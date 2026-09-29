@@ -1,0 +1,19 @@
+workstream_id: erp-analysis
+role: ERP Archaeologist + Functional BA
+status: active
+source: ERP_Medcom2026(4).zip
+primary_outputs:
+  - docs/erp/
+  - inventories/erp/
+scope:
+  - module_and_navigation_inventory
+  - forms_tabs_controls_and_actions
+  - grid_columns_visibility_order_filters_grouping_sorting
+  - dropdown_select_lookup_sources
+  - validation_defaults_and_workflows
+  - permissions_and_role_behavior
+  - reports_rpx_exports_printing
+  - layout_dat_and_user_company_customization
+  - integrations_files_templates_error_histories
+blocked_behavior: continue_independent_inventory_and_evidence
+acceptance: complete_inventory_with_stable_ids_evidence_and_unknowns
