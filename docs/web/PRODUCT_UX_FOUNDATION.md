@@ -177,3 +177,16 @@ Therefore this foundation intentionally defines reusable `WEB-*` contracts witho
 4. Define configuration precedence and saved-view conflict UX jointly with Migration Architecture.
 5. Validate keyboard shortcuts against actual ERP high-frequency workflows.
 6. Create representative stress scenarios: 100k+ result sets, 100+ columns, multi-user document conflict, live-update loss, 10s latency and long-running exports.
+
+
+## 13. Verified binding checkpoint
+
+ERP Analysis now publishes VERIFIED packaged IDs including ERP-CFG-AR_InvoiceFrm, ERP-CFG-AP_OrderFrm, ERP-CFG-FA_AssetListFrm and 24 persisted filter artifacts. These bind WEB-GRID-CORE/WEB-GRID-VIEW to multi-grid layouts with persisted width/order/visibility/aggregation semantics; filter metadata binds a new WEB-FILTER-CONTRACT with typed, server-allow-listed fields/operators. Browser-supplied legacy FieldID is never query authority.
+
+DB Analysis VERIFIED configuration objects including DB-TABLE-dbo.SY_Menu, SY_FrmCfg, SY_FrmCtrTbl, SY_FrmDrdwTbl, SY_FrmFltTbl, SY_FrmGrdActTbl, SY_FrmLstTbl, SY_FrmMstActTbl, SY_FrmOptBtnTbl and SY_FrmParTbl. WEB-CONFIG-RESOLUTION therefore consumes typed server-resolved capabilities rather than executable legacy source/action expressions. SY_UserBranch/SY_UserStorehouse prove scope metadata exists, not universal authorization enforcement.
+
+ERP report evidence now binds WEB-REPORT-RUN: 786 candidate-current RPX files include 119 with embedded script, 8 parent/subreport families, 7 barcode-bearing reports and one chart-bearing report. Report runs default to SNAPSHOT; embedded RPX script never executes in the browser; barcode outputs require machine-decode acceptance tests.
+
+Initial freshness binding: transactional/master lists SWR ≤30 s; warehouse/inbound operational lists SWR ≤15 s; reference lookups SWR ≤60 s/on-open; editable documents use version-aware targeted revalidation; config uses SWR after save + manual refresh; reports are SNAPSHOT. No bound surface is promoted to PUSH until an authoritative event/version source is VERIFIED.
+
+New explicit gaps: UX-GAP-NAV-001 menu reachability; UX-GAP-AUTH-001 enforcement semantics; UX-GAP-CONFIG-001 legacy precedence; UX-GAP-FILTER-001 Like/A-B aliases; UX-GAP-WORKFLOW-001 commands/side effects; UX-GAP-LOOKUP-001 lookup dependencies; UX-GAP-REPORT-001 report reachability/print options; UX-GAP-CONCURRENCY-001 version/idempotency; UX-GAP-REALTIME-001 event source; UX-GAP-RESPONSIVE-001 domain task priority. Status remains active.
