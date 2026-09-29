@@ -1,0 +1,19 @@
+workstream_id: db-analysis
+role: SQL Server Archaeologist + Data Architect
+status: active
+source: Medcom-Data (3)(1).zip
+primary_outputs:
+  - docs/db/
+  - inventories/db/
+scope:
+  - schemas_tables_columns_types_defaults
+  - primary_foreign_unique_keys
+  - indexes_constraints
+  - views_procedures_functions_triggers
+  - object_dependency_graph
+  - master_transaction_config_audit_reporting_classification
+  - authorization_and_identity_data
+  - implicit_contracts_side_effects_and_hotspots
+  - reuse_compatibility_and_schema_extension_candidates
+blocked_behavior: continue_independent_object_classification_and_dependency_analysis
+acceptance: complete_db_catalog_dependency_model_and_reuse_assessment
