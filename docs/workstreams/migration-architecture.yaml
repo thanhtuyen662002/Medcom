@@ -1,0 +1,18 @@
+workstream_id: migration-architecture
+role: Solution Architect + Backend Lead + Integration Architect
+status: active
+primary_outputs:
+  - docs/architecture/
+  - inventories/traceability/
+scope:
+  - erp_web_db_traceability
+  - api_and_backend_boundaries
+  - db_reuse_vs_additive_config_schema
+  - authorization_audit_and_tenant_company_scope
+  - concurrency_transactions_idempotency
+  - realtime_eventing_caching_background_jobs
+  - reporting_file_and_export_architecture
+  - migration_sequencing_compatibility_rollback
+  - observability_operational_support
+blocked_behavior: maintain_partial_traceability_and_gap_register_without_waiting
+acceptance: no_unmapped_verified_erp_capability_without_db_or_web_disposition
