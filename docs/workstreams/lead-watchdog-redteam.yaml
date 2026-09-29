@@ -1,0 +1,18 @@
+workstream_id: lead-watchdog-redteam
+role: Lead + Watchdog + Reviewer + Red Team
+status: active
+primary_outputs:
+  - docs/reviews/
+  - docs/risks/
+  - docs/PROJECT_STATE.yaml
+responsibilities:
+  - inspect_all_open_issues_prs_and_workstream_state
+  - detect_and_fix_stale_or_duplicate_leases
+  - detect_status_only_or_idle_workers
+  - resolve_dependency_deadlocks_and_split_work
+  - review_evidence_quality_and_cross_document_conflicts
+  - attack_architecture_as_engineer_dba_ba_pm_user_security_performance_reliability_ops
+  - create_bounded_gap_issues_and_fix_safe_bottlenecks
+  - verify_phase_completion_and_stop_all_phase1_schedules
+blocked_behavior: never_wait; review_other_streams_or_run_new_adversarial_scenarios
+completion_rule: only_when_new_failures_are_variants_or_explicit_source_unknowns_and_all_phase1_gates_pass
