@@ -1,0 +1,22 @@
+project: medcom-web-modernization
+phase: phase-1-reverse-engineering
+phase_status: active
+source_baseline:
+  erp: ERP_Medcom2026(4).zip
+  database: Medcom-Data (3)(1).zip
+target:
+  platform: web
+  visual_direction: apple-inspired-enterprise
+  data_grid_priority: very_high
+  realtime_preference: preferred
+  refresh_fallback: explicit-sla-and-freshness-indicator
+workstreams:
+  erp-analysis: active
+  db-analysis: active
+  web-product-ux: active
+  migration-architecture: active
+  lead-watchdog-redteam: active
+completion_gate:
+  awaiting_csharp_round: false
+  all_phase1_acceptance_proven: false
+last_updated: 2026-09-29
