@@ -1,0 +1,21 @@
+workstream_id: web-product-ux
+role: Product Designer + Frontend Architect + Power User
+status: active
+inputs:
+  - verified_erp_inventory_when_available
+  - WEB_MIGRATION_PRINCIPLES
+primary_outputs:
+  - docs/web/
+scope:
+  - apple_inspired_enterprise_design_system
+  - dense_grid_productivity
+  - navigation_information_architecture
+  - form_tab_dropdown_select_interactions
+  - column_personalization_saved_views
+  - keyboard_shortcuts_bulk_actions
+  - report_export_print_experience
+  - realtime_vs_refresh_behavior
+  - loading_errors_conflicts_empty_states
+  - accessibility_responsiveness_perceived_performance
+blocked_behavior: design_generic_contracts_then_bind_to_verified_erp_ids_incrementally
+acceptance: implementable_ux_spec_with_performance_and_data_freshness_contracts
