@@ -199,3 +199,17 @@ The implementation pilot after Phase 1 will exercise different archetypes with t
 | Mua hàng → Đặt mua hàng | `ERP-FRM-AP_OrderFrm` → `AP_OrderTbl` / `AP_OrderDetailTbl` | Master–Detail Document |
 
 The pilot must prove the shared Grid platform and separate desktop/mobile screen schemas before scaling to the rest of Medcom.
+
+
+## 11. Mobile shell and role quick navigation
+
+Mobile shell behavior is defined by `docs/web/MOBILE_NAVIGATION_ROLE_CONFIG.md`.
+
+Normative additions:
+- persistent bottom navigation for high-frequency actions;
+- Menu item opens the full authorized drawer/sidebar;
+- bottom-nav quick actions are configurable per role;
+- only verified admin accounts may modify role quick-nav configuration from the UI;
+- quick-nav configuration is presentation only and cannot grant permission;
+- revoked capabilities disappear after authoritative revalidation;
+- realtime invalidation may use SignalR, with SWR/revalidation fallback during WinForms coexistence.
