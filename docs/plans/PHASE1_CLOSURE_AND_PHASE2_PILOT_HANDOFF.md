@@ -276,3 +276,41 @@ For each business screen, "complete" means:
 - CI is green for the exact implementation head.
 
 If any exact source dependency (for example Tool.dll method names or the exact internal-transfer form binding) remains unknown, resolve it as the first implementation blocker; do not substitute a guessed API or guessed form.
+
+
+## Adopted implementation stack and mobile navigation
+
+Owner-approved Phase 2 implementation decisions:
+
+### Backend
+- C# / ASP.NET Core on **.NET 10 LTS**.
+- Tool.dll must be isolated behind a backend compatibility adapter. If direct .NET 10 loading is unsafe/incompatible, use a Windows/.NET Framework compatibility bridge rather than rewriting or guessing Tool.dll behavior.
+- SQL Server access remains server-only and typed.
+- ASP.NET Core SignalR is the preferred realtime transport for post-commit Web-owned invalidation where freshness materially matters.
+
+### Frontend
+- Next.js + React + TypeScript.
+- **shadcn/ui** + Tailwind for fast implementation of shell/forms/drawer/dialog/menu/admin surfaces.
+- TanStack Query for authoritative server state/revalidation.
+- TanStack Table + virtualization for the shared ERP Grid platform.
+
+### Mobile navigation
+- persistent bottom quick-navigation bar;
+- Menu item opens a left-side drawer/sidebar containing the full authorized ERP menu;
+- quick-action slots are configurable **per role**;
+- only a verified admin account can edit/publish role quick-nav configuration from the UI;
+- non-admin users cannot override the role quick-nav layout;
+- role quick-nav is presentation only and never grants permission;
+- permission/capability changes should invalidate navigation through SignalR when possible, with SWR/focus/manual revalidation fallback.
+
+Implementation must read:
+- `docs/web/MOBILE_NAVIGATION_ROLE_CONFIG.md`
+- `docs/web/GRID_MOBILE_IMPLEMENTATION_CONTRACT.md`
+- `docs/architecture/PHASE2_TECH_STACK.md`
+
+### Added authorization acceptance
+- admin configuration API/route is server-protected;
+- a non-admin cannot modify role bottom nav by crafted requests;
+- configured shortcuts targeting unauthorized capabilities are omitted from effective navigation;
+- role permission revocation removes the shortcut without requiring a new login after authoritative revalidation;
+- drawer and bottom nav derive from one server-resolved capability model, not separate permission systems.
