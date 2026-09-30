@@ -1,6 +1,6 @@
 workstream_id: erp-analysis
 role: ERP Archaeologist + Functional BA
-status: active
+status: complete_candidate
 source: ERP_Medcom2026(4).zip
 primary_outputs:
   - docs/erp/
@@ -17,3 +17,5 @@ scope:
   - integrations_files_templates_error_histories
 blocked_behavior: continue_independent_inventory_and_evidence
 acceptance: complete_inventory_with_stable_ids_evidence_and_unknowns
+
+completion_note: package evidence classes exhausted; C#-only runtime semantics remain explicit UNKNOWNs
