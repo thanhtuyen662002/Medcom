@@ -18,3 +18,12 @@
 
 ## Baseline discipline
 These hashes identify the Phase 1 source set. A future C# source package supplied by the owner starts a new technical verification round; do not silently mix it into this baseline. Any newer Library file must be explicitly recorded here with a new hash before becoming authoritative.
+
+
+## Supplemental C# review summaries
+
+Received from the owner on 2026-09-30:
+- `docs/erp/CSHARP_ENGINE_ARCHITECTURE_REVIEW.md`
+- `docs/erp/CSHARP_USERCONTROL_ARCHITECTURE_REVIEW.md`
+
+These are sanitized secondary review summaries produced after a prior agent inspected the WinForms source. They are useful for reconciliation and for narrowing the direct C# verification queue, but they are not a replacement for an authoritative raw C# source package. Claims unique to these summaries remain supplemental (`INFERRED` unless independently corroborated) until the corresponding source is opened directly in the C# verification round.
