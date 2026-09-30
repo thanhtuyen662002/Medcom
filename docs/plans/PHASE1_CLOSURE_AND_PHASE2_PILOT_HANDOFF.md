@@ -314,3 +314,25 @@ Implementation must read:
 - configured shortcuts targeting unauthorized capabilities are omitted from effective navigation;
 - role permission revocation removes the shortcut without requiring a new login after authoritative revalidation;
 - drawer and bottom nav derive from one server-resolved capability model, not separate permission systems.
+
+
+## Mandatory consolidated owner directives
+
+Before declaring the Phase 2 implementation plan complete, Lead and all implementation lanes must read and disposition:
+- `docs/plans/OWNER_WEB_IMPLEMENTATION_DIRECTIVES.md`
+- `docs/architecture/WEB_PLATFORM_SHARED_SERVICES.md` from the live Architecture lease
+- `docs/web/UX_RUNTIME_FEEDBACK_SESSION.md` from the live UX lease
+- `docs/web/MOBILE_NAVIGATION_ROLE_CONFIG.md`
+- `docs/web/GRID_MOBILE_IMPLEMENTATION_CONTRACT.md`
+- `docs/architecture/PHASE2_TECH_STACK.md`
+
+New mandatory planning coverage:
+- reusable cross-project WebCore/config/session/audit/idempotency/outbox/trace services;
+- durable business/security audit plus bounded diagnostic trace;
+- FE/API/DB correlation IDs;
+- toast/operation feedback and perceived-speed behavior;
+- 24h default idle logout with admin-configurable timeout minutes;
+- background polling/SignalR cannot extend genuine inactivity;
+- dynamic Screen Definition + DB/DAT synchronization with versioning, validation, audit and rollback;
+- explicit separation of presentation changes from executable/business configuration;
+- agents may adopt a better architecture only with documented rationale and equivalent-or-better acceptance coverage.
