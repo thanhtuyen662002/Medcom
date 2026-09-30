@@ -229,3 +229,19 @@ It is normative for Phase 2 planning:
 - pilot validation on the owner-prioritized Sales, Inventory and Purchasing workflows.
 
 Where this contract conflicts with a generic UI convenience, the business-specific screen configuration and server authorization contract win.
+
+
+## 16. Runtime feedback and idle session UX
+
+Implementation must also follow `docs/web/UX_RUNTIME_FEEDBACK_SESSION.md`.
+
+Normative additions:
+- user experience is the first product trade-off criterion;
+- save/action feedback uses concise toast notifications, preferred top-center, only after authoritative server result;
+- validation/conflict/recovery cannot rely on disappearing toast only;
+- support-worthy errors expose a safe correlation/reference ID;
+- default idle logout is 1440 minutes (24h) of no real user interaction;
+- admin may configure idle-timeout minutes;
+- polling/SWR/SignalR/background work must not reset true user inactivity;
+- server owns expiry and continuation;
+- perceived speed requires <=100 ms interaction acknowledgment and progress feedback for slower operations.
