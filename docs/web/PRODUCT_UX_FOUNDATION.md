@@ -162,21 +162,18 @@ At narrow widths, prioritize task completion: summary + key fields + actions + d
 
 ## 12. Binding and gap register
 
-Current binding status:
-- VERIFIED ERP screen/form IDs: **UNKNOWN / not yet published to this workstream**.
-- VERIFIED ERP report IDs: **UNKNOWN / not yet published**.
-- VERIFIED DB object IDs relevant to individual screens: **UNKNOWN / not yet published to main**.
+Current binding status is **incremental, not blocked**. VERIFIED ERP config/form/report IDs and VERIFIED DB configuration IDs are already bound in §13. Remaining unknowns are tracked as bounded `UX-GAP-*` entries rather than represented as absent inventories.
 
-Therefore this foundation intentionally defines reusable `WEB-*` contracts without claiming parity. Subsequent passes must create domain/screen binding tables:
+Binding rows use:
 `ERP ID → current behavior evidence → WEB capability IDs → freshness policy → performance budget → permission behavior → DB/API disposition → unresolved gaps`.
 
 ### Required next UX passes
-1. Bind first VERIFIED ERP form/grid/report inventory as soon as it lands.
+1. Expand bindings as additional VERIFIED ERP/DB IDs land; never wait for full inventory.
 2. Build design tokens, density modes and component anatomy.
 3. Define command/search/navigation taxonomy from VERIFIED module inventory.
 4. Define configuration precedence and saved-view conflict UX jointly with Migration Architecture.
 5. Validate keyboard shortcuts against actual ERP high-frequency workflows.
-6. Create representative stress scenarios: 100k+ result sets, 100+ columns, multi-user document conflict, live-update loss, 10s latency and long-running exports.
+6. Run representative stress scenarios: 100k+ result sets, 100+ columns, multi-user document conflict, live-update loss, 10s latency and long-running exports.
 
 
 ## 13. Verified binding checkpoint
@@ -190,3 +187,29 @@ ERP report evidence now binds WEB-REPORT-RUN: 786 candidate-current RPX files in
 Initial freshness binding: transactional/master lists SWR ≤30 s; warehouse/inbound operational lists SWR ≤15 s; reference lookups SWR ≤60 s/on-open; editable documents use version-aware targeted revalidation; config uses SWR after save + manual refresh; reports are SNAPSHOT. No bound surface is promoted to PUSH until an authoritative event/version source is VERIFIED.
 
 New explicit gaps: UX-GAP-NAV-001 menu reachability; UX-GAP-AUTH-001 enforcement semantics; UX-GAP-CONFIG-001 legacy precedence; UX-GAP-FILTER-001 Like/A-B aliases; UX-GAP-WORKFLOW-001 commands/side effects; UX-GAP-LOOKUP-001 lookup dependencies; UX-GAP-REPORT-001 report reachability/print options; UX-GAP-CONCURRENCY-001 version/idempotency; UX-GAP-REALTIME-001 event source; UX-GAP-RESPONSIVE-001 domain task priority. Status remains active.
+
+
+## 14. Mutation outcome and historical-failure UX
+
+ERP historical-error evidence now makes several resilience states product requirements rather than generic hypotheses.
+
+**WEB-MUTATION-OUTCOME** uses the explicit state machine:
+`ready → submitting → committed-confirmed | rejected | outcome-unknown → reconciling → committed-confirmed | rejected | conflict`.
+
+- A transport/network failure after submission is **not** shown as “not saved”. The UI shows “result unknown — checking server state”, disables blind duplicate submission, and performs authoritative reconciliation using the command/record correlation contract supplied by the API.
+- Retry is offered only when the backend proves the prior command did not commit or provides a VERIFIED idempotency key/command contract.
+- Server/trigger business-rule rejection is rendered as an authoritative rejected state with field/document context where safely available; the browser does not attempt to bypass it.
+- Optimistic delete/update conflicts preserve the user's intent and explain that the record changed or disappeared since it was loaded. Critical fields never silently last-write-wins.
+- Server-owned rowversion/timestamp-like tokens are opaque. They are returned by the API and sent back for concurrency checks; users never edit them and client code never synthesizes them.
+- Schema/result-contract drift is a distinct incompatible-client/server state. Missing required response fields must fail closed with correlation/support information instead of silently rendering partial business state.
+
+This contract binds the historical ERP failure classes reported by ERP Analysis (optimistic concurrency violation, network-write failure, schema/result-set drift, trigger-aborted transaction and server-owned timestamp rejection) to `WEB-FORM-STATE`, `WEB-CONFLICT-EDIT`, `WEB-NET-DEGRADED` and `WEB-STATE-ASYNC`.
+
+### Acceptance tests
+- Drop the network after the server receives a mutation but before the browser receives acknowledgement: exactly one business effect may survive; UI enters `outcome-unknown`, reconciles, and never claims failure prematurely.
+- Modify/delete the same record from a second session before submit: conflict is explicit, attempted user values remain recoverable, and no silent overwrite occurs.
+- Return an API payload missing a required contract field: the screen fails closed with a supportable error/correlation identifier rather than interpreting missing data as empty/default.
+- Reject a command from an authoritative DB/business rule: the UI reports rejection without automatic replay.
+- Simulate 10 s latency during reconciliation: existing safe data remains readable, duplicate mutation controls stay disabled, and connection/freshness status remains visible.
+
+New bounded gaps: `UX-GAP-IDEMPOTENCY-001` exact per-command replay/correlation keys; `UX-GAP-VERSION-001` per-document concurrency token semantics; `UX-GAP-SCHEMA-001` API compatibility/version negotiation and minimum-supported-client behavior. These remain UNKNOWN until DB/API/C# evidence proves them.
