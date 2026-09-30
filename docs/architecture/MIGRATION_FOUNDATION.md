@@ -44,3 +44,18 @@ The DB specialist branch verifies a broad SQL object/configuration/concurrency b
 - ARCH-GAP-008: reusable UX bindings exist; remaining work is exhaustive disposition of newly VERIFIED ERP IDs, not absence of a UX contract.
 
 Every VERIFIED ERP capability must eventually record ERP ID, evidence, user intent, WEB capabilities, API contract, DB IDs/disposition, authorization, concurrency, side effects, freshness, configuration, report/export dependencies, acceptance tests, rollback and explicit UNKNOWNs.
+
+
+## Phase 2 implementation stack
+
+The adopted implementation stack is defined in `docs/architecture/PHASE2_TECH_STACK.md`.
+
+Key constraints:
+- backend: C# / ASP.NET Core on .NET 10 LTS;
+- Tool.dll isolated behind a compatibility adapter/bridge;
+- frontend: Next.js + React + TypeScript + shadcn/ui;
+- shared dense-grid platform: TanStack Table + virtualization;
+- server state/revalidation: TanStack Query;
+- realtime candidate transport: ASP.NET Core SignalR, post-commit and authorization-scoped;
+- SignalR never replaces SWR/poll/revalidation while legacy WinForms writers can bypass the Web backend;
+- role-configurable mobile quick navigation is presentation configuration only and cannot grant permissions.
