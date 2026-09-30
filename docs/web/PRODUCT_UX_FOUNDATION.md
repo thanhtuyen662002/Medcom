@@ -213,3 +213,19 @@ This contract binds the historical ERP failure classes reported by ERP Analysis 
 - Simulate 10 s latency during reconciliation: existing safe data remains readable, duplicate mutation controls stay disabled, and connection/freshness status remains visible.
 
 New bounded gaps: `UX-GAP-IDEMPOTENCY-001` exact per-command replay/correlation keys; `UX-GAP-VERSION-001` per-document concurrency token semantics; `UX-GAP-SCHEMA-001` API compatibility/version negotiation and minimum-supported-client behavior. These remain UNKNOWN until DB/API/C# evidence proves them.
+
+
+## 15. Adopted Grid + Mobile implementation contract
+
+The owner-approved implementation direction is now durable in `docs/web/GRID_MOBILE_IMPLEMENTATION_CONTRACT.md`.
+
+It is normative for Phase 2 planning:
+- one shared Grid platform, many screen configurations;
+- separate desktop Grid schema and mobile semantic list/card schema;
+- screen-owned actions/filters/business behaviors outside Grid Core;
+- server-side query adapters for large datasets;
+- server-authoritative navigation/route/API/action authorization;
+- saved-view/personalization scope separated from system defaults;
+- pilot validation on the owner-prioritized Sales, Inventory and Purchasing workflows.
+
+Where this contract conflicts with a generic UI convenience, the business-specific screen configuration and server authorization contract win.
