@@ -238,3 +238,19 @@ Slices 1–6 can proceed without waiting for unresolved form bindings.
 - `UX-P2-GAP-REALTIME` — authoritative commit-correlated event/version source.
 
 These gaps block only the unsafe binding, not shared FE implementation.
+
+
+## 10. Pilot implementation matrix
+
+| Unit | Evidence gate | Frontend delivery |
+|---|---|---|
+| AP Order | `ERP-FRM-AP_OrderFrm` and AP Order master/detail are VERIFIED | Build desktop list/document and mobile semantic list/document now; workflow actions remain server-capability gated. |
+| Inbound Request | `ERP-FRM-IV_InboundRequestFrm` and inbound master/detail are VERIFIED | Build operational desktop/mobile surfaces now; status transitions remain gated. |
+| Incoming Status | packaged form/data binding VERIFIED | Build read/review status surface; do not treat it as internal transfer. |
+| Sales Request | candidate form/data binding exists; exact business-label/action equivalence unresolved | Build reusable request schema; gate route label and commands. |
+| Purchase Approval | exact form/action/workflow unresolved | Build approval interaction shell; do not bind a business adapter yet. |
+| Internal Transfer | exact form/table/query/action unresolved | Reuse generic inventory-request schema only; do not invent a binding. |
+
+Shared components remain App Shell, ERP Grid, Document Shell, Lookup, Action Bar, Session Guard, top-center Feedback and Freshness indicator. Mobile uses bottom quick-nav plus authorized drawer; role quick-nav editing is admin-only and never grants business permission. Passive polling/SWR/SignalR never resets the 1440-minute default idle timer.
+
+Acceptance must cover 100k+ result cardinality, 100+ potential columns, superseded requests, 10-second latency, lost mutation acknowledgement, concurrent-edit conflict, role revocation, realtime degradation, keyboard/accessibility and background export/report. Missing ERP semantics stay fail-closed under the existing `UX-P2-GAP-*` register.
