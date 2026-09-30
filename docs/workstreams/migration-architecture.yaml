@@ -1,6 +1,6 @@
 workstream_id: migration-architecture
 role: Solution Architect + Backend Lead + Integration Architect
-status: active
+status: complete_candidate
 primary_outputs:
   - docs/architecture/
   - inventories/traceability/
@@ -16,3 +16,5 @@ scope:
   - observability_operational_support
 blocked_behavior: maintain_partial_traceability_and_gap_register_without_waiting
 acceptance: no_unmapped_verified_erp_capability_without_db_or_web_disposition
+
+completion_note: architecture disposition coverage complete; remaining runtime facts are bounded UNKNOWNs for direct source verification
