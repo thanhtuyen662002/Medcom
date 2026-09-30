@@ -169,3 +169,110 @@ When all seven Phase 1 gates pass:
 4. only after the plan is durable, disable all five Phase 1 schedules.
 
 If Phase 1 cannot be closed by 21:00, Lead must leave a precise durable blocker list and continue hourly closure work. The planning deadline remains 08:00 and must not be replaced by status-only reporting.
+
+
+## Updated owner execution directive — 2026-09-30 late evening
+
+### Absolute deadlines
+
+- **Phase 1 absolute cutoff: 2026-10-01 01:00 Asia/Ho_Chi_Minh.**
+- **Phase 2 implementation plan + adversarial plan review: complete before 2026-10-01 08:00 Asia/Ho_Chi_Minh.**
+- **Pilot functionality completion target: before 2026-10-02 09:00 Asia/Ho_Chi_Minh (Friday).**
+
+The 01:00 cutoff is a hard transition point. Phase 1 workers must spend the remaining window only on closure-critical executable evidence. No broad new archaeology is allowed unless it can invalidate a closure gate.
+
+At 00:30, if any closure gate is still blocked, Lead must escalate from normal hourly ownership to direct critical-path closure: consume the live specialist evidence, identify the smallest missing durable artifact, and drive that artifact to completion on the owning lease or record the exact non-deferrable blocker.
+
+Do not fabricate completion. If a fact genuinely cannot be proven from the available authoritative source, keep it as a bounded UNKNOWN. Missing executable deliverables that can still be produced from the source are not allowed to be relabeled UNKNOWN merely to meet the clock.
+
+### Phase 2 planning must be 100% implementation-ready
+
+The Phase 2 plan is not complete merely because headings exist. It must contain:
+- concrete BE/FE/QA issue graph and dependency ordering;
+- Tool.dll authentication adapter boundary and explicit verification tasks for any unknown method/session semantics;
+- navigation/menu, route, API, data-scope, mutation and export authorization contracts;
+- exact known ERP/DB bindings for each pilot screen;
+- screen-level DTO/query/command contracts;
+- desktop/mobile schema decisions using the adopted Grid/Mobile contract;
+- migration/coexistence/rollback strategy;
+- test strategy, CI gates and definition of done;
+- deployment/local-run assumptions;
+- owner-visible progress checkpoints.
+
+### Mandatory adversarial attack on the plan
+
+Before implementation begins, Lead must attack the plan from all of these perspectives and durable-record findings/corrections:
+- senior Windows/ERP engineer;
+- backend/API engineer;
+- frontend architect;
+- SQL Server DBA;
+- BA/accounting operator;
+- warehouse operator;
+- purchasing/sales operator;
+- security engineer;
+- performance engineer;
+- reliability/SRE;
+- support/operations;
+- accessibility/mobile UX critic;
+- accidental misuse;
+- malicious misuse;
+- migration/coexistence/rollback reviewer.
+
+The attack must explicitly try to break:
+- Tool.dll login/logout/session lifecycle;
+- permission/menu visibility vs direct-route/API bypass;
+- role changes during session;
+- company/branch/storehouse scope;
+- document-state authorization;
+- stale/concurrent edits;
+- duplicate retry/idempotency;
+- partial transaction / trigger side effects;
+- grid performance and huge datasets;
+- slow network/offline/reconnect;
+- export/report authorization;
+- config corruption and saved-view drift;
+- mobile action safety;
+- observability/support diagnostics;
+- rollout/rollback with WinForms coexistence.
+
+Each discovered issue must be either fixed in the plan, converted to a bounded implementation blocker with owner/acceptance test, or explicitly proven to be a variant of an existing risk class.
+
+### Immediate coding after plan acceptance
+
+If the implementation plan and adversarial review finish before the 08:00 deadline, coding begins immediately. Do not wait for the deadline.
+
+Reuse the existing five automation slots after Phase 1 instead of creating a sixth schedule. Lead owns the transition and should repurpose lanes to implementation work rather than leaving completed analysis loops idle.
+
+Recommended implementation-lane mapping after Phase 1 closure:
+1. **Backend/Auth lane** — Tool.dll adapter, login/logout/session, authorization/capability service, route/API enforcement.
+2. **Backend/Data lane** — typed query/command adapters, DB bindings, transaction/idempotency/audit.
+3. **Frontend lane** — login/session UX, authorized shell/navigation, shared Grid Engine, desktop/mobile screen schemas.
+4. **Integration/QA lane** — cross-screen workflow, permission matrix, end-to-end tests, performance/reliability/rollback.
+5. **Lead lane** — issue orchestration, red-team/review, CI closure, integration, release-readiness.
+
+### Pilot implementation scope due before Friday 09:00
+
+Required:
+1. Tool.dll-backed login.
+2. Logout and invalid session handling.
+3. Permission-filtered module/menu/navigation.
+4. Server-enforced route/API/data/mutation/export authorization.
+5. Bán hàng → Đề nghị bán hàng.
+6. Quản lý kho → Đề nghị nhập hàng.
+7. Quản lý kho → Đề nghị điều chuyển nội bộ.
+8. Mua hàng → Duyệt đề nghị mua hàng.
+9. Mua hàng → Đặt mua hàng.
+
+For each business screen, "complete" means:
+- authorized role can discover/open/use the screen;
+- unauthorized role cannot see it in navigation and cannot access it by direct URL/API;
+- list/detail data is scoped correctly;
+- server-side search/filter/sort/paging works;
+- required create/edit/approve/transition behavior in scope is bound to authoritative backend rules;
+- desktop uses shared Grid Engine;
+- mobile uses its own semantic presentation;
+- permission + business-state tests exist;
+- critical mutation outcomes are unambiguous and retry-safe according to the available contract;
+- CI is green for the exact implementation head.
+
+If any exact source dependency (for example Tool.dll method names or the exact internal-transfer form binding) remains unknown, resolve it as the first implementation blocker; do not substitute a guessed API or guessed form.
