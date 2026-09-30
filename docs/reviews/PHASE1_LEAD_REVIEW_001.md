@@ -45,3 +45,12 @@ New FK trust/integrity concerns and historical referential-integrity failures ar
 Keep Phase 1 active and keep all five workstreams alive. Do not create a sixth schedule. Do not mark complete_candidate, merge Phase 1 leases, or switch PROJECT_STATE to awaiting_csharp_round until exact specialist acceptance and full VERIFIED traceability are proven.
 
 Immediate critical path: complete DB exact catalog/dependencies/reuse assessment; expand ERP sanitized coverage while preserving C#-only UNKNOWNs; bind every newly VERIFIED ERP ID in architecture; reconcile stale architecture text; then rerun Lead saturation and seven-gate review.
+
+
+## Deadline-mode watchdog checkpoint — 2026-09-30 16:57 ICT
+
+Live audit confirms PRs #7–#11 remain the five valid Draft leases and are mergeable. UX has advanced to `complete_candidate` in its closure matrix. ERP added a stable-ID coverage/gap artifact and supplemental C# review summaries while keeping direct-source-only facts bounded. DB remains the dominant closure blocker because its current lease still lacks the complete exact sanitized catalog, dependency model, classification and reuse assessment required by gate 2.
+
+Watchdog performed a safe cross-document correction on Architecture PR #11: `docs/architecture/MIGRATION_FOUNDATION.md` no longer claims VERIFIED ERP IDs/UX bindings are absent and now distinguishes available package/config evidence from C#-round UNKNOWNs. Architecture still must exhaustively disposition every VERIFIED ERP capability and cannot become `complete_candidate` merely from that wording repair.
+
+Deadline policy: no new exploratory scope outranks closure of gates 1–6. If a fact cannot be proven from the authoritative Phase 1 baseline and truly depends on runtime/source semantics, reserve it explicitly for the C# round; do not weaken a missing DB catalog or missing VERIFIED traceability row into an UNKNOWN simply to meet the clock.
