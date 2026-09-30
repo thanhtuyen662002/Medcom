@@ -149,3 +149,19 @@ Do not hard-lock the entire application to the legacy runtime if an isolated ada
 - SignalR path has reconnect/revalidation fallback;
 - permission changes propagate without relying solely on user relogin;
 - WinForms coexistence freshness remains safe without assuming all writes emit events.
+
+
+## 10. Shared platform services, audit and session policy
+
+Implementation planning must read `docs/architecture/WEB_PLATFORM_SHARED_SERVICES.md`.
+
+Required outcomes:
+- reusable Web platform schema/services suitable for Medcom and future projects;
+- separate durable business/security audit from high-volume diagnostic telemetry;
+- safe correlation IDs across FE → API → handler → DB/SP;
+- retention/purge/indexing strategy for diagnostic records;
+- default idle timeout 1440 minutes, admin-configurable in minutes;
+- background refresh/SignalR must not keep an idle user session alive;
+- dynamic Screen Definition/DAT sync must be versioned, auditable and rollback-safe.
+
+The suggested `WebCore.*` table set is a reference architecture, not a mandatory physical naming scheme. A better design is allowed when it preserves all invariants and is documented/tested.
