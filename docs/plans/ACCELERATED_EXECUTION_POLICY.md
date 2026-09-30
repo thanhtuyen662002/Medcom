@@ -207,3 +207,42 @@ A scheduled worker should leave the repository in a state another run can resume
 - blocker owner/dependency if any.
 
 No run should end with only “waiting” when a useful independent unit exists.
+
+
+## GitHub mutation safety-layer protocol
+
+The GitHub connector may intermittently reject otherwise-valid mutation operations through its safety layer. This is an external write-path condition, not evidence that analysis/code is invalid.
+
+Workers must NOT attempt to bypass or disable the safety layer.
+
+### Mutation discipline
+For every GitHub write:
+1. fetch live branch/PR state first;
+2. fetch the current file SHA when updating an existing file;
+3. perform **one mutation at a time**;
+4. prefer small, reviewable, single-purpose commits;
+5. avoid batching unrelated files/comments into one write burst;
+6. verify the new commit/head after success before issuing the next dependent mutation.
+
+### When a safety-layer rejection occurs
+1. Do not spam retries.
+2. Re-read live head/file SHA.
+3. Retry once with the smallest equivalent mutation:
+   - one file instead of several;
+   - shorter/single-purpose content;
+   - one comment instead of a burst;
+   - update an existing durable artifact instead of creating several new artifacts when semantically equivalent.
+4. If the second mutation is also blocked, mark the write path unavailable for the rest of that run and continue read-only analysis, tests, planning, review, or another independent executable unit.
+5. Preserve the exact pending durable change in the run's resumable checkpoint when any write path remains available. If no GitHub mutation is available at all, report the precise pending file/change in the final run report so the next run can retry it once.
+6. On the next scheduled run, retry the pending smallest mutation once after refreshing live state.
+
+### Lead recovery
+Lead treats repeated safety-layer blocks as a write-path incident:
+- compare chat/run-reported progress against actual durable GitHub head;
+- never count uncommitted/uncommented work as durable completion;
+- when mutations recover, flush the smallest highest-priority pending closure artifacts first;
+- avoid duplicate writes that another run may already have landed;
+- if a closure deadline is threatened, continue producing verified analysis and a precise pending-write manifest rather than fabricating closure.
+
+### What the user does NOT need to do
+No repository setting, permission toggle, branch-protection weakening or safety bypass should be requested from the owner solely for this condition. Ask the owner only if GitHub itself reports a genuine permission/credential/repository-policy blocker that cannot be resolved by the existing authorized connector.
