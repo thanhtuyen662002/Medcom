@@ -31,16 +31,16 @@ Migrate by vertical slice: discover verified semantics, define contracts, shadow
 Track API and SQL latency/errors, deadlocks, concurrency conflicts, duplicate retries, job backlog/failure, realtime gaps, cache freshness, authorization denials, report runtime and config-version failures.
 
 ## Current evidence anchors
-The DB specialist branch verifies existence of AR_InvoiceTbl, AR_OrderTbl, CF_ObjectTbl, CF_ItemTbl, SY_User, SY_UserGroup and FA_AssetTbl, plus a broad report-procedure surface and trigger side effects. Until exact dependencies are catalogued, domain objects default to FACADE/UNKNOWN rather than direct generic reuse. The UX specialist branch defines reusable WEB contracts, but VERIFIED ERP screen IDs are not yet available on main.
+The DB specialist branch verifies a broad SQL object/configuration/concurrency baseline, including existing SY_* configuration surfaces. ERP Analysis now publishes VERIFIED package IDs for layout/config/filter/report evidence, and Web Product/UX publishes reusable WEB contracts plus a complete-candidate closure matrix. Architecture therefore binds live specialist branch evidence rather than waiting for it to land on main. Until exact DB dependencies and per-command mutation semantics are catalogued, domain writes remain FACADE/UNKNOWN rather than direct generic reuse.
 
 ## Gap register
-- ARCH-GAP-001: VERIFIED ERP screen/form IDs are not yet on main.
-- ARCH-GAP-002: exact procedure/view/trigger dependency catalog is pending.
-- ARCH-GAP-003: existing system configuration/permission support for Web presentation configuration is unproven.
-- ARCH-GAP-004: concurrency/version fields and transaction boundaries are unproven.
-- ARCH-GAP-005: report procedure to RPX parameter/result mapping is pending.
-- ARCH-GAP-006: company/branch/user enforcement needs DB analysis and later C# verification.
-- ARCH-GAP-007: integration, background-job and file contracts remain to inventory.
-- ARCH-GAP-008: UX screen bindings are pending.
+- ARCH-GAP-001: exact runtime menu reachability/captions/order remain C#-round UNKNOWN; package form/config IDs are available now.
+- ARCH-GAP-002: exact procedure/view/trigger dependency catalog is pending DB closure.
+- ARCH-GAP-003: existing SY_* configuration support is VERIFIED at schema/capability level; exact precedence, executable semantics and safe Web personalization persistence remain UNKNOWN.
+- ARCH-GAP-004: concurrency/version fields and per-command transaction/idempotency boundaries are unproven.
+- ARCH-GAP-005: report procedure to RPX parameter/result mapping is partial; exact result/side-effect contracts remain pending.
+- ARCH-GAP-006: exact permission precedence and company/branch/storehouse enforcement remain C#-round UNKNOWN; server authorization remains mandatory.
+- ARCH-GAP-007: exact integration/background-job/file runtime bindings remain to inventory or reserve explicitly for C# verification.
+- ARCH-GAP-008: reusable UX bindings exist; remaining work is exhaustive disposition of newly VERIFIED ERP IDs, not absence of a UX contract.
 
 Every VERIFIED ERP capability must eventually record ERP ID, evidence, user intent, WEB capabilities, API contract, DB IDs/disposition, authorization, concurrency, side effects, freshness, configuration, report/export dependencies, acceptance tests, rollback and explicit UNKNOWNs.
