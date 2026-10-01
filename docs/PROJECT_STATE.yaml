@@ -11,12 +11,36 @@ target:
   realtime_preference: preferred
   refresh_fallback: explicit-sla-and-freshness-indicator
 workstreams:
-  erp-analysis: active
+  erp-analysis: complete_candidate
   db-analysis: active
-  web-product-ux: active
+  web-product-ux: complete_candidate
   migration-architecture: active
   lead-watchdog-redteam: active
 completion_gate:
   awaiting_csharp_round: false
   all_phase1_acceptance_proven: false
-last_updated: 2026-09-29
+  gate_audit: docs/reviews/PHASE1_CLOSURE_AUDIT_20261001.md
+  gate_status:
+    erp_inventory: pass_bounded
+    db_inventory: fail_row_level_catalog_and_dependencies_missing
+    web_product_ux: pass_bounded
+    erp_web_db_traceability: fail_partial_join
+    migration_architecture: fail_pending_gates_2_and_4
+    red_team: pass_candidate_plan_review_required
+    lead_saturation: fail
+phase2:
+  plan_status: durable_implementation_ready_launchpad
+  master_plan: docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md
+  adversarial_review: docs/reviews/PHASE2_PLAN_ADVERSARIAL_REVIEW.md
+  issue_graph: docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md
+  implementation_issue_range: 12-41
+  production_code_started: false
+  ready_issue_count: 18
+  blocked_issue_count: 12
+remaining_blockers:
+  - TRC-DB-001 row-level sanitized SQL catalog and dependency graph
+  - TRC-TOOL-001 direct Tool.dll runtime and API verification
+  - exact internal-transfer ERP form and data binding
+  - exhaustive ERP to Web to DB traceability
+  - per-screen mutation, permission precedence and concurrency contracts
+last_updated: 2026-10-01
