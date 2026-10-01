@@ -81,6 +81,30 @@ are FormName, View, AddNew, Edit, Delete, Manager, Admin, AutoLock, HideAmount,
 LockDoc, UnLockDoc and ExportExcel. Field names describe a capability shape;
 they do not prove precedence, enforcement timing, scope or server-safe semantics.
 
+## Parameter names visible in metadata
+
+The following parameter names are also present in method metadata. They are
+recorded as names only and are not promoted to business semantics:
+
+- Functions.VerifyUserPass: Username, Password, PasswordEncode
+- Functions.GetPermission: FormName, ShowInvalidPer
+- Functions.GetPermissionWithMenuPara: FormName, MenuPara, ShowInvalidPer
+- Functions.CheckAdminUserGroup: ShowInvalidMsg
+- Functions.EncodeUserPass: User, Pass
+- MD5.EncryptUserPass: User, Pass
+- MD5.VerifyUserPass: User, Pass, PassEn
+- MD5.VerifyUserPassSystem: User, Pass, PassEn
+- Connector.GetBranchFilter: TableNamePrefix
+- Storer.SetUserAutoID: FieldName, Value
+- FormControler.SetPermission: CanAdd, CanEdit, CanDelete
+- SY_ApproveDocumentFrm.KiemTraUserCoQuyenDuyet: UserLevel
+
+The names do not establish whether a password is plaintext, encoded, hashed or
+transport-only; whether ShowInvalidPer changes security or only UI feedback;
+whether FormName is a menu identifier or a form identifier; or whether
+TableNamePrefix and UserLevel are safe to accept from a Web client. The Web
+adapter must keep all such values server-owned and typed.
+
 ## Negative and unresolved findings
 
 No public method named Login, Logout, Logon or Logoff was found by the metadata
