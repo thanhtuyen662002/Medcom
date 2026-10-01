@@ -320,3 +320,26 @@ Before coding, Red Team must attack at minimum:
 - supportability using correlation IDs.
 
 Any unresolved safety-critical item becomes a bounded blocker; ordinary implementation improvements can proceed independently.
+
+## 15. Single-port multi-customer backend
+
+Backend implementation must prioritize a **shared single-port multi-customer service**.
+
+Mandatory outcome:
+- one ASP.NET Core backend service/endpoint can serve many customers/companies concurrently;
+- onboarding another customer does not require a dedicated backend port or code fork;
+- customer/company context is resolved server-side from authenticated authority;
+- each customer can map to its own SQL Server/database/configuration/legacy-adapter profile;
+- one customer may map to multiple databases when required;
+- shared-database and database-per-customer models are both supportable by the abstraction;
+- cache, SignalR, background jobs, audit, logs and DB connections are correctly tenant-scoped.
+
+Preferred stack remains ASP.NET Core/.NET 10. Classic ASPX is permitted only when a verified legacy compatibility dependency provides a stronger reason, not as the default architecture.
+
+A browser-provided CompanyId/database/server identifier is untrusted input. The server must validate membership/scope and resolve the effective data source internally.
+
+Required tests:
+- cross-customer access attempts fail closed;
+- same port serves multiple customers simultaneously;
+- tenant-scoped connection/cache/realtime/job/audit behavior is isolated;
+- a newly configured customer can be activated without changing the listening port.
