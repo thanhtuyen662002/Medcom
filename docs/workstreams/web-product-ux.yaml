@@ -1,6 +1,6 @@
 workstream_id: web-product-ux
 role: Product Designer + Frontend Architect + Power User
-status: active
+status: complete_candidate
 inputs:
   - verified_erp_inventory_when_available
   - WEB_MIGRATION_PRINCIPLES
@@ -19,3 +19,11 @@ scope:
   - accessibility_responsiveness_perceived_performance
 blocked_behavior: design_generic_contracts_then_bind_to_verified_erp_ids_incrementally
 acceptance: implementable_ux_spec_with_performance_and_data_freshness_contracts
+
+closure_evidence:
+  - docs/web/PHASE1_UX_CLOSURE_MATRIX.md
+  - docs/web/PRODUCT_UX_FOUNDATION.md
+  - docs/web/GRID_MOBILE_IMPLEMENTATION_CONTRACT.md
+  - docs/web/DYNAMIC_CAPABILITY_UX.md
+  - docs/web/CONFIGURATION_LOOKUP_UX.md
+remaining_unknowns_policy: bounded_for_csharp_round
