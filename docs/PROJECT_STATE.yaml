@@ -29,10 +29,12 @@ completion_gate:
     red_team: pass_candidate_plan_review_required
     lead_saturation: fail
 phase2:
-  plan_status: durable_implementation_ready_launchpad
+  plan_status: complete_before_code
   master_plan: docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md
   adversarial_review: docs/reviews/PHASE2_PLAN_ADVERSARIAL_REVIEW.md
   issue_graph: docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md
+  plan_completeness_audit: docs/reviews/PHASE2_PLAN_COMPLETENESS_AUDIT_20261001.md
+  code_start_policy: no production code in this planning run
   implementation_issue_range: 12-41
   production_code_started: false
   ready_issue_count: 16

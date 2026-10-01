@@ -275,6 +275,8 @@ revalidated and reported as unknown. Expiry clears protected query state and
 returns to a safe route. Dirty forms offer a local recovery path without
 persisting secrets or unauthorized data.
 
+Static metadata for Tools.dll is now verified in docs/erp/TOOL_DLL_METADATA_EVIDENCE.md. The observed signature shape is available for adapter design, but it does not prove login, logout, session, permission precedence or side effects.
+
 Exact Tool.dll login/logout/session methods, result codes, target runtime,
 thread safety and disposal remain `T1` BLOCKED until direct verification.
 
