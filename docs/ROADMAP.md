@@ -16,4 +16,4 @@ Create a screen-by-screen and capability-by-capability ERP ↔ Web ↔ DB mappin
 Attack the plan from developer, DBA, BA, project manager, end user, security, performance, reliability and operations perspectives. Record failure classes, mitigations, detection and test evidence. Continue until newly found failures are only variants of documented classes or explicitly unresolved source unknowns.
 
 ## Next phase
-Owner will provide C# source on the morning after Phase 1. Treat that as a second technical verification round against all Phase 1 conclusions.
+The owner has supplied a supplementary maintenance guide identifying legacy VB.NET projects. Direct legacy-source/build verification remains a separate technical round against Phase 1 conclusions; the guide is not the raw solution. C# remains the target Web backend language. See `SOURCE_BASELINE.md`, `erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md` and `plans/PHASE2_SCHEDULED_EXECUTION_PLAN.md` for the current evidence and execution handoff. Earlier dates and source-language shorthand are historical, not current start eligibility.

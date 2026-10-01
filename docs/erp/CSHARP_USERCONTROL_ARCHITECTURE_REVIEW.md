@@ -2,6 +2,8 @@
 
 Status: supplemental C# review evidence supplied by the owner on 2026-09-30.
 
+**2026-10-01 reconciliation:** the filename/source-round shorthand is historical; the new guide identifies VB.NET legacy projects. See `WINFORMS_SOURCE_GUIDE_EVIDENCE.md` for class/row identity and the six differently serialized UserControl defaults. Secondary source review and a ControlType 22 slot cannot prove a concrete runtime binding. C# remains the Web backend target.
+
 ## Provenance and evidence handling
 
 This is a sanitized synthesis of an owner-supplied technical review produced after another agent inspected the WinForms source. It does not contain the raw source files. Treat direct-source-only claims as `INFERRED` until the C# source is re-opened in this project; promote to `CORROBORATED` where the behavior agrees with independent ERP/DB/package evidence.

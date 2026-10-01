@@ -23,7 +23,7 @@ missing, and the exact acceptance needed before the DB gate can pass.
 | unique constraints | 7 explicit ALTER TABLE unique declarations plus implicit PK/unique indexes | **PARTIAL** | Complete unique constraint/index ownership and column order. |
 | check constraints | 558 declarations | **PARTIAL** | Owning table, normalized expression, trust/disabled state and stable IDs. |
 | indexes | 125 explicit CREATE INDEX statements across 79 tables | **PARTIAL** | Full index metadata including implicit PK/unique indexes, key/include columns, filters and disabled state. |
-| views | 216 declarations / 203 normalized identities | **PARTIAL** | Per-view definition hash, referenced object edges, read/write classification and active-definition rule. |
+| views | 216 declarations / 203 normalized identities | **PARTIAL** | Per-view definition hash, referenced object edges, read/write classification and script-effective/candidate definition rule; actual deployed version remains runtime UNKNOWN. |
 | procedures | 652 declarations / 591 normalized identities, including `zuser.SY_SystemServiceCheckStp` | **PARTIAL** | Per-procedure definition hash, parameters, referenced objects, side effects and duplicate-definition reconciliation. |
 | functions | 113 declarations / 109 normalized identities | **PARTIAL** | Per-function parameter/return metadata, body hash and dependencies. |
 | triggers | 5 declarations / 3 normalized identities | **PARTIAL** | Table, event, order, body hash, side effects and disabled/trust state. |

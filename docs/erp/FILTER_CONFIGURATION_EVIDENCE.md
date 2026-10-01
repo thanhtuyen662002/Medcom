@@ -96,4 +96,4 @@ These links prove persisted filter-field references. They do **not** prove that 
 
 These should be verified from C#, database configuration and runtime evidence in the next passes.
 
-Workstream status remains `active`.
+Current workstream status is recorded in `../PROJECT_STATE.yaml` and `../workstreams/erp-analysis.yaml`; this evidence slice does not independently set phase or stream completion.

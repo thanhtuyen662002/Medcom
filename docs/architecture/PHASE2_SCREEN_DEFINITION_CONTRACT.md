@@ -17,3 +17,18 @@ ConfigSyncCheckpoint records source identity, source hash/version, last successf
 Acceptance: malformed source cannot replace current version; stale admin publish conflicts; rollback restores a known valid version; user override cannot grant authorization; executable metadata is absent from browser payload; legacy writer/source change is detected without requiring SignalR; config history is immutable and correlated to actor/source.
 
 UNKNOWN: exact SY_* precedence and executable semantics, DAT grammar beyond verified fields, per-screen source binding, and whether every proposed WebCore physical table is necessary after DB reuse review.
+
+## Maintenance-guide reconciliation and compiler acceptance
+
+The guide supplement `../erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md` and its 293-pair index are asserted historical grammar, not a directly verified Medcom parser. A7/R3 must establish source/build identity and consumer-specific addressing before activation.
+
+- Config row identity includes source/build, tenant/company scope, exact FID/variant/PFID, KeyID, SubID and SubValue plus persisted row ID/version. Never collapse LYT order and LYS property-key meanings of SubValue. Prefix matching cannot resolve a variant.
+- The guide reports non-unique configuration tuples and first-row lookups. Detect collisions before compilation; quarantine ambiguous executable rows and retain the prior good version. Do not silently select an arbitrary row or add a unique index to the legacy database without a separately reviewed cleanup/migration.
+- LYT parsing preserves empty positions, sparse legacy arrays, encoding rules and unknown trailing fields. Test the reported positions 0–20, caption/default delimiter escaping and malformed input. A canonical Web projection may omit unsupported fields with an explicit disposition; legacy write-back must preserve them and is disabled until round-trip evidence is available.
+- Resolve each property default/empty value by its actual getter/setter and class inheritance. TXT/BOL defaults cannot be generalized across controls; ControlType 22 does not establish its executable class. ControlType 30 never permits arbitrary browser HTML/script execution.
+- Map hooks per consumer and event order; form EBS/ESS/ESS2 and table DBS/S10 are not aliases. Deferred hooks, triggers and joined/read-only details need separate transaction/completion contracts. No generic CRUD is enabled by metadata presence alone.
+- Config publication does not flush every WinForms client. Q3 verifies legacy Forever1Day cache invalidation and defined client refresh/restart before claiming convergence. Clear(), Clear(True), Web publication and SignalR are distinct operations.
+
+Required acceptance includes duplicate tuple quarantine, wrong variant denial, missing/extra/empty LYT fields, malformed encoded values, LYS full identity, stale concurrent publication, unsupported executable key refusal, user override permission denial and old-cache/new-schema coexistence. Planned cases are enumerated in the two Phase 2 attack reviews; they are not executed results.
+
+A previous-good config is eligible for rollback only if its source/compiler/action contracts and current build/schema still admit it. Validate compatibility and the expected current pointer before rollback; an incompatible historical version remains quarantined and cannot re-enable retired/unauthorized commands. R5/A7 exercise current-build/old-schema and old-config/current-schema cases as well as concurrent pointer changes.

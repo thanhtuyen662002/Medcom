@@ -26,20 +26,45 @@ completion_gate:
     web_product_ux: pass_bounded
     erp_web_db_traceability: fail_partial_join
     migration_architecture: fail_pending_gates_2_and_4
-    red_team: pass_candidate_plan_review_required
+    red_team: reviewed_open_findings
     lead_saturation: fail
 phase2:
-  plan_status: complete_before_code
+  plan_status: coverage_reviewed_evidence_pending
   master_plan: docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md
   adversarial_review: docs/reviews/PHASE2_PLAN_ADVERSARIAL_REVIEW.md
   issue_graph: docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md
   plan_completeness_audit: docs/reviews/PHASE2_PLAN_COMPLETENESS_AUDIT_20261001.md
   code_start_policy: no production code in this planning run
-  implementation_issue_range: 12-41
+  implementation_issue_range: 12-42
+  implementation_issue_count: 31
+  implementation_authorized: false
+  eligible_to_start_count: 0
+  active_planning_pr: 43
   production_code_started: false
-  ready_issue_count: 16
-  blocked_issue_count: 14
+  historical_ready_or_bounded_labels: 16
+  historical_blocked_labels: 15
+  count_note: historical graph labels do not establish current start eligibility
   tool_metadata_evidence: docs/erp/TOOL_DLL_METADATA_EVIDENCE.md
+  supplementary_guide_evidence: docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md
+  consistency_audit: docs/reviews/DOCUMENT_CONSISTENCY_AUDIT_20261001.md
+  detailed_attack_reviews:
+    - docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md
+    - docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md
+  future_workflow_authorized: true
+  future_authorization_scope: gated coding workflow preparation; source-free foundation after plan integration and preflight; verified domain slices after their gates
+  current_run_scope: supplementary evidence; document reconciliation; tabletop attacks; scheduled execution plan
+  current_start_blocker: plan integration and per-issue lease/runtime/source/dependency preflight
+scheduled_execution:
+  plan: docs/plans/PHASE2_SCHEDULED_EXECUTION_PLAN.md
+  planned_lane_count: 10
+  maximum_medcom_schedules: 10
+  activation_status: planned_only
+  automation_instances_created_this_run: 0
+  automation_instances_modified_this_run: 0
+  session_task_target_min: 4
+  session_task_target_max: 6
+  ci_policy: repair every actionable owned-current-head failure, including inherited failures, in same session before new product code; external outage remains blocked; exact current head green before DONE or merge
+  integration_owner: L01
 remaining_blockers:
   - TRC-DB-001 row-level sanitized SQL catalog and dependency graph
   - TRC-TOOL-001 Tool.dll runtime session semantics and direct-load versus bridge verification

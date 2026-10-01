@@ -2,6 +2,8 @@
 
 Status: supplemental C# review evidence supplied by the owner on 2026-09-30.
 
+**2026-10-01 reconciliation:** the filename is historical. The newer maintenance guide identifies VB.NET legacy projects; it remains secondary evidence. `WINFORMS_SOURCE_GUIDE_EVIDENCE.md` records the newer asserted grammar and conflicts. Neither summary is a direct Medcom source/runtime proof.
+
 ## Provenance and evidence handling
 
 This document is a sanitized synthesis of an owner-supplied technical review that was produced after another agent inspected the WinForms C# / VB.NET solution. The raw source package itself is not part of the current authoritative Phase 1 Library baseline, so claims in this document are not automatically promoted to `VERIFIED`.
@@ -41,22 +43,22 @@ The review describes `SY_FrmCfg` as the central layout / behavior configuration 
 
 Reported table/data keys include:
 - `T0`: master source;
-- `T1..T19`: detail sources;
+- `T1..T19`: earlier conceptual numbering, **not accepted literal parser keys**; the newer guide reports physical slots `T1..T9`, then `TA..TJ`;
 - `TN`: table name;
 - `PK`: primary key;
 - `SO`: default sort;
 - `DCP`: detail caption;
 - `SUM`: summary columns;
 - `FKA1/FKB1`: master/detail link fields;
-- `SAV_BFR`: before-save hook;
-- `SAV`: after-save hook;
-- `DEL`: after-delete hook;
+- `SAV_BFR`, `SAV`, `DEL`: earlier illustrative labels, **not accepted executable keys**; the guide reports form `EBS/ESS/ESD` and table `DBS/S10/S11` in different consumers;
 - `FTX`: filter expression;
-- `IJ1`: join expression;
+- `IJ1`: the newer guide maps this to `InnerJoinMode1`, while `JC1` maps `JoinConditionEx`; do not treat these as interchangeable;
 - `SE1`: extra select fields;
-- `FML`: formula configuration.
+- `FML`: earlier illustrative formula label; exact consumer/key remains UNKNOWN.
 
 The hook/filter/join keys imply executable data behavior inside metadata. Until direct source re-verification, treat exact parsing, escaping, precedence, and transaction boundaries as `UNKNOWN`.
+
+No alias translation or global key substitution is approved. Resolve each literal by consumer class, FID, KeyID, SubID and SubValue; unsupported or conflicting executable mappings are quarantined by A7/R3. The nine-class 293-pair index is a source-search index, not a complete runtime schema.
 
 ### 2.3 `LYT1` layout grammar
 

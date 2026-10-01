@@ -1,6 +1,6 @@
 # Medcom Phase 2 implementation master plan
 
-Status: **implementation-ready launchpad; production coding intentionally not started**  
+Status: **coverage reviewed; evidence pending; implementation not authorized in this planning run**
 Plan date: 2026-10-01 (Asia/Ho_Chi_Minh)  
 Owner: Lead / Integrator
 
@@ -9,6 +9,8 @@ contracts remain normative at their existing paths; this file joins them into
 an executable dependency graph, records the fixed pilot scope, and makes every
 READY/BLOCKED boundary explicit. It does not replace the evidence baseline or
 invent legacy runtime behavior.
+
+The owner's 2026-10-01 request prepares a future gated coding workflow with at most ten scheduled lanes. Section 26 and `PHASE2_SCHEDULED_EXECUTION_PLAN.md` govern that workflow. This run remains evidence/planning only; future source-free foundation eligibility is distinct from legacy/domain/runtime gates and from activation of schedules.
 
 The independent Phase 1 audit in
 `docs/reviews/PHASE1_CLOSURE_AUDIT_20261001.md` currently leaves the DB catalog
@@ -46,8 +48,8 @@ implemented in parallel by backend, frontend and QA lanes. It must:
 9. Mua hàng → Đặt mua hàng.
 
 The internal-transfer screen is a required pilot slot even though its exact
-form and data binding is UNKNOWN. Generic platform work may proceed, but the
-vertical slice cannot be marked READY until the exact source is evidenced.
+form and data binding is UNKNOWN. Generic platform contracts can be planned independently. Any future implementation
+requires authorization and its dependencies; this vertical slice also requires exact source evidence.
 
 ### Non-goals for this run
 
@@ -77,10 +79,7 @@ counts in `docs/db/DECLARATION_COUNT_CORRECTION.md` and
 required row-level catalog is tracked by `TRC-DB-001`; it is not silently
 replaced by aggregate counts.
 
-The sanitized owner-supplied C# review summaries are secondary evidence. They
-help prioritize verification of `FormControler`, `LayoutX`, `Storer`, LYT1/LYS1
-and dynamic UserControls, but raw C# source remains a separate verification
-round and cannot prove Tool.dll runtime APIs by itself.
+The sanitized owner-supplied legacy-source summaries and new maintenance guide are secondary evidence. The guide identifies VB.NET projects, preserves an older database/source snapshot and is indexed in `../erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md`. It sharpens `FormControler`, `LayoutX`, `Storer`, LYT/LYS and UserControl verification; it is not the raw solution or the approved Medcom catalog. Different snapshot counts/captions/triggers remain separate. Raw legacy-source and controlled runtime verification are still required for dependent bindings.
 
 ## 3. Fixed technical stack
 
@@ -92,8 +91,7 @@ round and cannot prove Tool.dll runtime APIs by itself.
   correctness or perceived freshness.
 - OpenTelemetry-compatible structured traces/metrics alongside bounded durable
   support records.
-- Tool.dll behind `Medcom.Legacy.ToolAdapter`; use an isolated Windows/.NET
-  Framework compatibility bridge if direct .NET 10 loading is not proven safe.
+- Tool.dll behind a typed private `Medcom.Legacy.ToolAdapter` boundary and dedicated compatibility worker per authenticated ERP session. The bridge contract governs alternatives; successful .NET 10 loading alone does not prove multi-user safety.
 
 Classic ASPX is not the default. It can be considered only if a verified
 legacy compatibility requirement makes it materially safer and the decision is
@@ -277,8 +275,10 @@ persisting secrets or unauthorized data.
 
 Static metadata for Tools.dll is now verified in docs/erp/TOOL_DLL_METADATA_EVIDENCE.md. The observed signature shape is available for adapter design, but it does not prove login, logout, session, permission precedence or side effects.
 
-Exact Tool.dll login/logout/session methods, result codes, target runtime,
-thread safety and disposal remain `T1` BLOCKED until direct verification.
+The supplied Tools.dll statically targets `.NETFramework v4.6.2`; PE I386 with
+CLR ILOnly does not prove an x86-only deployment. Host compatibility, dependency
+availability, login/logout/session behavior, result semantics, thread safety and
+disposal remain blocked by [T1/#19](https://github.com/thanhtuyen662002/Medcom/issues/19).
 
 ## 10. Authorization and data scope
 
@@ -354,9 +354,21 @@ transaction or generic retry. Exact lock resources, timeout behavior, caller
 transaction ownership, hook ordering and idempotency remain blockers for each
 command family.
 
-Tool.dll is never referenced by frontend or public contracts. If it loads safely
-in .NET 10, isolate it in a process/project with contract tests; otherwise use
-a private Windows/.NET Framework bridge. The adapter maps only normalized
+Tool.dll is never referenced by frontend or public contracts. The conservative
+plan is a private Windows worker compatible with the verified Framework target.
+A dedicated process context belongs to one authenticated ERP session and its
+immutable server-established tenant, company, data source, ERP principal and
+authorization generation. Serialize calls within that worker; never multiplex
+different users, even within one company. Static `Connector.UserLogin`,
+`UserGroup` and `UserFullName` prove a shared-state hazard, not the full state
+model. Restoring those fields, AsyncLocal or a per-call lock is not evidence of
+safe reuse. T1 must verify startup, dependencies, compatibility, capacity limits,
+cleanup and a controlled isolation protocol before any alternative is accepted.
+Retire the worker on logout, expiry, revocation, context mismatch, timeout or
+unrecoverable failure. Invalidate access immediately; preserve command and
+correlation records outside it. Worker termination does not prove SQL rollback.
+An ambiguous write remains `OutcomeUnknown` until authoritative reconciliation;
+no blind retry or reassignment to a fresh worker is allowed. The adapter maps only normalized
 Success, Rejected, Expired, Forbidden, Unavailable, Timeout and Unknown states.
 
 ## 13. Reusable WebCore platform services and tables
@@ -413,16 +425,17 @@ activity.
 
 ## 16. Fixed pilot screen matrix
 
-The following is the planning baseline. `READY` means generic/read-only work
-can begin; `BLOCKED` means a safety-critical binding cannot be guessed.
+The following is a planning baseline. Read candidates still require verified
+query bindings, scope, completed dependencies and future implementation authorization.
+`BLOCKED` identifies evidence that cannot be guessed. No row authorizes coding in this run.
 
 | Pilot | Stable ERP ID / path / confidence | Master/detail and list source | Route + DTO | Scope, permissions and state | Actions/command disposition | Desktop/mobile/freshness | BE / FE / QA / blockers |
 |---|---|---|---|---|---|---|---|
-| Sales request | `ERP-FRM-AR_InvoiceRequestFrm`; Bán hàng → Đề nghị bán hàng; CORROBORATED packaged form + DAT filter evidence, exact menu label UNKNOWN | `AR_InvoiceRequestTbl` / `AR_InvoiceRequestDetailTbl`; typed query candidate; exact joins/aliases require DB catalog | `/sales/invoice-requests`; `InvoiceRequestListDto`, `InvoiceRequestDetailDto`; server filter/sort/page | View/query/action capability plus tenant/company/branch/storehouse scope; document-state transitions UNKNOWN | Query READY. Create/edit/submit/approve/export command mapping BLOCKED (`F5`, `B3`) until menu/action/SP evidence and reread contract | Shared dense Grid + master/detail keyboard flow; mobile 4–6 field cards and safe action sheet; SWR with post-commit invalidation | BE `B1/B2/B3`; FE `F5`; QA `Q1/Q3`; exact menu/action and mutation contract remain blockers |
-| Inbound request | `ERP-FRM-IV_InboundRequestFrm`; Quản lý kho → Đề nghị nhập hàng; CORROBORATED filter/table references, runtime aliases UNKNOWN | `IV_InboundRequestTbl` / `IV_InboundRequestDetailsTbl`; typed read adapter candidate; exact query dependencies pending catalog | `/inventory/inbound-requests`; `InboundRequestListDto`, `InboundRequestDetailDto` | Warehouse/company scope; view/query capability; submit/approve/state rules UNKNOWN | Read/list/query READY. Mutations and workflow command BLOCKED until hooks/SP/state contract verified | Grid with item/quantity/source warehouse columns; mobile receipt-oriented cards; freshness ≤15s target subject to evidence | BE `B1/B2/B3`; FE `F4`; QA `Q1/Q3`; alias and mutation evidence |
+| Sales request | `ERP-FRM-AR_InvoiceRequestFrm`; Bán hàng → Đề nghị bán hàng; CORROBORATED packaged form + DAT filter evidence, exact menu label UNKNOWN | `AR_InvoiceRequestTbl` / `AR_InvoiceRequestDetailTbl`; typed query candidate; exact joins/aliases require DB catalog | `/sales/invoice-requests`; `InvoiceRequestListDto`, `InvoiceRequestDetailDto`; server filter/sort/page | View/query/action capability plus tenant/company/branch/storehouse scope; document-state transitions UNKNOWN | Query candidate; binding and authorization pending. Create/edit/submit/approve/export command mapping BLOCKED (`F5`, `B3`) until menu/action/SP evidence and reread contract | Shared dense Grid + master/detail keyboard flow; mobile 4–6 field cards and safe action sheet; SWR with post-commit invalidation | BE `B1/B2/B3`; FE `F5`; QA `Q1/Q3`; exact menu/action and mutation contract remain blockers |
+| Inbound request | `ERP-FRM-IV_InboundRequestFrm`; Quản lý kho → Đề nghị nhập hàng; CORROBORATED filter/table references, runtime aliases UNKNOWN | `IV_InboundRequestTbl` / `IV_InboundRequestDetailsTbl`; typed read adapter candidate; exact query dependencies pending catalog | `/inventory/inbound-requests`; `InboundRequestListDto`, `InboundRequestDetailDto` | Warehouse/company scope; view/query capability; submit/approve/state rules UNKNOWN | Read/list/query candidate; binding and authorization pending. Mutations and workflow command BLOCKED until hooks/SP/state contract verified | Grid with item/quantity/source warehouse columns; mobile request-oriented cards; freshness ≤15s target subject to evidence | BE `B1/B2/B3`; FE `F4` read-only and [F9/#42](https://github.com/thanhtuyen662002/Medcom/issues/42) source-gated writes; QA `Q1/Q3/Q4`; alias and mutation evidence |
 | Internal transfer | Stable form, menu binding and master/detail DB objects UNKNOWN; path required by scope; confidence UNKNOWN | `IV_InternalTransfer_*` procedure family is VERIFIED; exact tables/views/query and aliases UNKNOWN | Reserved `/inventory/internal-transfers`; DTO names provisional and cannot be bound until `F6/B2` closes | Server warehouse/company scope; capability/state model defined, concrete permission/state mapping UNKNOWN | Entire vertical mutation/read binding BLOCKED; generic shell/grid may proceed; no guessed route/data source | Transfer-specific source/destination and status cards; manual refresh/SWR plus event fallback; no success toast without reread | BE `B2/B3`; FE `F6`; QA `Q1/Q3`; exact ERP form/data binding is a release blocker |
-| Purchase approval | `ERP-FRM-AP_ApprovePurchaseRequestListFrm`; Mua hàng → Duyệt đề nghị mua hàng; CORROBORATED filter/table references, reachability/state UNKNOWN | `AP_PurchaseRequestTbl` / `AP_PurchaseRequestDetailTbl`; typed read candidate | `/purchasing/purchase-requests/approval`; `PurchaseRequestApprovalListDto`, `PurchaseRequestApprovalDetailDto` | Purchase/company/branch scope; view + approve capability; current-state precondition UNKNOWN | Read/query READY. Approve/reject/return commands BLOCKED (`F7/B3`) until transition/SP/lock/idempotency evidence | Dense approval grid with reason/conflict display; mobile review card with explicit confirm; SWR and authoritative reread | BE `B1/B2/B3`; FE `F7`; QA `Q1`; transition and permission precedence |
-| Purchase order | `ERP-FRM-AP_OrderFrm`; Mua hàng → Đặt mua hàng; CORROBORATED form/filter/table references, exact mutation UNKNOWN | `AP_OrderTbl` / `AP_OrderDetailTbl`; typed read candidate | `/purchasing/orders`; `PurchaseOrderListDto`, `PurchaseOrderDetailDto` | Supplier/company/branch/storehouse scope; CRUD/action capability; status rules UNKNOWN | List/detail query READY. Save/submit/cancel commands BLOCKED until hooks/SP/signature/transaction evidence | Dense order grid and keyboard detail editor; mobile summary + line cards; freshness by workflow SLA | BE `B1/B2/B3`; FE `F4`; QA `Q1/Q3`; mutation contract and concurrency |
+| Purchase approval | `ERP-FRM-AP_ApprovePurchaseRequestListFrm`; Mua hàng → Duyệt đề nghị mua hàng; CORROBORATED filter/table references, reachability/state UNKNOWN | `AP_PurchaseRequestTbl` / `AP_PurchaseRequestDetailTbl`; typed read candidate | `/purchasing/purchase-requests/approval`; `PurchaseRequestApprovalListDto`, `PurchaseRequestApprovalDetailDto` | Purchase/company/branch scope; view + approve capability; current-state precondition UNKNOWN | Read/query candidate; binding and authorization pending. Approve/reject/return commands BLOCKED (`F7/B3`) until transition/SP/lock/idempotency evidence | Dense approval grid with reason/conflict display; mobile review card with explicit confirm; SWR and authoritative reread | BE `B1/B2/B3`; FE `F7`; QA `Q1`; transition and permission precedence |
+| Purchase order | `ERP-FRM-AP_OrderFrm`; Mua hàng → Đặt mua hàng; CORROBORATED form/filter/table references, exact mutation UNKNOWN | `AP_OrderTbl` / `AP_OrderDetailTbl`; typed read candidate | `/purchasing/orders`; `PurchaseOrderListDto`, `PurchaseOrderDetailDto` | Supplier/company/branch/storehouse scope; CRUD/action capability; status rules UNKNOWN | List/detail query candidate; binding and authorization pending. Save/submit/cancel commands BLOCKED until hooks/SP/signature/transaction evidence | Dense order grid and keyboard detail editor; mobile summary + line cards; freshness by workflow SLA | BE `B1/B2/B3`; FE `F4` read-only and `F8` source-gated writes; QA `Q1/Q3/Q4`; mutation contract and concurrency |
 
 Every row must be expanded into a traceability record before its implementation
 Issue is closed. Candidate table names are not permission or SQL authority.
@@ -514,28 +527,20 @@ tests. Do not weaken a gate to meet a date.
 
 The detailed issue records are in
 `docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md` and GitHub Issues created
-from it. The critical dependency chain is:
+from it. The issue graph owns the exact predecessor edges. A1 bootstraps the tree and CI; A2 tenant resolution and A3 sessions follow independently. A4 establishes authority before integrated query/command handlers; A6 supplies their audit boundary. A5 owns persistence reconciliation, A7/R3 config verification, and T1/B2/B4 actual legacy/catalog/authority evidence. Integrated pilots consume F1/F2/F3, B1/B3/B5 and their source-backed bindings; F8/F9 also require F4 reads. B4 owns authority, B5 concurrency and uncertain completion. Q4 follows every listed pilot and operational gate.
 
-```text
-A1 bootstrap
-  -> A2 tenant/data-source scope
-  -> A3 session + A4 capability/authorization
-  -> A5 WebCore reconciliation + A6 audit/trace
-  -> B1 typed query platform + A7 Screen Registry
-  -> F1 shell + F2 Grid/mobile primitives
-  -> per-screen read slices
-T1 Tool verification -> auth adapter -> login/route acceptance
-DB/ERP catalog + C# evidence -> B2/B3 command bindings -> mutation slices
-B4 scope/concurrency evidence -> retry/conflict UX -> E2E pilot release
-```
-
-Platform READY work may proceed in parallel with source verification. Pilot
-mutation and internal-transfer work remains BLOCKED until its named evidence
-issues close.
+The graph has 31 canonical issues (#12–42). Its historical 16 READY/BOUNDS and
+15 BLOCKED labels describe planning disposition, not current start eligibility.
+All implementation remains unauthorized in this run. After authorization,
+respect each dependency edge before starting; only independent ready nodes may
+run in parallel. Pilot writes and internal-transfer bindings additionally need
+their evidence gates. F4/#31 covers reads; F9/#42 owns inbound write evidence
+and the future bounded mutation slice. Q4/#41 requires verified F4–F9 outcomes,
+B5, Q1–Q3, R1, R2, R4 and R5; read-only F4 alone cannot satisfy inbound acceptance.
 
 ## 22. READY/BLOCKED dependency ledger
 
-### READY now
+### Reviewed platform candidates; dependencies and authorization still required
 
 - .NET solution/API/contracts/CI bootstrap;
 - single-port tenant and data-source interfaces with scope fencing;
@@ -550,13 +555,13 @@ issues close.
   confirmed, without mutation claims;
 - frontend accessibility/responsive/performance harness.
 
-### BLOCKED or READY-with-bounds
+### Evidence-blocked or bounded candidates
 
 - Tool.dll direct API/runtime/session verification;
 - exact DB row-level catalog/dependency export;
 - exact sales menu/action equivalence;
 - exact internal-transfer form/master/detail/query/action binding;
-- purchase approval transition and AP Order mutation contracts;
+- inbound request, purchase approval and AP Order mutation contracts;
 - permission/company/branch/storehouse precedence and runtime scope;
 - concurrency token, lock timeout and retry-safe command mapping;
 - report/RPX reachability, parameters and export authorization;
@@ -565,11 +570,13 @@ issues close.
 
 ## 23. Definition of done
 
-Phase 2 is implementation-ready when every READY issue has a reviewed contract,
-tests and CI lane; every BLOCKED issue has direct evidence or an explicit
-owner/acceptance test; each pilot row has a stable ERP/DB/API disposition; auth
-tamper, tenant isolation, freshness, retry, accessibility and rollback tests
-are runnable; and no browser payload contains SQL authority or Tool.dll state.
+Planning coverage is reviewed when each requirement has a canonical owner issue,
+ordered dependencies, an acceptance criterion and an explicit disposition for
+unknown evidence. This is distinct from closing Phase 1, authorizing code,
+passing runtime verification or proving implementation quality. A future issue
+is eligible only when its contract is reviewed, its dependencies and applicable
+evidence/runtime gates are closed, and implementation is authorized. Test
+strategies here describe future acceptance; no test or CI pass is claimed.
 
 A pilot screen is complete only when an authorized role can discover and use it,
 an unauthorized role fails at navigation, route, API/data, mutation and export,
@@ -596,3 +603,75 @@ The Lead must re-run the seven-gate Phase 1 audit after the missing DB and
 traceability artifacts land. Only then may `docs/PROJECT_STATE.yaml` transition
 to `phase_status: awaiting_csharp_round` and
 `all_phase1_acceptance_proven: true`.
+
+## 25. Proposed Web transport contract
+
+These are new Web contract decisions, not extracted ERP or SQL facts. A1/#12,
+B1/#20 and B3/#22 own their versioned definitions; A4/#15 enforces authority.
+Domain field lists, SQL mappings and concurrency mechanisms stay blocked until
+source evidence is reviewed. Contract version 1 uses the following envelope.
+
+| Field / shape | Requiredness and proposed rule |
+| --- | --- |
+| `contractVersion: integer` | Required; 1 initially. Unsupported versions fail before dispatch; breaking shape or semantic changes require a new version. |
+| `screenId: string`, `queryId: string` or `actionId: string` | Required registered IDs, 1–128 characters; resolved by server allow-lists. No SQL object selectors. |
+| `recordRef: string`, `detailRefs: string[]` | Required only for existing-record operations. Opaque scoped references; server reauthorizes every referenced row. Reference opacity does not establish permission. |
+| Query `page: integer`, `pageSize: integer` | Required; page at least 1, pageSize 1–200. Sort includes a verified deterministic tie-breaker. Deep paging/cursor alternatives require a versioned query contract and measured evidence. |
+| `filters: Filter[]`, `sort: Sort[]` | Required arrays, may be empty; at most 20 filters and 3 sort terms. Each uses a registered fieldId. Operators are allow-listed per field from eq, ne, lt, lte, gt, gte, contains, startsWith, in, isNull; in has at most 100 values. Unsupported fields, operators, coercions and nesting are rejected. |
+| `payload: action-specific DTO` | Required for a command; closed typed schema rejects unknown properties. Dates, decimals, nullability and validation follow each reviewed domain contract; never infer SQL columns from an envelope. |
+| `metadataRevision: string`, `permissionRevision: string` | Required for commands. Server compares revisions and rejects stale commands before side effects; it always re-evaluates live permission. Query responses include the current revisions. |
+| `expectedVersion: string` | Required only when a verified domain concurrency mechanism exists. Do not invent rowversion; otherwise a reviewed lock/state precondition is a blocker. |
+| `idempotencyKey: string` | Required for side-effect commands, 1–128 characters. Server scopes it to authenticated context and action, binds a canonical payload fingerprint, and rejects reuse with different content. Retention/replay windows require the per-command contract before enablement. |
+| `correlationId: string` | Server generated and returned on every result; optional client reference is validated and never establishes authority. |
+| Query response | Typed items plus page metadata, server timestamp, freshness state, metadata/permission revisions and correlation. Counts are optional and scoped; no unfiltered totals. |
+| Command response | Discriminated outcome: Succeeded, Rejected, Conflict, OutcomeUnknown, Unavailable or Forbidden; correlation and operationRef when recorded. Success requires the verified completion and authoritative reread contract. |
+| Safe error / validation | Stable code, safe message, correlation and optional fieldId errors. No SQL, secret, connection or out-of-scope existence details. Invalid input uses 400, unauthenticated 401, denied 403, stale/conflict 409, unavailable 503. Operation status distinguishes unknown completion from rejection. |
+
+The browser never supplies authoritative tenant, company membership, data source,
+ERP principal or permission state. A company-switch request is resolved and
+reauthorized by the server. Background refresh never extends session activity.
+
+For inbound requests, F9 first enumerates actions from authoritative form/DAT,
+handlers and SQL evidence. Create, edit, save and submit are hypotheses until
+verified; receipt, stock posting, approval, cancellation and deletion are not
+implied. Each enabled action needs field/permission/state mappings, transaction
+ownership, side effects, concurrency, idempotency and authoritative reread.
+B5/#24 and Q4/#41 must cover worker loss after a possible commit and ensure
+reconciliation precedes retry.
+
+## 26. Guide intake, adversarial dispositions and scheduled coding handoff
+
+### Authority and consistency
+
+`PROJECT_STATE` owns current phase/start state; `SOURCE_BASELINE` owns source identities; this plan owns the integrated design; the issue graph owns 31 unique nodes/dependencies; the scheduled plan owns ten lane assignments and run mechanics; specialist contracts own their semantics. Companion documents reference their owner rather than copy conflicting executable rules. Dated audits preserve the decision at their original head with explicit supersession. The 17-finding document audit is `../reviews/DOCUMENT_CONSISTENCY_AUDIT_20261001.md`.
+
+The new guide adds a provenance-tagged 293-pair, nine-consumer source-search index and all 21 reported LYT positions. It supplies historical menu/form/variant and hook/control verification leads, not proof that the current Medcom runtime implements them. Medcom remains at the canonical 7,985 column declarations; another database's old 403-table/75-trigger inventory cannot replace its 583-table/3-distinct-trigger dump inventory. Raw baseline archive access was not available in this run. No Phase 1 seven-gate closure, build, live attack or application CI success is inferred.
+
+### Normative repairs from the multi-role review
+
+The case-by-case attacks and acceptance belong to `../reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md` and `../reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md`. They supplement existing risk classes, with existing issue owners, rather than create competing catalogs or implementations. Every enabled affected slice must link its applicable cases and actual results.
+
+| Failure class | Required plan/contract disposition | Primary implementation/evidence owners |
+|---|---|---|
+| Conflicting/non-unique config and variant identity | Source/build/consumer/FID/Para/PFID/row identity; collision quarantine; previous-good publication; no inferred unique constraint or DELETE-FID maintenance | A7/#18, R3/#26, B2/#21 |
+| Sparse/encoded LYT, LYS key identity, differing empty defaults and unsupported controls | Preserve empty/tail fields and contextual keys; golden/negative parser fixtures; explicit defaults; unsupported executable key/script fails closed; legacy round-trip disabled until proved | A7/#18, R3/#26 |
+| Misnamed sales pilot, disabled AP Order, stock/consignment versus internal transfer | Requested Web intent and observed caption are separate; approved-build/menu/handler equivalence and rollout decision; five fixed pilots; incoming/status optional | F4/#31, F5/#32, F6/#33, F8/#35, F9/#42 |
+| Multi-detail, derived/read-only dataset, rounding, trigger and delayed hook loss | Per-dataset writable field/key and action-specific transaction/completion matrix; defer final success until required effect is authoritative; never generic CRUD from names | B2/#21, B3/#22, B5/#24, F5–F9 |
+| Tool shared user state, unsafe startup DDL, saturation and missing vendor dependency | Static-first/disposable runtime environment; dedicated authenticated-session process context; generation fence, bounded admission/queue/capacity, controlled dependency/license provisioning | T1/#19, B4/#23, A3/#14 |
+| Lost ACK or business/ledger cross-DB gap | Tenant/principal/action/key/fingerprint scope; reservation/dispatch/commit/ACK/ledger gap tests; external outcome ledger and action-specific authoritative reconciliation; uncertain effect blocks replay | B3/#22, B5/#24, Q4/#41 |
+| Dirty tab, bfcache restore, revoked role, company switch and idle bypass | Server-owned session/authority generation; scoped caches/drafts; no passive traffic activity; no automatic mutation replay after reauthentication; safe persistent recovery | A3/#14, A4/#15, F3/#30, Q1/#36 |
+| Virtual focus, full-filter totals/select-all, query drift and masked export | Logical row/field identity and focus; declared page/filter universe/version; allow-listed server summary/bulk contract; field/export authorization independently rechecked | F2/#29, B1/#20, R2/#25, Q1/#36, Q2/#37 |
+| Legacy Forever1Day cache, external writer and realtime loss | Controlled cache refresh/restart runbook, version/freshness visibility, SWR/poll/manual/focus fallback; report immutable-run policy does not turn on SQL SNAPSHOT isolation | A7/#18, Q3/#38, R1/#39, R2/#25 |
+| Red/pending/stale-head CI, duplicate worker, stalled dependency and unsafe rollback | Four-to-six real tasks; switch while CI waits; same-session owned failure repair; exact-head drain; unique issue/path lease with fencing; single integration queue; preserve business commits on backout | A1/#12, R5/#40, Q4/#41, L01 coordinator |
+
+### Startability and delivery gates
+
+1. Complete this documentation reconciliation and independent second-pass review; persist it on the existing Draft PR #43. Review/integrate the canonical plan before scheduled coding consumes it.
+2. The user has authorized preparing the future implementation workflow. A1 source-free solution/contract/test/CI bootstrap can become eligible after plan integration, a valid lease and runtime/tool preflight. Other platform tasks follow actual graph predecessors; historical READY never means those predecessors completed. Fake legacy auth, in-memory domain substitutes or guessed SQL cannot satisfy a business slice.
+3. B2/T1/R3 investigate only when their approved source/control environment is available. Until then select independent test design, source-gap disposition or source-free contracts; do not mark a source gate closed. Current eligible application starts remain zero in this preparation.
+4. No legacy login, production SQL write, pilot mutation or release is enabled until its exact authority/state/transaction/side-effect/concurrency/completion evidence and acceptance are proved. The guide alone cannot close these gates.
+5. The ten-lane plan is a **plan**, with zero automation instances created/changed by this run. Activation later reconciles the live existing Medcom schedules within the ten-task ceiling; scheduling is not a merge/release approval.
+6. A code session selects 4–6 meaningful tasks with verification, starts CI early, consumes independent nonconflicting work while queued/running, and repairs every actionable current-head CI failure, including inherited failures, before closing. Reserve repair/drain capacity; do not admit unlimited waiting work. External provider/runtime failures are recorded precisely and keep the head blocked; no claim can guarantee an unavailable provider will recover.
+7. Only the coordinator integrates reviewed exact-head green work through the current base; contributors push their own fenced lease branches. Rebase/shared-contract changes invalidate prior readiness. No failing/pending check or unresolved critical acceptance finding is bypassed to meet a task count.
+
+Planning disposition: stronger coverage with named owners, explicit repairs and adversarial cases. Implementation effectiveness and remaining source/runtime evidence are still unproved. Further discoveries must be classified against these cases or added as a new owner-bound case, never dismissed merely because a review already exists.

@@ -12,7 +12,7 @@ This document contains sanitized schema metadata only. No production row values 
 - Script generation timestamp recorded in source: 2026-09-28 11:21:40.
 - Primary data/log logical names remain `VietDuc` / `VietDuc_Log` even though database name is Medcom. This is a legacy naming artifact and must not be treated as a business-domain identifier.
 - Canonical normalized coverage is recorded in `DECLARATION_NORMALIZATION.md` and `DECLARATION_COUNT_CORRECTION.md`; those artifacts supersede the provisional scanner counts previously recorded here.
-- Parsed table definitions contain 7,968 column declarations.
+- Parsed table definitions contain **7,985 column declarations** (5,610 nullable and 2,375 NOT NULL), as reconciled in `STRUCTURAL_CATALOG_CLOSURE.md`. The provisional 7,968 count is superseded; declarations are not distinct runtime objects.
 - Source contains 540 PRIMARY KEY declaration lines, 364 FOREIGN KEY declaration lines, 812 ALTER TABLE default-constraint statements and 558 ALTER TABLE check-constraint statements.
 - 125 explicit CREATE INDEX statements were found. This number excludes indexes implicitly created by PK/unique constraints and therefore is not the total physical-index count.
 - Nearly all parsed objects are in `dbo`; at least one function is under `zuser`. Schema usage requires a later exact catalog pass.

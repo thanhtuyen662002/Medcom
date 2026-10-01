@@ -120,4 +120,4 @@ The UX workstream is complete_candidate for the Phase 1 specification because th
 4. representative dense-grid, form/conflict, report/export, slow-network and accessibility scenarios are mapped into migration acceptance;
 5. no UX document promotes an INFERRED interaction into VERIFIED ERP behavior.
 
-Current status: **active**.
+Current specification status is `complete_candidate` in `../PROJECT_STATE.yaml`; runtime acceptance remains pending. This document does not set overall Phase 1 completion.

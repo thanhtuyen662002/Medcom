@@ -1,8 +1,8 @@
 # Phase 2 Pilot UX / Frontend Implementation Pack
 
-Status: **implementation-ready UX contract** derived from Phase 1 VERIFIED/CORROBORATED evidence.  
+Status: **reviewed UX design; implementation eligibility remains dependency/evidence gated**.
 Owner: `web-product-ux`.  
-This pack does not upgrade unresolved C# semantics to VERIFIED.
+This pack does not upgrade unresolved legacy VB.NET/source or runtime semantics to VERIFIED. The issue graph and scheduled execution plan govern start eligibility; 'implement' below means a planned slice, never permission to bind an unverified domain.
 
 ## 1. Purpose and implementation boundary
 
@@ -63,7 +63,7 @@ Default idle timeout 1440 minutes. Server is authoritative. Passive SignalR, pol
 
 Evidence confidence is explicit.
 
-### P1 — Purchasing: Đặt mua hàng
+### P5 — Purchasing: Đặt mua hàng
 Binding: `ERP-FRM-AP_OrderFrm` → `DB-TABLE-dbo.AP_OrderTbl` + `DB-TABLE-dbo.AP_OrderDetailTbl` (**VERIFIED/CORROBORATED from current Phase 1 artifacts**).
 
 Desktop:
@@ -87,22 +87,24 @@ Mobile: operational card/list optimized for status/review and line drill-down.
 Freshness: active operational list SWR ≤15 s.  
 Gap: exact commands/status transitions remain `UX-GAP-WORKFLOW-001`.
 
-### P3 — Inventory: incoming/status companion
+### Optional companion — Inventory: incoming/status
 Binding: `ERP-FRM-IV_IncomingShipmentStatusFrm` → inbound-request master/detail objects (**VERIFIED packaged binding**).
 
 Treat as an operational status surface, not automatically as the owner-requested “Đề nghị điều chuyển nội bộ”. Do not rename/reuse it for internal transfer without exact evidence.
 
+This companion is outside the five required pilots and cannot satisfy P3 or F6 acceptance.
+
 Freshness: SWR ≤15 s + visible last-updated/manual refresh.
 
-### P4 — Sales: Đề nghị bán hàng
-Current package evidence includes `ERP-FRM-AR_InvoiceRequestFrm` → `AR_InvoiceRequestTbl/AR_InvoiceRequestDetailTbl`, but the exact owner business label “Đề nghị bán hàng” must not be assumed identical without direct C# / menu verification.
+### P1 — Sales: Đề nghị bán hàng
+Current package evidence includes `ERP-FRM-AR_InvoiceRequestFrm` → `AR_InvoiceRequestTbl/AR_InvoiceRequestDetailTbl`, but the exact owner business label “Đề nghị bán hàng” must not be assumed identical without direct legacy-source/menu verification.
 
-Frontend may implement the reusable Sales request list/document schema now; route label and business command set remain blocked on `UX-P2-GAP-SALES-BINDING`.
+Reusable schema work may proceed after its platform dependencies and plan preflight; route label and business commands remain blocked on `UX-P2-GAP-SALES-BINDING`. The historical guide labels this form 'Yêu cầu xuất hóa đơn', not the owner's requested 'Đề nghị bán hàng'; F5 must prove equivalence on the approved build/menu before binding.
 
 Freshness: list SWR ≤30 s.
 
-### P5 — Purchasing: Duyệt đề nghị mua hàng
-Exact form/action/SP binding is not currently VERIFIED in the Phase 1 UX evidence. Implement the approval interaction contract now:
+### P4 — Purchasing: Duyệt đề nghị mua hàng
+Exact form/action/SP binding is not currently VERIFIED in the Phase 1 UX evidence. Plan the following reusable approval interaction contract after its platform dependencies:
 - review summary + relevant detail;
 - action capability resolved by server;
 - confirmation only when destructive/financial policy requires it;
@@ -114,8 +116,8 @@ Exact form/action/SP binding is not currently VERIFIED in the Phase 1 UX evidenc
 
 Exact route/form/action IDs stay blocked on `UX-P2-GAP-PURCHASE-APPROVAL`.
 
-### Owner-requested Inventory: Đề nghị điều chuyển nội bộ
-No current VERIFIED binding in the consumed evidence. Build no guessed route/table/SP. Reuse the generic inventory request schema after ERP/C# lane supplies exact stable IDs. Track as `UX-P2-GAP-INTERNAL-TRANSFER`.
+### P3 — Inventory: Đề nghị điều chuyển nội bộ
+No current VERIFIED binding in the consumed evidence. Build no guessed route/table/SP. The historical guide's `IV_StockTranferFrm` caption 'Chuyển kho - ký gởi' is a candidate to investigate, not proven equivalence. Reuse the generic inventory request schema only after the legacy-source lane supplies exact stable IDs. Track as `UX-P2-GAP-INTERNAL-TRANSFER`.
 
 ## 4. Permission/action matrix contract
 
@@ -197,6 +199,8 @@ Pilot freshness:
 - reports: immutable run SNAPSHOT;
 - PUSH: prohibited as sole freshness path until commit-correlated event/version evidence is VERIFIED.
 
+Report SNAPSHOT describes an authorized, bounded immutable result/run contract; it does not enable SQL Server SNAPSHOT isolation or establish historical consistency without an evidenced query/materialization mechanism. Grid summaries and select-all explicitly identify current-page versus authorized full-filter scope, server summary allow-lists and the filter/version used. Reject stale, widened or unknown bulk-action scope.
+
 Slow-network test profile:
 - 10 s request latency;
 - interrupted mutation acknowledgement;
@@ -244,12 +248,13 @@ These gaps block only the unsafe binding, not shared FE implementation.
 
 | Unit | Evidence gate | Frontend delivery |
 |---|---|---|
-| AP Order | `ERP-FRM-AP_OrderFrm` and AP Order master/detail are VERIFIED | Build desktop list/document and mobile semantic list/document now; workflow actions remain server-capability gated. |
-| Inbound Request | `ERP-FRM-IV_InboundRequestFrm` and inbound master/detail are VERIFIED | Build operational desktop/mobile surfaces now; status transitions remain gated. |
-| Incoming Status | packaged form/data binding VERIFIED | Build read/review status surface; do not treat it as internal transfer. |
-| Sales Request | candidate form/data binding exists; exact business-label/action equivalence unresolved | Build reusable request schema; gate route label and commands. |
-| Purchase Approval | exact form/action/workflow unresolved | Build approval interaction shell; do not bind a business adapter yet. |
-| Internal Transfer | exact form/table/query/action unresolved | Reuse generic inventory-request schema only; do not invent a binding. |
+| P1 Sales Request | candidate form/data binding exists; exact business-label/action equivalence unresolved | Reusable request schema after platform gates; F5 proves caption/variant/action equivalence before domain binding. |
+| P2 Inbound Request | current package/table candidates; exact actions and source pairing remain gated | F4 supplies authorized read only after its dependencies; F9 separately proves each write. |
+| P3 Internal Transfer | exact form/table/query/action unresolved | Reuse generic inventory-request design only; F6 cannot bind a similarly named stock/consignment form by inference. |
+| P4 Purchase Approval | exact form/action/workflow unresolved | Approval interaction primitives after platform gates; F7 proves actual transitions before domain binding. |
+| P5 AP Order | current package/table candidates; historical guide menu disabled and current enablement unresolved | F4 supplies gated reads; F8 proves each mutation; menu/route enablement is independently authorized. |
+
+Incoming Status is an optional packaged read/review companion outside this five-row release matrix. Its evidence does not satisfy P3/F6 or add a sixth required pilot.
 
 Shared components remain App Shell, ERP Grid, Document Shell, Lookup, Action Bar, Session Guard, top-center Feedback and Freshness indicator. Mobile uses bottom quick-nav plus authorized drawer; role quick-nav editing is admin-only and never grants business permission. Passive polling/SWR/SignalR never resets the 1440-minute default idle timer.
 

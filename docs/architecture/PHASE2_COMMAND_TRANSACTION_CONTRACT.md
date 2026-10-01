@@ -14,4 +14,14 @@ Correlation ID spans API, handler, adapter, SQL, audit and post-commit work. Sig
 
 Acceptance: direct SQL/procedure selection is impossible; duplicate replay cannot duplicate effects; ambiguous outcomes reconcile; stale writes cannot silently overwrite when a version contract exists; rollback emits no post-commit event; audit and trace correlate without secrets.
 
-UNKNOWN until direct DB/C# evidence: transaction owner by procedure, lock resources/timeouts, hook ordering, version tokens and the exact retry-safe command set.
+UNKNOWN until direct DB/legacy-source evidence: transaction owner by procedure, lock resources/timeouts, hook ordering, version tokens and the exact retry-safe command set.
+
+## Completion and supplementary hook evidence
+
+`../erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md` reports multiple detail slots, joined/read-only datasets, form/table-specific hooks and delayed ESS2. These are secondary verification targets, not automatically executable Medcom bindings. Each command's matrix identifies every writable dataset/field, required before/after/deferred hook, trigger, transaction owner and authoritative outcome. Confirming the first SQL commit does not prove a required deferred business effect completed. Model intermediate states explicitly; a final success response/toast follows only the reviewed completion contract.
+
+B3/B5 test: hook failure before commit; mandatory effect after first commit; business commit before ACK; ledger reservation before dispatch; ledger update failure across databases; worker death and late ACK; duplicate same-key/same-payload versus same-key/changed-payload; WinForms competing writer; decimal scale/rounding and read-only field tamper. Do not wrap unknown transactions or silently compensate committed financial/stock effects. Without a source-backed recovery identifier and safe retry disposition, OutcomeUnknown blocks replay.
+
+The dedupe domain binds immutable tenant/company/data-source identity, stable principal, registered action/contract and idempotency key plus semantic request fingerprint. Session/permission generation fences dispatch and result delivery separately; reauthentication must not create a fresh harmful effect for the same logical operation. Replays and outcome reads revalidate current authority; dedupe never grants another principal or revoked role access to an old result.
+
+OutcomeUnknown/InProgress operations cannot be purged into a reusable empty slot. Retention uses the command's verified reconciliation/replay window and safe tombstone/business-dedupe contract, not diagnostic-log TTL. Reject or reconcile expired keys instead of silently treating them as new. R4/B5 test business/ledger backups restored to different points; command dispatch remains disabled until authoritative operation reconciliation establishes a safe restore frontier. No exactly-once guarantee follows from an external ledger alone.

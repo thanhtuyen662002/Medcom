@@ -82,4 +82,4 @@ These remain C#-round UNKNOWNs and do not justify inventing runtime behavior.
 
 All observed historical error families now map to documented Web/migration risk classes or explicit C#-round UNKNOWNs. This slice has no unexplained VERIFIED capability gap.
 
-ERP workstream remains `active` until the complete ERP acceptance inventory is reconciled; this document closes the previously non-durable historical-error frequency/drift slice.
+This document closes the previously non-durable historical-error frequency/drift slice. Current ERP specification status lives in `../PROJECT_STATE.yaml` and `../workstreams/erp-analysis.yaml`; runtime/source UNKNOWNs and overall Phase 1 closure remain separately gated.

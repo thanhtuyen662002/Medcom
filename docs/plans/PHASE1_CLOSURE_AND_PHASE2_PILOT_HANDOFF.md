@@ -1,5 +1,7 @@
 # Phase 1 Closure Deadline and Phase 2 Pilot Handoff
 
+**Current interpretation, 2026-10-01:** past deadlines and the five-slot transition in this historical directive are superseded for future scheduling by `PHASE2_SCHEDULED_EXECUTION_PLAN.md` (at most 10 lanes; 4–6 meaningful tasks/session; same-session CI repair). Current Phase 1 gates live in `../PROJECT_STATE.yaml`; they are not closed by this document or the new maintenance guide. No automation action follows merely from reading these historical instructions.
+
 Owner directive date: 2026-09-30  
 Timezone: Asia/Ho_Chi_Minh
 
@@ -241,7 +243,7 @@ Each discovered issue must be either fixed in the plan, converted to a bounded i
 
 If the implementation plan and adversarial review finish before the 08:00 deadline, coding begins immediately. Do not wait for the deadline.
 
-Reuse the existing five automation slots after Phase 1 instead of creating a sixth schedule. Lead owns the transition and should repurpose lanes to implementation work rather than leaving completed analysis loops idle.
+The former five-slot restriction is superseded by the owner's 2026-10-01 request to plan at most ten coding schedules. The current lane map and resource admission are in `PHASE2_SCHEDULED_EXECUTION_PLAN.md`. This preparation records the plan only; actual schedule operations require the corresponding current task request and live automation/Page ownership checks.
 
 Recommended implementation-lane mapping after Phase 1 closure:
 1. **Backend/Auth lane** — Tool.dll adapter, login/logout/session, authorization/capability service, route/API enforcement.

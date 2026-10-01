@@ -2,6 +2,8 @@
 
 Owner directive: maximize throughput per automation run while preserving lease safety, evidence quality, security and reviewability.
 
+Current owner direction (2026-10-01): **4–6 meaningful tasks per working session** and **at most 10 planned scheduled lanes**, with same-session repair of owned CI failures. `PHASE2_SCHEDULED_EXECUTION_PLAN.md` is the canonical lane/lease/session protocol. Past deadlines and the five-role analysis structure below are historical; this run does not activate automations.
+
 ## Objective
 
 A scheduled run is not a single-task slot. Each run should complete as many independent, bounded work units as tool/runtime budget safely permits.
@@ -32,7 +34,7 @@ Prefer several small reviewable commits over one oversized commit.
 
 ## Minimum throughput target
 
-When the source/tool state permits, a run should aim for **4–8 bounded work units for analysis/planning lanes** and **3–6 bounded work units for implementation/code lanes**, for example:
+Every lane plans **4–6 meaningful, bounded tasks per working session**, including its required verification, for example:
 - multiple DB catalog shards;
 - catalog + dependency extraction + reuse classification;
 - several screen bindings;
@@ -76,8 +78,10 @@ While CI runs:
 - create/review acceptance tests.
 
 When CI completes:
-- repair actionable failures immediately on the same PR;
+- repair every actionable failure on the owned current head, introduced now or inherited, immediately on the same PR **within that session**, then rerun appropriate checks for the latest pushed head;
 - if green and acceptance remains, continue to the next unit in the same run.
+
+Reserve a repair/drain phase before the session budget is exhausted. Stop admitting new code while failing checks are being repaired; switch to disjoint work while checks are queued/running. Before closing, account for every actionable failure on the owned current head and verify the current head; no pending/red head is DONE or mergeable. Do not weaken gates, delete required tests or count a rerun as a repair. A CI provider outage, unavailable runner or missing authorized environment is recorded as an external block with run/job/head/error, attempted recovery and a preserved checkpoint. It is never reported as fixed. The task target cannot override emergency CI repair.
 
 ## Phase 1 acceleration
 
@@ -90,12 +94,7 @@ Until 2026-10-01 01:00:
 
 ## Phase 2 acceleration
 
-After Phase 1 closure, reuse five lanes:
-1. Backend/Auth.
-2. Backend/Data.
-3. Frontend.
-4. Integration/QA.
-5. Lead/Integrator/Red Team.
+Use the at-most-ten lane ownership table in `PHASE2_SCHEDULED_EXECUTION_PLAN.md`. Independent source-free platform preparation is not automatically blocked by unresolved domain evidence; enabling legacy authentication, business writes and release still requires their individual gates. Reuse an existing suitable lease instead of creating a duplicate; schedules themselves remain planned until explicitly instantiated.
 
 Each implementation run should continue beyond the first completed issue when another READY issue can be safely claimed without overlap.
 
@@ -118,10 +117,9 @@ Workers should maximize useful work per run without risking an uncheckpointed ti
 
 Use this adaptive rule:
 
-- **Analysis/planning lanes:** target 4–8 bounded units/run when evidence/tool access is available.
-- **Implementation/code lanes:** target 3–6 bounded units/run, including tests/verification.
-- **Lead/Integrator:** target 4–8 units/run across audit, unblock, integration, plan correction and review.
-- **Heavy/fragile unit:** a single expensive extraction/migration/CI-repair can count as multiple ordinary units when it consumes comparable effort and produces a meaningful closure artifact.
+- **All lanes, including Lead:** plan 4–6 meaningful tasks/session, each with an artifact, acceptance and verification.
+- **Heavy/fragile task:** remains one task. Rebalance the queue and reserve CI recovery budget; never inflate its count.
+- **Blocked shortfall:** record actual completed count, missing source/environment/lease, attempted recovery and next independent work. Do not claim four tasks when fewer completed.
 
 Continue until:
 1. no safe executable work remains;
@@ -162,7 +160,7 @@ If a PR is stale, closed, behind, non-mergeable or conflicted:
 A worker must not continue building on a stale/invalid lease.
 
 ### Level 4 — CI recovery
-- actionable RED: inspect and fix in the same run when safe;
+- actionable RED on the owned current head, introduced now or inherited: inspect, fix and rerun in the same session; keep the owning PR open and non-mergeable until proved green;
 - infrastructure/zero-step noise: retry once only;
 - CI running: continue another non-conflicting unit;
 - green CI with remaining acceptance: continue work, do not stop.

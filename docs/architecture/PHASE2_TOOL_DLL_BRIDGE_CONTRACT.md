@@ -1,12 +1,14 @@
 # Phase 2 Tool.dll Adapter / Compatibility Bridge Contract
 
-Status: implementation-ready boundary; exact legacy APIs remain source-verification blockers.
+Status: reviewed planning boundary; runtime evidence pending; implementation is not authorized in this run.
+
+The 2026-10-01 owner request prepares a future gated coding workflow; it does not prove runtime semantics. `../plans/PHASE2_SCHEDULED_EXECUTION_PLAN.md` controls future eligibility, while this preparation run creates no application binding.
 
 ## Invariants
 - Browser and frontend never load, call, or receive Tool.dll credentials/objects.
 - ASP.NET Core .NET 10 depends only on typed interfaces in the application boundary.
-- Tool.dll is referenced only by `Medcom.Legacy.ToolAdapter` when direct loading is proven safe.
-- If direct loading is incompatible, a Windows compatibility bridge owns Tool.dll and exposes a private authenticated contract to the .NET 10 backend.
+- Tool.dll is referenced only inside a dedicated compatibility worker; the .NET 10 application uses a typed private contract.
+- A Windows worker compatible with the verified .NET Framework target is the conservative default. Alternative hosting requires T1 evidence for both load compatibility and authenticated-session isolation; loading successfully is not sufficient.
 - No guessed Tool.dll class, method, return-code, permission, logout, or session semantics may enter production code.
 
 ## Typed boundary
@@ -37,14 +39,14 @@ Classify adapter results as Success, Rejected, Expired, Forbidden, Unavailable, 
 
 ## Verification gate before implementation binding
 Direct source/runtime inspection must establish:
-1. Tool.dll target runtime/architecture and load dependencies;
+1. host compatibility, process architecture and dependencies for the statically verified .NETFramework v4.6.2 target; PE I386 with ILOnly does not prove x86-only;
 2. exact login/logout/session APIs and result semantics;
 3. thread-safety/reentrancy and process-global/static state;
 4. credential handling and disposal;
 5. permission/capability APIs if any;
 6. timeout/error behavior and side effects.
 
-Until proven, each item is UNKNOWN/BLOCKED rather than inferred.
+Static metadata establishes only the facts recorded below. Unproven runtime behavior stays UNKNOWN/BLOCKED.
 
 ## Acceptance
 - adapter can be contract-tested without Tool.dll;
@@ -58,3 +60,35 @@ Until proven, each item is UNKNOWN/BLOCKED rather than inferred.
 The owner supplied Tools.dll; sanitized metadata is recorded in docs/erp/TOOL_DLL_METADATA_EVIDENCE.md. The binary is Tools version 7.9.9767.36959, targets .NETFramework,Version=v4.6.2, has an I386 ILOnly PE shape, and references .NET Framework desktop, Janus and ActiveReports libraries. Public metadata confirms typed shapes for VerifyUserPass, GetPermission, GetPermissionWithMenuPara, CheckAdminUserGroup, user and branch context properties, and approval permission checks.
 
 This evidence narrows the adapter design but does not close the runtime gate. No public Login, Logout, Logon or Logoff method name was found, and VerifyUserPass must not be relabeled as a complete login or session operation. PermissionType is a value type with capability-shaped fields, not proof of authorization precedence or enforcement. Direct .NET 10 loading remains unverified; a private .NET Framework bridge remains an allowed and likely compatibility path until an isolated load and behavior test succeeds.
+
+## Authenticated-session process isolation
+
+Static Connector.UserLogin, Connector.UserGroup and Connector.UserFullName are
+mutable user identity properties. They establish a shared-state hazard, not the
+complete state model. Until [T1/#19](https://github.com/thanhtuyen662002/Medcom/issues/19)
+proves a safe alternative, dedicate one worker process context to one authenticated
+ERP session and serialize calls inside it. Same-company users require separate
+contexts. Bind the context to the server-resolved tenant, company, data source,
+ERP principal and authorization/session generation; reject missing or mismatched
+bindings before dispatch. Do not reassign a live context to another session.
+
+Restoring three properties, AsyncLocal, per-method locking or a successful load
+is not evidence of safe switching. Logout, expiry, revocation, context mismatch,
+timeout or unrecoverable failure invalidates dispatch and retires the worker.
+Fence late results by the original generation. Reauthentication creates a new
+context; it does not resurrect authority or automatically replay pending work.
+
+The durable command ledger, correlation and operation status live outside the
+worker. Terminating it does not prove SQL rollback. If a call may have committed,
+return OutcomeUnknown and reconcile authoritative business state before any
+retry. A new worker cannot infer that the original operation failed.
+
+T1 must record a controlled verification protocol for initialization, dependencies,
+concurrent sessions, same-company distinct users, logout/revoke, late results,
+resource limits, backpressure and retirement. B5/#24 and Q4/#41 own the
+loss-after-possible-commit and reconciliation acceptance. These are future
+verification requirements, not runtime results from the supplied binary.
+
+The maintenance guide reports a Connector startup path that can run DDL. T1 must inspect initialization statically before any launch, use a disposable/nonproduction database with audited/controlled DDL permissions, and record attempted schema changes, dependency/license failures and cleanup. Opening the legacy app against production merely to inspect defaults is not an approved verification step.
+
+An external ledger is not automatically atomic with a separate legacy database. B5 must cover reserve-before-dispatch, worker-start, business-commit-before-ack, ledger-update failure and late-result fencing. Scope keys by tenant/company/principal/action and request fingerprint; changed payload under the same key is rejected. Recovery uses the actual action-specific business identity/outcome contract and cannot infer rollback from process retirement. Unverifiable outcome remains OutcomeUnknown and blocks replay.
