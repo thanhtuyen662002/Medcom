@@ -46,4 +46,4 @@ These gaps must not be converted to VERIFIED from naming conventions. They are r
 
 ## Phase-1 ERP disposition
 
-The ERP workstream is **not yet complete_candidate**. Stable-ID/evidence foundations are strong enough for downstream partial traceability, but the acceptance requirement is a complete inventory with explicit unknowns. Remaining independent work should prioritize reviewable sanitized indexes (DAT/report/form/error classes) rather than monolithic generated blobs, while C#-only behavior stays explicitly UNKNOWN.
+The ERP workstream is **complete_candidate**. Package evidence classes have been exhausted into stable-ID inventories and explicit UNKNOWN boundaries; remaining C#-only runtime semantics stay UNKNOWN pending the direct C# verification round. Until Lead closes Phase 1, ERP work remains focused on closure verification and evidence-backed pilot unblockers rather than reopening broad archaeology.
