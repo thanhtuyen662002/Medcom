@@ -72,4 +72,4 @@ The source also contains a large reporting procedure surface, e.g. AR order/sale
 - Identify tables without PKs, suspicious wide tables, heap/index risks, orphan-prone relationships and procedure dynamic-SQL dependencies.
 - Produce reuse disposition by domain: reuse-as-is / compatibility facade / controlled change / additive Web config / retire-replace.
 
-No `complete_candidate` claim is made in this pass.
+This baseline is intentionally not a complete-candidate claim. See `PHASE1_CATALOG_COVERAGE_MATRIX.md` for the independent gate decision and the row-level catalog/dependency records still required for closure.

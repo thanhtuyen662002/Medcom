@@ -112,7 +112,7 @@ Domain-specific mobile priorities remain unresolved under `UX-GAP-RESPONSIVE-001
 
 ## 9. Acceptance evidence required before complete_candidate
 
-The UX workstream is not complete merely because these tests are specified. Before `complete_candidate`:
+The UX workstream is complete_candidate for the Phase 1 specification because the closure matrix binds these tests and preserves their runtime acceptance criteria. The tests still must execute in Phase 2 before a production slice is accepted; specification status is not runtime test evidence.
 
 1. every VERIFIED ERP surface published for Phase 1 has a Web disposition or explicit bounded gap;
 2. each bound surface declares freshness policy and visible stale/degraded behavior;

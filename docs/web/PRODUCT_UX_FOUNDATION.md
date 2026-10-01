@@ -186,7 +186,7 @@ ERP report evidence now binds WEB-REPORT-RUN: 786 candidate-current RPX files in
 
 Initial freshness binding: transactional/master lists SWR ≤30 s; warehouse/inbound operational lists SWR ≤15 s; reference lookups SWR ≤60 s/on-open; editable documents use version-aware targeted revalidation; config uses SWR after save + manual refresh; reports are SNAPSHOT. No bound surface is promoted to PUSH until an authoritative event/version source is VERIFIED.
 
-New explicit gaps: UX-GAP-NAV-001 menu reachability; UX-GAP-AUTH-001 enforcement semantics; UX-GAP-CONFIG-001 legacy precedence; UX-GAP-FILTER-001 Like/A-B aliases; UX-GAP-WORKFLOW-001 commands/side effects; UX-GAP-LOOKUP-001 lookup dependencies; UX-GAP-REPORT-001 report reachability/print options; UX-GAP-CONCURRENCY-001 version/idempotency; UX-GAP-REALTIME-001 event source; UX-GAP-RESPONSIVE-001 domain task priority. Status remains active.
+New explicit gaps: UX-GAP-NAV-001 menu reachability; UX-GAP-AUTH-001 enforcement semantics; UX-GAP-CONFIG-001 legacy precedence; UX-GAP-FILTER-001 Like/A-B aliases; UX-GAP-WORKFLOW-001 commands/side effects; UX-GAP-LOOKUP-001 lookup dependencies; UX-GAP-REPORT-001 report reachability/print options; UX-GAP-CONCURRENCY-001 version/idempotency; UX-GAP-REALTIME-001 event source; UX-GAP-RESPONSIVE-001 domain task priority. The Web Product/UX stream is complete_candidate for Phase 1 specification evidence; each listed gap remains an explicit implementation or C# verification dependency.
 
 
 ## 14. Mutation outcome and historical-failure UX

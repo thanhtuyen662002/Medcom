@@ -100,4 +100,4 @@ This is **VERIFIED existence evidence only**. Root causes and affected workflows
 - Inspect safe assembly metadata/resources for form/menu/report names while avoiding decompilation claims that cannot be evidenced.
 - Bind ERP IDs to DB/Web IDs only after those workstreams publish VERIFIED identifiers.
 
-Status remains `active`; this is not yet a complete ERP inventory.
+This is a source-evidence artifact rather than a stream status record. The ERP stream is `complete_candidate` according to `STABLE_ID_COVERAGE_AND_GAPS.md`; the runtime/menu/permission gaps listed above remain UNKNOWN and are not being promoted by this document.

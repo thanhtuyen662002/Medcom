@@ -1,6 +1,6 @@
 # Phase 1 Architecture Post-Closure Watch — 2026-09-30
 
-Status: architecture remains **complete_candidate**.
+Status: architecture contracts are **implementation-ready but closure-pending**.
 
 ## Live specialist state
 

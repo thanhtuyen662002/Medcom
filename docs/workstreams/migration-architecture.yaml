@@ -1,6 +1,6 @@
 workstream_id: migration-architecture
 role: Solution Architect + Backend Lead + Integration Architect
-status: complete_candidate
+status: active
 primary_outputs:
   - docs/architecture/
   - inventories/traceability/
