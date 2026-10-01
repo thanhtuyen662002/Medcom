@@ -165,3 +165,39 @@ Required outcomes:
 - dynamic Screen Definition/DAT sync must be versioned, auditable and rollback-safe.
 
 The suggested `WebCore.*` table set is a reference architecture, not a mandatory physical naming scheme. A better design is allowed when it preserves all invariants and is documented/tested.
+
+## 11. Single-port multi-customer backend hosting
+
+Owner priority: the backend must be deployable as **one shared Web/API service on one listening port for multiple customers/companies**, rather than requiring a separate process/port per customer.
+
+Preferred implementation:
+- ASP.NET Core / .NET 10 LTS;
+- one Kestrel/ASP.NET Core application instance (or a horizontally scaled pool behind one reverse-proxy endpoint);
+- one public/internal port per deployed service environment;
+- customer/company/tenant resolution happens inside the application from authoritative authenticated server-side context;
+- each customer may map to a different SQL Server, database, config profile, Tool.dll/legacy adapter profile, feature set or storage endpoint.
+
+Conceptual flow: Clients A/B/C -> one HTTPS endpoint/port -> ASP.NET Core -> TenantResolver + Auth/Session -> CompanyDataSourceResolver -> DB A | DB B | DB C.
+
+The browser may carry a requested company/context selector only as presentation input. It cannot authoritatively choose an arbitrary tenant/database/connection string. The server validates the authenticated user's allowed company memberships and resolves the effective data source from server configuration.
+
+Required reusable boundaries should cover tenant context, tenant resolution, company data-source resolution, connection creation, legacy-adapter resolution and company feature resolution. Exact interface names are implementation choices.
+
+The data-source model must support one DB shared by several companies, one DB per company, and multiple DBs for one company where the existing ERP requires it. Local or remote SQL Server endpoints remain server-side configuration.
+
+Isolation requirements:
+- every request resolves an immutable authoritative tenant/company context before business handlers execute;
+- query/command/cache/audit/realtime keys include required tenant/company scope;
+- client-supplied CompanyId/DatabaseName/ServerName never widens authority;
+- background jobs persist and restore tenant scope explicitly;
+- connection pooling cannot leak prior tenant context.
+
+Classic ASPX can technically serve many customers behind one IIS site/port, but ASP.NET Core is preferred because middleware/DI, SignalR, async APIs, health checks, observability and future scaling are cleaner. Use classic ASPX only when a verified legacy dependency creates a compelling compatibility requirement that cannot be isolated behind the legacy bridge.
+
+Preferred external surface is HTTPS 443 through IIS/Nginx/reverse proxy to one backend service URL. Hostname/path routing may improve deployment organization but is not an authorization boundary.
+
+Acceptance:
+- multiple test customers use the same service/port concurrently;
+- each resolves the correct DB/config/permissions;
+- onboarding another configured customer does not require a new backend port or code fork;
+- tenant-isolation tests are green.
