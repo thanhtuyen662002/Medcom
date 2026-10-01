@@ -35,8 +35,8 @@ phase2:
   issue_graph: docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md
   implementation_issue_range: 12-41
   production_code_started: false
-  ready_issue_count: 18
-  blocked_issue_count: 12
+  ready_issue_count: 16
+  blocked_issue_count: 14
 remaining_blockers:
   - TRC-DB-001 row-level sanitized SQL catalog and dependency graph
   - TRC-TOOL-001 direct Tool.dll runtime and API verification
