@@ -38,6 +38,14 @@ Allowed durable artifacts are sanitized technical metadata, object inventories, 
 - This request authorizes preparation of the future coding workflow. Independent source-free foundation work may be eligible only after plan integration/preflight; enabled legacy authentication, domain writes, SQL changes and release remain individually evidence/dependency gated. The current run produces planning/evidence artifacts only.
 - `docs/PROJECT_STATE.yaml` holds current state, the issue graph holds dependencies, the scheduled plan holds lane/session mechanics, and specialist contracts hold semantics. Historical READY labels and old five-lane/deadline rules do not grant start permission.
 
+## Activated workflow — 2026-10-02
+
+The owner has now explicitly activated the schedule workflow and requested review/merge of PR #43. The reviewed plan is on main; read `docs/execution/SCHEDULE_ACTIVATION_20261002.md` and its actual configuration registry. Ten hourly schedules are enabled in Asia/Saigon. This newer direction supersedes the earlier planned-only schedule restriction and blanket planning-run authorization note. It preserves all evidence, source, dependency, runtime, CI and operation gates.
+
+L01 is the sole authorized GitHub writer during bootstrap; L02–L10 perform read-only GitHub/preparation until tested dispatcher fencing and eligible leases admit them. Minimum single-writer preflight is allowed before dispatcher proof; source-free A1 follows that preflight and the already-completed plan integration. Record an L02→L01 sublease if L01 applies A1 preparation. Do not resume merged PR #43 as a lease. In-session subagents may prepare bounded local patches without GitHub mutations, with direct reviewed handoff.
+
+TRC-DB-001/#21 and exhaustive traceability remain open under `docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md`. Close static coverage by the finite catalog/manifest/export acceptance, rather than waiting indefinitely on unrelated runtime facts. Bounded runtime UNKNOWNs remain separate enabled-slice gates; missing manifest members and dump-extractable facts cannot be waived. Historical Phase 1 stop rules do not independently authorize changing these active coding schedules.
+
 ## Definition of Phase 1 complete
 Phase 1 is complete only when the repository contains:
 1. ERP inventory covering modules/forms/reports/layout/config/permissions/workflows and unresolved unknowns.

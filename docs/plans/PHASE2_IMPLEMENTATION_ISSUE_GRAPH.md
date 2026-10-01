@@ -1,5 +1,7 @@
 # Phase 2 implementation issue graph
 
+> Activation checkpoint — 2026-10-02: PR #43 is reviewed/merged and ten hourly schedules are enabled in bootstrap/preparation mode. Read `docs/execution/SCHEDULE_ACTIVATION_20261002.md` and current `docs/PROJECT_STATE.yaml`. These supersede the original planned-only/future activation statements below. L01 alone writes GitHub until minimum preflight and proved dispatcher admission; other lanes remain read-only/preparation. Source/runtime/CI gates and truthful 4–6 unit accounting remain mandatory.
+
 This file is the durable source for bounded GitHub implementation Issues. Each
 Issue created from this graph must keep the objective, non-goals, dependencies,
 contracts, acceptance tests, security/tenant constraints and definition of done
@@ -113,7 +115,7 @@ Track design and implementation start separately in every Issue and status recor
 - depends_on: canonical GitHub issue numbers, not unresolved shorthand.
 - evidence_blockers: exact source artifact, object, handler, runtime observation, or owner needed.
 
-Only start_status=eligible means the reviewed design, completed dependencies, evidence/runtime gates and authorization all permit implementation. Historical READY/BOUNDS labels alone never establish eligibility. All 31 issues are waiting_plan_integration in this preparation run, with additional evidence/runtime/dependency blockers recorded independently. The owner has directed a future gated workflow; current application implementation remains false until integration and minimal bootstrap preflight. DONE still requires reviewed implementation and green CI.
+Only start_status=eligible means the reviewed design, completed dependencies, evidence/runtime gates and authorization all permit implementation. Historical READY/BOUNDS labels alone never establish eligibility. At the original 2026-10-01 checkpoint, all 31 issues were waiting_plan_integration. PR #43 is now merged and the owner activated the gated workflow on 2026-10-02. Recompute each node as waiting_preflight, waiting_dependencies, waiting_evidence or waiting_runtime from its actual acceptance. No application unit starts before minimum bootstrap preflight and its additional gates. DONE still requires reviewed implementation and green CI.
 
 ### F9 inbound request mutation slice
 
@@ -148,4 +150,4 @@ Master plan section 25 defines the proposed fields, types, requiredness, bounds,
 | R5 | [#40](https://github.com/thanhtuyen662002/Medcom/issues/40) | Q4 | [#41](https://github.com/thanhtuyen662002/Medcom/issues/41) |
 | F9 | [#42](https://github.com/thanhtuyen662002/Medcom/issues/42) | TRC-DB-001 | [#21](https://github.com/thanhtuyen662002/Medcom/issues/21) |
 
-B4 is one node, owned by issue [#23](https://github.com/thanhtuyen662002/Medcom/issues/23), listed once and counted once. B2 / issue [#21](https://github.com/thanhtuyen662002/Medcom/issues/21) is the single owner of TRC-DB-001 row-level catalog evidence. The implementation graph has 31 issues. The historical labels comprise 16 READY/BOUNDS candidates and 15 BLOCKED candidates; these are not eligibility counts. Every issue still needs plan integration/preflight for the directed future workflow and any unfinished dependency or evidence/runtime gate. Current eligible-to-start count is zero.
+B4 is one node, owned by issue [#23](https://github.com/thanhtuyen662002/Medcom/issues/23), listed once and counted once. B2 / issue [#21](https://github.com/thanhtuyen662002/Medcom/issues/21) is the single owner of TRC-DB-001 row-level catalog evidence. The implementation graph has 31 issues. The historical labels comprise 16 READY/BOUNDS candidates and 15 BLOCKED candidates; these are not eligibility counts. Every issue still needs plan integration/preflight for the directed future workflow and any unfinished dependency or evidence/runtime gate. Current eligible-to-start count is zero pending minimum bootstrap preflight and the remaining per-node gates; plan integration itself is complete.

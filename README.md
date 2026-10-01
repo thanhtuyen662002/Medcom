@@ -1,5 +1,7 @@
 # Medcom ERP → Web Modernization
 
+> Activation checkpoint — 2026-10-02: PR #43 is reviewed/merged and ten hourly schedules are enabled in bootstrap/preparation mode. Read `docs/execution/SCHEDULE_ACTIVATION_20261002.md` and current `docs/PROJECT_STATE.yaml`. These supersede the original planned-only/future activation statements below. L01 alone writes GitHub until minimum preflight and proved dispatcher admission; other lanes remain read-only/preparation. Source/runtime/CI gates and truthful 4–6 unit accounting remain mandatory.
+
 This repository is the durable engineering source of truth for analyzing the current Windows ERP, reusing the Medcom SQL Server database, and planning a complete migration to a Web ERP.
 
 ## Phase 1 baseline
