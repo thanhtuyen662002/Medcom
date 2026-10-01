@@ -2,6 +2,21 @@
 
 Status: **PARTIAL / GATE 4 FAIL** as of 2026-10-01.
 
+## Owner guide intake — 2026-10-01
+
+The supplemental guide is reconciled in `docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md`; all 293 indexed property/key pairs and nine consumers are retained in `inventories/erp/WINFORMS_PROPERTY_KEY_INDEX.json`. It is an older maintenance summary, so its source-described behavior is INFERRED until approved-baseline corroboration. It does not replace Medcom counts or close this gate.
+
+| Newly bounded ERP evidence | Web / DB contract disposition | Remaining verification / owner |
+|---|---|---|
+| LayoutX form FID/KeyID, T0 and T1–T9/TA–TJ address slots; 21 LYT positions | Contextual selectors and lossless sparse/trailing serialization in Screen Definition | Actual consumers, golden fixtures, duplicate prevalence and precedence; R3/#26, B2/#21 |
+| LYS property-key addressing, six control defaults and 293 contextual pairs | Consumer-specific identity; no global property/key dedupe; unknown values preserved and executable ambiguity quarantined | Source/build consumer and parser/default fixtures; R3/#26, A7/#18 |
+| Form/table hook differences, multi-detail invoice/derived VAT datasets | Per-action writable/read-only/deferred-effect matrix; final success after required authoritative effects | Actual signatures, transactions, permission/state and reread; B3/#22, B5/#24, F5–F9 |
+| SaveConfig deletes all FID rows then reinserts; persistent cache behavior | Reviewed exclusive maintenance/version protocol and controlled client refresh; stale writer cannot overwrite silently | Atomicity, external writers, permissions and convergence in approved build; A7/#18, Q3/#38 |
+| Sales caption mismatch, historical disabled AP Order and stock/consignment transfer candidate | Preserve requested five Web intents separately from observed menu candidates; do not infer equivalence or current permission | Approved menu/action and rollout decision; F4/#31, F5/#32, F6/#33, F8/#35 |
+| Connector startup can cause DDL; legacy source is VB.NET/.NET Framework | Static-first investigation, immutable supplied Tools.dll and controlled isolated runtime evidence | Source-to-binary provenance, startup side effects, per-session isolation; T1/#19, B4/#23 |
+
+Implementation attack acceptance is tracked once in the two detailed review registers and specialist contracts, with one issue owner per case. No synthetic parser/UI/ledger fixture establishes actual ERP behavior. Approved archive access was unavailable in this preparation run; the exact boundary is recorded in `docs/SOURCE_BASELINE.md`.
+
 The current matrix in `PHASE1_BOUND_CONTRACTS.md` is useful and correctly
 labels several unknowns, but it is a bounded join rather than an exhaustive
 traceability catalog. This audit defines the closure rule and preserves the

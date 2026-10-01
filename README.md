@@ -18,3 +18,14 @@ This repository is the durable engineering source of truth for analyzing the cur
 5. Stress-test the plan until new failures are only variants of documented failure classes.
 
 See `AGENTS.md`, `docs/PROJECT_STATE.yaml`, `docs/SOURCE_BASELINE.md`, `docs/ROADMAP.md`, and `docs/PARALLEL_EXECUTION.md`.
+
+## Current reconciliation and execution handoff
+
+The 2026-10-01 preparation integrates the owner-supplied WinForms maintenance guide without replacing the approved raw-source baselines or claiming Phase 1 closure. Legacy VB.NET source grammar, historical menu/data context and unresolved runtime facts remain explicit.
+
+- [Supplementary guide evidence](docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md) and [293 contextual property/key pairs](inventories/erp/WINFORMS_PROPERTY_KEY_INDEX.json).
+- [Document consistency audit](docs/reviews/DOCUMENT_CONSISTENCY_AUDIT_20261001.md).
+- [Security/data attack cases](docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md) and [user/operations attack cases](docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md): 92 planned cases, not executed runtime tests.
+- [Ten-lane scheduled execution plan](docs/plans/PHASE2_SCHEDULED_EXECUTION_PLAN.md): one owner per 31 issues, 4–6 meaningful tasks/session, same-session CI repair, fenced leases and a single integration queue. Schedules are planned only; none is activated by this preparation.
+
+Current gates are in `docs/PROJECT_STATE.yaml`; the master plan's section 26 joins the handoff and adversarial dispositions. A historical READY label or a guide snapshot is not implementation or release evidence.

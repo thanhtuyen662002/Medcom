@@ -4,6 +4,8 @@ Review date: 2026-10-01 (Asia/Ho_Chi_Minh)
 Reviewer: Lead / Red Team  
 Plan under attack: `docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md`
 
+Supplemental 2026-10-01 tabletop review: `PHASE2_SECURITY_DATA_ATTACK_REVIEW.md` contains 40 detailed security/data cases; `PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md` contains 52 user/IT/management/operations cases. These extend this historical matrix with small-step reproductions, measurable acceptance and existing issue owners. Specialist contracts own normative semantics; `PHASE2_SCHEDULED_EXECUTION_PLAN.md` owns execution controls. FIXED below means a planned rule exists, not an executed or passed runtime test.
+
 This review intentionally tries to break the plan before production coding.
 Every finding is either fixed by a cited plan rule or converted into a bounded
 implementation blocker with an owner and acceptance test. A finding is not

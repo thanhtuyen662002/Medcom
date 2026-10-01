@@ -2,6 +2,8 @@
 
 Status: architecture addendum. The owner-supplied C# review summaries are secondary evidence and do not replace the authoritative Phase 1 package/database baselines.
 
+**Current reconciliation, 2026-10-01:** retain the historical path for links, but read 'C# round' here as direct legacy-source verification, including the VB.NET projects identified by the new maintenance guide. `../erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md` records asserted grammar and contradictions; `PHASE2_SCREEN_DEFINITION_CONTRACT.md` owns the fail-closed compiler acceptance. Source/runtime proof is still pending.
+
 ## Purpose
 
 The C# review summaries sharpen boundaries already indicated by ERP package and DB evidence. Claims that depend only on those summaries remain INFERRED until direct source verification.

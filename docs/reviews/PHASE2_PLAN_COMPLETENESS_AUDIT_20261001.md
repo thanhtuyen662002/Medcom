@@ -44,7 +44,7 @@ production code in this planning run.
 | Unit, integration, E2E, security, performance, mobile and recovery tests | Master plan section 19; Q1, Q2, Q3 and Q4 | PASS |
 | Backend, frontend and integration CI gates | Master plan section 20; A1, Q2 and Q4 | PASS as planned gate; no workflow exists yet |
 | Bounded implementation Issue graph and dependencies | Master plan section 21; issue graph; Issues 12 through 42 (31 canonical nodes) | PASS |
-| Design disposition versus implementation eligibility | Master plan sections 21–23; graph status rules; PROJECT_STATE | Historical labels are not start eligibility; authorization false and eligible count zero |
+| Design disposition versus implementation eligibility | Master plan sections 21–23; graph status rules; PROJECT_STATE | Historical labels are not start eligibility; current implementation false, future gated workflow directed, plan integration/preflight pending and eligible count zero |
 | Definition of done and owner checkpoints | Master plan sections 23 and 24 | PASS |
 | Adversarial multi-role attack and dispositions | PHASE2_PLAN_ADVERSARIAL_REVIEW.md | PASS |
 
@@ -90,7 +90,7 @@ contract or gate exists, never a claim of implemented or verified runtime behavi
 | Worker retirement could be mistaken for rollback | External command ledger and authoritative OutcomeUnknown reconciliation; B5 and Q4 acceptance | Controlled loss-after-commit and safe retry evidence |
 | Target framework incorrectly called unknown | Supplied Tools.dll metadata establishes .NETFramework v4.6.2; PE I386/ILOnly does not prove x86-only | Actual host compatibility, dependency availability and load behavior |
 | Transport contract listed names without bounds | Master section 25 defines proposed types, requiredness, limits, versions, errors and outcomes | Action-specific domain schemas, precision, state and concurrency require source review |
-| Completion and count drift | PROJECT_STATE uses coverage_reviewed_evidence_pending, 31 issues and zero eligible starts | Phase1 seven-gate proof and later implementation authorization |
+| Completion and count drift | PROJECT_STATE uses coverage_reviewed_evidence_pending, 31 issues and zero eligible starts | Phase1 seven-gate proof; plan integration/minimal bootstrap preflight for independent foundation work; all source/runtime/operation gates for legacy and business work |
 
 ## Evidence handoff and closure criteria
 

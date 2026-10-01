@@ -103,4 +103,4 @@ This narrows the previous blanket UNKNOWN around report-to-database binding: at 
 - Sanitize historical error signatures into failure classes.
 - Await C# only for behavior that packaged artifacts cannot establish; do not block the independent inventories above.
 
-Workstream status remains `active`.
+Current workstream status is recorded in `../PROJECT_STATE.yaml` and `../workstreams/erp-analysis.yaml`; this evidence slice does not independently set phase or stream completion. Report-local C# scripts remain genuine package evidence and are distinct from the legacy application project's VB.NET language.

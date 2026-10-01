@@ -1,5 +1,7 @@
 # Phase 1 independent closure audit
 
+> Historical checkpoint: PR/head observations, deadlines, source-language assumptions and five-schedule instructions below apply only to the recorded snapshot. Current state is `docs/PROJECT_STATE.yaml`; current gated workflow is `docs/plans/PHASE2_SCHEDULED_EXECUTION_PLAN.md` (at most ten planned Medcom schedules). These historical directions do not activate or stop schedules. The owner-supplied guide establishes VB source context; runtime and seven-gate closure remain unproved.
+
 Audit date: 2026-10-01 (Asia/Ho_Chi_Minh)
 
 This is the Lead audit of the integrated Phase 1 evidence. It is deliberately

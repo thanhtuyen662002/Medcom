@@ -39,7 +39,8 @@ Expose an internal abstraction such as:
 - `ILegacyPermissionAdapter` when direct legacy permission behavior must be reused.
 
 Compatibility decision after direct inspection:
-1. If Tool.dll is loadable/supported in the .NET 10 process without unsafe runtime coupling, reference it only inside the isolated adapter project.
+The dedicated compatibility-worker/session-isolation rules in `PHASE2_TOOL_DLL_BRIDGE_CONTRACT.md` govern this decision. A successful load alone cannot permit in-process multi-user reuse; T1 must also prove authenticated-session isolation, side effects and lifecycle safety.
+1. An alternative host may be proposed only after T1 proves load compatibility **and** authenticated-session isolation; preserve the typed private boundary and dedicated worker context until that evidence exists.
 2. If Tool.dll requires .NET Framework/Windows-only APIs that cannot safely load in .NET 10, run an isolated Windows compatibility bridge/service and call it from ASP.NET Core through an internal authenticated IPC/HTTP contract.
 3. Never rewrite or guess Tool.dll method semantics merely to remove the bridge.
 

@@ -2,6 +2,8 @@
 
 Status: reviewed planning boundary; runtime evidence pending; implementation is not authorized in this run.
 
+The 2026-10-01 owner request prepares a future gated coding workflow; it does not prove runtime semantics. `../plans/PHASE2_SCHEDULED_EXECUTION_PLAN.md` controls future eligibility, while this preparation run creates no application binding.
+
 ## Invariants
 - Browser and frontend never load, call, or receive Tool.dll credentials/objects.
 - ASP.NET Core .NET 10 depends only on typed interfaces in the application boundary.
@@ -86,3 +88,7 @@ concurrent sessions, same-company distinct users, logout/revoke, late results,
 resource limits, backpressure and retirement. B5/#24 and Q4/#41 own the
 loss-after-possible-commit and reconciliation acceptance. These are future
 verification requirements, not runtime results from the supplied binary.
+
+The maintenance guide reports a Connector startup path that can run DDL. T1 must inspect initialization statically before any launch, use a disposable/nonproduction database with audited/controlled DDL permissions, and record attempted schema changes, dependency/license failures and cleanup. Opening the legacy app against production merely to inspect defaults is not an approved verification step.
+
+An external ledger is not automatically atomic with a separate legacy database. B5 must cover reserve-before-dispatch, worker-start, business-commit-before-ack, ledger-update failure and late-result fencing. Scope keys by tenant/company/principal/action and request fingerprint; changed payload under the same key is rejected. Recovery uses the actual action-specific business identity/outcome contract and cannot infer rollback from process retirement. Unverifiable outcome remains OutcomeUnknown and blocks replay.

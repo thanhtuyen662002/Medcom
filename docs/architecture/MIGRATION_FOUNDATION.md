@@ -8,7 +8,7 @@ The Web client is presentation only and never connects directly to SQL Server. B
 Database objects receive one disposition: REUSE, FACADE, CONTROLLED_CHANGE, ADDITIVE_WEB_CONFIG, REPLACE_RETIRE, or UNKNOWN. Repair/backup artifacts require explicit review.
 
 ## Web configuration
-Before adding tables, DB Analysis must check existing configuration support. If extension is needed, model stable surface/element IDs, lookup definitions, scoped overrides, saved views and immutable config versions. Presentation precedence is system default, company default, role default, then user override. Authorization is not part of presentation precedence.
+Before adding tables, DB Analysis must check existing configuration support. If extension is needed, model stable surface/element IDs, lookup definitions, scoped overrides, saved views and immutable config versions. **Target Web presentation policy** is system default, company default, role default, then user override; exact legacy precedence remains UNKNOWN. Authorization is not part of presentation precedence.
 
 ## Data changes
 Critical edits require a server-validated expected version when concurrency applies. Retryable commands use a stable request key and the server must not execute the same logical change twice. Existing SQL trigger effects are part of the transaction and must be included in retry tests.

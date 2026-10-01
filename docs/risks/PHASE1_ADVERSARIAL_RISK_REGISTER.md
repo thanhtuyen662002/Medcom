@@ -1,5 +1,7 @@
 # Phase 1 adversarial risk register
 
+2026-10-01 supplemental owner-guide review adds 40 security/data and 52 user/operations tabletop cases in `docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md` and `docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md`. Those registers reuse canonical issue owners and acceptance controls rather than creating a parallel implementation backlog. Source/runtime evidence and Phase 1 closure remain open.
+
 Status: ACTIVE. This register defines failure classes, required mitigations, detection signals and acceptance tests. Source-specific behavior that is not proven remains UNKNOWN rather than being assumed.
 
 ## Gate rule

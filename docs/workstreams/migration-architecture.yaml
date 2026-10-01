@@ -17,4 +17,4 @@ scope:
 blocked_behavior: maintain_partial_traceability_and_gap_register_without_waiting
 acceptance: no_unmapped_verified_erp_capability_without_db_or_web_disposition
 
-completion_note: architecture disposition coverage complete; remaining runtime facts are bounded UNKNOWNs for direct source verification
+completion_note: architecture design coverage reviewed; exhaustive ERP-Web-DB disposition remains incomplete pending Gates 2 and 4 and direct source/runtime verification

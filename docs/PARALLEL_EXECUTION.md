@@ -1,6 +1,6 @@
 # Parallel execution and anti-bottleneck protocol
 
-Five scheduled workstreams operate with staggered hourly starts.
+The five Phase 1 workstreams are historical analysis roles. The owner's 2026-10-01 request plans at most ten future coding lanes, defined in `plans/PHASE2_SCHEDULED_EXECUTION_PLAN.md`. No automation is created, repurposed, stopped or enabled by this preparation run. That plan governs future lane ownership, admission, lease fencing and CI drain; this file retains the underlying anti-bottleneck principles.
 
 ## Core rule: never idle on a dependency
 A worker blocked on one artifact must immediately choose the next independent item in its backlog: inventory, evidence verification, gap analysis, risk tests, cross-reference, documentation or remediation design. Waiting is not a valid end state while independent work exists.
@@ -10,6 +10,7 @@ A worker blocked on one artifact must immediately choose the next independent it
 - Earliest valid active lease wins; later duplicate claims must close/rebase to non-overlapping work.
 - Stale/closed/merged PR references are not live leases.
 - Keep PRs small enough for review; split huge inventories into generated indexes plus human-readable summaries.
+- A Draft PR is a discoverable lease record, not an atomic lock by itself. Use the scheduled plan's unique issue/path owner, generation/source-head fencing and re-read-before-write protocol; only the coordinator admits a contested lease. A TTL expiry alone never authorizes stealing another worker's branch.
 - Lead may take over a stale lease only after proving inactivity/invalidity and documenting why.
 
 ### Connector-resilient fallback lease

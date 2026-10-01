@@ -1,5 +1,7 @@
 # Phase 1 Architecture Post-Closure Watch — 2026-09-30
 
+Historical checkpoint only. The later independent audit `../reviews/PHASE1_CLOSURE_AUDIT_20261001.md` and current `../PROJECT_STATE.yaml` leave Phase 1 active; candidate status recorded below does not prove closure.
+
 Status: architecture contracts are **implementation-ready but closure-pending**.
 
 ## Live specialist state

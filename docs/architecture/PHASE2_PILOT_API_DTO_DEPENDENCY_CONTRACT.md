@@ -20,6 +20,12 @@ Every pilot must test allowed/denied role, direct-route/API denial, scope wideni
 
 BLOCKED facts remain exact Tool.dll APIs, internal-transfer binding, per-screen mutation procedure/transaction ownership, permission precedence, concurrency tokens and unverified menu reachability.
 
+## 2026-10-01 guide reconciliation
+
+The five rows above are the owner's requested Web intents and current package/DB candidates, not guaranteed equivalence with a historic menu. The secondary guide labels `AR_InvoiceRequestFrm` as 'Yêu cầu xuất hóa đơn'; historical `AP_OrderFrm` is a disabled menu plus generic EDIT definition; `IV_StockTranferFrm` is 'Chuyển kho - ký gởi'. These observations keep F5/F8/F6 binding or enablement open. Missing inbound/approval names in that different snapshot do not disprove current Medcom candidates. See `../erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md` for source/date/line evidence.
+
+Every pilot disposition stores requested intent separately from observed caption, source/build, menu ID/parents/Para, FID/PFID, generic versus compiled consumer, all datasets and exact action/permission/state contracts. F4 remains read-only; F9 remains the inbound-write owner; incoming/status remains an optional companion outside the five required pilots.
+
 ## Ownership and proposed transport
 
 The [master plan](../plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md), sections 16 and

@@ -10,6 +10,8 @@ an executable dependency graph, records the fixed pilot scope, and makes every
 READY/BLOCKED boundary explicit. It does not replace the evidence baseline or
 invent legacy runtime behavior.
 
+The owner's 2026-10-01 request prepares a future gated coding workflow with at most ten scheduled lanes. Section 26 and `PHASE2_SCHEDULED_EXECUTION_PLAN.md` govern that workflow. This run remains evidence/planning only; future source-free foundation eligibility is distinct from legacy/domain/runtime gates and from activation of schedules.
+
 The independent Phase 1 audit in
 `docs/reviews/PHASE1_CLOSURE_AUDIT_20261001.md` currently leaves the DB catalog
 and exhaustive traceability gates open. Those gaps are included as bounded
@@ -77,10 +79,7 @@ counts in `docs/db/DECLARATION_COUNT_CORRECTION.md` and
 required row-level catalog is tracked by `TRC-DB-001`; it is not silently
 replaced by aggregate counts.
 
-The sanitized owner-supplied C# review summaries are secondary evidence. They
-help prioritize verification of `FormControler`, `LayoutX`, `Storer`, LYT1/LYS1
-and dynamic UserControls, but raw C# source remains a separate verification
-round and cannot prove Tool.dll runtime APIs by itself.
+The sanitized owner-supplied legacy-source summaries and new maintenance guide are secondary evidence. The guide identifies VB.NET projects, preserves an older database/source snapshot and is indexed in `../erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md`. It sharpens `FormControler`, `LayoutX`, `Storer`, LYT/LYS and UserControl verification; it is not the raw solution or the approved Medcom catalog. Different snapshot counts/captions/triggers remain separate. Raw legacy-source and controlled runtime verification are still required for dependent bindings.
 
 ## 3. Fixed technical stack
 
@@ -92,8 +91,7 @@ round and cannot prove Tool.dll runtime APIs by itself.
   correctness or perceived freshness.
 - OpenTelemetry-compatible structured traces/metrics alongside bounded durable
   support records.
-- Tool.dll behind `Medcom.Legacy.ToolAdapter`; use an isolated Windows/.NET
-  Framework compatibility bridge if direct .NET 10 loading is not proven safe.
+- Tool.dll behind a typed private `Medcom.Legacy.ToolAdapter` boundary and dedicated compatibility worker per authenticated ERP session. The bridge contract governs alternatives; successful .NET 10 loading alone does not prove multi-user safety.
 
 Classic ASPX is not the default. It can be considered only if a verified
 legacy compatibility requirement makes it materially safer and the decision is
@@ -529,20 +527,7 @@ tests. Do not weaken a gate to meet a date.
 
 The detailed issue records are in
 `docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md` and GitHub Issues created
-from it. The critical dependency chain is:
-
-```text
-A1 bootstrap
-  -> A2 tenant/data-source scope
-  -> A3 session + A4 capability/authorization
-  -> A5 WebCore reconciliation + A6 audit/trace
-  -> B1 typed query platform + A7 Screen Registry
-  -> F1 shell + F2 Grid/mobile primitives
-  -> per-screen read slices
-T1 Tool verification -> auth adapter -> login/route acceptance
-DB/ERP catalog + C# evidence -> B2/B3 command bindings -> mutation slices
-B4 scope/concurrency evidence -> retry/conflict UX -> E2E pilot release
-```
+from it. The issue graph owns the exact predecessor edges. A1 bootstraps the tree and CI; A2 tenant resolution and A3 sessions follow independently. A4 establishes authority before integrated query/command handlers; A6 supplies their audit boundary. A5 owns persistence reconciliation, A7/R3 config verification, and T1/B2/B4 actual legacy/catalog/authority evidence. Integrated pilots consume F1/F2/F3, B1/B3/B5 and their source-backed bindings; F8/F9 also require F4 reads. B4 owns authority, B5 concurrency and uncertain completion. Q4 follows every listed pilot and operational gate.
 
 The graph has 31 canonical issues (#12–42). Its historical 16 READY/BOUNDS and
 15 BLOCKED labels describe planning disposition, not current start eligibility.
@@ -550,7 +535,7 @@ All implementation remains unauthorized in this run. After authorization,
 respect each dependency edge before starting; only independent ready nodes may
 run in parallel. Pilot writes and internal-transfer bindings additionally need
 their evidence gates. F4/#31 covers reads; F9/#42 owns inbound write evidence
-and the future bounded mutation slice. Q4/#41 requires verified F5–F9 outcomes,
+and the future bounded mutation slice. Q4/#41 requires verified F4–F9 outcomes,
 B5, Q1–Q3, R1, R2, R4 and R5; read-only F4 alone cannot satisfy inbound acceptance.
 
 ## 22. READY/BLOCKED dependency ledger
@@ -653,3 +638,40 @@ implied. Each enabled action needs field/permission/state mappings, transaction
 ownership, side effects, concurrency, idempotency and authoritative reread.
 B5/#24 and Q4/#41 must cover worker loss after a possible commit and ensure
 reconciliation precedes retry.
+
+## 26. Guide intake, adversarial dispositions and scheduled coding handoff
+
+### Authority and consistency
+
+`PROJECT_STATE` owns current phase/start state; `SOURCE_BASELINE` owns source identities; this plan owns the integrated design; the issue graph owns 31 unique nodes/dependencies; the scheduled plan owns ten lane assignments and run mechanics; specialist contracts own their semantics. Companion documents reference their owner rather than copy conflicting executable rules. Dated audits preserve the decision at their original head with explicit supersession. The 17-finding document audit is `../reviews/DOCUMENT_CONSISTENCY_AUDIT_20261001.md`.
+
+The new guide adds a provenance-tagged 293-pair, nine-consumer source-search index and all 21 reported LYT positions. It supplies historical menu/form/variant and hook/control verification leads, not proof that the current Medcom runtime implements them. Medcom remains at the canonical 7,985 column declarations; another database's old 403-table/75-trigger inventory cannot replace its 583-table/3-distinct-trigger dump inventory. Raw baseline archive access was not available in this run. No Phase 1 seven-gate closure, build, live attack or application CI success is inferred.
+
+### Normative repairs from the multi-role review
+
+The case-by-case attacks and acceptance belong to `../reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md` and `../reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md`. They supplement existing risk classes, with existing issue owners, rather than create competing catalogs or implementations. Every enabled affected slice must link its applicable cases and actual results.
+
+| Failure class | Required plan/contract disposition | Primary implementation/evidence owners |
+|---|---|---|
+| Conflicting/non-unique config and variant identity | Source/build/consumer/FID/Para/PFID/row identity; collision quarantine; previous-good publication; no inferred unique constraint or DELETE-FID maintenance | A7/#18, R3/#26, B2/#21 |
+| Sparse/encoded LYT, LYS key identity, differing empty defaults and unsupported controls | Preserve empty/tail fields and contextual keys; golden/negative parser fixtures; explicit defaults; unsupported executable key/script fails closed; legacy round-trip disabled until proved | A7/#18, R3/#26 |
+| Misnamed sales pilot, disabled AP Order, stock/consignment versus internal transfer | Requested Web intent and observed caption are separate; approved-build/menu/handler equivalence and rollout decision; five fixed pilots; incoming/status optional | F4/#31, F5/#32, F6/#33, F8/#35, F9/#42 |
+| Multi-detail, derived/read-only dataset, rounding, trigger and delayed hook loss | Per-dataset writable field/key and action-specific transaction/completion matrix; defer final success until required effect is authoritative; never generic CRUD from names | B2/#21, B3/#22, B5/#24, F5–F9 |
+| Tool shared user state, unsafe startup DDL, saturation and missing vendor dependency | Static-first/disposable runtime environment; dedicated authenticated-session process context; generation fence, bounded admission/queue/capacity, controlled dependency/license provisioning | T1/#19, B4/#23, A3/#14 |
+| Lost ACK or business/ledger cross-DB gap | Tenant/principal/action/key/fingerprint scope; reservation/dispatch/commit/ACK/ledger gap tests; external outcome ledger and action-specific authoritative reconciliation; uncertain effect blocks replay | B3/#22, B5/#24, Q4/#41 |
+| Dirty tab, bfcache restore, revoked role, company switch and idle bypass | Server-owned session/authority generation; scoped caches/drafts; no passive traffic activity; no automatic mutation replay after reauthentication; safe persistent recovery | A3/#14, A4/#15, F3/#30, Q1/#36 |
+| Virtual focus, full-filter totals/select-all, query drift and masked export | Logical row/field identity and focus; declared page/filter universe/version; allow-listed server summary/bulk contract; field/export authorization independently rechecked | F2/#29, B1/#20, R2/#25, Q1/#36, Q2/#37 |
+| Legacy Forever1Day cache, external writer and realtime loss | Controlled cache refresh/restart runbook, version/freshness visibility, SWR/poll/manual/focus fallback; report immutable-run policy does not turn on SQL SNAPSHOT isolation | A7/#18, Q3/#38, R1/#39, R2/#25 |
+| Red/pending/stale-head CI, duplicate worker, stalled dependency and unsafe rollback | Four-to-six real tasks; switch while CI waits; same-session owned failure repair; exact-head drain; unique issue/path lease with fencing; single integration queue; preserve business commits on backout | A1/#12, R5/#40, Q4/#41, L01 coordinator |
+
+### Startability and delivery gates
+
+1. Complete this documentation reconciliation and independent second-pass review; persist it on the existing Draft PR #43. Review/integrate the canonical plan before scheduled coding consumes it.
+2. The user has authorized preparing the future implementation workflow. A1 source-free solution/contract/test/CI bootstrap can become eligible after plan integration, a valid lease and runtime/tool preflight. Other platform tasks follow actual graph predecessors; historical READY never means those predecessors completed. Fake legacy auth, in-memory domain substitutes or guessed SQL cannot satisfy a business slice.
+3. B2/T1/R3 investigate only when their approved source/control environment is available. Until then select independent test design, source-gap disposition or source-free contracts; do not mark a source gate closed. Current eligible application starts remain zero in this preparation.
+4. No legacy login, production SQL write, pilot mutation or release is enabled until its exact authority/state/transaction/side-effect/concurrency/completion evidence and acceptance are proved. The guide alone cannot close these gates.
+5. The ten-lane plan is a **plan**, with zero automation instances created/changed by this run. Activation later reconciles the live existing Medcom schedules within the ten-task ceiling; scheduling is not a merge/release approval.
+6. A code session selects 4–6 meaningful tasks with verification, starts CI early, consumes independent nonconflicting work while queued/running, and repairs every actionable current-head CI failure, including inherited failures, before closing. Reserve repair/drain capacity; do not admit unlimited waiting work. External provider/runtime failures are recorded precisely and keep the head blocked; no claim can guarantee an unavailable provider will recover.
+7. Only the coordinator integrates reviewed exact-head green work through the current base; contributors push their own fenced lease branches. Rebase/shared-contract changes invalidate prior readiness. No failing/pending check or unresolved critical acceptance finding is bypassed to meet a task count.
+
+Planning disposition: stronger coverage with named owners, explicit repairs and adversarial cases. Implementation effectiveness and remaining source/runtime evidence are still unproved. Further discoveries must be classified against these cases or added as a new owner-bound case, never dismissed merely because a review already exists.
