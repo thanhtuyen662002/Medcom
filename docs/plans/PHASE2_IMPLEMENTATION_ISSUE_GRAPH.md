@@ -90,3 +90,54 @@ Every created Issue must include:
 - owner lane and handoff artifact.
 
 No giant “implement the backend” or “implement the frontend” Issue is allowed.
+
+
+## 2026-10-01 Lead correction: inbound coverage, isolation, and readiness
+
+This correction supersedes earlier conflicting status definitions and dependency rows in this file. The current run authorizes planning and documentation only; it does not authorize production code. A reviewed design never overrides this run-level gate.
+
+### Readiness fields
+
+Track design and implementation start separately in every Issue and status record:
+
+- design_status: reviewed, needs_evidence, or needs_decision.
+- start_status: eligible, waiting_dependencies, waiting_evidence, waiting_runtime, or waiting_authorization.
+- depends_on: canonical GitHub issue numbers, not unresolved shorthand.
+- evidence_blockers: exact source artifact, object, handler, runtime observation, or owner needed.
+
+READY means the bounded design is reviewed and every dependency and authorization gate is satisfied. READY WITH BOUNDS permits only the expressly named subset after its dependencies and authorization gate. Neither state bypasses the current planning-only authorization. DONE still requires reviewed implementation and green CI.
+
+### F9 inbound request mutation slice
+
+F4 / issue #31 remains read-only. F9 / issue #42 owns any future write slice for IV_InboundRequestFrm and the candidate IV_InboundRequestTbl / IV_InboundRequestDetailsTbl bindings. F9 is BLOCKED on issues #15, #17, #18, #19, #20, #21, #22, #23, #24, #28, #29, #30 and source-backed ERP/C#/SQL evidence. The exact enabled actions, field bindings, permissions, validation, procedure signatures, transaction boundary, state transitions, concurrency and reread must be verified first. Request entry does not imply inventory receipt, stock posting, approval, cancellation or deletion. Q4 / issue #41 depends on F9 as well as F5–F8, B5, Q1–Q3, R1, R2, R4 and R5.
+
+### Tool.dll user isolation boundary
+
+Static metadata verifies Connector.UserLogin, Connector.UserGroup and Connector.UserFullName are static user identity properties; it does not establish the full mutable process state, thread safety, reset, logout or cleanup behavior. Until controlled runtime evidence closes T1 / issue #19, do not multiplex different authenticated ERP users through one live Tool.dll context. Bind each worker to immutable server-resolved tenant, company, data source, authenticated ERP user and permission/session generation. Fail closed on missing or mismatched context and retire or invalidate the worker after logout, timeout, revocation, context mismatch or failure. Same-company users require isolation too. Do not treat restoring these three properties, a per-call lock, or AsyncLocal alone as proof of safety.
+
+### Transport contract boundary
+
+Proposed Web contracts may define stable ScreenId, QueryId and ActionId; opaque record/detail references; typed and versioned DTOs; bounded paging and allow-listed filter/sort operators; validation codes and safe messages; correlation and idempotency keys; explicit conflict and OutcomeUnknown results; and authoritative rereads. These are proposed API contracts, not extracted ERP/SQL facts. Do not invent columns, rowversion support, parameters, defaults, permission precedence or business transitions. The browser never supplies SQL, table/view/procedure names, connection selection or tenant/user authority.
+
+### Canonical issue map
+
+| Graph ID | GitHub issue | Graph ID | GitHub issue |
+|---|---:|---|---:|
+| A1 | #12 | A2 | #13 |
+| A3 | #14 | A4 | #15 |
+| A5 | #16 | A6 | #17 |
+| A7 | #18 | T1 | #19 |
+| B1 | #20 | B2 | #21 |
+| B3 | #22 | B4 | #23 |
+| B5 | #24 | R2 | #25 |
+| R3 | #26 | R4 | #27 |
+| F1 | #28 | F2 | #29 |
+| F3 | #30 | F4 | #31 |
+| F5 | #32 | F6 | #33 |
+| F7 | #34 | F8 | #35 |
+| Q1 | #36 | Q2 | #37 |
+| Q3 | #38 | R1 | #39 |
+| R5 | #40 | Q4 | #41 |
+| F9 | #42 | TRC-DB-001 | #21 |
+
+B4 is one node, owned by issue #23; its appearance in more than one lane is a shared reference, not a separate node or count. B2 / issue #21 is the single owner of TRC-DB-001 row-level catalog evidence. The implementation graph now has 31 issues: 16 design-ready/bounded candidates and 15 start-blocked issues. The current run-level code authorization is still false.
