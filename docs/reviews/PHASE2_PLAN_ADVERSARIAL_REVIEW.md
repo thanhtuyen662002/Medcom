@@ -23,12 +23,12 @@ closed merely because a heading exists.
 | Perspective / attack | Attempt to break | Finding | Disposition |
 |---|---|---|---|
 | Senior Windows ERP engineer | Assume every DAT layout is a form and every RPX is reachable | DAT/RPX package evidence does not prove menu reachability, runtime hooks or authorization | **FIXED:** plan requires stable IDs, reachability UNKNOWN, typed report adapter and per-screen traceability. `F5`, `R2`, `R3` remain blockers. |
-| Tool/legacy runtime engineer | Guess Tool.dll class, target runtime, login return code or thread model | The baseline has no direct API/source proof | **BLOCKED T1:** verify target/architecture/dependencies, login/logout/validate, permission APIs, thread safety, disposal, timeout and ambiguous results; acceptance is adapter/bridge contract tests. |
+| Tool/legacy runtime engineer | Guess Tool.dll class, target runtime, login return code or thread model | Supplied Tools.dll metadata proves API shape and .NETFramework v4.6.2 target, but not runtime behavior | **BLOCKED T1:** verify actual host/dependencies, login/logout/validate, permission APIs, thread safety, disposal, timeout and ambiguous results; acceptance is adapter/bridge contract tests. |
 | C# backend architect | Let Tool types, SQL names or client-selected DBs leak into application contracts | A generic repository or browser-supplied object could bypass policy | **FIXED:** typed Contracts and adapter boundary; A2/A4/B1 tests reject arbitrary object IDs and client data-source selection. |
 | SQL Server DBA | Treat aggregate object counts as a complete catalog; ignore keyless tables, triggers, locks and options | DB gate lacks row-level catalog/dependency export; 50 keyless tables and mixed XACT_ABORT are real hazards | **BLOCKED TRC-DB-001/B2/B3:** sanitized catalog, dependency edges and per-command transaction mapping; no invented key or blanket retry. |
 | SQL injection reviewer | Send DAT FieldID, aliases, sort or SP names through the browser | Metadata contains aliases and executable-looking values | **FIXED:** allow-listed Query Adapter, server-owned resolution, unresolved alias fail-closed, no arbitrary SQL; tamper tests in Q1. |
 | Accounting operator | Approve or post a document after its state changed in another client | A visible button is not proof of current state | **FIXED/BLOCKED:** revalidate state immediately before command; exact state/SP mapping for approval is `F7`; stale/conflict/outcome-unknown UI is mandatory. |
-| Warehouse operator | Perform an internal transfer without knowing source/destination/status or lose a write on a slow network | Exact internal-transfer binding and procedure contract are unknown | **BLOCKED F6/B2/B3:** generic shell may proceed, vertical slice cannot; acceptance requires exact form/data/action evidence and concurrent state tests. |
+| Warehouse operator | Perform an internal transfer without knowing source/destination/status or lose a write on a slow network | Exact internal-transfer binding and procedure contract are unknown | **BLOCKED F6/B2/B3:** platform design can proceed; implementation and the vertical slice remain separately gated; acceptance requires exact form/data/action evidence and concurrent state tests. |
 | Purchasing operator | Retry a purchase order/approval command after a lost response | Duplicate document or approval is harmful | **FIXED:** idempotency fingerprint, authoritative reread and OutcomeUnknown; B3/B5 acceptance covers lost ACK, duplicate and partial transaction. |
 | Sales operator | Open a known URL when menu visibility is stale or use a hidden export | UI-only authorization is bypassable | **FIXED:** route, API/data, mutation and export gates are independent; F5 and Q1 test crafted requests and no existence leak. |
 | Security engineer | Widen tenant/company/branch/storehouse or reuse a cache/hub group from another customer | Pool, cache, jobs and groups can accidentally retain scope | **FIXED:** scope key and resolver rules cover connection checkout, cache, job restoration, audit and SignalR; Q1 tenant-identical-ID tests. |
@@ -95,15 +95,36 @@ closed merely because a heading exists.
 | F5 | ERP + Frontend | Sales Vietnamese menu/action equivalence is not proven | Evidence maps path to form and action/state matrix; route/menu test passes. |
 | F6 | ERP + DB + Frontend | Internal-transfer form/master/detail/query binding is UNKNOWN | Exact binding and workflow evidence; concurrent transition and scope tests pass. |
 | F7 | ERP + DB | Purchase approval transition/state is not proven | State/action/SP/lock/idempotency contract and allowed/denied E2E tests. |
+| F8/F9 | ERP + DB + Frontend | Purchase-order and inbound-request write contracts are not proven; F4 is read-only | Source-backed actions/fields/state/transaction/concurrency and authoritative reread; F9 does not imply stock receipt or posting. |
 | B4/B5 | Architecture + DB | Permission precedence, scope source and version/retry semantics unknown | Server-derived scope and stale/duplicate/concurrent tests pass for each pilot. |
 | R1/R2/R3/R4/R5 | Architecture + SRE | Event source, report reachability, DAT source/grammar and DR facts unknown | Evidence plus failure/recovery test for each bounded area. |
 
+## Follow-up attacks and corrections
+
+| Attack | Finding | Disposition and owner |
+| --- | --- | --- |
+| Complete inbound pilot using only F4 read surfaces | Mutation ownership was absent | Planning gap corrected by F9/[#42](https://github.com/thanhtuyen662002/Medcom/issues/42); actual actions and mappings remain BLOCKED. Q4/#41 now requires F9. |
+| Reuse one Tools process for two users in the same company | Static identity properties create a process-state hazard | Master section 12 requires a dedicated process context per authenticated ERP session and serialized calls. T1/#19 must prove runtime isolation; three-property reset, AsyncLocal or a per-call lock is insufficient. |
+| Kill a timed-out worker and retry its write | Worker death does not prove SQL rollback | B5/#24 and Q4/#41 require ledger/correlation outside the worker, OutcomeUnknown and authoritative reconciliation before retry. |
+| Start all foundation issues in Wave 0 | Parallel instructions contradicted dependency edges | Graph waves now obey prerequisites; historical READY labels do not mark a dependency complete or grant authorization. |
+| Count B4 twice and omit the new pilot owner | Count and issue-range drift | Graph lists B4 once, maps canonical links and contains 31 issues, #12–42. No issue is authorized to start code in this run. |
+| Treat DTO names as a complete browser contract | Types, bounds and error semantics were underspecified | Master section 25 defines proposed envelopes; action-specific fields and SQL/state/concurrency semantics remain source-gated. |
+| Treat a completeness heading as Phase1 acceptance | Earlier conclusion overstated readiness | PROJECT_STATE and completeness audit now record coverage_reviewed_evidence_pending. Seven Phase1 gates remain authoritative. |
+
+Expected outcomes include same-company distinct-user isolation, no context reuse
+after logout/revoke/timeout, late worker results fenced by session generation,
+and no automatic replay after possible commit. These are future acceptance
+scenarios, not tests executed or passed by this review.
+
 ## Review conclusion
 
-The master plan survives the attack as an implementation launchpad because it
-does not use UX visibility as security, push as correctness, aggregate counts as
-catalog coverage, or inferred legacy behavior as fact. The residual blockers are
-small enough to run in parallel with generic foundation work. The Lead must
-re-run this review after T1, TRC-DB-001 and the pilot binding issues close; any
-new failure must be fixed in the plan or added to this table before a pilot
-release is declared.
+The follow-up closes the identified documentation gaps in ownership, dependency
+ordering, transport boundaries and conservative Tools isolation. It does not
+prove runtime isolation, SQL correctness, pilot behavior or release readiness.
+The current disposition is **coverage reviewed; evidence pending**. Implementation
+is not authorized in this planning run.
+
+Lead must re-audit the source and runtime blockers after evidence arrives and
+re-run the seven Phase1 gates before any phase transition. Later implementation
+requires reviewed contracts, completed dependencies, relevant evidence and
+explicit authorization; a reviewed plan alone cannot make a blocked issue eligible.
