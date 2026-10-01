@@ -52,3 +52,9 @@ Until proven, each item is UNKNOWN/BLOCKED rather than inferred.
 - no Tool.dll type/reference exists in Web API/Application/Contracts/frontend;
 - direct route/API authorization remains server-authoritative even if legacy capability resolution is cached;
 - deployment can disable/rollback Web compatibility components without modifying committed business data or SQL Server runtime options.
+
+## Static binary evidence now available
+
+The owner supplied Tools.dll; sanitized metadata is recorded in docs/erp/TOOL_DLL_METADATA_EVIDENCE.md. The binary is Tools version 7.9.9767.36959, targets .NETFramework,Version=v4.6.2, has an I386 ILOnly PE shape, and references .NET Framework desktop, Janus and ActiveReports libraries. Public metadata confirms typed shapes for VerifyUserPass, GetPermission, GetPermissionWithMenuPara, CheckAdminUserGroup, user and branch context properties, and approval permission checks.
+
+This evidence narrows the adapter design but does not close the runtime gate. No public Login, Logout, Logon or Logoff method name was found, and VerifyUserPass must not be relabeled as a complete login or session operation. PermissionType is a value type with capability-shaped fields, not proof of authorization precedence or enforcement. Direct .NET 10 loading remains unverified; a private .NET Framework bridge remains an allowed and likely compatibility path until an isolated load and behavior test succeeds.

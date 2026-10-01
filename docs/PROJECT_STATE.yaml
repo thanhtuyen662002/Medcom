@@ -37,9 +37,10 @@ phase2:
   production_code_started: false
   ready_issue_count: 16
   blocked_issue_count: 14
+  tool_metadata_evidence: docs/erp/TOOL_DLL_METADATA_EVIDENCE.md
 remaining_blockers:
   - TRC-DB-001 row-level sanitized SQL catalog and dependency graph
-  - TRC-TOOL-001 direct Tool.dll runtime and API verification
+  - TRC-TOOL-001 Tool.dll runtime session semantics and direct-load versus bridge verification
   - exact internal-transfer ERP form and data binding
   - exhaustive ERP to Web to DB traceability
   - per-screen mutation, permission precedence and concurrency contracts
