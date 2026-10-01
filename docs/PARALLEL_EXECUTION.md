@@ -6,11 +6,25 @@ Five scheduled workstreams operate with staggered hourly starts.
 A worker blocked on one artifact must immediately choose the next independent item in its backlog: inventory, evidence verification, gap analysis, risk tests, cross-reference, documentation or remediation design. Waiting is not a valid end state while independent work exists.
 
 ## Lease rules
-- Draft PR = distributed lease for a bounded work package.
+- Draft PR = preferred distributed lease for a bounded work package.
 - Earliest valid active lease wins; later duplicate claims must close/rebase to non-overlapping work.
 - Stale/closed/merged PR references are not live leases.
 - Keep PRs small enough for review; split huge inventories into generated indexes plus human-readable summaries.
 - Lead may take over a stale lease only after proving inactivity/invalidity and documenting why.
+
+### Connector-resilient fallback lease
+GitHub connector write operations must be attempted sequentially, not as a burst of multiple independent mutations.
+
+If `create_pull_request` is rejected by the connector safety/mutation layer while branch writes still work:
+1. Do not stop the workstream.
+2. Do not create a second branch.
+3. The canonical workstream branch `agent/<workstream>-issue-<n>` plus its latest durable commit becomes the temporary fallback lease.
+4. Continue making small, reviewable commits on that same branch.
+5. Record the missing-PR condition in the workstream's next durable checkpoint when possible.
+6. Lead/Watchdog retries converting that exact branch into a Draft PR on a later cycle, one PR mutation at a time.
+7. Once a Draft PR exists, it supersedes the fallback branch lease immediately.
+
+A connector rejection is therefore a process degradation, not a project blocker, unless both branch writes and PR creation are unavailable. If all GitHub mutations fail, workers continue source analysis locally for the run, clearly report that the result is not yet durable, and retry persistence on the next cycle without duplicating work.
 
 ## Cross-workstream contracts
 - ERP Analysis publishes stable IDs for screens/forms/reports/config artifacts.
