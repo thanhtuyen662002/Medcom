@@ -31,17 +31,19 @@ Browser writes saved views/personalization through stable surface/element IDs. I
 
 All rows below bind to WEB-FILTER-CONTRACT and use a server allow-list. Client legacy FieldID/operator strings are descriptive input, never raw SQL authority.
 
+The [filter-family register](FILTER_FAMILY_TRACEABILITY_REGISTER.json) enumerates the exact **13 families / 24 artifacts / 600 serialized rows** recorded in the durable ERP evidence: 11 paired families and two standalone families. It retains 18 literal DB reference names and quarantines aliases in all 10 alias-bearing artifacts. These are proposed Web/API dispositions and verified packaged references; complete current DB object resolution, field/query semantics and deployment remain gated. This is filter-slice coverage, not an exhaustive 232-DAT or 786-RPX traceability claim. See [FILTER_TRACEABILITY_SCOPE_AUDIT.md](FILTER_TRACEABILITY_SCOPE_AUDIT.md).
+
 | ERP form/config | VERIFIED DB reference from DAT | API disposition | DB decision | Freshness |
 |---|---|---|---|---|
 | ERP-FRM-AP_OrderFrm / ERP-CFG-AP_OrderFrm_filter(_d) | DB-TABLE-dbo.AP_OrderTbl; DB-TABLE-dbo.AP_OrderDetailTbl | typed order-list query with separately modeled master/detail filters | FACADE | SWR ≤30s |
 | ERP-FRM-AP_PurchaseFrm / filter(_d) | DB-TABLE-dbo.AP_PurchaseTbl; DB-TABLE-dbo.AP_PurchaseDetailTbl | typed purchase query | FACADE | SWR ≤30s |
-| ERP-FRM-AR_InvoiceRequestFrm / filter(_d) | DB-TABLE-dbo.AR_InvoiceRequestTbl; DB-TABLE-dbo.AR_InvoiceRequestDetailTbl | typed invoice-request query | FACADE | SWR ≤30s |
-| ERP-FRM-AR_OrderByContractFrm / filter(_d) | DB-VIEW-dbo.AR_OrderViewData candidate; DB-TABLE-dbo.AR_OrderDetailTbl | typed contract-order query | FACADE | SWR ≤30s |
+| ERP-FRM-AR_InvoiceRequestFrm / filter(_d) | DB-TABLE-dbo.AR_InvoiceRequestTbl; DB-TABLE-dbo.AR_InvoiceRequestDetailTbl; master alias A UNKNOWN | typed invoice-request query; reject unresolved alias fields until mapped | FACADE | SWR ≤30s |
+| ERP-FRM-AR_OrderByContractFrm / filter(_d) | DB-VIEW-dbo.AR_OrderViewData candidate; DB-TABLE-dbo.AR_OrderDetailTbl; detail alias A UNKNOWN | typed contract-order query; reject unresolved alias fields until mapped | FACADE | SWR ≤30s |
 | ERP-FRM-AR_OrderShipFrm / filter(_d) | DB-TABLE-dbo.AR_OrderTbl; DB-TABLE-dbo.AR_OrderDetailTbl; aliases A/B UNKNOWN | typed shipping-order query; reject unresolved alias fields until mapped | FACADE | SWR ≤15–30s by operational acceptance |
 | ERP-FRM-AR_StockInputFrm / filter(_d) | DB-VIEW-dbo.vIS_Input candidate; DB-VIEW-dbo.vIS_InputDetail candidate | typed stock-input query | FACADE | SWR ≤15s |
 | ERP-FRM-GJ_BalanceItemFrm / filter | DB-TABLE-dbo.SY_BalanceItemTbl; DB-TABLE-dbo.CF_ItemTbl | typed balance-item query | FACADE | SWR ≤30s |
 | ERP-FRM-IV_InboundRequestFrm / filter(_d) | DB-TABLE-dbo.IV_InboundRequestTbl; DB-TABLE-dbo.IV_InboundRequestDetailsTbl; aliases A/B UNKNOWN | typed inbound-request query | FACADE | SWR ≤15s |
-| ERP-FRM-IV_IncomingShipmentStatusFrm / filter(_d) | DB-TABLE-dbo.IV_InboundRequestTbl; DB-TABLE-dbo.IV_InboundRequestDetailsTbl | typed incoming-shipment query | FACADE | SWR ≤15s |
+| ERP-FRM-IV_IncomingShipmentStatusFrm / filter(_d) | DB-TABLE-dbo.IV_InboundRequestTbl; DB-TABLE-dbo.IV_InboundRequestDetailsTbl; detail alias A UNKNOWN | typed incoming-shipment query; reject unresolved alias fields until mapped | FACADE | SWR ≤15s |
 | ERP-FRM-ItemGroupListFrm / filter | DB-TABLE-dbo.CF_ItemGroupTbl | typed reference query | FACADE | SWR ≤60s |
 
 The `DB-VIEW` type for AR_OrderViewData/vIS_* is a candidate classification based on naming in ERP evidence and must be reconciled against the DB catalog before promotion to VERIFIED DB object type.

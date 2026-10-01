@@ -1,0 +1,2087 @@
+{
+  "schema_version": 1,
+  "generated_on": "2026-10-02",
+  "status": "COMPLETE_DURABLE_FILTER_SLICE_ONLY__GATE4_REMAINS_PARTIAL",
+  "baseline_attributed": {
+    "filename": "ERP_Medcom2026(4).zip",
+    "sha256": "801cccb871fedce049ec3c446aeff819d7661ec94641a891d6013d4b86a0bd52",
+    "attributed_directory": "Layout/Medcom",
+    "basis": "existing authoritative-package evidence documents; raw archive not reinspected for this generation"
+  },
+  "extraction_sources": [
+    {
+      "role": "filter_evidence",
+      "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+      "sha256": "87a9165f370e30294d69a409e81c918f1f2425c2eeeb86d534d68d79762a14ad",
+      "line_count": 99
+    },
+    {
+      "role": "query_inventory",
+      "path": "docs/erp/DAT_FILTER_QUERY_INVENTORY.md",
+      "sha256": "e14ed16146118556f11e4c30cabf10f6ae1795c4ccc53ee741054bb8b8037cc4",
+      "line_count": 90
+    },
+    {
+      "role": "bound_contracts",
+      "path": "inventories/traceability/PHASE1_BOUND_CONTRACTS.md",
+      "sha256": "fd758158e2909a07d96ab0bf70afb6a445453dc118a6eab3fe43116f5b73252f",
+      "line_count": 115
+    },
+    {
+      "role": "closure_delta",
+      "path": "inventories/traceability/PHASE1_FILTER_CLOSURE_DELTA.md",
+      "sha256": "386a27eb711985bec82d490ee487cd18e99bb051519e7e9dbdb95f3f008de702",
+      "line_count": 33
+    }
+  ],
+  "coverage": {
+    "families": 13,
+    "paired_families": 11,
+    "standalone_families": 2,
+    "artifacts": 24,
+    "serialized_rows": 600,
+    "visible_rows": 526,
+    "hidden_rows": 74,
+    "literal_db_reference_names": 18,
+    "alias_bearing_artifacts": 10,
+    "members_exhaustive_for": "24 members explicitly enumerated in both durable filter inventories",
+    "not_exhaustive_for": [
+      "all 232 DAT artifacts",
+      "23 corroborated form identity members",
+      "786 candidate-current RPX members",
+      "234 backup RPX members",
+      "18 Office template members",
+      "full ERP-Web-DB catalog or runtime capability set"
+    ],
+    "gate2_closed": false,
+    "trc_db_001_closed": false,
+    "gate4_closed": false
+  },
+  "interpretation_rules": [
+    "VERIFIED labels retain source ERP structure/reference evidence only; generation verifies exact durable table extraction.",
+    "Web/API IDs and policy are proposed dispositions, not implemented routes, current ERP semantics or authorization.",
+    "Current DB kind/schema/definition/field resolution remains pending B2; identifiers in ERP are not proof of DB object kind.",
+    "No source field values, production filter values, raw SQL, secrets or new guide historical data rows are copied.",
+    "UNKNOWN semantics can be bounded by owner/acceptance/blocked behavior, but missing artifact membership and dump-extractable catalog data cannot be hidden as UNKNOWN."
+  ],
+  "families": [
+    {
+      "family_id": "ERP-CFG-DAT-FilterFamily-AP_ApprovePurchaseRequestListFrm",
+      "form_basename": "AP_ApprovePurchaseRequestListFrm",
+      "erp_form_candidate_id": "ERP-FRM-AP_ApprovePurchaseRequestListFrm",
+      "form_identity_scope": "filter basename association; does not prove executable class, navigation, business caption or authorization",
+      "pairing": "master/detail",
+      "artifact_count": 2,
+      "serialized_rows": 21,
+      "visible_rows": 19,
+      "hidden_rows": 2,
+      "members": [
+        {
+          "id": "ERP-CFG-AP_ApprovePurchaseRequestListFrm_filter",
+          "artifact_basename": "AP_ApprovePurchaseRequestListFrm_filter",
+          "family": "AP_ApprovePurchaseRequestListFrm",
+          "member_role": "master",
+          "serialized_rows": 10,
+          "visible_rows": 9,
+          "hidden_rows": 1,
+          "literal_db_reference_names": [
+            "AP_PurchaseRequestTbl"
+          ],
+          "alias_markers": [],
+          "evidence_level": "VERIFIED",
+          "evidence_scope": "persisted filter metadata as recorded by authoritative-package analysis; not runtime execution",
+          "source_citations": [
+            {
+              "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+              "line": 32
+            },
+            {
+              "path": "docs/erp/DAT_FILTER_QUERY_INVENTORY.md",
+              "line": 34
+            }
+          ],
+          "alias_quarantine": {
+            "required": false,
+            "target_status": "no alias marker recorded",
+            "target_mapping": null,
+            "policy": "Reject unresolved alias-prefixed fields; do not guess targets, expose a raw FieldID, or drop hidden criteria to force query execution"
+          },
+          "db_reference_resolution_status": "PENDING_B2_CATALOG_JOIN",
+          "runtime_field_contract_status": "UNKNOWN"
+        },
+        {
+          "id": "ERP-CFG-AP_ApprovePurchaseRequestListFrm_filter_d",
+          "artifact_basename": "AP_ApprovePurchaseRequestListFrm_filter_d",
+          "family": "AP_ApprovePurchaseRequestListFrm",
+          "member_role": "detail",
+          "serialized_rows": 11,
+          "visible_rows": 10,
+          "hidden_rows": 1,
+          "literal_db_reference_names": [
+            "AP_PurchaseRequestDetailTbl"
+          ],
+          "alias_markers": [
+            "A"
+          ],
+          "evidence_level": "VERIFIED",
+          "evidence_scope": "persisted filter metadata as recorded by authoritative-package analysis; not runtime execution",
+          "source_citations": [
+            {
+              "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+              "line": 33
+            },
+            {
+              "path": "docs/erp/DAT_FILTER_QUERY_INVENTORY.md",
+              "line": 35
+            }
+          ],
+          "alias_quarantine": {
+            "required": true,
+            "target_status": "UNKNOWN",
+            "target_mapping": null,
+            "policy": "Reject unresolved alias-prefixed fields; do not guess targets, expose a raw FieldID, or drop hidden criteria to force query execution"
+          },
+          "db_reference_resolution_status": "PENDING_B2_CATALOG_JOIN",
+          "runtime_field_contract_status": "UNKNOWN"
+        }
+      ],
+      "literal_db_reference_names": [
+        "AP_PurchaseRequestDetailTbl",
+        "AP_PurchaseRequestTbl"
+      ],
+      "web_disposition": {
+        "status": "PROPOSED_NOT_DEPLOYED",
+        "capability_id": "WEB-FILTER-CONTRACT",
+        "family_capability_id_proposed": "WEB-FILTER-FAMILY-AP_ApprovePurchaseRequestListFrm",
+        "preserve_master_detail_separation": true,
+        "preserve_hidden_rows": true
+      },
+      "api_disposition": {
+        "status": "PROPOSED_NOT_IMPLEMENTED",
+        "query_id_proposed": "API-QUERY-FILTER-AP_ApprovePurchaseRequestListFrm",
+        "purpose": "typed purchase-request approval query",
+        "execution_model": "server-owned typed compatibility facade",
+        "no_mutation_contract_inferred": true
+      },
+      "db_disposition": {
+        "status": "B2_RESOLUTION_PENDING",
+        "reuse_policy_proposed": "FACADE",
+        "literal_references_are_not_execution_authority": true,
+        "current_schema_kind_definition_and_field_resolution": "UNKNOWN until sanitized B2 catalog/dependency join; existing independently verified anchor facts retain their own evidence level"
+      },
+      "freshness_policy_proposed": {
+        "mode": "SWR",
+        "target_seconds": 30,
+        "authoritative_scope_and_permissions_rechecked": "before protected query/action; exact legacy timing UNKNOWN"
+      },
+      "bounded_unknowns": [
+        "FILTER-CATALOG-RESOLUTION",
+        "FILTER-GRAMMAR-PRECEDENCE",
+        "FILTER-PERMISSION-SCOPE",
+        "FILTER-API-READ-CONTRACT",
+        "FILTER-ALIAS-RESOLUTION"
+      ],
+      "architecture_source_citations": [
+        {
+          "path": "inventories/traceability/PHASE1_FILTER_CLOSURE_DELTA.md",
+          "line": 9
+        }
+      ],
+      "pilot_owner": {
+        "node": "F7",
+        "issue": 34,
+        "scope": "pilot intent/menu/action verification and future slice; this register proves no mutation"
+      }
+    },
+    {
+      "family_id": "ERP-CFG-DAT-FilterFamily-AP_OrderFrm",
+      "form_basename": "AP_OrderFrm",
+      "erp_form_candidate_id": "ERP-FRM-AP_OrderFrm",
+      "form_identity_scope": "filter basename association; does not prove executable class, navigation, business caption or authorization",
+      "pairing": "master/detail",
+      "artifact_count": 2,
+      "serialized_rows": 36,
+      "visible_rows": 29,
+      "hidden_rows": 7,
+      "members": [
+        {
+          "id": "ERP-CFG-AP_OrderFrm_filter",
+          "artifact_basename": "AP_OrderFrm_filter",
+          "family": "AP_OrderFrm",
+          "member_role": "master",
+          "serialized_rows": 22,
+          "visible_rows": 16,
+          "hidden_rows": 6,
+          "literal_db_reference_names": [
+            "AP_OrderTbl"
+          ],
+          "alias_markers": [],
+          "evidence_level": "VERIFIED",
+          "evidence_scope": "persisted filter metadata as recorded by authoritative-package analysis; not runtime execution",
+          "source_citations": [
+            {
+              "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+              "line": 34
+            },
+            {
+              "path": "docs/erp/DAT_FILTER_QUERY_INVENTORY.md",
+              "line": 36
+            }
+          ],
+          "alias_quarantine": {
+            "required": false,
+            "target_status": "no alias marker recorded",
+            "target_mapping": null,
+            "policy": "Reject unresolved alias-prefixed fields; do not guess targets, expose a raw FieldID, or drop hidden criteria to force query execution"
+          },
+          "db_reference_resolution_status": "PENDING_B2_CATALOG_JOIN",
+          "runtime_field_contract_status": "UNKNOWN"
+        },
+        {
+          "id": "ERP-CFG-AP_OrderFrm_filter_d",
+          "artifact_basename": "AP_OrderFrm_filter_d",
+          "family": "AP_OrderFrm",
+          "member_role": "detail",
+          "serialized_rows": 14,
+          "visible_rows": 13,
+          "hidden_rows": 1,
+          "literal_db_reference_names": [
+            "AP_OrderDetailTbl"
+          ],
+          "alias_markers": [],
+          "evidence_level": "VERIFIED",
+          "evidence_scope": "persisted filter metadata as recorded by authoritative-package analysis; not runtime execution",
+          "source_citations": [
+            {
+              "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+              "line": 35
+            },
+            {
+              "path": "docs/erp/DAT_FILTER_QUERY_INVENTORY.md",
+              "line": 37
+            }
+          ],
+          "alias_quarantine": {
+            "required": false,
+            "target_status": "no alias marker recorded",
+            "target_mapping": null,
+            "policy": "Reject unresolved alias-prefixed fields; do not guess targets, expose a raw FieldID, or drop hidden criteria to force query execution"
+          },
+          "db_reference_resolution_status": "PENDING_B2_CATALOG_JOIN",
+          "runtime_field_contract_status": "UNKNOWN"
+        }
+      ],
+      "literal_db_reference_names": [
+        "AP_OrderDetailTbl",
+        "AP_OrderTbl"
+      ],
+      "web_disposition": {
+        "status": "PROPOSED_NOT_DEPLOYED",
+        "capability_id": "WEB-FILTER-CONTRACT",
+        "family_capability_id_proposed": "WEB-FILTER-FAMILY-AP_OrderFrm",
+        "preserve_master_detail_separation": true,
+        "preserve_hidden_rows": true
+      },
+      "api_disposition": {
+        "status": "PROPOSED_NOT_IMPLEMENTED",
+        "query_id_proposed": "API-QUERY-FILTER-AP_OrderFrm",
+        "purpose": "typed order-list query",
+        "execution_model": "server-owned typed compatibility facade",
+        "no_mutation_contract_inferred": true
+      },
+      "db_disposition": {
+        "status": "B2_RESOLUTION_PENDING",
+        "reuse_policy_proposed": "FACADE",
+        "literal_references_are_not_execution_authority": true,
+        "current_schema_kind_definition_and_field_resolution": "UNKNOWN until sanitized B2 catalog/dependency join; existing independently verified anchor facts retain their own evidence level"
+      },
+      "freshness_policy_proposed": {
+        "mode": "SWR",
+        "target_seconds": 30,
+        "authoritative_scope_and_permissions_rechecked": "before protected query/action; exact legacy timing UNKNOWN"
+      },
+      "bounded_unknowns": [
+        "FILTER-CATALOG-RESOLUTION",
+        "FILTER-GRAMMAR-PRECEDENCE",
+        "FILTER-PERMISSION-SCOPE",
+        "FILTER-API-READ-CONTRACT"
+      ],
+      "architecture_source_citations": [
+        {
+          "path": "inventories/traceability/PHASE1_BOUND_CONTRACTS.md",
+          "line": 38
+        }
+      ],
+      "pilot_owner": {
+        "node": "F8",
+        "issue": 35,
+        "scope": "pilot intent/menu/action verification and future slice; this register proves no mutation"
+      }
+    },
+    {
+      "family_id": "ERP-CFG-DAT-FilterFamily-AP_PurchaseFrm",
+      "form_basename": "AP_PurchaseFrm",
+      "erp_form_candidate_id": "ERP-FRM-AP_PurchaseFrm",
+      "form_identity_scope": "filter basename association; does not prove executable class, navigation, business caption or authorization",
+      "pairing": "master/detail",
+      "artifact_count": 2,
+      "serialized_rows": 79,
+      "visible_rows": 71,
+      "hidden_rows": 8,
+      "members": [
+        {
+          "id": "ERP-CFG-AP_PurchaseFrm_filter",
+          "artifact_basename": "AP_PurchaseFrm_filter",
+          "family": "AP_PurchaseFrm",
+          "member_role": "master",
+          "serialized_rows": 41,
+          "visible_rows": 34,
+          "hidden_rows": 7,
+          "literal_db_reference_names": [
+            "AP_PurchaseTbl"
+          ],
+          "alias_markers": [],
+          "evidence_level": "VERIFIED",
+          "evidence_scope": "persisted filter metadata as recorded by authoritative-package analysis; not runtime execution",
+          "source_citations": [
+            {
+              "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+              "line": 36
+            },
+            {
+              "path": "docs/erp/DAT_FILTER_QUERY_INVENTORY.md",
+              "line": 38
+            }
+          ],
+          "alias_quarantine": {
+            "required": false,
+            "target_status": "no alias marker recorded",
+            "target_mapping": null,
+            "policy": "Reject unresolved alias-prefixed fields; do not guess targets, expose a raw FieldID, or drop hidden criteria to force query execution"
+          },
+          "db_reference_resolution_status": "PENDING_B2_CATALOG_JOIN",
+          "runtime_field_contract_status": "UNKNOWN"
+        },
+        {
+          "id": "ERP-CFG-AP_PurchaseFrm_filter_d",
+          "artifact_basename": "AP_PurchaseFrm_filter_d",
+          "family": "AP_PurchaseFrm",
+          "member_role": "detail",
+          "serialized_rows": 38,
+          "visible_rows": 37,
+          "hidden_rows": 1,
+          "literal_db_reference_names": [
+            "AP_PurchaseDetailTbl"
+          ],
+          "alias_markers": [],
+          "evidence_level": "VERIFIED",
+          "evidence_scope": "persisted filter metadata as recorded by authoritative-package analysis; not runtime execution",
+          "source_citations": [
+            {
+              "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+              "line": 37
+            },
+            {
+              "path": "docs/erp/DAT_FILTER_QUERY_INVENTORY.md",
+              "line": 39
+            }
+          ],
+          "alias_quarantine": {
+            "required": false,
+            "target_status": "no alias marker recorded",
+            "target_mapping": null,
+            "policy": "Reject unresolved alias-prefixed fields; do not guess targets, expose a raw FieldID, or drop hidden criteria to force query execution"
+          },
+          "db_reference_resolution_status": "PENDING_B2_CATALOG_JOIN",
+          "runtime_field_contract_status": "UNKNOWN"
+        }
+      ],
+      "literal_db_reference_names": [
+        "AP_PurchaseDetailTbl",
+        "AP_PurchaseTbl"
+      ],
+      "web_disposition": {
+        "status": "PROPOSED_NOT_DEPLOYED",
+        "capability_id": "WEB-FILTER-CONTRACT",
+        "family_capability_id_proposed": "WEB-FILTER-FAMILY-AP_PurchaseFrm",
+        "preserve_master_detail_separation": true,
+        "preserve_hidden_rows": true
+      },
+      "api_disposition": {
+        "status": "PROPOSED_NOT_IMPLEMENTED",
+        "query_id_proposed": "API-QUERY-FILTER-AP_PurchaseFrm",
+        "purpose": "typed purchase query",
+        "execution_model": "server-owned typed compatibility facade",
+        "no_mutation_contract_inferred": true
+      },
+      "db_disposition": {
+        "status": "B2_RESOLUTION_PENDING",
+        "reuse_policy_proposed": "FACADE",
+        "literal_references_are_not_execution_authority": true,
+        "current_schema_kind_definition_and_field_resolution": "UNKNOWN until sanitized B2 catalog/dependency join; existing independently verified anchor facts retain their own evidence level"
+      },
+      "freshness_policy_proposed": {
+        "mode": "SWR",
+        "target_seconds": 30,
+        "authoritative_scope_and_permissions_rechecked": "before protected query/action; exact legacy timing UNKNOWN"
+      },
+      "bounded_unknowns": [
+        "FILTER-CATALOG-RESOLUTION",
+        "FILTER-GRAMMAR-PRECEDENCE",
+        "FILTER-PERMISSION-SCOPE",
+        "FILTER-API-READ-CONTRACT"
+      ],
+      "architecture_source_citations": [
+        {
+          "path": "inventories/traceability/PHASE1_BOUND_CONTRACTS.md",
+          "line": 39
+        }
+      ]
+    },
+    {
+      "family_id": "ERP-CFG-DAT-FilterFamily-AP_PurposeRequestListFrm",
+      "form_basename": "AP_PurposeRequestListFrm",
+      "erp_form_candidate_id": "ERP-FRM-AP_PurposeRequestListFrm",
+      "form_identity_scope": "filter basename association; does not prove executable class, navigation, business caption or authorization",
+      "pairing": "master/detail",
+      "artifact_count": 2,
+      "serialized_rows": 26,
+      "visible_rows": 24,
+      "hidden_rows": 2,
+      "members": [
+        {
+          "id": "ERP-CFG-AP_PurposeRequestListFrm_filter",
+          "artifact_basename": "AP_PurposeRequestListFrm_filter",
+          "family": "AP_PurposeRequestListFrm",
+          "member_role": "master",
+          "serialized_rows": 14,
+          "visible_rows": 13,
+          "hidden_rows": 1,
+          "literal_db_reference_names": [
+            "AP_PurchaseRequestTbl"
+          ],
+          "alias_markers": [],
+          "evidence_level": "VERIFIED",
+          "evidence_scope": "persisted filter metadata as recorded by authoritative-package analysis; not runtime execution",
+          "source_citations": [
+            {
+              "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+              "line": 38
+            },
+            {
+              "path": "docs/erp/DAT_FILTER_QUERY_INVENTORY.md",
+              "line": 40
+            }
+          ],
+          "alias_quarantine": {
+            "required": false,
+            "target_status": "no alias marker recorded",
+            "target_mapping": null,
+            "policy": "Reject unresolved alias-prefixed fields; do not guess targets, expose a raw FieldID, or drop hidden criteria to force query execution"
+          },
+          "db_reference_resolution_status": "PENDING_B2_CATALOG_JOIN",
+          "runtime_field_contract_status": "UNKNOWN"
+        },
+        {
+          "id": "ERP-CFG-AP_PurposeRequestListFrm_filter_d",
+          "artifact_basename": "AP_PurposeRequestListFrm_filter_d",
+          "family": "AP_PurposeRequestListFrm",
+          "member_role": "detail",
+          "serialized_rows": 12,
+          "visible_rows": 11,
+          "hidden_rows": 1,
+          "literal_db_reference_names": [
+            "AP_PurchaseRequestDetailTbl"
+          ],
+          "alias_markers": [
+            "A"
+          ],
+          "evidence_level": "VERIFIED",
+          "evidence_scope": "persisted filter metadata as recorded by authoritative-package analysis; not runtime execution",
+          "source_citations": [
+            {
+              "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+              "line": 39
+            },
+            {
+              "path": "docs/erp/DAT_FILTER_QUERY_INVENTORY.md",
+              "line": 41
+            }
+          ],
+          "alias_quarantine": {
+            "required": true,
+            "target_status": "UNKNOWN",
+            "target_mapping": null,
+            "policy": "Reject unresolved alias-prefixed fields; do not guess targets, expose a raw FieldID, or drop hidden criteria to force query execution"
+          },
+          "db_reference_resolution_status": "PENDING_B2_CATALOG_JOIN",
+          "runtime_field_contract_status": "UNKNOWN"
+        }
+      ],
+      "literal_db_reference_names": [
+        "AP_PurchaseRequestDetailTbl",
+        "AP_PurchaseRequestTbl"
+      ],
+      "web_disposition": {
+        "status": "PROPOSED_NOT_DEPLOYED",
+        "capability_id": "WEB-FILTER-CONTRACT",
+        "family_capability_id_proposed": "WEB-FILTER-FAMILY-AP_PurposeRequestListFrm",
+        "preserve_master_detail_separation": true,
+        "preserve_hidden_rows": true
+      },
+      "api_disposition": {
+        "status": "PROPOSED_NOT_IMPLEMENTED",
+        "query_id_proposed": "API-QUERY-FILTER-AP_PurposeRequestListFrm",
+        "purpose": "typed purchase-request query",
+        "execution_model": "server-owned typed compatibility facade",
+        "no_mutation_contract_inferred": true
+      },
+      "db_disposition": {
+        "status": "B2_RESOLUTION_PENDING",
+        "reuse_policy_proposed": "FACADE",
+        "literal_references_are_not_execution_authority": true,
+        "current_schema_kind_definition_and_field_resolution": "UNKNOWN until sanitized B2 catalog/dependency join; existing independently verified anchor facts retain their own evidence level"
+      },
+      "freshness_policy_proposed": {
+        "mode": "SWR",
+        "target_seconds": 30,
+        "authoritative_scope_and_permissions_rechecked": "before protected query/action; exact legacy timing UNKNOWN"
+      },
+      "bounded_unknowns": [
+        "FILTER-CATALOG-RESOLUTION",
+        "FILTER-GRAMMAR-PRECEDENCE",
+        "FILTER-PERMISSION-SCOPE",
+        "FILTER-API-READ-CONTRACT",
+        "FILTER-ALIAS-RESOLUTION"
+      ],
+      "architecture_source_citations": [
+        {
+          "path": "inventories/traceability/PHASE1_FILTER_CLOSURE_DELTA.md",
+          "line": 10
+        }
+      ]
+    },
+    {
+      "family_id": "ERP-CFG-DAT-FilterFamily-AR_InvoiceRequestFrm",
+      "form_basename": "AR_InvoiceRequestFrm",
+      "erp_form_candidate_id": "ERP-FRM-AR_InvoiceRequestFrm",
+      "form_identity_scope": "filter basename association; does not prove executable class, navigation, business caption or authorization",
+      "pairing": "master/detail",
+      "artifact_count": 2,
+      "serialized_rows": 44,
+      "visible_rows": 36,
+      "hidden_rows": 8,
+      "members": [
+        {
+          "id": "ERP-CFG-AR_InvoiceRequestFrm_filter",
+          "artifact_basename": "AR_InvoiceRequestFrm_filter",
+          "family": "AR_InvoiceRequestFrm",
+          "member_role": "master",
+          "serialized_rows": 31,
+          "visible_rows": 24,
+          "hidden_rows": 7,
+          "literal_db_reference_names": [
+            "AR_InvoiceRequestTbl"
+          ],
+          "alias_markers": [
+            "A"
+          ],
+          "evidence_level": "VERIFIED",
+          "evidence_scope": "persisted filter metadata as recorded by authoritative-package analysis; not runtime execution",
+          "source_citations": [
+            {
+              "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+              "line": 40
+            },
+            {
+              "path": "docs/erp/DAT_FILTER_QUERY_INVENTORY.md",
+              "line": 42
+            }
+          ],
+          "alias_quarantine": {
+            "required": true,
+            "target_status": "UNKNOWN",
+            "target_mapping": null,
+            "policy": "Reject unresolved alias-prefixed fields; do not guess targets, expose a raw FieldID, or drop hidden criteria to force query execution"
+          },
+          "db_reference_resolution_status": "PENDING_B2_CATALOG_JOIN",
+          "runtime_field_contract_status": "UNKNOWN"
+        },
+        {
+          "id": "ERP-CFG-AR_InvoiceRequestFrm_filter_d",
+          "artifact_basename": "AR_InvoiceRequestFrm_filter_d",
+          "family": "AR_InvoiceRequestFrm",
+          "member_role": "detail",
+          "serialized_rows": 13,
+          "visible_rows": 12,
+          "hidden_rows": 1,
+          "literal_db_reference_names": [
+            "AR_InvoiceRequestDetailTbl"
+          ],
+          "alias_markers": [],
+          "evidence_level": "VERIFIED",
+          "evidence_scope": "persisted filter metadata as recorded by authoritative-package analysis; not runtime execution",
+          "source_citations": [
+            {
+              "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+              "line": 41
+            },
+            {
+              "path": "docs/erp/DAT_FILTER_QUERY_INVENTORY.md",
+              "line": 43
+            }
+          ],
+          "alias_quarantine": {
+            "required": false,
+            "target_status": "no alias marker recorded",
+            "target_mapping": null,
+            "policy": "Reject unresolved alias-prefixed fields; do not guess targets, expose a raw FieldID, or drop hidden criteria to force query execution"
+          },
+          "db_reference_resolution_status": "PENDING_B2_CATALOG_JOIN",
+          "runtime_field_contract_status": "UNKNOWN"
+        }
+      ],
+      "literal_db_reference_names": [
+        "AR_InvoiceRequestDetailTbl",
+        "AR_InvoiceRequestTbl"
+      ],
+      "web_disposition": {
+        "status": "PROPOSED_NOT_DEPLOYED",
+        "capability_id": "WEB-FILTER-CONTRACT",
+        "family_capability_id_proposed": "WEB-FILTER-FAMILY-AR_InvoiceRequestFrm",
+        "preserve_master_detail_separation": true,
+        "preserve_hidden_rows": true
+      },
+      "api_disposition": {
+        "status": "PROPOSED_NOT_IMPLEMENTED",
+        "query_id_proposed": "API-QUERY-FILTER-AR_InvoiceRequestFrm",
+        "purpose": "typed invoice-request query",
+        "execution_model": "server-owned typed compatibility facade",
+        "no_mutation_contract_inferred": true
+      },
+      "db_disposition": {
+        "status": "B2_RESOLUTION_PENDING",
+        "reuse_policy_proposed": "FACADE",
+        "literal_references_are_not_execution_authority": true,
+        "current_schema_kind_definition_and_field_resolution": "UNKNOWN until sanitized B2 catalog/dependency join; existing independently verified anchor facts retain their own evidence level"
+      },
+      "freshness_policy_proposed": {
+        "mode": "SWR",
+        "target_seconds": 30,
+        "authoritative_scope_and_permissions_rechecked": "before protected query/action; exact legacy timing UNKNOWN"
+      },
+      "bounded_unknowns": [
+        "FILTER-CATALOG-RESOLUTION",
+        "FILTER-GRAMMAR-PRECEDENCE",
+        "FILTER-PERMISSION-SCOPE",
+        "FILTER-API-READ-CONTRACT",
+        "FILTER-ALIAS-RESOLUTION"
+      ],
+      "architecture_source_citations": [
+        {
+          "path": "inventories/traceability/PHASE1_BOUND_CONTRACTS.md",
+          "line": 40
+        }
+      ],
+      "pilot_owner": {
+        "node": "F5",
+        "issue": 32,
+        "scope": "pilot intent/menu/action verification and future slice; this register proves no mutation"
+      },
+      "business_caption_status": "UNKNOWN current equivalence: historical guide says Yêu cầu xuất hóa đơn; planned pilot says Đề nghị bán hàng; F5 must resolve"
+    },
+    {
+      "family_id": "ERP-CFG-DAT-FilterFamily-AR_OrderByContractFrm",
+      "form_basename": "AR_OrderByContractFrm",
+      "erp_form_candidate_id": "ERP-FRM-AR_OrderByContractFrm",
+      "form_identity_scope": "filter basename association; does not prove executable class, navigation, business caption or authorization",
+      "pairing": "master/detail",
+      "artifact_count": 2,
+      "serialized_rows": 71,
+      "visible_rows": 62,
+      "hidden_rows": 9,
+      "members": [
+        {
+          "id": "ERP-CFG-AR_OrderByContractFrm_filter",
+          "artifact_basename": "AR_OrderByContractFrm_filter",
+          "family": "AR_OrderByContractFrm",
+          "member_role": "master",
+          "serialized_rows": 42,
+          "visible_rows": 34,
+          "hidden_rows": 8,
+          "literal_db_reference_names": [
+            "AR_OrderViewData"
+          ],
+          "alias_markers": [],
+          "evidence_level": "VERIFIED",
+          "evidence_scope": "persisted filter metadata as recorded by authoritative-package analysis; not runtime execution",
+          "source_citations": [
+            {
+              "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+              "line": 42
+            },
+            {
+              "path": "docs/erp/DAT_FILTER_QUERY_INVENTORY.md",
+              "line": 44
+            }
+          ],
+          "alias_quarantine": {
+            "required": false,
+            "target_status": "no alias marker recorded",
+            "target_mapping": null,
+            "policy": "Reject unresolved alias-prefixed fields; do not guess targets, expose a raw FieldID, or drop hidden criteria to force query execution"
+          },
+          "db_reference_resolution_status": "PENDING_B2_CATALOG_JOIN",
+          "runtime_field_contract_status": "UNKNOWN"
+        },
+        {
+          "id": "ERP-CFG-AR_OrderByContractFrm_filter_d",
+          "artifact_basename": "AR_OrderByContractFrm_filter_d",
+          "family": "AR_OrderByContractFrm",
+          "member_role": "detail",
+          "serialized_rows": 29,
+          "visible_rows": 28,
+          "hidden_rows": 1,
+          "literal_db_reference_names": [
+            "AR_OrderDetailTbl"
+          ],
+          "alias_markers": [
+            "A"
+          ],
+          "evidence_level": "VERIFIED",
+          "evidence_scope": "persisted filter metadata as recorded by authoritative-package analysis; not runtime execution",
+          "source_citations": [
+            {
+              "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+              "line": 43
+            },
+            {
+              "path": "docs/erp/DAT_FILTER_QUERY_INVENTORY.md",
+              "line": 45
+            }
+          ],
+          "alias_quarantine": {
+            "required": true,
+            "target_status": "UNKNOWN",
+            "target_mapping": null,
+            "policy": "Reject unresolved alias-prefixed fields; do not guess targets, expose a raw FieldID, or drop hidden criteria to force query execution"
+          },
+          "db_reference_resolution_status": "PENDING_B2_CATALOG_JOIN",
+          "runtime_field_contract_status": "UNKNOWN"
+        }
+      ],
+      "literal_db_reference_names": [
+        "AR_OrderDetailTbl",
+        "AR_OrderViewData"
+      ],
+      "web_disposition": {
+        "status": "PROPOSED_NOT_DEPLOYED",
+        "capability_id": "WEB-FILTER-CONTRACT",
+        "family_capability_id_proposed": "WEB-FILTER-FAMILY-AR_OrderByContractFrm",
+        "preserve_master_detail_separation": true,
+        "preserve_hidden_rows": true
+      },
+      "api_disposition": {
+        "status": "PROPOSED_NOT_IMPLEMENTED",
+        "query_id_proposed": "API-QUERY-FILTER-AR_OrderByContractFrm",
+        "purpose": "typed contract-order query",
+        "execution_model": "server-owned typed compatibility facade",
+        "no_mutation_contract_inferred": true
+      },
+      "db_disposition": {
+        "status": "B2_RESOLUTION_PENDING",
+        "reuse_policy_proposed": "FACADE",
+        "literal_references_are_not_execution_authority": true,
+        "current_schema_kind_definition_and_field_resolution": "UNKNOWN until sanitized B2 catalog/dependency join; existing independently verified anchor facts retain their own evidence level"
+      },
+      "freshness_policy_proposed": {
+        "mode": "SWR",
+        "target_seconds": 30,
+        "authoritative_scope_and_permissions_rechecked": "before protected query/action; exact legacy timing UNKNOWN"
+      },
+      "bounded_unknowns": [
+        "FILTER-CATALOG-RESOLUTION",
+        "FILTER-GRAMMAR-PRECEDENCE",
+        "FILTER-PERMISSION-SCOPE",
+        "FILTER-API-READ-CONTRACT",
+        "FILTER-ALIAS-RESOLUTION"
+      ],
+      "architecture_source_citations": [
+        {
+          "path": "inventories/traceability/PHASE1_BOUND_CONTRACTS.md",
+          "line": 41
+        }
+      ]
+    },
+    {
+      "family_id": "ERP-CFG-DAT-FilterFamily-AR_OrderComfirmFrm",
+      "form_basename": "AR_OrderComfirmFrm",
+      "erp_form_candidate_id": "ERP-FRM-AR_OrderComfirmFrm",
+      "form_identity_scope": "filter basename association; does not prove executable class, navigation, business caption or authorization",
+      "pairing": "master/detail",
+      "artifact_count": 2,
+      "serialized_rows": 60,
+      "visible_rows": 51,
+      "hidden_rows": 9,
+      "members": [
+        {
+          "id": "ERP-CFG-AR_OrderComfirmFrm_filter",
+          "artifact_basename": "AR_OrderComfirmFrm_filter",
+          "family": "AR_OrderComfirmFrm",
+          "member_role": "master",
+          "serialized_rows": 34,
+          "visible_rows": 26,
+          "hidden_rows": 8,
+          "literal_db_reference_names": [
+            "AR_OrderTbl"
+          ],
+          "alias_markers": [
+            "A"
+          ],
+          "evidence_level": "VERIFIED",
+          "evidence_scope": "persisted filter metadata as recorded by authoritative-package analysis; not runtime execution",
+          "source_citations": [
+            {
+              "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+              "line": 44
+            },
+            {
+              "path": "docs/erp/DAT_FILTER_QUERY_INVENTORY.md",
+              "line": 46
+            }
+          ],
+          "alias_quarantine": {
+            "required": true,
+            "target_status": "UNKNOWN",
+            "target_mapping": null,
+            "policy": "Reject unresolved alias-prefixed fields; do not guess targets, expose a raw FieldID, or drop hidden criteria to force query execution"
+          },
+          "db_reference_resolution_status": "PENDING_B2_CATALOG_JOIN",
+          "runtime_field_contract_status": "UNKNOWN"
+        },
+        {
+          "id": "ERP-CFG-AR_OrderComfirmFrm_filter_d",
+          "artifact_basename": "AR_OrderComfirmFrm_filter_d",
+          "family": "AR_OrderComfirmFrm",
+          "member_role": "detail",
+          "serialized_rows": 26,
+          "visible_rows": 25,
+          "hidden_rows": 1,
+          "literal_db_reference_names": [
+            "AR_OrderDetailTbl"
+          ],
+          "alias_markers": [],
+          "evidence_level": "VERIFIED",
+          "evidence_scope": "persisted filter metadata as recorded by authoritative-package analysis; not runtime execution",
+          "source_citations": [
+            {
+              "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+              "line": 45
+            },
+            {
+              "path": "docs/erp/DAT_FILTER_QUERY_INVENTORY.md",
+              "line": 47
+            }
+          ],
+          "alias_quarantine": {
+            "required": false,
+            "target_status": "no alias marker recorded",
+            "target_mapping": null,
+            "policy": "Reject unresolved alias-prefixed fields; do not guess targets, expose a raw FieldID, or drop hidden criteria to force query execution"
+          },
+          "db_reference_resolution_status": "PENDING_B2_CATALOG_JOIN",
+          "runtime_field_contract_status": "UNKNOWN"
+        }
+      ],
+      "literal_db_reference_names": [
+        "AR_OrderDetailTbl",
+        "AR_OrderTbl"
+      ],
+      "web_disposition": {
+        "status": "PROPOSED_NOT_DEPLOYED",
+        "capability_id": "WEB-FILTER-CONTRACT",
+        "family_capability_id_proposed": "WEB-FILTER-FAMILY-AR_OrderComfirmFrm",
+        "preserve_master_detail_separation": true,
+        "preserve_hidden_rows": true
+      },
+      "api_disposition": {
+        "status": "PROPOSED_NOT_IMPLEMENTED",
+        "query_id_proposed": "API-QUERY-FILTER-AR_OrderComfirmFrm",
+        "purpose": "typed order-confirmation query",
+        "execution_model": "server-owned typed compatibility facade",
+        "no_mutation_contract_inferred": true
+      },
+      "db_disposition": {
+        "status": "B2_RESOLUTION_PENDING",
+        "reuse_policy_proposed": "FACADE",
+        "literal_references_are_not_execution_authority": true,
+        "current_schema_kind_definition_and_field_resolution": "UNKNOWN until sanitized B2 catalog/dependency join; existing independently verified anchor facts retain their own evidence level"
+      },
+      "freshness_policy_proposed": {
+        "mode": "SWR",
+        "target_seconds": 30,
+        "authoritative_scope_and_permissions_rechecked": "before protected query/action; exact legacy timing UNKNOWN"
+      },
+      "bounded_unknowns": [
+        "FILTER-CATALOG-RESOLUTION",
+        "FILTER-GRAMMAR-PRECEDENCE",
+        "FILTER-PERMISSION-SCOPE",
+        "FILTER-API-READ-CONTRACT",
+        "FILTER-ALIAS-RESOLUTION"
+      ],
+      "architecture_source_citations": [
+        {
+          "path": "inventories/traceability/PHASE1_FILTER_CLOSURE_DELTA.md",
+          "line": 11
+        }
+      ]
+    },
+    {
+      "family_id": "ERP-CFG-DAT-FilterFamily-AR_OrderShipFrm",
+      "form_basename": "AR_OrderShipFrm",
+      "erp_form_candidate_id": "ERP-FRM-AR_OrderShipFrm",
+      "form_identity_scope": "filter basename association; does not prove executable class, navigation, business caption or authorization",
+      "pairing": "master/detail",
+      "artifact_count": 2,
+      "serialized_rows": 83,
+      "visible_rows": 74,
+      "hidden_rows": 9,
+      "members": [
+        {
+          "id": "ERP-CFG-AR_OrderShipFrm_filter",
+          "artifact_basename": "AR_OrderShipFrm_filter",
+          "family": "AR_OrderShipFrm",
+          "member_role": "master",
+          "serialized_rows": 53,
+          "visible_rows": 45,
+          "hidden_rows": 8,
+          "literal_db_reference_names": [
+            "AR_OrderTbl"
+          ],
+          "alias_markers": [
+            "A",
+            "B"
+          ],
+          "evidence_level": "VERIFIED",
+          "evidence_scope": "persisted filter metadata as recorded by authoritative-package analysis; not runtime execution",
+          "source_citations": [
+            {
+              "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+              "line": 46
+            },
+            {
+              "path": "docs/erp/DAT_FILTER_QUERY_INVENTORY.md",
+              "line": 48
+            }
+          ],
+          "alias_quarantine": {
+            "required": true,
+            "target_status": "UNKNOWN",
+            "target_mapping": null,
+            "policy": "Reject unresolved alias-prefixed fields; do not guess targets, expose a raw FieldID, or drop hidden criteria to force query execution"
+          },
+          "db_reference_resolution_status": "PENDING_B2_CATALOG_JOIN",
+          "runtime_field_contract_status": "UNKNOWN"
+        },
+        {
+          "id": "ERP-CFG-AR_OrderShipFrm_filter_d",
+          "artifact_basename": "AR_OrderShipFrm_filter_d",
+          "family": "AR_OrderShipFrm",
+          "member_role": "detail",
+          "serialized_rows": 30,
+          "visible_rows": 29,
+          "hidden_rows": 1,
+          "literal_db_reference_names": [
+            "AR_OrderDetailTbl"
+          ],
+          "alias_markers": [
+            "A"
+          ],
+          "evidence_level": "VERIFIED",
+          "evidence_scope": "persisted filter metadata as recorded by authoritative-package analysis; not runtime execution",
+          "source_citations": [
+            {
+              "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+              "line": 47
+            },
+            {
+              "path": "docs/erp/DAT_FILTER_QUERY_INVENTORY.md",
+              "line": 49
+            }
+          ],
+          "alias_quarantine": {
+            "required": true,
+            "target_status": "UNKNOWN",
+            "target_mapping": null,
+            "policy": "Reject unresolved alias-prefixed fields; do not guess targets, expose a raw FieldID, or drop hidden criteria to force query execution"
+          },
+          "db_reference_resolution_status": "PENDING_B2_CATALOG_JOIN",
+          "runtime_field_contract_status": "UNKNOWN"
+        }
+      ],
+      "literal_db_reference_names": [
+        "AR_OrderDetailTbl",
+        "AR_OrderTbl"
+      ],
+      "web_disposition": {
+        "status": "PROPOSED_NOT_DEPLOYED",
+        "capability_id": "WEB-FILTER-CONTRACT",
+        "family_capability_id_proposed": "WEB-FILTER-FAMILY-AR_OrderShipFrm",
+        "preserve_master_detail_separation": true,
+        "preserve_hidden_rows": true
+      },
+      "api_disposition": {
+        "status": "PROPOSED_NOT_IMPLEMENTED",
+        "query_id_proposed": "API-QUERY-FILTER-AR_OrderShipFrm",
+        "purpose": "typed shipping-order query",
+        "execution_model": "server-owned typed compatibility facade",
+        "no_mutation_contract_inferred": true
+      },
+      "db_disposition": {
+        "status": "B2_RESOLUTION_PENDING",
+        "reuse_policy_proposed": "FACADE",
+        "literal_references_are_not_execution_authority": true,
+        "current_schema_kind_definition_and_field_resolution": "UNKNOWN until sanitized B2 catalog/dependency join; existing independently verified anchor facts retain their own evidence level"
+      },
+      "freshness_policy_proposed": {
+        "mode": "SWR",
+        "target_seconds": 15,
+        "operational_acceptance_upper_seconds": 30,
+        "authoritative_scope_and_permissions_rechecked": "before protected query/action; exact legacy timing UNKNOWN"
+      },
+      "bounded_unknowns": [
+        "FILTER-CATALOG-RESOLUTION",
+        "FILTER-GRAMMAR-PRECEDENCE",
+        "FILTER-PERMISSION-SCOPE",
+        "FILTER-API-READ-CONTRACT",
+        "FILTER-ALIAS-RESOLUTION"
+      ],
+      "architecture_source_citations": [
+        {
+          "path": "inventories/traceability/PHASE1_BOUND_CONTRACTS.md",
+          "line": 42
+        }
+      ]
+    },
+    {
+      "family_id": "ERP-CFG-DAT-FilterFamily-AR_StockInputFrm",
+      "form_basename": "AR_StockInputFrm",
+      "erp_form_candidate_id": "ERP-FRM-AR_StockInputFrm",
+      "form_identity_scope": "filter basename association; does not prove executable class, navigation, business caption or authorization",
+      "pairing": "master/detail",
+      "artifact_count": 2,
+      "serialized_rows": 35,
+      "visible_rows": 30,
+      "hidden_rows": 5,
+      "members": [
+        {
+          "id": "ERP-CFG-AR_StockInputFrm_filter",
+          "artifact_basename": "AR_StockInputFrm_filter",
+          "family": "AR_StockInputFrm",
+          "member_role": "master",
+          "serialized_rows": 22,
+          "visible_rows": 18,
+          "hidden_rows": 4,
+          "literal_db_reference_names": [
+            "vIS_Input"
+          ],
+          "alias_markers": [],
+          "evidence_level": "VERIFIED",
+          "evidence_scope": "persisted filter metadata as recorded by authoritative-package analysis; not runtime execution",
+          "source_citations": [
+            {
+              "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+              "line": 48
+            },
+            {
+              "path": "docs/erp/DAT_FILTER_QUERY_INVENTORY.md",
+              "line": 50
+            }
+          ],
+          "alias_quarantine": {
+            "required": false,
+            "target_status": "no alias marker recorded",
+            "target_mapping": null,
+            "policy": "Reject unresolved alias-prefixed fields; do not guess targets, expose a raw FieldID, or drop hidden criteria to force query execution"
+          },
+          "db_reference_resolution_status": "PENDING_B2_CATALOG_JOIN",
+          "runtime_field_contract_status": "UNKNOWN"
+        },
+        {
+          "id": "ERP-CFG-AR_StockInputFrm_filter_d",
+          "artifact_basename": "AR_StockInputFrm_filter_d",
+          "family": "AR_StockInputFrm",
+          "member_role": "detail",
+          "serialized_rows": 13,
+          "visible_rows": 12,
+          "hidden_rows": 1,
+          "literal_db_reference_names": [
+            "vIS_InputDetail"
+          ],
+          "alias_markers": [],
+          "evidence_level": "VERIFIED",
+          "evidence_scope": "persisted filter metadata as recorded by authoritative-package analysis; not runtime execution",
+          "source_citations": [
+            {
+              "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+              "line": 49
+            },
+            {
+              "path": "docs/erp/DAT_FILTER_QUERY_INVENTORY.md",
+              "line": 51
+            }
+          ],
+          "alias_quarantine": {
+            "required": false,
+            "target_status": "no alias marker recorded",
+            "target_mapping": null,
+            "policy": "Reject unresolved alias-prefixed fields; do not guess targets, expose a raw FieldID, or drop hidden criteria to force query execution"
+          },
+          "db_reference_resolution_status": "PENDING_B2_CATALOG_JOIN",
+          "runtime_field_contract_status": "UNKNOWN"
+        }
+      ],
+      "literal_db_reference_names": [
+        "vIS_Input",
+        "vIS_InputDetail"
+      ],
+      "web_disposition": {
+        "status": "PROPOSED_NOT_DEPLOYED",
+        "capability_id": "WEB-FILTER-CONTRACT",
+        "family_capability_id_proposed": "WEB-FILTER-FAMILY-AR_StockInputFrm",
+        "preserve_master_detail_separation": true,
+        "preserve_hidden_rows": true
+      },
+      "api_disposition": {
+        "status": "PROPOSED_NOT_IMPLEMENTED",
+        "query_id_proposed": "API-QUERY-FILTER-AR_StockInputFrm",
+        "purpose": "typed stock-input query",
+        "execution_model": "server-owned typed compatibility facade",
+        "no_mutation_contract_inferred": true
+      },
+      "db_disposition": {
+        "status": "B2_RESOLUTION_PENDING",
+        "reuse_policy_proposed": "FACADE",
+        "literal_references_are_not_execution_authority": true,
+        "current_schema_kind_definition_and_field_resolution": "UNKNOWN until sanitized B2 catalog/dependency join; existing independently verified anchor facts retain their own evidence level"
+      },
+      "freshness_policy_proposed": {
+        "mode": "SWR",
+        "target_seconds": 15,
+        "authoritative_scope_and_permissions_rechecked": "before protected query/action; exact legacy timing UNKNOWN"
+      },
+      "bounded_unknowns": [
+        "FILTER-CATALOG-RESOLUTION",
+        "FILTER-GRAMMAR-PRECEDENCE",
+        "FILTER-PERMISSION-SCOPE",
+        "FILTER-API-READ-CONTRACT"
+      ],
+      "architecture_source_citations": [
+        {
+          "path": "inventories/traceability/PHASE1_BOUND_CONTRACTS.md",
+          "line": 43
+        }
+      ]
+    },
+    {
+      "family_id": "ERP-CFG-DAT-FilterFamily-GJ_BalanceItemFrm",
+      "form_basename": "GJ_BalanceItemFrm",
+      "erp_form_candidate_id": "ERP-FRM-GJ_BalanceItemFrm",
+      "form_identity_scope": "filter basename association; does not prove executable class, navigation, business caption or authorization",
+      "pairing": "standalone",
+      "artifact_count": 1,
+      "serialized_rows": 23,
+      "visible_rows": 20,
+      "hidden_rows": 3,
+      "members": [
+        {
+          "id": "ERP-CFG-GJ_BalanceItemFrm_filter",
+          "artifact_basename": "GJ_BalanceItemFrm_filter",
+          "family": "GJ_BalanceItemFrm",
+          "member_role": "standalone",
+          "serialized_rows": 23,
+          "visible_rows": 20,
+          "hidden_rows": 3,
+          "literal_db_reference_names": [
+            "SY_BalanceItemTbl",
+            "CF_ItemTbl"
+          ],
+          "alias_markers": [],
+          "evidence_level": "VERIFIED",
+          "evidence_scope": "persisted filter metadata as recorded by authoritative-package analysis; not runtime execution",
+          "source_citations": [
+            {
+              "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+              "line": 50
+            },
+            {
+              "path": "docs/erp/DAT_FILTER_QUERY_INVENTORY.md",
+              "line": 52
+            }
+          ],
+          "alias_quarantine": {
+            "required": false,
+            "target_status": "no alias marker recorded",
+            "target_mapping": null,
+            "policy": "Reject unresolved alias-prefixed fields; do not guess targets, expose a raw FieldID, or drop hidden criteria to force query execution"
+          },
+          "db_reference_resolution_status": "PENDING_B2_CATALOG_JOIN",
+          "runtime_field_contract_status": "UNKNOWN"
+        }
+      ],
+      "literal_db_reference_names": [
+        "CF_ItemTbl",
+        "SY_BalanceItemTbl"
+      ],
+      "web_disposition": {
+        "status": "PROPOSED_NOT_DEPLOYED",
+        "capability_id": "WEB-FILTER-CONTRACT",
+        "family_capability_id_proposed": "WEB-FILTER-FAMILY-GJ_BalanceItemFrm",
+        "preserve_master_detail_separation": false,
+        "preserve_hidden_rows": true
+      },
+      "api_disposition": {
+        "status": "PROPOSED_NOT_IMPLEMENTED",
+        "query_id_proposed": "API-QUERY-FILTER-GJ_BalanceItemFrm",
+        "purpose": "typed balance-item query",
+        "execution_model": "server-owned typed compatibility facade",
+        "no_mutation_contract_inferred": true
+      },
+      "db_disposition": {
+        "status": "B2_RESOLUTION_PENDING",
+        "reuse_policy_proposed": "FACADE",
+        "literal_references_are_not_execution_authority": true,
+        "current_schema_kind_definition_and_field_resolution": "UNKNOWN until sanitized B2 catalog/dependency join; existing independently verified anchor facts retain their own evidence level"
+      },
+      "freshness_policy_proposed": {
+        "mode": "SWR",
+        "target_seconds": 30,
+        "authoritative_scope_and_permissions_rechecked": "before protected query/action; exact legacy timing UNKNOWN"
+      },
+      "bounded_unknowns": [
+        "FILTER-CATALOG-RESOLUTION",
+        "FILTER-GRAMMAR-PRECEDENCE",
+        "FILTER-PERMISSION-SCOPE",
+        "FILTER-API-READ-CONTRACT"
+      ],
+      "architecture_source_citations": [
+        {
+          "path": "inventories/traceability/PHASE1_BOUND_CONTRACTS.md",
+          "line": 44
+        }
+      ]
+    },
+    {
+      "family_id": "ERP-CFG-DAT-FilterFamily-IV_InboundRequestFrm",
+      "form_basename": "IV_InboundRequestFrm",
+      "erp_form_candidate_id": "ERP-FRM-IV_InboundRequestFrm",
+      "form_identity_scope": "filter basename association; does not prove executable class, navigation, business caption or authorization",
+      "pairing": "master/detail",
+      "artifact_count": 2,
+      "serialized_rows": 63,
+      "visible_rows": 59,
+      "hidden_rows": 4,
+      "members": [
+        {
+          "id": "ERP-CFG-IV_InboundRequestFrm_filter",
+          "artifact_basename": "IV_InboundRequestFrm_filter",
+          "family": "IV_InboundRequestFrm",
+          "member_role": "master",
+          "serialized_rows": 38,
+          "visible_rows": 36,
+          "hidden_rows": 2,
+          "literal_db_reference_names": [
+            "IV_InboundRequestTbl"
+          ],
+          "alias_markers": [
+            "A",
+            "B"
+          ],
+          "evidence_level": "VERIFIED",
+          "evidence_scope": "persisted filter metadata as recorded by authoritative-package analysis; not runtime execution",
+          "source_citations": [
+            {
+              "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+              "line": 51
+            },
+            {
+              "path": "docs/erp/DAT_FILTER_QUERY_INVENTORY.md",
+              "line": 54
+            }
+          ],
+          "alias_quarantine": {
+            "required": true,
+            "target_status": "UNKNOWN",
+            "target_mapping": null,
+            "policy": "Reject unresolved alias-prefixed fields; do not guess targets, expose a raw FieldID, or drop hidden criteria to force query execution"
+          },
+          "db_reference_resolution_status": "PENDING_B2_CATALOG_JOIN",
+          "runtime_field_contract_status": "UNKNOWN"
+        },
+        {
+          "id": "ERP-CFG-IV_InboundRequestFrm_filter_d",
+          "artifact_basename": "IV_InboundRequestFrm_filter_d",
+          "family": "IV_InboundRequestFrm",
+          "member_role": "detail",
+          "serialized_rows": 25,
+          "visible_rows": 23,
+          "hidden_rows": 2,
+          "literal_db_reference_names": [
+            "IV_InboundRequestDetailsTbl"
+          ],
+          "alias_markers": [
+            "A"
+          ],
+          "evidence_level": "VERIFIED",
+          "evidence_scope": "persisted filter metadata as recorded by authoritative-package analysis; not runtime execution",
+          "source_citations": [
+            {
+              "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+              "line": 52
+            },
+            {
+              "path": "docs/erp/DAT_FILTER_QUERY_INVENTORY.md",
+              "line": 55
+            }
+          ],
+          "alias_quarantine": {
+            "required": true,
+            "target_status": "UNKNOWN",
+            "target_mapping": null,
+            "policy": "Reject unresolved alias-prefixed fields; do not guess targets, expose a raw FieldID, or drop hidden criteria to force query execution"
+          },
+          "db_reference_resolution_status": "PENDING_B2_CATALOG_JOIN",
+          "runtime_field_contract_status": "UNKNOWN"
+        }
+      ],
+      "literal_db_reference_names": [
+        "IV_InboundRequestDetailsTbl",
+        "IV_InboundRequestTbl"
+      ],
+      "web_disposition": {
+        "status": "PROPOSED_NOT_DEPLOYED",
+        "capability_id": "WEB-FILTER-CONTRACT",
+        "family_capability_id_proposed": "WEB-FILTER-FAMILY-IV_InboundRequestFrm",
+        "preserve_master_detail_separation": true,
+        "preserve_hidden_rows": true
+      },
+      "api_disposition": {
+        "status": "PROPOSED_NOT_IMPLEMENTED",
+        "query_id_proposed": "API-QUERY-FILTER-IV_InboundRequestFrm",
+        "purpose": "typed inbound-request query",
+        "execution_model": "server-owned typed compatibility facade",
+        "no_mutation_contract_inferred": true
+      },
+      "db_disposition": {
+        "status": "B2_RESOLUTION_PENDING",
+        "reuse_policy_proposed": "FACADE",
+        "literal_references_are_not_execution_authority": true,
+        "current_schema_kind_definition_and_field_resolution": "UNKNOWN until sanitized B2 catalog/dependency join; existing independently verified anchor facts retain their own evidence level"
+      },
+      "freshness_policy_proposed": {
+        "mode": "SWR",
+        "target_seconds": 15,
+        "authoritative_scope_and_permissions_rechecked": "before protected query/action; exact legacy timing UNKNOWN"
+      },
+      "bounded_unknowns": [
+        "FILTER-CATALOG-RESOLUTION",
+        "FILTER-GRAMMAR-PRECEDENCE",
+        "FILTER-PERMISSION-SCOPE",
+        "FILTER-API-READ-CONTRACT",
+        "FILTER-ALIAS-RESOLUTION"
+      ],
+      "architecture_source_citations": [
+        {
+          "path": "inventories/traceability/PHASE1_BOUND_CONTRACTS.md",
+          "line": 45
+        }
+      ],
+      "pilot_owner": {
+        "node": "F9",
+        "issue": 42,
+        "scope": "pilot intent/menu/action verification and future slice; this register proves no mutation"
+      }
+    },
+    {
+      "family_id": "ERP-CFG-DAT-FilterFamily-IV_IncomingShipmentStatusFrm",
+      "form_basename": "IV_IncomingShipmentStatusFrm",
+      "erp_form_candidate_id": "ERP-FRM-IV_IncomingShipmentStatusFrm",
+      "form_identity_scope": "filter basename association; does not prove executable class, navigation, business caption or authorization",
+      "pairing": "master/detail",
+      "artifact_count": 2,
+      "serialized_rows": 50,
+      "visible_rows": 47,
+      "hidden_rows": 3,
+      "members": [
+        {
+          "id": "ERP-CFG-IV_IncomingShipmentStatusFrm_filter",
+          "artifact_basename": "IV_IncomingShipmentStatusFrm_filter",
+          "family": "IV_IncomingShipmentStatusFrm",
+          "member_role": "master",
+          "serialized_rows": 35,
+          "visible_rows": 33,
+          "hidden_rows": 2,
+          "literal_db_reference_names": [
+            "IV_InboundRequestTbl"
+          ],
+          "alias_markers": [],
+          "evidence_level": "VERIFIED",
+          "evidence_scope": "persisted filter metadata as recorded by authoritative-package analysis; not runtime execution",
+          "source_citations": [
+            {
+              "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+              "line": 53
+            },
+            {
+              "path": "docs/erp/DAT_FILTER_QUERY_INVENTORY.md",
+              "line": 56
+            }
+          ],
+          "alias_quarantine": {
+            "required": false,
+            "target_status": "no alias marker recorded",
+            "target_mapping": null,
+            "policy": "Reject unresolved alias-prefixed fields; do not guess targets, expose a raw FieldID, or drop hidden criteria to force query execution"
+          },
+          "db_reference_resolution_status": "PENDING_B2_CATALOG_JOIN",
+          "runtime_field_contract_status": "UNKNOWN"
+        },
+        {
+          "id": "ERP-CFG-IV_IncomingShipmentStatusFrm_filter_d",
+          "artifact_basename": "IV_IncomingShipmentStatusFrm_filter_d",
+          "family": "IV_IncomingShipmentStatusFrm",
+          "member_role": "detail",
+          "serialized_rows": 15,
+          "visible_rows": 14,
+          "hidden_rows": 1,
+          "literal_db_reference_names": [
+            "IV_InboundRequestDetailsTbl"
+          ],
+          "alias_markers": [
+            "A"
+          ],
+          "evidence_level": "VERIFIED",
+          "evidence_scope": "persisted filter metadata as recorded by authoritative-package analysis; not runtime execution",
+          "source_citations": [
+            {
+              "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+              "line": 54
+            },
+            {
+              "path": "docs/erp/DAT_FILTER_QUERY_INVENTORY.md",
+              "line": 57
+            }
+          ],
+          "alias_quarantine": {
+            "required": true,
+            "target_status": "UNKNOWN",
+            "target_mapping": null,
+            "policy": "Reject unresolved alias-prefixed fields; do not guess targets, expose a raw FieldID, or drop hidden criteria to force query execution"
+          },
+          "db_reference_resolution_status": "PENDING_B2_CATALOG_JOIN",
+          "runtime_field_contract_status": "UNKNOWN"
+        }
+      ],
+      "literal_db_reference_names": [
+        "IV_InboundRequestDetailsTbl",
+        "IV_InboundRequestTbl"
+      ],
+      "web_disposition": {
+        "status": "PROPOSED_NOT_DEPLOYED",
+        "capability_id": "WEB-FILTER-CONTRACT",
+        "family_capability_id_proposed": "WEB-FILTER-FAMILY-IV_IncomingShipmentStatusFrm",
+        "preserve_master_detail_separation": true,
+        "preserve_hidden_rows": true
+      },
+      "api_disposition": {
+        "status": "PROPOSED_NOT_IMPLEMENTED",
+        "query_id_proposed": "API-QUERY-FILTER-IV_IncomingShipmentStatusFrm",
+        "purpose": "typed incoming-shipment query",
+        "execution_model": "server-owned typed compatibility facade",
+        "no_mutation_contract_inferred": true
+      },
+      "db_disposition": {
+        "status": "B2_RESOLUTION_PENDING",
+        "reuse_policy_proposed": "FACADE",
+        "literal_references_are_not_execution_authority": true,
+        "current_schema_kind_definition_and_field_resolution": "UNKNOWN until sanitized B2 catalog/dependency join; existing independently verified anchor facts retain their own evidence level"
+      },
+      "freshness_policy_proposed": {
+        "mode": "SWR",
+        "target_seconds": 15,
+        "authoritative_scope_and_permissions_rechecked": "before protected query/action; exact legacy timing UNKNOWN"
+      },
+      "bounded_unknowns": [
+        "FILTER-CATALOG-RESOLUTION",
+        "FILTER-GRAMMAR-PRECEDENCE",
+        "FILTER-PERMISSION-SCOPE",
+        "FILTER-API-READ-CONTRACT",
+        "FILTER-ALIAS-RESOLUTION"
+      ],
+      "architecture_source_citations": [
+        {
+          "path": "inventories/traceability/PHASE1_BOUND_CONTRACTS.md",
+          "line": 46
+        }
+      ]
+    },
+    {
+      "family_id": "ERP-CFG-DAT-FilterFamily-ItemGroupListFrm",
+      "form_basename": "ItemGroupListFrm",
+      "erp_form_candidate_id": "ERP-FRM-ItemGroupListFrm",
+      "form_identity_scope": "filter basename association; does not prove executable class, navigation, business caption or authorization",
+      "pairing": "standalone",
+      "artifact_count": 1,
+      "serialized_rows": 9,
+      "visible_rows": 4,
+      "hidden_rows": 5,
+      "members": [
+        {
+          "id": "ERP-CFG-ItemGroupListFrm_filter",
+          "artifact_basename": "ItemGroupListFrm_filter",
+          "family": "ItemGroupListFrm",
+          "member_role": "standalone",
+          "serialized_rows": 9,
+          "visible_rows": 4,
+          "hidden_rows": 5,
+          "literal_db_reference_names": [
+            "CF_ItemGroupTbl"
+          ],
+          "alias_markers": [],
+          "evidence_level": "VERIFIED",
+          "evidence_scope": "persisted filter metadata as recorded by authoritative-package analysis; not runtime execution",
+          "source_citations": [
+            {
+              "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+              "line": 55
+            },
+            {
+              "path": "docs/erp/DAT_FILTER_QUERY_INVENTORY.md",
+              "line": 53
+            }
+          ],
+          "alias_quarantine": {
+            "required": false,
+            "target_status": "no alias marker recorded",
+            "target_mapping": null,
+            "policy": "Reject unresolved alias-prefixed fields; do not guess targets, expose a raw FieldID, or drop hidden criteria to force query execution"
+          },
+          "db_reference_resolution_status": "PENDING_B2_CATALOG_JOIN",
+          "runtime_field_contract_status": "UNKNOWN"
+        }
+      ],
+      "literal_db_reference_names": [
+        "CF_ItemGroupTbl"
+      ],
+      "web_disposition": {
+        "status": "PROPOSED_NOT_DEPLOYED",
+        "capability_id": "WEB-FILTER-CONTRACT",
+        "family_capability_id_proposed": "WEB-FILTER-FAMILY-ItemGroupListFrm",
+        "preserve_master_detail_separation": false,
+        "preserve_hidden_rows": true
+      },
+      "api_disposition": {
+        "status": "PROPOSED_NOT_IMPLEMENTED",
+        "query_id_proposed": "API-QUERY-FILTER-ItemGroupListFrm",
+        "purpose": "typed reference query",
+        "execution_model": "server-owned typed compatibility facade",
+        "no_mutation_contract_inferred": true
+      },
+      "db_disposition": {
+        "status": "B2_RESOLUTION_PENDING",
+        "reuse_policy_proposed": "FACADE",
+        "literal_references_are_not_execution_authority": true,
+        "current_schema_kind_definition_and_field_resolution": "UNKNOWN until sanitized B2 catalog/dependency join; existing independently verified anchor facts retain their own evidence level"
+      },
+      "freshness_policy_proposed": {
+        "mode": "SWR",
+        "target_seconds": 60,
+        "authoritative_scope_and_permissions_rechecked": "before protected query/action; exact legacy timing UNKNOWN"
+      },
+      "bounded_unknowns": [
+        "FILTER-CATALOG-RESOLUTION",
+        "FILTER-GRAMMAR-PRECEDENCE",
+        "FILTER-PERMISSION-SCOPE",
+        "FILTER-API-READ-CONTRACT"
+      ],
+      "architecture_source_citations": [
+        {
+          "path": "inventories/traceability/PHASE1_BOUND_CONTRACTS.md",
+          "line": 47
+        }
+      ]
+    }
+  ],
+  "literal_db_references": [
+    {
+      "literal_name": "AP_OrderDetailTbl",
+      "evidence_level": "VERIFIED",
+      "evidence_scope": "identifier occurs in persisted FieldID metadata recorded by ERP analysis",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-AP_OrderFrm_filter_d"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 35
+        }
+      ],
+      "resolved_catalog_object_id": null,
+      "schema_kind_column_and_dependency_resolution_status": "PENDING_B2",
+      "owner": {
+        "node": "B2",
+        "issue": 21
+      },
+      "acceptance": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name"
+    },
+    {
+      "literal_name": "AP_OrderTbl",
+      "evidence_level": "VERIFIED",
+      "evidence_scope": "identifier occurs in persisted FieldID metadata recorded by ERP analysis",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-AP_OrderFrm_filter"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 34
+        }
+      ],
+      "resolved_catalog_object_id": null,
+      "schema_kind_column_and_dependency_resolution_status": "PENDING_B2",
+      "owner": {
+        "node": "B2",
+        "issue": 21
+      },
+      "acceptance": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name"
+    },
+    {
+      "literal_name": "AP_PurchaseDetailTbl",
+      "evidence_level": "VERIFIED",
+      "evidence_scope": "identifier occurs in persisted FieldID metadata recorded by ERP analysis",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-AP_PurchaseFrm_filter_d"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 37
+        }
+      ],
+      "resolved_catalog_object_id": null,
+      "schema_kind_column_and_dependency_resolution_status": "PENDING_B2",
+      "owner": {
+        "node": "B2",
+        "issue": 21
+      },
+      "acceptance": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name"
+    },
+    {
+      "literal_name": "AP_PurchaseRequestDetailTbl",
+      "evidence_level": "VERIFIED",
+      "evidence_scope": "identifier occurs in persisted FieldID metadata recorded by ERP analysis",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-AP_ApprovePurchaseRequestListFrm_filter_d",
+        "ERP-CFG-AP_PurposeRequestListFrm_filter_d"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 33
+        },
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 39
+        }
+      ],
+      "resolved_catalog_object_id": null,
+      "schema_kind_column_and_dependency_resolution_status": "PENDING_B2",
+      "owner": {
+        "node": "B2",
+        "issue": 21
+      },
+      "acceptance": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name"
+    },
+    {
+      "literal_name": "AP_PurchaseRequestTbl",
+      "evidence_level": "VERIFIED",
+      "evidence_scope": "identifier occurs in persisted FieldID metadata recorded by ERP analysis",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-AP_ApprovePurchaseRequestListFrm_filter",
+        "ERP-CFG-AP_PurposeRequestListFrm_filter"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 32
+        },
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 38
+        }
+      ],
+      "resolved_catalog_object_id": null,
+      "schema_kind_column_and_dependency_resolution_status": "PENDING_B2",
+      "owner": {
+        "node": "B2",
+        "issue": 21
+      },
+      "acceptance": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name"
+    },
+    {
+      "literal_name": "AP_PurchaseTbl",
+      "evidence_level": "VERIFIED",
+      "evidence_scope": "identifier occurs in persisted FieldID metadata recorded by ERP analysis",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-AP_PurchaseFrm_filter"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 36
+        }
+      ],
+      "resolved_catalog_object_id": null,
+      "schema_kind_column_and_dependency_resolution_status": "PENDING_B2",
+      "owner": {
+        "node": "B2",
+        "issue": 21
+      },
+      "acceptance": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name"
+    },
+    {
+      "literal_name": "AR_InvoiceRequestDetailTbl",
+      "evidence_level": "VERIFIED",
+      "evidence_scope": "identifier occurs in persisted FieldID metadata recorded by ERP analysis",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-AR_InvoiceRequestFrm_filter_d"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 41
+        }
+      ],
+      "resolved_catalog_object_id": null,
+      "schema_kind_column_and_dependency_resolution_status": "PENDING_B2",
+      "owner": {
+        "node": "B2",
+        "issue": 21
+      },
+      "acceptance": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name"
+    },
+    {
+      "literal_name": "AR_InvoiceRequestTbl",
+      "evidence_level": "VERIFIED",
+      "evidence_scope": "identifier occurs in persisted FieldID metadata recorded by ERP analysis",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-AR_InvoiceRequestFrm_filter"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 40
+        }
+      ],
+      "resolved_catalog_object_id": null,
+      "schema_kind_column_and_dependency_resolution_status": "PENDING_B2",
+      "owner": {
+        "node": "B2",
+        "issue": 21
+      },
+      "acceptance": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name"
+    },
+    {
+      "literal_name": "AR_OrderDetailTbl",
+      "evidence_level": "VERIFIED",
+      "evidence_scope": "identifier occurs in persisted FieldID metadata recorded by ERP analysis",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-AR_OrderByContractFrm_filter_d",
+        "ERP-CFG-AR_OrderComfirmFrm_filter_d",
+        "ERP-CFG-AR_OrderShipFrm_filter_d"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 43
+        },
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 45
+        },
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 47
+        }
+      ],
+      "resolved_catalog_object_id": null,
+      "schema_kind_column_and_dependency_resolution_status": "PENDING_B2",
+      "owner": {
+        "node": "B2",
+        "issue": 21
+      },
+      "acceptance": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name"
+    },
+    {
+      "literal_name": "AR_OrderTbl",
+      "evidence_level": "VERIFIED",
+      "evidence_scope": "identifier occurs in persisted FieldID metadata recorded by ERP analysis",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-AR_OrderComfirmFrm_filter",
+        "ERP-CFG-AR_OrderShipFrm_filter"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 44
+        },
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 46
+        }
+      ],
+      "resolved_catalog_object_id": null,
+      "schema_kind_column_and_dependency_resolution_status": "PENDING_B2",
+      "owner": {
+        "node": "B2",
+        "issue": 21
+      },
+      "acceptance": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name"
+    },
+    {
+      "literal_name": "AR_OrderViewData",
+      "evidence_level": "VERIFIED",
+      "evidence_scope": "identifier occurs in persisted FieldID metadata recorded by ERP analysis",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-AR_OrderByContractFrm_filter"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 42
+        }
+      ],
+      "resolved_catalog_object_id": null,
+      "schema_kind_column_and_dependency_resolution_status": "PENDING_B2",
+      "owner": {
+        "node": "B2",
+        "issue": 21
+      },
+      "acceptance": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name"
+    },
+    {
+      "literal_name": "CF_ItemGroupTbl",
+      "evidence_level": "VERIFIED",
+      "evidence_scope": "identifier occurs in persisted FieldID metadata recorded by ERP analysis",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-ItemGroupListFrm_filter"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 55
+        }
+      ],
+      "resolved_catalog_object_id": null,
+      "schema_kind_column_and_dependency_resolution_status": "PENDING_B2",
+      "owner": {
+        "node": "B2",
+        "issue": 21
+      },
+      "acceptance": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name"
+    },
+    {
+      "literal_name": "CF_ItemTbl",
+      "evidence_level": "VERIFIED",
+      "evidence_scope": "identifier occurs in persisted FieldID metadata recorded by ERP analysis",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-GJ_BalanceItemFrm_filter"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 50
+        }
+      ],
+      "resolved_catalog_object_id": null,
+      "schema_kind_column_and_dependency_resolution_status": "PENDING_B2",
+      "owner": {
+        "node": "B2",
+        "issue": 21
+      },
+      "acceptance": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name"
+    },
+    {
+      "literal_name": "IV_InboundRequestDetailsTbl",
+      "evidence_level": "VERIFIED",
+      "evidence_scope": "identifier occurs in persisted FieldID metadata recorded by ERP analysis",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-IV_InboundRequestFrm_filter_d",
+        "ERP-CFG-IV_IncomingShipmentStatusFrm_filter_d"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 52
+        },
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 54
+        }
+      ],
+      "resolved_catalog_object_id": null,
+      "schema_kind_column_and_dependency_resolution_status": "PENDING_B2",
+      "owner": {
+        "node": "B2",
+        "issue": 21
+      },
+      "acceptance": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name"
+    },
+    {
+      "literal_name": "IV_InboundRequestTbl",
+      "evidence_level": "VERIFIED",
+      "evidence_scope": "identifier occurs in persisted FieldID metadata recorded by ERP analysis",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-IV_InboundRequestFrm_filter",
+        "ERP-CFG-IV_IncomingShipmentStatusFrm_filter"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 51
+        },
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 53
+        }
+      ],
+      "resolved_catalog_object_id": null,
+      "schema_kind_column_and_dependency_resolution_status": "PENDING_B2",
+      "owner": {
+        "node": "B2",
+        "issue": 21
+      },
+      "acceptance": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name"
+    },
+    {
+      "literal_name": "SY_BalanceItemTbl",
+      "evidence_level": "VERIFIED",
+      "evidence_scope": "identifier occurs in persisted FieldID metadata recorded by ERP analysis",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-GJ_BalanceItemFrm_filter"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 50
+        }
+      ],
+      "resolved_catalog_object_id": null,
+      "schema_kind_column_and_dependency_resolution_status": "PENDING_B2",
+      "owner": {
+        "node": "B2",
+        "issue": 21
+      },
+      "acceptance": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name"
+    },
+    {
+      "literal_name": "vIS_Input",
+      "evidence_level": "VERIFIED",
+      "evidence_scope": "identifier occurs in persisted FieldID metadata recorded by ERP analysis",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-AR_StockInputFrm_filter"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 48
+        }
+      ],
+      "resolved_catalog_object_id": null,
+      "schema_kind_column_and_dependency_resolution_status": "PENDING_B2",
+      "owner": {
+        "node": "B2",
+        "issue": 21
+      },
+      "acceptance": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name"
+    },
+    {
+      "literal_name": "vIS_InputDetail",
+      "evidence_level": "VERIFIED",
+      "evidence_scope": "identifier occurs in persisted FieldID metadata recorded by ERP analysis",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-AR_StockInputFrm_filter_d"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 49
+        }
+      ],
+      "resolved_catalog_object_id": null,
+      "schema_kind_column_and_dependency_resolution_status": "PENDING_B2",
+      "owner": {
+        "node": "B2",
+        "issue": 21
+      },
+      "acceptance": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name"
+    }
+  ],
+  "bounded_unknown_register": [
+    {
+      "id": "FILTER-CATALOG-RESOLUTION",
+      "owner": {
+        "node": "B2",
+        "issue": 21
+      },
+      "status": "BLOCKED",
+      "acceptance": "All 18 literals resolve to catalog identity rows or explicit absent/ambiguous evidence with affected queries disabled; field types/keys/dependencies resolve; no invented view/table classification",
+      "unsafe_behavior_blocked": "No raw literal name becomes an executable SQL identifier or endpoint"
+    },
+    {
+      "id": "FILTER-GRAMMAR-PRECEDENCE",
+      "owner": {
+        "node": "R3",
+        "issue": 26
+      },
+      "status": "UNKNOWN",
+      "acceptance": "Source/runtime evidence establishes Like escaping, empty values, both operator slots, boolean/date rules, AndOr grouping, STT and hidden-row semantics plus package/DB/company/role/user precedence; preserve all 600 private source rows in authorized verification",
+      "unsafe_behavior_blocked": "No silent loss of hidden filters, malformed executable metadata, or source defaults"
+    },
+    {
+      "id": "FILTER-ALIAS-RESOLUTION",
+      "owner": {
+        "node": "R3",
+        "issue": 26
+      },
+      "supporting_owner": {
+        "node": "B2",
+        "issue": 21
+      },
+      "status": "UNKNOWN",
+      "acceptance": "For each of the 10 alias-bearing artifacts, source/query evidence binds every A/B field to the exact authorized query projection; retain per-member unresolved mappings as quarantined",
+      "unsafe_behavior_blocked": "No arbitrary A/B to table mapping and no query execution that depends on unresolved criteria"
+    },
+    {
+      "id": "FILTER-PERMISSION-SCOPE",
+      "owner": {
+        "node": "B4",
+        "issue": 23
+      },
+      "status": "UNKNOWN",
+      "acceptance": "Server derives effective user/company/branch/storehouse scope and tests allowed/denied/revoked/cross-scope queries; classify hidden criteria without making visibility equal authority",
+      "unsafe_behavior_blocked": "No client scope expansion or security-filter omission"
+    },
+    {
+      "id": "FILTER-API-READ-CONTRACT",
+      "owner": {
+        "node": "B1",
+        "issue": 20
+      },
+      "status": "PROPOSED",
+      "acceptance": "After B2/R3/B4 gates, schema-typed field/operator/value allowlists, deterministic stable sort/window, timeout, telemetry, cancel/race handling and representative legacy/Web result parity are evidenced",
+      "unsafe_behavior_blocked": "No guessed endpoint, unsafe FieldID interpolation, generic CRUD or mutation implied by read-query design"
+    }
+  ],
+  "scope_audit": "inventories/traceability/FILTER_TRACEABILITY_SCOPE_AUDIT.md"
+}

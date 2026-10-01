@@ -76,4 +76,4 @@ field, table/view name, procedure name or SQL fragment as execution authority.
 | `TRC-TOOL-001` Tool.dll runtime/API/session verification | ERP + Lead | Adapter/bridge decision and contract tests cover login, logout, validate, expiry, errors and thread safety. |
 | `TRC-AUTH-001` permission/scope precedence | Architecture + ERP + DB | Server-derived capability and company/branch/storehouse scope are proven and tamper tests pass. |
 
-Until these acceptance rows are closed, this file must retain PARTIAL status.
+This export remains PARTIAL until every in-scope VERIFIED source identity has a reviewed disposition and the set/DB referential checks pass. A bounded runtime UNKNOWN may remain in an otherwise complete coverage export when it has an owner, acceptance, blocked behavior and a Phase 2 issue. It cannot excuse a missing source manifest member or a dump-extractable schema/dependency fact. The pilot/runtime blockers above stay independently open until their actual acceptance passes; they are not all prerequisites for documentary coverage closure. The finite decision and validation contract is `docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md`.

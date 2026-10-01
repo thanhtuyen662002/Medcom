@@ -1,6 +1,6 @@
 # Medcom Phase 2 implementation master plan
 
-Status: **coverage reviewed; evidence pending; implementation not authorized in this planning run**  
+Status: **coverage reviewed; evidence pending; implementation not authorized in this planning run**
 Plan date: 2026-10-01 (Asia/Ho_Chi_Minh)  
 Owner: Lead / Integrator
 
