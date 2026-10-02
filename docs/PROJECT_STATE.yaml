@@ -40,7 +40,7 @@ phase2:
   implementation_issue_count: 31
   implementation_authorized: true
   eligible_to_start_count: 0
-  active_planning_pr: 44
+  active_planning_pr: null
   production_code_started: false
   historical_ready_or_bounded_labels: 16
   historical_blocked_labels: 15
@@ -66,10 +66,17 @@ phase2:
   plan_integration_status: merged
   closure_decision: docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md
   foundation_code_started: true
-  foundation_status: local_verified_waiting_exact_head_ci_and_review
+  foundation_status: implemented_pending_independent_review
   foundation_test_count: 8
   application_code_started: true
   active_implementation_pr: 44
+  foundation_ci_evidence:
+    verified_head: 0c5a45fb1988a143666d393c6bffd6bccfdcea52
+    push_run: 36957036456
+    pull_request_run: 36957039119
+    result: success
+    current_head_policy: check GitHub checks on the latest head; previous-head success
+      is not current-head evidence
 scheduled_execution:
   plan: docs/plans/PHASE2_SCHEDULED_EXECUTION_PLAN.md
   planned_lane_count: 10
@@ -93,7 +100,7 @@ scheduled_execution:
   hard_fencing_proof: not_yet_tested
   parallel_writer_admission: blocked_until_proved
   active_draft_pr: 44
-  integration_status: draft_backend_foundation_in_progress
+  integration_status: backend_foundation_pending_independent_review
   direct_execution_record: docs/execution/DIRECT_EXECUTION_20261002.md
 remaining_blockers:
 - TRC-DB-001 row-level sanitized SQL catalog and dependency graph

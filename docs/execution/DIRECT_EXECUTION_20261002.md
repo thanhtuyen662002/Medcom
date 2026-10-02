@@ -39,3 +39,9 @@ The SDK's first multi-node local restore exited without diagnostics. Serial rest
 ### Hosted CI repair
 
 Both push and PR runs on `f1b077b9f9d4cfe03882bf70339d754c695a999f` passed architecture, locked restore, analyzer build and all eight actual HTTP tests, then failed preparation validation. The inherited L05–L08 metadata test runners referenced an absolute scratch checkout. They now resolve the repository from their own file location; source pins, validator semantics, negative mutations and product gates remain unchanged. The full reference suite is rerun before the repair commit and hosted CI must pass on the new exact head.
+
+### Hosted acceptance after repair
+
+Both [push run 36957036456](https://github.com/thanhtuyen662002/Medcom/actions/runs/36957036456) and [PR run 36957039119](https://github.com/thanhtuyen662002/Medcom/actions/runs/36957039119) completed successfully on exact head `0c5a45fb1988a143666d393c6bffd6bccfdcea52`. All steps, including architecture, locked restore, analyzer build, eight actual HTTP tests and all reference checks, passed. The initial absolute-path CI failure was repaired in this session; no check was removed or weakened.
+
+Any subsequent checkpoint commit must have its own exact-head CI verified. A1 is implemented with hosted build/test evidence, but remains open for independent review and integration. No business node, Phase 1 gate or production release is closed.
