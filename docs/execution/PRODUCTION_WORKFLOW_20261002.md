@@ -1,0 +1,37 @@
+# Six-role production workflow — owner activation, 2026-10-02
+
+Goal: [#45](https://github.com/thanhtuyen662002/Medcom/issues/45). This newer owner request replaces the ten-task pause and earlier preparation-only restrictions. Five **different** coder tasks and one lead task run hourly, with coder starts ten minutes apart. Identical staggered copies of one task are unsupported by the automation cadence policy. Reuse six existing Medcom IDs; leave the other four paused and all unrelated projects unchanged.
+
+## Execution source and custody
+
+Resolve live #44: until integrated, use `medcom-schedule-activation-20261002`, not stale main, for this workflow/source/code baseline. After integration, use live main and the lead-designated successor. Read AGENTS, PROJECT_STATE, goal, source-set and current issue graph. Never assume a prior scratch workspace persists. Raw owner artifacts remain private; the complete new SQL archive is verified and all seven transfer checks are available.
+
+`production-tickets.json` contains ready assignments. Each role has one outstanding product PR. Lead owns shared contracts, API wiring, root styles/layouts, project/package locks, CI, catalog/manifest headers and integration. The five coder prefixes are disjoint. A ready ticket allows preparation/code only within its actual source/dependency/runtime eligibility; enabling writes still needs observed effects, authorization and atomicity acceptance. No synthetic fixture substitutes for target-host acceptance.
+
+## Create-only claims and isolated work branches
+
+1. Read the current ready ticket and generation, its allowed paths, dependencies and base. Create a fresh run UUID. Before claim, reconcile all live claim branches and PRs; never resume another invocation's work branch.
+2. Create a commit based on the ticket's current integration base containing only `docs/execution/claims/<ticket-id>.json` with goal, ticket, generation, role, run UUID, exact base, allowed paths and created-at. This unattached commit grants no ownership.
+3. Call GitHub `create_branch` for the **fixed** name `medcom-claims/g45/<role>/<ticket-id>` pointing to that commit. Success creates the immutable claim. `422 Reference already exists` means this invocation lost: it must not write the claim or its work branch. Read the remote claim file and confirm the unique run UUID. Never update/delete claim refs. If readback is ambiguous, do not write.
+4. The successful claimant creates `medcom-work/g45/<role>/<ticket-id>-<run-uuid>` from the exact ticket base. Only this invocation writes that branch. All updates are ordinary fast-forward with a fresh owner/head check. Publish a Draft PR targeting the current integration branch (or main after baseline integration); opening the PR is necessary for worker CI. The claim marker is control evidence on the claim branch, not product content to merge.
+5. Before every publication, re-read the live ticket/generation/claim and branch head; reject changed/revoked scope. Never write #44 or main from a coder. Review/test other scopes read-only while blocked. Issue comments or a Draft PR alone are not atomic claims.
+6. End only after pending publication/check handling has drained; leave a durable completion or BLOCKED checkpoint naming run/head/tests and outstanding activity. Do not hand off while child processes/writes can still run. Workers never create a new generation themselves.
+7. Lead issues the next ticket/generation only after the old owner has positively completed/handover and outstanding activity is resolved, with the previous PR preserved. Lease age or schedule pause is not proof of cancellation. Without positive quiescence, preserve the claim and use a different independent task; no timeout-based takeover.
+
+Lead uses the same create-only protocol for `L01`. The initial interactive author finishes publication before the first scheduled lead start. Subsequent lead runs must claim a distinct ready successor after positive completed handoff; a concurrent losing lead only inspects/prepares read-only. One lead integrates at a time. Normal ref updates still lack epoch-enforced credentials; do not pretend a policy read or local process lock supplies that enforcement.
+
+## Observed claim probe and limits
+
+Actual GitHub probe `medcom-claims/probe-production-20261002` was created with owner `first-run`, commit `2abc71e3d34e854b32abeccb451c35437e3631b6`. A second create pointing to `4bda2c8798c51ba615ae64d8863dd325b67d5a0a` returned 422 `Reference already exists`; readback retained `first-run` at `docs/execution/claims/PROBE.json` (blob d90f62d5280238af84af6b6b63900c3515f999aa). This verifies create-if-absent behavior, not a production dispatcher or simultaneous-race/credential/expiry enforcement. No product code or main was changed by the probe.
+
+This workflow avoids multiple admitted writers on one work branch and forbids stale claim takeover. Full restricted-credential dispatcher/resource fencing remains unproved. The synthetic control model retains its original limitations. Do not reuse shared-branch bootstrap authority for five writers. If a role cannot satisfy this protocol, do independent review/preparation rather than mutate a shared branch.
+
+## Delivery and quality
+
+Prioritize actual code, source-bound semantics, regression repair and independent review over another planning loop. Target 4–6 meaningful verified units where feasible; record a real shortfall. While CI waits, review/source analysis on another eligible unit is useful; do not accumulate another product PR for the same role. Reserve CI repair budget; fix owned actionable current-head failures in the same session. External outages are precise BLOCKED incidents, not PASS. Old-head green is historical evidence.
+
+Lead independently reviews worker changes and closes contract/wiring bottlenecks. OPS/QA independently reviews #44 before any acceptance; a reviewer cannot approve code it authored. Integrate only when actual review, source head, required checks, tested current base and enforceable expected-head/protected-base policy hold. `mergeable=true` is insufficient. No direct main overwrite, force push, skipped checks, administrative bypass or invented review. Inspect post-integration main before the next queue item.
+
+Continue the complete goal, including all source-mapped modules beyond the first five pilots. Produce executable installation/configuration/recovery/load acceptance tooling while real server access is unavailable. Ask the owner only for concrete environment/credential/operational decisions that are actually necessary, after preparing the code and safe reviewable handoff. Do not deploy to production or modify production SQL from a schedule without that independently authorized target operation.
+
+`production-schedules.json` records exact saved prompts, IDs and observed enable responses. A configured/enabled schedule is not proof that a worker started or completed code. Every run leaves GitHub evidence, not a claim of continuous background work. Lead pauses these six IDs when all #45 criteria, including actual target deployment/real-user acceptance, pass; otherwise continue useful eligible work. Follow a newer owner pause immediately and preserve in-flight custody. Never auto-enable the four historical paused tasks or modify unrelated schedules.

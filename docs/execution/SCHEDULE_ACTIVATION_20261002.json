@@ -160,5 +160,7 @@
   ],
   "paused_at": "2026-10-02T02:23:25.404958Z",
   "pause_reason": "owner requested pausing all ten schedules and direct GitHub/code ownership",
-  "direct_execution_record": "docs/execution/DIRECT_EXECUTION_20261002.md"
+  "direct_execution_record": "docs/execution/DIRECT_EXECUTION_20261002.md",
+  "superseded_by": "docs/execution/production-schedules.json",
+  "record_scope": "historical ten-task pause; latest owner six-role resumption lives in superseding registry"
 }
