@@ -26,7 +26,11 @@ for page in ('index.html', 'workspace/index.html'):
         raise SystemExit(f'Missing exported frontend: {page}; run npm ci && npm run build first')
 shutil.copytree(frontend, output / 'wwwroot', dirs_exist_ok=True)
 shutil.copy(ROOT / 'docs/deployment/SERVER_DEPLOYMENT.md', output / 'DEPLOYMENT.md')
-manifest = {'format': 1, 'releaseStatus': 'BLOCKED_BUSINESS_AND_RUNTIME_ACCEPTANCE',
+revision = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
+if subprocess.check_output(['git', 'status', '--porcelain', '--untracked-files=normal'], cwd=ROOT, text=True).strip():
+    raise SystemExit('Package only a clean committed source tree; commit or isolate changes first')
+manifest = {'format': 2, 'sourceRevision': revision,
+            'releaseStatus': 'BLOCKED_BUSINESS_AND_RUNTIME_ACCEPTANCE',
             'files': {str(path.relative_to(output)): hashlib.sha256(path.read_bytes()).hexdigest()
                       for path in sorted(output.rglob('*')) if path.is_file()}}
 (output / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
@@ -35,4 +39,10 @@ with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as package:
     for path in sorted(output.rglob('*')):
         if path.is_file():
             package.write(path, path.relative_to(output))
+verifier = ROOT / 'artifacts/medcom-verify-package.py'
+shutil.copy(ROOT / '.github/scripts/package_integrity.py', verifier)
+subprocess.run([os.environ.get('MEDCOM_PYTHON', 'python'), str(verifier), str(archive)], check=True)
+checksum = ROOT / 'artifacts/medcom-candidate.sha256'
+checksum.write_text(''.join(f'{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.name}\n'
+                          for path in (archive, verifier)))
 print(f'Created {archive.name}; release blocked until real ERP/SQL and end-to-end acceptance pass.')
