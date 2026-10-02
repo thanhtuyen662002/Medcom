@@ -1,0 +1,65 @@
+{
+  "goal_issue": 45,
+  "ticket_id": "L01",
+  "generation": 1,
+  "role": "lead",
+  "run_uuid": "bee09e89-5d53-41cb-8db6-89df576de9f8",
+  "lifecycle": "handoff_complete",
+  "handoff_complete": true,
+  "product_writes_complete": true,
+  "claim_branch": "medcom-claims/g45/lead/L01",
+  "claim_commit": "c5b9bd80ab26cab633674dcbd87736d4be3bae5c",
+  "work_branch": "medcom-work/g45/lead/L01-bee09e89-5d53-41cb-8db6-89df576de9f8",
+  "product_pr": 46,
+  "source_head": "1c75629c7495aacd600c97febcda0b9e4266a421",
+  "target_base": "1cc4dd40e761e5c578c1e1ee594be283795e66a8",
+  "tested_merge": "882ae8b9d1e1be995cf9bebd7a2ffa9a1569ef6b",
+  "ci": {
+    "run_id": 37035784635,
+    "result": "success",
+    "checks": [
+      {
+        "id": 110933526916,
+        "name": "backend",
+        "status": "completed",
+        "conclusion": "success",
+        "head": "1c75629c7495aacd600c97febcda0b9e4266a421"
+      }
+    ]
+  },
+  "review": "not_independently_reviewed",
+  "merged": false,
+  "main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "completed_units": 4,
+  "unit_type": "integration_and_verification_tooling; not business feature completion",
+  "tests": {
+    "guard": 37,
+    "backend": 37,
+    "frontend_contract": 5,
+    "packaged_browser": 4,
+    "reference_suites": 23,
+    "catalog_scanner": 9
+  },
+  "verified_hosted_package": true,
+  "verified_hosted_receipt": true,
+  "prepared": [
+    "branch_protection_PUT_template",
+    "independent OPS_QA review requests",
+    "scoped worker contract handoff"
+  ],
+  "blocked": [
+    "main reports protected:false; protection GET 403; enforcement not available",
+    "independent exact-head reviews absent",
+    "full business and target-host/real-user release acceptance"
+  ],
+  "owner_blocker": "Apply/reconcile actual no-bypass branch policy and eligible independent review; later provide authorized target host operational acceptance.",
+  "outstanding_writes": [],
+  "pending_ci": [],
+  "background_product_processes": [],
+  "terminal_product_handoff_at": "2026-10-02 16:48:20 UTC",
+  "next": "Publish immutable review/integration-only successor L02 after this completed product handoff. Keep PR46 preserved; no old-branch takeover or duplicate lead product PR.",
+  "terminal_goal_comment_id": 5957026157,
+  "successor_ticket": "L02",
+  "successor_mode": "review_integration_only",
+  "successor_registry_ref": "medcom-tickets/g45/lead/L02"
+}

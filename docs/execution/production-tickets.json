@@ -7,7 +7,7 @@
       "ticket_id": "L01",
       "role": "lead",
       "generation": 1,
-      "status": "ready",
+      "status": "completed_handoff",
       "goal_issue": 45,
       "base_resolution": "live #44 head while open; main after verified integration",
       "predecessor": null,
@@ -28,7 +28,10 @@
       "issues": [],
       "deliverable": "Own reviewed integration, shared-contract wiring, ticket admission/handoff, CI repair and goal completion.",
       "claim_branch": "medcom-claims/g45/lead/L01",
-      "claim_policy": "create-only unique run; no takeover; positive completed handoff before successor"
+      "claim_policy": "create-only unique run; no takeover; positive completed handoff before successor",
+      "handoff_comment_id": 5957026157,
+      "product_pr": 46,
+      "product_head": "1c75629c7495aacd600c97febcda0b9e4266a421"
     },
     {
       "ticket_id": "P01",
@@ -162,6 +165,42 @@
       "deliverable": "OPS/QA riêng: #25–27/#36–41. Ticket đầu O01: review độc lập actual PR #44 diff/current-head CI và chạy adversarial auth/scope/precision/packaged-browser tests; ghi verified defects và review evidence ở docs/reviews/PRODUCTION_PR44*, tests/production/, tools/deploy/validate_config.py, tools/deploy/test_validate_config.py, docs/deploy/. Code config validator/rehearsal/security QA cần thiết ở đúng paths, không tự thay tools/deploy/package.py, API readiness, CI hoặc files của coder khác. Đây là reviewer riêng nếu chưa author implementation đang review; không tự approve code mình vừa sửa. Reports/realtime/recovery tiếp theo qua source-backed ticket. Không fabricate Windows/target SQL host/load/restore/RPO/RTO results khi chưa chạy; chuẩn bị executable acceptance harness và báo thiếu actual environment cụ thể.",
       "claim_branch": "medcom-claims/g45/operations/O01",
       "claim_policy": "create-only unique run; no takeover; positive completed handoff before successor"
+    },
+    {
+      "ticket_id": "L02",
+      "role": "lead",
+      "generation": 2,
+      "status": "ready",
+      "mode": "review_integration_only",
+      "goal_issue": 45,
+      "base_resolution": "Resolve live #44 head while open; main only after verified integration. Immutable control registry governs this review-only successor.",
+      "predecessor": {
+        "ticket_id": "L01",
+        "generation": 1,
+        "run_uuid": "bee09e89-5d53-41cb-8db6-89df576de9f8",
+        "claim_branch": "medcom-claims/g45/lead/L01",
+        "handoff_comment_id": 5957026157,
+        "work_branch": "medcom-work/g45/lead/L01-bee09e89-5d53-41cb-8db6-89df576de9f8",
+        "product_pr": 46,
+        "product_head": "1c75629c7495aacd600c97febcda0b9e4266a421",
+        "ci_run_id": 37035784635,
+        "requires_live_verification": true
+      },
+      "allowed_paths": [],
+      "issues": [
+        45,
+        12,
+        17,
+        22,
+        24,
+        41
+      ],
+      "deliverable": "Review/integrate only: independently review worker PRs and contracts; drain current checks; reconcile exact installed branch policy and #44/#46 required review/tested base. Keep PR46 preserved and outstanding: no old-branch write, no second lead product PR. Prepare bounded patches locally where code review needs them. After positive quiescent handoff lead may issue another review-only successor; product-writing tickets require previous role PR integrated or explicitly preserved and superseded under a reviewed bounded scope. Do not treat missing policy/review as authorization to merge.",
+      "claim_branch": "medcom-claims/g45/lead/L02",
+      "claim_policy": "create-only unique invocation run; recheck predecessor terminal record/claim/work-head/CI and quiescence; no timeout takeover; no prior branch resume",
+      "outstanding_product_pr": 46,
+      "successor_registry_ref": "medcom-tickets/g45/lead/L02"
     }
-  ]
+  ],
+  "lead_successor_registry": "medcom-tickets/g45/lead/L02"
 }
