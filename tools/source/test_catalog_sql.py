@@ -1,8 +1,10 @@
+import copy
 import json
 from pathlib import Path
 import tempfile
 import unittest
 from catalog_sql import catalog
+from validate_catalog import validate_detail_bindings
 
 class CatalogTests(unittest.TestCase):
     def run_dump(self, text):
@@ -48,5 +50,21 @@ GO
     def test_truncated_literal_and_duplicate_declaration_fail(self):
         for dump in ["INSERT dbo.x VALUES(N'unclosed", 'CREATE TABLE [dbo].[X] ([Id] int)\nGO\nCREATE TABLE [dbo].[X] ([Id] int)\nGO\n']:
             with self.assertRaises(ValueError): self.run_dump(dump)
+
+class DetailBindingTests(unittest.TestCase):
+    def test_registered_detail_metadata_is_valid_but_stale_or_wider_bindings_fail(self):
+        folder=Path(__file__).resolve().parents[2]/'inventories/source/20261002'
+        bindings=json.loads((folder/'detail-read-bindings.json').read_text())
+        objects={}
+        for path in folder.glob('table-*.json'):
+            for obj in json.loads(path.read_text())['objects']:
+                objects[(obj['kind'],obj['schema'],obj['name'])]=obj
+        validate_detail_bindings(bindings,objects)
+        for field,value in [('detailMaskedDefinitionSha256','stale'),('detailTable','SY_User'),('joinColumns',['ItemID'])]:
+            changed=copy.deepcopy(bindings);changed['pilots'][0][field]=value
+            with self.assertRaises(ValueError):validate_detail_bindings(changed,objects)
+        changed=copy.deepcopy(bindings)
+        changed['pilots'][0]['selectedColumns'].append({'name':'Amount','type':'decimal'})
+        with self.assertRaises(ValueError):validate_detail_bindings(changed,objects)
 
 if __name__ == '__main__': unittest.main()

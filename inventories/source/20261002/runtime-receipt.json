@@ -21,7 +21,7 @@
     "privateLegacyRuntime": 2,
     "frontendContract": 5,
     "packagedBrowser": 4,
-    "sourceScanner": 3,
+    "sourceScanner": 4,
     "referenceSuites": 23
   },
   "legacyRuntimeClaims": [

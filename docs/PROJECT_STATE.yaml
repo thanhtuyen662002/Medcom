@@ -87,7 +87,7 @@ phase2:
     packaged_browser_tests: 4
     reference_suites: 23
     legacy_sql_dll_runtime_tests: 2
-    catalog_scanner_tests: 3
+    catalog_scanner_tests: 4
     runtime_receipt: inventories/source/20261002/runtime-receipt.json
   new_head_ci_status: requires_live_check_after_publication
   production_release_accepted: false
