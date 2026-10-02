@@ -1,0 +1,248 @@
+{
+  "sourceSet": "owner-attachment-20261002",
+  "previousMissingSourceBlocker": "RESOLVED_FULL_ARCHIVE_EXTRACTION",
+  "procedures": [
+    {
+      "kind": "PROCEDURE",
+      "schema": "dbo",
+      "name": "IV_InternalTransfer_BatchCheckBeforeUpdateStp",
+      "sourceLine": 857506,
+      "maskedDefinitionSha256": "a03d0ab8661f42df579565f60a48c0e6eded3107c288270f6b56412450672a59",
+      "syntacticReferences": [
+        "B.BatchID",
+        "B.StatusID",
+        "S.StatusID",
+        "dbo.IV_InternalTransferBatchTbl"
+      ],
+      "parameters": [
+        {
+          "name": "@BatchID",
+          "type": "varchar",
+          "output": false
+        },
+        {
+          "name": "@Status",
+          "type": "varchar",
+          "output": false
+        }
+      ]
+    },
+    {
+      "kind": "PROCEDURE",
+      "schema": "dbo",
+      "name": "IV_InternalTransfer_BatchCheckDeleteStp",
+      "sourceLine": 857523,
+      "maskedDefinitionSha256": "f2ea8374a7ca87ba8cae84ada35ba0c12474574e66d6ece887f7c5bf71491fac",
+      "syntacticReferences": [
+        "B.AssignedPM",
+        "B.BatchID",
+        "B.StatusID",
+        "X.BatchID",
+        "dbo.IV_InternalTransferBatchRequestTbl",
+        "dbo.IV_InternalTransferBatchTbl"
+      ],
+      "parameters": [
+        {
+          "name": "@BatchID",
+          "type": "varchar",
+          "output": false
+        },
+        {
+          "name": "@User",
+          "type": "varchar",
+          "output": false
+        }
+      ]
+    },
+    {
+      "kind": "PROCEDURE",
+      "schema": "dbo",
+      "name": "IV_InternalTransfer_BatchPMCheckEditStp",
+      "sourceLine": 857605,
+      "maskedDefinitionSha256": "559e0765eccc93ff3c64079a466e04d4811152b472bd30e75e7848a22fe9f804",
+      "syntacticReferences": [
+        "dbo.IV_InternalTransferBatchTbl"
+      ],
+      "parameters": [
+        {
+          "name": "@BatchID",
+          "type": "varchar",
+          "output": false
+        },
+        {
+          "name": "@User",
+          "type": "varchar",
+          "output": false
+        }
+      ]
+    },
+    {
+      "kind": "PROCEDURE",
+      "schema": "dbo",
+      "name": "IV_InternalTransfer_BatchRoleCheckEditStp",
+      "sourceLine": 857815,
+      "maskedDefinitionSha256": "9b3e749ff535c06ec85cbb503ec26a2881b0c2f3d856ba9def61be3937e80602",
+      "syntacticReferences": [
+        "dbo.IV_InternalTransfer_BatchCheckBeforeUpdateStp"
+      ],
+      "parameters": [
+        {
+          "name": "@BatchID",
+          "type": "varchar",
+          "output": false
+        },
+        {
+          "name": "@Status",
+          "type": "varchar",
+          "output": false
+        }
+      ]
+    },
+    {
+      "kind": "PROCEDURE",
+      "schema": "dbo",
+      "name": "IV_InternalTransfer_BatchTechCheckEditStp",
+      "sourceLine": 858045,
+      "maskedDefinitionSha256": "8d3820f59a99938a841467a3d96c06834ea56bfdd6648ff496abdb6f6d71861a",
+      "syntacticReferences": [
+        "dbo.IV_InternalTransferBatchTbl"
+      ],
+      "parameters": [
+        {
+          "name": "@BatchID",
+          "type": "varchar",
+          "output": false
+        },
+        {
+          "name": "@User",
+          "type": "varchar",
+          "output": false
+        }
+      ]
+    },
+    {
+      "kind": "PROCEDURE",
+      "schema": "dbo",
+      "name": "IV_InternalTransfer_RequestCheckDeleteStp",
+      "sourceLine": 858372,
+      "maskedDefinitionSha256": "dee4f27dbf08255c7b7b05593f8c393b16146ea0c25e00107704d69e10363a85",
+      "syntacticReferences": [
+        "dbo.IV_InternalTransferRequestTbl"
+      ],
+      "parameters": [
+        {
+          "name": "@DocumentID",
+          "type": "varchar",
+          "output": false
+        },
+        {
+          "name": "@User",
+          "type": "varchar",
+          "output": false
+        }
+      ]
+    },
+    {
+      "kind": "PROCEDURE",
+      "schema": "dbo",
+      "name": "IV_InternalTransfer_RequestCheckEditStp",
+      "sourceLine": 858387,
+      "maskedDefinitionSha256": "912613040f94030627368d9694d7444f29fc962661f285c0485842219f1f0040",
+      "syntacticReferences": [
+        "dbo.IV_InternalTransferRequestTbl"
+      ],
+      "parameters": [
+        {
+          "name": "@DocumentID",
+          "type": "varchar",
+          "output": false
+        },
+        {
+          "name": "@User",
+          "type": "varchar",
+          "output": false
+        }
+      ]
+    },
+    {
+      "kind": "PROCEDURE",
+      "schema": "dbo",
+      "name": "IV_InternalTransfer_RequestPMCheckEditStp",
+      "sourceLine": 858458,
+      "maskedDefinitionSha256": "a092a61578071caf555caebaad49bb191f031935438d951354c1f4fc65487bb6",
+      "syntacticReferences": [
+        "R.AssignedPM",
+        "R.DocumentID",
+        "R.StatusID",
+        "dbo.IV_InternalTransferRequestTbl"
+      ],
+      "parameters": [
+        {
+          "name": "@DocumentID",
+          "type": "varchar",
+          "output": false
+        },
+        {
+          "name": "@User",
+          "type": "varchar",
+          "output": false
+        }
+      ]
+    }
+  ],
+  "rules": {
+    "requestEdit": {
+      "ownerField": "SalesUser",
+      "statuses": [
+        0,
+        30
+      ]
+    },
+    "requestDelete": {
+      "ownerField": "SalesUser",
+      "statuses": [
+        0
+      ]
+    },
+    "requestPmEdit": {
+      "ownerField": "AssignedPM",
+      "statuses": [
+        10
+      ]
+    },
+    "batchPmEdit": {
+      "ownerField": "AssignedPM",
+      "unassignedAllowedByProcedure": true,
+      "statuses": [
+        0,
+        10,
+        25,
+        45
+      ]
+    },
+    "batchTechEdit": {
+      "ownerField": "AssignedTechnician",
+      "statuses": [
+        20,
+        21
+      ]
+    },
+    "batchDelete": {
+      "ownerField": "AssignedPM",
+      "unassignedAllowedByProcedure": true,
+      "statuses": [
+        0
+      ],
+      "linkedRequestsMustBeEmpty": true
+    },
+    "batchRoleEdit": {
+      "delegatesTo": "IV_InternalTransfer_BatchCheckBeforeUpdateStp",
+      "allowedStatusSource": "trusted form role configuration; never arbitrary client status list"
+    }
+  },
+  "limits": [
+    "These checks do not replace current Web user/menu/action/branch authorization or atomic write concurrency control.",
+    "The source request key is nvarchar(50), while check procedure @DocumentID is varchar(30); typed commands must prevent truncation/encoding loss.",
+    "Only check procedures were executed in the disposable fixture; no real data or production write path was used."
+  ]
+}

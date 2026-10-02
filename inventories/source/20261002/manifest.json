@@ -2,17 +2,20 @@
   "formatVersion": 1,
   "counts": {
     "FUNCTION": 109,
+    "PROCEDURE": 609,
     "SEQUENCE": 2,
     "TABLE": 596,
     "VIEW": 211
   },
-  "ssmsHeaderCount": 918,
+  "ssmsHeaderCount": 1527,
   "headersWithoutDeclaration": [],
   "limits": [
     "No data rows, literal strings or SQL bodies are exported.",
     "Syntactic references are candidates; resolution, dynamic SQL, indexes and constraints need separate verification.",
     "Counts describe this dump only, not the old baseline or a live database."
   ],
+  "sourceByteCount": 1212595716,
+  "sourceSha256": "61a8744c7a9a007b13ef37fbda26ea8c78af11fcc469963a528eba9469174096",
   "members": {
     "function-01.json": {
       "sha256": "0b880a4c0b90f372df1f0c3ce2c3df16801892088449bf64733a66eebfaa6ab9",
@@ -21,6 +24,38 @@
     "function-02.json": {
       "sha256": "aa758c2ecd71318b2fb98a30cfff783b9790bf0913256991db154c59e49d0e8a",
       "objectCount": 16
+    },
+    "procedure-01.json": {
+      "sha256": "53bead00528febee0e9bd426660e05e9ee9d4c02fb8a2aa2d6e858ca53a7c63e",
+      "objectCount": 71
+    },
+    "procedure-02.json": {
+      "sha256": "b6da7e1dff031a49a91ac56bcf59d95815a7c5023a32f38f6fe10b8c2cecbb73",
+      "objectCount": 72
+    },
+    "procedure-03.json": {
+      "sha256": "f84d617b4d815e936cde607b82adb19d059d50c7a49435720026a450e9acbe7c",
+      "objectCount": 71
+    },
+    "procedure-04.json": {
+      "sha256": "71f0a20cb6a071b064340d50eacb26aabbc824222c05f2c07d36a520f75ea407",
+      "objectCount": 94
+    },
+    "procedure-05.json": {
+      "sha256": "113bb256a8017cd3e50ff7926dcaf5d47c122591289dbfc58098d8c6cc1ad1c2",
+      "objectCount": 67
+    },
+    "procedure-06.json": {
+      "sha256": "193e462f044b4c00dee67c44b17d7a22607ebb53a32e61016f86c94d6238c8f3",
+      "objectCount": 84
+    },
+    "procedure-07.json": {
+      "sha256": "cc145e4288b191162a7abdd2699316214b66dcaacfa44864d31b20535afe498a",
+      "objectCount": 80
+    },
+    "procedure-08.json": {
+      "sha256": "7654b9fa48b11b7b97676b699ea30be6d67890baf9e016180a39d1bf941764ed",
+      "objectCount": 70
     },
     "sequence-01.json": {
       "sha256": "df45a129a6039263d79adc34b53b718c00fa1449f94e61dce7b0e0c3f423a07e",
@@ -111,7 +146,7 @@
       "objectCount": 101
     },
     "additional-statements.json": {
-      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+      "sha256": "696a8ff5ef038cf2a415afe023e9ba4847f2a2339386a1d8cc740dd068bc863c"
     }
   }
 }

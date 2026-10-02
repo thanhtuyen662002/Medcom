@@ -1,0 +1,11 @@
+{
+  "expectedBytes": 1212595716,
+  "priorExtractedBytes": 1015021568,
+  "actualBytes": 1212595716,
+  "memberCrc32": "16a9a7e6",
+  "verified": true,
+  "sha256": "61a8744c7a9a007b13ef37fbda26ea8c78af11fcc469963a528eba9469174096",
+  "correctionReason": "Prior extraction stopped before ZIP member end; previous source absence conclusions are superseded.",
+  "priorExtractedSha256": "93184a552b674a1cedd88c73b1f3b661465c6b4302134f65b78c75fe29350c3a",
+  "supersededHead": "019d21820ca29c0235fc848a405f95ac71d16665"
+}

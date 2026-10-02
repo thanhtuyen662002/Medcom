@@ -1,5 +1,7 @@
 # Full-stack continuation — 2026-10-02
 
+Current source truth: the extraction correction below supersedes earlier zero-procedure and missing-source statements in this chronological record.
+
 ## Owner goal and source access
 
 The owner requested Tool.dll from the ERP archive, unchanged password verification, BE/FE completion and an owner-deployable production ERP. Ten schedules remain paused; the direct lead continues the existing PR #44 at its observed head `86c2b0e41efe602fbe439cd22435e912c7ced635` without parallel GitHub writers or force pushes.
@@ -57,3 +59,9 @@ Continued from live PR #44 head c6f6f5cdf4613743a62b042abfc64e9df973e456, whose 
 Validation: 37 source-free backend tests, two owner-DLL/disposable SQL/HTTPS runtime tests using ten source DDLs, five frontend contracts, typecheck/production build, four packaged HTTPS browser checks, four scanner/binding regressions, finite catalog validation and 23 reference suites pass. Runtime exercises both detail shapes, maximum-precision/null quantities, empty pages, orphan/other-branch denial, injection, invalid IDs, company mismatch and current grant revocation. Desktop and mobile synthetic screenshots were inspected. The package, read-only SQL grants and receipt are updated. New-head hosted CI must be fetched after publication; release and independent-review gates remain open.
 
 Hosted CI first detected that the new supplemental detail binding file was absent from the strict directory registry. The registry now explicitly includes it and cross-checks its table/column/source hashes against the finite catalog. A regression rejects stale hashes, different tables/join columns and monetary projection widening. All four scanner/binding checks pass locally; the hosted repair must pass on its new head before integration.
+
+## Full archive extraction correction
+
+The owner identified that proc/trigger definitions are in the supplied data ZIP. Rechecking the ZIP member against local bytes found a truncated extraction (1,015,021,568 of 1,212,595,716 bytes). A complete binary extraction now matches ZIP CRC and has hash 61a8744c7a9a007b13ef37fbda26ea8c78af11fcc469963a528eba9469174096. The corrected catalog has 609 procedures and 1,527 total declared objects/33 members; all seven missing transfer candidates are present among 28 transfer procedures. Stored-definition metadata additionally covers 188 declarations/160 distinct module names, including six trigger records/three names with retained versions. The missing-source blocker is removed; complete product/business/runtime/operations acceptance remains open.
+
+A third private runtime test executes the seven actual source checks plus their delegated helper using three actual source transfer table DDLs and synthetic rows in a disposable SQL database. It verifies owners/assignments/status boundaries, linked deletion denial and source null-PM behavior. No production database/data or Web mutation was used. Archive/candidate/embedded-definition regressions now total nine tests. Verified extraction tooling atomically replaces private files only after complete size/CRC/hash checks; catalog metadata records source size/hash and CI cross-checks them.

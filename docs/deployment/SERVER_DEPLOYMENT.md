@@ -6,7 +6,7 @@ The ZIP contains the .NET 10 API, exported Next.js/React frontend and isolated p
 
 Accessible owner archives were hashed and a new source set recorded in `docs/SOURCE_BASELINE.md`. The exact Tools.dll normal stored-password subset ran successfully on Linux/.NET 10. The worker is process-isolated, pins the DLL bytes, denies wrong/malformed credentials and excludes the legacy system-password exception. The complete legacy engine is not certified by this subset.
 
-The SQL adapter reads canonical accounts/groups, rejects disabled/missing/ambiguous matches and revokes changed credentials/groups. Two optionally enabled pilot screens list purchase orders and inbound requests through typed, scoped, parameterized queries. Explicit current menu/grants and branch assignments are checked on the server and at SQL execution; no arbitrary SQL or identifier is accepted from a browser. Fields shown are document ID/date/branch/status/lock only. Save/approve/post/delete/export/report operations are not enabled.
+The SQL adapter reads canonical accounts/groups, rejects disabled/missing/ambiguous matches and revokes changed credentials/groups. Two optionally enabled pilot screens list purchase orders and inbound requests through typed, scoped, parameterized queries. Explicit current menu/grants and branch assignments are checked on the server and at SQL execution; no arbitrary SQL or identifier is accepted from a browser. List fields are document ID/date/branch/status/lock; detail panels add fixed line identifiers and exact source quantities. Save/approve/post/delete/export/report operations are not enabled.
 
 A real owner-DLL + disposable SQL Server + HTTPS browser test covers login, purchase-order Grid/search, other-branch denial and logout/replay. Only synthetic fixture rows were inserted, using ten source table DDLs. The data dump was not restored. Details and limitations are in `docs/erp/OWNER_SOURCE_RECOVERY_20261002.md` and `inventories/source/20261002/runtime-receipt.json`.
 
@@ -16,7 +16,7 @@ A real owner-DLL + disposable SQL Server + HTTPS browser test covers login, purc
 
 A bounded background monitor checks schema and a public synthetic pure-DLL health vector every 30 seconds. Health polling serves the cached snapshot and does not start SQL/process work or extend a session. Dependency checks can be healthy while `/health/ready` remains 503 because business release acceptance is open. There is no configuration flag that silently overrides this gate.
 
-Seven internal-transfer edit/delete check procedures referenced by the current configuration are absent from the dump's executable schema. Their current definitions require a schema-only export or a representative staging DB. Full effects, approvals, transaction/idempotency/concurrency semantics, durable security audit, exports, operational recovery/performance, independent review and deployment-host acceptance are still required.
+Full archive verification recovered 609 procedures, including all seven internal-transfer edit/delete checks. Their source-availability blocker is resolved. Trigger definitions stored in data are cataloged separately with version provenance. Full effects, approvals, transaction/idempotency/concurrency semantics, durable security audit, exports, operational recovery/performance, independent review and deployment-host acceptance are still required.
 
 ## Build and package
 
@@ -68,3 +68,5 @@ Data Protection keys must be privately persisted/encrypted with service-account 
 Before a production release, validate the real server OS/runtime, host/TLS/secrets, current full SQL schema and legacy definitions, all business effects, backup/restore and rollback, large-dataset behavior, auditing and exact-head independent review/CI. This candidate is suitable for controlled staging verification, not an accepted production ERP.
 
 The configured pilots also require SELECT on the two detail tables listed above. Detail routes expose only fixed source identifiers/quantities and recheck parent scope. The HTTPS runtime flow additionally tests both detail shapes, exact quantities, other-branch/missing 404 equivalence, keyboard focus and contained mobile tables. The business release gate remains unchanged.
+
+The corrected full SQL source has 1,527 declared objects and 33 catalog members. The earlier zero-procedure statement came from a truncated extraction and is withdrawn. A third private runtime test creates three source transfer tables/eight source check procedures and verifies assignment/status/deletion rules with synthetic rows; it enables no Web writes.

@@ -31,7 +31,7 @@ def main():
     folder=Path(__file__).resolve().parents[2]/'inventories/source/20261002'
     manifest=json.loads((folder/'manifest.json').read_text());counts=collections.Counter();seen=set();objects={}
     for filename,entry in manifest['members'].items():
-        if not re.fullmatch(r'(?:table|view|function|sequence)-\d{2}\.json|additional-statements\.json',filename):raise SystemExit('Invalid member path')
+        if not re.fullmatch(r'(?:table|view|function|sequence|procedure|trigger)-\d{2}\.json|additional-statements\.json',filename):raise SystemExit('Invalid member path')
         content=(folder/filename).read_bytes()
         if hashlib.sha256(content).hexdigest()!=entry['sha256']:raise SystemExit(f'Checksum mismatch {filename}')
         data=json.loads(content)
@@ -45,9 +45,18 @@ def main():
             if len({c['name'] for c in columns})!=len(columns):raise SystemExit(f'Duplicate column {key}')
     if dict(counts)!=manifest['counts'] or manifest['headersWithoutDeclaration']:raise SystemExit('Incomplete catalog')
     actual={p.name for p in folder.iterdir() if p.is_file()}
-    expected=set(manifest['members'])|{'manifest.json','source-set.json','pilot-menu-bindings.json','pilot-action-metadata.json','runtime-receipt.json','detail-read-bindings.json'}
+    expected=set(manifest['members'])|{'manifest.json','source-set.json','pilot-menu-bindings.json','pilot-action-metadata.json','runtime-receipt.json','detail-read-bindings.json',
+        'extraction-integrity.json','embedded-module-catalog.json','recovered-transfer-checks.json'}
     if actual!=expected:raise SystemExit(f'Manifest directory mismatch: {actual^expected}')
     validate_detail_bindings(json.loads((folder/'detail-read-bindings.json').read_text()),objects)
+    source=json.loads((folder/'source-set.json').read_text())['files']['MedData-Data.sql']
+    integrity=json.loads((folder/'extraction-integrity.json').read_text())
+    if (source['size']!=1212595716 or integrity['actualBytes']!=source['size'] or not integrity['verified']
+        or manifest.get('sourceByteCount')!=source['size'] or manifest.get('sourceSha256')!=source['sha256']
+        or integrity['sha256']!=source['sha256']):raise SystemExit('Unverified or incomplete source extraction')
+    recovered=json.loads((folder/'recovered-transfer-checks.json').read_text())
+    for obj in recovered['procedures']:
+        if objects.get(('PROCEDURE','dbo',obj['name']))!=obj:raise SystemExit('Recovered procedure not in verified catalog')
     print(f'PASS: {len(seen)} declared objects; {len(manifest["members"])} checksum-verified catalog members')
 
 if __name__=='__main__':main()

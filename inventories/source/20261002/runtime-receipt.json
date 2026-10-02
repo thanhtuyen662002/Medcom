@@ -10,18 +10,19 @@
     "sqlServer": "17.0.4065.4 Enterprise Developer"
   },
   "databaseFixture": {
-    "sourceTableDdlCount": 10,
+    "sourceTableDdlCount": 13,
     "rows": "synthetic only",
     "rawDumpRestored": false,
     "productionDatabaseAccessed": false,
-    "createdAndDroppedUniqueTestDatabase": true
+    "createdAndDroppedUniqueTestDatabase": true,
+    "sourceProcedureDdlCount": 8
   },
   "observedTests": {
     "sourceFreeBackend": 37,
-    "privateLegacyRuntime": 2,
+    "privateLegacyRuntime": 3,
     "frontendContract": 5,
     "packagedBrowser": 4,
-    "sourceScanner": 4,
+    "sourceScanner": 9,
     "referenceSuites": 23
   },
   "legacyRuntimeClaims": [
@@ -34,13 +35,16 @@
     "Real HTTPS browser login, purchase-order navigation/Grid/search, crafted other-branch 403, logout and subsequent workspace 401 are observed.",
     "Both typed line-detail shapes preserve exact decimal scale and null quantities, require scoped enabled parent documents, paginate and exclude orphan/other-branch rows.",
     "Hidden and missing parents both return 404; oversized IDs, cross-company reads, injection attempts and revoked grants are denied.",
-    "Real HTTPS browser verifies purchase-order Enter/Escape focus restoration, inbound details and mobile containment with zero browser errors."
+    "Real HTTPS browser verifies purchase-order Enter/Escape focus restoration, inbound details and mobile containment with zero browser errors.",
+    "Seven current internal-transfer check procedures and their delegated helper execute on three source transfer tables with synthetic rows, verifying assignment/status/deletion boundaries.",
+    "The full SQL member has been size/CRC/hash verified; the previous missing-procedure source blocker is resolved."
   ],
   "releaseStatus": "BLOCKED_BUSINESS_AND_RUNTIME_ACCEPTANCE",
   "limits": [
     "Public CI lacks private owner artifacts and does not claim these two runtime tests.",
     "Full legacy engine, Windows host, complete permission/admin/company equivalence and all business commands/effects are not accepted.",
-    "Current procedure/trigger definitions, durable security audit, report/export/recovery/performance and independent review/deployed-host acceptance remain open.",
+    "Stored trigger version/deployed-host reconciliation, durable security audit, report/export/recovery/performance and independent review/deployed-host acceptance remain open.",
     "No real credentials, transaction rows, hashes, SQL bodies or source binaries are included in this receipt."
-  ]
+  ],
+  "sourceIntegrityEvidence": "extraction-integrity.json"
 }

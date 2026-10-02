@@ -83,6 +83,9 @@ def describe(kind, schema, obj, code, line):
 
 
 def catalog(path, private_tables_dir=None):
+    source_path=Path(path);source_hash=hashlib.sha256()
+    with source_path.open('rb') as source:
+        for block in iter(lambda:source.read(8*1024*1024),b''):source_hash.update(block)
     masker = Masker(); objects = []; headers = []; ddl = []; raw_ddl = []; current = None; extras = []
     selected = {'SY_User','SY_UserGroup','SY_UserBranch','SY_Menu','SY_UserGroupPermisstion','SY_UserPermisstion','AP_OrderTbl','IV_InboundRequestTbl','AP_OrderDetailTbl','IV_InboundRequestDetailsTbl'}
     private_dir = Path(private_tables_dir).resolve() if private_tables_dir else None
@@ -121,7 +124,8 @@ def catalog(path, private_tables_dir=None):
     header_kinds={'Table':'TABLE','View':'VIEW','StoredProcedure':'PROCEDURE','UserDefinedFunction':'FUNCTION','Trigger':'TRIGGER','Sequence':'SEQUENCE'}
     declared=set(keys)
     missing=[h for h in headers if (header_kinds[h['kind']],h['schema'],h['name']) not in declared]
-    return {'formatVersion':1,'counts':dict(sorted(collections.Counter(o['kind'] for o in objects).items())),
+    return {'formatVersion':1,'sourceByteCount':source_path.stat().st_size,'sourceSha256':source_hash.hexdigest(),
+            'counts':dict(sorted(collections.Counter(o['kind'] for o in objects).items())),
             'objects':objects,'ssmsHeaderCount':len(headers),'headersWithoutDeclaration':missing,
             'additionalIndexOrAlterStatements':extras,
             'limits':['No data rows, literal strings or SQL bodies are exported.',

@@ -11,11 +11,13 @@ namespace Medcom.Api.Tests;
 
 public sealed class LegacyRuntimeFactAttribute : FactAttribute
 {
-    public LegacyRuntimeFactAttribute()
+    public LegacyRuntimeFactAttribute(bool transferChecks = false)
     {
         if (new[] { "MEDCOM_TEST_SQL", "MEDCOM_LEGACY_TOOLS", "MEDCOM_TEST_HASH", "MEDCOM_TEST_SCHEMA" }
             .Any(key => string.IsNullOrEmpty(Environment.GetEnvironmentVariable(key))))
             Skip = "Explicit disposable SQL + owner DLL fixture is required; this is not a production acceptance substitute.";
+        if (transferChecks && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("MEDCOM_TEST_TRANSFER_SCHEMA")))
+            Skip = "Full verified source workflow fixture is required.";
     }
 }
 
@@ -197,5 +199,84 @@ public sealed class LegacyRuntimeTests
         await using var command=new SqlCommand(sql,connection) { CommandTimeout=20 };
         if(hash is not null)command.Parameters.Add("@hash",SqlDbType.VarChar,200).Value=hash;
         await command.ExecuteNonQueryAsync();
+    }
+
+    [LegacyRuntimeFact(transferChecks:true), Trait("Category","LegacyRuntime")]
+    public async Task ActualTransferCheckProceduresEnforceSourceAssignmentsAndStatuses()
+    {
+        var adminBuilder=new SqlConnectionStringBuilder(Environment.GetEnvironmentVariable("MEDCOM_TEST_SQL"));
+        Assert.StartsWith("127.0.0.1,",adminBuilder.DataSource); Assert.Equal("master",adminBuilder.InitialCatalog);
+        var database="medcom_test_"+Guid.NewGuid().ToString("N");
+        await using var admin=new SqlConnection(adminBuilder.ConnectionString);await admin.OpenAsync();
+        await Execute(admin,$"CREATE DATABASE [{database}];");
+        try
+        {
+            var builder=new SqlConnectionStringBuilder(adminBuilder.ConnectionString) { InitialCatalog=database };
+            await using var connection=new SqlConnection(builder.ConnectionString);await connection.OpenAsync();
+            var schema=await File.ReadAllTextAsync(Environment.GetEnvironmentVariable("MEDCOM_TEST_TRANSFER_SCHEMA")!);
+            foreach(var batch in Regex.Split(schema,@"^\s*GO\s*$",RegexOptions.Multiline|RegexOptions.IgnoreCase))
+            {
+                if(string.IsNullOrWhiteSpace(batch))continue;
+                Assert.Matches(@"^\s*CREATE\s+(TABLE|PROCEDURE)\s+\[dbo\]\.\[",batch);
+                await Execute(connection,batch);
+            }
+            await Execute(connection,"""
+                INSERT dbo.IV_InternalTransferRequestTbl(DocumentID,DocumentDate,SalesUser,BranchID,FromBranchID,ToBranchID,AssignedPM,StatusID,isLock)
+                VALUES(N'REQUEST-TEST','2026-10-02','SYNTHETIC-SALES','BR-A','BR-A','BR-B','SYNTHETIC-PM',0,0);
+                INSERT dbo.IV_InternalTransferBatchTbl(BatchID,BatchDate,FromBranchID,ToBranchID,AssignedPM,AssignedTechnician,HasEquipment,StatusID,isLock)
+                VALUES('BATCH-TEST','2026-10-02','BR-A','BR-B','SYNTHETIC-PM','SYNTHETIC-TECH',0,0,0);
+                """);
+            async Task<bool> Denied(string name,string id,string context,bool status=false)
+            {
+                await using var command=new SqlCommand("dbo.IV_InternalTransfer_"+name,connection) { CommandType=CommandType.StoredProcedure,CommandTimeout=5 };
+                command.Parameters.Add(name.StartsWith("Request",StringComparison.Ordinal)?"@DocumentID":"@BatchID",SqlDbType.VarChar,30).Value=id;
+                command.Parameters.Add(status?"@Status":"@User",SqlDbType.VarChar,100).Value=context;
+                await using var reader=await command.ExecuteReaderAsync();
+                var denied=await reader.ReadAsync();
+                if(denied)Assert.Equal(1,reader.GetInt32(reader.GetOrdinal("MsgType")));
+                return denied;
+            }
+            Assert.False(await Denied("RequestCheckEditStp","REQUEST-TEST","SYNTHETIC-SALES"));
+            Assert.True(await Denied("RequestCheckEditStp","REQUEST-TEST","OTHER"));
+            Assert.False(await Denied("RequestCheckDeleteStp","REQUEST-TEST","SYNTHETIC-SALES"));
+            Assert.True(await Denied("RequestCheckDeleteStp","REQUEST-TEST","OTHER"));
+            await Execute(connection,"UPDATE dbo.IV_InternalTransferRequestTbl SET StatusID=30;");
+            Assert.False(await Denied("RequestCheckEditStp","REQUEST-TEST","SYNTHETIC-SALES"));
+            Assert.True(await Denied("RequestCheckDeleteStp","REQUEST-TEST","SYNTHETIC-SALES"));
+            await Execute(connection,"UPDATE dbo.IV_InternalTransferRequestTbl SET StatusID=10;");
+            Assert.True(await Denied("RequestCheckEditStp","REQUEST-TEST","SYNTHETIC-SALES"));
+            Assert.False(await Denied("RequestPMCheckEditStp","REQUEST-TEST","SYNTHETIC-PM"));
+            Assert.True(await Denied("RequestPMCheckEditStp","REQUEST-TEST","OTHER"));
+            Assert.True(await Denied("RequestPMCheckEditStp","MISSING","SYNTHETIC-PM"));
+
+            Assert.False(await Denied("BatchCheckDeleteStp","BATCH-TEST","SYNTHETIC-PM"));
+            Assert.True(await Denied("BatchCheckDeleteStp","BATCH-TEST","OTHER"));
+            await Execute(connection,"INSERT dbo.IV_InternalTransferBatchRequestTbl(UserAutoID,BatchID,RequestID) VALUES('SYNTHETIC-LINK','BATCH-TEST',N'REQUEST-TEST');");
+            Assert.True(await Denied("BatchCheckDeleteStp","BATCH-TEST","SYNTHETIC-PM"));
+            await Execute(connection,"DELETE dbo.IV_InternalTransferBatchRequestTbl; UPDATE dbo.IV_InternalTransferBatchTbl SET AssignedPM=NULL;");
+            Assert.False(await Denied("BatchCheckDeleteStp","BATCH-TEST","OTHER"));
+            foreach(var sourceStatus in new[]{0,10,25,45})
+            {
+                await Execute(connection,$"UPDATE dbo.IV_InternalTransferBatchTbl SET StatusID={sourceStatus},AssignedPM='SYNTHETIC-PM';");
+                Assert.False(await Denied("BatchPMCheckEditStp","BATCH-TEST","SYNTHETIC-PM"));
+                Assert.True(await Denied("BatchPMCheckEditStp","BATCH-TEST","OTHER"));
+            }
+            await Execute(connection,"UPDATE dbo.IV_InternalTransferBatchTbl SET StatusID=20;");
+            Assert.True(await Denied("BatchPMCheckEditStp","BATCH-TEST","SYNTHETIC-PM"));
+            Assert.False(await Denied("BatchTechCheckEditStp","BATCH-TEST","SYNTHETIC-TECH"));
+            Assert.True(await Denied("BatchTechCheckEditStp","BATCH-TEST","OTHER"));
+            Assert.False(await Denied("BatchRoleCheckEditStp","BATCH-TEST","20,21",true));
+            Assert.True(await Denied("BatchRoleCheckEditStp","BATCH-TEST","30,40",true));
+            Assert.True(await Denied("BatchRoleCheckEditStp","BATCH-TEST","invalid",true));
+            await Execute(connection,"UPDATE dbo.IV_InternalTransferBatchTbl SET StatusID=21;");
+            Assert.False(await Denied("BatchTechCheckEditStp","BATCH-TEST","SYNTHETIC-TECH"));
+            await Execute(connection,"UPDATE dbo.IV_InternalTransferBatchTbl SET StatusID=30;");
+            Assert.True(await Denied("BatchTechCheckEditStp","BATCH-TEST","SYNTHETIC-TECH"));
+        }
+        finally
+        {
+            SqlConnection.ClearAllPools();
+            await Execute(admin,$"ALTER DATABASE [{database}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE [{database}];");
+        }
     }
 }
