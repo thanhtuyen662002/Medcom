@@ -57,3 +57,11 @@ Phase 1 is complete only when the repository contains:
 7. Lead quality review confirms that further discovered problems are variants of existing documented classes or are explicitly tracked as remaining unknowns.
 
 When all seven are proven, Lead stops all Phase 1 schedules and records `phase_status: awaiting_csharp_round`.
+
+## Direct execution — 2026-10-02 (newest owner direction)
+
+The owner requested: “Tạm thời tắt 10 schedule, bạn sẽ đảm nhiệm toàn quyền xử lý github và tiến hành code dự án”. All ten automation update responses confirmed `is_enabled=false`. Preserve their prompts and schedules; do not resume them without a new request. Pausing does not prove an already-running invocation was cancelled.
+
+The current interactive lead owns direct GitHub/code execution across previous lane path boundaries. Existing lane ownership is historical context; a new dispatcher, parallel admission or lane sublease is not a prerequisite for this one writer's source-free implementation. This supersedes scheduled-only/preparation-only restrictions for the direct lead. Resume Draft #44, preserve existing work and read the remote head before normal fast-forward publication. No force-push, no direct overwrite of main, no invented source or runtime evidence. Existing independent-review/CI and sensitive-data constraints remain.
+
+A1 now has a checksum-verified .NET 10.0.401 SDK in the interactive runtime. Restore/build/tests must be observed, not assumed from SDK installation. The direct checkpoint and local run instructions are in `docs/execution/DIRECT_EXECUTION_20261002.md` and `src/backend/README.md`. Keep TRC-DB-001, T1, total traceability and business/release gates open until their actual acceptance passes.

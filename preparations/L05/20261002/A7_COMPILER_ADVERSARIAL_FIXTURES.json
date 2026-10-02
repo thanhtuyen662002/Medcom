@@ -1,0 +1,208 @@
+{
+  "schema_version": 1,
+  "lane": "L05",
+  "artifact_status": "prepared_local_only",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_issues": [
+    16,
+    18,
+    26
+  ],
+  "source_contracts": [
+    {
+      "path": "docs/db/CONFIGURATION_OBJECT_CATALOG.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "a8cb863be9b001a9e81fe3f91b17b7370096accb66153cdcc1a744ad37fe8245",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/db/CONFIGURATION_OBJECT_CATALOG.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/architecture/PHASE2_SCREEN_DEFINITION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "aeb14d0db338c24d98dce32f1eb986ff6e771abd5c799a151a8536c9dbba2316",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_SCREEN_DEFINITION_CONTRACT.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/erp/DAT_LAYOUT_CORROBORATION.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c2dc4ea6cc61b46edb12b7ebf0f1edfdbb6975f7d9df29f4f0448deadcdccedf",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/DAT_LAYOUT_CORROBORATION.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "87a9165f370e30294d69a409e81c918f1f2425c2eeeb86d534d68d79762a14ad",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/erp/TEMPLATES_PERSONALIZATION_UPDATE_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "ef8ec347a29a39e5b112225c923f9ec751a3d4e9ca097ba6abbe3b889ebff25f",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/TEMPLATES_PERSONALIZATION_UPDATE_EVIDENCE.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "4a48658994a7a70ad809587c2100cb3f6340526e508805f4ebee11710574f4d6",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "inventories/erp/WINFORMS_PROPERTY_KEY_INDEX.json",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c41eb90ae522a45819f810f3ac69e2cf902f5d47f295163de5056dcfcb4fe50c",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/inventories/erp/WINFORMS_PROPERTY_KEY_INDEX.json",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "access": "sanitized repository evidence"
+    }
+  ],
+  "limits": [
+    "no L05 dispatcher lease or writer token",
+    "no approved raw DAT/source archive opened in this run",
+    "no SY_* rows or executable config bodies inspected or executed",
+    "no legacy database/config write or migration",
+    "no product/compiler runtime test or CI",
+    "no GitHub mutation or issue closure"
+  ],
+  "unit_id": "L05-A7-COMPILER-FAIL-CLOSED",
+  "graph_id": "A7-R3",
+  "issue": 18,
+  "supporting_issue": 26,
+  "objective": "Provide negative compiler cases for contextual LYT/LYS/filter/config parsing while retaining the last valid version.",
+  "cases": [
+    {
+      "id": "CMP-01",
+      "input": "LYT with 21 positions",
+      "expected": "interpret only within verified consumer/context; retain raw source identity"
+    },
+    {
+      "id": "CMP-02",
+      "input": "LYT with fewer positions and trailing empty fields",
+      "expected": "preserve empty/trailing structure; explicit unsupported/default disposition, no shifting"
+    },
+    {
+      "id": "CMP-03",
+      "input": "LYT with unknown extra trailing fields",
+      "expected": "preserve and quarantine unsupported additions; no silent truncation"
+    },
+    {
+      "id": "CMP-04",
+      "input": "caption/default delimiters containing colon/semicolon/quotes",
+      "expected": "consumer-specific decoding only; no whole-string replacement"
+    },
+    {
+      "id": "CMP-05",
+      "input": "LYS row where SubValue is property key",
+      "expected": "do not treat SubValue as display order; require full FID/KeyID/SubID/SubValue identity"
+    },
+    {
+      "id": "CMP-06",
+      "input": "same KeyID literal across LayoutX, AutoNumberSetting and other consumer",
+      "expected": "consumer/class/address context prevents collision"
+    },
+    {
+      "id": "CMP-07",
+      "input": "ADT and ADT-1/ADT-2",
+      "expected": "distinct addresses; suffix not flattened"
+    },
+    {
+      "id": "CMP-08",
+      "input": "T1..T9 and TA..TJ table slots",
+      "expected": "use literal verified slots; never invent T10..T19 keys"
+    },
+    {
+      "id": "CMP-09",
+      "input": "duplicate configuration tuples with different persisted row IDs",
+      "expected": "quarantine ambiguity; never arbitrary first row or inferred unique constraint"
+    },
+    {
+      "id": "CMP-10",
+      "input": "ControlType 22 without exact declared class",
+      "expected": "unsupported/blocked; do not infer executable UserControl type"
+    },
+    {
+      "id": "CMP-11",
+      "input": "ControlType 30 HTML/script surface",
+      "expected": "reject source-supplied script/SQL/hooks from browser payload; separately modeled presentation HTML requires a non-executable sanitized renderer and does not authorize execution"
+    },
+    {
+      "id": "CMP-12",
+      "input": "hook keys EBS/ESS/ESS2 and DBS/S10",
+      "expected": "remain distinct consumer/event contracts; no aliasing or generic CRUD"
+    },
+    {
+      "id": "CMP-13",
+      "input": "filter alias A/B with no query binding",
+      "expected": "quarantine field/query contract until exact target resolves"
+    },
+    {
+      "id": "CMP-14",
+      "input": "client-supplied FieldID/operator/source name",
+      "expected": "match typed server allow-list or reject before query construction"
+    },
+    {
+      "id": "CMP-15",
+      "input": "malformed XML/encoding/Unicode/reserved delimiter",
+      "expected": "candidate rejected with safe bounded diagnostics; published previous-good remains"
+    },
+    {
+      "id": "CMP-16",
+      "input": "XML external entity, DTD, network/file URI or expansion bomb",
+      "expected": "DTD/external resolution disabled; bounded parser rejects without file/network access or unbounded expansion"
+    },
+    {
+      "id": "CMP-17",
+      "input": "deeply nested XML, huge attribute/value/count or decompression/resource amplification",
+      "expected": "hard byte/node/depth/time limits reject candidate; previous-good remains and diagnostics stay bounded"
+    },
+    {
+      "id": "CMP-18",
+      "input": "path traversal, absolute path, alternate stream or symlink escape in source identity",
+      "expected": "resolve only under approved manifest root using qualified normalized path; escape rejected before read"
+    },
+    {
+      "id": "CMP-19",
+      "input": "case-fold or Unicode-confusable FID/KeyID/control/field collision",
+      "expected": "preserve exact source identity, detect comparison collision and quarantine rather than merge"
+    },
+    {
+      "id": "CMP-20",
+      "input": "unknown executable-looking attribute or future hook key",
+      "expected": "unknown data preserved only as non-executable evidence; never emitted or invoked until a reviewed typed contract exists"
+    }
+  ],
+  "pass_condition": "every case fails closed or emits an explicit presentation-only disposition; none enables an executable contract",
+  "execution_status": "NOT_RUN",
+  "resource_limits_required": [
+    "maximum input bytes",
+    "maximum XML nodes and depth",
+    "maximum attributes/value length",
+    "maximum compiled elements",
+    "parse/compile deadline",
+    "bounded diagnostic count and size"
+  ]
+}

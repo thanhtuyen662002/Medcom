@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/Backend/">
+    <Project Path="src/backend/Medcom.Api/Medcom.Api.csproj" />
+    <Project Path="src/backend/Medcom.Application/Medcom.Application.csproj" />
+    <Project Path="src/backend/Medcom.Contracts/Medcom.Contracts.csproj" />
+    <Project Path="src/backend/Medcom.Infrastructure/Medcom.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="tests/backend/Medcom.Api.Tests/Medcom.Api.Tests.csproj" />
+  </Folder>
+</Solution>

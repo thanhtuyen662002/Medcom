@@ -1,0 +1,188 @@
+{
+  "schema_version": 1,
+  "lane": "L08",
+  "artifact_status": "prepared_local_only",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_issues": [
+    32,
+    33,
+    34,
+    35,
+    42
+  ],
+  "source_contracts": [
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "9d9b7157027cce55e3d24d7ade4e554e7205d34a9393bb67f21f60164190c1e0",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/web/PHASE2_PILOT_FRONTEND_IMPLEMENTATION_PACK.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "ca5fbb87a9a34262e41b8134693b2f7a69b186c30f6682691132091aaa70af35",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/PHASE2_PILOT_FRONTEND_IMPLEMENTATION_PACK.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "4a48658994a7a70ad809587c2100cb3f6340526e508805f4ebee11710574f4d6",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "inventories/traceability/FILTER_TRACEABILITY_SCOPE_AUDIT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "2405377c8f751cf92ff6c5aced05b3b3b5481c599fb76b689d53b3cce43191f1",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/inventories/traceability/FILTER_TRACEABILITY_SCOPE_AUDIT.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "inventories/traceability/FILTER_FAMILY_TRACEABILITY_REGISTER.json",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "bf467cc1843939098319f57028ae60c5ed7243ff78ce9f0bafde8f8432ce36bf",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/inventories/traceability/FILTER_FAMILY_TRACEABILITY_REGISTER.json",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "338ac433b907f42e720fe3564d3041fef2322036d7405bdf0c7e08942ce3bb13",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "9cb84eb673b9d7a0a8cea3e70f2366350b8150f4a15ad42f614510f3113c1524",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    }
+  ],
+  "limits": [
+    "no L08 dispatcher lease or writer token",
+    "no complete approved ERP/source manifest",
+    "no complete B2 database catalog or exact per-pilot dependencies",
+    "no verified mutation signature, state machine, transaction or idempotency contract",
+    "no product/API/browser/database execution",
+    "no GitHub mutation or issue closure",
+    "mock/test-double evidence cannot enable real users or close a pilot"
+  ],
+  "execution_status": "NOT_RUN",
+  "eligible_to_code": false,
+  "unit_id": "L08-P3-INTERNAL-TRANSFER-GATE",
+  "graph_id": "F6",
+  "issue": 33,
+  "pilot_id": "P3-INTERNAL-TRANSFER",
+  "requested_intent": "Quản lý kho → Đề nghị điều chuyển nội bộ",
+  "observed_candidates": [
+    "IV_StockTranferFrm candidate from historical guide",
+    "IV_IncomingShipmentStatusFrm optional companion, explicitly not this pilot"
+  ],
+  "verified_or_corroborated": [
+    "requested intent exists in owner pilot matrix",
+    "historical guide contains Chuyển kho - ký gởi candidate"
+  ],
+  "blocked_facts": [
+    "exact current form/menu/variant identity",
+    "master/detail DB objects, source/destination warehouse fields and item/quantity joins",
+    "query/action/permission/state/transaction/idempotency contracts",
+    "equivalence of ký gởi/stock transfer candidate to requested internal transfer"
+  ],
+  "forbidden_inferences": [
+    "do not infer binding from form/procedure/table name",
+    "incoming/status companion cannot satisfy F6",
+    "do not reuse inbound request or stock-posting actions",
+    "do not invent rowversion, source/destination semantics or transfer states",
+    "incoming/status companion is not P3 and cannot satisfy F6"
+  ],
+  "dependency_gates": [
+    "A4 capability and B4 effective scope",
+    "B1 typed query and B2 exact catalog/bindings",
+    "B3 typed command and exact transaction/effect audit",
+    "B5 concurrency/idempotency/OutcomeUnknown per action",
+    "F1/F2/F3 shared shell/Grid/form primitives",
+    "current source/build/menu/action evidence",
+    "Q1/Q2/Q3 applicable independent acceptance"
+  ],
+  "acceptance_before_binding": [
+    "exact source/build/menu/form/variant identity",
+    "exact list/detail DTO and field/join/alias binding",
+    "allowed and denied role plus direct-route/API/export scope tests",
+    "each mutation maps to a reviewed ActionId, state guard and authoritative reread",
+    "transaction owner/hooks/triggers/mandatory effects and retry classification",
+    "desktop/mobile/freshness/conflict/OutcomeUnknown acceptance",
+    "current-head independent review and required CI green"
+  ],
+  "cases": [
+    {
+      "id": "P3-01",
+      "scenario": "IV_StockTranferFrm name resembles internal transfer",
+      "expected": "retain as investigation candidate only; no route or binding"
+    },
+    {
+      "id": "P3-02",
+      "scenario": "incoming shipment status screen is reused as transfer",
+      "expected": "reject; optional companion is not P3"
+    },
+    {
+      "id": "P3-03",
+      "scenario": "inbound request tables are reused for transfer",
+      "expected": "reject unless exact source and DB dependency evidence proves model"
+    },
+    {
+      "id": "P3-04",
+      "scenario": "procedure family/name contains transfer",
+      "expected": "does not prove caller, parameter, state, permission or current deployment"
+    },
+    {
+      "id": "P3-05",
+      "scenario": "source and destination warehouse are identical",
+      "expected": "exact domain rule remains UNKNOWN; no invented validation"
+    },
+    {
+      "id": "P3-06",
+      "scenario": "source or destination scope is widened by client",
+      "expected": "server-derived warehouse/company scope required"
+    },
+    {
+      "id": "P3-07",
+      "scenario": "two transfers compete for same inventory",
+      "expected": "requires evidenced lock/order/state and OutcomeUnknown reconciliation"
+    },
+    {
+      "id": "P3-08",
+      "scenario": "partial line success is proposed",
+      "expected": "atomicity/partial-result semantics must come from exact command contract"
+    },
+    {
+      "id": "P3-09",
+      "scenario": "mobile transfer action is added from generic schema",
+      "expected": "omit until exact ActionId and capability/state policy exist"
+    },
+    {
+      "id": "P3-10",
+      "scenario": "report/status candidate is treated as mutation authority",
+      "expected": "reject cross-surface inference"
+    },
+    {
+      "id": "P3-11",
+      "scenario": "mock master/detail uses invented item/quantity fields",
+      "expected": "test-double only and cannot establish binding"
+    },
+    {
+      "id": "P3-12",
+      "scenario": "any required identity remains unresolved",
+      "expected": "pilot remains explicitly unavailable, not silently substituted"
+    }
+  ]
+}

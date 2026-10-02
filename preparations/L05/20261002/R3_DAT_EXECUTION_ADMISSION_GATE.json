@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "lane": "L05",
+  "artifact_status": "prepared_local_only",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_issues": [16, 18, 26],
+  "source_contract_ref": "R3_DAT_SOURCE_PRECEDENCE_REGISTER.json#source_contracts",
+  "limits": [
+    "no L05 dispatcher lease or writer token",
+    "no approved raw DAT/source archive opened in this run",
+    "no SY_* rows or executable config bodies inspected or executed",
+    "no legacy database/config write or migration",
+    "no product/compiler runtime test or CI",
+    "no GitHub mutation or issue closure"
+  ],
+  "unit_id": "L05-R3-DAT-EXECUTION-ADMISSION",
+  "graph_id": "A7-R3",
+  "issue": 26,
+  "supporting_issue": 18,
+  "objective": "Keep compiled DAT/config output non-executable until exact source, compiler, scope, authority and previous-good recovery evidence are all verified at one head.",
+  "current_decision": "BLOCKED_NO_EXECUTABLE_DAT_ADMISSION",
+  "execution_authorized": false,
+  "requirements": [
+    {
+      "id": "EXE-01",
+      "requirement": "Approved archive/build identity and the complete qualified source-set manifest are exact-hash verified.",
+      "state": "MISSING_NOT_PROVIDED"
+    },
+    {
+      "id": "EXE-02",
+      "requirement": "Every selected DAT/SY source carries tenant/company/FID/variant/PFID and persisted identity without basename or timestamp authority.",
+      "state": "MISSING_NOT_PROVIDED"
+    },
+    {
+      "id": "EXE-03",
+      "requirement": "Consumer-specific grammar and encoding are versioned; unknown fields remain quarantined and losslessly evidenced.",
+      "state": "MISSING_NOT_PROVIDED"
+    },
+    {
+      "id": "EXE-04",
+      "requirement": "Compiler binary/source/dependency identity and bounded parser limits are attested at the exact implementation head.",
+      "state": "MISSING_NOT_PROVIDED"
+    },
+    {
+      "id": "EXE-05",
+      "requirement": "Executable-looking SQL, script, hook, type and path fields have reviewed typed contracts; unknown execution surfaces are denied.",
+      "state": "MISSING_NOT_PROVIDED"
+    },
+    {
+      "id": "EXE-06",
+      "requirement": "Compiled output is presentation-only unless an independently authorized server action/capability binding exists.",
+      "state": "MISSING_NOT_PROVIDED"
+    },
+    {
+      "id": "EXE-07",
+      "requirement": "Publisher epoch, source manifest hash, compiler version and output hash are atomically bound to one immutable candidate.",
+      "state": "MISSING_NOT_PROVIDED"
+    },
+    {
+      "id": "EXE-08",
+      "requirement": "Admission uses expected-current CAS and rejects stale, mixed-generation, incomplete or ambiguous candidates.",
+      "state": "MISSING_NOT_PROVIDED"
+    },
+    {
+      "id": "EXE-09",
+      "requirement": "Previous-good remains active on compile, validation, publication, cache-convergence or acknowledgement failure.",
+      "state": "MISSING_NOT_PROVIDED"
+    },
+    {
+      "id": "EXE-10",
+      "requirement": "Rollback is compatibility-checked and changes only an immutable configuration pointer, never capability or business data.",
+      "state": "MISSING_NOT_PROVIDED"
+    },
+    {
+      "id": "EXE-11",
+      "requirement": "Runtime evaluation is bounded in a disposable target and proves no file, network, arbitrary type, SQL or script escape.",
+      "state": "MISSING_NOT_PROVIDED"
+    },
+    {
+      "id": "EXE-12",
+      "requirement": "Independent review approves the exact source/build/compiler/output/head tuple and all unresolved executable surfaces remain blocked.",
+      "state": "MISSING_NOT_PROVIDED"
+    }
+  ],
+  "adversarial_cases": [
+    {
+      "id": "XAD-01",
+      "fault": "one DAT member is absent from an otherwise valid manifest",
+      "expected": "candidate rejected; previous-good remains active"
+    },
+    {
+      "id": "XAD-02",
+      "fault": "same basename resolves from two qualified paths",
+      "expected": "ambiguity quarantined; neither newest timestamp nor path order selects authority"
+    },
+    {
+      "id": "XAD-03",
+      "fault": "SY row or DAT content changes after compile but before publish",
+      "expected": "source-set/output binding mismatch rejects before activation"
+    },
+    {
+      "id": "XAD-04",
+      "fault": "compiler or dependency version differs from the reviewed attestation",
+      "expected": "candidate cannot execute even when output bytes happen to match"
+    },
+    {
+      "id": "XAD-05",
+      "fault": "unknown hook, SQL-like field, script, type name or path appears",
+      "expected": "deny execution; preserve only bounded non-executable evidence"
+    },
+    {
+      "id": "XAD-06",
+      "fault": "presentation metadata attempts to grant capability or widen company/warehouse scope",
+      "expected": "deny at authoritative server boundary; configuration is not permission"
+    },
+    {
+      "id": "XAD-07",
+      "fault": "stale publisher wins after a newer immutable version is current",
+      "expected": "expected-current CAS rejects stale epoch with no pointer change"
+    },
+    {
+      "id": "XAD-08",
+      "fault": "lost publish acknowledgement leaves outcome uncertain",
+      "expected": "reconcile authoritative pointer/output hash before retry; no automatic replay"
+    },
+    {
+      "id": "XAD-09",
+      "fault": "rollback candidate targets incompatible grammar, build or retired executable contract",
+      "expected": "rollback rejected; current compatible previous-good remains active"
+    },
+    {
+      "id": "XAD-10",
+      "fault": "one client retains a stale legacy cache after publication",
+      "expected": "fleet activation remains incomplete until measured convergence; Web invalidation is insufficient"
+    }
+  ],
+  "admission_rule": "All EXE-01..12 must be independently verified at one exact head; any drift returns to BLOCKED_NO_EXECUTABLE_DAT_ADMISSION.",
+  "execution_status": "NOT_RUN"
+}

@@ -1,0 +1,227 @@
+{
+  "schema_version": 1,
+  "lane": "L09",
+  "artifact_status": "prepared_local_only",
+  "execution_status": "NOT_RUN",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_owner": "L09",
+  "source_contracts": [
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "git_blob_sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/plans/PHASE2_SCHEDULED_EXECUTION_PLAN.md",
+      "git_blob_sha256": "9e58be73eba12f3ec9e255c4460e9e2d4ede1c26d43877d421144b56876fa532",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md",
+      "git_blob_sha256": "9cb84eb673b9d7a0a8cea3e70f2366350b8150f4a15ad42f614510f3113c1524",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/architecture/PHASE2_REALTIME_COEXISTENCE_RECOVERY_CONTRACT.md",
+      "git_blob_sha256": "e48ccffc8fa128f41c525c7c30ac4fff265a6fb8af739478281cf927afd753f4",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/architecture/PHASE2_COMMAND_TRANSACTION_CONTRACT.md",
+      "git_blob_sha256": "a819e2f2cb55b94883235ae3626157e7da641e75a727b98a8930bd712299e99c",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/erp/RPX_STRUCTURAL_EVIDENCE.md",
+      "git_blob_sha256": "23766cc08c6e1f085846e8110f6d630f08fd1f1d0cdb36b9bea77ba4e4f349d7",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/web/GRID_MOBILE_IMPLEMENTATION_CONTRACT.md",
+      "git_blob_sha256": "b59d80f754cd3108c415a458f83c19dc7c7c197998e23fa12f258adaeafb3418",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/web/PHASE2_FRONTEND_ACCEPTANCE.md",
+      "git_blob_sha256": "668c3f410cbc5793aa3be1f032130a31d07bbf075c9153a778af5e3ac2d4422a",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/web/UX_STRESS_ACCEPTANCE.md",
+      "git_blob_sha256": "56a9163d45ad3c6787ca280db17c0ce69f6f31a5525ba1c94ac943d114649e03",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "git_blob_sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "git_blob_sha256": "868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "git_blob_sha256": "338ac433b907f42e720fe3564d3041fef2322036d7405bdf0c7e08942ce3bb13",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "inventories/traceability/FILTER_TRACEABILITY_SCOPE_AUDIT.md",
+      "git_blob_sha256": "2405377c8f751cf92ff6c5aced05b3b3b5481c599fb76b689d53b3cce43191f1",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    }
+  ],
+  "safety_limits": [
+    "sanitized metadata and synthetic fixtures only",
+    "no GitHub mutation, runtime connection, SQL execution, backup, restore, deployment, or production operation",
+    "candidate/static evidence does not establish reachability, runtime behavior, authorization, recovery success, RPO, or RTO",
+    "all product/runtime/CI results remain NOT_RUN until an eligible fenced lease and required environments exist"
+  ],
+  "unit": "R1",
+  "issue": 39,
+  "title": "Post-commit scoped invalidation and event-loss recovery fixtures",
+  "eligibility": {
+    "graph_status": "BLOCKED",
+    "dependencies": [
+      "A2",
+      "A4",
+      "A6",
+      "operations/event-source evidence"
+    ],
+    "unmet": [
+      "authenticated session implementation",
+      "server-derived capability scopes",
+      "current event source and commit hook",
+      "measured topology/backplane need",
+      "screen freshness classes and polling bounds"
+    ]
+  },
+  "contract": {
+    "authority": "SQL Server/business service",
+    "signalr_role": "invalidation accelerator only",
+    "payload": "stable resource/scope/version hints; no trusted business payload",
+    "fallbacks": [
+      "SWR revalidation",
+      "bounded polling by reviewed freshness class",
+      "manual refresh",
+      "focus-return refresh"
+    ],
+    "legacy_writer_limit": "WinForms may write without a Web event",
+    "dispatch_boundary": "event consumers treat every message as a hint and reauthorize/revalidate current scope and authoritative version before protected use"
+  },
+  "cases": [
+    {
+      "id": "R1-01",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "mutation transaction rolls back after an event candidate is created",
+      "expected_fail_closed_behavior": "publish no invalidation",
+      "required_evidence_to_pass": "outbox/post-commit ordering test tied to authoritative transaction outcome"
+    },
+    {
+      "id": "R1-02",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "client supplies a broader company/branch/storehouse group name",
+      "expected_fail_closed_behavior": "ignore client group request and derive groups server-side",
+      "required_evidence_to_pass": "authenticated scope mapping and adversarial subscription test"
+    },
+    {
+      "id": "R1-03",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "role or storehouse access is revoked while hub remains connected",
+      "expected_fail_closed_behavior": "invalidate membership and force authorized reread",
+      "required_evidence_to_pass": "permission revision fence and revoked-session test"
+    },
+    {
+      "id": "R1-04",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "event names include protected record IDs or state for an unauthorized listener",
+      "expected_fail_closed_behavior": "emit no sensitive metadata or existence signal",
+      "required_evidence_to_pass": "payload classification and cross-scope observation test"
+    },
+    {
+      "id": "R1-05",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "events are duplicated, reordered or a sequence gap is detected",
+      "expected_fail_closed_behavior": "deduplicate hints and re-fetch authoritative state",
+      "required_evidence_to_pass": "version/sequence contract and gap recovery test"
+    },
+    {
+      "id": "R1-06",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "SignalR disconnects during active use",
+      "expected_fail_closed_behavior": "show degraded freshness and use bounded fallback",
+      "required_evidence_to_pass": "screen freshness policy and reconnect/revalidation test"
+    },
+    {
+      "id": "R1-07",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "WinForms changes SQL without traversing Web backend",
+      "expected_fail_closed_behavior": "discover change via authorized fallback without assuming push",
+      "required_evidence_to_pass": "disposable coexistence target and bounded refresh measurement"
+    },
+    {
+      "id": "R1-08",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "cache is unavailable or corrupt",
+      "expected_fail_closed_behavior": "bypass/rebuild from authoritative APIs; never restore permission from cache",
+      "required_evidence_to_pass": "cache isolation/failure test and server authorization assertion"
+    },
+    {
+      "id": "R1-09",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "background polling or SignalR traffic continues",
+      "expected_fail_closed_behavior": "do not extend idle session",
+      "required_evidence_to_pass": "server activity classification and expiry test"
+    },
+    {
+      "id": "R1-10",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "late event from old login/company arrives after context switch",
+      "expected_fail_closed_behavior": "fence it by current session/scope generation",
+      "required_evidence_to_pass": "multi-tab/account-switch late-message test"
+    },
+    {
+      "id": "R1-11",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "team proposes a backplane or aggressive DB polling before measurement",
+      "expected_fail_closed_behavior": "keep topology decision open and polling bounded",
+      "required_evidence_to_pass": "connection/fan-out/latency measurements and approved capacity model"
+    },
+    {
+      "id": "R1-12",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "mutation response is ambiguous but invalidation arrives",
+      "expected_fail_closed_behavior": "do not declare success or retry from event alone",
+      "required_evidence_to_pass": "B5 outcome reconciliation using authoritative command/business identity"
+    },
+    {
+      "id": "R1-13",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "outbox row exists but business commit identity/version cannot be correlated",
+      "expected_fail_closed_behavior": "do not publish trusted freshness; quarantine/reconcile from authoritative business state",
+      "required_evidence_to_pass": "commit-correlated outbox identity and crash-window tests"
+    },
+    {
+      "id": "R1-14",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "event payload version is newer but belongs to a different scope generation",
+      "expected_fail_closed_behavior": "discard before cache/UI update and perform authorized reread",
+      "required_evidence_to_pass": "scope generation in subscription/cache key plus cross-scope test"
+    },
+    {
+      "id": "R1-15",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "client reconnects without a complete sequence replay window",
+      "expected_fail_closed_behavior": "mark gap and full-authoritative refresh for affected resources; never infer no changes",
+      "required_evidence_to_pass": "bounded replay/gap protocol or explicit full-refresh acceptance"
+    },
+    {
+      "id": "R1-16",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "backplane delivers duplicate notification after config/build generation changes",
+      "expected_fail_closed_behavior": "fence old generation and revalidate current resource contract before use",
+      "required_evidence_to_pass": "build/config/event generation and duplicate delivery test"
+    }
+  ]
+}

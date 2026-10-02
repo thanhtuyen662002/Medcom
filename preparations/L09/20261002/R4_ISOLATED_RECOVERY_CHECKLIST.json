@@ -1,0 +1,250 @@
+{
+  "schema_version": 1,
+  "lane": "L09",
+  "artifact_status": "prepared_local_only",
+  "execution_status": "NOT_RUN",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_owner": "L09",
+  "source_contracts": [
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "git_blob_sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/plans/PHASE2_SCHEDULED_EXECUTION_PLAN.md",
+      "git_blob_sha256": "9e58be73eba12f3ec9e255c4460e9e2d4ede1c26d43877d421144b56876fa532",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md",
+      "git_blob_sha256": "9cb84eb673b9d7a0a8cea3e70f2366350b8150f4a15ad42f614510f3113c1524",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/architecture/PHASE2_REALTIME_COEXISTENCE_RECOVERY_CONTRACT.md",
+      "git_blob_sha256": "e48ccffc8fa128f41c525c7c30ac4fff265a6fb8af739478281cf927afd753f4",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/architecture/PHASE2_COMMAND_TRANSACTION_CONTRACT.md",
+      "git_blob_sha256": "a819e2f2cb55b94883235ae3626157e7da641e75a727b98a8930bd712299e99c",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/erp/RPX_STRUCTURAL_EVIDENCE.md",
+      "git_blob_sha256": "23766cc08c6e1f085846e8110f6d630f08fd1f1d0cdb36b9bea77ba4e4f349d7",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/web/GRID_MOBILE_IMPLEMENTATION_CONTRACT.md",
+      "git_blob_sha256": "b59d80f754cd3108c415a458f83c19dc7c7c197998e23fa12f258adaeafb3418",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/web/PHASE2_FRONTEND_ACCEPTANCE.md",
+      "git_blob_sha256": "668c3f410cbc5793aa3be1f032130a31d07bbf075c9153a778af5e3ac2d4422a",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/web/UX_STRESS_ACCEPTANCE.md",
+      "git_blob_sha256": "56a9163d45ad3c6787ca280db17c0ce69f6f31a5525ba1c94ac943d114649e03",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "git_blob_sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "git_blob_sha256": "868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "git_blob_sha256": "338ac433b907f42e720fe3564d3041fef2322036d7405bdf0c7e08942ce3bb13",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "inventories/traceability/FILTER_TRACEABILITY_SCOPE_AUDIT.md",
+      "git_blob_sha256": "2405377c8f751cf92ff6c5aced05b3b3b5481c599fb76b689d53b3cce43191f1",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    }
+  ],
+  "safety_limits": [
+    "sanitized metadata and synthetic fixtures only",
+    "no GitHub mutation, runtime connection, SQL execution, backup, restore, deployment, or production operation",
+    "candidate/static evidence does not establish reachability, runtime behavior, authorization, recovery success, RPO, or RTO",
+    "all product/runtime/CI results remain NOT_RUN until an eligible fenced lease and required environments exist"
+  ],
+  "unit": "R4",
+  "issue": 27,
+  "title": "Isolated backup, restore and recovery evidence checklist",
+  "eligibility": {
+    "graph_status": "BLOCKED",
+    "dependencies": [
+      "authorized DBA/SRE runtime access",
+      "actual isolated recovery rehearsal"
+    ],
+    "unmet": [
+      "approved disposable target",
+      "backup artifact provenance",
+      "restore tooling/permissions",
+      "agreed business RPO/RTO targets",
+      "measured restore evidence",
+      "post-restore application and integrity checks"
+    ]
+  },
+  "verified_static_baseline": {
+    "recovery_model": "SIMPLE",
+    "read_committed_snapshot": "ON",
+    "snapshot_isolation": "OFF",
+    "service_broker": "OFF",
+    "query_store": "OFF",
+    "meaning": "dump evidence only; current runtime must be rechecked"
+  },
+  "required_rehearsal_record": [
+    "source environment identity and approved scope",
+    "backup identity/type/time/hash or provider-native immutable ID",
+    "disposable restore target and isolation proof",
+    "tool/version/command class with secrets redacted",
+    "start/end timestamps and measured durations",
+    "integrity result and application smoke result",
+    "data-loss observation compared with an agreed target",
+    "cleanup/retention outcome and reviewer sign-off"
+  ],
+  "prohibited_claims": [
+    "no invented RPO/RTO",
+    "no production restore or SQL option change",
+    "no point-in-time recovery assumption under SIMPLE",
+    "no success inferred from backup creation alone",
+    "no customer/transaction payload in public evidence"
+  ],
+  "cases": [
+    {
+      "id": "R4-01",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "runtime options differ from the historical dump",
+      "expected_fail_closed_behavior": "stop and classify provenance mismatch",
+      "required_evidence_to_pass": "authorized live option capture with environment/build/database identity"
+    },
+    {
+      "id": "R4-02",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "backup exists but source identity or chain is unknown",
+      "expected_fail_closed_behavior": "do not restore or claim recoverability",
+      "required_evidence_to_pass": "verified backup sequence compatible with the current recovery model and provider policy; under SIMPLE, no transaction-log chain assumption"
+    },
+    {
+      "id": "R4-03",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "restore target can route to shared/customer resources",
+      "expected_fail_closed_behavior": "abort before restore",
+      "required_evidence_to_pass": "network/account/database isolation proof and DBA approval"
+    },
+    {
+      "id": "R4-04",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "restore command completes",
+      "expected_fail_closed_behavior": "withhold success until integrity and application smoke checks pass",
+      "required_evidence_to_pass": "DB integrity result plus scoped read/auth/application checks"
+    },
+    {
+      "id": "R4-05",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "team derives RPO/RTO from one elapsed restore",
+      "expected_fail_closed_behavior": "report only observed timings and data-loss window",
+      "required_evidence_to_pass": "owner-approved targets plus repeated representative measurements"
+    },
+    {
+      "id": "R4-06",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "point-in-time recovery is requested while evidence says SIMPLE",
+      "expected_fail_closed_behavior": "mark unsupported pending verified backup policy",
+      "required_evidence_to_pass": "current recovery model and provider backup/log capability evidence"
+    },
+    {
+      "id": "R4-07",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "credentials or live data would enter logs/artifacts",
+      "expected_fail_closed_behavior": "redact and store only sanctioned metadata",
+      "required_evidence_to_pass": "secret scan and sanitized evidence review"
+    },
+    {
+      "id": "R4-08",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "restore uses a newer/older incompatible application or schema",
+      "expected_fail_closed_behavior": "quarantine result until compatibility is proven",
+      "required_evidence_to_pass": "build/config/schema manifest and compatibility smoke suite"
+    },
+    {
+      "id": "R4-09",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "rehearsal fails or is interrupted",
+      "expected_fail_closed_behavior": "retain failed evidence and clean isolated resources safely",
+      "required_evidence_to_pass": "failure log, resource inventory and verified cleanup"
+    },
+    {
+      "id": "R4-10",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "backup/restore succeeds once but no reviewer verifies exact artifacts",
+      "expected_fail_closed_behavior": "keep R4 open",
+      "required_evidence_to_pass": "independent exact-evidence review and repeatability record"
+    },
+    {
+      "id": "R4-11",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "SIMPLE database has full plus differential backup but no SQL log backups",
+      "expected_fail_closed_behavior": "evaluate the verified compatible sequence; do not fail merely for missing log chain and do not claim PITR",
+      "required_evidence_to_pass": "current recovery model, actual backup types/order and successful isolated restore"
+    },
+    {
+      "id": "R4-12",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "business database restores later than command ledger",
+      "expected_fail_closed_behavior": "disable dispatch and reconcile operations at a safe common frontier before reuse",
+      "required_evidence_to_pass": "business/ledger checkpoint mapping and duplicate/OutcomeUnknown reconciliation test"
+    },
+    {
+      "id": "R4-13",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "business database restores but audit/outbox state is older or newer",
+      "expected_fail_closed_behavior": "withhold normal operation; reconcile missing/duplicate audit and event delivery without fabricating history",
+      "required_evidence_to_pass": "audit/outbox frontier map, replay/dedup policy and reviewer evidence"
+    },
+    {
+      "id": "R4-14",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "report job/artifact metadata points beyond restored business/config frontier",
+      "expected_fail_closed_behavior": "quarantine status/download and regenerate only under current authorization and reviewed snapshot semantics",
+      "required_evidence_to_pass": "job/artifact/config frontier and authorized reconciliation test"
+    }
+  ],
+  "backup_chain_policy": {
+    "historical_static_recovery_model": "SIMPLE",
+    "runtime_rule": "re-read current recovery model and provider backup capabilities before selecting evidence requirements",
+    "SIMPLE": "require a verified restorable full backup and any compatible differential/provider-native chain actually used; do not require or claim SQL transaction-log chain or point-in-time recovery",
+    "FULL_OR_BULK_LOGGED": "log-chain/PITR acceptance applies only if the current runtime policy and actual backup sequence prove it",
+    "universal": "every artifact/sequence has immutable identity, source, timestamps, integrity and restore-order evidence; a chain type is never guessed"
+  },
+  "restore_frontier": {
+    "stores": [
+      "business database",
+      "command/idempotency ledger",
+      "business/security audit",
+      "outbox/event delivery state",
+      "report/export job and artifact metadata",
+      "build/config compatibility manifest"
+    ],
+    "rule": "choose one reviewed recovery frontier that prevents replay, duplicate effects, missing audit and false event/report completion; independent store restores are not assumed atomic",
+    "required_dispositions": [
+      "latest mutually consistent checkpoints",
+      "accepted/in-flight/OutcomeUnknown operation inventory",
+      "outbox published/unpublished boundary",
+      "job/artifact visibility and retention boundary",
+      "authorization/config generation at frontier",
+      "post-restore reconciliation owner and blocked-dispatch state"
+    ]
+  }
+}

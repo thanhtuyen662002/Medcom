@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../Medcom.Application/Medcom.Application.csproj" />
+    <ProjectReference Include="../Medcom.Contracts/Medcom.Contracts.csproj" />
+  </ItemGroup>
+</Project>

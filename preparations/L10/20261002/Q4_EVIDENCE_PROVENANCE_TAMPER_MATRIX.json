@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "lane": "L10",
+  "artifact_status": "prepared_local_only",
+  "execution_status": "NOT_RUN",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_owner": "L10",
+  "unit": "Q4",
+  "issue": 41,
+  "title": "Release-evidence provenance tamper supplement",
+  "supplement_to": "Q4_RELEASE_GATE_LEDGER.json",
+  "source_contracts": [
+    {"path":"docs/EVIDENCE_STANDARDS.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","git_blob_sha256":"b330291378041fc197796deaab6d49c72a9563fdbe2c5fd990fd827b266e1910"},
+    {"path":"docs/plans/PHASE2_SCHEDULED_EXECUTION_PLAN.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","git_blob_sha256":"9e58be73eba12f3ec9e255c4460e9e2d4ede1c26d43877d421144b56876fa532"},
+    {"path":"docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","git_blob_sha256":"338ac433b907f42e720fe3564d3041fef2322036d7405bdf0c7e08942ce3bb13"}
+  ],
+  "safety_limits": [
+    "synthetic evidence records only; no check, review, issue, pull-request, or branch mutation",
+    "no GitHub mutation, product execution, runtime connection, SQL execution, deployment, or production operation",
+    "the matrix cannot make Q4 eligible or close any dependency"
+  ],
+  "eligibility": {"actual_start_state":"NOT_ELIGIBLE","dependency_count":14,"required_runtime":"exact implementation head with independently verifiable review, CI, environment, and artifact identities"},
+  "cases": [
+    {"id":"Q4-PT-01","role":"release_manager","execution_status":"NOT_RUN","entry_point":"check suite evidence","attack_or_failure":"attach a green check from an ancestor, sibling, or rebased-away commit to the proposed release head","expected_result":"gate rejects unless every required check conclusion is bound to the exact current head","owner_route":"L01/Q4","evidence_to_pass":"API readback of head SHA, required check identity, conclusion, and completion time"},
+    {"id":"Q4-PT-02","role":"manager_reviewer","execution_status":"NOT_RUN","entry_point":"review evidence","attack_or_failure":"reuse approval created before the latest material code or evidence change","expected_result":"gate requires a still-valid independent approval for the exact reviewable head and policy","owner_route":"L01/Q4","evidence_to_pass":"review author/role, submitted commit, dismissal state, and head comparison"},
+    {"id":"Q4-PT-03","role":"internal_malicious_user","execution_status":"NOT_RUN","entry_point":"artifact manifest","attack_or_failure":"replace a report, screenshot, log, catalog, or fixture after review while keeping its filename","expected_result":"content digest/provenance mismatch blocks acceptance and is never repaired by filename alone","owner_route":"L01/Q4","evidence_to_pass":"independent digest recomputation against immutable source/run identity"},
+    {"id":"Q4-PT-04","role":"release_engineer","execution_status":"NOT_RUN","entry_point":"environment attestation","attack_or_failure":"present test-double, local preparation, or unapproved runtime output as product evidence","expected_result":"gate rejects missing or mismatched environment, source, build, dependency, and data-fixture identities","owner_route":"L01/Q4","evidence_to_pass":"machine-readable attestation joins exact head to build and isolated environment identities"},
+    {"id":"Q4-PT-05","role":"DBA","execution_status":"NOT_RUN","entry_point":"finite catalog/traceability result","attack_or_failure":"use the bounded 13-family seed register or a partial export as proof of the complete 232 DAT / 786 RPX universe","expected_result":"finite validator rejects incomplete universe/join counts while runtime UNKNOWN remains a separate status","owner_route":"L03/L01/Q4","evidence_to_pass":"authoritative finite catalog/export manifests and total-join validator output"},
+    {"id":"Q4-PT-06","role":"SRE","execution_status":"NOT_RUN","entry_point":"dependency ledger transition","attack_or_failure":"mark Q4 eligible from cached statuses after a pilot/operational dependency is reopened, superseded, expired, or moved to a new head","expected_result":"one atomic fresh read recomputes all 14 gates and leaves Q4 blocked on any non-current proof","owner_route":"L01/Q4","evidence_to_pass":"timestamped 14-node readback with exact heads, owners, review/check identities, and no stale cache input"}
+  ],
+  "future_execution_record_fields": ["stimulus_timestamp", "observed_result", "authoritative_version_or_identity", "exact_head", "environment_identity", "measurement_profile", "reviewer"]
+}

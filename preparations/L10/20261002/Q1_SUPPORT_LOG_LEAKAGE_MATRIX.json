@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "lane": "L10",
+  "artifact_status": "prepared_local_only",
+  "execution_status": "NOT_RUN",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_owner": "L10",
+  "unit": "Q1",
+  "issue": 36,
+  "title": "Support and diagnostic leakage adversarial supplement",
+  "supplement_to": "Q1_AUTH_TENANT_ATTACK_MATRIX.json",
+  "source_contracts": [
+    {"path":"docs/architecture/PHASE2_AUTH_CAPABILITY_CONTRACT.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","git_blob_sha256":"fa8db170726d9afe02fd5b2e578e00226978f78757c4fbfcde3fa9328d18eb47"},
+    {"path":"docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","git_blob_sha256":"c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84"},
+    {"path":"docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","git_blob_sha256":"868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b"}
+  ],
+  "safety_limits": [
+    "synthetic canary values only; no real secret, credential, patient, customer, or transaction data",
+    "no GitHub mutation, product execution, runtime connection, SQL execution, deployment, or production operation",
+    "a prepared denial oracle is not a product finding or passing runtime evidence"
+  ],
+  "eligibility": {
+    "actual_start_state": "waiting_dependencies_and_preflight",
+    "dependencies": ["A1/#12", "A6/#17", "T1/#19"],
+    "required_runtime": "isolated support/log pipeline with synthetic canaries"
+  },
+  "cases": [
+    {"id":"Q1-SL-01","role":"IT_support","execution_status":"NOT_RUN","entry_point":"support reference lookup","attack_or_failure":"look up a synthetic reference owned by another tenant and compare not-found versus forbidden behavior","expected_result":"uniform denial reveals neither record existence nor foreign scope metadata","owner_route":"A6/A4/Q1","evidence_to_pass":"same response class, bounded timing/size distribution, and zero foreign identifiers in the isolated trace"},
+    {"id":"Q1-SL-02","role":"internal_malicious_user","execution_status":"NOT_RUN","entry_point":"application log and trace","attack_or_failure":"inject CANARY_SECRET_A, a synthetic connection fragment, and a synthetic customer-row marker into validation failures","expected_result":"structured logs retain safe correlation and error class while removing every canary payload","owner_route":"A1/A6/Q1","evidence_to_pass":"sink-by-sink capture proves canary absence and preserves correlation/build/object metadata"},
+    {"id":"Q1-SL-03","role":"release_engineer","execution_status":"NOT_RUN","entry_point":"CI failure artifact","attack_or_failure":"cause a synthetic command failure whose request body contains a password-shaped canary and SQL-shaped text","expected_result":"console, test report, attachment, and annotation redact the body without hiding the failing contract identity","owner_route":"A6/L01/Q1","evidence_to_pass":"four-channel artifact scan has zero canary matches and a usable sanitized failure reference"},
+    {"id":"Q1-SL-04","role":"IT_support","execution_status":"NOT_RUN","entry_point":"support bundle export","attack_or_failure":"request a bundle after synthetic config, license-path, cookie, authorization-header, and customer-row canaries were observed","expected_result":"bundle is allowlisted, scope-authorized, and contains none of the canaries or raw configuration","owner_route":"A6/T1/Q1","evidence_to_pass":"manifested bundle contents plus recursive canary scan and access-denial test"},
+    {"id":"Q1-SL-05","role":"external_attacker","execution_status":"NOT_RUN","entry_point":"problem-details and exception response","attack_or_failure":"trigger parser, authorization, and downstream timeout failures with canaries in path, query, header, and body","expected_result":"client receives a stable safe error and correlation ID, never stack, SQL, filesystem path, secret, or foreign identifier","owner_route":"A1/A4/Q1","evidence_to_pass":"response corpus scan plus correlation lookup using only authorized sanitized metadata"},
+    {"id":"Q1-SL-06","role":"SRE","execution_status":"NOT_RUN","entry_point":"audit and telemetry fan-out","attack_or_failure":"send one synthetic denied operation through audit, metrics, tracing, alerting, and dead-letter paths","expected_result":"each sink uses the minimum authorized dimensions; no sink restores a value redacted by the producer","owner_route":"A6/R1/Q1","evidence_to_pass":"five-sink lineage inventory, access matrix, retention identity, and zero-canary scan"}
+  ],
+  "future_execution_record_fields": ["stimulus_timestamp", "observed_result", "authoritative_version_or_identity", "exact_head", "environment_identity", "measurement_profile", "reviewer"]
+}

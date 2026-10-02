@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "lane": "L10",
+  "artifact_status": "prepared_local_only",
+  "execution_status": "NOT_RUN",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_owner": "L10",
+  "unit": "Q2",
+  "issue": 37,
+  "title": "Export formula-injection and accessible workflow supplement",
+  "supplement_to": "Q2_FRONTEND_STRESS_MATRIX.json",
+  "source_contracts": [
+    {"path":"docs/web/GRID_MOBILE_IMPLEMENTATION_CONTRACT.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","git_blob_sha256":"b59d80f754cd3108c415a458f83c19dc7c7c197998e23fa12f258adaeafb3418"},
+    {"path":"docs/web/UX_STRESS_ACCEPTANCE.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","git_blob_sha256":"56a9163d45ad3c6787ca280db17c0ce69f6f31a5525ba1c94ac943d114649e03"},
+    {"path":"docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","git_blob_sha256":"c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84"}
+  ],
+  "safety_limits": [
+    "synthetic cells and generated local artifacts only; no real customer or transaction data",
+    "no GitHub mutation, product execution, runtime connection, SQL execution, deployment, or production operation",
+    "opening a generated spreadsheet in an unisolated desktop application is outside this preparation"
+  ],
+  "eligibility": {"actual_start_state":"waiting_dependencies_and_preflight","dependencies":["F2/#29", "R2/#25", "Q1/#36"],"required_runtime":"isolated export generator and disposable spreadsheet-analysis sandbox"},
+  "cases": [
+    {"id":"Q2-EF-01","role":"external_attacker","execution_status":"NOT_RUN","entry_point":"CSV/XLSX text cell","attack_or_failure":"export synthetic values beginning with =, +, -, @, tab, carriage return, and Unicode lookalikes","expected_result":"every untrusted value remains literal in every supported export format","owner_route":"R2/F2/Q2","evidence_to_pass":"file-level parse proves no formula, external link, macro, or DDE-capable cell"},
+    {"id":"Q2-EF-02","role":"internal_malicious_user","execution_status":"NOT_RUN","entry_point":"exported filename and content-disposition","attack_or_failure":"inject CR/LF, path separators, bidi controls, reserved names, and extension confusion into saved-view/report labels","expected_result":"server emits a safe deterministic filename and one unambiguous media type","owner_route":"R2/Q2","evidence_to_pass":"header parser, filesystem-name corpus, and download UX assertion"},
+    {"id":"Q2-EF-03","role":"analyst","execution_status":"NOT_RUN","entry_point":"scoped export","attack_or_failure":"combine hidden columns, active filters, unloaded rows, and a revoked export capability after job enqueue","expected_result":"worker reauthorizes immutable scope and excludes hidden/foreign fields rather than exporting the visible cache","owner_route":"A4/R2/Q1/Q2","evidence_to_pass":"queued-job revocation test plus parsed column/row manifest"},
+    {"id":"Q2-EF-04","role":"screen_reader_user","execution_status":"NOT_RUN","entry_point":"long-running export workflow","attack_or_failure":"progress, completion, failure, and cancellation are conveyed only by color, animation, or an unlabeled toast","expected_result":"named live status is non-spammy, focus remains stable, and the final artifact action is keyboard reachable","owner_route":"F3/R2/Q2","evidence_to_pass":"screen-reader transcript, focus trace, and duplicate-announcement assertion"},
+    {"id":"Q2-EF-05","role":"manager","execution_status":"NOT_RUN","entry_point":"locale-sensitive export","attack_or_failure":"round-trip synthetic leading zeros, long identifiers, dates, decimal separators, and RTL text under two locales","expected_result":"declared schema preserves identity and value semantics without spreadsheet auto-coercion","owner_route":"R2/F2/Q2","evidence_to_pass":"schema-aware round-trip comparison across both locales"},
+    {"id":"Q2-EF-06","role":"end_user","execution_status":"NOT_RUN","entry_point":"cancel and retry after ambiguous download","attack_or_failure":"disconnect after generation completes but before acknowledgement, then retry with the same request identity","expected_result":"UI reconciles artifact state, does not silently duplicate generation, and never labels unknown completion as failure or success","owner_route":"R2/B5/F3/Q2","evidence_to_pass":"disconnect/reconcile trace with one authoritative artifact identity and explicit OutcomeUnknown transition"}
+  ],
+  "future_execution_record_fields": ["stimulus_timestamp", "observed_result", "authoritative_version_or_identity", "exact_head", "environment_identity", "measurement_profile", "reviewer"]
+}

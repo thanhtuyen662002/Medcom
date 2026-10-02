@@ -1,0 +1,209 @@
+{
+  "schema_version": 1,
+  "lane": "L05",
+  "artifact_status": "prepared_local_only",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_issues": [
+    16,
+    18,
+    26
+  ],
+  "source_contracts": [
+    {
+      "path": "docs/db/CONFIGURATION_OBJECT_CATALOG.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "a8cb863be9b001a9e81fe3f91b17b7370096accb66153cdcc1a744ad37fe8245",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/db/CONFIGURATION_OBJECT_CATALOG.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/architecture/PHASE2_SCREEN_DEFINITION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "aeb14d0db338c24d98dce32f1eb986ff6e771abd5c799a151a8536c9dbba2316",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_SCREEN_DEFINITION_CONTRACT.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/erp/DAT_LAYOUT_CORROBORATION.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c2dc4ea6cc61b46edb12b7ebf0f1edfdbb6975f7d9df29f4f0448deadcdccedf",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/DAT_LAYOUT_CORROBORATION.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "87a9165f370e30294d69a409e81c918f1f2425c2eeeb86d534d68d79762a14ad",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/erp/TEMPLATES_PERSONALIZATION_UPDATE_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "ef8ec347a29a39e5b112225c923f9ec751a3d4e9ca097ba6abbe3b889ebff25f",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/TEMPLATES_PERSONALIZATION_UPDATE_EVIDENCE.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "4a48658994a7a70ad809587c2100cb3f6340526e508805f4ebee11710574f4d6",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "inventories/erp/WINFORMS_PROPERTY_KEY_INDEX.json",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c41eb90ae522a45819f810f3ac69e2cf902f5d47f295163de5056dcfcb4fe50c",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/inventories/erp/WINFORMS_PROPERTY_KEY_INDEX.json",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "access": "sanitized repository evidence"
+    }
+  ],
+  "limits": [
+    "no L05 dispatcher lease or writer token",
+    "no approved raw DAT/source archive opened in this run",
+    "no SY_* rows or executable config bodies inspected or executed",
+    "no legacy database/config write or migration",
+    "no product/compiler runtime test or CI",
+    "no GitHub mutation or issue closure"
+  ],
+  "unit_id": "L05-A7-SCREEN-DEFINITION",
+  "graph_id": "A7",
+  "issue": 18,
+  "objective": "Specify presentation-only immutable definition fixtures without copying executable legacy grammar into browser contracts.",
+  "normalized_shape": {
+    "identity": [
+      "screen_id",
+      "variant_id",
+      "source_identity",
+      "source_hash",
+      "compiler_version",
+      "canonical_content_hash",
+      "source_set_manifest_ref"
+    ],
+    "version": [
+      "definition_version_id",
+      "created_at",
+      "actor_ref",
+      "previous_version_ref"
+    ],
+    "presentation": [
+      "tabs",
+      "labels",
+      "order",
+      "grid columns",
+      "filter descriptors",
+      "lookup contract refs",
+      "required/read-only/default presentation",
+      "desktop/mobile schema"
+    ],
+    "publication": [
+      "candidate_status",
+      "current_pointer_expected_version",
+      "last_good_pointer",
+      "publisher_epoch",
+      "compatibility_fingerprint"
+    ],
+    "prohibited_browser_fields": [
+      "raw SQL",
+      "table/view/procedure identifiers as authority",
+      "hook/formula/script bodies",
+      "credentials",
+      "unvalidated legacy class/method names"
+    ]
+  },
+  "fixtures": [
+    {
+      "id": "DEF-01",
+      "input": "same FormName, two MenuPara/variant identities",
+      "expected": "two explicit variants; no basename/suffix collapse"
+    },
+    {
+      "id": "DEF-02",
+      "input": "FID/PFID child plus parent with matching labels",
+      "expected": "retain exact parent/child identities and source rows; no inferred inheritance"
+    },
+    {
+      "id": "DEF-03",
+      "input": "company presentation override hides a column",
+      "expected": "presentation change only; data/query/export authorization unchanged"
+    },
+    {
+      "id": "DEF-04",
+      "input": "user override requests forbidden field or action",
+      "expected": "deny/remove without broadening scope or capability"
+    },
+    {
+      "id": "DEF-05",
+      "input": "ControlType 30 or executable HTML/script-like metadata",
+      "expected": "browser executable payload refused; previous-good version remains"
+    },
+    {
+      "id": "DEF-06",
+      "input": "lookup source metadata has unresolved table/action/parameter",
+      "expected": "quarantine lookup contract; do not emit arbitrary source to browser"
+    },
+    {
+      "id": "DEF-07",
+      "input": "required/read-only flag conflicts with server business validation",
+      "expected": "server validation remains authoritative; presentation cannot weaken it"
+    },
+    {
+      "id": "DEF-08",
+      "input": "mobile schema omits dense-grid fields",
+      "expected": "semantic identity and authorization remain, with explicit mobile presentation only"
+    },
+    {
+      "id": "DEF-09",
+      "input": "current pointer changed since admin opened candidate",
+      "expected": "optimistic conflict; no overwrite"
+    },
+    {
+      "id": "DEF-10",
+      "input": "candidate valid under old build/schema only",
+      "expected": "quarantine on current compatibility check; cannot become rollback target"
+    },
+    {
+      "id": "DEF-11",
+      "input": "override omits a property versus explicitly sets null/empty/default",
+      "expected": "retain four distinct states where the verified consumer distinguishes them; no accidental inherited-value deletion"
+    },
+    {
+      "id": "DEF-12",
+      "input": "two definitions normalize to same display text but differ by Unicode normalization/case/source identity",
+      "expected": "canonicalization is explicit for comparison only; original identity retained and collision quarantined"
+    },
+    {
+      "id": "DEF-13",
+      "input": "canonical payload hash matches but source-set manifest or compiler version differs",
+      "expected": "do not reuse publication identity across provenance/compiler boundaries"
+    },
+    {
+      "id": "DEF-14",
+      "input": "admin modifies capability/action identifier through presentation override",
+      "expected": "reject forbidden semantic change even when resulting JSON matches presentation schema"
+    }
+  ],
+  "execution_status": "NOT_RUN"
+}

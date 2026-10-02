@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "lane": "L10",
+  "artifact_status": "prepared_local_only",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "unit": "QX-R1",
+  "issue": 41,
+  "primary_owner": "L10",
+  "reviewed_owner": "L09/R1",
+  "execution_status": "NOT_RUN",
+  "review_kind": "independent_mutation_review",
+  "review_verdict": "PASS_PREPARED_LOCAL_REPAIR_NOT_DURABLE",
+  "release_effect": "The five validator gaps are rejected locally; R1 remains blocking until the repair is durable, independently reviewed on the exact remote head, and backed by actual isolated rehearsal evidence",
+  "owner_route": "L09/R1",
+  "reviewed_local_artifacts": [
+    {
+      "path": "preparations/L09/20261002/R1_EXTERNAL_WRITE_FRESHNESS_GATE.json",
+      "sha256": "ab5074c1e462e4abe3794a973eba6448cb82274c5020209e8722127ba77a0b85",
+      "durability": "LOCAL_WORKTREE_ONLY"
+    },
+    {
+      "path": "preparations/L09/20261002/validate_preparation.py",
+      "sha256": "185dacfc9f37f931a56f5d0f0031beecc8cecfc249349b6155f3e6b260388264",
+      "durability": "LOCAL_WORKTREE_ONLY"
+    }
+  ],
+  "safety_limits": [
+    "sanitized local fixtures and mutation copies only",
+    "no GitHub mutation, runtime connection, SQL execution, deployment, or production operation",
+    "accepted mutation means a validator coverage gap, not a product/runtime failure",
+    "the L10 review does not alter L09 ownership or authorize an external-write rehearsal"
+  ],
+  "acceptance_for_owner_repair": [
+    "require exact XWR-01..12 identities and safety semantics rather than token presence anywhere in the document",
+    "require exact R1X-01..10 case identities and nontrivial evidence contracts",
+    "pin admission_rule and drift_rule to exact-head, all-requirements, independent-review and fail-back-to-blocked semantics",
+    "add negative mutations for every invariant below and obtain independent re-review"
+  ],
+  "cases": [
+    {
+      "id": "QX-R1-01",
+      "role": "independent_QA_reviewer",
+      "entry_point": "XWR requirement semantics",
+      "attack_or_failure": "replace XWR-02 requirement text with placeholder while preserving its ID and MISSING_NOT_PROVIDED state",
+      "observed_local_result": "REJECTED_BY_REPAIRED_VALIDATOR",
+      "expected_result": "reject because approved build/source identity and bounded write-path semantics were removed",
+      "owner_route": "L09/R1",
+      "evidence_to_pass": "negative test rejects semantic removal for each exact XWR requirement",
+      "execution_status": "NOT_RUN"
+    },
+    {
+      "id": "QX-R1-02",
+      "role": "independent_QA_reviewer",
+      "entry_point": "rehearsal admission rule",
+      "attack_or_failure": "replace admission_rule with text that permits admission without exact-head verification",
+      "observed_local_result": "REJECTED_BY_REPAIRED_VALIDATOR",
+      "expected_result": "reject any admission rule that omits separately authorized controller, exact head and all twelve verified requirements",
+      "owner_route": "L09/R1",
+      "evidence_to_pass": "negative test rejects weakened admission semantics",
+      "execution_status": "NOT_RUN"
+    },
+    {
+      "id": "QX-R1-03",
+      "role": "independent_QA_reviewer",
+      "entry_point": "rehearsal drift rule",
+      "attack_or_failure": "replace drift_rule with none",
+      "observed_local_result": "REJECTED_BY_REPAIRED_VALIDATOR",
+      "expected_result": "reject removal of fail-back-to-blocked behavior after target/build/scope/detector/load/review drift",
+      "owner_route": "L09/R1",
+      "evidence_to_pass": "negative test rejects absent or weakened drift fencing",
+      "execution_status": "NOT_RUN"
+    },
+    {
+      "id": "QX-R1-04",
+      "role": "independent_QA_reviewer",
+      "entry_point": "synthetic case identity",
+      "attack_or_failure": "replace R1X-01 with R1X-99 while keeping ten unique prefixed cases",
+      "observed_local_result": "REJECTED_BY_REPAIRED_VALIDATOR",
+      "expected_result": "reject because the exact required R1X-01..10 coverage set is no longer present",
+      "owner_route": "L09/R1",
+      "evidence_to_pass": "negative test pins the complete exact case-ID set",
+      "execution_status": "NOT_RUN"
+    },
+    {
+      "id": "QX-R1-05",
+      "role": "independent_QA_reviewer",
+      "entry_point": "evidence contract",
+      "attack_or_failure": "replace R1X-01 required_evidence_to_pass with the nonempty string ok",
+      "observed_local_result": "REJECTED_BY_REPAIRED_VALIDATOR",
+      "expected_result": "reject evidence text that no longer requires write identity, detector result, elapsed convergence and authorized reread proof",
+      "owner_route": "L09/R1",
+      "evidence_to_pass": "negative test pins the safety-relevant evidence obligations per case",
+      "execution_status": "NOT_RUN"
+    }
+  ]
+}

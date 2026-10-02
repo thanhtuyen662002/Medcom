@@ -1,0 +1,256 @@
+{
+  "schema_version": 1,
+  "lane": "L03",
+  "artifact_status": "prepared_local_only",
+  "execution_status": "NOT_RUN",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_owner": "L03",
+  "source_contracts": [
+    {
+      "path": "docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "338ac433b907f42e720fe3564d3041fef2322036d7405bdf0c7e08942ce3bb13",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md"
+    },
+    {
+      "path": "docs/db/PHASE1_CATALOG_COVERAGE_MATRIX.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "0f3bb2ef99e105dd337bb42fcbe0b0e5f3843cd00e961c0a83d0171716e817ec",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/db/PHASE1_CATALOG_COVERAGE_MATRIX.md"
+    },
+    {
+      "path": "docs/db/BASELINE_INVENTORY.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "6d87cdceaa664c1d7c0829d9763da25122ad2da416994a64106edeaac9f40b4f",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/db/BASELINE_INVENTORY.md"
+    },
+    {
+      "path": "docs/EVIDENCE_STANDARDS.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "b330291378041fc197796deaab6d49c72a9563fdbe2c5fd990fd827b266e1910",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/EVIDENCE_STANDARDS.md"
+    },
+    {
+      "path": "docs/SOURCE_BASELINE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "6f9fb08b0d1f3af2def0809f2d5a194082403249ff9119a1f2605551c93658b8",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/SOURCE_BASELINE.md"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "9cb84eb673b9d7a0a8cea3e70f2366350b8150f4a15ad42f614510f3113c1524",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md"
+    },
+    {
+      "path": "inventories/traceability/FILTER_FAMILY_TRACEABILITY_REGISTER.json",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "bf467cc1843939098319f57028ae60c5ed7243ff78ce9f0bafde8f8432ce36bf",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/inventories/traceability/FILTER_FAMILY_TRACEABILITY_REGISTER.json"
+    },
+    {
+      "path": "inventories/traceability/FILTER_TRACEABILITY_SCOPE_AUDIT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "2405377c8f751cf92ff6c5aced05b3b3b5481c599fb76b689d53b3cce43191f1",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/inventories/traceability/FILTER_TRACEABILITY_SCOPE_AUDIT.md"
+    },
+    {
+      "path": "docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "9d9b7157027cce55e3d24d7ade4e554e7205d34a9393bb67f21f60164190c1e0",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md"
+    }
+  ],
+  "safety_limits": [
+    "sanitized metadata and synthetic fixtures only; no raw SQL, data rows, secrets, credentials or connection material",
+    "no GitHub mutation, SQL execution, legacy runtime, product implementation, deployment or production operation",
+    "aggregate counts and filename conventions never substitute for exact authoritative catalog identities",
+    "all product/runtime execution remains NOT_RUN and TRC-DB-001 stays open"
+  ],
+  "unit": "B2N",
+  "issue": 21,
+  "title": "Definition normalization and effective-candidate disposition fixtures",
+  "eligibility": {
+    "writer_lease": "NOT_GRANTED",
+    "dispatcher_fencing": "NOT_PROVEN",
+    "authoritative_sql_bytes": "NOT_ACCESSIBLE",
+    "eligible_to_code": false
+  },
+  "future_execution_record_fields": [
+    "stimulus_timestamp",
+    "observed_result",
+    "authoritative_source_identity",
+    "exact_head",
+    "environment_identity",
+    "parser_version",
+    "reviewer"
+  ],
+  "cases": [
+    {
+      "id": "B2N-01",
+      "role": "catalog_parser",
+      "execution_status": "NOT_RUN",
+      "entry_point": "CREATE then ALTER",
+      "attack_or_failure": "later ALTER changes a field/body",
+      "expected_result": "retain both spans and an explicit candidate/effective disposition",
+      "owner_route": "B2",
+      "evidence_to_pass": "versioned source-span fixture"
+    },
+    {
+      "id": "B2N-02",
+      "role": "catalog_parser",
+      "execution_status": "NOT_RUN",
+      "entry_point": "duplicate CREATE",
+      "attack_or_failure": "same qualified identity appears twice",
+      "expected_result": "retain both candidates; never silently choose first/last",
+      "owner_route": "B2",
+      "evidence_to_pass": "duplicate-definition fixture"
+    },
+    {
+      "id": "B2N-03",
+      "role": "catalog_parser",
+      "execution_status": "NOT_RUN",
+      "entry_point": "DROP then CREATE",
+      "attack_or_failure": "object is recreated later",
+      "expected_result": "record lifecycle and candidate selection rule",
+      "owner_route": "B2",
+      "evidence_to_pass": "ordered statement fixture"
+    },
+    {
+      "id": "B2N-04",
+      "role": "catalog_parser",
+      "execution_status": "NOT_RUN",
+      "entry_point": "conditional IF",
+      "attack_or_failure": "definition depends on condition",
+      "expected_result": "retain conditional ambiguity and runtime UNKNOWN",
+      "owner_route": "B2",
+      "evidence_to_pass": "branch-aware manifest"
+    },
+    {
+      "id": "B2N-05",
+      "role": "catalog_parser",
+      "execution_status": "NOT_RUN",
+      "entry_point": "dynamic EXEC DDL",
+      "attack_or_failure": "definition is constructed dynamically",
+      "expected_result": "quarantine exact span and reason",
+      "owner_route": "B2",
+      "evidence_to_pass": "unsupported-region coverage"
+    },
+    {
+      "id": "B2N-06",
+      "role": "catalog_parser",
+      "execution_status": "NOT_RUN",
+      "entry_point": "GO batch context",
+      "attack_or_failure": "parser loses preceding SET/schema context",
+      "expected_result": "preserve batch/session parse context metadata",
+      "owner_route": "B2",
+      "evidence_to_pass": "batch-boundary fixture"
+    },
+    {
+      "id": "B2N-07",
+      "role": "catalog_parser",
+      "execution_status": "NOT_RUN",
+      "entry_point": "quoted identifier",
+      "attack_or_failure": "case/escaping normalizes incorrectly",
+      "expected_result": "preserve source spelling and canonical comparison identity",
+      "owner_route": "B2",
+      "evidence_to_pass": "quoted-name fixture"
+    },
+    {
+      "id": "B2N-08",
+      "role": "catalog_parser",
+      "execution_status": "NOT_RUN",
+      "entry_point": "default schema",
+      "attack_or_failure": "unqualified object is assumed dbo without context",
+      "expected_result": "record resolution basis or ambiguous disposition",
+      "owner_route": "B2",
+      "evidence_to_pass": "schema-context fixture"
+    },
+    {
+      "id": "B2N-09",
+      "role": "catalog_parser",
+      "execution_status": "NOT_RUN",
+      "entry_point": "temporary object",
+      "attack_or_failure": "temporary/work table counted permanent",
+      "expected_result": "classify/exclude with explicit reason",
+      "owner_route": "B2",
+      "evidence_to_pass": "temporary-object fixture"
+    },
+    {
+      "id": "B2N-10",
+      "role": "catalog_parser",
+      "execution_status": "NOT_RUN",
+      "entry_point": "backup/repair name",
+      "attack_or_failure": "name alone causes retirement",
+      "expected_result": "retain object and evidence-based classification",
+      "owner_route": "B2",
+      "evidence_to_pass": "ZZ/Backup/Fix fixture"
+    },
+    {
+      "id": "B2N-11",
+      "role": "catalog_parser",
+      "execution_status": "NOT_RUN",
+      "entry_point": "ALTER column",
+      "attack_or_failure": "column declaration history collapses to one unexplained row",
+      "expected_result": "link declaration versions to normalized field disposition",
+      "owner_route": "B2",
+      "evidence_to_pass": "column-version fixture"
+    },
+    {
+      "id": "B2N-12",
+      "role": "catalog_parser",
+      "execution_status": "NOT_RUN",
+      "entry_point": "constraint rename",
+      "attack_or_failure": "old/new names become two live constraints",
+      "expected_result": "record rename/lifecycle relation",
+      "owner_route": "B2",
+      "evidence_to_pass": "rename fixture"
+    },
+    {
+      "id": "B2N-13",
+      "role": "catalog_parser",
+      "execution_status": "NOT_RUN",
+      "entry_point": "procedure signature drift",
+      "attack_or_failure": "duplicate body changes parameters or result shape",
+      "expected_result": "retain signature versions and compatibility disposition",
+      "owner_route": "B2",
+      "evidence_to_pass": "signature-drift fixture"
+    },
+    {
+      "id": "B2N-14",
+      "role": "catalog_parser",
+      "execution_status": "NOT_RUN",
+      "entry_point": "trigger version",
+      "attack_or_failure": "same trigger name targets changed table/event",
+      "expected_result": "retain owner/event/body candidates",
+      "owner_route": "B2",
+      "evidence_to_pass": "trigger-version fixture"
+    },
+    {
+      "id": "B2N-15",
+      "role": "catalog_parser",
+      "execution_status": "NOT_RUN",
+      "entry_point": "parse recovery",
+      "attack_or_failure": "syntax error causes remainder of file to disappear",
+      "expected_result": "quarantine bounded span and resume only at proven boundary",
+      "owner_route": "B2",
+      "evidence_to_pass": "recovery-boundary fixture"
+    },
+    {
+      "id": "B2N-16",
+      "role": "catalog_parser",
+      "execution_status": "NOT_RUN",
+      "entry_point": "deployed selection",
+      "attack_or_failure": "script-effective candidate is called deployed fact",
+      "expected_result": "keep actual deployed selection runtime UNKNOWN",
+      "owner_route": "B2",
+      "evidence_to_pass": "static-vs-runtime assertion"
+    }
+  ]
+}

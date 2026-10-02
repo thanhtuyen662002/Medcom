@@ -1,3 +1,5 @@
+> Current direction — 2026-10-02: the owner paused all ten schedules and authorized direct single-writer GitHub/code execution. Read `docs/execution/DIRECT_EXECUTION_20261002.md` (repository-relative). Activation and missing-SDK observations below are historical; current acceptance is tracked in PROJECT_STATE. Source/runtime/release gates remain.
+
 # Medcom schedule activation — 2026-10-02
 
 The owner explicitly requested schedule activation and review/merge of PR #43. The plan was independently reviewed, corrected and merged to `main` at `f9197185b624a8c3f74c99e48a69550b5a7c2a73`, source head `bf4224703f8acda6a3e25e8eb61f8c6e02e87f0c`. Full main-to-head diff, metadata/source hashes, source-table membership, links and dependency checks passed. No application/workflow code was present; no CI/check/status success is claimed.

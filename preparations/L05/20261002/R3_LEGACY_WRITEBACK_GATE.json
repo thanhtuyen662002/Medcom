@@ -1,0 +1,244 @@
+{
+  "schema_version": 1,
+  "lane": "L05",
+  "artifact_status": "prepared_local_only",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_issues": [
+    16,
+    18,
+    26
+  ],
+  "source_contracts": [
+    {
+      "path": "docs/db/CONFIGURATION_OBJECT_CATALOG.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "a8cb863be9b001a9e81fe3f91b17b7370096accb66153cdcc1a744ad37fe8245",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/db/CONFIGURATION_OBJECT_CATALOG.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/architecture/PHASE2_SCREEN_DEFINITION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "aeb14d0db338c24d98dce32f1eb986ff6e771abd5c799a151a8536c9dbba2316",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_SCREEN_DEFINITION_CONTRACT.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/erp/DAT_LAYOUT_CORROBORATION.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c2dc4ea6cc61b46edb12b7ebf0f1edfdbb6975f7d9df29f4f0448deadcdccedf",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/DAT_LAYOUT_CORROBORATION.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "87a9165f370e30294d69a409e81c918f1f2425c2eeeb86d534d68d79762a14ad",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/erp/TEMPLATES_PERSONALIZATION_UPDATE_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "ef8ec347a29a39e5b112225c923f9ec751a3d4e9ca097ba6abbe3b889ebff25f",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/TEMPLATES_PERSONALIZATION_UPDATE_EVIDENCE.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "4a48658994a7a70ad809587c2100cb3f6340526e508805f4ebee11710574f4d6",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "inventories/erp/WINFORMS_PROPERTY_KEY_INDEX.json",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c41eb90ae522a45819f810f3ac69e2cf902f5d47f295163de5056dcfcb4fe50c",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/inventories/erp/WINFORMS_PROPERTY_KEY_INDEX.json",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "access": "sanitized repository evidence"
+    }
+  ],
+  "limits": [
+    "no L05 dispatcher lease or writer token",
+    "no approved raw DAT/source archive opened in this run",
+    "no SY_* rows or executable config bodies inspected or executed",
+    "no legacy database/config write or migration",
+    "no product/compiler runtime test or CI",
+    "no GitHub mutation or issue closure"
+  ],
+  "unit_id": "L05-R3-LEGACY-WRITEBACK-GATE",
+  "graph_id": "A7-R3",
+  "issue": 26,
+  "supporting_issue": 18,
+  "objective": "Keep legacy configuration write-back disabled until exact source, transaction, concurrency, scope, cache and recovery behavior is proved in a disposable environment.",
+  "current_decision": "DISABLED_BLOCKED_UNKNOWN",
+  "writeback_authorized": false,
+  "evidence_basis": [
+    "The supplemental guide infers that LayoutX.SaveConfig may delete all rows for an FID and then reinsert non-empty configuration.",
+    "Transaction boundaries, concurrent-writer handling, complete grammar, current source/build correspondence and cache convergence remain UNKNOWN.",
+    "Web publication and immutable pointer rollback do not prove safe legacy DAT/SY_* write-back."
+  ],
+  "requirements": [
+    {
+      "id": "WRB-01",
+      "requirement": "Exact approved source/build identity for every read and write consumer is paired with the tested binary.",
+      "state": "MISSING_NOT_PROVIDED",
+      "sanitized_evidence": "source/build manifest identifier, component hashes and mismatch disposition"
+    },
+    {
+      "id": "WRB-02",
+      "requirement": "The complete source set for one bounded screen is path-qualified and includes DAT, SY_* rows, FID/variant/PFID, table slots and persisted row identities.",
+      "state": "MISSING_NOT_PROVIDED",
+      "sanitized_evidence": "immutable source-set manifest with counts and hashes; no row values"
+    },
+    {
+      "id": "WRB-03",
+      "requirement": "Consumer-specific grammar is verified for LYT, LYS, table slots, empty/null/absent values, encoding and unknown trailing fields.",
+      "state": "MISSING_NOT_PROVIDED",
+      "sanitized_evidence": "grammar version, case identifiers and lossless round-trip digests"
+    },
+    {
+      "id": "WRB-04",
+      "requirement": "Executable keys, SQL-like values, hooks and unknown attributes are classified; unsupported content remains quarantined.",
+      "state": "MISSING_NOT_PROVIDED",
+      "sanitized_evidence": "classification totals and allow/deny decision identifiers; no executable bodies"
+    },
+    {
+      "id": "WRB-05",
+      "requirement": "Actual delete/reinsert and failure boundaries are observed in a disposable target, including transaction owner and partial-failure state.",
+      "state": "MISSING_NOT_PROVIDED",
+      "sanitized_evidence": "operation stages, transaction outcome, object/count deltas and schema fingerprint"
+    },
+    {
+      "id": "WRB-06",
+      "requirement": "Concurrent legacy and Web writers are tested with an expected-state token that rejects stale full-form replacement.",
+      "state": "MISSING_NOT_PROVIDED",
+      "sanitized_evidence": "writer generations, conflict result and unchanged-current proof"
+    },
+    {
+      "id": "WRB-07",
+      "requirement": "Authorization and tenant/company/user scope for read, propose, publish and legacy write-back are independently verified.",
+      "state": "MISSING_NOT_PROVIDED",
+      "sanitized_evidence": "synthetic actor/scope classes and allow/deny outcomes"
+    },
+    {
+      "id": "WRB-08",
+      "requirement": "A preflight diff uses an explicit object/field allow-list and rejects target, source-set or expected-state drift before mutation.",
+      "state": "MISSING_NOT_PROVIDED",
+      "sanitized_evidence": "diff digest, allow-list version and drift result"
+    },
+    {
+      "id": "WRB-09",
+      "requirement": "The target is disposable and proves no production connectivity before any write path is armed.",
+      "state": "MISSING_NOT_PROVIDED",
+      "sanitized_evidence": "opaque target fingerprint, production=false assertion and negative-connect result"
+    },
+    {
+      "id": "WRB-10",
+      "requirement": "Lost acknowledgement and partial failure are reconciled from authoritative current rows before any retry; automatic replay is disabled.",
+      "state": "MISSING_NOT_PROVIDED",
+      "sanitized_evidence": "operation identity, authoritative reread digest and retry disposition"
+    },
+    {
+      "id": "WRB-11",
+      "requirement": "Legacy Forever1Day cache convergence is measured across clients after commit and rollback; Web invalidation alone is insufficient.",
+      "state": "MISSING_NOT_PROVIDED",
+      "sanitized_evidence": "client generations, refresh/restart method and convergence observations"
+    },
+    {
+      "id": "WRB-12",
+      "requirement": "Independent review approves the exact source/build/target head, bounded screen, cleanup and compatibility evidence before a disposable test.",
+      "state": "MISSING_NOT_PROVIDED",
+      "sanitized_evidence": "review identity, exact hashes/head and unresolved findings"
+    }
+  ],
+  "adversarial_cases": [
+    {
+      "id": "WBA-01",
+      "fault": "stale editor saves while another writer has added a row under the same FID",
+      "expected": "expected-state conflict; no delete or partial replacement"
+    },
+    {
+      "id": "WBA-02",
+      "fault": "delete phase succeeds and reinsertion fails",
+      "expected": "transaction behavior is observed; partial state fails acceptance and target is rebuilt"
+    },
+    {
+      "id": "WBA-03",
+      "fault": "duplicate tuple or ambiguous first-row legacy behavior",
+      "expected": "quarantine; never choose an arbitrary winner or add an inferred unique constraint"
+    },
+    {
+      "id": "WBA-04",
+      "fault": "absent, null, empty and explicit zero carry different consumer defaults",
+      "expected": "preserve consumer-specific semantics and raw source identity"
+    },
+    {
+      "id": "WBA-05",
+      "fault": "unknown trailing LYT field or future LYS key is present",
+      "expected": "lossless preservation in evidence and write-back disabled for unsupported grammar"
+    },
+    {
+      "id": "WBA-06",
+      "fault": "workstation-local artifact is newer than the approved shared source",
+      "expected": "timestamp cannot select authority; source remains blocked"
+    },
+    {
+      "id": "WBA-07",
+      "fault": "operation may have committed but acknowledgement is lost",
+      "expected": "authoritative reread by immutable operation identity before retry"
+    },
+    {
+      "id": "WBA-08",
+      "fault": "one WinForms client retains a stale Forever1Day cache",
+      "expected": "cache convergence remains incomplete; do not claim fleet-wide activation"
+    },
+    {
+      "id": "WBA-09",
+      "fault": "rollback candidate references a retired executable key or incompatible schema/build",
+      "expected": "rollback candidate quarantined; current compatible version stays authoritative"
+    },
+    {
+      "id": "WBA-10",
+      "fault": "presentation change attempts to grant capability, widen scope or modify business data",
+      "expected": "deny before mutation and retain authorization/business state unchanged"
+    }
+  ],
+  "state_machine": {
+    "initial": "DISABLED_BLOCKED_UNKNOWN",
+    "ready": "READY_FOR_DISPOSABLE_WRITEBACK_TEST",
+    "all_requirements_required": true,
+    "automatic_transition": "PROHIBITED",
+    "admission_rule": "Only a separately authorized controller may admit one bounded nonproduction test after WRB-01..12 are independently verified at the exact head.",
+    "drift_rule": "Any source/build/target/grammar/scope/expected-state/cache/review drift returns to DISABLED_BLOCKED_UNKNOWN.",
+    "production_rule": "No production or customer database write-back is authorized by this gate."
+  },
+  "rollback_boundary": [
+    "rollback may change a compatible immutable configuration pointer or restore a disposable fixture",
+    "rollback never reverses business data or proves transaction rollback from process termination",
+    "legacy target cleanup uses rebuild from an authorized snapshot when outcome is uncertain"
+  ],
+  "execution_status": "NOT_RUN"
+}

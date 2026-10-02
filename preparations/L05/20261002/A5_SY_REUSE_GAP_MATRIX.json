@@ -1,0 +1,261 @@
+{
+  "schema_version": 1,
+  "lane": "L05",
+  "artifact_status": "prepared_local_only",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_issues": [
+    16,
+    18,
+    26
+  ],
+  "source_contracts": [
+    {
+      "path": "docs/db/CONFIGURATION_OBJECT_CATALOG.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "a8cb863be9b001a9e81fe3f91b17b7370096accb66153cdcc1a744ad37fe8245",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/db/CONFIGURATION_OBJECT_CATALOG.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/architecture/PHASE2_SCREEN_DEFINITION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "aeb14d0db338c24d98dce32f1eb986ff6e771abd5c799a151a8536c9dbba2316",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_SCREEN_DEFINITION_CONTRACT.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/erp/DAT_LAYOUT_CORROBORATION.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c2dc4ea6cc61b46edb12b7ebf0f1edfdbb6975f7d9df29f4f0448deadcdccedf",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/DAT_LAYOUT_CORROBORATION.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "87a9165f370e30294d69a409e81c918f1f2425c2eeeb86d534d68d79762a14ad",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/erp/TEMPLATES_PERSONALIZATION_UPDATE_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "ef8ec347a29a39e5b112225c923f9ec751a3d4e9ca097ba6abbe3b889ebff25f",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/TEMPLATES_PERSONALIZATION_UPDATE_EVIDENCE.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "4a48658994a7a70ad809587c2100cb3f6340526e508805f4ebee11710574f4d6",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "inventories/erp/WINFORMS_PROPERTY_KEY_INDEX.json",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c41eb90ae522a45819f810f3ac69e2cf902f5d47f295163de5056dcfcb4fe50c",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/inventories/erp/WINFORMS_PROPERTY_KEY_INDEX.json",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "access": "sanitized repository evidence"
+    }
+  ],
+  "limits": [
+    "no L05 dispatcher lease or writer token",
+    "no approved raw DAT/source archive opened in this run",
+    "no SY_* rows or executable config bodies inspected or executed",
+    "no legacy database/config write or migration",
+    "no product/compiler runtime test or CI",
+    "no GitHub mutation or issue closure"
+  ],
+  "unit_id": "L05-A5-SY-REUSE",
+  "graph_id": "A5",
+  "issue": 16,
+  "objective": "Require exact reconciliation of existing SY_* capabilities before any additive WebCore persistence.",
+  "verified_object_presence": [
+    "DB-TABLE-dbo.SY_Menu",
+    "DB-TABLE-dbo.SY_FrmCfg",
+    "DB-TABLE-dbo.SY_FrmCtrTbl",
+    "DB-TABLE-dbo.SY_FrmDrdwTbl",
+    "DB-TABLE-dbo.SY_FrmExpTbl",
+    "DB-TABLE-dbo.SY_FrmFltTbl",
+    "DB-TABLE-dbo.SY_FrmGrdActTbl",
+    "DB-TABLE-dbo.SY_FrmLstTbl",
+    "DB-TABLE-dbo.SY_FrmMstActTbl",
+    "DB-TABLE-dbo.SY_FrmOptBtnTbl",
+    "DB-TABLE-dbo.SY_FrmParTbl",
+    "DB-TABLE-dbo.SY_UserBranch",
+    "DB-TABLE-dbo.SY_UserStorehouse"
+  ],
+  "capabilities": [
+    {
+      "id": "CAP-MENU",
+      "web_need": "authorized navigation metadata",
+      "existing_candidates": [
+        "SY_Menu"
+      ],
+      "proven": "object and relevant identity/caption/form/parent/flag/parameter columns are present",
+      "unknown": "current rows, ancestry/permission precedence, reachability",
+      "disposition": "typed read facade candidate; never browser authority"
+    },
+    {
+      "id": "CAP-CONTROL",
+      "web_need": "screen/control captions, order and presentation",
+      "existing_candidates": [
+        "SY_FrmCtrTbl",
+        "SY_FrmCfg"
+      ],
+      "proven": "object presence and presentation-shaped metadata",
+      "unknown": "current keys, variant/precedence, collision/order semantics",
+      "disposition": "reconcile and compile; quarantine ambiguity"
+    },
+    {
+      "id": "CAP-LOOKUP",
+      "web_need": "typed lookup/dropdown descriptors",
+      "existing_candidates": [
+        "SY_FrmDrdwTbl"
+      ],
+      "proven": "source/column/link/parameter/default/search/order-shaped metadata exists",
+      "unknown": "executable source grammar and safe typed mappings",
+      "disposition": "server facade after R3 allow-list; no raw source metadata to client"
+    },
+    {
+      "id": "CAP-FILTER",
+      "web_need": "typed filters and saved views",
+      "existing_candidates": [
+        "SY_FrmFltTbl",
+        "packaged DAT filter artifacts"
+      ],
+      "proven": "DB object exists; 24 packaged filter artifacts contain 600 rows",
+      "unknown": "precedence, alias resolution, runtime operators and user override store",
+      "disposition": "preserve master/detail and hidden rows; query fields/operators remain allow-listed"
+    },
+    {
+      "id": "CAP-ACTION",
+      "web_need": "typed screen actions",
+      "existing_candidates": [
+        "SY_FrmGrdActTbl",
+        "SY_FrmMstActTbl",
+        "SY_FrmOptBtnTbl",
+        "SY_FrmParTbl"
+      ],
+      "proven": "action/parameter/status/message-shaped metadata exists",
+      "unknown": "executable grammar, authorization, hook/transaction/completion semantics",
+      "disposition": "fail closed until action-specific B3/R3 evidence; never generic CRUD"
+    },
+    {
+      "id": "CAP-SCOPE",
+      "web_need": "company/branch/storehouse presentation and data scope",
+      "existing_candidates": [
+        "SY_UserBranch",
+        "SY_UserStorehouse"
+      ],
+      "proven": "objects exist",
+      "unknown": "effective permission precedence and current values",
+      "disposition": "B4 server authority; presentation override cannot widen scope"
+    },
+    {
+      "id": "CAP-SCREEN-VERSION",
+      "web_need": "immutable ScreenDefinitionVersion and current pointer",
+      "existing_candidates": [
+        "SY_FrmCfg",
+        "other SY_* candidates"
+      ],
+      "proven": "legacy config objects exist",
+      "unknown": "whether existing schema can provide immutable version/CAS/history without unsafe mutation",
+      "disposition": "ADDITIVE_GAP_UNPROVED; no table until exact columns/indexes/writers/gap analysis"
+    },
+    {
+      "id": "CAP-SYNC",
+      "web_need": "source hash/checkpoint/error and last successful publication",
+      "existing_candidates": [
+        "existing config objects unknown"
+      ],
+      "proven": "none from current object-presence slice",
+      "unknown": "complete catalog/dependencies and safe storage reuse",
+      "disposition": "ADDITIVE_GAP_UNPROVED; design contract only"
+    },
+    {
+      "id": "CAP-OVERRIDE",
+      "web_need": "versioned system/company/role/user presentation overrides",
+      "existing_candidates": [
+        "SY_FrmCfg",
+        "packaged user-context DATA/remember-state artifacts"
+      ],
+      "proven": "some user-scoped packaged state exists; semantics unknown",
+      "unknown": "identity, precedence, authorization, version/conflict model",
+      "disposition": "ADDITIVE_GAP_UNPROVED; do not copy private values"
+    },
+    {
+      "id": "CAP-IDEMPOTENCY-AUDIT-OUTBOX",
+      "web_need": "command idempotency/audit/outbox",
+      "existing_candidates": [
+        "not established by this config evidence"
+      ],
+      "proven": "no absence claim",
+      "unknown": "B2 complete catalog and per-command need",
+      "disposition": "outside configuration inference; add only after canonical owners prove gap"
+    }
+  ],
+  "physical_change_gate": [
+    "complete B2 catalog and exact keys/indexes/dependencies",
+    "existing writer/read behavior and precedence",
+    "typed facade feasibility",
+    "explicit missing semantic and owning issue",
+    "additive migration plus compatibility/backout tests",
+    "independent review and authorized current-head CI"
+  ],
+  "execution_status": "NOT_RUN",
+  "reconciliation_acceptance": [
+    {
+      "id": "REC-01",
+      "requirement": "exact normalized object and column identities from B2, including keys, indexes, constraints and dependency edges",
+      "fail_closed": "aggregate presence or prefix counts cannot prove reuse"
+    },
+    {
+      "id": "REC-02",
+      "requirement": "enumerate every known reader/writer and its source/build/runtime evidence level",
+      "fail_closed": "an unowned writer blocks mutation of the shared legacy object"
+    },
+    {
+      "id": "REC-03",
+      "requirement": "separate presentation, authorization, executable metadata and business state per field",
+      "fail_closed": "mixed or executable fields stay behind a typed server facade"
+    },
+    {
+      "id": "REC-04",
+      "requirement": "prove identity, scope, precedence, optimistic concurrency and retention needed by the Web semantic",
+      "fail_closed": "missing semantic remains an unproved additive gap"
+    },
+    {
+      "id": "REC-05",
+      "requirement": "compare reuse/facade/additive choices with compatibility, backout and old-client coexistence tests",
+      "fail_closed": "no physical table or legacy constraint change before reviewed acceptance"
+    },
+    {
+      "id": "REC-06",
+      "requirement": "assign one canonical owner for config, idempotency, audit and outbox persistence",
+      "fail_closed": "L05 does not duplicate storage owned by B3/B5/A6"
+    }
+  ]
+}
