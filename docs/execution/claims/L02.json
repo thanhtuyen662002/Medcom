@@ -1,0 +1,13 @@
+{
+  "goal": 45,
+  "ticket_id": "L02",
+  "generation": 2,
+  "role": "lead",
+  "owner": "Medcom Lead Production",
+  "run_uuid": "d57e11d0-92d7-40cc-88ba-4acea8da08cc",
+  "base_sha": "1cc4dd40e761e5c578c1e1ee594be283795e66a8",
+  "allowed_paths": [],
+  "mode": "review_integration_only",
+  "predecessor_handoff": 5957026157,
+  "created_at": "2026-10-02 17:16:44 UTC"
+}
