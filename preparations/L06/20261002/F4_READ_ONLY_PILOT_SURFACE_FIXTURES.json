@@ -1,0 +1,274 @@
+{
+  "schema_version": 1,
+  "lane": "L06",
+  "artifact_status": "prepared_local_only",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_issues": [
+    28,
+    29,
+    30,
+    31
+  ],
+  "source_contracts": [
+    {
+      "path": "docs/web/GRID_MOBILE_IMPLEMENTATION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "b59d80f754cd3108c415a458f83c19dc7c7c197998e23fa12f258adaeafb3418",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/GRID_MOBILE_IMPLEMENTATION_CONTRACT.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/web/PRODUCT_UX_FOUNDATION.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "8299a090625de634f1aadc4b8bd5cb17aef628489d5cca31bdfc755d904bc520",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/PRODUCT_UX_FOUNDATION.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/web/MOBILE_NAVIGATION_ROLE_CONFIG.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "5e031383a484408298ea8ee819694499e7d00af621ccd1d793e1c26b1023ea8e",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/MOBILE_NAVIGATION_ROLE_CONFIG.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/web/CONFIGURATION_LOOKUP_UX.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "757435de098e0f72e1235b1fa6f672c2e4d526e3914ed29b6ca0a6ad51b4793d",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/CONFIGURATION_LOOKUP_UX.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/web/UX_RUNTIME_FEEDBACK_SESSION.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "a397a8df0049481cc91df81cfd664deb42e99baa3e060cc534d396c8a4e277a0",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/UX_RUNTIME_FEEDBACK_SESSION.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "9d9b7157027cce55e3d24d7ade4e554e7205d34a9393bb67f21f60164190c1e0",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/architecture/PHASE2_AUTH_CAPABILITY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "fa8db170726d9afe02fd5b2e578e00226978f78757c4fbfcde3fa9328d18eb47",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_AUTH_CAPABILITY_CONTRACT.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/architecture/PHASE2_SCREEN_DEFINITION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "aeb14d0db338c24d98dce32f1eb986ff6e771abd5c799a151a8536c9dbba2316",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_SCREEN_DEFINITION_CONTRACT.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/web/PHASE2_FRONTEND_ACCEPTANCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "668c3f410cbc5793aa3be1f032130a31d07bbf075c9153a778af5e3ac2d4422a",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/PHASE2_FRONTEND_ACCEPTANCE.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/web/UX_STRESS_ACCEPTANCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "56a9163d45ad3c6787ca280db17c0ce69f6f31a5525ba1c94ac943d114649e03",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/UX_STRESS_ACCEPTANCE.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    }
+  ],
+  "limits": [
+    "no L06 dispatcher lease or writer token",
+    "no frontend application tree or installed project dependencies",
+    "no completed backend/query/capability dependencies",
+    "no product browser, accessibility, performance or CI execution",
+    "no GitHub mutation or issue closure",
+    "mock/synthetic preparation cannot enable real users or close F1-F4"
+  ],
+  "unit_id": "L06-F4-READ-SURFACES",
+  "graph_id": "F4",
+  "issue": 31,
+  "objective": "Prepare strictly read-only AP Order and IV Inbound Request list/detail/mobile semantics while preserving all query/source gates and F9 write ownership.",
+  "surfaces": [
+    {
+      "id": "READ-AP-ORDER",
+      "screen_candidate": "ERP-FRM-AP_OrderFrm",
+      "db_candidates": [
+        "AP_OrderTbl",
+        "AP_OrderDetailTbl"
+      ],
+      "evidence": "packaged filter references only; historical menu/enablement differs",
+      "required_before_binding": [
+        "A4 capability DONE",
+        "B1 typed query platform DONE",
+        "B2 exact catalog/fields/joins/dependencies",
+        "F1 shell DONE",
+        "F2 Grid DONE",
+        "current reachability/scope decision"
+      ],
+      "allowed_ui": [
+        "authorized list",
+        "authorized detail",
+        "filter/sort/page/search",
+        "freshness state",
+        "desktop Grid",
+        "mobile semantic cards"
+      ],
+      "forbidden_ui": [
+        "create",
+        "edit",
+        "save",
+        "submit",
+        "approve",
+        "cancel",
+        "delete",
+        "hidden mutation endpoint/button"
+      ]
+    },
+    {
+      "id": "READ-IV-INBOUND",
+      "screen_candidate": "ERP-FRM-IV_InboundRequestFrm",
+      "db_candidates": [
+        "IV_InboundRequestTbl",
+        "IV_InboundRequestDetailsTbl"
+      ],
+      "evidence": "packaged filter references with unresolved aliases/runtime query",
+      "required_before_binding": [
+        "A4 capability DONE",
+        "B1 typed query platform DONE",
+        "B2 exact catalog/fields/joins/dependencies and alias resolution",
+        "F1 shell DONE",
+        "F2 Grid DONE",
+        "current scope/reachability decision"
+      ],
+      "allowed_ui": [
+        "authorized list",
+        "authorized detail",
+        "filter/sort/page/search",
+        "freshness state",
+        "desktop Grid",
+        "mobile semantic cards"
+      ],
+      "forbidden_ui": [
+        "create",
+        "edit",
+        "save",
+        "submit",
+        "receipt",
+        "stock posting",
+        "approve",
+        "cancel",
+        "delete",
+        "hidden mutation endpoint/button"
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "RDO-01",
+      "scenario": "authorized AP Order list/detail",
+      "expected": "typed scoped read only; no mutation affordance or endpoint assumption"
+    },
+    {
+      "id": "RDO-02",
+      "scenario": "historically disabled/unknown AP Order reachability",
+      "expected": "feature remains unavailable until current enablement decision; package presence alone insufficient"
+    },
+    {
+      "id": "RDO-03",
+      "scenario": "AP Order exact field/join contract missing",
+      "expected": "do not bind guessed fields; use no fake demo path for real users"
+    },
+    {
+      "id": "RDO-04",
+      "scenario": "AP Order foreign company/branch/storehouse ID",
+      "expected": "deny without existence/count leak"
+    },
+    {
+      "id": "RDO-05",
+      "scenario": "AP Order at 390px",
+      "expected": "4–6 semantic high-value slots configured only after verified DTO; drill-down read-only"
+    },
+    {
+      "id": "RDO-06",
+      "scenario": "AP Order freshness event lost",
+      "expected": "declared SWR/poll/manual fallback and visible age"
+    },
+    {
+      "id": "RDO-07",
+      "scenario": "authorized inbound request list/detail",
+      "expected": "typed scoped read only; request entry does not imply receipt/posting/workflow actions"
+    },
+    {
+      "id": "RDO-08",
+      "scenario": "inbound filter alias unresolved",
+      "expected": "query binding stays blocked; never guess alias from neighboring field"
+    },
+    {
+      "id": "RDO-09",
+      "scenario": "inbound mutation button injected through config",
+      "expected": "refuse; F9 owns source-backed writes and dependencies remain"
+    },
+    {
+      "id": "RDO-10",
+      "scenario": "inbound foreign warehouse lookup/reference",
+      "expected": "deny safely before returning protected detail"
+    },
+    {
+      "id": "RDO-11",
+      "scenario": "inbound at 390px",
+      "expected": "semantic request card after DTO proof; no default horizontal desktop grid"
+    },
+    {
+      "id": "RDO-12",
+      "scenario": "read surface works against synthetic/mock data",
+      "expected": "counts as component preparation only; cannot close F4, F9, Gate 2 or Gate 4"
+    },
+    {
+      "id": "RDO-13",
+      "scenario": "read-only list receives export/report/download configuration",
+      "expected": "omit until independently authorized typed export/report contract exists; grid visibility does not grant export"
+    },
+    {
+      "id": "RDO-14",
+      "scenario": "count/summary endpoint includes hidden or foreign records",
+      "expected": "scope and field authorization apply before aggregation; no existence or masked-value inference"
+    },
+    {
+      "id": "RDO-15",
+      "scenario": "frontend config injects POST/PUT/PATCH/DELETE endpoint under read surface",
+      "expected": "route/method contract rejects mutation; F4 package contains no mutation client or fallback"
+    },
+    {
+      "id": "RDO-16",
+      "scenario": "mock API flag or fixture route remains enabled outside component-test harness",
+      "expected": "build/runtime guard fails closed; synthetic success cannot become a real-user data path"
+    }
+  ],
+  "execution_status": "NOT_RUN"
+}

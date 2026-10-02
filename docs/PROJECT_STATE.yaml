@@ -4,6 +4,8 @@ phase_status: active
 source_baseline:
   erp: ERP_Medcom2026(4).zip
   database: Medcom-Data (3)(1).zip
+  current_technical_round: owner-attachment-20261002
+  current_manifest: inventories/source/20261002/source-set.json
 target:
   platform: web
   visual_direction: apple-inspired-enterprise
@@ -34,13 +36,14 @@ phase2:
   adversarial_review: docs/reviews/PHASE2_PLAN_ADVERSARIAL_REVIEW.md
   issue_graph: docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md
   plan_completeness_audit: docs/reviews/PHASE2_PLAN_COMPLETENESS_AUDIT_20261001.md
-  code_start_policy: no production code in this planning run
+  code_start_policy: owner-authorized scoped scheduled coding on isolated invocation
+    branches with create-only claims; actual source/dependency/runtime gates preserved
   implementation_issue_range: 12-42
   implementation_issue_count: 31
-  implementation_authorized: false
+  implementation_authorized: true
   eligible_to_start_count: 0
-  active_planning_pr: 43
-  production_code_started: false
+  active_planning_pr: null
+  production_code_started: true
   historical_ready_or_bounded_labels: 16
   historical_blocked_labels: 15
   count_note: historical graph labels do not establish current start eligibility
@@ -48,27 +51,88 @@ phase2:
   supplementary_guide_evidence: docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md
   consistency_audit: docs/reviews/DOCUMENT_CONSISTENCY_AUDIT_20261001.md
   detailed_attack_reviews:
-    - docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md
-    - docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md
+  - docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md
+  - docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md
   future_workflow_authorized: true
-  future_authorization_scope: gated coding workflow preparation; source-free foundation after plan integration and preflight; verified domain slices after their gates
-  current_run_scope: supplementary evidence; document reconciliation; tabletop attacks; scheduled execution plan
-  current_start_blocker: plan integration and per-issue lease/runtime/source/dependency preflight
+  future_authorization_scope: 'active scoped code/test/review toward goal #45; no
+    production deployment inferred'
+  current_run_scope: production goal and six-role scheduled resumption; platform/commands/frontend/pilots/operations
+    plus sole integrator
+  current_start_blocker: full business implementation/effects acceptance; deployment/runtime/operations
+    acceptance; exact-head independent review
+  implementation_authorization_scope: conditional foundation and evidence workflow;
+    source/dependency/runtime gates before domain binding or operations; no production
+    deployment
+  plan_integration_pr: 43
+  plan_integration_commit: f9197185b624a8c3f74c99e48a69550b5a7c2a73
+  plan_integration_status: merged
+  closure_decision: docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md
+  foundation_code_started: true
+  foundation_status: implemented_pending_independent_review
+  foundation_test_count: 37
+  application_code_started: true
+  active_implementation_pr: 44
+  foundation_ci_evidence:
+    verified_head: 0c5a45fb1988a143666d393c6bffd6bccfdcea52
+    push_run: 36957036456
+    pull_request_run: 36957039119
+    result: success
+    current_head_policy: check GitHub checks on the latest head; previous-head success
+      is not current-head evidence
+  frontend_status: login_workspace_two_typed_read_only_lists_and_line_details_configuration_gated
+  server_candidate_status: BLOCKED_BUSINESS_AND_RUNTIME_ACCEPTANCE
+  full_stack_checkpoint: docs/execution/FULL_STACK_CONTINUATION_20261002.md
+  local_acceptance:
+    backend_tests: 37
+    frontend_contract_tests: 5
+    packaged_browser_tests: 4
+    reference_suites: 23
+    legacy_sql_dll_runtime_tests: 3
+    catalog_scanner_tests: 9
+    runtime_receipt: inventories/source/20261002/runtime-receipt.json
+  new_head_ci_status: verify live latest head; prior source-correction head 692a8ab
+    success run 37029121428
+  production_release_accepted: false
+  source_access_status: recovered_full_size_crc_hash_verified_archive_member
+  transfer_check_procedure_source_status: recovered_and_synthetic_sql_checks_passed
+  missing_transfer_procedure_source_blocker: resolved
+  source_evidence: docs/erp/OWNER_SOURCE_RECOVERY_20261002.md
+  production_goal_issue: 45
+  production_goal: docs/goals/PRODUCTION_ERP_GOAL.md
 scheduled_execution:
-  plan: docs/plans/PHASE2_SCHEDULED_EXECUTION_PLAN.md
-  planned_lane_count: 10
+  plan: docs/execution/PRODUCTION_WORKFLOW_20261002.md
+  planned_lane_count: 6
   maximum_medcom_schedules: 10
-  activation_status: planned_only
+  activation_status: six_enabled_confirmed
   automation_instances_created_this_run: 0
-  automation_instances_modified_this_run: 0
+  automation_instances_modified_this_run: 6
   session_task_target_min: 4
   session_task_target_max: 6
-  ci_policy: repair every actionable owned-current-head failure, including inherited failures, in same session before new product code; external outage remains blocked; exact current head green before DONE or merge
-  integration_owner: L01
+  ci_policy: repair every actionable owned-current-head failure, including inherited
+    failures, in same session before new product code; external outage remains blocked;
+    exact current head green before DONE or merge
+  integration_owner: lead
+  activation_record: docs/execution/PRODUCTION_WORKFLOW_20261002.md
+  activation_registry: docs/execution/production-schedules.json
+  active_lane_count: 6
+  timezone: Asia/Saigon
+  activation_date: '2026-10-02'
+  github_writer_mode: isolated_scope_and_invocation_owned_branches; lead sole integrator
+  minimum_bootstrap_preflight: local_restore_build_analyzers_http_tests_passed
+  hard_fencing_proof: create_if_absent_probe_passed; full_dispatcher_credential_fencing_not_proven
+  parallel_writer_admission: distinct_ready_ticket_paths_only; immutable_claim_and_unique_work_branch;
+    no shared-branch admission
+  active_draft_pr: 44
+  integration_status: backend_foundation_pending_independent_review
+  direct_execution_record: docs/execution/DIRECT_EXECUTION_20261002.md
+  ticket_registry: docs/execution/production-tickets.json
+  production_goal_issue: 45
+  execution_observation: scheduled configuration enabled; worker start/completion
+    not yet observed
 remaining_blockers:
-  - TRC-DB-001 row-level sanitized SQL catalog and dependency graph
-  - TRC-TOOL-001 Tool.dll runtime session semantics and direct-load versus bridge verification
-  - exact internal-transfer ERP form and data binding
-  - exhaustive ERP to Web to DB traceability
-  - per-screen mutation, permission precedence and concurrency contracts
-last_updated: 2026-10-01
+- TRC-DB-001 row-level sanitized SQL catalog and dependency graph
+- TRC-TOOL-001 Tool.dll runtime session semantics and direct-load versus bridge verification
+- exact internal-transfer ERP form and data binding
+- exhaustive ERP to Web to DB traceability
+- per-screen mutation, permission precedence and concurrency contracts
+last_updated: '2026-10-02'

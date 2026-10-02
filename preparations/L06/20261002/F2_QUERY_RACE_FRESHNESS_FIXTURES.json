@@ -1,0 +1,190 @@
+{
+  "schema_version": 1,
+  "lane": "L06",
+  "artifact_status": "prepared_local_only",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_issues": [
+    28,
+    29,
+    30,
+    31
+  ],
+  "source_contracts": [
+    {
+      "path": "docs/web/GRID_MOBILE_IMPLEMENTATION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "b59d80f754cd3108c415a458f83c19dc7c7c197998e23fa12f258adaeafb3418",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/GRID_MOBILE_IMPLEMENTATION_CONTRACT.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/web/PRODUCT_UX_FOUNDATION.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "8299a090625de634f1aadc4b8bd5cb17aef628489d5cca31bdfc755d904bc520",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/PRODUCT_UX_FOUNDATION.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/web/MOBILE_NAVIGATION_ROLE_CONFIG.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "5e031383a484408298ea8ee819694499e7d00af621ccd1d793e1c26b1023ea8e",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/MOBILE_NAVIGATION_ROLE_CONFIG.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/web/CONFIGURATION_LOOKUP_UX.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "757435de098e0f72e1235b1fa6f672c2e4d526e3914ed29b6ca0a6ad51b4793d",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/CONFIGURATION_LOOKUP_UX.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/web/UX_RUNTIME_FEEDBACK_SESSION.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "a397a8df0049481cc91df81cfd664deb42e99baa3e060cc534d396c8a4e277a0",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/UX_RUNTIME_FEEDBACK_SESSION.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "9d9b7157027cce55e3d24d7ade4e554e7205d34a9393bb67f21f60164190c1e0",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/architecture/PHASE2_AUTH_CAPABILITY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "fa8db170726d9afe02fd5b2e578e00226978f78757c4fbfcde3fa9328d18eb47",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_AUTH_CAPABILITY_CONTRACT.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/architecture/PHASE2_SCREEN_DEFINITION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "aeb14d0db338c24d98dce32f1eb986ff6e771abd5c799a151a8536c9dbba2316",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_SCREEN_DEFINITION_CONTRACT.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/web/PHASE2_FRONTEND_ACCEPTANCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "668c3f410cbc5793aa3be1f032130a31d07bbf075c9153a778af5e3ac2d4422a",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/PHASE2_FRONTEND_ACCEPTANCE.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/web/UX_STRESS_ACCEPTANCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "56a9163d45ad3c6787ca280db17c0ce69f6f31a5525ba1c94ac943d114649e03",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/UX_STRESS_ACCEPTANCE.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    }
+  ],
+  "limits": [
+    "no L06 dispatcher lease or writer token",
+    "no frontend application tree or installed project dependencies",
+    "no completed backend/query/capability dependencies",
+    "no product browser, accessibility, performance or CI execution",
+    "no GitHub mutation or issue closure",
+    "mock/synthetic preparation cannot enable real users or close F1-F4"
+  ],
+  "unit_id": "L06-F2-QUERY-RACE",
+  "graph_id": "F2",
+  "issue": 29,
+  "objective": "Prevent stale/superseded query results, scope drift and false freshness in the shared query state.",
+  "cases": [
+    {
+      "id": "QRY-01",
+      "scenario": "search A then AB then ABC returns in reverse order",
+      "expected": "only latest request identity may update current result"
+    },
+    {
+      "id": "QRY-02",
+      "scenario": "filter changes while old request is in flight",
+      "expected": "abort/supersede old request; late response ignored"
+    },
+    {
+      "id": "QRY-03",
+      "scenario": "company or role generation changes in flight",
+      "expected": "old response fenced and purged; new scope reauthorizes"
+    },
+    {
+      "id": "QRY-04",
+      "scenario": "page request races changed sort/filter",
+      "expected": "query key includes schema/scope/filter/sort/page and stable version"
+    },
+    {
+      "id": "QRY-05",
+      "scenario": "SWR retains prior data during safe refresh",
+      "expected": "mark data age/refreshing; never represent stale data as current"
+    },
+    {
+      "id": "QRY-06",
+      "scenario": "SignalR event dropped/duplicated/reordered",
+      "expected": "event is a hint; authoritative revalidation converges by policy"
+    },
+    {
+      "id": "QRY-07",
+      "scenario": "socket connected but DB/query stale",
+      "expected": "do not show live/fresh based on transport alone"
+    },
+    {
+      "id": "QRY-08",
+      "scenario": "server returns totalCount/group summary for mixed authorized/foreign filters",
+      "expected": "scope applied before aggregates and no foreign existence leak"
+    },
+    {
+      "id": "QRY-09",
+      "scenario": "client submits legacy FieldID, table or arbitrary operator",
+      "expected": "typed allow-list rejects before query construction"
+    },
+    {
+      "id": "QRY-10",
+      "scenario": "manual refresh while mutation outcome is OutcomeUnknown",
+      "expected": "reconcile authoritative record/operation status; do not imply retry or success"
+    },
+    {
+      "id": "QRY-11",
+      "scenario": "10-second latency while usable prior data exists",
+      "expected": "non-blocking progress appears after about 300 ms; prior data is visibly stale/refreshing and remains safe to use"
+    },
+    {
+      "id": "QRY-12",
+      "scenario": "cached response key matches query text but tenant/company/principal generation differs",
+      "expected": "cache isolation rejects cross-scope reuse and purges inaccessible data"
+    },
+    {
+      "id": "QRY-13",
+      "scenario": "cursor/page token reused after dataset version or deterministic sort contract changes",
+      "expected": "server rejects/restarts pagination; client cannot splice mixed snapshots"
+    },
+    {
+      "id": "QRY-14",
+      "scenario": "conditional response reports not-modified after capability or field authorization changed",
+      "expected": "authorization generation participates in validation; stale protected projection is discarded"
+    }
+  ],
+  "execution_status": "NOT_RUN"
+}

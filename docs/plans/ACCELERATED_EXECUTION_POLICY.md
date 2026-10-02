@@ -1,5 +1,7 @@
 # Accelerated Multi-Unit Execution Policy
 
+> Activation checkpoint — 2026-10-02: PR #43 is reviewed/merged and ten hourly schedules are enabled in bootstrap/preparation mode. Read `docs/execution/SCHEDULE_ACTIVATION_20261002.md` and current `docs/PROJECT_STATE.yaml`. These supersede the original planned-only/future activation statements below. L01 alone writes GitHub until minimum preflight and proved dispatcher admission; other lanes remain read-only/preparation. Source/runtime/CI gates and truthful 4–6 unit accounting remain mandatory.
+
 Owner directive: maximize throughput per automation run while preserving lease safety, evidence quality, security and reviewability.
 
 Current owner direction (2026-10-01): **4–6 meaningful tasks per working session** and **at most 10 planned scheduled lanes**, with same-session repair of owned CI failures. `PHASE2_SCHEDULED_EXECUTION_PLAN.md` is the canonical lane/lease/session protocol. Past deadlines and the five-role analysis structure below are historical; this run does not activate automations.

@@ -1,0 +1,161 @@
+{
+  "issue": 14,
+  "acceptance": "1440 minute default idle, meaningful accepted activity, logout/generation fencing",
+  "cases": [
+    {
+      "id": "A3-01",
+      "synthetic_scenario": "no accepted meaningful user activity for configured idle period; polling/SWR/SignalR continue",
+      "expected_assertions": [
+        "server session expires",
+        "passive/background traffic does not reset idle"
+      ],
+      "defect_detected": "background traffic keeps idle session alive",
+      "execution_status": "not_run_against_product"
+    },
+    {
+      "id": "A3-02",
+      "synthetic_scenario": "accepted user action/explicit continuation before expiry",
+      "expected_assertions": [
+        "server validates active generation and records accepted activity",
+        "client timestamp alone cannot extend lifetime"
+      ],
+      "defect_detected": "untrusted activity authority",
+      "execution_status": "not_run_against_product"
+    },
+    {
+      "id": "A3-03",
+      "synthetic_scenario": "Continue Session arrives after server expiry",
+      "expected_assertions": [
+        "cannot revive expired session",
+        "protected operation denied; local dirty input safely preserved"
+      ],
+      "defect_detected": "expired continuation bypass",
+      "execution_status": "not_run_against_product"
+    },
+    {
+      "id": "A3-04",
+      "synthetic_scenario": "tab one logs out; tab two restores bfcache protected screen",
+      "expected_assertions": [
+        "server generation invalidated",
+        "revalidation before reveal/command; no stale replay"
+      ],
+      "defect_detected": "multi-tab stale session",
+      "execution_status": "not_run_against_product"
+    },
+    {
+      "id": "A3-05",
+      "synthetic_scenario": "different principal logs in with old local dirty draft",
+      "expected_assertions": [
+        "draft/cache remain scoped by principal/company/variant",
+        "never silently submit prior command"
+      ],
+      "defect_detected": "draft transfer or blind command replay",
+      "execution_status": "not_run_against_product"
+    },
+    {
+      "id": "A3-06",
+      "synthetic_scenario": "admin policy changes while idle session and meaningful activity race",
+      "expected_assertions": [
+        "policy/generation is server authoritative",
+        "explicit reviewed race decision required; stale grant never revives expired generation"
+      ],
+      "defect_detected": "idle-policy race",
+      "execution_status": "not_run_against_product"
+    },
+    {
+      "id": "A3-07",
+      "synthetic_scenario": "external origin or missing/invalid CSRF token submits cookie-authenticated command, company switch or Continue Session",
+      "expected_assertions": [
+        "reject before handler dispatch, accepted-activity update, session/context mutation or business effect",
+        "same-origin valid-token positive control remains allowed subject to normal authorization"
+      ],
+      "defect_detected": "CSRF state/session mutation",
+      "execution_status": "not_run_against_product"
+    }
+  ],
+  "unknowns": [
+    "exact legacy Tool login/logout signatures",
+    "absolute maximum lifetime",
+    "simultaneous-session policy",
+    "idle-policy race boundary needs reviewed implementation decision"
+  ],
+  "schema_version": 1,
+  "graph_id": "A3",
+  "primary_owner": "L02",
+  "artifact_status": "prepared_local_only",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "source_contracts": [
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md",
+      "sha256": "9cb84eb673b9d7a0a8cea3e70f2366350b8150f4a15ad42f614510f3113c1524",
+      "reference_level": "reviewed_repository_contract_or_attack_evidence_not_runtime",
+      "source_ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md",
+      "snapshot_status": "merged_main"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "reference_level": "reviewed_repository_contract_or_attack_evidence_not_runtime",
+      "source_ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "snapshot_status": "merged_main"
+    },
+    {
+      "path": "docs/architecture/PHASE2_AUTH_CAPABILITY_CONTRACT.md",
+      "sha256": "fa8db170726d9afe02fd5b2e578e00226978f78757c4fbfcde3fa9328d18eb47",
+      "reference_level": "reviewed_repository_contract_or_attack_evidence_not_runtime",
+      "source_ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_AUTH_CAPABILITY_CONTRACT.md",
+      "snapshot_status": "merged_main"
+    },
+    {
+      "path": "docs/architecture/PHASE2_AUDIT_TRACE_CONTRACT.md",
+      "sha256": "e552f88a122745ee5e90754115ac832db9de2e16ae0c8f8cc35e650d56e2114c",
+      "reference_level": "reviewed_repository_contract_or_attack_evidence_not_runtime",
+      "source_ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_AUDIT_TRACE_CONTRACT.md",
+      "snapshot_status": "merged_main"
+    },
+    {
+      "path": "docs/architecture/WEB_PLATFORM_SHARED_SERVICES.md",
+      "sha256": "51ae9139debccd591548b53004b7bb280d58a25b395b7c71e28d7e1850f53b0b",
+      "reference_level": "reviewed_repository_contract_or_attack_evidence_not_runtime",
+      "source_ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/WEB_PLATFORM_SHARED_SERVICES.md",
+      "snapshot_status": "merged_main"
+    },
+    {
+      "path": "docs/web/UX_RUNTIME_FEEDBACK_SESSION.md",
+      "sha256": "a397a8df0049481cc91df81cfd664deb42e99baa3e060cc534d396c8a4e277a0",
+      "reference_level": "reviewed_repository_contract_or_attack_evidence_not_runtime",
+      "source_ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/UX_RUNTIME_FEEDBACK_SESSION.md",
+      "snapshot_status": "merged_main"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84",
+      "reference_level": "reviewed_repository_contract_or_attack_evidence_not_runtime",
+      "source_ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "snapshot_status": "merged_main"
+    }
+  ],
+  "limitations": [
+    "synthetic proposed acceptance fixture, not implemented backend behavior",
+    "no legacy source/runtime/SQL calls",
+    "no GitHub writer lease or issue closure"
+  ],
+  "foundation_dependencies": [
+    "A1"
+  ],
+  "legacy_binding_gates": [
+    "Actual Tool-backed login/logout semantics: T1; legacy absolute/concurrent policy UNKNOWN; does not block synthetic Web session foundation"
+  ],
+  "current_preparation_limits": [
+    "no L02 GitHub writer lease/fencing admission",
+    "no available .NET 10 SDK or actual product build acceptance"
+  ],
+  "source_provenance_rule": "validator hashes exact git object bytes from source_ref:path; mutable worktree bytes and URL substring checks are insufficient"
+}

@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "lane": "L10",
+  "artifact_status": "prepared_local_only",
+  "execution_status": "NOT_RUN",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_owner": "L10",
+  "unit": "Q3",
+  "issue": 38,
+  "title": "Realtime payload-minimization and amplification supplement",
+  "supplement_to": "Q3_FRESHNESS_CHAOS_MATRIX.json",
+  "source_contracts": [
+    {"path":"docs/architecture/PHASE2_REALTIME_COEXISTENCE_RECOVERY_CONTRACT.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","git_blob_sha256":"e48ccffc8fa128f41c525c7c30ac4fff265a6fb8af739478281cf927afd753f4"},
+    {"path":"docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","git_blob_sha256":"c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84"},
+    {"path":"docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","git_blob_sha256":"868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b"}
+  ],
+  "safety_limits": [
+    "synthetic event identities and bounded local load only; no customer or patient payload",
+    "no GitHub mutation, product execution, runtime connection, SQL execution, deployment, or production operation",
+    "no production fan-out, load test, or externally reachable subscriber"
+  ],
+  "eligibility": {"actual_start_state":"waiting_dependencies_and_preflight","dependencies":["A6/#17", "R1/#39", "F2/#29"],"required_runtime":"isolated event broker, synthetic publisher/subscribers, and bounded load profile"},
+  "cases": [
+    {"id":"Q3-EP-01","role":"internal_malicious_subscriber","execution_status":"NOT_RUN","entry_point":"invalidation payload","attack_or_failure":"attempt to make an event carry a synthetic customer row, display label, amount, query text, or secret-shaped canary","expected_result":"event contains only opaque scoped identity, version, reason, and safe correlation fields","owner_route":"R1/A6/Q3","evidence_to_pass":"schema allowlist and captured-payload canary scan"},
+    {"id":"Q3-EP-02","role":"external_attacker","execution_status":"NOT_RUN","entry_point":"subscribe/reconnect handshake","attack_or_failure":"vary unauthorized scope identifiers and observe acknowledgement size, timing, group count, or replay cursor","expected_result":"uniform denial leaks neither scope existence nor event volume","owner_route":"A4/R1/Q1/Q3","evidence_to_pass":"bounded side-channel comparison over existing and absent synthetic scopes"},
+    {"id":"Q3-EP-03","role":"SRE","execution_status":"NOT_RUN","entry_point":"fan-out burst","attack_or_failure":"publish a bounded synthetic burst with duplicate keys and one hot scope to trigger reconnect and refetch amplification","expected_result":"coalescing/backpressure preserves the latest required version without unbounded queue, connection, or query growth","owner_route":"R1/F2/Q3","evidence_to_pass":"declared load profile with queue, reconnect, refetch, memory, and dropped-signal measurements"},
+    {"id":"Q3-EP-04","role":"internal_malicious_user","execution_status":"NOT_RUN","entry_point":"client-controlled revalidation hint","attack_or_failure":"inject a URL, query, table name, or arbitrary cache key into an otherwise valid event envelope","expected_result":"client maps registered opaque identities to fixed handlers and never executes supplied routing/query text","owner_route":"R1/F2/Q3","evidence_to_pass":"negative schema corpus and handler-dispatch trace"},
+    {"id":"Q3-EP-05","role":"IT_support","execution_status":"NOT_RUN","entry_point":"dead-letter and telemetry","attack_or_failure":"force malformed synthetic events into retry, dead-letter, alert, and trace sinks","expected_result":"diagnostics retain event identity/version/reason but redact payload, connection material, and foreign-scope detail","owner_route":"A6/R1/Q3","evidence_to_pass":"sink inventory and recursive synthetic-canary scan"},
+    {"id":"Q3-EP-06","role":"SRE","execution_status":"NOT_RUN","entry_point":"oversize and decompression payload","attack_or_failure":"send just-over-limit, deeply nested, duplicate-field, and compression-ratio-bomb synthetic frames","expected_result":"transport rejects before allocation/fan-out, records a safe bounded reason, and keeps healthy scoped traffic available","owner_route":"R1/Q3","evidence_to_pass":"memory/CPU ceilings, rejection counters, and unaffected control-subscriber trace"}
+  ],
+  "future_execution_record_fields": ["stimulus_timestamp", "observed_result", "authoritative_version_or_identity", "exact_head", "environment_identity", "measurement_profile", "reviewer"]
+}

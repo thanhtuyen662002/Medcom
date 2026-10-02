@@ -1,0 +1,472 @@
+{
+  "schema_version": 1,
+  "lane": "L03",
+  "artifact_status": "prepared_local_only",
+  "execution_status": "NOT_RUN",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_owner": "L03",
+  "source_contracts": [
+    {
+      "path": "docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "338ac433b907f42e720fe3564d3041fef2322036d7405bdf0c7e08942ce3bb13",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md"
+    },
+    {
+      "path": "docs/db/PHASE1_CATALOG_COVERAGE_MATRIX.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "0f3bb2ef99e105dd337bb42fcbe0b0e5f3843cd00e961c0a83d0171716e817ec",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/db/PHASE1_CATALOG_COVERAGE_MATRIX.md"
+    },
+    {
+      "path": "docs/db/BASELINE_INVENTORY.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "6d87cdceaa664c1d7c0829d9763da25122ad2da416994a64106edeaac9f40b4f",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/db/BASELINE_INVENTORY.md"
+    },
+    {
+      "path": "docs/EVIDENCE_STANDARDS.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "b330291378041fc197796deaab6d49c72a9563fdbe2c5fd990fd827b266e1910",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/EVIDENCE_STANDARDS.md"
+    },
+    {
+      "path": "docs/SOURCE_BASELINE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "6f9fb08b0d1f3af2def0809f2d5a194082403249ff9119a1f2605551c93658b8",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/SOURCE_BASELINE.md"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "9cb84eb673b9d7a0a8cea3e70f2366350b8150f4a15ad42f614510f3113c1524",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md"
+    },
+    {
+      "path": "inventories/traceability/FILTER_FAMILY_TRACEABILITY_REGISTER.json",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "bf467cc1843939098319f57028ae60c5ed7243ff78ce9f0bafde8f8432ce36bf",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/inventories/traceability/FILTER_FAMILY_TRACEABILITY_REGISTER.json"
+    },
+    {
+      "path": "inventories/traceability/FILTER_TRACEABILITY_SCOPE_AUDIT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "2405377c8f751cf92ff6c5aced05b3b3b5481c599fb76b689d53b3cce43191f1",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/inventories/traceability/FILTER_TRACEABILITY_SCOPE_AUDIT.md"
+    },
+    {
+      "path": "docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "9d9b7157027cce55e3d24d7ade4e554e7205d34a9393bb67f21f60164190c1e0",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md"
+    }
+  ],
+  "safety_limits": [
+    "sanitized metadata and synthetic fixtures only; no raw SQL, data rows, secrets, credentials or connection material",
+    "no GitHub mutation, SQL execution, legacy runtime, product implementation, deployment or production operation",
+    "aggregate counts and filename conventions never substitute for exact authoritative catalog identities",
+    "all product/runtime execution remains NOT_RUN and TRC-DB-001 stays open"
+  ],
+  "unit": "B2D",
+  "issue": 21,
+  "title": "Dependency extraction, resolution and quarantine fixtures",
+  "eligibility": {
+    "writer_lease": "NOT_GRANTED",
+    "dispatcher_fencing": "NOT_PROVEN",
+    "authoritative_sql_bytes": "NOT_ACCESSIBLE",
+    "eligible_to_code": false
+  },
+  "future_execution_record_fields": [
+    "stimulus_timestamp",
+    "observed_result",
+    "authoritative_source_identity",
+    "exact_head",
+    "environment_identity",
+    "parser_version",
+    "reviewer"
+  ],
+  "allowed_dispositions": [
+    "RESOLVED_EDGE",
+    "DYNAMIC",
+    "AMBIGUOUS",
+    "UNRESOLVED",
+    "UNSUPPORTED_QUARANTINED",
+    "EXTERNAL_OR_CROSS_DATABASE",
+    "LOCAL_OR_NON_CATALOG"
+  ],
+  "cases": [
+    {
+      "id": "B2D-01",
+      "role": "dependency_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "three-part name",
+      "attack_or_failure": "cross-database target",
+      "expected_result": "emit a sourced site with an explicit allowed disposition; never silently drop the region",
+      "owner_route": "B2",
+      "evidence_to_pass": "fixture expects EXTERNAL_OR_CROSS_DATABASE with source span, reason, owner and parser version",
+      "expected_disposition": "EXTERNAL_OR_CROSS_DATABASE"
+    },
+    {
+      "id": "B2D-02",
+      "role": "dependency_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "four-part name",
+      "attack_or_failure": "linked-server target",
+      "expected_result": "emit a sourced site with an explicit allowed disposition; never silently drop the region",
+      "owner_route": "B2",
+      "evidence_to_pass": "fixture expects EXTERNAL_OR_CROSS_DATABASE with source span, reason, owner and parser version",
+      "expected_disposition": "EXTERNAL_OR_CROSS_DATABASE"
+    },
+    {
+      "id": "B2D-03",
+      "role": "dependency_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "synonym",
+      "attack_or_failure": "target requires synonym catalog",
+      "expected_result": "emit a sourced site with an explicit allowed disposition; never silently drop the region",
+      "owner_route": "B2",
+      "evidence_to_pass": "fixture expects AMBIGUOUS with source span, reason, owner and parser version",
+      "expected_disposition": "AMBIGUOUS"
+    },
+    {
+      "id": "B2D-04",
+      "role": "dependency_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "dynamic EXEC string",
+      "attack_or_failure": "runtime object name assembled",
+      "expected_result": "emit a sourced site with an explicit allowed disposition; never silently drop the region",
+      "owner_route": "B2",
+      "evidence_to_pass": "fixture expects DYNAMIC with source span, reason, owner and parser version",
+      "expected_disposition": "DYNAMIC"
+    },
+    {
+      "id": "B2D-05",
+      "role": "dependency_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "sp_executesql parameter",
+      "attack_or_failure": "text plus parameterized values",
+      "expected_result": "emit a sourced site with an explicit allowed disposition; never silently drop the region",
+      "owner_route": "B2",
+      "evidence_to_pass": "fixture expects DYNAMIC with source span, reason, owner and parser version",
+      "expected_disposition": "DYNAMIC"
+    },
+    {
+      "id": "B2D-06",
+      "role": "dependency_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "unqualified table",
+      "attack_or_failure": "multiple schema candidates",
+      "expected_result": "emit a sourced site with an explicit allowed disposition; never silently drop the region",
+      "owner_route": "B2",
+      "evidence_to_pass": "fixture expects AMBIGUOUS with source span, reason, owner and parser version",
+      "expected_disposition": "AMBIGUOUS"
+    },
+    {
+      "id": "B2D-07",
+      "role": "dependency_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "CTE name",
+      "attack_or_failure": "parser mistakes CTE for catalog object",
+      "expected_result": "retain a manifest-covered local/non-catalog exclusion with reason and owner; emit zero catalog edges",
+      "owner_route": "B2",
+      "evidence_to_pass": "synthetic source spans remain exact; classifier distinguishes lexical/local scope before catalog resolution; zero false catalog edges; independent review and actual parser test remain required",
+      "expected_disposition": "LOCAL_OR_NON_CATALOG",
+      "fixture_source": {
+        "identity": "synthetic:B2D-07",
+        "provenance": "SYNTHETIC_TEST_DESIGN",
+        "text": "WITH cte_synthetic AS (SELECT 1 AS value) SELECT value FROM cte_synthetic;",
+        "sha256": "9ed3245ec6d514a4fa089eae34a48d802d84eb67a5f41d831e817502973da87a",
+        "authoritative_source_path": null,
+        "scope_context": "STATEMENT_CTE"
+      },
+      "source_spans": [
+        {
+          "start": 60,
+          "end": 73,
+          "offset_unit": "unicode_code_point",
+          "lexeme": "cte_synthetic",
+          "lexical_role": "CTE_NAME"
+        }
+      ],
+      "reason": "Statement-local CTE reference, not a permanent catalog object.",
+      "disposition_owner": "L03/B2",
+      "catalog_edges": [],
+      "closure_acceptance": "NO_CATALOG_EDGE; covered manifest exclusion only; does not close TRC-DB-001 or prove parser execution"
+    },
+    {
+      "id": "B2D-08",
+      "role": "dependency_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "table variable",
+      "attack_or_failure": "parser mistakes variable for permanent object",
+      "expected_result": "retain a manifest-covered local/non-catalog exclusion with reason and owner; emit zero catalog edges",
+      "owner_route": "B2",
+      "evidence_to_pass": "synthetic source spans remain exact; classifier distinguishes lexical/local scope before catalog resolution; zero false catalog edges; independent review and actual parser test remain required",
+      "expected_disposition": "LOCAL_OR_NON_CATALOG",
+      "fixture_source": {
+        "identity": "synthetic:B2D-08",
+        "provenance": "SYNTHETIC_TEST_DESIGN",
+        "text": "DECLARE @synthetic TABLE (value int); SELECT value FROM @synthetic;",
+        "sha256": "3e6187165d36d9fe60bc7c0022b213fddf5e330a835448bc1cb0eee9201f81bd",
+        "authoritative_source_path": null,
+        "scope_context": "BATCH_TABLE_VARIABLE"
+      },
+      "source_spans": [
+        {
+          "start": 56,
+          "end": 66,
+          "offset_unit": "unicode_code_point",
+          "lexeme": "@synthetic",
+          "lexical_role": "TABLE_VARIABLE"
+        }
+      ],
+      "reason": "Batch-local table variable, not a permanent catalog object.",
+      "disposition_owner": "L03/B2",
+      "catalog_edges": [],
+      "closure_acceptance": "NO_CATALOG_EDGE; covered manifest exclusion only; does not close TRC-DB-001 or prove parser execution"
+    },
+    {
+      "id": "B2D-09",
+      "role": "dependency_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "temporary table",
+      "attack_or_failure": "parser promotes temp object",
+      "expected_result": "retain a manifest-covered local/non-catalog exclusion with reason and owner; emit zero catalog edges",
+      "owner_route": "B2",
+      "evidence_to_pass": "synthetic source spans remain exact; classifier distinguishes lexical/local scope before catalog resolution; zero false catalog edges; independent review and actual parser test remain required",
+      "expected_disposition": "LOCAL_OR_NON_CATALOG",
+      "fixture_source": {
+        "identity": "synthetic:B2D-09",
+        "provenance": "SYNTHETIC_TEST_DESIGN",
+        "text": "CREATE TABLE #synthetic (value int); SELECT value FROM #synthetic;",
+        "sha256": "a3f7797277cbc36d2dd5dfc0353bf98a80fd829249b2a9e18cd60dc49c565dd6",
+        "authoritative_source_path": null,
+        "scope_context": "BATCH_TEMPORARY_TABLE"
+      },
+      "source_spans": [
+        {
+          "start": 55,
+          "end": 65,
+          "offset_unit": "unicode_code_point",
+          "lexeme": "#synthetic",
+          "lexical_role": "TEMPORARY_TABLE"
+        }
+      ],
+      "reason": "Temporary object is excluded from permanent catalog dependency edges.",
+      "disposition_owner": "L03/B2",
+      "catalog_edges": [],
+      "closure_acceptance": "NO_CATALOG_EDGE; covered manifest exclusion only; does not close TRC-DB-001 or prove parser execution"
+    },
+    {
+      "id": "B2D-10",
+      "role": "dependency_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "function call",
+      "attack_or_failure": "scalar/table function dependency",
+      "expected_result": "emit a sourced site with an explicit allowed disposition; never silently drop the region",
+      "owner_route": "B2",
+      "evidence_to_pass": "fixture expects RESOLVED_EDGE with source span, reason, owner and parser version",
+      "expected_disposition": "RESOLVED_EDGE"
+    },
+    {
+      "id": "B2D-11",
+      "role": "dependency_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "trigger pseudo-table",
+      "attack_or_failure": "inserted/deleted treated as objects",
+      "expected_result": "retain a manifest-covered local/non-catalog exclusion with reason and owner; emit zero catalog edges",
+      "owner_route": "B2",
+      "evidence_to_pass": "synthetic source spans remain exact; classifier distinguishes lexical/local scope before catalog resolution; zero false catalog edges; independent review and actual parser test remain required",
+      "expected_disposition": "LOCAL_OR_NON_CATALOG",
+      "fixture_source": {
+        "identity": "synthetic:B2D-11",
+        "provenance": "SYNTHETIC_TEST_DESIGN",
+        "text": "SELECT value FROM inserted; SELECT value FROM deleted;",
+        "sha256": "a5fa23a9ae0a7ffa777a5cc7dc002c5e918b362e9a34e22f5466810f8171d91f",
+        "authoritative_source_path": null,
+        "scope_context": "TRIGGER_BODY"
+      },
+      "source_spans": [
+        {
+          "start": 18,
+          "end": 26,
+          "offset_unit": "unicode_code_point",
+          "lexeme": "inserted",
+          "lexical_role": "TRIGGER_PSEUDO_TABLE"
+        },
+        {
+          "start": 46,
+          "end": 53,
+          "offset_unit": "unicode_code_point",
+          "lexeme": "deleted",
+          "lexical_role": "TRIGGER_PSEUDO_TABLE"
+        }
+      ],
+      "reason": "Trigger-scoped pseudo-tables are not catalog objects.",
+      "disposition_owner": "L03/B2",
+      "catalog_edges": [],
+      "closure_acceptance": "NO_CATALOG_EDGE; covered manifest exclusion only; does not close TRC-DB-001 or prove parser execution"
+    },
+    {
+      "id": "B2D-12",
+      "role": "dependency_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "sequence NEXT VALUE",
+      "attack_or_failure": "sequence dependency omitted",
+      "expected_result": "emit a sourced site with an explicit allowed disposition; never silently drop the region",
+      "owner_route": "B2",
+      "evidence_to_pass": "fixture expects RESOLVED_EDGE with source span, reason, owner and parser version",
+      "expected_disposition": "RESOLVED_EDGE"
+    },
+    {
+      "id": "B2D-13",
+      "role": "dependency_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "MERGE",
+      "attack_or_failure": "read and write targets collapsed",
+      "expected_result": "emit a sourced site with an explicit allowed disposition; never silently drop the region",
+      "owner_route": "B2",
+      "evidence_to_pass": "fixture expects RESOLVED_EDGE with source span, reason, owner and parser version",
+      "expected_disposition": "RESOLVED_EDGE"
+    },
+    {
+      "id": "B2D-14",
+      "role": "dependency_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "SELECT INTO",
+      "attack_or_failure": "created transient/permanent target omitted",
+      "expected_result": "emit a sourced site with an explicit allowed disposition; never silently drop the region",
+      "owner_route": "B2",
+      "evidence_to_pass": "fixture expects RESOLVED_EDGE with source span, reason, owner and parser version",
+      "expected_disposition": "RESOLVED_EDGE"
+    },
+    {
+      "id": "B2D-15",
+      "role": "dependency_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "OPENQUERY/OPENROWSET",
+      "attack_or_failure": "external source hidden",
+      "expected_result": "emit a sourced site with an explicit allowed disposition; never silently drop the region",
+      "owner_route": "B2",
+      "evidence_to_pass": "fixture expects EXTERNAL_OR_CROSS_DATABASE with source span, reason, owner and parser version",
+      "expected_disposition": "EXTERNAL_OR_CROSS_DATABASE"
+    },
+    {
+      "id": "B2D-16",
+      "role": "dependency_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "unsupported syntax",
+      "attack_or_failure": "body region silently skipped",
+      "expected_result": "emit a sourced site with an explicit allowed disposition; never silently drop the region",
+      "owner_route": "B2",
+      "evidence_to_pass": "fixture expects UNSUPPORTED_QUARANTINED with source span, reason, owner and parser version",
+      "expected_disposition": "UNSUPPORTED_QUARANTINED"
+    },
+    {
+      "id": "B2D-17",
+      "role": "dependency_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "comment/string token",
+      "attack_or_failure": "false positive identifier",
+      "expected_result": "retain a manifest-covered local/non-catalog exclusion with reason and owner; emit zero catalog edges",
+      "owner_route": "B2",
+      "evidence_to_pass": "synthetic source spans remain exact; classifier distinguishes lexical/local scope before catalog resolution; zero false catalog edges; independent review and actual parser test remain required",
+      "expected_disposition": "LOCAL_OR_NON_CATALOG",
+      "fixture_source": {
+        "identity": "synthetic:B2D-17",
+        "provenance": "SYNTHETIC_TEST_DESIGN",
+        "text": "-- dbo.CommentOnly\nSELECT 'dbo.StringOnly' AS value;",
+        "sha256": "7222cd553ff0f78cea0ad40711df8160c14aacffc665a57df50a0157b3ed9c60",
+        "authoritative_source_path": null,
+        "scope_context": "ORDINARY_COMMENT_AND_STRING"
+      },
+      "source_spans": [
+        {
+          "start": 3,
+          "end": 18,
+          "offset_unit": "unicode_code_point",
+          "lexeme": "dbo.CommentOnly",
+          "lexical_role": "COMMENT_TOKEN"
+        },
+        {
+          "start": 27,
+          "end": 41,
+          "offset_unit": "unicode_code_point",
+          "lexeme": "dbo.StringOnly",
+          "lexical_role": "STRING_LITERAL_TOKEN"
+        }
+      ],
+      "reason": "Lexical comment and ordinary string tokens are non-references; dynamic SQL must instead be classified DYNAMIC.",
+      "disposition_owner": "L03/B2",
+      "catalog_edges": [],
+      "closure_acceptance": "NO_CATALOG_EDGE; covered manifest exclusion only; does not close TRC-DB-001 or prove parser execution"
+    },
+    {
+      "id": "B2D-18",
+      "role": "dependency_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "caller-dependent object",
+      "attack_or_failure": "EXECUTE AS or caller resolution omitted",
+      "expected_result": "emit a sourced site with an explicit allowed disposition; never silently drop the region",
+      "owner_route": "B2",
+      "evidence_to_pass": "fixture expects AMBIGUOUS with source span, reason, owner and parser version",
+      "expected_disposition": "AMBIGUOUS"
+    },
+    {
+      "id": "B2D-19",
+      "role": "dependency_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "qualified reference absent from synthetic catalog",
+      "attack_or_failure": "parser guesses target or drops unresolved reference",
+      "expected_result": "retain UNRESOLVED with exact synthetic span, zero-match reason and L03/B2 owner; fail closed for binding and closure",
+      "owner_route": "B2",
+      "evidence_to_pass": "synthetic empty catalog plus exact reference span produces UNRESOLVED, no target or edge, and BLOCKED_UNRESOLVED binding/closure acceptance; actual parser execution remains NOT_RUN",
+      "expected_disposition": "UNRESOLVED",
+      "fixture_source": {
+        "identity": "synthetic:B2D-19",
+        "provenance": "SYNTHETIC_TEST_DESIGN",
+        "text": "SELECT value FROM dbo.SyntheticMissing;",
+        "sha256": "a91c86ac7a93bfa6c7f78bf2c5fe1a602adb591d3c7743381425e1722c4e4237",
+        "authoritative_source_path": null,
+        "scope_context": "CATALOG_QUERY"
+      },
+      "source_spans": [
+        {
+          "start": 18,
+          "end": 38,
+          "offset_unit": "unicode_code_point",
+          "lexeme": "dbo.SyntheticMissing",
+          "lexical_role": "CATALOG_REFERENCE"
+        }
+      ],
+      "reason": "Zero verified qualified matches in the explicitly empty synthetic catalog; no authoritative catalog lookup has run.",
+      "disposition_owner": "L03/B2",
+      "catalog_edges": [],
+      "closure_acceptance": "BLOCKED_UNRESOLVED",
+      "synthetic_catalog": {
+        "provenance": "SYNTHETIC_TEST_DESIGN",
+        "objects": [],
+        "qualified_match_count": 0
+      },
+      "resolved_target_id": null,
+      "binding_acceptance": "BLOCKED_UNRESOLVED"
+    }
+  ],
+  "classification_contract": {
+    "stage_order": [
+      "lexical_context",
+      "local_symbol_scope",
+      "catalog_resolution"
+    ],
+    "local_or_non_catalog": "CTE names, table variables, temporary tables, trigger pseudo-tables and comment/string tokens are manifest-covered exclusions; never catalog edges.",
+    "resolved_edge": "Only a catalog reference resolved to an exact qualified verified object ID can emit RESOLVED_EDGE.",
+    "unresolved": "A syntactically valid catalog reference with zero verified matches retains its synthetic/source span, reason and L03/B2 owner; no guessed target, executable binding or closure pass.",
+    "evidence_boundary": "Inline fixture inputs and catalogs are explicitly synthetic test design, not extracted authoritative source sites. Parser/product/runtime execution remains NOT_RUN."
+  }
+}

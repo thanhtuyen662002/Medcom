@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "lane": "L10",
+  "artifact_status": "prepared_local_only",
+  "execution_status": "NOT_RUN",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "unit": "QX-R2J",
+  "issue": 41,
+  "reviewed_owner": "L09/R2",
+  "review_verdict": "FAIL_OPEN_DESIGN_DEFECTS_ROUTED",
+  "owner_route": "L09/R2/#25",
+  "reviewed_local_artifacts": [
+    {
+      "path": "preparations/L09/20261002/async_export_job_double.py",
+      "sha256": "a35762197716b103169e869cd013cc6ad5ba3bec727a1b2d6dc6f24dd08980d4",
+      "durability": "LOCAL_WORKTREE_ONLY"
+    },
+    {
+      "path": "preparations/L09/20261002/test_async_export_job_double.py",
+      "sha256": "7b9ba7a8b697f0ee5d2470497df849ec1799f001d218ab94a6da735fe4362130",
+      "durability": "LOCAL_WORKTREE_ONLY"
+    },
+    {
+      "path": "preparations/L09/20261002/R2_ASYNC_EXPORT_JOB_DOUBLE.md",
+      "sha256": "3c85a3be236f1da8dccd00c10a203ca59846a2ca842c90fb6c2f965a2d595b43",
+      "durability": "LOCAL_WORKTREE_ONLY"
+    },
+    {
+      "path": "preparations/L10/20261002/review_l09_async_export_double.py",
+      "sha256": "35a0830ccf84b41cb607b5f3905e9bf143537f4eb7ca65d38a6a7fb7ae3744da",
+      "durability": "LOCAL_WORKTREE_ONLY"
+    }
+  ],
+  "safety_limits": [
+    "synthetic data and local source inspection only",
+    "no GitHub mutation, SQL/runtime connection, artifact access, deployment, or production operation",
+    "a reproduced model defect is not a product-runtime result or durable correction"
+  ],
+  "cases": [
+    {
+      "id": "QX-R2J-01",
+      "execution_status": "NOT_RUN",
+      "role": "release manager / stale worker",
+      "entry_point": "worker completion after registry drift",
+      "attack_or_failure": "report evidence is revoked or config generation changes after dispatch, but completion still marks the artifact READY",
+      "observed_local_result": "REPRODUCED_FAIL_OPEN_DESIGN_DEFECT",
+      "expected_result": "completion must recheck current report, release/config fence and kill-switch state before publishing readiness",
+      "owner_route": "L09/R2/#25",
+      "evidence_to_pass": "owner repair plus regression showing stale running work is fenced or quarantined"
+    },
+    {
+      "id": "QX-R2J-02",
+      "execution_status": "NOT_RUN",
+      "role": "internal malicious worker",
+      "entry_point": "queue dispatch lease",
+      "attack_or_failure": "caller self-asserts an arbitrary non-empty worker owner and epoch 999 without a controller-issued lease",
+      "observed_local_result": "REPRODUCED_FAIL_OPEN_DESIGN_DEFECT",
+      "expected_result": "dispatch must compare owner/run/epoch with an independently controlled current lease and reject self-assertion",
+      "owner_route": "L09/R2/#25",
+      "evidence_to_pass": "controller-owned worker lease fixture with stale/foreign owner and epoch rejection"
+    },
+    {
+      "id": "QX-R2J-03",
+      "execution_status": "NOT_RUN",
+      "role": "external attacker / storage boundary",
+      "entry_point": "artifact completion reference",
+      "attack_or_failure": "path-like foreign artifact reference is accepted and exposed as READY",
+      "observed_local_result": "REPRODUCED_FAIL_OPEN_DESIGN_DEFECT",
+      "expected_result": "artifact identity must be server-derived, narrow, opaque and scoped; worker input cannot choose a path or namespace",
+      "owner_route": "L09/R2/#25",
+      "evidence_to_pass": "server-owned artifact identity fixture and path/namespace injection rejection"
+    },
+    {
+      "id": "QX-R2J-04",
+      "execution_status": "NOT_RUN",
+      "role": "release manager / rollback",
+      "entry_point": "report registry replacement",
+      "attack_or_failure": "release generation increase permits config generation to regress from 4 to 1 because fences are compared lexicographically",
+      "observed_local_result": "REPRODUCED_FAIL_OPEN_DESIGN_DEFECT",
+      "expected_result": "independent generation axes must never regress silently; reviewed rollback needs an explicit fenced lineage",
+      "owner_route": "L09/R2/#25",
+      "evidence_to_pass": "component-wise monotonic or explicit rollback-lineage tests"
+    },
+    {
+      "id": "QX-R2J-05",
+      "execution_status": "NOT_RUN",
+      "role": "SRE / kill switch",
+      "entry_point": "queued/running job cancellation",
+      "attack_or_failure": "the model has no cancel transition, cancelled state or kill-switch generation despite existing R2J-11 acceptance",
+      "observed_local_result": "REPRODUCED_FAIL_OPEN_DESIGN_DEFECT",
+      "expected_result": "cancel/kill-switch must durably fence queued and running workers and prevent READY publication",
+      "owner_route": "L09/R2/#25",
+      "evidence_to_pass": "versioned cancellation and stale worker completion regression tests"
+    }
+  ]
+}

@@ -1,0 +1,158 @@
+{
+  "issue": 15,
+  "acceptance": "independent server navigation/route/query/mutation/export enforcement",
+  "cases": [
+    {
+      "id": "A4-01",
+      "synthetic_scenario": "server route/data grant absent; menu hidden; attacker crafts direct route/API request",
+      "expected_assertions": [
+        "route and data independently deny because authoritative server grants are absent",
+        "UI visibility or presentation omission never determines permission"
+      ],
+      "defect_detected": "navigation-only authorization",
+      "execution_status": "not_run_against_product"
+    },
+    {
+      "id": "A4-02",
+      "synthetic_scenario": "allow route but deny query/filter/count within crafted scope",
+      "expected_assertions": [
+        "allowlisted typed query is required",
+        "server injects effective scope",
+        "denial reveals no out-of-scope count/existence"
+      ],
+      "defect_detected": "data authority bypass",
+      "execution_status": "not_run_against_product"
+    },
+    {
+      "id": "A4-03",
+      "synthetic_scenario": "mutation capability previously allowed but business state changed",
+      "expected_assertions": [
+        "capability/scope/business state revalidated at mutation boundary",
+        "no unauthorized side effect"
+      ],
+      "defect_detected": "TOCTOU or state bypass",
+      "execution_status": "not_run_against_product"
+    },
+    {
+      "id": "A4-04",
+      "synthetic_scenario": "report URL/file token reused after role revoked",
+      "expected_assertions": [
+        "export/file endpoint independently reauthorizes current scope/generation",
+        "download cache cannot disclose revoked data"
+      ],
+      "defect_detected": "export authorization bypass",
+      "execution_status": "not_run_against_product"
+    },
+    {
+      "id": "A4-05",
+      "synthetic_scenario": "role revoked but SignalR invalidation lost",
+      "expected_assertions": [
+        "authoritative revalidation/SWR fallback denies without relogin",
+        "hint absence is not continued authority"
+      ],
+      "defect_detected": "push notification mistaken for enforcement",
+      "execution_status": "not_run_against_product"
+    },
+    {
+      "id": "A4-06",
+      "synthetic_scenario": "non-admin edits quick-nav/admin settings/executable screen config",
+      "expected_assertions": [
+        "presentation cannot confer capabilities",
+        "non-admin mutation denied server-side"
+      ],
+      "defect_detected": "configuration privilege escalation",
+      "execution_status": "not_run_against_product"
+    },
+    {
+      "id": "A4-07",
+      "synthetic_scenario": "same-company user guesses another user-owned opaque record and compares denial shape and latency distribution",
+      "expected_assertions": [
+        "uniform safe response reveals no protected fields/count/existence",
+        "measure and record timing residual; never claim perfect timing indistinguishability without evidence"
+      ],
+      "defect_detected": "same-scope enumeration or unmeasured timing leak",
+      "execution_status": "not_run_against_product"
+    }
+  ],
+  "schema_version": 1,
+  "graph_id": "A4",
+  "primary_owner": "L02",
+  "artifact_status": "prepared_local_only",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "source_contracts": [
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md",
+      "sha256": "9cb84eb673b9d7a0a8cea3e70f2366350b8150f4a15ad42f614510f3113c1524",
+      "reference_level": "reviewed_repository_contract_or_attack_evidence_not_runtime",
+      "source_ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md",
+      "snapshot_status": "merged_main"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "reference_level": "reviewed_repository_contract_or_attack_evidence_not_runtime",
+      "source_ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "snapshot_status": "merged_main"
+    },
+    {
+      "path": "docs/architecture/PHASE2_AUTH_CAPABILITY_CONTRACT.md",
+      "sha256": "fa8db170726d9afe02fd5b2e578e00226978f78757c4fbfcde3fa9328d18eb47",
+      "reference_level": "reviewed_repository_contract_or_attack_evidence_not_runtime",
+      "source_ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_AUTH_CAPABILITY_CONTRACT.md",
+      "snapshot_status": "merged_main"
+    },
+    {
+      "path": "docs/architecture/PHASE2_AUDIT_TRACE_CONTRACT.md",
+      "sha256": "e552f88a122745ee5e90754115ac832db9de2e16ae0c8f8cc35e650d56e2114c",
+      "reference_level": "reviewed_repository_contract_or_attack_evidence_not_runtime",
+      "source_ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_AUDIT_TRACE_CONTRACT.md",
+      "snapshot_status": "merged_main"
+    },
+    {
+      "path": "docs/architecture/WEB_PLATFORM_SHARED_SERVICES.md",
+      "sha256": "51ae9139debccd591548b53004b7bb280d58a25b395b7c71e28d7e1850f53b0b",
+      "reference_level": "reviewed_repository_contract_or_attack_evidence_not_runtime",
+      "source_ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/WEB_PLATFORM_SHARED_SERVICES.md",
+      "snapshot_status": "merged_main"
+    },
+    {
+      "path": "docs/web/UX_RUNTIME_FEEDBACK_SESSION.md",
+      "sha256": "a397a8df0049481cc91df81cfd664deb42e99baa3e060cc534d396c8a4e277a0",
+      "reference_level": "reviewed_repository_contract_or_attack_evidence_not_runtime",
+      "source_ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/UX_RUNTIME_FEEDBACK_SESSION.md",
+      "snapshot_status": "merged_main"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84",
+      "reference_level": "reviewed_repository_contract_or_attack_evidence_not_runtime",
+      "source_ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "snapshot_status": "merged_main"
+    }
+  ],
+  "limitations": [
+    "synthetic proposed acceptance fixture, not implemented backend behavior",
+    "no legacy source/runtime/SQL calls",
+    "no GitHub writer lease or issue closure"
+  ],
+  "foundation_dependencies": [
+    "A1",
+    "A2",
+    "A3"
+  ],
+  "legacy_binding_gates": [
+    "Actual legacy permission precedence/scope binding: B4/T1; does not create new foundation predecessors"
+  ],
+  "current_preparation_limits": [
+    "no L02 GitHub writer lease/fencing admission",
+    "no available .NET 10 SDK or actual product build acceptance"
+  ],
+  "source_provenance_rule": "validator hashes exact git object bytes from source_ref:path; mutable worktree bytes and URL substring checks are insufficient"
+}

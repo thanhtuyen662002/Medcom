@@ -1,0 +1,264 @@
+{
+  "schema_version": 1,
+  "lane": "L03",
+  "artifact_status": "prepared_local_only",
+  "execution_status": "NOT_RUN",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_owner": "L03",
+  "source_contracts": [
+    {
+      "path": "docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "338ac433b907f42e720fe3564d3041fef2322036d7405bdf0c7e08942ce3bb13",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md"
+    },
+    {
+      "path": "docs/db/PHASE1_CATALOG_COVERAGE_MATRIX.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "0f3bb2ef99e105dd337bb42fcbe0b0e5f3843cd00e961c0a83d0171716e817ec",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/db/PHASE1_CATALOG_COVERAGE_MATRIX.md"
+    },
+    {
+      "path": "docs/db/BASELINE_INVENTORY.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "6d87cdceaa664c1d7c0829d9763da25122ad2da416994a64106edeaac9f40b4f",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/db/BASELINE_INVENTORY.md"
+    },
+    {
+      "path": "docs/EVIDENCE_STANDARDS.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "b330291378041fc197796deaab6d49c72a9563fdbe2c5fd990fd827b266e1910",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/EVIDENCE_STANDARDS.md"
+    },
+    {
+      "path": "docs/SOURCE_BASELINE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "6f9fb08b0d1f3af2def0809f2d5a194082403249ff9119a1f2605551c93658b8",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/SOURCE_BASELINE.md"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "9cb84eb673b9d7a0a8cea3e70f2366350b8150f4a15ad42f614510f3113c1524",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md"
+    },
+    {
+      "path": "inventories/traceability/FILTER_FAMILY_TRACEABILITY_REGISTER.json",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "bf467cc1843939098319f57028ae60c5ed7243ff78ce9f0bafde8f8432ce36bf",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/inventories/traceability/FILTER_FAMILY_TRACEABILITY_REGISTER.json"
+    },
+    {
+      "path": "inventories/traceability/FILTER_TRACEABILITY_SCOPE_AUDIT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "2405377c8f751cf92ff6c5aced05b3b3b5481c599fb76b689d53b3cce43191f1",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/inventories/traceability/FILTER_TRACEABILITY_SCOPE_AUDIT.md"
+    },
+    {
+      "path": "docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "9d9b7157027cce55e3d24d7ade4e554e7205d34a9393bb67f21f60164190c1e0",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md"
+    }
+  ],
+  "safety_limits": [
+    "sanitized metadata and synthetic fixtures only; no raw SQL, data rows, secrets, credentials or connection material",
+    "no GitHub mutation, SQL execution, legacy runtime, product implementation, deployment or production operation",
+    "aggregate counts and filename conventions never substitute for exact authoritative catalog identities",
+    "all product/runtime execution remains NOT_RUN and TRC-DB-001 stays open"
+  ],
+  "unit": "B1",
+  "issue": 20,
+  "title": "Typed query boundary and fail-closed adapter preparation",
+  "eligibility": {
+    "writer_lease": "NOT_GRANTED",
+    "dispatcher_fencing": "NOT_PROVEN",
+    "authoritative_sql_bytes": "NOT_ACCESSIBLE",
+    "eligible_to_code": false
+  },
+  "future_execution_record_fields": [
+    "stimulus_timestamp",
+    "observed_result",
+    "authoritative_source_identity",
+    "exact_head",
+    "environment_identity",
+    "parser_version",
+    "reviewer"
+  ],
+  "contract_rules": [
+    "registered query ID only; never accept caller SQL or catalog identity",
+    "server resolves tenant/company/data-source/principal authority",
+    "typed filter/sort/page model validates against a versioned allow-list",
+    "stable ordering and bounded page size are mandatory",
+    "unresolved catalog/alias/schema generation fails closed",
+    "read path has cancellation, timeout, audit correlation and no mutation authority"
+  ],
+  "cases": [
+    {
+      "id": "B1-01",
+      "role": "external_attacker",
+      "execution_status": "NOT_RUN",
+      "entry_point": "query endpoint",
+      "attack_or_failure": "submit raw SELECT/UNION/comment text as a query identifier or filter value",
+      "expected_result": "reject before adapter dispatch without echoing SQL details",
+      "owner_route": "B1/A4",
+      "evidence_to_pass": "negative parser/dispatch test proves no raw SQL path"
+    },
+    {
+      "id": "B1-02",
+      "role": "internal_malicious_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "registered query",
+      "attack_or_failure": "substitute an unregistered query ID",
+      "expected_result": "return a stable unsupported-query denial",
+      "owner_route": "B1",
+      "evidence_to_pass": "registry allow-list test"
+    },
+    {
+      "id": "B1-03",
+      "role": "cross_tenant_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "scope envelope",
+      "attack_or_failure": "supply another tenant/company/data-source in browser fields",
+      "expected_result": "ignore client authority and resolve server scope",
+      "owner_route": "B1/A4",
+      "evidence_to_pass": "same request under two server scopes returns only authorized synthetic rows"
+    },
+    {
+      "id": "B1-04",
+      "role": "manager",
+      "execution_status": "NOT_RUN",
+      "entry_point": "filter AST",
+      "attack_or_failure": "use an unknown field/operator/type pair",
+      "expected_result": "reject the entire filter with no partial widening",
+      "owner_route": "B1",
+      "evidence_to_pass": "typed AST validation against catalog revision"
+    },
+    {
+      "id": "B1-05",
+      "role": "power_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "sort model",
+      "attack_or_failure": "sort by an unregistered or hidden sensitive field",
+      "expected_result": "reject or map only through explicit server policy",
+      "owner_route": "B1/A4",
+      "evidence_to_pass": "sort allow-list and disclosure test"
+    },
+    {
+      "id": "B1-06",
+      "role": "external_attacker",
+      "execution_status": "NOT_RUN",
+      "entry_point": "paging",
+      "attack_or_failure": "request negative, overflow or excessive page size",
+      "expected_result": "normalize only documented safe values and enforce the hard maximum",
+      "owner_route": "B1",
+      "evidence_to_pass": "boundary tests include integer overflow and maximum+1"
+    },
+    {
+      "id": "B1-07",
+      "role": "user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "paging consistency",
+      "attack_or_failure": "omit a deterministic tie-breaker while rows share sort values",
+      "expected_result": "append a stable approved identity ordering or reject",
+      "owner_route": "B1",
+      "evidence_to_pass": "repeat-page fixture proves no duplicate/omitted logical row"
+    },
+    {
+      "id": "B1-08",
+      "role": "user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "page plus count",
+      "attack_or_failure": "data and total count are evaluated across inconsistent snapshots",
+      "expected_result": "return a declared consistency token or mark the count/page relationship stale",
+      "owner_route": "B1/R1",
+      "evidence_to_pass": "concurrent synthetic update test records snapshot/version semantics"
+    },
+    {
+      "id": "B1-09",
+      "role": "DBA",
+      "execution_status": "NOT_RUN",
+      "entry_point": "read adapter",
+      "attack_or_failure": "a registered read path invokes a mutation-capable command",
+      "expected_result": "fail closed; typed query execution has no write authority",
+      "owner_route": "B1/B3",
+      "evidence_to_pass": "adapter registration and transaction-mode assertion"
+    },
+    {
+      "id": "B1-10",
+      "role": "SRE",
+      "execution_status": "NOT_RUN",
+      "entry_point": "timeout/cancellation",
+      "attack_or_failure": "client cancellation leaves an unbounded DB command running",
+      "expected_result": "propagate cancellation and bounded timeout with safe observability",
+      "owner_route": "B1",
+      "evidence_to_pass": "synthetic cancellable provider test and elapsed-time bound"
+    },
+    {
+      "id": "B1-11",
+      "role": "user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "null comparison",
+      "attack_or_failure": "client and server disagree on null ordering or equality",
+      "expected_result": "use the registered contract semantics and expose them in metadata",
+      "owner_route": "B1",
+      "evidence_to_pass": "null/empty/value ordering fixtures"
+    },
+    {
+      "id": "B1-12",
+      "role": "user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "computed projection",
+      "attack_or_failure": "return a derived column without type/nullability/provenance metadata",
+      "expected_result": "reject contract publication until projection metadata is explicit",
+      "owner_route": "B1/B2",
+      "evidence_to_pass": "projection-schema snapshot tied to catalog/query revision"
+    },
+    {
+      "id": "B1-13",
+      "role": "internal_malicious_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "alias-bearing filter",
+      "attack_or_failure": "execute unresolved alias A/B as a guessed join",
+      "expected_result": "return unsupported while alias target remains UNKNOWN",
+      "owner_route": "B1/B2",
+      "evidence_to_pass": "all alias-bearing members remain fail-closed until exact binding"
+    },
+    {
+      "id": "B1-14",
+      "role": "release_engineer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "catalog generation",
+      "attack_or_failure": "serve a query compiled under a superseded catalog revision",
+      "expected_result": "reject/recompile through an explicit compatible revision path",
+      "owner_route": "B1/B2",
+      "evidence_to_pass": "mixed-generation fixture"
+    },
+    {
+      "id": "B1-15",
+      "role": "DBA",
+      "execution_status": "NOT_RUN",
+      "entry_point": "schema drift",
+      "attack_or_failure": "result shape differs from registered column types",
+      "expected_result": "fail the adapter without silently coercing or dropping columns",
+      "owner_route": "B1/B2",
+      "evidence_to_pass": "shape fingerprint mismatch test"
+    },
+    {
+      "id": "B1-16",
+      "role": "support_operator",
+      "execution_status": "NOT_RUN",
+      "entry_point": "error path",
+      "attack_or_failure": "provider error exposes object names, SQL text or connection metadata",
+      "expected_result": "return a safe correlation ID and retain sanitized structured diagnostics",
+      "owner_route": "B1/A6",
+      "evidence_to_pass": "redaction test over synthetic provider exceptions"
+    }
+  ]
+}

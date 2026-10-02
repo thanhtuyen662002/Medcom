@@ -1,0 +1,282 @@
+{
+  "schema_version": 1,
+  "lane": "L10",
+  "artifact_status": "prepared_local_only",
+  "execution_status": "NOT_RUN",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_owner": "L10",
+  "source_contracts": [
+    {
+      "path": "docs/PROJECT_STATE.yaml",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "bcf2635d9bd7b634abb7a1c818ed36564fa5c774aecccc3cdbe64dadeed4e278"
+    },
+    {
+      "path": "docs/SOURCE_BASELINE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "6f9fb08b0d1f3af2def0809f2d5a194082403249ff9119a1f2605551c93658b8"
+    },
+    {
+      "path": "docs/EVIDENCE_STANDARDS.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "b330291378041fc197796deaab6d49c72a9563fdbe2c5fd990fd827b266e1910"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168"
+    },
+    {
+      "path": "docs/plans/PHASE2_SCHEDULED_EXECUTION_PLAN.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "9e58be73eba12f3ec9e255c4460e9e2d4ede1c26d43877d421144b56876fa532"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "9cb84eb673b9d7a0a8cea3e70f2366350b8150f4a15ad42f614510f3113c1524"
+    },
+    {
+      "path": "docs/architecture/PHASE2_AUTH_CAPABILITY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "fa8db170726d9afe02fd5b2e578e00226978f78757c4fbfcde3fa9328d18eb47"
+    },
+    {
+      "path": "docs/architecture/PHASE2_COMMAND_TRANSACTION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "a819e2f2cb55b94883235ae3626157e7da641e75a727b98a8930bd712299e99c"
+    },
+    {
+      "path": "docs/architecture/PHASE2_REALTIME_COEXISTENCE_RECOVERY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "e48ccffc8fa128f41c525c7c30ac4fff265a6fb8af739478281cf927afd753f4"
+    },
+    {
+      "path": "docs/web/GRID_MOBILE_IMPLEMENTATION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "b59d80f754cd3108c415a458f83c19dc7c7c197998e23fa12f258adaeafb3418"
+    },
+    {
+      "path": "docs/web/PHASE2_FRONTEND_ACCEPTANCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "668c3f410cbc5793aa3be1f032130a31d07bbf075c9153a778af5e3ac2d4422a"
+    },
+    {
+      "path": "docs/web/UX_STRESS_ACCEPTANCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "56a9163d45ad3c6787ca280db17c0ce69f6f31a5525ba1c94ac943d114649e03"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84"
+    },
+    {
+      "path": "docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b"
+    },
+    {
+      "path": "docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "338ac433b907f42e720fe3564d3041fef2322036d7405bdf0c7e08942ce3bb13"
+    }
+  ],
+  "safety_limits": [
+    "synthetic sanitized data only",
+    "no GitHub mutation, product execution, runtime connection, SQL execution, deployment, or production operation",
+    "expected denials and design review are not passing E2E/CI results",
+    "product defects are routed to the owner lane; L10 does not silently change owner code or close issues"
+  ],
+  "unit": "Q3",
+  "issue": 38,
+  "title": "External-write, realtime-loss and freshness convergence matrix",
+  "eligibility": {
+    "graph_label": "READY WITH BOUNDS",
+    "actual_start_state": "waiting_dependencies_runtime_and_preflight",
+    "dependencies": [
+      "A2/#13",
+      "A6/#17",
+      "A7/#18",
+      "F2/#29"
+    ],
+    "unmet": [
+      "current event source/commit hook",
+      "authenticated server-derived hub groups",
+      "screen freshness policy",
+      "disposable WinForms/direct-write test target"
+    ]
+  },
+  "cases": [
+    {
+      "id": "Q3-01",
+      "role": "SRE",
+      "execution_status": "NOT_RUN",
+      "entry_point": "post-commit event",
+      "attack_or_failure": "event emitted before transaction rollback",
+      "expected_result": "publish nothing and leave clients on authoritative state",
+      "owner_route": "R1/Q3",
+      "evidence_to_pass": "transaction-correlated event test"
+    },
+    {
+      "id": "Q3-02",
+      "role": "SRE",
+      "execution_status": "NOT_RUN",
+      "entry_point": "hub transport",
+      "attack_or_failure": "drop every invalidation for one client",
+      "expected_result": "converge by bounded SWR/poll/focus/manual fallback",
+      "owner_route": "R1/F2/Q3",
+      "evidence_to_pass": "measured freshness-class test"
+    },
+    {
+      "id": "Q3-03",
+      "role": "SRE",
+      "execution_status": "NOT_RUN",
+      "entry_point": "hub transport",
+      "attack_or_failure": "duplicate and reorder versions",
+      "expected_result": "deduplicate hints and re-fetch on gaps",
+      "owner_route": "R1/Q3",
+      "evidence_to_pass": "version/gap fixture"
+    },
+    {
+      "id": "Q3-04",
+      "role": "WinForms_operator",
+      "execution_status": "NOT_RUN",
+      "entry_point": "legacy write",
+      "attack_or_failure": "write bypasses Web and emits no event",
+      "expected_result": "Web discovers it through authoritative fallback",
+      "owner_route": "R1/Q3",
+      "evidence_to_pass": "disposable legacy-write rehearsal"
+    },
+    {
+      "id": "Q3-05",
+      "role": "internal_malicious_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "hub subscribe",
+      "attack_or_failure": "client requests broader tenant/company/storehouse group",
+      "expected_result": "server derives and restricts membership",
+      "owner_route": "A2/A4/R1/Q3",
+      "evidence_to_pass": "cross-scope subscription test"
+    },
+    {
+      "id": "Q3-06",
+      "role": "manager",
+      "execution_status": "NOT_RUN",
+      "entry_point": "role revoke",
+      "attack_or_failure": "revoked connection keeps receiving record hints",
+      "expected_result": "remove/fence membership and reauthorize read",
+      "owner_route": "A4/R1/Q3",
+      "evidence_to_pass": "permission-generation event test"
+    },
+    {
+      "id": "Q3-07",
+      "role": "end_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "reconnect",
+      "attack_or_failure": "late old-context event arrives after company switch",
+      "expected_result": "discard by context generation",
+      "owner_route": "A2/R1/Q3",
+      "evidence_to_pass": "switch/reconnect race"
+    },
+    {
+      "id": "Q3-08",
+      "role": "IT_support",
+      "execution_status": "NOT_RUN",
+      "entry_point": "cache outage",
+      "attack_or_failure": "stale cache restores permission or business state",
+      "expected_result": "bypass/rebuild from authorized API",
+      "owner_route": "A4/R1/Q3",
+      "evidence_to_pass": "cache corruption/failure test"
+    },
+    {
+      "id": "Q3-09",
+      "role": "end_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "idle timer",
+      "attack_or_failure": "push/poll/background refetch prevents expiry",
+      "expected_result": "background traffic remains passive",
+      "owner_route": "A3/Q3",
+      "evidence_to_pass": "idle expiry with active transport"
+    },
+    {
+      "id": "Q3-10",
+      "role": "manager",
+      "execution_status": "NOT_RUN",
+      "entry_point": "freshness display",
+      "attack_or_failure": "stale data shown as live while fallback is degraded",
+      "expected_result": "show age/degraded state and safe refresh",
+      "owner_route": "F2/F3/Q3",
+      "evidence_to_pass": "visible data-age test"
+    },
+    {
+      "id": "Q3-11",
+      "role": "SRE",
+      "execution_status": "NOT_RUN",
+      "entry_point": "topology",
+      "attack_or_failure": "backplane selected without load/fanout evidence",
+      "expected_result": "keep topology decision open",
+      "owner_route": "R1/Q3",
+      "evidence_to_pass": "measured connection/fanout/reconnect data"
+    },
+    {
+      "id": "Q3-12",
+      "role": "end_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "ambiguous mutation",
+      "attack_or_failure": "invalidation hint is treated as command success",
+      "expected_result": "keep OutcomeUnknown until authoritative reconciliation",
+      "owner_route": "B5/R1/Q3",
+      "evidence_to_pass": "lost-ACK plus event race"
+    },
+    {
+      "id": "Q3-13",
+      "role": "DBA",
+      "execution_status": "NOT_RUN",
+      "entry_point": "business commit/outbox correlation",
+      "attack_or_failure": "commit business state while losing or duplicating the corresponding outbox handoff",
+      "expected_result": "publish only transaction-correlated committed events and reconcile missing handoffs without inventing state",
+      "owner_route": "R1/Q3",
+      "evidence_to_pass": "synthetic transaction/outbox identity test plus authoritative reread after reconciliation"
+    },
+    {
+      "id": "Q3-14",
+      "role": "internal_malicious_subscriber",
+      "execution_status": "NOT_RUN",
+      "entry_point": "cross-scope event replay",
+      "attack_or_failure": "replay an event from another tenant/company/storehouse or an older permission generation",
+      "expected_result": "reject the event before cache/UI application and trigger no protected reread under the wrong scope",
+      "owner_route": "A6/R1/Q3",
+      "evidence_to_pass": "event envelope scope/generation validation with cross-scope negative cases and zero protected disclosure"
+    },
+    {
+      "id": "Q3-15",
+      "role": "release_manager",
+      "execution_status": "NOT_RUN",
+      "entry_point": "rollback/config generation",
+      "attack_or_failure": "deliver an event produced by a rolled-back build or superseded metadata/config generation",
+      "expected_result": "invalidate or ignore the stale event and complete an authoritative reread under the active generation",
+      "owner_route": "A7/R1/Q3",
+      "evidence_to_pass": "version-transition fixture records build/config/metadata identities and proves stale-generation rejection"
+    },
+    {
+      "id": "Q3-16",
+      "role": "SRE",
+      "execution_status": "NOT_RUN",
+      "entry_point": "kill switch during queued refresh",
+      "attack_or_failure": "activate a kill switch after a refresh/revalidation job is queued but before it executes",
+      "expected_result": "worker rechecks the switch and authority before execution, cancels safely, and leaves last authoritative state visible",
+      "owner_route": "A7/R1/Q3",
+      "evidence_to_pass": "queued-worker race test with dispatch-time revalidation and no post-switch external action"
+    }
+  ],
+  "future_execution_record_fields": [
+    "stimulus_timestamp",
+    "observed_result",
+    "authoritative_version_or_identity",
+    "exact_head",
+    "environment_identity",
+    "measurement_profile",
+    "reviewer"
+  ],
+  "open_freshness_measurement_definition": "Define whether each bound measures refresh scheduling, completed authoritative reread, or maximum displayed age. Until reviewed, an exceeded bound must show truthful stale/unavailable state and cannot be reported as SLA compliance."
+}

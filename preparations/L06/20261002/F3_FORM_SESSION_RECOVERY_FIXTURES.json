@@ -1,0 +1,210 @@
+{
+  "schema_version": 1,
+  "lane": "L06",
+  "artifact_status": "prepared_local_only",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_issues": [
+    28,
+    29,
+    30,
+    31
+  ],
+  "source_contracts": [
+    {
+      "path": "docs/web/GRID_MOBILE_IMPLEMENTATION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "b59d80f754cd3108c415a458f83c19dc7c7c197998e23fa12f258adaeafb3418",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/GRID_MOBILE_IMPLEMENTATION_CONTRACT.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/web/PRODUCT_UX_FOUNDATION.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "8299a090625de634f1aadc4b8bd5cb17aef628489d5cca31bdfc755d904bc520",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/PRODUCT_UX_FOUNDATION.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/web/MOBILE_NAVIGATION_ROLE_CONFIG.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "5e031383a484408298ea8ee819694499e7d00af621ccd1d793e1c26b1023ea8e",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/MOBILE_NAVIGATION_ROLE_CONFIG.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/web/CONFIGURATION_LOOKUP_UX.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "757435de098e0f72e1235b1fa6f672c2e4d526e3914ed29b6ca0a6ad51b4793d",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/CONFIGURATION_LOOKUP_UX.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/web/UX_RUNTIME_FEEDBACK_SESSION.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "a397a8df0049481cc91df81cfd664deb42e99baa3e060cc534d396c8a4e277a0",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/UX_RUNTIME_FEEDBACK_SESSION.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "9d9b7157027cce55e3d24d7ade4e554e7205d34a9393bb67f21f60164190c1e0",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/architecture/PHASE2_AUTH_CAPABILITY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "fa8db170726d9afe02fd5b2e578e00226978f78757c4fbfcde3fa9328d18eb47",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_AUTH_CAPABILITY_CONTRACT.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/architecture/PHASE2_SCREEN_DEFINITION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "aeb14d0db338c24d98dce32f1eb986ff6e771abd5c799a151a8536c9dbba2316",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_SCREEN_DEFINITION_CONTRACT.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/web/PHASE2_FRONTEND_ACCEPTANCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "668c3f410cbc5793aa3be1f032130a31d07bbf075c9153a778af5e3ac2d4422a",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/PHASE2_FRONTEND_ACCEPTANCE.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/web/UX_STRESS_ACCEPTANCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "56a9163d45ad3c6787ca280db17c0ce69f6f31a5525ba1c94ac943d114649e03",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/UX_STRESS_ACCEPTANCE.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    }
+  ],
+  "limits": [
+    "no L06 dispatcher lease or writer token",
+    "no frontend application tree or installed project dependencies",
+    "no completed backend/query/capability dependencies",
+    "no product browser, accessibility, performance or CI execution",
+    "no GitHub mutation or issue closure",
+    "mock/synthetic preparation cannot enable real users or close F1-F4"
+  ],
+  "unit_id": "L06-F3-RECOVERY",
+  "graph_id": "F3",
+  "issue": 30,
+  "objective": "Preserve user work and truthful outcomes across validation, conflicts, session expiry, lookups and uncertain completion.",
+  "cases": [
+    {
+      "id": "FRM-01",
+      "scenario": "submit has errors in active and hidden tabs",
+      "expected": "inline errors plus page/tab summary and focus path; no toast-only validation"
+    },
+    {
+      "id": "FRM-02",
+      "scenario": "navigate/refresh with dirty form",
+      "expected": "explicit recovery/discard path; sensitive fields not casually persisted"
+    },
+    {
+      "id": "FRM-03",
+      "scenario": "server record version changed",
+      "expected": "conflict with reload/compare/reapply where safe; no silent last-write-wins"
+    },
+    {
+      "id": "FRM-04",
+      "scenario": "save ACK lost after possible commit",
+      "expected": "OutcomeUnknown persistent state and authoritative reconciliation; no false toast or blind retry"
+    },
+    {
+      "id": "FRM-05",
+      "scenario": "server confirms save",
+      "expected": "success feedback only after authoritative acknowledgment and resulting state"
+    },
+    {
+      "id": "FRM-06",
+      "scenario": "lookup A/AB/ABC responses reorder",
+      "expected": "superseded result cannot alter selected stable ID or linked fields"
+    },
+    {
+      "id": "FRM-07",
+      "scenario": "selected legacy lookup reference is deleted/inaccessible",
+      "expected": "explicit unresolved state; unrelated edit does not silently clear/replace"
+    },
+    {
+      "id": "FRM-08",
+      "scenario": "session warning then valid Continue",
+      "expected": "server confirms current generation; dirty input remains scoped"
+    },
+    {
+      "id": "FRM-09",
+      "scenario": "Continue arrives after server expiry",
+      "expected": "cannot revive; safe login/return/recovery flow"
+    },
+    {
+      "id": "FRM-10",
+      "scenario": "polling/SignalR/job updates continue without user action",
+      "expected": "idle timeout still expires; passive traffic does not count"
+    },
+    {
+      "id": "FRM-11",
+      "scenario": "logout in one tab, dirty second tab remains",
+      "expected": "protected dispatch denied; draft isolated and cannot replay automatically"
+    },
+    {
+      "id": "FRM-12",
+      "scenario": "support-worthy failure",
+      "expected": "safe copyable correlation reference plus durable inline context; no SQL/stack secret leak"
+    },
+    {
+      "id": "FRM-13",
+      "scenario": "duplicate refresh events",
+      "expected": "deduplicated/non-spam feedback; no repeated toasts"
+    },
+    {
+      "id": "FRM-14",
+      "scenario": "offline/reconnect before critical submit",
+      "expected": "reauthorize scope/version/freshness; queued offline writes remain disabled by default"
+    },
+    {
+      "id": "FRM-15",
+      "scenario": "double click/Enter and retry submit before first acknowledgement",
+      "expected": "single in-flight local intent; server command identity governs retry and ambiguous outcome reconciliation"
+    },
+    {
+      "id": "FRM-16",
+      "scenario": "draft recovery key collides across tenant/company/principal/record/version",
+      "expected": "draft is isolated by authoritative scope and schema/version; foreign or incompatible draft cannot hydrate"
+    },
+    {
+      "id": "FRM-17",
+      "scenario": "hidden/configured-away required field blocks submit",
+      "expected": "form/tab summary exposes an accessible resolution path or server/config marks state unsupported; no impossible form"
+    },
+    {
+      "id": "FRM-18",
+      "scenario": "post-login return route contains attacker origin or unauthorized record",
+      "expected": "same-origin route allow-list and current authorization apply before navigation; no open redirect or protected reveal"
+    }
+  ],
+  "execution_status": "NOT_RUN"
+}

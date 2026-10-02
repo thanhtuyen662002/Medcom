@@ -1,6 +1,8 @@
 # Phase 2 scheduled execution plan — at most ten lanes
 
-Status: **proposed schedule plan; no schedules created, updated, started or stopped by this document**.
+Status: **configuration activated on 2026-10-02 in bootstrap/preparation mode**; actual IDs and runtime gates are in `docs/execution/SCHEDULE_ACTIVATION_20261002.md`.
+
+The original 2026-10-01 planning statements below describe that preparation snapshot. The owner subsequently authorized activation and PR #43 was reviewed/merged. Current timing is Asia/Saigon (UTC+07:00), with the same hourly minute offsets; L01 alone writes GitHub until dispatcher proof. Timer activation does not admit parallel writers or close evidence/runtime gates.
 Date: 2026-10-01. Proposed schedule timezone: **Asia/Bangkok (UTC+07:00)**.
 Owner: Lead / Integrator. Implementation graph: **31 canonical issues, #12–42**.
 

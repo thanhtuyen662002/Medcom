@@ -1,0 +1,209 @@
+{
+  "schema_version": 1,
+  "lane": "L04",
+  "artifact_status": "prepared_local_only",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_issues": [
+    19,
+    23
+  ],
+  "source_contracts": [
+    {
+      "path": "docs/erp/TOOL_DLL_METADATA_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "44da37f9d98fece9eae643b8b4c759d2dd40d20a807a37b89ea81c3d721324be",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/TOOL_DLL_METADATA_EVIDENCE.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/architecture/PHASE2_TOOL_DLL_BRIDGE_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "b4c15731c6be8874f359150052015094f0e980e92059e1c07f7c41dba70c3cfd",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_TOOL_DLL_BRIDGE_CONTRACT.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/architecture/PHASE2_AUTH_CAPABILITY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "fa8db170726d9afe02fd5b2e578e00226978f78757c4fbfcde3fa9328d18eb47",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_AUTH_CAPABILITY_CONTRACT.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "4a48658994a7a70ad809587c2100cb3f6340526e508805f4ebee11710574f4d6",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/erp/EXECUTABLE_METADATA_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "19730c6d5d4e916183cd7b79678227d47047ddc078951ae9355bf4d9bf6e4542",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/EXECUTABLE_METADATA_EVIDENCE.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "338ac433b907f42e720fe3564d3041fef2322036d7405bdf0c7e08942ce3bb13",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    }
+  ],
+  "common_limits": [
+    "no L04 writer lease or dispatcher admission",
+    "no raw approved ERP archive/source project or controlled Windows runtime opened in this run",
+    "no Tool/Tools binary executed, loaded or decompiled in this run",
+    "no legacy database or startup DDL executed",
+    "no GitHub mutation and no issue closure",
+    "all runtime and effective-scope outcomes remain unobserved"
+  ],
+  "unit_id": "L04-T1-STARTUP-DDL-LAUNCH-GATE",
+  "graph_id": "T1",
+  "issue": 19,
+  "objective": "Require machine-checkable containment evidence before any controlled legacy startup where initialization may execute DDL.",
+  "gate_state": "BLOCKED_NOT_RUN",
+  "launch_authorized": false,
+  "requirements": [
+    {
+      "id": "DDLG-01",
+      "requirement": "Approved private source, exact Tools binary and dependency hashes form one reviewed source/build manifest.",
+      "state": "MISSING_NOT_PROVIDED",
+      "sanitized_evidence": "manifest identifier, component names, versions and hashes; no binaries or license material"
+    },
+    {
+      "id": "DDLG-02",
+      "requirement": "Startup and constructor paths are statically inspected before process launch, with every database-changing path classified.",
+      "state": "MISSING_NOT_PROVIDED",
+      "sanitized_evidence": "review identifier, bounded path list, classifications and unresolved count"
+    },
+    {
+      "id": "DDLG-03",
+      "requirement": "A disposable target fingerprint is pinned and includes an explicit production=false assertion checked before process start.",
+      "state": "MISSING_NOT_PROVIDED",
+      "sanitized_evidence": "environment class, opaque target fingerprint and assertion result"
+    },
+    {
+      "id": "DDLG-04",
+      "requirement": "Network egress is deny by default and any required destination is independently allow-listed before assembly load.",
+      "state": "MISSING_NOT_PROVIDED",
+      "sanitized_evidence": "policy identifier, destination classes and denied-attempt counts"
+    },
+    {
+      "id": "DDLG-05",
+      "requirement": "The disposable database comes from an authorized sanitized fixture with a unique rebuildable snapshot identifier.",
+      "state": "MISSING_NOT_PROVIDED",
+      "sanitized_evidence": "fixture and snapshot identifiers, authorization and rebuild result; no rows"
+    },
+    {
+      "id": "DDLG-06",
+      "requirement": "The runtime principal is denied production access and has a separately reviewed controlled DDL policy for the disposable target only.",
+      "state": "MISSING_NOT_PROVIDED",
+      "sanitized_evidence": "principal class, capability summary and negative production-connect result"
+    },
+    {
+      "id": "DDLG-07",
+      "requirement": "A pre-run schema fingerprint and expected empty change budget are captured before initialization.",
+      "state": "MISSING_NOT_PROVIDED",
+      "sanitized_evidence": "schema fingerprint, object-class counts and capture timestamp"
+    },
+    {
+      "id": "DDLG-08",
+      "requirement": "Process, child process, filesystem, registry, temporary file and named-object monitoring is active before load.",
+      "state": "MISSING_NOT_PROVIDED",
+      "sanitized_evidence": "monitor identifiers, enabled surfaces and event counts"
+    },
+    {
+      "id": "DDLG-09",
+      "requirement": "A tested kill switch is armed before credentials or synthetic identity material can be supplied.",
+      "state": "MISSING_NOT_PROVIDED",
+      "sanitized_evidence": "kill-switch test identifier, elapsed stop time and cleanup status"
+    },
+    {
+      "id": "DDLG-10",
+      "requirement": "Only synthetic users and canary secrets are provisioned after containment checks pass.",
+      "state": "MISSING_NOT_PROVIDED",
+      "sanitized_evidence": "synthetic identity classes and canary trigger count; no secret values"
+    },
+    {
+      "id": "DDLG-11",
+      "requirement": "The observation record keeps object class, operation class, count, timing, statement hash and source span while redacting SQL text and values.",
+      "state": "MISSING_NOT_PROVIDED",
+      "sanitized_evidence": "schema version, statement hash algorithm, redaction test and record count"
+    },
+    {
+      "id": "DDLG-12",
+      "requirement": "Independent review confirms exact source/binary/target fingerprints, containment controls and permitted startup scope.",
+      "state": "MISSING_NOT_PROVIDED",
+      "sanitized_evidence": "review identity, exact-head identifiers, disposition and unresolved findings"
+    }
+  ],
+  "state_machine": {
+    "initial": "BLOCKED_NOT_RUN",
+    "ready": "READY_FOR_CONTROLLED_NONPRODUCTION_LAUNCH",
+    "all_requirements_required": true,
+    "automatic_transition": "PROHIBITED",
+    "admission_rule": "A distinct authorized controller may transition only after exact evidence for DDLG-01..12 is VERIFIED and unchanged at launch.",
+    "drift_rule": "Any source, binary, dependency, target, schema, network, permission, monitor, kill-switch or review drift returns to BLOCKED_NOT_RUN."
+  },
+  "abort_triggers": [
+    "target fingerprint mismatch or production=true",
+    "unexpected network egress",
+    "unexpected DDL or any schema fingerprint delta outside the reviewed empty change budget",
+    "credential or secret request before containment admission",
+    "monitoring gap, dependency mismatch or kill-switch failure",
+    "uncertain target identity, source attribution or startup outcome"
+  ],
+  "abort_disposition": [
+    "stop the process and quarantine retained sanitized metadata",
+    "destroy and rebuild the disposable target from its authorized snapshot",
+    "preserve UNKNOWN for runtime/session behavior and make no rollback claim",
+    "require a new independent review before any later attempt"
+  ],
+  "observation_schema": [
+    "run_id",
+    "exact_source_manifest_id",
+    "binary_sha256",
+    "target_fingerprint",
+    "production_false_assertion",
+    "pre_schema_fingerprint",
+    "post_schema_fingerprint",
+    "object_class",
+    "operation_class",
+    "event_count",
+    "statement_hash",
+    "source_span",
+    "kill_switch_result",
+    "cleanup_result",
+    "outcome"
+  ],
+  "allowed_outcomes": [
+    "BLOCKED_NOT_RUN",
+    "PASS_CONTROLLED_LAUNCH",
+    "FAIL_STOPPED_AND_QUARANTINED",
+    "INCOMPLETE_ENVIRONMENT_LOST"
+  ],
+  "execution_status": "NOT_RUN"
+}

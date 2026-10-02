@@ -1,0 +1,137 @@
+{
+  "sourceSet": "owner-attachment-20261002",
+  "pilots": [
+    {
+      "form": "AP_OrderFrm",
+      "parentTable": "AP_OrderTbl",
+      "detailTable": "AP_OrderDetailTbl",
+      "configurationSourceLines": [
+        296416,
+        296417,
+        296418,
+        296419,
+        297074
+      ],
+      "parentSourceLine": 11248,
+      "detailSourceLine": 11437,
+      "detailMaskedDefinitionSha256": "45be91aa7dd1f114d4953b9d216ada362b2fe86333cc95850053e2755c12c2fe",
+      "joinColumns": [
+        "DocumentID"
+      ],
+      "lineKey": "UserAutoID",
+      "selectedColumns": [
+        {
+          "name": "UserAutoID",
+          "type": "varchar",
+          "typeArguments": "(40)",
+          "nullable": false,
+          "identity": false
+        },
+        {
+          "name": "DocumentID",
+          "type": "varchar",
+          "typeArguments": "(30)",
+          "nullable": false,
+          "identity": false
+        },
+        {
+          "name": "ItemID",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": false,
+          "identity": false
+        },
+        {
+          "name": "Quantity",
+          "type": "decimal",
+          "typeArguments": "(28, 2)",
+          "nullable": true,
+          "identity": false
+        },
+        {
+          "name": "Quantity2",
+          "type": "decimal",
+          "typeArguments": "(28, 4)",
+          "nullable": true,
+          "identity": false
+        }
+      ]
+    },
+    {
+      "form": "IV_InboundRequestFrm",
+      "parentTable": "IV_InboundRequestTbl",
+      "detailTable": "IV_InboundRequestDetailsTbl",
+      "configurationSourceLines": [
+        299802,
+        299803,
+        299804,
+        299805,
+        299817,
+        300566
+      ],
+      "parentSourceLine": 11370,
+      "detailSourceLine": 11005,
+      "detailMaskedDefinitionSha256": "73f9e5beeda11822bfb507c9b258e003d93ac58b388c6a1d0d6a0b0d9f6a4165",
+      "joinColumns": [
+        "DocumentID"
+      ],
+      "lineKey": "UserAutoID",
+      "selectedColumns": [
+        {
+          "name": "UserAutoID",
+          "type": "varchar",
+          "typeArguments": "(50)",
+          "nullable": false,
+          "identity": false
+        },
+        {
+          "name": "DocumentID",
+          "type": "varchar",
+          "typeArguments": "(50)",
+          "nullable": false,
+          "identity": false
+        },
+        {
+          "name": "ItemID",
+          "type": "varchar",
+          "typeArguments": "(50)",
+          "nullable": false,
+          "identity": false
+        },
+        {
+          "name": "SetQuantityByDocument",
+          "type": "decimal",
+          "typeArguments": "(18, 0)",
+          "nullable": true,
+          "identity": false
+        },
+        {
+          "name": "BarrelQuantityByDocument",
+          "type": "decimal",
+          "typeArguments": "(18, 0)",
+          "nullable": true,
+          "identity": false
+        },
+        {
+          "name": "SetQuantityByReal",
+          "type": "decimal",
+          "typeArguments": "(18, 0)",
+          "nullable": true,
+          "identity": false
+        },
+        {
+          "name": "BarrelQuantityByReal",
+          "type": "decimal",
+          "typeArguments": "(18, 0)",
+          "nullable": true,
+          "identity": false
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "This is a fixed conservative Web read model supported by current form table bindings and shared DocumentID columns; it does not establish complete ERP load hooks or foreign-key traceability.",
+    "No monetary fields, notes, customer names, item lookups, lot identifiers, write hooks or SQL bodies are exposed.",
+    "Quantity and Quantity2 retain source names; unit conversion semantics are not inferred."
+  ]
+}
