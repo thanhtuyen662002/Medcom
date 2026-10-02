@@ -30,6 +30,15 @@ jobs:
           cache-dependency-path: src/frontend/package-lock.json
       - name: Verify project boundaries
         run: python tools/backend/check_architecture.py
+      - name: Verify integration and package guard regressions
+        run: python -m unittest discover -s .github/scripts -p 'test_*.py'
+      - name: Verify claimed worker scope against trusted base
+        if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'medcom-work/g45/')
+        env:
+          WORKER_BRANCH: ${{ github.head_ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python .github/scripts/claim_scope.py --branch "$WORKER_BRANCH" --base "$BASE_SHA" --head "$SOURCE_SHA"
       - name: Restore
         run: dotnet restore Medcom.slnx --locked-mode
       - name: Build with analyzers
@@ -55,12 +64,29 @@ jobs:
         run: npm run build
       - name: Package API and frontend
         run: python tools/deploy/package.py
+      - name: Verify candidate archive integrity
+        run: python .github/scripts/package_integrity.py artifacts/medcom-server-candidate.zip
       - name: Install browser for end-to-end checks
         working-directory: src/frontend
         run: npx playwright install --with-deps chromium
       - name: Test packaged HTTPS app in browser
         working-directory: src/frontend
         run: npm run test:e2e
+      - name: Record tested merge provenance
+        if: github.event_name == 'pull_request'
+        env:
+          TEST_EVENT: ${{ github.event_name }}
+          TEST_SOURCE: ${{ github.event.pull_request.head.sha }}
+          TEST_BASE: ${{ github.event.pull_request.base.sha }}
+          TEST_RUN_ID: ${{ github.run_id }}
+          TEST_REPOSITORY: ${{ github.repository }}
+        run: python .github/scripts/tested_receipt.py --output artifacts/tested-merge.json
+      - uses: actions/upload-artifact@v4
+        if: success() && github.event_name == 'pull_request'
+        with:
+          name: tested-merge
+          path: artifacts/tested-merge.json
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -71,5 +97,8 @@ jobs:
         if: success()
         with:
           name: medcom-server-candidate
-          path: artifacts/medcom-server-candidate.zip
+          path: |
+            artifacts/medcom-server-candidate.zip
+            artifacts/medcom-verify-package.py
+            artifacts/medcom-candidate.sha256
           if-no-files-found: error
