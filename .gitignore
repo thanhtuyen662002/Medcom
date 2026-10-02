@@ -8,3 +8,11 @@ TestResults/
 .env
 .env.*
 !.env.example
+**/node_modules/
+**/.next/
+**/out/
+artifacts/
+src/backend/Medcom.Api/wwwroot/
+*.tsbuildinfo
+src/frontend/test-results/
+src/frontend/playwright-report/

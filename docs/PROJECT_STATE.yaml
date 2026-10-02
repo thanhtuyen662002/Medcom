@@ -54,10 +54,10 @@ phase2:
   future_workflow_authorized: true
   future_authorization_scope: gated coding workflow preparation; source-free foundation
     after plan integration and preflight; verified domain slices after their gates
-  current_run_scope: pause ten schedules; direct lead ownership; backend bootstrap
-    and verification
-  current_start_blocker: A1 exact-head CI and independent review; downstream evidence
-    gates remain
+  current_run_scope: direct lead Tool archive recovery, Web session implementation,
+    frontend and server candidate
+  current_start_blocker: archive byte access, verified Tool/SQL binding and exact-head
+    independent review
   implementation_authorization_scope: conditional foundation and evidence workflow;
     source/dependency/runtime gates before domain binding or operations; no production
     deployment
@@ -67,7 +67,7 @@ phase2:
   closure_decision: docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md
   foundation_code_started: true
   foundation_status: implemented_pending_independent_review
-  foundation_test_count: 8
+  foundation_test_count: 28
   application_code_started: true
   active_implementation_pr: 44
   foundation_ci_evidence:
@@ -77,6 +77,15 @@ phase2:
     result: success
     current_head_policy: check GitHub checks on the latest head; previous-head success
       is not current-head evidence
+  frontend_status: login_workspace_implemented_no_enabled_business_screens
+  server_candidate_status: BLOCKED_SOURCE_AND_RUNTIME_ACCEPTANCE
+  full_stack_checkpoint: docs/execution/FULL_STACK_CONTINUATION_20261002.md
+  local_acceptance:
+    backend_tests: 28
+    frontend_contract_tests: 4
+    packaged_browser_tests: 4
+    reference_suites: 23
+  new_head_ci_status: requires_live_check_after_publication
 scheduled_execution:
   plan: docs/plans/PHASE2_SCHEDULED_EXECUTION_PLAN.md
   planned_lane_count: 10
