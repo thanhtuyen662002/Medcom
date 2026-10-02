@@ -1,0 +1,16 @@
+{
+  "goal": 45,
+  "ticket_id": "D01",
+  "generation": 1,
+  "role": "pilots",
+  "owner": "Medcom Coder Pilots",
+  "run_uuid": "08077aa6-3175-443c-be31-5fdc1d418632",
+  "base_sha": "1cc4dd40e761e5c578c1e1ee594be283795e66a8",
+  "allowed_paths": [
+    "src/frontend/components/pilots/*",
+    "src/frontend/tests/pilots*",
+    "docs/erp/PILOT_ACTIONS*",
+    "inventories/source/20261002/pilot-actions*.json"
+  ],
+  "created_at": "2026-10-02 17:04:13 UTC"
+}
