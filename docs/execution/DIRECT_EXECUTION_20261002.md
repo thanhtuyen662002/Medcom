@@ -35,3 +35,7 @@ Backend restore/build/HTTP test results and remote exact-head checks are appende
 - Whitespace and sanitized-content checks run before publication.
 
 The SDK's first multi-node local restore exited without diagnostics. Serial restore/build (`--disable-parallel -m:1 -nr:false`) succeeded and locked restore passed. This is recorded as a local runtime limitation, not hidden by disabling checks. CI uses the standard restore/build/test path. A1 remains open pending exact remote-head CI and independent review.
+
+### Hosted CI repair
+
+Both push and PR runs on `f1b077b9f9d4cfe03882bf70339d754c695a999f` passed architecture, locked restore, analyzer build and all eight actual HTTP tests, then failed preparation validation. The inherited L05–L08 metadata test runners referenced an absolute scratch checkout. They now resolve the repository from their own file location; source pins, validator semantics, negative mutations and product gates remain unchanged. The full reference suite is rerun before the repair commit and hosted CI must pass on the new exact head.

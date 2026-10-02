@@ -1,7 +1,7 @@
 import copy,json,tempfile,unittest
 from pathlib import Path
 from validate_preparation import validate,FILES
-REPO=Path('/workspace/scratch/80dc5431be34/Medcom')
+REPO=Path(__file__).resolve().parents[3]
 SRC=Path(__file__).resolve().parent
 class ValidationTests(unittest.TestCase):
  def setUp(self):
