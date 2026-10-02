@@ -24,12 +24,30 @@ public sealed record TransferActionDefinition(
     string MenuId,
     TransferEntityKind Entity,
     string Procedure,
+    string ProcedureSha256,
     string BeforeCheckProcedure,
     IReadOnlySet<int> AllowedSourceStatuses,
     TransferEffectContract Effect);
 
 public static class TransferActionCatalog
 {
+    private static readonly IReadOnlyDictionary<string, string> ProcedureFingerprints =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["IV_InternalTransfer_BatchAccountingConfirmStp"] = "7dc5691b93ae5df73db326da515cb327164eb824c066f5296748b7239ca6274c",
+            ["IV_InternalTransfer_BatchQuickRejectStp"] = "7ba4627386c6b271030faf102cb50428457321033670ef05a1aafc4cd891fb17",
+            ["IV_InternalTransfer_BatchUpdateStatusStp"] = "23c92e14134ec6f9bed2810d13e8ddb65222ff7f972b71d9e160c573875a6c3b",
+            ["IV_InternalTransfer_BatchSyncRequestsStp"] = "fde4d476d04e6f3533c63dafd769ab80c3c425b4dc33bc4d316cffbe39162a51",
+            ["IV_InternalTransfer_BatchSubmitStp"] = "425597ca604f57dcf18e8be03a288ec946e892c620a60e372e085bf985fccde6",
+            ["IV_InternalTransfer_RequestPMConfirmStp"] = "6ed96f40bb53ec1ba950b21040e01bff6536d004e30ede93b988a91d783321da",
+            ["IV_InternalTransfer_RequestPMReturnStp"] = "a7225b1ed64667ca16b8edeb7216009d9b1d9ad4d8bd85c289eb8db7e802fb49",
+            ["IV_InternalTransfer_RequestSendPMStp"] = "a1f9a927c556de3fb81b0711de794487d2af22def3ce136afac78bf38bb6573d",
+            ["IV_InternalTransfer_BatchSAApproveStp"] = "cff101d5a9c4c8140c8ab1105311d6f39e3a0248dd6385053a563e0dcad0c5be",
+            ["IV_InternalTransfer_BatchTechConfirmStp"] = "c118013ba92ba5e3249b4fa679a78d86b57449d55aad05bc556899c6ba655239",
+            ["IV_InternalTransfer_BatchReceiveStp"] = "3514fa7d2f090fb44c0516d0d0cb808a439d89fd962b6999c42b432c76983392",
+            ["IV_InternalTransfer_BatchDispatchStp"] = "dc44a89aa84561dcc3e62233d1ba6c1cceba11586d5ce0806ce9902a6d128381"
+        };
+
     private static readonly TransferEffectContract Synchronize =
         new(TransferEffectKind.ContentSynchronization, new HashSet<int>());
     private static readonly TransferEffectContract To10 = Statuses(10);
@@ -106,7 +124,8 @@ public static class TransferActionCatalog
     private static TransferActionDefinition Create(string form, string control, string menu,
         TransferEntityKind entity, string procedure, string beforeCheck,
         IReadOnlySet<int> statuses, TransferEffectContract effect) =>
-        new($"{form}:{control}", form, control, menu, entity, procedure, beforeCheck, statuses, effect);
+        new($"{form}:{control}", form, control, menu, entity, procedure,
+            ProcedureFingerprints[procedure], beforeCheck, statuses, effect);
 
     private static IReadOnlySet<int> Set(params int[] values) => new HashSet<int>(values);
     private static TransferEffectContract Statuses(params int[] values) =>

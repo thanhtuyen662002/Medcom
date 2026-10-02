@@ -19,6 +19,7 @@ public sealed class TransferCommandTests
         {
             Assert.NotEmpty(action.MenuId);
             Assert.NotEmpty(action.Procedure);
+            Assert.Matches("^[0-9a-f]{64}$", action.ProcedureSha256);
             Assert.NotEmpty(action.BeforeCheckProcedure);
             Assert.NotEmpty(action.AllowedSourceStatuses);
         });

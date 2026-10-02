@@ -8,7 +8,7 @@ the 28 transfer procedures extracted from the 609-procedure catalog. No SQL body
 credential, or owner attachment is copied here.
 
 The action catalog records the exact form, control, menu, entity key, source status set,
-before-check procedure, command procedure, and expected effect class. Status is authority data:
+before-check procedure, command procedure, procedure SHA-256, and expected effect class. Status is authority data:
 the Web request does not contain a role or source-status field.
 
 ## Admission boundary
