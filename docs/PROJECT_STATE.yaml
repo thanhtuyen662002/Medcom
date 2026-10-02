@@ -103,7 +103,7 @@ scheduled_execution:
   plan: docs/execution/PRODUCTION_WORKFLOW_20261002.md
   planned_lane_count: 6
   maximum_medcom_schedules: 10
-  activation_status: configured_pending_activation
+  activation_status: six_enabled_confirmed
   automation_instances_created_this_run: 0
   automation_instances_modified_this_run: 6
   session_task_target_min: 4
@@ -114,7 +114,7 @@ scheduled_execution:
   integration_owner: lead
   activation_record: docs/execution/PRODUCTION_WORKFLOW_20261002.md
   activation_registry: docs/execution/production-schedules.json
-  active_lane_count: 0
+  active_lane_count: 6
   timezone: Asia/Saigon
   activation_date: '2026-10-02'
   github_writer_mode: isolated_scope_and_invocation_owned_branches; lead sole integrator
@@ -127,6 +127,8 @@ scheduled_execution:
   direct_execution_record: docs/execution/DIRECT_EXECUTION_20261002.md
   ticket_registry: docs/execution/production-tickets.json
   production_goal_issue: 45
+  execution_observation: scheduled configuration enabled; worker start/completion
+    not yet observed
 remaining_blockers:
 - TRC-DB-001 row-level sanitized SQL catalog and dependency graph
 - TRC-TOOL-001 Tool.dll runtime session semantics and direct-load versus bridge verification
