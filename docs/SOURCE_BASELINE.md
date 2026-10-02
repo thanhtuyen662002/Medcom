@@ -39,3 +39,15 @@ These are sanitized secondary review summaries produced after a prior agent insp
 - In this run, materialization of the old baseline file IDs returned an account-access error; the selected Page archive references could not be materialized through the file interface. No raw ERP/SQL archive was opened or rehashed. This access result does not invalidate the previous evidence or prove that the archives are absent. B2/T1 retain source-access gates.
 
 Any recovered archive must be hashed against the approved baseline before analysis. A changed build/database is a separate source set and needs a compatibility/disposition record, not silent replacement.
+
+## Owner-attached source set, recovered 2026-10-02
+
+The owner supplied accessible `ERP_Medcom2026.zip`, `MedData-Data.zip` and `Tools.dll` for the requested BE/FE continuation. This begins a new authoritative technical verification round; the old Phase 1 source set remains historical evidence and is not silently replaced.
+
+| Artifact | Bytes | SHA-256 |
+|---|---:|---|
+| ERP_Medcom2026.zip | 162,176,322 | `d5fe49f8e58de89fc0b9972a116a6c8f673ab9f9b326c626708d0b5d01fc5783` |
+| MedData-Data.zip | 134,249,929 | `6a74eb02dc747e9c6ab679f69ca515783a8724ad767f6702fcebd28f195b1144` |
+| Tools.dll | 8,258,049 | `aa8910f3ba244fc405ccad2d322d142d40f938be3da94277ccd8d0814082dd61` |
+
+The ERP ZIP contains the exact standalone DLL. The DB dump declares 596 tables, 211 views, 109 functions and two sequences, with no executable procedure/trigger declarations. Backup INSERT literals are excluded by the lexical scanner. Exact source/dump identity and finite metadata members are in `inventories/source/20261002/source-set.json` and `manifest.json`; verification and compatibility dispositions are in `docs/erp/OWNER_SOURCE_RECOVERY_20261002.md`. Source access is recovered; complete business/runtime/release acceptance is still open.

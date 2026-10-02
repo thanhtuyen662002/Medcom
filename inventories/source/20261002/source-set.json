@@ -1,0 +1,25 @@
+{
+  "sourceSet": "owner-attachment-20261002",
+  "disposition": "New authoritative technical verification round; historical baseline retained separately. Not a runtime/production acceptance.",
+  "files": {
+    "ERP_Medcom2026.zip": {
+      "size": 162176322,
+      "sha256": "d5fe49f8e58de89fc0b9972a116a6c8f673ab9f9b326c626708d0b5d01fc5783",
+      "archiveMembers": 1425,
+      "rootToolsMatchesStandalone": true
+    },
+    "MedData-Data.zip": {
+      "size": 134249929,
+      "sha256": "6a74eb02dc747e9c6ab679f69ca515783a8724ad767f6702fcebd28f195b1144"
+    },
+    "Tools.dll": {
+      "size": 8258049,
+      "sha256": "aa8910f3ba244fc405ccad2d322d142d40f938be3da94277ccd8d0814082dd61"
+    },
+    "MedData-Data.sql": {
+      "size": 1015021568,
+      "sha256": "93184a552b674a1cedd88c73b1f3b661465c6b4302134f65b78c75fe29350c3a",
+      "encoding": "UTF-16LE BOM"
+    }
+  }
+}

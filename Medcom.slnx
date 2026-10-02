@@ -5,6 +5,10 @@
     <Project Path="src/backend/Medcom.Contracts/Medcom.Contracts.csproj" />
     <Project Path="src/backend/Medcom.Infrastructure/Medcom.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/src/" />
+  <Folder Name="/src/backend/">
+    <Project Path="src/backend/Medcom.LegacyPasswordWorker/Medcom.LegacyPasswordWorker.csproj" />
+  </Folder>
   <Folder Name="/Tests/">
     <Project Path="tests/backend/Medcom.Api.Tests/Medcom.Api.Tests.csproj" />
   </Folder>

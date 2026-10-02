@@ -77,14 +77,16 @@ public sealed class LocalWebSessions : IWebSessions
             if (currentIdentity is null || Expired(latest, clock.GetUtcNow())
                 || currentIdentity.PrincipalId != latest.Identity.PrincipalId
                 || currentIdentity.TenantId != latest.Identity.TenantId
-                || currentIdentity.CompanyId != latest.Identity.CompanyId)
+                || currentIdentity.CompanyId != latest.Identity.CompanyId
+                || currentIdentity.CredentialStamp != latest.Identity.CredentialStamp)
             {
                 entries.Remove(key);
                 return null;
             }
             if (currentIdentity.AuthorityVersion < latest.Identity.AuthorityVersion) return null;
             if (currentIdentity.AuthorityVersion == latest.Identity.AuthorityVersion
-                && !currentIdentity.Capabilities.SequenceEqual(latest.Identity.Capabilities))
+                && (!currentIdentity.Capabilities.SequenceEqual(latest.Identity.Capabilities)
+                    || !currentIdentity.BranchIds!.SequenceEqual(latest.Identity.BranchIds!)))
             {
                 entries.Remove(key);
                 return null;
@@ -120,11 +122,13 @@ public sealed class LocalWebSessions : IWebSessions
     {
         if (new[] { identity.PrincipalId, identity.TenantId, identity.CompanyId, identity.CompanyName,
                 identity.DisplayName }.Any(value => string.IsNullOrWhiteSpace(value) || value.Length > 250)
+            || identity.BranchIds is { Count: > 200 }
+            || identity.BranchIds?.Any(value => string.IsNullOrWhiteSpace(value) || value.Length > 50) == true
             || identity.AuthorityVersion < 1 || identity.Capabilities is null
             || identity.Capabilities.Count > 256
             || identity.Capabilities.Any(value => string.IsNullOrWhiteSpace(value) || value.Length > 100))
             return null;
-        return identity with { Capabilities = Array.AsReadOnly(identity.Capabilities
+        return identity with { BranchIds = Array.AsReadOnly((identity.BranchIds ?? []).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray()), Capabilities = Array.AsReadOnly(identity.Capabilities
             .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray()) };
     }
 }

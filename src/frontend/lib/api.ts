@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { healthSchema, workspaceSchema, sessionSchema } from "./contracts.ts";
+import { healthSchema, workspaceSchema, sessionSchema, documentPageSchema } from "./contracts.ts";
 
 export class ApiError extends Error {
   public status: number;
@@ -57,3 +57,8 @@ export async function logout() {
     headers: { "X-CSRF-TOKEN": await csrf() } });
   if (!response.ok && response.status !== 401) throw new ApiError(response.status, "logout_failed");
 }
+
+export const getDocuments = (kind: "purchase-orders" | "inbound-requests", page: number, search: string,
+  branchId: string, signal?: AbortSignal) => request(`/api/documents/${kind}?${new URLSearchParams({
+    page: String(page), pageSize: "50", search, branchId,
+  })}`, documentPageSchema, { signal });

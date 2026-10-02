@@ -38,7 +38,7 @@ export function LoginPage() {
     <section className="login-panel"><div className="login-card"><p className="eyebrow">CHÀO MỪNG TRỞ LẠI</p>
       <h2>Đăng nhập</h2><p className="muted">Sử dụng tài khoản ERP được doanh nghiệp cấp.</p>
       <form onSubmit={submit} className="login-form">
-        <label htmlFor="username">Tên đăng nhập</label><input id="username" name="username" autoComplete="username" required maxLength={150} placeholder="Nhập tên đăng nhập" disabled={pending} />
+        <label htmlFor="username">Tên đăng nhập</label><input id="username" name="username" autoComplete="username" required maxLength={100} placeholder="Nhập tên đăng nhập" disabled={pending} />
         <label htmlFor="password">Mật khẩu</label><input id="password" name="password" type="password" autoComplete="current-password" required maxLength={256} placeholder="Nhập mật khẩu" disabled={pending} />
         <div aria-live="polite">{error && <div className="error-message" role="alert"><p>{error}</p>{reference && <small>Mã hỗ trợ: {reference}</small>}</div>}</div>
         <Button type="submit" disabled={pending}>{pending ? <><LoaderCircle className="spin" size={18}/> Đang xác thực…</> : <>Đăng nhập <ArrowRight size={18}/></>}</Button>

@@ -12,11 +12,12 @@ public static class ApiHost
 {
     public const string CorrelationHeader = "X-Correlation-ID";
 
-    public static WebApplication Build(string[] args, Action<WebApplicationBuilder>? configure = null)
+    public static WebApplication Build(string[] args, Action<WebApplicationBuilder>? configure = null, string? webRoot = null)
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
         {
             Args = args,
+            WebRootPath = webRoot,
             ApplicationName = typeof(ApiHost).Assembly.GetName().Name
         });
         builder.WebHost.ConfigureKestrel(options =>
@@ -28,7 +29,32 @@ public static class ApiHost
         builder.Logging.AddFilter("Microsoft.AspNetCore", LogLevel.Warning);
         builder.Services.AddSingleton<IPlatformReadiness, UnconfiguredPlatformReadiness>();
         builder.Services.AddSingleton(TimeProvider.System);
-        builder.Services.AddSingleton<IIdentityAuthority, UnavailableIdentityAuthority>();
+        if (builder.Configuration.GetValue("Legacy:Enabled", false))
+        {
+            string Required(string key) => builder.Configuration[key] is { Length: > 0 } value
+                ? value : throw new InvalidOperationException($"Missing server setting {key}.");
+            var enablePilots = builder.Configuration.GetValue("Legacy:EnableReadOnlyPilots", false);
+            builder.Services.AddSingleton(new LegacyCompany(Required("Legacy:TenantId"),
+                Required("Legacy:CompanyId"), Required("Legacy:CompanyName")));
+            builder.Services.AddSingleton(new SqlLegacyUserStore(Required("Legacy:ConnectionString"), enablePilots: enablePilots));
+            builder.Services.AddSingleton<ILegacyUserStore>(provider=>provider.GetRequiredService<SqlLegacyUserStore>());
+            builder.Services.AddSingleton(new LegacyPasswordOptions(builder.Configuration["Legacy:DotnetPath"] ?? "dotnet",
+                Path.Combine(AppContext.BaseDirectory, "password-worker", "Medcom.LegacyPasswordWorker.dll"),
+                Required("Legacy:ToolsPath")));
+            builder.Services.AddSingleton<ILegacyPasswordVerifier, LegacyPasswordVerifier>();
+            builder.Services.AddSingleton<LegacyReadiness>();
+            builder.Services.AddSingleton<IPlatformReadiness>(provider=>provider.GetRequiredService<LegacyReadiness>());
+            builder.Services.AddHostedService<LegacyHealthMonitor>();
+            builder.Services.AddSingleton<IIdentityAuthority, LegacyIdentityAuthority>();
+            if (enablePilots) builder.Services.AddSingleton<IDocumentReader>(provider => new SqlDocumentReader(
+                Required("Legacy:ConnectionString"), provider.GetRequiredService<LegacyCompany>()));
+            else builder.Services.AddSingleton<IDocumentReader, UnavailableDocumentReader>();
+        }
+        else
+        {
+            builder.Services.AddSingleton<IIdentityAuthority, UnavailableIdentityAuthority>();
+            builder.Services.AddSingleton<IDocumentReader, UnavailableDocumentReader>();
+        }
         var idleMinutes = builder.Configuration.GetValue("Session:IdleMinutes", 1440);
         var absoluteMinutes = builder.Configuration.GetValue("Session:AbsoluteMinutes", 10080);
         builder.Services.AddSingleton(new WebSessionPolicy(TimeSpan.FromMinutes(idleMinutes),
@@ -161,9 +187,10 @@ public static class ApiHost
             .AllowAnonymous();
         app.MapGet("/api/platform/metadata", (HttpContext context) =>
             AuthEndpoints.Current(context).Identity.Capabilities.Contains("platform.status", StringComparer.Ordinal)
-            ? Results.Ok(new { contractVersion = 1, status = "foundation_only" })
+            ? Results.Ok(new { contractVersion = 1, status = AuthEndpoints.Current(context).Identity.CredentialStamp is null ? "foundation_only" : "read_only_adapter" })
             : Results.Problem(statusCode: 403, title: "Access denied."));
         AuthEndpoints.Map(app);
+        DocumentEndpoints.Map(app);
         return app;
     }
 

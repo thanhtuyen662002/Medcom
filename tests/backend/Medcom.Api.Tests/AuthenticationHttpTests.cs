@@ -147,6 +147,30 @@ public sealed class AuthenticationHttpTests
         }
     }
 
+    [Fact]
+    public async Task DocumentApiRechecksCapabilityAndRejectsUnknownQueryFieldsBeforeReader()
+    {
+        var reader=new CountingDocuments();
+        await using var server=await SecureTestServer.Start(documentReader:reader);
+        server.Authority.Identity=server.Authority.Identity with { Capabilities=["platform.status","purchase-orders.read"], BranchIds=["BR-A"] };
+        using var login=await server.Post("/api/auth/login",new { username="synthetic-user",password="synthetic-password" },await server.Csrf());
+        Assert.Equal(HttpStatusCode.OK,login.StatusCode);
+        using var unknown=await server.Client.GetAsync("/api/documents/purchase-orders?table=SY_User");
+        Assert.Equal(HttpStatusCode.BadRequest,unknown.StatusCode); Assert.Equal(0,reader.Calls);
+        using var allowed=await server.Client.GetAsync("/api/documents/purchase-orders?page=1");
+        Assert.Equal(HttpStatusCode.OK,allowed.StatusCode); Assert.Equal(1,reader.Calls);
+        server.Authority.Identity=server.Authority.Identity with { AuthorityVersion=2,Capabilities=["platform.status"] };
+        using var revoked=await server.Client.GetAsync("/api/documents/purchase-orders");
+        Assert.Equal(HttpStatusCode.Forbidden,revoked.StatusCode); Assert.Equal(1,reader.Calls);
+    }
+
+    private sealed class CountingDocuments : IDocumentReader
+    {
+        public int Calls;
+        public Task<DocumentResult> ReadAsync(AuthoritativeIdentity identity,DocumentKind kind,DocumentQuery query,CancellationToken token)
+        { Calls++; return Task.FromResult(new DocumentResult(DocumentOutcome.Success,new([],query.Page,query.PageSize,false))); }
+    }
+
     private sealed class MultipleTenantAuthority : IIdentityAuthority
     {
         private static AuthoritativeIdentity Identity(string user) => new(user, "tenant-" + user, "company-" + user,
@@ -165,19 +189,20 @@ internal sealed class SecureTestServer(WebApplication app, HttpClient client, X5
     public HttpClient Client { get; } = client;
     public ControlledAuthority Authority { get; } = authority;
 
-    public static async Task<SecureTestServer> Start(bool configureAuthority = true, IIdentityAuthority? identityAuthority = null)
+    public static async Task<SecureTestServer> Start(bool configureAuthority = true, IIdentityAuthority? identityAuthority = null, IDocumentReader? documentReader = null, string? webRoot = null)
     {
         using var key = RSA.Create(2048);
         var request = new CertificateRequest("CN=localhost", key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
         var certificate = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddHours(1));
         var authority = new ControlledAuthority();
-        var app = ApiHost.Build(["--environment", "Production"], builder =>
+        var app = ApiHost.Build(["--environment", "Production", "--Legacy:Enabled", "false"], builder =>
         {
             builder.Logging.ClearProviders();
             builder.WebHost.ConfigureKestrel(options => options.Listen(IPAddress.Loopback, 0,
                 listen => listen.UseHttps(certificate)));
             if (configureAuthority) builder.Services.AddSingleton(identityAuthority ?? authority);
-        });
+            if (documentReader is not null) builder.Services.AddSingleton(documentReader);
+        }, webRoot);
         await app.StartAsync();
         var address = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single();
         var client = new HttpClient(new HttpClientHandler

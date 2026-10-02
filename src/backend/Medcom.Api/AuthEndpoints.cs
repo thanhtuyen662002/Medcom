@@ -22,7 +22,7 @@ public static class AuthEndpoints
         {
             if (!context.Request.IsHttps)
                 return Problem(400, "https_required", "HTTPS is required.");
-            if (string.IsNullOrWhiteSpace(request.Username) || request.Username.Length > 150
+            if (string.IsNullOrWhiteSpace(request.Username) || request.Username.Length > 100
                 || string.IsNullOrEmpty(request.Password) || request.Password.Length > 256)
                 return Problem(400, "invalid_login_request", "Check the login fields.");
             IdentityResult result;
@@ -77,9 +77,14 @@ public static class AuthEndpoints
         app.MapGet("/api/workspace", (HttpContext context) =>
         {
             var session = Current(context);
-            NavigationItem[] navigation = session.Identity.Capabilities.Contains("platform.status", StringComparer.Ordinal)
-                ? [new("platform-status", "Trạng thái hệ thống", "/workspace/")] : [];
-            return Results.Ok(new WorkspaceView(session.View, navigation));
+            var navigation = new List<NavigationItem>();
+            if (session.Identity.Capabilities.Contains("platform.status", StringComparer.Ordinal))
+                navigation.Add(new("platform-status", "Trạng thái hệ thống", "/workspace/"));
+            if (session.Identity.Capabilities.Contains("purchase-orders.read", StringComparer.Ordinal))
+                navigation.Add(new("purchase-orders", "Đơn đặt hàng mua", "/workspace/?screen=purchase-orders"));
+            if (session.Identity.Capabilities.Contains("inbound-requests.read", StringComparer.Ordinal))
+                navigation.Add(new("inbound-requests", "Yêu cầu nhập kho", "/workspace/?screen=inbound-requests"));
+            return Results.Ok(new WorkspaceView(session.View, navigation, session.Identity.BranchIds ?? []));
         });
     }
 

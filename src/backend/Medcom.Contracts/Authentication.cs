@@ -8,4 +8,4 @@ public sealed record SessionView(string DisplayName, string TenantId, string Com
 
 public sealed record NavigationItem(string Id, string Label, string Href);
 
-public sealed record WorkspaceView(SessionView Session, IReadOnlyList<NavigationItem> Navigation);
+public sealed record WorkspaceView(SessionView Session, IReadOnlyList<NavigationItem> Navigation, IReadOnlyList<string> BranchIds);

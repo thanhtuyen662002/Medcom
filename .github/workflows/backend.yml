@@ -35,11 +35,13 @@ jobs:
       - name: Build with analyzers
         run: dotnet build Medcom.slnx --configuration Release --no-restore
       - name: Test actual HTTP boundary
-        run: dotnet test Medcom.slnx --configuration Release --no-build --logger 'trx;LogFileName=backend.trx'
+        run: dotnet test Medcom.slnx --configuration Release --no-build --filter 'Category!=LegacyRuntime' --logger 'trx;LogFileName=backend.trx'
       - name: Verify prepared reference models
         env:
           PYTHONDONTWRITEBYTECODE: '1'
         run: python tools/backend/run_preparation_checks.py
+      - name: Verify finite source metadata and scanner regressions
+        run: python tools/source/validate_catalog.py && python -m unittest discover -s tools/source -p 'test_*.py'
       - name: Install frontend dependencies
         working-directory: src/frontend
         run: npm ci

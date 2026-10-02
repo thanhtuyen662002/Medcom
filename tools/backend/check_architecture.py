@@ -10,6 +10,7 @@ ALLOWED = {
     'Medcom.Application': {'Medcom.Contracts'},
     'Medcom.Infrastructure': {'Medcom.Application', 'Medcom.Contracts'},
     'Medcom.Api': {'Medcom.Application', 'Medcom.Contracts', 'Medcom.Infrastructure'},
+    'Medcom.LegacyPasswordWorker': set(),
 }
 errors = []
 for name, expected in ALLOWED.items():
@@ -18,7 +19,9 @@ for name, expected in ALLOWED.items():
     actual = {Path(node.attrib['Include']).stem for node in tree.findall('.//ProjectReference')}
     if actual != expected:
         errors.append(f'{name}: invalid project reference direction {actual}')
-    if tree.findall('.//PackageReference') or tree.findall('.//Reference'):
+    packages = {(node.attrib['Include'], node.attrib.get('Version')) for node in tree.findall('.//PackageReference')}
+    allowed_packages = {('Microsoft.Data.SqlClient', '7.0.3')} if name == 'Medcom.Infrastructure' else set()
+    if packages != allowed_packages or tree.findall('.//Reference'):
         errors.append(f'{name}: unexpected package or legacy assembly reference')
 for name in ('Medcom.Contracts', 'Medcom.Application'):
     for path in (ROOT / 'src/backend' / name).glob('**/*.cs'):
@@ -31,4 +34,4 @@ for name in ('Medcom.Contracts', 'Medcom.Application'):
 if errors:
     print('\n'.join(errors), file=sys.stderr)
     sys.exit(1)
-print('PASS: four project boundaries; no legacy/SQL package coupling')
+print('PASS: five project boundaries; SQL dependency restricted to Infrastructure')

@@ -8,7 +8,7 @@ public enum IdentityOutcome { Success, Rejected, Unavailable }
 // connection string or executable configuration crosses this boundary.
 public sealed record AuthoritativeIdentity(string PrincipalId, string TenantId,
     string CompanyId, string CompanyName, string DisplayName, long AuthorityVersion,
-    IReadOnlyList<string> Capabilities);
+    IReadOnlyList<string> Capabilities, string? CredentialStamp = null, IReadOnlyList<string>? BranchIds = null);
 
 public sealed record IdentityResult(IdentityOutcome Outcome, AuthoritativeIdentity? Identity = null);
 

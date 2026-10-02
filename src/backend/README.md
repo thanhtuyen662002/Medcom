@@ -38,3 +38,11 @@ The server session store is deliberately single-instance and bounded; restart re
 `tools/backend/check_architecture.py` validates boundary direction and prohibits legacy/SQL assembly coupling. `tools/backend/run_preparation_checks.py` runs the separately labelled reference models and metadata validators. Passing reference checks does not complete source/runtime/business nodes. CI fetches full history because source pins validate immutable Git objects.
 
 A sandboxed local MSBuild invocation may require `-m:1 -nr:false` and `dotnet restore --disable-parallel`; these serialize local work without skipping restore, analyzers or tests. Hosted CI uses the normal commands.
+
+## Verified owner-DLL/SQL continuation
+
+`Medcom.LegacyPasswordWorker` is a fifth executable boundary, with no compile-time owner assembly reference. It hashes the private DLL before loading, checks only the exact normal stored-password path and exits after one bounded request. It never runs Connector/startup, system-password verification or arbitrary calls. Infrastructure owns the pinned Microsoft.Data.SqlClient dependency; application/contracts remain platform independent.
+
+Explicit `Legacy` server configuration can enable canonical SQL identity reads and two conservative typed read-only pilots. Defaults stay unavailable, no synthetic identity is registered in product code, and all write/effect/export endpoints remain absent. Current grants/branches and credentials are revalidated and fenced. A bounded cached dependency monitor does not close the business release gate.
+
+37 source-free backend tests and two separate private source/SQL/DLL/browser runtime tests were observed. Run general CI with `--filter 'Category!=LegacyRuntime'`; full fixture setup and limits are in `tools/legacy/README.md`. Source identities, actual evidence and production gaps are in `docs/erp/OWNER_SOURCE_RECOVERY_20261002.md` and `docs/deployment/SERVER_DEPLOYMENT.md`.

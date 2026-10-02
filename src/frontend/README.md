@@ -16,3 +16,9 @@ Routes: `/` is login; `/workspace/` fetches a freshly authorized workspace. Expo
 The initial workspace contains server-filtered navigation, session status, explicit Continue Session and readiness. It does not contain fake business records or invented ERP CRUD screens. Business Grid/metadata, dynamic screen compilation, admin policy/configuration, report/export, accessibility qualification and real user-flow acceptance remain pending verified ERP/SQL contracts.
 
 Browser tests use the real packaged unavailable-provider API for rejected login/direct-route checks. One separately labelled synthetic frontend contract fixture renders an authorized workspace; it is not a successful legacy login or business acceptance result.
+
+## Typed read-only pilots
+
+Purchase-order and inbound-request lists consume two allow-listed API shapes, with server-provided navigation and branch IDs, bounded search/pagination and keyboard-accessible dense tables. A requested route is not a grant; API and final SQL checks remain authoritative. Cache/session fences hide retired data on logout/return/error. No amount/customer/patient fields, writes, approvals or exports are exposed by these lists. Both pilots are explicit server configuration gates and require real ERP grants.
+
+The separate private runtime fixture runs actual SQL + owner DLL + HTTPS browser login/Grid/search/scope-denial/logout; it is not a mocked frontend acceptance. General browser checks still label their synthetic frontend contract separately. See `tools/legacy/README.md`; complete business/production admission is not established.
