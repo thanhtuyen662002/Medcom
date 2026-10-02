@@ -78,12 +78,12 @@ phase2:
     result: success
     current_head_policy: check GitHub checks on the latest head; previous-head success is not current-head
       evidence
-  frontend_status: login_workspace_and_two_typed_read_only_pilots_implemented_configuration_gated
+  frontend_status: login_workspace_two_typed_read_only_lists_and_line_details_configuration_gated
   server_candidate_status: BLOCKED_BUSINESS_AND_RUNTIME_ACCEPTANCE
   full_stack_checkpoint: docs/execution/FULL_STACK_CONTINUATION_20261002.md
   local_acceptance:
     backend_tests: 37
-    frontend_contract_tests: 4
+    frontend_contract_tests: 5
     packaged_browser_tests: 4
     reference_suites: 23
     legacy_sql_dll_runtime_tests: 2

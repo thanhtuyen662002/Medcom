@@ -75,6 +75,11 @@ public sealed class LegacyRuntimeTests
                 VALUES('ORDER-A','2026-10-01','SYNTHETIC','VND',1,0,'BR-A',1),
                       ('ORDER-B','2026-10-01','SYNTHETIC','VND',1,0,'BR-B',1),
                       ('ORDER%LITERAL','2026-10-01','SYNTHETIC','VND',1,0,'BR-A',1);
+                INSERT dbo.AP_OrderDetailTbl(UserAutoID,DocumentID,ItemID,Quantity,Quantity2)
+                VALUES('LINE-A1','ORDER-A',N'ITEM-A',12345678901234567890123456.78,1.2345),
+                      ('LINE-A2','ORDER-A',N'ITEM-NULL',NULL,NULL),
+                      ('LINE-B','ORDER-B',N'HIDDEN-ITEM',999,1),
+                      ('LINE-ORPHAN','MISSING',N'ORPHAN-ITEM',888,1);
                 """,Environment.GetEnvironmentVariable("MEDCOM_TEST_HASH"));
             var store=new SqlLegacyUserStore(builder.ConnectionString,true,true);
             await store.ProbeSchemaAsync(default);
@@ -111,6 +116,43 @@ public sealed class LegacyRuntimeTests
             Assert.Single(literal.Page!.Rows); Assert.Equal("ORDER%LITERAL",literal.Page.Rows[0].DocumentId);
             var first=await documents.ReadAsync(identity,DocumentKind.PurchaseOrders,new(PageSize:1),default);
             Assert.True(first.Page!.HasMore); Assert.Single(first.Page.Rows);
+            var detail=await documents.ReadDetailAsync(identity,DocumentKind.PurchaseOrders,new("ORDER-A",PageSize:1),default);
+            Assert.Equal(DocumentOutcome.Success,detail.Outcome);
+            Assert.Equal("ORDER-A",detail.Detail!.Document.DocumentId);
+            Assert.True(detail.Detail.HasMore); Assert.Empty(detail.Detail.InboundRequestLines);
+            var line=Assert.Single(detail.Detail.PurchaseOrderLines);
+            Assert.Equal("12345678901234567890123456.78",line.Quantity); Assert.Equal("1.2345",line.Quantity2);
+            var secondLine=await documents.ReadDetailAsync(identity,DocumentKind.PurchaseOrders,new("ORDER-A",2,1),default);
+            Assert.False(secondLine.Detail!.HasMore); Assert.Null(Assert.Single(secondLine.Detail.PurchaseOrderLines).Quantity);
+            Assert.Empty((await documents.ReadDetailAsync(identity,DocumentKind.PurchaseOrders,new("ORDER-A",3,1),default)).Detail!.PurchaseOrderLines);
+            Assert.Empty((await documents.ReadDetailAsync(identity,DocumentKind.PurchaseOrders,new("ORDER%LITERAL"),default)).Detail!.PurchaseOrderLines);
+            foreach(var id in new[]{"ORDER-B","MISSING","' OR 1=1 --"})
+                Assert.Equal(DocumentOutcome.NotFound,(await documents.ReadDetailAsync(identity,DocumentKind.PurchaseOrders,new(id),default)).Outcome);
+            Assert.Equal(DocumentOutcome.Invalid,(await documents.ReadDetailAsync(identity,DocumentKind.PurchaseOrders,new(new string('x',31)),default)).Outcome);
+            Assert.Equal(DocumentOutcome.Denied,(await documents.ReadDetailAsync(identity with { CompanyId="another" },DocumentKind.PurchaseOrders,new("ORDER-A"),default)).Outcome);
+            Assert.Equal(DocumentOutcome.Denied,(await documents.ReadDetailAsync(identity,DocumentKind.InboundRequests,new("ORDER-A"),default)).Outcome);
+
+            // The second reviewed shape uses its own source columns and enabled menu.
+            await Execute(connection,"""
+                INSERT dbo.SY_Menu(MenuID,VN,MenuType,isBeginGroup,isDisable,isBold,FormName)
+                VALUES('07011',N'Synthetic Inbound',2,0,0,0,'IV_InboundRequestFrm');
+                INSERT dbo.SY_UserGroupPermisstion(ID,UserGroupID,MenuID,IsRun,IsAdd,IsUpdate,IsDelete,isAdmin)
+                VALUES('synthetic_inbound','test_group','07011',1,0,0,0,0);
+                INSERT dbo.IV_InboundRequestTbl(DocumentID,DocumentDate,OrderNumber,BranchID,InvoiceNo,DeparturePoint,DestinationPoint,OrderTypeID,StatusID,QRPrintType)
+                VALUES('INBOUND-A','2026-10-01',N'SYNTHETIC','BR-A',N'SYNTHETIC',N'TEST',N'TEST',N'TEST',1,'TEST'),
+                      ('INBOUND-B','2026-10-01',N'SYNTHETIC','BR-B',N'SYNTHETIC',N'TEST',N'TEST',N'TEST',1,'TEST');
+                INSERT dbo.IV_InboundRequestDetailsTbl(UserAutoID,DocumentID,ItemID,SetQuantityByDocument,BarrelQuantityByDocument,SetQuantityByReal,BarrelQuantityByReal)
+                VALUES('IN-LINE-A','INBOUND-A','IN-ITEM',123456789012345678,10,NULL,9),
+                      ('IN-LINE-B','INBOUND-B','HIDDEN-IN-ITEM',999,999,999,999);
+                """);
+            var inboundIdentity=(await authority.RevalidateAsync(identity,default)).Identity!;
+            var inbound=await documents.ReadDetailAsync(inboundIdentity,DocumentKind.InboundRequests,new("INBOUND-A"),default);
+            Assert.Equal(DocumentOutcome.Success,inbound.Outcome); Assert.Null(inbound.Detail!.Document.IsLocked);
+            Assert.Empty(inbound.Detail.PurchaseOrderLines);
+            var inboundLine=Assert.Single(inbound.Detail.InboundRequestLines);
+            Assert.Equal("123456789012345678",inboundLine.SetQuantityByDocument);
+            Assert.Null(inboundLine.SetQuantityByReal); Assert.Equal("9",inboundLine.BarrelQuantityByReal);
+            Assert.Equal(DocumentOutcome.NotFound,(await documents.ReadDetailAsync(inboundIdentity,DocumentKind.InboundRequests,new("INBOUND-B"),default)).Outcome);
             var root=Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,"../../../../../../"));
             await using (var server=await SecureTestServer.Start(identityAuthority:authority,documentReader:documents,
                 webRoot:Path.Combine(root,"artifacts/server/wwwroot")))
@@ -133,6 +175,7 @@ public sealed class LegacyRuntimeTests
             }
             await Execute(connection,"UPDATE dbo.SY_UserGroupPermisstion SET IsRun=0 WHERE ID='synthetic_grant';");
             Assert.Equal(DocumentOutcome.Denied,(await documents.ReadAsync(identity,DocumentKind.PurchaseOrders,new(),default)).Outcome);
+            Assert.Equal(DocumentOutcome.Denied,(await documents.ReadDetailAsync(identity,DocumentKind.PurchaseOrders,new("ORDER-A"),default)).Outcome);
             var revalidated=await authority.RevalidateAsync(identity,default);
             Assert.Equal(IdentityOutcome.Success,revalidated.Outcome);
             Assert.DoesNotContain("purchase-orders.read",revalidated.Identity!.Capabilities);

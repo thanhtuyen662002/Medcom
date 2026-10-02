@@ -8,7 +8,7 @@ Accessible owner archives were hashed and a new source set recorded in `docs/SOU
 
 The SQL adapter reads canonical accounts/groups, rejects disabled/missing/ambiguous matches and revokes changed credentials/groups. Two optionally enabled pilot screens list purchase orders and inbound requests through typed, scoped, parameterized queries. Explicit current menu/grants and branch assignments are checked on the server and at SQL execution; no arbitrary SQL or identifier is accepted from a browser. Fields shown are document ID/date/branch/status/lock only. Save/approve/post/delete/export/report operations are not enabled.
 
-A real owner-DLL + disposable SQL Server + HTTPS browser test covers login, purchase-order Grid/search, other-branch denial and logout/replay. Only synthetic fixture rows were inserted, using eight source table DDLs. The data dump was not restored. Details and limitations are in `docs/erp/OWNER_SOURCE_RECOVERY_20261002.md` and `inventories/source/20261002/runtime-receipt.json`.
+A real owner-DLL + disposable SQL Server + HTTPS browser test covers login, purchase-order Grid/search, other-branch denial and logout/replay. Only synthetic fixture rows were inserted, using ten source table DDLs. The data dump was not restored. Details and limitations are in `docs/erp/OWNER_SOURCE_RECOVERY_20261002.md` and `inventories/source/20261002/runtime-receipt.json`.
 
 ## Current admission
 
@@ -53,7 +53,7 @@ Set these server settings through private deployment configuration, not browser 
 | `Legacy:EnableReadOnlyPilots` | Explicitly enable the two verified query shapes; default false |
 | `AllowedHosts` | Real host allow-list |
 
-Environment-variable equivalents use double underscores (for example `Legacy__ToolsPath`). Do not commit credentials or put passwords in argv. Use a SQL login limited to SELECT on `SY_User`, `SY_UserGroup` and, for pilots, `SY_Menu`, `SY_UserGroupPermisstion`, `SY_UserPermisstion`, `SY_UserBranch`, `AP_OrderTbl`, `IV_InboundRequestTbl`; do not grant DDL/admin/write privileges. Table access alone is not a user grant. Users/groups/menus must be enabled and explicit permission bits/branch assignments must exist.
+Environment-variable equivalents use double underscores (for example `Legacy__ToolsPath`). Do not commit credentials or put passwords in argv. Use a SQL login limited to SELECT on `SY_User`, `SY_UserGroup` and, for pilots, `SY_Menu`, `SY_UserGroupPermisstion`, `SY_UserPermisstion`, `SY_UserBranch`, `AP_OrderTbl`, `IV_InboundRequestTbl`, `AP_OrderDetailTbl`, `IV_InboundRequestDetailsTbl`; do not grant DDL/admin/write privileges. Table access alone is not a user grant. Users/groups/menus must be enabled and explicit permission bits/branch assignments must exist.
 
 Start from the extracted directory with a privately managed Kestrel certificate and endpoint configuration:
 
@@ -66,3 +66,5 @@ The `__Host-` cookies require HTTPS. The API does not trust arbitrary forwarded 
 Data Protection keys must be privately persisted/encrypted with service-account access only. The bounded in-memory session store is single-instance: restart revokes all sessions. Multiple replicas require a reviewed distributed store and fencing. Defaults remain 1440 idle minutes, 10080 absolute minutes and 10000 sessions; accepted explicit Continue Session advances activity, passive reads/polling do not. Logout and credential/company/tenant changes fence previous sessions.
 
 Before a production release, validate the real server OS/runtime, host/TLS/secrets, current full SQL schema and legacy definitions, all business effects, backup/restore and rollback, large-dataset behavior, auditing and exact-head independent review/CI. This candidate is suitable for controlled staging verification, not an accepted production ERP.
+
+The configured pilots also require SELECT on the two detail tables listed above. Detail routes expose only fixed source identifiers/quantities and recheck parent scope. The HTTPS runtime flow additionally tests both detail shapes, exact quantities, other-branch/missing 404 equivalence, keyboard focus and contained mobile tables. The business release gate remains unchanged.

@@ -84,7 +84,7 @@ def describe(kind, schema, obj, code, line):
 
 def catalog(path, private_tables_dir=None):
     masker = Masker(); objects = []; headers = []; ddl = []; raw_ddl = []; current = None; extras = []
-    selected = {'SY_User','SY_UserGroup','SY_UserBranch','SY_Menu','SY_UserGroupPermisstion','SY_UserPermisstion','AP_OrderTbl','IV_InboundRequestTbl'}
+    selected = {'SY_User','SY_UserGroup','SY_UserBranch','SY_Menu','SY_UserGroupPermisstion','SY_UserPermisstion','AP_OrderTbl','IV_InboundRequestTbl','AP_OrderDetailTbl','IV_InboundRequestDetailsTbl'}
     private_dir = Path(private_tables_dir).resolve() if private_tables_dir else None
     if private_dir:
         if private_dir.is_relative_to(Path(__file__).resolve().parents[2]): raise ValueError('Private source DDL must stay outside the public checkout')

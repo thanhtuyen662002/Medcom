@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { ApiError, errorMessage, safeReturnPath } from "../lib/api.ts";
-import { sessionSchema, workspaceSchema } from "../lib/contracts.ts";
+import { sessionSchema, workspaceSchema, documentDetailSchema } from "../lib/contracts.ts";
 
 test("return URLs cannot escape the approved workspace route", () => {
   for (const value of [null, "https://outside.invalid", "//outside.invalid", "/api/auth/login", "/workspace/?sql=arbitrary", "javascript:alert(1)"])
@@ -25,4 +25,15 @@ test("server navigation cannot introduce external or executable routes", () => {
   assert.equal(workspaceSchema.safeParse({ session: valid, navigation: [{ id: "status", label: "Status", href: "/workspace/" }] }).success, true);
   for (const href of ["javascript:alert(1)", "https://outside.invalid", "/api/rawsql"])
     assert.equal(workspaceSchema.safeParse({ session: valid, navigation: [{ id: "status", label: "Status", href }] }).success, false);
+});
+test("line quantities preserve ERP precision and reject numeric, money or mixed-shape payloads", () => {
+  const detail = { document: { documentId: "TEST", documentDate: "2026-10-02", branchId: "BR-A", statusId: 1, isLocked: false },
+    purchaseOrderLines: [{ lineId: "LINE", itemId: "ITEM", quantity: "12345678901234567890123456.78", quantity2: "1.2345" }],
+    inboundRequestLines: [], page: 1, pageSize: 50, hasMore: false };
+  assert.equal(documentDetailSchema.parse(detail).purchaseOrderLines[0].quantity, detail.purchaseOrderLines[0].quantity);
+  for (const line of [{ ...detail.purchaseOrderLines[0], quantity: 123 }, { ...detail.purchaseOrderLines[0], quantity: "1e30" },
+    { ...detail.purchaseOrderLines[0], amount: "999" }])
+    assert.equal(documentDetailSchema.safeParse({ ...detail, purchaseOrderLines: [line] }).success, false);
+  assert.equal(documentDetailSchema.safeParse({ ...detail, inboundRequestLines: [{ lineId: "OTHER", itemId: "OTHER",
+    setQuantityByDocument: "1", barrelQuantityByDocument: "2", setQuantityByReal: null, barrelQuantityByReal: null }] }).success, false);
 });

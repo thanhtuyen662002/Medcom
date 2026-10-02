@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { healthSchema, workspaceSchema, sessionSchema, documentPageSchema } from "./contracts.ts";
+import { healthSchema, workspaceSchema, sessionSchema, documentPageSchema, documentDetailSchema } from "./contracts.ts";
 
 export class ApiError extends Error {
   public status: number;
@@ -20,6 +20,7 @@ export function errorMessage(error: unknown): string {
   if (error.code === "csrf_invalid") return "Phiên trang đã thay đổi. Tải lại trang rồi thử lại.";
   if (error.status === 401) return "Đăng nhập không được chấp nhận hoặc phiên đã hết hạn.";
   if (error.status === 403) return "Bạn không có quyền thực hiện thao tác này.";
+  if (error.status === 404) return "Chứng từ không còn khả dụng trong phạm vi được cấp quyền.";
   return "Không thể hoàn tất yêu cầu. Vui lòng thử lại.";
 }
 async function request<T>(path: string, schema: z.ZodType<T>, init?: RequestInit): Promise<T> {
@@ -62,3 +63,8 @@ export const getDocuments = (kind: "purchase-orders" | "inbound-requests", page:
   branchId: string, signal?: AbortSignal) => request(`/api/documents/${kind}?${new URLSearchParams({
     page: String(page), pageSize: "50", search, branchId,
   })}`, documentPageSchema, { signal });
+
+export const getDocumentDetail = (kind: "purchase-orders" | "inbound-requests", documentId: string,
+  page: number, signal?: AbortSignal) => request(`/api/documents/${kind}/detail?${new URLSearchParams({
+    documentId, page: String(page), pageSize: "50",
+  })}`, documentDetailSchema, { signal });

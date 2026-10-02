@@ -2,7 +2,7 @@
 
 Raw owner DLLs/dumps stay outside the public checkout. Ordinary CI runs source-free product checks; the `LegacyRuntime` category requires explicit private fixtures and a disposable **loopback** SQL Server. Tests create/drop only a unique `medcom_test_<guid>` database and refuse a remote/pre-existing ERP database. They never restore raw dump data.
 
-Build the frontend/server package and password worker first. With the source files available, prepare eight actual table DDLs and a synthetic hash using the pinned DLL:
+Build the frontend/server package and password worker first. With the source files available, prepare ten actual table DDLs and a synthetic hash using the pinned DLL:
 
 ```bash
 python tools/legacy/prepare_fixture.py --dump /private/MedData-Data.sql --tools /private/Tools.dll --private-directory /private/medcom-fixture --dotnet /trusted/dotnet

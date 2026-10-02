@@ -159,9 +159,18 @@ public sealed class AuthenticationHttpTests
         Assert.Equal(HttpStatusCode.BadRequest,unknown.StatusCode); Assert.Equal(0,reader.Calls);
         using var allowed=await server.Client.GetAsync("/api/documents/purchase-orders?page=1");
         Assert.Equal(HttpStatusCode.OK,allowed.StatusCode); Assert.Equal(1,reader.Calls);
+        foreach(var query in new[]{"", "documentId=TEST&table=SY_User", "documentId=TEST&page=0", "documentId=TEST&pageSize=101", "documentId="+new string('x',31)})
+        {
+            using var invalid=await server.Client.GetAsync("/api/documents/purchase-orders/detail?"+query);
+            Assert.Equal(HttpStatusCode.BadRequest,invalid.StatusCode); Assert.Equal(1,reader.Calls);
+        }
+        using var detail=await server.Client.GetAsync("/api/documents/purchase-orders/detail?documentId=TEST");
+        Assert.Equal(HttpStatusCode.NotFound,detail.StatusCode); Assert.Equal(2,reader.Calls);
         server.Authority.Identity=server.Authority.Identity with { AuthorityVersion=2,Capabilities=["platform.status"] };
         using var revoked=await server.Client.GetAsync("/api/documents/purchase-orders");
-        Assert.Equal(HttpStatusCode.Forbidden,revoked.StatusCode); Assert.Equal(1,reader.Calls);
+        Assert.Equal(HttpStatusCode.Forbidden,revoked.StatusCode); Assert.Equal(2,reader.Calls);
+        using var revokedDetail=await server.Client.GetAsync("/api/documents/purchase-orders/detail?documentId=TEST");
+        Assert.Equal(HttpStatusCode.Forbidden,revokedDetail.StatusCode); Assert.Equal(2,reader.Calls);
     }
 
     private sealed class CountingDocuments : IDocumentReader
@@ -169,6 +178,8 @@ public sealed class AuthenticationHttpTests
         public int Calls;
         public Task<DocumentResult> ReadAsync(AuthoritativeIdentity identity,DocumentKind kind,DocumentQuery query,CancellationToken token)
         { Calls++; return Task.FromResult(new DocumentResult(DocumentOutcome.Success,new([],query.Page,query.PageSize,false))); }
+        public Task<DocumentDetailResult> ReadDetailAsync(AuthoritativeIdentity identity,DocumentKind kind,DocumentDetailQuery query,CancellationToken token)
+        { Calls++; return Task.FromResult(new DocumentDetailResult(DocumentOutcome.NotFound)); }
     }
 
     private sealed class MultipleTenantAuthority : IIdentityAuthority

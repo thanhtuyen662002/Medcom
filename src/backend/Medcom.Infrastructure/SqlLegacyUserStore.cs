@@ -37,6 +37,9 @@ public sealed class SqlLegacyUserStore : ILegacyUserStore
             SELECT TOP (0) UserName,BranchID FROM dbo.SY_UserBranch;
             SELECT TOP (0) DocumentID,DocumentDate,BranchID,StatusID,isLock FROM dbo.AP_OrderTbl;
             SELECT TOP (0) DocumentID,DocumentDate,BranchID,StatusID FROM dbo.IV_InboundRequestTbl;
+            SELECT TOP (0) UserAutoID,DocumentID,ItemID,Quantity,Quantity2 FROM dbo.AP_OrderDetailTbl;
+            SELECT TOP (0) UserAutoID,DocumentID,ItemID,SetQuantityByDocument,BarrelQuantityByDocument,
+                SetQuantityByReal,BarrelQuantityByReal FROM dbo.IV_InboundRequestDetailsTbl;
             """;
         await using var command=new SqlCommand(sql,connection) { CommandTimeout=5 };
         await using var reader=await command.ExecuteReaderAsync(cancellationToken);

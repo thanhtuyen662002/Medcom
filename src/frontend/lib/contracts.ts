@@ -24,3 +24,12 @@ export const documentPageSchema = z.object({
   page: z.number().int().min(1).max(1000), pageSize: z.number().int().min(1).max(100), hasMore: z.boolean(),
 }).strict();
 export type DocumentKind = "purchase-orders" | "inbound-requests";
+const quantitySchema = z.string().regex(/^-?\d{1,28}(?:\.\d{1,4})?$/).max(34).nullable();
+const lineSchema = z.object({ lineId: z.string().min(1).max(50), itemId: z.string().min(1).max(50) });
+export const documentDetailSchema = z.object({
+  document: documentPageSchema.shape.rows.element,
+  purchaseOrderLines: z.array(lineSchema.extend({ quantity: quantitySchema, quantity2: quantitySchema }).strict()).max(100),
+  inboundRequestLines: z.array(lineSchema.extend({ setQuantityByDocument: quantitySchema, barrelQuantityByDocument: quantitySchema,
+    setQuantityByReal: quantitySchema, barrelQuantityByReal: quantitySchema }).strict()).max(100),
+  page: z.number().int().min(1).max(1000), pageSize: z.number().int().min(1).max(100), hasMore: z.boolean(),
+}).strict().refine(value => value.purchaseOrderLines.length === 0 || value.inboundRequestLines.length === 0);

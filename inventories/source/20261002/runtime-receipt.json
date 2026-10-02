@@ -3,17 +3,38 @@
   "sourceSet": "owner-attachment-20261002",
   "observedDateUtc": "2026-10-02",
   "ownerDllSha256": "aa8910f3ba244fc405ccad2d322d142d40f938be3da94277ccd8d0814082dd61",
-  "runtime": {"dotnetSdk": "10.0.401", "dotnetRuntime": "10.0.12", "os": "Ubuntu 24.04 Linux x64", "sqlServer": "17.0.4065.4 Enterprise Developer"},
-  "databaseFixture": {"sourceTableDdlCount": 8, "rows": "synthetic only", "rawDumpRestored": false, "productionDatabaseAccessed": false, "createdAndDroppedUniqueTestDatabase": true},
-  "observedTests": {"sourceFreeBackend": 37, "privateLegacyRuntime": 2, "frontendContract": 4, "packagedBrowser": 4, "sourceScanner": 3, "referenceSuites": 23},
+  "runtime": {
+    "dotnetSdk": "10.0.401",
+    "dotnetRuntime": "10.0.12",
+    "os": "Ubuntu 24.04 Linux x64",
+    "sqlServer": "17.0.4065.4 Enterprise Developer"
+  },
+  "databaseFixture": {
+    "sourceTableDdlCount": 10,
+    "rows": "synthetic only",
+    "rawDumpRestored": false,
+    "productionDatabaseAccessed": false,
+    "createdAndDroppedUniqueTestDatabase": true
+  },
+  "observedTests": {
+    "sourceFreeBackend": 37,
+    "privateLegacyRuntime": 2,
+    "frontendContract": 5,
+    "packagedBrowser": 4,
+    "sourceScanner": 3,
+    "referenceSuites": 23
+  },
   "legacyRuntimeClaims": [
     "Actual pinned DLL normal stored-password check accepts a generated synthetic hash and rejects wrong password, different username and malformed hash.",
     "Modified DLL is rejected; no system-password verification or Connector startup is called.",
-    "Eight source table DDLs execute on a disposable SQL Server with synthetic fixtures.",
+    "Ten source table DDLs execute on a disposable SQL Server with synthetic fixtures.",
     "Canonical SQL login, permission/group/credential revocation and injection denial are observed.",
     "Typed purchase-order query restricts branches, paginates and treats wildcard search characters literally.",
     "Schema and synthetic pure-DLL health probes succeed while business readiness remains blocked.",
-    "Real HTTPS browser login, purchase-order navigation/Grid/search, crafted other-branch 403, logout and subsequent workspace 401 are observed."
+    "Real HTTPS browser login, purchase-order navigation/Grid/search, crafted other-branch 403, logout and subsequent workspace 401 are observed.",
+    "Both typed line-detail shapes preserve exact decimal scale and null quantities, require scoped enabled parent documents, paginate and exclude orphan/other-branch rows.",
+    "Hidden and missing parents both return 404; oversized IDs, cross-company reads, injection attempts and revoked grants are denied.",
+    "Real HTTPS browser verifies purchase-order Enter/Escape focus restoration, inbound details and mobile containment with zero browser errors."
   ],
   "releaseStatus": "BLOCKED_BUSINESS_AND_RUNTIME_ACCEPTANCE",
   "limits": [
