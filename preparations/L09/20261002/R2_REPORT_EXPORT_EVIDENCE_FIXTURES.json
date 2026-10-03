@@ -1,0 +1,236 @@
+{
+  "schema_version": 1,
+  "lane": "L09",
+  "artifact_status": "prepared_local_only",
+  "execution_status": "NOT_RUN",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_owner": "L09",
+  "source_contracts": [
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "git_blob_sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/plans/PHASE2_SCHEDULED_EXECUTION_PLAN.md",
+      "git_blob_sha256": "9e58be73eba12f3ec9e255c4460e9e2d4ede1c26d43877d421144b56876fa532",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md",
+      "git_blob_sha256": "9cb84eb673b9d7a0a8cea3e70f2366350b8150f4a15ad42f614510f3113c1524",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/architecture/PHASE2_REALTIME_COEXISTENCE_RECOVERY_CONTRACT.md",
+      "git_blob_sha256": "e48ccffc8fa128f41c525c7c30ac4fff265a6fb8af739478281cf927afd753f4",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/architecture/PHASE2_COMMAND_TRANSACTION_CONTRACT.md",
+      "git_blob_sha256": "a819e2f2cb55b94883235ae3626157e7da641e75a727b98a8930bd712299e99c",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/erp/RPX_STRUCTURAL_EVIDENCE.md",
+      "git_blob_sha256": "23766cc08c6e1f085846e8110f6d630f08fd1f1d0cdb36b9bea77ba4e4f349d7",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/web/GRID_MOBILE_IMPLEMENTATION_CONTRACT.md",
+      "git_blob_sha256": "b59d80f754cd3108c415a458f83c19dc7c7c197998e23fa12f258adaeafb3418",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/web/PHASE2_FRONTEND_ACCEPTANCE.md",
+      "git_blob_sha256": "668c3f410cbc5793aa3be1f032130a31d07bbf075c9153a778af5e3ac2d4422a",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/web/UX_STRESS_ACCEPTANCE.md",
+      "git_blob_sha256": "56a9163d45ad3c6787ca280db17c0ce69f6f31a5525ba1c94ac943d114649e03",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "git_blob_sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "git_blob_sha256": "868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "git_blob_sha256": "338ac433b907f42e720fe3564d3041fef2322036d7405bdf0c7e08942ce3bb13",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "inventories/traceability/FILTER_TRACEABILITY_SCOPE_AUDIT.md",
+      "git_blob_sha256": "2405377c8f751cf92ff6c5aced05b3b3b5481c599fb76b689d53b3cce43191f1",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    }
+  ],
+  "safety_limits": [
+    "sanitized metadata and synthetic fixtures only",
+    "no GitHub mutation, runtime connection, SQL execution, backup, restore, deployment, or production operation",
+    "candidate/static evidence does not establish reachability, runtime behavior, authorization, recovery success, RPO, or RTO",
+    "all product/runtime/CI results remain NOT_RUN until an eligible fenced lease and required environments exist"
+  ],
+  "unit": "R2",
+  "issue": 25,
+  "title": "Candidate report, reachability, scoped export and artifact authorization fixtures",
+  "eligibility": {
+    "graph_status": "BLOCKED",
+    "dependencies": [
+      "B2",
+      "exact ERP/report reachability",
+      "export authority"
+    ],
+    "unmet": [
+      "authoritative complete 786-member manifest",
+      "current navigation/runtime invocation evidence",
+      "typed parameter and subreport binding",
+      "report/export/status/download authorization contract",
+      "retention/storage/runtime evidence"
+    ]
+  },
+  "verified_static_facts": {
+    "candidate_current_rpx_count": 786,
+    "embedded_script_report_count": 119,
+    "subreport_control_count": 31,
+    "subreport_parent_count": 8,
+    "image_report_count": 74,
+    "barcode_report_count": 7,
+    "chart_report_count": 1,
+    "direct_binding_lead": {
+      "parent": "ERP-RPT-AP_GoodsInspectionAndReceivingReport",
+      "identifier": "IV_GetInboundRequestDetailsByDocumentIDStp",
+      "parameter": "DocumentID",
+      "disposition": "lead_only_waiting_B2_signature_dependency_resolution"
+    }
+  },
+  "non_inferences": [
+    "packaged candidate is not a reachable menu/report",
+    "31 subreport controls are not 31 unique reports",
+    "RPX script is not executable in the Web client",
+    "one metadata binding does not generalize to all reports",
+    "grid visibility does not grant export/status/download",
+    "report run snapshot does not enable SQL SNAPSHOT isolation"
+  ],
+  "cases": [
+    {
+      "id": "R2-01",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "candidate RPX has no current menu/runtime invocation proof",
+      "expected_fail_closed_behavior": "keep report unsupported/unreachable",
+      "required_evidence_to_pass": "current build menu path, capability, invocation trace and source identity"
+    },
+    {
+      "id": "R2-02",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "parent report requested while a packaged subreport dependency is absent",
+      "expected_fail_closed_behavior": "reject run as incomplete",
+      "required_evidence_to_pass": "complete parent/subreport manifest, hashes and engine load proof"
+    },
+    {
+      "id": "R2-03",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "RPX contains embedded C# or VB.NET script",
+      "expected_fail_closed_behavior": "refuse client execution and require reviewed server disposition",
+      "required_evidence_to_pass": "script behavior inventory and parity tests"
+    },
+    {
+      "id": "R2-04",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "role may view grid but lacks export capability",
+      "expected_fail_closed_behavior": "deny export dispatch with no count/data leak",
+      "required_evidence_to_pass": "server export policy and denied-role test"
+    },
+    {
+      "id": "R2-05",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "role is revoked or company scope changes after job dispatch",
+      "expected_fail_closed_behavior": "reauthorize status and download; deny foreign/stale context",
+      "required_evidence_to_pass": "scoped job/artifact identity and revoke tests"
+    },
+    {
+      "id": "R2-06",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "CSV cell begins with =, +, -, or @ from untrusted text",
+      "expected_fail_closed_behavior": "neutralize per reviewed format contract",
+      "required_evidence_to_pass": "round-trip formula safety test in target spreadsheet consumers"
+    },
+    {
+      "id": "R2-07",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "lost acknowledgement after long report submission",
+      "expected_fail_closed_behavior": "reconcile durable job identity before retry",
+      "required_evidence_to_pass": "idempotent dispatch/reconciliation contract and retained run reference"
+    },
+    {
+      "id": "R2-08",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "masked field omitted in UI but requested via filter/sort/total/export",
+      "expected_fail_closed_behavior": "reject unauthorized field operation without inference leak",
+      "required_evidence_to_pass": "field-level query/aggregation/export matrix"
+    },
+    {
+      "id": "R2-09",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "report output is labeled snapshot without timezone, parameters or data-as-of",
+      "expected_fail_closed_behavior": "do not claim immutable run identity",
+      "required_evidence_to_pass": "documented consistency method and run metadata"
+    },
+    {
+      "id": "R2-10",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "barcode/QR report looks visually similar",
+      "expected_fail_closed_behavior": "do not accept parity from screenshot",
+      "required_evidence_to_pass": "machine-decode acceptance using reviewed symbology/content rules"
+    },
+    {
+      "id": "R2-11",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "direct data-call identifier is present in one RPX family",
+      "expected_fail_closed_behavior": "do not execute or infer signature/permission",
+      "required_evidence_to_pass": "B2 object identity, parameters, dependencies and least-privilege adapter review"
+    },
+    {
+      "id": "R2-12",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "bounded named examples are mistaken for the full 786-report inventory",
+      "expected_fail_closed_behavior": "keep exhaustive report disposition open",
+      "required_evidence_to_pass": "source-set-equal stable-ID manifest with zero omitted/duplicate members"
+    },
+    {
+      "id": "R2-13",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "job is queued under scope generation A then worker starts after role/company generation B",
+      "expected_fail_closed_behavior": "worker reauthorizes immutable job scope immediately before execution and refuses stale/widened authority",
+      "required_evidence_to_pass": "queued-worker dispatch fence with principal/scope/capability generation test"
+    },
+    {
+      "id": "R2-14",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "queued job payload is edited or rebound to a broader report/parameter set",
+      "expected_fail_closed_behavior": "immutable request fingerprint and registered report contract mismatch reject dispatch",
+      "required_evidence_to_pass": "durable immutable job envelope and tamper test"
+    },
+    {
+      "id": "R2-15",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "artifact is generated correctly but storage key or download token crosses tenant/company scope",
+      "expected_fail_closed_behavior": "artifact namespace and token stay narrow; download reauthorizes current scope",
+      "required_evidence_to_pass": "cross-scope storage/token isolation and expiry test"
+    },
+    {
+      "id": "R2-16",
+      "execution_status": "NOT_RUN",
+      "synthetic_trigger": "report job succeeds after requester loses access",
+      "expected_fail_closed_behavior": "retain operational result per policy but deny status/content visibility and do not notify unauthorized principal",
+      "required_evidence_to_pass": "revocation test across dispatch, completion, status, notification and download"
+    }
+  ]
+}

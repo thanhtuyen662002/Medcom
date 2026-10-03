@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "lane": "L07",
+  "artifact_status": "prepared_local_only",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_issues": [22, 24],
+  "source_contracts": [
+    {"path":"docs/architecture/PHASE2_COMMAND_TRANSACTION_CONTRACT.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","sha256":"a819e2f2cb55b94883235ae3626157e7da641e75a727b98a8930bd712299e99c"},
+    {"path":"docs/db/CONCURRENCY_TRANSACTION_CONTRACTS.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","sha256":"5d3a5f84feb79dcfd024531fd9a0b25072756ab5c1c2899edcc52756dfa66b5c"},
+    {"path":"docs/db/LOCKING_TRANSACTION_HOTSPOTS.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","sha256":"c0a34a5db9265a0cc946d9ad4cb85bd8f2d736fde84fdfdedaade835c0e401eb"},
+    {"path":"docs/architecture/PHASE2_AUDIT_TRACE_CONTRACT.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","sha256":"e552f88a122745ee5e90754115ac832db9de2e16ae0c8f8cc35e650d56e2114c"},
+    {"path":"docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","sha256":"9d9b7157027cce55e3d24d7ade4e554e7205d34a9393bb67f21f60164190c1e0"},
+    {"path":"docs/web/UX_RUNTIME_FEEDBACK_SESSION.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","sha256":"a397a8df0049481cc91df81cfd664deb42e99baa3e060cc534d396c8a4e277a0"},
+    {"path":"docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","sha256":"c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84"},
+    {"path":"docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","sha256":"868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b"},
+    {"path":"docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","sha256":"d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168"},
+    {"path":"docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","sha256":"338ac433b907f42e720fe3564d3041fef2322036d7405bdf0c7e08942ce3bb13"}
+  ],
+  "limits": [
+    "no L07 dispatcher lease or writer token; bounded repair applied by L01 under explicit L07-to-L01 preparation sublease",
+    "no exact pilot command signature, procedure binding, transaction owner or hook order proved",
+    "no authorized raw SQL/source/runtime opened or executed",
+    "no database mutation, lock test or legacy command dispatch",
+    "no product code, CI or current-head implementation test",
+    "no GitHub mutation or issue closure is proved by this local artifact"
+  ],
+  "unit_id": "L07-B5-RETENTION-RESTORE",
+  "graph_id": "B5",
+  "issue": 24,
+  "objective": "Block purge, retry and dispatch until ledger retention windows and a coherent cross-store restore frontier are evidenced.",
+  "current_decision": "BLOCKED_WINDOWS_AND_RESTORE_FRONTIER_UNKNOWN",
+  "purge_or_dispatch_authorized": false,
+  "requirements": [
+    {"id":"LRG-01","name":"terminal-operation retention window","state":"MISSING_NOT_PROVIDED","owner":"B5/A5","acceptance":"versioned duration and legal/business source"},
+    {"id":"LRG-02","name":"OutcomeUnknown/InProgress retention floor","state":"MISSING_NOT_PROVIDED","owner":"B5","acceptance":"never silently purged or made reusable"},
+    {"id":"LRG-03","name":"safe tombstone schema","state":"MISSING_NOT_PROVIDED","owner":"B5/A5","acceptance":"stable key and immutable fingerprint survive payload purge"},
+    {"id":"LRG-04","name":"business store restore identity","state":"MISSING_NOT_PROVIDED","owner":"R4/B5","acceptance":"verified backup and restored frontier marker"},
+    {"id":"LRG-05","name":"ledger restore identity","state":"MISSING_NOT_PROVIDED","owner":"R4/B5","acceptance":"ledger frontier joins business commit identity"},
+    {"id":"LRG-06","name":"audit restore identity","state":"MISSING_NOT_PROVIDED","owner":"R4/A6","acceptance":"audit frontier joins operation and actor identity"},
+    {"id":"LRG-07","name":"outbox/hook restore identity","state":"MISSING_NOT_PROVIDED","owner":"R4/R1","acceptance":"mandatory effect frontier and replay rule"},
+    {"id":"LRG-08","name":"restore-frontier comparison","state":"MISSING_NOT_PROVIDED","owner":"R4/B5","acceptance":"business/ledger/audit/outbox compatibility decision"},
+    {"id":"LRG-09","name":"dispatch-disabled restore rehearsal","state":"MISSING_NOT_PROVIDED","owner":"R4/B5","acceptance":"isolated restore begins with dispatch disabled"},
+    {"id":"LRG-10","name":"current authorization at disclosure/replay","state":"MISSING_NOT_PROVIDED","owner":"A4/B5","acceptance":"reauthorize current principal and scope"},
+    {"id":"LRG-11","name":"wall-clock and skew source","state":"MISSING_NOT_PROVIDED","owner":"A5/B5","acceptance":"authoritative clock, skew and expiry semantics"},
+    {"id":"LRG-12","name":"independent review and exact-head evidence","state":"MISSING_NOT_PROVIDED","owner":"L10/L01","acceptance":"reviewed policy, isolated rehearsal and exact-head checks"}
+  ],
+  "state_machine": {
+    "initial": "BLOCKED_WINDOWS_AND_RESTORE_FRONTIER_UNKNOWN",
+    "ready": "READY_FOR_ISOLATED_RETENTION_RESTORE_REHEARSAL",
+    "all_requirements_required": true,
+    "automatic_transition": "PROHIBITED",
+    "rule": "only an independently reviewed evidence set may advance readiness; wall-clock age alone never enables purge, reuse, replay or dispatch"
+  },
+  "cases": [
+    {"id":"LRC-01","role":"operator","execution_status":"NOT_RUN","stimulus":"purge an expired successful entry","expected":"blocked until the verified terminal window and safe tombstone contract apply"},
+    {"id":"LRC-02","role":"internal_malicious_user","execution_status":"NOT_RUN","stimulus":"purge an OutcomeUnknown/InProgress key after a guessed timeout","expected":"deny; unknown/in-progress keys are never silently purged into reusable slots"},
+    {"id":"LRC-03","role":"SRE","execution_status":"NOT_RUN","stimulus":"restore business data newer than the idempotency ledger","expected":"dispatch disabled until a compatible restore frontier and reconciliation are proved"},
+    {"id":"LRC-04","role":"SRE","execution_status":"NOT_RUN","stimulus":"restore ledger newer than business data","expected":"dispatch disabled; do not infer missing business effects are safe to replay"},
+    {"id":"LRC-05","role":"auditor","execution_status":"NOT_RUN","stimulus":"restore business and ledger while audit or outbox is older","expected":"block readiness because business/ledger/audit/outbox frontiers diverge"},
+    {"id":"LRC-06","role":"manager","execution_status":"NOT_RUN","stimulus":"request old result after tenant, company or permission change","expected":"current authorization controls disclosure regardless of original completion"},
+    {"id":"LRC-07","role":"DBA","execution_status":"NOT_RUN","stimulus":"claim recovery from backup existence without isolated restore","expected":"remain blocked until isolated cross-store restore and reconciliation evidence exists"},
+    {"id":"LRC-08","role":"release_manager","execution_status":"NOT_RUN","stimulus":"set a retention duration without legal/business/config provenance","expected":"reject invented duration and preserve UNKNOWN"},
+    {"id":"LRC-09","role":"SRE","execution_status":"NOT_RUN","stimulus":"wall-clock moves backward or nodes disagree around expiry","expected":"no automatic purge/reuse; authoritative clock and skew policy required"},
+    {"id":"LRC-10","role":"independent_reviewer","execution_status":"NOT_RUN","stimulus":"promote readiness from local fixtures or owner self-review","expected":"deny until independent review, exact-head checks and isolated rehearsal all pass"}
+  ],
+  "execution_status": "NOT_RUN"
+}

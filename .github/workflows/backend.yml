@@ -1,0 +1,104 @@
+name: Backend foundation
+on:
+  push:
+    branches: [main, medcom-schedule-activation-20261002, 'medcom-work/**', 'medcom-ci/**']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: backend-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: src/frontend/package-lock.json
+      - name: Verify project boundaries
+        run: python tools/backend/check_architecture.py
+      - name: Verify integration and package guard regressions
+        run: python -m unittest discover -s .github/scripts -p 'test_*.py'
+      - name: Verify claimed worker scope against trusted base
+        if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'medcom-work/g45/')
+        env:
+          WORKER_BRANCH: ${{ github.head_ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python .github/scripts/claim_scope.py --branch "$WORKER_BRANCH" --base "$BASE_SHA" --head "$SOURCE_SHA"
+      - name: Restore
+        run: dotnet restore Medcom.slnx --locked-mode
+      - name: Build with analyzers
+        run: dotnet build Medcom.slnx --configuration Release --no-restore
+      - name: Test actual HTTP boundary
+        run: dotnet test Medcom.slnx --configuration Release --no-build --filter 'Category!=LegacyRuntime' --logger 'trx;LogFileName=backend.trx'
+      - name: Verify prepared reference models
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python tools/backend/run_preparation_checks.py
+      - name: Verify finite source metadata and scanner regressions
+        run: python tools/source/validate_catalog.py && python -m unittest discover -s tools/source -p 'test_*.py'
+      - name: Install frontend dependencies
+        working-directory: src/frontend
+        run: npm ci
+      - name: Verify frontend contracts and types
+        working-directory: src/frontend
+        run: npm test && npm run typecheck
+      - name: Build frontend
+        working-directory: src/frontend
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: npm run build
+      - name: Package API and frontend
+        run: python tools/deploy/package.py
+      - name: Verify candidate archive integrity
+        run: python .github/scripts/package_integrity.py artifacts/medcom-server-candidate.zip
+      - name: Install browser for end-to-end checks
+        working-directory: src/frontend
+        run: npx playwright install --with-deps chromium
+      - name: Test packaged HTTPS app in browser
+        working-directory: src/frontend
+        run: npm run test:e2e
+      - name: Record tested merge provenance
+        if: github.event_name == 'pull_request'
+        env:
+          TEST_EVENT: ${{ github.event_name }}
+          TEST_SOURCE: ${{ github.event.pull_request.head.sha }}
+          TEST_BASE: ${{ github.event.pull_request.base.sha }}
+          TEST_RUN_ID: ${{ github.run_id }}
+          TEST_REPOSITORY: ${{ github.repository }}
+        run: python .github/scripts/tested_receipt.py --output artifacts/tested-merge.json
+      - uses: actions/upload-artifact@v4
+        if: success() && github.event_name == 'pull_request'
+        with:
+          name: tested-merge
+          path: artifacts/tested-merge.json
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-test-results
+          path: '**/TestResults/*.trx'
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: medcom-server-candidate
+          path: |
+            artifacts/medcom-server-candidate.zip
+            artifacts/medcom-verify-package.py
+            artifacts/medcom-candidate.sha256
+          if-no-files-found: error

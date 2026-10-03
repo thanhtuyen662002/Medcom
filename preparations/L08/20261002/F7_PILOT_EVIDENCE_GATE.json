@@ -1,0 +1,189 @@
+{
+  "schema_version": 1,
+  "lane": "L08",
+  "artifact_status": "prepared_local_only",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_issues": [
+    32,
+    33,
+    34,
+    35,
+    42
+  ],
+  "source_contracts": [
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "9d9b7157027cce55e3d24d7ade4e554e7205d34a9393bb67f21f60164190c1e0",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/web/PHASE2_PILOT_FRONTEND_IMPLEMENTATION_PACK.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "ca5fbb87a9a34262e41b8134693b2f7a69b186c30f6682691132091aaa70af35",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/PHASE2_PILOT_FRONTEND_IMPLEMENTATION_PACK.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "4a48658994a7a70ad809587c2100cb3f6340526e508805f4ebee11710574f4d6",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "inventories/traceability/FILTER_TRACEABILITY_SCOPE_AUDIT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "2405377c8f751cf92ff6c5aced05b3b3b5481c599fb76b689d53b3cce43191f1",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/inventories/traceability/FILTER_TRACEABILITY_SCOPE_AUDIT.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "inventories/traceability/FILTER_FAMILY_TRACEABILITY_REGISTER.json",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "bf467cc1843939098319f57028ae60c5ed7243ff78ce9f0bafde8f8432ce36bf",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/inventories/traceability/FILTER_FAMILY_TRACEABILITY_REGISTER.json",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "338ac433b907f42e720fe3564d3041fef2322036d7405bdf0c7e08942ce3bb13",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "9cb84eb673b9d7a0a8cea3e70f2366350b8150f4a15ad42f614510f3113c1524",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    }
+  ],
+  "limits": [
+    "no L08 dispatcher lease or writer token",
+    "no complete approved ERP/source manifest",
+    "no complete B2 database catalog or exact per-pilot dependencies",
+    "no verified mutation signature, state machine, transaction or idempotency contract",
+    "no product/API/browser/database execution",
+    "no GitHub mutation or issue closure",
+    "mock/test-double evidence cannot enable real users or close a pilot"
+  ],
+  "execution_status": "NOT_RUN",
+  "eligible_to_code": false,
+  "unit_id": "L08-P4-PURCHASE-APPROVAL-GATE",
+  "graph_id": "F7",
+  "issue": 34,
+  "pilot_id": "P4-PURCHASE-APPROVAL",
+  "requested_intent": "Mua hàng → Duyệt đề nghị mua hàng",
+  "observed_candidates": [
+    "ERP-FRM-AP_ApprovePurchaseRequestListFrm",
+    "DB-TABLE-dbo.AP_PurchaseRequestTbl",
+    "DB-TABLE-dbo.AP_PurchaseRequestDetailTbl"
+  ],
+  "verified_or_corroborated": [
+    "packaged form/filter/table candidates",
+    "approval interaction design is reusable only"
+  ],
+  "blocked_facts": [
+    "current route/menu reachability",
+    "approve/reject/return action identifiers and exact meanings",
+    "state graph and eligible transitions",
+    "procedure/signature/transaction owner/locks/hooks",
+    "approver authority, separation-of-duties and idempotency"
+  ],
+  "forbidden_inferences": [
+    "button caption does not prove transition",
+    "generic approval UX does not authorize an action",
+    "table candidate does not prove workflow state column",
+    "success cannot precede authoritative resulting-state reread"
+  ],
+  "dependency_gates": [
+    "A4 capability and B4 effective scope",
+    "B1 typed query and B2 exact catalog/bindings",
+    "B3 typed command and exact transaction/effect audit",
+    "B5 concurrency/idempotency/OutcomeUnknown per action",
+    "F1/F2/F3 shared shell/Grid/form primitives",
+    "current source/build/menu/action evidence",
+    "Q1/Q2/Q3 applicable independent acceptance"
+  ],
+  "acceptance_before_binding": [
+    "exact source/build/menu/form/variant identity",
+    "exact list/detail DTO and field/join/alias binding",
+    "allowed and denied role plus direct-route/API/export scope tests",
+    "each mutation maps to a reviewed ActionId, state guard and authoritative reread",
+    "transaction owner/hooks/triggers/mandatory effects and retry classification",
+    "desktop/mobile/freshness/conflict/OutcomeUnknown acceptance",
+    "current-head independent review and required CI green"
+  ],
+  "cases": [
+    {
+      "id": "P4-01",
+      "scenario": "candidate list renders purchase requests",
+      "expected": "read candidate does not enable approve/reject/return"
+    },
+    {
+      "id": "P4-02",
+      "scenario": "approve action is inferred from form name",
+      "expected": "omit until exact ActionId/source/SP/state evidence"
+    },
+    {
+      "id": "P4-03",
+      "scenario": "reject and return are treated as synonyms",
+      "expected": "keep separate UNKNOWN transitions and payload/reason rules"
+    },
+    {
+      "id": "P4-04",
+      "scenario": "client submits target state directly",
+      "expected": "server registry selects permitted transition from current state"
+    },
+    {
+      "id": "P4-05",
+      "scenario": "stale approval state changes while queued",
+      "expected": "reauthorize and reread under protected boundary"
+    },
+    {
+      "id": "P4-06",
+      "scenario": "same user requests and approves",
+      "expected": "separation-of-duties rule remains evidence-bound and fail-closed"
+    },
+    {
+      "id": "P4-07",
+      "scenario": "duplicate approval submit",
+      "expected": "scoped idempotency/fingerprint and resulting-state reconciliation required"
+    },
+    {
+      "id": "P4-08",
+      "scenario": "ACK lost after possible approval commit",
+      "expected": "OutcomeUnknown; no second approval"
+    },
+    {
+      "id": "P4-09",
+      "scenario": "mandatory notification/audit hook remains pending",
+      "expected": "no final success until action-specific completion predicate"
+    },
+    {
+      "id": "P4-10",
+      "scenario": "foreign company request ID",
+      "expected": "deny without revealing request existence/state"
+    },
+    {
+      "id": "P4-11",
+      "scenario": "export list offered from view grant",
+      "expected": "independent export/report authorization required"
+    },
+    {
+      "id": "P4-12",
+      "scenario": "generic approval component passes tests",
+      "expected": "component preparation cannot close F7"
+    }
+  ]
+}

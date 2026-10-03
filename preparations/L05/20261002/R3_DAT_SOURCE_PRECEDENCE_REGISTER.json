@@ -1,0 +1,195 @@
+{
+  "schema_version": 1,
+  "lane": "L05",
+  "artifact_status": "prepared_local_only",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_issues": [
+    16,
+    18,
+    26
+  ],
+  "source_contracts": [
+    {
+      "path": "docs/db/CONFIGURATION_OBJECT_CATALOG.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "a8cb863be9b001a9e81fe3f91b17b7370096accb66153cdcc1a744ad37fe8245",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/db/CONFIGURATION_OBJECT_CATALOG.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/architecture/PHASE2_SCREEN_DEFINITION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "aeb14d0db338c24d98dce32f1eb986ff6e771abd5c799a151a8536c9dbba2316",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_SCREEN_DEFINITION_CONTRACT.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/erp/DAT_LAYOUT_CORROBORATION.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c2dc4ea6cc61b46edb12b7ebf0f1edfdbb6975f7d9df29f4f0448deadcdccedf",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/DAT_LAYOUT_CORROBORATION.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "87a9165f370e30294d69a409e81c918f1f2425c2eeeb86d534d68d79762a14ad",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/erp/TEMPLATES_PERSONALIZATION_UPDATE_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "ef8ec347a29a39e5b112225c923f9ec751a3d4e9ca097ba6abbe3b889ebff25f",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/TEMPLATES_PERSONALIZATION_UPDATE_EVIDENCE.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "4a48658994a7a70ad809587c2100cb3f6340526e508805f4ebee11710574f4d6",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "inventories/erp/WINFORMS_PROPERTY_KEY_INDEX.json",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c41eb90ae522a45819f810f3ac69e2cf902f5d47f295163de5056dcfcb4fe50c",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/inventories/erp/WINFORMS_PROPERTY_KEY_INDEX.json",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "access": "sanitized repository evidence"
+    }
+  ],
+  "limits": [
+    "no L05 dispatcher lease or writer token",
+    "no approved raw DAT/source archive opened in this run",
+    "no SY_* rows or executable config bodies inspected or executed",
+    "no legacy database/config write or migration",
+    "no product/compiler runtime test or CI",
+    "no GitHub mutation or issue closure"
+  ],
+  "unit_id": "L05-R3-SOURCE-PRECEDENCE",
+  "graph_id": "R3",
+  "issue": 26,
+  "objective": "Enumerate known configuration source classes and the evidence needed before deciding runtime precedence.",
+  "sources": [
+    {
+      "id": "SRC-DAT-ROOT",
+      "population": "232 packaged DAT XML artifacts",
+      "verified": "all parse as XML; 23 exact executable/non-filter basename matches",
+      "unknown": "complete 232-DAT and 23-form exact membership is not durably retained; pending approved-source manifest, runtime loader, scope and precedence",
+      "trust": "package input; presentation/executable classification required"
+    },
+    {
+      "id": "SRC-DAT-FILTER",
+      "population": "24 filter DAT artifacts, 13 families, 600 rows",
+      "verified": "persisted operator/type/order/visibility and 18 literal DB reference names in bounded register",
+      "unknown": "alias resolution, runtime query builder and override precedence",
+      "trust": "typed filter seed only; no client SQL authority"
+    },
+    {
+      "id": "SRC-DB-SY",
+      "population": "13 named SY_* objects in current catalog slice",
+      "verified": "DDL object presence and capability-shaped columns",
+      "unknown": "current rows, exact keys/indexes/dependencies/precedence/executable semantics",
+      "trust": "server-side facade candidate after B2/R3"
+    },
+    {
+      "id": "SRC-GUIDE-SY_FRMCFG",
+      "population": "293 property/key pairs across nine attributed consumers",
+      "verified": "attachment bytes/index extraction",
+      "unknown": "current source/build/schema/runtime correspondence and actual default/getter precedence",
+      "trust": "INFERRED legacy behavior; fixture design only"
+    },
+    {
+      "id": "SRC-USER-PACKAGE",
+      "population": "two DATA artifacts and one remember-state artifact",
+      "verified": "package presence",
+      "unknown": "preference, context, company/branch, permission or other semantics",
+      "trust": "excluded from migration until safely classified; private contents omitted"
+    },
+    {
+      "id": "SRC-ADMIN-WEB",
+      "population": "future versioned admin publication",
+      "verified": "reviewed target contract",
+      "unknown": "physical persistence pending A5 reconciliation",
+      "trust": "authorized immutable candidate only after validation"
+    }
+  ],
+  "legacy_precedence": "UNKNOWN; do not claim packaged DAT < DB < company < role < user until source/runtime verifies it",
+  "target_web_presentation_precedence": "system then company then role then user, subject to validated immutable versions; cannot grant capability or widen scope",
+  "fail_closed_selection": [
+    "source identity includes build/package hash, tenant/company scope, FID/variant/PFID and persisted row identity/version",
+    "workstation/local source cannot override shared defaults without an explicit authorized scope contract",
+    "basename, prefix and newest timestamp do not select authority",
+    "duplicate/ambiguous tuples are quarantined",
+    "missed events are reconciled by authoritative source hash scan",
+    "unknown source kinds remain unsupported while previous-good stays active"
+  ],
+  "execution_status": "NOT_RUN",
+  "source_identity_fields": [
+    "source_kind",
+    "package_or_build_hash",
+    "qualified_relative_path_or_db_object_id",
+    "tenant",
+    "company",
+    "branch_if_verified",
+    "fid",
+    "variant",
+    "pfid",
+    "persisted_row_id_or_version",
+    "content_hash"
+  ],
+  "precedence_conflict_cases": [
+    {
+      "id": "PRE-01",
+      "conflict": "same basename in two qualified DAT paths",
+      "decision": "path-qualified identities remain distinct; no newest-file winner"
+    },
+    {
+      "id": "PRE-02",
+      "conflict": "packaged DAT and SY row disagree",
+      "decision": "legacy precedence remains UNKNOWN; quarantine executable disagreement and retain previous-good"
+    },
+    {
+      "id": "PRE-03",
+      "conflict": "local/workstation artifact is newer than shared source",
+      "decision": "local timestamp cannot override shared authority"
+    },
+    {
+      "id": "PRE-04",
+      "conflict": "user artifact lacks verified tenant/company/principal binding",
+      "decision": "exclude private contents and do not migrate or apply"
+    },
+    {
+      "id": "PRE-05",
+      "conflict": "admin candidate was compiled from incomplete source-set manifest",
+      "decision": "candidate cannot publish even if individual file hashes validate"
+    },
+    {
+      "id": "PRE-06",
+      "conflict": "source disappears after a previously successful publication",
+      "decision": "record tombstone/removal candidate and require reviewed semantics; never silently preserve or delete capability"
+    }
+  ]
+}

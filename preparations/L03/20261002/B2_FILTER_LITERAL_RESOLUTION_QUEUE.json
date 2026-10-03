@@ -1,0 +1,534 @@
+{
+  "schema_version": 1,
+  "lane": "L03",
+  "artifact_status": "prepared_local_only",
+  "execution_status": "NOT_RUN",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_owner": "L03",
+  "source_contracts": [
+    {
+      "path": "docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "338ac433b907f42e720fe3564d3041fef2322036d7405bdf0c7e08942ce3bb13",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md"
+    },
+    {
+      "path": "docs/db/PHASE1_CATALOG_COVERAGE_MATRIX.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "0f3bb2ef99e105dd337bb42fcbe0b0e5f3843cd00e961c0a83d0171716e817ec",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/db/PHASE1_CATALOG_COVERAGE_MATRIX.md"
+    },
+    {
+      "path": "docs/db/BASELINE_INVENTORY.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "6d87cdceaa664c1d7c0829d9763da25122ad2da416994a64106edeaac9f40b4f",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/db/BASELINE_INVENTORY.md"
+    },
+    {
+      "path": "docs/EVIDENCE_STANDARDS.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "b330291378041fc197796deaab6d49c72a9563fdbe2c5fd990fd827b266e1910",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/EVIDENCE_STANDARDS.md"
+    },
+    {
+      "path": "docs/SOURCE_BASELINE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "6f9fb08b0d1f3af2def0809f2d5a194082403249ff9119a1f2605551c93658b8",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/SOURCE_BASELINE.md"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "9cb84eb673b9d7a0a8cea3e70f2366350b8150f4a15ad42f614510f3113c1524",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md"
+    },
+    {
+      "path": "inventories/traceability/FILTER_FAMILY_TRACEABILITY_REGISTER.json",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "bf467cc1843939098319f57028ae60c5ed7243ff78ce9f0bafde8f8432ce36bf",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/inventories/traceability/FILTER_FAMILY_TRACEABILITY_REGISTER.json"
+    },
+    {
+      "path": "inventories/traceability/FILTER_TRACEABILITY_SCOPE_AUDIT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "2405377c8f751cf92ff6c5aced05b3b3b5481c599fb76b689d53b3cce43191f1",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/inventories/traceability/FILTER_TRACEABILITY_SCOPE_AUDIT.md"
+    },
+    {
+      "path": "docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "9d9b7157027cce55e3d24d7ade4e554e7205d34a9393bb67f21f60164190c1e0",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md"
+    }
+  ],
+  "safety_limits": [
+    "sanitized metadata and synthetic fixtures only; no raw SQL, data rows, secrets, credentials or connection material",
+    "no GitHub mutation, SQL execution, legacy runtime, product implementation, deployment or production operation",
+    "aggregate counts and filename conventions never substitute for exact authoritative catalog identities",
+    "all product/runtime execution remains NOT_RUN and TRC-DB-001 stays open"
+  ],
+  "unit": "B2Q",
+  "issue": 21,
+  "title": "Exact filter literal to catalog resolution queue",
+  "eligibility": {
+    "writer_lease": "NOT_GRANTED",
+    "dispatcher_fencing": "NOT_PROVEN",
+    "authoritative_sql_bytes": "NOT_ACCESSIBLE",
+    "eligible_to_code": false
+  },
+  "future_execution_record_fields": [
+    "stimulus_timestamp",
+    "observed_result",
+    "authoritative_source_identity",
+    "exact_head",
+    "environment_identity",
+    "parser_version",
+    "reviewer"
+  ],
+  "bounded_filter_slice": {
+    "families": 13,
+    "artifacts": 24,
+    "serialized_rows": 600,
+    "literal_names": 18,
+    "scope": "complete only for explicitly enumerated filter slice"
+  },
+  "cases": [
+    {
+      "id": "B2Q-01",
+      "role": "catalog_resolver",
+      "execution_status": "NOT_RUN",
+      "entry_point": "persisted FieldID literal",
+      "literal_name": "AP_OrderDetailTbl",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-AP_OrderFrm_filter_d"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 35
+        }
+      ],
+      "attack_or_failure": "infer schema, object kind, column validity or executable binding from the literal name",
+      "expected_result": "retain PENDING_B2 with no resolved catalog object until the authoritative sanitized catalog proves exact identity and requested fields/dependencies",
+      "owner_route": "B2/#21",
+      "evidence_to_pass": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name",
+      "catalog_resolution_status": "PENDING_B2",
+      "resolved_catalog_object_id": null
+    },
+    {
+      "id": "B2Q-02",
+      "role": "catalog_resolver",
+      "execution_status": "NOT_RUN",
+      "entry_point": "persisted FieldID literal",
+      "literal_name": "AP_OrderTbl",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-AP_OrderFrm_filter"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 34
+        }
+      ],
+      "attack_or_failure": "infer schema, object kind, column validity or executable binding from the literal name",
+      "expected_result": "retain PENDING_B2 with no resolved catalog object until the authoritative sanitized catalog proves exact identity and requested fields/dependencies",
+      "owner_route": "B2/#21",
+      "evidence_to_pass": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name",
+      "catalog_resolution_status": "PENDING_B2",
+      "resolved_catalog_object_id": null
+    },
+    {
+      "id": "B2Q-03",
+      "role": "catalog_resolver",
+      "execution_status": "NOT_RUN",
+      "entry_point": "persisted FieldID literal",
+      "literal_name": "AP_PurchaseDetailTbl",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-AP_PurchaseFrm_filter_d"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 37
+        }
+      ],
+      "attack_or_failure": "infer schema, object kind, column validity or executable binding from the literal name",
+      "expected_result": "retain PENDING_B2 with no resolved catalog object until the authoritative sanitized catalog proves exact identity and requested fields/dependencies",
+      "owner_route": "B2/#21",
+      "evidence_to_pass": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name",
+      "catalog_resolution_status": "PENDING_B2",
+      "resolved_catalog_object_id": null
+    },
+    {
+      "id": "B2Q-04",
+      "role": "catalog_resolver",
+      "execution_status": "NOT_RUN",
+      "entry_point": "persisted FieldID literal",
+      "literal_name": "AP_PurchaseRequestDetailTbl",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-AP_ApprovePurchaseRequestListFrm_filter_d",
+        "ERP-CFG-AP_PurposeRequestListFrm_filter_d"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 33
+        },
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 39
+        }
+      ],
+      "attack_or_failure": "infer schema, object kind, column validity or executable binding from the literal name",
+      "expected_result": "retain PENDING_B2 with no resolved catalog object until the authoritative sanitized catalog proves exact identity and requested fields/dependencies",
+      "owner_route": "B2/#21",
+      "evidence_to_pass": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name",
+      "catalog_resolution_status": "PENDING_B2",
+      "resolved_catalog_object_id": null
+    },
+    {
+      "id": "B2Q-05",
+      "role": "catalog_resolver",
+      "execution_status": "NOT_RUN",
+      "entry_point": "persisted FieldID literal",
+      "literal_name": "AP_PurchaseRequestTbl",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-AP_ApprovePurchaseRequestListFrm_filter",
+        "ERP-CFG-AP_PurposeRequestListFrm_filter"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 32
+        },
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 38
+        }
+      ],
+      "attack_or_failure": "infer schema, object kind, column validity or executable binding from the literal name",
+      "expected_result": "retain PENDING_B2 with no resolved catalog object until the authoritative sanitized catalog proves exact identity and requested fields/dependencies",
+      "owner_route": "B2/#21",
+      "evidence_to_pass": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name",
+      "catalog_resolution_status": "PENDING_B2",
+      "resolved_catalog_object_id": null
+    },
+    {
+      "id": "B2Q-06",
+      "role": "catalog_resolver",
+      "execution_status": "NOT_RUN",
+      "entry_point": "persisted FieldID literal",
+      "literal_name": "AP_PurchaseTbl",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-AP_PurchaseFrm_filter"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 36
+        }
+      ],
+      "attack_or_failure": "infer schema, object kind, column validity or executable binding from the literal name",
+      "expected_result": "retain PENDING_B2 with no resolved catalog object until the authoritative sanitized catalog proves exact identity and requested fields/dependencies",
+      "owner_route": "B2/#21",
+      "evidence_to_pass": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name",
+      "catalog_resolution_status": "PENDING_B2",
+      "resolved_catalog_object_id": null
+    },
+    {
+      "id": "B2Q-07",
+      "role": "catalog_resolver",
+      "execution_status": "NOT_RUN",
+      "entry_point": "persisted FieldID literal",
+      "literal_name": "AR_InvoiceRequestDetailTbl",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-AR_InvoiceRequestFrm_filter_d"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 41
+        }
+      ],
+      "attack_or_failure": "infer schema, object kind, column validity or executable binding from the literal name",
+      "expected_result": "retain PENDING_B2 with no resolved catalog object until the authoritative sanitized catalog proves exact identity and requested fields/dependencies",
+      "owner_route": "B2/#21",
+      "evidence_to_pass": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name",
+      "catalog_resolution_status": "PENDING_B2",
+      "resolved_catalog_object_id": null
+    },
+    {
+      "id": "B2Q-08",
+      "role": "catalog_resolver",
+      "execution_status": "NOT_RUN",
+      "entry_point": "persisted FieldID literal",
+      "literal_name": "AR_InvoiceRequestTbl",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-AR_InvoiceRequestFrm_filter"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 40
+        }
+      ],
+      "attack_or_failure": "infer schema, object kind, column validity or executable binding from the literal name",
+      "expected_result": "retain PENDING_B2 with no resolved catalog object until the authoritative sanitized catalog proves exact identity and requested fields/dependencies",
+      "owner_route": "B2/#21",
+      "evidence_to_pass": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name",
+      "catalog_resolution_status": "PENDING_B2",
+      "resolved_catalog_object_id": null
+    },
+    {
+      "id": "B2Q-09",
+      "role": "catalog_resolver",
+      "execution_status": "NOT_RUN",
+      "entry_point": "persisted FieldID literal",
+      "literal_name": "AR_OrderDetailTbl",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-AR_OrderByContractFrm_filter_d",
+        "ERP-CFG-AR_OrderComfirmFrm_filter_d",
+        "ERP-CFG-AR_OrderShipFrm_filter_d"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 43
+        },
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 45
+        },
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 47
+        }
+      ],
+      "attack_or_failure": "infer schema, object kind, column validity or executable binding from the literal name",
+      "expected_result": "retain PENDING_B2 with no resolved catalog object until the authoritative sanitized catalog proves exact identity and requested fields/dependencies",
+      "owner_route": "B2/#21",
+      "evidence_to_pass": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name",
+      "catalog_resolution_status": "PENDING_B2",
+      "resolved_catalog_object_id": null
+    },
+    {
+      "id": "B2Q-10",
+      "role": "catalog_resolver",
+      "execution_status": "NOT_RUN",
+      "entry_point": "persisted FieldID literal",
+      "literal_name": "AR_OrderTbl",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-AR_OrderComfirmFrm_filter",
+        "ERP-CFG-AR_OrderShipFrm_filter"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 44
+        },
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 46
+        }
+      ],
+      "attack_or_failure": "infer schema, object kind, column validity or executable binding from the literal name",
+      "expected_result": "retain PENDING_B2 with no resolved catalog object until the authoritative sanitized catalog proves exact identity and requested fields/dependencies",
+      "owner_route": "B2/#21",
+      "evidence_to_pass": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name",
+      "catalog_resolution_status": "PENDING_B2",
+      "resolved_catalog_object_id": null
+    },
+    {
+      "id": "B2Q-11",
+      "role": "catalog_resolver",
+      "execution_status": "NOT_RUN",
+      "entry_point": "persisted FieldID literal",
+      "literal_name": "AR_OrderViewData",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-AR_OrderByContractFrm_filter"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 42
+        }
+      ],
+      "attack_or_failure": "infer schema, object kind, column validity or executable binding from the literal name",
+      "expected_result": "retain PENDING_B2 with no resolved catalog object until the authoritative sanitized catalog proves exact identity and requested fields/dependencies",
+      "owner_route": "B2/#21",
+      "evidence_to_pass": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name",
+      "catalog_resolution_status": "PENDING_B2",
+      "resolved_catalog_object_id": null
+    },
+    {
+      "id": "B2Q-12",
+      "role": "catalog_resolver",
+      "execution_status": "NOT_RUN",
+      "entry_point": "persisted FieldID literal",
+      "literal_name": "CF_ItemGroupTbl",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-ItemGroupListFrm_filter"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 55
+        }
+      ],
+      "attack_or_failure": "infer schema, object kind, column validity or executable binding from the literal name",
+      "expected_result": "retain PENDING_B2 with no resolved catalog object until the authoritative sanitized catalog proves exact identity and requested fields/dependencies",
+      "owner_route": "B2/#21",
+      "evidence_to_pass": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name",
+      "catalog_resolution_status": "PENDING_B2",
+      "resolved_catalog_object_id": null
+    },
+    {
+      "id": "B2Q-13",
+      "role": "catalog_resolver",
+      "execution_status": "NOT_RUN",
+      "entry_point": "persisted FieldID literal",
+      "literal_name": "CF_ItemTbl",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-GJ_BalanceItemFrm_filter"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 50
+        }
+      ],
+      "attack_or_failure": "infer schema, object kind, column validity or executable binding from the literal name",
+      "expected_result": "retain PENDING_B2 with no resolved catalog object until the authoritative sanitized catalog proves exact identity and requested fields/dependencies",
+      "owner_route": "B2/#21",
+      "evidence_to_pass": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name",
+      "catalog_resolution_status": "PENDING_B2",
+      "resolved_catalog_object_id": null
+    },
+    {
+      "id": "B2Q-14",
+      "role": "catalog_resolver",
+      "execution_status": "NOT_RUN",
+      "entry_point": "persisted FieldID literal",
+      "literal_name": "IV_InboundRequestDetailsTbl",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-IV_InboundRequestFrm_filter_d",
+        "ERP-CFG-IV_IncomingShipmentStatusFrm_filter_d"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 52
+        },
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 54
+        }
+      ],
+      "attack_or_failure": "infer schema, object kind, column validity or executable binding from the literal name",
+      "expected_result": "retain PENDING_B2 with no resolved catalog object until the authoritative sanitized catalog proves exact identity and requested fields/dependencies",
+      "owner_route": "B2/#21",
+      "evidence_to_pass": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name",
+      "catalog_resolution_status": "PENDING_B2",
+      "resolved_catalog_object_id": null
+    },
+    {
+      "id": "B2Q-15",
+      "role": "catalog_resolver",
+      "execution_status": "NOT_RUN",
+      "entry_point": "persisted FieldID literal",
+      "literal_name": "IV_InboundRequestTbl",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-IV_InboundRequestFrm_filter",
+        "ERP-CFG-IV_IncomingShipmentStatusFrm_filter"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 51
+        },
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 53
+        }
+      ],
+      "attack_or_failure": "infer schema, object kind, column validity or executable binding from the literal name",
+      "expected_result": "retain PENDING_B2 with no resolved catalog object until the authoritative sanitized catalog proves exact identity and requested fields/dependencies",
+      "owner_route": "B2/#21",
+      "evidence_to_pass": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name",
+      "catalog_resolution_status": "PENDING_B2",
+      "resolved_catalog_object_id": null
+    },
+    {
+      "id": "B2Q-16",
+      "role": "catalog_resolver",
+      "execution_status": "NOT_RUN",
+      "entry_point": "persisted FieldID literal",
+      "literal_name": "SY_BalanceItemTbl",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-GJ_BalanceItemFrm_filter"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 50
+        }
+      ],
+      "attack_or_failure": "infer schema, object kind, column validity or executable binding from the literal name",
+      "expected_result": "retain PENDING_B2 with no resolved catalog object until the authoritative sanitized catalog proves exact identity and requested fields/dependencies",
+      "owner_route": "B2/#21",
+      "evidence_to_pass": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name",
+      "catalog_resolution_status": "PENDING_B2",
+      "resolved_catalog_object_id": null
+    },
+    {
+      "id": "B2Q-17",
+      "role": "catalog_resolver",
+      "execution_status": "NOT_RUN",
+      "entry_point": "persisted FieldID literal",
+      "literal_name": "vIS_Input",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-AR_StockInputFrm_filter"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 48
+        }
+      ],
+      "attack_or_failure": "infer schema, object kind, column validity or executable binding from the literal name",
+      "expected_result": "retain PENDING_B2 with no resolved catalog object until the authoritative sanitized catalog proves exact identity and requested fields/dependencies",
+      "owner_route": "B2/#21",
+      "evidence_to_pass": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name",
+      "catalog_resolution_status": "PENDING_B2",
+      "resolved_catalog_object_id": null
+    },
+    {
+      "id": "B2Q-18",
+      "role": "catalog_resolver",
+      "execution_status": "NOT_RUN",
+      "entry_point": "persisted FieldID literal",
+      "literal_name": "vIS_InputDetail",
+      "referenced_by_artifact_ids": [
+        "ERP-CFG-AR_StockInputFrm_filter_d"
+      ],
+      "source_citations": [
+        {
+          "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+          "line": 49
+        }
+      ],
+      "attack_or_failure": "infer schema, object kind, column validity or executable binding from the literal name",
+      "expected_result": "retain PENDING_B2 with no resolved catalog object until the authoritative sanitized catalog proves exact identity and requested fields/dependencies",
+      "owner_route": "B2/#21",
+      "evidence_to_pass": "Resolve exact current baseline schema/kind/stable object ID, requested fields and dependencies from sanitized catalog; retain unresolved/ambiguous results as blockers; no kind inferred from Tbl/View/name",
+      "catalog_resolution_status": "PENDING_B2",
+      "resolved_catalog_object_id": null
+    }
+  ]
+}

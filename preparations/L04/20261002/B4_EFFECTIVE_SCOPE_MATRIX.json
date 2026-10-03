@@ -1,0 +1,244 @@
+{
+  "schema_version": 1,
+  "lane": "L04",
+  "artifact_status": "prepared_local_only",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_issues": [
+    19,
+    23
+  ],
+  "source_contracts": [
+    {
+      "path": "docs/erp/TOOL_DLL_METADATA_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "44da37f9d98fece9eae643b8b4c759d2dd40d20a807a37b89ea81c3d721324be",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/TOOL_DLL_METADATA_EVIDENCE.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/architecture/PHASE2_TOOL_DLL_BRIDGE_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "b4c15731c6be8874f359150052015094f0e980e92059e1c07f7c41dba70c3cfd",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_TOOL_DLL_BRIDGE_CONTRACT.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/architecture/PHASE2_AUTH_CAPABILITY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "fa8db170726d9afe02fd5b2e578e00226978f78757c4fbfcde3fa9328d18eb47",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_AUTH_CAPABILITY_CONTRACT.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "4a48658994a7a70ad809587c2100cb3f6340526e508805f4ebee11710574f4d6",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/erp/EXECUTABLE_METADATA_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "19730c6d5d4e916183cd7b79678227d47047ddc078951ae9355bf4d9bf6e4542",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/EXECUTABLE_METADATA_EVIDENCE.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "338ac433b907f42e720fe3564d3041fef2322036d7405bdf0c7e08942ce3bb13",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    }
+  ],
+  "common_limits": [
+    "no L04 writer lease or dispatcher admission",
+    "no raw approved ERP archive/source project or controlled Windows runtime opened in this run",
+    "no Tool/Tools binary executed, loaded or decompiled in this run",
+    "no legacy database or startup DDL executed",
+    "no GitHub mutation and no issue closure",
+    "all runtime and effective-scope outcomes remain unobserved"
+  ],
+  "unit_id": "L04-B4-EFFECTIVE-SCOPE",
+  "graph_id": "B4",
+  "issue": 23,
+  "objective": "Make permission/company/branch/storehouse precedence observable without inferring authority from UI flags or static names.",
+  "authoritative_principles": [
+    "server derives effective scope; browser values cannot widen it",
+    "navigation, route, query/data, mutation/state and export/file are independently enforced",
+    "UI hidden/read-only/edit flags and menu ancestry are evidence inputs, never backend authority",
+    "denial must not reveal out-of-scope existence or counts",
+    "role/scope changes require current generation revalidation"
+  ],
+  "cases": [
+    {
+      "id": "SCP-01",
+      "factors": {
+        "menu": "hidden",
+        "route_grant": "absent"
+      },
+      "probe": "direct route and API",
+      "expected": "deny because authoritative server grant is absent; menu visibility alone is not the reason"
+    },
+    {
+      "id": "SCP-02",
+      "factors": {
+        "menu": "visible",
+        "route_grant": "absent"
+      },
+      "probe": "direct route and API",
+      "expected": "deny; visible navigation never grants route/data authority"
+    },
+    {
+      "id": "SCP-03",
+      "factors": {
+        "ancestor_menu": "disabled",
+        "child_symbol": "present"
+      },
+      "probe": "child direct route/API",
+      "expected": "follow verified current ancestor/permission policy; until verified, feature remains fail-closed and UNKNOWN"
+    },
+    {
+      "id": "SCP-04",
+      "factors": {
+        "company": "authorized A",
+        "client_company": "B"
+      },
+      "probe": "query/count/lookup",
+      "expected": "server retains A; foreign existence/count not disclosed"
+    },
+    {
+      "id": "SCP-05",
+      "factors": {
+        "branch": "authorized X",
+        "client_branch": "Y"
+      },
+      "probe": "typed query and export",
+      "expected": "Y cannot widen scope; export independently reauthorizes"
+    },
+    {
+      "id": "SCP-06",
+      "factors": {
+        "storehouse": "authorized S1",
+        "lookup_value": "S2"
+      },
+      "probe": "mutation reference",
+      "expected": "deny before harmful dispatch; opaque/reference existence is not authority"
+    },
+    {
+      "id": "SCP-07",
+      "factors": {
+        "role": "revoked",
+        "legacy_permission_cache": "stale allow"
+      },
+      "probe": "query then mutation",
+      "expected": "current generation denies both applicable boundaries; stale cache cannot restore capability"
+    },
+    {
+      "id": "SCP-08",
+      "factors": {
+        "permission_field": "HideAmount true"
+      },
+      "probe": "list totals, sort/filter, clipboard, export",
+      "expected": "verified policy governs every path; no amount/aggregate inference; static field name alone does not define policy"
+    },
+    {
+      "id": "SCP-09",
+      "factors": {
+        "PermissionType": "Manager/Admin shaped fields"
+      },
+      "probe": "ordinary user submits admin parameter",
+      "expected": "server-owned typed resolver ignores/rejects client escalation; exact legacy precedence remains UNKNOWN"
+    },
+    {
+      "id": "SCP-10",
+      "factors": {
+        "FormName": "same",
+        "MenuPara": "different"
+      },
+      "probe": "capability resolve",
+      "expected": "do not collapse variants until exact current mapping and precedence are verified"
+    },
+    {
+      "id": "SCP-11",
+      "factors": {
+        "same_company_users": "different role generations"
+      },
+      "probe": "cache/pool/worker reuse",
+      "expected": "principal/generation separation; broader result cannot bleed to narrower user"
+    },
+    {
+      "id": "SCP-12",
+      "factors": {
+        "company_switch": "in flight result"
+      },
+      "probe": "late query/export/permission response",
+      "expected": "late result fenced to original scope generation and not revealed in new context"
+    },
+    {
+      "id": "SCP-13",
+      "factors": {
+        "authorized_scope": "A",
+        "foreign_scope": "B"
+      },
+      "probe": "compare denial timing/size/error and count metadata",
+      "expected": "foreign existence is not distinguishable through timing/size/error classes beyond the reviewed leakage budget"
+    },
+    {
+      "id": "SCP-14",
+      "factors": {
+        "cache_key": "same user and form",
+        "scope_generation": "changed"
+      },
+      "probe": "reuse cached capability or result",
+      "expected": "cache key includes authoritative tenant/company/principal/capability/scope generation; stale entry cannot grant or reveal data"
+    },
+    {
+      "id": "SCP-15",
+      "factors": {
+        "download_token": "issued under scope A",
+        "current_scope": "B or revoked"
+      },
+      "probe": "redeem export/download token",
+      "expected": "token is narrow, expiring and reauthorized; old scope cannot download generated content"
+    },
+    {
+      "id": "SCP-16",
+      "factors": {
+        "queued_work": "authorized before revoke",
+        "current_generation": "revoked"
+      },
+      "probe": "dispatch delayed query/export/mutation",
+      "expected": "queued work reauthorizes immediately before dispatch; stale queue admission is insufficient"
+    }
+  ],
+  "facts_still_unknown": [
+    "exact legacy admin/group/menu/form precedence",
+    "source of company/branch/storehouse grants",
+    "meaning and side effects of ShowInvalidPer/MenuPara/TableNamePrefix/UserLevel",
+    "permission cache lifetime and revocation behavior",
+    "current menu ancestry/reachability for pilot screens"
+  ],
+  "execution_status": "NOT_RUN"
+}

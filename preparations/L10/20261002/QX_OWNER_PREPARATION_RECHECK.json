@@ -1,0 +1,366 @@
+{
+  "schema_version": 1,
+  "lane": "L10",
+  "artifact_status": "prepared_local_only",
+  "execution_status": "NOT_RUN",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_owner": "L10",
+  "source_contracts": [
+    {
+      "path": "docs/PROJECT_STATE.yaml",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "bcf2635d9bd7b634abb7a1c818ed36564fa5c774aecccc3cdbe64dadeed4e278"
+    },
+    {
+      "path": "docs/SOURCE_BASELINE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "6f9fb08b0d1f3af2def0809f2d5a194082403249ff9119a1f2605551c93658b8"
+    },
+    {
+      "path": "docs/EVIDENCE_STANDARDS.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "b330291378041fc197796deaab6d49c72a9563fdbe2c5fd990fd827b266e1910"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168"
+    },
+    {
+      "path": "docs/plans/PHASE2_SCHEDULED_EXECUTION_PLAN.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "9e58be73eba12f3ec9e255c4460e9e2d4ede1c26d43877d421144b56876fa532"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "9cb84eb673b9d7a0a8cea3e70f2366350b8150f4a15ad42f614510f3113c1524"
+    },
+    {
+      "path": "docs/architecture/PHASE2_AUTH_CAPABILITY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "fa8db170726d9afe02fd5b2e578e00226978f78757c4fbfcde3fa9328d18eb47"
+    },
+    {
+      "path": "docs/architecture/PHASE2_COMMAND_TRANSACTION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "a819e2f2cb55b94883235ae3626157e7da641e75a727b98a8930bd712299e99c"
+    },
+    {
+      "path": "docs/architecture/PHASE2_REALTIME_COEXISTENCE_RECOVERY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "e48ccffc8fa128f41c525c7c30ac4fff265a6fb8af739478281cf927afd753f4"
+    },
+    {
+      "path": "docs/web/GRID_MOBILE_IMPLEMENTATION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "b59d80f754cd3108c415a458f83c19dc7c7c197998e23fa12f258adaeafb3418"
+    },
+    {
+      "path": "docs/web/PHASE2_FRONTEND_ACCEPTANCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "668c3f410cbc5793aa3be1f032130a31d07bbf075c9153a778af5e3ac2d4422a"
+    },
+    {
+      "path": "docs/web/UX_STRESS_ACCEPTANCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "56a9163d45ad3c6787ca280db17c0ce69f6f31a5525ba1c94ac943d114649e03"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84"
+    },
+    {
+      "path": "docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b"
+    },
+    {
+      "path": "docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "338ac433b907f42e720fe3564d3041fef2322036d7405bdf0c7e08942ce3bb13"
+    }
+  ],
+  "safety_limits": [
+    "synthetic sanitized data only",
+    "no GitHub mutation, product execution, runtime connection, SQL execution, deployment, or production operation",
+    "expected denials and design review are not passing E2E/CI results",
+    "product defects are routed to the owner lane; L10 does not silently change owner code or close issues"
+  ],
+  "unit": "QX",
+  "issue": 41,
+  "title": "Independent owner-preparation recheck ledger",
+  "eligibility": {
+    "purpose": "local preparation review only",
+    "durable_corrections": 0,
+    "product_tests_passed": 0,
+    "release_decision": "NOT_ELIGIBLE"
+  },
+  "review_summary": {
+    "routed_findings": 12,
+    "prepared_corrections": 12,
+    "open_design_defects": 0,
+    "durable_corrections": 0,
+    "product_tests_passed": 0
+  },
+  "reviewed_local_artifacts": [
+    {
+      "path": "preparations/L02/20261002/validate_preparation.py",
+      "sha256": "0e38506b1f6c6469ceea224a465af139242732ac235d05cc52b7ef356b076cab",
+      "durability": "LOCAL_WORKTREE_ONLY"
+    },
+    {
+      "path": "preparations/L06/20261002/F2_GRID_ACCESSIBILITY_STRESS_FIXTURES.json",
+      "sha256": "c646a6d6d502b6053c9f3050a3a485b2dabac92dc50d751d5a9054ef37f007a3",
+      "durability": "LOCAL_WORKTREE_ONLY"
+    },
+    {
+      "path": "preparations/L07/20261002/B3_TRANSACTION_EFFECT_AUDIT_TEMPLATE.json",
+      "sha256": "0d889de2950f2781b1c44d64cfbe97970e29c1dd67169267dd4f3a1662a76bb6",
+      "durability": "LOCAL_WORKTREE_ONLY"
+    },
+    {
+      "path": "preparations/L07/20261002/B3_TYPED_COMMAND_ENVELOPE_FIXTURES.json",
+      "sha256": "bdcc0c905d68b6fd4d2957dce58b3e91014add1f95cfb2194e2569c221e0f985",
+      "durability": "LOCAL_WORKTREE_ONLY"
+    },
+    {
+      "path": "preparations/L07/20261002/B5_IDEMPOTENCY_FINGERPRINT_FIXTURES.json",
+      "sha256": "b9ebeea34024b10e66faec1c15e8cd969cd6fdc0ec309418573f8bef31199896",
+      "durability": "LOCAL_WORKTREE_ONLY"
+    },
+    {
+      "path": "preparations/L07/20261002/B5_OUTCOME_UNKNOWN_STATE_MACHINE.json",
+      "sha256": "6aee4226032566e03aef671d46cab5985d7d57bdba662a172c74a690e377e5e8",
+      "durability": "LOCAL_WORKTREE_ONLY"
+    },
+    {
+      "path": "preparations/L09/20261002/R4_ISOLATED_RECOVERY_CHECKLIST.json",
+      "sha256": "b93e22333296aefbaee630613fd5555de1e8dbccd6e843146fa36a2a87c495a2",
+      "durability": "LOCAL_WORKTREE_ONLY"
+    },
+    {
+      "path": "preparations/L09/20261002/R2_ASYNC_JOB_SCOPE_FIXTURES.json",
+      "sha256": "043615d893bd6e516bb93257055e190ff3eb62e72291efac3b02f2c1a8891129",
+      "durability": "LOCAL_WORKTREE_ONLY"
+    },
+    {
+      "path": "preparations/L03/20261002/B1_TYPED_QUERY_BOUNDARY_FIXTURES.json",
+      "sha256": "5428f8817179cc383a22e2465f7f93ece3c62e65ffad575cf6cd089d4f051a7f",
+      "durability": "LOCAL_WORKTREE_ONLY"
+    },
+    {
+      "path": "preparations/L03/20261002/B2_CATALOG_SCHEMA_ACCEPTANCE.json",
+      "sha256": "b9d9565d29181e4369e45434518208814cbdf3aada5fd357354a45efd937abec",
+      "durability": "LOCAL_WORKTREE_ONLY"
+    },
+    {
+      "path": "preparations/L03/20261002/B2_DEFINITION_NORMALIZATION_FIXTURES.json",
+      "sha256": "ab66e7e437f362407ca1820a958a4f7e0ad715fd4bdf8a87cf18c1e32416bc49",
+      "durability": "LOCAL_WORKTREE_ONLY"
+    },
+    {
+      "path": "preparations/L03/20261002/B2_DEPENDENCY_QUARANTINE_FIXTURES.json",
+      "sha256": "7ada6716b2f8e81140ddb234bc947332df44c00f98b30192fc1fb487d51f7a84",
+      "durability": "LOCAL_WORKTREE_ONLY"
+    },
+    {
+      "path": "preparations/L03/20261002/B2_FILTER_LITERAL_RESOLUTION_QUEUE.json",
+      "sha256": "80549dd24705b12e4d75f9eac896ad039cee5e2df9b6b11f5078bff2ba17a14a",
+      "durability": "LOCAL_WORKTREE_ONLY"
+    }
+  ],
+  "cases": [
+    {
+      "id": "QX-01",
+      "role": "independent_QA_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "owner preparation artifact",
+      "attack_or_failure": "previous owner fixture included semantic_request_fingerprint in lookup uniqueness, allowing changed payload to miss the existing stable-key record",
+      "expected_result": "lookup identity is [tenant, company, authoritative_data_source, stable_principal, registered_action_id, contract_version, idempotency_key]; request fingerprint is stored immutably on the found record and a mismatch is rejected before dispatch",
+      "owner_route": "L07/B5",
+      "evidence_to_pass": "durable owner artifact, independent review, same-key changed-payload product test, and required exact-head checks",
+      "local_recheck_result": "PASS_PREPARED_LOCAL_NOT_DURABLE",
+      "artifact_paths": [
+        "preparations/L07/20261002/B5_IDEMPOTENCY_FINGERPRINT_FIXTURES.json"
+      ],
+      "routed_finding_id": "QA-ROUTE-L07-001"
+    },
+    {
+      "id": "QX-02",
+      "role": "independent_QA_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "owner preparation artifact",
+      "attack_or_failure": "A first business commit before ACK loss is insufficient for SUCCEEDED when mandatory deferred effects remain; reconciliation must prove the completion contract.",
+      "expected_result": "the local owner preparation explicitly addresses the routed finding while durable review, product execution and exact-head CI remain open",
+      "owner_route": "L07/B5",
+      "evidence_to_pass": "durable owner artifact, independent review, focused product/runtime evidence where eligible, and required checks on the exact candidate head",
+      "local_recheck_result": "PASS_PREPARED_LOCAL_NOT_DURABLE",
+      "artifact_paths": [
+        "preparations/L07/20261002/B5_OUTCOME_UNKNOWN_STATE_MACHINE.json"
+      ],
+      "routed_finding_id": "QA-ROUTE-L07-002"
+    },
+    {
+      "id": "QX-03",
+      "role": "independent_QA_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "owner preparation artifact",
+      "attack_or_failure": "The local grid fixture uses exactly 100000 rows, while canonical acceptance requires 100k+; use at least 100001 rows so the boundary is actually exercised.",
+      "expected_result": "the local owner preparation explicitly addresses the routed finding while durable review, product execution and exact-head CI remain open",
+      "owner_route": "L06/F2",
+      "evidence_to_pass": "durable owner artifact, independent review, focused product/runtime evidence where eligible, and required checks on the exact candidate head",
+      "local_recheck_result": "PASS_PREPARED_LOCAL_NOT_DURABLE",
+      "artifact_paths": [
+        "preparations/L06/20261002/F2_GRID_ACCESSIBILITY_STRESS_FIXTURES.json"
+      ],
+      "routed_finding_id": "QA-ROUTE-L06-001"
+    },
+    {
+      "id": "QX-04",
+      "role": "independent_QA_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "owner preparation artifact",
+      "attack_or_failure": "GRD-15 uses a 50ms interaction threshold while the canonical contract states p95 <=100ms; label 50ms as an optional stricter target or validate the canonical threshold explicitly.",
+      "expected_result": "the local owner preparation explicitly addresses the routed finding while durable review, product execution and exact-head CI remain open",
+      "owner_route": "L06/F2",
+      "evidence_to_pass": "durable owner artifact, independent review, focused product/runtime evidence where eligible, and required checks on the exact candidate head",
+      "local_recheck_result": "PASS_PREPARED_LOCAL_NOT_DURABLE",
+      "artifact_paths": [
+        "preparations/L06/20261002/F2_GRID_ACCESSIBILITY_STRESS_FIXTURES.json"
+      ],
+      "routed_finding_id": "QA-ROUTE-L06-002"
+    },
+    {
+      "id": "QX-05",
+      "role": "independent_QA_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "owner preparation artifact",
+      "attack_or_failure": "Recovery evidence must reconcile the restore frontier across business DB, idempotency/operation ledger, audit and outbox stores/checkpoints before dispatch resumes; DB integrity and read smoke alone are insufficient.",
+      "expected_result": "the local owner preparation explicitly addresses the routed finding while durable review, product execution and exact-head CI remain open",
+      "owner_route": "L09/R4",
+      "evidence_to_pass": "durable owner artifact, independent review, focused product/runtime evidence where eligible, and required checks on the exact candidate head",
+      "local_recheck_result": "PASS_PREPARED_LOCAL_NOT_DURABLE",
+      "artifact_paths": [
+        "preparations/L09/20261002/R4_ISOLATED_RECOVERY_CHECKLIST.json"
+      ],
+      "routed_finding_id": "QA-ROUTE-L09-001"
+    },
+    {
+      "id": "QX-06",
+      "role": "independent_QA_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "owner preparation artifact",
+      "attack_or_failure": "Do not require a full/differential/log chain unconditionally under a static SIMPLE baseline; require the restorable artifact/dependency set appropriate to the verified recovery model and make no PITR/log-chain assumption.",
+      "expected_result": "the local owner preparation explicitly addresses the routed finding while durable review, product execution and exact-head CI remain open",
+      "owner_route": "L09/R4",
+      "evidence_to_pass": "durable owner artifact, independent review, focused product/runtime evidence where eligible, and required checks on the exact candidate head",
+      "local_recheck_result": "PASS_PREPARED_LOCAL_NOT_DURABLE",
+      "artifact_paths": [
+        "preparations/L09/20261002/R4_ISOLATED_RECOVERY_CHECKLIST.json"
+      ],
+      "routed_finding_id": "QA-ROUTE-L09-002"
+    },
+    {
+      "id": "QX-07",
+      "role": "independent_QA_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "owner preparation artifact",
+      "attack_or_failure": "The command envelope must separate browser-supplied fields from server-derived authority and include the required metadataRevision; a flat envelope risks treating tenant/company/user authority as client input.",
+      "expected_result": "the local owner preparation explicitly addresses the routed finding while durable review, product execution and exact-head CI remain open",
+      "owner_route": "L07/B3",
+      "evidence_to_pass": "durable owner artifact, independent review, focused product/runtime evidence where eligible, and required checks on the exact candidate head",
+      "local_recheck_result": "PASS_PREPARED_LOCAL_NOT_DURABLE",
+      "artifact_paths": [
+        "preparations/L07/20261002/B3_TYPED_COMMAND_ENVELOPE_FIXTURES.json",
+        "preparations/L07/20261002/B3_TRANSACTION_EFFECT_AUDIT_TEMPLATE.json"
+      ],
+      "routed_finding_id": "QA-ROUTE-L07-003"
+    },
+    {
+      "id": "QX-08",
+      "role": "independent_QA_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "owner preparation artifact",
+      "attack_or_failure": "The OutcomeUnknown fixture lists states/events but lacks an explicit permitted-transition and guard table, so validation cannot reject fresh dispatch from OutcomeUnknown or precommit-to-Succeeded shortcuts.",
+      "expected_result": "the local owner preparation explicitly addresses the routed finding while durable review, product execution and exact-head CI remain open",
+      "owner_route": "L07/B5",
+      "evidence_to_pass": "durable owner artifact, independent review, focused product/runtime evidence where eligible, and required checks on the exact candidate head",
+      "local_recheck_result": "PASS_PREPARED_LOCAL_NOT_DURABLE",
+      "artifact_paths": [
+        "preparations/L07/20261002/B5_OUTCOME_UNKNOWN_STATE_MACHINE.json"
+      ],
+      "routed_finding_id": "QA-ROUTE-L07-004"
+    },
+    {
+      "id": "QX-09",
+      "role": "independent_QA_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "owner preparation artifact",
+      "attack_or_failure": "Queued report/export work must reauthorize before worker execution as well as status/download, bind immutable server-resolved job scope, and reject changed/restored/replayed envelopes before dispatch.",
+      "expected_result": "the local owner preparation explicitly addresses the routed finding while durable review, product execution and exact-head CI remain open",
+      "owner_route": "L09/R2",
+      "evidence_to_pass": "durable owner artifact, independent review, focused product/runtime evidence where eligible, and required checks on the exact candidate head",
+      "local_recheck_result": "PASS_PREPARED_LOCAL_NOT_DURABLE",
+      "artifact_paths": [
+        "preparations/L09/20261002/R2_ASYNC_JOB_SCOPE_FIXTURES.json"
+      ],
+      "routed_finding_id": "QA-ROUTE-L09-003"
+    },
+    {
+      "id": "QX-10",
+      "role": "independent_QA_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "owner preparation artifact",
+      "attack_or_failure": "The local L02 validator hashes worktree bytes and weakly checks source_ref text rather than pinning exact git-object bytes at the declared base; strengthen provenance before integration.",
+      "expected_result": "the local owner preparation explicitly addresses the routed finding while durable review, product execution and exact-head CI remain open",
+      "owner_route": "L02/A1",
+      "evidence_to_pass": "durable owner artifact, independent review, focused product/runtime evidence where eligible, and required checks on the exact candidate head",
+      "local_recheck_result": "PASS_PREPARED_LOCAL_NOT_DURABLE",
+      "artifact_paths": [
+        "preparations/L02/20261002/validate_preparation.py"
+      ],
+      "routed_finding_id": "QA-ROUTE-L02-001"
+    },
+    {
+      "id": "QX-11",
+      "role": "independent_QA_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "owner preparation artifact",
+      "attack_or_failure": "Dependency fixtures classify CTE names, table variables, temporary tables, trigger pseudo-tables and comment/string tokens as RESOLVED_EDGE. Local/non-catalog symbols must not become durable catalog dependency edges; introduce an explicit LOCAL_OR_NON_CATALOG disposition and prove zero false catalog edges.",
+      "expected_result": "local symbols and lexical non-references use an explicit non-catalog disposition and cannot create catalog dependency edges",
+      "owner_route": "L03/B2",
+      "evidence_to_pass": "owner fixture and validator distinguish local/non-catalog symbols from resolved catalog edges, then pass independent review",
+      "local_recheck_result": "PASS_PREPARED_LOCAL_NOT_DURABLE",
+      "artifact_paths": [
+        "preparations/L03/20261002/B2_DEPENDENCY_QUARANTINE_FIXTURES.json"
+      ],
+      "routed_finding_id": "QA-ROUTE-L03-001"
+    },
+    {
+      "id": "QX-12",
+      "role": "independent_QA_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "owner preparation artifact",
+      "attack_or_failure": "UNRESOLVED is an allowed dependency disposition but no fixture exercises it, so the validator cannot detect removal or coercion of genuinely unresolved reference sites. Add a sourced unresolved-site case with reason, owner and fail-closed acceptance.",
+      "expected_result": "at least one exact fixture exercises UNRESOLVED and the validator requires it",
+      "owner_route": "L03/B2",
+      "evidence_to_pass": "sourced unresolved-site case retains span, reason, owner and fail-closed acceptance",
+      "local_recheck_result": "PASS_PREPARED_LOCAL_NOT_DURABLE",
+      "artifact_paths": [
+        "preparations/L03/20261002/B2_DEPENDENCY_QUARANTINE_FIXTURES.json"
+      ],
+      "routed_finding_id": "QA-ROUTE-L03-002"
+    }
+  ],
+  "future_execution_record_fields": [
+    "stimulus_timestamp",
+    "observed_result",
+    "authoritative_version_or_identity",
+    "exact_head",
+    "environment_identity",
+    "measurement_profile",
+    "reviewer"
+  ]
+}

@@ -1,0 +1,190 @@
+{
+  "schema_version": 1,
+  "lane": "L08",
+  "artifact_status": "prepared_local_only",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_issues": [
+    32,
+    33,
+    34,
+    35,
+    42
+  ],
+  "source_contracts": [
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "9d9b7157027cce55e3d24d7ade4e554e7205d34a9393bb67f21f60164190c1e0",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/web/PHASE2_PILOT_FRONTEND_IMPLEMENTATION_PACK.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "ca5fbb87a9a34262e41b8134693b2f7a69b186c30f6682691132091aaa70af35",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/PHASE2_PILOT_FRONTEND_IMPLEMENTATION_PACK.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "4a48658994a7a70ad809587c2100cb3f6340526e508805f4ebee11710574f4d6",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "inventories/traceability/FILTER_TRACEABILITY_SCOPE_AUDIT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "2405377c8f751cf92ff6c5aced05b3b3b5481c599fb76b689d53b3cce43191f1",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/inventories/traceability/FILTER_TRACEABILITY_SCOPE_AUDIT.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "inventories/traceability/FILTER_FAMILY_TRACEABILITY_REGISTER.json",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "bf467cc1843939098319f57028ae60c5ed7243ff78ce9f0bafde8f8432ce36bf",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/inventories/traceability/FILTER_FAMILY_TRACEABILITY_REGISTER.json",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "338ac433b907f42e720fe3564d3041fef2322036d7405bdf0c7e08942ce3bb13",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "9cb84eb673b9d7a0a8cea3e70f2366350b8150f4a15ad42f614510f3113c1524",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    }
+  ],
+  "limits": [
+    "no L08 dispatcher lease or writer token",
+    "no complete approved ERP/source manifest",
+    "no complete B2 database catalog or exact per-pilot dependencies",
+    "no verified mutation signature, state machine, transaction or idempotency contract",
+    "no product/API/browser/database execution",
+    "no GitHub mutation or issue closure",
+    "mock/test-double evidence cannot enable real users or close a pilot"
+  ],
+  "execution_status": "NOT_RUN",
+  "eligible_to_code": false,
+  "unit_id": "L08-P1-SALES-REQUEST-GATE",
+  "graph_id": "F5",
+  "issue": 32,
+  "pilot_id": "P1-SALES-REQUEST",
+  "requested_intent": "Bán hàng → Đề nghị bán hàng",
+  "observed_candidates": [
+    "ERP-FRM-AR_InvoiceRequestFrm",
+    "DB-TABLE-dbo.AR_InvoiceRequestTbl",
+    "DB-TABLE-dbo.AR_InvoiceRequestDetailTbl"
+  ],
+  "verified_or_corroborated": [
+    "packaged form/filter/table candidates",
+    "bounded filter family is enumerated",
+    "sales/purchasing read freshness target is SWR <=30s"
+  ],
+  "blocked_facts": [
+    "owner intent versus observed caption equivalence",
+    "current menu ID/parents/Para/reachability",
+    "master alias A and exact field/join contract",
+    "save/submit/approve/cancel/delete/export actions and state transitions",
+    "exact permission/transaction/hook/idempotency semantics"
+  ],
+  "forbidden_inferences": [
+    "historical guide caption Yêu cầu xuất hóa đơn is not proof of Đề nghị bán hàng",
+    "table candidates do not authorize direct mutation",
+    "filter membership does not prove current menu reachability",
+    "mock route cannot be exposed to real users"
+  ],
+  "dependency_gates": [
+    "A4 capability and B4 effective scope",
+    "B1 typed query and B2 exact catalog/bindings",
+    "B3 typed command and exact transaction/effect audit",
+    "B5 concurrency/idempotency/OutcomeUnknown per action",
+    "F1/F2/F3 shared shell/Grid/form primitives",
+    "current source/build/menu/action evidence",
+    "Q1/Q2/Q3 applicable independent acceptance"
+  ],
+  "acceptance_before_binding": [
+    "exact source/build/menu/form/variant identity",
+    "exact list/detail DTO and field/join/alias binding",
+    "allowed and denied role plus direct-route/API/export scope tests",
+    "each mutation maps to a reviewed ActionId, state guard and authoritative reread",
+    "transaction owner/hooks/triggers/mandatory effects and retry classification",
+    "desktop/mobile/freshness/conflict/OutcomeUnknown acceptance",
+    "current-head independent review and required CI green"
+  ],
+  "cases": [
+    {
+      "id": "P1-01",
+      "scenario": "owner intent is mapped directly to AR_InvoiceRequestFrm",
+      "expected": "reject until exact current caption/menu/variant equivalence is proved"
+    },
+    {
+      "id": "P1-02",
+      "scenario": "historical guide caption is treated as current authoritative label",
+      "expected": "retain source/date boundary and conflicting-label blocker"
+    },
+    {
+      "id": "P1-03",
+      "scenario": "master alias A is guessed from adjacent fields",
+      "expected": "query binding remains blocked until exact alias target and projected fields resolve"
+    },
+    {
+      "id": "P1-04",
+      "scenario": "authorized list candidate is available",
+      "expected": "read may proceed only after B1/B2/B4/F1/F2 gates; it grants no mutation"
+    },
+    {
+      "id": "P1-05",
+      "scenario": "browser injects unregistered action from config",
+      "expected": "server registry rejects before dispatch"
+    },
+    {
+      "id": "P1-06",
+      "scenario": "save/submit/approve is inferred from generic request UX",
+      "expected": "omit action; require exact source-backed command/state contract"
+    },
+    {
+      "id": "P1-07",
+      "scenario": "foreign company/branch/storehouse ID is supplied",
+      "expected": "server scope denies without existence/count leak"
+    },
+    {
+      "id": "P1-08",
+      "scenario": "lost mutation acknowledgement",
+      "expected": "OutcomeUnknown and authoritative reconciliation; no optimistic success/retry"
+    },
+    {
+      "id": "P1-09",
+      "scenario": "role revoked after page load",
+      "expected": "mutation and result visibility reauthorize at current generation"
+    },
+    {
+      "id": "P1-10",
+      "scenario": "export is visible because grid is visible",
+      "expected": "independent export authorization and typed snapshot contract required"
+    },
+    {
+      "id": "P1-11",
+      "scenario": "mobile card invents supplier/status/amount fields",
+      "expected": "bind only exact authorized DTO fields after evidence"
+    },
+    {
+      "id": "P1-12",
+      "scenario": "mock screen renders and tests pass",
+      "expected": "counts as local preparation only; pilot remains blocked"
+    }
+  ]
+}

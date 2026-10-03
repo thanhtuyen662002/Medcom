@@ -1,0 +1,303 @@
+{
+  "schema_version": 1,
+  "lane": "L03",
+  "artifact_status": "prepared_local_only",
+  "execution_status": "NOT_RUN",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_owner": "L03",
+  "source_contracts": [
+    {
+      "path": "docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "338ac433b907f42e720fe3564d3041fef2322036d7405bdf0c7e08942ce3bb13",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md"
+    },
+    {
+      "path": "docs/db/PHASE1_CATALOG_COVERAGE_MATRIX.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "0f3bb2ef99e105dd337bb42fcbe0b0e5f3843cd00e961c0a83d0171716e817ec",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/db/PHASE1_CATALOG_COVERAGE_MATRIX.md"
+    },
+    {
+      "path": "docs/db/BASELINE_INVENTORY.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "6d87cdceaa664c1d7c0829d9763da25122ad2da416994a64106edeaac9f40b4f",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/db/BASELINE_INVENTORY.md"
+    },
+    {
+      "path": "docs/EVIDENCE_STANDARDS.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "b330291378041fc197796deaab6d49c72a9563fdbe2c5fd990fd827b266e1910",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/EVIDENCE_STANDARDS.md"
+    },
+    {
+      "path": "docs/SOURCE_BASELINE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "6f9fb08b0d1f3af2def0809f2d5a194082403249ff9119a1f2605551c93658b8",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/SOURCE_BASELINE.md"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "9cb84eb673b9d7a0a8cea3e70f2366350b8150f4a15ad42f614510f3113c1524",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md"
+    },
+    {
+      "path": "inventories/traceability/FILTER_FAMILY_TRACEABILITY_REGISTER.json",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "bf467cc1843939098319f57028ae60c5ed7243ff78ce9f0bafde8f8432ce36bf",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/inventories/traceability/FILTER_FAMILY_TRACEABILITY_REGISTER.json"
+    },
+    {
+      "path": "inventories/traceability/FILTER_TRACEABILITY_SCOPE_AUDIT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "2405377c8f751cf92ff6c5aced05b3b3b5481c599fb76b689d53b3cce43191f1",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/inventories/traceability/FILTER_TRACEABILITY_SCOPE_AUDIT.md"
+    },
+    {
+      "path": "docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "9d9b7157027cce55e3d24d7ade4e554e7205d34a9393bb67f21f60164190c1e0",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md"
+    }
+  ],
+  "safety_limits": [
+    "sanitized metadata and synthetic fixtures only; no raw SQL, data rows, secrets, credentials or connection material",
+    "no GitHub mutation, SQL execution, legacy runtime, product implementation, deployment or production operation",
+    "aggregate counts and filename conventions never substitute for exact authoritative catalog identities",
+    "all product/runtime execution remains NOT_RUN and TRC-DB-001 stays open"
+  ],
+  "unit": "B2",
+  "issue": 21,
+  "title": "Finite sanitized catalog record acceptance",
+  "eligibility": {
+    "writer_lease": "NOT_GRANTED",
+    "dispatcher_fencing": "NOT_PROVEN",
+    "authoritative_sql_bytes": "NOT_ACCESSIBLE",
+    "eligible_to_code": false
+  },
+  "future_execution_record_fields": [
+    "stimulus_timestamp",
+    "observed_result",
+    "authoritative_source_identity",
+    "exact_head",
+    "environment_identity",
+    "parser_version",
+    "reviewer"
+  ],
+  "required_record_types": [
+    "schema",
+    "table",
+    "column",
+    "constraint",
+    "index",
+    "programmable_object",
+    "dependency",
+    "classification",
+    "runtime_option"
+  ],
+  "canonical_aggregate_reconciliation": {
+    "permanent_tables": 583,
+    "column_declarations": 7985,
+    "nullable_declarations": 5610,
+    "not_null_declarations": 2375,
+    "pk_tables": 533,
+    "keyless_tables": 50,
+    "fk_declarations": 364,
+    "default_declarations": 812,
+    "check_declarations": 558,
+    "explicit_alter_unique_declarations": 7,
+    "normalized_views": 203,
+    "normalized_procedures": 591,
+    "normalized_functions": 109,
+    "normalized_triggers": 3
+  },
+  "cases": [
+    {
+      "id": "B2-01",
+      "role": "catalog_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "source manifest",
+      "attack_or_failure": "catalog source hash differs from approved SQL archive/script identity",
+      "expected_result": "reject extraction and require an explicit new-baseline decision",
+      "owner_route": "B2",
+      "evidence_to_pass": "exact approved archive/script hash and extraction version"
+    },
+    {
+      "id": "B2-02",
+      "role": "catalog_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "schema record",
+      "attack_or_failure": "object references an absent or unstable schema identity",
+      "expected_result": "fail referential validation",
+      "owner_route": "B2",
+      "evidence_to_pass": "complete schema set and object-to-schema mapping"
+    },
+    {
+      "id": "B2-03",
+      "role": "DBA",
+      "execution_status": "NOT_RUN",
+      "entry_point": "table record",
+      "attack_or_failure": "one of 583 permanent table identities is omitted or duplicated",
+      "expected_result": "fail exact-set equality",
+      "owner_route": "B2",
+      "evidence_to_pass": "stable qualified IDs and source spans for all 583"
+    },
+    {
+      "id": "B2-04",
+      "role": "DBA",
+      "execution_status": "NOT_RUN",
+      "entry_point": "column record",
+      "attack_or_failure": "declaration total matches while table/ordinal identity rows are missing",
+      "expected_result": "fail row-level acceptance",
+      "owner_route": "B2",
+      "evidence_to_pass": "7985 sourced declarations plus normalized identity/disposition review"
+    },
+    {
+      "id": "B2-05",
+      "role": "developer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "column type",
+      "attack_or_failure": "length, precision, scale, collation, identity or computed metadata is silently defaulted",
+      "expected_result": "retain exact sourced value or explicit not-applicable/unknown state",
+      "owner_route": "B2",
+      "evidence_to_pass": "typed field validation per column"
+    },
+    {
+      "id": "B2-06",
+      "role": "DBA",
+      "execution_status": "NOT_RUN",
+      "entry_point": "primary key",
+      "attack_or_failure": "PK table count matches but key order/clusteredness/owner is absent",
+      "expected_result": "fail PK coverage",
+      "owner_route": "B2",
+      "evidence_to_pass": "533 PK table records with stable constraint/index ownership"
+    },
+    {
+      "id": "B2-07",
+      "role": "DBA",
+      "execution_status": "NOT_RUN",
+      "entry_point": "keyless table",
+      "attack_or_failure": "invent a Web identity for any of 50 keyless tables",
+      "expected_result": "block generated entity identity",
+      "owner_route": "B2",
+      "evidence_to_pass": "exact keyless set and caller-semantics UNKNOWN"
+    },
+    {
+      "id": "B2-08",
+      "role": "DBA",
+      "execution_status": "NOT_RUN",
+      "entry_point": "foreign key",
+      "attack_or_failure": "FK target resolves but column pairs/actions/trust state are incomplete",
+      "expected_result": "fail FK edge acceptance",
+      "owner_route": "B2",
+      "evidence_to_pass": "364 declaration dispositions and normalized FK records"
+    },
+    {
+      "id": "B2-09",
+      "role": "DBA",
+      "execution_status": "NOT_RUN",
+      "entry_point": "default/check/unique",
+      "attack_or_failure": "constraint expression or owner is dropped after normalization",
+      "expected_result": "fail constraint ownership",
+      "owner_route": "B2",
+      "evidence_to_pass": "sourced normalized expression hash and disposition"
+    },
+    {
+      "id": "B2-10",
+      "role": "DBA",
+      "execution_status": "NOT_RUN",
+      "entry_point": "index",
+      "attack_or_failure": "only 125 explicit CREATE INDEX statements are exported",
+      "expected_result": "fail full index acceptance",
+      "owner_route": "B2",
+      "evidence_to_pass": "include implicit PK/unique indexes and ordered key/include/filter metadata"
+    },
+    {
+      "id": "B2-11",
+      "role": "catalog_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "view record",
+      "attack_or_failure": "216 declarations are confused with 203 normalized identities",
+      "expected_result": "keep declaration and identity counts separate",
+      "owner_route": "B2",
+      "evidence_to_pass": "per-definition candidate/effective disposition"
+    },
+    {
+      "id": "B2-12",
+      "role": "catalog_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "procedure record",
+      "attack_or_failure": "652 declarations are treated as 652 live procedures",
+      "expected_result": "reject count promotion",
+      "owner_route": "B2",
+      "evidence_to_pass": "591 normalized procedure identities with definition dispositions"
+    },
+    {
+      "id": "B2-13",
+      "role": "catalog_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "function record",
+      "attack_or_failure": "113 declarations are treated as 113 normalized functions",
+      "expected_result": "reject count promotion",
+      "owner_route": "B2",
+      "evidence_to_pass": "109 normalized identities and candidate definitions"
+    },
+    {
+      "id": "B2-14",
+      "role": "catalog_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "trigger record",
+      "attack_or_failure": "five declarations are treated as five distinct triggers",
+      "expected_result": "reject count promotion",
+      "owner_route": "B2",
+      "evidence_to_pass": "three normalized trigger identities with owner/event/body metadata"
+    },
+    {
+      "id": "B2-15",
+      "role": "security_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "catalog sanitation",
+      "attack_or_failure": "data rows, literal secrets or raw dump fragments enter the export",
+      "expected_result": "reject publication and regenerate sanitized metadata",
+      "owner_route": "B2",
+      "evidence_to_pass": "scanner plus manual sample review"
+    },
+    {
+      "id": "B2-16",
+      "role": "migration_owner",
+      "execution_status": "NOT_RUN",
+      "entry_point": "classification",
+      "attack_or_failure": "prefix alone assigns reuse/retire disposition",
+      "expected_result": "retain INFERRED or UNKNOWN until per-object evidence supports it",
+      "owner_route": "B2",
+      "evidence_to_pass": "evidence level, confidence and rationale on every classification"
+    },
+    {
+      "id": "B2-17",
+      "role": "migration_owner",
+      "execution_status": "NOT_RUN",
+      "entry_point": "reuse disposition",
+      "attack_or_failure": "an object has no reuse/facade/controlled-change/additive-config/retire/unknown decision",
+      "expected_result": "fail total disposition coverage",
+      "owner_route": "B2",
+      "evidence_to_pass": "one explicit bounded disposition per catalog object"
+    },
+    {
+      "id": "B2-18",
+      "role": "independent_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "closure gate",
+      "attack_or_failure": "aggregate counts pass while row-level ownership or dependencies fail",
+      "expected_result": "keep TRC-DB-001 open",
+      "owner_route": "B2/L01",
+      "evidence_to_pass": "independent exact-set, orphan and unresolved-class review"
+    }
+  ]
+}

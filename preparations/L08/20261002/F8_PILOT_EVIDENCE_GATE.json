@@ -1,0 +1,191 @@
+{
+  "schema_version": 1,
+  "lane": "L08",
+  "artifact_status": "prepared_local_only",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_issues": [
+    32,
+    33,
+    34,
+    35,
+    42
+  ],
+  "source_contracts": [
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "9d9b7157027cce55e3d24d7ade4e554e7205d34a9393bb67f21f60164190c1e0",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/web/PHASE2_PILOT_FRONTEND_IMPLEMENTATION_PACK.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "ca5fbb87a9a34262e41b8134693b2f7a69b186c30f6682691132091aaa70af35",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/PHASE2_PILOT_FRONTEND_IMPLEMENTATION_PACK.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "4a48658994a7a70ad809587c2100cb3f6340526e508805f4ebee11710574f4d6",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "inventories/traceability/FILTER_TRACEABILITY_SCOPE_AUDIT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "2405377c8f751cf92ff6c5aced05b3b3b5481c599fb76b689d53b3cce43191f1",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/inventories/traceability/FILTER_TRACEABILITY_SCOPE_AUDIT.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "inventories/traceability/FILTER_FAMILY_TRACEABILITY_REGISTER.json",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "bf467cc1843939098319f57028ae60c5ed7243ff78ce9f0bafde8f8432ce36bf",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/inventories/traceability/FILTER_FAMILY_TRACEABILITY_REGISTER.json",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "338ac433b907f42e720fe3564d3041fef2322036d7405bdf0c7e08942ce3bb13",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "9cb84eb673b9d7a0a8cea3e70f2366350b8150f4a15ad42f614510f3113c1524",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    }
+  ],
+  "limits": [
+    "no L08 dispatcher lease or writer token",
+    "no complete approved ERP/source manifest",
+    "no complete B2 database catalog or exact per-pilot dependencies",
+    "no verified mutation signature, state machine, transaction or idempotency contract",
+    "no product/API/browser/database execution",
+    "no GitHub mutation or issue closure",
+    "mock/test-double evidence cannot enable real users or close a pilot"
+  ],
+  "execution_status": "NOT_RUN",
+  "eligible_to_code": false,
+  "unit_id": "L08-P5-AP-ORDER-GATE",
+  "graph_id": "F8",
+  "issue": 35,
+  "pilot_id": "P5-AP-ORDER",
+  "requested_intent": "Mua hàng → Đặt mua hàng",
+  "observed_candidates": [
+    "ERP-FRM-AP_OrderFrm",
+    "DB-TABLE-dbo.AP_OrderTbl",
+    "DB-TABLE-dbo.AP_OrderDetailTbl"
+  ],
+  "verified_or_corroborated": [
+    "packaged filter/table candidates",
+    "F4 owns separately gated read-only list/detail candidate",
+    "sales/purchasing read freshness target is SWR <=30s"
+  ],
+  "blocked_facts": [
+    "current menu/route enablement; historical guide reports disabled menu",
+    "exact header/detail fields, joins and writable ownership",
+    "save/submit/cancel/delete action signatures and states",
+    "transaction owner/hooks/number allocation/locks/idempotency",
+    "export/report and supplier/item scope"
+  ],
+  "forbidden_inferences": [
+    "F4 read surface does not authorize F8 mutations",
+    "historical generic EDIT definition is not exact action proof",
+    "table binding does not permit generic CRUD",
+    "disabled historical menu cannot be silently enabled"
+  ],
+  "dependency_gates": [
+    "A4 capability and B4 effective scope",
+    "B1 typed query and B2 exact catalog/bindings",
+    "B3 typed command and exact transaction/effect audit",
+    "B5 concurrency/idempotency/OutcomeUnknown per action",
+    "F1/F2/F3 shared shell/Grid/form primitives",
+    "current source/build/menu/action evidence",
+    "Q1/Q2/Q3 applicable independent acceptance",
+    "F4 AP Order read surface accepted for exact current binding"
+  ],
+  "acceptance_before_binding": [
+    "exact source/build/menu/form/variant identity",
+    "exact list/detail DTO and field/join/alias binding",
+    "allowed and denied role plus direct-route/API/export scope tests",
+    "each mutation maps to a reviewed ActionId, state guard and authoritative reread",
+    "transaction owner/hooks/triggers/mandatory effects and retry classification",
+    "desktop/mobile/freshness/conflict/OutcomeUnknown acceptance",
+    "current-head independent review and required CI green"
+  ],
+  "cases": [
+    {
+      "id": "P5-01",
+      "scenario": "F4 AP Order read screen works",
+      "expected": "mutation remains blocked; read and write acceptance stay separate"
+    },
+    {
+      "id": "P5-02",
+      "scenario": "historical menu was disabled",
+      "expected": "require current explicit reachability/enablement decision before route exposure"
+    },
+    {
+      "id": "P5-03",
+      "scenario": "generic EDIT definition exists",
+      "expected": "does not prove save/submit/cancel/delete commands"
+    },
+    {
+      "id": "P5-04",
+      "scenario": "browser posts AP_OrderTbl-shaped object",
+      "expected": "closed typed command rejects table-shaped generic CRUD"
+    },
+    {
+      "id": "P5-05",
+      "scenario": "detail line points to foreign supplier/item/scope",
+      "expected": "validate authoritative links and scope before effect"
+    },
+    {
+      "id": "P5-06",
+      "scenario": "document number allocated with count+1",
+      "expected": "reject invented allocator; require exact lock/resource owner evidence"
+    },
+    {
+      "id": "P5-07",
+      "scenario": "concurrent Web/WinForms edit",
+      "expected": "verified version/lock/state contract required; no silent overwrite"
+    },
+    {
+      "id": "P5-08",
+      "scenario": "submit ACK lost",
+      "expected": "OutcomeUnknown and authoritative order/operation reread before retry"
+    },
+    {
+      "id": "P5-09",
+      "scenario": "cancel is treated as delete",
+      "expected": "keep distinct unsupported actions until state/effect evidence"
+    },
+    {
+      "id": "P5-10",
+      "scenario": "rollback UI is offered after commit",
+      "expected": "config/code rollback cannot reverse committed order data"
+    },
+    {
+      "id": "P5-11",
+      "scenario": "mobile order card adds mutation buttons",
+      "expected": "omit until exact server capabilities/actions are returned"
+    },
+    {
+      "id": "P5-12",
+      "scenario": "synthetic save succeeds",
+      "expected": "cannot enable route or close F8"
+    }
+  ]
+}

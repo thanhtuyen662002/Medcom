@@ -1,0 +1,189 @@
+{
+  "schema_version": 1,
+  "lane": "L07",
+  "artifact_status": "prepared_local_only",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_issues": [
+    22,
+    24
+  ],
+  "source_contracts": [
+    {
+      "path": "docs/architecture/PHASE2_COMMAND_TRANSACTION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "a819e2f2cb55b94883235ae3626157e7da641e75a727b98a8930bd712299e99c",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_COMMAND_TRANSACTION_CONTRACT.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/db/CONCURRENCY_TRANSACTION_CONTRACTS.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "5d3a5f84feb79dcfd024531fd9a0b25072756ab5c1c2899edcc52756dfa66b5c",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/db/CONCURRENCY_TRANSACTION_CONTRACTS.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/db/LOCKING_TRANSACTION_HOTSPOTS.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c0a34a5db9265a0cc946d9ad4cb85bd8f2d736fde84fdfdedaade835c0e401eb",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/db/LOCKING_TRANSACTION_HOTSPOTS.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/architecture/PHASE2_AUDIT_TRACE_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "e552f88a122745ee5e90754115ac832db9de2e16ae0c8f8cc35e650d56e2114c",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_AUDIT_TRACE_CONTRACT.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "9d9b7157027cce55e3d24d7ade4e554e7205d34a9393bb67f21f60164190c1e0",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/web/UX_RUNTIME_FEEDBACK_SESSION.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "a397a8df0049481cc91df81cfd664deb42e99baa3e060cc534d396c8a4e277a0",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/UX_RUNTIME_FEEDBACK_SESSION.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "338ac433b907f42e720fe3564d3041fef2322036d7405bdf0c7e08942ce3bb13",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "access": "sanitized repository contract/evidence"
+    }
+  ],
+  "limits": [
+    "no L07 dispatcher lease or writer token",
+    "no exact pilot command signature, procedure binding, transaction owner or hook order proved",
+    "no authorized raw SQL/source/runtime opened or executed",
+    "no database mutation, lock test or legacy command dispatch",
+    "no product code, CI or current-head implementation test",
+    "no GitHub mutation or issue closure"
+  ],
+  "unit_id": "L07-B3-EFFECT-AUDIT",
+  "graph_id": "B3",
+  "issue": 22,
+  "objective": "Require a command-specific transaction/hook/effect map before implementation or retry classification.",
+  "required_sections": [
+    {
+      "id": "AUD-01",
+      "name": "identity_and_provenance",
+      "required": "action/contract/source/build/database IDs and exact handler/caller evidence"
+    },
+    {
+      "id": "AUD-02",
+      "name": "typed_parameters",
+      "required": "names, types, bounds, nullability, server-derived fields and sensitive redaction"
+    },
+    {
+      "id": "AUD-03",
+      "name": "datasets_and_fields",
+      "required": "every master/detail/join/read-only/derived dataset and writable field ownership"
+    },
+    {
+      "id": "AUD-04",
+      "name": "authorization_state",
+      "required": "capability, tenant/company/branch/storehouse and business-state checks with timing"
+    },
+    {
+      "id": "AUD-05",
+      "name": "transaction_owner",
+      "required": "caller versus procedure ownership, nested/savepoint behavior, isolation and XACT_ABORT disposition"
+    },
+    {
+      "id": "AUD-06",
+      "name": "locks",
+      "required": "row/application resources, naming, order, timeout, owner/release and competing WinForms path"
+    },
+    {
+      "id": "AUD-07",
+      "name": "hooks_triggers",
+      "required": "before/after/deferred hooks, triggers, order, failure behavior and mandatory versus optional effects"
+    },
+    {
+      "id": "AUD-08",
+      "name": "completion",
+      "required": "authoritative success identity/state/reread and delayed mandatory-effect boundary"
+    },
+    {
+      "id": "AUD-09",
+      "name": "failure_retry",
+      "required": "pre-dispatch rejection, rollback-proved retry, timeout/deadlock/worker-loss/late ACK and OutcomeUnknown policy"
+    },
+    {
+      "id": "AUD-10",
+      "name": "audit_events",
+      "required": "business audit atomicity, post-commit outbox/invalidation, safe correlation and no secrets"
+    }
+  ],
+  "review_rules": [
+    "static hotspot presence is not a UI action binding",
+    "mixed XACT_ABORT cannot be normalized globally",
+    "no outer transaction until compatibility is proved",
+    "first DB commit may not be final business completion",
+    "no generic CRUD from table names",
+    "no silent compensation of committed financial/stock effects",
+    "core transaction commit is an intermediate fact when any mandatory effect remains; final success requires the complete action-specific predicate"
+  ],
+  "completion_status": "template_only_no_command_audited",
+  "execution_status": "NOT_RUN",
+  "completion_model": [
+    {
+      "id": "CMPH-01",
+      "phase": "PRE_DISPATCH",
+      "success_allowed": false,
+      "required_evidence": "authorization, state, typed payload, provenance and reservation accepted"
+    },
+    {
+      "id": "CMPH-02",
+      "phase": "CORE_TRANSACTION_COMMITTED",
+      "success_allowed": false,
+      "required_evidence": "business transaction identity/commit observed; mandatory downstream effects still evaluated"
+    },
+    {
+      "id": "CMPH-03",
+      "phase": "MANDATORY_EFFECTS_PENDING",
+      "success_allowed": false,
+      "required_evidence": "durable effect identities and recovery ownership; client sees pending/unknown, never final success"
+    },
+    {
+      "id": "CMPH-04",
+      "phase": "MANDATORY_EFFECTS_CONFIRMED",
+      "success_allowed": false,
+      "required_evidence": "every required hook/trigger/outbox/external effect accepted by its exact completion criterion"
+    },
+    {
+      "id": "CMPH-05",
+      "phase": "AUTHORITATIVE_REREAD_FINAL",
+      "success_allowed": true,
+      "required_evidence": "reread proves final business state and all mandatory completion predicates"
+    }
+  ]
+}

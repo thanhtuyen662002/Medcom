@@ -1,0 +1,218 @@
+{
+  "schema_version": 1,
+  "lane": "L07",
+  "artifact_status": "prepared_local_only",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_issues": [
+    22,
+    24
+  ],
+  "source_contracts": [
+    {
+      "path": "docs/architecture/PHASE2_COMMAND_TRANSACTION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "a819e2f2cb55b94883235ae3626157e7da641e75a727b98a8930bd712299e99c",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_COMMAND_TRANSACTION_CONTRACT.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/db/CONCURRENCY_TRANSACTION_CONTRACTS.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "5d3a5f84feb79dcfd024531fd9a0b25072756ab5c1c2899edcc52756dfa66b5c",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/db/CONCURRENCY_TRANSACTION_CONTRACTS.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/db/LOCKING_TRANSACTION_HOTSPOTS.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c0a34a5db9265a0cc946d9ad4cb85bd8f2d736fde84fdfdedaade835c0e401eb",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/db/LOCKING_TRANSACTION_HOTSPOTS.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/architecture/PHASE2_AUDIT_TRACE_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "e552f88a122745ee5e90754115ac832db9de2e16ae0c8f8cc35e650d56e2114c",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_AUDIT_TRACE_CONTRACT.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "9d9b7157027cce55e3d24d7ade4e554e7205d34a9393bb67f21f60164190c1e0",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/web/UX_RUNTIME_FEEDBACK_SESSION.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "a397a8df0049481cc91df81cfd664deb42e99baa3e060cc534d396c8a4e277a0",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/UX_RUNTIME_FEEDBACK_SESSION.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "338ac433b907f42e720fe3564d3041fef2322036d7405bdf0c7e08942ce3bb13",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "access": "sanitized repository contract/evidence"
+    }
+  ],
+  "limits": [
+    "no L07 dispatcher lease or writer token",
+    "no exact pilot command signature, procedure binding, transaction owner or hook order proved",
+    "no authorized raw SQL/source/runtime opened or executed",
+    "no database mutation, lock test or legacy command dispatch",
+    "no product code, CI or current-head implementation test",
+    "no GitHub mutation or issue closure"
+  ],
+  "unit_id": "L07-B5-IDEMPOTENCY",
+  "graph_id": "B5",
+  "issue": 24,
+  "objective": "Define dedupe identity and mismatch handling without claiming exactly-once behavior.",
+  "dedupe_domain": [
+    "tenant",
+    "company",
+    "authoritative_data_source",
+    "stable_principal",
+    "registered_action_id",
+    "contract_version",
+    "idempotency_key"
+  ],
+  "cases": [
+    {
+      "id": "IDM-01",
+      "scenario": "same domain/key and identical semantic payload while first InProgress",
+      "expected": "return same operation/InProgress; do not dispatch again"
+    },
+    {
+      "id": "IDM-02",
+      "scenario": "same domain/key and identical payload after Success",
+      "expected": "reauthorize result access and return reconciled original outcome"
+    },
+    {
+      "id": "IDM-03",
+      "scenario": "same key with changed semantic payload",
+      "expected": "reject mismatch; never overwrite fingerprint"
+    },
+    {
+      "id": "IDM-04",
+      "scenario": "same key in different tenant/company/data source",
+      "expected": "distinct scoped domain; no cross-scope result access"
+    },
+    {
+      "id": "IDM-05",
+      "scenario": "same key from another principal",
+      "expected": "does not grant access or dedupe authority across principals unless explicit command contract says so"
+    },
+    {
+      "id": "IDM-06",
+      "scenario": "role revoked before replay/result read",
+      "expected": "current authority revalidated; old success record grants no permission"
+    },
+    {
+      "id": "IDM-07",
+      "scenario": "reauthentication changes session generation",
+      "expected": "dispatch/result fenced separately; logical harmful effect is not recreated automatically"
+    },
+    {
+      "id": "IDM-08",
+      "scenario": "key expires while operation InProgress or OutcomeUnknown",
+      "expected": "cannot become empty/reusable; reconcile or retain safe tombstone"
+    },
+    {
+      "id": "IDM-09",
+      "scenario": "semantic fingerprint changes only JSON field order/format",
+      "expected": "canonical command-specific normalization yields same meaning where explicitly defined"
+    },
+    {
+      "id": "IDM-10",
+      "scenario": "payload changes a business-significant default omitted by client",
+      "expected": "server-resolved value participates in semantic fingerprint as contract requires"
+    },
+    {
+      "id": "IDM-11",
+      "scenario": "external ledger reservation succeeds but business dispatch never starts",
+      "expected": "terminal/retry disposition follows verified command policy; no fake business success"
+    },
+    {
+      "id": "IDM-12",
+      "scenario": "business commit succeeds but external ledger update fails",
+      "expected": "OutcomeUnknown/reconciliation; external ledger alone cannot claim exactly once"
+    },
+    {
+      "id": "IDM-13",
+      "scenario": "ledger query includes semantic fingerprint in lookup uniqueness, so changed payload misses the existing stable key",
+      "expected": "validator/design rejects lookup; stable scoped key finds the existing record and immutable fingerprint mismatch is rejected before dispatch"
+    },
+    {
+      "id": "IDM-14",
+      "scenario": "same idempotency key and fingerprint digest but different canonicalizer/contract version",
+      "expected": "contract/canonicalizer version is bound; incompatible fingerprint domains never collide silently"
+    },
+    {
+      "id": "IDM-15",
+      "scenario": "browser submits its own semantic fingerprint",
+      "expected": "server recomputes from typed payload, authoritative defaults/scope and action contract; client digest grants no dedupe identity"
+    },
+    {
+      "id": "IDM-16",
+      "scenario": "hash collision or canonicalization ambiguity is detected",
+      "expected": "fail closed to manual/explicit conflict; never return or dispatch against an ambiguous operation"
+    }
+  ],
+  "execution_status": "NOT_RUN",
+  "ledger_lookup_key": [
+    "tenant",
+    "company",
+    "authoritative_data_source",
+    "stable_principal",
+    "registered_action_id",
+    "contract_version",
+    "idempotency_key"
+  ],
+  "fingerprint_contract": {
+    "input_owner": "server",
+    "inputs": [
+      "canonical typed payload",
+      "server-resolved business defaults",
+      "business reference",
+      "action/contract version",
+      "relevant authoritative scope"
+    ],
+    "algorithm": "versioned canonicalization plus collision-resistant digest; exact algorithm selected in implementation review",
+    "stored_with_operation": "required and immutable",
+    "lookup_behavior": "lookup by stable scoped ledger key, then compare the immutable stored fingerprint; mismatch is rejected before dispatch and is never a miss or new reservation"
+  },
+  "immutable_record_fields": [
+    "semantic_request_fingerprint"
+  ],
+  "lookup_sequence": [
+    "lookup by stable scoped ledger key",
+    "if absent reserve one operation record",
+    "if present compare immutable semantic_request_fingerprint",
+    "reject mismatch before dispatch; never reserve a second record for the same key",
+    "reauthorize before result disclosure or replay decision"
+  ]
+}

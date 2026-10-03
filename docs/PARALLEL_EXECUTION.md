@@ -1,5 +1,7 @@
 # Parallel execution and anti-bottleneck protocol
 
+> Activation checkpoint — 2026-10-02: PR #43 is reviewed/merged and ten hourly schedules are enabled in bootstrap/preparation mode. Read `docs/execution/SCHEDULE_ACTIVATION_20261002.md` and current `docs/PROJECT_STATE.yaml`. These supersede the original planned-only/future activation statements below. L01 alone writes GitHub until minimum preflight and proved dispatcher admission; other lanes remain read-only/preparation. Source/runtime/CI gates and truthful 4–6 unit accounting remain mandatory.
+
 The five Phase 1 workstreams are historical analysis roles. The owner's 2026-10-01 request plans at most ten future coding lanes, defined in `plans/PHASE2_SCHEDULED_EXECUTION_PLAN.md`. No automation is created, repurposed, stopped or enabled by this preparation run. That plan governs future lane ownership, admission, lease fencing and CI drain; this file retains the underlying anti-bottleneck principles.
 
 ## Core rule: never idle on a dependency

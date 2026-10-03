@@ -1,0 +1,18 @@
+{
+  "decision": "BLOCKED",
+  "reasons": [
+    "admin_bypass_not_excluded",
+    "current_base_checks_not_enforced",
+    "exact_head_independent_review_missing",
+    "last_push_independent_approval_missing",
+    "protection_unreadable",
+    "required_check_identity_missing",
+    "required_review_not_enforced",
+    "stale_review_protection_missing",
+    "tested_source_base_missing"
+  ],
+  "expected_head": "1cc4dd40e761e5c578c1e1ee594be283795e66a8",
+  "expected_base": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "atomic_reservation": false,
+  "dispatcher_fencing": "not_proven"
+}
