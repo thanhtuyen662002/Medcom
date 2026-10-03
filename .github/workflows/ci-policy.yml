@@ -1,0 +1,51 @@
+name: CI policy and Windows backend
+on:
+  push:
+    branches: [main, medcom-schedule-activation-20261002, 'medcom-work/**', 'medcom-ci/**']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ci-policy-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  ci-policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install policy parser
+        run: python -m pip install -r .github/requirements-ci.txt
+      - name: Validate ruleset and required workflow checks
+        run: python .github/scripts/verify_ci_policy.py
+      - name: Verify integration and package guards
+        run: python -m unittest discover -s .github/scripts -p 'test_*.py'
+      - name: Verify source metadata and architecture
+        run: |
+          python tools/backend/check_architecture.py
+          python tools/source/validate_catalog.py
+          python -m unittest discover -s tools/source -p 'test_*.py'
+  backend-windows:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Restore locked dependencies
+        run: dotnet restore Medcom.slnx --locked-mode
+      - name: Build with analyzers
+        run: dotnet build Medcom.slnx --configuration Release --no-restore
+      - name: Test source-free HTTP and application boundaries
+        run: dotnet test Medcom.slnx --configuration Release --no-build --filter 'Category!=LegacyRuntime' --logger 'trx;LogFileName=backend-windows.trx'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-windows-test-results
+          path: '**/TestResults/*.trx'
+          if-no-files-found: error
