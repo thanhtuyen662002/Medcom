@@ -122,5 +122,13 @@
     }
   ],
   "configuration_commit": "ff835e444faa1587d1df00dc98c2cc4b6ce8dcb1",
-  "execution_observation": "enable confirmed; next_run_time provider null; invocation start/completion not inferred"
+  "execution_observation": "enable confirmed; next_run_time provider null; invocation start/completion not inferred",
+  "owner_guard": {
+    "name": "MEDCOM_SCHEDULE_GUARD_V1",
+    "date": "2026-10-03",
+    "authority": "Only a newer direct owner instruction permits schedule administration. No coder/lead schedule mutation during scheduled invocations, including after goal acceptance.",
+    "historical_prompts": "The schedules array preserves the original activation snapshot; historical auto-stop wording is superseded by the owner guard. It is not a live configuration export.",
+    "interactive_renewal": "Direct owner requested a long-term goal and continued coding. Six existing schedules resumed; cadence and prompts preserved. No new automation created.",
+    "latest_readback": "All six active IDs confirmed is_enabled=true after interactive resume on 2026-10-03; configured state does not prove execution."
+  }
 }
