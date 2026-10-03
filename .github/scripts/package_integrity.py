@@ -38,7 +38,7 @@ def verify(path):
                 return ['archive_limit_exceeded']
             if len(names) != len(set(names)) or len(names) != len(set(n.casefold() for n in names)):
                 errors.append('duplicate_or_case_colliding_member')
-            if any(not safe_name(m.filename) or m.is_dir()
+            if any(not safe_name(m.orig_filename) or m.orig_filename != m.filename or m.is_dir()
                    or stat.S_ISLNK(m.external_attr >> 16) or m.flag_bits & 1 for m in members):
                 errors.append('unsafe_member')
             if errors:

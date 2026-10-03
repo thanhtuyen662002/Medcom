@@ -15,6 +15,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -34,6 +36,13 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify integration and package guards on Windows
+        run: python -m unittest discover -s .github/scripts -p 'test_*.py'
       - uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
@@ -48,4 +57,31 @@ jobs:
         with:
           name: backend-windows-test-results
           path: '**/TestResults/*.trx'
+          if-no-files-found: error
+  tested-policy-merge:
+    needs: [ci-policy, backend-windows]
+    if: success() && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Record tested policy merge provenance
+        env:
+          TEST_SOURCE: ${{ github.event.pull_request.head.sha }}
+          TEST_BASE: ${{ github.event.pull_request.base.sha }}
+          TEST_RUN_ID: ${{ github.run_id }}
+          TEST_EVENT: ${{ github.event_name }}
+          TEST_REPOSITORY: ${{ github.repository }}
+        run: |
+          mkdir -p artifacts
+          python .github/scripts/tested_receipt.py --output artifacts/tested-merge.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tested-merge
+          path: artifacts/tested-merge.json
           if-no-files-found: error

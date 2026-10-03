@@ -25,7 +25,13 @@ class PackageTests(unittest.TestCase):
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore')
                 for name, data in extras or []:
-                    archive.writestr(name, data)
+                    if isinstance(name, str):
+                        member = zipfile.ZipInfo(name)
+                        # Preserve the raw ZIP name that Windows would otherwise normalize.
+                        member.filename = name
+                    else:
+                        member = name
+                    archive.writestr(member, data)
         return path
 
     def test_valid_staging_payload(self):
@@ -43,7 +49,15 @@ class PackageTests(unittest.TestCase):
 
     def test_traversal_absolute_backslash_and_drive_paths(self):
         for name in ['../secret', '/root/key', 'a/../b', 'C:/windows/x', 'a\\x', 'a//x']:
-            self.assertIn('unsafe_member', verify(self.package(extras=[(name, b'x')])))
+            with self.subTest(name=name):
+                self.assertIn('unsafe_member', verify(self.package(extras=[(name, b'x')])))
+
+    def test_raw_name_normalization_is_rejected(self):
+        raw_name = 'wwwroot/index.html\x00hidden'
+        path = self.package(extras=[(raw_name, b'x')])
+        with zipfile.ZipFile(path) as archive:
+            self.assertIn(raw_name, [member.orig_filename for member in archive.infolist()])
+        self.assertIn('unsafe_member', verify(path))
 
     def test_symlink(self):
         info = zipfile.ZipInfo('link'); info.create_system = 3; info.external_attr = 0o120777 << 16
