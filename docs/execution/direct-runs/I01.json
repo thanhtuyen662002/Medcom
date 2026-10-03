@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I01",
+  "role": "direct_interactive",
+  "owner": "Codex direct writer under owner renewal 2026-10-03",
+  "run_id": "1ffbac5b-8d82-4242-a3a2-b510684df7ad",
+  "base_sha": "5bb48d89daea3a7b0f9cf2683b44c1885186505e",
+  "work_branch": "medcom-direct/g45/session-1ffbac5b",
+  "claim_branch": "medcom-claims/g45/direct/I01",
+  "scope": [
+    "src/backend/Medcom.Infrastructure/LocalWebSessions.cs",
+    "tests/backend/Medcom.Api.Tests/SessionTests.cs",
+    "AGENTS.md",
+    "docs/goals/PRODUCTION_ERP_GOAL.md",
+    "docs/execution/PRODUCTION_WORKFLOW_20261002.md",
+    "docs/execution/production-schedules.json",
+    "docs/PROJECT_STATE.yaml",
+    "docs/execution/direct-runs/I01.json"
+  ],
+  "purpose": "Publish handed-off session race repair, durable cancellation/expiry regressions, and current long-term goal/schedule authority. Preserve all prior invocation branches and immutable claims.",
+  "scheduled_successor": false,
+  "production_accepted": false
+}
