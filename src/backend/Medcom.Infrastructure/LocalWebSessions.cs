@@ -15,7 +15,7 @@ public sealed record WebSessionPolicy(TimeSpan IdleTimeout, TimeSpan AbsoluteTim
 public sealed class LocalWebSessions : IWebSessions
 {
     private sealed record Entry(AuthoritativeIdentity Identity, DateTimeOffset LastActivity,
-        DateTimeOffset AbsoluteExpiry);
+        DateTimeOffset AbsoluteExpiry, SemaphoreSlim RevalidationGate);
 
     private readonly Dictionary<string, Entry> entries = new(StringComparer.Ordinal);
     private readonly object gate = new();
@@ -45,7 +45,7 @@ public sealed class LocalWebSessions : IWebSessions
                 entries.Remove(key);
             if (entries.Count >= policy.Capacity) return null;
             var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
-            var entry = new Entry(frozen, now, now + policy.AbsoluteTimeout);
+            var entry = new Entry(frozen, now, now + policy.AbsoluteTimeout, new SemaphoreSlim(1, 1));
             entries.Add(Hash(token), entry);
             return Resolve(token, entry);
         }
@@ -65,39 +65,62 @@ public sealed class LocalWebSessions : IWebSessions
                 return null;
             }
         }
-        var result = await authority.RevalidateAsync(original.Identity, cancellationToken);
-        cancellationToken.ThrowIfCancellationRequested();
-        var currentIdentity = result.Outcome == IdentityOutcome.Success && result.Identity is not null
-            ? Freeze(result.Identity) : null;
-        lock (gate)
+        // One database observation at a time per session. Request-start sequence
+        // numbers cannot order SQL snapshots when overlapping reads finish out
+        // of order. Keep different sessions independent and preserve the gate
+        // through immutable Entry replacements.
+        var revalidationGate = original.RevalidationGate;
+        await revalidationGate.WaitAsync(cancellationToken);
+        try
         {
-            // Never resurrect a logout or a late validation result. Concurrent
-            // validation may update activity/capabilities but cannot regress them.
-            if (!entries.TryGetValue(key, out var latest)) return null;
-            if (currentIdentity is null || Expired(latest, clock.GetUtcNow())
-                || currentIdentity.PrincipalId != latest.Identity.PrincipalId
-                || currentIdentity.TenantId != latest.Identity.TenantId
-                || currentIdentity.CompanyId != latest.Identity.CompanyId
-                || currentIdentity.CredentialStamp != latest.Identity.CredentialStamp)
+            lock (gate)
             {
-                entries.Remove(key);
-                return null;
+                // A queued validation must read the latest identity and cannot
+                // begin a database read after logout or expiry.
+                if (!entries.TryGetValue(key, out original!) || Expired(original, clock.GetUtcNow()))
+                {
+                    entries.Remove(key);
+                    return null;
+                }
             }
-            if (currentIdentity.AuthorityVersion < latest.Identity.AuthorityVersion) return null;
-            if (currentIdentity.AuthorityVersion == latest.Identity.AuthorityVersion
-                && (!currentIdentity.Capabilities.SequenceEqual(latest.Identity.Capabilities)
-                    || !currentIdentity.BranchIds!.SequenceEqual(latest.Identity.BranchIds!)))
+            var result = await authority.RevalidateAsync(original.Identity, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            var currentIdentity = result.Outcome == IdentityOutcome.Success && result.Identity is not null
+                ? Freeze(result.Identity) : null;
+            lock (gate)
             {
-                entries.Remove(key);
-                return null;
+                // Never resurrect a logout or a late validation result. Concurrent
+                // validation may update activity/capabilities but cannot regress them.
+                if (!entries.TryGetValue(key, out var latest)) return null;
+                if (currentIdentity is null || Expired(latest, clock.GetUtcNow())
+                    || currentIdentity.PrincipalId != latest.Identity.PrincipalId
+                    || currentIdentity.TenantId != latest.Identity.TenantId
+                    || currentIdentity.CompanyId != latest.Identity.CompanyId
+                    || currentIdentity.CredentialStamp != latest.Identity.CredentialStamp)
+                {
+                    entries.Remove(key);
+                    return null;
+                }
+                if (currentIdentity.AuthorityVersion < latest.Identity.AuthorityVersion) return null;
+                if (currentIdentity.AuthorityVersion == latest.Identity.AuthorityVersion
+                    && (!currentIdentity.Capabilities.SequenceEqual(latest.Identity.Capabilities)
+                        || !currentIdentity.BranchIds!.SequenceEqual(latest.Identity.BranchIds!)))
+                {
+                    entries.Remove(key);
+                    return null;
+                }
+                var updated = latest with
+                {
+                    Identity = currentIdentity,
+                    LastActivity = userInteraction ? clock.GetUtcNow() : latest.LastActivity
+                };
+                entries[key] = updated;
+                return Resolve(token, updated);
             }
-            var updated = latest with
-            {
-                Identity = currentIdentity,
-                LastActivity = userInteraction ? clock.GetUtcNow() : latest.LastActivity
-            };
-            entries[key] = updated;
-            return Resolve(token, updated);
+        }
+        finally
+        {
+            revalidationGate.Release();
         }
     }
 

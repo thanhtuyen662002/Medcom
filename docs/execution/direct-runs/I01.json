@@ -20,5 +20,37 @@
   ],
   "purpose": "Publish handed-off session race repair, durable cancellation/expiry regressions, and current long-term goal/schedule authority. Preserve all prior invocation branches and immutable claims.",
   "scheduled_successor": false,
-  "production_accepted": false
+  "production_accepted": false,
+  "status": "candidate_published_for_independent_review",
+  "completed_units": [
+    "Renewed canonical long-term goal #45 and restored/read back six existing schedules; no new automation/cadence/prompt change.",
+    "Published independently handed-off per-session revalidation repair on isolated direct custody.",
+    "Added four cancellation/expiry/different-session boundary regressions alongside the two handed-off race/logout tests; reproduced real race failure on unrepaired base.",
+    "Reconciled current AGENTS/goal/workflow/state with MEDCOM_SCHEDULE_GUARD_V1 while preserving historical configuration evidence."
+  ],
+  "local_validation": {
+    "sdk": "10.0.401",
+    "locked_restore": "PASS",
+    "release_build": "PASS; 0 warnings, 0 errors",
+    "source_free_backend": "43 passed, 0 failed, 0 skipped",
+    "unrepaired_regression": "FAIL as expected: unchanged identity returns null when later authority read finishes first",
+    "integration_package_guards": "37 passed",
+    "source_scanner_tests": "9 passed",
+    "finite_metadata": "1527 declared objects; 33 checksum-verified members",
+    "architecture": "PASS",
+    "ci_policy_binding": "PASS; no server policy changed",
+    "diff": "PASS"
+  },
+  "review_provenance": [
+    "https://github.com/thanhtuyen662002/Medcom/pull/44#issuecomment-5956807780",
+    "https://github.com/thanhtuyen662002/Medcom/pull/44#issuecomment-5956833253"
+  ],
+  "blocked": [
+    "Hosted CI must run on the new exact head; previous-head green is not new-head evidence.",
+    "New tests/governance and stacked diff require independent review. The credential is the PR author's and cannot supply its own required approval.",
+    "Integration queue remains #46/#51 before this stacked session repair and #44; no previous work branch is resumed.",
+    "Full ERP business/source disposition, command/audit/UI integration, actual DLL/SQL host/TLS/load/restore and real-user production acceptance remain unproven."
+  ],
+  "next": "OPS_QA independently reviews this exact head including cancellation/logout/expiry, then lead drains current-base CI and required approval before serial integration. Workers use only eligible unoccupied ready successor tickets.",
+  "dispatcher_fencing_status": "not_proven"
 }

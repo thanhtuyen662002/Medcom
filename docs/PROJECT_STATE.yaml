@@ -135,4 +135,18 @@ remaining_blockers:
 - exact internal-transfer ERP form and data binding
 - exhaustive ERP to Web to DB traceability
 - per-screen mutation, permission precedence and concurrency contracts
-last_updated: '2026-10-02'
+last_updated: '2026-10-03'
+
+owner_renewal_20261003:
+  canonical_goal: 45
+  scope: complete authorized ERP through actual target-host and real-user production acceptance
+  code_execution: direct interactive writer on a new isolated branch; prior scheduled custody preserved
+  direct_branch: medcom-direct/g45/session-1ffbac5b
+  tested_base: 5bb48d89daea3a7b0f9cf2683b44c1885186505e
+  schedule_guard: MEDCOM_SCHEDULE_GUARD_V1
+  schedule_administration: only newer direct owner instruction; never scheduled self-stop
+  six_schedule_readback: all_enabled_confirmed_20261003
+  goal_accepted: false
+  production_release_accepted: false
+  current_work: publish independently handed-off per-session revalidation repair with cancellation and expiry regressions
+  remaining_acceptance: exact-head hosted checks and independent review; integrated main; full source dispositions and commands; actual target and real-user evidence

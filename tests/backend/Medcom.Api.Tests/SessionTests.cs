@@ -143,6 +143,158 @@ public sealed class SessionTests
             new(TimeSpan.Zero, TimeSpan.FromMinutes(30), 1)));
     }
 
+    [Fact]
+    public async Task ConcurrentLegacyRevalidationDoesNotLogOutUnchangedIdentity()
+    {
+        var users = new GatedLegacyUsers();
+        var authority = new LegacyIdentityAuthority(users, new AcceptedPassword(),
+            new("test-tenant", "test-company", "Test company"));
+        var login = await authority.AuthenticateAsync("synthetic-user", "synthetic-password", default);
+        var sessions = new LocalWebSessions(authority, TimeProvider.System, WebSessionPolicy.Default);
+        var session = sessions.Create(login.Identity!)!;
+        users.DelayNextRead = true;
+        var first = sessions.ResolveAsync(session.Token, false, default);
+        await users.ReadEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        var second = sessions.ResolveAsync(session.Token, false, default);
+        users.ReleaseRead.SetResult();
+        var results = await Task.WhenAll(first, second).WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.All(results, value => Assert.NotNull(value));
+        Assert.True(results[1]!.Identity.AuthorityVersion > results[0]!.Identity.AuthorityVersion);
+        Assert.NotNull(await sessions.ResolveAsync(session.Token, false, default));
+    }
+
+    [Fact]
+    public async Task QueuedRevalidationAfterLogoutDoesNotReadOrResurrectSession()
+    {
+        var users = new GatedLegacyUsers();
+        var authority = new LegacyIdentityAuthority(users, new AcceptedPassword(),
+            new("test-tenant", "test-company", "Test company"));
+        var login = await authority.AuthenticateAsync("synthetic-user", "synthetic-password", default);
+        var sessions = new LocalWebSessions(authority, TimeProvider.System, WebSessionPolicy.Default);
+        var session = sessions.Create(login.Identity!)!;
+        users.DelayNextRead = true;
+        var first = sessions.ResolveAsync(session.Token, false, default);
+        await users.ReadEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        var second = sessions.ResolveAsync(session.Token, false, default);
+        sessions.Revoke(session.Token);
+        users.ReleaseRead.SetResult();
+        var results = await Task.WhenAll(first, second).WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.All(results, value => Assert.Null(value));
+        Assert.Equal(2, users.Reads);
+    }
+
+    [Fact]
+    public async Task CancelledWaiterDoesNotUnlockTheActiveValidationOrRevokeSession()
+    {
+        var users = new GatedLegacyUsers();
+        var (sessions, session) = await LegacySession(users, new ManualClock());
+        users.DelayNextRead = true;
+        var active = sessions.ResolveAsync(session.Token, false, default);
+        await users.ReadEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        using var cancellation = new CancellationTokenSource();
+        var cancelled = sessions.ResolveAsync(session.Token, false, cancellation.Token);
+        cancellation.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => cancelled);
+        var queued = sessions.ResolveAsync(session.Token, false, default);
+        Assert.False(queued.IsCompleted);
+        Assert.Equal(2, users.Reads);
+        users.ReleaseRead.SetResult();
+        var results = await Task.WhenAll(active, queued).WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.All(results, value => Assert.NotNull(value));
+        Assert.NotNull(await sessions.ResolveAsync(session.Token, false, default));
+    }
+
+    [Fact]
+    public async Task CancelledActiveValidationReleasesWaiterWithoutRevokingSession()
+    {
+        var users = new GatedLegacyUsers();
+        var (sessions, session) = await LegacySession(users, new ManualClock());
+        users.DelayNextRead = true;
+        using var cancellation = new CancellationTokenSource();
+        var active = sessions.ResolveAsync(session.Token, false, cancellation.Token);
+        await users.ReadEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        var queued = sessions.ResolveAsync(session.Token, false, default);
+        Assert.Equal(2, users.Reads);
+        cancellation.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => active);
+        Assert.NotNull(await queued.WaitAsync(TimeSpan.FromSeconds(5)));
+        Assert.Equal(3, users.Reads);
+        Assert.NotNull(await sessions.ResolveAsync(session.Token, false, default));
+    }
+
+    [Fact]
+    public async Task QueuedValidationAfterIdleExpiryDoesNotReadOrExtendSession()
+    {
+        var users = new GatedLegacyUsers();
+        var clock = new ManualClock();
+        var (sessions, session) = await LegacySession(users, clock);
+        users.DelayNextRead = true;
+        var active = sessions.ResolveAsync(session.Token, true, default);
+        await users.ReadEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        var queued = sessions.ResolveAsync(session.Token, true, default);
+        clock.Advance(TimeSpan.FromMinutes(10));
+        users.ReleaseRead.SetResult();
+        var results = await Task.WhenAll(active, queued).WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.All(results, value => Assert.Null(value));
+        Assert.Equal(2, users.Reads);
+        Assert.Null(await sessions.ResolveAsync(session.Token, true, default));
+    }
+
+    [Fact]
+    public async Task SlowValidationDoesNotSerializeDifferentSessions()
+    {
+        var users = new GatedLegacyUsers();
+        var (sessions, firstSession) = await LegacySession(users, new ManualClock());
+        var otherSession = sessions.Create(firstSession.Identity)!;
+        users.DelayNextRead = true;
+        var first = sessions.ResolveAsync(firstSession.Token, false, default);
+        await users.ReadEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        var other = await sessions.ResolveAsync(otherSession.Token, false, default)
+            .WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.NotNull(other);
+        Assert.False(first.IsCompleted);
+        users.ReleaseRead.SetResult();
+        Assert.NotNull(await first.WaitAsync(TimeSpan.FromSeconds(5)));
+    }
+
+    private static async Task<(LocalWebSessions Sessions, ResolvedSession Session)> LegacySession(
+        GatedLegacyUsers users, ManualClock clock)
+    {
+        var authority = new LegacyIdentityAuthority(users, new AcceptedPassword(),
+            new("test-tenant", "test-company", "Test company"));
+        var login = await authority.AuthenticateAsync("synthetic-user", "synthetic-password", default);
+        var sessions = new LocalWebSessions(authority, clock,
+            new(TimeSpan.FromMinutes(10), TimeSpan.FromMinutes(30), 10));
+        return (sessions, sessions.Create(login.Identity!)!);
+    }
+
+    private sealed class AcceptedPassword : ILegacyPasswordVerifier
+    {
+        public Task<PasswordOutcome> VerifyAsync(string username, string password, string storedHash,
+            CancellationToken cancellationToken) => Task.FromResult(PasswordOutcome.Accepted);
+    }
+
+    private sealed class GatedLegacyUsers : ILegacyUserStore
+    {
+        private int reads;
+        public int Reads => Volatile.Read(ref reads);
+        public bool DelayNextRead { get; set; }
+        public TaskCompletionSource ReadEntered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource ReleaseRead { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public async Task<LegacyUser?> FindAsync(string username, CancellationToken cancellationToken)
+        {
+            Interlocked.Increment(ref reads);
+            if (DelayNextRead)
+            {
+                DelayNextRead = false;
+                ReadEntered.SetResult();
+                await ReleaseRead.Task.WaitAsync(cancellationToken);
+            }
+            return new("synthetic-user", "Synthetic user", "synthetic-stored-hash", false,
+                "synthetic-group", true, ["purchase-orders.read"], ["synthetic-branch"]);
+        }
+    }
+
     private static LocalWebSessions Store(ControlledAuthority authority, ManualClock clock, int capacity = 10) =>
         new(authority, clock, new(TimeSpan.FromMinutes(10), TimeSpan.FromMinutes(30), capacity));
 }
