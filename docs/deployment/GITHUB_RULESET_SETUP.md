@@ -13,6 +13,9 @@ claim or publish the accumulated product repair proposals.
 - `.github/workflows/ci-policy.yml`: ruleset/job consistency, guard regressions and a
   Windows .NET source-free restore/build/test job.
 - `.github/scripts/verify_ci_policy.py` and `.github/requirements-ci.txt`: policy parser.
+- `tests/backend/Medcom.Api.Tests/AuthenticationHttpTests.cs`: fixture certificate is
+  reimported from temporary in-memory PKCS#12 for Windows Schannel compatibility;
+  exact certificate-thumbprint trust and the full HTTPS tests remain in place.
 
 The required GitHub Actions contexts are `backend`, `ci-policy`, `backend-windows`.
 Both `main` and `medcom-schedule-activation-20261002` require an up-to-date tested base,

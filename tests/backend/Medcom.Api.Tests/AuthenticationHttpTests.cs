@@ -204,7 +204,14 @@ internal sealed class SecureTestServer(WebApplication app, HttpClient client, X5
     {
         using var key = RSA.Create(2048);
         var request = new CertificateRequest("CN=localhost", key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-        var certificate = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddHours(1));
+        using var generated = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddHours(1));
+        // Windows Schannel needs an imported private key for the server handshake.
+        // DefaultKeySet creates a temporary key which is cleaned up on certificate disposal.
+        // Keep the same fixture-only thumbprint trust boundary on every platform.
+        var pkcs12 = generated.Export(X509ContentType.Pfx);
+        X509Certificate2 certificate;
+        try { certificate = X509CertificateLoader.LoadPkcs12(pkcs12, null); }
+        finally { CryptographicOperations.ZeroMemory(pkcs12); }
         var authority = new ControlledAuthority();
         var app = ApiHost.Build(["--environment", "Production", "--Legacy:Enabled", "false"], builder =>
         {
