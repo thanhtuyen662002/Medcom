@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "parent_ticket": "I02",
+  "goal_issue": 45,
+  "parent_claim_sha": "60e2a8a79b346035300ff68575f3e538355129ee",
+  "owner_run": "2c24e90b-4e0a-49cb-828b-83b824788e33",
+  "work_branch": "codex/g45-production-i02-20261004",
+  "draft_lease": 53,
+  "role": "Lead bounded CI repair under direct owner production request",
+  "scope": [
+    ".github/scripts/package_integrity.py",
+    ".github/scripts/test_package_integrity.py",
+    ".github/workflows/ci-policy.yml"
+  ],
+  "trigger": "Inherited Windows ZIP normalization regression: integration handoffs match canonical hashes, but the full guard suite has 59 PASS and one package-path failure",
+  "purpose": "Repair raw ZIP member validation and preserve malicious fixture bytes across Windows/Linux; execute the full guard suite on supported CI hosts before further product code",
+  "admission": "Scope addendum for the same I02 run and Draft lease; no second active lease, no old-branch takeover, no immutable claim replacement",
+  "authorization": "Direct owner requires every actionable owned current-head CI failure to be repaired in the same session before new product code; Lead owns bounded shared-path repair coordination",
+  "source_evidence": [
+    ".github/scripts/package_integrity.py",
+    ".github/scripts/test_package_integrity.py",
+    "https://github.com/thanhtuyen662002/Medcom/issues/45#issuecomment-5970559066"
+  ],
+  "schedules": "No create or enable; no automation operation is performed by this repair",
+  "production_accepted": false
+}
