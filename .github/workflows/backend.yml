@@ -1,18 +1,18 @@
 name: Backend foundation
 on:
   push:
-    branches: [main, medcom-schedule-activation-20261002]
+    branches: [main, medcom-schedule-activation-20261002, 'medcom-work/**', 'medcom-ci/**']
   pull_request:
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: backend-${{ github.ref }}
+  group: backend-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   backend:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
