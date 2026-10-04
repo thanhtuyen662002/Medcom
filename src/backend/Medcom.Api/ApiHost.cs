@@ -20,6 +20,7 @@ public static class ApiHost
             WebRootPath = webRoot,
             ApplicationName = typeof(ApiHost).Assembly.GetName().Name
         });
+        ServerConfiguration.LoadPrivateConfiguration(builder.Configuration, builder.Environment.ContentRootPath, args);
         builder.WebHost.ConfigureKestrel(options =>
         {
             options.AddServerHeader = false;
@@ -34,9 +35,10 @@ public static class ApiHost
             string Required(string key) => builder.Configuration[key] is { Length: > 0 } value
                 ? value : throw new InvalidOperationException($"Missing server setting {key}.");
             var enablePilots = builder.Configuration.GetValue("Legacy:EnableReadOnlyPilots", false);
+            var connectionString = ServerConfiguration.ResolveConnectionString(builder.Configuration);
             builder.Services.AddSingleton(new LegacyCompany(Required("Legacy:TenantId"),
                 Required("Legacy:CompanyId"), Required("Legacy:CompanyName")));
-            builder.Services.AddSingleton(new SqlLegacyUserStore(Required("Legacy:ConnectionString"), enablePilots: enablePilots));
+            builder.Services.AddSingleton(new SqlLegacyUserStore(connectionString, enablePilots: enablePilots));
             builder.Services.AddSingleton<ILegacyUserStore>(provider=>provider.GetRequiredService<SqlLegacyUserStore>());
             builder.Services.AddSingleton(new LegacyPasswordOptions(builder.Configuration["Legacy:DotnetPath"] ?? "dotnet",
                 Path.Combine(AppContext.BaseDirectory, "password-worker", "Medcom.LegacyPasswordWorker.dll"),
@@ -47,7 +49,7 @@ public static class ApiHost
             builder.Services.AddHostedService<LegacyHealthMonitor>();
             builder.Services.AddSingleton<IIdentityAuthority, LegacyIdentityAuthority>();
             if (enablePilots) builder.Services.AddSingleton<IDocumentReader>(provider => new SqlDocumentReader(
-                Required("Legacy:ConnectionString"), provider.GetRequiredService<LegacyCompany>()));
+                connectionString, provider.GetRequiredService<LegacyCompany>()));
             else builder.Services.AddSingleton<IDocumentReader, UnavailableDocumentReader>();
         }
         else

@@ -43,6 +43,8 @@ jobs:
           python-version: '3.12'
       - name: Verify integration and package guards on Windows
         run: python -m unittest discover -s .github/scripts -p 'test_*.py'
+      - name: Verify private server configuration persistence on Windows PowerShell
+        run: powershell.exe -NoProfile -File tools/deploy/Test-MedcomServerConfiguration.ps1
       - uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
