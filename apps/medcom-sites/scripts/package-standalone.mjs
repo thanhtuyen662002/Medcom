@@ -23,9 +23,38 @@ function contained(root, candidate) {
   const relative = path.relative(root, candidate);
   return relative === '' || (!relative.startsWith(`..${path.sep}`) && relative !== '..' && !path.isAbsolute(relative));
 }
-export async function assertRealDirectory(root) {
-  const stat = await fs.lstat(root);
-  if (!stat.isDirectory() || stat.isSymbolicLink() || path.resolve(await fs.realpath(root)) !== path.resolve(root)) throw new Error('Source or package root must be a real directory');
+export function sameFilesystemObject(left, right) {
+  // Node's bigint stats preserve Windows file IDs. Never case-fold names:
+  // Windows can enable case-sensitive directories containing distinct siblings.
+  return left.dev === right.dev && left.ino === right.ino && left.ino !== 0n;
+}
+export async function assertRealDirectory(root, { filesystem = fs, pathApi = path } = {}) {
+  const absolute = pathApi.resolve(root);
+  let ancestor = absolute;
+  while (true) {
+    const stat = await filesystem.lstat(ancestor, { bigint: true });
+    if (!stat.isDirectory() || stat.isSymbolicLink()) throw new Error('Source or package root must be a real directory');
+    const parent = pathApi.dirname(ancestor);
+    if (parent === ancestor) break;
+    ancestor = parent;
+  }
+  const requested = await filesystem.lstat(absolute, { bigint: true });
+  const canonical = await filesystem.lstat(await filesystem.realpath(absolute), { bigint: true });
+  if (!sameFilesystemObject(requested, canonical) || !canonical.isDirectory() || canonical.isSymbolicLink()) throw new Error('Source or package root must be a real directory');
+}
+
+export async function physicallyContained(root, candidate, { filesystem = fs, pathApi = path } = {}) {
+  const rootStat = await filesystem.lstat(root, { bigint: true });
+  if (!rootStat.isDirectory() || rootStat.isSymbolicLink()) return false;
+  let ancestor = pathApi.resolve(candidate);
+  while (true) {
+    const stat = await filesystem.lstat(ancestor, { bigint: true });
+    if (stat.isSymbolicLink()) return false;
+    if (sameFilesystemObject(rootStat, stat)) return stat.isDirectory();
+    const parent = pathApi.dirname(ancestor);
+    if (parent === ancestor) return false;
+    ancestor = parent;
+  }
 }
 
 // Materialize traced pnpm links only when their final target stays inside this tree.
@@ -39,7 +68,7 @@ export async function copyTree(source, destination) {
     let actual = current;
     if (stat.isSymbolicLink()) {
       actual = await fs.realpath(current);
-      if (!contained(root, actual)) throw new Error(`Link escapes source tree: ${relative}`);
+      if (!await physicallyContained(root, actual)) throw new Error(`Link escapes source tree: ${relative}`);
       stat = await fs.lstat(actual);
     }
     if (relative) {
@@ -62,7 +91,7 @@ export async function copyTree(source, destination) {
         let pkg;
         try {
           const resolved = await fs.realpath(metadata);
-          if (!contained(root, resolved)) throw new Error('Package metadata escapes source tree');
+          if (!await physicallyContained(root, resolved)) throw new Error('Package metadata escapes source tree');
           pkg = JSON.parse(await fs.readFile(resolved, 'utf8'));
         } catch (error) { if (error.code !== 'ENOENT') throw error; }
         const dependencies = Object.keys({ ...pkg?.dependencies, ...pkg?.optionalDependencies, ...pkg?.peerDependencies }).sort();
@@ -72,7 +101,7 @@ export async function copyTree(source, destination) {
           const targetRelative = `${relative}/node_modules/${name}`;
           try { await fs.lstat(path.join(destination, ...targetRelative.split('/'))); continue; } catch (error) { if (error.code !== 'ENOENT') throw error; }
           let ancestor = actual;
-          while (contained(root, ancestor)) {
+          while (await physicallyContained(root, ancestor)) {
             const candidate = path.join(ancestor, 'node_modules', ...name.split('/'));
             let found = false;
             try { await fs.lstat(candidate); found = true; } catch (error) { if (error.code !== 'ENOENT') throw error; }

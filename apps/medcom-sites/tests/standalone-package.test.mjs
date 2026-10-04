@@ -3,12 +3,15 @@ import assert from 'node:assert/strict';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { ADMISSION, MANIFEST, assertReleaseInputs, copyTree, packageStandalone, rebuildAndPackage, validatePath } from '../scripts/package-standalone.mjs';
+import { ADMISSION, MANIFEST, assertRealDirectory, assertReleaseInputs, physicallyContained, sameFilesystemObject, copyTree, packageStandalone, rebuildAndPackage, validatePath } from '../scripts/package-standalone.mjs';
 import { verifyStandalone } from '../scripts/verify-standalone.mjs';
 
 const revision = 'a'.repeat(40);
 async function fixture(t) {
-  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'medcom-package-test-'));
+  // Windows runner TEMP may be an alias or junction. Use its canonical
+  // location for ordinary fixtures; dedicated tests retain link rejection.
+  const tempRoot = await fs.realpath(os.tmpdir());
+  const dir = await fs.mkdtemp(path.join(tempRoot, 'medcom-package-test-'));
   t.after(() => fs.rm(dir, { recursive: true, force: true }));
   const appRoot = path.join(dir, 'app');
   const outputRoot = path.join(dir, 'artifacts');
@@ -251,4 +254,68 @@ test('release guard allows normal generated Next declaration and TypeScript buil
   await fs.writeFile(path.join(appRoot, 'tsconfig.tsbuildinfo'), '{}');
   assert.equal(git(['ls-files', '--others', '--exclude-standard']).trim(), '');
   await assertReleaseInputs(appRoot);
+});
+
+
+function syntheticStat(ino, { link = false, directory = true } = {}) {
+  return { dev: 1n, ino: BigInt(ino), isDirectory: () => directory, isSymbolicLink: () => link };
+}
+
+test('Windows canonical spelling differences use file identity without case folding', async () => {
+  const requested = String.raw`c:\Users\RUNNER~1\Temp\package`;
+  const canonical = String.raw`C:\Users\runneradmin\Temp\package`;
+  const filesystem = {
+    realpath: async () => canonical,
+    lstat: async value => syntheticStat(value === requested || value === canonical ? 42 : 1),
+  };
+  await assertRealDirectory(requested, { filesystem, pathApi: path.win32 });
+  await assert.rejects(assertRealDirectory(requested, {
+    filesystem: { ...filesystem, lstat: async value => syntheticStat(value === canonical ? 43 : 42) },
+    pathApi: path.win32,
+  }), /real directory/);
+  assert.equal(sameFilesystemObject(syntheticStat(42), syntheticStat(43)), false);
+});
+
+test('Windows identity normalization still rejects a junction ancestor', async () => {
+  const root = String.raw`C:\parent\junction\package`;
+  await assert.rejects(assertRealDirectory(root, {
+    filesystem: {
+      realpath: async () => root,
+      lstat: async value => syntheticStat(42, { link: value === String.raw`C:\parent\junction` }),
+    },
+    pathApi: path.win32,
+  }), /real directory/);
+});
+
+test('physical Windows containment rejects distinct case-sensitive sibling identity', async () => {
+  const root = String.raw`C:\source\CaseRoot`;
+  const sibling = String.raw`C:\source\CASEROOT`;
+  const candidate = `${sibling}\\private.js`;
+  const identities = new Map([[root, 10], [sibling, 20], [candidate, 30], [String.raw`C:\source`, 2], ['C:\\', 1]]);
+  const filesystem = { lstat: async value => syntheticStat(identities.get(value), { directory: value !== candidate }) };
+  assert.equal(path.win32.relative(root, candidate), 'private.js');
+  assert.equal(await physicallyContained(root, candidate, { filesystem, pathApi: path.win32 }), false);
+  assert.equal(await physicallyContained(root, `${root}\\asset.js`, {
+    filesystem: { lstat: async value => syntheticStat(value === root ? 10 : 40, { directory: value === root }) },
+    pathApi: path.win32,
+  }), true);
+});
+
+test('real directory validation rejects a linked ancestor', async t => {
+  const { dir } = await fixture(t);
+  const real = path.join(dir, 'real');
+  const link = path.join(dir, 'linked');
+  await fs.mkdir(path.join(real, 'nested'), { recursive: true });
+  await fs.symlink(real, link, process.platform === 'win32' ? 'junction' : 'dir');
+  await assert.rejects(assertRealDirectory(path.join(link, 'nested')), /real directory/);
+  await assertRealDirectory(path.join(real, 'nested'));
+});
+
+if (process.platform === 'win32') test('Windows runtime accepts canonical drive-letter spelling aliases', async t => {
+  const { dir } = await fixture(t);
+  const canonical = await fs.realpath(dir);
+  await assertRealDirectory(canonical);
+  const alternateDrive = canonical.replace(/^[a-z]:/i, drive => drive[0] === drive[0].toUpperCase() ? drive.toLowerCase() : drive.toUpperCase());
+  await assertRealDirectory(alternateDrive);
+  assert.equal(await physicallyContained(alternateDrive, canonical), true);
 });
