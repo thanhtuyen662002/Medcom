@@ -1,6 +1,8 @@
 # Server candidate — release acceptance is still open
 
-The ZIP contains the .NET 10 API, exported Next.js/React frontend and isolated password worker. The same ASP.NET HTTPS endpoint serves the frontend and API; Node is only needed at build/test time. This package never creates or upgrades an ERP database. Owner DLLs, dumps, connection secrets and production records are not included.
+For a separately hosted frontend, use `python tools/deploy/package.py --profile backend` and [the Windows update workflow](WINDOWS_UPDATE_WORKFLOW.md). This profile contains only the .NET 10 API, isolated password worker and public operator tools/docs; Node is not required for its build. It uses separate artifacts and a format-3 backend manifest.
+
+The historical default combined ZIP contains the API, exported Next.js/React frontend and isolated password worker. In that combined profile the same ASP.NET HTTPS endpoint serves frontend and API; Node is needed at build/test time. This package never creates or upgrades an ERP database. Owner DLLs, dumps, connection secrets and production records are not included.
 
 ## Implemented and verified
 
@@ -18,7 +20,7 @@ A bounded background monitor checks schema and a public synthetic pure-DLL healt
 
 Full archive verification recovered 609 procedures, including all seven internal-transfer edit/delete checks. Their source-availability blocker is resolved. Trigger definitions stored in data are cataloged separately with version provenance. Full effects, approvals, transaction/idempotency/concurrency semantics, durable security audit, exports, operational recovery/performance, independent review and deployment-host acceptance are still required.
 
-## Build and package
+## Build and package the historical combined profile
 
 From the repository root with the SDK in `global.json`, Node 24, npm and Python:
 

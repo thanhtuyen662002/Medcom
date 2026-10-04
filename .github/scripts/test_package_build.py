@@ -1,6 +1,7 @@
 import contextlib
 import io
 import json
+import os
 from pathlib import Path
 import runpy
 import shutil
@@ -16,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class PackageSourceCustodyTests(unittest.TestCase):
-    def build(self, change=None):
+    def build(self, change=None, profile="combined", frontend=True, unsafe=None):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         root = Path(temp.name).resolve()
@@ -24,22 +25,43 @@ class PackageSourceCustodyTests(unittest.TestCase):
             destination = root / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(ROOT / relative, destination)
-        for relative in ('src/frontend/out/index.html', 'src/frontend/out/workspace/index.html',
-                         'docs/deployment/SERVER_DEPLOYMENT.md', 'docs/backend/SERVER_CONFIGURATION.md',
-                         'tools/deploy/Configure-MedcomServer.ps1'):
+        fixtures = ['docs/deployment/SERVER_DEPLOYMENT.md', 'docs/backend/SERVER_CONFIGURATION.md',
+                    'tools/deploy/Configure-MedcomServer.ps1', 'tools/deploy/plan_update.py',
+                    'docs/deployment/WINDOWS_UPDATE_WORKFLOW.md']
+        if frontend:
+            fixtures += ['src/frontend/out/index.html', 'src/frontend/out/workspace/index.html']
+        for relative in fixtures:
             destination = root / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_text('Isolated test fixture; not a production payload')
+        external_temp = tempfile.TemporaryDirectory()
+        self.addCleanup(external_temp.cleanup)
+        external = Path(external_temp.name)
+        (external / 'synthetic-private.json').write_text('synthetic external bytes must not be packaged')
+        if unsafe == 'source-link':
+            source = root / 'docs/backend/SERVER_CONFIGURATION.md'
+            source.unlink()
+            source.symlink_to(external / 'synthetic-private.json')
         phase = {'publishes': 0, 'verified': False}
         real_run = subprocess.run
 
         def run(command, **kwargs):
             if command[0] == 'fixture-dotnet':
                 phase['publishes'] += 1
+                self.assertEqual(profile == 'backend', '-p:UseAppHost=false' in command)
                 output = Path(command[command.index('-o') + 1])
                 output.mkdir(parents=True, exist_ok=True)
                 name = 'Medcom.Api.dll' if phase['publishes'] == 1 else 'Medcom.LegacyPasswordWorker.dll'
                 (output / name).write_bytes(b'Isolated synthetic assembly fixture')
+                if phase['publishes'] == 1:
+                    if unsafe == 'file-link':
+                        (output / 'innocent.json').symlink_to(external / 'synthetic-private.json')
+                    elif unsafe == 'directory-link':
+                        (output / 'innocent').symlink_to(external, target_is_directory=True)
+                    elif unsafe == 'hard-link':
+                        os.link(external / 'synthetic-private.json', output / 'innocent.json')
+                    elif unsafe == 'fifo':
+                        os.mkfifo(output / 'innocent.json')
                 return subprocess.CompletedProcess(command, 0)
             result = real_run(command, capture_output=True, text=True, **kwargs)
             phase['verified'] = True
@@ -52,7 +74,7 @@ class PackageSourceCustodyTests(unittest.TestCase):
                 return ('b' if changed and change.endswith('head') else 'a') * 40 + '\n'
             return ' M source.cs\n' if changed and change.endswith('dirty') else ''
 
-        with patch.object(sys, 'argv', ['package.py', '--dotnet', 'fixture-dotnet']), \
+        with patch.object(sys, 'argv', ['package.py', '--dotnet', 'fixture-dotnet', '--profile', profile]), \
              patch.object(subprocess, 'run', side_effect=run), \
              patch.object(subprocess, 'check_output', side_effect=git), \
              contextlib.redirect_stdout(io.StringIO()):
@@ -72,6 +94,44 @@ class PackageSourceCustodyTests(unittest.TestCase):
             self.assertIn('docs/backend/SERVER_CONFIGURATION.md', manifest['files'])
             self.assertFalse(any('\\' in name for name in manifest['files']))
         self.assertTrue((root / 'artifacts/medcom-candidate.sha256').is_file())
+
+    def test_backend_needs_no_frontend_and_has_separate_profile_artifacts(self):
+        root, failure = self.build(profile='backend', frontend=False)
+        self.assertIsNone(failure)
+        self.assertFalse((root / 'artifacts/medcom-server-candidate.zip').exists())
+        self.assertTrue((root / 'artifacts/medcom-backend-candidate.sha256').exists())
+        self.assertTrue((root / 'artifacts/medcom-backend-verify-package.py').exists())
+        with zipfile.ZipFile(root / 'artifacts/medcom-backend-candidate.zip') as archive:
+            manifest = json.loads(archive.read('manifest.json'))
+            self.assertEqual(3, manifest['format'])
+            self.assertEqual('backend', manifest['packageProfile'])
+            self.assertFalse(any(name.startswith('wwwroot/') for name in archive.namelist()))
+            self.assertIn('tools/deploy/plan_update.py', manifest['files'])
+            self.assertIn('tools/deploy/package_integrity.py', manifest['files'])
+
+    def test_backend_source_changes_never_leave_final_candidate(self):
+        for change in ('publish-head', 'publish-dirty', 'verify-head', 'verify-dirty'):
+            with self.subTest(change=change):
+                root, failure = self.build(change, profile='backend', frontend=False)
+                self.assertIsNotNone(failure)
+                self.assertFalse((root / 'artifacts/medcom-backend-candidate.zip').exists())
+                self.assertFalse((root / 'artifacts/medcom-backend-candidate.sha256').exists())
+
+    def test_linked_and_nonregular_inputs_never_finalize_candidate(self):
+        modes = ['file-link', 'directory-link', 'source-link', 'hard-link']
+        if hasattr(os, 'mkfifo'):
+            modes.append('fifo')
+        for unsafe in modes:
+            with self.subTest(unsafe=unsafe):
+                try:
+                    root, failure = self.build(profile='backend', frontend=False, unsafe=unsafe)
+                except OSError as error:
+                    if os.name == 'nt' and getattr(error, 'winerror', None) == 1314:
+                        self.skipTest('This Windows test identity cannot create synthetic symbolic links')
+                    raise
+                self.assertIsNotNone(failure)
+                self.assertFalse((root / 'artifacts/medcom-backend-candidate.zip').exists())
+                self.assertFalse((root / 'artifacts/medcom-backend-candidate.sha256').exists())
 
     def assert_unfinalized(self, change):
         root, failure = self.build(change)

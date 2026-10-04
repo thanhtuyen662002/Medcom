@@ -9,7 +9,7 @@ from package_integrity import verify, STATUS
 
 
 class PackageTests(unittest.TestCase):
-    def package(self, mutate=None, extras=None):
+    def package(self, mutate=None, extras=None, backend=False):
         directory = tempfile.TemporaryDirectory(); self.addCleanup(directory.cleanup)
         path = Path(directory.name) / 'candidate.zip'
         payload = {name: b'synthetic' for name in ['Medcom.Api.dll', 'password-worker/Medcom.LegacyPasswordWorker.dll',
@@ -17,6 +17,13 @@ class PackageTests(unittest.TestCase):
                                                  'tools/deploy/Configure-MedcomServer.ps1', 'docs/backend/SERVER_CONFIGURATION.md']}
         manifest = {'format': 2, 'sourceRevision': 'a' * 40, 'releaseStatus': STATUS,
                     'files': {name: hashlib.sha256(data).hexdigest() for name, data in payload.items()}}
+        if backend:
+            payload.pop('wwwroot/index.html')
+            payload.pop('wwwroot/workspace/index.html')
+            payload.update({name: b'synthetic' for name in ('tools/deploy/plan_update.py',
+                'tools/deploy/package_integrity.py', 'docs/deployment/WINDOWS_UPDATE_WORKFLOW.md')})
+            manifest.update(format=3, packageProfile='backend',
+                            files={name: hashlib.sha256(data).hexdigest() for name, data in payload.items()})
         if mutate:
             mutate(manifest, payload)
         with zipfile.ZipFile(path, 'w') as archive:
@@ -37,6 +44,41 @@ class PackageTests(unittest.TestCase):
 
     def test_valid_staging_payload(self):
         self.assertEqual([], verify(self.package()))
+
+    def test_backend_profile_is_valid_without_embedded_frontend(self):
+        self.assertEqual([], verify(self.package(backend=True)))
+
+    def test_backend_profile_rejects_frontend_even_when_hashed(self):
+        for name in ('wwwroot/index.html', 'WWWROOT/stale.txt', 'wwwroot'):
+            def add(m, p):
+                p[name] = b'stale frontend'
+                m['files'][name] = hashlib.sha256(p[name]).hexdigest()
+            self.assertIn('frontend_payload_forbidden', verify(self.package(add, backend=True)))
+
+    def test_backend_requires_its_operator_assets(self):
+        for name in ('tools/deploy/plan_update.py', 'tools/deploy/package_integrity.py',
+                     'docs/deployment/WINDOWS_UPDATE_WORKFLOW.md'):
+            def remove(m, p):
+                p.pop(name); m['files'].pop(name)
+            self.assertIn('required_payload_missing', verify(self.package(remove, backend=True)))
+
+    def test_profile_format_confusion_is_rejected(self):
+        for change in ({'format': 3}, {'packageProfile': 'backend'}, {'format': 3.0},
+                       {'format': 3, 'packageProfile': 'combined'}, {'format': True}):
+            self.assertIn('unsupported_manifest_or_release_status',
+                          verify(self.package(lambda m, p: m.update(change))))
+        self.assertIn('unsupported_manifest_or_release_status',
+                      verify(self.package(lambda m, p: m.pop('packageProfile'), backend=True)))
+
+    def test_backend_private_material_and_revision_gates_preserved(self):
+        def add(m, p):
+            p['appsettings.Private.json'] = b'synthetic'
+            m['files']['appsettings.Private.json'] = hashlib.sha256(b'synthetic').hexdigest()
+        self.assertEqual(['private_payload_forbidden'], verify(self.package(add, backend=True)))
+        self.assertIn('source_revision_missing', verify(self.package(
+            lambda m, p: m.update(sourceRevision='unknown'), backend=True)))
+        self.assertIn('unsupported_manifest_or_release_status', verify(self.package(
+            lambda m, p: m.update(releaseStatus='READY'), backend=True)))
 
     def test_setup_tool_and_guide_are_required(self):
         for name in ('tools/deploy/Configure-MedcomServer.ps1', 'docs/backend/SERVER_CONFIGURATION.md'):
@@ -86,6 +128,32 @@ class PackageTests(unittest.TestCase):
                      'nested./file', 'appsettings.Private.json ', 'server.pfx '):
             with self.subTest(name=name):
                 self.assertIn('unsafe_member', verify(self.package(extras=[(name, b'synthetic')])))
+
+    def test_windows_device_names_are_rejected_in_every_component(self):
+        for name in ('NUL.txt', 'nested/COM1.dll', 'AUX', 'PRN.json', 'con/file',
+                     'LPT9', 'com¹.txt', 'lpt².txt', 'COM³.dll', 'CONIN$.log',
+                     'CONOUT$', 'CLOCK$.data', 'NUL .txt', 'con...txt'):
+            with self.subTest(name=name):
+                self.assertIn('unsafe_member', verify(self.package(extras=[(name, b'x')])))
+
+    def test_windows_illegal_and_control_characters_are_rejected(self):
+        for name in ('a?b', 'a*b', 'a<b', 'a>b', 'a|b', 'a"b', 'a\x01b',
+                     'a\tb', 'a\nb', 'a\x1fb', 'a\x7fb', 'a\x85b'):
+            with self.subTest(name=name):
+                self.assertIn('unsafe_member', verify(self.package(extras=[(name, b'x'), ('a_b', b'y')])))
+
+    def test_casefolded_file_directory_prefix_collisions_are_rejected(self):
+        for name in ('tools', 'TOOLS', 'tools/DEPLOY', 'MEDCOM.API.DLL/child.txt'):
+            with self.subTest(name=name):
+                self.assertIn('file_directory_collision', verify(self.package(extras=[(name, b'x')])))
+
+    def test_valid_portable_runtime_paths_remain_allowed(self):
+        def add(m, p):
+            for name in ('runtimes/win-x64/native/Microsoft.Data.SqlClient.SNI.dll',
+                         'password-worker/Medcom.LegacyPasswordWorker.runtimeconfig.json',
+                         'locales/vi-VN.json', 'tools/com10-example.txt'):
+                p[name] = b'synthetic'; m['files'][name] = hashlib.sha256(p[name]).hexdigest()
+        self.assertEqual([], verify(self.package(add, backend=True)))
 
     def test_symlink(self):
         info = zipfile.ZipInfo('link'); info.create_system = 3; info.external_attr = 0o120777 << 16
