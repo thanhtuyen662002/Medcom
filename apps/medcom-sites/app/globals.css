@@ -477,3 +477,5 @@ html { scroll-padding-top: 88px; }
   }
 }
 @media print { .mobile-bottom-nav { display: none; } .erp-inset { padding-bottom: 0; } }
+
+.mobile-home-empty { margin-bottom: 26px; }
