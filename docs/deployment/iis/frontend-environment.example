@@ -1,0 +1,14 @@
+# Placeholder-only operator reference, not a script or automatically loaded .env.
+# Supply these through the separately approved Windows service wrapper environment.
+# Store the actual configuration privately outside checkout and all release roots.
+NODE_ENV=production
+NEXT_TELEMETRY_DISABLED=1
+HOSTNAME=127.0.0.1
+PORT=__NODE_PORT__
+MEDCOM_PUBLIC_ORIGIN=https://__FRONTEND_DNS__
+MEDCOM_API_ORIGIN=https://__API_DNS__
+# Optional only for an operator-approved private CA: absolute PEM CA-chain path,
+# readable by the Node identity, outside releases. Never a client key/certificate.
+# NODE_EXTRA_CA_CERTS=__ABSOLUTE_PRIVATE_CA_CHAIN_PEM_PATH__
+# Never set NODE_TLS_REJECT_UNAUTHORIZED=0 or inject a TLS-bypassing dispatcher.
+# Never add NEXT_PUBLIC_ credentials, SQL settings, Tools.dll paths or API secrets.

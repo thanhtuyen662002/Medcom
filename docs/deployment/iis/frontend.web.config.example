@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- EXAMPLE ONLY. Replace every __PLACEHOLDER__, review server-level prerequisites,
+     and install only in the dedicated frontend IIS site's empty proxy root.
+     Never put this file or the Node release under any existing site's root. -->
+<configuration>
+  <system.webServer>
+    <directoryBrowse enabled="false" />
+    <httpErrors existingResponse="PassThrough" errorMode="Custom" />
+    <caching enabled="false" enableKernelCache="false" />
+    <security>
+      <requestFiltering>
+        <requestLimits maxAllowedContentLength="1048576" />
+      </requestFiltering>
+    </security>
+    <rewrite>
+      <rules>
+        <clear />
+        <rule name="Reject unexpected host" stopProcessing="true">
+          <match url=".*" />
+          <conditions>
+            <!-- Regex-escape dots and all other metacharacters in the chosen DNS name. -->
+            <add input="{HTTP_HOST}" pattern="^__FRONTEND_DNS_REGEX__(:443)?$" negate="true" />
+          </conditions>
+          <action type="CustomResponse" statusCode="400" statusReason="Bad Request" statusDescription="Invalid host" />
+        </rule>
+        <rule name="Require HTTPS" stopProcessing="true">
+          <match url=".*" />
+          <conditions><add input="{HTTPS}" pattern="^ON$" negate="true" /></conditions>
+          <action type="CustomResponse" statusCode="400" statusReason="Bad Request" statusDescription="HTTPS required" />
+        </rule>
+        <rule name="Dedicated Next standalone loopback" stopProcessing="true">
+          <match url="^(.*)$" />
+          <serverVariables>
+            <!-- All names require operator-approved allowedServerVariables entries.
+                 replace=true replaces client values; do not append untrusted values. -->
+            <set name="HTTP_X_FORWARDED_FOR" value="{REMOTE_ADDR}" replace="true" />
+            <set name="HTTP_X_FORWARDED_HOST" value="__FRONTEND_DNS__" replace="true" />
+            <set name="HTTP_X_FORWARDED_PROTO" value="https" replace="true" />
+            <set name="HTTP_X_FORWARDED_PORT" value="443" replace="true" />
+            <set name="HTTP_FORWARDED" value="" replace="true" />
+          </serverVariables>
+          <action type="Rewrite" url="http://127.0.0.1:__NODE_PORT__/{R:1}" appendQueryString="true" />
+        </rule>
+      </rules>
+    </rewrite>
+  </system.webServer>
+</configuration>

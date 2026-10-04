@@ -1,0 +1,12 @@
+minimumReleaseAge: 10080
+minimumReleaseAgeIgnoreMissingTime: false
+trustLockfile: false
+strictDepBuilds: true
+allowBuilds:
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
+enableGlobalVirtualStore: false
+# Next standalone on Windows must not inherit absolute pnpm junction targets.
+# Hoisted uses physical package directories; frozen dependency versions stay unchanged.
+nodeLinker: hoisted
