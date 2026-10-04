@@ -34,6 +34,10 @@ POST requires same-origin Origin, enforces a 16 KiB streamed payload bound and r
 
 health/live and platform/metadata are also allowlisted known backend paths, not proof of business readiness. Returned navigation hrefs are not blindly rendered. Data access uses known capability names and backend enforcement.
 
+## UI implementation update
+
+See `UI_IMPLEMENTATION_HANDOFF.md` for the repository UX audit, delivered shared components, typed extension seams, integration dependencies and remaining runtime acceptance. Shared grid, semantic mobile cards/lines, 15/30-second passive refresh, expiry warning and top-center feedback now replace the earlier basic table behavior. Document/lookup/report/admin editor components are authored behind verified adapters; unpublished business/configuration endpoints remain disabled.
+
 ## UI behavior
 
 Responsive shell; mobile fixed bottom navigation, authorized drawer and account controls; module navigation; command search (Ctrl/Cmd+K); favorites; local theme/density; URL/back-forward navigation; source-separated transfer stages; ERP login/continue/logout; branch/search/server pagination; column visibility; refresh; independently paged line details; unauthenticated, denied, unavailable, empty and no-results states. No synthetic transactions, balances, notifications, chart values or successful writes ship.

@@ -19,6 +19,10 @@ Menu opens the existing left Sheet drawer, with independently scrolling authoriz
 
 Workspace authority revalidates on route change, focus/visibility and once per minute while visible, using existing passive GET. Failed refresh clears authority. Logout, expiry and newer reads fence late responses. No SignalR/live guarantee is claimed. Tests cover different authority sets, navigation/capability intersection, revocation, unsupported/source-disabled targets, untrusted hrefs, anonymous/admin-looking grants and response-generation fencing. Supported browser validation remains open.
 
+## Frontend adapter update (2026-10-04)
+
+`RoleNavigationEditor` now supplies the gated edit/preview/publish/conflict surface. `WorkspaceExtensions.effectiveMobileNavigation` can drive the bottom bar after intersection with current authorized screen IDs. Both remain unbound in production because the observed BE has no role DTO/API. Role catalog selection, icon overrides, actor/history and rollback remain explicit further frontend/BE work; the editor does not imply that the full administrative workflow has passed acceptance. See `UI_IMPLEMENTATION_HANDOFF.md`.
+
 ## Required Codex BE/API/SQL deliverable (OPEN)
 
 Codex owns this boundary. Implement the full existing contract before enabling the admin editor; do not replace it with browser preferences.
