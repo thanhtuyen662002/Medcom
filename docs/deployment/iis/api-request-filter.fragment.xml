@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- FRAGMENT ONLY: merge these children into the existing API system.webServer,
+     preserving generated handlers/aspNetCore hostingModel="inprocess".
+     This is not a replacement web.config and installs nothing. -->
+<system.webServer>
+  <security>
+    <requestFiltering>
+      <requestLimits maxAllowedContentLength="1048576" />
+    </requestFiltering>
+  </security>
+  <httpErrors existingResponse="PassThrough" errorMode="Custom" />
+  <caching enabled="false" enableKernelCache="false" />
+</system.webServer>

@@ -1,0 +1,104 @@
+name: Medcom self-hosted frontend
+on:
+  push:
+    branches: [main, 'codex/g45-selfhost-*']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: medcom-selfhost-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  frontend:
+    name: Frontend standalone (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: windows-latest
+            platform: win32
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      SOURCE_REVISION: ${{ github.sha }}
+      PACKAGE_DIRECTORY: artifacts/medcom-frontend-${{ matrix.platform }}-x64
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          architecture: x64
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '11.25.0'
+          run_install: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Record checkout and runtime
+        run: |
+          git rev-parse HEAD
+          node --version
+          pnpm --version
+          test "$(git rev-parse HEAD)" = "$SOURCE_REVISION"
+      - name: Install locked frontend dependencies
+        working-directory: apps/medcom-sites
+        run: pnpm install --frozen-lockfile
+      - name: Typecheck
+        working-directory: apps/medcom-sites
+        run: pnpm typecheck
+      - name: Lint
+        working-directory: apps/medcom-sites
+        run: pnpm lint
+      - name: Test ERP proxy and application contracts
+        working-directory: apps/medcom-sites
+        run: node scripts/test-erp.mjs
+      - name: Test standalone package guards
+        working-directory: apps/medcom-sites
+        run: node --test tests/standalone-package.test.mjs
+      - name: Build standalone frontend
+        working-directory: apps/medcom-sites
+        run: pnpm build
+      - name: Package public standalone output
+        working-directory: apps/medcom-sites
+        run: node scripts/package-standalone.mjs
+      - name: Verify exact-revision package
+        run: node apps/medcom-sites/scripts/verify-standalone.mjs "$PACKAGE_DIRECTORY" "$SOURCE_REVISION"
+      - name: Smoke test packaged process without private dependencies
+        run: node apps/medcom-sites/scripts/smoke-standalone.mjs "$PACKAGE_DIRECTORY" "$SOURCE_REVISION"
+      - name: Record exact tested source and base
+        if: github.event_name == 'pull_request'
+        env:
+          TEST_EVENT: ${{ github.event_name }}
+          TEST_SOURCE: ${{ github.event.pull_request.head.sha }}
+          TEST_BASE: ${{ github.event.pull_request.base.sha }}
+          TEST_RUN_ID: ${{ github.run_id }}
+          TEST_REPOSITORY: ${{ github.repository }}
+        run: python .github/scripts/tested_receipt.py --output "artifacts/frontend-tested-merge-${{ matrix.platform }}.json"
+      - name: Upload frontend tested provenance
+        uses: actions/upload-artifact@v4
+        if: success() && github.event_name == 'pull_request'
+        with:
+          name: medcom-frontend-tested-merge-${{ matrix.platform }}-x64
+          path: artifacts/frontend-tested-merge-${{ matrix.platform }}.json
+          if-no-files-found: error
+      - name: Upload verified public frontend candidate
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: medcom-frontend-${{ matrix.platform }}-x64-${{ github.sha }}
+          path: ${{ env.PACKAGE_DIRECTORY }}/
+          # Next needs .next files. The package's restrictive guards run first;
+          # never upload the checkout, private configuration or raw ERP sources.
+          include-hidden-files: true
+          if-no-files-found: error
