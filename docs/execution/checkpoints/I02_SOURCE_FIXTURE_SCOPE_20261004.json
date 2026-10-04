@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "parent_run_id": "2c24e90b-4e0a-49cb-828b-83b824788e33",
+  "parent_lease": "https://github.com/thanhtuyen662002/Medcom/pull/53",
+  "parent_claim": "medcom-claims/g45/direct/I02",
+  "source_head": "00460399e3b0cf9220401859bb8a0a34ca5f1e85",
+  "scope_ref": "medcom-scope/g45/direct/I02/source-fixture-encoding",
+  "paths": [
+    "tools/source/prepare_transfer_checks.py",
+    "tools/source/test_transfer_checks.py"
+  ],
+  "reason": "Verified source extraction fails on Windows cp1252 when writing Vietnamese procedure text. Repair source fixture encoding and add UTF-8 regression coverage before further product code.",
+  "evidence": "I02 private transfer-prepare.log: UnicodeEncodeError at prepare_transfer_checks.py output.write_text; terminal process 16492 exit 1. Full approved SQL member SHA256 verified before extraction.",
+  "custody": "Bounded repair by existing I02 owner on own Draft branch; no predecessor branch or claim mutation, no additional active lease.",
+  "acceptance": "Fixture preparation only; no SQL runtime or production acceptance asserted.",
+  "automations": "No automation mutation; owner OFF instruction retained."
+}
