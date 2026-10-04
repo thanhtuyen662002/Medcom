@@ -1,8 +1,33 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
-import {getWorkspace,getDocuments,getDetail,login,ApiError} from '../.test-runtime/erp-tests/api.js';
+import {getWorkspace,getSession,continueSession,getDocuments,getDetail,login,ApiError} from '../.test-runtime/erp-tests/api.js';
 const session={displayName:'Synthetic test user',tenantId:'test',companyId:'test',companyName:'Test only',authorityVersion:1,idleExpiresAt:'2026-10-04T03:00:00Z',absoluteExpiresAt:'2026-10-04T04:00:00Z',capabilities:['purchase-orders.read']};
 const reply=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json','X-Correlation-ID':'test-correlation'}});
 test('workspace defaults branch array without inventing access',async()=>{const old=global.fetch;try{global.fetch=async()=>reply({session,navigation:[]});assert.deepEqual((await getWorkspace()).branchIds,[]);}finally{global.fetch=old;}});
+
+test('all session response paths reject malformed or timezone-free expiry safely',async()=>{
+ const old=global.fetch;
+ try{
+  for(const field of ['idleExpiresAt','absoluteExpiresAt']){
+   for(const invalid of ['', 'invalid', '2026-10-04', '2026-10-04T03:00:00', '2026-02-30T03:00:00Z', '2026-10-04T25:00:00Z', '2026-10-04T03:00:00+99:00']){
+    const bad={...session,[field]:invalid};
+    global.fetch=async(url)=>reply(url.endsWith('/csrf')?{token:'synthetic-csrf'}:url.endsWith('/workspace')?{session:bad,navigation:[]}:bad);
+    for(const read of [getWorkspace,getSession,()=>login('test','synthetic-password'),continueSession]){
+     await assert.rejects(read(),e=>e instanceof ApiError&&e.status===502&&e.code==='invalid_api_response');
+    }
+   }
+  }
+ }finally{global.fetch=old;}
+});
+
+test('session expiry accepts real DateTimeOffset JSON with UTC, offset and fractional seconds',async()=>{
+ const old=global.fetch;
+ try{
+  for(const value of ['2026-10-04T03:00:00Z','2026-10-04T10:00:00+07:00','2026-10-04T03:00:00.1234567+00:00']){
+   global.fetch=async()=>reply({...session,idleExpiresAt:value,absoluteExpiresAt:value});
+   assert.equal((await getSession()).idleExpiresAt,value);
+  }
+ }finally{global.fetch=old;}
+});
 test('login gets CSRF then sends exact credentials',async()=>{const old=global.fetch;const calls=[];try{global.fetch=async(url,init)=>{calls.push({url,init});return reply(calls.length===1?{token:'synthetic-csrf'}:session);};assert.equal((await login('test','synthetic-password')).companyId,'test');assert.equal(calls[0].url,'/api/erp/api/auth/csrf');assert.equal(calls[1].init.headers['X-CSRF-TOKEN'],'synthetic-csrf');assert.deepEqual(JSON.parse(calls[1].init.body),{username:'test',password:'synthetic-password'});assert.equal(calls[1].init.credentials,'same-origin');}finally{global.fetch=old;}});
 test('denied and unconfigured replies never become data',async()=>{const old=global.fetch;try{for(const status of [401,403,503]){global.fetch=async()=>reply({code:status===503?'backend_not_configured':'denied'},status);await assert.rejects(getDocuments('purchase-orders',1,'',''),e=>e instanceof ApiError&&e.status===status&&e.correlationId==='test-correlation');}}finally{global.fetch=old;}});
 test('malformed successful response fails closed',async()=>{const old=global.fetch;try{global.fetch=async()=>reply({rows:'not-an-array',page:1,pageSize:50,hasMore:false});await assert.rejects(getDocuments('purchase-orders',1,'',''),e=>e.code==='invalid_api_response');}finally{global.fetch=old;}});
