@@ -39,3 +39,15 @@ These are sanitized secondary review summaries produced after a prior agent insp
 - In this run, materialization of the old baseline file IDs returned an account-access error; the selected Page archive references could not be materialized through the file interface. No raw ERP/SQL archive was opened or rehashed. This access result does not invalidate the previous evidence or prove that the archives are absent. B2/T1 retain source-access gates.
 
 Any recovered archive must be hashed against the approved baseline before analysis. A changed build/database is a separate source set and needs a compatibility/disposition record, not silent replacement.
+
+## Owner-attached source set, recovered 2026-10-02
+
+The owner supplied accessible `ERP_Medcom2026.zip`, `MedData-Data.zip` and `Tools.dll` for the requested BE/FE continuation. This begins a new authoritative technical verification round; the old Phase 1 source set remains historical evidence and is not silently replaced.
+
+| Artifact | Bytes | SHA-256 |
+|---|---:|---|
+| ERP_Medcom2026.zip | 162,176,322 | `d5fe49f8e58de89fc0b9972a116a6c8f673ab9f9b326c626708d0b5d01fc5783` |
+| MedData-Data.zip | 134,249,929 | `6a74eb02dc747e9c6ab679f69ca515783a8724ad767f6702fcebd28f195b1144` |
+| Tools.dll | 8,258,049 | `aa8910f3ba244fc405ccad2d322d142d40f938be3da94277ccd8d0814082dd61` |
+
+The ERP ZIP contains the exact standalone DLL. The full SQL member is now verified at 1,212,595,716 bytes, CRC32 `16a9a7e6`, SHA-256 `61a8744c7a9a007b13ef37fbda26ea8c78af11fcc469963a528eba9469174096`. It declares 596 tables, 211 views, 109 functions, 609 procedures and two sequences (1,527 objects). A separate metadata inventory includes trigger definitions stored in data. The earlier zero-procedure claim used a truncated 1,015,021,568-byte extraction and is superseded; see `extraction-integrity.json`. All seven internal-transfer checks are present. Exact source identity and finite metadata are in `inventories/source/20261002/source-set.json` and `manifest.json`; verified findings and runtime limits are in `docs/erp/OWNER_SOURCE_RECOVERY_20261002.md`. Complete business/runtime/release acceptance remains open.

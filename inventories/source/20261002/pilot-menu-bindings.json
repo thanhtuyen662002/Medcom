@@ -1,0 +1,136 @@
+{
+  "source": "MedData-Data.sql dbo.SY_Menu INSERT metadata only",
+  "bindings": [
+    {
+      "MenuID": "05012",
+      "FormName": "AP_ApprovePurchaseRequestListFrm",
+      "Para": null,
+      "isDisable": "0",
+      "MenuType": "2",
+      "isNotCheckPermission": null,
+      "sourceLine": 319878
+    },
+    {
+      "MenuID": "050129",
+      "FormName": "AP_OrderFrm",
+      "Para": null,
+      "isDisable": "0",
+      "MenuType": "2",
+      "isNotCheckPermission": null,
+      "sourceLine": 319879
+    },
+    {
+      "MenuID": "06023",
+      "FormName": "AR_InvoiceRequestFrm",
+      "Para": null,
+      "isDisable": "1",
+      "MenuType": "2",
+      "isNotCheckPermission": null,
+      "sourceLine": 319935
+    },
+    {
+      "MenuID": "07010100",
+      "FormName": "IV_InternalTransferRequestFrm",
+      "Para": null,
+      "isDisable": "0",
+      "MenuType": "2",
+      "isNotCheckPermission": null,
+      "sourceLine": 319984
+    },
+    {
+      "MenuID": "07010110",
+      "FormName": "IV_InternalTransferPMFrm",
+      "Para": null,
+      "isDisable": "0",
+      "MenuType": "2",
+      "isNotCheckPermission": null,
+      "sourceLine": 319985
+    },
+    {
+      "MenuID": "07010120",
+      "FormName": "IV_InternalTransferBatchFrm",
+      "Para": null,
+      "isDisable": "0",
+      "MenuType": "2",
+      "isNotCheckPermission": null,
+      "sourceLine": 319986
+    },
+    {
+      "MenuID": "07010130",
+      "FormName": "IV_InternalTransferTechFrm",
+      "Para": null,
+      "isDisable": "0",
+      "MenuType": "2",
+      "isNotCheckPermission": null,
+      "sourceLine": 319987
+    },
+    {
+      "MenuID": "07010140",
+      "FormName": "IV_InternalTransferSAFrm",
+      "Para": null,
+      "isDisable": "0",
+      "MenuType": "2",
+      "isNotCheckPermission": null,
+      "sourceLine": 319988
+    },
+    {
+      "MenuID": "07010150",
+      "FormName": "IV_InternalTransferAccountingFrm",
+      "Para": null,
+      "isDisable": "0",
+      "MenuType": "2",
+      "isNotCheckPermission": null,
+      "sourceLine": 319989
+    },
+    {
+      "MenuID": "07010160",
+      "FormName": "IV_InternalTransferWarehouseOutFrm",
+      "Para": null,
+      "isDisable": "0",
+      "MenuType": "2",
+      "isNotCheckPermission": null,
+      "sourceLine": 319990
+    },
+    {
+      "MenuID": "07010170",
+      "FormName": "IV_InternalTransferWarehouseInFrm",
+      "Para": null,
+      "isDisable": "0",
+      "MenuType": "2",
+      "isNotCheckPermission": null,
+      "sourceLine": 319991
+    },
+    {
+      "MenuID": "07011",
+      "FormName": "IV_InboundRequestFrm",
+      "Para": null,
+      "isDisable": "0",
+      "MenuType": "2",
+      "isNotCheckPermission": null,
+      "sourceLine": 319992
+    },
+    {
+      "MenuID": "0705",
+      "FormName": "IV_StockTranferFrm",
+      "Para": "",
+      "isDisable": "0",
+      "MenuType": "2",
+      "isNotCheckPermission": null,
+      "sourceLine": 320005
+    },
+    {
+      "MenuID": "166401",
+      "FormName": "GJ_TransferSetupFrm",
+      "Para": "",
+      "isDisable": "0",
+      "MenuType": "2",
+      "isNotCheckPermission": null,
+      "sourceLine": 320196
+    }
+  ],
+  "limits": [
+    "Menu presence is not runtime approval or a grant to a user.",
+    "AR_InvoiceRequestFrm is disabled in this source set.",
+    "Multiple internal transfer stages must not be collapsed into stock posting."
+  ]
+}

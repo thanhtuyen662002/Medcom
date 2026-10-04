@@ -1,0 +1,307 @@
+{
+  "schema_version": 1,
+  "lane": "L07",
+  "artifact_status": "prepared_local_only",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_issues": [
+    22,
+    24
+  ],
+  "source_contracts": [
+    {
+      "path": "docs/architecture/PHASE2_COMMAND_TRANSACTION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "a819e2f2cb55b94883235ae3626157e7da641e75a727b98a8930bd712299e99c",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_COMMAND_TRANSACTION_CONTRACT.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/db/CONCURRENCY_TRANSACTION_CONTRACTS.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "5d3a5f84feb79dcfd024531fd9a0b25072756ab5c1c2899edcc52756dfa66b5c",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/db/CONCURRENCY_TRANSACTION_CONTRACTS.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/db/LOCKING_TRANSACTION_HOTSPOTS.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c0a34a5db9265a0cc946d9ad4cb85bd8f2d736fde84fdfdedaade835c0e401eb",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/db/LOCKING_TRANSACTION_HOTSPOTS.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/architecture/PHASE2_AUDIT_TRACE_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "e552f88a122745ee5e90754115ac832db9de2e16ae0c8f8cc35e650d56e2114c",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_AUDIT_TRACE_CONTRACT.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "9d9b7157027cce55e3d24d7ade4e554e7205d34a9393bb67f21f60164190c1e0",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/web/UX_RUNTIME_FEEDBACK_SESSION.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "a397a8df0049481cc91df81cfd664deb42e99baa3e060cc534d396c8a4e277a0",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/UX_RUNTIME_FEEDBACK_SESSION.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "338ac433b907f42e720fe3564d3041fef2322036d7405bdf0c7e08942ce3bb13",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "access": "sanitized repository contract/evidence"
+    }
+  ],
+  "limits": [
+    "no L07 dispatcher lease or writer token",
+    "no exact pilot command signature, procedure binding, transaction owner or hook order proved",
+    "no authorized raw SQL/source/runtime opened or executed",
+    "no database mutation, lock test or legacy command dispatch",
+    "no product code, CI or current-head implementation test",
+    "no GitHub mutation or issue closure"
+  ],
+  "unit_id": "L07-B5-OUTCOME",
+  "graph_id": "B5",
+  "issue": 24,
+  "objective": "Make ambiguous completion durable and non-retriable until authoritative reconciliation.",
+  "states": [
+    "RECEIVED",
+    "RESERVED",
+    "DISPATCHING",
+    "IN_PROGRESS",
+    "CORE_COMMITTED_EFFECTS_PENDING",
+    "SUCCEEDED",
+    "REJECTED_PRE_DISPATCH",
+    "FAILED_ROLLBACK_PROVED",
+    "OUTCOME_UNKNOWN",
+    "RECONCILING",
+    "RECONCILED_SUCCEEDED",
+    "RECONCILED_FAILED_SAFE_TO_RETRY",
+    "MANUAL_INTERVENTION"
+  ],
+  "cases": [
+    {
+      "id": "OUT-01",
+      "event": "authorization/state rejection before dispatch",
+      "expected": "REJECTED_PRE_DISPATCH; no effect and no harmful retry ambiguity"
+    },
+    {
+      "id": "OUT-02",
+      "event": "verified failure with protected unit rolled back",
+      "expected": "FAILED_ROLLBACK_PROVED; bounded command-specific retry may be considered"
+    },
+    {
+      "id": "OUT-03",
+      "event": "HTTP timeout after server receipt",
+      "expected": "OUTCOME_UNKNOWN unless authoritative non-dispatch/rollback is proved"
+    },
+    {
+      "id": "OUT-04",
+      "event": "worker dies after potential legacy call",
+      "expected": "OUTCOME_UNKNOWN; process death does not prove SQL rollback"
+    },
+    {
+      "id": "OUT-05",
+      "event": "business commit before ACK loss",
+      "expected": "reconcile to original business identity and SUCCEEDED; no duplicate dispatch"
+    },
+    {
+      "id": "OUT-06",
+      "event": "mandatory deferred hook effect incomplete",
+      "expected": "do not claim final success; follow command-specific intermediate/recovery contract"
+    },
+    {
+      "id": "OUT-07",
+      "event": "late success arrives after client reauthenticates",
+      "expected": "record operation outcome under original domain; deliver only after current authorization"
+    },
+    {
+      "id": "OUT-08",
+      "event": "authoritative business lookup proves no effect and retry safety",
+      "expected": "RECONCILED_FAILED_SAFE_TO_RETRY only with exact source-backed criterion"
+    },
+    {
+      "id": "OUT-09",
+      "event": "authoritative lookup cannot distinguish effect",
+      "expected": "MANUAL_INTERVENTION/continued unknown; no replay"
+    },
+    {
+      "id": "OUT-10",
+      "event": "duplicate same-key request during reconciliation",
+      "expected": "join existing reconciliation; no second effect"
+    },
+    {
+      "id": "OUT-11",
+      "event": "ledger and business backups restored to different points",
+      "expected": "disable dispatch until safe restore frontier/reconciliation is established"
+    },
+    {
+      "id": "OUT-12",
+      "event": "diagnostic trace sink fails",
+      "expected": "does not fabricate command failure/success; business/audit policy remains command-specific"
+    },
+    {
+      "id": "OUT-13",
+      "event": "core transaction commits while mandatory outbox/hook is only queued",
+      "expected": "CORE_COMMITTED_EFFECTS_PENDING; no final success until required effect acceptance and reread"
+    },
+    {
+      "id": "OUT-14",
+      "event": "reconciler lease/epoch expires mid-read",
+      "expected": "stale reconciler cannot transition state; new fenced owner rereads from authoritative sources"
+    },
+    {
+      "id": "OUT-15",
+      "event": "two reconcilers propose success and safe-to-retry concurrently",
+      "expected": "atomic state/version CAS admits one transition; conflict requires fresh authoritative reconciliation"
+    },
+    {
+      "id": "OUT-16",
+      "event": "mandatory effect permanently fails after core commit",
+      "expected": "never label rollback-proved or blindly compensate; action-specific recovery/manual state retains committed fact"
+    }
+  ],
+  "invariants": [
+    "OutcomeUnknown is durable",
+    "unknown/in-progress keys are never silently purged into reusable slots",
+    "retry requires authoritative safe criterion",
+    "success follows command completion contract and reread",
+    "post-commit events/invalidation only follow authoritative commit",
+    "current authorization gates outcome visibility",
+    "state changes use expected-state/version and fenced reconciler ownership",
+    "core commit alone is not final success when mandatory effects exist"
+  ],
+  "execution_status": "NOT_RUN",
+  "transitions": [
+    {
+      "id": "TRN-01",
+      "from": "RECEIVED",
+      "to": "REJECTED_PRE_DISPATCH",
+      "guard": "authorization/state/schema/provenance fails before dispatch"
+    },
+    {
+      "id": "TRN-02",
+      "from": "RECEIVED",
+      "to": "RESERVED",
+      "guard": "full scoped idempotency key including server fingerprint reserved"
+    },
+    {
+      "id": "TRN-03",
+      "from": "RESERVED",
+      "to": "DISPATCHING",
+      "guard": "current authorization/state/registry revision rechecked"
+    },
+    {
+      "id": "TRN-04",
+      "from": "DISPATCHING",
+      "to": "IN_PROGRESS",
+      "guard": "handler accepted dispatch with durable operation identity"
+    },
+    {
+      "id": "TRN-05",
+      "from": "IN_PROGRESS",
+      "to": "FAILED_ROLLBACK_PROVED",
+      "guard": "exact protected unit proves rollback and no mandatory/external effect"
+    },
+    {
+      "id": "TRN-06",
+      "from": "IN_PROGRESS",
+      "to": "CORE_COMMITTED_EFFECTS_PENDING",
+      "guard": "core business commit proved while at least one mandatory effect is unconfirmed"
+    },
+    {
+      "id": "TRN-07",
+      "from": "IN_PROGRESS",
+      "to": "SUCCEEDED",
+      "guard": "single-phase action final predicate plus authoritative reread passed"
+    },
+    {
+      "id": "TRN-08",
+      "from": "CORE_COMMITTED_EFFECTS_PENDING",
+      "to": "SUCCEEDED",
+      "guard": "all mandatory effects and final authoritative reread passed"
+    },
+    {
+      "id": "TRN-09",
+      "from": "IN_PROGRESS",
+      "to": "OUTCOME_UNKNOWN",
+      "guard": "transport/worker/deadlock evidence cannot exclude commit or mandatory effect"
+    },
+    {
+      "id": "TRN-10",
+      "from": "CORE_COMMITTED_EFFECTS_PENDING",
+      "to": "OUTCOME_UNKNOWN",
+      "guard": "mandatory effect outcome or completion boundary becomes ambiguous"
+    },
+    {
+      "id": "TRN-11",
+      "from": "OUTCOME_UNKNOWN",
+      "to": "RECONCILING",
+      "guard": "single fenced reconciler owns exact operation"
+    },
+    {
+      "id": "TRN-12",
+      "from": "RECONCILING",
+      "to": "RECONCILED_SUCCEEDED",
+      "guard": "authoritative action-specific identity/state and required effects prove completion"
+    },
+    {
+      "id": "TRN-13",
+      "from": "RECONCILING",
+      "to": "RECONCILED_FAILED_SAFE_TO_RETRY",
+      "guard": "authoritative criterion proves no effect and current retry safety"
+    },
+    {
+      "id": "TRN-14",
+      "from": "RECONCILING",
+      "to": "MANUAL_INTERVENTION",
+      "guard": "evidence remains ambiguous or inconsistent"
+    },
+    {
+      "id": "TRN-15",
+      "from": "RECONCILED_SUCCEEDED",
+      "to": "SUCCEEDED",
+      "guard": "current authorization permits result visibility; no redispatch"
+    },
+    {
+      "id": "TRN-16",
+      "from": "RECONCILED_FAILED_SAFE_TO_RETRY",
+      "to": "RESERVED",
+      "guard": "new explicitly authorized attempt with retained lineage and fresh reservation"
+    }
+  ],
+  "forbidden_transitions": [
+    "OUTCOME_UNKNOWN->SUCCEEDED without RECONCILING and authoritative proof",
+    "OUTCOME_UNKNOWN->RESERVED/IN_PROGRESS by blind replay",
+    "CORE_COMMITTED_EFFECTS_PENDING->FAILED_ROLLBACK_PROVED",
+    "any terminal/reconciliation state->RECEIVED by key expiry",
+    "REJECTED_PRE_DISPATCH->SUCCEEDED without a distinct authorized attempt"
+  ]
+}

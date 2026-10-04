@@ -1,0 +1,505 @@
+{
+  "schema_version": 1,
+  "lane": "L10",
+  "artifact_status": "prepared_local_only",
+  "execution_status": "NOT_RUN",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_owner": "L10",
+  "source_contracts": [
+    {
+      "path": "docs/PROJECT_STATE.yaml",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "bcf2635d9bd7b634abb7a1c818ed36564fa5c774aecccc3cdbe64dadeed4e278"
+    },
+    {
+      "path": "docs/SOURCE_BASELINE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "6f9fb08b0d1f3af2def0809f2d5a194082403249ff9119a1f2605551c93658b8"
+    },
+    {
+      "path": "docs/EVIDENCE_STANDARDS.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "b330291378041fc197796deaab6d49c72a9563fdbe2c5fd990fd827b266e1910"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168"
+    },
+    {
+      "path": "docs/plans/PHASE2_SCHEDULED_EXECUTION_PLAN.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "9e58be73eba12f3ec9e255c4460e9e2d4ede1c26d43877d421144b56876fa532"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "9cb84eb673b9d7a0a8cea3e70f2366350b8150f4a15ad42f614510f3113c1524"
+    },
+    {
+      "path": "docs/architecture/PHASE2_AUTH_CAPABILITY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "fa8db170726d9afe02fd5b2e578e00226978f78757c4fbfcde3fa9328d18eb47"
+    },
+    {
+      "path": "docs/architecture/PHASE2_COMMAND_TRANSACTION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "a819e2f2cb55b94883235ae3626157e7da641e75a727b98a8930bd712299e99c"
+    },
+    {
+      "path": "docs/architecture/PHASE2_REALTIME_COEXISTENCE_RECOVERY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "e48ccffc8fa128f41c525c7c30ac4fff265a6fb8af739478281cf927afd753f4"
+    },
+    {
+      "path": "docs/web/GRID_MOBILE_IMPLEMENTATION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "b59d80f754cd3108c415a458f83c19dc7c7c197998e23fa12f258adaeafb3418"
+    },
+    {
+      "path": "docs/web/PHASE2_FRONTEND_ACCEPTANCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "668c3f410cbc5793aa3be1f032130a31d07bbf075c9153a778af5e3ac2d4422a"
+    },
+    {
+      "path": "docs/web/UX_STRESS_ACCEPTANCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "56a9163d45ad3c6787ca280db17c0ce69f6f31a5525ba1c94ac943d114649e03"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84"
+    },
+    {
+      "path": "docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b"
+    },
+    {
+      "path": "docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "338ac433b907f42e720fe3564d3041fef2322036d7405bdf0c7e08942ce3bb13"
+    }
+  ],
+  "safety_limits": [
+    "synthetic sanitized data only",
+    "no GitHub mutation, product execution, runtime connection, SQL execution, deployment, or production operation",
+    "expected denials and design review are not passing E2E/CI results",
+    "product defects are routed to the owner lane; L10 does not silently change owner code or close issues"
+  ],
+  "unit": "Q4",
+  "issue": 41,
+  "title": "Five-pilot release-readiness gate ledger and adversarial release matrix",
+  "eligibility": {
+    "graph_label": "BLOCKED",
+    "actual_start_state": "blocked_on_all_listed_dependencies_and_preflight",
+    "dependency_count": 14,
+    "release_decision": "NOT_ELIGIBLE"
+  },
+  "dependency_ledger": [
+    {
+      "graph_id": "F4",
+      "issue": 31,
+      "owner_lane": "L06",
+      "live_issue_state": "OPEN",
+      "verified_implementation": "NOT_PROVEN",
+      "green_exact_head_ci": "NOT_PROVEN",
+      "gate": "BLOCKING"
+    },
+    {
+      "graph_id": "F5",
+      "issue": 32,
+      "owner_lane": "L08",
+      "live_issue_state": "OPEN",
+      "verified_implementation": "NOT_PROVEN",
+      "green_exact_head_ci": "NOT_PROVEN",
+      "gate": "BLOCKING"
+    },
+    {
+      "graph_id": "F6",
+      "issue": 33,
+      "owner_lane": "L08",
+      "live_issue_state": "OPEN",
+      "verified_implementation": "NOT_PROVEN",
+      "green_exact_head_ci": "NOT_PROVEN",
+      "gate": "BLOCKING"
+    },
+    {
+      "graph_id": "F7",
+      "issue": 34,
+      "owner_lane": "L08",
+      "live_issue_state": "OPEN",
+      "verified_implementation": "NOT_PROVEN",
+      "green_exact_head_ci": "NOT_PROVEN",
+      "gate": "BLOCKING"
+    },
+    {
+      "graph_id": "F8",
+      "issue": 35,
+      "owner_lane": "L08",
+      "live_issue_state": "OPEN",
+      "verified_implementation": "NOT_PROVEN",
+      "green_exact_head_ci": "NOT_PROVEN",
+      "gate": "BLOCKING"
+    },
+    {
+      "graph_id": "F9",
+      "issue": 42,
+      "owner_lane": "L08",
+      "live_issue_state": "OPEN",
+      "verified_implementation": "NOT_PROVEN",
+      "green_exact_head_ci": "NOT_PROVEN",
+      "gate": "BLOCKING"
+    },
+    {
+      "graph_id": "B5",
+      "issue": 24,
+      "owner_lane": "L07",
+      "live_issue_state": "OPEN",
+      "verified_implementation": "NOT_PROVEN",
+      "green_exact_head_ci": "NOT_PROVEN",
+      "gate": "BLOCKING"
+    },
+    {
+      "graph_id": "Q1",
+      "issue": 36,
+      "owner_lane": "L10",
+      "live_issue_state": "OPEN",
+      "verified_implementation": "NOT_PROVEN",
+      "green_exact_head_ci": "NOT_PROVEN",
+      "gate": "BLOCKING"
+    },
+    {
+      "graph_id": "Q2",
+      "issue": 37,
+      "owner_lane": "L10",
+      "live_issue_state": "OPEN",
+      "verified_implementation": "NOT_PROVEN",
+      "green_exact_head_ci": "NOT_PROVEN",
+      "gate": "BLOCKING"
+    },
+    {
+      "graph_id": "Q3",
+      "issue": 38,
+      "owner_lane": "L10",
+      "live_issue_state": "OPEN",
+      "verified_implementation": "NOT_PROVEN",
+      "green_exact_head_ci": "NOT_PROVEN",
+      "gate": "BLOCKING"
+    },
+    {
+      "graph_id": "R1",
+      "issue": 39,
+      "owner_lane": "L09",
+      "live_issue_state": "OPEN",
+      "verified_implementation": "NOT_PROVEN",
+      "green_exact_head_ci": "NOT_PROVEN",
+      "gate": "BLOCKING"
+    },
+    {
+      "graph_id": "R2",
+      "issue": 25,
+      "owner_lane": "L09",
+      "live_issue_state": "OPEN",
+      "verified_implementation": "NOT_PROVEN",
+      "green_exact_head_ci": "NOT_PROVEN",
+      "gate": "BLOCKING"
+    },
+    {
+      "graph_id": "R4",
+      "issue": 27,
+      "owner_lane": "L09",
+      "live_issue_state": "OPEN",
+      "verified_implementation": "NOT_PROVEN",
+      "green_exact_head_ci": "NOT_PROVEN",
+      "gate": "BLOCKING"
+    },
+    {
+      "graph_id": "R5",
+      "issue": 40,
+      "owner_lane": "L09",
+      "live_issue_state": "OPEN",
+      "verified_implementation": "NOT_PROVEN",
+      "green_exact_head_ci": "NOT_PROVEN",
+      "gate": "BLOCKING"
+    }
+  ],
+  "pilot_rows": [
+    "sales request F5",
+    "internal transfer F6",
+    "purchase approval F7",
+    "AP Order read F4 plus mutation F8",
+    "inbound request read F4 plus independently source-backed mutation F9"
+  ],
+  "non_negotiable": [
+    "all five rows have allowed and denied menu/route/API/data/mutation/export paths",
+    "tenant/company/branch/storehouse/user scope is server-derived",
+    "F4 read-only does not satisfy F9 inbound mutation",
+    "request entry does not imply receipt, stock posting, approval, cancellation or deletion",
+    "exact current-head CI and independent review",
+    "recovery/coexistence preserves committed business data"
+  ],
+  "routed_findings": [
+    {
+      "id": "QA-ROUTE-L07-001",
+      "owner": "L07/B5",
+      "severity": "HIGH",
+      "finding": "Idempotency fingerprint must be compared on the stable action/contract/key record; it must not participate in lookup uniqueness, or changed payload may dispatch as a new record.",
+      "status": "PREPARED_LOCAL_CORRECTION_NOT_DURABLE",
+      "release_effect": "BLOCKING_UNTIL_DURABLE_REVIEWED_EVIDENCE",
+      "product_evidence": "NOT_RUN",
+      "local_recheck": "PASS_STABLE_LOOKUP_KEY_AND_IMMUTABLE_FINGERPRINT_COMPARE"
+    },
+    {
+      "id": "QA-ROUTE-L07-002",
+      "owner": "L07/B5",
+      "severity": "HIGH",
+      "finding": "A first business commit before ACK loss is insufficient for SUCCEEDED when mandatory deferred effects remain; reconciliation must prove the completion contract.",
+      "status": "PREPARED_LOCAL_CORRECTION_NOT_DURABLE",
+      "release_effect": "BLOCKING_UNTIL_DURABLE_REVIEWED_EVIDENCE",
+      "product_evidence": "NOT_RUN"
+    },
+    {
+      "id": "QA-ROUTE-L06-001",
+      "owner": "L06/F2",
+      "severity": "MEDIUM",
+      "finding": "The local grid fixture uses exactly 100000 rows, while canonical acceptance requires 100k+; use at least 100001 rows so the boundary is actually exercised.",
+      "status": "PREPARED_LOCAL_CORRECTION_NOT_DURABLE",
+      "release_effect": "BLOCKING_UNTIL_DURABLE_REVIEWED_EVIDENCE",
+      "product_evidence": "NOT_RUN"
+    },
+    {
+      "id": "QA-ROUTE-L06-002",
+      "owner": "L06/F2",
+      "severity": "MEDIUM",
+      "finding": "GRD-15 uses a 50ms interaction threshold while the canonical contract states p95 <=100ms; label 50ms as an optional stricter target or validate the canonical threshold explicitly.",
+      "status": "PREPARED_LOCAL_CORRECTION_NOT_DURABLE",
+      "release_effect": "BLOCKING_UNTIL_DURABLE_REVIEWED_EVIDENCE",
+      "product_evidence": "NOT_RUN"
+    },
+    {
+      "id": "QA-ROUTE-L09-001",
+      "owner": "L09/R4",
+      "severity": "HIGH",
+      "finding": "Recovery evidence must reconcile the restore frontier across business DB, idempotency/operation ledger, audit and outbox stores/checkpoints before dispatch resumes; DB integrity and read smoke alone are insufficient.",
+      "status": "PREPARED_LOCAL_CORRECTION_NOT_DURABLE",
+      "release_effect": "BLOCKING_UNTIL_DURABLE_REVIEWED_EVIDENCE",
+      "product_evidence": "NOT_RUN"
+    },
+    {
+      "id": "QA-ROUTE-L09-002",
+      "owner": "L09/R4",
+      "severity": "MEDIUM",
+      "finding": "Do not require a full/differential/log chain unconditionally under a static SIMPLE baseline; require the restorable artifact/dependency set appropriate to the verified recovery model and make no PITR/log-chain assumption.",
+      "status": "PREPARED_LOCAL_CORRECTION_NOT_DURABLE",
+      "release_effect": "BLOCKING_UNTIL_DURABLE_REVIEWED_EVIDENCE",
+      "product_evidence": "NOT_RUN"
+    },
+    {
+      "id": "QA-ROUTE-L07-003",
+      "owner": "L07/B3",
+      "severity": "HIGH",
+      "finding": "The command envelope must separate browser-supplied fields from server-derived authority and include the required metadataRevision; a flat envelope risks treating tenant/company/user authority as client input.",
+      "status": "PREPARED_LOCAL_CORRECTION_NOT_DURABLE",
+      "release_effect": "BLOCKING_UNTIL_DURABLE_REVIEWED_EVIDENCE",
+      "product_evidence": "NOT_RUN"
+    },
+    {
+      "id": "QA-ROUTE-L07-004",
+      "owner": "L07/B5",
+      "severity": "HIGH",
+      "finding": "The OutcomeUnknown fixture lists states/events but lacks an explicit permitted-transition and guard table, so validation cannot reject fresh dispatch from OutcomeUnknown or precommit-to-Succeeded shortcuts.",
+      "status": "PREPARED_LOCAL_CORRECTION_NOT_DURABLE",
+      "release_effect": "BLOCKING_UNTIL_DURABLE_REVIEWED_EVIDENCE",
+      "product_evidence": "NOT_RUN"
+    },
+    {
+      "id": "QA-ROUTE-L09-003",
+      "owner": "L09/R2",
+      "severity": "HIGH",
+      "finding": "Queued report/export work must reauthorize before worker execution as well as status/download, bind immutable server-resolved job scope, and reject changed/restored/replayed envelopes before dispatch.",
+      "status": "PREPARED_LOCAL_CORRECTION_NOT_DURABLE",
+      "release_effect": "BLOCKING_UNTIL_DURABLE_REVIEWED_EVIDENCE",
+      "product_evidence": "NOT_RUN"
+    },
+    {
+      "id": "QA-ROUTE-L02-001",
+      "owner": "L02/A1",
+      "severity": "MEDIUM",
+      "finding": "The local L02 validator hashes worktree bytes and weakly checks source_ref text rather than pinning exact git-object bytes at the declared base; strengthen provenance before integration.",
+      "status": "PREPARED_LOCAL_CORRECTION_NOT_DURABLE",
+      "release_effect": "BLOCKING_UNTIL_DURABLE_REVIEWED_EVIDENCE",
+      "product_evidence": "NOT_RUN"
+    },
+    {
+      "id": "QA-ROUTE-L03-001",
+      "owner": "L03/B2",
+      "severity": "HIGH",
+      "finding": "Dependency fixtures classify CTE names, table variables, temporary tables, trigger pseudo-tables and comment/string tokens as RESOLVED_EDGE. Local/non-catalog symbols must not become durable catalog dependency edges; introduce an explicit LOCAL_OR_NON_CATALOG disposition and prove zero false catalog edges.",
+      "status": "PREPARED_LOCAL_CORRECTION_NOT_DURABLE",
+      "release_effect": "BLOCKING_UNTIL_DURABLE_REVIEWED_EVIDENCE",
+      "product_evidence": "NOT_RUN"
+    },
+    {
+      "id": "QA-ROUTE-L03-002",
+      "owner": "L03/B2",
+      "severity": "MEDIUM",
+      "finding": "UNRESOLVED is an allowed dependency disposition but no fixture exercises it, so the validator cannot detect removal or coercion of genuinely unresolved reference sites. Add a sourced unresolved-site case with reason, owner and fail-closed acceptance.",
+      "status": "PREPARED_LOCAL_CORRECTION_NOT_DURABLE",
+      "release_effect": "BLOCKING_UNTIL_DURABLE_REVIEWED_EVIDENCE",
+      "product_evidence": "NOT_RUN"
+    }
+  ],
+  "cases": [
+    {
+      "id": "Q4-01",
+      "role": "release_manager",
+      "execution_status": "NOT_RUN",
+      "entry_point": "dependency gate",
+      "attack_or_failure": "one of 14 dependencies lacks reviewed implementation or exact-head green CI",
+      "expected_result": "block release",
+      "owner_route": "Q4/L01",
+      "evidence_to_pass": "machine-readable dependency ledger and exact-head evidence"
+    },
+    {
+      "id": "Q4-02",
+      "role": "manager_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "pilot matrix",
+      "attack_or_failure": "read-only inbound surface is counted as mutation coverage",
+      "expected_result": "block; require independent F9 binding/actions",
+      "owner_route": "F9/Q4",
+      "evidence_to_pass": "source-backed mutation/action/state tests"
+    },
+    {
+      "id": "Q4-03",
+      "role": "warehouse_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "inbound action",
+      "attack_or_failure": "request entry is relabeled receipt or stock posting",
+      "expected_result": "block unsupported action",
+      "owner_route": "F9/Q4",
+      "evidence_to_pass": "exact source action and transaction evidence"
+    },
+    {
+      "id": "Q4-04",
+      "role": "internal_attacker",
+      "execution_status": "NOT_RUN",
+      "entry_point": "cross-scope pilot API",
+      "attack_or_failure": "same record ID used across tenant/company/storehouse",
+      "expected_result": "deny without leak in every pilot",
+      "owner_route": "Q1/Q4",
+      "evidence_to_pass": "allowed/denied five-pilot isolation matrix"
+    },
+    {
+      "id": "Q4-05",
+      "role": "accountant",
+      "execution_status": "NOT_RUN",
+      "entry_point": "report/export",
+      "attack_or_failure": "grid view grant is reused for artifact download",
+      "expected_result": "deny and reauthorize dispatch/status/download",
+      "owner_route": "R2/Q1/Q4",
+      "evidence_to_pass": "report/export capability tests"
+    },
+    {
+      "id": "Q4-06",
+      "role": "DBA",
+      "execution_status": "NOT_RUN",
+      "entry_point": "recovery signoff",
+      "attack_or_failure": "backup existence substitutes for isolated restore rehearsal",
+      "expected_result": "block operational readiness",
+      "owner_route": "R4/Q4",
+      "evidence_to_pass": "measured authorized restore/integrity/app evidence"
+    },
+    {
+      "id": "Q4-07",
+      "role": "SRE",
+      "execution_status": "NOT_RUN",
+      "entry_point": "coexistence",
+      "attack_or_failure": "SignalR green path substitutes for legacy external-write convergence",
+      "expected_result": "block freshness readiness",
+      "owner_route": "Q3/R1/Q4",
+      "evidence_to_pass": "dropped-event and direct-write rehearsal"
+    },
+    {
+      "id": "Q4-08",
+      "role": "release_engineer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "rollback",
+      "attack_or_failure": "rollback plan deletes committed requests or restores production DB",
+      "expected_result": "block; use non-destructive slice/build/config rollback",
+      "owner_route": "R5/Q4",
+      "evidence_to_pass": "compatible rollback rehearsal plus reconciliation"
+    },
+    {
+      "id": "Q4-09",
+      "role": "support",
+      "execution_status": "NOT_RUN",
+      "entry_point": "traceability",
+      "attack_or_failure": "success claimed without redacted correlation/support path",
+      "expected_result": "block support readiness",
+      "owner_route": "A6/Q4",
+      "evidence_to_pass": "end-to-end trace with safe reference"
+    },
+    {
+      "id": "Q4-10",
+      "role": "lead_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "closure",
+      "attack_or_failure": "bounded synthetic/local fixtures are treated as product CI or Phase 1 closure",
+      "expected_result": "keep Q4 and Phase 1 gates open",
+      "owner_route": "L01/Q4",
+      "evidence_to_pass": "durable reviewed implementation, exact-head CI and finite catalog/manifest validators"
+    },
+    {
+      "id": "Q4-11",
+      "role": "independent_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "owner preparation recheck",
+      "attack_or_failure": "treat a passing local preparation validator as reviewed implementation, product evidence, or exact-head CI",
+      "expected_result": "record only local preparation quality; keep implementation and exact-head gates NOT_PROVEN",
+      "owner_route": "Q4/L01",
+      "evidence_to_pass": "separate artifact hash/recheck evidence from durable GitHub head, independent review and required CI evidence"
+    },
+    {
+      "id": "Q4-12",
+      "role": "release_manager",
+      "execution_status": "NOT_RUN",
+      "entry_point": "idempotency design gate",
+      "attack_or_failure": "accept a ledger lookup key that includes the request fingerprint and therefore misses a same-key changed-payload record",
+      "expected_result": "block release until lookup uses stable action/contract/idempotency identity and compares an immutable stored fingerprint",
+      "owner_route": "B5/Q4",
+      "evidence_to_pass": "negative fixture proves same key plus changed payload resolves the existing record and is rejected before dispatch"
+    },
+    {
+      "id": "Q4-13",
+      "role": "SRE",
+      "execution_status": "NOT_RUN",
+      "entry_point": "cross-store recovery gate",
+      "attack_or_failure": "resume dispatch after restoring only business data while ledger, audit, or outbox frontiers differ",
+      "expected_result": "keep dispatch stopped until all required stores/checkpoints share a verified recovery frontier",
+      "owner_route": "R4/Q4",
+      "evidence_to_pass": "isolated restore drill correlates business DB, operation ledger, audit and outbox identities before resume"
+    },
+    {
+      "id": "Q4-14",
+      "role": "release_manager",
+      "execution_status": "NOT_RUN",
+      "entry_point": "pilot and operations evidence",
+      "attack_or_failure": "infer Q4 readiness from matrices, mocks, or partial pilots while any of F4-F9, B5, Q1-Q3, R1/R2/R4/R5 lacks exact-head evidence",
+      "expected_result": "keep release NOT_ELIGIBLE and name each missing owner/evidence item",
+      "owner_route": "Q4/L01",
+      "evidence_to_pass": "all 14 dependency rows have reviewed implementation and green required checks on the exact candidate head"
+    }
+  ],
+  "future_execution_record_fields": [
+    "stimulus_timestamp",
+    "observed_result",
+    "authoritative_version_or_identity",
+    "exact_head",
+    "environment_identity",
+    "measurement_profile",
+    "reviewer"
+  ]
+}

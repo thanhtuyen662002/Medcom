@@ -4,6 +4,8 @@ Status: **coverage reviewed; evidence pending; implementation not authorized in 
 Plan date: 2026-10-01 (Asia/Ho_Chi_Minh)  
 Owner: Lead / Integrator
 
+Activation checkpoint 2026-10-02: PR #43 is reviewed/merged and ten schedules are active in bootstrap/preparation mode. `docs/execution/SCHEDULE_ACTIVATION_20261002.md` supersedes earlier planned-only and blanket planning-run authorization statements; minimum bootstrap and per-node gates remain. This activation session starts no application code.
+
 This document is the single orchestration plan for Phase 2. Specialist
 contracts remain normative at their existing paths; this file joins them into
 an executable dependency graph, records the fixed pilot scope, and makes every
@@ -531,7 +533,7 @@ from it. The issue graph owns the exact predecessor edges. A1 bootstraps the tre
 
 The graph has 31 canonical issues (#12–42). Its historical 16 READY/BOUNDS and
 15 BLOCKED labels describe planning disposition, not current start eligibility.
-All implementation remains unauthorized in this run. After authorization,
+The original planning run did not authorize immediate implementation. The 2026-10-02 owner action now authorizes the gated workflow; after minimum bootstrap preflight,
 respect each dependency edge before starting; only independent ready nodes may
 run in parallel. Pilot writes and internal-transfer bindings additionally need
 their evidence gates. F4/#31 covers reads; F9/#42 owns inbound write evidence

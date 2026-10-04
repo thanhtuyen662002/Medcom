@@ -1,0 +1,200 @@
+{
+  "schema_version": 1,
+  "lane": "L07",
+  "artifact_status": "prepared_local_only",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_issues": [
+    22,
+    24
+  ],
+  "source_contracts": [
+    {
+      "path": "docs/architecture/PHASE2_COMMAND_TRANSACTION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "a819e2f2cb55b94883235ae3626157e7da641e75a727b98a8930bd712299e99c",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_COMMAND_TRANSACTION_CONTRACT.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/db/CONCURRENCY_TRANSACTION_CONTRACTS.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "5d3a5f84feb79dcfd024531fd9a0b25072756ab5c1c2899edcc52756dfa66b5c",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/db/CONCURRENCY_TRANSACTION_CONTRACTS.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/db/LOCKING_TRANSACTION_HOTSPOTS.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c0a34a5db9265a0cc946d9ad4cb85bd8f2d736fde84fdfdedaade835c0e401eb",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/db/LOCKING_TRANSACTION_HOTSPOTS.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/architecture/PHASE2_AUDIT_TRACE_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "e552f88a122745ee5e90754115ac832db9de2e16ae0c8f8cc35e650d56e2114c",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_AUDIT_TRACE_CONTRACT.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "9d9b7157027cce55e3d24d7ade4e554e7205d34a9393bb67f21f60164190c1e0",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/web/UX_RUNTIME_FEEDBACK_SESSION.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "a397a8df0049481cc91df81cfd664deb42e99baa3e060cc534d396c8a4e277a0",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/UX_RUNTIME_FEEDBACK_SESSION.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "338ac433b907f42e720fe3564d3041fef2322036d7405bdf0c7e08942ce3bb13",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "access": "sanitized repository contract/evidence"
+    }
+  ],
+  "limits": [
+    "no L07 dispatcher lease or writer token",
+    "no exact pilot command signature, procedure binding, transaction owner or hook order proved",
+    "no authorized raw SQL/source/runtime opened or executed",
+    "no database mutation, lock test or legacy command dispatch",
+    "no product code, CI or current-head implementation test",
+    "no GitHub mutation or issue closure"
+  ],
+  "unit_id": "L07-B5-CONCURRENCY",
+  "graph_id": "B5",
+  "issue": 24,
+  "objective": "Exercise generic lock/version/state failures while preserving command-specific verified SQL semantics.",
+  "verified_hotspot_examples": [
+    "AP_ImportCost_AllocateStp: XACT_ABORT ON + sp_getapplock + UPDLOCK/HOLDLOCK on AP_PurchaseTbl",
+    "AP_ImportCost_SelectStp: XACT_ABORT ON + sp_getapplock + UPDLOCK/HOLDLOCK on AP_PurchaseTbl",
+    "AP_Service_ImportInboundCostStp: XACT_ABORT ON + sp_getapplock + UPDLOCK/HOLDLOCK on AP_ServiceTbl",
+    "CF_QRcodeStp: XACT_ABORT OFF + repeated UPDLOCK/HOLDLOCK",
+    "IV_ReturnRequestTransitionStp: XACT_ABORT ON + UPDLOCK/HOLDLOCK"
+  ],
+  "hotspot_boundary": "textual/static procedure evidence only; no current pilot/UI action binding or live/deployed-version claim",
+  "cases": [
+    {
+      "id": "CON-01",
+      "scenario": "two authorized users mutate same business identity",
+      "expected": "verified lock/version/state contract selects one valid outcome; no silent lost update"
+    },
+    {
+      "id": "CON-02",
+      "scenario": "Web and WinForms writers acquire resources in opposite order",
+      "expected": "capture deadlock; preserve invariants; retry only rollback-proved idempotent unit"
+    },
+    {
+      "id": "CON-03",
+      "scenario": "application lock timeout",
+      "expected": "command-specific safe error/unknown result; no blanket retry"
+    },
+    {
+      "id": "CON-04",
+      "scenario": "database deadlock victim before any external effect",
+      "expected": "retry only if rollback and idempotency are proved for exact command"
+    },
+    {
+      "id": "CON-05",
+      "scenario": "deadlock/timeout after possible external or deferred effect",
+      "expected": "OutcomeUnknown/reconciliation; no automatic retry"
+    },
+    {
+      "id": "CON-06",
+      "scenario": "procedure expects caller transaction",
+      "expected": "do not remove or add incompatible transaction; exact ownership evidence required"
+    },
+    {
+      "id": "CON-07",
+      "scenario": "procedure owns transaction but Web adds outer transaction",
+      "expected": "block until nested/savepoint/error compatibility proved"
+    },
+    {
+      "id": "CON-08",
+      "scenario": "XACT_ABORT ON family is treated like OFF family",
+      "expected": "reject generic normalization; test actual partial/rollback behavior per procedure"
+    },
+    {
+      "id": "CON-09",
+      "scenario": "invented rowversion supplied for table without verified token",
+      "expected": "reject design; use existing locking semantics and keep gap UNKNOWN"
+    },
+    {
+      "id": "CON-10",
+      "scenario": "stale capability or business state changes while waiting for lock",
+      "expected": "revalidate at protected boundary before harmful effect"
+    },
+    {
+      "id": "CON-11",
+      "scenario": "branch/date/prefix changes during document-number allocation",
+      "expected": "verify domain/resource owner; no count+1 or guessed rollback"
+    },
+    {
+      "id": "CON-12",
+      "scenario": "same lock resource accidentally reused across companies",
+      "expected": "prove intentional compatibility or scope safely; no cross-company interference"
+    },
+    {
+      "id": "CON-13",
+      "scenario": "client cancellation after server dispatch",
+      "expected": "does not imply rollback; operation remains observable/reconcilable"
+    },
+    {
+      "id": "CON-14",
+      "scenario": "post-commit SignalR/outbox emitted then transaction rolls back",
+      "expected": "test fails; publication must occur only after authoritative commit"
+    },
+    {
+      "id": "CON-15",
+      "scenario": "authoritative reread differs from expected effect",
+      "expected": "no success toast/result; enter conflict/unknown or command-specific failure"
+    },
+    {
+      "id": "CON-16",
+      "scenario": "core transaction commits but required outbox/hook reservation is absent",
+      "expected": "final success prohibited; enter pending/unknown recovery according to exact command completion predicate"
+    },
+    {
+      "id": "CON-17",
+      "scenario": "deferred worker processes same mandatory effect twice",
+      "expected": "effect has its own scoped idempotency/claim contract or remains unsupported; command ledger alone is insufficient"
+    },
+    {
+      "id": "CON-18",
+      "scenario": "stale worker holds lock after authorization or metadata revision changed",
+      "expected": "revalidate current generation/revision immediately before harmful effect; stale worker aborts without widening authority"
+    },
+    {
+      "id": "CON-19",
+      "scenario": "competing Web/WinForms path uses an unobserved lock resource or order",
+      "expected": "do not claim concurrency safety from Web-only test; retain UNKNOWN/block until exact competing path is evidenced"
+    }
+  ],
+  "execution_status": "NOT_RUN"
+}

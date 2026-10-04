@@ -1,0 +1,200 @@
+{
+  "schema_version": 1,
+  "lane": "L06",
+  "artifact_status": "prepared_local_only",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_issues": [
+    28,
+    29,
+    30,
+    31
+  ],
+  "source_contracts": [
+    {
+      "path": "docs/web/GRID_MOBILE_IMPLEMENTATION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "b59d80f754cd3108c415a458f83c19dc7c7c197998e23fa12f258adaeafb3418",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/GRID_MOBILE_IMPLEMENTATION_CONTRACT.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/web/PRODUCT_UX_FOUNDATION.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "8299a090625de634f1aadc4b8bd5cb17aef628489d5cca31bdfc755d904bc520",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/PRODUCT_UX_FOUNDATION.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/web/MOBILE_NAVIGATION_ROLE_CONFIG.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "5e031383a484408298ea8ee819694499e7d00af621ccd1d793e1c26b1023ea8e",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/MOBILE_NAVIGATION_ROLE_CONFIG.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/web/CONFIGURATION_LOOKUP_UX.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "757435de098e0f72e1235b1fa6f672c2e4d526e3914ed29b6ca0a6ad51b4793d",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/CONFIGURATION_LOOKUP_UX.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/web/UX_RUNTIME_FEEDBACK_SESSION.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "a397a8df0049481cc91df81cfd664deb42e99baa3e060cc534d396c8a4e277a0",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/UX_RUNTIME_FEEDBACK_SESSION.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "9d9b7157027cce55e3d24d7ade4e554e7205d34a9393bb67f21f60164190c1e0",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/architecture/PHASE2_AUTH_CAPABILITY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "fa8db170726d9afe02fd5b2e578e00226978f78757c4fbfcde3fa9328d18eb47",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_AUTH_CAPABILITY_CONTRACT.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/architecture/PHASE2_SCREEN_DEFINITION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "aeb14d0db338c24d98dce32f1eb986ff6e771abd5c799a151a8536c9dbba2316",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_SCREEN_DEFINITION_CONTRACT.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/web/PHASE2_FRONTEND_ACCEPTANCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "668c3f410cbc5793aa3be1f032130a31d07bbf075c9153a778af5e3ac2d4422a",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/PHASE2_FRONTEND_ACCEPTANCE.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/web/UX_STRESS_ACCEPTANCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "56a9163d45ad3c6787ca280db17c0ce69f6f31a5525ba1c94ac943d114649e03",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/UX_STRESS_ACCEPTANCE.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    }
+  ],
+  "limits": [
+    "no L06 dispatcher lease or writer token",
+    "no frontend application tree or installed project dependencies",
+    "no completed backend/query/capability dependencies",
+    "no product browser, accessibility, performance or CI execution",
+    "no GitHub mutation or issue closure",
+    "mock/synthetic preparation cannot enable real users or close F1-F4"
+  ],
+  "unit_id": "L06-F1-SHELL",
+  "graph_id": "F1",
+  "issue": 28,
+  "objective": "Exercise shell/navigation/mobile presentation against server-owned capability and session generations without treating visibility as authority.",
+  "cases": [
+    {
+      "id": "SHL-01",
+      "scenario": "authorized screen appears in server navigation",
+      "expected": "stable ScreenId opens allowed route; page identity and context visible"
+    },
+    {
+      "id": "SHL-02",
+      "scenario": "screen absent from authorized navigation and server grant absent",
+      "expected": "direct route/API denied; safe state reveals no data existence"
+    },
+    {
+      "id": "SHL-03",
+      "scenario": "attacker injects quick-nav ScreenId",
+      "expected": "configuration rejected or omitted; quick-nav cannot create capability"
+    },
+    {
+      "id": "SHL-04",
+      "scenario": "role revoked while shell/tab is open",
+      "expected": "authoritative revalidation removes navigation and protected content/actions"
+    },
+    {
+      "id": "SHL-05",
+      "scenario": "company switch with open tabs and cached navigation",
+      "expected": "scope/session generation changes; old data and actions fenced before display/dispatch"
+    },
+    {
+      "id": "SHL-06",
+      "scenario": "browser back-forward cache restores protected page after logout",
+      "expected": "revalidate before reveal; redirect safely if invalid"
+    },
+    {
+      "id": "SHL-07",
+      "scenario": "module recent/favorite points to retired or unauthorized screen",
+      "expected": "shortcut omitted/disabled with safe recovery; never bypasses authorization"
+    },
+    {
+      "id": "SHL-08",
+      "scenario": "390px viewport",
+      "expected": "persistent role-filtered quick nav plus full authorized drawer; touch labels/focus usable"
+    },
+    {
+      "id": "SHL-09",
+      "scenario": "desktop work tabs contain duplicate document IDs",
+      "expected": "tab identity includes screen/scope/record instance and dirty state; no cross-scope collision"
+    },
+    {
+      "id": "SHL-10",
+      "scenario": "connection/freshness degraded",
+      "expected": "truthful degraded state; no green live badge from socket alone"
+    },
+    {
+      "id": "SHL-11",
+      "scenario": "keyboard-only shell navigation",
+      "expected": "visible focus, logical order, named controls and no focus trap"
+    },
+    {
+      "id": "SHL-12",
+      "scenario": "non-admin invokes quick-nav admin route/API",
+      "expected": "server denies; UI does not show controls; denial is not the sole security boundary"
+    },
+    {
+      "id": "SHL-13",
+      "scenario": "server denies screen but stale client cache/hydration contains prior navigation or page bytes",
+      "expected": "authorization is resolved before protected reveal; no flash of protected content or cached counts"
+    },
+    {
+      "id": "SHL-14",
+      "scenario": "login return route is external, malformed or points to unauthorized screen",
+      "expected": "return target is same-origin allow-listed and reauthorized; otherwise route to a safe authorized landing page"
+    },
+    {
+      "id": "SHL-15",
+      "scenario": "two tabs switch company or revoke role concurrently",
+      "expected": "cross-tab generation notice purges old scoped navigation/data; each tab revalidates before reveal or dispatch"
+    },
+    {
+      "id": "SHL-16",
+      "scenario": "mobile drawer/dialog closes after navigation or denial",
+      "expected": "focus returns to a valid named control; background is not keyboard/assistive-technology reachable while overlay is active"
+    }
+  ],
+  "execution_status": "NOT_RUN"
+}

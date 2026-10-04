@@ -1,0 +1,312 @@
+{
+  "schema_version": 1,
+  "lane": "L10",
+  "artifact_status": "prepared_local_only",
+  "execution_status": "NOT_RUN",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_owner": "L10",
+  "source_contracts": [
+    {
+      "path": "docs/PROJECT_STATE.yaml",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "bcf2635d9bd7b634abb7a1c818ed36564fa5c774aecccc3cdbe64dadeed4e278"
+    },
+    {
+      "path": "docs/SOURCE_BASELINE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "6f9fb08b0d1f3af2def0809f2d5a194082403249ff9119a1f2605551c93658b8"
+    },
+    {
+      "path": "docs/EVIDENCE_STANDARDS.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "b330291378041fc197796deaab6d49c72a9563fdbe2c5fd990fd827b266e1910"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168"
+    },
+    {
+      "path": "docs/plans/PHASE2_SCHEDULED_EXECUTION_PLAN.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "9e58be73eba12f3ec9e255c4460e9e2d4ede1c26d43877d421144b56876fa532"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "9cb84eb673b9d7a0a8cea3e70f2366350b8150f4a15ad42f614510f3113c1524"
+    },
+    {
+      "path": "docs/architecture/PHASE2_AUTH_CAPABILITY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "fa8db170726d9afe02fd5b2e578e00226978f78757c4fbfcde3fa9328d18eb47"
+    },
+    {
+      "path": "docs/architecture/PHASE2_COMMAND_TRANSACTION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "a819e2f2cb55b94883235ae3626157e7da641e75a727b98a8930bd712299e99c"
+    },
+    {
+      "path": "docs/architecture/PHASE2_REALTIME_COEXISTENCE_RECOVERY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "e48ccffc8fa128f41c525c7c30ac4fff265a6fb8af739478281cf927afd753f4"
+    },
+    {
+      "path": "docs/web/GRID_MOBILE_IMPLEMENTATION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "b59d80f754cd3108c415a458f83c19dc7c7c197998e23fa12f258adaeafb3418"
+    },
+    {
+      "path": "docs/web/PHASE2_FRONTEND_ACCEPTANCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "668c3f410cbc5793aa3be1f032130a31d07bbf075c9153a778af5e3ac2d4422a"
+    },
+    {
+      "path": "docs/web/UX_STRESS_ACCEPTANCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "56a9163d45ad3c6787ca280db17c0ce69f6f31a5525ba1c94ac943d114649e03"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84"
+    },
+    {
+      "path": "docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b"
+    },
+    {
+      "path": "docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "338ac433b907f42e720fe3564d3041fef2322036d7405bdf0c7e08942ce3bb13"
+    }
+  ],
+  "safety_limits": [
+    "synthetic sanitized data only",
+    "no GitHub mutation, product execution, runtime connection, SQL execution, deployment, or production operation",
+    "expected denials and design review are not passing E2E/CI results",
+    "product defects are routed to the owner lane; L10 does not silently change owner code or close issues"
+  ],
+  "unit": "Q2",
+  "issue": 37,
+  "title": "Accessibility, responsive and grid-stress matrix",
+  "eligibility": {
+    "graph_label": "READY",
+    "actual_start_state": "waiting_dependencies_and_preflight",
+    "dependencies": [
+      "F1/#28",
+      "F2/#29",
+      "F3/#30"
+    ],
+    "live_issue_note": "body still says waiting_plan_integration; integration is complete but frontend tree/dependencies and CI harness are absent"
+  },
+  "performance_contract_ms": {
+    "local_interaction_p95_max": 100,
+    "indexed_filter_sort_p95_max": 1000,
+    "first_useful_grid_p75_max": 1500,
+    "first_useful_grid_p95_max": 2500,
+    "slow_network_fixture": 10000
+  },
+  "cases": [
+    {
+      "id": "Q2-01",
+      "role": "keyboard_power_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "100001-row grid",
+      "attack_or_failure": "navigate virtualized rows/columns with keyboard and frozen regions",
+      "expected_result": "logical focus/row identity remains deterministic",
+      "owner_route": "F2/Q2",
+      "evidence_to_pass": "100001+ rows and 101+ potential columns; canonical p95 interaction budget <=100ms"
+    },
+    {
+      "id": "Q2-02",
+      "role": "screen_reader_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "grid status",
+      "attack_or_failure": "loading, refreshing, stale, empty, denied and error collapse to one message",
+      "expected_result": "expose distinct named states and useful live announcements",
+      "owner_route": "F2/F3/Q2",
+      "evidence_to_pass": "screen-reader state assertions"
+    },
+    {
+      "id": "Q2-03",
+      "role": "low_vision_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "workflow state",
+      "attack_or_failure": "pending/rejected/approved differ only by color",
+      "expected_result": "add text/icon semantics and contrast-compliant presentation",
+      "owner_route": "F3/Q2",
+      "evidence_to_pass": "color-disabled and contrast checks"
+    },
+    {
+      "id": "Q2-04",
+      "role": "mobile_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "390px viewport",
+      "attack_or_failure": "desktop grid forces page-level horizontal scrolling",
+      "expected_result": "use semantic cards/lists and safe action sheet",
+      "owner_route": "F1/F2/Q2",
+      "evidence_to_pass": "390px task completion test"
+    },
+    {
+      "id": "Q2-05",
+      "role": "touch_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "mobile actions",
+      "attack_or_failure": "targets are too small/crowded or hidden by viewport",
+      "expected_result": "meet reviewed touch target and focus/viewport behavior",
+      "owner_route": "F1/F3/Q2",
+      "evidence_to_pass": "realistic touch/zoom fixture"
+    },
+    {
+      "id": "Q2-06",
+      "role": "keyboard_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "modal/drawer",
+      "attack_or_failure": "closing overlay loses focus or traps focus",
+      "expected_result": "restore trigger focus and maintain logical tab order",
+      "owner_route": "F1/F3/Q2",
+      "evidence_to_pass": "overlay focus cycle test"
+    },
+    {
+      "id": "Q2-07",
+      "role": "end_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "server validation",
+      "attack_or_failure": "error exists only in toast",
+      "expected_result": "associate error to field/summary and keep critical state persistent",
+      "owner_route": "F3/Q2",
+      "evidence_to_pass": "toast-expiry recovery test"
+    },
+    {
+      "id": "Q2-08",
+      "role": "power_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "saved view schema drift",
+      "attack_or_failure": "removed column blanks/crashes the surface",
+      "expected_result": "preserve valid preferences and report retired stable IDs",
+      "owner_route": "F2/A7/Q2",
+      "evidence_to_pass": "old-view/new-schema fixture"
+    },
+    {
+      "id": "Q2-09",
+      "role": "analyst",
+      "execution_status": "NOT_RUN",
+      "entry_point": "totals/select all",
+      "attack_or_failure": "50 loaded rows are mistaken for 100k filtered rows",
+      "expected_result": "label page/selection/full-filter scope and version",
+      "owner_route": "F2/B1/Q2",
+      "evidence_to_pass": "server summary/bulk scope fixture"
+    },
+    {
+      "id": "Q2-10",
+      "role": "end_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "overlapping searches",
+      "attack_or_failure": "slow old query overwrites newer result",
+      "expected_result": "cancel/fence superseded response",
+      "owner_route": "F2/Q2",
+      "evidence_to_pass": "deterministic delayed-response race"
+    },
+    {
+      "id": "Q2-11",
+      "role": "end_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "10-second latency",
+      "attack_or_failure": "blank UI or duplicate submit during wait",
+      "expected_result": "show progress after about 300ms, preserve safe prior data, block duplicates",
+      "owner_route": "F2/F3/Q2",
+      "evidence_to_pass": "10s throttled network test"
+    },
+    {
+      "id": "Q2-12",
+      "role": "end_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "mutation disconnect",
+      "attack_or_failure": "lost ACK produces success toast or automatic replay",
+      "expected_result": "show persistent OutcomeUnknown and reconcile",
+      "owner_route": "F3/B5/Q2",
+      "evidence_to_pass": "disconnect-after-submit test"
+    },
+    {
+      "id": "Q2-13",
+      "role": "keyboard_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "bulk action",
+      "attack_or_failure": "selection identity drifts under filter/page changes",
+      "expected_result": "bind action to declared versioned universe and confirm scope",
+      "owner_route": "F2/B1/Q2",
+      "evidence_to_pass": "query-fingerprint selection test"
+    },
+    {
+      "id": "Q2-14",
+      "role": "assistive_tech_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "responsive navigation",
+      "attack_or_failure": "authorized current route disappears from mobile nav",
+      "expected_result": "provide full authorized drawer and clear current location",
+      "owner_route": "F1/Q2",
+      "evidence_to_pass": "role/mobile navigation matrix"
+    },
+    {
+      "id": "Q2-15",
+      "role": "release_engineer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "visual regression",
+      "attack_or_failure": "screenshot passes while task is unusable",
+      "expected_result": "require semantic keyboard/touch/task assertions",
+      "owner_route": "Q2",
+      "evidence_to_pass": "functional accessibility evidence, not screenshot only"
+    },
+    {
+      "id": "Q2-16",
+      "role": "release_engineer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "virtualized grid boundary",
+      "attack_or_failure": "exercise exactly 100001 rows and 101 potential columns to detect off-by-one fixtures hidden at exactly 100000",
+      "expected_result": "retain deterministic row identity, paging and interaction behavior beyond the canonical lower bound",
+      "owner_route": "F2/Q2",
+      "evidence_to_pass": "fixture metadata and assertions prove 100001 rows, 101 potential columns, and stable logical identities"
+    },
+    {
+      "id": "Q2-17",
+      "role": "performance_reviewer",
+      "execution_status": "NOT_RUN",
+      "entry_point": "canonical interaction profile",
+      "attack_or_failure": "report a mean, p50, or optional 50ms target as if it proved the canonical p95 contract",
+      "expected_result": "measure the declared local-interaction p95 and require it to be no more than 100ms under a recorded profile",
+      "owner_route": "F2/Q2",
+      "evidence_to_pass": "raw synthetic samples, percentile calculation, warmup/repetition policy, hardware/runtime identity and p95 <=100ms"
+    },
+    {
+      "id": "Q2-18",
+      "role": "keyboard_power_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "recycled virtual row",
+      "attack_or_failure": "move focus while a virtualized row container is recycled for another record",
+      "expected_result": "bind focus and selection to stable logical rowRef rather than a transient visual index or component instance",
+      "owner_route": "F2/Q2",
+      "evidence_to_pass": "keyboard test crosses recycle boundaries and asserts record identity, focus restoration and action target"
+    },
+    {
+      "id": "Q2-19",
+      "role": "internal_malicious_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "test-double route",
+      "attack_or_failure": "attempt to reach mock data, fixture switching, or test-only commands outside the test harness",
+      "expected_result": "fail closed and expose no mock route or fixture control in a production-shaped build",
+      "owner_route": "F1/F2/Q2",
+      "evidence_to_pass": "build-boundary test proves test routes and fixture controls are absent or independently denied"
+    }
+  ],
+  "future_execution_record_fields": [
+    "stimulus_timestamp",
+    "observed_result",
+    "authoritative_version_or_identity",
+    "exact_head",
+    "environment_identity",
+    "measurement_profile",
+    "reviewer"
+  ]
+}

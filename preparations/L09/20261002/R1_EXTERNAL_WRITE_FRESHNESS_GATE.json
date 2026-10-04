@@ -1,0 +1,232 @@
+{
+  "schema_version": 1,
+  "lane": "L09",
+  "artifact_status": "prepared_local_only",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_owner": "L09",
+  "source_contracts": [
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "git_blob_sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/plans/PHASE2_SCHEDULED_EXECUTION_PLAN.md",
+      "git_blob_sha256": "9e58be73eba12f3ec9e255c4460e9e2d4ede1c26d43877d421144b56876fa532",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md",
+      "git_blob_sha256": "9cb84eb673b9d7a0a8cea3e70f2366350b8150f4a15ad42f614510f3113c1524",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/architecture/PHASE2_REALTIME_COEXISTENCE_RECOVERY_CONTRACT.md",
+      "git_blob_sha256": "e48ccffc8fa128f41c525c7c30ac4fff265a6fb8af739478281cf927afd753f4",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/architecture/PHASE2_COMMAND_TRANSACTION_CONTRACT.md",
+      "git_blob_sha256": "a819e2f2cb55b94883235ae3626157e7da641e75a727b98a8930bd712299e99c",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/erp/RPX_STRUCTURAL_EVIDENCE.md",
+      "git_blob_sha256": "23766cc08c6e1f085846e8110f6d630f08fd1f1d0cdb36b9bea77ba4e4f349d7",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/web/GRID_MOBILE_IMPLEMENTATION_CONTRACT.md",
+      "git_blob_sha256": "b59d80f754cd3108c415a458f83c19dc7c7c197998e23fa12f258adaeafb3418",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/web/PHASE2_FRONTEND_ACCEPTANCE.md",
+      "git_blob_sha256": "668c3f410cbc5793aa3be1f032130a31d07bbf075c9153a778af5e3ac2d4422a",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/web/UX_STRESS_ACCEPTANCE.md",
+      "git_blob_sha256": "56a9163d45ad3c6787ca280db17c0ce69f6f31a5525ba1c94ac943d114649e03",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "git_blob_sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "git_blob_sha256": "868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "git_blob_sha256": "338ac433b907f42e720fe3564d3041fef2322036d7405bdf0c7e08942ce3bb13",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    },
+    {
+      "path": "inventories/traceability/FILTER_TRACEABILITY_SCOPE_AUDIT.md",
+      "git_blob_sha256": "2405377c8f751cf92ff6c5aced05b3b3b5481c599fb76b689d53b3cce43191f1",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73"
+    }
+  ],
+  "safety_limits": [
+    "sanitized metadata and synthetic fixtures only",
+    "no GitHub mutation, runtime connection, SQL execution, backup, restore, deployment, or production operation",
+    "candidate/static evidence does not establish reachability, runtime behavior, authorization, recovery success, RPO, or RTO",
+    "all product/runtime/CI results remain NOT_RUN until an eligible fenced lease and required environments exist"
+  ],
+  "unit": "R1X",
+  "issue": 39,
+  "title": "External WinForms write freshness rehearsal gate",
+  "eligibility": {
+    "graph_status": "BLOCKED",
+    "decision": "preparation_only; no disposable target, authoritative detector or L09 lease"
+  },
+  "current_decision": "BLOCKED_NO_DISPOSABLE_EXTERNAL_WRITER_REHEARSAL",
+  "external_write_rehearsal_authorized": false,
+  "requirements": [
+    {
+      "id": "XWR-01",
+      "requirement": "Disposable nonproduction database and Web environment are uniquely fingerprinted; production connectivity is denied.",
+      "state": "MISSING_NOT_PROVIDED"
+    },
+    {
+      "id": "XWR-02",
+      "requirement": "Approved WinForms build/source identity and one bounded write path are verified; no guessed action or SQL contract.",
+      "state": "MISSING_NOT_PROVIDED"
+    },
+    {
+      "id": "XWR-03",
+      "requirement": "Authoritative version/change detector is identified for the affected resource; timestamps alone are insufficient.",
+      "state": "MISSING_NOT_PROVIDED"
+    },
+    {
+      "id": "XWR-04",
+      "requirement": "Baseline proves no SQL Broker event transport is assumed; no SQL Broker or database option change is made.",
+      "state": "MISSING_NOT_PROVIDED"
+    },
+    {
+      "id": "XWR-05",
+      "requirement": "SWR/poll/focus/manual fallback paths are separately instrumented and reauthorize before returning data.",
+      "state": "MISSING_NOT_PROVIDED"
+    },
+    {
+      "id": "XWR-06",
+      "requirement": "Polling is bounded by measured load, jitter/backoff and resource-specific freshness acceptance; no interval is invented.",
+      "state": "MISSING_NOT_PROVIDED"
+    },
+    {
+      "id": "XWR-07",
+      "requirement": "Server-derived tenant/company/branch/storehouse scope and permission revision fence every revalidation.",
+      "state": "MISSING_NOT_PROVIDED"
+    },
+    {
+      "id": "XWR-08",
+      "requirement": "Role revoke, logout and company switch purge inaccessible cached data and late results without existence leakage.",
+      "state": "MISSING_NOT_PROVIDED"
+    },
+    {
+      "id": "XWR-09",
+      "requirement": "Passive traffic does not extend session activity or draft lifetime.",
+      "state": "MISSING_NOT_PROVIDED"
+    },
+    {
+      "id": "XWR-10",
+      "requirement": "Freshness UI exposes data age/degraded state and never claims live delivery from transport connectivity alone.",
+      "state": "MISSING_NOT_PROVIDED"
+    },
+    {
+      "id": "XWR-11",
+      "requirement": "Concurrent Web/WinForms writes and superseded responses resolve through authoritative reread without overwriting dirty input.",
+      "state": "MISSING_NOT_PROVIDED"
+    },
+    {
+      "id": "XWR-12",
+      "requirement": "Independent review by security/DBA/operations accepts exact environment, head, load and cleanup evidence.",
+      "state": "MISSING_NOT_PROVIDED"
+    }
+  ],
+  "state_machine": {
+    "initial": "BLOCKED_NO_DISPOSABLE_EXTERNAL_WRITER_REHEARSAL",
+    "ready": "READY_FOR_ISOLATED_EXTERNAL_WRITE_REHEARSAL",
+    "all_requirements_required": true,
+    "automatic_transition": "PROHIBITED",
+    "admission_rule": "A separately authorized controller may admit one isolated rehearsal only after XWR-01..12 are VERIFIED at the exact head.",
+    "drift_rule": "Any target/build/scope/detector/load/review drift returns to BLOCKED_NO_DISPOSABLE_EXTERNAL_WRITER_REHEARSAL."
+  },
+  "cases": [
+    {
+      "id": "R1X-01",
+      "synthetic_trigger": "WinForms-direct write occurs with no Web event",
+      "expected_fail_closed_behavior": "bounded authorized fallback detects authoritative version change and rereads",
+      "required_evidence_to_pass": "write identity, detector result, elapsed convergence and authorized reread proof",
+      "execution_status": "NOT_RUN"
+    },
+    {
+      "id": "R1X-02",
+      "synthetic_trigger": "SignalR remains connected but legacy write is invisible to the hub",
+      "expected_fail_closed_behavior": "transport state never claims freshness; data age remains visible until fallback reread",
+      "required_evidence_to_pass": "UI freshness trace and fallback convergence record",
+      "execution_status": "NOT_RUN"
+    },
+    {
+      "id": "R1X-03",
+      "synthetic_trigger": "poll response returns after company switch",
+      "expected_fail_closed_behavior": "old scope generation is discarded before cache/UI update",
+      "required_evidence_to_pass": "generation fence and zero cross-scope field/count disclosure",
+      "execution_status": "NOT_RUN"
+    },
+    {
+      "id": "R1X-04",
+      "synthetic_trigger": "permission revoke occurs between request and response",
+      "expected_fail_closed_behavior": "response reauthorization denies and purges now-inaccessible cached state",
+      "required_evidence_to_pass": "permission revision trace and denial without existence leak",
+      "execution_status": "NOT_RUN"
+    },
+    {
+      "id": "R1X-05",
+      "synthetic_trigger": "two rapid legacy writes occur between fallback scans",
+      "expected_fail_closed_behavior": "authoritative version/change detector exposes a gap or newest state; no false unchanged result",
+      "required_evidence_to_pass": "ordered write/version record and final authoritative equality",
+      "execution_status": "NOT_RUN"
+    },
+    {
+      "id": "R1X-06",
+      "synthetic_trigger": "bounded polling faces outage or rate pressure",
+      "expected_fail_closed_behavior": "backoff/jitter and degraded freshness preserve bounded load; manual refresh remains safe",
+      "required_evidence_to_pass": "request-rate, backoff and recovery measurements",
+      "execution_status": "NOT_RUN"
+    },
+    {
+      "id": "R1X-07",
+      "synthetic_trigger": "focus and manual refresh race an older SWR response",
+      "expected_fail_closed_behavior": "superseded response cannot replace newer authoritative result",
+      "required_evidence_to_pass": "request generation ordering and displayed-version trace",
+      "execution_status": "NOT_RUN"
+    },
+    {
+      "id": "R1X-08",
+      "synthetic_trigger": "passive SWR/polling continues beyond idle timeout",
+      "expected_fail_closed_behavior": "session expires; background traffic never counts as user activity",
+      "required_evidence_to_pass": "activity-clock trace and expired authorization result",
+      "execution_status": "NOT_RUN"
+    },
+    {
+      "id": "R1X-09",
+      "synthetic_trigger": "external write changes a record while Web form has dirty local input",
+      "expected_fail_closed_behavior": "show conflict/refresh option without silently replacing dirty fields",
+      "required_evidence_to_pass": "dirty-field preservation and authoritative version comparison",
+      "execution_status": "NOT_RUN"
+    },
+    {
+      "id": "R1X-10",
+      "synthetic_trigger": "team proposes SQL Broker enablement or production polling to obtain evidence",
+      "expected_fail_closed_behavior": "reject operation; use only approved disposable target and retain R1 topology UNKNOWN",
+      "required_evidence_to_pass": "approved isolated environment and reviewed nonproduction procedure",
+      "execution_status": "NOT_RUN"
+    }
+  ],
+  "execution_status": "NOT_RUN"
+}

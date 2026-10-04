@@ -1,0 +1,204 @@
+{
+  "schema_version": 1,
+  "lane": "L05",
+  "artifact_status": "prepared_local_only",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_issues": [
+    16,
+    18,
+    26
+  ],
+  "source_contracts": [
+    {
+      "path": "docs/db/CONFIGURATION_OBJECT_CATALOG.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "a8cb863be9b001a9e81fe3f91b17b7370096accb66153cdcc1a744ad37fe8245",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/db/CONFIGURATION_OBJECT_CATALOG.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/architecture/PHASE2_SCREEN_DEFINITION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "aeb14d0db338c24d98dce32f1eb986ff6e771abd5c799a151a8536c9dbba2316",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_SCREEN_DEFINITION_CONTRACT.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/erp/DAT_LAYOUT_CORROBORATION.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c2dc4ea6cc61b46edb12b7ebf0f1edfdbb6975f7d9df29f4f0448deadcdccedf",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/DAT_LAYOUT_CORROBORATION.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "87a9165f370e30294d69a409e81c918f1f2425c2eeeb86d534d68d79762a14ad",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/FILTER_CONFIGURATION_EVIDENCE.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/erp/TEMPLATES_PERSONALIZATION_UPDATE_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "ef8ec347a29a39e5b112225c923f9ec751a3d4e9ca097ba6abbe3b889ebff25f",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/TEMPLATES_PERSONALIZATION_UPDATE_EVIDENCE.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "4a48658994a7a70ad809587c2100cb3f6340526e508805f4ebee11710574f4d6",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "inventories/erp/WINFORMS_PROPERTY_KEY_INDEX.json",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c41eb90ae522a45819f810f3ac69e2cf902f5d47f295163de5056dcfcb4fe50c",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/inventories/erp/WINFORMS_PROPERTY_KEY_INDEX.json",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "access": "sanitized repository evidence"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "access": "sanitized repository evidence"
+    }
+  ],
+  "limits": [
+    "no L05 dispatcher lease or writer token",
+    "no approved raw DAT/source archive opened in this run",
+    "no SY_* rows or executable config bodies inspected or executed",
+    "no legacy database/config write or migration",
+    "no product/compiler runtime test or CI",
+    "no GitHub mutation or issue closure"
+  ],
+  "unit_id": "L05-A7-SYNC-ROLLBACK",
+  "graph_id": "A7",
+  "issue": 18,
+  "objective": "Define an immutable publish/rollback flow resilient to missed events, stale writers and WinForms cache divergence.",
+  "states": [
+    "NO_PUBLISHED_VERSION",
+    "PUBLISHED_GOOD",
+    "CANDIDATE_DETECTED",
+    "CANDIDATE_VALIDATING",
+    "CANDIDATE_QUARANTINED",
+    "PUBLISH_CONFLICT",
+    "PUBLISHED_NEW",
+    "ROLLBACK_VALIDATING",
+    "ROLLBACK_CONFLICT",
+    "ROLLED_BACK_POINTER",
+    "DEGRADED_LAST_GOOD",
+    "STALE_PUBLISHER_REJECTED",
+    "SOURCE_SET_INCOMPLETE"
+  ],
+  "cases": [
+    {
+      "id": "SYN-01",
+      "event": "source watcher fires",
+      "expected": "hash authoritative source and create immutable candidate only if changed"
+    },
+    {
+      "id": "SYN-02",
+      "event": "watcher misses source change",
+      "expected": "periodic/manual hash reconciliation detects drift"
+    },
+    {
+      "id": "SYN-03",
+      "event": "parser/validator fails",
+      "expected": "candidate quarantined; current pointer unchanged"
+    },
+    {
+      "id": "SYN-04",
+      "event": "executable reference unresolved",
+      "expected": "candidate quarantined; no browser/runtime activation"
+    },
+    {
+      "id": "SYN-05",
+      "event": "two admins publish from same expected pointer",
+      "expected": "one transactional CAS succeeds; other conflicts and refreshes"
+    },
+    {
+      "id": "SYN-06",
+      "event": "publish transaction commits",
+      "expected": "audit/current pointer/checkpoint durable before post-commit invalidation"
+    },
+    {
+      "id": "SYN-07",
+      "event": "SignalR invalidation lost",
+      "expected": "SWR/poll/focus/manual re-fetch converges; no activity/session extension"
+    },
+    {
+      "id": "SYN-08",
+      "event": "WinForms Forever1Day cache remains old",
+      "expected": "do not claim convergence; controlled refresh/restart acceptance belongs to Q3/A7"
+    },
+    {
+      "id": "SYN-09",
+      "event": "admin selects previous-good rollback version",
+      "expected": "revalidate source/compiler/action/build/schema compatibility and expected pointer"
+    },
+    {
+      "id": "SYN-10",
+      "event": "rollback pointer races newer publish",
+      "expected": "rollback conflicts; never overwrite newer current pointer"
+    },
+    {
+      "id": "SYN-11",
+      "event": "historical version references retired/unauthorized command",
+      "expected": "rollback candidate quarantined"
+    },
+    {
+      "id": "SYN-12",
+      "event": "service cannot fetch new definition",
+      "expected": "serve explicitly scoped previous-good where compatible or fail closed; never fabricate mixed version"
+    },
+    {
+      "id": "SYN-13",
+      "event": "stale publisher has correct pointer but obsolete publisher epoch or lease",
+      "expected": "atomic compare includes owner epoch and expected pointer; stale writer rejected before mutation"
+    },
+    {
+      "id": "SYN-14",
+      "event": "multi-file source set changes during scan/compile",
+      "expected": "manifest snapshot equality is rechecked before publish; mixed generation becomes SOURCE_SET_INCOMPLETE"
+    },
+    {
+      "id": "SYN-15",
+      "event": "database commit succeeds but publisher loses acknowledgement",
+      "expected": "read current pointer/audit by immutable operation identity before retry; never publish a second version blindly"
+    },
+    {
+      "id": "SYN-16",
+      "event": "clock moves backward or nodes disagree on wall time",
+      "expected": "ordering and conflicts use immutable IDs/monotonic epochs, not timestamps as authority"
+    }
+  ],
+  "invariants": [
+    "versions/history are immutable",
+    "publication/rollback changes only a current pointer transactionally",
+    "business data is never reversed by config rollback",
+    "overrides cannot grant authorization or scope",
+    "source/compiler/build/schema compatibility is checked",
+    "checkpoint distinguishes last observed source from last successful publication",
+    "invalidation occurs only after commit",
+    "publisher ownership is fenced by an epoch in the same atomic decision as pointer CAS",
+    "a published version references one complete immutable source-set manifest"
+  ],
+  "execution_status": "NOT_RUN"
+}

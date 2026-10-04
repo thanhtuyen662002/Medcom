@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "lane": "L04",
+  "artifact_status": "prepared_local_only",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_issues": [
+    19,
+    23
+  ],
+  "source_contracts": [
+    {
+      "path": "docs/erp/TOOL_DLL_METADATA_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "44da37f9d98fece9eae643b8b4c759d2dd40d20a807a37b89ea81c3d721324be",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/TOOL_DLL_METADATA_EVIDENCE.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/architecture/PHASE2_TOOL_DLL_BRIDGE_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "b4c15731c6be8874f359150052015094f0e980e92059e1c07f7c41dba70c3cfd",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_TOOL_DLL_BRIDGE_CONTRACT.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/architecture/PHASE2_AUTH_CAPABILITY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "fa8db170726d9afe02fd5b2e578e00226978f78757c4fbfcde3fa9328d18eb47",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_AUTH_CAPABILITY_CONTRACT.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "4a48658994a7a70ad809587c2100cb3f6340526e508805f4ebee11710574f4d6",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/erp/EXECUTABLE_METADATA_EVIDENCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "19730c6d5d4e916183cd7b79678227d47047ddc078951ae9355bf4d9bf6e4542",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/erp/EXECUTABLE_METADATA_EVIDENCE.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "338ac433b907f42e720fe3564d3041fef2322036d7405bdf0c7e08942ce3bb13",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    }
+  ],
+  "common_limits": [
+    "no L04 writer lease or dispatcher admission",
+    "no raw approved ERP archive/source project or controlled Windows runtime opened in this run",
+    "no Tool/Tools binary executed, loaded or decompiled in this run",
+    "no legacy database or startup DDL executed",
+    "no GitHub mutation and no issue closure",
+    "all runtime and effective-scope outcomes remain unobserved"
+  ],
+  "unit_id": "L04-T1-CONTROLLED-RUNTIME",
+  "graph_id": "T1",
+  "issue": 19,
+  "objective": "Define a future controlled verification sequence that cannot accidentally modify production or mistake load success for safe multi-user behavior.",
+  "preconditions": [
+    {
+      "id": "ENV-01",
+      "requirement": "Disposable nonproduction Windows environment is explicitly identified; production/customer targets are rejected before process start. Pin a target fingerprint and deny unexpected network egress before loading any assembly.",
+      "evidence_to_retain": "sanitized environment class, OS/runtime/architecture, authorization and rejection proof"
+    },
+    {
+      "id": "SRC-01",
+      "requirement": "Approved source/archive and exact binary/dependency manifests are hashed and reconciled before use.",
+      "evidence_to_retain": "hash manifest, build target, build output identity and mismatch disposition"
+    },
+    {
+      "id": "DB-01",
+      "requirement": "Disposable database is restored from an authorized sanitized fixture; account has audited least privilege and controlled DDL policy. Capture a pre-run schema fingerprint and configure a kill switch before initialization.",
+      "evidence_to_retain": "target fingerprint, permissions, snapshot/cleanup IDs; no rows or secrets; pre/post schema fingerprint and kill-switch result"
+    },
+    {
+      "id": "DEP-01",
+      "requirement": "Private licensed Janus/ActiveReports/Aspose and other dependencies are provisioned outside the public repository.",
+      "evidence_to_retain": "dependency names/versions/availability status and safe missing-dependency result; no license material"
+    },
+    {
+      "id": "DDL-01",
+      "requirement": "Inspect startup/initialization paths statically before first launch because guide reports Connector startup can run DDL.",
+      "evidence_to_retain": "call-path decision, allow/deny list and audited attempted schema changes"
+    }
+  ],
+  "ordered_checks": [
+    {
+      "id": "RUN-01",
+      "action": "Build exact attributed source on the approved private runner where available.",
+      "pass": "output identity and referenced dependency manifest are retained; mismatch is explicit",
+      "unsafe_or_unknown": "build failure or unavailable source remains blocked"
+    },
+    {
+      "id": "RUN-02",
+      "action": "Start one process without credentials against the disposable target.",
+      "pass": "bounded dependency/readiness response, target fingerprint unchanged, network egress constrained and zero unexpected DDL",
+      "unsafe_or_unknown": "any target mismatch, unreviewed network egress, unreviewed DDL or live-target access stops protocol through the kill switch"
+    },
+    {
+      "id": "RUN-03",
+      "action": "Exercise only identified authentication candidates with synthetic users and canary secrets.",
+      "pass": "exact arguments/results/exceptions/side effects and redaction are observed",
+      "unsafe_or_unknown": "no method is promoted to login from name/signature alone"
+    },
+    {
+      "id": "RUN-04",
+      "action": "Observe initialization, mutable static/process state, threads, handles and DB connections.",
+      "pass": "all session-relevant state owners and cleanup boundaries are identified",
+      "unsafe_or_unknown": "unaccounted shared state preserves dedicated-process rule"
+    },
+    {
+      "id": "RUN-05",
+      "action": "Run same-user, two-user same-company and cross-company contention in separate then intentionally shared contexts.",
+      "pass": "no state/scope bleed and measured safe serialization/reentrancy",
+      "unsafe_or_unknown": "any bleed, crash or ambiguity rejects sharing"
+    },
+    {
+      "id": "RUN-06",
+      "action": "Exercise logout/revoke/expiry/timeout/process kill and late result.",
+      "pass": "generation fencing and cleanup are measured; ambiguous business outcome stays Unknown",
+      "unsafe_or_unknown": "process death never proves SQL rollback; ambiguous business outcome remains OutcomeUnknown"
+    },
+    {
+      "id": "RUN-07",
+      "action": "Measure bounded worker memory, handles, queue, latency, retirement and dependency readiness.",
+      "pass": "capacity/admission thresholds and cleanup are supported by observations",
+      "unsafe_or_unknown": "generic liveness is not readiness or capacity proof"
+    }
+  ],
+  "prohibited": [
+    "production/shared customer database",
+    "startup with unreviewed DDL capability",
+    "raw credentials or error payloads in public logs",
+    "vendor binaries/licenses in public repository",
+    "state-changing business commands before their own B3/B5/pilot authorization"
+  ],
+  "execution_status": "NOT_RUN"
+}

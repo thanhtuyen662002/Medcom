@@ -1,0 +1,261 @@
+{
+  "schema_version": 1,
+  "lane": "L06",
+  "artifact_status": "prepared_local_only",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_issues": [
+    28,
+    29,
+    30,
+    31
+  ],
+  "source_contracts": [
+    {
+      "path": "docs/web/GRID_MOBILE_IMPLEMENTATION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "b59d80f754cd3108c415a458f83c19dc7c7c197998e23fa12f258adaeafb3418",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/GRID_MOBILE_IMPLEMENTATION_CONTRACT.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/web/PRODUCT_UX_FOUNDATION.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "8299a090625de634f1aadc4b8bd5cb17aef628489d5cca31bdfc755d904bc520",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/PRODUCT_UX_FOUNDATION.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/web/MOBILE_NAVIGATION_ROLE_CONFIG.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "5e031383a484408298ea8ee819694499e7d00af621ccd1d793e1c26b1023ea8e",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/MOBILE_NAVIGATION_ROLE_CONFIG.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/web/CONFIGURATION_LOOKUP_UX.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "757435de098e0f72e1235b1fa6f672c2e4d526e3914ed29b6ca0a6ad51b4793d",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/CONFIGURATION_LOOKUP_UX.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/web/UX_RUNTIME_FEEDBACK_SESSION.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "a397a8df0049481cc91df81cfd664deb42e99baa3e060cc534d396c8a4e277a0",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/UX_RUNTIME_FEEDBACK_SESSION.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "9d9b7157027cce55e3d24d7ade4e554e7205d34a9393bb67f21f60164190c1e0",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/architecture/PHASE2_AUTH_CAPABILITY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "fa8db170726d9afe02fd5b2e578e00226978f78757c4fbfcde3fa9328d18eb47",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_AUTH_CAPABILITY_CONTRACT.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/architecture/PHASE2_SCREEN_DEFINITION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "aeb14d0db338c24d98dce32f1eb986ff6e771abd5c799a151a8536c9dbba2316",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_SCREEN_DEFINITION_CONTRACT.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "access": "sanitized repository contract"
+    },
+    {
+      "path": "docs/web/PHASE2_FRONTEND_ACCEPTANCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "668c3f410cbc5793aa3be1f032130a31d07bbf075c9153a778af5e3ac2d4422a",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/PHASE2_FRONTEND_ACCEPTANCE.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    },
+    {
+      "path": "docs/web/UX_STRESS_ACCEPTANCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "56a9163d45ad3c6787ca280db17c0ce69f6f31a5525ba1c94ac943d114649e03",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/UX_STRESS_ACCEPTANCE.md",
+      "current_run_access": "sanitized_repository_evidence_only"
+    }
+  ],
+  "limits": [
+    "no L06 dispatcher lease or writer token",
+    "no frontend application tree or installed project dependencies",
+    "no completed backend/query/capability dependencies",
+    "no product browser, accessibility, performance or CI execution",
+    "no GitHub mutation or issue closure",
+    "mock/synthetic preparation cannot enable real users or close F1-F4"
+  ],
+  "unit_id": "L06-F3-DRAFT-STORAGE-GATE",
+  "graph_id": "F3",
+  "issue": 30,
+  "objective": "Keep recoverable draft persistence disabled until scope, field sensitivity, lifecycle, reauthorization and replay boundaries are independently proved.",
+  "current_decision": "NO_PERSISTENT_SENSITIVE_DRAFT_BY_DEFAULT",
+  "persistent_storage_authorized": false,
+  "requirements": [
+    {
+      "id": "DFT-01",
+      "requirement": "Draft identity is keyed by tenant/company/principal/session generation/screen variant/record identity/schema version.",
+      "state": "MISSING_NOT_PROVIDED",
+      "evidence": "synthetic key collision matrix and zero cross-scope hydration"
+    },
+    {
+      "id": "DFT-02",
+      "requirement": "A per-screen field allow-list classifies recoverable, derived, secret, credential, attachment and forbidden fields.",
+      "state": "MISSING_NOT_PROVIDED",
+      "evidence": "field-class manifest and deny outcomes; no real values"
+    },
+    {
+      "id": "DFT-03",
+      "requirement": "No secret, credential, token, connection value, protected attachment or server-derived authority is persisted in a draft.",
+      "state": "MISSING_NOT_PROVIDED",
+      "evidence": "synthetic canary scan and redaction result"
+    },
+    {
+      "id": "DFT-04",
+      "requirement": "Logout, expiry, account switch and company switch purge or cryptographically isolate all prior-context drafts before protected reveal.",
+      "state": "MISSING_NOT_PROVIDED",
+      "evidence": "lifecycle case results and storage inventory counts"
+    },
+    {
+      "id": "DFT-05",
+      "requirement": "Role revoke or field-scope reduction masks/removes newly forbidden draft values before compare or restore.",
+      "state": "MISSING_NOT_PROVIDED",
+      "evidence": "before/after authorization revision and permitted-field counts"
+    },
+    {
+      "id": "DFT-06",
+      "requirement": "Every restore validates current schema version, screen variant, field allow-list and authoritative record version.",
+      "state": "MISSING_NOT_PROVIDED",
+      "evidence": "version tuple, compatibility decision and rejected-field counts"
+    },
+    {
+      "id": "DFT-07",
+      "requirement": "Bounded TTL and explicit expiry are defined from policy evidence; passive polling or background traffic cannot extend draft lifetime.",
+      "state": "MISSING_NOT_PROVIDED",
+      "evidence": "TTL policy identifier and synthetic clock-boundary results"
+    },
+    {
+      "id": "DFT-08",
+      "requirement": "Per-principal and per-screen quota, size limits and eviction ordering are explicit and never evict another principal context.",
+      "state": "MISSING_NOT_PROVIDED",
+      "evidence": "quota policy and bounded storage stress results"
+    },
+    {
+      "id": "DFT-09",
+      "requirement": "Storage technology, origin scope, encryption-at-rest capability and browser backup/sync behavior are reviewed for the supported clients.",
+      "state": "MISSING_NOT_PROVIDED",
+      "evidence": "client/storage matrix and unsupported-client disposition"
+    },
+    {
+      "id": "DFT-10",
+      "requirement": "Restore is user-initiated, reauthorizes live scope/state and never auto-replay submits, saves or other commands.",
+      "state": "MISSING_NOT_PROVIDED",
+      "evidence": "reauthorization and dispatch-count results"
+    },
+    {
+      "id": "DFT-11",
+      "requirement": "Clear/discard is durable and multi-tab coordinated; late writes from an old generation cannot recreate a purged draft.",
+      "state": "MISSING_NOT_PROVIDED",
+      "evidence": "generation fencing and late-write rejection results"
+    },
+    {
+      "id": "DFT-12",
+      "requirement": "Independent security/accessibility review accepts exact-head UX, denial, focus, announcement and sanitized telemetry behavior.",
+      "state": "MISSING_NOT_PROVIDED",
+      "evidence": "review identity, exact head, disposition and unresolved findings"
+    }
+  ],
+  "cases": [
+    {
+      "id": "DFR-01",
+      "scenario": "logout then browser Back/bfcache restore",
+      "expected": "no prior fields render; old draft is unavailable and protected route revalidates"
+    },
+    {
+      "id": "DFR-02",
+      "scenario": "user A logs out and user B signs in on the same workstation",
+      "expected": "tenant/company/principal key separation prevents user B from observing user A draft metadata or values"
+    },
+    {
+      "id": "DFR-03",
+      "scenario": "company switch with a dirty form",
+      "expected": "old-company draft is fenced; current company must not hydrate it implicitly"
+    },
+    {
+      "id": "DFR-04",
+      "scenario": "role revoke removes access to one previously editable field",
+      "expected": "draft reauthorization removes/masks that field and cannot submit or disclose it"
+    },
+    {
+      "id": "DFR-05",
+      "scenario": "screen schema retires or renames a draft field",
+      "expected": "compatible allowed fields require explicit user recovery; retired field stays quarantined"
+    },
+    {
+      "id": "DFR-06",
+      "scenario": "draft contains synthetic password/token/connection-string canaries",
+      "expected": "field allow-list rejects persistence and sanitized telemetry contains no canary value"
+    },
+    {
+      "id": "DFR-07",
+      "scenario": "TTL expires while SWR, polling or SignalR traffic continues",
+      "expected": "draft expires on policy clock; passive traffic does not extend it"
+    },
+    {
+      "id": "DFR-08",
+      "scenario": "quota pressure and multiple tabs write drafts concurrently",
+      "expected": "bounded same-principal eviction is deterministic; no cross-context eviction or partial foreign restore"
+    },
+    {
+      "id": "DFR-09",
+      "scenario": "discard/logout races a late old-generation autosave",
+      "expected": "generation fence rejects the late write and purged state is not recreated"
+    },
+    {
+      "id": "DFR-10",
+      "scenario": "restored input resembles a previously submitted command after reconnect",
+      "expected": "restore remains local input; reauthorize and validate, then require explicit action; never auto-replay"
+    }
+  ],
+  "state_machine": {
+    "initial": "NO_PERSISTENT_SENSITIVE_DRAFT_BY_DEFAULT",
+    "ready": "READY_FOR_BOUNDED_SYNTHETIC_DRAFT_TEST",
+    "all_requirements_required": true,
+    "automatic_transition": "PROHIBITED",
+    "admission_rule": "Only a separately authorized implementation head may test persistence after DFT-01..12 are accepted; each real screen still needs a field allow-list.",
+    "drift_rule": "Any scope, schema, authorization, storage, lifecycle or review drift returns to NO_PERSISTENT_SENSITIVE_DRAFT_BY_DEFAULT."
+  },
+  "safe_default": [
+    "memory-only dirty state for the current authorized context",
+    "explicit warning before navigation or refresh",
+    "no persistent sensitive draft by default",
+    "critical recovery context remains visible and keyboard accessible while authorized",
+    "draft restore never grants authority and never auto-replay commands"
+  ],
+  "execution_status": "NOT_RUN"
+}

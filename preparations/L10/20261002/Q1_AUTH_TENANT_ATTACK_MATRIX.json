@@ -1,0 +1,314 @@
+{
+  "schema_version": 1,
+  "lane": "L10",
+  "artifact_status": "prepared_local_only",
+  "execution_status": "NOT_RUN",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_owner": "L10",
+  "source_contracts": [
+    {
+      "path": "docs/PROJECT_STATE.yaml",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "bcf2635d9bd7b634abb7a1c818ed36564fa5c774aecccc3cdbe64dadeed4e278"
+    },
+    {
+      "path": "docs/SOURCE_BASELINE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "6f9fb08b0d1f3af2def0809f2d5a194082403249ff9119a1f2605551c93658b8"
+    },
+    {
+      "path": "docs/EVIDENCE_STANDARDS.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "b330291378041fc197796deaab6d49c72a9563fdbe2c5fd990fd827b266e1910"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168"
+    },
+    {
+      "path": "docs/plans/PHASE2_SCHEDULED_EXECUTION_PLAN.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "9e58be73eba12f3ec9e255c4460e9e2d4ede1c26d43877d421144b56876fa532"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "9cb84eb673b9d7a0a8cea3e70f2366350b8150f4a15ad42f614510f3113c1524"
+    },
+    {
+      "path": "docs/architecture/PHASE2_AUTH_CAPABILITY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "fa8db170726d9afe02fd5b2e578e00226978f78757c4fbfcde3fa9328d18eb47"
+    },
+    {
+      "path": "docs/architecture/PHASE2_COMMAND_TRANSACTION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "a819e2f2cb55b94883235ae3626157e7da641e75a727b98a8930bd712299e99c"
+    },
+    {
+      "path": "docs/architecture/PHASE2_REALTIME_COEXISTENCE_RECOVERY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "e48ccffc8fa128f41c525c7c30ac4fff265a6fb8af739478281cf927afd753f4"
+    },
+    {
+      "path": "docs/web/GRID_MOBILE_IMPLEMENTATION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "b59d80f754cd3108c415a458f83c19dc7c7c197998e23fa12f258adaeafb3418"
+    },
+    {
+      "path": "docs/web/PHASE2_FRONTEND_ACCEPTANCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "668c3f410cbc5793aa3be1f032130a31d07bbf075c9153a778af5e3ac2d4422a"
+    },
+    {
+      "path": "docs/web/UX_STRESS_ACCEPTANCE.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "56a9163d45ad3c6787ca280db17c0ce69f6f31a5525ba1c94ac943d114649e03"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84"
+    },
+    {
+      "path": "docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b"
+    },
+    {
+      "path": "docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "git_blob_sha256": "338ac433b907f42e720fe3564d3041fef2322036d7405bdf0c7e08942ce3bb13"
+    }
+  ],
+  "safety_limits": [
+    "synthetic sanitized data only",
+    "no GitHub mutation, product execution, runtime connection, SQL execution, deployment, or production operation",
+    "expected denials and design review are not passing E2E/CI results",
+    "product defects are routed to the owner lane; L10 does not silently change owner code or close issues"
+  ],
+  "unit": "Q1",
+  "issue": 36,
+  "title": "Authorization and tenant-isolation adversarial matrix",
+  "eligibility": {
+    "graph_label": "READY WITH BOUNDS",
+    "actual_start_state": "waiting_dependencies_and_preflight",
+    "dependencies": [
+      "A2/#13",
+      "A4/#15",
+      "A6/#17"
+    ],
+    "live_issue_note": "body still says waiting_plan_integration; PR43 integration is complete, but dependencies/runtime acceptance remain"
+  },
+  "identity_axes": [
+    "authenticated principal",
+    "tenant/data-source profile",
+    "company",
+    "branch",
+    "storehouse",
+    "permission/session generation",
+    "screen/action/query/export capability"
+  ],
+  "cases": [
+    {
+      "id": "Q1-01",
+      "role": "external_attacker",
+      "execution_status": "NOT_RUN",
+      "entry_point": "direct route",
+      "attack_or_failure": "request a route whose authoritative server route/data capability is absent; UI hiding is only incidental",
+      "expected_result": "deny server-side with a uniform safe response and no protected record/count leak",
+      "owner_route": "A4/Q1",
+      "evidence_to_pass": "route/data capability denial plus separate proof that presentation visibility alone neither grants nor revokes server capability"
+    },
+    {
+      "id": "Q1-02",
+      "role": "internal_malicious_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "query API",
+      "attack_or_failure": "supply another tenant/company/storehouse identifier",
+      "expected_result": "ignore/reject client authority and return zero foreign data",
+      "owner_route": "A2/A4/B1/Q1",
+      "evidence_to_pass": "same-ID cross-scope fixture"
+    },
+    {
+      "id": "Q1-03",
+      "role": "same_company_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "detail API",
+      "attack_or_failure": "guess another user-owned opaque ID",
+      "expected_result": "deny with a uniform safe response; record and evaluate latency residual rather than claim perfect timing indistinguishability",
+      "owner_route": "A4/B4/Q1",
+      "evidence_to_pass": "same-company isolation policy, response-shape equivalence and measured timing distribution/residual"
+    },
+    {
+      "id": "Q1-04",
+      "role": "manager",
+      "execution_status": "NOT_RUN",
+      "entry_point": "export API",
+      "attack_or_failure": "view permission exists but export capability is absent",
+      "expected_result": "deny export independently",
+      "owner_route": "A4/R2/Q1",
+      "evidence_to_pass": "export policy plus sanitized audit"
+    },
+    {
+      "id": "Q1-05",
+      "role": "internal_malicious_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "filter/sort/summary",
+      "attack_or_failure": "probe a hidden amount/customer field",
+      "expected_result": "reject field operation and omit unauthorized aggregates",
+      "owner_route": "A4/B1/F2/Q1",
+      "evidence_to_pass": "field-level response/filter/summary matrix"
+    },
+    {
+      "id": "Q1-06",
+      "role": "end_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "role revoke",
+      "attack_or_failure": "continue using stale page/cache/hub after revocation",
+      "expected_result": "authoritative revalidation denies data/actions/export",
+      "owner_route": "A4/R1/Q1",
+      "evidence_to_pass": "permission-generation fence"
+    },
+    {
+      "id": "Q1-07",
+      "role": "end_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "multi-tab logout",
+      "attack_or_failure": "old tab sends query/command after another tab logs out",
+      "expected_result": "deny old generation and clear/mask protected cache",
+      "owner_route": "A3/A4/Q1",
+      "evidence_to_pass": "multi-tab logout test"
+    },
+    {
+      "id": "Q1-08",
+      "role": "shared_workstation_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "browser bfcache",
+      "attack_or_failure": "Back reveals prior user content after account switch",
+      "expected_result": "mask then revalidate; never transfer draft/cache authority",
+      "owner_route": "A3/F3/Q1",
+      "evidence_to_pass": "bfcache/account-switch test"
+    },
+    {
+      "id": "Q1-09",
+      "role": "internal_malicious_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "quick nav",
+      "attack_or_failure": "craft protected ScreenId into personal shortcut",
+      "expected_result": "omit/deny; configuration grants no capability",
+      "owner_route": "A4/F1/Q1",
+      "evidence_to_pass": "quick-nav tamper test"
+    },
+    {
+      "id": "Q1-10",
+      "role": "external_attacker",
+      "execution_status": "NOT_RUN",
+      "entry_point": "command body",
+      "attack_or_failure": "inject table/view/procedure or connection selector",
+      "expected_result": "reject closed typed schema",
+      "owner_route": "A2/B3/Q1",
+      "evidence_to_pass": "schema fuzz and no SQL-object-input proof"
+    },
+    {
+      "id": "Q1-11",
+      "role": "IT_support",
+      "execution_status": "NOT_RUN",
+      "entry_point": "support trace",
+      "attack_or_failure": "open reference owned by another scope",
+      "expected_result": "show only authorized redacted metadata",
+      "owner_route": "A6/Q1",
+      "evidence_to_pass": "support lookup authorization/redaction test"
+    },
+    {
+      "id": "Q1-12",
+      "role": "end_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "idle session",
+      "attack_or_failure": "keep SignalR/polling active without accepted interaction",
+      "expected_result": "expire session; background traffic does not extend idle",
+      "owner_route": "A3/Q1",
+      "evidence_to_pass": "server activity classification test"
+    },
+    {
+      "id": "Q1-13",
+      "role": "manager",
+      "execution_status": "NOT_RUN",
+      "entry_point": "company switch",
+      "attack_or_failure": "late result from previous company arrives",
+      "expected_result": "discard by context generation and requery",
+      "owner_route": "A2/A4/F3/Q1",
+      "evidence_to_pass": "late-response cross-company race"
+    },
+    {
+      "id": "Q1-14",
+      "role": "malicious_admin_candidate",
+      "execution_status": "NOT_RUN",
+      "entry_point": "protected config API",
+      "attack_or_failure": "non-admin changes session/menu/action policy",
+      "expected_result": "deny and audit without applying",
+      "owner_route": "A4/A7/Q1",
+      "evidence_to_pass": "admin capability and optimistic-version test"
+    },
+    {
+      "id": "Q1-15",
+      "role": "external_attacker",
+      "execution_status": "NOT_RUN",
+      "entry_point": "cookie-authenticated command/company-switch/Continue Session",
+      "attack_or_failure": "external origin or missing/invalid CSRF token submits a protected state-changing request",
+      "expected_result": "reject before handler dispatch, session-activity/context mutation, or business effect; same-origin valid-token control remains allowed",
+      "owner_route": "A3/A4/Q1",
+      "evidence_to_pass": "CSRF middleware integration tests covering command, company switch and Continue Session"
+    },
+    {
+      "id": "Q1-16",
+      "role": "external_attacker",
+      "execution_status": "NOT_RUN",
+      "entry_point": "server-rendered protected route",
+      "attack_or_failure": "stale SSR or hydration cache briefly renders protected data after permission/session generation changes",
+      "expected_result": "server authority check prevents protected bytes from entering the response or hydration payload",
+      "owner_route": "A4/Q1",
+      "evidence_to_pass": "synthetic stale-generation SSR/hydration test proving zero protected-field and protected-count disclosure"
+    },
+    {
+      "id": "Q1-17",
+      "role": "internal_malicious_user",
+      "execution_status": "NOT_RUN",
+      "entry_point": "cached export/report artifact",
+      "attack_or_failure": "reuse a job, artifact, or download token after tenant/company/storehouse scope changes",
+      "expected_result": "deny under the current authoritative scope and never reuse an artifact across scope generations",
+      "owner_route": "A4/R2/Q1",
+      "evidence_to_pass": "immutable server-resolved artifact scope plus current-generation authorization at status and download"
+    },
+    {
+      "id": "Q1-18",
+      "role": "external_attacker",
+      "execution_status": "NOT_RUN",
+      "entry_point": "denied lookup",
+      "attack_or_failure": "infer record existence from response timing, size, pagination count, or distinct denial code",
+      "expected_result": "return a uniform safe denial envelope within a documented synthetic variance budget and reveal no protected count",
+      "owner_route": "A4/Q1",
+      "evidence_to_pass": "paired present/absent forbidden-record trials with normalized response shape and timing-distribution review"
+    },
+    {
+      "id": "Q1-19",
+      "role": "IT_support",
+      "execution_status": "NOT_RUN",
+      "entry_point": "queued mutation worker",
+      "attack_or_failure": "enqueue while authorized, then revoke permission or change tenant/company/session generation before worker dispatch",
+      "expected_result": "reauthorize before dispatch against immutable server-resolved scope and reject the stale envelope",
+      "owner_route": "A4/B5/Q1",
+      "evidence_to_pass": "synthetic queued-action generation-race test proving no business mutation after revocation"
+    }
+  ],
+  "future_execution_record_fields": [
+    "stimulus_timestamp",
+    "observed_result",
+    "authoritative_version_or_identity",
+    "exact_head",
+    "environment_identity",
+    "measurement_profile",
+    "reviewer"
+  ]
+}

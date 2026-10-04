@@ -1,0 +1,50 @@
+{
+  "formatVersion": 1,
+  "sourceSet": "owner-attachment-20261002",
+  "observedDateUtc": "2026-10-02",
+  "ownerDllSha256": "aa8910f3ba244fc405ccad2d322d142d40f938be3da94277ccd8d0814082dd61",
+  "runtime": {
+    "dotnetSdk": "10.0.401",
+    "dotnetRuntime": "10.0.12",
+    "os": "Ubuntu 24.04 Linux x64",
+    "sqlServer": "17.0.4065.4 Enterprise Developer"
+  },
+  "databaseFixture": {
+    "sourceTableDdlCount": 13,
+    "rows": "synthetic only",
+    "rawDumpRestored": false,
+    "productionDatabaseAccessed": false,
+    "createdAndDroppedUniqueTestDatabase": true,
+    "sourceProcedureDdlCount": 8
+  },
+  "observedTests": {
+    "sourceFreeBackend": 37,
+    "privateLegacyRuntime": 3,
+    "frontendContract": 5,
+    "packagedBrowser": 4,
+    "sourceScanner": 9,
+    "referenceSuites": 23
+  },
+  "legacyRuntimeClaims": [
+    "Actual pinned DLL normal stored-password check accepts a generated synthetic hash and rejects wrong password, different username and malformed hash.",
+    "Modified DLL is rejected; no system-password verification or Connector startup is called.",
+    "Ten source table DDLs execute on a disposable SQL Server with synthetic fixtures.",
+    "Canonical SQL login, permission/group/credential revocation and injection denial are observed.",
+    "Typed purchase-order query restricts branches, paginates and treats wildcard search characters literally.",
+    "Schema and synthetic pure-DLL health probes succeed while business readiness remains blocked.",
+    "Real HTTPS browser login, purchase-order navigation/Grid/search, crafted other-branch 403, logout and subsequent workspace 401 are observed.",
+    "Both typed line-detail shapes preserve exact decimal scale and null quantities, require scoped enabled parent documents, paginate and exclude orphan/other-branch rows.",
+    "Hidden and missing parents both return 404; oversized IDs, cross-company reads, injection attempts and revoked grants are denied.",
+    "Real HTTPS browser verifies purchase-order Enter/Escape focus restoration, inbound details and mobile containment with zero browser errors.",
+    "Seven current internal-transfer check procedures and their delegated helper execute on three source transfer tables with synthetic rows, verifying assignment/status/deletion boundaries.",
+    "The full SQL member has been size/CRC/hash verified; the previous missing-procedure source blocker is resolved."
+  ],
+  "releaseStatus": "BLOCKED_BUSINESS_AND_RUNTIME_ACCEPTANCE",
+  "limits": [
+    "Public CI lacks private owner artifacts and does not claim these two runtime tests.",
+    "Full legacy engine, Windows host, complete permission/admin/company equivalence and all business commands/effects are not accepted.",
+    "Stored trigger version/deployed-host reconciliation, durable security audit, report/export/recovery/performance and independent review/deployed-host acceptance remain open.",
+    "No real credentials, transaction rows, hashes, SQL bodies or source binaries are included in this receipt."
+  ],
+  "sourceIntegrityEvidence": "extraction-integrity.json"
+}

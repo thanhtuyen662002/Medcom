@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "lane": "L03",
+  "artifact_status": "prepared_local_only",
+  "execution_status": "NOT_RUN",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_owner": "L03",
+  "unit": "B2M",
+  "issue": 21,
+  "title": "Authoritative SQL extraction-manifest acceptance",
+  "source_contracts": [
+    {"path":"docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","git_blob_sha256":"338ac433b907f42e720fe3564d3041fef2322036d7405bdf0c7e08942ce3bb13"},
+    {"path":"docs/db/PHASE1_CATALOG_COVERAGE_MATRIX.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","git_blob_sha256":"0f3bb2ef99e105dd337bb42fcbe0b0e5f3843cd00e961c0a83d0171716e817ec"},
+    {"path":"docs/db/BASELINE_INVENTORY.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","git_blob_sha256":"6d87cdceaa664c1d7c0829d9763da25122ad2da416994a64106edeaac9f40b4f"},
+    {"path":"docs/EVIDENCE_STANDARDS.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","git_blob_sha256":"b330291378041fc197796deaab6d49c72a9563fdbe2c5fd990fd827b266e1910"},
+    {"path":"docs/SOURCE_BASELINE.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","git_blob_sha256":"6f9fb08b0d1f3af2def0809f2d5a194082403249ff9119a1f2605551c93658b8"},
+    {"path":"docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","git_blob_sha256":"d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168"},
+    {"path":"docs/plans/PHASE2_IMPLEMENTATION_MASTER_PLAN.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","git_blob_sha256":"9cb84eb673b9d7a0a8cea3e70f2366350b8150f4a15ad42f614510f3113c1524"},
+    {"path":"inventories/traceability/FILTER_FAMILY_TRACEABILITY_REGISTER.json","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","git_blob_sha256":"bf467cc1843939098319f57028ae60c5ed7243ff78ce9f0bafde8f8432ce36bf"},
+    {"path":"inventories/traceability/FILTER_TRACEABILITY_SCOPE_AUDIT.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","git_blob_sha256":"2405377c8f751cf92ff6c5aced05b3b3b5481c599fb76b689d53b3cce43191f1"},
+    {"path":"docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md","ref":"f9197185b624a8c3f74c99e48a69550b5a7c2a73","git_blob_sha256":"9d9b7157027cce55e3d24d7ade4e554e7205d34a9393bb67f21f60164190c1e0"}
+  ],
+  "safety_limits": [
+    "sanitized metadata and synthetic fixtures only; no raw SQL, data rows, secrets, credentials or connection material",
+    "no GitHub mutation, SQL execution, legacy runtime, product implementation, deployment or production operation",
+    "aggregate counts and filename conventions never substitute for exact authoritative catalog identities",
+    "all product/runtime execution remains NOT_RUN and TRC-DB-001 stays open"
+  ],
+  "eligibility": {
+    "writer_lease": "NOT_GRANTED",
+    "dispatcher_fencing": "NOT_PROVEN",
+    "authoritative_sql_bytes": "NOT_ACCESSIBLE",
+    "eligible_to_code": false
+  },
+  "manifest_contract": {
+    "approved_archive_sha256": "2d809c2e0d4c80700a1e8946c8f09db45a5840ec6735413bd46c3bd1d1ee1e0c",
+    "source_set_state": "NOT_MATERIALIZED",
+    "member_set_required": true,
+    "span_offset_unit": "unicode_code_point",
+    "body_region_total_coverage": true,
+    "sanitizer_fail_closed": true,
+    "public_raw_retention": "PROHIBITED"
+  },
+  "cases": [
+    {"id":"B2M-01","role":"source_custodian","execution_status":"NOT_RUN","entry_point":"archive intake","attack_or_failure":"begin extraction from a filename, prior note, or inaccessible file ID without materialized bytes","expected_result":"remain blocked; record only the access observation","owner_route":"L03/B2","evidence_to_pass":"authorized bytes plus independently recomputed SHA-256"},
+    {"id":"B2M-02","role":"source_custodian","execution_status":"NOT_RUN","entry_point":"archive hash","attack_or_failure":"materialized bytes differ from approved SHA-256","expected_result":"quarantine as a different source set; never silently replace baseline","owner_route":"L03/B2","evidence_to_pass":"explicit compatibility/baseline decision with both source identities"},
+    {"id":"B2M-03","role":"extractor","execution_status":"NOT_RUN","entry_point":"archive member manifest","attack_or_failure":"omit, duplicate, or rename a source member while preserving aggregate byte counts","expected_result":"exact path/hash member-set reconciliation fails","owner_route":"L03/B2","evidence_to_pass":"unique normalized relative paths, raw-byte hashes and collision dispositions"},
+    {"id":"B2M-04","role":"extractor","execution_status":"NOT_RUN","entry_point":"path identity","attack_or_failure":"collapse distinct members that share a basename","expected_result":"retain per-path identities and explicit collision groups","owner_route":"L03/B2","evidence_to_pass":"zero path loss and reviewed collision disposition"},
+    {"id":"B2M-05","role":"parser_owner","execution_status":"NOT_RUN","entry_point":"encoding detection","attack_or_failure":"decode BOM, legacy code page, invalid byte sequence or Unicode identifier inconsistently","expected_result":"record encoding decision and fail closed on undecodable regions","owner_route":"L03/B2","evidence_to_pass":"byte-to-code-point fixture with reversible offsets or explicit quarantine"},
+    {"id":"B2M-06","role":"parser_owner","execution_status":"NOT_RUN","entry_point":"newline normalization","attack_or_failure":"normalize CRLF/LF before recording source spans and make offsets irreproducible","expected_result":"retain raw-byte identity and declared unicode-code-point span convention","owner_route":"L03/B2","evidence_to_pass":"span round-trip against immutable member bytes"},
+    {"id":"B2M-07","role":"parser_owner","execution_status":"NOT_RUN","entry_point":"batch/include expansion","attack_or_failure":"drop GO batches, nested includes, variables or context transitions from the extraction graph","expected_result":"every region is ordered, sourced and either expanded or quarantined","owner_route":"L03/B2","evidence_to_pass":"batch/include/context manifest with zero uncovered regions"},
+    {"id":"B2M-08","role":"catalog_reviewer","execution_status":"NOT_RUN","entry_point":"source span","attack_or_failure":"publish a catalog record whose span is out of range or does not reproduce its normalized identity","expected_result":"validator rejects the record and dependent edges","owner_route":"L03/B2","evidence_to_pass":"exact byte/member/span replay and normalized-identity comparison"},
+    {"id":"B2M-09","role":"security_reviewer","execution_status":"NOT_RUN","entry_point":"sanitized output","attack_or_failure":"catalog output contains raw SQL body, literals, data rows, credentials or connection material","expected_result":"fail the entire publication; retain only approved hashes, spans and sanitized metadata","owner_route":"L03/B2","evidence_to_pass":"allowlist schema plus recursive sensitive-content scan"},
+    {"id":"B2M-10","role":"release_reviewer","execution_status":"NOT_RUN","entry_point":"extractor identity","attack_or_failure":"rerun with unrecorded parser/sanitizer rules and compare only output counts","expected_result":"treat output as a new unreviewed extraction","owner_route":"L03/B2","evidence_to_pass":"tool commit, rule/schema version, command profile and environment identity"},
+    {"id":"B2M-11","role":"dependency_reviewer","execution_status":"NOT_RUN","entry_point":"programmable body coverage","attack_or_failure":"parser reports only successful references and omits unsupported body regions","expected_result":"coverage fails unless every region is parsed or explicitly quarantined with span/reason/owner","owner_route":"L03/B2","evidence_to_pass":"total region partition and zero silent remainder"},
+    {"id":"B2M-12","role":"definition_reviewer","execution_status":"NOT_RUN","entry_point":"conditional/versioned definition","attack_or_failure":"choose one branch as authoritative without recording predicates and candidate definitions","expected_result":"retain candidates, ordering, predicates and script-effective disposition separately from runtime truth","owner_route":"L03/B2","evidence_to_pass":"branch-aware definition manifest and bounded runtime UNKNOWN"},
+    {"id":"B2M-13","role":"catalog_reviewer","execution_status":"NOT_RUN","entry_point":"input/output reconciliation","attack_or_failure":"catalog counts match aggregates while one input region or output record has no counterpart","expected_result":"bidirectional exact-set reconciliation fails on omissions, duplicates and orphans","owner_route":"L03/B2","evidence_to_pass":"input-region to output-record mapping plus justified zero-output exclusions"},
+    {"id":"B2M-14","role":"independent_reviewer","execution_status":"NOT_RUN","entry_point":"closure evidence","attack_or_failure":"promote a locally generated manifest before exact-head review and reproducible validation","expected_result":"TRC-DB-001 remains open","owner_route":"L03/B2","evidence_to_pass":"durable sanitized artifacts, independent source-boundary samples and exact-head validator result"}
+  ],
+  "future_execution_record_fields": [
+    "stimulus_timestamp",
+    "observed_result",
+    "authoritative_source_identity",
+    "exact_head",
+    "environment_identity",
+    "parser_version",
+    "reviewer"
+  ]
+}

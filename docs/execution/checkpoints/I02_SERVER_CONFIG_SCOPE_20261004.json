@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "parent_run_id": "2c24e90b-4e0a-49cb-828b-83b824788e33",
+  "parent_lease": "https://github.com/thanhtuyen662002/Medcom/pull/53",
+  "parent_claim": "medcom-claims/g45/direct/I02",
+  "source_head": "e9f7e230bdcaf0d900c615b287561860b675e942",
+  "scope_ref": "medcom-scope/g45/direct/I02/server-configuration",
+  "paths": [
+    "tests/backend/Medcom.Api.Tests/ServerConfigurationTests.cs",
+    "tools/deploy/Configure-MedcomServer.ps1",
+    "tools/deploy/Test-MedcomServerConfiguration.ps1",
+    "docs/backend/SERVER_CONFIGURATION.md",
+    "docs/goals/BACKEND_PRODUCTION_GOAL.md"
+  ],
+  "reason": "Owner requests direct SQL Server connection, a private configuration file defaulting to D:/Config/appsettings.Private.json, and a graphical server-local folder selector. No frontend/Sites mutation.",
+  "custody": "Same I02 owner and Draft lease; Api files remain within original scope; no predecessor takeover or duplicate lease.",
+  "acceptance": "Configuration and bootstrap only. SQL endpoint, runtime, full ERP scope denominator and production acceptance remain UNKNOWN until verified.",
+  "automations": "Keep OFF; no automation mutation."
+}

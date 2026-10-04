@@ -1,0 +1,213 @@
+{
+  "schema_version": 1,
+  "lane": "L07",
+  "artifact_status": "prepared_local_only",
+  "base_main": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+  "primary_issues": [
+    22,
+    24
+  ],
+  "source_contracts": [
+    {
+      "path": "docs/architecture/PHASE2_COMMAND_TRANSACTION_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "a819e2f2cb55b94883235ae3626157e7da641e75a727b98a8930bd712299e99c",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_COMMAND_TRANSACTION_CONTRACT.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/db/CONCURRENCY_TRANSACTION_CONTRACTS.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "5d3a5f84feb79dcfd024531fd9a0b25072756ab5c1c2899edcc52756dfa66b5c",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/db/CONCURRENCY_TRANSACTION_CONTRACTS.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/db/LOCKING_TRANSACTION_HOTSPOTS.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c0a34a5db9265a0cc946d9ad4cb85bd8f2d736fde84fdfdedaade835c0e401eb",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/db/LOCKING_TRANSACTION_HOTSPOTS.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/architecture/PHASE2_AUDIT_TRACE_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "e552f88a122745ee5e90754115ac832db9de2e16ae0c8f8cc35e650d56e2114c",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_AUDIT_TRACE_CONTRACT.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "9d9b7157027cce55e3d24d7ade4e554e7205d34a9393bb67f21f60164190c1e0",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/architecture/PHASE2_PILOT_API_DTO_DEPENDENCY_CONTRACT.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/web/UX_RUNTIME_FEEDBACK_SESSION.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "a397a8df0049481cc91df81cfd664deb42e99baa3e060cc534d396c8a4e277a0",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/web/UX_RUNTIME_FEEDBACK_SESSION.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "c0b3703e66de2db886d6f0155c26ce54d16d269f79af7addf399c3c730bd7c84",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_SECURITY_DATA_ATTACK_REVIEW.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "868d941461b99c0d7bd054661312beb83b60d1d55e05548855ce240064af9b2b",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE2_USER_OPERATIONS_ATTACK_REVIEW.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "d09bc5a78ea79dc613570e56e7b96100c98e58913b4a1cfaf32b8744ee7b0168",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/plans/PHASE2_IMPLEMENTATION_ISSUE_GRAPH.md",
+      "access": "sanitized repository contract/evidence"
+    },
+    {
+      "path": "docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "ref": "f9197185b624a8c3f74c99e48a69550b5a7c2a73",
+      "sha256": "338ac433b907f42e720fe3564d3041fef2322036d7405bdf0c7e08942ce3bb13",
+      "url": "https://github.com/thanhtuyen662002/Medcom/blob/f9197185b624a8c3f74c99e48a69550b5a7c2a73/docs/reviews/PHASE1_DB_TRACEABILITY_CLOSURE_DECISION_20261002.md",
+      "access": "sanitized repository contract/evidence"
+    }
+  ],
+  "limits": [
+    "no L07 dispatcher lease or writer token",
+    "no exact pilot command signature, procedure binding, transaction owner or hook order proved",
+    "no authorized raw SQL/source/runtime opened or executed",
+    "no database mutation, lock test or legacy command dispatch",
+    "no product code, CI or current-head implementation test",
+    "no GitHub mutation or issue closure"
+  ],
+  "unit_id": "L07-B3-ENVELOPE",
+  "graph_id": "B3",
+  "issue": 22,
+  "objective": "Validate a closed typed command envelope before any evidence-bound handler dispatch.",
+  "conceptual_envelope": [
+    "registered_action_id",
+    "contract_version",
+    "tenant_company_data_source_identity",
+    "authenticated_principal",
+    "server_scope_generation",
+    "permission_generation",
+    "business_reference",
+    "typed_payload",
+    "idempotency_key_when_required",
+    "semantic_fingerprint",
+    "correlation_id",
+    "client_metadata_revision_hint",
+    "resolved_server_metadata_revision"
+  ],
+  "cases": [
+    {
+      "id": "CMD-01",
+      "scenario": "client supplies SQL table/procedure/method name",
+      "expected": "reject before resolution; registry accepts only registered ActionId and typed contract"
+    },
+    {
+      "id": "CMD-02",
+      "scenario": "unknown ActionId or contract version",
+      "expected": "fail closed with safe code; no dynamic dispatch"
+    },
+    {
+      "id": "CMD-03",
+      "scenario": "extra or unknown payload field",
+      "expected": "closed schema rejects; no mass assignment"
+    },
+    {
+      "id": "CMD-04",
+      "scenario": "client widens company/branch/storehouse",
+      "expected": "server-derived scope retained; deny before side effects"
+    },
+    {
+      "id": "CMD-05",
+      "scenario": "permission generation stale at mutation boundary",
+      "expected": "reauthorize/deny before dispatch"
+    },
+    {
+      "id": "CMD-06",
+      "scenario": "business state changed after form load",
+      "expected": "state guard rechecked in protected command path"
+    },
+    {
+      "id": "CMD-07",
+      "scenario": "reference belongs to foreign parent/scope",
+      "expected": "ownership/link validated; no foreign existence leak"
+    },
+    {
+      "id": "CMD-08",
+      "scenario": "read-only/derived field included in payload",
+      "expected": "reject or ignore only by explicit typed policy; never write by reflection"
+    },
+    {
+      "id": "CMD-09",
+      "scenario": "screen configuration injects an executable action",
+      "expected": "registry requires reviewed server contract; config is presentation only"
+    },
+    {
+      "id": "CMD-10",
+      "scenario": "correlation ID copied from another operation",
+      "expected": "correlation grants no identity, permission, idempotency or result access"
+    },
+    {
+      "id": "CMD-11",
+      "scenario": "handler binding lacks exact source/build/database identity",
+      "expected": "command remains unsupported; no guessed fallback"
+    },
+    {
+      "id": "CMD-12",
+      "scenario": "response transport fails after dispatch",
+      "expected": "enter OutcomeUnknown when commit cannot be excluded; no blind retry"
+    },
+    {
+      "id": "CMD-13",
+      "scenario": "browser supplies metadataRevision newer, older or for another action",
+      "expected": "treat as compatibility hint; resolve authoritative server metadata revision and reject stale/mismatched contract before dispatch"
+    },
+    {
+      "id": "CMD-14",
+      "scenario": "browser supplies tenant, principal, scope generation, server defaults or semantic fingerprint",
+      "expected": "ignore/reject client authority fields; derive all dispatch authority and fingerprint inputs on server"
+    },
+    {
+      "id": "CMD-15",
+      "scenario": "server registry revision changes after validation but before dispatch",
+      "expected": "fenced dispatch rechecks the same resolved registry revision atomically or aborts before side effect"
+    },
+    {
+      "id": "CMD-16",
+      "scenario": "presentation config references a registered action but server metadata marks it retired or unsupported",
+      "expected": "server registry decision wins; UI reference cannot resurrect executable capability"
+    }
+  ],
+  "execution_status": "NOT_RUN",
+  "authority_split": {
+    "browser_may_supply": [
+      "registered_action_id",
+      "contract_version",
+      "business_reference",
+      "typed_payload",
+      "idempotency_key_when_required",
+      "client_metadata_revision_hint",
+      "correlation_id"
+    ],
+    "server_must_derive": [
+      "tenant_company_data_source_identity",
+      "authenticated_principal",
+      "server_scope_generation",
+      "permission_generation",
+      "resolved_server_metadata_revision",
+      "server_resolved_defaults",
+      "semantic_fingerprint"
+    ],
+    "rule": "browser metadata revision is an optimistic compatibility hint only; server registry revision, scope, defaults, fingerprint and dispatch binding are authoritative"
+  }
+}

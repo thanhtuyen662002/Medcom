@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "parent_run_id": "2c24e90b-4e0a-49cb-828b-83b824788e33",
+  "parent_lease": "https://github.com/thanhtuyen662002/Medcom/pull/53",
+  "source_head": "9896604bf9dfcfa1e936ee2f3eaa765bdcb0c0e0",
+  "scope_ref": "medcom-scope/g45/direct/I02/ci-parser-install",
+  "paths": [
+    ".github/workflows/backend.yml",
+    ".github/workflows/ci-policy.yml",
+    ".github/scripts/verify_ci_policy.py",
+    ".github/scripts/test_verify_ci_policy.py",
+    "docs/execution/checkpoints/I02_BACKEND_GOAL_20261004.md"
+  ],
+  "reason": "Repair current-head backend and backend-windows failures before new product code. Exact-head logs 37204868599 and 37204868701 show missing PyYAML for new policy regression tests; install existing pinned CI requirements before guard suites and retain every gate.",
+  "custody": "Same root-owned I02 Draft #53; no other writer branch or immutable claim is modified.",
+  "automations": "OFF; workflow dependency repair is not an automation activation."
+}
