@@ -15,3 +15,8 @@
 - Full Python guard suite: 77 tests PASS; includes source HEAD/dirty-tree races during publish and verification, setup assets, private baseline dump filenames and Windows trailing-dot/space aliases.
 - Native ruleset 24407230 readback: approval count 0, last-push/code-owner/extra approval false, conversations required, strict backend/ci-policy/backend-windows checks retained. GitHub #45 title/body now reflects full backend/API/SQL and FE handoff.
 - Independent local review found three package/policy blockers; repaired in this patch. Final fresh-head CI, real package build and remote SQL acceptance remain pending at publication.
+
+## Exact-head CI dependency repair
+- Head 9896604bf9dfcfa1e936ee2f3eaa765bdcb0c0e0: runs 37204868599 and 37204868701 show ModuleNotFoundError yaml in policy regression tests. backend/backend-windows failed, ci-policy passed; no merge attempted.
+- Scope control 16a21d8969613dea82a41774dece1732a6a2779c, ref medcom-scope/g45/direct/I02/ci-parser-install. Repair installs existing PyYAML 6.0.3 requirements before both missing guard jobs. No checks skipped, renamed or disabled.
+- Local policy PASS; 77 guard tests PASS. Next verify the newly pushed repair head in CI, then build the actual package and privately probe authorized SQL configuration.
