@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "parent_run_id": "2c24e90b-4e0a-49cb-828b-83b824788e33",
+  "parent_lease": "https://github.com/thanhtuyen662002/Medcom/pull/53",
+  "source_head": "9beb87229abad7f59da67473c1d08d091ad0bd33",
+  "scope_ref": "medcom-scope/g45/direct/I02/policy-package-review",
+  "paths": [
+    ".github/policies/medcom-main-ruleset.json",
+    ".github/scripts/verify_ci_policy.py",
+    ".github/scripts/test_verify_ci_policy.py",
+    ".github/scripts/test_package_build.py",
+    "tools/deploy/package.py",
+    ".github/scripts/package_integrity.py",
+    ".github/scripts/test_package_integrity.py",
+    "docs/execution/checkpoints/I02_BACKEND_GOAL_20261004.md"
+  ],
+  "reason": "Read-only local reviewer found stale repository native approval template/validator and package custody/private-name gaps. Repair before new product work; preserve all CI, strict-base and conversation protections.",
+  "custody": "Same root-owned I02 Draft #53, no agent GitHub publication, no other lease or writer takeover. Existing uncommitted scoped work is preserved.",
+  "automations": "OFF; no automation mutations."
+}
