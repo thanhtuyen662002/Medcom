@@ -1,28 +1,20 @@
-# Medcom backend production checklist
+# Backend delivery and FE handoff ledger
 
-Parent and durable coordination: [production goal #45](https://github.com/thanhtuyen662002/Medcom/issues/45), [global acceptance criteria](PRODUCTION_ERP_GOAL.md). This checklist creates no duplicate goal, excludes no ERP module and does not close the full product goal. Current lane: I02, Draft PR #53. Backend role does not modify the separately owned Sites/frontend.
+Canonical acceptance and execution policy: [PRODUCTION_ERP_GOAL.md](PRODUCTION_ERP_GOAL.md), [GitHub #45](https://github.com/thanhtuyen662002/Medcom/issues/45). Owner refocused the existing goal on BE/API/SQL and FE handoff on 2026-10-04; no duplicate goal issue and no native GitHub approval gate.
 
-## Acceptance chain
+| Capability | Current evidence | Remaining acceptance |
+| --- | --- | --- |
+| Source/request scope | inventories/source/20261002/source-set.json; existing issue graph #12-42 | Reconcile every live requested backend action/report/configuration/permission; total UNKNOWN |
+| SQL Server private configuration | Api/ServerConfiguration.cs; ServerConfigurationTests.cs; tools/deploy/Configure-MedcomServer.ps1; docs/backend/SERVER_CONFIGURATION.md; published c4e66d6 in Draft #53 | Package setup assets; successful authorized connection and deployed service identity validation |
+| Authentication/session/scope | ApiHost and legacy adapters in Draft #53 | Full source-compatible runtime, durable multi-instance session behavior and authority acceptance |
+| SQL-backed reads | Existing scoped read pilots in Draft chain | All required source queries, pagination/filter/report/export and target SQL acceptance |
+| Transfer commands | Application/Transfers; Infrastructure/Transfers; TRANSFER_COMMAND_CONTRACT_20261003.md | Concrete gateway, trusted reread/locks, source detail save, transaction journal/audit/idempotency and HTTP wiring; writes remain gated |
+| FE API handoff | Shared read contracts exist | Full versioned OpenAPI/typed command/error/session/report contracts, sanitized examples and consumer contract evidence |
+| Packaging and operations | tools/deploy/package.py; package_integrity.py | Include setup UI/guide, prove final package integrity; target install/HTTPS/monitoring/load/backup/restore/rollback |
+| Main integration | Draft #53; CI on 285c3af green | New head checks, live gate receipts and main merge |
+| Staging SQL | Private D:\Config configuration is non-template | Connectivity and representative business/effects/audit tests not yet verified |
+| Production backend | No target acceptance receipt | Deployment and authorized business acceptance UNKNOWN |
 
-For each required ERP action: approved source object and evidence → versioned typed API contract → authenticated tenant/company/branch authorization → trusted SQL state reread and source-defined effects → transaction/concurrency/idempotency → durable audit/receipt → integration test → frontend consumer/UAT evidence.
+Accepted backend production capabilities: **0 / UNKNOWN total**. No item above is implicitly excluded. Implementation, publication, main integration, staging and production acceptance are distinct states; the full backend denominator must be reconciled before percentages.
 
-The complete backend/action denominator is **UNKNOWN** until all current inventory entries are reconciled. No percentage inferred from test counts. Source inventory entry point: `inventories/source/20261002/source-set.json`; ERP/DB traceability and unresolved unknowns remain governed by `docs/PROJECT_STATE.yaml`. Approved historical Library archives remain mandatory distinct evidence; newer technical attachment verification does not silently replace them.
-
-| Gate | Current evidence / missing work | Status |
-|---|---|---|
-| Full ERP module/action/report/config/permissions ledger | Reconcile existing inventories into API acceptance chain; denominator unresolved | UNKNOWN |
-| Private direct SQL Server configuration | `docs/backend/SERVER_CONFIGURATION.md`; selector and server-local UI; target connection not verified | Code pending publication/review |
-| Session/authentication/data authorization | Legacy authority/read paths exist; deployment, concurrent sessions and full scope verification pending | Incomplete |
-| Typed domain commands | Recovered transfer catalog and three PM typed payloads; remaining actions unresolved | Incomplete |
-| SQL gateway and actual effects | Transfer atomic gateway interface exists; concrete SQL transaction/authority/effects wiring missing | Incomplete |
-| Durable idempotency/audit | Correlation validation exists; persisted atomic journal and restart/retry reconciliation missing | Incomplete |
-| HTTP API/OpenAPI/frontend contract | Shared read contracts exist; full versioned command/error/pagination/report contracts and consumer validation missing | Incomplete |
-| Reports/export/configuration | All source items require explicit API implementation and acceptance mapping | UNKNOWN |
-| Release/operations | Package checks exist; target deployment, HTTPS, secrets, backup/restore/rollback, load and monitoring evidence missing | Incomplete |
-| Native integration | Draft #53 requires distinct latest-push GitHub approval and exact-head checks | Pending |
-| Staging SQL | Owner-authorized remote sandbox endpoint/configuration and representative fixture acceptance | UNKNOWN |
-| Production | Target host/database and authorized user acceptance evidence | UNKNOWN |
-
-Code completion, publication, main integration, staging verification and production acceptance must be reported separately. The global checkpoint records **production accepted 0 / UNKNOWN total**; it is not a backend implementation percentage.
-
-Next: finish and publish private configuration; obtain a successful authorized remote SQL probe; complete the first source-defined transfer command with concrete gateway, HTTP authorization, transactional durable journal and receipt. Continue independent contract and source work while environment evidence is missing. All Medcom schedules remain OFF; no schedule state proves writer termination. Use positive custody handoffs and the existing I02 lease.
+For each delivery, hand FE an API contract/version, permission/state/action matrix, validation/error examples, pagination/filter and report behavior, idempotency/concurrency/session requirements and test/SQL acceptance receipts. Do not call an unwired abstraction a delivered endpoint.

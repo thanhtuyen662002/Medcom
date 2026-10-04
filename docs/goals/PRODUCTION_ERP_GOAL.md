@@ -1,38 +1,45 @@
-# Complete Medcom ERP for production
+# Medcom backend, API and SQL production goal
 
-Canonical long-term goal: [GitHub #45](https://github.com/thanhtuyen662002/Medcom/issues/45). Renewed direct owner direction: 2026-10-04, continue code, review, tests and integration until the complete ERP reaches independently verified production acceptance for real users. Reuse this goal rather than creating a duplicate. The native production Goal is active; it does not replace this durable acceptance record.
+Canonical goal: [GitHub #45](https://github.com/thanhtuyen662002/Medcom/issues/45).
+Direct owner scope revision: 2026-10-04. Native Codex goal created with this scope and ACTIVE on 2026-10-04.
+Reuse #45; do not create a duplicate goal issue. This direction supersedes historical BE/FE goal text and independent GitHub approval requirements.
 
-The goal covers the agreed ERP surface, not only the two existing read screens or initial five pilots. Every source capability requires a reviewed Web/DB disposition; exclusions require an explicit owner decision. Existing implementation graph #12–42 remains authoritative for dependencies.
+## Objective and boundaries
 
-## Definition of done
+Deliver the complete source-backed backend, API and SQL business capabilities requested in GitHub, with usable integration handoffs for the separately owned frontend. Cover the full ERP backend surface, not only pilots or read endpoints. Preserve the SQL Server/WinForms/Tools.dll compatibility architecture; do not replace source business semantics with generic CRUD. Implement no separately owned FE/Sites application in this goal.
 
-- Exhaustive finite source/schema/dependency and ERP → Web → DB traceability; all seven Phase 1 gates independently accepted.
-- Complete source-backed backend: normal Tools.dll password path, current trusted permissions/scopes, business effects, atomic commands, concurrency, idempotency/unknown-outcome reconciliation and durable audit.
-- Complete authorized FE workflows, grids/forms/actions, keyboard/mobile/accessibility, per-user configuration, refresh/conflicts/recovery.
-- End-to-end independently accepted five pilots, reachable reports/exports and all remaining agreed source capabilities.
-- Exact-head tests/security/performance/independent review, healthy integrated main, no unresolved critical finding.
-- Versioned package/checksums, executable configuration validation, installation/monitoring and measured backup/restore/coexistence/rollback rehearsals.
-- Authorized target-host/staging acceptance with real DLL/SQL/TLS/schema/trigger versions and representative load. Mock CI and synthetic SQL are separate evidence.
-- Exact release build/config/schema GO decision and owner-managed real-user installation verification. Only then close #45 with the complete evidence and report acceptance to the owner. Medcom schedules must remain OFF under the current direct owner instruction.
+Frontend implementation and full Web ERP user acceptance remain separate responsibilities. Their absence is not concealed as backend completion. Backend acceptance includes executable API contracts and consumer integration evidence, not an assertion that a finished UI exists. Scope exclusions require the owner's explicit agreement.
 
-## Persistent execution and schedule authority
+## Acceptance gates
 
-The newer direct owner instruction supersedes the historical `MEDCOM_SCHEDULE_GUARD_V1` instruction to keep six schedules enabled: keep all Medcom schedules OFF. Do not create, enable or repurpose automations. Historical enabled-state snapshots and old scheduled prompts do not grant restart authority.
+1. **Scope and source:** reconcile all current GitHub feature requests with the complete module/action/report/configuration/permission inventory. Map each required item: source evidence/object -> backend/API -> SQL effects -> FE contract -> tests -> acceptance receipt. Record UNKNOWN explicitly; close the denominator before claiming 100%.
+2. **Identity and authority:** source-compatible authentication, session lifecycle and concurrent sessions; trusted user/unit/branch permissions; data scope enforcement; unauthorized access/session expiry tests. No client authority claims or plaintext password substitutes.
+3. **Business commands:** typed payloads for every source action; a concrete SQL gateway wired into HTTP; source-defined stored procedures/triggers/state effects; transactions/isolation/locking, concurrency tokens, retry/double-submit protection and durable idempotency. Do not enable writes through a flag alone.
+4. **Audit and recovery:** committed/rejected/rolled-back/unknown outcomes recorded correctly; durable correlation and reconciliation; no false success on uncertain commit; prove database effects and audit agreement.
+5. **Reads, reports and configuration:** real SQL-backed query/detail/pagination/filter/report/export/configuration endpoints, scoped authorization, cache boundaries and predictable errors. Private SQL Server configuration remains outside the public repo, default D:\Config\appsettings.Private.json; server setup permits choosing its directory.
+6. **FE handoff:** versioned OpenAPI/typed contracts, action/permission/state requirements, field validation, paging/filter rules, errors, idempotency/concurrency examples, session recovery and report/export contracts. Provide sanitized request/response examples, runnable contract tests and evidence for each delivered feature; mocks only in isolated tests.
+7. **Release and target acceptance:** backend build and verified package; unit/API/integration tests and representative authorized SQL acceptance; target host/database verification, HTTPS/secrets/logging/monitoring, measurable load criteria, install/upgrade and necessary migrations, backup/restore/rollback, deployment smoke checks and authorized business acceptance.
 
-A blocked ticket, missing environment/toolchain/reviewer, failed CI, occupied claim, finished PR, accepted baseline or duplicate reporting does not authorize enabling a schedule. Record concrete evidence and the next unblock step and continue eligible work. Claim age and disabled schedules never prove another writer's quiescence: verify positive terminal handoffs and live activity before integration.
+Never publish raw archives/binaries/dumps, private connection strings, credentials, patient/customer data or real transaction rows. Mandatory approved Library archives remain ERP_Medcom2026(4).zip and Medcom-Data (3)(1).zip; the current technical source-set does not silently replace them. See inventories/source/20261002/source-set.json and docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md for provenance distinctions.
 
-The current direct interactive I02 continuation uses its own Draft PR #53 and immutable custody/scope refs; predecessor branches and claims remain preserved. Source, custody, fresh exact-head CI, independent review and authorized target-operation gates remain mandatory. Configuration state does not prove execution or production acceptance.
+## GitHub execution policy
 
-## Current direct execution checkpoints — 2026-10-04
+The owner explicitly delegates GitHub execution to this Codex lead as the sole executor. GitHub approvals are not a required gate. No fabricated review or second GitHub actor is needed. Local code review, positive writer handoffs, one active Draft lease, exact source/base checks, all required CI, conversation resolution, artifact integrity, no force-push/deletion protections and public-data safety remain mandatory. Merge only a verified current head after reading current reviews and resolving actionable findings. Do not disable checks or reuse checks from an older head.
 
-- [Integration and Windows package repair](../execution/checkpoints/I02_INTEGRATION_REPAIR_20261004.md): public gate handoffs recovered, tested merge receipts wired, 61 guard tests and 43 backend tests verified locally; publication `6cb69451107a2561c2ccfbe1ec634ccf0a92318a` has fresh green CI.
-- [Typed transfer recovery](../execution/checkpoints/I02_TRANSFER_RECOVERY_20261004.md): six terminal handoff file hashes verified, 143 backend tests pass; publication `00460399e3b0cf9220401859bb8a0a34ca5f1e85` has fresh green backend and policy/Windows CI.
-- [Windows source fixture repair scope](../execution/checkpoints/I02_SOURCE_FIXTURE_SCOPE_20261004.json): UTF-8 preparation of the verified owner SQL member. Direct source file/member reads are separate from runtime evidence.
-- Prepared code remains in a Draft; integration into main is pending a distinct latest-push GitHub approval and the integration gate. The transfer gateway remains an interface; SQL provider, trusted authority reread, API/UI wiring and durable transactional audit/idempotency remain incomplete.
-- Production accepted capabilities: **0 / UNKNOWN total**. The full ERP denominator has not been closed; SQL object counts and green test counts are not product acceptance counts. No scope item is excluded by this checkpoint.
+Keep Medcom automations OFF. Do not create, enable or repurpose schedules. Schedule state or claim age never proves a writer stopped; use positive custody evidence. Root alone publishes GitHub mutations; delegated agents, if used, operate bounded local file scopes.
 
-## Present baseline
+## Current checkpoint (2026-10-04)
 
-PR #44 contains normal-password BE, scope-safe list/detail FE and the full SQL extraction correction. Source availability is resolved: 609 procedures, seven transfer checks, stored trigger versions. Previous-head hosted CI passed at 692a8ab05ab248dbaad58a65f4c18893fbe34ca5 (run 37029121428). Read live current head before any integration decision. No Web mutation or production deployment has been accepted. Product status remains BLOCKED_BUSINESS_AND_RUNTIME_ACCEPTANCE.
+- Active lease: [Draft PR #53](https://github.com/thanhtuyen662002/Medcom/pull/53), branch codex/g45-production-i02-20261004, run 2c24e90b-4e0a-49cb-828b-83b824788e33.
+- Published private configuration feature: c4e66d6801ee898ad93e08fac65e40f015121b99; configurable private directory, direct SQL Server TLS validation and protected persistence. Published in Draft, not integrated or deployed. Evidence: docs/backend/SERVER_CONFIGURATION.md; docs/execution/checkpoints/I02_SERVER_CONFIGURATION_20261004.md; CI runs 37183893976 and 37183893981.
+- Last previously pushed head 285c3af57283ed373ca1111928fdf78e5fdcf242 has green runs 37189214588 and 37189214621. These checks do not cover later uncommitted work.
+- Current work: package the actual setup tool/guide, reject private payloads, reconcile sole-executor policy, then validate private remote SQL configuration and complete concrete transactional transfer/API wiring.
+- Transfer adapter and typed commands exist, but the concrete transactional gateway, durable journal/audit and HTTP commands are incomplete. Evidence: src/backend/Medcom.Application/Transfers, src/backend/Medcom.Infrastructure/Transfers and docs/erp/TRANSFER_COMMAND_CONTRACT_20261003.md.
+- Full backend denominator: **UNKNOWN**. Production accepted backend capabilities: **0 / UNKNOWN**. Code/published/main/staging/production stages must be counted separately. Tests or source object counts are not business acceptance percentages.
+- Target deployment, representative SQL runtime and authorized business acceptance: **UNKNOWN** until actual receipts exist. A private non-template configuration file is present; this alone does not prove connectivity, permissions or business behavior.
 
-Execution: docs/execution/PRODUCTION_WORKFLOW_20261002.md, production-tickets.json and production-schedules.json.
+## Closure and continuation
+
+Close #45/native goal only when the reconciled backend scope has no required missing/disabled/mock capability, all API/SQL/FE handoff gates are evidenced, code is integrated into main with current-head CI, and the backend release is deployed and accepted on the authorized target with operational recovery evidence. Do not claim full Web ERP production completion from this backend goal. Missing external access must be stated precisely while independent work continues. Destructive data changes, irreversible migrations or material access changes need the concrete backup/rollback plan and owner decision unless already authorized.
+
+Every checkpoint records exact commit/PR, tests, remaining source/runtime gaps, handoff location and next executable step. No promise of unsupported background execution. Detailed delivery matrix: [BACKEND_PRODUCTION_GOAL.md](BACKEND_PRODUCTION_GOAL.md).

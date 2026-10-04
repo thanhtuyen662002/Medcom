@@ -71,6 +71,44 @@ def ruleset_candidate():
 
 
 class IntegrationGateTests(unittest.TestCase):
+    def sole_executor_candidate(self):
+        s = ruleset_candidate()
+        s['pr']['user']['login'] = 'thanhtuyen662002'
+        review = s['ruleset_evidence']['rulesets'][0]['rules'][2]['parameters']
+        review.update(required_approving_review_count=0,
+                      dismiss_stale_reviews_on_push=False,
+                      require_last_push_approval=False)
+        s['reviews'] = []
+        s['independent_reviewers'] = []
+        return s
+
+    def test_owner_sole_executor_policy_needs_no_fabricated_review(self):
+        self.assertEqual('PREFLIGHT_PASS', evaluate(self.sole_executor_candidate())['decision'])
+
+    def test_zero_approval_requires_exact_live_ruleset_and_owner(self):
+        s = self.sole_executor_candidate()
+        s['pr']['user']['login'] = 'other'
+        self.assert_blocked(s, 'sole_executor_policy_invalid')
+        s = candidate()
+        s['protection']['required_pull_request_reviews'].update(
+            required_approving_review_count=0, dismiss_stale_reviews=False,
+            require_last_push_approval=False, require_code_owner_reviews=False)
+        s['pr']['user']['login'] = 'thanhtuyen662002'
+        self.assert_blocked(s, 'sole_executor_policy_invalid')
+
+    def test_sole_executor_still_requires_ci_base_threads_and_custody(self):
+        for field, value, reason in [
+            ('current_base', HEAD, 'base_changed'),
+            ('checks', [], 'required_check_not_success:backend'),
+            ('review_threads', [{'isResolved': False}], 'review_threads_unresolved_or_unknown')
+        ]:
+            s = self.sole_executor_candidate(); s[field] = value
+            self.assert_blocked(s, reason)
+        s = self.sole_executor_candidate()
+        s['reviews'] = [{'id': 3, 'user': {'login': 'qa'},
+                         'state': 'CHANGES_REQUESTED', 'commit_id': HEAD}]
+        self.assert_blocked(s, 'changes_requested')
+
     def assert_blocked(self, snapshot, reason):
         result = evaluate(snapshot)
         self.assertEqual('BLOCKED', result['decision'])

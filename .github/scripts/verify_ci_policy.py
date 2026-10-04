@@ -22,11 +22,14 @@ def main():
             'deletion', 'non_fast_forward', 'pull_request', 'required_status_checks'}:
         raise SystemExit('Missing, duplicate or unexpected rules')
     reviews = rules['pull_request']['parameters']
-    if (reviews['required_approving_review_count'] != 1
-            or any(reviews[key] is not True for key in (
+    if (type(reviews.get('required_approving_review_count')) is not int
+            or reviews['required_approving_review_count'] != 0
+            or any(reviews.get(key) is not False for key in (
                 'dismiss_stale_reviews_on_push', 'require_last_push_approval',
-                'required_review_thread_resolution'))):
-        raise SystemExit('Independent current-push review must remain required')
+                'require_code_owner_review', 'require_extra_approval_for_unattributed_changes'))
+            or reviews.get('required_reviewers') != []
+            or reviews.get('required_review_thread_resolution') is not True):
+        raise SystemExit('Owner sole-executor policy requires zero approvals and resolved conversations')
     checks = rules['required_status_checks']['parameters']
     contexts = [check['context'] for check in checks['required_status_checks']]
     if (set(contexts) != {'backend', 'ci-policy', 'backend-windows'} or len(contexts) != 3

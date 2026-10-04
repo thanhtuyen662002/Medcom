@@ -1,3 +1,26 @@
+owner_backend_direction_20261004:
+  canonical_goal: "https://github.com/thanhtuyen662002/Medcom/issues/45"
+  codex_goal: active_backend_api_sql_fe_handoff
+  supersedes: historical_full_be_fe_and_independent_github_approval_directions
+  scope: full_source_backed_backend_api_sql_and_frontend_integration_handoff
+  frontend_implementation: separately_owned
+  github_executor: root_only_on_owner_account
+  github_approval_required: false
+  required_ci: [backend, ci-policy, backend-windows]
+  exact_head_and_base_required: true
+  automation_direction: OFF_do_not_create_enable_or_repurpose
+  live_automation_state: UNKNOWN_not_reverified_by_this_checkpoint
+  active_draft: 53
+  run_id: "2c24e90b-4e0a-49cb-828b-83b824788e33"
+  published_server_config_head: "c4e66d6801ee898ad93e08fac65e40f015121b99"
+  previous_green_head: "285c3af57283ed373ca1111928fdf78e5fdcf242"
+  backend_scope_total: UNKNOWN
+  backend_production_accepted: 0
+  concrete_transfer_gateway: incomplete
+  sql_runtime_acceptance: UNKNOWN
+  target_deployment_acceptance: UNKNOWN
+  evidence: docs/execution/checkpoints/I02_BACKEND_GOAL_20261004.md
+  historical_state_below: retained_as_evidence_not_current_execution_authority
 project: medcom-web-modernization
 phase: phase-1-reverse-engineering
 phase_status: active

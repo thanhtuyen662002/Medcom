@@ -19,12 +19,16 @@ MAX_MANIFEST_BYTES = 8 * 1024 ** 2
 HEX = re.compile(r'[0-9a-f]{64}\Z')
 SHA = re.compile(r'[0-9a-f]{40}\Z')
 STATUS = 'BLOCKED_BUSINESS_AND_RUNTIME_ACCEPTANCE'
+PRIVATE_NAMES = {'appsettings.private.json', 'config-location.json', 'tools.dll',
+                 'meddata-data.sql', 'medcom-data.sql'}
+PRIVATE_SUFFIXES = {'.bak', '.mdf', '.ldf', '.pfx', '.p12'}
 
 
 def safe_name(name):
     path = PurePosixPath(name)
     return bool(name and not name.startswith('/') and '\\' not in name and ':' not in name
-                and all(part not in ('', '.', '..') for part in name.split('/'))
+                and all(part not in ('', '.', '..') and not part.endswith(('.', ' '))
+                        for part in name.split('/'))
                 and str(path) == name)
 
 
@@ -43,6 +47,11 @@ def verify(path):
                 errors.append('unsafe_member')
             if errors:
                 return errors
+            for name in names:
+                leaf = PurePosixPath(name).name.casefold()
+                if (leaf in PRIVATE_NAMES or PurePosixPath(leaf).suffix in PRIVATE_SUFFIXES
+                        or (leaf.endswith('.zip') and leaf.startswith(('erp_medcom2026', 'medcom-data', 'meddata-data')))):
+                    return ['private_payload_forbidden']
             if 'manifest.json' not in names or archive.getinfo('manifest.json').file_size > MAX_MANIFEST_BYTES:
                 return ['manifest_missing_or_oversized']
             manifest = json.loads(archive.read('manifest.json'))
@@ -58,7 +67,8 @@ def verify(path):
             if set(files) != set(names) - {'manifest.json'}:
                 errors.append('inventory_mismatch')
             required = {'Medcom.Api.dll', 'password-worker/Medcom.LegacyPasswordWorker.dll',
-                        'wwwroot/index.html', 'wwwroot/workspace/index.html', 'DEPLOYMENT.md'}
+                        'wwwroot/index.html', 'wwwroot/workspace/index.html', 'DEPLOYMENT.md',
+                        'tools/deploy/Configure-MedcomServer.ps1', 'docs/backend/SERVER_CONFIGURATION.md'}
             if not required.issubset(files):
                 errors.append('required_payload_missing')
             for name, expected in files.items():

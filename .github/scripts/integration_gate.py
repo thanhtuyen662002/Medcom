@@ -14,6 +14,9 @@ from pathlib import Path
 SHA = re.compile(r"[0-9a-f]{40}\Z")
 LOGIN = re.compile(r"(?=.{1,39}\Z)[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9]))*\Z")
 EXPECTED_REPOSITORY = "thanhtuyen662002/Medcom"
+# Direct owner direction, 2026-10-04: one GitHub executor, no approval gate.
+# This affects approval counts only; all source/base/CI/custody gates remain.
+SOLE_EXECUTOR = "thanhtuyen662002"
 MAX_SNAPSHOT_BYTES = 2 * 1024 ** 2
 GITHUB_ACTIONS_JOB = re.compile(
     r"https://github\.com/([^/\s]+)/([^/\s]+)/actions/runs/([0-9]+)/job/[0-9]+(?:\?[^\s]*)?\Z"
@@ -91,9 +94,9 @@ def _ruleset_protection(snapshot, errors):
     status = by_type["required_status_checks"].get("parameters")
     if (not isinstance(review, dict) or not isinstance(status, dict)
             or type(review.get("required_approving_review_count")) is not int
-            or review["required_approving_review_count"] < 1
-            or review.get("dismiss_stale_reviews_on_push") is not True
-            or review.get("require_last_push_approval") is not True
+            or review["required_approving_review_count"] < 0
+            or review.get("dismiss_stale_reviews_on_push") is not (review["required_approving_review_count"] > 0)
+            or review.get("require_last_push_approval") is not (review["required_approving_review_count"] > 0)
             or review.get("required_review_thread_resolution") is not True
             or review.get("require_code_owner_review") is not False
             or review.get("required_reviewers", []) != []
@@ -113,7 +116,9 @@ def _ruleset_protection(snapshot, errors):
         "required_conversation_resolution": {"enabled": True},
         "required_pull_request_reviews": {
             "required_approving_review_count": review["required_approving_review_count"],
-            "dismiss_stale_reviews": True, "require_last_push_approval": True},
+            "dismiss_stale_reviews": review["dismiss_stale_reviews_on_push"],
+            "require_last_push_approval": review["require_last_push_approval"],
+            "require_code_owner_reviews": False},
         "required_status_checks": {"strict": True, "checks": [
             {"context": check["context"], "app_id": check["integration_id"]} for check in checks]},
     }
@@ -185,15 +190,21 @@ def evaluate(snapshot):
     if not isinstance(review_policy, dict):
         errors.append("review_policy_unreadable")
         review_policy = {}
-    required_approvals = review_policy.get("required_approving_review_count", 0)
-    if type(required_approvals) is not int:
+    required_approvals = review_policy.get("required_approving_review_count")
+    if type(required_approvals) is not int or required_approvals < 0:
         errors.append("required_review_policy_invalid")
         required_approvals = 1
-    elif required_approvals < 1:
-        errors.append("required_review_not_enforced")
-    if review_policy.get("dismiss_stale_reviews") is not True:
+    if required_approvals == 0:
+        owner = _mapping(pr.get("user", {}), errors)
+        if (_login(owner.get("login")) != SOLE_EXECUTOR
+                or "ruleset_evidence" not in snapshot
+                or review_policy.get("require_code_owner_reviews") is not False
+                or review_policy.get("dismiss_stale_reviews") is not False
+                or review_policy.get("require_last_push_approval") is not False):
+            errors.append("sole_executor_policy_invalid")
+    if required_approvals > 0 and review_policy.get("dismiss_stale_reviews") is not True:
         errors.append("stale_review_protection_missing")
-    if review_policy.get("require_last_push_approval") is not True:
+    if required_approvals > 0 and review_policy.get("require_last_push_approval") is not True:
         errors.append("last_push_independent_approval_missing")
     allowances = review_policy.get("bypass_pull_request_allowances", {})
     if not isinstance(allowances, dict):
@@ -347,7 +358,7 @@ def evaluate(snapshot):
                  and r.get("state") == "APPROVED" and r.get("commit_id") == source]
     if any(r.get("state") == "CHANGES_REQUESTED" for r in latest.values()):
         errors.append("changes_requested")
-    if len(approvals) < max(1, required_approvals):
+    if len(approvals) < required_approvals:
         errors.append("exact_head_independent_review_missing")
     review_threads = snapshot.get("review_threads", [])
     if not isinstance(review_threads, list) or any(not isinstance(t, dict) for t in review_threads):

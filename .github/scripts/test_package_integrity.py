@@ -13,7 +13,8 @@ class PackageTests(unittest.TestCase):
         directory = tempfile.TemporaryDirectory(); self.addCleanup(directory.cleanup)
         path = Path(directory.name) / 'candidate.zip'
         payload = {name: b'synthetic' for name in ['Medcom.Api.dll', 'password-worker/Medcom.LegacyPasswordWorker.dll',
-                                                 'wwwroot/index.html', 'wwwroot/workspace/index.html', 'DEPLOYMENT.md']}
+                                                 'wwwroot/index.html', 'wwwroot/workspace/index.html', 'DEPLOYMENT.md',
+                                                 'tools/deploy/Configure-MedcomServer.ps1', 'docs/backend/SERVER_CONFIGURATION.md']}
         manifest = {'format': 2, 'sourceRevision': 'a' * 40, 'releaseStatus': STATUS,
                     'files': {name: hashlib.sha256(data).hexdigest() for name, data in payload.items()}}
         if mutate:
@@ -37,6 +38,27 @@ class PackageTests(unittest.TestCase):
     def test_valid_staging_payload(self):
         self.assertEqual([], verify(self.package()))
 
+    def test_setup_tool_and_guide_are_required(self):
+        for name in ('tools/deploy/Configure-MedcomServer.ps1', 'docs/backend/SERVER_CONFIGURATION.md'):
+            def remove(m, p):
+                p.pop(name); m['files'].pop(name)
+            self.assertIn('required_payload_missing', verify(self.package(remove)))
+
+    def test_private_payload_rejected_even_with_matching_manifest(self):
+        for name in ('appsettings.Private.json', 'nested/CONFIG-LOCATION.JSON', 'Tools.dll',
+                     'MedData-Data.sql', 'Medcom-Data.sql', 'database.bak', 'database.mdf', 'database.ldf',
+                     'server.pfx', 'server.p12', 'ERP_Medcom2026(4).zip', 'Medcom-Data (3)(1).zip'):
+            def add(m, p):
+                p[name] = b'synthetic-only'; m['files'][name] = hashlib.sha256(p[name]).hexdigest()
+            with self.subTest(name=name):
+                self.assertEqual(['private_payload_forbidden'], verify(self.package(add)))
+
+    def test_public_schema_migration_is_not_excluded(self):
+        def add(m, p):
+            p['migrations/001-control-schema.sql'] = b'synthetic-only'
+            m['files']['migrations/001-control-schema.sql'] = hashlib.sha256(p['migrations/001-control-schema.sql']).hexdigest()
+        self.assertEqual([], verify(self.package(add)))
+
     def test_tampered_payload(self):
         path = self.package(lambda m, p: p.update({'Medcom.Api.dll': b'tampered'}))
         self.assertIn('checksum_mismatch:Medcom.Api.dll', verify(path))
@@ -58,6 +80,12 @@ class PackageTests(unittest.TestCase):
         with zipfile.ZipFile(path) as archive:
             self.assertIn(raw_name, [member.orig_filename for member in archive.infolist()])
         self.assertIn('unsafe_member', verify(path))
+
+    def test_windows_trailing_dot_or_space_aliases_are_rejected(self):
+        for name in ('appsettings.Private.json.', 'server.pfx.', 'nested ./file',
+                     'nested./file', 'appsettings.Private.json ', 'server.pfx '):
+            with self.subTest(name=name):
+                self.assertIn('unsafe_member', verify(self.package(extras=[(name, b'synthetic')])))
 
     def test_symlink(self):
         info = zipfile.ZipInfo('link'); info.create_system = 3; info.external_attr = 0o120777 << 16

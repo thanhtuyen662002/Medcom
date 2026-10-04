@@ -1,3 +1,5 @@
+> CURRENT OWNER OVERRIDE — 2026-10-04: canonical #45 is full BE/API/SQL with FE handoff. Root is the sole GitHub executor; native GitHub approval is not required. Keep exact-head/base CI, PR/conversation/custody and public-data protections. All Medcom schedules remain OFF; do not activate the historical six-role schedule plan below. Read docs/goals/PRODUCTION_ERP_GOAL.md, the latest PROJECT_STATE entry and AGENTS.md before applying older text. References below to independent GitHub approval or active hourly lanes are historical, not current gates.
+
 # Six-role production workflow — owner activation, 2026-10-02
 
 Goal: [#45](https://github.com/thanhtuyen662002/Medcom/issues/45). This newer owner request replaces the ten-task pause and earlier preparation-only restrictions. Five **different** coder tasks and one lead task run hourly, with coder starts ten minutes apart. Identical staggered copies of one task are unsupported by the automation cadence policy. Reuse six existing Medcom IDs; leave the other four paused and all unrelated projects unchanged.
