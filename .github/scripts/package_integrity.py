@@ -10,6 +10,7 @@ import json
 import re
 import stat
 import sys
+import unicodedata
 import zipfile
 from pathlib import Path, PurePosixPath
 
@@ -22,12 +23,17 @@ STATUS = 'BLOCKED_BUSINESS_AND_RUNTIME_ACCEPTANCE'
 PRIVATE_NAMES = {'appsettings.private.json', 'config-location.json', 'tools.dll',
                  'meddata-data.sql', 'medcom-data.sql'}
 PRIVATE_SUFFIXES = {'.bak', '.mdf', '.ldf', '.pfx', '.p12'}
+WINDOWS_DEVICE = re.compile(r'(?:CON|PRN|AUX|NUL|CLOCK\$|CONIN\$|CONOUT\$|(?:COM|LPT)[1-9¹²³])\Z')
+WINDOWS_ILLEGAL = frozenset('<>:"\\|?*')
 
 
 def safe_name(name):
     path = PurePosixPath(name)
     return bool(name and not name.startswith('/') and '\\' not in name and ':' not in name
                 and all(part not in ('', '.', '..') and not part.endswith(('.', ' '))
+                        and not WINDOWS_DEVICE.fullmatch(part.split('.')[0].rstrip(' .').upper())
+                        and not any(char in WINDOWS_ILLEGAL or unicodedata.category(char) == 'Cc'
+                                    for char in part)
                         for part in name.split('/'))
                 and str(path) == name)
 
@@ -45,6 +51,10 @@ def verify(path):
             if any(not safe_name(m.orig_filename) or m.orig_filename != m.filename or m.is_dir()
                    or stat.S_ISLNK(m.external_attr >> 16) or m.flag_bits & 1 for m in members):
                 errors.append('unsafe_member')
+            folded_names = {name.casefold() for name in names}
+            if any('/'.join(name.casefold().split('/')[:index]) in folded_names
+                   for name in names for index in range(1, len(name.split('/')))):
+                errors.append('file_directory_collision')
             if errors:
                 return errors
             for name in names:
@@ -57,7 +67,10 @@ def verify(path):
             manifest = json.loads(archive.read('manifest.json'))
             if not isinstance(manifest, dict):
                 return ['invalid_manifest']
-            if manifest.get('format') != 2 or manifest.get('releaseStatus') != STATUS:
+            backend = manifest.get('format') == 3 and manifest.get('packageProfile') == 'backend'
+            combined = manifest.get('format') == 2 and 'packageProfile' not in manifest
+            if (type(manifest.get('format')) is not int or not (backend or combined)
+                    or manifest.get('releaseStatus') != STATUS):
                 errors.append('unsupported_manifest_or_release_status')
             if not isinstance(manifest.get('sourceRevision'), str) or not SHA.fullmatch(manifest['sourceRevision']):
                 errors.append('source_revision_missing')
@@ -67,8 +80,15 @@ def verify(path):
             if set(files) != set(names) - {'manifest.json'}:
                 errors.append('inventory_mismatch')
             required = {'Medcom.Api.dll', 'password-worker/Medcom.LegacyPasswordWorker.dll',
-                        'wwwroot/index.html', 'wwwroot/workspace/index.html', 'DEPLOYMENT.md',
+                        'DEPLOYMENT.md',
                         'tools/deploy/Configure-MedcomServer.ps1', 'docs/backend/SERVER_CONFIGURATION.md'}
+            if backend:
+                required |= {'tools/deploy/plan_update.py', 'tools/deploy/package_integrity.py',
+                             'docs/deployment/WINDOWS_UPDATE_WORKFLOW.md'}
+                if any(name.casefold() == 'wwwroot' or name.casefold().startswith('wwwroot/') for name in names):
+                    errors.append('frontend_payload_forbidden')
+            else:
+                required |= {'wwwroot/index.html', 'wwwroot/workspace/index.html'}
             if not required.issubset(files):
                 errors.append('required_payload_missing')
             for name, expected in files.items():
