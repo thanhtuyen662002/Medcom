@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I05",
+  "role": "direct_interactive",
+  "owner": "Mika under owner-directed overnight Medcom completion",
+  "run_id": "f6cca578-4c3a-4ff9-9cc2-329f1f82af98",
+  "base_sha": "2e6ec7fc0bbce7340eaf227381351b2fdaff5512",
+  "work_branch": "codex/g45-ui-hardening-i05-20261005",
+  "claim_branch": "medcom-claims/g45/direct/I05",
+  "predecessor_ticket": "I04",
+  "predecessor_handoff": "https://github.com/thanhtuyen662002/Medcom/pull/56#issuecomment-5982983444",
+  "scope": [
+    "apps/medcom-sites/components/erp/**",
+    "apps/medcom-sites/lib/erp/**",
+    "apps/medcom-sites/tests/**",
+    "apps/medcom-sites/scripts/test-erp.mjs",
+    "apps/medcom-sites/docs/READ_SLICE_ACCEPTANCE.md",
+    "docs/execution/direct-runs/I05.json",
+    "docs/execution/checkpoints/I05_WINDOWS_UI_HARDENING_20261005.md"
+  ],
+  "purpose": "Fix Windows-browser-reproduced session expiry validation and unintended grid/search preference loss on unchanged effective authorization refresh. Preserve tenant/company/branch/capability isolation, revocation fences and safe invalid-response handling. Add deterministic and browser regression evidence with synthetic data only.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "automation_policy": "No schedule changes",
+  "sql_policy": "No private archive access, SQL connection, real accounts or schema/data changes",
+  "publication_policy": "Single parent publisher. Local isolated worker patch only, independent review and exact source/base CI before integration. No installer, server, DNS, ACL, certificate or external access changes.",
+  "created_at": "2026-10-04T19:17:18Z"
+}
