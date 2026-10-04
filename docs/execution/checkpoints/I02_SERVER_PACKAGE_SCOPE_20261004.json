@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "parent_run_id": "2c24e90b-4e0a-49cb-828b-83b824788e33",
+  "parent_lease": "https://github.com/thanhtuyen662002/Medcom/pull/53",
+  "source_head": "c4e66d6801ee898ad93e08fac65e40f015121b99",
+  "scope_ref": "medcom-scope/g45/direct/I02/server-config-package",
+  "paths": [
+    "tools/deploy/package.py",
+    ".github/scripts/package_integrity.py",
+    ".github/scripts/test_package_integrity.py",
+    "docs/deployment/SERVER_DEPLOYMENT.md"
+  ],
+  "reason": "Ship verified public server setup tool and guide, enforce operator assets and exclude private payloads; preserve blocked release status.",
+  "custody": "Existing I02 Draft lease and coordinator; no additional lease or predecessor branch takeover.",
+  "automations": "Keep OFF; no automation mutation."
+}
