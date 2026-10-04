@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { ADMISSION, MANIFEST, assertRealDirectory, assertReleaseInputs, physicallyContained, sameFilesystemObject, copyTree, packageStandalone, rebuildAndPackage, validatePath } from '../scripts/package-standalone.mjs';
 import { verifyStandalone } from '../scripts/verify-standalone.mjs';
 
@@ -318,4 +319,39 @@ if (process.platform === 'win32') test('Windows runtime accepts canonical drive-
   const alternateDrive = canonical.replace(/^[a-z]:/i, drive => drive[0] === drive[0].toUpperCase() ? drive.toLowerCase() : drive.toUpperCase());
   await assertRealDirectory(alternateDrive);
   assert.equal(await physicallyContained(alternateDrive, canonical), true);
+});
+
+test('Next-style copied absolute pnpm junction cannot import the original dependency tree', async t => {
+  const { dir } = await fixture(t);
+  const original = path.join(dir, 'installation/node_modules/.pnpm/react@19/node_modules/react');
+  const originalLink = path.join(dir, 'installation/node_modules/.pnpm/next@16/node_modules/react');
+  const tracedRoot = path.join(dir, 'traced');
+  const tracedRelative = 'node_modules/.pnpm/next@16/node_modules/react';
+  const tracedLink = path.join(tracedRoot, ...tracedRelative.split('/'));
+  await fs.mkdir(original, { recursive: true });
+  await fs.mkdir(path.dirname(originalLink), { recursive: true });
+  await fs.mkdir(path.dirname(tracedLink), { recursive: true });
+  await fs.writeFile(path.join(original, 'index.js'), '// synthetic original installation outside trace root');
+  const type = process.platform === 'win32' ? 'junction' : 'dir';
+  await fs.symlink(original, originalLink, type);
+  // Reproduce copyTracedFiles preserving an original absolute target verbatim.
+  const target = await fs.readlink(originalLink);
+  assert.equal(path.isAbsolute(target), true);
+  await fs.symlink(target, tracedLink, type);
+  const destination = path.join(dir, 'unsafe-artifact');
+  await assert.rejects(copyTree(tracedRoot, destination), /Link escapes source tree/);
+  await assert.rejects(fs.access(path.join(destination, ...tracedRelative.split('/'), 'index.js')));
+});
+
+test('installed runtime packages use physical directories under the hoisted linker', async () => {
+  const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  for (const name of ['next', 'react', 'react-dom', 'zod']) {
+    const packageRoot = path.join(appRoot, 'node_modules', name);
+    const stat = await fs.lstat(packageRoot);
+    assert.equal(stat.isSymbolicLink(), false, `${name} must not use isolated pnpm links`);
+    assert.equal(stat.isDirectory(), true, `${name} must be a physical package directory`);
+    await assertRealDirectory(packageRoot);
+    const metadata = JSON.parse(await fs.readFile(path.join(packageRoot, 'package.json'), 'utf8'));
+    assert.equal(metadata.name, name);
+  }
 });

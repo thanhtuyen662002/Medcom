@@ -7,3 +7,6 @@ allowBuilds:
   sharp: true
   unrs-resolver: true
 enableGlobalVirtualStore: false
+# Next standalone on Windows must not inherit absolute pnpm junction targets.
+# Hoisted uses physical package directories; frozen dependency versions stay unchanged.
+nodeLinker: hoisted
