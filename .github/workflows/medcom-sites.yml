@@ -1,0 +1,40 @@
+name: Medcom Sites frontend
+on:
+  pull_request:
+    paths:
+      - 'apps/medcom-sites/**'
+      - '.github/workflows/medcom-sites.yml'
+  push:
+    branches: ['medcom-sites/**']
+    paths:
+      - 'apps/medcom-sites/**'
+      - '.github/workflows/medcom-sites.yml'
+permissions:
+  contents: read
+concurrency:
+  group: medcom-sites-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  sites-frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/medcom-sites
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: apps/medcom-sites/package.json
+          run_install: false
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Typecheck
+        run: pnpm exec tsc --noEmit
+      - name: API and proxy boundary tests
+        run: node scripts/test-erp.mjs
+      - name: Build Cloudflare Worker
+        run: pnpm build
