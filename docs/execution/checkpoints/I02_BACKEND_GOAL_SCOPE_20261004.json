@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "parent_run_id": "2c24e90b-4e0a-49cb-828b-83b824788e33",
+  "parent_lease": "https://github.com/thanhtuyen662002/Medcom/pull/53",
+  "source_head": "285c3af57283ed373ca1111928fdf78e5fdcf242",
+  "scope_ref": "medcom-scope/g45/direct/I02/backend-goal-policy",
+  "paths": [
+    "AGENTS.md",
+    "docs/execution/PRODUCTION_WORKFLOW_20261002.md",
+    "docs/goals/PRODUCTION_ERP_GOAL.md",
+    "docs/goals/BACKEND_PRODUCTION_GOAL.md",
+    "docs/PROJECT_STATE.yaml",
+    ".github/scripts/integration_gate.py",
+    ".github/scripts/test_integration_gate.py",
+    "docs/execution/checkpoints/I02_BACKEND_GOAL_20261004.md"
+  ],
+  "reason": "Owner explicitly refocuses existing goal #45 on full backend/API/SQL and FE handoff; sole GitHub executor, no GitHub approval gate. Preserve PR, exact-head/base CI, conversation and public-data protections.",
+  "custody": "Same I02 Draft lease; root alone publishes to GitHub; preserve uncommitted package work under its existing scope.",
+  "automations": "OFF; no automation mutation."
+}
