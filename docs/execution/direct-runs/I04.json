@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I04",
+  "role": "direct_interactive",
+  "owner": "Mika under owner-directed self-hosted frontend/backend workflow",
+  "run_id": "94adb95b-bf3a-4ec0-8949-c4c8a48c94b6",
+  "base_sha": "d55304a3dde49e65d590fd6485a45ab8eeaa590c",
+  "work_branch": "codex/g45-selfhost-i04-20261004",
+  "claim_branch": "medcom-claims/g45/direct/I04",
+  "predecessor_ticket": "I03",
+  "predecessor_handoff": "https://github.com/thanhtuyen662002/Medcom/pull/55#issuecomment-5982500581",
+  "scope": [
+    "apps/medcom-sites/**",
+    ".github/workflows/medcom-selfhost.yml",
+    "docs/deployment/SELF_HOSTED_IIS.md",
+    "docs/deployment/iis/frontend.web.config.example",
+    "docs/deployment/iis/api-request-filter.fragment.xml",
+    "docs/deployment/iis/frontend-environment.example",
+    "docs/execution/direct-runs/I04.json",
+    "docs/execution/checkpoints/I04_SELF_HOST_20261004.md"
+  ],
+  "purpose": "Import current owner-approved frontend and migrate to Next Node standalone for owner-operated Windows IIS co-hosting with existing API; preserve ERP auth/proxy protections, current UI and separate immutable packages. Add matrix CI, package verification and sanitized IIS examples. Existing PR54 remains preserved as historical Sites baseline; no writes to its branch.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "automation_policy": "No schedule changes",
+  "sql_policy": "No real database or private-configuration access",
+  "publication_policy": "Single parent publisher, create-only claim and Draft lease; independent review/exact-head CI before merge. No server installation, DNS/access change, deployment, private-source publication or credential use.",
+  "created_at": "2026-10-04T17:27:29Z"
+}
