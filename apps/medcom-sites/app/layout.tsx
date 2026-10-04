@@ -5,8 +5,8 @@ export const metadata: Metadata = {
   title: "Medcom ERP",
   description: "Không gian làm việc ERP Medcom: mua hàng, kho, kế toán và chứng từ.",
   icons: {
-    icon: "/favicon.svg",
-    shortcut: "/favicon.svg",
+    icon: "/medcom-logo.png",
+    shortcut: "/medcom-logo.png",
   },
 };
 
