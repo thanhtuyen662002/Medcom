@@ -36,9 +36,12 @@ health/live and platform/metadata are also allowlisted known backend paths, not 
 
 ## UI behavior
 
-Responsive shell; module navigation; command search (Ctrl/Cmd+K); favorites; local theme/density; URL/back-forward navigation; source-separated transfer stages; ERP login/continue/logout; branch/search/server pagination; column visibility; refresh; independently paged line details; unauthenticated, denied, unavailable, empty and no-results states. No synthetic transactions, balances, notifications, chart values or successful writes ship.
+Responsive shell; mobile fixed bottom navigation, authorized drawer and account controls; module navigation; command search (Ctrl/Cmd+K); favorites; local theme/density; URL/back-forward navigation; source-separated transfer stages; ERP login/continue/logout; branch/search/server pagination; column visibility; refresh; independently paged line details; unauthenticated, denied, unavailable, empty and no-results states. No synthetic transactions, balances, notifications, chart values or successful writes ship.
 
 ## Required backend handoff
+
+Admin role quick navigation remains OPEN. The mobile shell now uses existing authoritative workspace navigation as a bounded interim adapter; it does not implement or claim admin publish/role persistence. See `MOBILE_NAV_BACKEND_HANDOFF.md` and the parent repository `docs/web/MOBILE_NAVIGATION_ROLE_CONFIG.md`. No localStorage role override, assumed admin permission or guessed config endpoint is enabled.
+
 
 Purchase approvals, transfer commands, accounting configuration, invoice admission and reports need published API/permission/DTO contracts. No guessed mutation endpoint is enabled. Add proxy routes only after review; then add meaningful tests and UI. Reports need server catalog, parameters, jobs and output permission contracts. Read permission does not grant export permission.
 
