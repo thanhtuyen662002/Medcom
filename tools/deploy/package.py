@@ -41,6 +41,16 @@ def validate_tree(path):
             regular_node(Path(directory) / name)
 
 
+def file_identity(info):
+    # These fields have comparable meanings across path stat and descriptor stat.
+    return info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns
+
+
+def file_snapshot(info):
+    return (file_identity(info), info.st_ctime_ns, info.st_nlink, info.st_mode,
+            getattr(info, 'st_file_attributes', 0))
+
+
 def read_regular_file(path):
     validate_path(path)
     before = regular_node(path)
@@ -49,15 +59,20 @@ def read_regular_file(path):
     with path.open('rb') as stream:
         opened = os.fstat(stream.fileno())
         if (not stat.S_ISREG(opened.st_mode) or opened.st_nlink != 1
-                or (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)):
+                or file_identity(opened) != file_identity(before)):
             raise SystemExit('Package input changed while opening')
         data = stream.read()
         after = os.fstat(stream.fileno())
     current = regular_node(path)
-    if ((opened.st_size, opened.st_mtime_ns, opened.st_ctime_ns)
-            != (after.st_size, after.st_mtime_ns, after.st_ctime_ns)
-            or (current.st_dev, current.st_ino, current.st_size, current.st_mtime_ns, current.st_ctime_ns)
-            != (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns, after.st_ctime_ns)):
+    # CPython 3.12.10 Windows path stat exposes birthtime as ctime, while
+    # descriptor fstat exposes ChangeTime. Compare ctime only within the same
+    # API's before/after snapshots; never drop metadata/identity race checks.
+    # https://github.com/python/cpython/blob/v3.12.10/Modules/posixmodule.c#L2015
+    # https://github.com/python/cpython/blob/v3.12.10/Python/fileutils.c#L1037
+    if (file_snapshot(opened) != file_snapshot(after)
+            or file_snapshot(before) != file_snapshot(current)
+            or file_identity(current) != file_identity(after)
+            or len(data) != after.st_size):
         raise SystemExit('Package input changed while reading')
     return data
 

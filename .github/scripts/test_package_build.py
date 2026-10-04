@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 import zipfile
@@ -17,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class PackageSourceCustodyTests(unittest.TestCase):
-    def build(self, change=None, profile="combined", frontend=True, unsafe=None):
+    def build(self, change=None, profile="combined", frontend=True, unsafe=None, stat_change=None):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         root = Path(temp.name).resolve()
@@ -44,6 +45,33 @@ class PackageSourceCustodyTests(unittest.TestCase):
             source.symlink_to(external / 'synthetic-private.json')
         phase = {'publishes': 0, 'verified': False}
         real_run = subprocess.run
+        real_fstat = os.fstat
+        real_lstat = Path.lstat
+        path_stat_calls = {'count': 0}
+
+        def lstat(path):
+            info = real_lstat(path)
+            if stat_change == 'path-ctime' and path == root / 'docs/deployment/SERVER_DEPLOYMENT.md':
+                path_stat_calls['count'] += 1
+                if path_stat_calls['count'] == 3:
+                    fields = {name: getattr(info, name) for name in dir(info) if name.startswith('st_')}
+                    fields['st_ctime_ns'] += 1
+                    return SimpleNamespace(**fields)
+            return info
+        stat_calls = {'count': 0}
+
+        def fstat(fd):
+            info = real_fstat(fd)
+            stat_calls['count'] += 1
+            if not stat_change or stat_change == 'path-ctime':
+                return info
+            fields = {name: getattr(info, name) for name in dir(info) if name.startswith('st_')}
+            if stat_change == 'stable-ctime-offset':
+                # CPython 3.12.10 Windows fstat uses ChangeTime; lstat uses birthtime.
+                fields['st_ctime_ns'] += 1_000_000_000
+            elif stat_calls['count'] % 2 == 0:
+                fields[stat_change] += 1
+            return SimpleNamespace(**fields)
 
         def run(command, **kwargs):
             if command[0] == 'fixture-dotnet':
@@ -77,6 +105,8 @@ class PackageSourceCustodyTests(unittest.TestCase):
         with patch.object(sys, 'argv', ['package.py', '--dotnet', 'fixture-dotnet', '--profile', profile]), \
              patch.object(subprocess, 'run', side_effect=run), \
              patch.object(subprocess, 'check_output', side_effect=git), \
+             patch.object(os, 'fstat', side_effect=fstat), \
+             patch.object(Path, 'lstat', lstat), \
              contextlib.redirect_stdout(io.StringIO()):
             try:
                 runpy.run_path(str(root / 'tools/deploy/package.py'), run_name='__main__')
@@ -132,6 +162,25 @@ class PackageSourceCustodyTests(unittest.TestCase):
                 self.assertIsNotNone(failure)
                 self.assertFalse((root / 'artifacts/medcom-backend-candidate.zip').exists())
                 self.assertFalse((root / 'artifacts/medcom-backend-candidate.sha256').exists())
+
+    def test_stable_path_and_descriptor_ctime_semantics_can_differ(self):
+        root, failure = self.build(profile='backend', frontend=False, stat_change='stable-ctime-offset')
+        self.assertIsNone(failure)
+        self.assertTrue((root / 'artifacts/medcom-backend-candidate.sha256').is_file())
+
+    def test_descriptor_changes_still_reject_package(self):
+        for field in ('st_ctime_ns', 'st_mtime_ns', 'st_size', 'st_ino', 'st_nlink'):
+            with self.subTest(field=field):
+                root, failure = self.build(profile='backend', frontend=False, stat_change=field)
+                self.assertIsNotNone(failure)
+                self.assertFalse((root / 'artifacts/medcom-backend-candidate.zip').exists())
+                self.assertFalse((root / 'artifacts/medcom-backend-candidate.sha256').exists())
+
+    def test_path_metadata_change_still_rejects_package(self):
+        root, failure = self.build(profile='backend', frontend=False, stat_change='path-ctime')
+        self.assertIsNotNone(failure)
+        self.assertFalse((root / 'artifacts/medcom-backend-candidate.zip').exists())
+        self.assertFalse((root / 'artifacts/medcom-backend-candidate.sha256').exists())
 
     def assert_unfinalized(self, change):
         root, failure = self.build(change)
