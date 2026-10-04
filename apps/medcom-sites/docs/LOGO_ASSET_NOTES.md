@@ -3,7 +3,7 @@
 - Asset: `public/medcom-logo.png` (transparent RGBA PNG, 2065 × 761).
 - Source: owner-provided `Logo.png`, 171 × 104; original upload is preserved.
 - Editing: built-in image generation/editing tool, transparent background extraction and raster restoration. This is a raster restoration, not original vector artwork.
-- Website: sidebar image uses a 200 × 60 white frame with proportional `object-fit: cover`; this crops surplus transparent vertical margins while keeping all visible lettering, tagline and emblem. The white frame keeps the navy wordmark readable in either theme.
+- Website: sidebar image uses a transparent 200 × 60 frame with proportional `object-fit: cover`; this crops surplus transparent vertical margins while keeping all visible lettering, tagline and emblem. Light mode keeps the original color asset. Dark mode renders a monochrome inverse using CSS `grayscale(1) invert(1)` for contrast against the dark sidebar; the transparent PNG is unchanged. The former white plate, ERP WORKSPACE caption and redundant company-context card are removed.
 - Browser icon and shortcut use the supplied brand asset rather than the starter monogram.
 
 ## Edit prompt
