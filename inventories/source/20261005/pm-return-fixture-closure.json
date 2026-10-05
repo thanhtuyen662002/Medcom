@@ -1,0 +1,2236 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "bytes": 1212595716,
+    "sha256": "61a8744c7a9a007b13ef37fbda26ea8c78af11fcc469963a528eba9469174096",
+    "lines": 874083,
+    "encoding": "UTF-16LE with BOM"
+  },
+  "hashKind": "SHA256 of exact CREATE/ALTER/index batch UTF8 with universal LF, final LF, excluding GO",
+  "rootObjects": [
+    "dbo.IV_InternalTransfer_RequestPMReturnStp",
+    "dbo.IV_InternalTransfer_RequestPMCheckBeforeUpdateStp",
+    "dbo.IV_InternalTransferRequestTbl",
+    "dbo.IV_InternalTransferRequestDetailTbl",
+    "dbo.SY_User",
+    "dbo.SY_UserGroup",
+    "dbo.SY_Menu",
+    "dbo.SY_UserGroupPermisstion",
+    "dbo.SY_UserPermisstion",
+    "dbo.SY_UserBranch"
+  ],
+  "objects": [
+    {
+      "name": "dbo.SY_String2TableFnc",
+      "kind": "FUNCTION",
+      "startLine": 7152,
+      "endLine": 7192,
+      "sha256": "560055a2b8c8f80062ff7664c60f2804efade295a72352bc0bc5ca81b9ff02ed",
+      "references": [],
+      "requiredColumns": [],
+      "ansiNulls": "ON",
+      "quotedIdentifier": "ON"
+    },
+    {
+      "name": "dbo.CF_ObjectTbl",
+      "kind": "TABLE",
+      "startLine": 9921,
+      "endLine": 10004,
+      "sha256": "a86fa1b7fe1865636f03239ad2736867f74e65027ce5aba8d8c2bdb179aaf658",
+      "references": [],
+      "requiredColumns": [
+        {
+          "name": "ObjectID",
+          "type": "varchar",
+          "typeArguments": "(100)"
+        },
+        {
+          "name": "BranchID",
+          "type": "varchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "ObjectName",
+          "type": "nvarchar",
+          "typeArguments": "(300)"
+        },
+        {
+          "name": "ObjectGroupID",
+          "type": "varchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "CongNoDonHang",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "isEmployee",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "isManager",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "isVendor",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "isCustomer",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "isAgency",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "isDefault",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "isDisable",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "RevAccID",
+          "type": "varchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "PayAccID",
+          "type": "varchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "IsForeign",
+          "type": "bit",
+          "typeArguments": ""
+        }
+      ],
+      "ansiNulls": "ON",
+      "quotedIdentifier": "ON"
+    },
+    {
+      "name": "dbo.CF_ItemTbl",
+      "kind": "TABLE",
+      "startLine": 10823,
+      "endLine": 10867,
+      "sha256": "7e8dbef9b77a0fa64c22152c6357a939f55b16fa460a4ede9a86665157e2f4d7",
+      "references": [],
+      "requiredColumns": [
+        {
+          "name": "ItemID",
+          "type": "nvarchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "isProperty",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "isLot",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "IncomeAccID",
+          "type": "varchar",
+          "typeArguments": "(30)"
+        },
+        {
+          "name": "DiscountAcctID",
+          "type": "varchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "isDisable",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "isQuantity2",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "isProperty2",
+          "type": "bit",
+          "typeArguments": ""
+        }
+      ],
+      "ansiNulls": "ON",
+      "quotedIdentifier": "ON"
+    },
+    {
+      "name": "dbo.SY_User",
+      "kind": "TABLE",
+      "startLine": 11181,
+      "endLine": 11206,
+      "sha256": "281521e416e2829255df433a2bac224ccc41d2b44c02393a1ecfa49c62b4c555",
+      "references": [],
+      "requiredColumns": [
+        {
+          "name": "UserName",
+          "type": "varchar",
+          "typeArguments": "(100)"
+        },
+        {
+          "name": "HoTen",
+          "type": "nvarchar",
+          "typeArguments": "(150)"
+        },
+        {
+          "name": "TenNgan",
+          "type": "nvarchar",
+          "typeArguments": "(100)"
+        },
+        {
+          "name": "Disable",
+          "type": "bit",
+          "typeArguments": ""
+        }
+      ],
+      "ansiNulls": "ON",
+      "quotedIdentifier": "ON"
+    },
+    {
+      "name": "dbo.SY_UserGroup",
+      "kind": "TABLE",
+      "startLine": 11213,
+      "endLine": 11222,
+      "sha256": "de3e3961936b3770600fa9e1e52f8d5b0e0e702d014c7e961b802ea623f694e0",
+      "references": [],
+      "requiredColumns": [
+        {
+          "name": "UserGroupID",
+          "type": "varchar",
+          "typeArguments": "(20)"
+        },
+        {
+          "name": "UserGroupName",
+          "type": "nvarchar",
+          "typeArguments": "(100)"
+        },
+        {
+          "name": "IsDisable",
+          "type": "bit",
+          "typeArguments": ""
+        }
+      ],
+      "ansiNulls": "ON",
+      "quotedIdentifier": "ON"
+    },
+    {
+      "name": "dbo.CF_ObjectGroupTbl",
+      "kind": "TABLE",
+      "startLine": 11321,
+      "endLine": 11342,
+      "sha256": "d6a1d7b3d3512f1a300e4c07b8241ab668226088ac99e10db06a40a880bc66bd",
+      "references": [],
+      "requiredColumns": [
+        {
+          "name": "ObjectGroupID",
+          "type": "varchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "ObjectGroupName",
+          "type": "nvarchar",
+          "typeArguments": "(150)"
+        },
+        {
+          "name": "isCustomer",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "isVendor",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "isEmployee",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "isManager",
+          "type": "bit",
+          "typeArguments": ""
+        }
+      ],
+      "ansiNulls": "ON",
+      "quotedIdentifier": "ON"
+    },
+    {
+      "name": "dbo.FA_AssetTbl",
+      "kind": "TABLE",
+      "startLine": 13140,
+      "endLine": 13203,
+      "sha256": "d841e26738a1b7dbd3b5f2450790fd8aacd36a2b458308b27001fbb5ca2f8789",
+      "references": [],
+      "requiredColumns": [
+        {
+          "name": "AssetID",
+          "type": "varchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "AssetTypeID",
+          "type": "varchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "CapitalID",
+          "type": "varchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "AssetAccID",
+          "type": "varchar",
+          "typeArguments": "(30)"
+        },
+        {
+          "name": "DepreAccID",
+          "type": "varchar",
+          "typeArguments": "(30)"
+        },
+        {
+          "name": "ExpenseAccID",
+          "type": "varchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "UsingDate",
+          "type": "datetime",
+          "typeArguments": ""
+        },
+        {
+          "name": "DepreDate",
+          "type": "datetime",
+          "typeArguments": ""
+        },
+        {
+          "name": "SourceAmount",
+          "type": "float",
+          "typeArguments": ""
+        },
+        {
+          "name": "CurrencyID",
+          "type": "varchar",
+          "typeArguments": "(3)"
+        },
+        {
+          "name": "RateExchange",
+          "type": "float",
+          "typeArguments": ""
+        },
+        {
+          "name": "Amount",
+          "type": "float",
+          "typeArguments": ""
+        },
+        {
+          "name": "BranchID",
+          "type": "varchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "TrackLifecycle",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "OwnershipType",
+          "type": "varchar",
+          "typeArguments": "(20)"
+        },
+        {
+          "name": "LifecycleStatus",
+          "type": "varchar",
+          "typeArguments": "(30)"
+        }
+      ],
+      "ansiNulls": "ON",
+      "quotedIdentifier": "ON"
+    },
+    {
+      "name": "dbo.CF_BranchTbl",
+      "kind": "TABLE",
+      "startLine": 13987,
+      "endLine": 14009,
+      "sha256": "34314ab656dcbff2a8448bd50a7bd3b72bc29b7899b24f3edf019bd977d49e6c",
+      "references": [],
+      "requiredColumns": [
+        {
+          "name": "BranchID",
+          "type": "varchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "BranchName",
+          "type": "nvarchar",
+          "typeArguments": "(100)"
+        },
+        {
+          "name": "isDefault",
+          "type": "bit",
+          "typeArguments": ""
+        }
+      ],
+      "ansiNulls": "ON",
+      "quotedIdentifier": "ON"
+    },
+    {
+      "name": "dbo.SY_UserBranch",
+      "kind": "TABLE",
+      "startLine": 14016,
+      "endLine": 14026,
+      "sha256": "e5499c2669f9b7be5d06cc8939ede78fa17badeb303b2880692e9367831c91d0",
+      "references": [],
+      "requiredColumns": [
+        {
+          "name": "UserAutoID",
+          "type": "varchar",
+          "typeArguments": "(50)"
+        }
+      ],
+      "ansiNulls": "ON",
+      "quotedIdentifier": "ON"
+    },
+    {
+      "name": "dbo.IV_InternalTransferRequestTbl",
+      "kind": "TABLE",
+      "startLine": 14472,
+      "endLine": 14497,
+      "sha256": "05b74f3499fe48043779a9c1a6ebdfaa6af6b8c43aa3421d416d9f027e6fd8ce",
+      "references": [],
+      "requiredColumns": [
+        {
+          "name": "DocumentID",
+          "type": "nvarchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "DocumentDate",
+          "type": "datetime",
+          "typeArguments": ""
+        },
+        {
+          "name": "SalesUser",
+          "type": "varchar",
+          "typeArguments": "(100)"
+        },
+        {
+          "name": "BranchID",
+          "type": "varchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "FromBranchID",
+          "type": "varchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "ToBranchID",
+          "type": "varchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "StatusID",
+          "type": "int",
+          "typeArguments": ""
+        },
+        {
+          "name": "isLock",
+          "type": "bit",
+          "typeArguments": ""
+        }
+      ],
+      "ansiNulls": "ON",
+      "quotedIdentifier": "ON"
+    },
+    {
+      "name": "dbo.IV_InternalTransferRequestStatusTbl",
+      "kind": "TABLE",
+      "startLine": 14522,
+      "endLine": 14535,
+      "sha256": "54c7c6f1f4d0c0c624c2bf94bce2ca9351d5f42656ff60d8eb95251e00bff2ca",
+      "references": [],
+      "requiredColumns": [
+        {
+          "name": "StatusID",
+          "type": "int",
+          "typeArguments": ""
+        },
+        {
+          "name": "StatusCode",
+          "type": "varchar",
+          "typeArguments": "(30)"
+        },
+        {
+          "name": "StatusName",
+          "type": "nvarchar",
+          "typeArguments": "(150)"
+        },
+        {
+          "name": "SortOrder",
+          "type": "int",
+          "typeArguments": ""
+        },
+        {
+          "name": "IsReject",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "IsActive",
+          "type": "bit",
+          "typeArguments": ""
+        }
+      ],
+      "ansiNulls": "ON",
+      "quotedIdentifier": "ON"
+    },
+    {
+      "name": "dbo.CF_LocationTbl",
+      "kind": "TABLE",
+      "startLine": 14869,
+      "endLine": 14882,
+      "sha256": "337ccc9077727adf70e14d4859f889cbf938e3d52f6f557708bdc899cb1c7c0c",
+      "references": [],
+      "requiredColumns": [
+        {
+          "name": "LocationID",
+          "type": "nvarchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "LocationName",
+          "type": "nvarchar",
+          "typeArguments": "(100)"
+        }
+      ],
+      "ansiNulls": "ON",
+      "quotedIdentifier": "ON"
+    },
+    {
+      "name": "dbo.CF_CategoryTbl",
+      "kind": "TABLE",
+      "startLine": 14889,
+      "endLine": 14908,
+      "sha256": "1612aaad9a657137a4385d10f2e99f60bc4b01a5b3b0507f0e2cb93b59cbac02",
+      "references": [],
+      "requiredColumns": [
+        {
+          "name": "CategoryID",
+          "type": "varchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "CategoryName",
+          "type": "nvarchar",
+          "typeArguments": "(100)"
+        },
+        {
+          "name": "isDefault",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "isWaste",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "isNL",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "isBTP",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "isTP",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "isHH",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "isVT",
+          "type": "bit",
+          "typeArguments": ""
+        }
+      ],
+      "ansiNulls": "ON",
+      "quotedIdentifier": "ON"
+    },
+    {
+      "name": "dbo.CF_ZoneTbl",
+      "kind": "TABLE",
+      "startLine": 14937,
+      "endLine": 14948,
+      "sha256": "94028d799c49d394c60b7683c0d02542c7572c23688100f7bd70ff9795451c96",
+      "references": [],
+      "requiredColumns": [
+        {
+          "name": "ZoneID",
+          "type": "nvarchar",
+          "typeArguments": "(50)"
+        }
+      ],
+      "ansiNulls": "ON",
+      "quotedIdentifier": "ON"
+    },
+    {
+      "name": "dbo.IV_InternalTransferRequestDetailTbl",
+      "kind": "TABLE",
+      "startLine": 15056,
+      "endLine": 15073,
+      "sha256": "04fca84160b7548ac037f252574ee8fcea45306872c70feb54117757f2526069",
+      "references": [],
+      "requiredColumns": [
+        {
+          "name": "UserAutoID",
+          "type": "nvarchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "DocumentID",
+          "type": "nvarchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "ItemID",
+          "type": "nvarchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "RequestedQty",
+          "type": "decimal",
+          "typeArguments": "(28, 4)"
+        },
+        {
+          "name": "IsEquipment",
+          "type": "bit",
+          "typeArguments": ""
+        }
+      ],
+      "ansiNulls": "ON",
+      "quotedIdentifier": "ON"
+    },
+    {
+      "name": "dbo.SY_Menu",
+      "kind": "TABLE",
+      "startLine": 22558,
+      "endLine": 22582,
+      "sha256": "36cd6623c7980a00666f351b34b19c4d41288ea48c9e90495ff13ecdbd5cb5d6",
+      "references": [],
+      "requiredColumns": [
+        {
+          "name": "MenuID",
+          "type": "varchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "VN",
+          "type": "nvarchar",
+          "typeArguments": "(200)"
+        },
+        {
+          "name": "MenuType",
+          "type": "int",
+          "typeArguments": ""
+        },
+        {
+          "name": "isBeginGroup",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "isDisable",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "isBold",
+          "type": "bit",
+          "typeArguments": ""
+        }
+      ],
+      "ansiNulls": "ON",
+      "quotedIdentifier": "ON"
+    },
+    {
+      "name": "dbo.SY_UserGroupPermisstion",
+      "kind": "TABLE",
+      "startLine": 22589,
+      "endLine": 22608,
+      "sha256": "5e88923c77b4ec82f2cadb413aea5d445a98a7d643dd1787dba034b88bb8febd",
+      "references": [],
+      "requiredColumns": [
+        {
+          "name": "ID",
+          "type": "varchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "UserGroupID",
+          "type": "varchar",
+          "typeArguments": "(20)"
+        },
+        {
+          "name": "MenuID",
+          "type": "varchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "IsRun",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "IsAdd",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "IsUpdate",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "IsDelete",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "isAdmin",
+          "type": "bit",
+          "typeArguments": ""
+        }
+      ],
+      "ansiNulls": "ON",
+      "quotedIdentifier": "ON"
+    },
+    {
+      "name": "dbo.SY_UserPermisstion",
+      "kind": "TABLE",
+      "startLine": 22615,
+      "endLine": 22634,
+      "sha256": "d69ab384860b6d129e1a840a129ebc93c10a980a1d825f4f930d5d0d93e9f0a8",
+      "references": [],
+      "requiredColumns": [
+        {
+          "name": "ID",
+          "type": "varchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "UserName",
+          "type": "varchar",
+          "typeArguments": "(100)"
+        },
+        {
+          "name": "MenuID",
+          "type": "varchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "IsRun",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "IsAdd",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "IsUpdate",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "IsDelete",
+          "type": "bit",
+          "typeArguments": ""
+        },
+        {
+          "name": "isAdmin",
+          "type": "bit",
+          "typeArguments": ""
+        }
+      ],
+      "ansiNulls": "ON",
+      "quotedIdentifier": "ON"
+    },
+    {
+      "name": "dbo.CF_DepartmentTbl",
+      "kind": "TABLE",
+      "startLine": 25114,
+      "endLine": 25127,
+      "sha256": "e9b1d5c6b412de0a3925906b4474bb71b9318c3463a6e7c34f20aa02c2614b78",
+      "references": [],
+      "requiredColumns": [
+        {
+          "name": "DepartmentID",
+          "type": "varchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "DepartmentName",
+          "type": "nvarchar",
+          "typeArguments": "(100)"
+        }
+      ],
+      "ansiNulls": "ON",
+      "quotedIdentifier": "ON"
+    },
+    {
+      "name": "dbo.FA_AssetTypeTbl",
+      "kind": "TABLE",
+      "startLine": 26623,
+      "endLine": 26633,
+      "sha256": "8ae26af48bdd80ee3558293f347866b768991b1272844272bc532a36f03232ac",
+      "references": [],
+      "requiredColumns": [
+        {
+          "name": "AssetTypeID",
+          "type": "varchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "AssetTypeName",
+          "type": "nvarchar",
+          "typeArguments": "(150)"
+        },
+        {
+          "name": "YearUse",
+          "type": "decimal",
+          "typeArguments": "(18, 2)"
+        }
+      ],
+      "ansiNulls": "ON",
+      "quotedIdentifier": "ON"
+    },
+    {
+      "name": "dbo.FA_CapitalTbl",
+      "kind": "TABLE",
+      "startLine": 26640,
+      "endLine": 26649,
+      "sha256": "9925766e9d5e4d757bcc2fda349f5893a59c012efd53695e122c527cf7974183",
+      "references": [],
+      "requiredColumns": [
+        {
+          "name": "CapitalID",
+          "type": "varchar",
+          "typeArguments": "(50)"
+        }
+      ],
+      "ansiNulls": "ON",
+      "quotedIdentifier": "ON"
+    },
+    {
+      "name": "dbo.IV_InternalTransferRequestLogTbl",
+      "kind": "TABLE",
+      "startLine": 28877,
+      "endLine": 28889,
+      "sha256": "d9603254face445b986c876b5e8a54f6e9992b1f1911b06a784a210b8c80a72a",
+      "references": [],
+      "requiredColumns": [
+        {
+          "name": "UserAutoID",
+          "type": "varchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "DocumentID",
+          "type": "varchar",
+          "typeArguments": "(50)"
+        },
+        {
+          "name": "ThoiGian",
+          "type": "datetime",
+          "typeArguments": ""
+        }
+      ],
+      "ansiNulls": "ON",
+      "quotedIdentifier": "ON"
+    },
+    {
+      "name": "dbo.IV_InternalTransfer_RequestCheckBeforeUpdateStp",
+      "kind": "PROCEDURE",
+      "startLine": 858344,
+      "endLine": 858364,
+      "sha256": "e8305e373f7a54ddbab173a781ced4ddd6b12588a65c03fdbabe6ededfc6dd5f",
+      "references": [
+        "dbo.IV_InternalTransferRequestDetailTbl",
+        "dbo.IV_InternalTransferRequestTbl",
+        "dbo.SY_String2TableFnc"
+      ],
+      "requiredColumns": [],
+      "ansiNulls": "ON",
+      "quotedIdentifier": "ON"
+    },
+    {
+      "name": "dbo.IV_InternalTransfer_RequestLogStp",
+      "kind": "PROCEDURE",
+      "startLine": 858404,
+      "endLine": 858413,
+      "sha256": "f3694d51882f772c1dc51cef4b3d22e90699a55a122c2993df6decd8c942dd76",
+      "references": [
+        "dbo.IV_InternalTransferRequestLogTbl",
+        "dbo.SY_String2TableFnc"
+      ],
+      "requiredColumns": [],
+      "ansiNulls": "ON",
+      "quotedIdentifier": "ON"
+    },
+    {
+      "name": "dbo.IV_InternalTransfer_RequestPMCheckBeforeUpdateStp",
+      "kind": "PROCEDURE",
+      "startLine": 858421,
+      "endLine": 858435,
+      "sha256": "a540609a825f15d4c12620c80ca84c753b62f0aaeb9caeb6f4e370adc9a79b5b",
+      "references": [
+        "dbo.IV_InternalTransferRequestTbl",
+        "dbo.IV_InternalTransfer_RequestCheckBeforeUpdateStp",
+        "dbo.SY_String2TableFnc"
+      ],
+      "requiredColumns": [],
+      "ansiNulls": "ON",
+      "quotedIdentifier": "ON"
+    },
+    {
+      "name": "dbo.IV_InternalTransfer_RequestPMReturnStp",
+      "kind": "PROCEDURE",
+      "startLine": 858559,
+      "endLine": 858608,
+      "sha256": "a7225b1ed64667ca16b8edeb7216009d9b1d9ad4d8bd85c289eb8db7e802fb49",
+      "references": [
+        "dbo.IV_InternalTransferRequestTbl",
+        "dbo.IV_InternalTransfer_RequestLogStp"
+      ],
+      "requiredColumns": [],
+      "ansiNulls": "ON",
+      "quotedIdentifier": "ON"
+    }
+  ],
+  "supplementalDdl": [
+    {
+      "owner": "dbo.FA_AssetTbl",
+      "kind": "INDEX",
+      "name": "IX_FA_Asset_ItemLot",
+      "startLine": 817727,
+      "endLine": 817732,
+      "sha256": "4d22ef83a3867415fae2ed6e3b33a5aa34a62cd6ce22466ec56f083b1277a934",
+      "references": [
+        "dbo.FA_AssetTbl"
+      ]
+    },
+    {
+      "owner": "dbo.FA_AssetTbl",
+      "kind": "INDEX",
+      "name": "UX_FA_Asset_SerialNo",
+      "startLine": 817737,
+      "endLine": 817742,
+      "sha256": "39cdd5cfcf0dcc60d4d2aea0310ff74ae9b92b109ca360d33ad9d04ca051f9d0",
+      "references": [
+        "dbo.FA_AssetTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestDetailTbl",
+      "kind": "INDEX",
+      "name": "IX_ITReqDetail_Document",
+      "startLine": 818083,
+      "endLine": 818087,
+      "sha256": "a890aa1dac86db103571e96f7fb5ccbd505bb8268bd7ef57213e2d537f54ff93",
+      "references": [
+        "dbo.IV_InternalTransferRequestDetailTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestStatusTbl",
+      "kind": "INDEX",
+      "name": "UX_IV_InternalTransferRequestStatus_Code",
+      "startLine": 818092,
+      "endLine": 818095,
+      "sha256": "9c6d1caba94821e84c2a1c0e43c10018b9cfaa1660ce43c8343fe747bdc7f23c",
+      "references": [
+        "dbo.IV_InternalTransferRequestStatusTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestTbl",
+      "kind": "INDEX",
+      "name": "IX_ITReq_PM",
+      "startLine": 818100,
+      "endLine": 818105,
+      "sha256": "3c474f0903e84e5cc510dc47981e6b371c7764eff267aa8666a9f7f1fb9329e0",
+      "references": [
+        "dbo.IV_InternalTransferRequestTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestTbl",
+      "kind": "INDEX",
+      "name": "IX_ITReq_Sales",
+      "startLine": 818110,
+      "endLine": 818115,
+      "sha256": "8eb19f92263fc55808aefde3646bc55b679cf2ce207c89f7d7063a9877b62ba8",
+      "references": [
+        "dbo.IV_InternalTransferRequestTbl"
+      ]
+    },
+    {
+      "owner": "dbo.SY_UserGroup",
+      "kind": "INDEX",
+      "name": "IX_SY_UserGroup",
+      "startLine": 818405,
+      "endLine": 818408,
+      "sha256": "71051e7591cce81c443547b0201962355959853bc1b9f7161c541fddffc07fd5",
+      "references": [
+        "dbo.SY_UserGroup"
+      ]
+    },
+    {
+      "owner": "dbo.SY_UserGroupPermisstion",
+      "kind": "INDEX",
+      "name": "SY_UserGroupPermisstion_UserGroupID",
+      "startLine": 818413,
+      "endLine": 818417,
+      "sha256": "e005cb1444ad3b479541b1fa7a81e5963790c145c100990190942cf5d1c72796",
+      "references": [
+        "dbo.SY_UserGroupPermisstion"
+      ]
+    },
+    {
+      "owner": "dbo.SY_UserPermisstion",
+      "kind": "INDEX",
+      "name": "SY_UserPermisstion_IX_UserName_2",
+      "startLine": 818430,
+      "endLine": 818434,
+      "sha256": "c9c724ec18bd9c688d612ff99f83b257d982fcfb227631831b79215d8430353f",
+      "references": [
+        "dbo.SY_UserPermisstion"
+      ]
+    },
+    {
+      "owner": "dbo.CF_BranchTbl",
+      "kind": "DEFAULT",
+      "name": "DF_CF_BranchTbl_isDefault",
+      "startLine": 818908,
+      "endLine": 818908,
+      "sha256": "b92ef85c699a9c4129bd944751d614ddb1b83e1c48ce6dcca989fbf791371b32",
+      "references": [
+        "dbo.CF_BranchTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_CategoryTbl",
+      "kind": "DEFAULT",
+      "name": "DF_CF_CategoryTbl_isDefault",
+      "startLine": 818910,
+      "endLine": 818910,
+      "sha256": "d1dcdf23df2380358b40eca00f9986fd1f342848f0c251371869089a5458f2b3",
+      "references": [
+        "dbo.CF_CategoryTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_CategoryTbl",
+      "kind": "DEFAULT",
+      "name": "DF_CF_CategoryTbl_isDefault1",
+      "startLine": 818912,
+      "endLine": 818912,
+      "sha256": "c8589cdffba1f0f398926e5e9d7563a59665d71d991589334669f33c957c67c2",
+      "references": [
+        "dbo.CF_CategoryTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_CategoryTbl",
+      "kind": "DEFAULT",
+      "name": null,
+      "startLine": 818914,
+      "endLine": 818914,
+      "sha256": "2f3c14178bf527aed79425685f85b188ec771d600bdd4d237de14dec702624e2",
+      "references": [
+        "dbo.CF_CategoryTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_CategoryTbl",
+      "kind": "DEFAULT",
+      "name": null,
+      "startLine": 818916,
+      "endLine": 818916,
+      "sha256": "5d4127d164337c8d0485407099f3e7e6e456f285c4568fb1a063d51af6290755",
+      "references": [
+        "dbo.CF_CategoryTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_CategoryTbl",
+      "kind": "DEFAULT",
+      "name": null,
+      "startLine": 818918,
+      "endLine": 818918,
+      "sha256": "b4e2bed9cb7401e5af781a3872f41827725cae5a6aab0b20377f18dcf904f637",
+      "references": [
+        "dbo.CF_CategoryTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_CategoryTbl",
+      "kind": "DEFAULT",
+      "name": null,
+      "startLine": 818920,
+      "endLine": 818920,
+      "sha256": "dbffd6015e6a373a394956cef21aadc886a694fea5d4b7196bf8c0132a4156e1",
+      "references": [
+        "dbo.CF_CategoryTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_CategoryTbl",
+      "kind": "DEFAULT",
+      "name": null,
+      "startLine": 818922,
+      "endLine": 818922,
+      "sha256": "2efee586929b0f794e47135fdfca1ad85ff6c154b337b9a1c66033db3694b565",
+      "references": [
+        "dbo.CF_CategoryTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ItemTbl",
+      "kind": "DEFAULT",
+      "name": "DF__CF_ItemTb__isPro__2C3EB292",
+      "startLine": 818972,
+      "endLine": 818972,
+      "sha256": "1a5a9a0d056b32dc0a715f60b6a3eedc86fee2562268e699564f071fa09f470d",
+      "references": [
+        "dbo.CF_ItemTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ItemTbl",
+      "kind": "DEFAULT",
+      "name": "DF__CF_ItemTb__isLot__2784EA6D",
+      "startLine": 818974,
+      "endLine": 818974,
+      "sha256": "7e02b3cafa5fb22de969bca7908fe0166ea982bf7fc2e0b8e8005b13038fb6ff",
+      "references": [
+        "dbo.CF_ItemTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ItemTbl",
+      "kind": "DEFAULT",
+      "name": "DF_CF_ItemTbl_IsService",
+      "startLine": 818976,
+      "endLine": 818976,
+      "sha256": "79452e9924ec93b15ddc1c0868a955ee3085431b0f6ac992bbcc2736df7c3237",
+      "references": [
+        "dbo.CF_ItemTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ItemTbl",
+      "kind": "DEFAULT",
+      "name": "DF_CF_ItemTbl_DiscountAcctID",
+      "startLine": 818978,
+      "endLine": 818978,
+      "sha256": "8f24bb89b24ac241ef345b5a5f97e00c59118ea8c14fbc76981246de9c3e14ca",
+      "references": [
+        "dbo.CF_ItemTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ItemTbl",
+      "kind": "DEFAULT",
+      "name": "DF_CF_ItemTbl_ReturnAccID",
+      "startLine": 818980,
+      "endLine": 818980,
+      "sha256": "4843cedc5db213d0c1fa0c2579e0c3132b8ac0ff262643f0235fe95bb13eb37f",
+      "references": [
+        "dbo.CF_ItemTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ItemTbl",
+      "kind": "DEFAULT",
+      "name": "DF_CF_ItemTbl_Factor",
+      "startLine": 818982,
+      "endLine": 818982,
+      "sha256": "cd227d4ac453a7f0391617567588f4f54408710e2f0afe9d710d6ae912c2c672",
+      "references": [
+        "dbo.CF_ItemTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ItemTbl",
+      "kind": "DEFAULT",
+      "name": "DF__CF_ItemTb__isDis__6A70EF35",
+      "startLine": 818984,
+      "endLine": 818984,
+      "sha256": "8133e5d85ad844702b96d33d938ee9960c2bbb022204b06be5bdeece3240b445",
+      "references": [
+        "dbo.CF_ItemTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ItemTbl",
+      "kind": "DEFAULT",
+      "name": "DF__CF_ItemTb__isQua__2B4A8E59",
+      "startLine": 818986,
+      "endLine": 818986,
+      "sha256": "bc457ed5f1bc64101ddb00df417179a324683d433d804960abb1cb150d3562f9",
+      "references": [
+        "dbo.CF_ItemTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ItemTbl",
+      "kind": "DEFAULT",
+      "name": "DF__CF_ItemTb__isPro__2D32D6CB",
+      "startLine": 818988,
+      "endLine": 818988,
+      "sha256": "708eb2fddde4bc0c3af2ff663b089468f7eb6e41be44d874e774c23814f0acf3",
+      "references": [
+        "dbo.CF_ItemTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectGroupTbl",
+      "kind": "DEFAULT",
+      "name": "DF_CF_ObjectGroupTbl_isCustomer",
+      "startLine": 819010,
+      "endLine": 819010,
+      "sha256": "4aa2a4c678df0813d2fa806943e390ffce9fb72cf877f9933a5d1e053bff0559",
+      "references": [
+        "dbo.CF_ObjectGroupTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectGroupTbl",
+      "kind": "DEFAULT",
+      "name": "DF_CF_ObjectGroupTbl_isVendor",
+      "startLine": 819012,
+      "endLine": 819012,
+      "sha256": "021b469daa09c3d062005ffe14f21a11c5b0293999751863b6490321bb1b3c68",
+      "references": [
+        "dbo.CF_ObjectGroupTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectGroupTbl",
+      "kind": "DEFAULT",
+      "name": "DF_CF_ObjectGroupTbl_isEmployee",
+      "startLine": 819014,
+      "endLine": 819014,
+      "sha256": "6704f8e3ae1c818dca33ef6808c3c7bd3035521c4ceb1a782834bd16d769a841",
+      "references": [
+        "dbo.CF_ObjectGroupTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectGroupTbl",
+      "kind": "DEFAULT",
+      "name": "DF_CF_ObjectGroupTbl_isManager",
+      "startLine": 819016,
+      "endLine": 819016,
+      "sha256": "c8550a342cfa1b6ddc6192ed30c08beb22d70a80e02b36ee338edcb3d9b9bcbe",
+      "references": [
+        "dbo.CF_ObjectGroupTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectGroupTbl",
+      "kind": "DEFAULT",
+      "name": "DF_CF_ObjectGroupList_isDefault",
+      "startLine": 819018,
+      "endLine": 819018,
+      "sha256": "7fcc98bd8c53857e133e4ae59da5aa79d4e0084079353ef98b0acf6c072ef1d9",
+      "references": [
+        "dbo.CF_ObjectGroupTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectTbl",
+      "kind": "DEFAULT",
+      "name": "DF_CF_ObjectTbl_BranchID",
+      "startLine": 819024,
+      "endLine": 819024,
+      "sha256": "3b1011479cc4aa0da473ca31ba0f6e2fe7cafa32aa55a167c125310ef2bfbaaa",
+      "references": [
+        "dbo.CF_ObjectTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectTbl",
+      "kind": "DEFAULT",
+      "name": "DF_CF_ObjectTbl_ObjectGroupID",
+      "startLine": 819026,
+      "endLine": 819026,
+      "sha256": "27b5d4b854ec3d99a3542c04d4ff04473b3b7980183407c9920023fbdf312ccd",
+      "references": [
+        "dbo.CF_ObjectTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectTbl",
+      "kind": "DEFAULT",
+      "name": "DF_CF_ObjectTbl_CongNoDonHang",
+      "startLine": 819028,
+      "endLine": 819028,
+      "sha256": "f3128093b73d3f695c8829c7e26f76a619c0c8d035069743098a454687c78907",
+      "references": [
+        "dbo.CF_ObjectTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectTbl",
+      "kind": "DEFAULT",
+      "name": "DF_CF_ObjectTbl_isDefault1",
+      "startLine": 819030,
+      "endLine": 819030,
+      "sha256": "f601152c6a575b5615bec7bd72cdae6eb1cde9b57a541d46b2d5b0cbc3054ea6",
+      "references": [
+        "dbo.CF_ObjectTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectTbl",
+      "kind": "DEFAULT",
+      "name": "DF_CF_ObjectTbl_isEmployee1",
+      "startLine": 819032,
+      "endLine": 819032,
+      "sha256": "92ef0ecb6d2052b437feecee905ee7ac988737d35ea5e81a4882065126144809",
+      "references": [
+        "dbo.CF_ObjectTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectTbl",
+      "kind": "DEFAULT",
+      "name": "DF__CF_Object__isVen__10ABA6B6",
+      "startLine": 819034,
+      "endLine": 819034,
+      "sha256": "f9e8550cb857e942b5913dc2882dd73dfa67f65ebc0c8e48a5ca96399ee7843c",
+      "references": [
+        "dbo.CF_ObjectTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectTbl",
+      "kind": "DEFAULT",
+      "name": "DF__CF_Object__isCus__119FCAEF",
+      "startLine": 819036,
+      "endLine": 819036,
+      "sha256": "c127a2454edc05f69541c2bfc6ef3d429f8ce127e2808fbea897854d7b3b4499",
+      "references": [
+        "dbo.CF_ObjectTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectTbl",
+      "kind": "DEFAULT",
+      "name": "DF_CF_ObjectTbl_isAgency",
+      "startLine": 819038,
+      "endLine": 819038,
+      "sha256": "6ae4d94636d7d43210b90b7f25f36d20fbebbc6dc35d746632ce5e416ca00c6e",
+      "references": [
+        "dbo.CF_ObjectTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectTbl",
+      "kind": "DEFAULT",
+      "name": "DF_CF_ObjectList_isDefault",
+      "startLine": 819040,
+      "endLine": 819040,
+      "sha256": "53ef0469c66452129a1425bd493b689d77d0a681ecfaaed57e68fc249686dd26",
+      "references": [
+        "dbo.CF_ObjectTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectTbl",
+      "kind": "DEFAULT",
+      "name": "DF__CF_Object__isDis__1293EF28",
+      "startLine": 819042,
+      "endLine": 819042,
+      "sha256": "341899b402fc5520f5aaa5febc3dd23c478cf03b20be024bb7bef6de7bfd2421",
+      "references": [
+        "dbo.CF_ObjectTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectTbl",
+      "kind": "DEFAULT",
+      "name": "DF_CF_ObjectTbl_RevAccID",
+      "startLine": 819044,
+      "endLine": 819044,
+      "sha256": "fbf39d35f18592d2e094649eebf402832cad255f2661d855cfb90b885109ccd8",
+      "references": [
+        "dbo.CF_ObjectTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectTbl",
+      "kind": "DEFAULT",
+      "name": "DF_CF_ObjectTbl_PayAccID",
+      "startLine": 819046,
+      "endLine": 819046,
+      "sha256": "c5e6b19064f4e74e4a5a8df386781db388b567d1b1cffcd91516376489026814",
+      "references": [
+        "dbo.CF_ObjectTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectTbl",
+      "kind": "DEFAULT",
+      "name": "DF_CF_ObjectTbl_ChietKhau2AccID",
+      "startLine": 819048,
+      "endLine": 819048,
+      "sha256": "bcf121ce0580345c320e363a5f3169fd1b2b35f70fc17c5582a5bbf20923efe3",
+      "references": [
+        "dbo.CF_ObjectTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectTbl",
+      "kind": "DEFAULT",
+      "name": "DF_CF_ObjectTbl_ChietKhau4AccID",
+      "startLine": 819050,
+      "endLine": 819050,
+      "sha256": "0626a51c0f26d28ead3a7c1870f2901cc3e3224c1675ad6d0951de4c18fdcc22",
+      "references": [
+        "dbo.CF_ObjectTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectTbl",
+      "kind": "DEFAULT",
+      "name": "DF_CF_ObjectTbl_SoNgayGoiMa",
+      "startLine": 819052,
+      "endLine": 819052,
+      "sha256": "94c5677b21313eefba59c37812e9b81309b5e03cd5de57b6304818b2c0b41773",
+      "references": [
+        "dbo.CF_ObjectTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectTbl",
+      "kind": "DEFAULT",
+      "name": "DF_CF_ObjectTbl_isCostCenter1",
+      "startLine": 819054,
+      "endLine": 819054,
+      "sha256": "082702f91c27c610d7c2abb26fab25d62e6d387e3aa201ee97b9c77bad21d211",
+      "references": [
+        "dbo.CF_ObjectTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectTbl",
+      "kind": "DEFAULT",
+      "name": "DF_CF_ObjectTbl_DSChietKhauTT1",
+      "startLine": 819056,
+      "endLine": 819056,
+      "sha256": "48cc65e7d01b27992e731f24de27105448dd24343400b84758e1be235b1e744b",
+      "references": [
+        "dbo.CF_ObjectTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectTbl",
+      "kind": "DEFAULT",
+      "name": "DF__CF_Object__isCos__1E108ECC",
+      "startLine": 819058,
+      "endLine": 819058,
+      "sha256": "7d66244073b5f8b9caed1789c2f386b786f5a196bcc221503525e16fadcc96a8",
+      "references": [
+        "dbo.CF_ObjectTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectTbl",
+      "kind": "DEFAULT",
+      "name": "DF_CF_ObjectTbl_IsForeign",
+      "startLine": 819060,
+      "endLine": 819060,
+      "sha256": "d41fbf961381e73da27e01d93b55bff255167a721d082085f592f010714aa123",
+      "references": [
+        "dbo.CF_ObjectTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectTbl",
+      "kind": "DEFAULT",
+      "name": "DF_CF_ObjectTbl_isPending",
+      "startLine": 819062,
+      "endLine": 819062,
+      "sha256": "c70035a285cf58a9d97b8d96bfc4dda4134388808e51acb434b05ecc115d71cb",
+      "references": [
+        "dbo.CF_ObjectTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectTbl",
+      "kind": "DEFAULT",
+      "name": "DF__CF_Object__isTic__59635F03",
+      "startLine": 819064,
+      "endLine": 819064,
+      "sha256": "c4595a4b88d03a53a7d315254daae8c7c70d1d9dd299cf1bcb3ed0118b8e9fd4",
+      "references": [
+        "dbo.CF_ObjectTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ZoneTbl",
+      "kind": "DEFAULT",
+      "name": "DF_CF_ZoneTbl_isWebSelect",
+      "startLine": 819088,
+      "endLine": 819088,
+      "sha256": "f0ac9511eaa939b5735df320c934730cee8f6998be1bf47251a01e5e6e5b6dd1",
+      "references": [
+        "dbo.CF_ZoneTbl"
+      ]
+    },
+    {
+      "owner": "dbo.FA_AssetTbl",
+      "kind": "DEFAULT",
+      "name": "DF_FA_AssetTbl_UseLife",
+      "startLine": 819216,
+      "endLine": 819216,
+      "sha256": "13d12178e575598a32f6bfcc5ffe1098bfc9da55fae76fa236e7c588a4650d52",
+      "references": [
+        "dbo.FA_AssetTbl"
+      ]
+    },
+    {
+      "owner": "dbo.FA_AssetTbl",
+      "kind": "DEFAULT",
+      "name": "DF_Table_1_SourceCostBal",
+      "startLine": 819218,
+      "endLine": 819218,
+      "sha256": "1eba169023e626d1efe2762709aab02b19ac244c0f100a34522bd4e5120e0813",
+      "references": [
+        "dbo.FA_AssetTbl"
+      ]
+    },
+    {
+      "owner": "dbo.FA_AssetTbl",
+      "kind": "DEFAULT",
+      "name": "DF_FA_AssetTbl_CurrencyID",
+      "startLine": 819220,
+      "endLine": 819220,
+      "sha256": "c940c7f5a2c9b3e3d85906ec673ba46a45edadf6ff128bbf77d17ffc128ffb2b",
+      "references": [
+        "dbo.FA_AssetTbl"
+      ]
+    },
+    {
+      "owner": "dbo.FA_AssetTbl",
+      "kind": "DEFAULT",
+      "name": "DF_FA_AssetTbl_RateExchange",
+      "startLine": 819222,
+      "endLine": 819222,
+      "sha256": "e6becfe81559d66b17f67632eb4a2188ab20d48afe5d903faa96ded5cf8e7e20",
+      "references": [
+        "dbo.FA_AssetTbl"
+      ]
+    },
+    {
+      "owner": "dbo.FA_AssetTbl",
+      "kind": "DEFAULT",
+      "name": "DF_Table_1_BaseCostBal",
+      "startLine": 819224,
+      "endLine": 819224,
+      "sha256": "d81cae51bb9bf1c48b30bc8168fb956db1f36067729205687309d39e612d7f8f",
+      "references": [
+        "dbo.FA_AssetTbl"
+      ]
+    },
+    {
+      "owner": "dbo.FA_AssetTbl",
+      "kind": "DEFAULT",
+      "name": null,
+      "startLine": 819226,
+      "endLine": 819226,
+      "sha256": "b46e3717af8c1933b40e3c2b8cd07f76f99a2e4aa5b8e2bb4041588108b345b4",
+      "references": [
+        "dbo.FA_AssetTbl"
+      ]
+    },
+    {
+      "owner": "dbo.FA_AssetTbl",
+      "kind": "DEFAULT",
+      "name": "DF_FA_Asset_TrackLifecycle",
+      "startLine": 819228,
+      "endLine": 819228,
+      "sha256": "cd4838c0bee3afd15c2965c27eef271fed59b0128a0d7a0ea23d14144df76165",
+      "references": [
+        "dbo.FA_AssetTbl"
+      ]
+    },
+    {
+      "owner": "dbo.FA_AssetTbl",
+      "kind": "DEFAULT",
+      "name": "DF_FA_Asset_OwnershipType",
+      "startLine": 819230,
+      "endLine": 819230,
+      "sha256": "71f576bb9c444f7fb8d670fcd7e94e0074858c615a1577ce660f96c09fb3bc2b",
+      "references": [
+        "dbo.FA_AssetTbl"
+      ]
+    },
+    {
+      "owner": "dbo.FA_AssetTbl",
+      "kind": "DEFAULT",
+      "name": "DF_FA_Asset_LifecycleStatus",
+      "startLine": 819232,
+      "endLine": 819232,
+      "sha256": "d8a3b1f8ba0233c415f8bc8ac979f69eba335c99926ea1cdc96842fdabd4bb66",
+      "references": [
+        "dbo.FA_AssetTbl"
+      ]
+    },
+    {
+      "owner": "dbo.FA_AssetTypeTbl",
+      "kind": "DEFAULT",
+      "name": "DF_FA_AssetTypeTbl_MonthUse",
+      "startLine": 819234,
+      "endLine": 819234,
+      "sha256": "62016e328ee6fdab33cb778d621e486f4d5143a16d4166399a641e521c3eb97a",
+      "references": [
+        "dbo.FA_AssetTypeTbl"
+      ]
+    },
+    {
+      "owner": "dbo.FA_CapitalTbl",
+      "kind": "DEFAULT",
+      "name": null,
+      "startLine": 819236,
+      "endLine": 819236,
+      "sha256": "9336af597a1d2a00e4f1208961542179b59b3bd90175cafdb6460d523ec2156a",
+      "references": [
+        "dbo.FA_CapitalTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestDetailTbl",
+      "kind": "DEFAULT",
+      "name": "DF_ITReqDetail_IsEquipment",
+      "startLine": 819604,
+      "endLine": 819604,
+      "sha256": "79e1fff8f40a694eff0076d2b4f006033f6960b0bceaca184d53168c538d28af",
+      "references": [
+        "dbo.IV_InternalTransferRequestDetailTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestStatusTbl",
+      "kind": "DEFAULT",
+      "name": "DF_ITReqStatus_IsReject",
+      "startLine": 819606,
+      "endLine": 819606,
+      "sha256": "5a3f1f371d4945184717f14677dbb23ee2056844dfff5ce8ba206eb0bce50ac4",
+      "references": [
+        "dbo.IV_InternalTransferRequestStatusTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestStatusTbl",
+      "kind": "DEFAULT",
+      "name": "DF_ITReqStatus_IsActive",
+      "startLine": 819608,
+      "endLine": 819608,
+      "sha256": "c7cc579a6ec6ab76ddaabf393a9113cd321bcc7f7010b0de0813804497d772b2",
+      "references": [
+        "dbo.IV_InternalTransferRequestStatusTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestTbl",
+      "kind": "DEFAULT",
+      "name": "DF_ITReq_DocumentDate",
+      "startLine": 819610,
+      "endLine": 819610,
+      "sha256": "98411be1704a5b17fd349b4f7dc8ae6868214776c81e3447b5606c738b742eb8",
+      "references": [
+        "dbo.IV_InternalTransferRequestTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestTbl",
+      "kind": "DEFAULT",
+      "name": "DF_ITReq_Status",
+      "startLine": 819612,
+      "endLine": 819612,
+      "sha256": "7433872e17df65224884f24e3baedcf8322a22f2f7f707ffd2499e028573ce46",
+      "references": [
+        "dbo.IV_InternalTransferRequestTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestTbl",
+      "kind": "DEFAULT",
+      "name": "DF_ITReq_isLock",
+      "startLine": 819614,
+      "endLine": 819614,
+      "sha256": "5afe8433e4dce5b67749ce2d057c6ca1303cda2f3a8142227324d323a5f2af60",
+      "references": [
+        "dbo.IV_InternalTransferRequestTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestTbl",
+      "kind": "DEFAULT",
+      "name": "DF_ITReq_DateCreate",
+      "startLine": 819616,
+      "endLine": 819616,
+      "sha256": "ce4b98afa130e66384bc04e0a19f01d9ee828f0ff5dfc21556680083a0b9660d",
+      "references": [
+        "dbo.IV_InternalTransferRequestTbl"
+      ]
+    },
+    {
+      "owner": "dbo.SY_Menu",
+      "kind": "DEFAULT",
+      "name": "DF_LangMenu_isBeginGroup",
+      "startLine": 820046,
+      "endLine": 820046,
+      "sha256": "f06aaf79086b4f3b326b5bd428bd19a2141e3e08d501535f002297d258d937df",
+      "references": [
+        "dbo.SY_Menu"
+      ]
+    },
+    {
+      "owner": "dbo.SY_Menu",
+      "kind": "DEFAULT",
+      "name": "DF_LangMenu_isDisable",
+      "startLine": 820048,
+      "endLine": 820048,
+      "sha256": "5b40e26142939753c399d9ce497cad7795d2b1c50f6c7aab79c2ecdb3508ac17",
+      "references": [
+        "dbo.SY_Menu"
+      ]
+    },
+    {
+      "owner": "dbo.SY_Menu",
+      "kind": "DEFAULT",
+      "name": "DF_LangMenu_isBold",
+      "startLine": 820050,
+      "endLine": 820050,
+      "sha256": "8c98635ad25268951a933f410fdc2a909545e1d5c3c7ca488a34b849abb2183e",
+      "references": [
+        "dbo.SY_Menu"
+      ]
+    },
+    {
+      "owner": "dbo.SY_User",
+      "kind": "DEFAULT",
+      "name": "DF__SY_User__Disable__47B6EA7B",
+      "startLine": 820110,
+      "endLine": 820110,
+      "sha256": "b4e5d15b7fe56252e3c460ff5bf72145422fdd3036aaed1c31f952482bc887d8",
+      "references": [
+        "dbo.SY_User"
+      ]
+    },
+    {
+      "owner": "dbo.SY_User",
+      "kind": "DEFAULT",
+      "name": "DF__SY_User__KhongHi__5198B996",
+      "startLine": 820112,
+      "endLine": 820112,
+      "sha256": "4fc9581f5a599d5c962d7e7bb8dae6c094f4368ab0ef1d09bedfc3e1b9abc0d8",
+      "references": [
+        "dbo.SY_User"
+      ]
+    },
+    {
+      "owner": "dbo.SY_UserGroupPermisstion",
+      "kind": "DEFAULT",
+      "name": "DF_SY_UserGroupPermisstion_ID",
+      "startLine": 820116,
+      "endLine": 820116,
+      "sha256": "89f720f30cadf716e1e5c9a794aa7f9f89f7b104c487635010247fe2f9e45751",
+      "references": [
+        "dbo.SY_UserGroupPermisstion"
+      ]
+    },
+    {
+      "owner": "dbo.SY_UserGroupPermisstion",
+      "kind": "DEFAULT",
+      "name": null,
+      "startLine": 820118,
+      "endLine": 820118,
+      "sha256": "2ac686a081c3b8354c7fee720aab5c23d1def458c7be6a6077d84af0ee52a9a0",
+      "references": [
+        "dbo.SY_UserGroupPermisstion"
+      ]
+    },
+    {
+      "owner": "dbo.SY_UserPermisstion",
+      "kind": "DEFAULT",
+      "name": "DF_SY_UserPermisstion_ID",
+      "startLine": 820120,
+      "endLine": 820120,
+      "sha256": "c64c56b501991ccf8db6b580ff7cb2a736f82db25d5e605442193ec25f6beac2",
+      "references": [
+        "dbo.SY_UserPermisstion"
+      ]
+    },
+    {
+      "owner": "dbo.SY_UserPermisstion",
+      "kind": "DEFAULT",
+      "name": null,
+      "startLine": 820122,
+      "endLine": 820122,
+      "sha256": "d8af4f9c974b41853bb71b07c9913cc07c763e492b6f448e9bb29a749cb39ff5",
+      "references": [
+        "dbo.SY_UserPermisstion"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ItemTbl",
+      "kind": "FOREIGN_KEY",
+      "name": "FK_CF_ItemTbl_CF_CategoryTbl",
+      "startLine": 821124,
+      "endLine": 821126,
+      "sha256": "13af579341e6d1147e4d2f856e5fb79c24a43580d15f1f43799ab499c4350d16",
+      "references": [
+        "dbo.CF_ItemTbl",
+        "dbo.CF_CategoryTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ItemTbl",
+      "kind": "CHECK_OR_VALIDATION",
+      "name": "FK_CF_ItemTbl_CF_CategoryTbl",
+      "startLine": 821128,
+      "endLine": 821128,
+      "sha256": "c361a7260b83ccf33a296d16d725f41c10c29e579ce4b589e39814804e858722",
+      "references": [
+        "dbo.CF_ItemTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectTbl",
+      "kind": "FOREIGN_KEY",
+      "name": "FK_CF_ObjectTbl_CF_LocationTbl",
+      "startLine": 821163,
+      "endLine": 821165,
+      "sha256": "3543ce2c349c0bb13fbcff668f69f9d44f9089c590b702b30ad29a070e939666",
+      "references": [
+        "dbo.CF_ObjectTbl",
+        "dbo.CF_LocationTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectTbl",
+      "kind": "CHECK_OR_VALIDATION",
+      "name": "FK_CF_ObjectTbl_CF_LocationTbl",
+      "startLine": 821167,
+      "endLine": 821167,
+      "sha256": "64c39bb0d6973861a98314f9664fd17673709193ba2664232c9973988723673b",
+      "references": [
+        "dbo.CF_ObjectTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectTbl",
+      "kind": "FOREIGN_KEY",
+      "name": "FK_CF_ObjectTbl_CF_ObjectGroupTbl",
+      "startLine": 821169,
+      "endLine": 821171,
+      "sha256": "63f96913e12b305dcf819a8fc70292fb09c255ee0e870f0156caef607f8b1078",
+      "references": [
+        "dbo.CF_ObjectTbl",
+        "dbo.CF_ObjectGroupTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectTbl",
+      "kind": "CHECK_OR_VALIDATION",
+      "name": "FK_CF_ObjectTbl_CF_ObjectGroupTbl",
+      "startLine": 821173,
+      "endLine": 821173,
+      "sha256": "abe14713d2cdb31296a9ebaa720a5888333de6ca4152c3c0fba05ff92d5265de",
+      "references": [
+        "dbo.CF_ObjectTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectTbl",
+      "kind": "FOREIGN_KEY",
+      "name": "FK_CF_ObjectTbl_CF_ZoneTbl",
+      "startLine": 821175,
+      "endLine": 821177,
+      "sha256": "cb541f2dd3f216038610332d11510e6e03d94fcbbe7283f00fcc20afffc36c8e",
+      "references": [
+        "dbo.CF_ObjectTbl",
+        "dbo.CF_ZoneTbl"
+      ]
+    },
+    {
+      "owner": "dbo.CF_ObjectTbl",
+      "kind": "CHECK_OR_VALIDATION",
+      "name": "FK_CF_ObjectTbl_CF_ZoneTbl",
+      "startLine": 821179,
+      "endLine": 821179,
+      "sha256": "be1c5ee0614258a9128c9bfb268f8544252cab95966540b16e4331d6324764df",
+      "references": [
+        "dbo.CF_ObjectTbl"
+      ]
+    },
+    {
+      "owner": "dbo.FA_AssetTbl",
+      "kind": "FOREIGN_KEY",
+      "name": "FK_FA_AssetTbl_CF_DepartmentTbl",
+      "startLine": 821479,
+      "endLine": 821481,
+      "sha256": "e7fb3c0c0183e389ae7567f3806ac240e5660114ab9e9bb2a02ec3b4d9261a9a",
+      "references": [
+        "dbo.FA_AssetTbl",
+        "dbo.CF_DepartmentTbl"
+      ]
+    },
+    {
+      "owner": "dbo.FA_AssetTbl",
+      "kind": "CHECK_OR_VALIDATION",
+      "name": "FK_FA_AssetTbl_CF_DepartmentTbl",
+      "startLine": 821483,
+      "endLine": 821483,
+      "sha256": "512197ddb21a474ec2601a825b1b381c646ef0a4428f5df4a733e78c130ccde8",
+      "references": [
+        "dbo.FA_AssetTbl"
+      ]
+    },
+    {
+      "owner": "dbo.FA_AssetTbl",
+      "kind": "FOREIGN_KEY",
+      "name": "FK_FA_AssetTbl_FA_AssetTypeTbl",
+      "startLine": 821485,
+      "endLine": 821488,
+      "sha256": "6e72015a5466f8594933e08658b4543d660107d09b0047f421924390bab3a5b0",
+      "references": [
+        "dbo.FA_AssetTbl",
+        "dbo.FA_AssetTypeTbl"
+      ]
+    },
+    {
+      "owner": "dbo.FA_AssetTbl",
+      "kind": "ALTER_TABLE",
+      "name": "FK_FA_AssetTbl_FA_AssetTypeTbl",
+      "startLine": 821490,
+      "endLine": 821490,
+      "sha256": "88e2fc9bc79ae4e7da65b8c51c8aa582893726c10b6757a559e1ea573533bf4b",
+      "references": [
+        "dbo.FA_AssetTbl"
+      ]
+    },
+    {
+      "owner": "dbo.FA_AssetTbl",
+      "kind": "FOREIGN_KEY",
+      "name": "FK_FA_AssetTbl_FA_CapitalTbl",
+      "startLine": 821492,
+      "endLine": 821494,
+      "sha256": "0be93fb1317f1531589fc9cd5622b9a23bdf3062055c0e19554b6cde1c3e0c59",
+      "references": [
+        "dbo.FA_AssetTbl",
+        "dbo.FA_CapitalTbl"
+      ]
+    },
+    {
+      "owner": "dbo.FA_AssetTbl",
+      "kind": "CHECK_OR_VALIDATION",
+      "name": "FK_FA_AssetTbl_FA_CapitalTbl",
+      "startLine": 821496,
+      "endLine": 821496,
+      "sha256": "e4d0714bbf3adeed9107c23d2da450cb26f5e5f065561cfe08d68d7cb9885cd2",
+      "references": [
+        "dbo.FA_AssetTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestDetailTbl",
+      "kind": "FOREIGN_KEY",
+      "name": "FK_ITReqDetail_Asset",
+      "startLine": 821991,
+      "endLine": 821992,
+      "sha256": "3ba33251867ef452498dbff6068984849785c38b91ccf2ccc3cef2cc208fa66a",
+      "references": [
+        "dbo.IV_InternalTransferRequestDetailTbl",
+        "dbo.FA_AssetTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestDetailTbl",
+      "kind": "CHECK_OR_VALIDATION",
+      "name": "FK_ITReqDetail_Asset",
+      "startLine": 821994,
+      "endLine": 821994,
+      "sha256": "87ef9ef08efe8662e3e7096a62dadea2c6902ad41594c1be18b9659819b4cdc8",
+      "references": [
+        "dbo.IV_InternalTransferRequestDetailTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestDetailTbl",
+      "kind": "FOREIGN_KEY",
+      "name": "FK_ITReqDetail_Item",
+      "startLine": 821996,
+      "endLine": 821997,
+      "sha256": "56b6b1d2969196aa4812ec580dd65fa34ca3f1f31caec6e151b6aa0955efb3bb",
+      "references": [
+        "dbo.IV_InternalTransferRequestDetailTbl",
+        "dbo.CF_ItemTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestDetailTbl",
+      "kind": "CHECK_OR_VALIDATION",
+      "name": "FK_ITReqDetail_Item",
+      "startLine": 821999,
+      "endLine": 821999,
+      "sha256": "576955183227051dd1f9a3036a5f2a80b506bd1110e22340c39462402ca47b40",
+      "references": [
+        "dbo.IV_InternalTransferRequestDetailTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestDetailTbl",
+      "kind": "FOREIGN_KEY",
+      "name": "FK_ITReqDetail_Object",
+      "startLine": 822001,
+      "endLine": 822002,
+      "sha256": "40570495d8189cf7f65e822595b18c270ba2746899aec97a09791275a8a4d275",
+      "references": [
+        "dbo.IV_InternalTransferRequestDetailTbl",
+        "dbo.CF_ObjectTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestDetailTbl",
+      "kind": "CHECK_OR_VALIDATION",
+      "name": "FK_ITReqDetail_Object",
+      "startLine": 822004,
+      "endLine": 822004,
+      "sha256": "5c0b8447fec14b5f1d6a24f3ff8b9515a3bbce26df662313befa2cf376dfd2c2",
+      "references": [
+        "dbo.IV_InternalTransferRequestDetailTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestDetailTbl",
+      "kind": "FOREIGN_KEY",
+      "name": "FK_ITReqDetail_Req",
+      "startLine": 822006,
+      "endLine": 822008,
+      "sha256": "d8bff737dfa89d13d986c57effe0dd71e7dea95ca7cb73d0a446bbeca8bb23b4",
+      "references": [
+        "dbo.IV_InternalTransferRequestDetailTbl",
+        "dbo.IV_InternalTransferRequestTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestDetailTbl",
+      "kind": "CHECK_OR_VALIDATION",
+      "name": "FK_ITReqDetail_Req",
+      "startLine": 822010,
+      "endLine": 822010,
+      "sha256": "56c313eb98405c07b27d3a20b4756ea911836a590625223dfb8977f4653e2b69",
+      "references": [
+        "dbo.IV_InternalTransferRequestDetailTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestTbl",
+      "kind": "FOREIGN_KEY",
+      "name": "FK_ITReq_Branch",
+      "startLine": 822012,
+      "endLine": 822013,
+      "sha256": "9345fdfec5d85b5a377eaec1e8f2532ec489efa33467e38f7fe6af6f8d38443a",
+      "references": [
+        "dbo.IV_InternalTransferRequestTbl",
+        "dbo.CF_BranchTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestTbl",
+      "kind": "CHECK_OR_VALIDATION",
+      "name": "FK_ITReq_Branch",
+      "startLine": 822015,
+      "endLine": 822015,
+      "sha256": "4c9e44b0fa1904bb1360327afb508de83223214b0c9f342ff635a5b1f8cc7dee",
+      "references": [
+        "dbo.IV_InternalTransferRequestTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestTbl",
+      "kind": "FOREIGN_KEY",
+      "name": "FK_ITReq_FromBranch",
+      "startLine": 822017,
+      "endLine": 822018,
+      "sha256": "7cb19d8e188dbd04b5d298c63d3ba953ac088262187edebc6066a5cd72e636f5",
+      "references": [
+        "dbo.IV_InternalTransferRequestTbl",
+        "dbo.CF_BranchTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestTbl",
+      "kind": "CHECK_OR_VALIDATION",
+      "name": "FK_ITReq_FromBranch",
+      "startLine": 822020,
+      "endLine": 822020,
+      "sha256": "7e348aaf60c02da0466fb716590209883af8e27fb9236b9044a7210a0664eda6",
+      "references": [
+        "dbo.IV_InternalTransferRequestTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestTbl",
+      "kind": "FOREIGN_KEY",
+      "name": "FK_ITReq_Status",
+      "startLine": 822022,
+      "endLine": 822023,
+      "sha256": "d3ca8197a4a51db2439632f7a3a09f74938f01af7615c276fe5c5299d8419fdb",
+      "references": [
+        "dbo.IV_InternalTransferRequestTbl",
+        "dbo.IV_InternalTransferRequestStatusTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestTbl",
+      "kind": "CHECK_OR_VALIDATION",
+      "name": "FK_ITReq_Status",
+      "startLine": 822025,
+      "endLine": 822025,
+      "sha256": "adab9cf21371c7f3648f36b58e9c98854b77c38a68fc696a77aa079415d0c3ca",
+      "references": [
+        "dbo.IV_InternalTransferRequestTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestTbl",
+      "kind": "FOREIGN_KEY",
+      "name": "FK_ITReq_ToBranch",
+      "startLine": 822027,
+      "endLine": 822028,
+      "sha256": "982da5fcc46ab423e4490bb106d152d88f9e26e13da342c036e3cb159de45e83",
+      "references": [
+        "dbo.IV_InternalTransferRequestTbl",
+        "dbo.CF_BranchTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestTbl",
+      "kind": "CHECK_OR_VALIDATION",
+      "name": "FK_ITReq_ToBranch",
+      "startLine": 822030,
+      "endLine": 822030,
+      "sha256": "480f56ddcece8c5b8d9b1b7f8b50ff267068e4ed8f78dd6f96111fee83483c09",
+      "references": [
+        "dbo.IV_InternalTransferRequestTbl"
+      ]
+    },
+    {
+      "owner": "dbo.SY_UserBranch",
+      "kind": "FOREIGN_KEY",
+      "name": "FK_SY_UserBranch_SY_User",
+      "startLine": 822428,
+      "endLine": 822431,
+      "sha256": "5d2b1f47adba6f5daa3807af1a3b522bf508d409eec04ddecf61406cf831951f",
+      "references": [
+        "dbo.SY_UserBranch",
+        "dbo.SY_User"
+      ]
+    },
+    {
+      "owner": "dbo.SY_UserBranch",
+      "kind": "CHECK_OR_VALIDATION",
+      "name": "FK_SY_UserBranch_SY_User",
+      "startLine": 822433,
+      "endLine": 822433,
+      "sha256": "a207d258f97d08cb0dd73b7455ba41f1ea265669913e74d7610d225ad1848310",
+      "references": [
+        "dbo.SY_UserBranch"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestDetailTbl",
+      "kind": "CHECK_OR_VALIDATION",
+      "name": "CK_ITReqDetail_PMQty",
+      "startLine": 822549,
+      "endLine": 822549,
+      "sha256": "0e01e43ae139a19ea725fca5b7bc120c6f781e0baac3976b47c3c8308a934578",
+      "references": [
+        "dbo.IV_InternalTransferRequestDetailTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestDetailTbl",
+      "kind": "CHECK_OR_VALIDATION",
+      "name": "CK_ITReqDetail_PMQty",
+      "startLine": 822551,
+      "endLine": 822551,
+      "sha256": "da76bede19f36e396420916ca31a9333b8bd5e70f0a5b6326888f404e448a2ad",
+      "references": [
+        "dbo.IV_InternalTransferRequestDetailTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestDetailTbl",
+      "kind": "CHECK_OR_VALIDATION",
+      "name": "CK_ITReqDetail_Qty",
+      "startLine": 822553,
+      "endLine": 822553,
+      "sha256": "90f3a7a04ea4e2eb9f19c7294eace15c960a7271e047dea005a11c09a81932aa",
+      "references": [
+        "dbo.IV_InternalTransferRequestDetailTbl"
+      ]
+    },
+    {
+      "owner": "dbo.IV_InternalTransferRequestDetailTbl",
+      "kind": "CHECK_OR_VALIDATION",
+      "name": "CK_ITReqDetail_Qty",
+      "startLine": 822555,
+      "endLine": 822555,
+      "sha256": "6339b4a1a6ec7434b5bb1bb1874ea61f76987dd3136a788f79b9b055f78a627c",
+      "references": [
+        "dbo.IV_InternalTransferRequestDetailTbl"
+      ]
+    }
+  ],
+  "limits": [
+    "Technical metadata only; no SQL bodies or original rows.",
+    "Includes outgoing foreign-key/default dependency closure, not unrelated incoming references.",
+    "No SQL compile/execution, transaction, journal durability or business acceptance.",
+    "Stored trigger versions are not applied; deployed triggers and original WinForms hooks remain UNKNOWN.",
+    "Synthetic-only seed design is documented separately; no owner data is restored."
+  ]
+}
