@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I12",
+  "role": "direct_interactive",
+  "owner": "Mika under owner-directed Medcom continuation",
+  "run_id": "c948c1e7-91ae-42e0-a293-50d6724fe8d2",
+  "base_sha": "2f337a5b06000b9ad8b37f064e0e6ef9b995f2d0",
+  "work_branch": "codex/g45-mobile-request-i12-20261005",
+  "claim_branch": "medcom-claims/g45/direct/I12",
+  "predecessor_ticket": "I10",
+  "predecessor_handoff": "https://github.com/thanhtuyen662002/Medcom/pull/62#issuecomment-5997633562",
+  "scope": [
+    "apps/medcom-sites/components/erp/mobile-request.tsx",
+    "apps/medcom-sites/components/erp/mobile-request-lines.tsx",
+    "apps/medcom-sites/tests/mobile-request.test.mjs",
+    "docs/execution/checkpoints/I12_MOBILE_REQUEST_EDITOR.md",
+    "docs/execution/direct-runs/I12.json"
+  ],
+  "purpose": "Implement mobile-first purchase-request editor components with explicit adapter contract and honest pending/failure/reconciliation states; no API or production activation.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "automation_policy": "No schedule changes",
+  "publication_policy": "Parent sole publisher; new isolated worker checkout; independent code/privacy review and exact-head/base CI required.",
+  "sql_policy": "No SQL, owner-DLL execution, customer data, credentials or runtime changes.",
+  "constraints": [
+    "Four new worker files only; immutable admission unchanged; existing workspace/nav/BFF/API/source schemas remain unchanged",
+    "Purchase REQUEST model is distinct from AP_Order purchase order; never relabel existing order routes",
+    "Internal UI props are not a claimed HTTP/ERP command contract; final form/menu/permissions/save/submit transitions await verified source handoff",
+    "Use source-pinned purchase request metadata for represented fields and precision; decimal18,0 quantity/unitprice use exact strings, not unsafe JS floating point",
+    "Mobile accessible single-column header/line/review/actions with touch and keyboard; source-aligned labels and clear unsaved/server-confirmed draft/submitted distinction",
+    "Server-provided authorization and availability gate all edits/actions; fail closed without an admitted real adapter/capability",
+    "No fake saved/submitted success, mock fallback on API failure, invented business status/numbering, hidden data persistence or customer-data logs",
+    "Stable submission intent and explicit pending/rejected/conflict/unknown outcome states; never automatic retry with new key after lost ACK; retain user input safely in component memory",
+    "On logout/scope switch isolate/clear sensitive form state and prevent stale late responses from updating another session",
+    "Tests must exercise actual component/state behavior and adversarial user flows, not only source substring assertions; reuse I05 browser harness if available without duplicating repo paths",
+    "No endpoint/DI/FE route/production runtime activation, no new package/project/lockfile changes; wiring reserved for verified shared contract",
+    "Preserve B01/P01/I11 and every existing scope; new isolated checkout; independent review and exact-head/base CI before merge"
+  ],
+  "created_at": "2026-10-05T16:39:00Z"
+}
