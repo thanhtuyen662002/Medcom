@@ -93,6 +93,11 @@ jobs:
       - name: Test ERP proxy and application contracts
         working-directory: apps/medcom-sites
         run: node scripts/test-erp.mjs
+      - name: Test QR scanner with synthetic camera in installed browser
+        working-directory: apps/medcom-sites
+        env:
+          QR_TEST_BROWSER: ${{ env.MEDCOM_EDGE_PATH }}
+        run: node tests/qr-scanner.browser.mjs
       - name: Test standalone package guards
         working-directory: apps/medcom-sites
         run: node --test tests/standalone-package.test.mjs
