@@ -26,6 +26,7 @@ jobs:
       NEXT_TELEMETRY_DISABLED: '1'
       SOURCE_REVISION: ${{ github.sha }}
       PACKAGE_DIRECTORY: artifacts/medcom-frontend-${{ matrix.platform }}-x64
+      MEDCOM_BROWSER_TOOLCHAIN: ${{ github.workspace }}/src/frontend
     defaults:
       run:
         shell: bash
@@ -54,6 +55,35 @@ jobs:
       - name: Install locked frontend dependencies
         working-directory: apps/medcom-sites
         run: pnpm install --frozen-lockfile
+      - name: Install locked synthetic browser test toolchain
+        working-directory: src/frontend
+        run: npm ci --ignore-scripts
+      - name: Require installed synthetic test browser
+        run: |
+          node --input-type=module <<'NODE'
+          import {accessSync, appendFileSync, constants} from 'node:fs';
+          import {createRequire} from 'node:module';
+          import {join, resolve} from 'node:path';
+          if (process.versions.node.split('.')[0] !== '24') throw new Error('I12 browser tests require Node24');
+          try {
+            createRequire(join(resolve(process.env.MEDCOM_BROWSER_TOOLCHAIN), 'package.json')).resolve('playwright-core');
+          } catch {
+            throw new Error('Required locked I12 playwright-core toolchain is unavailable');
+          }
+          const candidates = process.platform === 'win32' ? [
+            'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
+            'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
+          ] : process.platform === 'linux' ? [
+            '/usr/bin/google-chrome', '/usr/bin/google-chrome-stable',
+            '/opt/google/chrome/chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser',
+          ] : [];
+          const browser = candidates.find(candidate => {
+            try {accessSync(candidate, constants.X_OK); return true;} catch {return false;}
+          });
+          if (!browser) throw new Error(`Required installed I12 browser unavailable on ${process.platform}; checked ${candidates.join(', ')}`);
+          appendFileSync(process.env.GITHUB_ENV, `MEDCOM_EDGE_PATH=${browser}\n`);
+          console.log(`Synthetic I12 browser: ${browser}; Node ${process.versions.node}`);
+          NODE
       - name: Typecheck
         working-directory: apps/medcom-sites
         run: pnpm typecheck
@@ -63,6 +93,11 @@ jobs:
       - name: Test ERP proxy and application contracts
         working-directory: apps/medcom-sites
         run: node scripts/test-erp.mjs
+      - name: Test QR scanner with synthetic camera in installed browser
+        working-directory: apps/medcom-sites
+        env:
+          QR_TEST_BROWSER: ${{ env.MEDCOM_EDGE_PATH }}
+        run: node tests/qr-scanner.browser.mjs
       - name: Test standalone package guards
         working-directory: apps/medcom-sites
         run: node --test tests/standalone-package.test.mjs
