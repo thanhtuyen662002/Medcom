@@ -1,5 +1,6 @@
 import {z} from "zod";
-export const sessionSchema=z.object({displayName:z.string().min(1).max(250),tenantId:z.string().min(1),companyId:z.string().min(1),companyName:z.string().min(1),authorityVersion:z.number().int().positive(),idleExpiresAt:z.string(),absoluteExpiresAt:z.string(),capabilities:z.array(z.string()).max(256)});
+const sessionTimestamp=z.string().datetime({offset:true}).refine(value=>Number.isFinite(Date.parse(value)));
+export const sessionSchema=z.object({displayName:z.string().min(1).max(250),tenantId:z.string().min(1),companyId:z.string().min(1),companyName:z.string().min(1),authorityVersion:z.number().int().positive(),idleExpiresAt:sessionTimestamp,absoluteExpiresAt:sessionTimestamp,capabilities:z.array(z.string()).max(256)});
 export const workspaceSchema=z.object({session:sessionSchema,navigation:z.array(z.object({id:z.string(),label:z.string(),href:z.string()})),branchIds:z.array(z.string()).max(200).default([])});
 export const rowSchema=z.object({documentId:z.string().min(1).max(50),documentDate:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),branchId:z.string().min(1),statusId:z.number().int().nullable(),isLocked:z.boolean().nullable()});
 export const pageSchema=z.object({rows:z.array(rowSchema).max(100),page:z.number().int().positive(),pageSize:z.number().int().positive().max(100),hasMore:z.boolean()});
