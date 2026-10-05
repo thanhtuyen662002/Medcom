@@ -112,7 +112,7 @@ public sealed class SqlPmReturnJournalStore
         }
     }
 
-    private async Task<bool> Probe(DbConnection connection, DbTransaction transaction, CancellationToken token)
+    internal async Task<bool> Probe(DbConnection connection, DbTransaction transaction, CancellationToken token)
     {
         await using var command = PmReturnJournalSql.Probe(connection, transaction);
         await using var reader = await command.ExecuteReaderAsync(token);
@@ -127,7 +127,7 @@ public sealed class SqlPmReturnJournalStore
         return !await reader.ReadAsync(token) && !await reader.NextResultAsync(token);
     }
 
-    private static async Task<(bool Valid, PmReturnStoredObservation? Row)> Lookup(DbConnection connection,
+    internal static async Task<(bool Valid, PmReturnStoredObservation? Row)> Lookup(DbConnection connection,
         DbTransaction transaction, PmReturnSubmittedIntent intent, CancellationToken token)
     {
         await using var command = PmReturnJournalSql.Lookup(connection, transaction, intent);
