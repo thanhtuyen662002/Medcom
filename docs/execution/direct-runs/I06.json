@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I06",
+  "role": "direct_interactive",
+  "owner": "Mika under owner-directed Medcom continuation",
+  "run_id": "6adc7914-17ab-4eb0-9120-f9a7f8f513af",
+  "base_sha": "0091f9aa62e980e6d1a6b84fb616d013ac417c6b",
+  "work_branch": "codex/g45-pm-return-i06-20261005",
+  "claim_branch": "medcom-claims/g45/direct/I06",
+  "predecessor_ticket": "I05",
+  "predecessor_handoff": "https://github.com/thanhtuyen662002/Medcom/pull/57#issuecomment-5983904881",
+  "scope": [
+    "src/backend/Medcom.Application/Transfers/PmReturnPreparation.cs",
+    "src/backend/Medcom.Application/Transfers/TransferStateSnapshot.cs",
+    "src/backend/Medcom.Application/Transfers/TransferSubmissionIdentity.cs",
+    "src/backend/Medcom.Infrastructure/Transfers/SqlPmReturnAuthorityReader.cs",
+    "src/backend/Medcom.Infrastructure/Transfers/PmReturnSqlCommandFactory.cs",
+    "tests/backend/Medcom.Api.Tests/PmReturnPreparationTests.cs",
+    "tests/backend/Medcom.Api.Tests/TransferStateSnapshotTests.cs",
+    "tests/backend/Medcom.Api.Tests/PmReturnSqlCommandTests.cs",
+    "docs/backend/PM_RETURN_OFFLINE_CONTRACT.md",
+    "docs/execution/checkpoints/I06_PM_RETURN_OFFLINE_20261005.md",
+    "docs/execution/direct-runs/I06.json"
+  ],
+  "purpose": "Source-backed offline PM Return preparation: conservative document authority, immutable state-equality snapshot, stable submission identity and parameterized SQL command factory. Runtime gateway remains unregistered.",
+  "historical_scope_note": "Preserve historical B01/PR50 claims and files. This is bounded new-file direct work under the newer sole-root direction, not a takeover or an unclaimed lane.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "automation_policy": "No schedule changes",
+  "sql_policy": "Static read of owner-authorized local source only; no SQL connection or execution, migrations, schema/data changes, credentials or raw-source publication",
+  "publication_policy": "Single parent publisher; isolated local worker, independent review and exact head/base CI. No server/DNS/ACL/certificate/deployment changes.",
+  "constraints": [
+    "Only listed new files; no shared fingerprint v1 changes",
+    "No API endpoints, capability grants, DI gateway registration, FE or readiness changes",
+    "Caller-owned SERIALIZABLE transaction; no internal commit/dispose",
+    "Actor printable ASCII <=50; no trim/truncate",
+    "State equality token is not monotonic version, ABA protection or stale UI proof",
+    "No runtime journal/gateway or Web-only lock qualification"
+  ],
+  "created_at": "2026-10-05T02:10:12Z"
+}
