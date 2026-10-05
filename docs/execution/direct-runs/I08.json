@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I08",
+  "role": "direct_interactive",
+  "owner": "Mika under owner-directed Medcom continuation",
+  "run_id": "5b1c3a96-0a41-4e2c-912e-7854097cf628",
+  "base_sha": "5db981098fef10ff8c201b4c7fffe607986e0c0b",
+  "work_branch": "codex/g45-pm-return-i08-20261005",
+  "claim_branch": "medcom-claims/g45/direct/I08",
+  "predecessor_ticket": "I07",
+  "predecessor_handoff": "https://github.com/thanhtuyen662002/Medcom/pull/59#issuecomment-5988591143",
+  "scope": [
+    "tools/source/prepare_pm_return_execution_fixture.py",
+    "tools/source/test_pm_return_execution_fixture.py",
+    "inventories/source/20261005/pm-return-fixture-closure.json",
+    "docs/backend/PM_RETURN_EXECUTION_FIXTURE.md",
+    "docs/execution/checkpoints/I08_PM_RETURN_FIXTURE.md",
+    "docs/execution/direct-runs/I08.json"
+  ],
+  "purpose": "Prepare a checksum-pinned, dependency-complete private PM Return execution fixture from the authorized SQL dump with synthetic-only seed design, without SQL execution.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "automation_policy": "No schedule changes",
+  "publication_policy": "Parent sole publisher; isolated worker; independent review and exact-head/base CI.",
+  "sql_policy": "No connection, execution, database creation/deletion, schema application, installation, service, TLS or network changes.",
+  "constraints": [
+    "Only listed new files; preserve B01/P01 and existing extractor behavior",
+    "Raw SQL bodies and real rows remain private outside repository and publication paths",
+    "Verify full input hash and object/batch fingerprints before producing outputs",
+    "Complete dependency closure includes supplemental DDL and explicit stored-trigger/runtime limits",
+    "Refuse existing outputs, links and repository/public output roots; fail closed on mismatch",
+    "Only technical metadata may enter public inventory",
+    "Do not claim SQL compile, transaction, durable journal or business acceptance",
+    "No API/DI/shared v1/claim mutation or readiness activation"
+  ],
+  "created_at": "2026-10-05T05:38:00Z"
+}
