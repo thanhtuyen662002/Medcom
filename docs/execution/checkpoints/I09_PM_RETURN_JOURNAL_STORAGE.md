@@ -97,6 +97,56 @@ never actual SQL engine evidence.
 Local test reports are held privately outside checkouts. They are not runtime SQL,
 production durability, independent review or exact remote-head CI evidence.
 
+## Windows CI exact-byte checkout repair
+
+Parent published the independently reviewed storage tree at
+`1d3cf9e3741738119a839497542f225d3941ffbc` (tree
+`c5595fc09fc92454fc00a47fd74fc13ce51e7968`). Hosted Windows run 37290726988
+reported 394/395 with the unchanged `Artifact_pin_matches_exact_unapplied_SQL_bytes`
+test failing. The repair is isolated from that published head; reviewed candidate
+`3980ecef0802f5da29ed07b444c07a997e8bcf20`, rejected candidate and immutable claim
+remain preserved.
+
+The [explicit scope amendment](https://github.com/thanhtuyen662002/Medcom/pull/61#issuecomment-5991875189)
+admits `.gitattributes` solely for the exact schema path. The file was absent at
+the published head; the repair adds exactly one rule:
+
+```gitattributes
+/schemas/backend/pm-return-journal-v1.sql text eol=lf
+```
+
+Git documents that `text` enables index LF normalization and `eol=lf` fixes the
+working-tree line endings for that path.
+[Official Git attribute documentation](https://git-scm.com/docs/gitattributes).
+No wildcard/global policy or global/repository Git configuration is changed.
+The original schema bytes, compiled artifact SHA and exact-byte test are unchanged;
+no test-time normalization is introduced. `check-attr` reports text=set/eol=lf for
+the schema and unspecified values for an unrelated schema path.
+
+Four fresh detached disposable worktrees reproduce the checkout behavior using
+only per-command `core.autocrlf` settings:
+
+| Snapshot | autocrlf | Schema bytes | Schema SHA-256 | Exact-byte test |
+| --- | --- | ---: | --- | --- |
+| Published control | true | 2335 | `649c3b2c850d571843ce5de6db021c65eaeea8c3bfcd0609edfd79508971f54b` | Expected FAIL, same expected/actual as CI |
+| Published control | false | 2298 | `c7a777578470d1bc4b150503eb4fad7e7497386643c1cf2225e10e916e00f2ce` | PASS |
+| Attribute fix | true | 2298 | `c7a777578470d1bc4b150503eb4fad7e7497386643c1cf2225e10e916e00f2ce` | PASS within full regression |
+| Attribute fix | false | 2298 | `c7a777578470d1bc4b150503eb4fad7e7497386643c1cf2225e10e916e00f2ce` | PASS within full regression |
+
+All four locked restores/builds passed with zero warnings/errors. Both corrected
+fresh worktrees passed **395/395 offline tests** (376 plus all 19 configuration
+cases, same process-only synthetic configuration method as above); no tests were
+skipped in those runs. The existing exact-byte test is included in each corrected
+run. Architecture, catalog 1527/33, source/scanner 48, CI policy and guards 97 were
+rerun and passed. The preparation scripts/assertions are unchanged; the earlier
+23-suite result remains inherited evidence, not a newly rerun repair check.
+
+The tested validation tree differs from published code only by this attribute.
+The final repair adds this checkpoint evidence; its schema/product/test blobs
+must match the tested tree. Independent rereview and fresh exact-head/base hosted
+Windows/Linux CI remain required before integration. This fixes source checkout
+bytes and grants no SQL/runtime or production acceptance.
+
 ## Open gates and next bounded work
 
 No actual SQL connection, schema apply, service/network/TLS/permission change,
