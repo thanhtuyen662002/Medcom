@@ -51,3 +51,7 @@ The owner supplied accessible `ERP_Medcom2026.zip`, `MedData-Data.zip` and `Tool
 | Tools.dll | 8,258,049 | `aa8910f3ba244fc405ccad2d322d142d40f938be3da94277ccd8d0814082dd61` |
 
 The ERP ZIP contains the exact standalone DLL. The full SQL member is now verified at 1,212,595,716 bytes, CRC32 `16a9a7e6`, SHA-256 `61a8744c7a9a007b13ef37fbda26ea8c78af11fcc469963a528eba9469174096`. It declares 596 tables, 211 views, 109 functions, 609 procedures and two sequences (1,527 objects). A separate metadata inventory includes trigger definitions stored in data. The earlier zero-procedure claim used a truncated 1,015,021,568-byte extraction and is superseded; see `extraction-integrity.json`. All seven internal-transfer checks are present. Exact source identity and finite metadata are in `inventories/source/20261002/source-set.json` and `manifest.json`; verified findings and runtime limits are in `docs/erp/OWNER_SOURCE_RECOVERY_20261002.md`. Complete business/runtime/release acceptance remains open.
+
+### Durable current-round recovery locators
+
+The current source-set records the owner-attached Library and attachment IDs for all three exact hashed files. Scheduled sessions should use those locators through the Library skill, materialize privately and rerun the archive/member integrity verifier. Old Phase 1 attachment IDs are historical, not the current-round recovery path. An ID lookup does not prove future access; record a real access error precisely and continue independent eligible code. Never put raw sources in this public repository.
