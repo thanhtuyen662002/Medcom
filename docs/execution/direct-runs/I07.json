@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I07",
+  "role": "direct_interactive",
+  "owner": "Mika under owner-directed Medcom continuation",
+  "run_id": "d821ac64-2845-479b-81e8-51f60944ea66",
+  "base_sha": "978c1d2c447c7229759ab4fb393ef8fb2e23eb18",
+  "work_branch": "codex/g45-pm-return-i07-20261005",
+  "claim_branch": "medcom-claims/g45/direct/I07",
+  "predecessor_ticket": "I06",
+  "predecessor_handoff": "https://github.com/thanhtuyen662002/Medcom/pull/58#issuecomment-5987897748",
+  "scope": [
+    "src/backend/Medcom.Application/Transfers/PmReturnReplayPolicy.cs",
+    "src/backend/Medcom.Application/Transfers/PmReturnJournalRecord.cs",
+    "tests/backend/Medcom.Api.Tests/PmReturnReplayPolicyTests.cs",
+    "docs/backend/PM_RETURN_JOURNAL_CONTRACT.md",
+    "docs/execution/checkpoints/I07_PM_RETURN_REPLAY.md",
+    "docs/execution/direct-runs/I07.json"
+  ],
+  "purpose": "Implement pure PM Return replay and receipt validation decisions from immutable server observations; preserve original committed receipt and fail closed on unresolved journal states.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "automation_policy": "No schedule changes",
+  "publication_policy": "Parent sole publisher; isolated worker; independent review and exact-head/base CI.",
+  "sql_policy": "No SQL connection/execution, schema/data changes or durability claim.",
+  "constraints": [
+    "Only listed new files after remote admission",
+    "No shared v1, Audit P01, API, DI, capability or readiness edits",
+    "Opaque configured database binding; no secret-derived identity",
+    "Current authorization before result disclosure",
+    "Unknown, in-progress and tombstone never permit dispatch",
+    "Replay preserves original committed receipt and fingerprint",
+    "No empty gateway interfaces or in-memory durability claims",
+    "Real storage, atomicity, reconciliation and ABA remain gated"
+  ],
+  "created_at": "2026-10-05T04:35:37Z"
+}
