@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I09",
+  "role": "direct_interactive",
+  "owner": "Mika under owner-directed Medcom continuation",
+  "run_id": "e846ad60-9571-4c31-b49d-234c6ddf9ae7",
+  "base_sha": "f8c41ee5e6e873c86205a133719257bb861d2fa7",
+  "work_branch": "codex/g45-pm-return-i09-20261005",
+  "claim_branch": "medcom-claims/g45/direct/I09",
+  "predecessor_ticket": "I08",
+  "predecessor_handoff": "https://github.com/thanhtuyen662002/Medcom/pull/60#issuecomment-5989889767",
+  "scope": [
+    "src/backend/Medcom.Infrastructure/Execution/PmReturn/SqlPmReturnJournalStore.cs",
+    "src/backend/Medcom.Infrastructure/Execution/PmReturn/PmReturnJournalSql.cs",
+    "src/backend/Medcom.Infrastructure/Execution/PmReturn/PmReturnJournalCodec.cs",
+    "schemas/backend/pm-return-journal-v1.sql",
+    "tests/backend/Medcom.Api.Tests/ExecutionPmReturnJournalTests.cs",
+    "docs/backend/PM_RETURN_JOURNAL_STORAGE.md",
+    "docs/execution/checkpoints/I09_PM_RETURN_JOURNAL_STORAGE.md",
+    "docs/execution/direct-runs/I09.json"
+  ],
+  "purpose": "Implement concrete, unregistered PM Return journal reservation/storage and strict I07 observation codec with an unapplied new schema artifact.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "automation_policy": "No schedule changes",
+  "publication_policy": "Parent sole publisher; isolated worker; independent review and exact-head/base CI.",
+  "sql_policy": "No real SQL connection/execution, schema application, database creation/drop, service, TLS, permission or security changes. Recording test doubles only until separate runtime authorization.",
+  "constraints": [
+    "Only listed new paths; preserve B01/P01 and shared I06/I07/v1/API/DI/capability/readiness files",
+    "Unique slot matches I07 binding/tenant/company/actor/action/idempotency tuple; document/intent/source are conflict correlations",
+    "Explicit schema/version/binding/collation/index validation fails closed; lookup errors are never Absent",
+    "Preserve ordinal validated key semantics; no trimming/case folding or secret-derived database identity",
+    "Return reservation ownership only after confirmed commit acknowledgment; ambiguous commit/cancellation/duplicate/deadlock never grants dispatch or timeout takeover",
+    "No Committed writer, ERP procedure execution, receipt invention or automatic DDL; later executor must commit receipt with ERP effects atomically",
+    "No key reuse/delete/expiry or in-memory durability claims",
+    "No raw owner SQL, real rows, credentials, private paths or private fixture output in public artifacts",
+    "Offline tests do not establish SQL uniqueness/locking/durability/runtime acceptance; document delayed durability and deployment prerequisites"
+  ],
+  "created_at": "2026-10-05T07:26:00Z"
+}
