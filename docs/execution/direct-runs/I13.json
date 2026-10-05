@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I13",
+  "role": "direct_interactive",
+  "owner": "Mika parent integrator under owner-directed branch reconciliation",
+  "run_id": "61c5c40a-d8b1-4f7b-b44d-c5e88b2b5acd",
+  "base_sha": "2f337a5b06000b9ad8b37f064e0e6ef9b995f2d0",
+  "work_branch": "codex/g45-source-locators-i13-20261005",
+  "claim_branch": "medcom-claims/g45/direct/I13",
+  "scope": [
+    "docs/SOURCE_BASELINE.md",
+    "inventories/source/20261002/source-set.json",
+    "docs/execution/direct-runs/I13.json"
+  ],
+  "purpose": "Recover only two independently reviewed source-recovery metadata deltas from historical PR44 on current main; preserve original branch/head.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "automation_policy": "No schedule changes or resume authority",
+  "publication_policy": "Parent sole publisher/integrator; exact-head/base CI and independent preservation review.",
+  "sql_policy": "No SQL, source archive execution, secrets, runtime, services, permissions, or deployment changes.",
+  "constraints": [
+    "Original PR44 head1cc4dd40e761e5c578c1e1ee594be283795e66a8 preserved; do not synchronize or claim its writer branch",
+    "Only existing reviewed blob62093c3214be06929db5d19de80d365ef4476aad and blobc420b90aaf5352c012edd178b990b4e94074a221 added over current base, plus this immutable claim",
+    "No existing hash/size/source-integrity field changes; Library identifiers are authenticated recovery locators, not authorization or credentials",
+    "No raw guide, private configuration, SQL bodies, customer rows, secret, private URL or paths in metadata",
+    "No product implementation/production completion claim; current source is already available to ongoing workers",
+    "Keep all other branches, claims and dirty worktrees unchanged"
+  ],
+  "created_at": "2026-10-05T17:17:00Z"
+}
