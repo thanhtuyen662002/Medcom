@@ -1,0 +1,68 @@
+"use client";
+
+import {useId} from "react";
+import {RemoteLookup} from "./lookup";
+import type {LookupAdapter} from "@/lib/erp/presentation";
+
+/** Local keys identify input/errors only. They are never ERP numbering. */
+export type PurchaseRequestLine = {
+  localKey: string;
+  lineId: string | null;
+  itemId: string;
+  itemLabel?: string;
+  quantity: string;
+  unitPrice: string;
+  budget: string;
+  timeRequired: string;
+  model: string;
+};
+
+export const requestInputStyle = {
+  width: "100%", minHeight: 44, padding: "10px 12px", border: "1px solid #a1a1aa",
+  borderRadius: 8, background: "var(--background, white)", color: "inherit", fontSize: 16,
+  boxSizing: "border-box" as const,
+};
+
+/** Exact source decimal(18,0); do not use Number/parseFloat or infer positivity. */
+export function isRequestInteger(value: string) {
+  return /^-?\d+$/.test(value) && value.replace(/^-/, "").replace(/^0+/, "").length <= 18;
+}
+
+export function MobileRequestLines({lines, disabled, canAdd = true, readOnly = false, errors, lookupAdapter, itemLookupId, onChange, onAdd, onRemove}: {
+  lines: readonly PurchaseRequestLine[];
+  disabled: boolean;
+  canAdd?: boolean;
+  readOnly?: boolean;
+  errors: Record<string, string>;
+  lookupAdapter: LookupAdapter;
+  itemLookupId: string;
+  onChange: (key: string, patch: Partial<PurchaseRequestLine>) => void;
+  onAdd: () => void;
+  onRemove: (key: string) => void;
+}) {
+  const prefix = useId();
+  return <section aria-labelledby={`${prefix}-title`} style={{display: "grid", gap: 16, minWidth: 0}}>
+    <h2 id={`${prefix}-title`}>Hàng đề nghị ({lines.length})</h2>
+    {errors.lines && <p role="alert">{errors.lines}</p>}
+    {!lines.length && <p>Chưa có dòng hàng.</p>}
+    {lines.map((line, index) => <article key={line.localKey} aria-label={`Dòng hàng ${index + 1}`} style={{border: "1px solid #a1a1aa", borderRadius: 12, padding: 16, display: "grid", gap: 12, minWidth: 0, overflowWrap: "anywhere"}}>
+      <h3>Dòng {index + 1}</h3>
+      {readOnly ? <p><strong>{line.itemLabel || line.itemId || "Chưa chọn hàng"}</strong></p> : <RemoteLookup id={itemLookupId} label={`Mặt hàng dòng ${index + 1}`} value={line.itemId ? {id: line.itemId, label: line.itemLabel || line.itemId} : null} adapter={lookupAdapter} disabled={disabled} error={errors[`lines.${line.localKey}.itemId`]} onChange={item => onChange(line.localKey, {itemId: item?.id ?? "", itemLabel: item?.label})}/>}
+      {errors[`lines.${line.localKey}.itemId`] && <p role="alert">{errors[`lines.${line.localKey}.itemId`]}</p>}
+      {([
+        ["quantity", "Số lượng", 40], ["unitPrice", "Đơn giá", 40], ["budget", "Ngân sách", 40],
+        ["timeRequired", "Thời gian cần", 200], ["model", "Model", 50],
+      ] as const).map(([field, label, maxLength]) => {
+        const id = `${prefix}-${index}-${field}`;
+        const error = errors[`lines.${line.localKey}.${field}`];
+        return <div key={field} style={{display: "grid", gap: 6}}>
+          <label htmlFor={id}>{label}{field === "quantity" || field === "unitPrice" ? " *" : ""}</label>
+          {readOnly ? <strong>{line[field] || "—"}</strong> : <input id={id} name={`lines.${line.localKey}.${field}`} value={line[field]} inputMode={["quantity", "unitPrice", "budget"].includes(field) ? "numeric" : undefined} maxLength={maxLength} disabled={disabled} aria-invalid={!!error} aria-describedby={error ? `${id}-error` : undefined} style={requestInputStyle} onChange={event => onChange(line.localKey, {[field]: event.target.value})}/>}
+          {error && <p id={`${id}-error`} role="alert">{error}</p>}
+        </div>;
+      })}
+      {!readOnly && <button type="button" disabled={disabled} style={requestInputStyle} onClick={() => onRemove(line.localKey)}>Bỏ dòng {index + 1}</button>}
+    </article>)}
+    {!readOnly && <button type="button" disabled={disabled || !canAdd} style={requestInputStyle} onClick={onAdd}>Thêm dòng hàng</button>}
+  </section>;
+}
