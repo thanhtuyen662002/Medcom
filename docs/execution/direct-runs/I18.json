@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I18",
+  "role": "direct_interactive",
+  "owner": "Mika under owner-approved fixed mobile request delivery",
+  "run_id": "7a0d78f5-21c3-49ad-9d76-9ff99a2ad889",
+  "base_sha": "c57fb41a720e9a2d6ee46bcbc2d1ae47a1d12d17",
+  "work_branch": "codex/g45-inbound-editor-i18-20261006",
+  "claim_branch": "medcom-claims/g45/direct/I18",
+  "scope": [
+    "apps/medcom-sites/components/erp/mobile-inbound-request.tsx",
+    "apps/medcom-sites/lib/erp/inbound-draft.ts",
+    "apps/medcom-sites/tests/mobile-inbound-request.test.mjs",
+    "docs/execution/checkpoints/INBOUND_DRAFT_MOBILE_EDITOR.md",
+    "docs/execution/direct-runs/I18.json"
+  ],
+  "purpose": "Fixed mobile inbound existing-document editor with truthful save/send/reconciliation states and exact I15 contract; no workspace or production activation.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "automation_policy": "No schedule changes",
+  "publication_policy": "Parent sole publisher, isolated checkout, independent code/privacy and exact-head/base CI required.",
+  "sql_policy": "Synthetic offline tests only; no SQL/private config/customer data/owner DLL.",
+  "dependencies": {
+    "I15": "Accepted offline 6ec79eaaf151f17e87efa8c2aa39832fd0409e61, public contracts unchanged; publication/runtime gates remain separate."
+  },
+  "constraints": [
+    "Four new worker files only; immutable admission unchanged; no existing workspace/API/BFF/runner/package/lock changes.",
+    "Exact I15 TypeScript contracts with injected read/execute/reconcile; no invented HTTP route or direct database access.",
+    "Preserve all supplied fields, NULL versus empty, exact decimal strings and source timestamps; lock existing branch/document date.",
+    "Complete aggregate up to qualified500 details, explicit changes/removals; no truncation; retained costs read-only and explicit unsupported fields.",
+    "Separate Save and SendToWarehouse, send only on fresh unchanged editable readback; create unavailable until qualified numbering. No automatic save-and-send.",
+    "Original command/key deep-frozen before dispatch; unknown/malformed response blocks replacement writes; reconcile never redispatches.",
+    "Valid confirmed receipt survives failed readback; block further writes until authoritative read; no fabricated row-ID mapping.",
+    "Opaque session scope and generation fencing; refresh/selection A-B-A cannot erase unresolved intent, revive stale data or switch credentials.",
+    "Actual React mobile synthetic browser tests for decimals/nulls/dates/deltas, duplicated taps, post-save read failure, all outcomes, logout/revocation/selection races; no fake success or skipped browser acceptance.",
+    "Memory-only unresolved custody is not durable recovery; report reload/crash recovery limit and retain truthful blocked state.",
+    "QR excluded until exact business-field mapping; do not treat arbitrary code as item/serial authorization.",
+    "No real camera, security/cert/network changes, deployment or production activation; component completion is not customer-ready end-to-end acceptance."
+  ],
+  "created_at": "2026-10-05T20:17:00Z"
+}
