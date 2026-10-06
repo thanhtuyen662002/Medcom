@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I29",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "b2140814-0556-43d3-8b30-fb0c8543c944",
+  "base_sha": "2c80c4fb886c52550a0532d47a00d9e783d3e969",
+  "work_branch": "codex/g45-modern-tab-retention-i29-20261006",
+  "claim_branch": "medcom-claims/g45/direct/I29",
+  "scope": [
+    "src/backend/Medcom.Api/WorkspaceReadScope.cs",
+    "src/backend/Medcom.Api/AuthEndpoints.cs",
+    "src/backend/Medcom.Api/DocumentEndpoints.cs",
+    "tests/backend/Medcom.Api.Tests/AuthenticationHttpTests.cs",
+    "apps/medcom-sites/components/erp/workspace.tsx",
+    "apps/medcom-sites/components/erp/documents.tsx",
+    "apps/medcom-sites/lib/erp/contracts.ts",
+    "apps/medcom-sites/lib/erp/api.ts",
+    "apps/medcom-sites/lib/erp/navigation.ts",
+    "apps/medcom-sites/lib/erp/proxy.ts",
+    "apps/medcom-sites/tests/api.test.mjs",
+    "apps/medcom-sites/tests/navigation.test.mjs",
+    "apps/medcom-sites/tests/proxy.test.mjs",
+    "apps/medcom-sites/tests/workspace-retention.browser.mjs",
+    "apps/medcom-sites/README.md",
+    ".github/workflows/medcom-selfhost.yml",
+    "docs/execution/checkpoints/I29_MODERN_BROWSER_TAB_RETENTION.md",
+    "docs/execution/direct-runs/I29.json"
+  ],
+  "purpose": "Preserve in-memory read-view controls across browser tab revalidation while requiring fresh authorized data and exact session/read-scope continuity; preserve existing visual design.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "dependencies": [
+    {
+      "ticket": "I28",
+      "pr": 80,
+      "state": "Provisional; shared proxy/test/workflow paths require explicit author handoff and root composition, never overwrite from old base."
+    }
+  ],
+  "constraints": [
+    "Only browser hidden/visible/focus continuity; no visual redesign, persistent row/control storage or unrelated module-switch feature. Mask protected data while authority unavailable; refresh before redisplay.",
+    "Stable opaque noncredential server-session and read-scope markers in response headers only; domain-separated token-bound digest or protected mechanism, never token/credential/identity disclosure. Markers never authorize requests; existing cookie/CSRF/native rights unchanged.",
+    "Do not use authorityVersion observation sequence, expiry or display name as identity. Canonical scope sets; confirmed retirement, account/session or rights change clears view state. Fresh response generations reject late canceled/stale data.",
+    "Retain memory-only selection/filter/pages/scroll for same verified session/scope; reconcile selection against authorized fresh data before detail display. Read failures hide data without claiming logout or losing controls prematurely.",
+    "Header markers on workspace/document responses must reflect the response session/scope; validate/relay only named bounded headers in BFF. No public JSON contract changes, SQL, configuration or business-write activation.",
+    "Actual composed Workspace/browser regression and backend marker tests required for healthy version/expiry/set-order changes, outages, revoke/account swap and stale responses. Existing I20/I21/I24 and QR suites preserved.",
+    "Root alone publishes/integrates; I28 shared-path custody handoff mandatory. No missing tests/skips claimed pass. Independent privacy/security review plus exact-head/current-base CI before merge."
+  ],
+  "created_at": "2026-10-06T13:01:00Z"
+}
