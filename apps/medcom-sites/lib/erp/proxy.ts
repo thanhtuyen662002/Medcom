@@ -1,19 +1,21 @@
-import {backendOrigin,erpCookies,relayCookie,routeAllowed,sameOriginWrite,purchaseCommandRoute,inboundRoute,inboundCommandRoute,requestBodyLimit} from "./proxy-policy";
+import {resolveErpOrigins,erpCookies,relayCookie,routeAllowed,purchaseCommandRoute,inboundRoute,inboundCommandRoute,requestBodyLimit} from "./proxy-policy";
 const problem=(status:number,code:string)=>Response.json({code},{status,headers:{"Cache-Control":"no-store"}});
-export async function proxyErpRequest(request:Request,path:string[],configuredOrigin:string|undefined,configuredPublicOrigin:string|undefined,upstreamFetch:typeof fetch=fetch){
+export async function proxyErpRequest(request:Request,path:string[],configuredOrigin:string|undefined,configuredPublicOrigin:string|undefined,upstreamFetch:typeof fetch=fetch,localHttpsMode?:string){
  const route=path.join("/");
  if(!routeAllowed(route,request.method))return problem(404,"endpoint_unavailable");
  const inbound=inboundRoute(route),inboundCommand=request.method==="POST"&&inboundCommandRoute(route);
  // A decoded slash must not turn one catchall segment into an admitted route.
  if(inbound&&path.some(segment=>segment.includes("/")))return problem(404,"endpoint_unavailable");
- if((request.method==="POST"||inbound)&&!backendOrigin(configuredPublicOrigin))return problem(503,"frontend_not_configured");
- if(request.method==="POST"&&!sameOriginWrite(configuredPublicOrigin,request.headers.get("origin")))return problem(403,"origin_rejected");
+ const origins=resolveErpOrigins(configuredOrigin,configuredPublicOrigin,localHttpsMode);
+ const sameOrigin=(origin:string|null)=>origins.publicOrigin!==null&&origin===origins.publicOrigin;
+ if((request.method==="POST"||inbound)&&!origins.publicOrigin)return problem(503,"frontend_not_configured");
+ if(request.method==="POST"&&!sameOrigin(request.headers.get("origin")))return problem(403,"origin_rejected");
  if(inbound){
   const browserOrigin=request.headers.get("origin"),site=request.headers.get("sec-fetch-site");
   if(site!==null&&site!=="same-origin")return problem(403,"origin_rejected");
-  if(browserOrigin!==null?!sameOriginWrite(configuredPublicOrigin,browserOrigin):site!=="same-origin")return problem(403,"origin_rejected");
+  if(browserOrigin!==null?!sameOrigin(browserOrigin):site!=="same-origin")return problem(403,"origin_rejected");
  }
- const origin=backendOrigin(configuredOrigin);
+ const origin=origins.backend;
  if(!origin)return problem(503,"backend_not_configured");
  const incoming=new URL(request.url);if(incoming.search.length>4096)return problem(400,"query_too_large");
  const command=request.method==="POST"&&purchaseCommandRoute(route);
@@ -66,6 +68,14 @@ export async function proxyErpRequest(request:Request,path:string[],configuredOr
   if(r.status>=300&&r.status<400)return problem(502,"upstream_redirect_rejected");
   const outgoing=new Headers({"Cache-Control":"no-store","X-Content-Type-Options":"nosniff"});
   for(const name of ["content-type","x-correlation-id","retry-after"]){const v=r.headers.get(name);if(v)outgoing.set(name,v);}
+  // Response correlation only. Browser-supplied scope markers are never sent
+  // upstream and neither marker can grant access or identify a session token.
+  if(request.method==="GET"&&r.status===200&&/^(?:api\/workspace|api\/documents\/(?:purchase-orders|inbound-requests)(?:\/detail)?)$/.test(route)){
+   const session=r.headers.get("X-Medcom-Session-Scope"),read=r.headers.get("X-Medcom-Read-Scope");
+   if(session&&read&&/^[a-f0-9]{64}$/.test(session)&&/^[a-f0-9]{64}$/.test(read)){
+    outgoing.set("X-Medcom-Session-Scope",session);outgoing.set("X-Medcom-Read-Scope",read);
+   }
+  }
   for(const value of r.headers.getSetCookie()){const safe=relayCookie(value);if(safe)outgoing.append("Set-Cookie",safe);}
   return new Response(r.body,{status:r.status,headers:outgoing});
  }catch{return problem(503,"backend_unavailable");}

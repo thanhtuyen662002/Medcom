@@ -765,8 +765,9 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
       if (route === '/api/auth/csrf') {await wait(model, 'csrf'); return json(res, 200, {token: 'synthetic-csrf'});}
       if (route === '/api/auth/login') return json(res, 200, workspace(model).session);
       if (route === '/api/auth/logout') return json(res, model.logoutStatus, {});
-      if (route === '/api/workspace') {await wait(model, 'workspace'); return json(res, model.failure ?? 200, model.failure ? {code: 'synthetic_workspace_failure'} : workspace(model));}
+      if (route === '/api/workspace') {res.setHeader('X-Medcom-Session-Scope',model.scope);res.setHeader('X-Medcom-Read-Scope',model.scope);await wait(model, 'workspace'); return json(res, model.failure ?? 200, model.failure ? {code: 'synthetic_workspace_failure'} : workspace(model));}
       if (route === '/api/documents/inbound-requests') {
+        res.setHeader('X-Medcom-Session-Scope',model.scope);res.setHeader('X-Medcom-Read-Scope',model.scope);
         const status = model.listStatus; await wait(model, 'list');
         return json(res, status ?? 200, status ? {code: 'synthetic_list_failure'} : {rows: Object.values(model.docs).map(d => ({documentId: d.documentId, documentDate: '2026-10-01', branchId: 'BR-A', statusId: d.statusId, isLocked: false})), page: Number(url.searchParams.get('page')), pageSize: 50, hasMore: true});
       }

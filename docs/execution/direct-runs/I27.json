@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I27",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "c8472c1a-c871-4c7d-927e-3478f9e28907",
+  "base_sha": "2c80c4fb886c52550a0532d47a00d9e783d3e969",
+  "work_branch": "codex/g45-command-branch-i27-20261006",
+  "claim_branch": "medcom-claims/g45/direct/I27",
+  "scope": [
+    "src/backend/Medcom.Infrastructure/PurchaseRequests/SqlPurchaseRequestCommandAuthorityReader.cs",
+    "src/backend/Medcom.Infrastructure/PurchaseRequests/SqlPurchaseRequestCommands.cs",
+    "tests/backend/Medcom.Api.Tests/PurchaseRequestCommandAdmissionTests.cs",
+    "tests/backend/Medcom.Api.Tests/PurchaseRequestCommandCompositionTests.cs",
+    "tests/backend/Medcom.Api.Tests/PurchaseRequestCommandTests.cs",
+    "tests/backend/Medcom.Api.Tests/PurchaseRequestSqlTests.cs",
+    "docs/execution/checkpoints/I27_NATIVE_BRANCH_COMMAND_SCOPE.md",
+    "docs/execution/direct-runs/I27.json"
+  ],
+  "purpose": "Use reviewed native branch resolver consistently in purchase command admission and writer/lookup revalidation without activating commands.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "constraints": [
+    "Replace only native branch-check seams using unchanged reviewed SqlLegacyBranchScope inside existing transactions. Preserve live identity exact branch membership, canonical credential/group/native Run+Update and session fences.",
+    "Leave PurchaseRequestSql, shared resolver, public contracts, DI/factory/attestation, SQL schema, journal/intent/receipt/effect/allocator logic, FE/config/dependencies unchanged.",
+    "No actual SQL/DLL/private config access, deployment or business-write activation. Synthetic tests and current-head/base CI are mandatory; code acceptance is not runtime qualification.",
+    "Root sole publisher. Independent source/privacy review and exact current CI before merge; preserve markers/claims."
+  ],
+  "created_at": "2026-10-06T12:42:20Z"
+}

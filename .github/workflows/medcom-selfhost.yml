@@ -46,6 +46,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.401'
       - name: Record checkout and runtime
         run: |
           git rev-parse HEAD
@@ -143,6 +146,15 @@ jobs:
         env:
           QR_TEST_BROWSER: ${{ env.MEDCOM_EDGE_PATH }}
         run: node tests/qr-scanner.browser.mjs
+      - name: Test actual Workspace tab retention and read-scope fences
+        working-directory: apps/medcom-sites
+        run: node --test --test-reporter=tap tests/workspace-retention.browser.mjs
+      - name: Upload Workspace tab-retention evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: medcom-workspace-retention-${{ matrix.platform }}-x64-${{ github.sha }}
+          path: apps/medcom-sites/.test-runtime/i29-workspace-retention/browser-result.json
+          if-no-files-found: error
       - name: Test standalone package guards
         working-directory: apps/medcom-sites
         run: node --test tests/standalone-package.test.mjs
@@ -156,6 +168,89 @@ jobs:
         run: node apps/medcom-sites/scripts/verify-standalone.mjs "$PACKAGE_DIRECTORY" "$SOURCE_REVISION"
       - name: Smoke test packaged process without private dependencies
         run: node apps/medcom-sites/scripts/smoke-standalone.mjs "$PACKAGE_DIRECTORY" "$SOURCE_REVISION"
+      - name: Build locked local HTTPS relay and synthetic fixture
+        run: |
+          dotnet restore tests/backend/Medcom.LocalFrontendFixture/Medcom.LocalFrontendFixture.csproj --locked-mode
+          dotnet publish tests/backend/Medcom.LocalFrontendFixture/Medcom.LocalFrontendFixture.csproj -c Release --no-restore -o artifacts/i28-synthetic-fixture
+          dotnet publish tools/local-frontend/Medcom.LocalFrontendHost/Medcom.LocalFrontendHost.csproj -c Release --no-restore -o artifacts/medcom-local-frontend-host
+      - name: Test built modern Workspace through actual HTTPS relay and BFF
+        working-directory: apps/medcom-sites
+        env:
+          I28_PACKAGE_DIRECTORY: ${{ github.workspace }}/${{ env.PACKAGE_DIRECTORY }}
+          I28_FIXTURE_DLL: ${{ github.workspace }}/artifacts/i28-synthetic-fixture/Medcom.LocalFrontendFixture.dll
+        run: node --test --test-reporter=tap tests/local-https-frontend.test.mjs
+      - name: Upload synthetic local HTTPS evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: medcom-local-https-evidence-${{ matrix.platform }}-x64-${{ github.sha }}
+          path: |
+            apps/medcom-sites/.test-runtime/i28-local-https/result.json
+            apps/medcom-sites/.test-runtime/i28-local-https/workspace-320.png
+            apps/medcom-sites/.test-runtime/i28-local-https/workspace-390.png
+          if-no-files-found: error
+      - name: Package local HTTPS host with exact source hashes
+        env:
+          I28_PACKAGE_PLATFORM: ${{ matrix.platform }}
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,shutil
+          from pathlib import Path
+          root=Path('artifacts/medcom-local-frontend-host')
+          for p in root.rglob('*.pdb'): p.unlink()
+          shutil.copyfile('tools/deploy/Start-MedcomLocalFrontend.ps1',root/'Start-MedcomLocalFrontend.ps1')
+          files=[];directories=[]
+          for p in sorted(root.rglob('*')):
+              if p.is_symlink(): raise RuntimeError('No linked helper members')
+              relative=p.relative_to(root).as_posix()
+              if p.is_dir(): directories.append(relative)
+              elif p.is_file():
+                  data=p.read_bytes();files.append({'path':relative,'size':len(data),'sha256':hashlib.sha256(data).hexdigest()})
+              else: raise RuntimeError('Unexpected helper member')
+          manifest={'schemaVersion':1,'artifact':'medcom-local-frontend-host','sourceRevision':os.environ['SOURCE_REVISION'],
+              'platform':os.environ['I28_PACKAGE_PLATFORM'],'arch':'x64','entryPoint':'Medcom.LocalFrontendHost.dll',
+              'admission':'BLOCKED_BUSINESS_AND_RUNTIME_ACCEPTANCE','files':files,'directories':directories}
+          (root/'medcom-local-frontend-package.json').write_text(json.dumps(manifest,indent=2)+'\n')
+          print(f'Prepared {len(files)} exact-hash helper members; no fixture/certificate/Node runtime included')
+          PY
+      - name: Verify Windows launcher parsing, manifests and occupied-port rejection
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $launcher=Join-Path $PWD 'tools/deploy/Start-MedcomLocalFrontend.ps1'
+          $tokens=$null;$errors=$null
+          $ast=[Management.Automation.Language.Parser]::ParseFile($launcher,[ref]$tokens,[ref]$errors)
+          if ($errors.Count) { throw 'Windows PowerShell launcher parsing failed.' }
+          foreach ($fn in $ast.FindAll({param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst]},$false)) {
+            . ([scriptblock]::Create($fn.Extent.Text))
+          }
+          $ExpectedRevision=$env:SOURCE_REVISION
+          $frontend=[IO.Path]::GetFullPath($env:PACKAGE_DIRECTORY)
+          $hostRoot=Join-Path $PWD 'artifacts/medcom-local-frontend-host'
+          Verify-Artifact $frontend 'medcom-package.json' 'medcom-frontend'
+          Verify-Artifact $hostRoot 'medcom-local-frontend-package.json' 'medcom-local-frontend-host'
+          $ExpectedRevision='0000000000000000000000000000000000000000'
+          $rejected=$false
+          try { Verify-Artifact $frontend 'medcom-package.json' 'medcom-frontend' } catch { $rejected=$true }
+          if (-not $rejected) { throw 'Launcher accepted the wrong artifact revision.' }
+          $listener=New-Object Net.Sockets.TcpListener([Net.IPAddress]::Loopback,0)
+          try {
+            $listener.Start();$rejected=$false
+            try { Check-Port $listener.LocalEndpoint.Port } catch { $rejected=$true }
+            if (-not $rejected) { throw 'Launcher accepted an occupied loopback port.' }
+          } finally { $listener.Stop() }
+          foreach ($unsafe in @('../x','/absolute','C:/x','a\b')) {
+            $rejected=$false;try { Valid-Relative $unsafe } catch { $rejected=$true }
+            if (-not $rejected) { throw 'Launcher accepted an unsafe manifest path.' }
+          }
+          Write-Host 'Windows launcher parsing, exact artifact manifests, wrong revision, unsafe paths and occupied port: PASS'
+      - name: Upload verified local HTTPS host
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: medcom-local-frontend-host-${{ matrix.platform }}-x64-${{ github.sha }}
+          path: artifacts/medcom-local-frontend-host/
+          if-no-files-found: error
       - name: Record exact tested source and base
         if: github.event_name == 'pull_request'
         env:

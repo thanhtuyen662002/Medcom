@@ -60,7 +60,7 @@ test('production session continuations cannot mutate a retired account',async()=
  function fixture(){
   let resolveContinue,rejectContinue,resolveLogout,generation=0;const calls=[];
   const continuation=new Promise((resolve,reject)=>{resolveContinue=resolve;rejectContinue=reject;}),logout=new Promise(resolve=>{resolveLogout=resolve;});
-  const context={mounted:{current:true},authorityFence:{current:{begin:()=>++generation,isCurrent:value=>value===generation,invalidate:()=>{generation++;}}},
+  const context={mounted:{current:true},signOutPending:{current:false},authorityFence:{current:{begin:()=>++generation,isCurrent:value=>value===generation,invalidate:()=>{generation++;}}},
    continueSession:()=>continuation,logout:()=>logout,getWorkspace:async()=>{calls.push('read');return{};},loadWorkspace:async()=>{calls.push('read');},
    setWorkspace:value=>calls.push(['workspace',value]),setSessionError:value=>calls.push(['error',value]),setSessionBusy:()=>{},onDenied:()=>calls.push('denied'),
    queryClient:{clear(){}},ApiError:api.ApiError??class extends Error{},errorMessage:error=>String(error),toast:{success:()=>calls.push('success'),error:()=>calls.push('error')}};
@@ -132,7 +132,7 @@ test('real HTTP → BFF → existing workspace/browser purchase controls and aut
   const url=new URL(request.url,'http://localhost');calls.push({path:url.pathname,query:Object.fromEntries(url.searchParams),method:request.method,cookie:request.headers.cookie??''});
   if(url.pathname==='/health/ready')return send(response,503,{status:'unavailable',checks:[{component:'business_release',status:'not_configured'}]});
   if(!state.authenticated||!request.headers.cookie?.includes('__Host-Medcom.Session=synthetic-i17'))return send(response,401,{code:'authentication_required'});
-  if(url.pathname==='/api/workspace')return send(response,200,workspace());
+  if(url.pathname==='/api/workspace'){response.setHeader('X-Medcom-Session-Scope','a'.repeat(64));response.setHeader('X-Medcom-Read-Scope',state.scope);return send(response,200,workspace());}
   if(url.pathname.startsWith('/api/purchase-requests')&&!state.canRead)return send(response,403,{code:'forbidden'});
   const envelope=data=>({scopeKey:state.scope,data});
   if(url.pathname==='/api/purchase-requests/workspace')return send(response,200,envelope({branchIds:state.branches,writeAvailable:false,writeReason:'numbering_journal_runtime_unqualified',lookups:[
@@ -462,6 +462,7 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
    if(p==='/api/auth/csrf')return json(response,200,{token:'synthetic-custody-csrf'});
    if(p==='/api/auth/login'){assert.equal(request.method,'POST');return json(response,200,workspace().session);}
    if(p==='/api/workspace'){
+    response.setHeader('X-Medcom-Session-Scope','a'.repeat(64));response.setHeader('X-Medcom-Read-Scope',state.scope);
     if(state.holdWorkspace)await new Promise(resolve=>{state.releaseWorkspace=resolve;});
     if(state.failure==='network'){response.destroy();return;}
     if(state.failure===503||state.failure===401)return json(response,state.failure,{code:state.failure===401?'authentication_required':'identity_unavailable'});

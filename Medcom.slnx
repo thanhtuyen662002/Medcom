@@ -11,5 +11,9 @@
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="tests/backend/Medcom.Api.Tests/Medcom.Api.Tests.csproj" />
+    <Project Path="tests/backend/Medcom.LocalFrontendFixture/Medcom.LocalFrontendFixture.csproj" />
+  </Folder>
+  <Folder Name="/LocalFrontend/">
+    <Project Path="tools/local-frontend/Medcom.LocalFrontendHost/Medcom.LocalFrontendHost.csproj" />
   </Folder>
 </Solution>

@@ -1,7 +1,7 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
 import {getWorkspace,getSession,continueSession,getDocuments,getDetail,login,ApiError} from '../.test-runtime/erp-tests/api.js';
 const session={displayName:'Synthetic test user',tenantId:'test',companyId:'test',companyName:'Test only',authorityVersion:1,idleExpiresAt:'2026-10-04T03:00:00Z',absoluteExpiresAt:'2026-10-04T04:00:00Z',capabilities:['purchase-orders.read']};
-const reply=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json','X-Correlation-ID':'test-correlation'}});
+const reply=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json','X-Correlation-ID':'test-correlation','X-Medcom-Session-Scope':'a'.repeat(64),'X-Medcom-Read-Scope':'b'.repeat(64)}});
 test('workspace defaults branch array without inventing access',async()=>{const old=global.fetch;try{global.fetch=async()=>reply({session,navigation:[]});assert.deepEqual((await getWorkspace()).branchIds,[]);}finally{global.fetch=old;}});
 
 test('all session response paths reject malformed or timezone-free expiry safely',async()=>{
@@ -47,4 +47,31 @@ test('fresh detail must correlate with both requested document and page',async()
    assert.deepEqual(await getDetail(kind,'selected-document',2),detail('selected-document',2));
   }
  }finally{global.fetch=old;}
+});
+
+
+test('workspace and document reads require exact opaque headers and reject substituted responses',async()=>{
+ const old=global.fetch,scope={sessionScope:'a'.repeat(64),readScope:'b'.repeat(64)};
+ const row={documentId:'TEST',documentDate:'2026-10-06',branchId:'A',statusId:1,isLocked:false};
+ const body=url=>url.includes('/workspace')?{session,navigation:[]}:url.includes('/detail?')?{document:row,purchaseOrderLines:[],inboundRequestLines:[],page:1,pageSize:50,hasMore:false}:{rows:[row],page:1,pageSize:50,hasMore:false};
+ try{
+  for(const headers of [{},{'X-Medcom-Session-Scope':scope.sessionScope},{'X-Medcom-Session-Scope':'A'.repeat(64),'X-Medcom-Read-Scope':scope.readScope},{'X-Medcom-Session-Scope':scope.sessionScope,'X-Medcom-Read-Scope':'x'}]){
+   global.fetch=async url=>Response.json(body(String(url)),{headers});
+   for(const read of [()=>getWorkspace(),()=>getDocuments('purchase-orders',1,'','',undefined,scope),()=>getDetail('purchase-orders','TEST',1,undefined,scope)])await assert.rejects(read(),e=>e.code==='invalid_read_scope');
+  }
+  global.fetch=async url=>reply(body(String(url)));
+  const w=await getWorkspace();assert.equal(w.sessionScope,scope.sessionScope);assert.equal(w.readScope,scope.readScope);
+  assert.deepEqual((await getDocuments('purchase-orders',1,'','',undefined,scope)).rows,[row]);
+  for(const expected of [{...scope,sessionScope:'c'.repeat(64)},{...scope,readScope:'c'.repeat(64)}]){
+   await assert.rejects(getDocuments('purchase-orders',1,'','',undefined,expected),e=>e.code==='read_scope_changed');
+   await assert.rejects(getDetail('purchase-orders','TEST',1,undefined,expected),e=>e.code==='read_scope_changed');
+  }
+  const controller=new AbortController();global.fetch=async url=>{controller.abort();return reply(body(String(url)));};
+  await assert.rejects(getDocuments('purchase-orders',1,'','',controller.signal,scope),e=>e.name==='AbortError');
+ }finally{global.fetch=old;}
+});
+
+
+test('fresh list response must correlate with the requested page',async()=>{
+ const old=global.fetch;try{global.fetch=async()=>reply({rows:[],page:1,pageSize:50,hasMore:false});await assert.rejects(getDocuments('purchase-orders',2,'',''),e=>e.code==='invalid_api_response');}finally{global.fetch=old;}
 });

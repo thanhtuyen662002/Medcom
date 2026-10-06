@@ -173,6 +173,84 @@ public sealed class PurchaseRequestCommandCompositionTests
         }
     }
 
+    [Theory]
+    [InlineData(null,"header")] [InlineData("","header")]
+    [InlineData(null,"update")] [InlineData("","update")]
+    [InlineData(null,"remove")] [InlineData("","remove")]
+    [InlineData(null,"submit")] [InlineData("","submit")]
+    public async Task Native_NULL_or_empty_catalog_scope_composes_no_Add_access_write_and_post_submit_lookup(string? native,string operation)
+    {
+        var db = new PurchaseRecordingModel { NativeBranch = native, NativeBranches = [], CatalogBranches = ["B2", "B1"], Denial = "add" };
+        db.Seed(2); var sessions = new FakeSessions();
+        using var host = new Harness(Factory(db), sessions); using var request = host.Request(Session(TokenA));
+        var original = Save(db.Documents[PurchaseFixtures.DocumentId]) with { LineChanges = operation switch {
+            "update" => [new(PurchaseRequestLineChangeKind.Update, "line-1", null, PurchaseFixtures.Values with { Quantity = "9" })],
+            "remove" => [new(PurchaseRequestLineChangeKind.Remove, "line-1", null, null)], _ => [] } };
+        var submit = Submit(original);
+        AssertAdmitted(await request.Access.ResolveAsync(request.Session, PurchaseFixtures.DocumentId, "B1", CancellationToken.None));
+        var result = operation == "submit" ? await request.Commands.SubmitAsync(submit) : await request.Commands.SaveAsync(original);
+        Assert.Equal(PurchaseRequestCommandOutcome.Committed, result.Outcome); Assert.NotNull(result.Receipt);
+        Assert.Empty(result.Receipt!.AllocatedLines); Assert.Equal(0, db.AllocatorCalls); Assert.Equal(2, db.Commits);
+        Assert.Equal(operation == "remove" ? 1 : 2, result.Receipt.Document.Lines.Count);
+        if (operation == "update") Assert.Equal("9", result.Receipt.Document.Lines.Single(x => x.LineId == "line-1").Values.Quantity);
+        if (operation == "submit") { Assert.Equal(2, result.Receipt.Document.StatusId); Assert.True(result.Receipt.Document.IsLocked); }
+        AssertAdmitted(await request.Access.ResolveAsync(request.Session, PurchaseFixtures.DocumentId, "B1", CancellationToken.None));
+        Assert.Contains(db.Commands, c => c.CommandText == SqlLegacyBranchScope.CatalogShapeText);
+        Assert.Contains(db.Commands, c => c.CommandText == SqlLegacyBranchScope.CatalogText);
+        Assert.DoesNotContain(db.Commands, c => c.CommandText == SqlLegacyBranchScope.RestrictedText || c.CommandText == PurchaseRequestSql.BranchesText);
+        Assert.All(db.Commands, c => Assert.NotNull(c.Transaction));
+        var expected = JsonSerializer.Serialize(result.Receipt, PurchaseRequestCommandRules.Json);
+        var before = Snapshot(db); var commits = db.Commits;
+        db.Commands.Clear(); db.Events.Clear();
+        var observed = operation == "submit" ? await request.Commands.LookupAsync(submit) : await request.Commands.LookupAsync(original);
+        Assert.Equal(PurchaseRequestLookupOutcome.Committed, observed.Outcome);
+        Assert.Equal(expected, JsonSerializer.Serialize(observed.Receipt, PurchaseRequestCommandRules.Json));
+        Assert.Equal(before, Snapshot(db)); Assert.Equal(commits, db.Commits); AssertLookupOnly(db);
+
+        // A retained request/session and old catalog observation cannot disclose a
+        // receipt once the native assignment switches to a disjoint restricted set.
+        db.NativeBranch = "B2"; db.NativeBranches = ["B2"];
+        db.Commands.Clear(); db.Events.Clear();
+        var denied = operation == "submit" ? await request.Commands.LookupAsync(submit) : await request.Commands.LookupAsync(original);
+        Assert.Equal(PurchaseRequestLookupOutcome.Denied, denied.Outcome); Assert.Null(denied.Receipt);
+        AssertDenied(await request.Access.ResolveAsync(request.Session, PurchaseFixtures.DocumentId, "B1", CancellationToken.None));
+        Assert.Equal(before, Snapshot(db)); Assert.Equal(commits, db.Commits); Assert.Equal(0, db.AllocatorCalls);
+        Assert.Contains(db.Commands, c => c.CommandText == SqlLegacyBranchScope.RestrictedText);
+        Assert.DoesNotContain(db.Commands, c => c.CommandText == SqlLegacyBranchScope.CatalogText);
+        db.NativeBranch = native; db.NativeBranches = [];
+        db.Commands.Clear(); db.Events.Clear();
+        var restored = operation == "submit" ? await request.Commands.LookupAsync(submit) : await request.Commands.LookupAsync(original);
+        Assert.Equal(PurchaseRequestLookupOutcome.Committed, restored.Outcome);
+        Assert.Equal(expected, JsonSerializer.Serialize(restored.Receipt, PurchaseRequestCommandRules.Json));
+        Assert.Equal(before, Snapshot(db)); Assert.Equal(commits, db.Commits); AssertLookupOnly(db);
+    }
+
+    [Theory]
+    [InlineData(null)] [InlineData("")]
+    public async Task Native_branch_loss_after_composed_admission_denies_before_reservation_and_never_falls_back_to_catalog(string? native)
+    {
+        var db = new PurchaseRecordingModel { NativeBranch = native, NativeBranches = [], CatalogBranches = ["B1"], Denial = "add" };
+        db.Seed(); var sessions = new FakeSessions();
+        using var host = new Harness(Factory(db), sessions); using var request = host.Request(Session(TokenA));
+        var original = Save(db.Documents[PurchaseFixtures.DocumentId]); var before = Snapshot(db);
+        AssertAdmitted(await request.Access.ResolveAsync(request.Session, PurchaseFixtures.DocumentId, "B1", CancellationToken.None));
+        db.NativeBranch = "B2"; db.NativeBranches = ["B2"];
+        db.Commands.Clear(); db.Events.Clear();
+        var denied = await request.Commands.SaveAsync(original);
+        Assert.Equal(PurchaseRequestCommandOutcome.Denied, denied.Outcome); Assert.Null(denied.Receipt);
+        Assert.Equal(before, Snapshot(db)); Assert.Empty(db.Journal); Assert.Equal(0, db.Commits); Assert.Equal(0, db.AllocatorCalls);
+        Assert.Contains(db.Commands, c => c.CommandText == SqlLegacyBranchScope.RestrictedText);
+        Assert.DoesNotContain(db.Commands, c => c.CommandText == SqlLegacyBranchScope.CatalogText || c.CommandText == PurchaseRequestSql.ReserveText);
+        // An explicit current restricted grant remains valid even without catalog rows.
+        db.NativeBranch = "B1"; db.NativeBranches = ["B1"]; db.CatalogBranches = [];
+        db.Commands.Clear(); db.Events.Clear();
+        AssertAdmitted(await request.Access.ResolveAsync(request.Session, PurchaseFixtures.DocumentId, "B1", CancellationToken.None));
+        var committed = await request.Commands.SaveAsync(original);
+        Assert.Equal(PurchaseRequestCommandOutcome.Committed, committed.Outcome); Assert.NotNull(committed.Receipt);
+        Assert.Equal(2, db.Commits); Assert.Equal(0, db.AllocatorCalls);
+        Assert.DoesNotContain(db.Commands, c => c.CommandText == SqlLegacyBranchScope.CatalogText);
+    }
+
     [Fact]
     public async Task Create_and_Add_dispatch_are_denied_before_SQL_or_allocator_and_do_not_reserve()
     {
@@ -501,7 +579,8 @@ public sealed class PurchaseRequestCommandCompositionTests
     private static void AssertLookupOnly(PurchaseRecordingModel db, int previousAllocations = 0)
     {
         var allowed = new[] { PurchaseRequestSql.ProbeText, PurchaseRequestSql.TransactionText, PurchaseRequestSql.CredentialText,
-            PurchaseRequestSql.GrantsText, PurchaseRequestSql.BranchesText, PurchaseRequestSql.HeadText, PurchaseRequestSql.DetailsText, PurchaseRequestSql.LookupText };
+            PurchaseRequestSql.GrantsText, SqlLegacyBranchScope.NativeUserText, SqlLegacyBranchScope.RestrictedText,
+            SqlLegacyBranchScope.CatalogShapeText, SqlLegacyBranchScope.CatalogText, PurchaseRequestSql.HeadText, PurchaseRequestSql.DetailsText, PurchaseRequestSql.LookupText };
         Assert.All(db.Commands, c => Assert.Contains(c.CommandText, allowed));
         foreach (var suffix in new[] { ":reserve", ":complete", ":insert-head", ":insert-line", ":update-head", ":update-line", ":delete-line", ":submit", ":allocate", ":commit-before", ":commit-ack" })
             Assert.DoesNotContain(db.Events, x => x.EndsWith(suffix, StringComparison.Ordinal));
