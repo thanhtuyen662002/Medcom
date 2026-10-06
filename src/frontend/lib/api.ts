@@ -15,6 +15,7 @@ export function safeReturnPath(value: string | null): string {
 }
 export function errorMessage(error: unknown): string {
   if (!(error instanceof ApiError)) return "Không thể kết nối. Kiểm tra mạng rồi thử lại.";
+  if (error.code === "invalid_response") return "Dữ liệu máy chủ không tương thích với giao diện này. Vui lòng liên hệ quản trị viên.";
   if (error.code === "identity_unavailable") return "Dịch vụ đăng nhập ERP chưa sẵn sàng. Vui lòng liên hệ quản trị viên.";
   if (error.status === 429) return "Có nhiều yêu cầu đăng nhập. Vui lòng thử lại sau một phút.";
   if (error.code === "csrf_invalid") return "Phiên trang đã thay đổi. Tải lại trang rồi thử lại.";
@@ -31,14 +32,20 @@ async function request<T>(path: string, schema: z.ZodType<T>, init?: RequestInit
     throw new ApiError(response.status, problem.success ? (problem.data.code ?? "request_failed") : "request_failed",
       response.headers.get("X-Correlation-ID") ?? undefined);
   }
-  return schema.parse(body);
+  return parseResponse(response, body, schema);
+}
+function parseResponse<T>(response: Response, body: unknown, schema: z.ZodType<T>): T {
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) throw new ApiError(response.status, "invalid_response",
+    response.headers.get("X-Correlation-ID") ?? undefined);
+  return parsed.data;
 }
 export const getWorkspace = (signal?: AbortSignal) => request("/api/workspace", workspaceSchema, { signal });
 export const getSession = (signal?: AbortSignal) => request("/api/auth/session", sessionSchema, { signal });
 export async function getHealth(signal?: AbortSignal) {
   const response = await fetch("/health/ready", { signal, credentials: "same-origin", cache: "no-store" });
   if (response.status !== 503) throw new ApiError(response.status, "unexpected_readiness");
-  return healthSchema.parse(await response.json());
+  return parseResponse(response, await response.json().catch(() => null), healthSchema);
 }
 async function csrf() {
   return (await request("/api/auth/csrf", z.object({ token: z.string().min(1) }).strict())).token;
