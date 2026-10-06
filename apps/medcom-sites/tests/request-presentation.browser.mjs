@@ -34,6 +34,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
  const {observedView}=await import(pathToFileURL(contractFile).href);
  assert.deepEqual(observedView({outcome:'Observed',document:inbound},inbound.documentId),inbound,'Synthetic inbound data must satisfy the production read contract before browser execution');
  const entry=`import React from 'react';import{createRoot}from'react-dom/client';import Workspace from './components/erp/workspace';import{RequestError}from'./components/erp/request-presentation';import{ApiError}from'./lib/erp/api';
+ window.i30SaveDispatches=[];window.i30ControlDispatches=[];const nativeFetch=window.fetch.bind(window);window.fetch=(input,init)=>{const pathname=typeof input==='string'?new URL(input,location.href).pathname:'';if(init?.method==='POST'){if(pathname==='/api/erp/api/inbound-requests/draft/save')window.i30SaveDispatches.push(String(init.body));if(pathname.startsWith('/i30/network-control/'))window.i30ControlDispatches.push({kind:pathname.split('/').at(-1),body:String(init.body)});}return nativeFetch(input,init);};
  const diagnostics=new URLSearchParams(location.search).has('diagnostics');createRoot(document.getElementById('root')).render(diagnostics?<RequestError error={new ApiError(503,'PRIVATE_SQL_SENTINEL','PRIVATE_COOKIE_SENTINEL')}/>:<Workspace/>);`;
  const built=await build({absWorkingDir:app,stdin:{contents:entry,resolveDir:app,loader:'tsx'},bundle:true,write:false,platform:'browser',format:'iife',alias:{'@':app},jsx:'automatic',define:{'process.env.NODE_ENV':'"production"','process.env':'{}'},logLevel:'warning',plugins:[{name:'next-image-only',setup(build){build.onResolve({filter:/^next\/image$/},()=>({path:'image',namespace:'i30-image'}));build.onLoad({filter:/.*/,namespace:'i30-image'},()=>({contents:"import React from 'react';export default function Image({src,alt,width,height}){return <img src={src} alt={alt} width={width} height={height}/>;}",resolveDir:app,loader:'jsx'}));}}]});
  const cssSource=await readFile(path.join(app,'app/globals.css'),'utf8');
@@ -41,8 +42,8 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
  assert.ok(!css.includes('@import "tailwindcss"'),'Application Tailwind must actually compile.');
  const script=Buffer.from(built.outputFiles[0].contents),logo=await readFile(path.join(app,'public/medcom-logo.png'));
  const html='<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/app.css"><div id="root"></div><script src="/app.js"></script></html>';
- let model,serial=0,browser,context,page,origin,completed=false,fatal=null;const expectedCases=10;const errors=[],results=[],failures=[],captures=[],calls=[];
- const reset=(patch={})=>{model={serial:++serial,writable:false,empty:false,status:200,holdList:false,waiters:[],unknown:false,workspaceReads:0,deniedLists:0,...patch};calls.length=0;};
+ let model,serial=0,browser,context,page,origin,completed=false,fatal=null;const expectedCases=10;const errors=[],results=[],failures=[],captures=[],calls=[],transportEvidence=[];
+ const reset=(patch={})=>{model={serial:++serial,writable:false,empty:false,status:200,holdList:false,waiters:[],unknown:false,workspaceReads:0,deniedLists:0,inbound:structuredClone(inbound),effects:0,originals:new Map(),receipt:null,writes:[],reconciles:[],control:{closed:[],bff:[]},...patch};calls.length=0;};
  const workspace=()=>({session:{displayName:'SYNTHETIC USER',tenantId:'QA-T',companyId:'QA-C',companyName:'SYNTHETIC',authorityVersion:1,idleExpiresAt:new Date(Date.now()+3600000).toISOString(),absoluteExpiresAt:new Date(Date.now()+7200000).toISOString(),capabilities:['purchase-requests.read','inbound-requests.read','purchase-orders.read']},branchIds:['QA-BRANCH'],navigation:['purchase-requests','inbound-requests','purchase-orders'].map(id=>({id,label:id,href:'/?screen='+id}))});
  const send=(res,status,data,headers={})=>{if(res.destroyed)return;res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store',...headers});res.end(JSON.stringify(data));};
  const readHeaders={'X-Medcom-Session-Scope':session,'X-Medcom-Read-Scope':scope};
@@ -52,6 +53,10 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
    if(url.pathname==='/app.js'){res.setHeader('Content-Type','text/javascript');return res.end(script);}
    if(url.pathname==='/app.css'){res.setHeader('Content-Type','text/css');return res.end(css);}
    if(url.pathname==='/medcom-logo.png'){res.setHeader('Content-Type','image/png');return res.end(logo);}
+   if(['/i30/network-control/closed','/i30/network-control/bff'].includes(url.pathname)){
+    const parts=[];for await(const part of req)parts.push(part);const digest=sha(Buffer.concat(parts));const kind=url.pathname.endsWith('/closed')?'closed':'bff';m.control[kind].push(digest);
+    if(kind==='closed'){res.destroy();return;}return send(res,503,{code:'backend_unavailable'});
+   }
    if(!url.pathname.startsWith('/api/erp/')){res.setHeader('Content-Type','text/html');return res.end(html);}
    const route=url.pathname.slice('/api/erp'.length);calls.push({route,method:req.method});
    if(route==='/health/ready')return send(res,503,{status:'not_ready',checks:[]});
@@ -66,8 +71,21 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
     const data={rows,page:Number(url.searchParams.get('page')??1),pageSize:isPurchase?20:50,hasMore:false};return send(res,200,isPurchase?{scopeKey:scope,data}:data,readHeaders);
    }
    if(route==='/api/purchase-requests/detail')return send(res,200,{scopeKey:scope,data:{document:purchase,stateToken:'prs1.'+'d'.repeat(64),commandAccess:{canSave:m.writable,canSubmit:m.writable,canLookup:m.writable,canAddLines:false,reason:m.writable?'available':'command_access_provider_unavailable'}}});
-   if(route==='/api/inbound-requests/draft')return send(res,200,{scopeKey:scope,access:{canRead:true,canSave:m.writable,canSend:m.writable,available:true,maxCommandBytes:1048576},data:{outcome:'Observed',document:inbound}});
-   if(req.method==='POST'&&route==='/api/inbound-requests/draft/save'){for await(const part of req)void part;if(m.unknown){res.destroy();return;}return send(res,503,{code:'request_failed'});}
+   if(route==='/api/inbound-requests/draft')return send(res,200,{scopeKey:scope,access:{canRead:true,canSave:m.writable,canSend:m.writable,available:true,maxCommandBytes:1048576},data:{outcome:'Observed',document:m.inbound}});
+   if(req.method==='POST'&&['/api/inbound-requests/draft/save','/api/inbound-requests/draft/reconcile'].includes(route)){
+    const parts=[];for await(const part of req)parts.push(part);const body=Buffer.concat(parts).toString('utf8'),command=JSON.parse(body),digest=sha(body);
+    if(route.endsWith('/reconcile')){assert.equal(m.originals.get(command.operationId),body,'Reconcile must retain the exact original intent');m.reconciles.push(digest);return send(res,200,{scopeKey:scope,data:{outcome:'Replayed',receipt:m.receipt,code:null}});}
+    m.writes.push({operationId:command.operationId,bodySha256:digest});
+    if(m.originals.has(command.operationId))assert.equal(m.originals.get(command.operationId),body);else{
+     m.originals.set(command.operationId,body);m.effects++;
+     m.inbound.header=structuredClone(command.header);m.inbound.details=m.inbound.details.filter(row=>!command.removedDetailIds.includes(row.rowId));
+     for(const row of command.detailUpserts){const at=m.inbound.details.findIndex(old=>old.rowId===row.rowId);assert.ok(at>=0,'This metadata-only fixture retains existing row identities');m.inbound.details[at]=structuredClone(row);}
+     m.inbound.stateEqualityToken='D'.repeat(64);m.receipt={operationId:command.operationId,documentId:m.inbound.documentId,statusId:m.inbound.statusId,stateEqualityToken:m.inbound.stateEqualityToken,auditId:'22222222-2222-4222-8222-222222222222',committedAtUtc:new Date().toISOString()};
+    }
+    // Production proxy.ts catches an upstream failure and returns this explicit
+    //503. Closing the browser-facing socket instead can trigger browser retries.
+    return send(res,503,{code:'backend_unavailable'});
+   }
    return send(res,404,{code:'request_failed'});
   }catch(error){errors.push('Synthetic server failure: '+String(error));send(res,500,{code:'request_failed'});}
  });
@@ -126,11 +144,18 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
    });
   }
   await run('mobile editable exact values and unresolved Save keep custody',async()=>{
-   await start(390,'inbound-requests',{writable:true,unknown:true});await open('inbound-requests').click();const order=page.getByLabel('Số đơn',{exact:true});await order.waitFor();await order.fill('SYNTHETIC EDIT');await order.focus();await layout(390,'inbound-requests');
+   await start(390,'inbound-requests',{writable:true,unknown:true});
+   const control=await page.evaluate(async()=>{const results=[];for(const kind of ['closed','bff']){try{const response=await fetch('/i30/network-control/'+kind,{method:'POST',body:'SYNTHETIC TRANSPORT CONTROL'});results.push({kind,status:response.status});}catch{results.push({kind,status:null});}}return results;});
+   const controlDispatches=await page.evaluate(()=>window.i30ControlDispatches);for(const kind of ['closed','bff'])assert.equal(controlDispatches.filter(event=>event.kind===kind).length,1);assert.equal(control[0].status,null);assert.ok(model.control.closed.length>=1);assert.equal(new Set(model.control.closed).size,1);assert.equal(model.control.bff.length,1);assert.equal(control[1].status,503);
+   await open('inbound-requests').click();const order=page.getByLabel('Số đơn',{exact:true});await order.waitFor();await order.fill('SYNTHETIC EDIT');await order.focus();await layout(390,'inbound-requests');
    assert.equal(await page.getByLabel('Số lượng bộ theo chứng từ',{exact:true}).inputValue(),'999999999999999999');
    await page.getByRole('button',{name:'Rà soát phiếu',exact:true}).click();await page.getByRole('button',{name:'Lưu thay đổi',exact:true}).click();await page.waitForFunction(()=>document.querySelector('[data-testid=inbound-editor]')?.getAttribute('data-phase')==='unknown');assert.equal(await page.getByTestId('inbound-editor').getByRole('button',{name:'Kiểm tra yêu cầu gốc',exact:true}).isEnabled(),true);
-   assert.equal(calls.filter(v=>v.route==='/api/inbound-requests/draft/save').length,1);await layout(390,'inbound-requests');await capture('inbound-requests-unresolved-390');
+   assert.equal(calls.filter(v=>v.route==='/api/inbound-requests/draft/save').length,1);assert.equal(model.effects,1);assert.equal((await page.evaluate(()=>window.i30SaveDispatches)).length,1);await layout(390,'inbound-requests');await capture('inbound-requests-unresolved-390');
    await page.getByRole('button',{name:'Đóng phiếu nhập hàng',exact:true}).click();await page.getByRole('alertdialog').waitFor();assert.equal(calls.filter(v=>v.route==='/api/inbound-requests/draft/save').length,1);await capture('inbound-requests-custody-390');
+   await page.getByRole('button',{name:'Tiếp tục làm việc',exact:true}).click();await page.getByRole('button',{name:'Kiểm tra yêu cầu gốc',exact:true}).click();await page.waitForFunction(()=>document.querySelector('[data-testid=inbound-editor]')?.getAttribute('data-phase')==='editing');
+   assert.equal(await page.getByLabel('Số đơn',{exact:true}).inputValue(),'SYNTHETIC EDIT');assert.equal(model.effects,1);assert.equal(model.writes.length,1);assert.equal(model.reconciles.length,1);assert.equal(model.reconciles[0],model.writes[0].bodySha256);
+   const clientBodies=await page.evaluate(()=>window.i30SaveDispatches);assert.equal(clientBodies.length,1);assert.equal(sha(clientBodies[0]),model.writes[0].bodySha256);
+   transportEvidence.push({control:{responses:control,clientCalls:controlDispatches.map(event=>({kind:event.kind,bodySha256:sha(event.body)})),closedServerRequests:model.control.closed.length,closedBodyHashes:model.control.closed,bffServerRequests:model.control.bff.length},applicationSaveDispatches:clientBodies.length,serverSaveRequests:model.writes.length,effects:model.effects,originalBodySha256:model.writes[0].bodySha256,reconcileBodySha256:model.reconciles[0]});await capture('inbound-requests-reconciled-390');
   });
   await run('support details never expose arbitrary errors or references',async()=>{
    await page.goto(origin+'/?diagnostics=1');await page.getByText('Thông tin hỗ trợ',{exact:true}).click();const text=await page.locator('body').innerText();assert.match(text,/503/);assert.match(text,/unknown_code/);assert.doesNotMatch(text,/PRIVATE_SQL_SENTINEL|PRIVATE_COOKIE_SENTINEL/);
@@ -139,7 +164,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
  }catch(error){fatal=String(error);throw error;}finally{
   let teardownError;try{await cleanup();}catch(error){teardownError=error;errors.push(String(error));}
   t.signal.removeEventListener('abort',abortCleanup);
-  const evidence={node:process.version,css:{sourceSha256:sha(cssSource),compiledSha256:sha(css),bytes:Buffer.byteLength(css)},viewportWidths:[320,390,1440],hierarchy:'Actual Workspace and production request components',backend:'Synthetic HTTP only; no ERP/SQL acceptance',status:completed&&!t.signal.aborted&&!fatal&&!failures.length&&!errors.length&&results.length===expectedCases?'passed':'failed',expectedCases,completedCases:results.length,fatal,results,failures,captures,errors};
+  const evidence={node:process.version,css:{sourceSha256:sha(cssSource),compiledSha256:sha(css),bytes:Buffer.byteLength(css)},viewportWidths:[320,390,1440],hierarchy:'Actual Workspace and production request components',backend:'Synthetic HTTP only; no ERP/SQL acceptance',status:completed&&!t.signal.aborted&&!fatal&&!failures.length&&!errors.length&&results.length===expectedCases?'passed':'failed',expectedCases,completedCases:results.length,fatal,results,failures,captures,transportEvidence,errors};
   await writeFile(path.join(output,'browser-result.json'),JSON.stringify(evidence,null,2));
   if(teardownError)throw teardownError;
  }
