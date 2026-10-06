@@ -272,7 +272,7 @@ public static class LoopbackRelay
         {
             await RejectAsync(context, 504, "local_upstream_timeout");
         }
-        catch (BadHttpRequestException exception)
+        catch (Microsoft.AspNetCore.Http.BadHttpRequestException exception)
         {
             await RejectAsync(context, exception.StatusCode == 413 ? 413 : 400, "invalid_request_body");
         }
