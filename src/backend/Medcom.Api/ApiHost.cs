@@ -1,5 +1,7 @@
 using Medcom.Application;
 using Medcom.Infrastructure;
+using Medcom.Application.PurchaseRequests;
+using Medcom.Infrastructure.PurchaseRequests;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -30,6 +32,8 @@ public static class ApiHost
         builder.Logging.AddFilter("Microsoft.AspNetCore", LogLevel.Warning);
         builder.Services.AddSingleton<IPlatformReadiness, UnconfiguredPlatformReadiness>();
         builder.Services.AddSingleton(TimeProvider.System);
+        builder.Services.AddHttpContextAccessor();
+        builder.Services.AddSingleton<IPurchaseRequestQueries, UnavailablePurchaseRequestQueries>();
         if (builder.Configuration.GetValue("Legacy:Enabled", false))
         {
             string Required(string key) => builder.Configuration[key] is { Length: > 0 } value
@@ -51,6 +55,16 @@ public static class ApiHost
             if (enablePilots) builder.Services.AddSingleton<IDocumentReader>(provider => new SqlDocumentReader(
                 connectionString, provider.GetRequiredService<LegacyCompany>()));
             else builder.Services.AddSingleton<IDocumentReader, UnavailableDocumentReader>();
+            if (enablePilots) builder.Services.AddScoped<IPurchaseRequestQueries>(provider =>
+            {
+                var context = provider.GetRequiredService<IHttpContextAccessor>().HttpContext
+                    ?? throw new InvalidOperationException("A current request is required.");
+                var token = AuthEndpoints.Current(context).Token;
+                var sessions = provider.GetRequiredService<IWebSessions>();
+                return new SqlPurchaseRequestQueries(provider.GetRequiredService<SqlLegacyUserStore>(),
+                    provider.GetRequiredService<LegacyCompany>(), async cancellation =>
+                        (await sessions.ResolveAsync(token, false, cancellation))?.Identity);
+            });
         }
         else
         {
@@ -193,6 +207,7 @@ public static class ApiHost
             : Results.Problem(statusCode: 403, title: "Access denied."));
         AuthEndpoints.Map(app);
         DocumentEndpoints.Map(app);
+        PurchaseRequestEndpoints.Map(app);
         return app;
     }
 

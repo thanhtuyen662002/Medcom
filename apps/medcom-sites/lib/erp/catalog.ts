@@ -1,5 +1,6 @@
-export type ScreenId="home"|"purchase-orders"|"purchase-approval"|"inbound-requests"|"transfers"|"sales"|"accounting"|"reports"|"settings";
+export type ScreenId="home"|"purchase-orders"|"purchase-requests"|"purchase-approval"|"inbound-requests"|"transfers"|"sales"|"accounting"|"reports"|"settings";
 export const screens=[
+ {id:"purchase-requests",label:"Đề nghị mua hàng",group:"Mua hàng",description:"Đọc đề nghị mua hàng theo quyền ERP hiện tại.",form:"AP_PurposeRequestListFrm",menu:"05011",capability:"purchase-requests.read"},
  {id:"home",label:"Không gian làm việc",group:"Tổng quan",description:"Truy cập nhanh các công việc và phân hệ."},
  {id:"purchase-orders",label:"Đơn đặt hàng mua",group:"Mua hàng",description:"Tra cứu đơn hàng và theo dõi chi tiết hàng hóa.",form:"AP_OrderFrm",menu:"050129",capability:"purchase-orders.read"},
  {id:"purchase-approval",label:"Duyệt yêu cầu mua",group:"Mua hàng",description:"Kiểm tra và phê duyệt yêu cầu mua hàng.",form:"AP_ApprovePurchaseRequestListFrm",menu:"05012"},
