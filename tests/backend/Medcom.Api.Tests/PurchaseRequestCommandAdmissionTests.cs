@@ -5,6 +5,7 @@ using System.Globalization;
 using Medcom.Application;
 using Medcom.Application.PurchaseRequests;
 using Medcom.Contracts;
+using Medcom.Infrastructure;
 using Medcom.Infrastructure.PurchaseRequests;
 using Xunit;
 
@@ -12,6 +13,119 @@ namespace Medcom.Api.Tests;
 
 public sealed class PurchaseRequestCommandAdmissionTests
 {
+    [Theory]
+    [InlineData(null)] [InlineData("")]
+    public async Task Native_blank_uses_qualified_catalog_and_keeps_live_scope_and_EDIT_independent(string? native)
+    {
+        var db = new I22AdmissionModel { NativeBranch = native, CatalogBranches = ["B2", "B1"] };
+        Assert.Equal(PurchaseRequestCommandAuthorityOutcome.Admitted,
+            await db.Reader().ReadAsync(PurchaseFixtures.DocumentId, "B1"));
+        Assert.Equal(2, db.Events.Count(s => s == "native-user"));
+        Assert.Equal(2, db.Events.Count(s => s == "catalog"));
+        Assert.DoesNotContain("branches", db.Events); db.AssertReadOnly();
+        foreach (var liveScope in new string[][] { [], ["B2"], ["b1"] })
+        {
+            db = new I22AdmissionModel { NativeBranch = native };
+            db.Identity = db.Identity with { BranchIds = liveScope };
+            Assert.Equal(PurchaseRequestCommandAuthorityOutcome.Denied,
+                await db.Reader().ReadAsync(PurchaseFixtures.DocumentId, "B1"));
+            Assert.Equal(0, db.Opens); db.AssertReadOnly();
+        }
+        foreach (var grant in new[] { new I22NativeGrant(PurchaseGrantFixture.For("actor", "exact"), false, true),
+            new I22NativeGrant(PurchaseGrantFixture.For("actor", "exact"), true, false) })
+        {
+            db = new I22AdmissionModel { NativeBranch = native, Grants = [grant] };
+            Assert.Equal(PurchaseRequestCommandAuthorityOutcome.Denied,
+                await db.Reader().ReadAsync(PurchaseFixtures.DocumentId, "B1"));
+            Assert.DoesNotContain("catalog", db.Events); db.AssertReadOnly();
+        }
+    }
+
+    [Theory]
+    [InlineData("empty")] [InlineData("missing")] [InlineData("case")]
+    [InlineData("shape")] [InlineData("duplicate")] [InlineData("alias")]
+    [InlineData("null")] [InlineData("space")] [InlineData("whitespace")]
+    [InlineData("control")] [InlineData("overflow")]
+    public async Task Blank_native_catalog_failures_never_expand_scope(string fault)
+    {
+        var db = new I22AdmissionModel { NativeBranch = null };
+        switch (fault)
+        {
+            case "empty": db.CatalogBranches = []; break;
+            case "missing": db.CatalogBranches = ["B2"]; break;
+            case "case": db.CatalogBranches = ["b1"]; break;
+            case "shape": db.CatalogShape = 0; break;
+            case "duplicate": db.CatalogBranches = ["B1", "B1"]; break;
+            case "alias": db.CatalogAlias = 1; break;
+            case "space": db.CatalogBranches = ["B1 "]; break;
+            case "whitespace": db.NativeBranch = " "; break;
+            case "control": db.CatalogBranches = ["B1\0"]; break;
+            case "overflow": db.CatalogBranches = Enumerable.Range(0, 201).Select(n => "B" + n).ToArray(); break;
+            case "null": db.Transform = (stage, table) => { if (stage == "catalog") table.Rows[0][0] = DBNull.Value; return table; }; break;
+        }
+        Assert.Equal(fault is "empty" or "missing" or "case" ? PurchaseRequestCommandAuthorityOutcome.Denied
+            : PurchaseRequestCommandAuthorityOutcome.Unavailable,
+            await db.Reader().ReadAsync(PurchaseFixtures.DocumentId, "B1"));
+        Assert.DoesNotContain("head", db.Events); Assert.Equal(1, db.Rollbacks); db.AssertReadOnly();
+    }
+
+    [Theory]
+    [InlineData("missing")] [InlineData("duplicate")] [InlineData("principal")]
+    [InlineData("stamp")] [InlineData("disabled")] [InlineData("group-disabled")] [InlineData("group-null")]
+    public async Task Native_user_must_be_fresh_unique_and_credential_bound_before_blank_expansion(string fault)
+    {
+        var db = new I22AdmissionModel { NativeBranch = "" };
+        db.Transform = (stage, table) =>
+        {
+            if (stage != "native-user") return table;
+            switch (fault)
+            {
+                case "missing": table.Rows.Clear(); break;
+                case "duplicate": table.ImportRow(table.Rows[0]); break;
+                case "principal": table.Rows[0][0] = PurchaseFixtures.Actor.ToUpperInvariant(); break;
+                case "stamp": table.Rows[0][1] = "different-synthetic-hash"; break;
+                case "disabled": table.Rows[0][2] = true; break;
+                case "group-disabled": table.Rows[0][4] = true; break;
+                case "group-null": table.Rows[0][3] = DBNull.Value; break;
+            }
+            return table;
+        };
+        Assert.Equal(PurchaseRequestCommandAuthorityOutcome.Unavailable,
+            await db.Reader().ReadAsync(PurchaseFixtures.DocumentId, "B1"));
+        Assert.DoesNotContain("catalog", db.Events); db.AssertReadOnly();
+    }
+
+    [Theory]
+    [InlineData("native-user")] [InlineData("catalog-shape")] [InlineData("catalog")]
+    public async Task Native_blank_reader_fault_cancellation_shape_and_extra_results_fail_closed(string stage)
+    {
+        foreach (var failure in new[] { "fault", "cancel", "shape", "extra" })
+        {
+            using var stop = new CancellationTokenSource();
+            var db = new I22AdmissionModel { NativeBranch = null };
+            if (failure == "fault") db.FaultAt = stage;
+            if (failure == "extra") db.ExtraResultAt = stage;
+            if (failure == "cancel") db.OnStep = s => { if (s == stage) stop.Cancel(); };
+            if (failure == "shape") db.Transform = (s, table) => s == stage ? I22AdmissionModel.Table([typeof(bool)], [true]) : table;
+            Assert.Equal(failure == "cancel" ? PurchaseRequestCommandAuthorityOutcome.Cancelled : PurchaseRequestCommandAuthorityOutcome.Unavailable,
+                await db.Reader().ReadAsync(PurchaseFixtures.DocumentId, "B1", stop.Token));
+            Assert.Equal(1, db.Rollbacks); db.AssertReadOnly();
+        }
+    }
+
+    [Theory]
+    [InlineData(null)] [InlineData("")]
+    public async Task Native_blank_to_restricted_change_is_denied_at_second_SQL_fence(string? native)
+    {
+        var db = new I22AdmissionModel { NativeBranch = native };
+        db.OnStep = s => { if (s == "details") { db.NativeBranch = "B2"; db.NativeBranches = ["B2"]; } };
+        Assert.Equal(PurchaseRequestCommandAuthorityOutcome.Denied,
+            await db.Reader().ReadAsync(PurchaseFixtures.DocumentId, "B1"));
+        Assert.Equal(2, db.Events.Count(s => s == "native-user"));
+        Assert.Equal(1, db.Events.Count(s => s == "catalog"));
+        Assert.Equal(1, db.Events.Count(s => s == "branches")); db.AssertReadOnly();
+    }
+
     [Theory]
     [InlineData("missing")] [InlineData("empty-binding")] [InlineData("binding")]
     [InlineData("tenant")] [InlineData("company")] [InlineData("evidence")]
@@ -349,6 +463,9 @@ public sealed class PurchaseRequestCommandAdmissionTests
 internal sealed record I22NativeGrant(PurchaseGrantFixture Scope, bool Run, bool Update, bool Enabled = true);
 internal sealed class I22AdmissionModel
 {
+    internal string? NativeBranch = "B1";
+    internal string[] NativeBranches = ["B1"], CatalogBranches = ["B1"];
+    internal int CatalogShape = 1, CatalogAlias;
     internal AuthoritativeIdentity Identity = PurchaseFixtures.Identity();
     internal PurchaseRequestAggregate Document = PurchaseFixtures.Aggregate();
     internal List<I22NativeGrant> Grants = [new(PurchaseGrantFixture.For("actor", "exact"), true, true)];
@@ -380,7 +497,8 @@ internal sealed class I22AdmissionModel
     {
         Assert.Equal(0, ForbiddenCalls);
         var allowed = new[] { PurchaseRequestSql.ProbeText, PurchaseRequestSql.TransactionText, PurchaseRequestSql.CredentialText,
-            PurchaseRequestSql.GrantsText, PurchaseRequestSql.BranchesText, PurchaseRequestSql.HeadText, PurchaseRequestSql.DetailsText };
+            PurchaseRequestSql.GrantsText, SqlLegacyBranchScope.NativeUserText, SqlLegacyBranchScope.RestrictedText,
+            SqlLegacyBranchScope.CatalogShapeText, SqlLegacyBranchScope.CatalogText, PurchaseRequestSql.HeadText, PurchaseRequestSql.DetailsText };
         Assert.All(Commands, c => { Assert.Contains(c.CommandText, allowed); Assert.Equal(CommandType.Text, c.CommandType); });
     }
     internal static DataTable Table(Type[] types, object[]? row = null)
@@ -413,7 +531,19 @@ internal sealed class I22AdmissionModel
                     (string)cmd.Parameters["@username"].Value!, (string)cmd.Parameters["@group"].Value!, (string)cmd.Parameters["@menu"].Value!));
                 table = Table([typeof(string), typeof(string), typeof(string), typeof(bool), typeof(string), typeof(bool), typeof(int), typeof(int)],
                     [PurchaseRequestCommandRules.MenuId, PurchaseRequestCommandRules.FormId, DBNull.Value, false, "05", false, 0, update ? 1 : 0]); break;
-            case "branches": table = Table([typeof(string)], ["B1"]); break;
+            case "native-user":
+                Assert.Equal(Identity.PrincipalId, cmd.Parameters["@actor"].Value);
+                table = Table([typeof(string), typeof(string), typeof(bool), typeof(string), typeof(bool), typeof(string)],
+                    [PurchaseFixtures.Actor, PurchaseFixtures.Stored, false, PurchaseFixtures.Group, false, O(NativeBranch)]); break;
+            case "branches":
+                table = Table([typeof(string)]);
+                foreach (var branch in NativeBranches) table.Rows.Add(branch);
+                break;
+            case "catalog-shape": table = Table([typeof(int)], [CatalogShape]); break;
+            case "catalog":
+                table = Table([typeof(string), typeof(int)]);
+                foreach (var branch in CatalogBranches) table.Rows.Add(branch, CatalogAlias);
+                break;
             case "head":
                 Assert.Equal(PurchaseFixtures.DocumentId, cmd.Parameters["@document"].Value);
                 var h = Document.Header;
@@ -471,7 +601,7 @@ internal sealed class I22AdmissionModel
     {
         [AllowNull] public override string CommandText { get; set; } = "";
         public override int CommandTimeout { get; set; }
-        public override CommandType CommandType { get; set; }
+        public override CommandType CommandType { get; set; } = CommandType.Text;
         public override bool DesignTimeVisible { get; set; }
         public override UpdateRowSource UpdatedRowSource { get; set; }
         protected override DbConnection? DbConnection { get => owner; set => throw new NotSupportedException(); }
@@ -488,7 +618,10 @@ internal sealed class I22AdmissionModel
             Assert.Same(owner, DbTransaction!.Connection); Assert.Equal(IsolationLevel.Serializable, DbTransaction.IsolationLevel);
             string stage = CommandText == PurchaseRequestSql.ProbeText ? "probe" : CommandText == PurchaseRequestSql.TransactionText ? "transaction"
                 : CommandText == PurchaseRequestSql.CredentialText ? "credential" : CommandText == PurchaseRequestSql.GrantsText ? "grants"
-                : CommandText == PurchaseRequestSql.BranchesText ? "branches" : CommandText == PurchaseRequestSql.HeadText ? "head"
+                : CommandText == SqlLegacyBranchScope.NativeUserText ? "native-user"
+                : CommandText == SqlLegacyBranchScope.RestrictedText ? "branches"
+                : CommandText == SqlLegacyBranchScope.CatalogShapeText ? "catalog-shape"
+                : CommandText == SqlLegacyBranchScope.CatalogText ? "catalog" : CommandText == PurchaseRequestSql.HeadText ? "head"
                 : CommandText == PurchaseRequestSql.DetailsText ? "details" : "forbidden";
             model.Step(stage);
             var table = model.Result(stage, this);
