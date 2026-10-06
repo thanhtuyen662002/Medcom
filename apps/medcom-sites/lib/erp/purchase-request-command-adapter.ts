@@ -34,7 +34,7 @@ function text(value:string,max:number){
 }
 function integer(value:string){
  if(typeof value!=="string"||value.length>40||!(/^-?\d+$/).test(value))throw new Error("Exact integer required");
- const n=BigInt(value);if(n>999999999999999999n||n< -999999999999999999n)throw new Error("Source precision exceeded");
+ const n=BigInt(value);if(n>BigInt("999999999999999999")||n<BigInt("-999999999999999999"))throw new Error("Source precision exceeded");
  return n.toString(); // String-to-BigInt-to-string, never IEEE754 coercion.
 }
 function nullableText(original:string|null,display:string,max:number){return display===(original??"")?original:text(display,max);}

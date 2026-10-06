@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 using Medcom.Application;
 using Medcom.Application.PurchaseRequests;
 using Medcom.Contracts;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace Medcom.Api;
 
@@ -72,6 +73,10 @@ public static class PurchaseRequestEndpoints
 
 
     private const int CommandBodyLimit = 1_048_576;
+    // Kestrel HTTP/1.1 counts chunk framing toward its transport limit.
+    // Keep a finite framing allowance only here; decoded application bytes
+    // remain capped at CommandBodyLimit before deserialization or dispatch.
+    private const int CommandChunkedTransportLimit = CommandBodyLimit + 65_536;
     private static readonly JsonSerializerOptions CommandJson = new(PurchaseRequestCommandRules.Json)
     {
         PropertyNameCaseInsensitive = false,
@@ -165,6 +170,10 @@ public static class PurchaseRequestEndpoints
 
     private static async Task<byte[]> ReadCommandBytes(HttpContext context)
     {
+        if (context.Request.Protocol == "HTTP/1.1" && context.Request.ContentLength is null
+            && context.Request.Headers.TransferEncoding.ToString().Equals("chunked", StringComparison.OrdinalIgnoreCase)
+            && context.Features.Get<IHttpMaxRequestBodySizeFeature>() is { IsReadOnly: false } transport)
+            transport.MaxRequestBodySize = CommandChunkedTransportLimit;
         if (context.Request.ContentLength > CommandBodyLimit) throw new BadHttpRequestException("Body too large.", 413);
         using var buffer = new MemoryStream();
         var chunk = new byte[8192];

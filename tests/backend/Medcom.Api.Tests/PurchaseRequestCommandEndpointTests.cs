@@ -128,7 +128,19 @@ public sealed class PurchaseRequestCommandEndpointTests
         var json = JsonSerializer.Serialize(Save(fixture), PurchaseRequestCommandRules.Json);
         var exact = Encoding.UTF8.GetBytes(json + new string(' ', 1_048_576 - Encoding.UTF8.GetByteCount(json)));
         using var accepted = await SendBytes(fixture, "save", exact, chunked); Assert.Equal(HttpStatusCode.OK, accepted.StatusCode); Assert.Equal(1, commands.SaveCalls);
-        using var oversized = await SendBytes(fixture, "save", [..exact, (byte)' '], chunked); Assert.Equal(HttpStatusCode.RequestEntityTooLarge, oversized.StatusCode); Assert.Equal(1, commands.SaveCalls);
+        using var oversized = await SendBytes(fixture, "save", [..exact, (byte)' '], chunked, expectContinue: !chunked); Assert.Equal(HttpStatusCode.RequestEntityTooLarge, oversized.StatusCode); Assert.Equal(1, commands.SaveCalls);
+    }
+    [Fact]
+    public async Task Small_chunk_frames_preserve_the_same_decoded_one_MiB_boundary()
+    {
+        var commands = new CommandDouble();
+        await using var fixture = await Start(commands, new()); fixture.Source.Seed(); commands.Current = fixture.Source.Documents[0]; await fixture.Login();
+        var json = JsonSerializer.Serialize(Save(fixture), PurchaseRequestCommandRules.Json);
+        var exact = Encoding.UTF8.GetBytes(json + new string(' ', 1_048_576 - Encoding.UTF8.GetByteCount(json)));
+        using var accepted = await SendBytes(fixture, "save", exact, true, chunkSize: 256);
+        Assert.Equal(HttpStatusCode.OK, accepted.StatusCode); Assert.Equal(1, commands.SaveCalls);
+        using var oversized = await SendBytes(fixture, "save", [..exact, (byte)' '], true, chunkSize: 256);
+        Assert.Equal(HttpStatusCode.RequestEntityTooLarge, oversized.StatusCode); Assert.Equal(1, commands.SaveCalls);
     }
     [Fact]
     public async Task Malformed_JSON_UTF8_duplicate_missing_case_alias_numeric_enum_and_Add_are_rejected_before_dispatch()
@@ -172,22 +184,23 @@ public sealed class PurchaseRequestCommandEndpointTests
     private static Task<HttpResponseMessage> Send(PurchaseHttpFixture f, string route, object body, bool csrf = true, string? origin = null, string? scope = null) =>
         SendBytes(f, route, JsonSerializer.SerializeToUtf8Bytes(body, PurchaseRequestCommandRules.Json), false, csrf, origin, scope);
     private static async Task<HttpResponseMessage> SendBytes(PurchaseHttpFixture f, string route, byte[] bytes, bool chunked,
-        bool csrf = true, string? origin = null, string? scope = null)
+        bool csrf = true, string? origin = null, string? scope = null, bool expectContinue = false, int chunkSize = 8192)
     {
         var workspace = await f.Json("/api/purchase-requests/workspace");
         using var request = new HttpRequestMessage(HttpMethod.Post, "/api/purchase-requests/" + route);
-        request.Content = chunked ? new ChunkedBody(bytes) : new ByteArrayContent(bytes);
+        request.Content = chunked ? new ChunkedBody(bytes, chunkSize) : new ByteArrayContent(bytes);
+        if (expectContinue) request.Headers.ExpectContinue = true;
         request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
         request.Headers.Add("Origin", origin ?? f.Client.BaseAddress!.GetLeftPart(UriPartial.Authority));
         request.Headers.Add("X-Purchase-Scope", scope ?? workspace.GetProperty("scopeKey").GetString());
         if (csrf) request.Headers.Add("X-CSRF-TOKEN", (await f.Json("/api/auth/csrf")).GetProperty("token").GetString());
         return await f.Client.SendAsync(request);
     }
-    private sealed class ChunkedBody(byte[] bytes) : HttpContent
+    private sealed class ChunkedBody(byte[] bytes, int chunkSize) : HttpContent
     {
         protected override bool TryComputeLength(out long length) { length = 0; return false; }
         protected override async Task SerializeToStreamAsync(Stream stream, TransportContext? context)
-        { for (var start = 0; start < bytes.Length; start += 8192) await stream.WriteAsync(bytes.AsMemory(start, Math.Min(8192, bytes.Length - start))); }
+        { for (var start = 0; start < bytes.Length; start += chunkSize) await stream.WriteAsync(bytes.AsMemory(start, Math.Min(chunkSize, bytes.Length - start))); }
     }
     private sealed class AccessDouble : IPurchaseRequestCommandAccess
     {

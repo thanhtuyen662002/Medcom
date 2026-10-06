@@ -138,7 +138,7 @@ function PurchaseRequestReader({workspace,boundary,onDenied,onLogin}:PurchaseReq
   <button style={control} disabled aria-describedby="purchase-write-qualification">Tạo đề nghị</button>
   {!workspace?<><p>Đăng nhập ERP để đọc đề nghị mua hàng.</p><button style={control} onClick={onLogin}>Đăng nhập ERP</button></>:!allowed?<p role="status">Bạn không có quyền đọc đề nghị mua hàng trong phạm vi hiện tại.</p>:verifiedWorkspace!==workspace?<section aria-label="Đang xác minh phạm vi mua hàng">
    <p role={active?.error?"alert":"status"}>{active?.error?errorMessage(active.error):"Đang xác minh lại phạm vi và quyền ERP; dữ liệu vẫn bị ẩn."}</p>
-   {active?.error&&<button type="button" style={control} onClick={()=>setRefresh(value=>value+1)}>Xác minh lại phạm vi ERP</button>}
+   {!!active?.error&&<button type="button" style={control} onClick={()=>setRefresh(value=>value+1)}>Xác minh lại phạm vi ERP</button>}
   </section>:<>
    <form onSubmit={find} style={gap}><label>Tìm mã đề nghị <input style={control} value={searchInput} maxLength={100} onChange={event=>setSearchInput(event.target.value)}/></label>
     <button type="submit" style={control} disabled={busy}>Tìm kiếm</button>
