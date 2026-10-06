@@ -333,8 +333,22 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
     res.end(req.url === '/fixture.js' ? bundle.outputFiles[0].contents : '<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;font:16px system-ui}*{box-sizing:border-box}[role=alertdialog]{position:fixed;left:3%;top:3%;width:94%;z-index:51;background:white;padding:16px}[data-slot=alert-dialog-overlay]{position:fixed;inset:0;background:#0004;z-index:50}</style><div id="root"></div><script src="/fixture.js"></script>');});
   server.listen(0, '127.0.0.1'); await once(server, 'listening');
   let browser, context; const errors = [], external = [], results = [];
+  // node:test marks a timed-out async test failed but does not unwind its
+  // pending browser awaits. Close live resources on abort as well as finally.
+  const cleanup = async () => {
+    server.closeAllConnections();
+    const outcomes = await Promise.allSettled([context?.close(), browser?.close(), new Promise((resolve, reject) => server.close(error => {
+      if (error && error.code !== 'ERR_SERVER_NOT_RUNNING') reject(error); else resolve();
+    }))]);
+    // Abort already failed the test; duplicate abort/finally closure is safe.
+    // A normal teardown error must still fail after attempting every close.
+    const failures = outcomes.filter(outcome => outcome.status === 'rejected');
+    if (failures.length && !t.signal.aborted) throw new AggregateError(failures.map(outcome => outcome.reason), 'Synthetic browser teardown failed');
+  };
+  const abortCleanup = () => {void cleanup();}; t.signal.addEventListener('abort', abortCleanup, {once: true});
   try {
     browser = await chromium.launch({headless: true, ...(process.env.I21_TEST_BROWSER ? {executablePath: process.env.I21_TEST_BROWSER} : {})});
+    t.signal.throwIfAborted();
     context = await browser.newContext({viewport: {width: 390, height: 844}, locale: 'vi-VN', serviceWorkers: 'block'});
     const page = await context.newPage(); page.on('pageerror', e => errors.push(e.message));
     const origin = `http://127.0.0.1:${server.address().port}`;
@@ -587,7 +601,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
     assert.deepEqual(errors, []); assert.deepEqual(external, []);
     await writeFile(path.join(output, 'react-result.json'), JSON.stringify({node:process.version,browser:browser.version(),results,external,errors,
       scope:'Actual React host/I18/provider; fake list/fetch only. NOT ASP.NET, BFF, SQL or production.'}, null, 2));
-  } finally {await context?.close(); await browser?.close(); server.closeAllConnections(); await new Promise(resolve => server.close(resolve));}
+  } finally {t.signal.removeEventListener('abort', abortCleanup); await cleanup();}
 });
 
 // I24: whole production BFF modules, no extracted policy helpers or replacement
@@ -722,12 +736,12 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
     }}]});
   const css = await readFile(path.join(app, 'app/globals.css'), 'utf8');
   const html = '<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>' + css + '\nbody{margin:0;font:16px system-ui}img{max-width:100%;height:auto}[role=alertdialog],[role=dialog]{position:fixed;inset:3%;z-index:99;background:white;padding:16px;overflow:auto}[data-slot=alert-dialog-overlay]{position:fixed;inset:0;z-index:98;background:#0004}</style><div id="root"></div><script src="/i24.js"></script></html>';
-  let state, serial = 0; const calls = [], errors = [], external = [], results = [];
+  let state, serial = 0; const calls = [], errors = [], external = [], results = [], models = new Set();
   const resetState = (patch = {}) => {
     const now = Date.now(); state = {scope: (++serial).toString(16).padStart(64, '0'), failure: null, readStatus: null, listStatus: null, commandStatus: null,
       mode: 'Committed', version: 1, logoutStatus: 204, held: {}, waiters: {}, effects: 0, originals: new Map(), receipts: new Map(),
       lifetime: {idleExpiresAt: new Date(now + 3600000).toISOString(), absoluteExpiresAt: new Date(now + 7200000).toISOString()},
-      docs: {'DOC-A': structuredClone(source), 'DOC-B': {...structuredClone(source), documentId: 'DOC-B'}}, ...patch}; calls.length = 0;
+      docs: {'DOC-A': structuredClone(source), 'DOC-B': {...structuredClone(source), documentId: 'DOC-B'}}, ...patch}; models.add(state); calls.length = 0;
   };
   const release = (kind, model = state) => {model.held[kind] = false; (model.waiters[kind] ?? []).splice(0).forEach(resolve => resolve());};
   const wait = async (model, kind) => {if (model.held[kind]) await new Promise(resolve => (model.waiters[kind] ??= []).push(resolve));};
@@ -765,8 +779,23 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
   });
   resetState(); backend.listen(0, '127.0.0.1'); await once(backend, 'listening'); const backendHttp = `http://127.0.0.1:${backend.address().port}`;
   let browser, context, page;
+  const releaseAll = () => {for (const model of models) for (const kind of Object.keys(model.waiters)) release(kind, model);};
+  const cleanup = async () => {
+    // A login/reset can replace state while an old synthetic command is held.
+    // Retain/release every model, not merely the most recent one.
+    releaseAll(); backend.closeAllConnections();
+    const outcomes = await Promise.allSettled([context?.close(), browser?.close(), new Promise((resolve, reject) => backend.close(error => {
+      if (error && error.code !== 'ERR_SERVER_NOT_RUNNING') reject(error); else resolve();
+    }))]);
+    // Abort already failed the test; duplicate abort/finally closure is safe.
+    // A normal teardown error must still fail after attempting every close.
+    const failures = outcomes.filter(outcome => outcome.status === 'rejected');
+    if (failures.length && !t.signal.aborted) throw new AggregateError(failures.map(outcome => outcome.reason), 'Synthetic browser teardown failed');
+  };
+  const abortCleanup = () => {void cleanup();}; t.signal.addEventListener('abort', abortCleanup, {once: true});
   try {
     browser = await chromium.launch({headless: true, ...(process.env.I21_TEST_BROWSER ? {executablePath: process.env.I21_TEST_BROWSER} : {})});
+    t.signal.throwIfAborted();
     context = await browser.newContext({viewport: {width: 390, height: 844}, locale: 'vi-VN', serviceWorkers: 'block'}); page = await context.newPage();
     page.on('pageerror', error => errors.push(error.message));
     await page.route('**/*', async route => {
@@ -803,7 +832,7 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
     const settled = () => page.waitForFunction(() => document.querySelector('[data-testid=inbound-request-host]')?.getAttribute('data-readback-pending') === 'false');
     const recover = async () => {state.failure = null; await button('Xác minh lại phiên nhập hàng').click(); await field('Tìm phiếu nhập hàng').waitFor(); await page.waitForFunction(() => [...document.querySelectorAll('button')].some(b => b.textContent === 'Kiểm tra yêu cầu gốc' && !b.disabled) || document.querySelector('[data-testid=confirmed-receipt]'));};
     const single = async () => {const io = await page.evaluate(() => window.i24IO), writers = calls.filter(c => /\/(save|send-to-warehouse)$/.test(c.path)); assert.equal(io.execute.length, 1); assert.equal(io.fetch.filter(c => /\/(save|send-to-warehouse)$/.test(c.url)).length, 1); assert.equal(writers.length, 1); assert.equal(state.effects, 1); for (const c of calls.filter(c => /\/(save|send-to-warehouse|reconcile)$/.test(c.path))) {assert.equal(c.body, io.execute[0].body); assert.equal(c.scope, state.scope);} for (const c of io.fetch) assert.equal(c.body, io.execute[0].body);};
-    const run = async (name, fn) => {await t.test(name, async () => {await fn(); results.push(name);});};
+    const run = async (name, fn) => {await t.test(name, async () => {try {await fn(); results.push(name);} finally {releaseAll();}});};
     for (const width of [320, 360, 390]) await run(`${width}px actual Workspace mounts one full draft host without a child sentinel`, async () => {
       await page.setViewportSize({width, height: 844}); await start(); assert.equal(await host().count(), 1); assert.equal(await field('Số đơn').inputValue(), 'FULL ERP A');
       assert.equal(await host().evaluate(el => el.scrollWidth <= el.clientWidth), true); assert.equal(await page.evaluate(() => history.state.medcomInboundHost ?? null), null);
@@ -892,5 +921,5 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
     const standalonePath = path.join(output, 'react-result.json');
     const standalone = JSON.parse(await readFile(standalonePath, 'utf8').catch(error => {if (error.code === 'ENOENT') return '{}'; throw error;}));
     await writeFile(standalonePath, JSON.stringify({...standalone, workspaceComposition: evidence}, null, 2));
-  } finally {for (const kind of Object.keys(state.held)) release(kind); await context?.close(); await browser?.close(); backend.closeAllConnections(); await new Promise(resolve => backend.close(resolve));}
+  } finally {t.signal.removeEventListener('abort', abortCleanup); await cleanup();}
 });
