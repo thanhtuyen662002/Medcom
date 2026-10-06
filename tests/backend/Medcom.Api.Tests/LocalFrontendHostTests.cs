@@ -335,11 +335,14 @@ public sealed class LocalFrontendHostTests
         using var acceptedStreamed = await fixture.Client.PostAsync(path, new StreamingContent(bytes));
         Assert.Equal(HttpStatusCode.Created, acceptedStreamed.StatusCode);
         Assert.Equal(bytes, received);
-        // Read TLS responses while sending: an early 413 can close the request write side before HttpClient
-        // finishes serializing a large body. A write failure alone never satisfies either rejection assertion.
-        var declaredOverflow = await fixture.Raw("POST", path, body: new byte[limit + 1]);
+        // An oversized declared length must receive a final 413 before body upload. Raw returns the first
+        // response headers, so an interim 100 Continue fails this assertion; no payload is sent in this case.
+        var declaredOverflow = await fixture.Raw("POST", path,
+            $"Content-Length: {(limit + 1).ToString(System.Globalization.CultureInfo.InvariantCulture)}\r\nExpect: 100-continue\r\n");
         Assert.StartsWith("HTTP/1.1 413", declaredOverflow, StringComparison.Ordinal);
         Assert.Equal(2, fixture.UpstreamCalls);
+        // The streamed overflow still sends actual chunked bytes while concurrently requiring an observed 413.
+        // A request write failure by itself never satisfies the rejection assertion.
         var streamedOverflow = await fixture.Raw("POST", path, body: new byte[limit + 1], chunked: true);
         Assert.StartsWith("HTTP/1.1 413", streamedOverflow, StringComparison.Ordinal);
         Assert.Equal(2, fixture.UpstreamCalls);

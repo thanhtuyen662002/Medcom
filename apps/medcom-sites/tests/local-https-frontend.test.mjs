@@ -160,7 +160,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       assert.equal(sent.origin,ready.apiOrigin);assert.equal(sent.forwarded,false);assert.equal(sent.scope,'a'.repeat(64));assert.deepEqual(sent.cookieNames,['__Host-Medcom.Csrf','__Host-Medcom.Session']);
     });
     await run('untrusted upstream certificates fail closed without browser/Node validation bypass', async () => {
-      await assert.rejects(request(ready.apiOrigin+'/health/live',{certificate:false}),error=>/CERT|SELF_SIGNED|ISSUER/.test(error.code??''));
+      await assert.rejects(request(ready.apiOrigin+'/health/live',{certificate:false}),{code:'UNABLE_TO_VERIFY_LEAF_SIGNATURE'});
       await assert.rejects(request(ready.apiOrigin.replace('localhost','127.0.0.1')+'/health/live'),error=>error.code==='ERR_TLS_CERT_ALTNAME_INVALID');
       await closeChild(node);node.expectedStopped=true;
       const untrustedEnv={...localEnv};delete untrustedEnv.NODE_EXTRA_CA_CERTS;
