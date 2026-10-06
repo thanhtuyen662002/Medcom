@@ -454,12 +454,12 @@ public sealed class PurchaseRequestCommandTests
         Assert.Equal(2,receipt.Document.Lines.Count);
         Assert.Equal(PurchaseRequestCommandRules.Line(replacement),receipt.Document.Lines.Single(l=>l.LineId=="line-1").Values);
         Assert.Equal(untouched,receipt.Document.Lines.Single(l=>l.LineId=="line-2"));
-        var delete=Assert.Single(db.Commands.Where(c=>c.CommandText==PurchaseRequestSql.DeleteLineText));
-        var insert=Assert.Single(db.Commands.Where(c=>c.CommandText==PurchaseRequestSql.InsertLineText));
+        var delete=Assert.Single(db.Commands,c=>c.CommandText==PurchaseRequestSql.DeleteLineText);
+        var insert=Assert.Single(db.Commands,c=>c.CommandText==PurchaseRequestSql.InsertLineText);
         Assert.Equal("line-1",delete.Parameters["@lineScope"].Value); Assert.Equal("line-1",insert.Parameters["@line"].Value);
         Assert.True(db.Commands.IndexOf(delete)<db.Commands.IndexOf(insert));
-        Assert.Single(db.Commands.Where(c=>c.CommandText==PurchaseRequestSql.ReserveText));
-        Assert.Single(db.Commands.Where(c=>c.CommandText==PurchaseRequestSql.CompleteText));
+        Assert.Single(db.Commands,c=>c.CommandText==PurchaseRequestSql.ReserveText);
+        Assert.Single(db.Commands,c=>c.CommandText==PurchaseRequestSql.CompleteText);
         var stored=Assert.Single(db.Journal.Values); Assert.Equal((byte)1,stored.State);
         Assert.Equal(PurchaseRequestCommandRules.IntentBytes(PurchaseRequestCommandRules.Freeze(input)),stored.Intent);
         Assert.Equal(JsonSerializer.Serialize(receipt,PurchaseRequestCommandRules.Json),stored.Receipt);
