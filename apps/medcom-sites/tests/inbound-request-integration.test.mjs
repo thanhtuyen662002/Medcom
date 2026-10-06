@@ -375,6 +375,35 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await button('Tiếp tục làm việc').click(); assert.equal(await page.evaluate(() => window.qaLeft), false);
     };
     const run = async (name, fn) => {await t.test(name, async () => {try {await fn(); results.push({name, result: 'PASS'});} catch (e) {results.push({name, result: 'FAIL'}); throw e;}});};
+    const detailFocus = () => page.getByRole('region', {name:'Phiếu nhập hàng đã chọn', exact:true});
+    const rowFocus = id => page.getByRole('button', {name:new RegExp('^Mở phiếu '+id+' ')});
+    const focused = async locator => {await page.waitForFunction(element=>document.activeElement===element,await locator.elementHandle());};
+    const focusPaint = () => page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    await run('I33 accepted full read focuses detail; same-document focus preserves dirty guard and values',async()=>{
+      await reset();await focused(detailFocus());await field('Số đơn').fill('FOCUS DIRTY A');const before=await calls();await open('DOC-A');await focused(detailFocus());assert.equal(await field('Số đơn').inputValue(),'FOCUS DIRTY A');assert.equal((await calls()).read.length,before.read.length);
+      await blocked(()=>button('Đóng phiếu nhập hàng').click(),true);assert.equal(await field('Số đơn').inputValue(),'FOCUS DIRTY A');assert.equal(await page.getByTestId('inbound-editor').getAttribute('data-document-id'),'DOC-A');
+      await open('DOC-B');await page.getByRole('alertdialog').waitFor();await button('Bỏ thay đổi và rời màn hình').click();await ready();await focused(detailFocus());assert.equal(await field('Số đơn').inputValue(),'FULL ERP B');assert.equal((await calls()).post.length,0);
+    });
+    await run('I33 approved Close returns focus to the current originating row without changing list controls',async()=>{
+      await reset();await focused(detailFocus());await field('Tìm phiếu nhập hàng').fill('UNAPPLIED FOCUS FILTER');await field('Số đơn').fill('DIRTY CLOSE VALUE');await button('Đóng phiếu nhập hàng').click();await page.getByRole('alertdialog').waitFor();assert.equal(await page.evaluate(()=>window.qaLeft),false);await button('Bỏ thay đổi và rời màn hình').click();await focused(rowFocus('DOC-A'));assert.equal(await field('Tìm phiếu nhập hàng').inputValue(),'UNAPPLIED FOCUS FILTER');assert.equal(await page.getByTestId('inbound-editor').count(),0);assert.equal((await calls()).post.length,0);
+    });
+    await run('I33 held Open read respects later input focus and authority revalidation never creates a new focus ticket',async()=>{
+      await page.evaluate(()=>window.qa.reset({held:{read:true}}));await open('DOC-A');await page.waitForFunction(()=>window.qa.held('read')>0);await field('Tìm phiếu nhập hàng').fill('KEEP THIS FOCUS');await page.evaluate(()=>window.qa.release('read'));await ready();await focusPaint();assert.equal(await field('Tìm phiếu nhập hàng').evaluate(element=>document.activeElement===element),true);
+      await page.evaluate(()=>window.qa.reset({held:{read:true}}));await open('DOC-A');await page.waitForFunction(()=>window.qa.held('read')>0);
+      // No intervening pointer/key/focus input cancels this live Open ticket: authority alone must retire it.
+      await page.evaluate(()=>{window.qa.rights({canRead:false,canSave:false,canSend:false});window.qa.release('read');});await page.waitForFunction(()=>!document.getElementById('inbound-header-orderNumber'));await focusPaint();assert.equal(await detailFocus().evaluate(element=>document.activeElement===element),false);
+      await page.evaluate(()=>window.qa.rights({}));await ready();await focusPaint();assert.equal(await detailFocus().evaluate(element=>document.activeElement===element),false);assert.equal((await calls()).post.length,0);
+    });
+    await run('I33 failed Open is retired; explicit retry can recover data without delayed focus theft',async()=>{
+      await page.evaluate(()=>window.qa.reset({readFailure:true}));await open('DOC-A');await page.getByText('Chưa xác minh được quyền nhập hàng. Ý định đang giữ không bị bỏ; thử xác minh lại trong đúng phiên.',{exact:true}).waitFor();await page.evaluate(()=>window.qa.healthy());await button('Xác minh lại quyền nhập hàng').click();await ready();await focusPaint();assert.equal(await detailFocus().evaluate(element=>document.activeElement===element),false);assert.equal(await field('Số đơn').inputValue(),'FULL ERP A');const before=(await calls()).read.length;await open('DOC-A');await focused(detailFocus());assert.equal((await calls()).read.length,before);assert.equal((await calls()).post.length,0);
+    });
+    await run('I33 same-document Open waits for new bound full read after bootstrap, not an old readiness event',async()=>{
+      await reset();await focused(detailFocus());await field('Tìm phiếu nhập hàng').focus();await page.evaluate(()=>{window.qa.hold('read');window.qa.rights({});});await page.waitForFunction(()=>window.qa.held('read')>0);const before=(await calls()).read.length;
+      await page.evaluate(()=>window.qa.releaseOne('read'));await page.waitForFunction(before=>window.qa.calls().read.length>before&&window.qa.held('read')>0,before);await open('DOC-A');await focusPaint();assert.equal(await detailFocus().evaluate(element=>document.activeElement===element),false,'bootstrap is not current I18 presentation proof');
+      await page.evaluate(()=>window.qa.release('read'));await ready();await focused(detailFocus());assert.equal(await field('Số đơn').inputValue(),'FULL ERP A');
+      await page.evaluate(()=>window.qa.hold('read'));await button('Đọc lại ERP').click();await page.waitForFunction(()=>window.qa.held('read')>0);await open('DOC-A');await focusPaint();assert.equal(await detailFocus().evaluate(element=>document.activeElement===element),false,'an old ready event cannot satisfy explicit child reread');
+      await page.evaluate(()=>window.qa.release('read'));await ready();await focused(detailFocus());assert.equal((await calls()).post.length,0);
+    });
     for (const width of [320, 360, 390]) await run(`${width}px real host uses full read; dirty selection/filter/page/close/Back show dialog`, async () => {
       await page.setViewportSize({width, height: 844}); await reset(); assert.equal(await field('Số đơn').inputValue(), 'FULL ERP A');
       assert.equal(await page.evaluate(w => document.documentElement.scrollWidth <= w, width), true);

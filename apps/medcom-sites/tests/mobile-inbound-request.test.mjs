@@ -118,7 +118,7 @@ import React,{useMemo,useRef,useState} from 'react';import {createRoot} from 're
 import {MobileInboundRequest} from './components/erp/mobile-inbound-request';
 import {NavigationGuardProvider,useNavigationGuard} from './components/erp/navigation-guard';
 const baseline=${JSON.stringify(source)};
-window.qaCallbacks=[];window.qaHeldReads=[];window.qaConfirms=0;window.qaLeft=false;window.qaConfirmAnswer=true;window.confirm=()=>{window.qaConfirms++;return window.qaConfirmAnswer;};
+window.qaPresented=[];window.qaCallbacks=[];window.qaHeldReads=[];window.qaConfirms=0;window.qaLeft=false;window.qaConfirmAnswer=true;window.confirm=()=>{window.qaConfirms++;return window.qaConfirmAnswer;};
 function docs(count=2){const a=structuredClone(baseline);if(count!==2)a.details=Array.from({length:count},(_,i)=>({...baseline.details[0],rowId:'ROW-'+(i+1)}));return {'DOC-A':a,'DOC-B':{...structuredClone(a),documentId:'DOC-B',stateEqualityToken:'B'.repeat(64),header:{...a.header,orderNumber:'SOURCE B'}}};}
 function model(patch={}){const m={docs:docs(patch.count),calls:{read:[],execute:[],reconcile:[],frozen:[],sameOriginal:[],finishedRead:0,finishedExecute:0,aborts:0},mode:'Committed',readFault:false,badReceipt:null,reconcileOutcome:'Replayed',callbackThrows:false,revision:0,...patch};
  if(patch.nullField)m.docs['DOC-A'].details[0][patch.nullField]=null;
@@ -131,8 +131,9 @@ function App(){const ref=useRef(model()),sequence=useRef(0);const [config,setCon
  read:async(id,signal)=>{m.calls.read.push(id);signal.addEventListener('abort',()=>m.calls.aborts++);
   // Capture BEFORE waiting: an old response must actually carry old data.
   const snapshot=structuredClone(m.staleReadback&&m.calls.execute.length?baseline:m.docs[id]);
+  if(m.malformedRead)snapshot.header.rateExchange=1;
   if(m.holdReadDocument===id){await new Promise(resolve=>{window.qaReadResolve=resolve;window.qaHeldReads.push({id,resolve});});}
-  m.calls.finishedRead++;if(m.readFault)throw Error('PRIVATE SENTINEL read');return {outcome:'Observed',document:snapshot};},
+  m.calls.finishedRead++;if(m.readFault||m.readFaultDocument===id)throw Error('PRIVATE SENTINEL read');return {outcome:'Observed',document:snapshot};},
  execute:async(c,signal)=>{m.original=c;m.calls.execute.push(structuredClone(c));m.calls.frozen.push(Object.isFrozen(c)&&Object.isFrozen(c.header??c)&&Object.isFrozen(c.detailUpserts)&&c.detailUpserts.every(Object.isFrozen));signal.addEventListener('abort',()=>m.calls.aborts++);
   if(m.mode==='controlled')await new Promise(resolve=>window.qaExecuteResolve=resolve);
   if(['Committed','Replayed','lost','controlled','malformed','readFailure'].includes(m.mode)){m.receipt=apply(m,c);m.calls.finishedExecute++;if(m.mode==='lost')throw Error('PRIVATE SENTINEL lost acknowledgment');if(m.mode==='readFailure')m.readFault=true;const result={outcome:m.mode==='Replayed'?'Replayed':'Committed',receipt:structuredClone(m.receipt),code:null};if(m.mode==='malformed')result.receipt[m.badReceipt??'operationId']='bad';return result;}
@@ -140,13 +141,18 @@ function App(){const ref=useRef(model()),sequence=useRef(0);const [config,setCon
  },
  reconcile:async(c,signal)=>{m.calls.reconcile.push(structuredClone(c));m.calls.sameOriginal.push(c===m.original&&Object.isFrozen(c));signal.addEventListener('abort',()=>m.calls.aborts++);if(m.holdReconcile)await new Promise(resolve=>window.qaReconcileResolve=resolve);return {outcome:m.reconcileOutcome,receipt:m.reconcileOutcome==='Replayed'?structuredClone(m.receipt):null,code:null};}
  };},[config.scopeKey,config.adapterVersion]);
- window.qa={reset:patch=>{ref.current=model(patch);window.qaHeldReads=[];window.qaReadResolve=undefined;window.qaConfirms=0;window.qaCallbacks=[];window.qaLeft=false;window.qaConfirmAnswer=true;setConfig({scopeKey:'synthetic-session-'+(++sequence.current),documentId:'DOC-A',canRead:true,canSave:true,canSend:true,available:true,maxCommandBytes:patch?.maxCommandBytes??1048576,adapterVersion:0});},calls:()=>ref.current.calls,
+ window.qa={reset:patch=>{ref.current=model(patch);window.qaPresented=[];window.qaHeldReads=[];window.qaReadResolve=undefined;window.qaConfirms=0;window.qaCallbacks=[];window.qaLeft=false;window.qaConfirmAnswer=true;setConfig({scopeKey:'synthetic-session-'+(++sequence.current),documentId:'DOC-A',canRead:true,canSave:true,canSend:true,available:true,maxCommandBytes:patch?.maxCommandBytes??1048576,adapterVersion:0});},calls:()=>ref.current.calls,
  // Raw select deliberately bypasses the host guard for stale-response adversarial tests; Leave is the guarded user path.
  select:id=>flushSync(()=>setConfig(old=>({...old,documentId:id}))),refresh:()=>setConfig(old=>({...old})),revoke:()=>setConfig(old=>({...old,canRead:false,canSave:false,canSend:false})),restore:()=>setConfig(old=>({...old,canRead:true,canSave:true,canSend:true})),logout:()=>setConfig(old=>({...old,scopeKey:null})),
- healthy:()=>{ref.current.readFault=false;ref.current.staleReadback=false;},readFault:value=>{ref.current.readFault=value;},holdReads:id=>{ref.current.holdReadDocument=id;},
+ healthy:()=>{ref.current.readFault=false;ref.current.staleReadback=false;ref.current.malformedRead=false;},readFault:value=>{ref.current.readFault=value;},holdReads:id=>{ref.current.holdReadDocument=id;},
   rights:patch=>setConfig(old=>({...old,...patch})),replaceAdapter:()=>setConfig(old=>({...old,adapterVersion:old.adapterVersion+1})),mutateOrder:value=>{ref.current.docs['DOC-A'].header.orderNumber=value;},mutateCallback:()=>{ref.current.callbackMutates=true;},
   changeToken:()=>{ref.current.docs['DOC-A'].stateEqualityToken='F'.repeat(64);},corruptFresh:kind=>{const d=ref.current.docs['DOC-A'];if(kind==='status')d.statusId=2;if(kind==='header')d.header.invoiceNo='CHANGED';if(kind==='detail')d.details[0].setQuantityByDocument=null;if(kind==='cost')d.costRowCount=3;},reconcileOutcome:value=>{ref.current.reconcileOutcome=value;},callbackThrows:()=>{ref.current.callbackThrows=true;}};
- return <NavigationGuardProvider><MobileInboundRequest documentId={config.documentId} access={config} adapter={adapter} onConfirmed={receipt=>{window.qaCallbacks.push(receipt);if(ref.current.callbackMutates)receipt.documentId='MUTATED';if(ref.current.callbackThrows)throw Error('PRIVATE SENTINEL callback');}}/><Leave onLeave={()=>setConfig(old=>({...old,documentId:'DOC-B'}))}/></NavigationGuardProvider>;
+ return <NavigationGuardProvider><MobileInboundRequest documentId={config.documentId} access={config} adapter={adapter} onPresentedRead={event=>{
+  const editor=document.querySelector('[data-testid=inbound-editor]'),field=document.getElementById('inbound-header-orderNumber');
+  window.qaPresented.push({...event,phase:editor?.getAttribute('data-phase')??null,visibleDocumentId:editor?.getAttribute('data-document-id')??null,order:field?.value??null,fieldConnected:field?.isConnected??false});
+  if(ref.current.presentedCallback==='throw')throw Error('PRIVATE SENTINEL presentation callback');
+  if(ref.current.presentedCallback==='reject')return Promise.reject(Error('PRIVATE SENTINEL presentation rejection'));
+ }} onConfirmed={receipt=>{window.qaCallbacks.push(receipt);if(ref.current.callbackMutates)receipt.documentId='MUTATED';if(ref.current.callbackThrows)throw Error('PRIVATE SENTINEL callback');}}/><Leave onLeave={()=>setConfig(old=>({...old,documentId:'DOC-B'}))}/></NavigationGuardProvider>;
 }
 function Leave({onLeave}){const guard=useNavigationGuard();return <button id='qa-leave' onClick={()=>guard.request(()=>{window.qaLeft=true;onLeave();})}>Synthetic navigation</button>;}
 createRoot(document.getElementById('root')).render(<App/>);`;
@@ -192,6 +198,95 @@ test('actual React mobile workflow and adversarial async custody', {timeout:2400
    return dialog;
   };
   await ready();
+  const presentationEvents=()=>page.evaluate(()=>window.qaPresented);
+  const presented=async()=>(await presentationEvents()).filter(event=>event.state!=='pending');
+  await run('presentation readiness occurs after committed current full read and does not remount or read again',async()=>{
+   await page.evaluate(()=>window.qa.reset({holdReadDocument:'DOC-A'}));await page.waitForFunction(()=>window.qaHeldReads.length===1);
+   assert.deepEqual(await presented(),[],'A started transport is not committed read proof');
+   await page.evaluate(()=>window.qaHeldReads[0].resolve());await ready();
+   const events=await presented();assert.equal(events.length,1);assert.match(events[0].scopeKey,/^synthetic-session-/);
+   assert.deepEqual({...events[0],scopeKey:'CURRENT'}, {documentId:'DOC-A',scopeKey:'CURRENT',state:'ready',phase:'editing',visibleDocumentId:'DOC-A',order:'SOURCE A',fieldConnected:true});
+   await page.evaluate(()=>{window.qaPresentedEditor=document.querySelector('[data-testid=inbound-editor]');window.qa.refresh();});
+   await field('Số đơn').fill('KEEP PRESENTED EDIT');await page.evaluate(()=>window.qa.refresh());await page.waitForTimeout(30);
+   assert.equal(await page.evaluate(()=>window.qaPresentedEditor===document.querySelector('[data-testid=inbound-editor]')),true);
+   assert.equal(await field('Số đơn').inputValue(),'KEEP PRESENTED EDIT');assert.equal((await presented()).length,1);
+   assert.equal((await calls()).read.length,1);assert.equal((await calls()).execute.length,0);
+  });
+  for(const fault of ['readFault','malformedRead'])await run(`presentation ${fault} reports only current failure until an explicit successful retry`,async()=>{
+   await page.evaluate(fault=>window.qa.reset({[fault]:true}),fault);await phase('readFailed');
+   assert.deepEqual((await presented()).map(event=>[event.documentId,event.state,event.phase]),[['DOC-A','failed','readFailed']]);
+   assert.equal((await calls()).read.length,1);assert.equal(await page.locator('form').count(),0);
+   await page.evaluate(()=>window.qa.healthy());await page.getByRole('button',{name:'Đọc lại ERP',exact:true}).click();await ready();
+   assert.deepEqual((await presented()).map(event=>event.state),['failed','ready']);assert.equal((await calls()).read.length,2);assert.equal((await calls()).execute.length,0);
+  });
+  for(const lateFailure of [false,true])await run(`presentation ignores superseded A ${lateFailure?'failure':'full read'} after B commits`,async()=>{
+   await page.evaluate(lateFailure=>window.qa.reset({holdReadDocument:'DOC-A',...(lateFailure?{readFaultDocument:'DOC-A'}:{})}),lateFailure);
+   await page.waitForFunction(()=>window.qaHeldReads.length===1);assert.deepEqual(await presented(),[]);
+   await page.evaluate(()=>window.qa.select('DOC-B'));await ready();
+   assert.deepEqual((await presented()).map(event=>[event.documentId,event.state]),[['DOC-B','ready']]);
+   await page.evaluate(()=>window.qaHeldReads[0].resolve());await page.waitForFunction(()=>window.qa.calls().finishedRead===2);await page.waitForTimeout(30);
+   assert.deepEqual((await presented()).map(event=>[event.documentId,event.state]),[['DOC-B','ready']]);assert.equal(await field('Số đơn').inputValue(),'SOURCE B');
+   assert.equal((await calls()).read.length,2);assert.equal((await calls()).execute.length,0);
+  });
+  await run('presentation cannot report a held read after authority loss; restored authority needs its new read',async()=>{
+   await page.evaluate(()=>window.qa.reset({holdReadDocument:'DOC-A'}));await page.waitForFunction(()=>window.qaHeldReads.length===1);
+   await page.evaluate(()=>window.qa.revoke());await page.waitForFunction(()=>!document.querySelector('form'));
+   await page.evaluate(()=>window.qaHeldReads[0].resolve());await page.waitForFunction(()=>window.qa.calls().finishedRead===1);await page.waitForTimeout(30);
+   assert.deepEqual(await presented(),[]);
+   await page.evaluate(()=>window.qa.restore());await page.waitForFunction(()=>window.qaHeldReads.length===2);assert.deepEqual(await presented(),[]);
+   await page.evaluate(()=>window.qaHeldReads[1].resolve());await ready();
+   assert.deepEqual((await presented()).map(event=>[event.documentId,event.state]),[['DOC-A','ready']]);assert.equal((await calls()).read.length,2);
+  });
+  await run('presentation reports legitimate retained conflict only after a new bound read commits',async()=>{
+   await reset();await field('Số đơn').fill('UNSAVED PRESENTED');
+   await page.evaluate(()=>{window.qa.mutateOrder('CONCURRENT PRESENTED');window.qa.rights({canSend:false});});await phase('conflict');
+   const events=await presented();assert.deepEqual(events.map(event=>[event.state,event.phase]),[['ready','editing'],['ready','conflict']]);
+   assert.equal(events[1].order,'UNSAVED PRESENTED');assert.equal(events[1].fieldConnected,true);assert.equal(await field('Số đơn').isDisabled(),true);
+   assert.equal((await calls()).read.length,2);assert.equal((await calls()).execute.length,0);
+  });
+  for(const presentedCallback of ['throw','reject'])await run(`presentation callback ${presentedCallback} cannot change command, receipt or editor lifetime`,async()=>{
+   await reset({presentedCallback});await page.evaluate(()=>{window.qaPresentedEditor=document.querySelector('[data-testid=inbound-editor]');});
+   assert.equal((await calls()).read.length,1);assert.equal((await presented()).length,1);
+   await field('Số đơn').fill('CALLBACK ISOLATED');await save();await confirm();await ready();await page.waitForTimeout(30);
+   assert.equal(await field('Số đơn').inputValue(),'CALLBACK ISOLATED');assert.equal(await page.evaluate(()=>window.qaPresentedEditor===document.querySelector('[data-testid=inbound-editor]')),true);
+   const c=await calls();assert.equal(c.read.length,2);assert.equal(c.execute.length,1);assert.equal(c.reconcile.length,0);assert.equal(c.frozen[0],true);
+   assert.equal(c.execute[0].header.orderNumber,'CALLBACK ISOLATED');assert.equal(await page.evaluate(()=>window.qaCallbacks.length),1);
+   assert.deepEqual((await presented()).map(event=>event.state),['ready','ready']);assert.doesNotMatch(await page.locator('body').innerText(),/PRIVATE SENTINEL/);
+  });
+  await run('presentation readiness also covers granted read-only full detail without enabling commands',async()=>{
+   await reset();await page.evaluate(()=>window.qa.rights({canSave:false,canSend:false}));await page.waitForFunction(()=>window.qa.calls().read.length===2);await ready();
+   const events=await presented();assert.equal(events.length,2);assert.equal(events[1].state,'ready');assert.equal(events[1].visibleDocumentId,'DOC-A');assert.equal(events[1].fieldConnected,true);
+   assert.equal(await field('Số đơn').isDisabled(),true);assert.equal((await calls()).execute.length,0);
+  });
+  await run('presentation invalidates an explicit held reread before a new binding-nonce proof can become ready',async()=>{
+   await reset();const before=await presentationEvents();assert.equal(before.at(-1).state,'ready');
+   await page.evaluate(()=>{window.qaPresentedEditor=document.querySelector('[data-testid=inbound-editor]');window.qa.holdReads('DOC-A');});
+   await page.getByRole('button',{name:'Đọc lại ERP',exact:true}).click();await page.waitForFunction(()=>window.qaHeldReads.length===1);
+   const pending=await presentationEvents();assert.equal(pending.at(-1).state,'pending');assert.equal(pending.at(-1).documentId,'DOC-A');
+   assert.equal(pending.at(-1).scopeKey,before.at(-1).scopeKey);assert.equal((await presented()).length,1);
+   assert.equal(await page.evaluate(()=>window.qaPresentedEditor===document.querySelector('[data-testid=inbound-editor]')),true);
+   assert.equal(await field('Số đơn').isDisabled(),true);assert.equal((await calls()).read.length,2);
+   for(let index=0;index<3;index++){await page.evaluate(()=>window.qa.refresh());await page.waitForTimeout(10);}
+   assert.deepEqual(await presentationEvents(),pending,'Reporting pending and parent rerenders cannot become accepted read proof');
+   await page.evaluate(()=>window.qaHeldReads[0].resolve());await ready();
+   const accepted=await presentationEvents();assert.equal(accepted.length,pending.length+1);assert.equal(accepted.at(-1).state,'ready');
+   assert.equal(accepted.at(-1).fieldConnected,true);assert.equal(accepted.at(-1).phase,'editing');assert.equal((await calls()).read.length,2);
+   await page.getByRole('button',{name:'Đọc lại ERP',exact:true}).click();await page.waitForFunction(()=>window.qaHeldReads.length===2);
+   const again=await presentationEvents();assert.equal(again.length,accepted.length+1);assert.equal(again.at(-1).state,'pending');
+   await page.evaluate(()=>window.qaHeldReads[1].resolve());await ready();assert.equal((await presentationEvents()).at(-1).state,'ready');
+   assert.equal((await calls()).read.length,3);assert.equal((await calls()).execute.length,0);
+  });
+  await run('failed held reread remains failed across parent renders until a new explicit nonce succeeds',async()=>{
+   await reset();await page.evaluate(()=>{window.qa.holdReads('DOC-A');window.qa.readFault(true);});
+   await page.getByRole('button',{name:'Đọc lại ERP',exact:true}).click();await page.waitForFunction(()=>window.qaHeldReads.length===1);
+   assert.equal((await presentationEvents()).at(-1).state,'pending');await page.evaluate(()=>window.qaHeldReads[0].resolve());await phase('readFailed');
+   const failed=await presentationEvents();assert.equal(failed.at(-1).state,'failed');assert.deepEqual((await presented()).map(event=>event.state),['ready','failed']);
+   await page.evaluate(()=>{window.qa.healthy();window.qa.refresh();});await page.waitForTimeout(30);
+   assert.deepEqual(await presentationEvents(),failed,'Healthy transport alone cannot restore stale presentation readiness');
+   await page.getByRole('button',{name:'Đọc lại ERP',exact:true}).click();await page.waitForFunction(()=>window.qaHeldReads.length===2);
+   assert.equal((await presentationEvents()).at(-1).state,'pending');await page.evaluate(()=>window.qaHeldReads[1].resolve());await ready();
+   assert.deepEqual((await presented()).map(event=>event.state),['ready','failed','ready']);assert.equal((await calls()).read.length,3);assert.equal((await calls()).execute.length,0);
+  });
   await run('all header fields, NULL/empty, exact18digit values and source times survive metadata Save',async()=>{
    await reset();assert.equal(await field('Ngày giờ chứng từ').inputValue(),source.header.documentDate);assert.equal(await field('Ngày giờ chứng từ').isDisabled(),true);assert.equal(await field('Chi nhánh').isDisabled(),true);
    assert.equal(await field('Số lượng bộ theo chứng từ').first().inputValue(),'999999999999999999');assert.equal(await field('Ngày giờ hết hạn theo chứng từ').first().inputValue(),source.details[0].expireDateByDocument);

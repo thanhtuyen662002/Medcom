@@ -102,13 +102,14 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
     public Task<PurchaseRequestQueryResult<PurchaseRequestWorkspace>> WorkspaceAsync(CancellationToken token = default)
         => Run<PurchaseRequestWorkspace>(async (tx, branches, ct) =>
         {
-            await Task.CompletedTask;
+            var purposes = await PurchaseRequestLookupSql.QualifyAsync(tx, "purposes", ct);
+            var currencies = await PurchaseRequestLookupSql.QualifyAsync(tx, "currencies", ct);
             return new(branches, false, PurchaseRequestQueryRules.WriteReason, [
                 new("branches", true, null, "Native explicit branch scope; validated CF_BranchTbl only for native blank BranchID"),
                 new("items", false, "source_binding_unqualified", "inventories/source/20261002/table-02.json: CF_ItemTbl; F4 filters UNKNOWN"),
                 new("objects", false, "source_binding_unqualified", "inventories/source/20261002/table-01.json: CF_ObjectTbl; F4/branch filters UNKNOWN"),
-                new("purposes", false, "source_binding_unqualified", "inventories/source/20261002/table-08.json: AP_PurposePurchaseTbl; F4 binding UNKNOWN"),
-                new("currencies", false, "source_binding_unqualified", "CF_CurrencyTbl + CF_CurrencyRateTbl; date/rate precedence UNKNOWN")]);
+                new("purposes", purposes, purposes ? null : "source_binding_unqualified", "SY_FrmDrdwTbl@308051; AP_PurposePurchaseTbl; fixed source-pinned header lookup"),
+                new("currencies", currencies, currencies ? null : "source_binding_unqualified", "SY_FrmDrdwTbl@308060; CF_CurrencyTbl.RateExchange; fixed source-pinned header lookup")]);
         }, token);
 
     public Task<PurchaseRequestQueryResult<PurchaseRequestListPage>> ListAsync(PurchaseRequestListQuery query, CancellationToken token = default)
@@ -185,7 +186,7 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
         if (!PurchaseRequestQueryRules.Lookup(kind, search, page)) return Invalid<PurchaseRequestLookupPage>();
         return Run<PurchaseRequestLookupPage>(async (tx, branches, ct) =>
         {
-            await Task.CompletedTask;
+            if (kind is "purposes" or "currencies") return await PurchaseRequestLookupSql.ReadAsync(tx, kind, search, page, ct);
             if (kind != "branches") return new(false, "source_binding_unqualified", [], page, false);
             var matches = branches.Where(branch => branch.Contains(search ?? "", StringComparison.OrdinalIgnoreCase)).ToArray();
             var selected = matches.Skip((page - 1) * 20).Take(21).ToArray();
@@ -201,32 +202,41 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
             var identity = await live(token);
             if (!Eligible(identity)) return new(PurchaseRequestQueryOutcome.Denied);
             if (System.Transactions.Transaction.Current is not null) return new(PurchaseRequestQueryOutcome.Unavailable);
-            await using var connection = factory();
-            if (connection.State != ConnectionState.Closed) return new(PurchaseRequestQueryOutcome.Unavailable);
-            await connection.OpenAsync(token);
-            await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.Serializable, token);
-            var user = await Credential(transaction, identity!, token);
-            if (user is null || !await Grant(transaction, user, token)) return new(PurchaseRequestQueryOutcome.Denied);
-            var branches = (await SqlLegacyBranchScope.ReadAsync(transaction, user, token))
-                .Intersect(identity!.BranchIds!, StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
-            if (branches.Length == 0) return new(PurchaseRequestQueryOutcome.Denied);
-            await using (var shape = PurchaseRequestSql.Command(transaction, ShapeText))
+            string[] branches;
+            T value;
+            await using (var connection = factory())
             {
-                await using var reader = await shape.ExecuteReaderAsync(token);
-                if (!await reader.ReadAsync(token) || reader.IsDBNull(0) || reader.GetInt32(0) != 1 || await reader.ReadAsync(token))
-                    return new(PurchaseRequestQueryOutcome.Unavailable);
+                if (connection.State != ConnectionState.Closed) return new(PurchaseRequestQueryOutcome.Unavailable);
+                await connection.OpenAsync(token);
+                await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.Serializable, token);
+                var user = await Credential(transaction, identity!, token);
+                if (user is null || !await Grant(transaction, user, token)) return new(PurchaseRequestQueryOutcome.Denied);
+                branches = (await SqlLegacyBranchScope.ReadAsync(transaction, user, token))
+                    .Intersect(identity!.BranchIds!, StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
+                if (branches.Length == 0) return new(PurchaseRequestQueryOutcome.Denied);
+                await using (var shape = PurchaseRequestSql.Command(transaction, ShapeText))
+                {
+                    await using var reader = await shape.ExecuteReaderAsync(token);
+                    if (!await reader.ReadAsync(token) || reader.IsDBNull(0) || reader.GetInt32(0) != 1 || await reader.ReadAsync(token))
+                        return new(PurchaseRequestQueryOutcome.Unavailable);
+                }
+                value = await read(transaction, branches, token);
+                if (!SameReadScope(await live(token), identity!, branches)) return new(PurchaseRequestQueryOutcome.Denied);
+                await transaction.RollbackAsync(token); // Read-only: release locks without any durable writes.
             }
-            var value = await read(transaction, branches, token);
-            var current = await live(token);
-            if (!Eligible(current) || current!.PrincipalId != identity!.PrincipalId || current.CredentialStamp != identity.CredentialStamp
-                || branches.Any(branch => !current.BranchIds!.Contains(branch, StringComparer.Ordinal))) return new(PurchaseRequestQueryOutcome.Denied);
-            await transaction.RollbackAsync(token); // Read-only: release locks without any durable writes.
+            // Cleanup can await and race logout too. Publish only after all SQL resources are released.
+            token.ThrowIfCancellationRequested();
+            if (!SameReadScope(await live(token), identity!, branches)) return new(PurchaseRequestQueryOutcome.Denied);
+            token.ThrowIfCancellationRequested();
             return new(PurchaseRequestQueryOutcome.Success, value);
         }
         catch (QueryDenied) { return new(PurchaseRequestQueryOutcome.Denied); }
         catch (QueryNotFound) { return new(PurchaseRequestQueryOutcome.NotFound); }
         catch (Exception) when (!token.IsCancellationRequested) { return new(PurchaseRequestQueryOutcome.Unavailable); }
     }
+    private bool SameReadScope(AuthoritativeIdentity? current, AuthoritativeIdentity original, string[] branches)
+        => Eligible(current) && current!.PrincipalId == original.PrincipalId && current.CredentialStamp == original.CredentialStamp
+            && branches.All(branch => current.BranchIds!.Contains(branch, StringComparer.Ordinal));
     private bool Eligible(AuthoritativeIdentity? identity) => identity is not null
         && identity.TenantId == company.TenantId && identity.CompanyId == company.CompanyId
         && PurchaseRequestCommandRules.Identifier(identity.PrincipalId, 100) && identity.CredentialStamp is { Length: > 0 }

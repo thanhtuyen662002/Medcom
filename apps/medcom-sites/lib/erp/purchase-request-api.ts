@@ -19,7 +19,29 @@ const workspace=z.object({branchIds:z.array(id).min(1).max(200),writeAvailable:z
  lookups:z.array(z.object({kind:z.enum(["branches","items","objects","purposes","currencies"]),available:z.boolean(),reason:z.string().nullable(),evidence:z.string()}).strict()).max(5)}).strict();
 const list=z.object({rows:z.array(z.object({documentId:id,purchaseDate:wallClock,branchId:id,personSuggest:text,department:text,statusId:z.number().int(),isLocked:z.boolean().nullable()}).strict()).max(50),
  page:z.number().int().min(1).max(1000),pageSize:z.number().int().min(1).max(50),hasMore:z.boolean()}).strict();
-const lookup=z.object({available:z.boolean(),reason:z.string().nullable(),items:z.array(z.object({id,label:z.string()}).strict()).max(20),page:z.number().int().min(1).max(1000),hasMore:z.boolean()}).strict();
+// These read-only choices preserve the qualified source values. In particular,
+// NULL purpose names and finite zero/negative currency rates are not defaults.
+const purposeId=z.string().max(11).regex(/^(?:0|-?[1-9]\d*)$/).refine(value=>{
+ const number=Number(value);return Number.isInteger(number)&&number>=-2147483648&&number<=2147483647;
+},"Expected a canonical Int32 identity");
+const branchChoice=z.object({id,label:z.string().max(100)}).strict();
+const sourceText=(value:string)=>!value.includes("\0")&&!/[\uD800-\uDFFF]/u.test(value);
+const purposeChoice=z.object({id:purposeId,label:z.string().max(50).refine(sourceText).nullable()}).strict();
+const currencyId=z.string().min(1).max(3).refine(value=>sourceText(value)&&!/\p{White_Space}$/u.test(value)&&!/\p{Cc}/u.test(value));
+const currencyChoice=z.object({id:currencyId,label:z.string().min(1).max(3),
+ currencyName:z.string().max(100).refine(sourceText),rateExchange:z.number().finite()}).strict().refine(value=>value.label===value.id,"Currency display identity must match its source identity");
+const lookupPage=<S extends z.ZodTypeAny>(choice:S)=>z.object({available:z.boolean(),reason:z.string().min(1).max(100).nullable(),
+ items:z.array(choice).max(20),page:z.number().int().min(1).max(1000),hasMore:z.boolean()}).strict().superRefine((value,context)=>{
+ if(value.available?value.reason!==null:value.reason===null||value.items.length>0||value.hasMore)
+  context.addIssue({code:z.ZodIssueCode.custom,message:"Incoherent lookup availability"});
+ if(new Set(value.items.map(item=>item.id)).size!==value.items.length)
+  context.addIssue({code:z.ZodIssueCode.custom,message:"Duplicate lookup identity"});
+});
+const unavailableLookup=z.object({available:z.literal(false),reason:z.string().min(1).max(100),items:z.array(z.never()).max(0),
+ page:z.number().int().min(1).max(1000),hasMore:z.literal(false)}).strict();
+const lookups={branches:lookupPage(branchChoice),items:unavailableLookup,objects:unavailableLookup,purposes:lookupPage(purposeChoice),currencies:lookupPage(currencyChoice)};
+export type PurchaseLookupKind=keyof typeof lookups;
+export type PurchaseLookupPage=z.infer<(typeof lookups)[PurchaseLookupKind]>;
 const envelope=<S extends z.ZodTypeAny>(data:S)=>z.object({scopeKey:scope,data}).strict();
 export type PurchaseReadback=z.infer<typeof snapshot>;
 export type PurchaseWorkspace=z.infer<typeof workspace>;
@@ -34,9 +56,11 @@ export async function getPurchaseDetail(scopeKey:string,documentId:string,signal
  const response=await request(`api/purchase-requests/detail?${new URLSearchParams({documentId})}`,envelope(snapshot),{signal});assertScope(response.scopeKey,scopeKey);
  if(response.data.document.purchaseRequestId!==documentId)throw new ApiError(502,"invalid_api_response");return response.data;
 }
-export async function getPurchaseLookup(scopeKey:string,kind:"branches"|"items"|"objects"|"purposes"|"currencies",search:string,page:number,signal?:AbortSignal){
- const response=await request(`api/purchase-requests/lookup?${new URLSearchParams({kind,search,page:String(page)})}`,envelope(lookup),{signal});assertScope(response.scopeKey,scopeKey);
- if(response.data.page!==page||!response.data.available&&(response.data.items.length>0||response.data.hasMore))throw new ApiError(502,"invalid_api_response");return response.data;
+export async function getPurchaseLookup(scopeKey:string,kind:PurchaseLookupKind,search:string,page:number,signal?:AbortSignal){
+ if(!Object.hasOwn(lookups,kind))throw new ApiError(400,"invalid_purchase_lookup");
+ signal?.throwIfAborted();
+ const response=await request(`api/purchase-requests/lookup?${new URLSearchParams({kind,search,page:String(page)})}`,envelope(lookups[kind]),{signal});assertScope(response.scopeKey,scopeKey);
+ if(response.data.page!==page)throw new ApiError(502,"invalid_api_response");return response.data;
 }
 
 type PurchaseOpenResult={detail?:PurchaseReadback;detailError?:unknown};
