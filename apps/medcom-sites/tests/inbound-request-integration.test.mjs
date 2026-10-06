@@ -734,6 +734,9 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
       build.onResolve({filter: /^next\/image$/}, () => ({path: 'image', namespace: 'i24-image'}));
       build.onLoad({filter: /.*/, namespace: 'i24-image'}, () => ({resolveDir: app, loader: 'jsx', contents: "import React from 'react';export default function Image({src,alt,width,height}){return <img src={src} alt={alt} width={width} height={height}/>;}"}));
     }}]});
+  // Playwright fulfill accepts Buffer/string, not esbuild's Uint8Array.
+  // Uint8Array.toString('base64') corrupts script bytes and response length.
+  const script = Buffer.from(built.outputFiles[0].contents);
   const css = await readFile(path.join(app, 'app/globals.css'), 'utf8');
   const html = '<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>' + css + '\nbody{margin:0;font:16px system-ui}img{max-width:100%;height:auto}[role=alertdialog],[role=dialog]{position:fixed;inset:3%;z-index:99;background:white;padding:16px;overflow:auto}[data-slot=alert-dialog-overlay]{position:fixed;inset:0;z-index:98;background:#0004}</style><div id="root"></div><script src="/i24.js"></script></html>';
   let state, serial = 0; const calls = [], errors = [], external = [], results = [], models = new Set();
@@ -779,6 +782,7 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
   });
   resetState(); backend.listen(0, '127.0.0.1'); await once(backend, 'listening'); const backendHttp = `http://127.0.0.1:${backend.address().port}`;
   let browser, context, page;
+  const routes = {started: 0, fulfilled: 0, aborted: 0, pending: new Map()}, loadEvents = [], failedRequests = [];
   const releaseAll = () => {for (const model of models) for (const kind of Object.keys(model.waiters)) release(kind, model);};
   const cleanup = async () => {
     // A login/reset can replace state while an old synthetic command is held.
@@ -798,11 +802,17 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
     t.signal.throwIfAborted();
     context = await browser.newContext({viewport: {width: 390, height: 844}, locale: 'vi-VN', serviceWorkers: 'block'}); page = await context.newPage();
     page.on('pageerror', error => errors.push(error.message));
+    page.on('domcontentloaded', () => loadEvents.push({event: 'domcontentloaded', url: page.url()}));
+    page.on('load', () => loadEvents.push({event: 'load', url: page.url()}));
+    page.on('requestfailed', request => failedRequests.push({url: request.url(), type: request.resourceType(), failure: request.failure()?.errorText}));
     await page.route('**/*', async route => {
-      const request = route.request(), url = new URL(request.url());
-      if (url.origin !== publicOrigin) {external.push(url.href); return route.abort();}
-      if (url.pathname === '/i24.js') return route.fulfill({contentType: 'text/javascript', body: built.outputFiles[0].contents});
-      if (!url.pathname.startsWith('/api/erp/')) return route.fulfill({contentType: 'text/html', body: html});
+      const request = route.request(), url = new URL(request.url()), ticket = ++routes.started;
+      routes.pending.set(ticket, {url: url.href, type: request.resourceType()});
+      const fulfill = async options => {await route.fulfill(options); routes.fulfilled++;};
+      try {
+      if (url.origin !== publicOrigin) {external.push(url.href); await route.abort(); routes.aborted++; return;}
+      if (url.pathname === '/i24.js') return await fulfill({contentType: 'text/javascript', body: script});
+      if (!url.pathname.startsWith('/api/erp/')) return await fulfill({contentType: 'text/html', body: html});
       const requestHeaders = await request.allHeaders(), buffer = request.postDataBuffer();
       const incoming = new Request(url, {method: request.method(), headers: requestHeaders, ...(buffer ? {body: buffer} : {})});
       const model = state;
@@ -815,7 +825,12 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
         if (model.mode === 'lost' && /\/(save|send-to-warehouse)$/.test(new URL(target).pathname)) {await answer.arrayBuffer(); throw Error('Synthetic completed ACK loss');}
         return answer;
       });
-      await route.fulfill({status: response.status, headers: Object.fromEntries(response.headers), body: Buffer.from(await response.arrayBuffer())}).catch(() => {});
+      await fulfill({status: response.status, headers: Object.fromEntries(response.headers), body: Buffer.from(await response.arrayBuffer())});
+      } catch (error) {
+        // Aborted fetches/closed pages are intentional in custody/reset cases.
+        if (!t.signal.aborted && !request.failure() && !page.isClosed()) errors.push('Synthetic route failure: ' + String(error));
+        await route.abort().then(() => {routes.aborted++;}).catch(() => {});
+      } finally {routes.pending.delete(ticket);}
     });
     const button = name => page.getByRole('button', {name, exact: true}), field = name => page.getByLabel(name, {exact: true});
     const host = () => page.getByTestId('inbound-request-host');
@@ -823,7 +838,18 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
     const open = async (id = 'DOC-A') => {await page.getByRole('button', {name: new RegExp('^Mở phiếu ' + id + ' ')}).click(); await ready();};
     const paint = () => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     const go = async screen => {await page.keyboard.press('Control+k'); const label = screen === 'settings' ? 'Thiết lập' : screen === 'home' ? 'Không gian làm việc' : 'Yêu cầu nhập kho'; await page.getByRole('option', {name: label, exact: true}).click();};
-    const start = async (patch = {}) => {resetState(patch); await page.goto(publicOrigin + '/?screen=home'); await page.getByRole('button', {name: 'Yêu cầu nhập kho', exact: true}).last().waitFor(); await go('inbound-requests'); await open();};
+    const start = async (patch = {}) => {
+      resetState(patch);
+      try {await page.goto(publicOrigin + '/?screen=home'); await page.getByRole('button', {name: 'Yêu cầu nhập kho', exact: true}).last().waitFor(); await go('inbound-requests'); await open();}
+      catch (error) {
+        let timer;
+        const dom = await Promise.race([page.evaluate(() => ({readyState: document.readyState, url: location.href, hostCount: document.querySelectorAll('[data-testid=inbound-request-host]').length, text: document.body?.innerText.slice(0, 500)})),
+          new Promise(resolve => {timer = setTimeout(() => resolve({diagnostic: 'DOM inspection timed out'}), 1000);})]).catch(problem => ({diagnostic: String(problem)})).finally(() => clearTimeout(timer));
+        console.error('I24 fixture start diagnostics ' + JSON.stringify({error: String(error), pageErrors: errors.slice(-10), routes: {started: routes.started, fulfilled: routes.fulfilled, aborted: routes.aborted, outstanding: [...routes.pending.values()].slice(-20)},
+          failedRequests: failedRequests.slice(-10), loadEvents: loadEvents.slice(-10), backendCalls: calls.slice(-20).map(({path, method}) => ({path, method})), dom}));
+        throw error;
+      }
+    };
     const save = async (action = 'Save') => {if (action === 'Save') await field('Số đơn').fill('I24 ORIGINAL'); await button('Rà soát phiếu').click(); await button(action === 'Save' ? 'Lưu thay đổi' : 'Gửi yêu cầu nhập kho').click();};
     const unknown = () => page.waitForFunction(() => document.querySelector('[data-testid=inbound-editor]')?.getAttribute('data-phase') === 'unknown');
     const confirmed = () => page.getByTestId('confirmed-receipt').waitFor();
