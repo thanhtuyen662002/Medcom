@@ -46,10 +46,10 @@ public static class InboundDraftEndpoints
         // Existing cookie/antiforgery/session infrastructure is required. This
         // helper does not replace it or weaken the application's fallback policy.
         var cookie = new AuthorizeAttribute { AuthenticationSchemes = CookieAuthenticationDefaults.AuthenticationScheme };
-        endpoints.MapGet(Root, (HttpContext c) => Run(c, null)).RequireAuthorization(cookie);
-        endpoints.MapPost(Root + "/save", (HttpContext c) => Run(c, "save")).RequireAuthorization(cookie);
-        endpoints.MapPost(Root + "/send-to-warehouse", (HttpContext c) => Run(c, "send-to-warehouse")).RequireAuthorization(cookie);
-        endpoints.MapPost(Root + "/reconcile", (HttpContext c) => Run(c, "reconcile")).RequireAuthorization(cookie);
+        endpoints.MapGet(Root, (Func<HttpContext, Task<IResult>>)(c => Run(c, null))).RequireAuthorization(cookie);
+        endpoints.MapPost(Root + "/save", (Func<HttpContext, Task<IResult>>)(c => Run(c, "save"))).RequireAuthorization(cookie);
+        endpoints.MapPost(Root + "/send-to-warehouse", (Func<HttpContext, Task<IResult>>)(c => Run(c, "send-to-warehouse"))).RequireAuthorization(cookie);
+        endpoints.MapPost(Root + "/reconcile", (Func<HttpContext, Task<IResult>>)(c => Run(c, "reconcile"))).RequireAuthorization(cookie);
     }
 
     private sealed class BoundaryFailure(int status, string code) : Exception

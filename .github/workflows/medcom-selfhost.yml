@@ -110,7 +110,7 @@ jobs:
         working-directory: apps/medcom-sites
         env:
           I21_TEST_BROWSER: ${{ env.MEDCOM_EDGE_PATH }}
-          I21_REQUIRE_BROWSER: '1'
+          I21_REACT_REQUIRED: '1'
         run: |
           node --input-type=module <<'NODE'
           import {spawnSync} from 'node:child_process';

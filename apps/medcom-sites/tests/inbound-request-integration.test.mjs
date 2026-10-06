@@ -163,8 +163,9 @@ test('Node double: double tap during CSRF/post and reconcile has one command fli
 test('Node double: transient workspace-null and API/rights refresh keep original bytes and scope', async () => {
   const f = await double({mode: 'lost'}); try {
     const c = command(); await f.bridge.adapter.execute(c, signal()); const scope = f.bridge.getSnapshot().access.scopeKey;
-    f.bridge.configure(null, f.api); assert.equal(f.bridge.getSnapshot().access.scopeKey, scope); assert.equal(f.bridge.getSnapshot().access.canRead, false);
-    f.bridge.configure('login-1-rights-2', f.api); await f.bridge.revalidate(signal());
+    f.bridge.configure(null, f.api); assert.equal(f.bridge.getSnapshot().contextKey, null); assert.equal(f.bridge.getSnapshot().access.scopeKey, scope); assert.equal(f.bridge.getSnapshot().access.canRead, false);
+    f.bridge.configure('login-1-rights-2', f.api); assert.equal(f.bridge.getSnapshot().contextKey, 'login-1-rights-2'); assert.equal(f.bridge.getSnapshot().needsRefresh, true);
+    await f.bridge.revalidate(signal()); assert.equal(f.bridge.getSnapshot().needsRefresh, false);
     acknowledge(f, await f.bridge.adapter.reconcile(c, signal())); assert.equal(reconciles(f)[0].body, writes(f)[0].body);
     assert.equal(writes(f).length, 1); assert.equal(f.bridge.getSnapshot().access.scopeKey, scope);
   } finally {await f.close();}
@@ -286,36 +287,46 @@ import React,{useMemo,useRef,useState} from 'react';import {createRoot} from 're
 import {InboundRequestScreen} from './components/erp/inbound-request-screen';
 import {NavigationGuardProvider} from './components/erp/navigation-guard';
 import {createInboundRequestApi} from './lib/erp/inbound-request-api';
+import {ApiError} from './lib/erp/api';
+const originalPush=history.pushState.bind(history);window.qaPushes=0;history.pushState=(...args)=>{window.qaPushes++;return originalPush(...args);};
 const baseline=${JSON.stringify(source)},rights=${JSON.stringify(access)};
-function model(){return {scope:'a'.repeat(64),access:{...rights},mode:'Committed',outcome:'Replayed',held:{},waits:{},readFailure:false,calls:{read:[],post:[],reconcile:[],list:[]},docs:{'DOC-A':structuredClone(baseline),'DOC-B':{...structuredClone(baseline),documentId:'DOC-B',header:{...baseline.header,orderNumber:'FULL ERP B'}}}};}
-function App(){const m=useRef(model()),count=useRef(0);const [config,setConfig]=useState({loginKey:'login-0',version:1,available:true});
+function model(){return {scope:'a'.repeat(64),access:{...rights},mode:'Committed',outcome:'Replayed',held:{},waits:{},readFailure:false,readShape:null,listFailure:null,calls:{read:[],post:[],reconcile:[],list:[]},docs:{'DOC-A':structuredClone(baseline),'DOC-B':{...structuredClone(baseline),documentId:'DOC-B',header:{...baseline.header,orderNumber:'FULL ERP B'}}}};}
+function App(){const m=useRef(model()),count=useRef(0);const [config,setConfig]=useState({loginKey:'login-0',version:1,available:true,listRevision:0,apiRevision:0,callbackRevision:0});
  const wait=async(model,kind)=>{if(model.held[kind])await new Promise(r=>(model.waits[kind]??=[]).push(r));};
  const api=useMemo(()=>createInboundRequestApi(async(url,init)=>{const x=m.current;const u=new URL(url,'https://fixture.invalid');
  const response=data=>new Response(JSON.stringify(data),{headers:{'content-type':'application/json','cache-control':'no-store'}});
  if(u.pathname.endsWith('/csrf'))return response({token:'fake-csrf'});
- if(init.method!=='POST'){const id=u.searchParams.get('documentId'),document=structuredClone(x.docs[id]),scope=x.scope;x.calls.read.push(id);await wait(x,'read');if(x.readFailure)throw Error('synthetic read lost');return response({scopeKey:scope,access:x.access,data:{outcome:x.access.canRead?'Observed':'Denied',document:x.access.canRead?document:null}});}
+ if(init.method!=='POST'){const id=u.searchParams.get('documentId'),document=structuredClone(x.docs[id]),scope=x.scope;x.calls.read.push(id);await wait(x,'read');if(x.readFailure)throw Error('synthetic read lost');if(x.nextReadAccess){x.access={...x.access,...x.nextReadAccess};x.nextReadAccess=null;x.held.read=true;}if(x.readShape==='malformed')document.header.rateExchange=1;if(x.readShape==='mismatch')document.stateEqualityToken='D'.repeat(64);return response({scopeKey:scope,access:x.access,data:{outcome:x.access.canRead?'Observed':'Denied',document:x.access.canRead?document:null}});}
  const c=JSON.parse(init.body),rec=u.pathname.endsWith('/reconcile');x.calls[rec?'reconcile':'post'].push(init.body);await wait(x,rec?'reconcile':'post');
  if(rec)return response({scopeKey:x.scope,data:{outcome:x.outcome,receipt:['Committed','Replayed'].includes(x.outcome)?x.receipt??null:null,code:null}});
- if(['Committed','lost','readFailure'].includes(x.mode)){const d=x.docs[c.documentId];if(c.action==='Save')d.header=structuredClone(c.header);else d.statusId=2;d.stateEqualityToken='C'.repeat(64);x.receipt={operationId:c.operationId,documentId:c.documentId,statusId:d.statusId,stateEqualityToken:d.stateEqualityToken,auditId:'${audit}',committedAtUtc:'2026-10-06T00:00:00Z'};if(x.mode==='lost')throw Error('lost ACK');if(x.mode==='readFailure')x.readFailure=true;return response({scopeKey:x.scope,data:{outcome:'Committed',receipt:x.receipt,code:null}});}
+ if(['Committed','lost','readFailure','malformedRead','mismatchedRead'].includes(x.mode)){const d=x.docs[c.documentId];if(c.action==='Save')d.header=structuredClone(c.header);else d.statusId=2;d.stateEqualityToken='C'.repeat(64);x.receipt={operationId:c.operationId,documentId:c.documentId,statusId:d.statusId,stateEqualityToken:d.stateEqualityToken,auditId:'${audit}',committedAtUtc:'2026-10-06T00:00:00Z'};if(x.mode==='lost')throw Error('lost ACK');if(x.mode==='readFailure')x.readFailure=true;if(x.mode==='malformedRead')x.readShape='malformed';if(x.mode==='mismatchedRead')x.readShape='mismatch';return response({scopeKey:x.scope,data:{outcome:'Committed',receipt:x.receipt,code:null}});}
  return response({scopeKey:x.scope,data:{outcome:x.mode,receipt:null,code:null}});
- }),[]);
- const list=useMemo(()=>async(page,search,branch)=>{const x=m.current;x.calls.list.push({page,search,branch});return {rows:Object.values(x.docs).map(d=>({documentId:d.documentId,documentDate:'2026-10-01',branchId:'BR-A',statusId:0,isLocked:false})),page,pageSize:50,hasMore:page===1};},[]);
+ }),[config.apiRevision]);
+ const list=useMemo(()=>async(page,search,branch)=>{const x=m.current,failure=x.listFailure;x.calls.list.push({page,search,branch});await wait(x,'list');if(failure!==null){if(failure==='network')throw new TypeError('synthetic network loss');throw new ApiError(failure,'synthetic_list_error');}return {rows:Object.values(x.docs).map(d=>({documentId:d.documentId,documentDate:'2026-10-01',branchId:'BR-A',statusId:0,isLocked:false})),page,pageSize:50,hasMore:page===1};},[config.listRevision]);
  const workspace=config.available&&config.loginKey?{session:{displayName:'Synthetic',tenantId:'T',companyId:'C',companyName:'Synthetic',authorityVersion:config.version,idleExpiresAt:'2026-10-07T00:00:00Z',absoluteExpiresAt:'2026-10-08T00:00:00Z',capabilities:['inbound-requests.read']},navigation:[],branchIds:['BR-A']}:null;
- window.qa={reset:patch=>{const next=++count.current;m.current={...model(),scope:next.toString(16).padStart(64,'0'),...patch};window.qaLeft=false;setConfig({loginKey:'login-'+next,version:1,available:true});},calls:()=>m.current.calls,
- hold:k=>m.current.held[k]=true,release:k=>{m.current.held[k]=false;(m.current.waits[k]??[]).splice(0).forEach(f=>f());},held:k=>(m.current.waits[k]??[]).length,
+ window.qa={reset:patch=>{const next=++count.current;m.current={...model(),scope:next.toString(16).padStart(64,'0'),...patch};window.qaLeft=false;window.qaDenied=[];window.qaCallback=null;setConfig({loginKey:'login-'+next,version:1,available:true,listRevision:0,apiRevision:0,callbackRevision:0});},calls:()=>m.current.calls,
+ hold:k=>m.current.held[k]=true,release:k=>{m.current.held[k]=false;(m.current.waits[k]??[]).splice(0).forEach(f=>f());},held:k=>(m.current.waits[k]??[]).length,releaseOne:k=>m.current.waits[k]?.shift()?.(),stopHolding:k=>m.current.held[k]=false,
+ failList:status=>{m.current.listFailure=status;setConfig(v=>({...v,listRevision:v.listRevision+1}));},listHealthy:()=>m.current.listFailure=null,
+ refreshList:()=>setConfig(v=>({...v,listRevision:v.listRevision+1})),swapApi:()=>setConfig(v=>({...v,apiRevision:v.apiRevision+1})),
+ rerender:()=>setConfig(v=>({...v,callbackRevision:v.callbackRevision+1})),callbackRevision:()=>config.callbackRevision,readFailure:value=>m.current.readFailure=value,nextReadRights:value=>m.current.nextReadAccess=value,
  rights:value=>{m.current.access={...rights,...value};setConfig(v=>({...v,version:v.version+1}));},workspace:value=>setConfig(v=>({...v,available:value})),logout:()=>setConfig(v=>({...v,loginKey:null,available:false})),
- retainRelease:k=>{const old=m.current;window.qaOldRelease=()=>{old.held[k]=false;(old.waits[k]??[]).splice(0).forEach(f=>f());};},outcome:v=>m.current.outcome=v,healthy:()=>m.current.readFailure=false,mode:v=>m.current.mode=v};
- return <NavigationGuardProvider><InboundRequestScreen loginKey={config.loginKey} workspace={workspace} api={api} list={list} onClose={()=>window.qaLeft=true} onBack={()=>window.qaLeft=true}/></NavigationGuardProvider>;
+ retainRelease:k=>{const old=m.current;window.qaOldRelease=()=>{old.held[k]=false;(old.waits[k]??[]).splice(0).forEach(f=>f());};},outcome:v=>m.current.outcome=v,healthy:()=>{m.current.readFailure=false;m.current.readShape=null;},mode:v=>m.current.mode=v};
+ return <NavigationGuardProvider><InboundRequestScreen loginKey={config.loginKey} workspace={workspace} api={api} list={list} onDenied={error=>(window.qaDenied??=[]).push(error.status)} onClose={()=>{window.qaLeft=true;window.qaCallback=config.callbackRevision;}} onBack={()=>{window.qaLeft=true;window.qaCallback=config.callbackRevision;}}/></NavigationGuardProvider>;
 }
 createRoot(document.getElementById('root')).render(<App/>);`;
 
 test('React host mobile 320/360/390: ACTUAL React gate (separate from Node double)', {timeout: 240000}, async t => {
   const require = createRequire(import.meta.url); let build, chromium;
+  const required = process.env.I21_REACT_REQUIRED === '1';
   try {
     ({build} = require('esbuild')); require.resolve('react'); require.resolve('react-dom');
     const tools = process.env.MEDCOM_BROWSER_TOOLCHAIN;
     ({chromium} = (tools ? createRequire(path.join(path.resolve(tools), 'package.json')) : require)('playwright-core'));
-  } catch (error) {t.skip(`NOT_RUN: existing React/esbuild/browser toolchain unavailable (${error.code ?? 'module'}). No install attempted.`); return;}
+  } catch (error) {
+    const message = `existing React/esbuild/browser toolchain unavailable (${error.code ?? 'module'}). No install attempted.`;
+    if (required) throw new Error(`I21_REACT_REQUIRED=1: ${message}`);
+    t.skip(`NOT_RUN: ${message}`); return;
+  }
   const bundle = await build({stdin: {contents: fixture, resolveDir: app, loader: 'tsx'}, bundle: true, platform: 'browser', format: 'iife', write: false,
     alias: {'@': app}, jsx: 'automatic', define: {'process.env.NODE_ENV': '"development"'}, logLevel: 'warning'});
   const server = createServer((req, res) => {res.setHeader('content-type', req.url === '/fixture.js' ? 'application/javascript' : 'text/html');
@@ -331,7 +342,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
     await page.goto(origin);
     const button = name => page.getByRole('button', {name, exact: true}), field = name => page.getByLabel(name, {exact: true});
     const open = id => page.getByRole('button', {name: new RegExp('^Mở phiếu ' + id + ' ')}).click();
-    const ready = () => page.waitForFunction(() => document.getElementById('inbound-header-orderNumber') && !document.getElementById('inbound-header-orderNumber').matches(':disabled'));
+    const ready = () => page.waitForFunction(() => document.getElementById('inbound-header-orderNumber') && !document.getElementById('inbound-header-orderNumber').matches(':disabled') && document.querySelector('[data-testid=inbound-request-host]')?.getAttribute('data-readback-pending') !== 'true');
     const reset = async (patch = {}) => {await page.evaluate(patch => window.qa.reset(patch), patch); await open('DOC-A'); await ready();};
     const review = () => button('Rà soát phiếu').click();
     const save = async () => {await review(); await button('Lưu thay đổi').click();};
@@ -353,6 +364,34 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
         () => button('Đóng phiếu nhập hàng').click(), () => button('Quay lại danh sách').click(), () => page.evaluate(() => history.back())]) {
         await blocked(action, true); assert.equal(await field('Số đơn').inputValue(), 'UNSAVED');
       }
+    });
+    await run('guard dialogs and parent callback rerenders do not append history; deferred callbacks use latest commit', async () => {
+      for (const nav of ['Quay lại danh sách', 'Đóng phiếu nhập hàng']) {
+        await reset(); await field('Số đơn').fill('HISTORY DIRTY');
+        const initial = await page.evaluate(() => ({length:history.length,pushes:window.qaPushes}));
+        for (let index=1;index<=3;index++) {
+          await blocked(() => button(nav).click(), true);
+          await page.evaluate(() => window.qa.rerender());
+          await page.waitForFunction(index => window.qa.callbackRevision() === index, index);
+          assert.deepEqual(await page.evaluate(() => ({length:history.length,pushes:window.qaPushes})), initial);
+        }
+        await button(nav).click(); await page.getByRole('alertdialog').waitFor({state:'visible'});
+        await page.evaluate(() => window.qa.rerender()); await page.waitForFunction(() => window.qa.callbackRevision() === 4);
+        await button('Bỏ thay đổi và rời màn hình').click(); await page.waitForFunction(() => window.qaLeft);
+        assert.equal(await page.evaluate(() => window.qaCallback), 4);
+        assert.deepEqual(await page.evaluate(() => ({length:history.length,pushes:window.qaPushes})), initial);
+      }
+    });
+    await run('old discard dialog cannot release a command that became pending', async () => {
+      await reset({mode:'lost'}); await field('Số đơn').fill('PENDING AFTER DIALOG'); await review();
+      await button('Đóng phiếu nhập hàng').click(); await page.getByRole('alertdialog').waitFor({state:'visible'});
+      await page.evaluate(() => {window.qa.hold('post'); [...document.querySelectorAll('button')].find(b=>b.textContent==='Lưu thay đổi').click();});
+      await page.waitForFunction(() => window.qa.held('post') > 0);
+      await button('Bỏ thay đổi và rời màn hình').click(); assert.equal(await page.evaluate(() => window.qaLeft), false);
+      await blocked(() => button('Đóng phiếu nhập hàng').click());
+      await page.evaluate(() => window.qa.release('post')); await unknown();
+      await button('Kiểm tra yêu cầu gốc').click(); await confirmed();
+      const c=await calls(); assert.equal(c.post.length,1); assert.equal(c.reconcile[0],c.post[0]);
     });
     await run('Send-only note remains guarded through pending authority revalidation and preflight read', async () => {
       for (const note of ['', 'KEEP SEND NOTE']) {
@@ -398,6 +437,111 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await page.evaluate(() => window.qa.rights({canRead:false,canSave:false,canSend:false}));
       await page.waitForFunction(() => !document.getElementById('inbound-header-orderNumber')); await blocked(() => button('Đóng phiếu nhập hàng').click(), true);
       await page.evaluate(() => window.qa.rights({})); await ready(); assert.equal(await field('Ghi chú gửi kho').inputValue(), 'RIGHTS NOTE');
+    });
+    for (const state of ['pending','confirmed']) await run(`current list 401 hides ${state} draft/filter/selection/receipt and cannot reopen same login`, async () => {
+      await reset(); await field('Tìm phiếu nhập hàng').fill('PRIVATE FILTER'); await field('Lọc chi nhánh').selectOption('BR-A');
+      await field('Số đơn').fill('SESSION PRIVATE');
+      if(state==='pending') await page.evaluate(() => window.qa.hold('post'));
+      await save();
+      if(state==='pending') await page.waitForFunction(() => window.qa.held('post') > 0);
+      else {await confirmed(); await ready(); await page.waitForSelector('[data-testid=inbound-host-receipt]');}
+      await page.evaluate(() => window.qa.failList(401)); await page.waitForFunction(() => window.qaDenied?.length === 1);
+      const hidden=async()=>{assert.equal(await field('Số đơn').count(),0);assert.equal(await field('Tìm phiếu nhập hàng').count(),0);
+        assert.equal(await page.locator('[aria-pressed=true]').count(),0);assert.equal(await page.locator('[data-testid=inbound-host-receipt],[data-testid=confirmed-receipt]').count(),0);
+        assert.match(await page.getByTestId('inbound-request-host').innerText(),/Đã kết thúc phiên/);};
+      await hidden();
+      if(state==='pending') {await page.evaluate(() => window.qa.release('post')); await page.waitForTimeout(30); await hidden();}
+      await page.evaluate(() => {window.qa.listHealthy();window.qa.rights({});window.qa.rerender();});
+      await page.waitForFunction(() => window.qa.callbackRevision()===1); await hidden();
+      assert.deepEqual(await page.evaluate(() => window.qaDenied),[401]); assert.equal((await calls()).post.length,1);
+      await reset(); assert.equal(await field('Số đơn').inputValue(),'FULL ERP A'); assert.equal(await field('Tìm phiếu nhập hàng').inputValue(),'');
+      assert.equal(await page.locator('[data-testid=confirmed-receipt]').count(),0); assert.equal(await button('Kiểm tra yêu cầu gốc').count(),0);
+    });
+    for(const status of [403,409]) await run(`list ${status} suspends authority, preserves held original, and same-session validation can recover`,async()=>{
+      await reset();await field('Số đơn').fill('ORIGINAL '+status);await page.evaluate(()=>window.qa.hold('post'));await save();
+      await page.waitForFunction(()=>window.qa.held('post')>0);const original=(await calls()).post[0];
+      await page.evaluate(status=>window.qa.failList(status),status);await page.waitForFunction(()=>!document.getElementById('inbound-header-orderNumber'));
+      assert.deepEqual(await page.evaluate(()=>window.qaDenied),[]);await blocked(()=>button('Đóng phiếu nhập hàng').click());
+      await page.evaluate(()=>{window.qa.release('post');window.qa.listHealthy();window.qa.hold('read');});
+      await button('Xác minh lại quyền nhập hàng').click();await page.waitForFunction(()=>window.qa.held('read')>0);
+      assert.equal(await field('Số đơn').count(),0);await page.evaluate(()=>window.qa.release('read'));await unknown();
+      await button('Kiểm tra yêu cầu gốc').click();await confirmed();const c=await calls();assert.equal(c.post.length,1);assert.equal(c.reconcile[0],original);
+    });
+    for(const status of [503,'network']) await run(`list ${status} is temporary and does not retire pending command or filters`,async()=>{
+      await reset();await field('Tìm phiếu nhập hàng').fill('RETAIN FILTER');await field('Số đơn').fill('RETAIN COMMAND');
+      await page.evaluate(()=>window.qa.hold('post'));await save();await page.waitForFunction(()=>window.qa.held('post')>0);
+      await page.evaluate(status=>window.qa.failList(status),status);await page.getByText('Chưa tải được danh sách.',{exact:true}).waitFor();
+      assert.equal(await field('Tìm phiếu nhập hàng').inputValue(),'RETAIN FILTER');assert.equal(await page.getByTestId('inbound-editor').getAttribute('data-phase'),'pending');
+      assert.deepEqual(await page.evaluate(()=>window.qaDenied),[]);await blocked(()=>button('Đóng phiếu nhập hàng').click());
+      await page.evaluate(()=>window.qa.release('post'));await confirmed();assert.equal((await calls()).post.length,1);
+    });
+    for(const newer of ['authority','api','login']) await run(`stale list 401 cannot end newer ${newer} context even if cancellation is ignored`,async()=>{
+      await reset();await page.evaluate(()=>{window.qa.hold('list');window.qa.failList(401);});await page.waitForFunction(()=>window.qa.held('list')>0);
+      await page.evaluate(newer=>{window.qa.retainRelease('list');window.qa.stopHolding('list');window.qa.listHealthy();
+        if(newer==='authority')window.qa.rights({});else if(newer==='api')window.qa.swapApi();else window.qa.reset({});},newer);
+      if(newer==='login')await open('DOC-A');await ready();await page.evaluate(()=>window.qaOldRelease());await page.waitForTimeout(30);
+      assert.deepEqual(await page.evaluate(()=>window.qaDenied),[]);assert.equal(await field('Số đơn').inputValue(),'FULL ERP A');
+      assert.equal(await field('Tìm phiếu nhập hàng').count(),1);
+    });
+    await run('receipt A is hidden under pending or proved read of B, then restored only after A proof',async()=>{
+      await reset();await field('Số đơn').fill('RECEIPT A');await save();await confirmed();await ready();
+      const receipt=await page.getByTestId('inbound-host-receipt').innerText();
+      await page.evaluate(()=>window.qa.hold('read'));await open('DOC-B');await page.waitForFunction(()=>window.qa.held('read')>0);
+      assert.equal(await page.locator('[data-testid=inbound-host-receipt],[data-testid=confirmed-receipt]').count(),0);
+      await page.evaluate(()=>window.qa.release('read'));await ready();assert.equal(await field('Số đơn').inputValue(),'FULL ERP B');
+      assert.equal(await page.locator('[data-testid=inbound-host-receipt],[data-testid=confirmed-receipt]').count(),0);
+      await page.evaluate(()=>window.qa.hold('read'));await open('DOC-A');await page.waitForFunction(()=>window.qa.held('read')>0);
+      assert.equal(await page.locator('[data-testid=inbound-host-receipt]').count(),0);await page.evaluate(()=>window.qa.release('read'));await ready();
+      assert.equal(await page.getByTestId('inbound-host-receipt').innerText(),receipt);assert.equal((await calls()).post.length,1);
+    });
+    for(const mode of ['readFailure','malformedRead','mismatchedRead']) await run(`confirmed A ${mode} blocks navigation without treating the commit as unknown`,async()=>{
+      await reset({mode});await field('Số đơn').fill('COMMITTED A');await save();await confirmed();
+      await page.waitForFunction(()=>document.querySelector('[data-testid=inbound-editor]')?.getAttribute('data-phase')==='readFailed');
+      const receipt=await page.getByTestId('inbound-host-receipt').innerText();
+      for(const nav of [()=>open('DOC-B'),()=>button('Áp dụng lọc nhập hàng').click(),()=>button('Trang phiếu tiếp').click(),
+        ()=>button('Đóng phiếu nhập hàng').click(),()=>button('Quay lại danh sách').click(),()=>page.evaluate(()=>history.back())]) await blocked(nav);
+      assert.equal(await page.getByTestId('inbound-editor').getAttribute('data-document-id'),'DOC-A');
+      assert.equal((await calls()).read.includes('DOC-B'),false);assert.equal(await page.getByTestId('inbound-host-receipt').innerText(),receipt);
+      assert.equal(await button('Kiểm tra yêu cầu gốc').count(),0);
+      await page.evaluate(()=>{window.qa.healthy();window.qa.hold('read');});await button('Đọc lại ERP').click();
+      await page.waitForFunction(()=>window.qa.held('read')>0);await blocked(()=>open('DOC-B'));
+      await page.evaluate(()=>window.qa.release('read'));await ready();await open('DOC-B');await ready();
+      assert.equal(await field('Số đơn').inputValue(),'FULL ERP B');assert.equal(await page.locator('[data-testid=inbound-host-receipt],[data-testid=confirmed-receipt]').count(),0);
+      const c=await calls();assert.equal(c.post.length,1);assert.equal(c.reconcile.length,0);
+    });
+    await run('bootstrap proof and a retired readback cannot clear the confirmed snapshot barrier',async()=>{
+      await reset({mode:'readFailure'});await field('Số đơn').fill('FENCED RECEIPT');await save();await confirmed();
+      await page.waitForFunction(()=>document.querySelector('[data-testid=inbound-editor]')?.getAttribute('data-phase')==='readFailed');
+      await page.evaluate(()=>{window.qa.healthy();window.qa.hold('read');window.qa.rights({});});
+      await page.waitForFunction(()=>window.qa.held('read')>0);const before=(await calls()).read.length;
+      await page.evaluate(()=>window.qa.releaseOne('read'));
+      await page.waitForFunction(before=>window.qa.calls().read.length>before&&window.qa.held('read')>0,before);
+      await blocked(()=>open('DOC-B'));assert.equal((await calls()).read.includes('DOC-B'),false);
+      await page.evaluate(()=>{window.qa.release('read');window.qa.rights({canRead:false,canSave:false,canSend:false});});
+      await page.waitForFunction(()=>!document.getElementById('inbound-header-orderNumber'));
+      await blocked(()=>button('Đóng phiếu nhập hàng').click());assert.equal(await page.locator('[data-testid=inbound-host-receipt],[data-testid=confirmed-receipt]').count(),0);
+      await page.evaluate(()=>window.qa.rights({}));await ready();await open('DOC-B');await ready();
+      assert.equal(await field('Số đơn').inputValue(),'FULL ERP B');assert.equal(await page.locator('[data-testid=inbound-host-receipt],[data-testid=confirmed-receipt]').count(),0);
+      const c=await calls();assert.equal(c.post.length,1);assert.equal(c.reconcile.length,0);
+    });
+    await run('access changed by readback itself retires that I18 binding and cannot release its receipt barrier',async()=>{
+      await reset({mode:'readFailure'});await field('Số đơn').fill('RIGHTS READBACK');await save();await confirmed();
+      await page.waitForFunction(()=>document.querySelector('[data-testid=inbound-editor]')?.getAttribute('data-phase')==='readFailed');
+      await page.evaluate(()=>{window.qa.healthy();window.qa.nextReadRights({canSend:false,maxCommandBytes:524288});});
+      await button('Đọc lại ERP').click();await page.waitForFunction(()=>window.qa.held('read')>0);await page.waitForTimeout(30);
+      assert.equal(await page.getByTestId('inbound-request-host').getAttribute('data-readback-pending'),'true');
+      await blocked(()=>open('DOC-B'));assert.equal((await calls()).read.includes('DOC-B'),false);
+      await page.evaluate(()=>window.qa.release('read'));await ready();await open('DOC-B');await ready();
+      assert.equal(await field('Số đơn').inputValue(),'FULL ERP B');assert.equal(await page.locator('[data-testid=inbound-host-receipt],[data-testid=confirmed-receipt]').count(),0);
+      const c=await calls();assert.equal(c.post.length,1);assert.equal(c.reconcile.length,0);
+    });
+    await run('same-document receipt survives failed authority refresh privately and reappears after fresh full read',async()=>{
+      await reset();await field('Số đơn').fill('RETAIN RECEIPT');await save();await confirmed();await ready();
+      const receipt=await page.getByTestId('inbound-host-receipt').innerText();
+      await page.evaluate(()=>{window.qa.readFailure(true);window.qa.rights({});});
+      await page.waitForFunction(()=>!document.getElementById('inbound-header-orderNumber'));assert.equal(await page.locator('[data-testid=inbound-host-receipt],[data-testid=confirmed-receipt]').count(),0);
+      await page.evaluate(()=>window.qa.healthy());await button('Xác minh lại quyền nhập hàng').click();await ready();
+      assert.equal(await page.getByTestId('inbound-host-receipt').innerText(),receipt);const c=await calls();assert.equal(c.post.length,1);assert.equal(c.reconcile.length,0);
     });
     await run('accepted discard permits selection/filter/close callbacks, not a no-op navigation fixture', async () => {
       await reset(); await field('Số đơn').fill('DISCARD'); await open('DOC-B'); await page.getByRole('alertdialog').waitFor({state:'visible'});

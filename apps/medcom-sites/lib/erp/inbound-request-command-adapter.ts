@@ -7,7 +7,7 @@ const closed = (scopeKey: string | null): InboundDraftAccess =>
   ({scopeKey, canRead: false, canSave: false, canSend: false, available: false, maxCommandBytes: inboundBodyLimit});
 type Intent = {original: InboundDraftCommand; body: string; scope: string; status: number | null; confirmed: boolean; candidate?: InboundDraftReceipt; candidateEpoch?: number};
 export type InboundBridgeState = Readonly<{
-  access: InboundDraftAccess; needsRefresh: boolean; unresolved: boolean;
+  contextKey: string | null; access: InboundDraftAccess; needsRefresh: boolean; unresolved: boolean;
   phase: "idle" | "pending" | "unknown" | "reconciling";
   receipt: InboundDraftReceipt | null;
 }>;
@@ -43,7 +43,7 @@ function receiptResult(value: unknown, intent: Intent): InboundDraftResult | nul
 export function createInboundRequestBridge(initialApi: InboundRequestApi): InboundRequestBridge {
   let api = initialApi, context: string | null = null, selected: string | null = null, epoch = 0, disposed = false;
   let scope: string | null = null, busy: object | null = null;
-  let state: InboundBridgeState = {access: closed(null), needsRefresh: true, unresolved: false, phase: "idle", receipt: null};
+  let state: InboundBridgeState = {contextKey: null, access: closed(null), needsRefresh: true, unresolved: false, phase: "idle", receipt: null};
   const listeners = new Set<() => void>(), requests = new Set<AbortController>(), intents = new Map<string, Intent>();
   const views = new Map<string, {token: string; status: number}>();
   let readSequence = 0;
@@ -56,7 +56,7 @@ export function createInboundRequestBridge(initialApi: InboundRequestApi): Inbou
   }
   function fence() {
     epoch++; for (const request of requests) request.abort(); requests.clear(); busy = null; views.clear(); currentRead.clear();
-    emit({...state, access: closed(scope), needsRefresh: true, unresolved: hasUnresolved(), phase: hasUnresolved() ? "unknown" : "idle"});
+    emit({...state, contextKey: context, access: closed(scope), needsRefresh: true, unresolved: hasUnresolved(), phase: hasUnresolved() ? "unknown" : "idle"});
   }
   function start(external: AbortSignal) {
     external.throwIfAborted();
@@ -191,7 +191,7 @@ export function createInboundRequestBridge(initialApi: InboundRequestApi): Inbou
     dispose() {
       // Only real login retirement/unmount; never call for workspace=null.
       disposed = true; fence(); intents.clear(); scope = null;
-      state = {...state, access: closed(null), receipt: null, unresolved: false}; listeners.clear();
+      state = {...state, contextKey: null, access: closed(null), receipt: null, unresolved: false}; listeners.clear();
     },
   };
 }
