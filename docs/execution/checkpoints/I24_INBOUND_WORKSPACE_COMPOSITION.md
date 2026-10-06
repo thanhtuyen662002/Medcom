@@ -38,3 +38,5 @@ This is dormant synthetic-tested contract wiring, not production functionality o
 ## PR76 first hosted-CI correction
 
 The first candidate `9dafd09d09301aa281b4dddbbf4e6c0ef0848301` passed hosted frontend TypeScript validation but failed `react-hooks/refs` lint: its bridge factory received a notification callback closing over a React ref during render. The bounded correction keeps bridge creation ref-free and installs/removes the current-session-denial callback in a layout effect. It does not suppress the lint rule, weaken current-generation checks or change retained original custody. The existing standalone and composition tests remain intact; fresh exact-head CI is required.
+
+The stale-discard recheck preserves the original standalone interaction: if a current nondiscardable blocker now exists, it closes the obsolete dialog and drops only that queued route action, keeping every registered blocker and the host intact. A subsequent route attempt presents current custody again. The I24 composition assertion verifies this behavior; none of the 44 standalone scenarios is changed.

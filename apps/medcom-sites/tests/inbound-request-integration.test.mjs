@@ -820,8 +820,8 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
     await run('pending receipt readback and a command started after a discard dialog cannot unmount Workspace host', async () => {
       await start({held: {post: true}}); await field('Số đơn').fill('OLD DIALOG'); await button('Rà soát phiếu').click(); await go('home'); await page.getByRole('alertdialog').waitFor();
       await page.evaluate(() => [...document.querySelectorAll('button')].find(b => b.textContent === 'Lưu thay đổi').click()); await eventually(() => state.waiters.post?.length > 0);
-      await button('Bỏ thay đổi và rời màn hình').click(); assert.equal(await host().count(), 1); assert.equal(await button('Bỏ thay đổi và rời màn hình').count(), 0);
-      await button('Tiếp tục làm việc').click(); await page.keyboard.press('Escape'); state.held.read = true; release('post'); await confirmed(); await eventually(() => state.waiters.read?.length > 0);
+      await button('Bỏ thay đổi và rời màn hình').click(); assert.equal(await host().count(), 1); await page.getByRole('alertdialog').waitFor({state: 'hidden'});
+      await page.keyboard.press('Escape'); await guard(() => go('home')); state.held.read = true; release('post'); await confirmed(); await eventually(() => state.waiters.read?.length > 0);
       await guard(() => go('settings')); assert.equal(await host().getAttribute('data-readback-pending'), 'true'); release('read'); await ready(); await single();
     });
     await run('owned Back and Forward cancel/approve preserve index, URL, forward stack and one callback', async () => {
