@@ -33,7 +33,8 @@ public sealed class SqlInboundDraftCommandService : IInboundDraftCommandService
         IInboundDocumentNumberAllocator? allocator = null)
         : this(databaseBindingId,company,()=>connectionFactory(),new SqlAuthority(resolveLiveSession),allocator) { }
 
-    // Recording-test dependency seam. Production wiring must use the SqlClient constructor above.
+    // Trusted dependency seam for recording tests and I31's bound factory, which
+    // always supplies NativeAuthority. Never register caller-supplied authority.
     public SqlInboundDraftCommandService(Guid databaseBindingId, LegacyCompany company,
         Func<DbConnection> connectionFactory, IInboundCommandAuthority trustedAuthority,
         IInboundDocumentNumberAllocator? allocator = null)
@@ -43,6 +44,26 @@ public sealed class SqlInboundDraftCommandService : IInboundDraftCommandService
         factory=connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
         authority=trustedAuthority ?? throw new ArgumentNullException(nameof(trustedAuthority));
         this.allocator=allocator ?? new UnqualifiedInboundDocumentNumberAllocator();
+    }
+
+    // I31 reuses the actual I15 credential/menu/native-rights reader. This seam
+    // does not add permission SQL, a new writer, or runtime qualification.
+    internal static IInboundCommandAuthority NativeAuthority(
+        Func<CancellationToken, Task<AuthoritativeIdentity?>> resolve) => new SqlAuthority(resolve);
+
+    internal static async Task<string?> ReadAuthorizedDocumentBranchAsync(DbTransaction tx,
+        string document, IReadOnlyList<string> grants, CancellationToken token)
+    {
+        try
+        {
+            var branch = await Scope(tx, document, grants, token);
+            // Read the same physical aggregate as I15, including SQL-equal child aliases.
+            // Status is deliberately not an admission condition after a successful Send.
+            Require(await Snapshot.Read(tx, document, token) is not null, InboundDraftOutcome.NotFound);
+            return branch;
+        }
+        catch (Stop stop) when (stop.Outcome is InboundDraftOutcome.Denied or InboundDraftOutcome.NotFound)
+        { return null; }
     }
 
     public Task<InboundDraftResult> ExecuteAsync(InboundDraftCommand request,CancellationToken token=default)
@@ -541,13 +562,13 @@ public sealed class SqlInboundDraftCommandService : IInboundDraftCommandService
         public Task<AuthoritativeIdentity?> ResolveAsync(CancellationToken token)=>resolve(token);
         public async Task<IReadOnlyList<string>?> ReadGrantsAsync(DbTransaction tx,AuthoritativeIdentity id,InboundDraftAction action,CancellationToken token)
         {
-            string group;
+            string group; LegacyUser user;
             await using(var c=InboundDraftSql.Command(tx,InboundDraftSql.AuthorityUserText))
             {
                 InboundDraftSql.Add(c,"@actor",DbType.AnsiString,id.PrincipalId,50);
                 await using var r=await c.ExecuteReaderAsync(token);
                 if(r.FieldCount!=6 || !await r.ReadAsync(token) || Enumerable.Range(0,6).Any(r.IsDBNull))return null;
-                var user=new LegacyUser(r.GetString(0),"",r.GetString(1),r.GetBoolean(2),r.GetString(3),!r.GetBoolean(4));
+                user=new LegacyUser(r.GetString(0),"",r.GetString(1),r.GetBoolean(2),r.GetString(3),!r.GetBoolean(4));
                 if(user.Username!=id.PrincipalId || user.Disabled || !user.GroupEnabled
                     || !InboundDraftValidation.Ansi(user.GroupId,20) || user.GroupId!=r.GetString(5) || LegacyIdentityAuthority.Stamp(user)!=id.CredentialStamp
                     || await r.ReadAsync(token) || await r.NextResultAsync(token))return null;
@@ -559,21 +580,18 @@ public sealed class SqlInboundDraftCommandService : IInboundDraftCommandService
                 InboundDraftSql.Add(c,"@create",DbType.Boolean,action==InboundDraftAction.Create);
                 InboundDraftSql.Add(c,"@menu",DbType.AnsiString,InboundDraftValidation.MenuId,50);
                 await using var r=await c.ExecuteReaderAsync(token);
-                if(!await r.ReadAsync(token) || r.IsDBNull(0) || r.IsDBNull(1) || r.IsDBNull(3) || r.IsDBNull(4)
+                if(r.FieldCount!=5 || !await r.ReadAsync(token) || r.IsDBNull(0) || r.IsDBNull(1) || r.IsDBNull(3) || r.IsDBNull(4)
                     || r.GetString(0)!=InboundDraftValidation.MenuId || r.GetString(1)!=InboundDraftValidation.FormId
                     || !r.IsDBNull(2) && r.GetString(2).Length!=0 || r.GetBoolean(3) || r.GetInt32(4)!=1
                     || await r.ReadAsync(token) || await r.NextResultAsync(token))return null;
             }
-            var branches=new List<string>();
-            await using(var c=InboundDraftSql.Command(tx,InboundDraftSql.AuthorityBranchesText))
-            {
-                InboundDraftSql.Add(c,"@actor",DbType.AnsiString,id.PrincipalId,50);
-                await using var r=await c.ExecuteReaderAsync(token);
-                while(await r.ReadAsync(token))
-                {if(branches.Count==200 || r.IsDBNull(0) || !InboundDraftValidation.Ansi(r.GetString(0),50))return null;branches.Add(r.GetString(0));}
-                if(await r.NextResultAsync(token))return null;
-            }
-            return Array.AsReadOnly(branches.ToArray());
+            // Native NULL/empty means the reviewed explicit catalog, never an empty
+            // derived array or wildcard. Revalidate inside this serializable transaction
+            // and intersect with the current independently resolved Web session scope.
+            var branches = await SqlLegacyBranchScope.ReadAsync(tx, user, token);
+            if (id.BranchIds is null || id.BranchIds.Count > 200
+                || id.BranchIds.Any(branch => !InboundDraftValidation.Ansi(branch, 50))) return null;
+            return Array.AsReadOnly(branches.Where(branch => id.BranchIds.Contains(branch, StringComparer.Ordinal)).ToArray());
         }
     }
 }

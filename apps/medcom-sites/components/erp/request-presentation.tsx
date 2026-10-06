@@ -13,34 +13,34 @@ import {cn} from "@/lib/utils";
 
 /** Shared presentation only. No request, authority, storage or command state. */
 export const requestStyles = {
-  stack: "grid min-w-0 gap-4",
-  panel: "min-w-0 rounded-xl border border-border bg-card text-card-foreground shadow-xs",
-  header: "flex min-w-0 flex-wrap items-center justify-between gap-3 border-b border-border p-4 sm:px-5",
-  title: "text-base font-semibold tracking-tight",
+  stack: "request-stack grid min-w-0 gap-4",
+  panel: "request-panel min-w-0 rounded-xl border border-border bg-card text-card-foreground shadow-xs",
+  header: "request-panel-header flex min-w-0 flex-wrap items-center justify-between gap-3 border-b border-border p-4 sm:px-5",
+  title: "request-title text-base font-semibold tracking-tight",
   muted: "text-sm leading-relaxed text-muted-foreground",
-  toolbar: "grid min-w-0 gap-3 border-b border-border p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end sm:px-5",
-  field: "grid min-w-0 gap-2 text-sm font-medium [&_label]:leading-relaxed",
-  fields: "grid min-w-0 gap-5 rounded-xl border border-border bg-card p-4 sm:grid-cols-2 sm:p-5",
-  line: "grid min-w-0 gap-4 rounded-xl border border-border bg-card p-4 [overflow-wrap:anywhere]",
-  cards: "grid min-w-0 gap-3 p-4 sm:p-5",
-  card: "grid min-w-0 gap-4 rounded-lg border border-border bg-card p-4 text-left transition-colors hover:border-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [overflow-wrap:anywhere]",
-  cardHeading: "flex min-w-0 items-start justify-between gap-3 text-base font-semibold",
-  values: "grid min-w-0 grid-cols-2 gap-x-4 gap-y-3 text-sm [&_dt]:mb-1 [&_dt]:text-xs [&_dt]:font-normal [&_dt]:text-muted-foreground [&_dd]:font-medium [&_dd]:[overflow-wrap:anywhere]",
-  footer: "flex min-w-0 flex-wrap items-center justify-between gap-3 border-t border-border p-4 text-sm sm:px-5",
+  toolbar: "request-filter grid min-w-0 gap-3 border-b border-border p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end sm:px-5",
+  field: "request-field grid min-w-0 gap-2 text-sm font-medium [&_label]:leading-relaxed",
+  fields: "request-fields grid min-w-0 gap-5 rounded-xl border border-border bg-card p-4 sm:grid-cols-2 sm:p-5",
+  line: "request-line grid min-w-0 gap-4 rounded-xl border border-border bg-card p-4 [overflow-wrap:anywhere]",
+  cards: "request-list grid min-w-0 gap-3 p-4 sm:p-5",
+  card: "request-list-row grid min-w-0 gap-4 rounded-lg border border-border bg-card p-4 text-left transition-colors hover:border-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [overflow-wrap:anywhere]",
+  cardHeading: "request-row-heading flex min-w-0 items-start justify-between gap-3 text-base font-semibold",
+  values: "request-values grid min-w-0 grid-cols-2 gap-x-4 gap-y-3 text-sm [&_dt]:mb-1 [&_dt]:text-xs [&_dt]:font-normal [&_dt]:text-muted-foreground [&_dd]:font-medium [&_dd]:[overflow-wrap:anywhere]",
+  footer: "request-panel-footer flex min-w-0 flex-wrap items-center justify-between gap-3 border-t border-border p-4 text-sm sm:px-5",
   actions: "flex min-w-0 flex-wrap gap-2 [&>button]:flex-1 sm:[&>button]:flex-none",
-  section: "grid min-w-0 gap-4 rounded-xl border border-border bg-card p-4 sm:p-5",
-  editor: "mx-auto grid w-full min-w-0 max-w-5xl gap-5 [overflow-wrap:anywhere]",
-  actionBar: "grid min-w-0 gap-3 rounded-xl border border-border bg-card p-4 shadow-xs sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:p-5 sm:[&>p]:mr-auto",
+  section: "request-section grid min-w-0 gap-4 rounded-xl border border-border bg-card p-4 sm:p-5",
+  editor: "request-editor mx-auto grid w-full min-w-0 max-w-5xl gap-5 [overflow-wrap:anywhere]",
+  actionBar: "request-action-bar grid min-w-0 gap-3 rounded-xl border border-border bg-card p-4 shadow-xs sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:p-5 sm:[&>p]:mr-auto",
 } as const;
 
 export function RequestButton({className, variant="outline", ...props}:ComponentProps<typeof Button>){
-  return <Button variant={variant} className={cn("h-auto min-h-11 min-w-11 max-w-full whitespace-normal break-words px-4 py-2 text-sm",className)} {...props}/>;
+  return <Button variant={variant} className={cn("request-button h-auto min-h-11 min-w-11 max-w-full whitespace-normal break-words px-4 py-2 text-sm",className)} {...props}/>;
 }
 export function RequestInput({className,...props}:ComponentProps<typeof Input>){
-  return <Input className={cn("h-auto min-h-11 w-full min-w-0 bg-background text-base md:text-base",className)} {...props}/>;
+  return <Input className={cn("request-input h-auto min-h-11 w-full min-w-0 bg-background text-base md:text-base",className)} {...props}/>;
 }
 export function RequestTextarea({className,...props}:ComponentProps<typeof Textarea>){
-  return <Textarea className={cn("min-h-24 w-full min-w-0 bg-background text-base md:text-base",className)} {...props}/>;
+  return <Textarea className={cn("request-textarea min-h-24 w-full min-w-0 bg-background text-base md:text-base",className)} {...props}/>;
 }
 export function RequestNotice({children,title,role="status",warning=false}:{children:ReactNode;title?:string;role?:"status"|"alert";warning?:boolean}){
   const Icon=warning?AlertCircle:ShieldCheck;
@@ -56,7 +56,7 @@ export function RequestLoading({label="Đang tải chứng từ…"}:{label?:str
   return <div role="status" aria-label={label} className="grid min-w-0 gap-3 p-4 sm:p-5"><span className="text-sm text-muted-foreground">{label}</span>{[1,2,3].map(i=><Skeleton key={i} className="h-24 w-full rounded-lg"/>)}</div>;
 }
 export function RequestStatus({value}:{value:string|number|null|undefined}){
-  return <Badge variant="outline" className="max-w-full whitespace-normal font-normal">Mã trạng thái: {value??"Chưa xác định"}</Badge>;
+  return <Badge variant="outline" className="request-status max-w-full whitespace-normal font-normal">Trạng thái: {value??"Chưa xác định"}</Badge>;
 }
 /** Display source wall-clock dates without converting time zone or editing data. */
 export function requestDate(value:string|null|undefined){

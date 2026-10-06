@@ -1,4 +1,5 @@
 "use client";
+import {useRequestNotifications} from "./request-notifications";
 import {RequestButton,RequestInput,RequestTextarea,RequestNotice,RequestStatus,requestMessage,requestStyles} from "./request-presentation";
 import {useEffect,useLayoutEffect,useRef,useState,type CSSProperties} from "react";
 import {useDirtyGuard} from "./navigation-guard";
@@ -20,6 +21,7 @@ const unknownMessage=outcomeMessage.OutcomeUnknown;
  * Keep this component mounted for unresolved custody; key ONLY by login scope. */
 export function MobileInboundRequest(props:MobileInboundRequestProps){return <InboundEditor key={JSON.stringify([props.access.scopeKey])} {...props}/>;}
 function InboundEditor({documentId,access,adapter,onConfirmed}:MobileInboundRequestProps){
+  const notify=useRequestNotifications(access.scopeKey,access.canRead&&access.available);
   const [state,setState]=useState<State>(empty),[note,setNote]=useState<string|null>(null),[page,setPage]=useState(1);
   const rights=JSON.stringify([access.scopeKey,access.canRead,access.canSave,access.canSend,access.available,access.maxCommandBytes]);
   const [binding,setBinding]=useState<Binding>({documentId,rights,adapter});
@@ -173,6 +175,8 @@ function InboundEditor({documentId,access,adapter,onConfirmed}:MobileInboundRequ
       const result=commandResult(response,command,originalView.statusId);
       if(!result||result.outcome==="OutcomeUnknown"){setState(previous=>({...previous,phase:"unknown",message:unknownMessage}));return;}
       if(result.receipt){confirmed(result.receipt,action);return;}
+      if(result.outcome==="Conflict")notify(command.operationId,"conflict");
+      else notify(command.operationId,"rejected");
       setState(previous=>({...previous,original:null,originalStatus:null,phase:result.outcome==="Conflict"?"conflict":"failed",message:outcomeMessage[result.outcome],reviewed:false}));
     }catch{
       if(stillCurrent(token,controller))setState(previous=>({...previous,phase:command?"unknown":"editing",message:command?unknownMessage:"Chưa thể chuẩn bị hoặc kiểm tra chứng từ; chưa gửi thao tác."}));
@@ -182,6 +186,7 @@ function InboundEditor({documentId,access,adapter,onConfirmed}:MobileInboundRequ
     // Parent callbacks cannot mutate our evidence, erase an acknowledgment, or
     // turn callback/readback failure into a failed Save or a replacement command.
     const evidence=Object.freeze({...receipt});
+    notify(evidence.operationId,action==="Save"?"saved":"sentToWarehouse");
     setState(previous=>({...previous,original:null,originalStatus:null,receipt:evidence,receiptAction:action,awaitingSnapshot:evidence,retainEdits:false,
       phase:"confirmed",readNonce:previous.readNonce+1,message:"ERP đã xác nhận thao tác. Đang đọc lại chứng từ.",reviewed:false}));
     if(action==="SendToWarehouse")setNote(null);

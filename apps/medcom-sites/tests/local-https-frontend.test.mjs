@@ -210,6 +210,9 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
     };
     const freshPurchaseDetail = async () => {
       await purchaseEditor().waitFor();
+      const disclosure = purchaseEditor().getByRole('region', {name: 'Dữ liệu ERP đầy đủ', exact: true}).locator('details');
+      // The fixed pre-I30 control has no disclosure; preserve that exact control.
+      if (await disclosure.count() && !await disclosure.evaluate(element => element.open)) await disclosure.locator('summary').click();
       await purchaseEditor().getByRole('table', {name: 'Toàn bộ dòng đề nghị', exact: true}).getByText('SYNTHETIC-PURCHASE-ITEM', {exact: true}).waitFor();
     };
     const prepareOrders = async () => {

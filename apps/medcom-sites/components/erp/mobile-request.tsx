@@ -1,4 +1,5 @@
 "use client";
+import {useRequestNotifications} from "./request-notifications";
 import {RequestButton,RequestInput,RequestTextarea,RequestNotice,requestStyles} from "./request-presentation";
 
 import {useEffect, useId, useLayoutEffect, useRef, useState} from "react";
@@ -158,6 +159,7 @@ const emptySnapshot = (): PurchaseRequestSnapshot => ({documentId: null, version
 
 function RequestEditor({initial, access, adapter, onConfirmed, readRevision=0, onWorkStateChange}: MobileRequestProps) {
   const prefix = useId();
+  const notify=useRequestNotifications(access.scopeKey,access.canRead&&access.available);
   // Invalid input is never rendered as a synthetic fallback. This only permits
   // hooks to remain mounted while a previously dispatched intent is unresolved.
   const [baseline, setBaseline] = useState(() => isSnapshot(initial) ? initial : emptySnapshot());
@@ -246,6 +248,9 @@ function RequestEditor({initial, access, adapter, onConfirmed, readRevision=0, o
     if (next.kind === "conflict" && !isSnapshot(next.current)) next = unknown(intent, "Chưa có bản ERP hợp lệ để kiểm tra xung đột.");
     if (next.kind !== "confirmed" && (typeof next.message !== "string" || next.referenceId !== undefined && typeof next.referenceId !== "string")) next = unknown(intent, "Phản hồi chưa hợp lệ. Hãy kiểm tra kết quả yêu cầu gốc.");
     if (next.kind === "rejected" && (!next.fieldErrors || typeof next.fieldErrors !== "object" || !Object.values(next.fieldErrors).every(value => typeof value === "string"))) next = unknown(intent, "Phản hồi chưa hợp lệ. Hãy kiểm tra kết quả yêu cầu gốc.");
+    // This branch is after all existing intent/action/snapshot validation above.
+    if(next.kind==="confirmed")notify(intent.intentId,next.action==="submit"?"submitted":"saved");
+    else if(next.kind==="rejected"||next.kind==="conflict")notify(intent.intentId,next.kind);
     setResult(next);
     // A definitive result resolves the OLD intent before opening the queued
     // document. It never applies the old receipt or values to the new identity.

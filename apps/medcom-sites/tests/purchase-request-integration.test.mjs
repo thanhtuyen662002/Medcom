@@ -196,15 +196,16 @@ test('real HTTP → BFF → existing workspace/browser purchase controls and aut
    assert.ok(calls.some(call=>call.query.page==='2'));assert.ok(calls.some(call=>call.query.branchId==='QA-B'));assert.ok(calls.some(call=>call.query.search==='QA-003'));
   });
   async function find(id){await screen.getByLabel('Tìm mã đề nghị',{exact:true}).fill(id);await screen.getByRole('button',{name:'Tìm kiếm',exact:true}).click();await screen.getByRole('button',{name:`Mở đề nghị ${id}`,exact:true}).waitFor();}
+  async function expandFullReadback(){const detail=screen.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true});await detail.waitFor();const disclosure=detail.locator('details');if(!await disclosure.evaluate(el=>el.open))await disclosure.locator('summary').click();}
   await t.test('open/refresh/close preserve precise values and the full hidden header',async()=>{
    await screen.getByRole('button',{name:'Mở đề nghị QA-003',exact:true}).click();const detail=screen.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true});await detail.waitFor();
-   assert.match(await detail.innerText(),/2026-10-06T13:14:15.000/);assert.match(await detail.innerText(),/15.25/);assert.match(await detail.innerText(),/999999999999999999/);
+   await expandFullReadback();assert.match(await detail.innerText(),/2026-10-06T13:14:15.000/);assert.match(await detail.innerText(),/15.25/);assert.match(await detail.innerText(),/999999999999999999/);
    const before=calls.filter(call=>call.path.endsWith('/detail')).length;const refreshed=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/erp/api/purchase-requests/detail');await screen.getByRole('button',{name:'Làm mới',exact:true}).click();await refreshed;await detail.waitFor();assert.ok(calls.filter(call=>call.path.endsWith('/detail')).length>before);
    await screen.getByRole('button',{name:'Đóng đề nghị',exact:true}).click();await screen.getByRole('button',{name:'Mở đề nghị QA-003',exact:true}).waitFor();assert.equal(await detail.count(),0);
   });
   await t.test('101 lines and nullable source date have complete read-only fallback without truncation',async()=>{
-   await find('QA-LARGE');await screen.getByRole('button',{name:'Mở đề nghị QA-LARGE',exact:true}).click();const table=screen.getByRole('table',{name:'Toàn bộ dòng đề nghị',exact:true});await table.waitFor();assert.equal(await table.locator('tbody tr').count(),101);assert.match(await table.innerText(),/QA-L101/);
-   await find('QA-NULL');await screen.getByRole('button',{name:'Mở đề nghị QA-NULL',exact:true}).click();await screen.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true}).waitFor();assert.match(await screen.innerText(),/NULL/);
+   await find('QA-LARGE');await screen.getByRole('button',{name:'Mở đề nghị QA-LARGE',exact:true}).click();await expandFullReadback();const table=screen.getByRole('table',{name:'Toàn bộ dòng đề nghị',exact:true});await table.waitFor();assert.equal(await table.locator('tbody tr').count(),101);assert.match(await table.innerText(),/QA-L101/);
+   await find('QA-NULL');await screen.getByRole('button',{name:'Mở đề nghị QA-NULL',exact:true}).click();await screen.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true}).waitFor();await expandFullReadback();assert.match(await screen.innerText(),/NULL/);
   });
   await t.test('refresh of a deleted selected document retains close/list recovery without stale detail',async()=>{
    await find('QA-003');await screen.getByRole('button',{name:'Mở đề nghị QA-003',exact:true}).click();

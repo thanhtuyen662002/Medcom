@@ -361,6 +361,10 @@ internal sealed class InboundModel:IInboundCommandAuthority
     internal InboundAuthorityComparison? SourceAuthority;
     internal readonly List<InboundCommand> Commands=[];internal readonly List<string> Events=[];
     internal string? Fault;internal string? Revoke;internal bool RollbackFails;
+    internal Action<string>? OnEvent;
+    internal bool ConnectionDisposeFails,TransactionDisposeFails;
+    internal int FactoryCalls,ConnectionDisposes,TransactionDisposes;
+    internal DbConnection NewConnection(){FactoryCalls++;return new InboundConnection(this);}
     internal Action<DataTable[]>? ReadbackMutation;
     internal int CommitAcks,OpenCalls,BusinessWrites;internal InboundTransaction? Active;
     internal SqlInboundDraftCommandService Service(IInboundDocumentNumberAllocator? allocator=null)=>new(Guid.Parse("11111111-1111-1111-1111-111111111111"),
@@ -385,7 +389,7 @@ internal sealed class InboundModel:IInboundCommandAuthority
         Active?.Business==true && Revoke=="identity" ? null : ActiveIdentity);
     public Task<IReadOnlyList<string>?> ReadGrantsAsync(DbTransaction tx,AuthoritativeIdentity id,InboundDraftAction action,CancellationToken token)
         =>Task.FromResult<IReadOnlyList<string>?>(Active?.Business==true && Revoke=="scope" ? ["BR-B"] : ["BR-A"]);
-    internal void Event(string name){Events.Add(name);if(Fault==name)throw new IOException("synthetic-secret-never-return");}
+    internal void Event(string name){Events.Add(name);OnEvent?.Invoke(name);if(Fault==name)throw new IOException("synthetic-secret-never-return");}
     internal static DataTable Table(params (string Name,Type Type)[] columns)
     {var t=new DataTable();foreach(var c in columns)t.Columns.Add(c.Name,c.Type);return t;}
     private static DataTable[] InitialTables()
@@ -421,7 +425,12 @@ internal sealed class InboundConnection(InboundModel model):DbConnection
     public override void Open(){model.OpenCalls++;state=ConnectionState.Open;}public override void Close()=>state=ConnectionState.Closed;
     protected override DbTransaction BeginDbTransaction(IsolationLevel level)=>model.Active=new InboundTransaction(this,level);
     protected override DbCommand CreateDbCommand(){var c=new InboundCommand(this);model.Commands.Add(c);return c;}
-    protected override void Dispose(bool disposing){if(disposing)Close();base.Dispose(disposing);}
+    protected override void Dispose(bool disposing)
+    {
+        if(disposing){model.ConnectionDisposes++;model.Event("connection-dispose");Close();
+            if(model.ConnectionDisposeFails)throw new IOException("synthetic cleanup failure");}
+        base.Dispose(disposing);
+    }
 }
 internal sealed class InboundTransaction(InboundConnection owner,IsolationLevel level):DbTransaction
 {
@@ -434,13 +443,19 @@ internal sealed class InboundTransaction(InboundConnection owner,IsolationLevel 
         owner.Model.Tables=Tables.Select(t=>t.Copy()).ToArray();owner.Model.Journal=Journal.Copy();owner.Model.CommitAcks++;
         owner.Model.Event(kind+"-commit-ack");
     }
-    public override void Rollback(){if(owner.Model.RollbackFails)throw new IOException("synthetic rollback failure");owner.Model.Events.Add("rollback");}
+    public override void Rollback(){owner.Model.Event("rollback");if(owner.Model.RollbackFails)throw new IOException("synthetic rollback failure");}
+    protected override void Dispose(bool disposing)
+    {
+        if(disposing){owner.Model.TransactionDisposes++;owner.Model.Event("transaction-dispose");
+            if(owner.Model.TransactionDisposeFails)throw new IOException("synthetic cleanup failure");}
+        base.Dispose(disposing);
+    }
 }
 internal sealed class InboundCommand(InboundConnection owner):DbCommand
 {
     private readonly RecordingParameters parameters=new();
     [AllowNull] public override string CommandText{get;set;}="";
-    public override int CommandTimeout{get;set;}public override CommandType CommandType{get;set;}
+    public override int CommandTimeout{get;set;}public override CommandType CommandType{get;set;}=CommandType.Text;
     public override bool DesignTimeVisible{get;set;}public override UpdateRowSource UpdatedRowSource{get;set;}
     protected override DbConnection? DbConnection{get=>owner;set=>throw new NotSupportedException();}
     protected override DbTransaction? DbTransaction{get;set;}
@@ -449,7 +464,14 @@ internal sealed class InboundCommand(InboundConnection owner):DbCommand
     public override void Cancel(){}public override void Prepare(){}public override object? ExecuteScalar()=>throw new NotSupportedException();
     private InboundTransaction Tx=>(InboundTransaction)DbTransaction!;
     private object P(string n)=>parameters[n].Value!;
-    private string Tag=>Regex.Match(CommandText,@"inbound:([a-z-]+)").Groups[1].Value;
+    private string Tag=>CommandText switch
+    {
+        SqlLegacyBranchScope.NativeUserText => "native-user",
+        SqlLegacyBranchScope.RestrictedText => "native-restricted",
+        SqlLegacyBranchScope.CatalogShapeText => "catalog-shape",
+        SqlLegacyBranchScope.CatalogText => "catalog",
+        _ => Regex.Match(CommandText,@"inbound:([a-z-]+)").Groups[1].Value
+    };
     private DataRow? Head=>Tx.Tables[0].Rows.Cast<DataRow>().SingleOrDefault(r=>Equals(r["DocumentID"],P("@document")));
     private DataRow? JournalRow=>Tx.Journal.Rows.Cast<DataRow>().SingleOrDefault(r=>new[]{("DatabaseBindingId","@binding"),("TenantId","@tenant"),
         ("CompanyId","@company"),("Actor","@actor"),("OperationId","@operation")}.All(p=>Equals(r[p.Item1],P(p.Item2))));
@@ -458,7 +480,7 @@ internal sealed class InboundCommand(InboundConnection owner):DbCommand
         Assert.Same(owner,Tx.Connection);var tag=Tag;
         owner.Model.Event(tag=="snapshot" ? Tx.Business?"snapshot-after":"snapshot-before" : tag);
         if(tag=="snapshot" && Tx.Business)owner.Model.ReadbackMutation?.Invoke(Tx.Tables);
-        if(tag is "user" or "grants" or "branches")return owner.Model.SourceAuthority!.Read(this,tag);
+        if(tag is "user" or "grants" or "branches" or "native-user" or "native-restricted" or "catalog-shape" or "catalog")return owner.Model.SourceAuthority!.Read(this,tag);
         if(tag=="probe")return Tx.Journal.Clone().CreateDataReader();
         if(tag=="lookup"){var t=Tx.Journal.Clone();if(JournalRow is {} row)t.ImportRow(row);return t.CreateDataReader();}
         if(tag=="branch"){var t=InboundModel.Table(("DocumentID",typeof(string)),("BranchID",typeof(string)));if(Head is {} h)t.Rows.Add(h["DocumentID"],h["BranchID"]);return t.CreateDataReader();}
@@ -599,12 +621,16 @@ public sealed class InboundDraftCollationTests
 internal sealed class InboundAuthorityComparison
 {
     internal sealed record User(string Name,string Group,string? Authority,string? Branch);
-    internal sealed record Grant(string Owner,string Menu);
+    internal sealed record Grant(string Owner,string Menu,bool Run=true,bool Update=true,bool Add=true);
     internal readonly List<User> Users=[new("sample-user","GROUP-A",null,"BR-A")];
     internal readonly HashSet<string> Groups=new(StringComparer.Ordinal){"GROUP-A"};
     internal readonly List<Grant> Direct=[],GroupRights=[];
     internal readonly List<(string Actor,string Branch)> Branches=[];
-    private const string Password="synthetic-source-password-value";
+    internal const string Password="synthetic-source-password-value";
+    internal string[] Catalog=["BR-A","BR-B"];
+    internal bool CatalogQualified=true;
+    internal int CatalogAlias;
+    internal Func<string,DataTable,DataTable>? ChangeProjection;
     internal InboundAuthorityComparison(InboundModel model)
     {
         model.SourceAuthority=this;BindIdentity(model);
@@ -612,7 +638,7 @@ internal sealed class InboundAuthorityComparison
     internal void BindIdentity(InboundModel model)
     {
         var stamp=typeof(LegacyIdentityAuthority).GetMethod("Stamp",BindingFlags.NonPublic|BindingFlags.Static)!;
-        model.ActiveIdentity=InboundModel.Identity with{CredentialStamp=(string)stamp.Invoke(null,
+        model.ActiveIdentity=InboundModel.Identity with{BranchIds=["BR-A","BR-B"],CredentialStamp=(string)stamp.Invoke(null,
             [new LegacyUser("sample-user","",Password,false,Users[0].Group,true)])!};
     }
     internal static bool Equal(string sql,string left,string right,string a,string b,bool defaultCaseSensitive=false)
@@ -631,6 +657,30 @@ internal sealed class InboundAuthorityComparison
         var sql=command.CommandText;
         string P(string name)=>(string)command.Parameters[name].Value!;
         bool Eq(string left,string right,string a,string b,bool sensitive=false)=>Equal(sql,left,right,a,b,sensitive);
+        DbDataReader Result(DataTable table) => (ChangeProjection?.Invoke(tag,table) ?? table).CreateDataReader();
+        if(tag=="native-user")
+        {
+            var rows=InboundModel.Table(("UserName",typeof(string)),("Password",typeof(string)),("Disable",typeof(bool)),
+                ("UserGroupID",typeof(string)),("IsDisable",typeof(bool)),("BranchID",typeof(string)));
+            foreach(var user in Users.Where(u=>string.Equals(u.Name.TrimEnd(' '),P("@actor").TrimEnd(' '),StringComparison.OrdinalIgnoreCase)))
+            {
+                var validGroup=Groups.Contains(user.Group);
+                rows.Rows.Add(user.Name,Password,false,user.Group,validGroup ? (object)false : DBNull.Value,(object?)user.Branch ?? DBNull.Value);
+            }
+            return Result(rows);
+        }
+        if(tag=="native-restricted")
+        {
+            var rows=InboundModel.Table(("BranchID",typeof(string)));
+            foreach(var branch in Users.Where(u=>u.Name==P("@actor")).Select(u=>u.Branch)
+                .Concat(Branches.Where(b=>b.Actor==P("@actor")).Select(b=>(string?)b.Branch)).Where(b=>!string.IsNullOrEmpty(b)))
+                rows.Rows.Add(branch);
+            return Result(rows);
+        }
+        if(tag=="catalog-shape")
+        {var rows=InboundModel.Table(("ShapeOk",typeof(int)));rows.Rows.Add(CatalogQualified?1:0);return Result(rows);}
+        if(tag=="catalog")
+        {var rows=InboundModel.Table(("BranchID",typeof(string)),("IdentityAlias",typeof(int)));foreach(var b in Catalog)rows.Rows.Add(b,CatalogAlias);return Result(rows);}
         if(tag=="user")
         {
             var includeGroup=sql[..sql.IndexOf("FROM",StringComparison.Ordinal)].Contains("G.UserGroupID",StringComparison.Ordinal);
@@ -643,18 +693,19 @@ internal sealed class InboundAuthorityComparison
                     object[] values=includeGroup ? [user.Name,Password,false,user.Group,false,group] : [user.Name,Password,false,user.Group,false];
                     rows.Rows.Add(values);
                 }
-            return rows.CreateDataReader();
+            return Result(rows);
         }
         if(tag=="grants")
         {
             var actor=P("@username");var group=P("@group");
-            var allowed=Direct.Any(p=>Eq("P.UserName","@username",p.Owner,actor) && Eq("P.MenuID","M.MenuID",p.Menu,P("@menu")))
-                || GroupRights.Any(p=>Eq("P.UserGroupID","@group",p.Owner,group) && Eq("P.MenuID","M.MenuID",p.Menu,P("@menu")))
+            bool Right(Grant grant) => grant.Run && ((bool)command.Parameters["@create"].Value! ? grant.Add : grant.Update);
+            var allowed=Direct.Any(p=>Right(p) && Eq("P.UserName","@username",p.Owner,actor) && Eq("P.MenuID","M.MenuID",p.Menu,P("@menu")))
+                || GroupRights.Any(p=>Right(p) && Eq("P.UserGroupID","@group",p.Owner,group) && Eq("P.MenuID","M.MenuID",p.Menu,P("@menu")))
                 || Users.Any(u=>u.Authority is not null && Eq("U.UserAuthority","@username",u.Authority,actor)
                     && Groups.Any(g=>Eq("G.UserGroupID","U.UserGroupID",g,u.Group))
-                    && GroupRights.Any(p=>Eq("U.UserGroupID","P.UserGroupID",u.Group,p.Owner) && Eq("P.MenuID","M.MenuID",p.Menu,P("@menu"))));
+                    && GroupRights.Any(p=>Right(p) && Eq("U.UserGroupID","P.UserGroupID",u.Group,p.Owner) && Eq("P.MenuID","M.MenuID",p.Menu,P("@menu"))));
             var rows=InboundModel.Table(("MenuID",typeof(string)),("FormName",typeof(string)),("Para",typeof(string)),("isDisable",typeof(bool)),("Granted",typeof(int)));
-            rows.Rows.Add("07011","IV_InboundRequestFrm",DBNull.Value,false,allowed?1:0);return rows.CreateDataReader();
+            rows.Rows.Add("07011","IV_InboundRequestFrm",DBNull.Value,false,allowed?1:0);return Result(rows);
         }
         if(tag=="branches")
         {

@@ -224,7 +224,7 @@ function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, hi
       <form aria-label="Lọc phiếu nhập hàng" className={requestStyles.toolbar} onSubmit={event => {
         event.preventDefault(); navigate(() => { select(null); setFilter({search, branch}); setPage(1); });
       }}>
-        <label className={requestStyles.field}>Tìm phiếu nhập hàng<RequestInput value={search} maxLength={100} onChange={event => setSearch(event.target.value)}/></label>
+        <label className={requestStyles.field}>Tìm phiếu nhập hàng<RequestInput placeholder="Nhập mã phiếu…" value={search} maxLength={100} onChange={event => setSearch(event.target.value)}/></label>
         <label className={requestStyles.field}>Lọc chi nhánh<select className="min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2 text-base font-normal" value={branch} onChange={event => setBranch(event.target.value)}>
           <option value="">Tất cả chi nhánh được cấp</option>{workspace?.branchIds.map(id => <option key={id} value={id}>{id}</option>)}
         </select></label>
@@ -248,7 +248,7 @@ function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, hi
     </div>}
     {/* Always mounted, even on close, permission change, list error or transient
         workspace=null. Only loginKey above retires this I18 instance. */}
-    <MobileInboundRequest documentId={selected} access={access} adapter={adapter} onConfirmed={acknowledge}/>
+    <div hidden={selected===null&&!state.unresolved&&!readbackPending}><MobileInboundRequest documentId={selected} access={access} adapter={adapter} onConfirmed={acknowledge}/></div>
     <p className={requestStyles.muted}>Lưu thay đổi và Gửi kho là hai thao tác riêng.</p>
   </section>;
 }
