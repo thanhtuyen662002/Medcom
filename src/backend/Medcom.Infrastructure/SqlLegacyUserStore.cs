@@ -84,11 +84,18 @@ public sealed class SqlLegacyUserStore : ILegacyUserStore
         await using var grants=await permissions.ExecuteReaderAsync(cancellationToken);
         var capabilities=new List<string>();
         while(await grants.ReadAsync(cancellationToken))
-            capabilities.Add(grants.GetString(0)=="050129"?"purchase-orders.read":"inbound-requests.read");
+        {
+            var capability = grants.GetString(0) switch
+            { "050129" => "purchase-orders.read", "07011" => "inbound-requests.read", _ => null };
+            if (capability is not null) capabilities.Add(capability);
+        }
         await grants.NextResultAsync(cancellationToken);
         var branches=new List<string>();
         while(await grants.ReadAsync(cancellationToken))
         { branches.Add(grants.GetString(0)); if(branches.Count>200) throw new InvalidOperationException(); }
+        await grants.CloseAsync();
+        if (await PurchaseRequests.SqlPurchaseRequestQueries.HasNativeReadGrantAsync(connection, user, cancellationToken))
+            capabilities.Add("purchase-requests.read");
         return user with { Capabilities=capabilities.AsReadOnly(), BranchIds=branches.AsReadOnly() };
     }
 }
