@@ -354,10 +354,13 @@ public sealed class LocalFrontendHostTests
     public async Task ChunkFramingHasAFiniteTransportBudgetEvenForOneDecodedByte(string path, int transportLimit)
     {
         await using var fixture = await RelayFixture.Start(context => context.Response.WriteAsync("unreachable"));
-        // The extension alone exceeds the transport envelope. The decoded payload is just one byte.
+        // Send one complete "1;pad=...\r\n" prefix: transportLimit+8 framing bytes, zero decoded bytes.
+        // Stop after that write; sending data or the terminal chunk after refusal can reset the TLS connection.
         var response = await fixture.Raw("POST", path, body: [0x41], chunked: true,
-            chunkExtension: new string('a', transportLimit));
+            chunkExtension: new string('a', transportLimit), stopAfterChunkPrefix: true);
         Assert.StartsWith("HTTP/1.1 413", response, StringComparison.Ordinal);
+        Assert.Equal(transportLimit + 8, fixture.LastRawChunkPrefixBytesWritten);
+        Assert.Equal(0, fixture.LastRawDecodedBytesWritten);
         Assert.Equal(0, fixture.UpstreamCalls);
     }
 
@@ -565,6 +568,8 @@ public sealed class LocalFrontendHostTests
         HttpClient client, int httpsPort, Func<int> calls) : IAsyncDisposable
     {
         public HttpClient Client { get; } = client;
+        public int LastRawChunkPrefixBytesWritten { get; private set; }
+        public int LastRawDecodedBytesWritten { get; private set; }
         public int HttpsPort { get; } = httpsPort;
         public int UpstreamCalls => calls();
 
@@ -599,8 +604,11 @@ public sealed class LocalFrontendHostTests
         }
 
         public async Task<string> Raw(string method, string target, string headers = "", string? host = null,
-            byte[]? body = null, bool chunked = false, bool appendConnectionClose = true, string? chunkExtension = null)
+            byte[]? body = null, bool chunked = false, bool appendConnectionClose = true, string? chunkExtension = null,
+            bool stopAfterChunkPrefix = false)
         {
+            LastRawChunkPrefixBytesWritten = 0;
+            LastRawDecodedBytesWritten = 0;
             using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             using var socket = new TcpClient();
             await socket.ConnectAsync(IPAddress.Loopback, HttpsPort, cancellation.Token);
@@ -627,13 +635,17 @@ public sealed class LocalFrontendHostTests
                             var length = Math.Min(8192, body.Length - offset);
                             var prefix = length.ToString("X", System.Globalization.CultureInfo.InvariantCulture) +
                                 (chunkExtension is null ? "" : ";pad=" + chunkExtension) + "\r\n";
-                            await stream.WriteAsync(Encoding.ASCII.GetBytes(prefix), cancellation.Token);
+                            var prefixBytes = Encoding.ASCII.GetBytes(prefix);
+                            await stream.WriteAsync(prefixBytes, cancellation.Token);
+                            LastRawChunkPrefixBytesWritten += prefixBytes.Length;
+                            if (stopAfterChunkPrefix) break;
                             await stream.WriteAsync(body.AsMemory(offset, length), cancellation.Token);
+                            LastRawDecodedBytesWritten += length;
                             await stream.WriteAsync("\r\n"u8.ToArray(), cancellation.Token);
                         }
-                        await stream.WriteAsync("0\r\n\r\n"u8.ToArray(), cancellation.Token);
+                        if (!stopAfterChunkPrefix) await stream.WriteAsync("0\r\n\r\n"u8.ToArray(), cancellation.Token);
                     }
-                    else await stream.WriteAsync(body, cancellation.Token);
+                    else { await stream.WriteAsync(body, cancellation.Token); LastRawDecodedBytesWritten += body.Length; }
                 }
             }
             catch (IOException exception) { uploadFailure = exception; }
