@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "role": "direct_interactive",
+  "owner": "Mika under owner-requested parallel fixed mobile workflow continuation",
+  "base_sha": "b1eb57077c2112a808c7ce2e581511741fa971a1",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "automation_policy": "No schedule changes",
+  "publication_policy": "Parent sole publisher/integrator. User routes manual coding chats; exact candidate privacy/code review and current-head/base CI required.",
+  "created_at": "2026-10-06T04:50:00Z",
+  "ticket_id": "I22",
+  "run_id": "62e7cfcf-089b-43d5-9b92-8f7a96c4eb22",
+  "work_branch": "codex/g45-purchase-admission-i22-20261006",
+  "claim_branch": "medcom-claims/g45/direct/I22",
+  "scope": [
+    "src/backend/Medcom.Infrastructure/PurchaseRequests/SqlPurchaseRequestCommandAuthorityReader.cs",
+    "src/backend/Medcom.Infrastructure/PurchaseRequests/PurchaseRequestCommandFactory.cs",
+    "src/backend/Medcom.Api/SqlPurchaseRequestCommandAccess.cs",
+    "src/backend/Medcom.Api/PurchaseRequestCommandRegistration.cs",
+    "tests/backend/Medcom.Api.Tests/PurchaseRequestCommandAdmissionTests.cs",
+    "tests/backend/Medcom.Api.Tests/PurchaseRequestCommandCompositionTests.cs",
+    "docs/execution/checkpoints/I22_PURCHASE_COMMAND_ADMISSION.md",
+    "docs/execution/direct-runs/I22.json"
+  ],
+  "purpose": "Dormant source-bound native EDIT admission and request-scoped purchase no-Add Save/Submit/original-intent Lookup composition, with recording tests and no production activation.",
+  "dependencies": {
+    "I14_I19": "Accepted unchanged on pinned main.",
+    "I20": "Read-only pending access interface and workspace DTO from original candidate patch SHA256 f24f1b7bcedba53492cf389fb8b6d1ce6f91f719a61f0ac1c7fc0e67dd250718. Final integration must use parent-accepted corrected I20; not yet accepted."
+  },
+  "constraints": [
+    "Seven mutable new files plus immutable marker. No ApiHost, I20 access/endpoints/contracts, existing I14/I19 implementation, FE, SQL schema, config, project/dependency/lock/CI edits.",
+    "SELECT-only fixed source-qualified authority reader using existing PurchaseRequestSql statements. Native Run+Update menu05011/form AP_PurposeRequestListFrm/parent05, enabled physical actor/group, CredentialStamp, exact branch/document/schema/binding; preserve SQL alias defenses and conservative policy.",
+    "Never infer write from purchase-requests.read or HasNativeReadGrantAsync. Original command transactional authority gates remain authoritative; no alternate writer.",
+    "Request-scoped registration helper remains uncalled. Capture server token and resolve IWebSessions afresh; use fresh closed connections and stable nonempty database binding. Missing actual runtime acceptance means unavailable and zero SQL opens.",
+    "Only a narrow parent-supplied acceptance seam, no accepted production input, configuration shortcut, hardcoded runtimeQualified=true or general qualification framework. Static schema/source/offline tests do not certify actual target runtime.",
+    "Deny-all allocator acceptable: no-Add Save Update/Remove and Submit require no identifier allocation. Create/Add remain denied. Original-intent Lookup eligibility survives submitted/locked state; post-dispatch receipt access cannot require still-draft status.",
+    "Recording sessions/connections only. Test default-off/noSQL, scope isolation, binding mismatch, native grant combinations, aliases, revocation, cancellation/cleanup, malformed schema, post-submit lookup, no admission DML/DDL/procedures/reservation/commit, no allocator for noAdd and denied Create/Add.",
+    "No actual SQL/DLL/private configuration or customer data, journal installation, security/TLS edits, deployment, publishing or runtime activation in this coding task. Parent owns final dependency pinning, shared wiring and actual runtime acceptance."
+  ]
+}
