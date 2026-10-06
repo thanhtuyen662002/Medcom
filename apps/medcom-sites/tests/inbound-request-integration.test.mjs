@@ -782,7 +782,7 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
   });
   resetState(); backend.listen(0, '127.0.0.1'); await once(backend, 'listening'); const backendHttp = `http://127.0.0.1:${backend.address().port}`;
   let browser, context, page;
-  const routes = {started: 0, fulfilled: 0, aborted: 0, pending: new Map()}, loadEvents = [], failedRequests = [];
+  const routes = {started: 0, fulfilled: 0, aborted: 0, pending: new Map()}, loadEvents = [], failedRequests = [], bffResponses = [];
   const releaseAll = () => {for (const model of models) for (const kind of Object.keys(model.waiters)) release(kind, model);};
   const cleanup = async () => {
     // A login/reset can replace state while an old synthetic command is held.
@@ -825,6 +825,10 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
         if (model.mode === 'lost' && /\/(save|send-to-warehouse)$/.test(new URL(target).pathname)) {await answer.arrayBuffer(); throw Error('Synthetic completed ACK loss');}
         return answer;
       });
+      const problem = response.ok ? null : await response.clone().json().catch(() => null);
+      bffResponses.push({path: url.pathname, method: request.method(), status: response.status, code: typeof problem?.code === 'string' ? problem.code.slice(0, 100) : null,
+        origin: requestHeaders.origin ?? null, fetchSite: requestHeaders['sec-fetch-site'] ?? null, fetchMode: requestHeaders['sec-fetch-mode'] ?? null,
+        frameOrigin: new URL(request.frame().url()).origin, scopePresent: incoming.headers.has('X-Inbound-Scope')});
       await fulfill({status: response.status, headers: Object.fromEntries(response.headers), body: Buffer.from(await response.arrayBuffer())});
       } catch (error) {
         // Aborted fetches/closed pages are intentional in custody/reset cases.
@@ -846,7 +850,7 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
         const dom = await Promise.race([page.evaluate(() => ({readyState: document.readyState, url: location.href, hostCount: document.querySelectorAll('[data-testid=inbound-request-host]').length, text: document.body?.innerText.slice(0, 500)})),
           new Promise(resolve => {timer = setTimeout(() => resolve({diagnostic: 'DOM inspection timed out'}), 1000);})]).catch(problem => ({diagnostic: String(problem)})).finally(() => clearTimeout(timer));
         console.error('I24 fixture start diagnostics ' + JSON.stringify({error: String(error), pageErrors: errors.slice(-10), routes: {started: routes.started, fulfilled: routes.fulfilled, aborted: routes.aborted, outstanding: [...routes.pending.values()].slice(-20)},
-          failedRequests: failedRequests.slice(-10), loadEvents: loadEvents.slice(-10), backendCalls: calls.slice(-20).map(({path, method}) => ({path, method})), dom}));
+          failedRequests: failedRequests.slice(-10), bffResponses: bffResponses.slice(-20), loadEvents: loadEvents.slice(-10), backendCalls: calls.slice(-20).map(({path, method}) => ({path, method})), dom}));
         throw error;
       }
     };
@@ -858,7 +862,13 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
     const settled = () => page.waitForFunction(() => document.querySelector('[data-testid=inbound-request-host]')?.getAttribute('data-readback-pending') === 'false');
     const recover = async () => {state.failure = null; await button('Xác minh lại phiên nhập hàng').click(); await field('Tìm phiếu nhập hàng').waitFor(); await page.waitForFunction(() => [...document.querySelectorAll('button')].some(b => b.textContent === 'Kiểm tra yêu cầu gốc' && !b.disabled) || document.querySelector('[data-testid=confirmed-receipt]'));};
     const single = async () => {const io = await page.evaluate(() => window.i24IO), writers = calls.filter(c => /\/(save|send-to-warehouse)$/.test(c.path)); assert.equal(io.execute.length, 1); assert.equal(io.fetch.filter(c => /\/(save|send-to-warehouse)$/.test(c.url)).length, 1); assert.equal(writers.length, 1); assert.equal(state.effects, 1); for (const c of calls.filter(c => /\/(save|send-to-warehouse|reconcile)$/.test(c.path))) {assert.equal(c.body, io.execute[0].body); assert.equal(c.scope, state.scope);} for (const c of io.fetch) assert.equal(c.body, io.execute[0].body);};
-    const run = async (name, fn) => {await t.test(name, async () => {try {await fn(); results.push(name);} finally {releaseAll();}});};
+    const run = async (name, fn) => {
+      let failure;
+      await t.test(name, async () => {try {await fn(); results.push(name);} catch (error) {failure = error; throw error;} finally {releaseAll();}});
+      // Stop a broken fixture at its first preserved failure instead of letting
+      // later cases cascade on invalid setup. Every case still runs on success.
+      if (failure) throw failure;
+    };
     for (const width of [320, 360, 390]) await run(`${width}px actual Workspace mounts one full draft host without a child sentinel`, async () => {
       await page.setViewportSize({width, height: 844}); await start(); assert.equal(await host().count(), 1); assert.equal(await field('Số đơn').inputValue(), 'FULL ERP A');
       assert.equal(await host().evaluate(el => el.scrollWidth <= el.clientWidth), true); assert.equal(await page.evaluate(() => history.state.medcomInboundHost ?? null), null);
