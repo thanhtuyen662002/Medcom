@@ -41,10 +41,12 @@ public static class ApiHost
             string Required(string key) => builder.Configuration[key] is { Length: > 0 } value
                 ? value : throw new InvalidOperationException($"Missing server setting {key}.");
             var enablePilots = builder.Configuration.GetValue("Legacy:EnableReadOnlyPilots", false);
-            var connectionString = ServerConfiguration.ResolveConnectionString(builder.Configuration);
+            var connectionString = ServerConfiguration.ResolveConnectionString(builder.Configuration,
+                out var developmentTestTlsTarget);
             builder.Services.AddSingleton(new LegacyCompany(Required("Legacy:TenantId"),
                 Required("Legacy:CompanyId"), Required("Legacy:CompanyName")));
-            builder.Services.AddSingleton(new SqlLegacyUserStore(connectionString, enablePilots: enablePilots));
+            builder.Services.AddSingleton(new SqlLegacyUserStore(connectionString, enablePilots: enablePilots,
+                developmentTestTlsTarget: developmentTestTlsTarget));
             builder.Services.AddSingleton<ILegacyUserStore>(provider=>provider.GetRequiredService<SqlLegacyUserStore>());
             builder.Services.AddSingleton(new LegacyPasswordOptions(builder.Configuration["Legacy:DotnetPath"] ?? "dotnet",
                 Path.Combine(AppContext.BaseDirectory, "password-worker", "Medcom.LegacyPasswordWorker.dll"),
@@ -55,7 +57,8 @@ public static class ApiHost
             builder.Services.AddHostedService<LegacyHealthMonitor>();
             builder.Services.AddSingleton<IIdentityAuthority, LegacyIdentityAuthority>();
             if (enablePilots) builder.Services.AddSingleton<IDocumentReader>(provider => new SqlDocumentReader(
-                connectionString, provider.GetRequiredService<LegacyCompany>()));
+                connectionString, provider.GetRequiredService<LegacyCompany>(),
+                developmentTestTlsTarget: developmentTestTlsTarget));
             else builder.Services.AddSingleton<IDocumentReader, UnavailableDocumentReader>();
             if (enablePilots) builder.Services.AddScoped<IPurchaseRequestQueries>(provider =>
             {

@@ -604,10 +604,26 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
    await begin('hold');await suspend(503);state.failure=401;
    const ended=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/erp/api/workspace'&&response.status()===401);
    await page.getByRole('button',{name:'Xác minh lại phiên ERP',exact:true}).click();await ended;await paint();
+   // A confirmed end removes the reader/guard. The real mobile Workspace then
+   // redirects its now-unauthorized purchase route to home; do not query a retired
+   // region as if it were still an authenticated or temporarily unverified screen.
+   await page.waitForURL(url=>url.searchParams.get('screen')==='home');
+   async function assertRetired(){
+    assert.equal(new URL(page.url()).searchParams.get('screen'),'home');
+    const banner=page.locator('.connection-banner');
+    await banner.getByText('Đăng nhập để truy cập dữ liệu doanh nghiệp',{exact:true}).waitFor();
+    assert.equal(await banner.getByRole('button',{name:'Đăng nhập ERP',exact:true}).isVisible(),true);
+    assert.equal(await page.locator('[aria-label="Danh sách đề nghị mua hàng"],[aria-label="Phiếu mua hàng hiện có"],[aria-label="Xác minh lại phiên mua hàng"]').count(),0);
+    assert.equal(await page.getByLabel('Tìm mã đề nghị',{exact:true}).count(),0);assert.equal(await page.getByLabel('Ghi chú',{exact:true}).count(),0);
+    assert.equal(await page.getByRole('button',{name:'Kiểm tra kết quả yêu cầu gốc',exact:true}).count(),0);
+    assert.doesNotMatch(await page.locator('body').textContent(),/SYNTHETIC ORIGINAL INTENT|SYNTHETIC REQUESTER|QA-CUSTODY|ERP đã xác nhận yêu cầu/);
+    assert.equal(await page.getByRole('alertdialog').count(),0);
+    assert.equal(await page.evaluate(()=>{const event=new Event('beforeunload',{cancelable:true});window.dispatchEvent(event);return event.defaultPrevented;}),false,'ended session must unregister the old unresolved-intent navigation guard');
+    await assertSingleWriter();assert.equal(lookups().length,0);
+   }
+   await assertRetired();
    state.releaseSave();await page.waitForFunction(()=>window.custodyIO.replies===1);await paint();
-   assert.equal(await screen.getByRole('region',{name:'Phiếu mua hàng hiện có',exact:true}).count(),0);
-   assert.equal(await screen.getByRole('button',{name:'Kiểm tra kết quả yêu cầu gốc',exact:true}).count(),0);assert.doesNotMatch(await screen.innerText(),/SYNTHETIC ORIGINAL INTENT|QA-CUSTODY/);
-   await assertSingleWriter();assert.equal(lookups().length,0);
+   await assertRetired();
   });
   await t.test('same-session recovery restores parent polling; focus refresh re-verifies current read authority before lookup',async()=>{
    const original=await begin('lost');await suspend(503);await recoverSame();
