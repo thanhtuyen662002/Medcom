@@ -14,8 +14,13 @@ import {verifyStandalone} from '../scripts/verify-standalone.mjs';
 // Built modern app -> actual shipping TLS relay -> built BFF -> synthetic HTTPS
 // API. Only this test process knows the ephemeral CA/leaf pin. Owner trust and
 // real SQL/DLL/business acceptance are not inferred from this fixture.
-test('I28 built mobile Workspace authenticates through actual local HTTPS relay and BFF', {timeout: 180000}, async t => {
+test('I28 built mobile Workspace authenticates through actual local HTTPS relay and BFF', {timeout: 300000}, async t => {
   assert.equal(process.versions.node.split('.')[0], '24', 'I28 requires Node 24');
+  const baselineControl = process.env.I29_BASELINE_CONTROL === '1';
+  if (baselineControl) {
+    assert.equal(process.platform, 'linux', 'the compiled pre-fix control is Linux-only');
+    assert.equal(process.env.SOURCE_REVISION, '2712d00532cd76b0cc4eae44ede04314f38e812f', 'negative control must use the exact admitted pre-fix source');
+  }
   const packageRoot = path.resolve(process.env.I28_PACKAGE_DIRECTORY ?? '');
   const fixtureDll = process.env.I28_FIXTURE_DLL;
   assert.ok(fixtureDll && process.env.I28_PACKAGE_DIRECTORY && /^[a-f0-9]{40}$/.test(process.env.SOURCE_REVISION ?? ''), 'I28 fixture/package/revision are required; no skip');
@@ -23,7 +28,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
   const require = createRequire(path.join(path.resolve(process.env.MEDCOM_BROWSER_TOOLCHAIN ?? ''), 'package.json'));
   const {chromium} = require('playwright-core');
   const directory = await mkdtemp(path.join(tmpdir(), 'medcom-i28-synthetic-'));
-  const output = path.resolve('.test-runtime/i28-local-https'); await mkdir(output, {recursive: true}); await rm(path.join(output,'result.json'),{force:true});
+  const output = path.resolve('.test-runtime/i28-local-https'); await mkdir(output, {recursive: true}); await rm(path.join(output,'result.json'),{force:true}); await rm(path.join(output,'baseline-control.json'),{force:true});
   const children = [], errors = [], external = [], results = [], responses = [];
   let browser, context, page, ca, ready;
   function child(executable, args, env) {
@@ -178,6 +183,551 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await page.goto(ready.publicOrigin+'/?screen=purchase-orders',{waitUntil:'load'});
       await page.locator('.mobile-document-card').waitFor();
     });
+
+    // These regressions run the packaged Next/React app through BOTH real TLS
+    // proxy hops. Only the final API is synthetic. No replacement Workspace,
+    // component harness, patched fetch, or substituted production timer is used.
+    const lifecycleEvidence = {visibility: [], requests: [], background: []};
+    let controls = {};
+    const control = async patch => {
+      const {releaseHolds = [], ...state} = patch;
+      controls = {...controls, ...state};
+      const result = await request(ready.apiOrigin + '/__fixture/control', {method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-I29-Fixture-Control': ready.controlToken}, body: JSON.stringify({...controls, releaseHolds})});
+      assert.equal(result.status, 200, 'synthetic fixture control must be accepted');
+    };
+    const routes = ['/api/workspace', '/api/purchase-requests/workspace', '/api/purchase-requests', '/api/purchase-requests/detail'];
+    const counts = async () => {const state = await snapshot(); return Object.fromEntries(routes.map(route => [route, state.calls.filter(call => call.path === route).length]));};
+    const difference = (after, before) => Object.fromEntries(routes.map(route => [route, after[route] - before[route]]));
+    const held = kind => waitFor(async () => (await snapshot()).waiting.some(entry => entry.key === kind && entry.value > 0), `held ${kind}`);
+    const paint = () => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    const purchasePanel = () => page.getByRole('region', {name: 'Danh sách đề nghị mua hàng', exact: true});
+    const purchaseEditor = () => page.getByRole('region', {name: 'Phiếu mua hàng hiện có', exact: true});
+    const purchaseRow = () => page.getByRole('button', {name: 'Mở đề nghị I29-PR-P2-00', exact: true});
+    const freshOrderDetail = async () => {
+      await page.getByRole('heading', {name: 'I29-PO-P2-00', exact: true}).waitFor();
+      await page.locator('.detail-sheet .desktop-detail-lines').getByText('I29-ITEM-P2-0', {exact: true}).waitFor();
+    };
+    const freshPurchaseDetail = async () => {
+      await purchaseEditor().waitFor();
+      await purchaseEditor().getByRole('table', {name: 'Toàn bộ dòng đề nghị', exact: true}).getByText('SYNTHETIC-PURCHASE-ITEM', {exact: true}).waitFor();
+    };
+    const prepareOrders = async () => {
+      await control({extendedRows: true, holds: [], failures: {}, expired: false, commandAllowed: true,
+        sessionScope: 'a'.repeat(64), readScope: 'b'.repeat(64), purchaseScope: 'c'.repeat(64), branchIds: ['BR-A', 'BR-B']});
+      await page.goto(ready.publicOrigin + '/?screen=purchase-orders');
+      await page.getByRole('button', {name: 'I29-PO-P1-00', exact: true}).waitFor();
+      await page.getByLabel('Tìm mã chứng từ', {exact: true}).fill('APPLIED');
+      await page.getByRole('button', {name: 'Tìm kiếm', exact: true}).click();
+      await page.getByRole('combobox', {name: 'Chi nhánh', exact: true}).click();
+      await page.getByRole('option', {name: 'BR-A', exact: true}).click();
+      await page.getByRole('button', {name: 'Trang tiếp theo', exact: true}).click();
+      await page.getByRole('button', {name: 'I29-PO-P2-00', exact: true}).waitFor();
+      await page.getByLabel('Tìm mã chứng từ', {exact: true}).fill('UNSUBMITTED DRAFT');
+      await page.getByRole('button', {name: 'I29-PO-P2-00', exact: true}).click();
+      await page.getByRole('button', {name: 'Trang dòng hàng tiếp theo', exact: true}).click();
+      await freshOrderDetail();
+      await page.locator('.desktop-grid-viewport').evaluate(element => {element.scrollTop = 220; element.scrollLeft = 80;});
+      await page.locator('.detail-sheet').evaluate(element => {element.scrollTop = 140;});
+      await paint();
+    };
+    const preparePurchase = async () => {
+      await control({commandGeneration: (controls.commandGeneration ?? 0) + 1, commitOnAck: false, purchaseBranchIds: null, extendedRows: true, holds: [], failures: {}, expired: false, commandAllowed: true,
+        sessionScope: 'a'.repeat(64), readScope: 'b'.repeat(64), purchaseScope: 'c'.repeat(64), branchIds: ['BR-A', 'BR-B']});
+      await page.goto(ready.publicOrigin + '/?screen=purchase-requests');
+      await purchasePanel().getByLabel('Tìm mã đề nghị', {exact: true}).fill('APPLIED');
+      await purchasePanel().getByRole('button', {name: 'Tìm kiếm', exact: true}).click();
+      await purchasePanel().getByRole('combobox', {name: 'Chi nhánh', exact: true}).selectOption('BR-A');
+      await purchasePanel().getByRole('button', {name: 'Trang sau', exact: true}).click();
+      await purchaseRow().waitFor();
+      await purchasePanel().getByLabel('Tìm mã đề nghị', {exact: true}).fill('UNSUBMITTED DRAFT');
+      await purchaseRow().click(); await freshPurchaseDetail();
+      await page.evaluate(() => window.scrollTo(0, 420)); await paint();
+    };
+    const orderControls = async () => {
+      assert.equal(await page.getByLabel('Tìm mã chứng từ', {exact: true}).inputValue(), 'UNSUBMITTED DRAFT');
+      assert.match(await page.locator('.branch-select').innerText(), /BR-A/);
+      assert.match(await page.locator('.document-panel .pagination').innerText(), /Trang 2/);
+    };
+    const purchaseControls = async () => {
+      assert.equal(await purchasePanel().getByLabel('Tìm mã đề nghị', {exact: true}).inputValue(), 'UNSUBMITTED DRAFT');
+      assert.equal(await purchasePanel().getByRole('combobox', {name: 'Chi nhánh', exact: true}).inputValue(), 'BR-A');
+      assert.match(await purchasePanel().getByRole('navigation', {name: 'Phân trang đề nghị', exact: true}).innerText(), /Trang 2/);
+      await page.getByRole('heading', {name: 'I29-PR-P2-00', exact: true}).waitFor();
+    };
+    const watchStableData = kind => page.evaluate(kind => {
+      window.i29StableObserver?.disconnect();
+      const visible = selector => {const node = document.querySelector(selector); return !!node && !node.closest('[hidden]') && node.getClientRects().length > 0;};
+      const editorForm = document.querySelector('form[aria-label="Đề nghị mua hàng trên điện thoại"]');
+      const noteInput = editorForm?.querySelector('textarea[name="notes"]');
+      const check = () => {
+        const stableEditor = visible('form[aria-label="Đề nghị mua hàng trên điện thoại"]')
+          && document.querySelector('form[aria-label="Đề nghị mua hàng trên điện thoại"]') === editorForm
+          && (kind === 'pending' ? editorForm?.textContent.includes('SYNTHETIC PENDING NOTE') || editorForm?.querySelector('textarea[name="notes"]')?.value === 'SYNTHETIC PENDING NOTE'
+            : visible('[aria-label="Phiếu mua hàng hiện có"] textarea[name="notes"]') && editorForm?.querySelector('textarea[name="notes"]') === noteInput);
+        const present = kind === 'orders'
+          ? visible('.document-link') && visible('.detail-sheet .desktop-detail-lines') && document.querySelector('.detail-sheet')?.textContent.includes('I29-ITEM-P2-0')
+          : visible('[aria-label="Danh sách đề nghị mua hàng"] article') && visible('[aria-label="Phiếu mua hàng hiện có"]') && stableEditor && document.querySelector('[aria-label="Phiếu mua hàng hiện có"]')?.textContent.includes('SYNTHETIC-PURCHASE-ITEM');
+        if (!present) window.i29MissingFrames++;
+      };
+      window.i29MissingFrames = 0; check();
+      window.i29StableObserver = new MutationObserver(check);
+      window.i29StableObserver.observe(document.body, {childList: true, subtree: true, attributes: true});
+    }, kind);
+    const stopStableData = async label => {
+      const missing = await page.evaluate(() => {window.i29StableObserver.disconnect(); return window.i29MissingFrames;});
+      assert.equal(missing, 0, `${label}: existing rows/detail must stay rendered throughout unchanged-scope background refresh`);
+    };
+    const activate = async (other, value) => {
+      await page.evaluate(() => {delete document.visibilityState;});
+      if (value === 'hidden') await other.bringToFront(); else await page.bringToFront();
+      // Some headless targets never occlude. Real tab activation still happens;
+      // record a supplemental visibility event honestly when the browser needs it.
+      const native = await page.evaluate(() => document.visibilityState);
+      const fallback = native !== value;
+      if (fallback) await page.evaluate(value => {
+        Object.defineProperty(document, 'visibilityState', {configurable: true, get: () => value});
+        document.dispatchEvent(new Event('visibilitychange'));
+        if (value === 'visible') window.dispatchEvent(new Event('focus'));
+      }, value);
+      lifecycleEvidence.visibility.push({requested: value, native, supplementalEvent: fallback});
+      await paint();
+    };
+    const assertOrderMasked = async () => {
+      assert.equal(await page.locator('.document-link:visible').count(), 0);
+      assert.equal(await page.locator('.detail-sheet .desktop-detail-lines:visible').count(), 0);
+    };
+    const assertPurchaseMasked = async () => {
+      assert.equal(await purchasePanel().getByRole('button', {name: /^Mở đề nghị I29-/}).count(), 0);
+      assert.equal(await purchaseEditor().isVisible(), false);
+    };
+    await page.setViewportSize({width: 1024, height: 900});
+    await page.clock.install();
+    if (baselineControl) {
+      // This mode recognizes precise old-code symptoms, never a failed test,
+      // absent browser, bad TLS/bootstrap, timeout, or arbitrary nonzero exit.
+      const observed = [], captures = [], captureErrors = [];
+      const capture = response => {
+        const route = new URL(response.url()).pathname;
+        if (!['/api/erp/api/workspace', '/api/erp/api/purchase-requests/workspace', '/api/erp/api/purchase-requests', '/api/erp/api/purchase-requests/detail'].includes(route)) return;
+        captures.push((async () => {
+          const body = await response.json(), headers = response.headers();
+          observed.push({route: route.slice('/api/erp'.length), status: response.status(), code: body.code,
+            authorityVersion: body.session?.authorityVersion, sessionScope: headers['x-medcom-session-scope'],
+            readScope: headers['x-medcom-read-scope'], purchaseScope: body.scopeKey});
+        })().catch(error => {captureErrors.push(String(error));}));
+      };
+      page.on('response', capture);
+      let missingMutations = 0, stormCounts, measuredMilliseconds;
+      try {
+        await preparePurchase(); await freshPurchaseDetail(); await purchaseControls();
+        await Promise.all(captures);
+        assert.ok(observed.some(item => item.route === '/api/purchase-requests/workspace' && item.status === 200 && item.purchaseScope === 'c'.repeat(64)), 'real successful purchase bootstrap is required before probing regressions');
+        assert.ok(observed.some(item => item.route === '/api/purchase-requests/detail' && item.status === 200 && item.purchaseScope === 'c'.repeat(64)), 'the compiled baseline must have genuinely rendered authorized detail');
+        await watchStableData('purchase');
+        assert.equal(await page.evaluate(() => window.i29MissingFrames), 0, 'baseline starts with visible real list and editor');
+        await control({holds: ['workspace', 'purchase-bootstrap', 'purchase-list', 'purchase-detail']});
+        await page.clock.fastForward(60001); await held('workspace');
+        await control({holds: ['purchase-bootstrap', 'purchase-list', 'purchase-detail']}); await held('purchase-bootstrap'); await paint();
+        missingMutations = await page.evaluate(() => {window.i29StableObserver.disconnect(); return window.i29MissingFrames;});
+        await control({holds: []}); await freshPurchaseDetail(); await purchaseControls(); await Promise.all(captures);
+        const healthyWorkspace = observed.filter(item => item.route === '/api/workspace' && item.status === 200);
+        assert.ok(healthyWorkspace.length >= 2 && healthyWorkspace.at(-1).authorityVersion > healthyWorkspace[0].authorityVersion, 'healthy baseline refresh must have increasing observation versions');
+        assert.ok(healthyWorkspace.every(item => item.sessionScope === 'a'.repeat(64) && item.readScope === 'b'.repeat(64)), 'baseline read scopes stay unchanged');
+        const before = await counts(), stormObservationIndex = observed.length; await control({failures: {'purchase-bootstrap': 403}});
+        const denied = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/workspace' && response.status() === 403);
+        await purchasePanel().getByRole('button', {name: 'Làm mới', exact: true}).click(); await denied;
+        const started = Date.now(), deadline = started + 3000;
+        do {
+          await delay(100); stormCounts = difference(await counts(), before);
+          if (stormCounts['/api/workspace'] >= 3 && stormCounts['/api/purchase-requests/workspace'] >= 4) break;
+        } while (Date.now() < deadline);
+        measuredMilliseconds = Date.now() - started;
+        // Stop the page's producers before releasing/cleaning fixture controls.
+        await page.goto('about:blank'); await control({holds: [], failures: {}}); await Promise.all(captures);
+        const deniedResponses = observed.slice(stormObservationIndex).filter(item => item.route === '/api/purchase-requests/workspace' && item.status === 403 && item.code === 'synthetic_read_denied').length;
+        const workspaceResponses = observed.filter(item => item.route === '/api/workspace' && item.status === 200);
+        const successfulStormWorkspace = observed.slice(stormObservationIndex).filter(item => item.route === '/api/workspace' && item.status === 200).length;
+        const storm = stormCounts['/api/workspace'] >= 3 && successfulStormWorkspace >= 3 && stormCounts['/api/purchase-requests/workspace'] >= 4 && deniedResponses >= 3;
+        const blanking = missingMutations > 0;
+        assert.ok(blanking || storm, 'the exact compiled baseline must demonstrate measured DOM blanking or the precise persistent-403 request storm');
+        assert.ok(workspaceResponses.every(item => item.sessionScope === 'a'.repeat(64) && item.readScope === 'b'.repeat(64)));
+        assert.ok(observed.filter(item => item.route.startsWith('/api/purchase-requests') && item.status === 200).every(item => item.purchaseScope === 'c'.repeat(64)));
+        const versions = workspaceResponses.map(item => item.authorityVersion);
+        assert.ok(versions.every(Number.isSafeInteger) && new Set(versions).size === versions.length, 'successful workspace responses have distinct authority observations');
+        assert.deepEqual(errors, []); assert.deepEqual(external, []);
+        await writeFile(path.join(output, 'baseline-control.json'), JSON.stringify({
+          sourceRevision: process.env.SOURCE_REVISION, expectedRegressionObserved: true, actualBuiltApp: true, actualShippingRelay: true,
+          syntheticApi: true, successfulBootstrap: true, stableSessionScope: true, stableReadScope: true, stablePurchaseScope: true,
+          authorityObservations: versions, symptoms: {backgroundDomBlanking: blanking, missingMutations, persistent403Storm: storm, deniedResponses, successfulStormWorkspace, requestDelta: stormCounts, measuredMilliseconds},
+          browser: await browser.version(), results, captureErrors, scope: 'Exact pre-fix compiled negative control only; no corrected-build or production acceptance.'
+        }, null, 2));
+      } finally {
+        page.off('response', capture); await control({holds: [], failures: {}});
+      }
+      return;
+    }
+    await run('I29 built 60s background observation refresh preserves order list, detail, filters, pages and scroll', async () => {
+      await prepareOrders(); await orderControls();
+      const scroll = await page.locator('.desktop-grid-viewport').evaluate(e => ({top: e.scrollTop, left: e.scrollLeft}));
+      const detailScroll = await page.locator('.detail-sheet').evaluate(e => e.scrollTop);
+      assert.ok(scroll.top > 0 && scroll.left > 0 && detailScroll > 0, 'fixture must exercise genuine scroll offsets');
+      const before = await snapshot(); await watchStableData('orders');
+      await control({holds: ['workspace', 'orders-list', 'orders-detail']});
+      await page.clock.fastForward(60001); await held('workspace'); await orderControls();
+      await control({holds: ['orders-list', 'orders-detail']}); await held('orders-list');
+      await orderControls();
+      const listFinished = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/documents/purchase-orders' && response.status() === 200);
+      await control({holds: ['orders-detail']}); await (await listFinished).finished(); await held('orders-detail');
+      const detailFinished = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/documents/purchase-orders/detail' && response.status() === 200);
+      await control({holds: []}); await (await detailFinished).finished();
+      await waitFor(async () => !(await snapshot()).waiting.some(entry => entry.value > 0), 'background order refresh released');
+      await freshOrderDetail(); await paint(); await orderControls(); await stopStableData('order read');
+      assert.deepEqual(await page.locator('.desktop-grid-viewport').evaluate(e => ({top: e.scrollTop, left: e.scrollLeft})), scroll);
+      assert.equal(await page.locator('.detail-sheet').evaluate(e => e.scrollTop), detailScroll);
+      const after = await snapshot();
+      for (const route of ['/api/workspace', '/api/documents/purchase-orders', '/api/documents/purchase-orders/detail']) {
+        const calls = after.calls.filter(call => call.path === route).length - before.calls.filter(call => call.path === route).length;
+        assert.ok(calls >= 1 && calls <= 3, `${route}: one bounded periodic refresh must still happen`);
+      }
+      lifecycleEvidence.background.push({kind: 'orders', beforeAuthority: before.authorityVersion, afterAuthority: after.authorityVersion});
+    });
+    await run('I29 built real tab return masks orders until fresh workspace, list and detail complete', async () => {
+      const other = await context.newPage();
+      try {
+        await other.goto('about:blank'); await control({holds: ['workspace', 'orders-list', 'orders-detail']});
+        await activate(other, 'hidden'); await assertOrderMasked();
+        await activate(other, 'visible'); await held('workspace'); await assertOrderMasked();
+        await control({holds: ['orders-list', 'orders-detail']}); await held('orders-list'); await assertOrderMasked();
+        await control({holds: ['orders-detail']}); await held('orders-detail');
+        assert.equal(await page.locator('.detail-sheet .desktop-detail-lines:visible').count(), 0);
+        await control({holds: []}); await freshOrderDetail(); await orderControls();
+      } finally {await control({holds: []}); await other.close();}
+    });
+    await run('I29 built 60s purchase refresh retains list, selection and controls while renewing command grants', async () => {
+      await preparePurchase(); await purchaseControls();
+      assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).isEnabled(), true);
+      await purchaseEditor().getByLabel('Ghi chú', {exact: true}).fill('UNSAVED SYNTHETIC NOTE');
+      await page.evaluate(() => window.scrollTo(0, 420));
+      const scroll = await page.evaluate(() => scrollY); assert.ok(scroll > 0);
+      const before = await counts(); await watchStableData('purchase');
+      await control({commandAllowed: false, holds: ['workspace', 'purchase-bootstrap', 'purchase-list', 'purchase-detail']});
+      await page.clock.fastForward(60001); await held('workspace'); await purchaseControls();
+      assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).isEnabled(), false, 'held parent workspace verification blocks new edits immediately');
+      assert.equal(await purchaseEditor().getByRole('button', {name: 'Rà soát phiếu', exact: true}).isEnabled(), false);
+      await control({holds: ['purchase-bootstrap', 'purchase-list', 'purchase-detail']}); await held('purchase-bootstrap'); await purchaseControls();
+      await control({holds: ['purchase-list', 'purchase-detail']}); await held('purchase-list'); await held('purchase-detail'); await purchaseControls();
+      assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).isEnabled(), false, 'new edits must wait for fresh command grants while existing values remain mounted');
+      const detailFinished = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200);
+      await control({holds: []}); await (await detailFinished).finished();
+      await purchaseEditor().getByText('synthetic_grant_revoked', {exact: true}).waitFor(); await paint();
+      await stopStableData('purchase read'); await purchaseControls();
+      assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).isEnabled(), false, 'fresh command denial must replace the old grant');
+      assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).inputValue(), 'UNSAVED SYNTHETIC NOTE', 'background grants must not overwrite an unsaved draft');
+      assert.equal(await page.evaluate(() => scrollY), scroll);
+      const delta = difference(await counts(), before);
+      for (const route of routes) assert.ok(delta[route] >= 1 && delta[route] <= 2, `${route}: unchanged-scope background read must refresh once, without a loop`);
+      lifecycleEvidence.background.push({kind: 'purchase', requests: delta, commandGrant: 'revoked', unsavedDraft: 'retained'});
+      await control({commandAllowed: true}); await page.clock.fastForward(60001);
+      await purchaseEditor().getByText('synthetic_grant_enabled', {exact: true}).waitFor();
+      await waitFor(() => purchaseEditor().getByLabel('Ghi chú', {exact: true}).isEnabled(), 'restored command grant');
+      assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).inputValue(), 'UNSAVED SYNTHETIC NOTE');
+      await purchaseEditor().getByLabel('Ghi chú', {exact: true}).fill('SYNTHETIC NOTES');
+      await paint();
+    });
+    await run('I29 built real tab return masks purchase editor until fresh authority and scoped data complete', async () => {
+      const other = await context.newPage();
+      try {
+        await other.goto('about:blank'); await control({holds: ['workspace', 'purchase-bootstrap', 'purchase-list', 'purchase-detail']});
+        await activate(other, 'hidden'); await assertPurchaseMasked();
+        await activate(other, 'visible'); await held('workspace'); await assertPurchaseMasked();
+        await control({holds: ['purchase-bootstrap', 'purchase-list', 'purchase-detail']}); await held('purchase-bootstrap'); await assertPurchaseMasked();
+        await control({holds: ['purchase-list', 'purchase-detail']}); await held('purchase-list'); await held('purchase-detail'); await assertPurchaseMasked();
+        await control({holds: []}); await freshPurchaseDetail(); await purchaseControls();
+      } finally {await control({holds: []}); await other.close();}
+    });
+    for (const action of ['save', 'submit']) {
+      await run(`I29 built held parent workspace check keeps the form visible and blocks a new ${action}`, async () => {
+        await preparePurchase();
+        if (action === 'save') await purchaseEditor().getByLabel('Ghi chú', {exact: true}).fill('UNSAVED VERIFICATION NOTE');
+        await purchaseEditor().getByRole('button', {name: 'Rà soát phiếu', exact: true}).click();
+        const button = purchaseEditor().getByRole('button', {name: action === 'save' ? 'Lưu nháp trên ERP' : 'Gửi đề nghị', exact: true});
+        assert.equal(await button.isEnabled(), true);
+        await page.evaluate(() => {window.i29ReviewForm = document.querySelector('form[aria-label="Đề nghị mua hàng trên điện thoại"]');});
+        const before = (await snapshot()).calls.length; await control({holds: ['workspace']});
+        await page.clock.fastForward(60001); await held('workspace'); await paint();
+        assert.equal(await button.isEnabled(), false, 'new command is blocked before the workspace response arrives');
+        assert.equal(await purchaseEditor().getByRole('form', {name: 'Đề nghị mua hàng trên điện thoại', exact: true}).isVisible(), true);
+        assert.equal(await page.evaluate(() => window.i29ReviewForm === document.querySelector('form[aria-label="Đề nghị mua hàng trên điện thoại"]')), true);
+        await button.evaluate(button => button.click());
+        assert.equal((await snapshot()).calls.slice(before).filter(call => call.path === '/api/purchase-requests/save' || call.path === '/api/purchase-requests/submit').length, 0);
+        const detailFinished = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200);
+        await control({holds: []}); await (await detailFinished).finished();
+        // A clean read revision may deliberately leave review mode; review the
+        // newly read values before admitting a NEW Submit. Dirty Save retains it.
+        const review = purchaseEditor().getByRole('button', {name: 'Rà soát phiếu', exact: true});
+        await waitFor(async () => await review.count() ? review.isEnabled() : button.isEnabled(), 'fresh grants verified');
+        if (await review.count()) await review.click();
+        await waitFor(() => button.isEnabled(), 'fresh reviewed grants allow the new command again');
+        await purchaseEditor().getByRole('button', {name: 'Quay lại chỉnh sửa', exact: true}).click();
+        if (action === 'save') await purchaseEditor().getByLabel('Ghi chú', {exact: true}).fill('SYNTHETIC NOTES');
+        await paint();
+      });
+    }
+    const beginPendingSave = async (commitOnAck = false) => {
+      await preparePurchase(); await control({commitOnAck, holds: ['purchase-save']});
+      const before = await snapshot();
+      await purchaseEditor().getByLabel('Ghi chú', {exact: true}).fill('SYNTHETIC PENDING NOTE');
+      await purchaseEditor().getByRole('button', {name: 'Rà soát phiếu', exact: true}).click();
+      await purchaseEditor().getByRole('button', {name: 'Lưu nháp trên ERP', exact: true}).evaluate(button => {button.click(); button.click();});
+      await held('purchase-save'); await purchaseEditor().getByText('Đang gửi yêu cầu…', {exact: true}).waitFor();
+      const state = await snapshot();
+      const writes = state.calls.slice(before.calls.length).filter(call => call.path === '/api/purchase-requests/save');
+      assert.equal(writes.length, 1, 'double click must dispatch one original command');
+      const original = writes[0]; const dto = JSON.parse(original.commandBody);
+      assert.equal(dto.header.notes, 'SYNTHETIC PENDING NOTE'); assert.equal(dto.expectedStateToken, 'prs1.' + '1'.repeat(64));
+      assert.equal(original.purchaseScope, 'c'.repeat(64));
+      return {start: before.calls.length, effects: before.syntheticEffects, original, dto};
+    };
+    const assertOriginalCustody = async (pending, lookups, effects = 1) => {
+      const state = await snapshot(); const calls = state.calls.slice(pending.start);
+      const writes = calls.filter(call => call.path === '/api/purchase-requests/save');
+      const reconciles = calls.filter(call => call.path === '/api/purchase-requests/save/lookup');
+      assert.equal(writes.length, 1); assert.equal(reconciles.length, lookups);
+      assert.equal(state.syntheticEffects, pending.effects + effects, 'only the expected synthetic business effect');
+      for (const call of [...writes, ...reconciles]) {
+        assert.equal(call.commandBody, pending.original.commandBody, 'reconciliation retains the exact original serialized JSON');
+        assert.equal(call.sha256, pending.original.sha256); assert.equal(call.bytes, pending.original.bytes);
+        assert.equal(JSON.parse(call.commandBody).idempotencyKey, pending.dto.idempotencyKey);
+        assert.equal(JSON.parse(call.commandBody).expectedStateToken, 'prs1.' + '1'.repeat(64), 'fresh token 2 must not rebuild the pending intent');
+      }
+    };
+    await run('I29 built pending save survives healthy 60s observation and grant checks without form reset or redispatch', async () => {
+      const pending = await beginPendingSave(); await watchStableData('pending');
+      await control({holds: ['purchase-save', 'workspace', 'purchase-bootstrap', 'purchase-list', 'purchase-detail']});
+      await page.clock.fastForward(60001); await held('workspace');
+      await control({holds: ['purchase-save', 'purchase-bootstrap', 'purchase-list', 'purchase-detail']}); await held('purchase-bootstrap');
+      await control({holds: ['purchase-save', 'purchase-list', 'purchase-detail']}); await held('purchase-list'); await held('purchase-detail');
+      const detailFinished = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200);
+      await control({holds: ['purchase-save']}); await (await detailFinished).finished(); await paint();
+      await stopStableData('pending save'); await purchaseEditor().getByText('Đang gửi yêu cầu…', {exact: true}).waitFor();
+      await assertOriginalCustody(pending, 0);
+      const ack = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/save' && response.status() === 200);
+      await control({holds: []}); await (await ack).finished();
+      await purchaseEditor().getByText('Nháp đã được ERP xác nhận', {exact: true}).waitFor();
+      assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).inputValue(), 'SYNTHETIC PENDING NOTE');
+      await assertOriginalCustody(pending, 0);
+      lifecycleEvidence.requests.push({kind: 'pending-healthy-background', writes: 1, effects: 1, lookups: 0, originalBodyHash: pending.original.sha256});
+    });
+    await run('I29 built pending ACK is accepted while the parent workspace check is still held', async () => {
+      const pending = await beginPendingSave(); await watchStableData('pending');
+      await control({holds: ['purchase-save', 'workspace']}); await page.clock.fastForward(60001); await held('workspace');
+      const ack = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/save' && response.status() === 200);
+      await control({holds: ['workspace']}); await (await ack).finished();
+      await purchaseEditor().getByText('Nháp đã được ERP xác nhận', {exact: true}).waitFor();
+      assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).inputValue(), 'SYNTHETIC PENDING NOTE');
+      assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).isEnabled(), false, 'confirmed data stays visible, but the held parent check still blocks new edits');
+      await assertOriginalCustody(pending, 0);
+      const detailFinished = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200);
+      await control({holds: []}); await (await detailFinished).finished();
+      await waitFor(() => purchaseEditor().getByLabel('Ghi chú', {exact: true}).isEnabled(), 'post-ACK parent and grant verification'); await paint();
+      await stopStableData('ACK during parent verification'); await assertOriginalCustody(pending, 0);
+      lifecycleEvidence.requests.push({kind: 'ack-during-parent-verification', writes: 1, effects: 1, lookups: 0, originalBodyHash: pending.original.sha256});
+    });
+    await run('I29 built ACK before stale background GET preserves the receipt and requests one fresh read', async () => {
+      const pending = await beginPendingSave(true); const before = await counts(); await watchStableData('pending');
+      await control({holds: ['purchase-save', 'workspace', 'purchase-bootstrap', 'purchase-list', 'purchase-detail']});
+      await page.clock.fastForward(60001); await held('workspace');
+      await control({holds: ['purchase-save', 'purchase-bootstrap', 'purchase-list', 'purchase-detail']}); await held('purchase-bootstrap');
+      await control({holds: ['purchase-save', 'purchase-list', 'purchase-detail']}); await held('purchase-list'); await held('purchase-detail');
+      await assertOriginalCustody(pending, 0, 0);
+      // The fixture captured GET token 1 before committing; release only Save
+      // so its token-2 ACK reaches the actual editor before those stale bodies.
+      const ack = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/save' && response.status() === 200);
+      await control({holds: ['purchase-list', 'purchase-detail']}); await (await ack).finished();
+      await purchaseEditor().getByText('Nháp đã được ERP xác nhận', {exact: true}).waitFor();
+      await assertOriginalCustody(pending, 0);
+      const staleDetail = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200);
+      const readsBefore = await counts();
+      await control({holds: ['purchase-list', 'purchase-detail'], releaseHolds: ['purchase-list', 'purchase-detail']});
+      assert.equal((await (await staleDetail).json()).data.stateToken, 'prs1.' + '1'.repeat(64), 'the held reply must really predate the ACK');
+      await waitFor(async () => (await counts())['/api/purchase-requests/detail'] > readsBefore['/api/purchase-requests/detail'], 'one bounded fresh read after superseded GET');
+      await held('purchase-detail'); await paint();
+      await purchaseEditor().getByText('Nháp đã được ERP xác nhận', {exact: true}).waitFor();
+      assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).inputValue(), 'SYNTHETIC PENDING NOTE');
+      assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).isEnabled(), false, 'new edits await a post-ACK grant/read');
+      assert.equal(await purchasePanel().getByRole('alert').count(), 0, 'superseded GET is not a fabricated outage');
+      const freshDetail = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200);
+      await control({holds: []}); assert.equal((await (await freshDetail).json()).data.stateToken, 'prs1.' + '2'.repeat(64));
+      await waitFor(() => purchaseEditor().getByLabel('Ghi chú', {exact: true}).isEnabled(), 'post-ACK grant verified'); await paint();
+      await stopStableData('ACK before old GET'); await assertOriginalCustody(pending, 0);
+      assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).inputValue(), 'SYNTHETIC PENDING NOTE');
+      const delta = difference(await counts(), before);
+      assert.equal(delta['/api/workspace'], 1);
+      for (const route of routes.slice(1)) assert.equal(delta[route], 2, 'one stale read plus one fresh read, without a retry loop');
+      lifecycleEvidence.requests.push({kind: 'ack-before-stale-get', requests: delta, writes: 1, effects: 1, lookups: 0, originalBodyHash: pending.original.sha256});
+    });
+    await run('I29 built pending save plus background detail 503 masks data and reconciles the exact original intent once', async () => {
+      const pending = await beginPendingSave(); await control({failures: {'purchase-detail': 503}});
+      const failed = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 503);
+      await page.clock.fastForward(60001); await failed;
+      await waitFor(async () => !await purchaseEditor().isVisible(), 'pending detail error masks protected data');
+      await control({holds: []}); await assertOriginalCustody(pending, 0);
+      await control({failures: {}}); await page.clock.fastForward(60001); await freshPurchaseDetail();
+      const reconcile = purchaseEditor().getByRole('button', {name: 'Kiểm tra kết quả yêu cầu gốc', exact: true});
+      await reconcile.waitFor(); await assertOriginalCustody(pending, 0);
+      await watchStableData('pending'); await control({holds: ['workspace']});
+      await page.clock.fastForward(60001); await held('workspace'); await paint();
+      assert.equal(await reconcile.isEnabled(), false, 'new reconciliation waits for the parent authority check');
+      await reconcile.evaluate(button => button.click()); await assertOriginalCustody(pending, 0);
+      const detailFinished = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200);
+      await control({holds: []}); await (await detailFinished).finished(); await waitFor(() => reconcile.isEnabled(), 'reconcile grant restored');
+      await stopStableData('unknown intent during parent verification');
+      assert.equal(await purchaseEditor().getByText('Nháp đã được ERP xác nhận', {exact: true}).count(), 0, 'retired ACK cannot resolve the retained unknown');
+      await reconcile.click(); await purchaseEditor().getByText('Nháp đã được ERP xác nhận', {exact: true}).waitFor();
+      await assertOriginalCustody(pending, 1);
+      assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).inputValue(), 'SYNTHETIC PENDING NOTE');
+      lifecycleEvidence.requests.push({kind: 'pending-detail-503', writes: 1, effects: 1, lookups: 1, originalBodyHash: pending.original.sha256});
+    });
+    await run('I29 built narrower child bootstrap masks a pending branch-excluded document before detail completes', async () => {
+      const pending = await beginPendingSave();
+      await control({holds: ['purchase-save', 'workspace', 'purchase-bootstrap', 'purchase-list', 'purchase-detail']});
+      await page.clock.fastForward(60001); await held('workspace');
+      // Parent response was already captured with AB/read-scope-b. The child
+      // must honor a later, narrower bootstrap even with the old parent DTO and
+      // the SAME purchase scope. The blocked detail cannot rescue this check.
+      await control({purchaseBranchIds: ['BR-B']});
+      const parent = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/workspace' && response.status() === 200);
+      await control({holds: ['purchase-save', 'purchase-bootstrap', 'purchase-list', 'purchase-detail']});
+      const parentResponse = await parent;
+      assert.deepEqual((await parentResponse.json()).branchIds, ['BR-A', 'BR-B']);
+      assert.equal(parentResponse.headers()['x-medcom-read-scope'], 'b'.repeat(64));
+      await held('purchase-bootstrap');
+      const bootstrap = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/workspace' && response.status() === 200);
+      await control({holds: ['purchase-save', 'purchase-list', 'purchase-detail']});
+      const admitted = await (await bootstrap).json();
+      assert.equal(admitted.scopeKey, 'c'.repeat(64)); assert.deepEqual(admitted.data.branchIds, ['BR-B']);
+      await waitFor(async () => !await purchaseEditor().isVisible(), 'narrowed bootstrap fences branch A before held detail');
+      assert.equal(await purchasePanel().getByRole('button', {name: 'Mở đề nghị I29-PR-P2-00', exact: true}).count(), 0);
+      assert.equal(await purchaseEditor().getByRole('button', {name: 'Kiểm tra kết quả yêu cầu gốc', exact: true}).count(), 0);
+      await assertOriginalCustody(pending, 0);
+      const recovery = page.getByRole('button', {name: 'Xác minh lại phiên ERP', exact: true}); await recovery.waitFor();
+      const quiet = await counts(); await delay(500); assert.deepEqual(await counts(), quiet, 'narrowed bootstrap cannot create an automatic authority/read storm');
+      await page.clock.fastForward(60001);
+      await waitFor(async () => difference(await counts(), quiet)['/api/workspace'] >= 2, 'periodic probe and one branch-denial recheck');
+      await recovery.waitFor(); await delay(500);
+      const branchPeriodic = difference(await counts(), quiet);
+      assert.deepEqual(branchPeriodic, {'/api/workspace': 2, '/api/purchase-requests/workspace': 1, '/api/purchase-requests': 0, '/api/purchase-requests/detail': 0}, 'one periodic probe plus one denial recheck; no excluded detail read');
+      const periodicQuiet = await counts(); await delay(500); assert.deepEqual(await counts(), periodicQuiet, 'no self-triggered branch-denial retry after the bounded cycle');
+      await assertOriginalCustody(pending, 0);
+      await control({purchaseBranchIds: null, holds: []}); await recovery.click(); await freshPurchaseDetail();
+      const reconcile = purchaseEditor().getByRole('button', {name: 'Kiểm tra kết quả yêu cầu gốc', exact: true});
+      await reconcile.waitFor(); await assertOriginalCustody(pending, 0);
+      assert.equal(await purchaseEditor().getByText('Nháp đã được ERP xác nhận', {exact: true}).count(), 0);
+      await reconcile.click(); await purchaseEditor().getByText('Nháp đã được ERP xác nhận', {exact: true}).waitFor(); await assertOriginalCustody(pending, 1);
+      lifecycleEvidence.requests.push({kind: 'child-bootstrap-branch-exclusion', writes: 1, effects: 1, lookups: 1, originalBodyHash: pending.original.sha256});
+    });
+    await run('I29 built read-scope-only grant revocation retains pending intent under the stable purchase scope', async () => {
+      const pending = await beginPendingSave();
+      await control({readScope: 'd'.repeat(64), commandAllowed: false, holds: ['purchase-save', 'workspace', 'purchase-bootstrap', 'purchase-list', 'purchase-detail']});
+      await page.clock.fastForward(60001); await held('workspace');
+      await control({holds: ['purchase-save', 'purchase-bootstrap', 'purchase-list', 'purchase-detail']}); await held('purchase-bootstrap'); await assertPurchaseMasked();
+      await control({holds: ['purchase-save', 'purchase-list', 'purchase-detail']}); await held('purchase-list'); await held('purchase-detail'); await assertPurchaseMasked();
+      await control({holds: []}); await freshPurchaseDetail();
+      await purchaseEditor().getByText('synthetic_grant_revoked', {exact: true}).waitFor(); await assertOriginalCustody(pending, 0);
+      assert.equal(controls.purchaseScope, 'c'.repeat(64), 'production purchase scope does not rotate for read rights changes');
+      assert.equal(await purchaseEditor().getByText('Nháp đã được ERP xác nhận', {exact: true}).count(), 0);
+      await purchaseEditor().getByRole('button', {name: 'Kiểm tra kết quả yêu cầu gốc', exact: true}).click();
+      await purchaseEditor().getByText('Nháp đã được ERP xác nhận', {exact: true}).waitFor(); await assertOriginalCustody(pending, 1);
+      lifecycleEvidence.requests.push({kind: 'read-scope-only-revocation', writes: 1, effects: 1, lookups: 1, originalBodyHash: pending.original.sha256});
+    });
+    for (const [kind, route] of [['purchase-bootstrap', '/api/purchase-requests/workspace'], ['purchase-list', '/api/purchase-requests'], ['purchase-detail', '/api/purchase-requests/detail']]) {
+      await run(`I29 built persistent 403 at ${kind} cannot storm and explicit recovery is bounded`, async () => {
+        await preparePurchase(); const before = await counts(); await control({failures: {[kind]: 403}});
+        const failed = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp' + route && response.status() === 403);
+        await purchasePanel().getByRole('button', {name: 'Làm mới', exact: true}).click(); await failed;
+        const recovery = page.getByRole('button', {name: 'Xác minh lại phiên ERP', exact: true});
+        await recovery.waitFor(); await assertPurchaseMasked();
+        await delay(500); const settled = await counts(); await delay(500);
+        assert.deepEqual(await counts(), settled, 'persistent 403 must not schedule automatic request retries');
+        const initial = difference(settled, before);
+        for (const count of Object.values(initial)) assert.ok(count <= 2, 'one denied read must not cascade into a workspace/purchase storm');
+        await page.clock.fastForward(60001);
+        await waitFor(async () => difference(await counts(), settled)['/api/workspace'] >= 2, 'periodic probe and one endpoint-denial recheck');
+        await recovery.waitFor(); await delay(500);
+        const periodic = difference(await counts(), settled);
+        assert.equal(periodic['/api/workspace'], 2, 'one periodic workspace probe plus one denial recheck');
+        assert.equal(periodic['/api/purchase-requests/workspace'], 1, 'one purchase bootstrap per periodic probe');
+        assert.equal(periodic['/api/purchase-requests'], kind === 'purchase-bootstrap' ? 0 : 1);
+        assert.equal(periodic['/api/purchase-requests/detail'], kind === 'purchase-bootstrap' ? 0 : 1);
+        const periodicQuiet = await counts(); await delay(500); assert.deepEqual(await counts(), periodicQuiet, 'no immediate self-trigger loop after the bounded periodic cycle');
+        await assertPurchaseMasked();
+        const retryBefore = await counts(); const deniedAgain = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp' + route && response.status() === 403);
+        await recovery.click(); await deniedAgain; await recovery.waitFor(); await delay(500);
+        const explicit = difference(await counts(), retryBefore);
+        for (const count of Object.values(explicit)) assert.ok(count <= 2, 'one explicit denied recovery must remain bounded');
+        const quiet = await counts(); await delay(500); assert.deepEqual(await counts(), quiet);
+        await control({failures: {}}); const successBefore = await counts(); await recovery.click(); await freshPurchaseDetail();
+        const recovered = difference(await counts(), successBefore);
+        for (const count of Object.values(recovered)) assert.ok(count <= 2, 'one explicit healthy recovery must remain bounded');
+        await purchaseControls(); lifecycleEvidence.requests.push({kind, initial, periodic, explicit, recovered});
+      });
+    }
+    for (const [kind, route] of [['purchase-bootstrap', '/api/purchase-requests/workspace'], ['purchase-list', '/api/purchase-requests'], ['purchase-detail', '/api/purchase-requests/detail']]) {
+      await run(`I29 built background 503 at ${kind} masks stale purchase data and recovers on fresh reads`, async () => {
+        await preparePurchase();
+        await purchaseEditor().getByLabel('Ghi chú', {exact: true}).fill('UNSAVED AFTER 503');
+        await control({failures: {[kind]: 503}});
+        const failed = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp' + route && response.status() === 503);
+        await page.clock.fastForward(60001); await failed; await paint();
+        await waitFor(async () => !await purchaseEditor().isVisible(), 'background failure masks purchase editor');
+        assert.equal(await purchasePanel().getByRole('button', {name: /^Mở đề nghị I29-/}).count(), kind === 'purchase-detail' ? 20 : 0, 'a successful current list may remain when only its selected detail fails');
+        await control({failures: {}}); await page.clock.fastForward(60001); await freshPurchaseDetail(); await purchaseControls();
+        assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).inputValue(), 'UNSAVED AFTER 503');
+        await purchaseEditor().getByLabel('Ghi chú', {exact: true}).fill('SYNTHETIC NOTES'); await paint();
+      });
+    }
+    await run('I29 built changed read and purchase scopes clear old controls and selection', async () => {
+      await prepareOrders(); await control({readScope: 'd'.repeat(64), branchIds: ['BR-B']});
+      await page.clock.fastForward(60001);
+      await waitFor(async () => await page.getByLabel('Tìm mã chứng từ', {exact: true}).inputValue() === '', 'order scope replacement');
+      assert.equal(await page.getByRole('heading', {name: 'I29-PO-P2-00', exact: true}).count(), 0);
+      assert.match(await page.locator('.document-panel .pagination').innerText(), /Trang 1/);
+      await preparePurchase(); await control({purchaseScope: 'e'.repeat(64), readScope: 'f'.repeat(64), branchIds: ['BR-B']});
+      await page.clock.fastForward(60001);
+      await waitFor(async () => await purchasePanel().getByLabel('Tìm mã đề nghị', {exact: true}).inputValue() === '', 'purchase scope replacement');
+      assert.equal(await purchaseEditor().isVisible(), false);
+      assert.equal(await page.getByRole('heading', {name: 'I29-PR-P2-00', exact: true}).count(), 0);
+      assert.match(await purchasePanel().getByRole('navigation', {name: 'Phân trang đề nghị', exact: true}).innerText(), /Trang 1/);
+    });
+    await run('I29 built same-display-name session marker replacement retires purchase selection and filters', async () => {
+      await preparePurchase(); await control({sessionScope: 'd'.repeat(64), readScope: 'e'.repeat(64), purchaseScope: 'f'.repeat(64)});
+      await page.clock.fastForward(60001);
+      await waitFor(async () => await purchasePanel().getByLabel('Tìm mã đề nghị', {exact: true}).inputValue() === '', 'session marker replacement');
+      assert.equal(await purchaseEditor().isVisible(), false);
+      assert.equal(await page.getByRole('heading', {name: 'I29-PR-P2-00', exact: true}).count(), 0);
+    });
+    await run('I29 built expiry fences selected purchase data until explicit login', async () => {
+      await preparePurchase(); await control({expired: true}); await page.clock.fastForward(60001);
+      await page.waitForFunction(() => document.querySelector('.topbar .user-button')?.textContent.includes('Tài khoản ERP'));
+      await assertPurchaseMasked(); await control({expired: false});
+      const before = await counts(); await page.clock.fastForward(60001); await delay(200);
+      assert.deepEqual(await counts(), before, 'retired expiry must not silently restore a live synthetic cookie');
+      await page.locator('.topbar .user-button').click(); await page.getByRole('menuitem', {name: 'Đăng nhập ERP', exact: true}).click();
+      const dialog = page.getByRole('dialog', {name: 'Đăng nhập ERP', exact: true});
+      await dialog.getByLabel('Tên đăng nhập', {exact: true}).fill('i28-user');
+      await dialog.getByLabel('Mật khẩu', {exact: true}).fill('synthetic-i28-password');
+      await dialog.getByRole('button', {name: 'Đăng nhập', exact: true}).click();
+      await purchasePanel().getByLabel('Tìm mã đề nghị', {exact: true}).waitFor();
+      assert.equal(await purchasePanel().getByLabel('Tìm mã đề nghị', {exact: true}).inputValue(), '');
+      assert.equal(await purchaseEditor().isVisible(), false);
+      const observations = (await snapshot()).calls.filter(call => call.authorityVersion > 0).map(call => call.authorityVersion);
+      assert.ok(observations.length > 20); assert.equal(new Set(observations).size, observations.length, 'every authenticated fixture request must receive a unique observation version');
+      // Restore the original I28 screen and single row for its existing logout case.
+      await control({extendedRows: false, branchIds: ['BR-A', 'BR-B'], sessionScope: 'a'.repeat(64), readScope: 'b'.repeat(64), purchaseScope: 'c'.repeat(64)});
+      await page.goto(ready.publicOrigin + '/?screen=purchase-orders'); await page.locator('.mobile-document-card').waitFor({state: 'attached'});
+      await page.setViewportSize({width: 390, height: 844});
+    });
     await run('UI logout retires the cookie-backed session and denies a later read', async () => {
       await page.locator('.topbar .user-button').click();await page.getByRole('menuitem',{name:'Đăng xuất ERP',exact:true}).click();
       await page.waitForFunction(()=>document.querySelector('.topbar .user-button')?.textContent.includes('Tài khoản ERP'));
@@ -185,7 +735,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
     });
     assert.deepEqual(errors,[]);assert.deepEqual(external,[]);
     await writeFile(path.join(output,'result.json'),JSON.stringify({sourceRevision:process.env.SOURCE_REVISION,results,errors,external,browser:await browser.version(),
-      actualBuiltApp:true,actualShippingRelay:true,api:'explicit synthetic HTTPS double',tls:'ephemeral fixture CA in Next child; exact leaf SPKI in isolated browser; no global trust changes',
+      actualBuiltApp:true,actualShippingRelay:true,lifecycleEvidence,api:'explicit synthetic HTTPS double',tls:'ephemeral fixture CA in Next child; exact leaf SPKI in isolated browser; no global trust changes',
       ownerCertificateTrust:'NOT_RUN',realSql:'NOT_RUN',productionAccepted:false},null,2));
   } catch (error) {
     const ui=await page?.evaluate(()=>({readyState:document.readyState,dialogs:[...document.querySelectorAll('[role="dialog"]')].map(dialog=>({title:dialog.querySelector('[data-slot="dialog-title"]')?.textContent,buttons:[...dialog.querySelectorAll('button')].map(button=>({text:button.textContent?.slice(0,100),type:button.type,disabled:button.disabled}))}))})).catch(()=>null);

@@ -42,3 +42,34 @@ fixture and workflow edits are separate I29 deltas over the explicitly handed-of
 I28 bytes, including its subsequent CI repairs; they must not overwrite a moving
 I28 author branch. No database/configuration/credential/install/publication work
 was performed by the local implementation worker.
+
+
+## Live-preview lifecycle correction
+
+The initial synthetic success did not cover continuously advancing native
+observations in the actual compiled purchase-request reader. Source inspection
+identified two distinct defects: every healthy background timer masked generic
+read data and replaced its query generation; purchase-request reads bypassed the
+parent's blocked context, allowing a current403 to amplify into repeated parent
+workspace/read cycles. The original reason for any owner-side403 remains UNKNOWN.
+No private owner row, identity or configuration value is part of this evidence.
+
+The correction preserves the periodic authority/data/document-grant checks.
+Same-scope healthy background reads retain the verified read-only list/editor
+DOM and local controls, while an explicit verifying flag blocks new commands
+throughout the parent-to-document pipeline. It does not retire an already
+in-flight intent solely because a check starts. Changed grants, denied authority,
+known read errors, logout and expiry keep their masking/custody fences. A GET
+superseded by an accepted command receipt is discarded before publishing data
+or grants, then refreshed without replacing the receipt with a false failure.
+
+A Linux-only compiled negative control builds exact pre-fix
+`2712d00532cd76b0cc4eae44ede04314f38e812f` using the identical locked dependencies
+and the same current synthetic HTTPS fixture. It must observe specific broken
+behavior, not merely any failure. Corrected compiled regression runs on Linux
+and Windows, including monotonic observations, held authority/grant reads,
+dirty/pending intent, ACK/read order, persistent403, recovery and revocation.
+Missing browser/bootstrap/transport prerequisites must fail the harness.
+At local source freeze these new compiled checks remain NOT_RUN; hosted results
+are required. This correction does not establish real ERP/business acceptance
+and does not alter backend authorization, cookies, CSRF or scope generation.

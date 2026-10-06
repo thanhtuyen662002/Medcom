@@ -16,8 +16,11 @@ Only published, allowlisted ERP endpoints are enabled. Unsupported business acti
 
 Purchase-order search text, applied search, branch, list page, selected document,
 line page and scroll positions stay in memory during a tab hide, authority check
-or transient read outage. Protected rows and summaries are masked until the
-workspace and applicable list/detail reads have been freshly verified. The
+or transient read outage. Hidden/returning tabs, lost authority evidence and known read failures mask the
+affected protected data until fresh verification succeeds. A continuously visible,
+unchanged-scope background check keeps the last verified read-only view mounted;
+purchase actions stay disabled from the parent authority request through the
+fresh document/grant response. Periodic data and command-grant checks continue. The
 selection is reconciled with the refreshed page; a document no longer present
 closes. Observation-version increments, expiry renewal and set ordering do not
 reset these controls. This does not add cross-screen or reload persistence.

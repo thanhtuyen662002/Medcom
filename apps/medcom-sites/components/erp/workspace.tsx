@@ -56,16 +56,19 @@ function WorkspaceContent({extensions}:{extensions?:WorkspaceExtensions}){
  const [sessionError,updateSessionError]=useState<unknown>(null);const [sessionBusy,setSessionBusy]=useState(true);const [loginOpen,setLoginOpen]=useState(false);const [commandOpen,setCommandOpen]=useState(false);
  const knownSessionLimit=useRef<number|null>(null);
  const [loginBoundary,updateLoginBoundary]=useState(0);
- const [readBlocked,setReadBlocked]=useState(true),[readGeneration,setReadGeneration]=useState(0),[readViewScope,setReadViewScope]=useState("unverified");
+ const [authorityChecking,setAuthorityChecking]=useState(true);
+ const [readBlocked,updateReadBlocked]=useState(true),[readGeneration,setReadGeneration]=useState(0),[readViewScope,setReadViewScope]=useState("unverified");
+ const readBlockedRef=useRef(true),publishedReadScope=useRef<string|null>(null);
+ const setReadBlocked=useCallback((value:boolean)=>{readBlockedRef.current=value;updateReadBlocked(value);},[]);
  const serverSessionScope=useRef<string|null>(null),serverReadScope=useRef<string|null>(null),recheckBlockedScope=useRef<string|null>(null),signOutPending=useRef(false);
- const suspendReads=useCallback(()=>{setReadBlocked(true);void queryClient.cancelQueries({predicate:q=>q.queryKey[0]==="erp-documents"||q.queryKey[0]==="workspace-detail"});},[queryClient]);
+ const suspendReads=useCallback(()=>{setReadBlocked(true);void queryClient.cancelQueries({predicate:q=>q.queryKey[0]==="erp-documents"||q.queryKey[0]==="workspace-detail"});},[queryClient,setReadBlocked]);
  // This memory-only identity belongs to authentication, never document/rights,
  // expiry, credentials or the last retained draft. Bootstrap creates it only
  // after a current authenticated workspace response; explicit login rotates it.
  const loginLifecycle=useRef<{key:string|null;retired:boolean}>({key:null,retired:false});
  const [inboundLoginKey,setInboundLoginKey]=useState<string|null>(null);
  const [sessionRetired,setSessionRetired]=useState(false);
- const setWorkspace=useCallback((value:WorkspaceData|null)=>{
+ const setWorkspace=useCallback((value:WorkspaceData|null,background=false)=>{
   if(value!==null){
    if(loginLifecycle.current.retired)return;
    if(serverSessionScope.current!==null&&serverSessionScope.current!==value.sessionScope){
@@ -77,22 +80,27 @@ function WorkspaceContent({extensions}:{extensions?:WorkspaceExtensions}){
    }
    serverSessionScope.current=value.sessionScope??null;serverReadScope.current=value.readScope??null;
    if(loginLifecycle.current.key===null){const key=crypto.randomUUID();loginLifecycle.current.key=key;setInboundLoginKey(key);}
-   setReadViewScope(workspaceReadViewScope(value));setReadGeneration(generation=>generation+1);setReadBlocked(document.visibilityState!=="visible"||recheckBlockedScope.current===value.readScope);recheckBlockedScope.current=null;
+   const scope=workspaceReadViewScope(value);
+   const replaceReadData=!background||readBlockedRef.current||publishedReadScope.current!==scope;
+   publishedReadScope.current=scope;setReadViewScope(scope);
+   if(replaceReadData)setReadGeneration(generation=>generation+1);
+   else void queryClient.invalidateQueries({predicate:q=>q.queryKey[0]==="erp-documents"||q.queryKey[0]==="workspace-detail"});
+   setReadBlocked(document.visibilityState!=="visible"||recheckBlockedScope.current===value.readScope);recheckBlockedScope.current=null;
   }else setReadBlocked(true);
   updateWorkspace(value);
- },[queryClient]);
+ },[queryClient,setReadBlocked]);
  const setSessionError=useCallback((error:unknown)=>{
   if(error instanceof ApiError&&error.status===401){loginLifecycle.current.retired=true;loginLifecycle.current.key=null;setInboundLoginKey(null);setSessionRetired(true);setReadViewScope("retired");setReadBlocked(true);serverSessionScope.current=null;}
   // Positive retirement is sticky until a successful explicit login. A later
   // 503 or even a cookie-swapped workspace cannot revive the retired lifecycle.
   if(!loginLifecycle.current.retired||error instanceof ApiError&&error.status===401)updateSessionError(error);
- },[]);
+ },[setReadBlocked]);
  const setLoginBoundary=useCallback((update:(value:number)=>number)=>{
   const key=crypto.randomUUID();loginLifecycle.current={key,retired:false};serverSessionScope.current=null;signOutPending.current=false;setReadViewScope(key);setReadBlocked(true);setInboundLoginKey(key);setSessionRetired(false);updateSessionError(null);updateLoginBoundary(update);
- },[]);
+ },[setReadBlocked]);
  const [favoriteOverride,setFavorites]=useState<ScreenId[]|null>(null);const favorites=favoriteOverride??initial.favorites;const [compactOverride,setCompact]=useState<boolean|null>(null);const compact=compactOverride??initial.compact;const [darkOverride,setDark]=useState<boolean|null>(null);const dark=darkOverride??initial.dark;const [paletteOverride,setPalette]=useState<PaletteId|null>(null);const palette=paletteOverride??initial.palette;const preferencesReady=initial.ready;const [lastVisit,setLastVisit]=useState<ScreenId[]>([]);
  const [health,setHealth]=useState<Awaited<ReturnType<typeof getHealth>>|null>(null);const [healthError,setHealthError]=useState<unknown>(null);const [checking,setChecking]=useState(true);const [checkedAt,setCheckedAt]=useState<string|null>(null);
- const loadWorkspace=useCallback((signal?:AbortSignal)=>{if(!mounted.current)return Promise.resolve();const fence=authorityFence.current;const generation=fence.begin();return getWorkspace(signal).then(w=>{if(signal?.aborted||!fence.isCurrent(generation))return;setWorkspace(w);setSessionError(null);}).catch(e=>{if(signal?.aborted||!fence.isCurrent(generation))return;setWorkspace(null);setSessionError(e);}).finally(()=>{if(!signal?.aborted&&fence.isCurrent(generation))setSessionBusy(false);});},[setWorkspace,setSessionError]);
+ const loadWorkspace=useCallback((signal?:AbortSignal)=>{if(!mounted.current)return Promise.resolve();setAuthorityChecking(true);const fence=authorityFence.current;const generation=fence.begin();return getWorkspace(signal).then(w=>{if(signal?.aborted||!fence.isCurrent(generation))return;setWorkspace(w);setSessionError(null);}).catch(e=>{if(signal?.aborted||!fence.isCurrent(generation))return;setWorkspace(null);setSessionError(e);}).finally(()=>{if(!signal?.aborted&&fence.isCurrent(generation)){setSessionBusy(false);setAuthorityChecking(false);}});},[setWorkspace,setSessionError]);
  // Purchase recovery must reuse the parent authority fence/state so normal polling
  // and idle/absolute expiry lifecycle resume after a successful verification.
  const verifyWorkspace=useCallback(()=>{setSessionBusy(true);return loadWorkspace();},[loadWorkspace]);
@@ -137,20 +145,20 @@ function WorkspaceContent({extensions}:{extensions?:WorkspaceExtensions}){
  useEffect(()=>{
   if(sessionEnded||!inboundLoginKey)return;
   let controller:AbortController|null=null;
-  const refresh=async()=>{
+  const refresh=async(background=false)=>{
    if(signOutPending.current)return;
    if(document.visibilityState!=="visible"){
     controller?.abort();controller=null;authorityFence.current.invalidate();suspendReads();return;
    }
    if(controller)return;
-   const request=new AbortController();controller=request;suspendReads();
+   const request=new AbortController();controller=request;setAuthorityChecking(true);if(!background||readBlockedRef.current)suspendReads();
    const fence=authorityFence.current,generation=fence.begin();
-   try{const w=await getWorkspace(request.signal);if(!request.signal.aborted&&fence.isCurrent(generation)){setWorkspace(w);setSessionError(null);}}
+   try{const w=await getWorkspace(request.signal);if(!request.signal.aborted&&fence.isCurrent(generation)){setWorkspace(w,background);setSessionError(null);}}
    catch(e){if(!request.signal.aborted&&fence.isCurrent(generation)){setWorkspace(null);setSessionError(e);}}
-   finally{if(controller===request)controller=null;if(!request.signal.aborted&&fence.isCurrent(generation))setSessionBusy(false);}
+   finally{if(controller===request)controller=null;if(!request.signal.aborted&&fence.isCurrent(generation)){setSessionBusy(false);setAuthorityChecking(false);}}
   };
-  const focus=()=>void refresh();window.addEventListener("focus",focus);window.addEventListener("online",focus);document.addEventListener("visibilitychange",focus);
-  const timer=setInterval(focus,60000);
+  const focus=()=>void refresh(document.visibilityState==="visible"&&!readBlockedRef.current);window.addEventListener("focus",focus);window.addEventListener("online",focus);document.addEventListener("visibilitychange",focus);
+  const timer=setInterval(()=>void refresh(true),60000);
   return()=>{controller?.abort();clearInterval(timer);window.removeEventListener("focus",focus);window.removeEventListener("online",focus);document.removeEventListener("visibilitychange",focus);};
  },[inboundLoginKey,sessionEnded,setWorkspace,setSessionError,suspendReads]);
  useEffect(()=>{
@@ -172,7 +180,7 @@ function WorkspaceContent({extensions}:{extensions?:WorkspaceExtensions}){
  const authorizedIds=authorizedScreenIds(workspace);const shownScreens=isMobile?screens.filter(s=>authorizedIds.includes(s.id)):screens;const shownFavorites=favorites.filter(id=>!isMobile||authorizedIds.includes(id));
  const current=screens.find(s=>s.id===screen)!;const Icon=icons[screen];const connected=!!workspace;const configured=!(healthError instanceof ApiError&&healthError.code==="backend_not_configured");
  const currentAuthorized=authorizedIds.includes(screen);
- useEffect(()=>{if(isMobile&&!sessionBusy&&!currentAuthorized&&!((screen==="inbound-requests"||screen==="purchase-orders")&&inboundLoginKey!==null&&workspace===null&&!sessionEnded))navigate("home");},[isMobile,sessionBusy,currentAuthorized,navigate,screen,inboundLoginKey,workspace,sessionEnded]);
+ useEffect(()=>{if(isMobile&&!sessionBusy&&!currentAuthorized&&!((screen==="inbound-requests"||screen==="purchase-orders"||screen==="purchase-requests")&&inboundLoginKey!==null&&workspace===null&&!sessionEnded))navigate("home");},[isMobile,sessionBusy,currentAuthorized,navigate,screen,inboundLoginKey,workspace,sessionEnded]);
  const onDenied=useCallback((e:unknown)=>{if(loginLifecycle.current.key!==inboundLoginKey)return;if(e instanceof ApiError&&e.status===401){authorityFence.current.invalidate();setWorkspace(null);setSessionError(e);}
   else if(e instanceof ApiError&&(e.status===403||e.code==="read_scope_changed")){recheckBlockedScope.current=serverReadScope.current;setReadViewScope(current=>current+":denied");suspendReads();void loadWorkspace();}
  },[inboundLoginKey,setWorkspace,setSessionError,suspendReads,loadWorkspace]);
@@ -185,13 +193,13 @@ function WorkspaceContent({extensions}:{extensions?:WorkspaceExtensions}){
   catch(e){if(mounted.current&&fence.isCurrent(generation)){signOutPending.current=false;toast.error(errorMessage(e));}}
  }
  async function extend(){
-  const fence=authorityFence.current,generation=fence.begin();const current=()=>mounted.current&&fence.isCurrent(generation);setSessionBusy(true);
+  const fence=authorityFence.current,generation=fence.begin();const current=()=>mounted.current&&fence.isCurrent(generation);setSessionBusy(true);setAuthorityChecking(true);
   try{
    await continueSession();if(!current())return;
    const next=await getWorkspace();if(!current())return;
    setWorkspace(next);setSessionError(null);toast.success("Đã gia hạn phiên làm việc.");
   }catch(e){if(!current())return;setWorkspace(null);setSessionError(e);toast.error(errorMessage(e));}
-  finally{if(current())setSessionBusy(false);}
+  finally{if(current()){setSessionBusy(false);setAuthorityChecking(false);}}
  }
  return <><a className="skip-link" href="#main-content">Đến nội dung chính</a><Sidebar className="erp-sidebar"><SidebarHeader><a className="brand" href="?screen=home" onClick={e=>{e.preventDefault();navigate("home");}}><span className="brand-logo-frame"><Image unoptimized className="brand-logo" src="/medcom-logo.png" alt="MEDCOMTECH — Moving forward together" width={2065} height={761}/></span></a>{isMobile&&<Button variant="ghost" size="icon" className="mobile-drawer-close" aria-label="Đóng menu" onClick={()=>setOpenMobile(false)}><X size={18}/></Button>}</SidebarHeader><SidebarContent>
  <SidebarGroup><SidebarMenu><SidebarMenuItem><SidebarMenuButton isActive={screen==="home"} onClick={()=>navigate("home")}><LayoutDashboard/><span>Tổng quan</span></SidebarMenuButton></SidebarMenuItem></SidebarMenu></SidebarGroup>
@@ -202,7 +210,7 @@ function WorkspaceContent({extensions}:{extensions?:WorkspaceExtensions}){
  <main id="main-content" className="workspace-content"><div className="page-heading"><div><div className="page-eyebrow"><Icon size={15}/>{current.group.toUpperCase()}</div><div className="title-row"><h1>{current.label}</h1>{screen!=="home"&&screen!=="settings"&&<Button variant="ghost" size="icon" aria-label={favorites.includes(screen)?"Bỏ yêu thích":"Thêm vào yêu thích"} onClick={()=>toggleFavorite(screen)}><Star size={19} fill={favorites.includes(screen)?"currentColor":"none"}/></Button>}</div><p>{current.description}</p></div><div className="heading-actions"><Badge variant="outline" className={connected?"connection connected":"connection"}>{connected?<ShieldCheck size={14}/>:<WifiOff size={14}/>} {connected?"Đã đăng nhập ERP":configured?"Chưa đăng nhập":"Chưa kết nối ERP"}</Badge></div></div>
  <Connectivity/><SessionWarning session={workspace?.session??null} extend={extend}/>{sessionError instanceof ApiError&&sessionError.code==="session_expired"&&<div className="erp-feedback" role="alert"><strong>Phiên làm việc đã hết hạn. Đăng nhập ERP để tiếp tục.</strong></div>}
  {!connected&&<div className="connection-banner"><div className="banner-icon"><LockKeyhole size={19}/></div><div><strong>{configured?"Đăng nhập để truy cập dữ liệu doanh nghiệp":"Kết nối hệ thống ERP để bắt đầu làm việc"}</strong><p>{configured?"Dữ liệu và thao tác được giới hạn theo quyền của tài khoản ERP.":"Danh sách chứng từ sẽ hiển thị sau khi hệ thống ERP được kết nối."}</p></div><Button variant="outline" onClick={()=>configured?setLoginOpen(true):navigate("settings")}>{configured?"Đăng nhập ERP":"Xem kết nối"}</Button></div>}
- {screen==="home"?<Home navigate={navigate} recent={lastVisit} favorites={favorites} availableIds={isMobile?authorizedIds:undefined}/>:screen==="purchase-requests"?<PurchaseRequestScreen workspace={workspace} loginBoundary={loginBoundary} sessionEnded={sessionEnded} onVerifyWorkspace={verifyWorkspace} onDenied={onDenied} onLogin={()=>setLoginOpen(true)}/>:screen==="inbound-requests"?<><InboundRequestScreen loginKey={inboundLoginKey} workspace={readBlocked?null:workspace} list={readInboundList} onDenied={onDenied} historyOwner="workspace"/>{inboundLoginKey!==null&&workspace===null&&!sessionEnded&&<Button variant="outline" disabled={sessionBusy} onClick={()=>void verifyWorkspace()}>Xác minh lại phiên nhập hàng</Button>}</>:screen==="purchase-orders"?<Documents key={JSON.stringify([screen,readViewScope,loginBoundary])} kind={screen} workspace={workspace} verified={!readBlocked} generation={readGeneration} compact={compact} setCompact={setCompact} onLogin={()=>setLoginOpen(true)} onDenied={onDenied} renderDetail={(selected,close,read)=>workspace&&extensions?.documentScreens?.[screen]?<ConfiguredDocumentSheet screen={screen} selected={selected} close={close} workspace={workspace} extension={extensions.documentScreens[screen]} onDenied={onDenied}/>:<Detail kind={screen} selected={selected} close={close} onDenied={onDenied} read={read}/>}/>:screen==="transfers"?<Transfers/>:screen==="settings"?<Settings compact={compact} setCompact={setCompact} dark={dark} setDark={setDark} palette={palette} setPalette={setPalette} health={health} healthError={healthError} checking={checking} checkHealth={async()=>{setChecking(true);await checkHealth();}} checkedAt={checkedAt} workspace={workspace} extend={extend}/>:screen==="reports"?workspace&&authorizedIds.includes("reports")&&extensions?.reports?<ReportWorkspace key={JSON.stringify([workspace.session.tenantId,workspace.session.companyId,workspace.session.authorityVersion,workspace.session.absoluteExpiresAt])} scopeKey={JSON.stringify([workspace.session.tenantId,workspace.session.companyId,workspace.session.authorityVersion,workspace.session.absoluteExpiresAt])} adapter={extensions.reports.adapter} lookupAdapter={extensions.reports.lookup} onDenied={onDenied}/>:<Reports/>:<Unavailable screen={screen}/>}
+ {screen==="home"?<Home navigate={navigate} recent={lastVisit} favorites={favorites} availableIds={isMobile?authorizedIds:undefined}/>:screen==="purchase-requests"?<PurchaseRequestScreen workspace={readBlocked?null:workspace} verifying={authorityChecking} loginBoundary={loginBoundary} sessionEnded={sessionEnded} onVerifyWorkspace={verifyWorkspace} onDenied={onDenied} onLogin={()=>setLoginOpen(true)}/>:screen==="inbound-requests"?<><InboundRequestScreen loginKey={inboundLoginKey} workspace={readBlocked?null:workspace} list={readInboundList} onDenied={onDenied} historyOwner="workspace"/>{inboundLoginKey!==null&&workspace===null&&!sessionEnded&&<Button variant="outline" disabled={sessionBusy} onClick={()=>void verifyWorkspace()}>Xác minh lại phiên nhập hàng</Button>}</>:screen==="purchase-orders"?<Documents key={JSON.stringify([screen,readViewScope,loginBoundary])} kind={screen} workspace={workspace} verified={!readBlocked} generation={readGeneration} compact={compact} setCompact={setCompact} onLogin={()=>setLoginOpen(true)} onDenied={onDenied} renderDetail={(selected,close,read)=>workspace&&extensions?.documentScreens?.[screen]?<ConfiguredDocumentSheet screen={screen} selected={selected} close={close} workspace={workspace} extension={extensions.documentScreens[screen]} onDenied={onDenied}/>:<Detail kind={screen} selected={selected} close={close} onDenied={onDenied} read={read}/>}/>:screen==="transfers"?<Transfers/>:screen==="settings"?<Settings compact={compact} setCompact={setCompact} dark={dark} setDark={setDark} palette={palette} setPalette={setPalette} health={health} healthError={healthError} checking={checking} checkHealth={async()=>{setChecking(true);await checkHealth();}} checkedAt={checkedAt} workspace={workspace} extend={extend}/>:screen==="reports"?workspace&&authorizedIds.includes("reports")&&extensions?.reports?<ReportWorkspace key={JSON.stringify([workspace.session.tenantId,workspace.session.companyId,workspace.session.authorityVersion,workspace.session.absoluteExpiresAt])} scopeKey={JSON.stringify([workspace.session.tenantId,workspace.session.companyId,workspace.session.authorityVersion,workspace.session.absoluteExpiresAt])} adapter={extensions.reports.adapter} lookupAdapter={extensions.reports.lookup} onDenied={onDenied}/>:<Reports/>:<Unavailable screen={screen}/>}
  {screen==="settings"&&workspace&&extensions?.roleNavigation&&<RoleNavigationEditor key={JSON.stringify([workspace.session.tenantId,workspace.session.companyId,workspace.session.authorityVersion,workspace.session.absoluteExpiresAt,extensions.roleNavigation.configuration.roleId])} configuration={extensions.roleNavigation.configuration} adapter={extensions.roleNavigation.adapter} onPublished={extensions.roleNavigation.onPublished} onDenied={onDenied}/>}
  </main><footer className="workspace-footer"><span><ShieldCheck size={13}/> Medcom ERP</span><span>{workspace?`Phiên làm việc đến ${time(workspace.session.idleExpiresAt)}`:"Dữ liệu doanh nghiệp chỉ hiển thị sau xác thực"}</span><span className="footer-shortcut"><CommandIcon size={12}/> K · Tìm màn hình</span></footer></SidebarInset>
  <Dialog open={commandOpen} onOpenChange={setCommandOpen}><DialogContent className="command-modal" showCloseButton={false}><DialogHeader className="sr-only"><DialogTitle>Tìm màn hình</DialogTitle><DialogDescription>Điều hướng đến phân hệ và màn hình ERP.</DialogDescription></DialogHeader><Command><CommandInput placeholder="Tìm màn hình hoặc phân hệ…"/><CommandList><CommandEmpty>Không tìm thấy màn hình phù hợp.</CommandEmpty>{["Tổng quan","Mua hàng","Kho hàng","Bán hàng","Kế toán","Phân tích","Hệ thống"].filter(g=>shownScreens.some(s=>s.group===g)).map(g=><CommandGroup heading={g} key={g}>{shownScreens.filter(s=>s.group===g).map(s=>{const I=icons[s.id];return <CommandItem key={s.id} value={`${s.label} ${s.group}`} onSelect={()=>navigate(s.id)}><I/><span>{s.label}</span></CommandItem>;})}</CommandGroup>)}</CommandList></Command></DialogContent></Dialog>

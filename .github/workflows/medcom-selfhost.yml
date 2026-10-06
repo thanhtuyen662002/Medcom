@@ -173,6 +173,38 @@ jobs:
           dotnet restore tests/backend/Medcom.LocalFrontendFixture/Medcom.LocalFrontendFixture.csproj --locked-mode
           dotnet publish tests/backend/Medcom.LocalFrontendFixture/Medcom.LocalFrontendFixture.csproj -c Release --no-restore -o artifacts/i28-synthetic-fixture
           dotnet publish tools/local-frontend/Medcom.LocalFrontendHost/Medcom.LocalFrontendHost.csproj -c Release --no-restore -o artifacts/medcom-local-frontend-host
+      # One Linux control build proves the regression on exact shipped-equivalent
+      # pre-fix code. The corrected compiled suite still runs on both OSes.
+      - name: Prove exact pre-fix compiled lifecycle failure
+        if: matrix.platform == 'linux'
+        env:
+          I29_BASELINE_CONTROL: '1'
+          I28_FIXTURE_DLL: ${{ github.workspace }}/artifacts/i28-synthetic-fixture/Medcom.LocalFrontendFixture.dll
+        run: |
+          set -euo pipefail
+          CONTROL_REV=2712d00532cd76b0cc4eae44ede04314f38e812f
+          CONTROL_ROOT="$RUNNER_TEMP/medcom-i29-prefixed-control"
+          git worktree add --detach "$CONTROL_ROOT" "$CONTROL_REV"
+          trap 'git worktree remove --force "$CONTROL_ROOT"' EXIT
+          test "$(git -C "$CONTROL_ROOT" rev-parse HEAD)" = "$CONTROL_REV"
+          cmp apps/medcom-sites/pnpm-lock.yaml "$CONTROL_ROOT/apps/medcom-sites/pnpm-lock.yaml"
+          cmp apps/medcom-sites/package.json "$CONTROL_ROOT/apps/medcom-sites/package.json"
+          cmp apps/medcom-sites/.npmrc "$CONTROL_ROOT/apps/medcom-sites/.npmrc"
+          (
+            cd "$CONTROL_ROOT/apps/medcom-sites"
+            pnpm install --offline --frozen-lockfile
+            SOURCE_REVISION="$CONTROL_REV" node scripts/package-standalone.mjs
+          )
+          cd apps/medcom-sites
+          SOURCE_REVISION="$CONTROL_REV" I28_PACKAGE_DIRECTORY="$CONTROL_ROOT/artifacts/medcom-frontend-linux-x64" \
+            node --test --test-reporter=tap tests/local-https-frontend.test.mjs
+      - name: Upload exact pre-fix lifecycle control proof
+        if: matrix.platform == 'linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: medcom-lifecycle-prefixed-control-${{ github.sha }}
+          path: apps/medcom-sites/.test-runtime/i28-local-https/baseline-control.json
+          if-no-files-found: error
       - name: Test built modern Workspace through actual HTTPS relay and BFF
         working-directory: apps/medcom-sites
         env:
