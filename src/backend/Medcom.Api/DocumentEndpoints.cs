@@ -24,6 +24,7 @@ public static class DocumentEndpoints
             try { result=await reader.ReadAsync(session.Identity,kind,new(page??1,pageSize??50,search,branchId),timeout.Token); }
             catch(OperationCanceledException) when(!context.RequestAborted.IsCancellationRequested)
             { return Results.Problem(statusCode:503,title:"Data is temporarily unavailable."); }
+            if (result.Outcome == DocumentOutcome.Success && result.Page is not null) WorkspaceReadScope.Stamp(context, session);
             return result.Outcome switch
             {
                 DocumentOutcome.Success when result.Page is not null => Results.Ok(result.Page),
@@ -50,6 +51,7 @@ public static class DocumentEndpoints
             try { result=await reader.ReadDetailAsync(session.Identity,kind,new(documentId,page??1,pageSize??50),timeout.Token); }
             catch(OperationCanceledException) when(!context.RequestAborted.IsCancellationRequested)
             { return Results.Problem(statusCode:503,title:"Data is temporarily unavailable."); }
+            if (result.Outcome == DocumentOutcome.Success && result.Detail is not null) WorkspaceReadScope.Stamp(context, session);
             return result.Outcome switch
             {
                 DocumentOutcome.Success when result.Detail is not null => Results.Ok(result.Detail),

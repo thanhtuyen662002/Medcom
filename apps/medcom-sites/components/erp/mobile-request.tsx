@@ -41,6 +41,8 @@ export type MobileRequestAccess = {
   canReconcile?: boolean;
   authorityKey?: string;
   requiresFreshRead?: boolean;
+  /** A same-scope read/grant refresh blocks new actions without retiring an in-flight intent. */
+  verifying?: boolean;
   branches: readonly Choice[];
   currencies: readonly Choice[];
   purposes: readonly Choice[];
@@ -212,10 +214,10 @@ function RequestEditor({initial, access, adapter, onConfirmed, readRevision=0, o
   const pending = phase === "pending" || phase === "reconciling";
   const uncertain = phase === "unknown" || phase === "reconciling";
   const serviceAvailable = !!adapter && access.available && validAccess(access) && isSnapshot(initial);
-  const editable = access.canRead && serviceAvailable && access.canEdit && !access.requiresFreshRead && !documentSwitchBlocked && baseline.confirmation !== "submitted" && !pending && !uncertain && phase !== "conflict";
+  const editable = access.canRead && serviceAvailable && access.canEdit && !access.verifying && !access.requiresFreshRead && !documentSwitchBlocked && baseline.confirmation !== "submitted" && !pending && !uncertain && phase !== "conflict";
   useDirtyGuard(dirty || pending || uncertain, !pending && !uncertain);
   useLayoutEffect(()=>{onWorkStateChange?.({dirty,unresolved:hasUnresolvedIntent});},[dirty,hasUnresolvedIntent,onWorkStateChange]);
-  const canSubmitExisting=access.existingOnly&&serviceAvailable&&access.canRead&&access.canSubmit
+  const canSubmitExisting=access.existingOnly&&serviceAvailable&&access.canRead&&!access.verifying&&access.canSubmit
     &&baseline.confirmation==="draft"&&!!baseline.documentId&&!!baseline.version&&!dirty&&!pending&&!uncertain&&!documentSwitchBlocked;
 
   function change(patch: Partial<PurchaseRequestDraft>) {
@@ -268,7 +270,7 @@ function RequestEditor({initial, access, adapter, onConfirmed, readRevision=0, o
     }
   }
   async function send(action: PurchaseRequestIntent["action"]) {
-    if (!adapter || originalIntent.current || queuedDocument.current || lock.current || pending || uncertain || phase === "conflict" || !review
+    if (!adapter || access.verifying || originalIntent.current || queuedDocument.current || lock.current || pending || uncertain || phase === "conflict" || !review
       || (action==="submit"&&access.existingOnly ? !canSubmitExisting : !editable)
       || (access.existingOnly&&!baseline.documentId)
       || (action === "saveDraft" ? !access.canSaveDraft || !dirty && !!baseline.documentId : !access.canSubmit)) return;
@@ -287,7 +289,7 @@ function RequestEditor({initial, access, adapter, onConfirmed, readRevision=0, o
   }
   async function reconcile() {
     const intent = originalIntent.current;
-    if (!adapter || !serviceAvailable || !access.canRead || access.canReconcile===false || originalAdapter.current!==adapter || !intent || lock.current || phase !== "unknown") return;
+    if (!adapter || !serviceAvailable || !access.canRead || access.verifying || access.canReconcile===false || originalAdapter.current!==adapter || !intent || lock.current || phase !== "unknown") return;
     lock.current = true; const token = ++generation.current; const controller = new AbortController(); request.current = controller; setPhase("reconciling");
     try {const next = await adapter.reconcile(intent, controller.signal); if (generation.current === token && !controller.signal.aborted && currentAccess.current.canRead && currentAdapter.current===adapter) accept(next, intent, true);}
     catch {if (generation.current === token && !controller.signal.aborted && currentAccess.current.canRead && currentAdapter.current===adapter) accept(unknown(intent, "Chưa kiểm tra được kết quả. Yêu cầu gốc vẫn chưa được xác nhận."), intent, true);}
@@ -300,7 +302,7 @@ function RequestEditor({initial, access, adapter, onConfirmed, readRevision=0, o
   ] as const;
   if (!access.canRead) return <section role="status"><h2>Đề nghị mua hàng</h2><p>Đăng nhập bằng tài khoản được cấp quyền để mở phiếu.</p></section>;
   if (!serviceAvailable || !adapter) return <section role="status"><h2>Đề nghị mua hàng</h2><p>Dịch vụ tạo và gửi đề nghị mua hàng chưa khả dụng.</p>{hasUnresolvedIntent && <p>Yêu cầu gốc vẫn cần được kiểm tra trước khi gửi yêu cầu khác.</p>}</section>;
-  if (documentSwitchBlocked) return <section aria-label="Chờ xác nhận phiếu trước" style={{padding: 16, display: "grid", gap: 12}}><h1>Đề nghị mua hàng</h1><p role="status">{pending ? "Đang chờ kết quả phiếu trước…" : "Phiếu trước chưa được xác nhận. Kiểm tra yêu cầu gốc trước khi mở phiếu khác."}</p>{phase === "unknown" && <button type="button" style={requestInputStyle} disabled={access.canReconcile===false || dispatchAdapter!==adapter} onClick={() => void reconcile()}>Kiểm tra kết quả yêu cầu gốc</button>}</section>;
+  if (documentSwitchBlocked) return <section aria-label="Chờ xác nhận phiếu trước" style={{padding: 16, display: "grid", gap: 12}}><h1>Đề nghị mua hàng</h1><p role="status">{pending ? "Đang chờ kết quả phiếu trước…" : "Phiếu trước chưa được xác nhận. Kiểm tra yêu cầu gốc trước khi mở phiếu khác."}</p>{phase === "unknown" && <button type="button" style={requestInputStyle} disabled={access.verifying || access.canReconcile===false || dispatchAdapter!==adapter} onClick={() => void reconcile()}>Kiểm tra kết quả yêu cầu gốc</button>}</section>;
   return <form ref={form} onSubmit={event => {event.preventDefault(); if (!review && editable) inspect();}} aria-label="Đề nghị mua hàng trên điện thoại" style={{maxWidth: 640, width: "100%", margin: "0 auto", display: "grid", gap: 20, padding: 16, boxSizing: "border-box", minWidth: 0}}>
     <header><h1>Đề nghị mua hàng</h1><p role="status" aria-live="polite">{stateLabel}</p>{baseline.documentId && <p>Mã phiếu: <strong>{baseline.documentId}</strong></p>}{baseline.status && <p>Trạng thái ERP: <strong>{baseline.status.label}</strong></p>}</header>
     {!access.canEdit && <p role="status">Phiếu hiện chỉ được xem theo quyền của bạn.</p>}
@@ -309,7 +311,7 @@ function RequestEditor({initial, access, adapter, onConfirmed, readRevision=0, o
     {message && <p role="alert">{message}</p>}
     {result && result.kind !== "confirmed" && <section role="alert" style={{border: "1px solid #a1a1aa", padding: 12, borderRadius: 8}}>
       <p>{result.message}</p>{result.referenceId && <p>Mã hỗ trợ: {result.referenceId}</p>}
-      {phase === "unknown" && <button type="button" style={requestInputStyle} disabled={access.canReconcile===false || dispatchAdapter!==adapter} onClick={() => void reconcile()}>Kiểm tra kết quả yêu cầu gốc</button>}
+      {phase === "unknown" && <button type="button" style={requestInputStyle} disabled={access.verifying || access.canReconcile===false || dispatchAdapter!==adapter} onClick={() => void reconcile()}>Kiểm tra kết quả yêu cầu gốc</button>}
       {result.kind === "conflict" && <><p>Nội dung đang nhập vẫn được giữ. Bản ERP: {result.current.documentId}; trạng thái: {result.current.status?.label ?? "Chưa được dịch vụ cung cấp"}.</p><button type="button" style={requestInputStyle} onClick={() => {if (lock.current) return; setBaseline(result.current); setValues(copy(result.current.values)); setPhase("editing"); setResult(null); setReview(false); setErrors({}); originalIntent.current = null;}}>Tải bản ERP và bỏ nội dung đang nhập</button></>}
     </section>}
     <section aria-label={review ? "Rà soát thông tin phiếu" : "Thông tin phiếu"} style={{display: "grid", gap: 14}}>

@@ -41,3 +41,12 @@ export class AuthorityFence{
  isCurrent(generation:number){return generation===this.generation;}
  invalidate(){this.generation++;}
 }
+
+/** Read controls belong to a verified server session/rights scope, not an
+ * observation number, clock extension, display name or request generation. */
+export function workspaceReadViewScope(workspace:WorkspaceData):string{
+ const set=(values:readonly string[])=>[...new Set(values)].sort();
+ if(!workspace.sessionScope||!workspace.readScope)return "unverified";
+ return JSON.stringify([workspace.sessionScope,workspace.readScope,workspace.session.tenantId,
+  workspace.session.companyId,set(workspace.session.capabilities),set(workspace.branchIds),set(authorizedScreenIds(workspace))]);
+}

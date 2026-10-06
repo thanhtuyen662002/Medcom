@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {authorizedScreenIds,mobileQuickScreenIds,workspaceStateScope,AuthorityFence} from '../.test-runtime/erp-tests/navigation.js';
+import {authorizedScreenIds,mobileQuickScreenIds,workspaceStateScope,workspaceReadViewScope,AuthorityFence} from '../.test-runtime/erp-tests/navigation.js';
 
 const workspace=(capabilities,navigation)=>({session:{displayName:'Synthetic role',tenantId:'test',companyId:'test',companyName:'Test',authorityVersion:1,idleExpiresAt:'2099-01-01T00:00:00Z',absoluteExpiresAt:'2099-01-02T00:00:00Z',capabilities},navigation:navigation.map(id=>({id,label:id,href:'/workspace/'})),branchIds:[]});
 
@@ -64,4 +64,18 @@ test('identity, login, fixed session lifetime or effective authorization changes
  for(const change of mutations){const changed=structuredClone(w);change(changed);assert.notEqual(workspaceStateScope(changed,4),key);}
  assert.notEqual(workspaceStateScope(w,5),key);
  assert.notEqual(workspaceStateScope(null,4),key);
+});
+
+
+test('read view controls use exact session and canonical rights, never observation or expiry',()=>{
+ const w=workspace(['purchase-orders.read','platform.status'],['purchase-orders']);
+ Object.assign(w,{sessionScope:'a'.repeat(64),readScope:'b'.repeat(64),branchIds:['B','A']});
+ const key=workspaceReadViewScope(w),same=structuredClone(w);
+ same.session.authorityVersion++;same.session.idleExpiresAt='2099-02-01T00:00:00Z';same.session.absoluteExpiresAt='2099-03-01T00:00:00Z';
+ same.session.displayName='Renamed';same.session.companyName='Renamed company';same.session.capabilities.reverse();same.branchIds=['A','B','A'];
+ assert.equal(workspaceReadViewScope(same),key);
+ for(const change of [x=>x.sessionScope='c'.repeat(64),x=>x.readScope='c'.repeat(64),x=>x.branchIds=['A'],x=>x.session.capabilities=[],x=>x.navigation=[]]){
+  const next=structuredClone(w);change(next);assert.notEqual(workspaceReadViewScope(next),key);
+ }
+ assert.equal(workspaceReadViewScope(workspace([],[])),'unverified');
 });
