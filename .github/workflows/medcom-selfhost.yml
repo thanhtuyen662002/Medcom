@@ -155,6 +155,18 @@ jobs:
           name: medcom-workspace-retention-${{ matrix.platform }}-x64-${{ github.sha }}
           path: apps/medcom-sites/.test-runtime/i29-workspace-retention/browser-result.json
           if-no-files-found: error
+      - name: Test request presentation with compiled application CSS
+        working-directory: apps/medcom-sites
+        run: node --test --test-reporter=tap tests/request-presentation.browser.mjs
+      - name: Upload synthetic request presentation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: medcom-request-presentation-${{ matrix.platform }}-x64-${{ github.sha }}
+          path: |
+            apps/medcom-sites/.test-runtime/i30-request-presentation/browser-result.json
+            apps/medcom-sites/.test-runtime/i30-request-presentation/*.png
+          if-no-files-found: error
       - name: Test standalone package guards
         working-directory: apps/medcom-sites
         run: node --test tests/standalone-package.test.mjs

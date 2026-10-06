@@ -1,20 +1,18 @@
 "use client";
-import {useCallback,useEffect,useLayoutEffect,useRef,useState,type FormEvent,type CSSProperties} from "react";
+import {RequestButton,RequestInput,RequestNotice,RequestEmpty,RequestLoading,RequestStatus,RequestError,requestDate,requestStyles} from "./request-presentation";
+import {useCallback,useEffect,useLayoutEffect,useRef,useState,type FormEvent} from "react";
 import {MobileRequest,type MobileRequestAccess,type PurchaseRequestSnapshot} from "./mobile-request";
 import {useNavigationGuard} from "./navigation-guard";
-import {ApiError,errorMessage} from "@/lib/erp/api";
+import {ApiError} from "@/lib/erp/api";
 import {getPurchaseWorkspace,getPurchaseDocuments,postPurchaseCommand,type PurchaseWorkspace,type PurchasePage,type PurchaseReadback} from "@/lib/erp/purchase-request-api";
 import {createPurchaseCommandAdapter,commandPurchaseSnapshot} from "@/lib/erp/purchase-request-command-adapter";
 import {workspaceReadViewScope} from "@/lib/erp/navigation";
 import type {WorkspaceData} from "@/lib/erp/contracts";
 
-const control:CSSProperties={border:"1px solid var(--border)",borderRadius:8,padding:"8px 12px",minHeight:44,background:"var(--background)",color:"var(--foreground)"};
-const gap:CSSProperties={display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"};
 function sameReadAuthority(left:WorkspaceData|null|undefined,right:WorkspaceData|null|undefined){
  return !!left?.sessionScope&&!!left.readScope&&!!right?.sessionScope&&!!right.readScope
   &&workspaceReadViewScope(left)===workspaceReadViewScope(right);
 }
-const qualification="Chỉ phiếu có sẵn. Không tạo hoặc thêm dòng; cấp số, nhật ký lệnh và quyền ghi thực tế không được tự kích hoạt. Lưu/Gửi chỉ khả dụng khi server xác minh riêng từng thao tác.";
 type ReadState={key:string;refresh?:number;observation?:WorkspaceData|null;scopeKey?:string;bootstrap?:PurchaseWorkspace;list?:PurchasePage;detail?:PurchaseReadback;detailError?:unknown;error?:unknown;loading:boolean};
 type RetainedEditor={scopeKey:string;raw:PurchaseReadback;snapshot:PurchaseRequestSnapshot;bridge:ReturnType<typeof createPurchaseCommandAdapter>;
  observation:WorkspaceData|null;revision:number;receiptId?:string;grant:PurchaseReadback["commandAccess"]};
@@ -41,9 +39,9 @@ function PurchaseRequestSession(props:PurchaseRequestScreenProps){
   setChecking(true);try{await props.onVerifyWorkspace();}finally{setChecking(false);}
  }
  return <>
-  {sessionUnverified&&<section aria-label="Xác minh lại phiên mua hàng" style={{display:"grid",gap:8}}>
-   <p role="status">Chưa xác minh được phiên ERP. Dữ liệu và thao tác mua hàng đang bị ẩn/khóa; yêu cầu chưa rõ kết quả vẫn được giữ để đối chiếu sau khi parent Workspace xác minh lại.</p>
-   <button type="button" style={control} disabled={checking} onClick={()=>void verifySession()}>{checking?"Đang xác minh phiên…":"Xác minh lại phiên ERP"}</button>
+  {sessionUnverified&&<section aria-label="Xác minh lại phiên mua hàng" className={requestStyles.stack}>
+   <p role="status">Chưa xác minh được phiên ERP. Dữ liệu tạm ẩn; yêu cầu đang xử lý vẫn được giữ để kiểm tra kết quả.</p>
+   <RequestButton type="button" disabled={checking} onClick={()=>void verifySession()}>{checking?"Đang xác minh phiên…":"Xác minh lại phiên ERP"}</RequestButton>
   </section>}
   <PurchaseRequestReader key={boundary} {...props} boundary={boundary} sessionUnverified={sessionUnverified}/>
  </>;
@@ -146,46 +144,47 @@ function PurchaseRequestReader({workspace,boundary,sessionUnverified,onDenied,on
   available:true,verifying:verifying||busy||!!active?.error||!!active?.detailError||editor?.observation!==workspace,
   authorityKey:JSON.stringify([workspace?workspaceReadViewScope(workspace):null,workspace?.session.capabilities.slice().sort(),workspace?.branchIds.slice().sort(),grant]),
   branches:[],currencies:[],purposes:[],maxNotesLength:65536,maxPurposeLength:65536,maxLines:500,itemLookupId:"items",objectLookupId:"objects"};
- return <section aria-label="Danh sách đề nghị mua hàng" style={{display:"grid",gap:16}}>
-  <h2>Đề nghị mua hàng</h2><p id="purchase-write-qualification" role="status">{qualification}</p>
-  <button style={control} disabled aria-describedby="purchase-write-qualification">Tạo đề nghị</button>
-  {!workspace?sessionUnverified?<p role="status">Phiên ERP tạm chưa được xác minh. Bộ lọc, phiếu đang chọn và dữ liệu nghiệp vụ đang được ẩn cho tới khi parent Workspace xác minh lại.</p>:<><p>Đăng nhập ERP để đọc đề nghị mua hàng.</p><button style={control} onClick={onLogin}>Đăng nhập ERP</button></>:!allowed?<p role="status">Bạn không có quyền đọc đề nghị mua hàng trong phạm vi hiện tại.</p>:verifiedWorkspace!==workspace?<section aria-label="Đang xác minh phạm vi mua hàng">
-   <p role={active?.error?"alert":"status"}>{active?.error?errorMessage(active.error):"Đang xác minh lại phạm vi và quyền ERP; dữ liệu vẫn bị ẩn."}</p>
-   {!!active?.error&&<button type="button" style={control} onClick={()=>setRefresh(value=>value+1)}>Xác minh lại phạm vi ERP</button>}
-  </section>:<>
-   <form onSubmit={find} style={gap}><label>Tìm mã đề nghị <input style={control} value={searchInput} maxLength={100} onChange={event=>setSearchInput(event.target.value)}/></label>
-    <button type="submit" style={control} disabled={busy}>Tìm kiếm</button>
-    <label>Chi nhánh <select aria-label="Chi nhánh" style={control} value={safeBranch} disabled={busy} onChange={event=>{const id=event.target.value;move(()=>{setBranch(id);setPage(1);setSelected(null);editorRef.current?.bridge.retire();retain(null);});}}><option value="">Tất cả chi nhánh được phép</option>{(active?.bootstrap?.branchIds??[]).map(id=><option key={id} value={id}>{id}</option>)}</select></label>
-    <button style={control} type="button" disabled={busy} onClick={()=>move(()=>setRefresh(value=>value+1))}>Làm mới</button>
+ return <section aria-label="Danh sách đề nghị mua hàng" className={requestStyles.stack}>
+  {!workspace?sessionUnverified?<RequestNotice>Đang xác minh phiên ERP để mở lại danh sách và phiếu đã chọn.</RequestNotice>:<RequestEmpty title="Danh sách đề nghị mua hàng"><span className="mb-4 block">Đăng nhập ERP để đọc đề nghị mua hàng.</span><RequestButton onClick={onLogin}>Đăng nhập ERP</RequestButton></RequestEmpty>:!allowed?<RequestNotice>Bạn không có quyền đọc đề nghị mua hàng trong phạm vi hiện tại.</RequestNotice>:verifiedWorkspace!==workspace?<section aria-label="Đang xác minh phạm vi mua hàng">
+   {active?.error?<RequestError error={active.error}/>:<RequestLoading label="Đang xác minh phạm vi và quyền ERP…"/>}
+   {!!active?.error&&<RequestButton type="button" onClick={()=>setRefresh(value=>value+1)}>Xác minh lại phạm vi ERP</RequestButton>}
+  </section>:<div className={requestStyles.panel}>
+   <div className={requestStyles.header}><div className="grid gap-1"><h2 className={requestStyles.title}>Danh sách đề nghị</h2><p id="purchase-write-qualification" className={requestStyles.muted}>Chỉ mở các phiếu hiện có.</p></div><RequestButton disabled className="request-unavailable" aria-describedby="purchase-write-qualification">Tạo đề nghị</RequestButton></div>
+   <form onSubmit={find} className="grid min-w-0 gap-3 border-b border-border p-4 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto] sm:items-end sm:p-5"><label className={requestStyles.field}>Tìm mã đề nghị <RequestInput placeholder="Nhập mã đề nghị…" value={searchInput} maxLength={100} onChange={event=>setSearchInput(event.target.value)}/></label>
+    <RequestButton type="submit" variant="secondary" disabled={busy}>Tìm kiếm</RequestButton>
+    <label className={requestStyles.field}>Chi nhánh <select aria-label="Chi nhánh" className="min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2 text-base font-normal" value={safeBranch} disabled={busy} onChange={event=>{const id=event.target.value;move(()=>{setBranch(id);setPage(1);setSelected(null);editorRef.current?.bridge.retire();retain(null);});}}><option value="">Tất cả chi nhánh được phép</option>{(active?.bootstrap?.branchIds??[]).map(id=><option key={id} value={id}>{id}</option>)}</select></label>
+    <RequestButton type="button" disabled={busy} onClick={()=>move(()=>setRefresh(value=>value+1))}>Làm mới</RequestButton>
    </form>
-   {busy&&!active?.list?<p role="status">Đang đọc ERP…</p>:active?.error?<p role="alert">{errorMessage(active.error)}</p>:<>
-    <div style={{display:"grid",gap:8}}>{active?.list?.rows.map(row=><article key={row.documentId} style={{border:"1px solid var(--border)",padding:12,borderRadius:8}}>
-     <strong>{row.documentId}</strong><p>{row.purchaseDate??"Ngày: NULL"} · {row.branchId} · Trạng thái ERP: {row.statusId}</p><p>{row.personSuggest} · {row.department}</p>
-     <button style={control} onClick={()=>move(()=>setSelected(row.documentId))} aria-label={`Mở đề nghị ${row.documentId}`}>Mở đề nghị</button>
-    </article>)}{active?.list?.rows.length===0&&<p>Không có đề nghị phù hợp trong phạm vi của bạn.</p>}</div>
-    <nav aria-label="Phân trang đề nghị" style={gap}><button style={control} disabled={page===1} onClick={()=>move(()=>{setPage(value=>value-1);setSelected(null);editorRef.current?.bridge.retire();retain(null);})}>Trang trước</button><span>Trang {page}</span><button style={control} disabled={!active?.list?.hasMore||page>=1000} onClick={()=>move(()=>{setPage(value=>value+1);setSelected(null);editorRef.current?.bridge.retire();retain(null);})}>Trang sau</button></nav>
+   {busy&&!active?.list?<RequestLoading label="Đang đọc ERP…"/>:active?.error?<RequestError error={active.error}/>:<>
+    <div className={requestStyles.cards}>{active?.list?.rows.map(row=><article key={row.documentId} className={requestStyles.card}>
+     <div className={requestStyles.cardHeading}><strong>{row.documentId}</strong><RequestStatus value={row.statusId}/></div>
+     <dl className={requestStyles.values}><div><dt>Ngày đề nghị</dt><dd>{requestDate(row.purchaseDate)}</dd></div><div><dt>Chi nhánh</dt><dd>{row.branchId}</dd></div><div><dt>Người đề nghị</dt><dd>{row.personSuggest||"Chưa có thông tin"}</dd></div><div><dt>Phòng ban</dt><dd>{row.department||"Chưa có thông tin"}</dd></div></dl>
+     <RequestButton onClick={()=>move(()=>setSelected(row.documentId))} aria-label={`Mở đề nghị ${row.documentId}`}>Mở đề nghị</RequestButton>
+    </article>)}{active?.list?.rows.length===0&&<RequestEmpty title="Không có đề nghị phù hợp">Thử điều chỉnh mã đề nghị hoặc chi nhánh.</RequestEmpty>}</div>
+    <nav aria-label="Phân trang đề nghị" className={requestStyles.footer}><RequestButton disabled={page===1} onClick={()=>move(()=>{setPage(value=>value-1);setSelected(null);editorRef.current?.bridge.retire();retain(null);})}>Trang trước</RequestButton><span>Trang {page}</span><RequestButton disabled={!active?.list?.hasMore||page>=1000} onClick={()=>move(()=>{setPage(value=>value+1);setSelected(null);editorRef.current?.bridge.retire();retain(null);})}>Trang sau</RequestButton></nav>
    </>}
-   {selected&&<div style={gap}><h3>{selected}</h3><button style={control} onClick={close}>Đóng đề nghị</button></div>}
-   {active?.detailError&&<p role="alert">{errorMessage(active.detailError)}</p>}
-  </>}
+   {selected&&<div className={requestStyles.footer}><h3 className={`${requestStyles.title} min-w-0 max-w-full [overflow-wrap:anywhere]`}>{selected}</h3><RequestButton onClick={close}>Đóng đề nghị</RequestButton></div>}
+   {!!active?.detailError&&<RequestError error={active.detailError}/>}
+  </div>}
   {/* Outside the busy/error/selection fragment. Never key by token or discard an unknown intent. */}
-  {editor&&<section aria-label="Phiếu mua hàng hiện có" hidden={!canRead}>
+  {editor&&<section aria-label="Phiếu mua hàng hiện có" hidden={!canRead}><div className={requestStyles.stack}>
    <MobileRequest initial={editor.snapshot} access={access} adapter={editor.bridge.adapter} readRevision={editor.revision} onConfirmed={onConfirmed} onWorkStateChange={onWorkStateChange}/>
    {canRead&&<>{editor.receiptId&&<p role="status">ERP đã xác nhận yêu cầu {editor.receiptId}. Receipt vẫn được giữ khi đọc lại thất bại.</p>}
-    <p role="status">{grant?.reason??"command_access_provider_unavailable"}</p><FullPurchaseReadback readback={editor.raw}/></>}
-  </section>}
+    <FullPurchaseReadback readback={editor.raw}/></>}
+  </div></section>}
  </section>;
 }
 
 function value(value:string|number|boolean|null){return value===null?"NULL":typeof value==="boolean"?String(value):value===""?"\"\"":String(value);}
+const lineLabels=["Mã dòng","Mã mặt hàng","Ngân sách","Thời gian yêu cầu","Số lượng","Đơn giá","Thành tiền","Model"];
 function FullPurchaseReadback({readback}:{readback:PurchaseReadback}){
  const document=readback.document;
  const labels:Record<string,string>={purchaseRequestId:"Mã đề nghị",branchId:"Chi nhánh",statusId:"Trạng thái ERP",isLocked:"Khóa phiếu",purchaseDate:"Ngày giờ đề nghị trên ERP",purposeId:"Mã mục đích",personSuggest:"Người đề nghị",department:"Phòng ban",purposeDescOrClient:"Diễn giải mục đích / khách hàng",price:"Giá trị đề nghị",notes:"Ghi chú",currencyId:"Tiền tệ",objectId:"Mã đối tượng",rateExchange:"Tỷ giá"};
- return <section aria-label="Dữ liệu ERP đầy đủ" style={{overflowX:"auto"}}><h4>Dữ liệu ERP đầy đủ — chỉ đọc</h4>
-  <dl>{Object.entries({purchaseRequestId:document.purchaseRequestId,branchId:document.branchId,statusId:document.statusId,isLocked:document.isLocked,...document.header}).map(([field,data])=><div key={field}><dt>{labels[field]}</dt><dd style={{whiteSpace:"pre-wrap",overflowWrap:"anywhere"}}>{value(data)}</dd></div>)}</dl>
+ return <section aria-label="Dữ liệu ERP đầy đủ"><details className={`${requestStyles.section} request-full-readback`}><summary className={requestStyles.title}>Toàn bộ thông tin trên ERP <span>{document.lines.length} dòng hàng</span></summary><div className="request-full-readback-content">
+  <dl className={requestStyles.values}>{Object.entries({purchaseRequestId:document.purchaseRequestId,branchId:document.branchId,statusId:document.statusId,isLocked:document.isLocked,...document.header}).map(([field,data])=><div key={field}><dt>{labels[field]}</dt><dd style={{whiteSpace:"pre-wrap",overflowWrap:"anywhere"}}>{value(data)}</dd></div>)}</dl>
   <p>{document.lines.length} dòng hàng</p>
-  <table aria-label="Toàn bộ dòng đề nghị"><thead><tr>{["Mã dòng","Mã mặt hàng","Ngân sách","Thời gian yêu cầu","Số lượng","Đơn giá","Thành tiền","Model"].map(field=><th key={field} scope="col">{field}</th>)}</tr></thead>
-   <tbody>{document.lines.map(line=><tr key={line.lineId}>{[line.lineId,line.values.itemId,line.values.budget,line.values.timeRequired,line.values.quantity,line.values.unitPrice,line.values.totalPrice,line.values.model].map((data,index)=><td key={index} style={{whiteSpace:"pre-wrap",padding:8}}>{value(data)}</td>)}</tr>)}</tbody>
-  </table>
- </section>;
+  <div className="min-w-0 md:overflow-x-auto"><table role="table" aria-label="Toàn bộ dòng đề nghị" className="block w-full text-sm md:table"><thead role="rowgroup" className="sr-only md:not-sr-only md:table-header-group"><tr role="row">{lineLabels.map(field=><th role="columnheader" key={field} scope="col" className="border-b border-border bg-muted/40 p-3 text-left font-medium text-muted-foreground">{field}</th>)}</tr></thead>
+   <tbody role="rowgroup" className="grid gap-3 md:table-row-group">{document.lines.map(line=><tr role="row" key={line.lineId} className="grid grid-cols-2 gap-3 rounded-lg border border-border p-3 md:table-row md:border-0 md:p-0">{[line.lineId,line.values.itemId,line.values.budget,line.values.timeRequired,line.values.quantity,line.values.unitPrice,line.values.totalPrice,line.values.model].map((data,index)=><td role="cell" key={index} className="min-w-0 whitespace-pre-wrap [overflow-wrap:anywhere] md:border-b md:border-border md:p-3"><span aria-hidden="true" className="mb-1 block text-xs text-muted-foreground md:hidden">{lineLabels[index]}</span><span>{value(data)}</span></td>)}</tr>)}</tbody>
+  </table></div>
+ </div></details></section>;
 }
