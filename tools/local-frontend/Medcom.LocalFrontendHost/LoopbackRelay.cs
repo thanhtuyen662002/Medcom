@@ -20,6 +20,9 @@ public static class LoopbackRelay
 {
     public const int SmallBodyLimit = 16 * 1024;
     public const int CommandBodyLimit = 1024 * 1024;
+    public const int ChunkedFramingAllowance = 64 * 1024;
+    public const int SmallTransportBodyLimit = SmallBodyLimit + ChunkedFramingAllowance;
+    public const int CommandTransportBodyLimit = CommandBodyLimit + ChunkedFramingAllowance;
 
     private static readonly HashSet<string> CommandPaths = new(StringComparer.Ordinal)
     {
@@ -211,6 +214,30 @@ public static class LoopbackRelay
             await RejectAsync(context, 413, "payload_too_large");
             return;
         }
+        if (context.Request.Headers.TryGetValue("Transfer-Encoding", out var transferEncoding))
+        {
+            if (context.Request.Protocol != "HTTP/1.1" || transferEncoding.Count != 1 ||
+                !string.Equals(transferEncoding[0], "chunked", StringComparison.OrdinalIgnoreCase))
+            {
+                await RejectAsync(context, 400, "invalid_transfer_encoding");
+                return;
+            }
+            // Kestrel counts chunk prefixes/extensions/CRLF as well as payload bytes. Permit a finite
+            // transport envelope only for exact HTTP/1.1 chunked framing; decoded route limits stay unchanged.
+            var transportLimit = limit == CommandBodyLimit ? CommandTransportBodyLimit : SmallTransportBodyLimit;
+            var bodySize = context.Features.Get<IHttpMaxRequestBodySizeFeature>();
+            if (bodySize is null || bodySize.IsReadOnly)
+            {
+                await RejectAsync(context, 500, "request_body_limit_unavailable");
+                return;
+            }
+            bodySize.MaxRequestBodySize = transportLimit;
+            if (bodySize.MaxRequestBodySize != transportLimit)
+            {
+                await RejectAsync(context, 500, "request_body_limit_unavailable");
+                return;
+            }
+        }
 
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted);
         cancellation.CancelAfter(options.UpstreamTimeout);
@@ -220,7 +247,7 @@ public static class LoopbackRelay
             var buffer = new byte[8192];
             while (true)
             {
-                // Inspect at most one byte beyond the route limit; retain the independent 1 MiB Kestrel cap.
+                // Inspect at most one byte beyond the decoded route limit, independently of the transport cap.
                 var remaining = Math.Min(buffer.Length, limit + 1 - (int)body.Length);
                 var read = await context.Request.Body.ReadAsync(buffer.AsMemory(0, remaining), cancellation.Token);
                 if (read == 0) break;

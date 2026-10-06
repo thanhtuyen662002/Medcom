@@ -345,6 +345,32 @@ public sealed class LocalFrontendHostTests
         Assert.Equal(2, fixture.UpstreamCalls);
     }
 
+    [Theory]
+    [InlineData("/api/erp/api/auth/login", LoopbackRelay.SmallTransportBodyLimit)]
+    [InlineData("/api/erp/api/inbound-requests/draft/save", LoopbackRelay.CommandTransportBodyLimit)]
+    public async Task ChunkFramingHasAFiniteTransportBudgetEvenForOneDecodedByte(string path, int transportLimit)
+    {
+        await using var fixture = await RelayFixture.Start(context => context.Response.WriteAsync("unreachable"));
+        // The extension alone exceeds the transport envelope. The decoded payload is just one byte.
+        var response = await fixture.Raw("POST", path, body: [0x41], chunked: true,
+            chunkExtension: new string('a', transportLimit));
+        Assert.StartsWith("HTTP/1.1 413", response, StringComparison.Ordinal);
+        Assert.Equal(0, fixture.UpstreamCalls);
+    }
+
+    [Theory]
+    [InlineData("Transfer-Encoding: gzip\r\n")]
+    [InlineData("Transfer-Encoding: gzip, chunked\r\n")]
+    [InlineData("Transfer-Encoding: chunked, chunked\r\n")]
+    [InlineData("Transfer-Encoding: chunked\r\nTransfer-Encoding: chunked\r\n")]
+    public async Task AmbiguousOrUnsupportedTransferEncodingsNeverReceiveTheFramingAllowance(string headers)
+    {
+        await using var fixture = await RelayFixture.Start(context => context.Response.WriteAsync("unreachable"));
+        var response = await fixture.Raw("POST", "/api/erp/api/auth/login", headers);
+        Assert.StartsWith("HTTP/1.1 400", response, StringComparison.Ordinal);
+        Assert.Equal(0, fixture.UpstreamCalls);
+    }
+
     [Fact]
     public async Task BrowserCancellationCancelsTheFixedUpstreamRequest()
     {
@@ -570,7 +596,7 @@ public sealed class LocalFrontendHostTests
         }
 
         public async Task<string> Raw(string method, string target, string headers = "", string? host = null,
-            byte[]? body = null, bool chunked = false, bool appendConnectionClose = true)
+            byte[]? body = null, bool chunked = false, bool appendConnectionClose = true, string? chunkExtension = null)
         {
             using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             using var socket = new TcpClient();
@@ -596,7 +622,9 @@ public sealed class LocalFrontendHostTests
                         for (var offset = 0; offset < body.Length; offset += 8192)
                         {
                             var length = Math.Min(8192, body.Length - offset);
-                            await stream.WriteAsync(Encoding.ASCII.GetBytes(length.ToString("X", System.Globalization.CultureInfo.InvariantCulture) + "\r\n"), cancellation.Token);
+                            var prefix = length.ToString("X", System.Globalization.CultureInfo.InvariantCulture) +
+                                (chunkExtension is null ? "" : ";pad=" + chunkExtension) + "\r\n";
+                            await stream.WriteAsync(Encoding.ASCII.GetBytes(prefix), cancellation.Token);
                             await stream.WriteAsync(body.AsMemory(offset, length), cancellation.Token);
                             await stream.WriteAsync("\r\n"u8.ToArray(), cancellation.Token);
                         }

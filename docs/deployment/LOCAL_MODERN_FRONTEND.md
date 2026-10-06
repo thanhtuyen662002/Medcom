@@ -25,6 +25,26 @@ cookies, bounds request bodies and cancellation, and never follows redirects.
 The BFF still verifies exact origin, fetch metadata, CSRF, scope, methods, paths
 and original command bytes. Its API hop uses real validated HTTPS.
 
+Body limits are measured after HTTP transfer framing is removed: 16 KiB for
+authentication/other small routes and 1 MiB for the exact admitted command routes.
+Kestrel counts HTTP/1.1 chunk prefixes, extensions and CRLF toward its transport
+limit as well as payload. For an admitted request with exact chunked framing,
+the relay therefore applies a separate finite transport budget of the route's
+payload limit plus **64 KiB**. The maximum command envelope is 1,114,112 bytes.
+The corresponding small-route envelope is 81,920 bytes.
+Known-length requests retain the global 1 MiB Kestrel cap and smaller route
+limits. Decoded command byte 1,048,577 is still rejected before any upstream
+dispatch; excessive chunk framing is also refused. Highly fragmented transfers
+may exceed the finite envelope even when their decoded payload is smaller.
+Neither limit is unlimited and the existing cancellation/deadline remains.
+See [Kestrel chunk accounting](https://github.com/dotnet/aspnetcore/blob/v10.0.0/src/Servers/Kestrel/Core/src/Internal/Http/Http1ChunkedEncodingMessageBody.cs)
+and [cumulative limit check](https://github.com/dotnet/aspnetcore/blob/v10.0.0/src/Servers/Kestrel/Core/src/Internal/Http/MessageBody.cs).
+The retained test writes 1,048,576 data bytes once;
+[.NET's chunk writer](https://github.com/dotnet/runtime/blob/v10.0.0/src/libraries/System.Net.Http/src/System/Net/Http/SocketsHttpHandler/ChunkedEncodingWriteStream.cs)
+adds an 8-byte hexadecimal prefix, 2-byte suffix and 5-byte terminator. That is
+1,048,591 transport bytes, explaining the old exact-limit failure without any
+extra decoded business data.
+
 The new private setting `MEDCOM_LOCAL_HTTPS=1` opts into **paired exact**
 `https://localhost:<explicit-port>` API/public origins. It rejects HTTP, IPs,
 aliases, credentials, path/query/fragment ambiguity and mixed local/public
