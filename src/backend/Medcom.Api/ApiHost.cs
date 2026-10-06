@@ -36,6 +36,7 @@ public static class ApiHost
         builder.Services.AddSingleton<IPurchaseRequestQueries, UnavailablePurchaseRequestQueries>();
         builder.Services.AddSingleton<IPurchaseRequestCommandAccess, UnavailablePurchaseRequestCommandAccess>();
         builder.Services.AddSingleton<IPurchaseRequestCommands, UnavailablePurchaseRequestCommands>();
+        builder.Services.AddInboundDraftFacade();
         if (builder.Configuration.GetValue("Legacy:Enabled", false))
         {
             string Required(string key) => builder.Configuration[key] is { Length: > 0 } value
@@ -213,6 +214,7 @@ public static class ApiHost
         AuthEndpoints.Map(app);
         DocumentEndpoints.Map(app);
         PurchaseRequestEndpoints.Map(app);
+        app.MapInboundDraftFacade();
         return app;
     }
 

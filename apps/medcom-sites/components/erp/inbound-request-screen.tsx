@@ -16,7 +16,9 @@ export type InboundRequestScreenProps = {
   workspace: WorkspaceData | null;
   onClose?: () => void;
   onBack?: () => void;
-  // Confirmed list session denial. The parent owns the real login boundary.
+  // Only explicit composed mode suppresses the standalone history sentinel.
+  historyOwner?: "standalone" | "workspace";
+  // Confirmed current-generation session denial. The parent owns the real login boundary.
   onDenied?: (error: ApiError) => void;
   api?: InboundRequestApi;
   // Existing inbound LIST only. Test seam; never use paginated detail as draft.
@@ -29,7 +31,7 @@ const defaultList = (page: number, search: string, branchId: string, signal: Abo
 function CustodyGuard({active, readbackPending}: {active: boolean; readbackPending: boolean}) {
   useDirtyGuard(active, false);
   const {register} = useNavigationGuard(), key = useRef(Symbol("inbound-receipt-readback"));
-  useEffect(() => {
+  useLayoutEffect(() => {
     const current = key.current;
     register(current, readbackPending ? {canDiscard: false,
       message: "ERP đã xác nhận thao tác. Cần đọc đầy đủ snapshot khớp xác nhận trước khi rời phiếu; không gửi lại thao tác đã xác nhận."} : null);
@@ -43,9 +45,19 @@ function CustodyGuard({active, readbackPending}: {active: boolean; readbackPendi
 export function InboundRequestScreen(props: InboundRequestScreenProps) {
   return <RetainedInboundHost key={JSON.stringify([props.loginKey])} {...props}/>;
 }
-function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, api: suppliedApi, list = defaultList}: InboundRequestScreenProps) {
+function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, historyOwner = "standalone", api: suppliedApi, list = defaultList}: InboundRequestScreenProps) {
   const defaultApi = useMemo(() => createInboundRequestApi(), []), api = suppliedApi ?? defaultApi;
+  const callbacks = useRef({onClose, onBack, onDenied});
+  const [sessionEnded, setSessionEnded] = useState(false), [deniedContext, setDeniedContext] = useState<string | null>(null);
   const [bridge] = useState(() => createInboundRequestBridge(api));
+  // Install the notification after commit. Constructing the bridge must not
+  // expose callback refs to a factory invoked during React render.
+  useLayoutEffect(() => {
+    bridge.setSessionDeniedHandler(() => {
+      setSessionEnded(true); callbacks.current.onDenied?.(new ApiError(401, "authentication_required"));
+    });
+    return () => bridge.setSessionDeniedHandler(null);
+  }, [bridge]);
   const state = useSyncExternalStore(bridge.subscribe, bridge.getSnapshot, bridge.getSnapshot);
   const pendingReceipt = useRef<InboundDraftReceipt | null>(null), [readbackPending, setReadbackPending] = useState(false);
   const readProofGeneration = useRef<object | null>(null), latestAdapterRead = useRef<object | null>(null);
@@ -82,9 +94,7 @@ function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, ap
     }
   }, [bridge]);
   const {request: guardNavigation} = useNavigationGuard();
-  const callbacks = useRef({onClose, onBack, onDenied});
   useLayoutEffect(() => { callbacks.current = {onClose, onBack, onDenied}; }, [onClose, onBack, onDenied]);
-  const [sessionEnded, setSessionEnded] = useState(false), [deniedContext, setDeniedContext] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null), [page, setPage] = useState(1);
   const [search, setSearch] = useState(""), [branch, setBranch] = useState("");
   const [filter, setFilter] = useState({search: "", branch: ""});
@@ -180,7 +190,7 @@ function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, ap
   const requestBack = useCallback(() => navigate(() => { select(null); callbacks.current.onBack?.(); }), [navigate, select]);
   const historyMarker = useRef<string | null>(null);
   useEffect(() => {
-    if (loginKey === null) return;
+    if (loginKey === null || historyOwner === "workspace") return;
     // A same-URL sentinel catches an ordinary browser Back BEFORE a router
     // leaves this screen. The parent still owns cross-screen routing and must
     // route its own navigation through NavigationGuardProvider.request.
@@ -193,7 +203,7 @@ function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, ap
     const back = () => { sentinel(); requestBack(); };
     window.addEventListener("popstate", back);
     return () => window.removeEventListener("popstate", back);
-  }, [loginKey, requestBack]);
+  }, [loginKey, requestBack, historyOwner]);
   const access: InboundDraftAccess = contextCurrent ? state.access : {...state.access, canRead: false, canSave: false, canSend: false, available: false};
   return <section data-testid="inbound-request-host" data-readback-pending={readbackPending} aria-label="Phiếu đề nghị nhập hàng"
     style={{maxWidth: 960, width: "100%", minWidth: 0, margin: "0 auto", padding: 12, boxSizing: "border-box", display: "grid", gap: 12, overflowWrap: "anywhere"}}>

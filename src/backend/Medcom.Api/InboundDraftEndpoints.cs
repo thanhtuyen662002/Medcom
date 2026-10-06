@@ -17,7 +17,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Medcom.Api;
 
-/// <summary>Uncalled I21 integration helpers; no SQL registration or second writer.</summary>
+/// <summary>Default-unavailable inbound facade; no SQL registration or second writer.</summary>
 public static class InboundDraftEndpoints
 {
     public const string Root = "/api/inbound-requests/draft";
@@ -80,13 +80,16 @@ public static class InboundDraftEndpoints
             Require(authenticated.Succeeded && claims is { Length: 1 }, 401, "authentication_required");
             var token = claims![0].Value;
             var sessions = context.RequestServices.GetRequiredService<IWebSessions>();
-            var originalSession = await Session(context, sessions, token);
+            // This invocation owns its baseline and last observed version. Other
+            // requests may advance the authority sequence independently.
+            var sessionFence = new SessionFence(context, sessions, token);
+            await sessionFence.ResolveAsync();
             if (route is not null)
             {
                 // Validate explicitly: JSON endpoints must not depend on form
                 // binding or on the eventual parent middleware arrangement.
                 await context.RequestServices.GetRequiredService<IAntiforgery>().ValidateRequestAsync(context);
-                await Session(context, sessions, token, originalSession);
+                await sessionFence.ResolveAsync();
             }
             var suppliedScope = ReadScope(context, route is not null);
             string documentId;
@@ -101,11 +104,11 @@ public static class InboundDraftEndpoints
             else
             {
                 Require(context.Request.Query.Count == 0);
-                var bytes = await ReadBody(context, () => Session(context, sessions, token, originalSession));
+                var bytes = await ReadBody(context, sessionFence.ResolveAsync);
                 command = ParseCommand(bytes, route);
                 documentId = command.DocumentId!;
             }
-            var before = await Authorize(context, sessions, token, originalSession, documentId);
+            var before = await Authorize(context, sessionFence, documentId);
             var service = context.RequestServices.GetService<IInboundDraftCommandService>();
             if (before.Authority is not null) MatchScope(suppliedScope, before.Scope);
             if (before.Authority is null || !before.Access.Available || service is null)
@@ -125,7 +128,7 @@ public static class InboundDraftEndpoints
             if (route is null)
             {
                 var read = await service.ReadAsync(documentId, context.RequestAborted);
-                var after = await Authorize(context, sessions, token, before.Session, documentId);
+                var after = await Authorize(context, sessionFence, documentId);
                 SameGate(before, after);
                 Require(Enum.IsDefined(read.Outcome), 503, "inbound_read_unavailable");
                 if (read.Outcome == InboundDraftOutcome.Observed)
@@ -150,7 +153,7 @@ public static class InboundDraftEndpoints
             var result = route == "reconcile"
                 ? await service.ReconcileAsync(command!, context.RequestAborted)
                 : await service.ExecuteAsync(command!, context.RequestAborted);
-            var final = await Authorize(context, sessions, token, before.Session, documentId);
+            var final = await Authorize(context, sessionFence, documentId);
             SameGate(before, final);
             Require(Enum.IsDefined(result.Outcome), 503, "inbound_result_unavailable");
             if (result.Outcome is InboundDraftOutcome.Committed or InboundDraftOutcome.Replayed)
@@ -216,31 +219,59 @@ public static class InboundDraftEndpoints
         && a.Identity.PrincipalId == b.Identity.PrincipalId && a.Identity.TenantId == b.Identity.TenantId
         && a.Identity.CompanyId == b.Identity.CompanyId && a.Identity.CredentialStamp == b.Identity.CredentialStamp;
     private static bool SameRights(ResolvedSession a, ResolvedSession b) => SameIdentity(a, b)
-        && a.Identity.AuthorityVersion == b.Identity.AuthorityVersion
         && a.Identity.Capabilities.SequenceEqual(b.Identity.Capabilities, StringComparer.Ordinal)
         && (a.Identity.BranchIds ?? []).SequenceEqual(b.Identity.BranchIds ?? [], StringComparer.Ordinal);
-    private static async Task<ResolvedSession> Session(HttpContext c, IWebSessions sessions, string token, ResolvedSession? expected = null)
+
+    // AuthorityVersion is an observation sequence, not a stable rights revision:
+    // LegacyIdentityAuthority legitimately advances it on every ResolveAsync.
+    // Bind the entire HTTP invocation to frozen identity/rights, while checking
+    // every observation against the LAST accepted version (e.g. 1 -> 5 -> 4
+    // must fail). Never rewrite a returned version or share this tracker.
+    private sealed class SessionFence(HttpContext context, IWebSessions sessions, string token)
     {
-        c.RequestAborted.ThrowIfCancellationRequested();
-        var value = await sessions.ResolveAsync(token, false, c.RequestAborted);
-        c.RequestAborted.ThrowIfCancellationRequested();
-        Require(value is not null && value.Token == token && value.Identity.AuthorityVersion > 0
-            && !string.IsNullOrWhiteSpace(value.Identity.CredentialStamp), 401, "authentication_required");
-        if (expected is not null) Require(SameIdentity(expected, value!), 401, "session_changed");
-        // Prevent a mutable provider-owned list from changing an old observation.
-        return value! with { Identity = value.Identity with
+        private ResolvedSession? baseline;
+        private long lastAcceptedVersion;
+
+        public async Task<ResolvedSession> ResolveAsync()
         {
-            Capabilities = Array.AsReadOnly(value.Identity.Capabilities.ToArray()),
-            BranchIds = Array.AsReadOnly((value.Identity.BranchIds ?? []).ToArray())
-        } };
+            context.RequestAborted.ThrowIfCancellationRequested();
+            var value = await sessions.ResolveAsync(token, false, context.RequestAborted);
+            context.RequestAborted.ThrowIfCancellationRequested();
+            Require(value is not null && value.Token == token && value.Identity.AuthorityVersion > 0
+                && !string.IsNullOrWhiteSpace(value.Identity.PrincipalId)
+                && !string.IsNullOrWhiteSpace(value.Identity.TenantId)
+                && !string.IsNullOrWhiteSpace(value.Identity.CompanyId)
+                && !string.IsNullOrWhiteSpace(value.Identity.CredentialStamp)
+                && value.Identity.Capabilities is { Count: <= 256 }
+                && value.Identity.Capabilities.All(capability => !string.IsNullOrWhiteSpace(capability) && capability.Length <= 100)
+                && (value.Identity.BranchIds is null || value.Identity.BranchIds.Count <= 200
+                    && value.Identity.BranchIds.All(branch => !string.IsNullOrWhiteSpace(branch) && branch.Length <= 50)),
+                401, "authentication_required");
+            // Copy before comparing: a provider-owned collection must not be
+            // able to alter an earlier gate or the invocation's first snapshot.
+            var current = value! with { Identity = value.Identity with
+            {
+                Capabilities = Array.AsReadOnly(value.Identity.Capabilities.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray()),
+                BranchIds = Array.AsReadOnly((value.Identity.BranchIds ?? []).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray())
+            } };
+            if (baseline is not null)
+            {
+                Require(SameIdentity(baseline, current), 401, "session_changed");
+                Require(current.Identity.AuthorityVersion >= lastAcceptedVersion && SameRights(baseline, current),
+                    403, "inbound_authority_changed");
+            }
+            else baseline = current;
+            lastAcceptedVersion = current.Identity.AuthorityVersion;
+            return current;
+        }
     }
-    private static async Task<Gate> Authorize(HttpContext c, IWebSessions sessions, string token,
-        ResolvedSession expected, string documentId)
+
+    private static async Task<Gate> Authorize(HttpContext c, SessionFence sessionFence, string documentId)
     {
-        var start = await Session(c, sessions, token, expected);
+        var start = await sessionFence.ResolveAsync();
         var provider = c.RequestServices.GetService<IInboundDraftCommandAccess>();
         var grant = provider is null ? null : await provider.ResolveAsync(start, documentId, c.RequestAborted);
-        var end = await Session(c, sessions, token, start);
+        var end = await sessionFence.ResolveAsync();
         Require(SameRights(start, end), 403, "inbound_authority_changed");
         if (grant is null) return new(end, null, null, Closed);
         Require(grant.DatabaseBindingId != Guid.Empty && grant.DocumentId == documentId

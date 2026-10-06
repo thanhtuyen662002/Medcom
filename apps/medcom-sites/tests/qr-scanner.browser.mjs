@@ -59,9 +59,10 @@ Object.defineProperty(navigator,'mediaDevices',{configurable:true,value:{getUser
 }}});
 `;
 const entry = `
-import React,{useState} from 'react';import{createRoot}from'react-dom/client';import{QrScanner}from'./components/erp/qr-scanner';
+import React,{useState,useLayoutEffect} from 'react';import{createRoot}from'react-dom/client';import{QrScanner}from'./components/erp/qr-scanner';
 function App(){const[open,setOpen]=useState(false),[scope,setScope]=useState('synthetic-session-a'),[mounted,setMounted]=useState(true);
  window.qrFixture.scope=setScope;window.qrFixture.mount=setMounted;window.qrFixture.open=setOpen;
+ useLayoutEffect(()=>{window.qrFixture.committed=true;return()=>{window.qrFixture.committed=false;};},[]);
  return <><button id="launch" onClick={()=>setOpen(true)}>Open synthetic scanner</button>
  {mounted&&<QrScanner open={open} scopeKey={scope} onOpenChange={value=>{if(!value&&window.qrFixture.holdClose)return;setOpen(value);}} onConfirm={text=>{window.qrFixture.confirms++;window.qrFixture.confirmed=text;}}/>}</>;
 }createRoot(document.getElementById('root')).render(<React.StrictMode><App/></React.StrictMode>);`;
@@ -100,12 +101,24 @@ async function evaluate(expression) {
 async function waitFor(expression, timeout = 7000) {
   const deadline = Date.now() + timeout;
   while (Date.now() < deadline) { if (await evaluate(expression)) return; await delay(40); }
-  console.error(JSON.stringify(await evaluate(`({calls:window.qrFixture?.calls.length,mode:window.qrFixture?.mode,status:document.querySelector('[role="status"]')?.textContent})`)));
+  console.error(JSON.stringify({state:await evaluate(`({calls:window.qrFixture?.calls.length,mode:window.qrFixture?.mode,status:document.querySelector('[role="status"]')?.textContent,readyState:document.readyState,committed:window.qrFixture?.committed,fonts:document.fonts?.status,focused:document.hasFocus(),activeElement:document.activeElement?.tagName,activeId:document.activeElement?.id,viewport:{width:innerWidth,height:innerHeight},pointer:window.qrFixture?.pointerSample,stylesheets:[...document.styleSheets].map(sheet=>sheet.href)})`),runtimeErrors:errors,requests:requests.slice(-10)}));
   throw new Error('Synthetic browser assertion timed out: ' + expression);
 }
 async function click(label) {
   await waitFor(`!document.querySelector('[role="dialog"]')?.getAnimations().some(animation=>animation.playState==='running')`);
-  const rect = await evaluate(`(()=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()===${JSON.stringify(label)});if(!b||b.disabled)throw Error('button unavailable');const r=b.getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2};})()`);
+  // Wait for committed, loaded layout and two stable target samples before
+  // the same single real pointer click. Never retry a click or call .click().
+  await evaluate('window.qrFixture.pointerSample=null');
+  await waitFor(`(()=>{
+    const label=${JSON.stringify(label)},b=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()===label);
+    if(!b||b.disabled||document.readyState!=='complete'||!window.qrFixture.committed||document.fonts?.status==='loading')return false;
+    const r=b.getBoundingClientRect(),x=r.x+r.width/2,y=r.y+r.height/2,style=getComputedStyle(b),hit=document.elementFromPoint(x,y),previous=window.qrFixture.pointerSample;
+    const sample={label,x,y,width:r.width,height:r.height,hitTag:hit?.tagName,hitId:hit?.id,hitText:hit?.textContent?.trim().slice(0,100),hitTarget:hit===b||b.contains(hit)};
+    window.qrFixture.pointerSample=sample;
+    return r.width>0&&r.height>0&&x>=0&&y>=0&&x<innerWidth&&y<innerHeight&&style.visibility==='visible'&&style.display!=='none'&&style.pointerEvents!=='none'&&Number(style.opacity)>0
+      &&sample.hitTarget&&previous?.label===label&&['x','y','width','height'].every(key=>Math.abs(previous[key]-sample[key])<0.5);
+  })()`);
+  const rect = await evaluate('({x:window.qrFixture.pointerSample.x,y:window.qrFixture.pointerSample.y})');
   await cdp('Input.dispatchMouseEvent', { type: 'mousePressed', button: 'left', clickCount: 1, ...rect });
   await cdp('Input.dispatchMouseEvent', { type: 'mouseReleased', button: 'left', clickCount: 1, ...rect });
 }
@@ -137,7 +150,8 @@ try {
   };
   await cdp('Runtime.enable'); await cdp('Page.enable');
   await cdp('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
-  await cdp('Page.navigate', { url: base }); await waitFor(`!!window.qrFixture?.open`);
+  await cdp('Page.bringToFront');
+  await cdp('Page.navigate', { url: base }); await waitFor(`document.readyState==='complete'&&window.qrFixture?.committed===true&&!!window.qrFixture.open`);
   await check('explicit Start, rear video only, actual decoder, no native detector, confirmation once', async () => {
     await open(); assert.equal(await evaluate('window.qrFixture.calls.length'), 0);
     await click('Bắt đầu quét'); await waitFor(`document.body.textContent.includes('MEDCOM-TEST-001')`);

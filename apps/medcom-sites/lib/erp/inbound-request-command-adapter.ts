@@ -19,6 +19,7 @@ export interface InboundRequestBridge {
   select(documentId: string | null): void;
   revalidate(signal: AbortSignal): Promise<void>;
   hasUnresolved(): boolean;
+  setSessionDeniedHandler(handler: (() => void) | null): void;
   acknowledge(receipt: InboundDraftReceipt): void;
   dispose(): void;
 }
@@ -40,7 +41,7 @@ function receiptResult(value: unknown, intent: Intent): InboundDraftResult | nul
 /** One controller per REAL login incarnation. Rights, document, workspace-null
  * and transport changes fence requests but never replace this intent store.
  * No localStorage/sessionStorage, automatic retry, or caller-supplied identity. */
-export function createInboundRequestBridge(initialApi: InboundRequestApi): InboundRequestBridge {
+export function createInboundRequestBridge(initialApi: InboundRequestApi, onSessionDenied?: () => void): InboundRequestBridge {
   let api = initialApi, context: string | null = null, selected: string | null = null, epoch = 0, disposed = false;
   let scope: string | null = null, busy: object | null = null;
   let state: InboundBridgeState = {contextKey: null, access: closed(null), needsRefresh: true, unresolved: false, phase: "idle", receipt: null};
@@ -91,7 +92,10 @@ export function createInboundRequestBridge(initialApi: InboundRequestApi): Inbou
     } catch (error) {
       // A failed readback must not erase a previously acknowledged receipt or
       // the I18 barrier. Ordinary read errors are surfaced to I18, not commits.
-      if ((bootstrap || error instanceof InboundTransportError && [401, 403, 409].includes(error.status)) && request.current() && currentRead.get(documentId) === sequence) emit({...state, access: closed(scope), needsRefresh: true});
+      if (request.current() && currentRead.get(documentId) === sequence) {
+        if (bootstrap || error instanceof InboundTransportError && [401, 403, 409].includes(error.status)) emit({...state, access: closed(scope), needsRefresh: true});
+        if (error instanceof InboundTransportError && error.status === 401) { fence(); onSessionDenied?.(); }
+      }
       throw error;
     } finally { request.finish(); }
   }
@@ -122,8 +126,10 @@ export function createInboundRequestBridge(initialApi: InboundRequestApi): Inbou
       intent.candidate = result.receipt; intent.candidateEpoch = epoch;
       return result;
     } catch (error) {
-      if (request.current() && error instanceof InboundTransportError && [401, 403, 409].includes(error.status))
+      if (request.current() && error instanceof InboundTransportError && [401, 403, 409].includes(error.status)) {
         emit({...state, access: closed(scope), needsRefresh: true});
+        if (error.status === 401) { fence(); onSessionDenied?.(); }
+      }
       return unknown();
     }
     finally {
@@ -168,6 +174,7 @@ export function createInboundRequestBridge(initialApi: InboundRequestApi): Inbou
     subscribe(listener) { listeners.add(listener); return () => { listeners.delete(listener); }; },
     getSnapshot: () => state,
     hasUnresolved,
+    setSessionDeniedHandler(handler) { onSessionDenied = handler ?? undefined; },
     acknowledge(receipt) {
       const intent = intents.get(receipt.operationId);
       if (disposed || context === null || !intent?.candidate || intent.candidateEpoch !== epoch || !record(receipt, receiptFields)

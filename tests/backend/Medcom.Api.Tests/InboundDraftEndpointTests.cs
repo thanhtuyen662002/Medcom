@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -8,8 +9,10 @@ using System.Text.Json;
 using Medcom.Api;
 using Medcom.Application;
 using Medcom.Application.Inbound;
+using Medcom.Application.PurchaseRequests;
 using Medcom.Contracts;
 using Medcom.Contracts.Inbound;
+using Medcom.Infrastructure;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -19,6 +22,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit;
@@ -26,8 +31,11 @@ using Xunit;
 namespace Medcom.Api.Tests;
 
 // Real ASP.NET/Kestrel/cookie/antiforgery tests WHEN RUN, with ephemeral test TLS
-// and synthetic I15/session/authority providers only. Never ApiHost.Build:
-// that would load private settings. No TestServer/dependency/SQL/DLL needed.
+// and synthetic I15 providers only. The R8 cases also exercise the real
+// LegacyIdentityAuthority and LocalWebSessions over synthetic in-memory users,
+// passwords, company and clock, never legacy SQL/DLL. The optional ApiHost
+// composition uses an explicit owned harmless PrivateConfigPath BEFORE Build,
+// with Legacy disabled; it never reads server settings. No SQL/DLL needed.
 public sealed class InboundDraftEndpointTests
 {
     private static readonly Guid Operation = Guid.Parse("11111111-1111-4111-8111-111111111111");
@@ -44,6 +52,122 @@ public sealed class InboundDraftEndpointTests
     {
         var bytes = await response.Content.ReadAsByteArrayAsync();
         return JsonDocument.Parse(bytes);
+    }
+
+    [Fact]
+    public async Task ApiHost_composes_exact_inbound_routes_with_unavailable_defaults_and_preserves_existing_routes()
+    {
+        await using var f = await Fixture.Start(composed: true);
+        var endpoints = ((IEndpointRouteBuilder)f.App).DataSources.SelectMany(source => source.Endpoints)
+            .OfType<RouteEndpoint>().ToArray();
+        static string[] Methods(RouteEndpoint endpoint) => endpoint.Metadata.GetMetadata<HttpMethodMetadata>()!.HttpMethods.ToArray();
+        var inbound = endpoints.Where(endpoint => endpoint.RoutePattern.RawText!
+            .StartsWith(InboundDraftEndpoints.Root, StringComparison.Ordinal)).ToArray();
+        Assert.Equal(new[]
+        {
+            "GET /api/inbound-requests/draft", "POST /api/inbound-requests/draft/reconcile",
+            "POST /api/inbound-requests/draft/save", "POST /api/inbound-requests/draft/send-to-warehouse"
+        }, inbound.SelectMany(endpoint => Methods(endpoint).Select(method => method + " " + endpoint.RoutePattern.RawText))
+            .OrderBy(value => value, StringComparer.Ordinal).ToArray());
+        foreach (var (route, method) in new[]
+        {
+            ("/api/auth/csrf", "GET"), ("/api/auth/login", "POST"), ("/api/auth/session", "GET"),
+            ("/api/auth/session/continue", "POST"), ("/api/auth/logout", "POST"), ("/api/workspace", "GET"),
+            ("/api/purchase-requests", "GET"), ("/api/purchase-requests/workspace", "GET"),
+            ("/api/purchase-requests/detail", "GET"), ("/api/purchase-requests/lookup", "GET"),
+            ("/api/purchase-requests/save", "POST"), ("/api/purchase-requests/submit", "POST"),
+            ("/api/purchase-requests/save/lookup", "POST"), ("/api/purchase-requests/submit/lookup", "POST")
+        }) Assert.Single(endpoints, endpoint => endpoint.RoutePattern.RawText == route && Methods(endpoint).Contains(method));
+        using var scope = f.App.Services.CreateScope();
+        var services = scope.ServiceProvider;
+        Assert.IsType<UnavailableInboundDraftCommandAccess>(services.GetRequiredService<IInboundDraftCommandAccess>());
+        Assert.IsType<UnavailableInboundDraftCommandService>(services.GetRequiredService<IInboundDraftCommandService>());
+        Assert.IsType<UnavailablePurchaseRequestQueries>(services.GetRequiredService<IPurchaseRequestQueries>());
+        Assert.IsType<UnavailablePurchaseRequestCommandAccess>(services.GetRequiredService<IPurchaseRequestCommandAccess>());
+        Assert.IsType<UnavailablePurchaseRequestCommands>(services.GetRequiredService<IPurchaseRequestCommands>());
+        Assert.IsType<UnavailableIdentityAuthority>(services.GetRequiredService<IIdentityAuthority>());
+        var configuration = services.GetRequiredService<IConfiguration>();
+        Assert.False(configuration.GetValue<bool>("Legacy:Enabled"));
+        Assert.Equal(f.PrivateConfigPath, configuration[ServerConfiguration.PrivateConfigPathKey]);
+        using var session = await f.Client.GetAsync("/api/auth/session");
+        Assert.Equal(HttpStatusCode.OK, session.StatusCode);
+        f.Sessions.Identity = f.Sessions.Identity with { Capabilities = ["inbound-requests.read", "purchase-requests.read"] };
+        using var purchase = await f.Client.GetAsync("/api/purchase-requests/workspace");
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, purchase.StatusCode);
+    }
+
+    [Fact]
+    public async Task ApiHost_valid_authenticated_read_returns_closed_unavailable_without_an_invented_scope()
+    {
+        await using var f = await Fixture.Start(composed: true);
+        using var response = await f.Get();
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var json = await Json(response);
+        Assert.Equal(JsonValueKind.Null, json.RootElement.GetProperty("scopeKey").ValueKind);
+        foreach (var right in new[] { "available", "canRead", "canSave", "canSend" })
+            Assert.False(json.RootElement.GetProperty("access").GetProperty(right).GetBoolean());
+        Assert.Equal(InboundDraftEndpoints.MaximumBodyBytes, json.RootElement.GetProperty("access").GetProperty("maxCommandBytes").GetInt32());
+        Assert.Equal("Unavailable", json.RootElement.GetProperty("data").GetProperty("outcome").GetString());
+        Assert.Equal(JsonValueKind.Null, json.RootElement.GetProperty("data").GetProperty("document").ValueKind);
+        Assert.Contains("no-store", response.Headers.CacheControl!.ToString());
+        Assert.Equal("nosniff", Assert.Single(response.Headers.GetValues("X-Content-Type-Options")));
+    }
+
+    [Theory]
+    [InlineData("save", InboundDraftAction.Save)]
+    [InlineData("send-to-warehouse", InboundDraftAction.SendToWarehouse)]
+    [InlineData("reconcile", InboundDraftAction.Save)]
+    [InlineData("reconcile", InboundDraftAction.SendToWarehouse)]
+    public async Task ApiHost_valid_commands_are_mapped_but_remain_unavailable(string route, InboundDraftAction action)
+    {
+        await using var f = await Fixture.Start(composed: true);
+        using var response = await f.Post(Body(action), route, new string('a', 64));
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var json = await Json(response);
+        Assert.Equal(JsonValueKind.Null, json.RootElement.GetProperty("scopeKey").ValueKind);
+        Assert.Equal("Unavailable", json.RootElement.GetProperty("data").GetProperty("outcome").GetString());
+        Assert.Equal(JsonValueKind.Null, json.RootElement.GetProperty("data").GetProperty("receipt").ValueKind);
+        Assert.Contains("no-store", response.Headers.CacheControl!.ToString());
+    }
+
+    [Theory]
+    [InlineData(false, "same", false, 403)]
+    [InlineData(true, "cross", false, 403)]
+    [InlineData(true, "missing", false, 403)]
+    [InlineData(true, "same", true, 409)]
+    public async Task ApiHost_composed_command_guards_precede_unavailable_response(bool csrf, string origin, bool omitScope, int status)
+    {
+        await using var f = await Fixture.Start(composed: true);
+        using var response = await f.Post(Body(), scope: new string('a', 64), csrf: csrf, origin: origin, omitScope: omitScope);
+        Assert.Equal(status, (int)response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ApiHost_composed_reads_reject_unproved_provenance_and_malformed_scope()
+    {
+        await using var f = await Fixture.Start(composed: true);
+        using var missing = await f.Client.GetAsync(InboundDraftEndpoints.Root + "?documentId=DOC-A");
+        Assert.Equal(HttpStatusCode.Forbidden, missing.StatusCode);
+        using var request = new HttpRequestMessage(HttpMethod.Get, InboundDraftEndpoints.Root + "?documentId=DOC-A");
+        request.Headers.Add("Origin", f.Origin); request.Headers.Add("Sec-Fetch-Site", "cross-site");
+        using var contradictory = await f.Client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.Forbidden, contradictory.StatusCode);
+        using var malformed = await f.Get(scope: "not-an-inbound-scope");
+        Assert.Equal(HttpStatusCode.Conflict, malformed.StatusCode);
+    }
+
+    [Fact]
+    public async Task ApiHost_composed_inbound_requires_a_live_cookie_session()
+    {
+        await using var f = await Fixture.Start(composed: true, login: false);
+        using var anonymous = await f.Get();
+        Assert.Equal(HttpStatusCode.Unauthorized, anonymous.StatusCode);
+        await f.Login();
+        using var authenticated = await f.Get();
+        Assert.Equal(HttpStatusCode.OK, authenticated.StatusCode);
+        f.Sessions.Revoked = true;
+        using var revoked = await f.Get();
+        Assert.Equal(HttpStatusCode.Unauthorized, revoked.StatusCode);
     }
 
     [Fact]
@@ -167,11 +291,400 @@ public sealed class InboundDraftEndpointTests
         f.Writer.AfterRead = () => {f.Sessions.Revoked = true; return Task.CompletedTask;};
         using (var revoked = await f.Get(scope: scope)) Assert.Equal(HttpStatusCode.Unauthorized, revoked.StatusCode);
         f.Sessions.Revoked = false; f.Writer.AfterRead = null;
-        f.Writer.AfterExecute = () => {f.Sessions.Identity = f.Sessions.Identity with { AuthorityVersion = 2 }; return Task.CompletedTask;};
+        f.Writer.AfterExecute = () => {f.Sessions.Identity = f.Sessions.Identity with { AuthorityVersion = 2, Capabilities = [] }; return Task.CompletedTask;};
         using var changed = await f.Post(Body(), scope: scope);
         Assert.Equal(HttpStatusCode.Forbidden, changed.StatusCode);
         Assert.Single(f.Writer.Executed); Assert.NotNull(f.Writer.Receipt); // may have committed: not proof of rollback
     }
+    [Theory]
+    [InlineData("read", false)]
+    [InlineData("save", false)]
+    [InlineData("send-to-warehouse", false)]
+    [InlineData("reconcile", false)]
+    [InlineData("read", true)]
+    [InlineData("save", true)]
+    [InlineData("send-to-warehouse", true)]
+    [InlineData("reconcile", true)]
+    public async Task Real_legacy_revalidation_advances_versions_without_closing_stable_ApiHost_requests(string route, bool enabled)
+    {
+        await using var f = await Fixture.Start(composed: true, realAuthority: true, enabled: enabled);
+        using (var services = f.App.Services.CreateScope())
+        {
+            Assert.Same(f.Real!.Authority, services.ServiceProvider.GetRequiredService<IIdentityAuthority>());
+            if (!enabled)
+            {
+                Assert.IsType<UnavailableInboundDraftCommandAccess>(services.ServiceProvider.GetRequiredService<IInboundDraftCommandAccess>());
+                Assert.IsType<UnavailableInboundDraftCommandService>(services.ServiceProvider.GetRequiredService<IInboundDraftCommandService>());
+            }
+        }
+        var scope = enabled ? await f.Scope() : new string('a', 64);
+        f.Writer.Receipt = Receipt(InboundDraftAction.Save);
+        f.Real!.Observed.Clear();
+        var reads = f.Writer.Reads;
+        using var response = await f.Invoke(route, scope);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var json = await Json(response);
+        Assert.Equal(enabled ? route == "read" ? "Observed" : route == "reconcile" ? "Replayed" : "Committed" : "Unavailable",
+            json.RootElement.GetProperty("data").GetProperty("outcome").GetString());
+        Assert.Equal(enabled ? scope : null, json.RootElement.GetProperty("scopeKey").GetString());
+        if (!enabled)
+        {
+            Assert.Equal(JsonValueKind.Null, json.RootElement.GetProperty("data").GetProperty(route == "read" ? "document" : "receipt").ValueKind);
+            Assert.Equal(reads, f.Writer.Reads); Assert.Empty(f.Writer.Executed); Assert.Empty(f.Writer.Reconciled);
+        }
+        else
+        {
+            Assert.Equal(reads + (route == "read" ? 1 : 0), f.Writer.Reads);
+            Assert.Equal(route is "save" or "send-to-warehouse" ? 1 : 0, f.Writer.Executed.Count);
+            Assert.Equal(route == "reconcile" ? 1 : 0, f.Writer.Reconciled.Count);
+        }
+        // Includes the real cookie middleware and every facade revalidation.
+        // The decorator records returned snapshots unchanged, without rewriting versions.
+        var observations = f.Real.Observed.Delivered;
+        Assert.True(observations.Length >= (route == "read" ? enabled ? 6 : 4 : enabled ? 9 : 7));
+        long previous = f.Real.Created.Identity.AuthorityVersion;
+        foreach (var observation in observations)
+        {
+            Assert.Equal(f.Real.Created.Token, observation.Token); Assert.False(observation.UserInteraction);
+            var live = Assert.IsType<ResolvedSession>(observation.Session);
+            Assert.Equal(f.Real.Created.Token, live.Token);
+            Assert.True(live.Identity.AuthorityVersion > previous);
+            Assert.Equal(f.Real.Created.Identity.Capabilities, live.Identity.Capabilities);
+            Assert.Equal(f.Real.Created.Identity.BranchIds, live.Identity.BranchIds);
+            previous = live.Identity.AuthorityVersion;
+        }
+        Assert.Contains("no-store", response.Headers.CacheControl!.ToString());
+    }
+
+    public static IEnumerable<object[]> SessionCheckpoints()
+    {
+        // Facade-only fixture uses a buffered MemoryStream body: one data read
+        // and one EOF read. These counts therefore cannot depend on TCP chunks.
+        // GET: initial, pre-provider, post-provider, post-service/pre-provider,
+        // post-provider. POST adds post-CSRF, body-data and body-EOF before these.
+        foreach (var route in new[] { "read", "save", "send-to-warehouse", "reconcile" })
+            for (var checkpoint = 1; checkpoint <= (route == "read" ? 5 : 8); checkpoint++)
+                yield return [route, checkpoint];
+    }
+
+    [Theory]
+    [MemberData(nameof(SessionCheckpoints))]
+    public async Task Every_session_checkpoint_rejects_invalid_or_regressing_actual_versions(string route, int checkpoint)
+    {
+        await using var f = await Fixture.Start();
+        var scope = await f.Scope();
+        f.BufferRequestBody = true; f.Writer.Receipt = Receipt(InboundDraftAction.Save);
+        f.Sessions.Clear();
+        f.Sessions.Observe = (call, live) => live with { Identity = live.Identity with
+        {
+            // Later checkpoints prove 1 -> 5 -> 4 fails even though 4 >= 1.
+            // The second observation has only the 5 -> 4 prefix available.
+            AuthorityVersion = call == checkpoint ? checkpoint == 1 ? 0 : 4
+                : checkpoint == 2 || call > 1 ? 5 : 1
+        } };
+        var reads = f.Writer.Reads;
+        using var response = await f.Invoke(route, scope);
+        await AssertSuppressed(response, checkpoint == 1 ? HttpStatusCode.Unauthorized : HttpStatusCode.Forbidden);
+        Assert.Equal(checkpoint, f.Sessions.Delivered.Count);
+        Assert.Equal(checkpoint == 1 ? 0 : 4, f.Sessions.Delivered[^1]!.Identity.AuthorityVersion);
+        var dispatched = checkpoint >= (route == "read" ? 4 : 7);
+        Assert.Equal(reads + (route == "read" && dispatched ? 1 : 0), f.Writer.Reads);
+        Assert.Equal((route is "save" or "send-to-warehouse") && dispatched ? 1 : 0, f.Writer.Executed.Count);
+        Assert.Equal(route == "reconcile" && dispatched ? 1 : 0, f.Writer.Reconciled.Count);
+        if (dispatched && route != "read") Assert.NotNull(f.Writer.Receipt); // Suppression is not rollback.
+    }
+
+    [Theory]
+    [InlineData("read")]
+    [InlineData("save")]
+    [InlineData("send-to-warehouse")]
+    [InlineData("reconcile")]
+    public async Task Positive_equal_and_increasing_observations_and_canonical_rights_remain_admitted(string route)
+    {
+        await using var f = await Fixture.Start(); var scope = await f.Scope();
+        f.BufferRequestBody = true; f.Writer.Receipt = Receipt(InboundDraftAction.Save);
+        f.Sessions.Identity = f.Sessions.Identity with
+        { Capabilities = ["synthetic-extra", "inbound-requests.read"], BranchIds = ["BR-B", "BR-A"] };
+        f.Sessions.Clear();
+        f.Sessions.Observe = (call, live) => live with { Identity = live.Identity with
+        {
+            AuthorityVersion = call == 1 ? 1 : call <= 3 ? 2 : 5,
+            Capabilities = call % 2 == 0 ? ["inbound-requests.read", "synthetic-extra", "inbound-requests.read"] : ["synthetic-extra", "inbound-requests.read"],
+            BranchIds = call % 2 == 0 ? ["BR-A", "BR-B", "BR-A"] : ["BR-B", "BR-A"]
+        } };
+        using var response = await f.Invoke(route, scope);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var json = await Json(response);
+        Assert.Equal(scope, json.RootElement.GetProperty("scopeKey").GetString());
+        Assert.Equal(route == "read" ? "Observed" : route == "reconcile" ? "Replayed" : "Committed",
+            json.RootElement.GetProperty("data").GetProperty("outcome").GetString());
+        Assert.Equal(route == "read" ? 5 : 8, f.Sessions.Delivered.Count);
+        Assert.Equal(1, f.Sessions.Delivered[0]!.Identity.AuthorityVersion);
+        Assert.Equal(2, f.Sessions.Delivered[1]!.Identity.AuthorityVersion);
+    }
+
+    public static IEnumerable<object[]> IdentityAndRightsChanges()
+    {
+        foreach (var route in new[] { "read", "save", "send-to-warehouse", "reconcile" })
+            foreach (var mutation in new[] { "token", "principal", "tenant", "company", "stamp", "capability", "capability-case", "branch", "branch-case" })
+                // Catch a transient change immediately, even if the provider
+                // would restore the old identity before the next observation.
+                yield return [route, mutation];
+    }
+
+    [Theory]
+    [MemberData(nameof(IdentityAndRightsChanges))]
+    public async Task Frozen_baseline_rejects_transient_identity_or_rights_changes_before_dispatch(string route, string mutation)
+    {
+        await using var f = await Fixture.Start(); var scope = await f.Scope();
+        f.BufferRequestBody = true; f.Sessions.Clear();
+        f.Sessions.Observe = (call, live) => call != 2 ? live : mutation switch
+        {
+            "token" => live with { Token = new string('B', 64) },
+            "principal" => live with { Identity = live.Identity with { PrincipalId = "OTHER" } },
+            "tenant" => live with { Identity = live.Identity with { TenantId = "OTHER" } },
+            "company" => live with { Identity = live.Identity with { CompanyId = "OTHER" } },
+            "stamp" => live with { Identity = live.Identity with { CredentialStamp = "OTHER" } },
+            "capability" => live with { Identity = live.Identity with { Capabilities = [] } },
+            "capability-case" => live with { Identity = live.Identity with { Capabilities = ["INBOUND-REQUESTS.READ"] } },
+            "branch" => live with { Identity = live.Identity with { BranchIds = [] } },
+            _ => live with { Identity = live.Identity with { BranchIds = ["br-a"] } }
+        };
+        var reads = f.Writer.Reads;
+        using var response = await f.Invoke(route, scope);
+        await AssertSuppressed(response, mutation is "token" or "principal" or "tenant" or "company" or "stamp"
+            ? HttpStatusCode.Unauthorized : HttpStatusCode.Forbidden);
+        Assert.Equal(2, f.Sessions.Delivered.Count);
+        Assert.Equal(reads, f.Writer.Reads); Assert.Empty(f.Writer.Executed); Assert.Empty(f.Writer.Reconciled);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Provider_owned_rights_lists_cannot_mutate_the_frozen_request_baseline(bool branches)
+    {
+        await using var f = await Fixture.Start();
+        var capabilities = new List<string> { "inbound-requests.read", "synthetic-extra" };
+        var branchIds = new List<string> { "BR-A", "BR-B" };
+        f.Sessions.Identity = f.Sessions.Identity with { Capabilities = capabilities, BranchIds = branchIds };
+        f.Access.After = () =>
+        {
+            if (branches) branchIds.Remove("BR-B"); else capabilities.Remove("synthetic-extra");
+            return Task.CompletedTask;
+        };
+        using var response = await f.Get();
+        await AssertSuppressed(response, HttpStatusCode.Forbidden);
+        Assert.Equal(0, f.Writer.Reads);
+    }
+
+    [Theory]
+    [InlineData("read", "capability")]
+    [InlineData("save", "capability")]
+    [InlineData("send-to-warehouse", "capability")]
+    [InlineData("reconcile", "capability")]
+    [InlineData("read", "branch")]
+    [InlineData("save", "branch")]
+    [InlineData("send-to-warehouse", "branch")]
+    [InlineData("reconcile", "branch")]
+    [InlineData("read", "stamp")]
+    [InlineData("save", "revoke")]
+    [InlineData("send-to-warehouse", "disabled")]
+    [InlineData("reconcile", "expiry")]
+    public async Task Real_session_revocation_or_rights_loss_after_service_suppresses_old_data_and_receipts(string route, string mutation)
+    {
+        await using var f = await Fixture.Start(realAuthority: true);
+        var scope = await f.Scope(); f.Writer.Receipt = Receipt(InboundDraftAction.Save);
+        var reads = f.Writer.Reads;
+        Task Change()
+        {
+            switch (mutation)
+            {
+                case "capability": f.Real!.Users.Capabilities = []; break;
+                case "branch": f.Real!.Users.Branches = []; break;
+                case "stamp": f.Real!.Users.StoredHash = "synthetic-changed-hash"; break;
+                case "disabled": f.Real!.Users.Disabled = true; break;
+                case "revoke": f.Real!.Sessions.Revoke(f.Real.Created.Token); break;
+                case "expiry": f.Real!.Clock.Advance(TimeSpan.FromMinutes(10)); break;
+            }
+            return Task.CompletedTask;
+        }
+        f.Writer.AfterRead = Change; f.Writer.AfterExecute = Change; f.Writer.AfterReconcile = Change;
+        using var response = await f.Invoke(route, scope);
+        await AssertSuppressed(response, mutation is "capability" or "branch" ? HttpStatusCode.Forbidden : HttpStatusCode.Unauthorized);
+        Assert.Equal(reads + (route == "read" ? 1 : 0), f.Writer.Reads);
+        Assert.Equal(route is "save" or "send-to-warehouse" ? 1 : 0, f.Writer.Executed.Count);
+        Assert.Equal(route == "reconcile" ? 1 : 0, f.Writer.Reconciled.Count);
+        if (route != "read") Assert.NotNull(f.Writer.Receipt); // A possible committed write remains recorded.
+    }
+
+    [Theory]
+    [InlineData("binding")]
+    [InlineData("branch")]
+    [InlineData("document")]
+    [InlineData("update")]
+    [InlineData("send")]
+    [InlineData("available")]
+    public async Task Increasing_real_versions_do_not_weaken_provider_scope_and_access_rechecks(string mutation)
+    {
+        await using var f = await Fixture.Start(realAuthority: true); var scope = await f.Scope();
+        f.Writer.AfterExecute = () =>
+        {
+            switch (mutation)
+            {
+                case "binding": f.Access.Binding = Guid.NewGuid(); break;
+                case "branch": f.Access.Branch = "BR-B"; break;
+                case "document": f.Access.Document = "OTHER"; break;
+                case "update": f.Access.Update = false; break;
+                case "send": f.Access.Send = false; break;
+                case "available": f.Access.Available = false; break;
+            }
+            return Task.CompletedTask;
+        };
+        using var response = await f.Post(Body(), scope: scope);
+        await AssertSuppressed(response, HttpStatusCode.Forbidden);
+        Assert.Single(f.Writer.Executed); Assert.NotNull(f.Writer.Receipt);
+    }
+
+    [Fact]
+    public async Task Concurrent_real_requests_keep_independent_last_accepted_version_fences()
+    {
+        await using var f = await Fixture.Start(realAuthority: true);
+        var captured = new TaskCompletionSource<ResolvedSession>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        f.Real!.Observed.AfterResolve = async (call, live, token) =>
+        {
+            // First request already accepted its baseline. Hold its next genuine
+            // snapshot AFTER LocalWebSessions has released the per-session lock.
+            if (call == 2)
+            {
+                captured.TrySetResult(Assert.IsType<ResolvedSession>(live));
+                await release.Task.WaitAsync(token);
+            }
+        };
+        var first = f.Get(cancellation: cancellation.Token);
+        Task<HttpResponseMessage>? second = null;
+        try
+        {
+            var delayed = await captured.Task.WaitAsync(cancellation.Token);
+            second = f.Get(cancellation: cancellation.Token);
+            using var secondResponse = await second.WaitAsync(cancellation.Token);
+            Assert.Equal(HttpStatusCode.OK, secondResponse.StatusCode);
+            Assert.False(first.IsCompleted);
+            var latest = f.Real.Observed.Delivered[^1].Session!;
+            Assert.True(latest.Identity.AuthorityVersion > delayed.Identity.AuthorityVersion);
+            release.TrySetResult();
+            using var firstResponse = await first.WaitAsync(cancellation.Token);
+            Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+            using var firstJson = await Json(firstResponse); using var secondJson = await Json(secondResponse);
+            Assert.Equal(firstJson.RootElement.GetProperty("scopeKey").GetString(), secondJson.RootElement.GetProperty("scopeKey").GetString());
+            Assert.Equal(2, f.Writer.Reads); Assert.Empty(f.Writer.Executed); Assert.Empty(f.Writer.Reconciled);
+            Assert.Equal(10, f.Real.Observed.Delivered.Length);
+            Assert.Same(delayed, f.Real.Observed.Delivered[6].Session);
+        }
+        finally
+        {
+            cancellation.Cancel(); release.TrySetResult();
+            foreach (var pending in new[] { first, second }.OfType<Task<HttpResponseMessage>>())
+                try { (await pending.WaitAsync(TimeSpan.FromSeconds(5))).Dispose(); }
+                catch (OperationCanceledException) { }
+        }
+    }
+
+    [Fact]
+    public async Task Overlapping_real_requests_keep_their_own_frozen_rights_baselines()
+    {
+        await using var f = await Fixture.Start(realAuthority: true);
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        var reads = 0;
+        f.Writer.AfterRead = async () =>
+        {
+            if (Interlocked.Increment(ref reads) != 1) return;
+            entered.TrySetResult();
+            await release.Task.WaitAsync(cancellation.Token);
+        };
+        var first = f.Get(cancellation: cancellation.Token);
+        Task<HttpResponseMessage>? second = null;
+        try
+        {
+            await entered.Task.WaitAsync(cancellation.Token);
+            f.Real!.Users.Capabilities = ["inbound-requests.read", "synthetic-new-grant"];
+            second = f.Get(cancellation: cancellation.Token);
+            using var secondResponse = await second.WaitAsync(cancellation.Token);
+            Assert.Equal(HttpStatusCode.OK, secondResponse.StatusCode);
+            using var secondJson = await Json(secondResponse);
+            Assert.Equal("Observed", secondJson.RootElement.GetProperty("data").GetProperty("outcome").GetString());
+            Assert.False(first.IsCompleted);
+            release.TrySetResult();
+            using var firstResponse = await first.WaitAsync(cancellation.Token);
+            await AssertSuppressed(firstResponse, HttpStatusCode.Forbidden);
+            Assert.Equal(2, f.Writer.Reads); Assert.Empty(f.Writer.Executed); Assert.Empty(f.Writer.Reconciled);
+        }
+        finally
+        {
+            cancellation.Cancel(); release.TrySetResult();
+            foreach (var pending in new[] { first, second }.OfType<Task<HttpResponseMessage>>())
+                try { (await pending.WaitAsync(TimeSpan.FromSeconds(5))).Dispose(); }
+                catch (OperationCanceledException) { }
+        }
+    }
+
+    [Theory]
+    [InlineData("read", false)]
+    [InlineData("save", false)]
+    [InlineData("send-to-warehouse", false)]
+    [InlineData("reconcile", false)]
+    [InlineData("read", true)]
+    [InlineData("save", true)]
+    [InlineData("send-to-warehouse", true)]
+    [InlineData("reconcile", true)]
+    public async Task Cancelled_requests_cannot_dispatch_later_or_expose_a_completed_service_result(string route, bool afterDispatch)
+    {
+        await using var f = await Fixture.Start(realAuthority: true); var scope = await f.Scope();
+        f.BufferRequestBody = true; f.Writer.Receipt = Receipt(InboundDraftAction.Save); f.Real!.Observed.Clear();
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var cancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var checkpoint = afterDispatch ? route == "read" ? 4 : 7 : 2;
+        f.Real.Observed.AfterResolve = async (call, _, token) =>
+        {
+            if (call != checkpoint) return;
+            entered.TrySetResult();
+            try { await Task.Delay(Timeout.InfiniteTimeSpan, token); }
+            finally { cancelled.TrySetResult(); }
+        };
+        var reads = f.Writer.Reads;
+        using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        var pending = f.Invoke(route, scope, cancellation.Token);
+        try
+        {
+            await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            cancellation.Cancel();
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => { using var ignored = await pending; });
+            await cancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.Equal(reads + (afterDispatch && route == "read" ? 1 : 0), f.Writer.Reads);
+            Assert.Equal(afterDispatch && (route is "save" or "send-to-warehouse") ? 1 : 0, f.Writer.Executed.Count);
+            Assert.Equal(afterDispatch && route == "reconcile" ? 1 : 0, f.Writer.Reconciled.Count);
+        }
+        finally { cancellation.Cancel(); }
+    }
+
+    private static InboundDraftReceipt Receipt(InboundDraftAction action) => new(Operation, "DOC-A",
+        action == InboundDraftAction.Save ? 0 : 2, new string('C', 64),
+        Guid.Parse("22222222-2222-4222-8222-222222222222"), new DateTime(2026, 10, 6, 0, 0, 0, DateTimeKind.Utc));
+
+    private static async Task AssertSuppressed(HttpResponseMessage response, HttpStatusCode status)
+    {
+        Assert.Equal(status, response.StatusCode);
+        using var json = await Json(response);
+        Assert.False(json.RootElement.TryGetProperty("data", out _));
+        Assert.False(json.RootElement.TryGetProperty("document", out _));
+        Assert.False(json.RootElement.TryGetProperty("receipt", out _));
+        Assert.False(json.RootElement.TryGetProperty("scopeKey", out _));
+        Assert.Contains("no-store", response.Headers.CacheControl!.ToString());
+    }
+
     [Theory]
     [InlineData("duplicate")]
     [InlineData("escaped-duplicate")]
@@ -334,6 +847,10 @@ public sealed class InboundDraftEndpointTests
     {
         private string token = new('A', 64);
         public bool Revoked;
+        private int calls;
+        public Func<int, ResolvedSession, ResolvedSession?>? Observe;
+        public List<ResolvedSession?> Delivered { get; } = [];
+        public void Clear() { calls = 0; Delivered.Clear(); }
         public AuthoritativeIdentity Identity = new("SYNTHETIC-USER", "T", "C", "Synthetic", "Synthetic", 1,
             ["inbound-requests.read"], "synthetic-credential-stamp", ["BR-A"]);
         public ResolvedSession Current => new(token, Identity, new SessionView(Identity.DisplayName, Identity.TenantId,
@@ -342,18 +859,26 @@ public sealed class InboundDraftEndpointTests
         public void Rotate() { token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)); Revoked = false; }
         public ResolvedSession? Create(AuthoritativeIdentity identity) { Identity = identity; return Current; }
         public Task<ResolvedSession?> ResolveAsync(string supplied, bool userInteraction, CancellationToken ct)
-        { ct.ThrowIfCancellationRequested(); return Task.FromResult(!Revoked && supplied == token ? Current : null); }
+        {
+            ct.ThrowIfCancellationRequested();
+            var live = !Revoked && supplied == token ? Current : null;
+            var call = ++calls;
+            if (live is not null && Observe is not null) live = Observe(call, live);
+            Delivered.Add(live);
+            return Task.FromResult(live);
+        }
         public void Revoke(string supplied) { if (supplied == token) Revoked = true; }
     }
     private sealed class FakeAccess : IInboundDraftCommandAccess
     {
         public Guid Binding = Guid.Parse("33333333-3333-4333-8333-333333333333");
         public string Branch = "BR-A";
-        public bool Update = true, Send = true;
+        public string? Document;
+        public bool Update = true, Send = true, Available = true;
         public Func<Task>? After;
         public async Task<InboundDraftAuthority?> ResolveAsync(ResolvedSession session, string documentId, CancellationToken ct)
         {
-            var captured = new InboundDraftAuthority(Binding, documentId, Branch, Update, Send, true);
+            var captured = new InboundDraftAuthority(Binding, Document ?? documentId, Branch, Update, Send, Available);
             if (After is not null) await After(); ct.ThrowIfCancellationRequested(); return captured;
         }
     }
@@ -365,7 +890,7 @@ public sealed class InboundDraftEndpointTests
         public InboundDraftReceipt? Receipt;
         public InboundDraftOutcome ReconcileOutcome = InboundDraftOutcome.Replayed;
         public bool LoseAck;
-        public Func<Task>? AfterRead, AfterExecute;
+        public Func<Task>? AfterRead, AfterExecute, AfterReconcile;
         public async Task<InboundDraftReadResult> ReadAsync(string documentId, CancellationToken token = default)
         {
             Reads++; var captured = View with { DocumentId = documentId };
@@ -381,11 +906,76 @@ public sealed class InboundDraftEndpointTests
             if (LoseAck) throw new IOException("synthetic lost ACK");
             return new(InboundDraftOutcome.Committed, Receipt);
         }
-        public Task<InboundDraftResult> ReconcileAsync(InboundDraftCommand originalRequest, CancellationToken token = default)
+        public async Task<InboundDraftResult> ReconcileAsync(InboundDraftCommand originalRequest, CancellationToken token = default)
         {
             token.ThrowIfCancellationRequested(); Reconciled.Add(originalRequest);
-            return Task.FromResult(new InboundDraftResult(ReconcileOutcome,
-                ReconcileOutcome is InboundDraftOutcome.Replayed or InboundDraftOutcome.Committed ? Receipt : null));
+            if (AfterReconcile is not null) await AfterReconcile(); token.ThrowIfCancellationRequested();
+            return new(ReconcileOutcome,
+                ReconcileOutcome is InboundDraftOutcome.Replayed or InboundDraftOutcome.Committed ? Receipt : null);
+        }
+    }
+    private sealed class SyntheticLegacyUsers : ILegacyUserStore
+    {
+        public string StoredHash = "synthetic-stored-hash";
+        public bool Disabled;
+        public IReadOnlyList<string> Capabilities = ["inbound-requests.read"];
+        public IReadOnlyList<string> Branches = ["BR-A", "BR-B"];
+        public Task<LegacyUser?> FindAsync(string username, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult<LegacyUser?>(username == "SYNTHETIC-USER"
+                ? new(username, "Synthetic user", StoredHash, Disabled, "synthetic-group", true, Capabilities, Branches)
+                : null);
+        }
+    }
+    private sealed class SyntheticPassword : ILegacyPasswordVerifier
+    {
+        public Task<PasswordOutcome> VerifyAsync(string username, string password, string storedHash, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(username == "SYNTHETIC-USER" && password == "synthetic-password" && storedHash == "synthetic-stored-hash"
+                ? PasswordOutcome.Accepted : PasswordOutcome.Rejected);
+        }
+    }
+    private sealed class SyntheticClock : TimeProvider
+    {
+        private DateTimeOffset now = new(2026, 10, 6, 0, 0, 0, TimeSpan.Zero);
+        public override DateTimeOffset GetUtcNow() => now;
+        public void Advance(TimeSpan duration) => now += duration;
+    }
+    private sealed record SessionObservation(string Token, bool UserInteraction, ResolvedSession? Session);
+    private sealed class ObservedSessions(IWebSessions inner) : IWebSessions
+    {
+        private readonly ConcurrentQueue<SessionObservation> delivered = new();
+        private int calls;
+        public Func<int, ResolvedSession?, CancellationToken, Task>? AfterResolve;
+        public SessionObservation[] Delivered => delivered.ToArray();
+        public void Clear() { delivered.Clear(); Interlocked.Exchange(ref calls, 0); }
+        public ResolvedSession? Create(AuthoritativeIdentity identity) => inner.Create(identity);
+        public void Revoke(string token) => inner.Revoke(token);
+        public async Task<ResolvedSession?> ResolveAsync(string token, bool userInteraction, CancellationToken cancellationToken)
+        {
+            var call = Interlocked.Increment(ref calls);
+            var live = await inner.ResolveAsync(token, userInteraction, cancellationToken);
+            if (AfterResolve is not null) await AfterResolve(call, live, cancellationToken);
+            delivered.Enqueue(new(token, userInteraction, live));
+            return live; // Preserve the real authority's exact snapshot and version.
+        }
+    }
+    private sealed record RealAuthorityFixture(SyntheticLegacyUsers Users, LegacyIdentityAuthority Authority,
+        LocalWebSessions Sessions, ObservedSessions Observed, ResolvedSession Created, SyntheticClock Clock)
+    {
+        public static async Task<RealAuthorityFixture> Create()
+        {
+            var users = new SyntheticLegacyUsers(); var clock = new SyntheticClock();
+            var authority = new LegacyIdentityAuthority(users, new SyntheticPassword(), new("T", "C", "Synthetic company"));
+            var result = await authority.AuthenticateAsync("SYNTHETIC-USER", "synthetic-password", default);
+            Assert.Equal(IdentityOutcome.Success, result.Outcome);
+            var identity = Assert.IsType<AuthoritativeIdentity>(result.Identity);
+            var sessions = new LocalWebSessions(authority, clock,
+                new WebSessionPolicy(TimeSpan.FromMinutes(10), TimeSpan.FromMinutes(30), 10));
+            var created = Assert.IsType<ResolvedSession>(sessions.Create(identity));
+            return new(users, authority, sessions, new ObservedSessions(sessions), created, clock);
         }
     }
     private sealed class Chunked(byte[] bytes) : HttpContent
@@ -402,14 +992,22 @@ public sealed class InboundDraftEndpointTests
         public FakeSessions Sessions { get; } = new();
         public FakeAccess Access { get; } = new();
         public FakeWriter Writer { get; } = new();
+        public RealAuthorityFixture? Real { get; private set; }
+        public bool BufferRequestBody;
+        private IWebSessions WebSessions => Real?.Observed ?? (IWebSessions)Sessions;
         public string Origin { get; private set; } = "";
         public string HttpOrigin { get; private set; } = "";
+        public string? PrivateConfigPath { get; private set; }
+        private string? privateDirectory;
+        private string csrfPath = "/qa/csrf";
         private X509Certificate2 certificate = null!;
-        public static async Task<Fixture> Start(bool defaults = false, bool login = true)
+        public static async Task<Fixture> Start(bool defaults = false, bool login = true, bool composed = false,
+            bool realAuthority = false, bool enabled = false)
         {
             var f = new Fixture();
             try
             {
+                if (realAuthority) f.Real = await RealAuthorityFixture.Create();
                 using var rsa = RSA.Create(2048);
                 var request = new CertificateRequest("CN=localhost", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
                 var san = new SubjectAlternativeNameBuilder(); san.AddIpAddress(IPAddress.Loopback); request.CertificateExtensions.Add(san.Build());
@@ -419,35 +1017,76 @@ public sealed class InboundDraftEndpointTests
                 var pkcs12 = generated.Export(X509ContentType.Pfx);
                 try { f.certificate = X509CertificateLoader.LoadPkcs12(pkcs12, null); }
                 finally { CryptographicOperations.ZeroMemory(pkcs12); }
-                var builder = WebApplication.CreateEmptyBuilder(new WebApplicationOptions { ApplicationName = typeof(InboundDraftEndpointTests).Assembly.FullName,
-                    EnvironmentName = "SyntheticInboundTest", ContentRootPath = Path.GetTempPath() });
-                builder.Logging.ClearProviders(); builder.Services.AddLogging(); builder.Services.AddRouting();
-                builder.WebHost.UseKestrel(options => {options.Listen(IPAddress.Loopback, 0, listen => listen.UseHttps(f.certificate)); options.Listen(IPAddress.Loopback, 0);});
-                builder.Services.AddDataProtection().UseEphemeralDataProtectionProvider();
-                builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options =>
+                if (composed)
                 {
-                    options.Cookie.Name = "__Host-I21.Test.Session"; options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.Always;
-                    options.Cookie.Path = "/"; options.Cookie.HttpOnly = true; options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Strict;
-                    options.Events.OnRedirectToLogin = c => {c.Response.StatusCode = 401; return Task.CompletedTask;};
-                    options.Events.OnRedirectToAccessDenied = c => {c.Response.StatusCode = 403; return Task.CompletedTask;};
-                });
-                builder.Services.AddAuthorization();
-                builder.Services.AddAntiforgery(options => {options.HeaderName = "X-CSRF-TOKEN"; options.Cookie.Name = "__Host-I21.Test.Csrf";
-                    options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.Always; options.Cookie.Path = "/"; options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Strict;});
-                builder.Services.AddSingleton<IWebSessions>(f.Sessions);
-                if (!defaults) {builder.Services.AddSingleton<IInboundDraftCommandAccess>(f.Access); builder.Services.AddSingleton<IInboundDraftCommandService>(f.Writer);}
-                builder.Services.AddInboundDraftFacade();
-                f.App = builder.Build();
-                f.App.Use(async (context, next) => {context.Response.Headers.CacheControl = "no-store"; await next(context);});
-                f.App.UseAuthentication(); f.App.UseAuthorization();
+                    f.privateDirectory = Directory.CreateTempSubdirectory("medcom-i24-host-").FullName;
+                    var contentRoot = Directory.CreateDirectory(Path.Combine(f.privateDirectory, "public")).FullName;
+                    f.PrivateConfigPath = Path.Combine(f.privateDirectory, "synthetic-private.json");
+                    await File.WriteAllTextAsync(f.PrivateConfigPath, "{\"Legacy\":{\"Enabled\":false}}");
+                    // The explicit external path is supplied before Build reads configuration,
+                    // not in its later callback. Never probe the machine's private settings.
+                    f.App = ApiHost.Build(["--environment", "Production", "--contentRoot", contentRoot,
+                        "--Medcom:PrivateConfigPath", f.PrivateConfigPath, "--Legacy:Enabled", "false"], builder =>
+                    {
+                        builder.Logging.ClearProviders();
+                        builder.WebHost.ConfigureKestrel(options => options.Listen(IPAddress.Loopback, 0,
+                            listen => listen.UseHttps(f.certificate)));
+                        builder.Services.AddDataProtection().UseEphemeralDataProtectionProvider();
+                        builder.Services.AddSingleton<IWebSessions>(f.WebSessions);
+                        if (f.Real is not null) builder.Services.AddSingleton<IIdentityAuthority>(f.Real.Authority);
+                        if (enabled)
+                        {
+                            builder.Services.AddSingleton<IInboundDraftCommandAccess>(f.Access);
+                            builder.Services.AddSingleton<IInboundDraftCommandService>(f.Writer);
+                        }
+                    });
+                    f.csrfPath = "/api/auth/csrf";
+                }
+                else
+                {
+                    var builder = WebApplication.CreateEmptyBuilder(new WebApplicationOptions { ApplicationName = typeof(InboundDraftEndpointTests).Assembly.FullName,
+                        EnvironmentName = "SyntheticInboundTest", ContentRootPath = Path.GetTempPath() });
+                    builder.Logging.ClearProviders(); builder.Services.AddLogging(); builder.Services.AddRouting();
+                    builder.WebHost.UseKestrel(options => {options.Listen(IPAddress.Loopback, 0, listen => listen.UseHttps(f.certificate)); options.Listen(IPAddress.Loopback, 0);});
+                    builder.Services.AddDataProtection().UseEphemeralDataProtectionProvider();
+                    builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options =>
+                    {
+                        options.Cookie.Name = "__Host-I21.Test.Session"; options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.Always;
+                        options.Cookie.Path = "/"; options.Cookie.HttpOnly = true; options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Strict;
+                        options.Events.OnRedirectToLogin = c => {c.Response.StatusCode = 401; return Task.CompletedTask;};
+                        options.Events.OnRedirectToAccessDenied = c => {c.Response.StatusCode = 403; return Task.CompletedTask;};
+                    });
+                    builder.Services.AddAuthorization();
+                    builder.Services.AddAntiforgery(options => {options.HeaderName = "X-CSRF-TOKEN"; options.Cookie.Name = "__Host-I21.Test.Csrf";
+                        options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.Always; options.Cookie.Path = "/"; options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Strict;});
+                    builder.Services.AddSingleton<IWebSessions>(f.WebSessions);
+                    if (!defaults) {builder.Services.AddSingleton<IInboundDraftCommandAccess>(f.Access); builder.Services.AddSingleton<IInboundDraftCommandService>(f.Writer);}
+                    builder.Services.AddInboundDraftFacade();
+                    f.App = builder.Build();
+                    f.App.Use(async (context, next) =>
+                    {
+                        context.Response.Headers.CacheControl = "no-store";
+                        if (!f.BufferRequestBody || context.Request.Method != "POST") { await next(context); return; }
+                        // Deterministic facade body checkpoints without relying on
+                        // network packet boundaries or changing production streams.
+                        var original = context.Request.Body;
+                        using var buffered = new MemoryStream();
+                        await original.CopyToAsync(buffered, context.RequestAborted); buffered.Position = 0;
+                        context.Request.Body = buffered;
+                        try { await next(context); }
+                        finally { context.Request.Body = original; }
+                    });
+                    f.App.UseAuthentication(); f.App.UseAuthorization();
+                    f.App.MapGet("/qa/csrf", (Microsoft.AspNetCore.Http.HttpContext c, IAntiforgery csrf) =>
+                        Microsoft.AspNetCore.Http.Results.Ok(new {token = csrf.GetAndStoreTokens(c).RequestToken})).RequireAuthorization();
+                    f.App.MapInboundDraftFacade();
+                }
                 f.App.MapGet("/qa/login", async (Microsoft.AspNetCore.Http.HttpContext c) =>
-                {await c.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, AuthEndpoints.Principal(f.Sessions.Current)); return Microsoft.AspNetCore.Http.Results.Ok();}).AllowAnonymous();
-                f.App.MapGet("/qa/csrf", (Microsoft.AspNetCore.Http.HttpContext c, IAntiforgery csrf) =>
-                    Microsoft.AspNetCore.Http.Results.Ok(new {token = csrf.GetAndStoreTokens(c).RequestToken})).RequireAuthorization();
-                f.App.MapInboundDraftFacade(); await f.App.StartAsync();
+                {await c.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, AuthEndpoints.Principal(f.Real?.Created ?? f.Sessions.Current)); return Microsoft.AspNetCore.Http.Results.Ok();}).AllowAnonymous();
+                await f.App.StartAsync();
                 var addresses = f.App.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses;
                 f.Origin = addresses.Single(a => a.StartsWith("https://", StringComparison.Ordinal));
-                f.HttpOrigin = addresses.Single(a => a.StartsWith("http://", StringComparison.Ordinal));
+                f.HttpOrigin = composed ? "" : addresses.Single(a => a.StartsWith("http://", StringComparison.Ordinal));
                 var handler = new HttpClientHandler {CookieContainer = f.Cookies, AllowAutoRedirect = false,
                     ServerCertificateCustomValidationCallback = (_, cert, _, _) => cert is not null && cert.RawData.AsSpan().SequenceEqual(f.certificate.RawData)};
                 f.Client = new HttpClient(handler) {BaseAddress = new Uri(f.Origin), Timeout = TimeSpan.FromSeconds(20)};
@@ -464,13 +1103,17 @@ public sealed class InboundDraftEndpointTests
             if (rotate) Sessions.Rotate();
             using var result = await Client.GetAsync("/qa/login"); result.EnsureSuccessStatusCode();
         }
-        public async Task<HttpResponseMessage> Get(string document = "DOC-A", string? scope = null)
+        public async Task<HttpResponseMessage> Get(string document = "DOC-A", string? scope = null, CancellationToken cancellation = default)
         {
             using var message = new HttpRequestMessage(HttpMethod.Get, InboundDraftEndpoints.Root + "?documentId=" + Uri.EscapeDataString(document));
             message.Headers.Add("Origin", Origin); message.Headers.Add("Sec-Fetch-Site", "same-origin");
             if (scope is not null) message.Headers.Add(InboundDraftEndpoints.ScopeHeader, scope);
-            return await Client.SendAsync(message);
+            return await Client.SendAsync(message, cancellation);
         }
+        public Task<HttpResponseMessage> Invoke(string route, string? scope, CancellationToken cancellation = default) => route == "read"
+            ? Get(scope: scope, cancellation: cancellation)
+            : Post(Encoding.UTF8.GetBytes(Body(route == "send-to-warehouse" ? InboundDraftAction.SendToWarehouse : InboundDraftAction.Save)),
+                route, scope, cancellation: cancellation);
         public async Task<string> Scope()
         {
             using var result = await Get(); result.EnsureSuccessStatusCode(); using var json = await Json(result);
@@ -481,7 +1124,7 @@ public sealed class InboundDraftEndpointTests
             Post(Encoding.UTF8.GetBytes(body), route, scope, csrf, origin, omitScope, duplicateScope);
         public async Task<HttpResponseMessage> Post(byte[] bytes, string route = "save", string? scope = null, bool csrf = true,
             string origin = "same", bool omitScope = false, bool duplicateScope = false, bool chunked = false,
-            string contentType = "application/json; charset=utf-8", string? encoding = null)
+            string contentType = "application/json; charset=utf-8", string? encoding = null, CancellationToken cancellation = default)
         {
             scope ??= await Scope();
             using var message = new HttpRequestMessage(HttpMethod.Post, InboundDraftEndpoints.Root + "/" + route)
@@ -493,10 +1136,10 @@ public sealed class InboundDraftEndpointTests
             if (!omitScope) message.Headers.Add(InboundDraftEndpoints.ScopeHeader, duplicateScope ? new[] {scope, scope} : new[] {scope});
             if (csrf)
             {
-                using var response = await Client.GetAsync("/qa/csrf"); response.EnsureSuccessStatusCode(); using var json = await Json(response);
+                using var response = await Client.GetAsync(csrfPath, cancellation); response.EnsureSuccessStatusCode(); using var json = await Json(response);
                 message.Headers.Add("X-CSRF-TOKEN", json.RootElement.GetProperty("token").GetString());
             }
-            return await Client.SendAsync(message);
+            return await Client.SendAsync(message, cancellation);
         }
         public async ValueTask DisposeAsync()
         {
@@ -509,7 +1152,11 @@ public sealed class InboundDraftEndpointTests
                     finally { await App.DisposeAsync(); }
                 }
             }
-            finally { certificate?.Dispose(); }
+            finally
+            {
+                certificate?.Dispose();
+                if (privateDirectory is not null) Directory.Delete(privateDirectory, recursive: true);
+            }
         }
     }
 }

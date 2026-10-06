@@ -1,7 +1,12 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {stripTypeScriptTypes, createRequire} from 'node:module';
-import {readFile, writeFile, mkdir} from 'node:fs/promises';
+import {readFile, writeFile, mkdir, mkdtemp, chmod, rm} from 'node:fs/promises';
+import {createServer as createHttpsServer} from 'node:https';
+import {execFileSync} from 'node:child_process';
+import {createHash, X509Certificate} from 'node:crypto';
+import {tmpdir} from 'node:os';
+import {Readable} from 'node:stream';
 import {createServer} from 'node:http';
 import {once} from 'node:events';
 import {fileURLToPath, pathToFileURL} from 'node:url';
@@ -18,7 +23,7 @@ for (const name of ['inbound-request-api', 'inbound-request-command-adapter']) {
   // Transpile the ENTIRE production module, not extracted helper functions.
   await writeFile(path.join(output, `${name}.mjs`), stripTypeScriptTypes(source, {mode: 'transform'}));
 }
-const {createInboundRequestApi, parseInboundJson, inboundDraftRoutes} = await import(pathToFileURL(path.join(output, 'inbound-request-api.mjs')).href);
+const {createInboundRequestApi, parseInboundJson, inboundDraftRoutes, InboundTransportError} = await import(pathToFileURL(path.join(output, 'inbound-request-api.mjs')).href);
 const {createInboundRequestBridge} = await import(pathToFileURL(path.join(output, 'inbound-request-command-adapter.mjs')).href);
 const op = '11111111-1111-4111-8111-111111111111', audit = '22222222-2222-4222-8222-222222222222';
 const source = {documentId: 'DOC-A', statusId: 0, stateEqualityToken: 'A'.repeat(64), costRowCount: 2, costEditingSupported: false,
@@ -333,8 +338,22 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
     res.end(req.url === '/fixture.js' ? bundle.outputFiles[0].contents : '<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;font:16px system-ui}*{box-sizing:border-box}[role=alertdialog]{position:fixed;left:3%;top:3%;width:94%;z-index:51;background:white;padding:16px}[data-slot=alert-dialog-overlay]{position:fixed;inset:0;background:#0004;z-index:50}</style><div id="root"></div><script src="/fixture.js"></script>');});
   server.listen(0, '127.0.0.1'); await once(server, 'listening');
   let browser, context; const errors = [], external = [], results = [];
+  // node:test marks a timed-out async test failed but does not unwind its
+  // pending browser awaits. Close live resources on abort as well as finally.
+  const cleanup = async () => {
+    server.closeAllConnections();
+    const outcomes = await Promise.allSettled([context?.close(), browser?.close(), new Promise((resolve, reject) => server.close(error => {
+      if (error && error.code !== 'ERR_SERVER_NOT_RUNNING') reject(error); else resolve();
+    }))]);
+    // Abort already failed the test; duplicate abort/finally closure is safe.
+    // A normal teardown error must still fail after attempting every close.
+    const failures = outcomes.filter(outcome => outcome.status === 'rejected');
+    if (failures.length && !t.signal.aborted) throw new AggregateError(failures.map(outcome => outcome.reason), 'Synthetic browser teardown failed');
+  };
+  const abortCleanup = () => {void cleanup();}; t.signal.addEventListener('abort', abortCleanup, {once: true});
   try {
     browser = await chromium.launch({headless: true, ...(process.env.I21_TEST_BROWSER ? {executablePath: process.env.I21_TEST_BROWSER} : {})});
+    t.signal.throwIfAborted();
     context = await browser.newContext({viewport: {width: 390, height: 844}, locale: 'vi-VN', serviceWorkers: 'block'});
     const page = await context.newPage(); page.on('pageerror', e => errors.push(e.message));
     const origin = `http://127.0.0.1:${server.address().port}`;
@@ -587,5 +606,388 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
     assert.deepEqual(errors, []); assert.deepEqual(external, []);
     await writeFile(path.join(output, 'react-result.json'), JSON.stringify({node:process.version,browser:browser.version(),results,external,errors,
       scope:'Actual React host/I18/provider; fake list/fetch only. NOT ASP.NET, BFF, SQL or production.'}, null, 2));
-  } finally {await context?.close(); await browser?.close(); server.closeAllConnections(); await new Promise(resolve => server.close(resolve));}
+  } finally {t.signal.removeEventListener('abort', abortCleanup); await cleanup();}
+});
+
+// I24: whole production BFF modules, no extracted policy helpers or replacement
+// proxy. The upstream transport below is explicitly synthetic, never SQL proof.
+for (const name of ['proxy-policy', 'proxy']) {
+  const text = (await readFile(path.join(app, 'lib/erp', `${name}.ts`), 'utf8')).replace('from "./proxy-policy"', 'from "./proxy-policy.mjs"');
+  await writeFile(path.join(output, `${name}.mjs`), stripTypeScriptTypes(text, {mode: 'transform'}));
+}
+const {proxyErpRequest} = await import(pathToFileURL(path.join(output, 'proxy.mjs')).href);
+const policy = await import(pathToFileURL(path.join(output, 'proxy-policy.mjs')).href);
+const publicOrigin = 'https://inbound.synthetic.invalid', backendOrigin = 'https://backend.synthetic.invalid';
+const inboundPath = 'api/inbound-requests/draft', inboundScope = 'a'.repeat(64);
+function proxyRequest(route = inboundPath + '/save', {method = 'POST', body = '{}', headers = {}, query = '', ...options} = {}) {
+  return new Request(publicOrigin + '/api/erp/' + route + query, {method,
+    headers: {Origin: publicOrigin, 'Sec-Fetch-Site': 'same-origin', 'Content-Type': 'application/json; charset=utf-8',
+      'X-Inbound-Scope': inboundScope, 'X-CSRF-TOKEN': 'synthetic-csrf', ...headers}, ...(method === 'GET' ? {} : {body}), ...options});
+}
+function throughProxy(request, upstream = () => assert.fail('unexpected upstream'), route) {
+  return proxyErpRequest(request, route ?? new URL(request.url).pathname.slice('/api/erp/'.length).split('/'), backendOrigin, publicOrigin, upstream);
+}
+test('I24 Node BFF admits exactly four inbound method/path pairs and preserves old limits', () => {
+  const routes = [[inboundPath, 'GET'], ...['save', 'send-to-warehouse', 'reconcile'].map(action => [inboundPath + '/' + action, 'POST'])];
+  for (const [route, allowed] of routes) for (const method of ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']) assert.equal(policy.routeAllowed(route, method), method === allowed, `${method} ${route}`);
+  for (const route of [inboundPath + '/create', inboundPath + '/save/more', inboundPath + '/Save', inboundPath + '/', inboundPath + '/lookup', 'api/inbound-requests', inboundPath.replace('draft', '%64raft')])
+    for (const method of ['GET', 'POST']) assert.equal(policy.routeAllowed(route, method), false, `${method} ${route}`);
+  assert.equal(policy.requestBodyLimit('api/auth/login', 'POST'), 16384);
+  assert.equal(policy.requestBodyLimit('api/purchase-requests/save', 'POST'), 1048576);
+  for (const [route, method] of routes.slice(1)) assert.equal(policy.requestBodyLimit(route, method), 1048576);
+});
+test('I24 Node BFF provenance, scope, CSRF, media and byte preflight deny before transport', async () => {
+  const cases = [
+    [{headers: {Origin: 'https://other.invalid'}}, 403], [{headers: {'Sec-Fetch-Site': 'cross-site'}}, 403],
+    [{headers: {'X-Inbound-Scope': 'A'.repeat(64)}}, 409], [{headers: {'X-Inbound-Scope': inboundScope + ', ' + inboundScope}}, 409],
+    [{headers: {'X-CSRF-TOKEN': ''}}, 403], [{headers: {'X-CSRF-TOKEN': 'one, two'}}, 403],
+    [{query: '?command=save'}, 400], [{headers: {'Content-Encoding': 'identity'}}, 415], [{headers: {'Content-Encoding': 'gzip'}}, 415],
+    ...['application/jsonp', 'application/json; charset=utf-16', 'application/json; boundary=x', 'text/plain'].map(value => [{headers: {'Content-Type': value}}, 415]),
+    ...['', '[]', 'null', '1', '\ufeff{}', '{'].map(body => [{body}, 400]),
+    [{body: Uint8Array.of(0xc3, 0x28)}, 400], [{headers: {'Content-Length': '3'}}, 400], [{headers: {'Content-Length': '-1'}}, 400],
+    [{headers: {'Content-Length': '1048577'}}, 413], [{body: 'x'.repeat(1048577)}, 413],
+  ];
+  for (const [options, expected] of cases) {
+    const response = await throughProxy(proxyRequest(undefined, options)); assert.equal(response.status, expected, JSON.stringify(options).slice(0, 200));
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+  }
+  for (const header of ['Origin', 'X-Inbound-Scope']) {const request = proxyRequest(); request.headers.delete(header); assert.equal((await throughProxy(request)).status, header === 'Origin' ? 403 : 409);}
+  for (const metadata of [undefined, 'cross-site', 'same-origin, same-origin']) {
+    const request = proxyRequest(inboundPath, {method: 'GET'}); request.headers.delete('Origin'); request.headers.delete('X-Inbound-Scope');
+    if (metadata === undefined) request.headers.delete('Sec-Fetch-Site'); else request.headers.set('Sec-Fetch-Site', metadata);
+    assert.equal((await throughProxy(request)).status, 403);
+  }
+  assert.equal((await throughProxy(proxyRequest(), undefined, ['api/inbound-requests', 'draft', 'save'])).status, 404);
+});
+test('I24 Node BFF streams exact byte limit, cancels overflow and rejects lying/error streams', async () => {
+  const exact = Buffer.from('{"notes":"' + 'x'.repeat(1048576 - 12) + '"}'); assert.equal(exact.length, 1048576);
+  let calls = 0; const upstream = async (_url, init) => {calls++; assert.deepEqual(Buffer.from(init.body), exact); return Response.json({});};
+  for (const declared of [false, true]) {const response = await throughProxy(proxyRequest(undefined, {body: exact, headers: declared ? {'Content-Length': String(exact.length)} : {}}), upstream); assert.equal(response.status, 200);}
+  let cancelled = false;
+  const stream = new ReadableStream({pull(controller) {controller.enqueue(new Uint8Array(600000));}, cancel() {cancelled = true;}});
+  assert.equal((await throughProxy(proxyRequest(undefined, {body: stream, duplex: 'half'}))).status, 413); assert.equal(cancelled, true);
+  assert.equal((await throughProxy(proxyRequest(undefined, {body: new ReadableStream({start(controller) {controller.error(Error('synthetic'));}}), duplex: 'half'}))).status, 400);
+  assert.equal(calls, 2);
+});
+test('I24 Node BFF canonical origin/cookies and raw HTTP lost-ACK reconciliation preserve original bytes', async () => {
+  const captures = [], server = createServer(async (request, response) => {
+    const parts = []; for await (const part of request) parts.push(part);
+    captures.push({path: request.url, bytes: Buffer.concat(parts), headers: request.headers});
+    response.writeHead(200, {'Content-Type': 'application/json', 'Cache-Control': 'no-store'}); response.end('{}');
+  });
+  server.listen(0, '127.0.0.1'); await once(server, 'listening');
+  const root = `http://127.0.0.1:${server.address().port}`;
+  const raw = Buffer.from(' { "operationId" : "' + op + '", "notes":"Tiếng Việt\\n", "decimal":"0001.0000" }\n');
+  try {
+    for (const action of ['save', 'send-to-warehouse']) {
+      let dispatches = 0;
+      const transport = async (url, init) => {dispatches++; assert.equal(init.redirect, 'manual'); assert.equal(init.cache, 'no-store'); assert.ok(init.body instanceof Uint8Array);
+        const answer = await fetch(root + new URL(url).pathname, init); await answer.arrayBuffer(); throw Error('Synthetic completed-response ACK loss');};
+      const headers = {Cookie: '__Host-Medcom.Session=synthetic; private=never-forward; __Host-Medcom.Csrf=csrf', Authorization: 'never-forward', 'X-Purchase-Scope': 'b'.repeat(64)};
+      assert.equal((await throughProxy(proxyRequest(inboundPath + '/' + action, {body: raw, headers}), transport)).status, 503); assert.equal(dispatches, 1);
+      assert.equal((await throughProxy(proxyRequest(inboundPath + '/reconcile', {body: raw, headers}), (url, init) => fetch(root + new URL(url).pathname, init))).status, 200);
+      const [execute, reconcile] = captures.slice(-2); assert.deepEqual(execute.bytes, raw); assert.deepEqual(reconcile.bytes, execute.bytes);
+      for (const item of [execute, reconcile]) {assert.equal(item.headers.origin, backendOrigin); assert.equal(item.headers['x-inbound-scope'], inboundScope); assert.equal(item.headers['x-csrf-token'], 'synthetic-csrf'); assert.equal(item.headers.cookie, '__Host-Medcom.Session=synthetic; __Host-Medcom.Csrf=csrf'); assert.equal(item.headers.authorization, undefined); assert.equal(item.headers['x-purchase-scope'], undefined);}
+    }
+    for (const withScope of [false, true]) {
+      const request = proxyRequest(inboundPath, {method: 'GET', query: '?documentId=DOC-A'}); request.headers.delete('Origin'); if (!withScope) request.headers.delete('X-Inbound-Scope');
+      assert.equal((await throughProxy(request, async (url, init) => {assert.equal(new URL(url).search, '?documentId=DOC-A'); assert.equal(init.headers.get('origin'), backendOrigin); assert.equal(init.headers.get('X-Inbound-Scope'), withScope ? inboundScope : null); return Response.json({});})).status, 200);
+    }
+    assert.equal((await throughProxy(proxyRequest(), async () => new Response(null, {status: 307, headers: {location: 'https://other.invalid'}}))).status, 502);
+  } finally {server.closeAllConnections(); await new Promise(resolve => server.close(resolve));}
+});
+test('I24 Node bridge notifies only current read/command 401; other failures retain custody', async () => {
+  for (const status of [401, 403, 409, 503]) {
+    let notified = 0, fail = false;
+    const api = {read: async () => {if (fail) throw new InboundTransportError(status, 'synthetic'); return {scopeKey: inboundScope, access, data: {outcome: 'Observed', document: structuredClone(source)}};},
+      command: async () => {throw new InboundTransportError(status, 'synthetic');}};
+    const bridge = createInboundRequestBridge(api, () => notified++); bridge.configure('login', api); bridge.select('DOC-A'); await bridge.revalidate(signal());
+    const original = command(); await bridge.adapter.execute(original, signal()); assert.equal(notified, status === 401 ? 1 : 0); assert.equal(bridge.hasUnresolved(), true);
+    bridge.configure('refreshed-context', api); await bridge.revalidate(signal()); fail = true;
+    await assert.rejects(bridge.adapter.read('DOC-A', signal())); assert.equal(notified, status === 401 ? 2 : 0); assert.equal(bridge.hasUnresolved(), true); bridge.dispose();
+  }
+  let rejectOld, notified = 0;
+  const old = {read: () => new Promise((_resolve, reject) => {rejectOld = reject;}), command: async () => {throw Error('unused');}};
+  const bridge = createInboundRequestBridge(old, () => notified++); bridge.configure('old', old); bridge.select('DOC-A'); const pending = bridge.revalidate(signal());
+  bridge.configure('new', old); rejectOld(new InboundTransportError(401, 'late')); await assert.rejects(pending); assert.equal(notified, 0); bridge.dispose();
+});
+
+// Real Workspace -> production inbound client/bridge -> production BFF -> HTTP
+// backend DOUBLE. The frontend hop is real loopback HTTPS with an ephemeral
+// pinned test certificate. Production BFF sees actual on-wire browser headers;
+// no Playwright fulfillment/provenance fabrication. No ASP.NET/SQL acceptance.
+test('I24 actual Workspace and BFF preserve mobile custody, retirement and history position', {timeout: 240000}, async t => {
+  const require = createRequire(import.meta.url); let build, chromium;
+  try {
+    ({build} = require('esbuild')); require.resolve('react'); require.resolve('react-dom');
+    const tools = process.env.MEDCOM_BROWSER_TOOLCHAIN;
+    ({chromium} = (tools ? createRequire(path.join(path.resolve(tools), 'package.json')) : require)('playwright-core'));
+  } catch {throw Error('I24 Workspace React gate NOT_RUN: installed pinned React/esbuild/browser toolchain unavailable. No install or skip.');}
+  const entry = `import React from 'react';import{createRoot}from'react-dom/client';import Workspace from './components/erp/workspace';
+    const native=window.fetch.bind(window);window.i24IO={execute:[],fetch:[],pushes:0};
+    const push=history.pushState.bind(history);history.pushState=(...args)=>{window.i24IO.pushes++;return push(...args);};
+    window.fetch=(url,init)=>{if(String(url).includes('/inbound-requests/draft/')&&init?.method==='POST')window.i24IO.fetch.push({url:String(url),body:init.body});return native(url,init);};
+    createRoot(document.getElementById('root')).render(<Workspace/>);`;
+  const built = await build({absWorkingDir: app, stdin: {contents: entry, resolveDir: app, loader: 'tsx'}, bundle: true, write: false,
+    platform: 'browser', format: 'iife', alias: {'@': app}, jsx: 'automatic', define: {'process.env.NODE_ENV': '"production"', 'process.env': '{}'}, logLevel: 'warning',
+    plugins: [{name: 'i24-execute-observer', setup(build) {
+      build.onResolve({filter: /inbound-request-command-adapter$/}, () => ({path: 'observer', namespace: 'i24-observer'}));
+      build.onLoad({filter: /.*/, namespace: 'i24-observer'}, () => ({resolveDir: app, loader: 'js', contents: `
+        export * from ${JSON.stringify(path.join(app, 'lib/erp/inbound-request-command-adapter.ts'))};
+        import{createInboundRequestBridge as create}from ${JSON.stringify(path.join(app, 'lib/erp/inbound-request-command-adapter.ts'))};
+        export function createInboundRequestBridge(...args){const b=create(...args),execute=b.adapter.execute;b.adapter={...b.adapter,execute:(intent,signal)=>{window.i24IO.execute.push({operationId:intent.operationId,body:JSON.stringify(intent)});return execute(intent,signal);}};return b;}` }));
+    }}, {name: 'i24-next-image-only', setup(build) {
+      build.onResolve({filter: /^next\/image$/}, () => ({path: 'image', namespace: 'i24-image'}));
+      build.onLoad({filter: /.*/, namespace: 'i24-image'}, () => ({resolveDir: app, loader: 'jsx', contents: "import React from 'react';export default function Image({src,alt,width,height}){return <img src={src} alt={alt} width={width} height={height}/>;}"}));
+    }}]});
+  // Preserve esbuild's exact script bytes at the real HTTPS response boundary.
+  const script = Buffer.from(built.outputFiles[0].contents);
+  const css = await readFile(path.join(app, 'app/globals.css'), 'utf8');
+  const html = '<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>' + css + '\nbody{margin:0;font:16px system-ui}img{max-width:100%;height:auto}[role=alertdialog],[role=dialog]{position:fixed;inset:3%;z-index:99;background:white;padding:16px;overflow:auto}[data-slot=alert-dialog-overlay]{position:fixed;inset:0;z-index:98;background:#0004}</style><div id="root"></div><script src="/i24.js"></script></html>';
+  let state, serial = 0; const calls = [], errors = [], external = [], results = [], models = new Set();
+  const resetState = (patch = {}) => {
+    const now = Date.now(); state = {scope: (++serial).toString(16).padStart(64, '0'), failure: null, readStatus: null, listStatus: null, commandStatus: null,
+      mode: 'Committed', version: 1, logoutStatus: 204, held: {}, waiters: {}, effects: 0, originals: new Map(), receipts: new Map(),
+      lifetime: {idleExpiresAt: new Date(now + 3600000).toISOString(), absoluteExpiresAt: new Date(now + 7200000).toISOString()},
+      docs: {'DOC-A': structuredClone(source), 'DOC-B': {...structuredClone(source), documentId: 'DOC-B'}}, ...patch}; models.add(state); calls.length = 0;
+  };
+  const release = (kind, model = state) => {model.held[kind] = false; (model.waiters[kind] ?? []).splice(0).forEach(resolve => resolve());};
+  const wait = async (model, kind) => {if (model.held[kind]) await new Promise(resolve => (model.waiters[kind] ??= []).push(resolve));};
+  const workspace = model => ({session: {displayName: 'SYNTHETIC I24', tenantId: 'T', companyId: 'C', companyName: 'Synthetic', authorityVersion: model.version,
+    ...model.lifetime, capabilities: ['inbound-requests.read']}, navigation: [{id: 'inbound-requests', label: 'Yêu cầu nhập kho', href: '/?screen=inbound-requests'}], branchIds: ['BR-A']});
+  const json = (res, status, data) => {res.writeHead(status, {'Content-Type': 'application/json', 'Cache-Control': 'no-store'}); res.end(status === 204 ? undefined : JSON.stringify(data));};
+  const backend = createServer(async (req, res) => {
+    const model = state;
+    try {
+      const url = new URL(req.url, 'http://localhost'), route = url.pathname, parts = []; for await (const part of req) parts.push(part);
+      const bytes = Buffer.concat(parts), body = bytes.toString('utf8'); calls.push({path: route, method: req.method, body, scope: req.headers['x-inbound-scope']});
+      if (route === '/health/ready') return json(res, 503, {status: 'unavailable', checks: [{component: 'business_release', status: 'not_configured'}]});
+      if (route === '/api/auth/csrf') {await wait(model, 'csrf'); return json(res, 200, {token: 'synthetic-csrf'});}
+      if (route === '/api/auth/login') return json(res, 200, workspace(model).session);
+      if (route === '/api/auth/logout') return json(res, model.logoutStatus, {});
+      if (route === '/api/workspace') {await wait(model, 'workspace'); return json(res, model.failure ?? 200, model.failure ? {code: 'synthetic_workspace_failure'} : workspace(model));}
+      if (route === '/api/documents/inbound-requests') {
+        const status = model.listStatus; await wait(model, 'list');
+        return json(res, status ?? 200, status ? {code: 'synthetic_list_failure'} : {rows: Object.values(model.docs).map(d => ({documentId: d.documentId, documentDate: '2026-10-01', branchId: 'BR-A', statusId: d.statusId, isLocked: false})), page: Number(url.searchParams.get('page')), pageSize: 50, hasMore: true});
+      }
+      if (route === '/' + inboundPath) {
+        const scope = model.scope, status = model.readStatus, document = structuredClone(model.docs[url.searchParams.get('documentId')]); await wait(model, 'read');
+        return json(res, status ?? 200, status ? {code: 'synthetic_read_failure'} : {scopeKey: scope, access, data: {outcome: 'Observed', document}});
+      }
+      if (!['save', 'send-to-warehouse', 'reconcile'].some(action => route === '/' + inboundPath + '/' + action)) return json(res, 404, {code: 'unavailable'});
+      assert.equal(req.headers.origin, backendOrigin); assert.equal(req.headers['x-inbound-scope'], model.scope); assert.equal(req.headers['x-csrf-token'], 'synthetic-csrf');
+      const command = JSON.parse(body), reconcile = route.endsWith('/reconcile');
+      if (reconcile) {assert.equal(model.originals.get(command.operationId), body); await wait(model, 'reconcile'); return json(res, 200, {scopeKey: model.scope, data: {outcome: 'Replayed', receipt: model.receipts.get(command.operationId), code: null}});}
+      assert.equal(model.originals.size, 0, 'only one initial writer dispatch'); model.originals.set(command.operationId, body);
+      const status = model.commandStatus; if (status) {await wait(model, 'post'); return json(res, status, {code: 'synthetic_command_failure'});}
+      model.effects++; const d = model.docs[command.documentId]; if (command.action === 'Save') d.header = structuredClone(command.header); else d.statusId = 2; d.stateEqualityToken = 'C'.repeat(64);
+      const receipt = {operationId: command.operationId, documentId: command.documentId, statusId: d.statusId, stateEqualityToken: d.stateEqualityToken, auditId: audit, committedAtUtc: new Date().toISOString()}; model.receipts.set(command.operationId, receipt);
+      await wait(model, 'post'); return json(res, 200, {scopeKey: model.scope, data: {outcome: 'Committed', receipt, code: null}});
+    } catch (error) {errors.push(String(error)); if (!res.headersSent) json(res, 500, {code: 'synthetic_failure'}); else res.destroy();}
+  });
+  resetState(); backend.listen(0, '127.0.0.1'); await once(backend, 'listening'); const backendHttp = `http://127.0.0.1:${backend.address().port}`;
+  let browser, context, page, frontend, tlsDirectory, testKey, siteOrigin;
+  const routes = {started: 0, fulfilled: 0, aborted: 0, pending: new Map()}, loadEvents = [], failedRequests = [], bffResponses = [];
+  const releaseAll = () => {for (const model of models) for (const kind of Object.keys(model.waiters)) release(kind, model);};
+  const cleanup = async () => {
+    // A login/reset can replace state while an old synthetic command is held.
+    // Retain/release every model, not merely the most recent one.
+    releaseAll();
+    const closeServer = server => new Promise((resolve, reject) => {
+      if (!server) return resolve(); server.closeAllConnections();
+      server.close(error => {if (error && error.code !== 'ERR_SERVER_NOT_RUNNING') reject(error); else resolve();});
+    });
+    const outcomes = await Promise.allSettled([context?.close(), browser?.close(), closeServer(frontend), closeServer(backend)]);
+    testKey?.fill(0);
+    if (tlsDirectory) {try {await rm(tlsDirectory, {recursive: true, force: true});} catch (reason) {outcomes.push({status: 'rejected', reason});}}
+    // Abort already failed the test; duplicate abort/finally closure is safe.
+    // A normal teardown error must still fail after attempting every close.
+    const failures = outcomes.filter(outcome => outcome.status === 'rejected');
+    if (failures.length && !t.signal.aborted) throw new AggregateError(failures.map(outcome => outcome.reason), 'Synthetic browser teardown failed');
+  };
+  const abortCleanup = () => {void cleanup();}; t.signal.addEventListener('abort', abortCleanup, {once: true});
+  try {
+    // Same OpenSSL ephemeral-certificate pattern as tools/deploy/serve_test_package.py.
+    // The private key lives only in an owned OS temp directory and is never an artifact.
+    tlsDirectory = await mkdtemp(path.join(tmpdir(), 'medcom-i24-test-tls-'));
+    const certPath = path.join(tlsDirectory, 'cert.pem'), keyPath = path.join(tlsDirectory, 'key.pem');
+    execFileSync('openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1', '-keyout', keyPath, '-out', certPath,
+      '-subj', '/CN=inbound.synthetic.invalid', '-addext', 'subjectAltName=DNS:inbound.synthetic.invalid'], {stdio: 'pipe'});
+    await chmod(keyPath, 0o600); testKey = await readFile(keyPath); const certificate = await readFile(certPath);
+    const spki = createHash('sha256').update(new X509Certificate(certificate).publicKey.export({type: 'spki', format: 'der'})).digest('base64');
+    frontend = createHttpsServer({key: testKey, cert: certificate}, async (request, response) => {
+      const url = new URL(request.url, siteOrigin), ticket = ++routes.started, model = state;
+      routes.pending.set(ticket, {url: url.href, type: request.headers['sec-fetch-dest'] ?? 'fetch'});
+      const controller = new AbortController(); request.once('aborted', () => controller.abort());
+      response.once('close', () => {if (!response.writableFinished) controller.abort();});
+      const send = (status, headers, body) => {if (response.destroyed) {routes.aborted++; return;} response.writeHead(status, headers); response.end(body); routes.fulfilled++;};
+      try {
+        if (url.pathname === '/i24.js') return send(200, {'Content-Type': 'text/javascript'}, script);
+        if (!url.pathname.startsWith('/api/erp/')) return send(200, {'Content-Type': 'text/html'}, html);
+        const requestHeaders = new Headers();
+        for (let index = 0; index < request.rawHeaders.length; index += 2) requestHeaders.append(request.rawHeaders[index], request.rawHeaders[index + 1]);
+        const incoming = new Request(url, {method: request.method, headers: requestHeaders, signal: controller.signal,
+          ...(request.method === 'POST' ? {body: Readable.toWeb(request), duplex: 'half'} : {})});
+        const result = await proxyErpRequest(incoming, url.pathname.slice('/api/erp/'.length).split('/'), backendOrigin, siteOrigin, async (target, init) => {
+          // Only the BFF-to-backend hop is a transport double. Ignore cancellation
+          // deliberately so current-generation checks must reject late ACKs.
+          const rest = {...init}; delete rest.signal;
+          if (model.failure === 'network' && new URL(target).pathname === '/api/workspace') throw Error('Synthetic workspace transport loss');
+          const answer = await fetch(backendHttp + new URL(target).pathname + new URL(target).search, rest);
+          if (model.mode === 'lost' && /\/(save|send-to-warehouse)$/.test(new URL(target).pathname)) {await answer.arrayBuffer(); throw Error('Synthetic completed ACK loss');}
+          return answer;
+        });
+        const problem = result.ok ? null : await result.clone().json().catch(() => null);
+        bffResponses.push({path: url.pathname, method: request.method, status: result.status, code: typeof problem?.code === 'string' ? problem.code.slice(0, 100) : null,
+          origin: requestHeaders.get('origin'), fetchSite: requestHeaders.get('sec-fetch-site'), fetchMode: requestHeaders.get('sec-fetch-mode'),
+          scopePresent: requestHeaders.has('X-Inbound-Scope'), provenance: 'actual HTTPS request.rawHeaders'});
+        send(result.status, Object.fromEntries(result.headers), Buffer.from(await result.arrayBuffer()));
+      } catch (error) {
+        if (!t.signal.aborted && !controller.signal.aborted) errors.push('Synthetic HTTPS route failure: ' + String(error));
+        if (!response.headersSent) send(500, {'Content-Type': 'application/json'}, '{"code":"synthetic_fixture_failure"}'); else response.destroy();
+      } finally {routes.pending.delete(ticket);}
+    });
+    frontend.listen(0, '127.0.0.1'); await once(frontend, 'listening'); siteOrigin = `https://inbound.synthetic.invalid:${frontend.address().port}`;
+    browser = await chromium.launch({headless: true, args: ['--host-resolver-rules=MAP inbound.synthetic.invalid 127.0.0.1', '--no-proxy-server', `--ignore-certificate-errors-spki-list=${spki}`],
+      ...(process.env.I21_TEST_BROWSER ? {executablePath: process.env.I21_TEST_BROWSER} : {})});
+    t.signal.throwIfAborted();
+    context = await browser.newContext({viewport: {width: 390, height: 844}, locale: 'vi-VN', serviceWorkers: 'block'});
+    await context.route('**/*', route => {if (new URL(route.request().url()).origin === siteOrigin) return route.continue(); external.push(route.request().url()); return route.abort();});
+    const newPage = async viewport => {
+      const next = await context.newPage(); if (viewport) await next.setViewportSize(viewport);
+      next.on('pageerror', error => errors.push(error.message));
+      next.on('domcontentloaded', () => loadEvents.push({event: 'domcontentloaded', url: next.url()}));
+      next.on('load', () => loadEvents.push({event: 'load', url: next.url()}));
+      next.on('requestfailed', request => failedRequests.push({url: request.url(), type: request.resourceType(), failure: request.failure()?.errorText}));
+      return next;
+    };
+    page = await newPage();
+    const button = name => page.getByRole('button', {name, exact: true}), field = name => page.getByLabel(name, {exact: true});
+    const host = () => page.getByTestId('inbound-request-host');
+    const ready = () => page.waitForFunction(() => {const field = document.getElementById('inbound-header-orderNumber'); return field && !field.disabled && document.querySelector('[data-testid=inbound-request-host]')?.getAttribute('data-readback-pending') !== 'true';});
+    const open = async (id = 'DOC-A') => {await page.getByRole('button', {name: new RegExp('^Mở phiếu ' + id + ' ')}).click(); await ready();};
+    const paint = () => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    const go = async screen => {await page.keyboard.press('Control+k'); const label = screen === 'settings' ? 'Thiết lập' : screen === 'home' ? 'Không gian làm việc' : 'Yêu cầu nhập kho'; await page.getByRole('option', {name: label, exact: true}).click();};
+    const start = async (patch = {}) => {
+      // Each case starts in a fresh page, not a navigation attempt out of the
+      // previous case's deliberately dirty/unknown document. Actual guard and
+      // Back/Forward assertions within each case still use the same live page.
+      const viewport = page.viewportSize(); await page.close(); page = await newPage(viewport); resetState(patch);
+      try {await page.goto(siteOrigin + '/?screen=home'); await page.getByRole('button', {name: 'Yêu cầu nhập kho', exact: true}).last().waitFor(); await go('inbound-requests'); await open();}
+      catch (error) {
+        let timer;
+        const dom = await Promise.race([page.evaluate(() => ({readyState: document.readyState, url: location.href, hostCount: document.querySelectorAll('[data-testid=inbound-request-host]').length, text: document.body?.innerText.slice(0, 500)})),
+          new Promise(resolve => {timer = setTimeout(() => resolve({diagnostic: 'DOM inspection timed out'}), 1000);})]).catch(problem => ({diagnostic: String(problem)})).finally(() => clearTimeout(timer));
+        console.error('I24 fixture start diagnostics ' + JSON.stringify({error: String(error), pageErrors: errors.slice(-10), routes: {started: routes.started, fulfilled: routes.fulfilled, aborted: routes.aborted, outstanding: [...routes.pending.values()].slice(-20)},
+          failedRequests: failedRequests.slice(-10), bffResponses: bffResponses.slice(-20), loadEvents: loadEvents.slice(-10), backendCalls: calls.slice(-20).map(({path, method}) => ({path, method})), dom}));
+        throw error;
+      }
+    };
+    const save = async (action = 'Save') => {if (action === 'Save') await field('Số đơn').fill('I24 ORIGINAL'); await button('Rà soát phiếu').click(); await button(action === 'Save' ? 'Lưu thay đổi' : 'Gửi yêu cầu nhập kho').click();};
+    const unknown = () => page.waitForFunction(() => document.querySelector('[data-testid=inbound-editor]')?.getAttribute('data-phase') === 'unknown');
+    const confirmed = () => page.getByTestId('confirmed-receipt').waitFor();
+    const guard = async (action, discard = false, accept = false) => {await action(); const dialog = page.getByRole('alertdialog'); await dialog.waitFor(); assert.equal(await dialog.getByRole('button', {name: 'Bỏ thay đổi và rời màn hình', exact: true}).count(), discard ? 1 : 0); await dialog.getByRole('button', {name: accept ? 'Bỏ thay đổi và rời màn hình' : 'Tiếp tục làm việc', exact: true}).click(); await dialog.waitFor({state: 'hidden'}); if (!accept && await page.getByRole('dialog', {name: 'Tìm màn hình', exact: true}).count()) await page.keyboard.press('Escape'); await paint();};
+    const refresh = async failure => {state.failure = failure; const response = page.waitForResponse(r => new URL(r.url()).pathname === '/api/erp/api/workspace'); await page.evaluate(() => window.dispatchEvent(new Event('focus'))); await response; await paint();};
+    const settled = () => page.waitForFunction(() => document.querySelector('[data-testid=inbound-request-host]')?.getAttribute('data-readback-pending') === 'false');
+    const recover = async () => {state.failure = null; await button('Xác minh lại phiên nhập hàng').click(); await field('Tìm phiếu nhập hàng').waitFor(); await page.waitForFunction(() => [...document.querySelectorAll('button')].some(b => b.textContent === 'Kiểm tra yêu cầu gốc' && !b.disabled) || document.querySelector('[data-testid=confirmed-receipt]'));};
+    const single = async () => {const io = await page.evaluate(() => window.i24IO), writers = calls.filter(c => /\/(save|send-to-warehouse)$/.test(c.path)); assert.equal(io.execute.length, 1); assert.equal(io.fetch.filter(c => /\/(save|send-to-warehouse)$/.test(c.url)).length, 1); assert.equal(writers.length, 1); assert.equal(state.effects, 1); for (const c of calls.filter(c => /\/(save|send-to-warehouse|reconcile)$/.test(c.path))) {assert.equal(c.body, io.execute[0].body); assert.equal(c.scope, state.scope);} for (const c of io.fetch) assert.equal(c.body, io.execute[0].body);};
+    const run = async (name, fn) => {
+      let failure;
+      await t.test(name, async () => {try {await fn(); results.push(name);} catch (error) {failure = error; throw error;} finally {releaseAll();}});
+      // Stop a broken fixture at its first preserved failure instead of letting
+      // later cases cascade on invalid setup. Every case still runs on success.
+      if (failure) throw failure;
+    };
+    for (const width of [320, 360, 390]) await run(`${width}px actual Workspace mounts one full draft host without a child sentinel`, async () => {
+      await page.setViewportSize({width, height: 844}); await start(); assert.equal(await host().count(), 1); assert.equal(await field('Số đơn').inputValue(), 'FULL ERP A');
+      assert.equal(await host().evaluate(el => el.scrollWidth <= el.clientWidth), true); assert.equal(await page.evaluate(() => history.state.medcomInboundHost ?? null), null);
+      assert.equal(calls.some(call => call.path.endsWith('/detail')), false); assert.equal(await page.evaluate(() => window.i24IO.pushes), 1);
+    });
+    for (const action of ['Save', 'SendToWarehouse']) await run(`pending ${action}, parent 503, repeated recovery failure and lost ACK retain original through BFF`, async () => {
+      await start({mode: 'lost', held: {post: true}}); await field('Tìm phiếu nhập hàng').fill('RETAIN FILTER'); await save(action);
+      await eventually(() => state.waiters.post?.length > 0); await refresh(503); assert.equal(await host().count(), 1); assert.equal(await field('Số đơn').count(), 0);
+      for (let i = 0; i < 2; i++) {const failed = page.waitForResponse(r => new URL(r.url()).pathname === '/api/erp/api/workspace'); await button('Xác minh lại phiên nhập hàng').click(); await failed; await paint();}
+      release('post'); await paint(); await recover(); await unknown(); assert.equal(await field('Tìm phiếu nhập hàng').inputValue(), 'RETAIN FILTER');
+      await guard(() => go('home')); await button('Kiểm tra yêu cầu gốc').click(); await confirmed(); await settled(); await single();
+      await refresh('network'); assert.equal(await host().count(), 1); assert.equal(await page.getByTestId('inbound-host-receipt').count(), 0); await recover(); await confirmed(); await single();
+    });
+    await run('pending receipt readback and a command started after a discard dialog cannot unmount Workspace host', async () => {
+      await start({held: {post: true}}); await field('Số đơn').fill('OLD DIALOG'); await button('Rà soát phiếu').click(); await go('home'); await page.getByRole('alertdialog').waitFor();
+      await page.evaluate(() => [...document.querySelectorAll('button')].find(b => b.textContent === 'Lưu thay đổi').click()); await eventually(() => state.waiters.post?.length > 0);
+      await button('Bỏ thay đổi và rời màn hình').click(); assert.equal(await host().count(), 1); await page.getByRole('alertdialog').waitFor({state: 'hidden'});
+      await page.keyboard.press('Escape'); await guard(() => go('home')); state.held.read = true; release('post'); await confirmed(); await eventually(() => state.waiters.read?.length > 0);
+      await guard(() => go('settings')); assert.equal(await host().getAttribute('data-readback-pending'), 'true'); release('read'); await ready(); await single();
+    });
+    await run('owned Back and Forward cancel/approve preserve index, URL, forward stack and one callback', async () => {
+      await start(); await go('settings'); await page.evaluate(() => history.back()); await host().waitFor(); await open(); await field('Số đơn').fill('HISTORY DIRTY');
+      const original = await page.evaluate(() => ({index: history.state.medcomWorkspace.index, href: location.href, pushes: window.i24IO.pushes, length: history.length}));
+      for (const direction of ['back', 'forward', 'back']) {await guard(() => page.evaluate(direction => history[direction](), direction), true); assert.deepEqual(await page.evaluate(() => ({index: history.state.medcomWorkspace.index, href: location.href, pushes: window.i24IO.pushes, length: history.length})), original);}
+      await guard(() => page.evaluate(() => history.back()), true, true); await host().waitFor({state: 'detached'}); assert.equal(await page.evaluate(() => history.state.medcomWorkspace.index), 0);
+      await page.evaluate(() => history.forward()); await host().waitFor(); await open(); await field('Số đơn').fill('FORWARD DIRTY'); await guard(() => page.evaluate(() => history.forward()), true, true);
+      await host().waitFor({state: 'detached'}); assert.equal(await page.evaluate(() => history.state.medcomWorkspace.index), 2); assert.equal(await page.evaluate(() => window.i24IO.pushes), original.pushes);
+    });
+    for (const queued of [false, true]) await run(`command starting during approved history traversal blocks the actual ${queued ? 'queued route' : 'Back'} commit`, async () => {
+      await start({mode: 'lost', held: {post: true}}); await field('Số đơn').fill('TRAVERSAL RACE'); await button('Rà soát phiếu').click();
+      const position = await page.evaluate(() => ({href: location.href, index: history.state.medcomWorkspace.index}));
+      await page.evaluate(() => history.back()); await page.getByRole('alertdialog').waitFor();
+      await page.evaluate(() => {const original = history.go.bind(history); history.go = delta => {window.i24ReleaseTraversal = () => {history.go = original; original(delta);};};});
+      await button('Bỏ thay đổi và rời màn hình').click();
+      if (queued) await go('settings');
+      await page.evaluate(() => [...document.querySelectorAll('button')].find(b => b.textContent === 'Lưu thay đổi').click()); await eventually(() => state.waiters.post?.length > 0);
+      await page.evaluate(() => window.i24ReleaseTraversal()); await page.getByRole('alertdialog').waitFor(); await paint();
+      assert.equal(await button('Bỏ thay đổi và rời màn hình').count(), 0); assert.equal(await host().count(), 1);
+      assert.deepEqual(await page.evaluate(() => ({href: location.href, index: history.state.medcomWorkspace.index})), position);
+      await button('Tiếp tục làm việc').click(); if (queued) await page.keyboard.press('Escape'); release('post'); await unknown();
+      await button('Kiểm tra yêu cầu gốc').click(); await confirmed(); await settled(); await single();
+    });
+    await run('sidebar, command palette, mobile Home and local Close preserve dirty and unknown custody', async () => {
+      await start({mode: 'lost'}); await field('Số đơn').fill('DIRTY');
+      await guard(() => button('Đóng phiếu nhập hàng').click(), true); await guard(() => go('settings'), true);
+      const mobileHome = () => page.getByRole('navigation', {name: 'Điều hướng nhanh trên điện thoại'}).getByRole('button', {name: 'Không gian làm việc', exact: true}).click();
+      await guard(mobileHome, true); await button('Mở menu đầy đủ').click();
+      await guard(() => page.locator('[data-mobile=true]').getByRole('button', {name: 'Tổng quan', exact: true}).click(), true); await button('Đóng menu').click();
+      await save(); await unknown(); await guard(mobileHome); await guard(() => button('Quay lại danh sách').click());
+    });
+    for (const kind of ['list', 'read', 'command']) await run(`current ${kind} 401 retires once and later 503 cannot revive that login`, async () => {
+      await start(); state[kind === 'command' ? 'commandStatus' : kind + 'Status'] = 401;
+      if (kind === 'command') await save(); else if (kind === 'read') await button('Xác minh lại quyền nhập hàng').click(); else await button('Áp dụng lọc nhập hàng').click();
+      await button('Đăng nhập ERP').first().waitFor(); await paint(); assert.equal(await field('Số đơn').count(), 0); assert.equal(await button('Xác minh lại phiên nhập hàng').count(), 0);
+      state.failure = 503; await page.evaluate(() => window.dispatchEvent(new Event('focus'))); await paint(); assert.equal(await button('Xác minh lại phiên nhập hàng').count(), 0);
+    });
+    for (const expiry of ['idleExpiresAt', 'absoluteExpiresAt']) await run(`retained ${expiry} retires an unverified pending login without polling`, async () => {
+      await start({held: {post: true}}); await save(); await eventually(() => state.waiters.post?.length > 0);
+      state.lifetime[expiry] = new Date(Date.now() + 700).toISOString(); await refresh(null); await refresh(503);
+      await page.getByText('Phiên làm việc đã hết hạn. Đăng nhập ERP để tiếp tục.', {exact: true}).waitFor(); release('post'); await paint();
+      assert.equal(await page.getByTestId('confirmed-receipt').count(), 0); assert.equal(await button('Xác minh lại phiên nhập hàng').count(), 0);
+    });
+    await run('failed logout retains a clean receipt and successful logout retires it', async () => {
+      await start(); await save(); await confirmed(); await settled(); state.logoutStatus = 503;
+      const signOut = async () => {const account = page.locator('.topbar .user-button'); assert.equal(await account.count(), 1); await account.click(); await page.getByRole('menuitem', {name: 'Đăng xuất ERP', exact: true}).click();};
+      await signOut(); await button('Xác minh lại phiên nhập hàng').waitFor(); assert.equal(await host().count(), 1); await recover(); await confirmed(); await settled(); await single();
+      state.logoutStatus = 204; await signOut(); await host().waitFor({state: 'detached'}); assert.equal(await button('Xác minh lại phiên nhập hàng').count(), 0);
+    });
+    await run('successful login rotates before a delayed workspace read; old deadline and late command 401 cannot retire it', async () => {
+      await start({commandStatus: 401, held: {post: true}}); await save(); await eventually(() => state.waiters.post?.length > 0);
+      state.lifetime.idleExpiresAt = new Date(Date.now() + 2500).toISOString(); await refresh(null); await refresh(503); const old = state;
+      await button('Đăng nhập ERP').first().click(); const dialog = page.getByRole('dialog', {name: 'Đăng nhập ERP', exact: true});
+      await dialog.getByLabel('Tên đăng nhập', {exact: true}).fill('synthetic-i24'); await dialog.getByLabel('Mật khẩu', {exact: true}).fill('synthetic-test-only');
+      resetState({held: {workspace: true}}); await dialog.getByRole('button', {name: 'Đăng nhập', exact: true}).click(); await eventually(() => state.waiters.workspace?.length > 0);
+      release('post', old); await new Promise(resolve => setTimeout(resolve, 2700)); await paint();
+      assert.equal(await page.getByText('Phiên làm việc đã hết hạn. Đăng nhập ERP để tiếp tục.', {exact: true}).count(), 0);
+      release('workspace'); await field('Tìm phiếu nhập hàng').waitFor(); await open(); assert.equal(await field('Số đơn').inputValue(), 'FULL ERP A');
+      assert.equal(await page.getByTestId('confirmed-receipt').count(), 0); assert.equal(calls.filter(call => /\/(save|send-to-warehouse|reconcile)$/.test(call.path)).length, 0);
+    });
+    const inboundWire = bffResponses.filter(item => item.path.startsWith('/api/erp/' + inboundPath));
+    assert.ok(inboundWire.some(item => item.method === 'GET') && inboundWire.some(item => item.method === 'POST'));
+    for (const item of inboundWire) {assert.equal(item.fetchSite, 'same-origin'); if (item.method === 'POST') assert.equal(item.origin, siteOrigin);}
+    assert.deepEqual(errors, []); assert.deepEqual(external, []);
+    const evidence = {node: process.version, browser: browser.version(), viewports: [320, 360, 390], results, errors, external, inboundWire,
+      scope: 'Actual Workspace/client/HTTPS frontend/BFF composition with pinned ephemeral test TLS and actual on-wire browser provenance; backend HTTP double. No ASP.NET/SQL/provider/production acceptance.'};
+    await writeFile(path.join(output, 'i24-workspace-bff-react.json'), JSON.stringify(evidence, null, 2));
+    // Preserve all standalone evidence while including composition results in
+    // its already-uploaded artifact; no workflow or dependency change needed.
+    const standalonePath = path.join(output, 'react-result.json');
+    const standalone = JSON.parse(await readFile(standalonePath, 'utf8').catch(error => {if (error.code === 'ENOENT') return '{}'; throw error;}));
+    await writeFile(standalonePath, JSON.stringify({...standalone, workspaceComposition: evidence}, null, 2));
+  } finally {t.signal.removeEventListener('abort', abortCleanup); await cleanup();}
 });
