@@ -128,7 +128,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
   await run('mobile editable exact values and unresolved Save keep custody',async()=>{
    await start(390,'inbound-requests',{writable:true,unknown:true});await open('inbound-requests').click();const order=page.getByLabel('Số đơn',{exact:true});await order.waitFor();await order.fill('SYNTHETIC EDIT');await order.focus();await layout(390,'inbound-requests');
    assert.equal(await page.getByLabel('Số lượng bộ theo chứng từ',{exact:true}).inputValue(),'999999999999999999');
-   await page.getByRole('button',{name:'Rà soát phiếu',exact:true}).click();await page.getByRole('button',{name:'Lưu thay đổi',exact:true}).click();await page.getByTestId('inbound-editor').getByRole('button',{name:'Kiểm tra yêu cầu gốc',exact:true}).waitFor();
+   await page.getByRole('button',{name:'Rà soát phiếu',exact:true}).click();await page.getByRole('button',{name:'Lưu thay đổi',exact:true}).click();await page.waitForFunction(()=>document.querySelector('[data-testid=inbound-editor]')?.getAttribute('data-phase')==='unknown');assert.equal(await page.getByTestId('inbound-editor').getByRole('button',{name:'Kiểm tra yêu cầu gốc',exact:true}).isEnabled(),true);
    assert.equal(calls.filter(v=>v.route==='/api/inbound-requests/draft/save').length,1);await layout(390,'inbound-requests');await capture('inbound-requests-unresolved-390');
    await page.getByRole('button',{name:'Đóng phiếu nhập hàng',exact:true}).click();await page.getByRole('alertdialog').waitFor();assert.equal(calls.filter(v=>v.route==='/api/inbound-requests/draft/save').length,1);await capture('inbound-requests-custody-390');
   });
