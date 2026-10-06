@@ -302,6 +302,28 @@ operation using that confirmed aggregate/token. Each read captures a command epo
 a GET begun before dispatch or acknowledgment cannot replace the confirmed receipt
 or satisfy the fresh-read requirement for another edit.
 
+R2 keeps session lifecycle ownership in the existing parent `Workspace`. A transient
+`workspace=null` caused by network/503 is only an unverified interval: the purchase
+reader stays mounted under the last verified session tuple so its frozen DTO/key/JSON
+and bridge remain in memory, but filters, selected-document data and editor UI are
+hidden and `canRead=false` fences any late command acknowledgment. The screen does
+not call `getWorkspace` itself and does not hold a second recovered Workspace object.
+Its verification button invokes a parent callback that reuses `loadWorkspace` and
+the existing `AuthorityFence`; successful recovery updates the parent `workspace`,
+therefore the normal focus/online/60-second polling resumes. The parent also retains
+only the last verified idle/absolute expiry deadline while `workspace` is temporarily
+null, so a known expiry still ends custody during an outage; recovery replaces that
+deadline from the newly verified workspace. Purchase bootstrap, opaque scope, branch
+and document grants still must pass before any data or control is shown again.
+
+The parent passes only a confirmed-end bit derived from current HTTP 401/session
+expiry/completed logout. That signal, a completed-login boundary, a verified session
+tuple change or opaque purchase scope change remounts/retires old custody. A current
+purchase-reader 401 also retires the bridge immediately, clears local filter/page/
+selection state, and is propagated to the parent so a delayed writer ACK cannot
+revive the old editor before the confirmed-end render arrives. Network/503 does not
+set this bit and cannot by itself destroy the retained original intent.
+
 ### New evidence and limits (2026-10-06)
 
 - Executed this run: 46/46 Node tests on transpiled **actual candidate** adapter and
@@ -318,8 +340,14 @@ or satisfy the fresh-read requirement for another edit.
   Compile/analyzers/xUnit are NOT_RUN here (.NET SDK absent from PATH/full checkout unavailable).
 - Source-authored React mobile cases cover Save→Submit, double tap/navigation,
   all lookup outcomes, failed refresh, authority/adapter/document/session changes.
-  Actual browser execution is NOT_RUN here. The tests require the existing pinned
-  Playwright/browser/dependency environment and do not skip or install a browser.
+  The actual-Workspace custody group retains all eight R1 scenarios and adds parent
+  focus-authority refresh after same-session recovery, both idle/absolute expiry
+  after recovery, and a purchase-reader 401 with a delayed ACK. Those cases assert
+  exact original JSON/key/token custody and one writer dispatch. Actual browser
+  execution is still NOT_RUN here because the partial environment cannot import
+  `esbuild`; source/model checks are reported separately and are not React evidence.
+  The tests require the existing pinned Playwright/browser/dependency environment
+  and do not skip or install a browser.
 - In-memory tab custody is not crash recovery. beforeunload warns; forced reload,
   tab/process loss and recovery of a frozen DTO after browser restart are not
   qualified by this slice. Equality tokens do not claim monotonic/ABA protection.

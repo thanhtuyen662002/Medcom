@@ -2,7 +2,7 @@
 import {useCallback,useEffect,useLayoutEffect,useRef,useState,type FormEvent,type CSSProperties} from "react";
 import {MobileRequest,type MobileRequestAccess,type PurchaseRequestSnapshot} from "./mobile-request";
 import {useNavigationGuard} from "./navigation-guard";
-import {ApiError,errorMessage,getWorkspace} from "@/lib/erp/api";
+import {ApiError,errorMessage} from "@/lib/erp/api";
 import {getPurchaseWorkspace,getPurchaseDocuments,postPurchaseCommand,type PurchaseWorkspace,type PurchasePage,type PurchaseReadback} from "@/lib/erp/purchase-request-api";
 import {createPurchaseCommandAdapter,commandPurchaseSnapshot} from "@/lib/erp/purchase-request-command-adapter";
 import type {WorkspaceData} from "@/lib/erp/contracts";
@@ -13,56 +13,34 @@ const qualification="Chỉ phiếu có sẵn. Không tạo hoặc thêm dòng; c
 type ReadState={key:string;observation?:WorkspaceData|null;scopeKey?:string;bootstrap?:PurchaseWorkspace;list?:PurchasePage;detail?:PurchaseReadback;detailError?:unknown;error?:unknown;loading:boolean};
 type RetainedEditor={scopeKey:string;raw:PurchaseReadback;snapshot:PurchaseRequestSnapshot;bridge:ReturnType<typeof createPurchaseCommandAdapter>;
  observation:WorkspaceData|null;revision:number;receiptId?:string;grant:PurchaseReadback["commandAccess"]};
-type PurchaseRequestScreenProps={workspace:WorkspaceData|null;loginBoundary:number;onDenied:(error:unknown)=>void;onLogin:()=>void};
+type PurchaseRequestScreenProps={workspace:WorkspaceData|null;loginBoundary:number;sessionEnded:boolean;onVerifyWorkspace:()=>Promise<void>;onDenied:(error:unknown)=>void;onLogin:()=>void};
 export function PurchaseRequestScreen(props:PurchaseRequestScreenProps){
  // A completed login rotates this boundary even while the shell has no workspace.
  return <PurchaseRequestSession key={props.loginBoundary} {...props}/>;
 }
 function PurchaseRequestSession(props:PurchaseRequestScreenProps){
- const [observed,setObserved]=useState(props.workspace),[recovered,setRecovered]=useState<WorkspaceData|null>(null);
- const [lastBoundary,setLastBoundary]=useState<string|null>(null),[ended,setEnded]=useState(0),[checking,setChecking]=useState(false);
- const [recoveryError,setRecoveryError]=useState<unknown>(null);
- const recovery=useRef({generation:0,controller:null as AbortController|null,locked:false});
- // Do not reuse an independently recovered observation after the shell changes.
- if(observed!==props.workspace){setObserved(props.workspace);setRecovered(null);setChecking(false);setRecoveryError(null);}
- const workspace=props.workspace??(observed===props.workspace?recovered:null),session=workspace?.session;
+ const retainedBoundary=useRef<string|null>(null);const [checking,setChecking]=useState(false);
+ const session=props.workspace?.session;
  const observedBoundary=session?JSON.stringify([session.tenantId,session.companyId,session.absoluteExpiresAt]):null;
- if(observedBoundary!==null&&observedBoundary!==lastBoundary)setLastBoundary(observedBoundary);
- // null is a loss of evidence, NOT evidence of logout. Preserve reader/bridge/DTO
- // until a verified session tuple, completed login, opaque scope or 401 retires it.
- const boundary=JSON.stringify([props.loginBoundary,observedBoundary??lastBoundary,ended]);
- useLayoutEffect(()=>{
-  const request=recovery.current;request.generation++;request.locked=false;
-  return()=>{request.generation++;request.controller?.abort();request.locked=false;};
- },[props.workspace]);
+ // workspace=null after network/503 is loss of evidence, not logout. Keep the last
+ // verified identity only as a component-lifetime key; it is never used as authority.
+ if(props.sessionEnded)retainedBoundary.current=null;
+ else if(observedBoundary!==null)retainedBoundary.current=observedBoundary;
+ const sessionUnverified=!props.workspace&&!props.sessionEnded&&retainedBoundary.current!==null;
+ const boundary=JSON.stringify([props.loginBoundary,observedBoundary??retainedBoundary.current,props.sessionEnded]);
  async function verifySession(){
-  const request=recovery.current;
-  if(props.workspace||request.locked)return;
-  request.locked=true;request.controller?.abort();const controller=new AbortController();request.controller=controller;
-  const generation=++request.generation,current=()=>!controller.signal.aborted&&request.generation===generation;
-  // A retry is read-only and cannot reuse a prior authority observation or ACK.
-  setRecovered(null);setChecking(true);setRecoveryError(null);
-  try{
-   const next=await getWorkspace(controller.signal);if(!current())return;
-   setRecovered(next); // Reader must still revalidate the opaque purchase scope and document grants.
-  }catch(error){
-   if(!current())return;setRecoveryError(error);
-   if(error instanceof ApiError&&error.status===401){
-    // Positive server evidence of an ended/revoked session, unlike network/503.
-    setLastBoundary(null);setEnded(value=>value+1);props.onDenied(error);
-   }
-  }finally{if(current()){request.locked=false;setChecking(false);}}
+  if(props.workspace||props.sessionEnded||checking)return;
+  setChecking(true);try{await props.onVerifyWorkspace();}finally{setChecking(false);}
  }
  return <>
-  {!props.workspace&&lastBoundary!==null&&<section aria-label="Xác minh lại phiên mua hàng" style={{display:"grid",gap:8}}>
-   <p role="status">{workspace?"Đã đọc lại phiên; dữ liệu chỉ mở sau khi xác minh thêm phạm vi/quyền mua hàng. Khung chung có thể chưa cập nhật.":"Chưa xác minh được phiên ERP. Dữ liệu và thao tác mua hàng đang bị ẩn/khóa; không tự bỏ yêu cầu chỉ vì lỗi kết nối."}</p>
-   {recoveryError!=null&&<p role="alert">{errorMessage(recoveryError)}</p>}
+  {sessionUnverified&&<section aria-label="Xác minh lại phiên mua hàng" style={{display:"grid",gap:8}}>
+   <p role="status">Chưa xác minh được phiên ERP. Dữ liệu và thao tác mua hàng đang bị ẩn/khóa; yêu cầu chưa rõ kết quả vẫn được giữ để đối chiếu sau khi parent Workspace xác minh lại.</p>
    <button type="button" style={control} disabled={checking} onClick={()=>void verifySession()}>{checking?"Đang xác minh phiên…":"Xác minh lại phiên ERP"}</button>
   </section>}
-  <PurchaseRequestReader key={boundary} {...props} workspace={workspace} boundary={boundary}/>
+  <PurchaseRequestReader key={boundary} {...props} boundary={boundary} sessionUnverified={sessionUnverified}/>
  </>;
 }
-function PurchaseRequestReader({workspace,boundary,onDenied,onLogin}:PurchaseRequestScreenProps&{boundary:string}){
+function PurchaseRequestReader({workspace,boundary,sessionUnverified,onDenied,onLogin}:PurchaseRequestScreenProps&{boundary:string;sessionUnverified:boolean}){
  const [searchInput,setSearchInput]=useState(""),[search,setSearch]=useState(""),[branch,setBranch]=useState(""),[page,setPage]=useState(1),[selected,setSelected]=useState<string|null>(null),[refresh,setRefresh]=useState(0);
  const [state,setState]=useState<ReadState>({key:"",loading:false}),[editor,setEditor]=useState<RetainedEditor|null>(null);
  const [knownScope,setKnownScope]=useState<string|null>(null);
@@ -110,7 +88,12 @@ function PurchaseRequestReader({workspace,boundary,onDenied,onLogin}:PurchaseReq
    }else if(existing&&!existing.bridge.hasPending()&&!existing.receiptId&&!work.current.dirty){existing.bridge.retire();retain(null);}
   })().catch(error=>{
    if(controller.signal.aborted||current!==generation.current)return;
-   if(error instanceof ApiError&&error.status===401){editorRef.current?.bridge.retire();retain(null);work.current={dirty:false,unresolved:false};}
+   if(error instanceof ApiError&&error.status===401){
+    // Current server evidence ends this session. Retire immediately so a late ACK
+    // cannot land before the parent propagates sessionEnded and remounts us.
+    editorRef.current?.bridge.retire();retain(null);work.current={dirty:false,unresolved:false};
+    setSearchInput("");setSearch("");setBranch("");setPage(1);setSelected(null);setKnownScope(null);serverScope.current=null;setVerifiedWorkspace(null);
+   }
    setState({key,observation:workspace,error,loading:false});onDenied(error);
   });
   return ()=>controller.abort();
@@ -136,7 +119,7 @@ function PurchaseRequestReader({workspace,boundary,onDenied,onLogin}:PurchaseReq
  return <section aria-label="Danh sách đề nghị mua hàng" style={{display:"grid",gap:16}}>
   <h2>Đề nghị mua hàng</h2><p id="purchase-write-qualification" role="status">{qualification}</p>
   <button style={control} disabled aria-describedby="purchase-write-qualification">Tạo đề nghị</button>
-  {!workspace?<><p>Đăng nhập ERP để đọc đề nghị mua hàng.</p><button style={control} onClick={onLogin}>Đăng nhập ERP</button></>:!allowed?<p role="status">Bạn không có quyền đọc đề nghị mua hàng trong phạm vi hiện tại.</p>:verifiedWorkspace!==workspace?<section aria-label="Đang xác minh phạm vi mua hàng">
+  {!workspace?sessionUnverified?<p role="status">Phiên ERP tạm chưa được xác minh. Bộ lọc, phiếu đang chọn và dữ liệu nghiệp vụ đang được ẩn cho tới khi parent Workspace xác minh lại.</p>:<><p>Đăng nhập ERP để đọc đề nghị mua hàng.</p><button style={control} onClick={onLogin}>Đăng nhập ERP</button></>:!allowed?<p role="status">Bạn không có quyền đọc đề nghị mua hàng trong phạm vi hiện tại.</p>:verifiedWorkspace!==workspace?<section aria-label="Đang xác minh phạm vi mua hàng">
    <p role={active?.error?"alert":"status"}>{active?.error?errorMessage(active.error):"Đang xác minh lại phạm vi và quyền ERP; dữ liệu vẫn bị ẩn."}</p>
    {!!active?.error&&<button type="button" style={control} onClick={()=>setRefresh(value=>value+1)}>Xác minh lại phạm vi ERP</button>}
   </section>:<>
@@ -156,7 +139,7 @@ function PurchaseRequestReader({workspace,boundary,onDenied,onLogin}:PurchaseReq
    {active?.detailError&&<p role="alert">{errorMessage(active.detailError)}</p>}
   </>}
   {/* Outside the busy/error/selection fragment. Never key by token or discard an unknown intent. */}
-  {editor&&<section aria-label="Phiếu mua hàng hiện có">
+  {editor&&<section aria-label="Phiếu mua hàng hiện có" hidden={!canRead}>
    <MobileRequest initial={editor.snapshot} access={access} adapter={editor.bridge.adapter} readRevision={editor.revision} onConfirmed={onConfirmed} onWorkStateChange={onWorkStateChange}/>
    {canRead&&<>{editor.receiptId&&<p role="status">ERP đã xác nhận yêu cầu {editor.receiptId}. Receipt vẫn được giữ khi đọc lại thất bại.</p>}
     <p role="status">{grant?.reason??"command_access_provider_unavailable"}</p><FullPurchaseReadback readback={editor.raw}/></>}
