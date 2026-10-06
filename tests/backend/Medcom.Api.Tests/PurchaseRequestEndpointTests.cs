@@ -95,6 +95,69 @@ public sealed class PurchaseRequestEndpointTests
         {var lookup=await fixture.Json("/api/purchase-requests/lookup?kind="+kind);Assert.False(lookup.GetProperty("data").GetProperty("available").GetBoolean());Assert.Equal(0,lookup.GetProperty("data").GetProperty("items").GetArrayLength());}
         var opens=fixture.Source.Opens;using var write=await fixture.Post("/api/purchase-requests",new{action="create"});Assert.Equal(HttpStatusCode.MethodNotAllowed,write.StatusCode);Assert.Equal(opens,fixture.Source.Opens);
     }
+    [Fact]
+    public async Task Qualified_reference_routes_return_exact_typed_values_and_preserve_branch_JSON()
+    {
+        await using var fixture = await PurchaseHttpFixture.Start(); await fixture.Login();
+        fixture.Source.LookupShapeOk = true;
+        fixture.Source.Purposes.Add((-1, null));
+        fixture.Source.Currencies.AddRange([("NEG", "  Synthetic currency  ", -1.25), ("ZER", "Zero synthetic", 0)]);
+        var purposes = await fixture.Json("/api/purchase-requests/lookup?kind=purposes");
+        var purpose = Assert.Single(purposes.GetProperty("data").GetProperty("items").EnumerateArray());
+        Assert.Equal("-1", purpose.GetProperty("id").GetString()); Assert.Equal(JsonValueKind.Null, purpose.GetProperty("label").ValueKind);
+        Assert.Equal(2, purpose.EnumerateObject().Count());
+        var currencies = await fixture.Json("/api/purchase-requests/lookup?kind=currencies");
+        Assert.Equal(purposes.GetProperty("scopeKey").GetString(), currencies.GetProperty("scopeKey").GetString());
+        var currency = currencies.GetProperty("data").GetProperty("items")[0];
+        Assert.Equal("NEG", currency.GetProperty("id").GetString()); Assert.Equal("NEG", currency.GetProperty("label").GetString());
+        Assert.Equal("  Synthetic currency  ", currency.GetProperty("currencyName").GetString()); Assert.Equal(-1.25, currency.GetProperty("rateExchange").GetDouble());
+        Assert.Equal(0, currencies.GetProperty("data").GetProperty("items")[1].GetProperty("rateExchange").GetDouble());
+        var branches = await fixture.Json("/api/purchase-requests/lookup?kind=branches&search=QA-A");
+        var branch = Assert.Single(branches.GetProperty("data").GetProperty("items").EnumerateArray());
+        Assert.Equal(new[] { "id", "label" }, branch.EnumerateObject().Select(property => property.Name));
+        var workspace = (await fixture.Json("/api/purchase-requests/workspace")).GetProperty("data");
+        Assert.False(workspace.GetProperty("writeAvailable").GetBoolean());
+        foreach (var lookup in workspace.GetProperty("lookups").EnumerateArray())
+            Assert.Equal(lookup.GetProperty("kind").GetString() is "branches" or "purposes" or "currencies", lookup.GetProperty("available").GetBoolean());
+        Assert.Equal(0, fixture.Source.Commits);
+    }
+    [Theory]
+    [InlineData("purposes")] [InlineData("currencies")]
+    public async Task Reference_drift_is_honestly_unavailable_and_late_logout_cannot_release_values(string kind)
+    {
+        await using var fixture = await PurchaseHttpFixture.Start(); await fixture.Login();
+        fixture.Source.LookupShapeOk = true; fixture.Source.BindingOverrides["GridName"] = "";
+        var unavailable = (await fixture.Json("/api/purchase-requests/lookup?kind=" + kind)).GetProperty("data");
+        Assert.False(unavailable.GetProperty("available").GetBoolean()); Assert.Equal("source_binding_unqualified", unavailable.GetProperty("reason").GetString());
+        Assert.Empty(unavailable.GetProperty("items").EnumerateArray());
+        fixture.Source.BindingOverrides.Clear(); fixture.Source.Purposes.Add((1, "Synthetic reference value"));
+        fixture.Source.Currencies.Add(("SYN", "Synthetic reference value", 0));
+        fixture.Source.AfterLookupData = () => fixture.Authority.Rejected = true;
+        using var revoked = await fixture.Client.GetAsync("/api/purchase-requests/lookup?kind=" + kind);
+        Assert.Equal(HttpStatusCode.Forbidden, revoked.StatusCode); Assert.DoesNotContain("Synthetic reference value", await revoked.Content.ReadAsStringAsync());
+        Assert.Equal(0, fixture.Source.Commits); Assert.Equal(fixture.Source.Opens, fixture.Source.ConnectionDisposals);
+    }
+    [Theory]
+    [InlineData("/api/purchase-requests/lookup?kind=purposes&page=1001")]
+    [InlineData("/api/purchase-requests/lookup?kind=currencies&kind=purposes")]
+    [InlineData("/api/purchase-requests/lookup?kind=currencies&date=2026-10-06")]
+    public async Task Reference_selectors_cannot_expand_fixed_query_scope(string path)
+    {
+        await using var fixture = await PurchaseHttpFixture.Start(); await fixture.Login();
+        using var response = await fixture.Client.GetAsync(path);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode); Assert.Equal(0, fixture.Source.Opens);
+    }
+    [Fact]
+    public async Task Malformed_reference_projection_returns_safe_unavailable_response()
+    {
+        await using var fixture = await PurchaseHttpFixture.Start(); await fixture.Login();
+        fixture.Source.LookupShapeOk = true; fixture.Source.BadLookupProjection = "currencies"; fixture.Source.BadLookupShape = "extra-result";
+        fixture.Source.Currencies.Add(("SYN", "Synthetic private label", 1));
+        using var response = await fixture.Client.GetAsync("/api/purchase-requests/lookup?kind=currencies");
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        Assert.DoesNotContain("Synthetic private label", await response.Content.ReadAsStringAsync()); Assert.Equal(0, fixture.Source.Commits);
+    }
+
 }
 
 internal sealed class PurchaseHttpFixture(WebApplication app,HttpClient client,X509Certificate2 certificate,string configPath,PurchaseQuerySource source,PurchaseHttpAuthority authority,PurchaseClock clock):IAsyncDisposable
