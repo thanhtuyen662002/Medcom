@@ -7,12 +7,21 @@ public sealed class SqlLegacyUserStore : ILegacyUserStore
 {
     private readonly string connectionString;
     private readonly bool enablePilots;
-    public SqlLegacyUserStore(string connectionString, bool allowLoopbackTestCertificate = false, bool enablePilots = false)
+    public SqlLegacyUserStore(string connectionString, bool allowLoopbackTestCertificate = false, bool enablePilots = false,
+        SqlDevelopmentTestTlsTarget? developmentTestTlsTarget = null)
     {
-        var builder = new SqlConnectionStringBuilder(connectionString);
+        SqlConnectionStringBuilder builder;
+        try { builder = new SqlConnectionStringBuilder(connectionString); }
+        catch (Exception exception) when (exception is ArgumentException or FormatException
+            or InvalidOperationException or NotSupportedException)
+        {
+            // Parser diagnostics can contain private input. Do not retain their inner exception.
+            throw new ArgumentException("A valid SQL Server connection is required.");
+        }
         if (string.IsNullOrWhiteSpace(builder.InitialCatalog) || builder.InitialCatalog.Equals("master", StringComparison.OrdinalIgnoreCase)
             || string.IsNullOrWhiteSpace(builder.DataSource)) throw new ArgumentException("A dedicated ERP database is required.");
-        if (builder.TrustServerCertificate && !(allowLoopbackTestCertificate
+        if (developmentTestTlsTarget is not null) developmentTestTlsTarget.ApplyTo(builder);
+        else if (builder.TrustServerCertificate && !(allowLoopbackTestCertificate
                 && builder.DataSource.StartsWith("127.0.0.1,", StringComparison.Ordinal)))
             throw new ArgumentException("The SQL server certificate must be trusted.");
         builder.Encrypt = SqlConnectionEncryptOption.Mandatory;

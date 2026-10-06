@@ -6,10 +6,11 @@ using Microsoft.Data.SqlClient;
 namespace Medcom.Infrastructure;
 
 public sealed class SqlDocumentReader(string connectionString, LegacyCompany company,
-    bool allowLoopbackTestCertificate = false) : IDocumentReader
+    bool allowLoopbackTestCertificate = false, SqlDevelopmentTestTlsTarget? developmentTestTlsTarget = null) : IDocumentReader
 {
     // Configuration goes through the same certificate/database checks as identity reads.
-    private readonly SqlLegacyUserStore database = new(connectionString, allowLoopbackTestCertificate, enablePilots: true);
+    private readonly SqlLegacyUserStore database = new(connectionString, allowLoopbackTestCertificate, enablePilots: true,
+        developmentTestTlsTarget: developmentTestTlsTarget);
     public async Task<DocumentResult> ReadAsync(AuthoritativeIdentity identity, DocumentKind kind,
         DocumentQuery query, CancellationToken cancellationToken)
     {

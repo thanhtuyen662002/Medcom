@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I23",
+  "role": "direct_interactive",
+  "owner": "Mika under explicit owner-approved endpoint-scoped development TLS exception",
+  "run_id": "42af69ed-cabe-49f4-8b88-dc5ab944df32",
+  "base_sha": "b1eb57077c2112a808c7ce2e581511741fa971a1",
+  "work_branch": "codex/g45-sql-test-tls-i23-20261006",
+  "claim_branch": "medcom-claims/g45/direct/I23",
+  "scope": [
+    "src/backend/Medcom.Infrastructure/SqlDevelopmentTestTlsTarget.cs",
+    "src/backend/Medcom.Infrastructure/SqlLegacyUserStore.cs",
+    "src/backend/Medcom.Infrastructure/SqlDocumentReader.cs",
+    "src/backend/Medcom.Api/ServerConfiguration.cs",
+    "src/backend/Medcom.Api/ApiHost.cs",
+    "tests/backend/Medcom.Api.Tests/SqlDevelopmentTestTlsTests.cs",
+    "docs/deployment/SQL_DEVELOPMENT_TEST_TLS.md",
+    "docs/execution/direct-runs/I23.json"
+  ],
+  "purpose": "Explicit default-off exact server/database development test exception for mandatory SQL encryption with certificate trust bypass; retain strict production/default checks.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "authorization": "Owner explicitly accepted the disclosed impersonation risk for a development-test-only exception matching the specified Medcom DB endpoint. This does not authorize production activation, credential publication or other security changes.",
+  "constraints": [
+    "Private Medcom:SqlDevelopmentTestTls:{Enabled,Server,Database} opt-in only. Absent/false preserves strict current validation. Enabled requires complete exact parsed server/database match, no partial/wildcard/alias matching.",
+    "Always force mandatory encryption and PersistSecurityInfo=false in the admitted test path. Reject alternate failover/read-only routing in this mode. Do not switch ASPNETCORE_ENVIRONMENT or alter OS/network/certificate stores.",
+    "No actual endpoint, database credential or raw private configuration in committed code/tests/docs; only synthetic targets/placeholders.",
+    "Scope spans are limited: ServerConfiguration resolver/opt-in parsing, infrastructure constructor validation, and parent-owned ApiHost parameter forwarding. Shared auth/session/business permission/qualification/journal and I20/I21/I22 behavior unchanged.",
+    "Existing loopback-only constructor test behavior and public overload compatibility preserved. All errors safe without private values. Validation/DI construction tests must not open SQL.",
+    "Test exact match/mismatch/missing flags, default rejection, encryption/PersistSecurityInfo, safe errors, document/identity consistency and loopback preservation. Run current-head/base hosted CI and independent review before merge.",
+    "Root solely owns serial ApiHost composition alongside I20. Preserve all existing claims/markers and unrelated edits. No runtime config change, SQL/DLL execution, data mutation, journal application, deployment or other security change by this coding worker.",
+    "The exception skips SQL server identity validation and is not production trust acceptance. Document disabling it before production and a trusted-certificate migration path."
+  ],
+  "created_at": "2026-10-06T06:49:00Z"
+}

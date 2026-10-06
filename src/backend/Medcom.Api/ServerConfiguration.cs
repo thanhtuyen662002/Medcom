@@ -1,3 +1,4 @@
+using Medcom.Infrastructure;
 using Microsoft.Data.SqlClient;
 
 namespace Medcom.Api;
@@ -64,7 +65,12 @@ public static class ServerConfiguration
     }
 
     public static string ResolveConnectionString(IConfiguration configuration)
+        => ResolveConnectionString(configuration, out _);
+
+    public static string ResolveConnectionString(IConfiguration configuration,
+        out SqlDevelopmentTestTlsTarget? developmentTestTlsTarget)
     {
+        developmentTestTlsTarget = null;
         try
         {
             var current = configuration.GetConnectionString("Medcom");
@@ -79,8 +85,20 @@ public static class ServerConfiguration
                 || connection.DataSource.Contains("(localdb)", StringComparison.OrdinalIgnoreCase)
                 || connection.ShouldSerialize("User Instance") || connection.ShouldSerialize("AttachDBFilename")
                 || string.IsNullOrWhiteSpace(connection.InitialCatalog)
-                || connection.InitialCatalog.Equals("master", StringComparison.OrdinalIgnoreCase)
-                || connection.Encrypt == SqlConnectionEncryptOption.Optional || connection.TrustServerCertificate)
+                || connection.InitialCatalog.Equals("master", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException();
+            var enabledValue = configuration["Medcom:SqlDevelopmentTestTls:Enabled"];
+            var enabled = false;
+            if (enabledValue is not null && !bool.TryParse(enabledValue, out enabled))
+                throw new InvalidOperationException();
+            if (enabled)
+            {
+                developmentTestTlsTarget = new SqlDevelopmentTestTlsTarget(
+                    configuration["Medcom:SqlDevelopmentTestTls:Server"] ?? "",
+                    configuration["Medcom:SqlDevelopmentTestTls:Database"] ?? "");
+                developmentTestTlsTarget.ApplyTo(connection);
+            }
+            else if (connection.Encrypt == SqlConnectionEncryptOption.Optional || connection.TrustServerCertificate)
                 throw new InvalidOperationException();
             connection.PersistSecurityInfo = false;
             return connection.ConnectionString;
@@ -88,6 +106,7 @@ public static class ServerConfiguration
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException
             or FormatException or NotSupportedException)
         {
+            developmentTestTlsTarget = null;
             throw new InvalidOperationException(ConnectionConfigurationError);
         }
     }
