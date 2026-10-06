@@ -540,15 +540,23 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
   assert.equal(await guard.getByRole('button',{name:'Bỏ thay đổi và rời màn hình',exact:true}).count(),0);
   await guard.getByRole('button',{name:'Tiếp tục làm việc',exact:true}).click();await guard.waitFor({state:'hidden'});
  }
+ async function guardExplicitOutageNavigation(){
+  await page.getByRole('region',{name:'Xác minh lại phiên mua hàng',exact:true}).waitFor();await paint();
+  assert.equal(new URL(page.url()).searchParams.get('screen'),'purchase-requests','a transient outage must keep the purchase screen');
+  assert.equal(await page.getByRole('alertdialog').count(),0,'outage alone must not attempt navigation');
+  await page.locator('.mobile-bottom-nav').getByRole('button',{name:'Không gian làm việc',exact:true}).click();
+  await continueGuard();
+  assert.equal(new URL(page.url()).searchParams.get('screen'),'purchase-requests','Continue retains the original pending screen');
+ }
  async function suspend(failure){
   state.failure=failure;
   const failed=failure==='network'?page.waitForEvent('requestfailed',request=>new URL(request.url()).pathname==='/api/erp/api/workspace'):
    page.waitForResponse(response=>new URL(response.url()).pathname==='/api/erp/api/workspace'&&response.status()===503);
   // Do not inject PurchaseRequestScreen props: invoke Workspace's real focus listener.
   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await failed;
-  // The modal makes the background aria-inaccessible. Verify the nondiscardable
-  // guard and dismiss via Continue before querying the real recovery region.
-  await continueGuard();
+  // Outage retains this screen. A real user navigation attempt must still
+  // raise the nondiscardable custody guard; Continue keeps the same intent.
+  await guardExplicitOutageNavigation();
   await page.getByRole('region',{name:'Xác minh lại phiên mua hàng',exact:true}).waitFor();await paint();
   assert.equal(await screen.locator('input,textarea,select,table').count(),0);
   assert.doesNotMatch(await screen.innerText(),/SYNTHETIC ORIGINAL INTENT|SYNTHETIC REQUESTER|QA-L001/);
@@ -579,7 +587,7 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
   await t.test('repeated failed verification preserves custody; recovery still uses the original writer body',async()=>{
    const original=await begin('lost');await suspend('network');state.failure=503;
    const response=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/erp/api/workspace'&&response.status()===503);
-   await page.getByRole('button',{name:'Xác minh lại phiên ERP',exact:true}).click();await response;await continueGuard();await paint();
+   await page.getByRole('button',{name:'Xác minh lại phiên ERP',exact:true}).click();await response;await guardExplicitOutageNavigation();await paint();
    assert.equal(await screen.locator('input,textarea,select,table').count(),0);await assertSingleWriter();assert.equal(lookups().length,0);
    await recoverSame();await screen.getByRole('button',{name:'Kiểm tra kết quả yêu cầu gốc',exact:true}).click();await screen.getByText(/^ERP đã xác nhận yêu cầu /).waitFor();assert.equal(lookups()[0].body,original.body);await assertSingleWriter();
   });

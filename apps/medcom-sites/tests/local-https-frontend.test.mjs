@@ -489,6 +489,27 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       assert.equal(original.purchaseScope, 'c'.repeat(64));
       return {start: before.calls.length, effects: before.syntheticEffects, original, dto};
     };
+    const assertPendingNoteVisible = async () => {
+      // A confirmed ACK retains review mode until a fresh readback. Check the
+      // actual visible note in either legitimate form state, not a textarea
+      // that is intentionally absent from the review screen.
+      const form = purchaseEditor().locator('form[aria-label="Đề nghị mua hàng trên điện thoại"]');
+      const input = form.getByLabel('Ghi chú', {exact: true});
+      if (await input.count()) {
+        assert.equal(await input.isVisible(), true);
+        assert.equal(await input.inputValue(), 'SYNTHETIC PENDING NOTE');
+      } else {
+        await form.getByText('SYNTHETIC PENDING NOTE', {exact: true}).waitFor();
+      }
+    };
+    const assertVerifiedActionsBlocked = async () => {
+      for (const name of ['Quay lại chỉnh sửa', 'Lưu nháp trên ERP', 'Gửi đề nghị']) {
+        const button = purchaseEditor().getByRole('button', {name, exact: true});
+        await button.waitFor(); assert.equal(await button.isEnabled(), false, name + ' waits for current verification');
+        await button.evaluate(element => element.click());
+      }
+      assert.equal(await purchaseEditor().locator('input:enabled, textarea:enabled, select:enabled').count(), 0);
+    };
     const assertOriginalCustody = async (pending, lookups, effects = 1) => {
       const state = await snapshot(); const calls = state.calls.slice(pending.start);
       const writes = calls.filter(call => call.path === '/api/purchase-requests/save');
@@ -515,7 +536,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       const ack = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/save' && response.status() === 200);
       await control({holds: []}); await (await ack).finished();
       await purchaseEditor().getByText('Nháp đã được ERP xác nhận', {exact: true}).waitFor();
-      assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).inputValue(), 'SYNTHETIC PENDING NOTE');
+      await assertPendingNoteVisible();
       await assertOriginalCustody(pending, 0);
       lifecycleEvidence.requests.push({kind: 'pending-healthy-background', writes: 1, effects: 1, lookups: 0, originalBodyHash: pending.original.sha256});
     });
@@ -525,8 +546,8 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       const ack = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/save' && response.status() === 200);
       await control({holds: ['workspace']}); await (await ack).finished();
       await purchaseEditor().getByText('Nháp đã được ERP xác nhận', {exact: true}).waitFor();
-      assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).inputValue(), 'SYNTHETIC PENDING NOTE');
-      assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).isEnabled(), false, 'confirmed data stays visible, but the held parent check still blocks new edits');
+      await assertPendingNoteVisible();
+      await assertVerifiedActionsBlocked();
       await assertOriginalCustody(pending, 0);
       const detailFinished = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200);
       await control({holds: []}); await (await detailFinished).finished();
@@ -554,14 +575,14 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await waitFor(async () => (await counts())['/api/purchase-requests/detail'] > readsBefore['/api/purchase-requests/detail'], 'one bounded fresh read after superseded GET');
       await held('purchase-detail'); await paint();
       await purchaseEditor().getByText('Nháp đã được ERP xác nhận', {exact: true}).waitFor();
-      assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).inputValue(), 'SYNTHETIC PENDING NOTE');
-      assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).isEnabled(), false, 'new edits await a post-ACK grant/read');
+      await assertPendingNoteVisible();
+      await assertVerifiedActionsBlocked();
       assert.equal(await purchasePanel().getByRole('alert').count(), 0, 'superseded GET is not a fabricated outage');
       const freshDetail = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200);
       await control({holds: []}); assert.equal((await (await freshDetail).json()).data.stateToken, 'prs1.' + '2'.repeat(64));
       await waitFor(() => purchaseEditor().getByLabel('Ghi chú', {exact: true}).isEnabled(), 'post-ACK grant verified'); await paint();
       await stopStableData('ACK before old GET'); await assertOriginalCustody(pending, 0);
-      assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).inputValue(), 'SYNTHETIC PENDING NOTE');
+      await assertPendingNoteVisible();
       const delta = difference(await counts(), before);
       assert.equal(delta['/api/workspace'], 1);
       for (const route of routes.slice(1)) assert.equal(delta[route], 2, 'one stale read plus one fresh read, without a retry loop');
@@ -586,7 +607,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       assert.equal(await purchaseEditor().getByText('Nháp đã được ERP xác nhận', {exact: true}).count(), 0, 'retired ACK cannot resolve the retained unknown');
       await reconcile.click(); await purchaseEditor().getByText('Nháp đã được ERP xác nhận', {exact: true}).waitFor();
       await assertOriginalCustody(pending, 1);
-      assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).inputValue(), 'SYNTHETIC PENDING NOTE');
+      await assertPendingNoteVisible();
       lifecycleEvidence.requests.push({kind: 'pending-detail-503', writes: 1, effects: 1, lookups: 1, originalBodyHash: pending.original.sha256});
     });
     await run('I29 built narrower child bootstrap masks a pending branch-excluded document before detail completes', async () => {
