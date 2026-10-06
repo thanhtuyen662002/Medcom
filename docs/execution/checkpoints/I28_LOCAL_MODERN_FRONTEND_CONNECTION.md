@@ -59,3 +59,25 @@ Runtime/business admission remains blocked. No real owner execution, SQL access,
 credential handling, device-camera acceptance, deployment or business write is
 performed in this lane. Cookie host/port sharing and the separate I29 browser
 tab-return investigation are recorded in the deployment guide.
+
+## Observed CI repairs through R4 preparation
+
+R1 resolved an actual ambiguous C# catch type. R2 fenced hosting URLs/preferences
+captured before configuration clearing and corrected protocol-specific fixture
+expectations without dropping cases. R3 supplied an empty writable configuration
+provider after clearing inherited sources. Both OS then executed 1,547 backend
+cases: 1,546 passed, one exact-limit chunked upload failed because Kestrel also
+counts HTTP chunk framing. The listener/forwarding regressions passed on that run.
+
+Root approved R4's finite HTTP/1.1 chunked transport allowance: route decoded
+limit plus 64 KiB. The decoded 16 KiB/1 MiB limits, exact streamed positive,
+decoded-overflow refusal and no-upstream assertions remain. New raw excessive
+chunk-extension proof checks the finite envelope independently. The application
+buffer reads at most decoded limit+1; no global/unlimited limit is introduced.
+
+R3 Linux built-app evidence passed actual HTTPS login/cookies and both 320/390
+Workspace list/detail scenarios. Its following hostile HTTP-Host test was stopped
+by Node's own TLS hostname check, because Node inferred SNI from that Host. R4
+keeps CA/hostname verification and explicitly authenticates localhost TLS for
+that negative HTTP test, retaining the relay400 assertion. No production TLS
+bypass is added. R4 full runtime results remain pending the next exact-head CI.

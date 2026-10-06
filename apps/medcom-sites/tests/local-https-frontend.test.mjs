@@ -63,11 +63,11 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
     const server = net.createServer(); await new Promise((resolve, reject) => {server.once('error', reject); server.listen(0, '127.0.0.1', resolve);});
     const port = server.address().port; await new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve())); return port;
   }
-  function request(url, {method = 'GET', headers = {}, body, certificate = ca, expectContinue = false} = {}) {
+  function request(url, {method = 'GET', headers = {}, body, certificate = ca, expectContinue = false, tlsServername} = {}) {
     return new Promise((resolve, reject) => {
       let sent = false;
       const wireHeaders = expectContinue ? {...headers, Expect:'100-continue', 'Content-Length':String(Buffer.byteLength(body ?? ''))} : headers;
-      const req = https.request(url, {method, headers:wireHeaders, ...(certificate === false ? {} : {ca: certificate}), rejectUnauthorized: true, family: 4, signal: t.signal}, res => {
+      const req = https.request(url, {method, headers:wireHeaders, ...(certificate === false ? {} : {ca: certificate}), ...(tlsServername ? {servername:tlsServername} : {}), rejectUnauthorized: true, family: 4, signal: t.signal}, res => {
         const parts = []; res.on('data', b => parts.push(b)); res.on('error', reject);
         res.on('end', () => {resolve({status: res.statusCode, headers: res.headers, body: Buffer.concat(parts).toString('utf8')});if(expectContinue&&!sent)req.destroy();});
       });
@@ -125,7 +125,11 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       }
     });
     await run('forged Host, Origin and forwarded headers cannot broaden origin admission', async () => {
-      const badHost = await request(ready.publicOrigin + '/', {headers: {Host: 'attacker.invalid'}}); assert.equal(badHost.status, 400);
+      // Node normally derives TLS servername from a supplied Host header. Prove
+      // that failure first, then authenticate localhost TLS while attacking only
+      // HTTP authority, so the relay's own Host check is actually exercised.
+      await assert.rejects(request(ready.publicOrigin + '/', {headers: {Host:'attacker.invalid'}}),error=>error.code==='ERR_TLS_CERT_ALTNAME_INVALID');
+      const badHost = await request(ready.publicOrigin + '/', {headers: {Host: 'attacker.invalid'},tlsServername:'localhost'}); assert.equal(badHost.status, 400);
       const before = (await snapshot()).calls.filter(c=>c.path==='/api/auth/login').length;
       const rejected = await request(address('api/auth/login'), {method: 'POST', headers: {'Content-Type':'application/json', Origin:'https://attacker.invalid', Connection:'Origin, close', Forwarded:'host=localhost;proto=https', 'X-Forwarded-Host':new URL(ready.publicOrigin).host}, body:'{}'});
       assert.equal(rejected.status,403); assert.equal(JSON.parse(rejected.body).code,'origin_rejected');
