@@ -83,10 +83,6 @@ public sealed class SqlLegacyUserStore : ILegacyUserStore
               AND ((M.MenuID='050129' AND M.FormName='AP_OrderFrm')
                 OR (M.MenuID='07011' AND M.FormName='IV_InboundRequestFrm'))
               AND (P.IsRun=1 OR P.IsAdd=1 OR P.IsUpdate=1 OR P.IsDelete=1 OR P.isManager=1 OR P.isAdmin=1);
-            SELECT DISTINCT BranchID FROM (
-                SELECT BranchID FROM dbo.SY_User WHERE UserName=@username
-                UNION ALL SELECT BranchID FROM dbo.SY_UserBranch WHERE UserName=@username
-            ) S WHERE BranchID IS NOT NULL AND BranchID<>'';
             """, connection) { CommandTimeout=5 };
         permissions.Parameters.Add("@username",SqlDbType.VarChar,100).Value=user.Username;
         permissions.Parameters.Add("@group",SqlDbType.VarChar,50).Value=(object?)user.GroupId??DBNull.Value;
@@ -98,13 +94,12 @@ public sealed class SqlLegacyUserStore : ILegacyUserStore
             { "050129" => "purchase-orders.read", "07011" => "inbound-requests.read", _ => null };
             if (capability is not null) capabilities.Add(capability);
         }
-        await grants.NextResultAsync(cancellationToken);
-        var branches=new List<string>();
-        while(await grants.ReadAsync(cancellationToken))
-        { branches.Add(grants.GetString(0)); if(branches.Count>200) throw new InvalidOperationException(); }
         await grants.CloseAsync();
         if (await PurchaseRequests.SqlPurchaseRequestQueries.HasNativeReadGrantAsync(connection, user, cancellationToken))
             capabilities.Add("purchase-requests.read");
-        return user with { Capabilities=capabilities.AsReadOnly(), BranchIds=branches.AsReadOnly() };
+        await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+        var branches = await SqlLegacyBranchScope.ReadAsync(transaction, user, cancellationToken);
+        await transaction.RollbackAsync(cancellationToken);
+        return user with { Capabilities=capabilities.AsReadOnly(), BranchIds=branches };
     }
 }

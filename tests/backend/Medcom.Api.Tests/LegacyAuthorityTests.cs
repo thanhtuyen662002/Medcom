@@ -58,6 +58,105 @@ public sealed class LegacyAuthorityTests
         Assert.Equal(IdentityOutcome.Rejected,(await authority.RevalidateAsync(identity,default)).Outcome);
         Assert.Equal(1,passwords.Calls);
     }
+
+    [Fact]
+    public async Task DerivedRestrictedAndAllBranchOutputsReplacePreviousIdentityScope()
+    {
+        // Synthetic, already-derived resolver outputs. These tests do not execute
+        // SQL or establish which native BranchID values resolve to all branches.
+        var users = new Users(); var passwords = new Passwords();
+        users.User = users.User! with { Capabilities = ["purchase-orders.read"], BranchIds = ["QA-A"] };
+        var authority = new LegacyIdentityAuthority(users, passwords, new("t", "c", "Company"));
+        var restricted = (await authority.AuthenticateAsync("alias", "input", default)).Identity!;
+        Assert.Equal(["QA-A"], restricted.BranchIds);
+
+        users.User = users.User with { BranchIds = ["QA-A", "QA-B", "QA-C"] };
+        var expanded = await authority.RevalidateAsync(restricted, default);
+        Assert.Equal(IdentityOutcome.Success, expanded.Outcome);
+        Assert.Equal(["QA-A", "QA-B", "QA-C"], expanded.Identity!.BranchIds);
+        Assert.Equal(restricted.CredentialStamp, expanded.Identity.CredentialStamp);
+        Assert.Equal(restricted.Capabilities, expanded.Identity.Capabilities);
+        Assert.True(expanded.Identity.AuthorityVersion > restricted.AuthorityVersion);
+
+        users.User = users.User with { BranchIds = ["QA-B"] };
+        var narrowed = await authority.RevalidateAsync(expanded.Identity, default);
+        Assert.Equal(IdentityOutcome.Success, narrowed.Outcome);
+        Assert.Equal(["QA-B"], narrowed.Identity!.BranchIds);
+        Assert.Equal(restricted.CredentialStamp, narrowed.Identity.CredentialStamp);
+        Assert.Equal(restricted.Capabilities, narrowed.Identity.Capabilities);
+        Assert.True(narrowed.Identity.AuthorityVersion > expanded.Identity.AuthorityVersion);
+        Assert.Equal("Canonical", users.Requested);
+        Assert.Equal(1, passwords.Calls);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task EmptyOrMissingDerivedScopeNeverRetainsPreviousBranchGrants(bool missing)
+    {
+        var users = new Users(); var passwords = new Passwords();
+        users.User = users.User! with { Capabilities = ["purchase-orders.read"], BranchIds = ["QA-A", "QA-B"] };
+        var authority = new LegacyIdentityAuthority(users, passwords, new("t", "c", "Company"));
+        var identity = (await authority.AuthenticateAsync("alias", "input", default)).Identity!;
+
+        users.User = users.User with { BranchIds = missing ? null : [] };
+        var revalidated = await authority.RevalidateAsync(identity, default);
+        Assert.Equal(IdentityOutcome.Success, revalidated.Outcome);
+        Assert.Empty(revalidated.Identity!.BranchIds ?? []);
+        Assert.Equal(identity.Capabilities, revalidated.Identity.Capabilities);
+        var freshLogin = await authority.AuthenticateAsync("alias", "input", default);
+        Assert.Equal(IdentityOutcome.Success, freshLogin.Outcome);
+        Assert.Empty(freshLogin.Identity!.BranchIds ?? []);
+    }
+
+    [Fact]
+    public async Task ExpandedDerivedScopeDoesNotRestoreRevokedFunctionalCapabilities()
+    {
+        var users = new Users(); var passwords = new Passwords();
+        users.User = users.User! with { Capabilities = ["purchase-orders.read", "purchase-requests.read"], BranchIds = ["QA-A"] };
+        var authority = new LegacyIdentityAuthority(users, passwords, new("t", "c", "Company"));
+        var identity = (await authority.AuthenticateAsync("alias", "input", default)).Identity!;
+
+        users.User = users.User with { Capabilities = [], BranchIds = ["QA-A", "QA-B"] };
+        var revalidated = await authority.RevalidateAsync(identity, default);
+        Assert.Equal(IdentityOutcome.Success, revalidated.Outcome);
+        Assert.Equal(["QA-A", "QA-B"], revalidated.Identity!.BranchIds);
+        Assert.Equal(["platform.status"], revalidated.Identity.Capabilities);
+        Assert.Equal(identity.CredentialStamp, revalidated.Identity.CredentialStamp);
+    }
+
+    [Theory]
+    [InlineData("credential")]
+    [InlineData("missing-credential")]
+    [InlineData("principal")]
+    [InlineData("disabled-user")]
+    [InlineData("group")]
+    [InlineData("missing-group")]
+    [InlineData("disabled-group")]
+    public async Task ExpandedDerivedScopeCannotBypassIdentityOrGroupRevocation(string change)
+    {
+        var users = new Users(); var passwords = new Passwords();
+        users.User = users.User! with { Capabilities = ["purchase-orders.read"], BranchIds = ["QA-A"] };
+        var authority = new LegacyIdentityAuthority(users, passwords, new("t", "c", "Company"));
+        var identity = (await authority.AuthenticateAsync("alias", "input", default)).Identity!;
+        users.User = users.User with { BranchIds = ["QA-A", "QA-B"] };
+        users.User = change switch
+        {
+            "credential" => users.User with { StoredHash = "changed-synthetic-hash" },
+            "missing-credential" => users.User with { StoredHash = "" },
+            "principal" => users.User with { Username = "Other" },
+            "disabled-user" => users.User with { Disabled = true },
+            "group" => users.User with { GroupId = "other-group" },
+            "missing-group" => users.User with { GroupId = null },
+            _ => users.User with { GroupEnabled = false }
+        };
+
+        var result = await authority.RevalidateAsync(identity, default);
+        Assert.Equal(IdentityOutcome.Rejected, result.Outcome);
+        Assert.Null(result.Identity);
+        Assert.Equal(1, passwords.Calls);
+    }
+
     [Fact]
     public async Task WorkerFailureAndInvalidPasswordDoNotCreateIdentity()
     {
