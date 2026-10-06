@@ -439,14 +439,17 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await page.evaluate(() => window.qa.rights({})); await ready(); assert.equal(await field('Ghi chú gửi kho').inputValue(), 'RIGHTS NOTE');
     });
     for (const state of ['pending','confirmed']) await run(`current list 401 hides ${state} draft/filter/selection/receipt and cannot reopen same login`, async () => {
-      await reset(); await field('Tìm phiếu nhập hàng').fill('PRIVATE FILTER'); await field('Lọc chi nhánh').selectOption('BR-A');
+      await reset(); await field('Tìm phiếu nhập hàng').fill('PRIVATE FILTER');
+      const branchFilter=page.getByRole('form',{name:'Lọc phiếu nhập hàng',exact:true}).getByRole('combobox');
+      assert.equal(await branchFilter.count(),1);await branchFilter.selectOption('BR-A');
+      assert.equal(await branchFilter.inputValue(),'BR-A');assert.equal(await field('Tìm phiếu nhập hàng').inputValue(),'PRIVATE FILTER');
       await field('Số đơn').fill('SESSION PRIVATE');
       if(state==='pending') await page.evaluate(() => window.qa.hold('post'));
       await save();
       if(state==='pending') await page.waitForFunction(() => window.qa.held('post') > 0);
       else {await confirmed(); await ready(); await page.waitForSelector('[data-testid=inbound-host-receipt]');}
       await page.evaluate(() => window.qa.failList(401)); await page.waitForFunction(() => window.qaDenied?.length === 1);
-      const hidden=async()=>{assert.equal(await field('Số đơn').count(),0);assert.equal(await field('Tìm phiếu nhập hàng').count(),0);
+      const hidden=async()=>{assert.equal(await field('Số đơn').count(),0);assert.equal(await field('Tìm phiếu nhập hàng').count(),0);assert.equal(await branchFilter.count(),0);
         assert.equal(await page.locator('[aria-pressed=true]').count(),0);assert.equal(await page.locator('[data-testid=inbound-host-receipt],[data-testid=confirmed-receipt]').count(),0);
         assert.match(await page.getByTestId('inbound-request-host').innerText(),/Đã kết thúc phiên/);};
       await hidden();
@@ -454,7 +457,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await page.evaluate(() => {window.qa.listHealthy();window.qa.rights({});window.qa.rerender();});
       await page.waitForFunction(() => window.qa.callbackRevision()===1); await hidden();
       assert.deepEqual(await page.evaluate(() => window.qaDenied),[401]); assert.equal((await calls()).post.length,1);
-      await reset(); assert.equal(await field('Số đơn').inputValue(),'FULL ERP A'); assert.equal(await field('Tìm phiếu nhập hàng').inputValue(),'');
+      await reset(); assert.equal(await field('Số đơn').inputValue(),'FULL ERP A'); assert.equal(await field('Tìm phiếu nhập hàng').inputValue(),'');assert.equal(await branchFilter.inputValue(),'');
       assert.equal(await page.locator('[data-testid=confirmed-receipt]').count(),0); assert.equal(await button('Kiểm tra yêu cầu gốc').count(),0);
     });
     for(const status of [403,409]) await run(`list ${status} suspends authority, preserves held original, and same-session validation can recover`,async()=>{

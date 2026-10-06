@@ -408,43 +408,56 @@ public sealed class InboundDraftEndpointTests
         public static async Task<Fixture> Start(bool defaults = false, bool login = true)
         {
             var f = new Fixture();
-            using var rsa = RSA.Create(2048);
-            var request = new CertificateRequest("CN=localhost", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-            var san = new SubjectAlternativeNameBuilder(); san.AddIpAddress(IPAddress.Loopback); request.CertificateExtensions.Add(san.Build());
-            f.certificate = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow.AddHours(2));
-            var builder = WebApplication.CreateEmptyBuilder(new WebApplicationOptions { ApplicationName = typeof(InboundDraftEndpointTests).Assembly.FullName,
-                EnvironmentName = "SyntheticInboundTest", ContentRootPath = Path.GetTempPath() });
-            builder.Logging.ClearProviders(); builder.Services.AddLogging(); builder.Services.AddRouting();
-            builder.WebHost.UseKestrel(options => {options.Listen(IPAddress.Loopback, 0, listen => listen.UseHttps(f.certificate)); options.Listen(IPAddress.Loopback, 0);});
-            builder.Services.AddDataProtection().UseEphemeralDataProtectionProvider();
-            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options =>
+            try
             {
-                options.Cookie.Name = "__Host-I21.Test.Session"; options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.Always;
-                options.Cookie.Path = "/"; options.Cookie.HttpOnly = true; options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Strict;
-                options.Events.OnRedirectToLogin = c => {c.Response.StatusCode = 401; return Task.CompletedTask;};
-                options.Events.OnRedirectToAccessDenied = c => {c.Response.StatusCode = 403; return Task.CompletedTask;};
-            });
-            builder.Services.AddAuthorization();
-            builder.Services.AddAntiforgery(options => {options.HeaderName = "X-CSRF-TOKEN"; options.Cookie.Name = "__Host-I21.Test.Csrf";
-                options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.Always; options.Cookie.Path = "/"; options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Strict;});
-            builder.Services.AddSingleton<IWebSessions>(f.Sessions);
-            if (!defaults) {builder.Services.AddSingleton<IInboundDraftCommandAccess>(f.Access); builder.Services.AddSingleton<IInboundDraftCommandService>(f.Writer);}
-            builder.Services.AddInboundDraftFacade();
-            f.App = builder.Build();
-            f.App.Use(async (context, next) => {context.Response.Headers.CacheControl = "no-store"; await next(context);});
-            f.App.UseAuthentication(); f.App.UseAuthorization();
-            f.App.MapGet("/qa/login", async (Microsoft.AspNetCore.Http.HttpContext c) =>
-            {await c.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, AuthEndpoints.Principal(f.Sessions.Current)); return Microsoft.AspNetCore.Http.Results.Ok();}).AllowAnonymous();
-            f.App.MapGet("/qa/csrf", (Microsoft.AspNetCore.Http.HttpContext c, IAntiforgery csrf) =>
-                Microsoft.AspNetCore.Http.Results.Ok(new {token = csrf.GetAndStoreTokens(c).RequestToken})).RequireAuthorization();
-            f.App.MapInboundDraftFacade(); await f.App.StartAsync();
-            var addresses = f.App.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses;
-            f.Origin = addresses.Single(a => a.StartsWith("https://", StringComparison.Ordinal));
-            f.HttpOrigin = addresses.Single(a => a.StartsWith("http://", StringComparison.Ordinal));
-            var handler = new HttpClientHandler {CookieContainer = f.Cookies, AllowAutoRedirect = false,
-                ServerCertificateCustomValidationCallback = (_, cert, _, _) => cert is not null && cert.RawData.AsSpan().SequenceEqual(f.certificate.RawData)};
-            f.Client = new HttpClient(handler) {BaseAddress = new Uri(f.Origin), Timeout = TimeSpan.FromSeconds(20)};
-            if (login) await f.Login(); return f;
+                using var rsa = RSA.Create(2048);
+                var request = new CertificateRequest("CN=localhost", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+                var san = new SubjectAlternativeNameBuilder(); san.AddIpAddress(IPAddress.Loopback); request.CertificateExtensions.Add(san.Build());
+                using var generated = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow.AddHours(2));
+                // Match the existing synthetic HTTPS fixtures: Windows Schannel
+                // needs an imported private key. Keep exact-certificate client pinning.
+                var pkcs12 = generated.Export(X509ContentType.Pfx);
+                try { f.certificate = X509CertificateLoader.LoadPkcs12(pkcs12, null); }
+                finally { CryptographicOperations.ZeroMemory(pkcs12); }
+                var builder = WebApplication.CreateEmptyBuilder(new WebApplicationOptions { ApplicationName = typeof(InboundDraftEndpointTests).Assembly.FullName,
+                    EnvironmentName = "SyntheticInboundTest", ContentRootPath = Path.GetTempPath() });
+                builder.Logging.ClearProviders(); builder.Services.AddLogging(); builder.Services.AddRouting();
+                builder.WebHost.UseKestrel(options => {options.Listen(IPAddress.Loopback, 0, listen => listen.UseHttps(f.certificate)); options.Listen(IPAddress.Loopback, 0);});
+                builder.Services.AddDataProtection().UseEphemeralDataProtectionProvider();
+                builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options =>
+                {
+                    options.Cookie.Name = "__Host-I21.Test.Session"; options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.Always;
+                    options.Cookie.Path = "/"; options.Cookie.HttpOnly = true; options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Strict;
+                    options.Events.OnRedirectToLogin = c => {c.Response.StatusCode = 401; return Task.CompletedTask;};
+                    options.Events.OnRedirectToAccessDenied = c => {c.Response.StatusCode = 403; return Task.CompletedTask;};
+                });
+                builder.Services.AddAuthorization();
+                builder.Services.AddAntiforgery(options => {options.HeaderName = "X-CSRF-TOKEN"; options.Cookie.Name = "__Host-I21.Test.Csrf";
+                    options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.Always; options.Cookie.Path = "/"; options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Strict;});
+                builder.Services.AddSingleton<IWebSessions>(f.Sessions);
+                if (!defaults) {builder.Services.AddSingleton<IInboundDraftCommandAccess>(f.Access); builder.Services.AddSingleton<IInboundDraftCommandService>(f.Writer);}
+                builder.Services.AddInboundDraftFacade();
+                f.App = builder.Build();
+                f.App.Use(async (context, next) => {context.Response.Headers.CacheControl = "no-store"; await next(context);});
+                f.App.UseAuthentication(); f.App.UseAuthorization();
+                f.App.MapGet("/qa/login", async (Microsoft.AspNetCore.Http.HttpContext c) =>
+                {await c.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, AuthEndpoints.Principal(f.Sessions.Current)); return Microsoft.AspNetCore.Http.Results.Ok();}).AllowAnonymous();
+                f.App.MapGet("/qa/csrf", (Microsoft.AspNetCore.Http.HttpContext c, IAntiforgery csrf) =>
+                    Microsoft.AspNetCore.Http.Results.Ok(new {token = csrf.GetAndStoreTokens(c).RequestToken})).RequireAuthorization();
+                f.App.MapInboundDraftFacade(); await f.App.StartAsync();
+                var addresses = f.App.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses;
+                f.Origin = addresses.Single(a => a.StartsWith("https://", StringComparison.Ordinal));
+                f.HttpOrigin = addresses.Single(a => a.StartsWith("http://", StringComparison.Ordinal));
+                var handler = new HttpClientHandler {CookieContainer = f.Cookies, AllowAutoRedirect = false,
+                    ServerCertificateCustomValidationCallback = (_, cert, _, _) => cert is not null && cert.RawData.AsSpan().SequenceEqual(f.certificate.RawData)};
+                f.Client = new HttpClient(handler) {BaseAddress = new Uri(f.Origin), Timeout = TimeSpan.FromSeconds(20)};
+                if (login) await f.Login(); return f;
+            }
+            catch
+            {
+                await f.DisposeAsync();
+                throw;
+            }
         }
         public async Task Login(bool rotate = false)
         {
@@ -487,7 +500,16 @@ public sealed class InboundDraftEndpointTests
         }
         public async ValueTask DisposeAsync()
         {
-            Client?.Dispose(); if (App is not null) {await App.StopAsync(); await App.DisposeAsync();} certificate?.Dispose();
+            try
+            {
+                Client?.Dispose();
+                if (App is not null)
+                {
+                    try { await App.StopAsync(); }
+                    finally { await App.DisposeAsync(); }
+                }
+            }
+            finally { certificate?.Dispose(); }
         }
     }
 }
