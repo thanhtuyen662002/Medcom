@@ -72,3 +72,15 @@ NOT_RUN and must be performed by the owner later with the verified artifact.
 
 Owner instructions: `tools/inspect/README.md`. No Python install, source build, execution
 policy change, certificate bypass or configuration rewrite is required on the owner machine.
+
+
+## Hosted portability correction R1
+
+Windows job 112490264241 / run 37528131357 reached inspector static/package checks
+and exposed mixed 8.3/long temporary-directory spellings in `validate_project`.
+The linked source was resolved to `runneradmin` while its comparison anchor retained
+`RUNNER~1`, so `relative_to` rejected the legitimate source. Both anchors now use the
+same resolved snapshot after regular-directory checks. An equivalent-path regression
+covers this failure class. No policy, linked source, SQL or dependency is changed.
+Local fixed-plan verifier and 11 synthetic package tests pass; hosted rerun and actual
+inspector .NET results remain required.

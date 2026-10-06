@@ -220,6 +220,12 @@ class PackageTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Unexpected'):
             package.published_files(output)
 
+    def test_project_uses_one_canonical_snapshot_anchor(self):
+        # Equivalent filesystem spelling, analogous to Windows 8.3/long names.
+        # The previous mixed lexical/resolved anchors raised in relative_to().
+        alias = self.root / 'tools' / '..'
+        package.validate_project(alias)
+
     def test_noncanonical_paths_refused(self):
         for path in ('../escape', '/root', 'foo\\bar', 'C:/x', 'foo//bar', './foo', 'foo/../bar'):
             with self.subTest(path=path), self.assertRaises(ValueError):

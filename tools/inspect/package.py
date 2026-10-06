@@ -93,6 +93,11 @@ def snapshot_source(revision, destination):
 
 
 def validate_project(snapshot):
+    # Windows temporary paths can use an 8.3 spelling while resolve() returns the
+    # long spelling. Use one verified canonical anchor for every relative test.
+    regular_node(snapshot, directory=True)
+    snapshot = snapshot.resolve(strict=True)
+    regular_node(snapshot, directory=True)
     project = snapshot / PROJECT
     tree = ET.parse(project)
     if tree.findall('.//ProjectReference') or tree.findall('.//Reference'):
