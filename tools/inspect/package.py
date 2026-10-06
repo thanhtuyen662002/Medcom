@@ -77,7 +77,7 @@ def read_regular(path):
 def snapshot_source(revision, destination):
     # Git archive excludes ignored build outputs, private local files and stale
     # binaries. Never compile from the caller's working directory.
-    with tarfile.open(fileobj=io.BytesIO(git('archive', '--format=tar', revision))) as archive:
+    with tarfile.open(fileobj=io.BytesIO(git('-c', 'core.autocrlf=false', '-c', 'core.eol=lf', 'archive', '--format=tar', revision))) as archive:
         for member in archive.getmembers():
             name = member.name.rstrip('/') if member.isdir() else member.name
             relative = safe_name(name)

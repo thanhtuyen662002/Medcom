@@ -84,3 +84,17 @@ same resolved snapshot after regular-directory checks. An equivalent-path regres
 covers this failure class. No policy, linked source, SQL or dependency is changed.
 Local fixed-plan verifier and 11 synthetic package tests pass; hosted rerun and actual
 inspector .NET results remain required.
+
+
+## Hosted portability correction R2
+
+On head `cc51be7129ba151450427a2d5e3c0c7ac65dc322`, Windows job 112492438375 /
+run 37528768321 passes all 11 Python packaging regressions, locked restores, zero-warning
+inspector/test builds and all 177 inspector cases. Real packaging then correctly refuses
+linked-source archive bytes that differ from the committed blob. Reproduction confirms
+`core.autocrlf=true` makes `git archive` convert the LF source to CRLF. The archive subprocess
+now pins `core.autocrlf=false` and `core.eol=lf` for that invocation only; persistent Git
+configuration is untouched, and exact raw-blob comparison remains mandatory. A synthetic
+inherited-autocrlf/eol regression verifies exact bytes and unchanged configuration.
+Local fixed-plan checks and 12 packaging tests pass; fresh full hosted CI/package proof
+is still required. No inspector runtime logic, SQL plan or linked policy source changed.

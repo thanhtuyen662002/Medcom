@@ -220,6 +220,24 @@ class PackageTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Unexpected'):
             package.published_files(output)
 
+    def test_archive_preserves_committed_bytes_under_inherited_autocrlf(self):
+        for name in package.LINKED_SOURCES:
+            (self.root / name).write_bytes(b'public static class Source { }\n// LF source fixture\n')
+        self.git('add', '.')
+        self.commit()
+        self.git('config', 'core.autocrlf', 'true')
+        self.git('config', 'core.eol', 'crlf')
+        snapshot = self.base / 'snapshot'
+        snapshot.mkdir()
+        revision = self.git('rev-parse', 'HEAD')
+        package.snapshot_source(revision, snapshot)
+        for name in package.LINKED_SOURCES:
+            raw = subprocess.check_output(['git', 'show', revision + ':' + name], cwd=self.root)
+            self.assertEqual((snapshot / name).read_bytes(), raw)
+            self.assertNotIn(b'\r\n', raw)
+        self.assertEqual(self.git('config', 'core.autocrlf'), 'true')
+        self.assertEqual(self.git('config', 'core.eol'), 'crlf')
+
     def test_project_uses_one_canonical_snapshot_anchor(self):
         # Equivalent filesystem spelling, analogous to Windows 8.3/long names.
         # The previous mixed lexical/resolved anchors raised in relative_to().
