@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I24",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "fd868c5a-ba53-49f3-a752-428cdf0bd950",
+  "base_sha": "6fb09ec1edad74262b32412497c7b3d636dedcbc",
+  "work_branch": "codex/g45-inbound-workspace-i24-20261006",
+  "claim_branch": "medcom-claims/g45/direct/I24",
+  "scope": [
+    "apps/medcom-sites/components/erp/workspace.tsx",
+    "apps/medcom-sites/components/erp/inbound-request-screen.tsx",
+    "apps/medcom-sites/components/erp/navigation-guard.tsx",
+    "apps/medcom-sites/lib/erp/inbound-request-command-adapter.ts",
+    "apps/medcom-sites/lib/erp/proxy-policy.ts",
+    "apps/medcom-sites/lib/erp/proxy.ts",
+    "apps/medcom-sites/tests/inbound-request-integration.test.mjs",
+    "src/backend/Medcom.Api/ApiHost.cs",
+    "tests/backend/Medcom.Api.Tests/InboundDraftEndpointTests.cs",
+    "docs/execution/checkpoints/I24_INBOUND_WORKSPACE_COMPOSITION.md",
+    "docs/execution/direct-runs/I24.json"
+  ],
+  "purpose": "Compose reviewed inbound host/API/BFF into real Workspace while preserving original-intent custody, current authority and one history owner; providers remain unavailable.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "dependencies": [
+    {
+      "ticket": "I21",
+      "pr": 74,
+      "candidate": "7c5ada1cc47b57a0fee6b31d568ef9ee59ddff8c",
+      "state": "Current-base synthetic CI pending; immutable read-only dependency until root acceptance"
+    }
+  ],
+  "constraints": [
+    "Root owns all shared-path composition; preserve accepted I20/I22/I23 behavior, markers and claims. Never overwrite shared files from old candidates.",
+    "I15/I18 and purchase implementations, dependencies/lockfiles, SQL/schema/private config and workflows are read-only. No actual DB, DLL, credential/config access, install, deployment or business-write activation.",
+    "Use exact four inbound method/path pairs and validated Origin/scope metadata; preserve original command bytes, cookie filtering, CSRF, no-store, no redirects/retries and bounded streaming body limits. Auth16KiB unchanged; only scoped inbound command POSTs1MiB.",
+    "Add facade service/route helpers only with unavailable defaults. No runtime acceptance flag, SQL authority/service provider or fabricated attestation.",
+    "Parent owns nonsecret true login incarnation, sticky confirmed retirement, recovery/polling/deadlines; transient null must retain closed custody. Never derive login key from credentials, expiry, authorityVersion, display name, document or receipt.",
+    "Workspace is sole history owner in composed mode; preserve standalone host default tests. Deferred discard must recheck current nondiscardable blockers. Preserve Back/Forward position and cancellation, no remount loss.",
+    "Only current-generation explicit401 may notify parent as session retirement; network503/403/409 must not masquerade as logout or discard unknown intent. Retain exact frozen command, operation ID and JSON for reconcile; no automatic writer replay.",
+    "Add actual Workspace/BFF/API composition regressions with synthetic transports and existing toolchain; no mocks claimed as browser/server acceptance, no skips/rule suppression. Run unchanged I20/I18/QR regressions plus full pinned lint/typecheck/build and exact head/base CI.",
+    "Independent source/privacy review and fresh dependency/current-base CI precede root merge. This lane does not certify runtime or production readiness."
+  ],
+  "created_at": "2026-10-06T08:27:00Z"
+}
