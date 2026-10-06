@@ -376,14 +376,16 @@ public sealed class SqlPurchaseRequestCommands : IPurchaseRequestCommands
             if(await r.ReadAsync(token) || !valid) return false;
             if(strict && await r.NextResultAsync(token)) return false;
         }
-        await using(var cmd=PurchaseRequestSql.Command(tx,PurchaseRequestSql.BranchesText))
+        // Native blank expands only through the reviewed catalog resolver; the live
+        // identity's exact branch membership remains an independent fence.
+        try
         {
-            PurchaseRequestSql.Parameter(cmd,"@actor",DbType.String,id.PrincipalId,100);
-            await using var r=await cmd.ExecuteReaderAsync(token); var count=0; var allowed=false;
-            if(strict && !LookupShape(r,typeof(string))) return false;
-            while(await r.ReadAsync(token)) { if(++count>200 || r.IsDBNull(0)) return false; if(r.GetString(0)==input.Branch) allowed=true; }
-            return allowed && (!strict || !await r.NextResultAsync(token));
+            var branches = await SqlLegacyBranchScope.ReadAsync(tx, user, token);
+            return branches.Contains(input.Branch, StringComparer.Ordinal);
         }
+        // Preserve strict receipt lookup's denial for invalid authority projections.
+        // Timeouts and cancellation retain their existing outer outcomes.
+        catch (InvalidOperationException) when (strict) { return false; }
     }
     private async Task<bool> Probe(DbTransaction tx,CancellationToken token,bool strict=false)
     {

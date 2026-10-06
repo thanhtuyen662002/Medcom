@@ -3,6 +3,7 @@ using System.Data.Common;
 using Medcom.Application;
 using Medcom.Application.PurchaseRequests;
 using Medcom.Contracts;
+using Medcom.Infrastructure;
 using Medcom.Infrastructure.PurchaseRequests;
 using Xunit;
 
@@ -10,6 +11,141 @@ namespace Medcom.Api.Tests;
 
 public sealed class PurchaseRequestCommandTests
 {
+    [Theory]
+    [InlineData(null,"save")] [InlineData("","save")]
+    [InlineData(null,"submit")] [InlineData("","submit")]
+    public async Task Native_blank_catalog_scope_commits_no_Add_and_replays_original_receipt_without_allocator(string? native,string action)
+    {
+        var db=new PurchaseRecordingModel { NativeBranch=native,NativeBranches=[],CatalogBranches=["B2","B1"],Denial="add" };
+        db.Seed(2); var save=SaveIntent(db); var submit=SubmitIntent(db);
+        var allocator=new LookupForbiddenAllocator(); var service=LookupService(db,allocator);
+        var result=action=="save" ? await service.SaveAsync(save) : await service.SubmitAsync(submit);
+        Assert.Equal(PurchaseRequestCommandOutcome.Committed,result.Outcome); Assert.NotNull(result.Receipt);
+        Assert.Empty(result.Receipt!.AllocatedLines); Assert.Equal(2,db.Commits); Assert.Equal(0,db.AllocatorCalls);
+        if(action=="submit") { Assert.Equal(2,result.Receipt.Document.StatusId); Assert.True(result.Receipt.Document.IsLocked); }
+        Assert.Contains(db.Commands,c=>c.CommandText==SqlLegacyBranchScope.CatalogShapeText);
+        Assert.Contains(db.Commands,c=>c.CommandText==SqlLegacyBranchScope.CatalogText);
+        Assert.DoesNotContain(db.Commands,c=>c.CommandText==SqlLegacyBranchScope.RestrictedText || c.CommandText==PurchaseRequestSql.BranchesText);
+        Assert.All(db.Commands,c=>Assert.NotNull(c.Transaction));
+        var receipt=JsonSerializer.Serialize(result.Receipt,PurchaseRequestCommandRules.Json);
+        var journal=JournalState(db);
+        var replay=action=="save" ? await service.SaveAsync(save) : await service.SubmitAsync(submit);
+        Assert.Equal(PurchaseRequestCommandOutcome.Replayed,replay.Outcome);
+        Assert.Equal(receipt,JsonSerializer.Serialize(replay.Receipt,PurchaseRequestCommandRules.Json));
+        Assert.Equal(journal,JournalState(db)); Assert.Equal(3,db.Commits);
+        db.Commands.Clear(); db.Events.Clear(); var before=BusinessSnapshot(db);
+        var lookup=action=="save" ? await service.LookupAsync(save) : await service.LookupAsync(submit);
+        Assert.Equal(PurchaseRequestLookupOutcome.Committed,lookup.Outcome);
+        Assert.Equal(receipt,JsonSerializer.Serialize(lookup.Receipt,PurchaseRequestCommandRules.Json));
+        Assert.Equal(before,BusinessSnapshot(db)); AssertLookupOnly(db,allocator);
+    }
+
+    public static IEnumerable<object?[]> NativeBranchWriterTransitions()
+    {
+        foreach(var native in new string?[]{null,""})
+            foreach(var action in new[]{"save","submit"})
+                foreach(var fence in new[]{2,3,4,5})
+                    yield return new object?[]{native,action,fence};
+    }
+    [Theory]
+    [MemberData(nameof(NativeBranchWriterTransitions))]
+    public async Task Native_blank_to_restricted_loss_fences_reservation_write_and_original_pending_custody(string? native,string action,int fence)
+    {
+        var db=new PurchaseRecordingModel { NativeBranch=native,NativeBranches=[],CatalogBranches=["B1"],Denial="add" };
+        db.Seed(2); var save=SaveIntent(db) with { Header=PurchaseFixtures.Header with { Notes="original pending change" } };
+        var submit=SubmitIntent(db); var document=PurchaseRequestCommandRules.IntentBytes(db.Documents[PurchaseFixtures.DocumentId]);
+        var calls=0;
+        Task<AuthoritativeIdentity?> Resolve(CancellationToken _)
+        {
+            // 2: reservation final fence; 3: write entry; 4: before source writes; 5: before business commit.
+            if(++calls==fence) { db.NativeBranch="B2"; db.NativeBranches=["B2"]; }
+            return Task.FromResult<AuthoritativeIdentity?>(PurchaseFixtures.Identity());
+        }
+        var allocator=new LookupForbiddenAllocator(); var service=LookupService(db,allocator,Resolve);
+        var result=action=="save" ? await service.SaveAsync(save) : await service.SubmitAsync(submit);
+        Assert.Equal(PurchaseRequestCommandOutcome.Denied,result.Outcome); Assert.Null(result.Receipt); Assert.Equal(fence,calls);
+        Assert.Equal(document,PurchaseRequestCommandRules.IntentBytes(db.Documents[PurchaseFixtures.DocumentId]));
+        Assert.Equal(0,allocator.QualificationCalls); Assert.Equal(0,allocator.AllocationCalls); Assert.Equal(0,db.AllocatorCalls);
+        Assert.Contains(db.Commands,c=>c.CommandText==SqlLegacyBranchScope.CatalogText);
+        Assert.Contains(db.Commands,c=>c.CommandText==SqlLegacyBranchScope.RestrictedText);
+        Assert.DoesNotContain(db.Commands,c=>c.CommandText==PurchaseRequestSql.BranchesText);
+        Assert.Equal(fence==2 ? 0 : 1,db.Commits);
+        if(fence<5)
+            Assert.DoesNotContain(db.Commands,c=>c.CommandText==PurchaseRequestSql.UpdateHeadText || c.CommandText==PurchaseRequestSql.SubmitText);
+        if(fence==2) { Assert.Empty(db.Journal); return; }
+        var pending=Assert.Single(db.Journal.Values); Assert.Equal((byte)0,pending.State); Assert.NotEqual(Guid.Empty,pending.Attempt);
+        Assert.Null(pending.Receipt); Assert.Null(pending.Document); Assert.Null(pending.Aggregate);
+        Assert.Equal(action=="save" ? PurchaseRequestCommandRules.IntentBytes(PurchaseRequestCommandRules.Freeze(save))
+            : PurchaseRequestCommandRules.IntentBytes(PurchaseRequestCommandRules.Freeze(submit)),pending.Intent);
+        var journal=JournalState(db);
+        // Restoring scope cannot transfer the acknowledged attempt to a fresh invocation.
+        db.NativeBranch=native; db.NativeBranches=[]; db.Commands.Clear(); db.Events.Clear();
+        var retry=action=="save" ? await service.SaveAsync(save) : await service.SubmitAsync(submit);
+        Assert.Equal(PurchaseRequestCommandOutcome.OutcomeUnknown,retry.Outcome); Assert.Null(retry.Receipt);
+        Assert.Equal(journal,JournalState(db)); Assert.Equal(1,db.Commits);
+        Assert.DoesNotContain(db.Commands,c=>c.CommandText==PurchaseRequestSql.ReserveText || c.CommandText==PurchaseRequestSql.CompleteText
+            || c.CommandText==PurchaseRequestSql.UpdateHeadText || c.CommandText==PurchaseRequestSql.SubmitText);
+        db.Commands.Clear(); db.Events.Clear(); var before=BusinessSnapshot(db);
+        var observed=action=="save" ? await service.LookupAsync(save) : await service.LookupAsync(submit);
+        Assert.Equal(PurchaseRequestLookupOutcome.Pending,observed.Outcome); Assert.Null(observed.Receipt);
+        var changed=action=="save" ? await service.LookupAsync(save with { Header=save.Header with { Notes="different intent" } })
+            : await service.LookupAsync(submit with { ExpectedStateToken=PurchaseRequestCommandRules.EqualityToken(PurchaseFixtures.Aggregate() with {
+                Header=PurchaseFixtures.Header with { Notes="different prestate" } }) });
+        Assert.Equal(PurchaseRequestLookupOutcome.Conflict,changed.Outcome); Assert.Null(changed.Receipt);
+        Assert.Equal(before,BusinessSnapshot(db)); AssertLookupOnly(db,allocator);
+    }
+
+    [Theory]
+    [InlineData("save",1)] [InlineData("save",2)] [InlineData("submit",1)] [InlineData("submit",2)]
+    public async Task Native_blank_to_restricted_loss_fences_replay_before_returning_cached_receipt(string action,int fence)
+    {
+        var db=new PurchaseRecordingModel { NativeBranch=null,NativeBranches=[],CatalogBranches=["B1"],Denial="add" };
+        db.Seed(); var save=SaveIntent(db); var submit=SubmitIntent(db); var allocator=new LookupForbiddenAllocator();
+        var original=LookupService(db,allocator);
+        Assert.Equal(PurchaseRequestCommandOutcome.Committed,(action=="save" ? await original.SaveAsync(save) : await original.SubmitAsync(submit)).Outcome);
+        var calls=0;
+        Task<AuthoritativeIdentity?> Resolve(CancellationToken _)
+        {
+            if(++calls==fence) { db.NativeBranch="B2"; db.NativeBranches=["B2"]; }
+            return Task.FromResult<AuthoritativeIdentity?>(PurchaseFixtures.Identity());
+        }
+        var replayService=LookupService(db,allocator,Resolve);
+        db.Commands.Clear(); db.Events.Clear(); var before=BusinessSnapshot(db);
+        var replay=action=="save" ? await replayService.SaveAsync(save) : await replayService.SubmitAsync(submit);
+        Assert.Equal(PurchaseRequestCommandOutcome.Denied,replay.Outcome); Assert.Null(replay.Receipt); Assert.Equal(fence,calls);
+        Assert.Equal(before,BusinessSnapshot(db)); AssertLookupOnly(db,allocator);
+        Assert.Contains(db.Commands,c=>c.CommandText==SqlLegacyBranchScope.RestrictedText);
+        if(fence==2) Assert.Contains(db.Commands,c=>c.CommandText==SqlLegacyBranchScope.CatalogText);
+    }
+
+    [Theory]
+    [InlineData("committed",1)] [InlineData("committed",2)]
+    [InlineData("pending",1)] [InlineData("pending",2)] [InlineData("absent",1)] [InlineData("absent",2)]
+    public async Task Native_blank_to_restricted_loss_fences_committed_pending_and_absent_lookup(string state,int fence)
+    {
+        var db=new PurchaseRecordingModel { NativeBranch="",NativeBranches=[],CatalogBranches=["B1"],Denial="add" };
+        db.Seed(); var save=SaveIntent(db); var allocator=new LookupForbiddenAllocator();
+        if(state!="absent")
+        {
+            if(state=="pending") db.Fault="0:commit-ack";
+            var result=await LookupService(db,allocator).SaveAsync(save);
+            Assert.Equal(state=="pending" ? PurchaseRequestCommandOutcome.OutcomeUnknown : PurchaseRequestCommandOutcome.Committed,result.Outcome);
+            db.Fault=null;
+        }
+        var calls=0;
+        Task<AuthoritativeIdentity?> Resolve(CancellationToken _)
+        {
+            if(++calls==fence) { db.NativeBranch="B2"; db.NativeBranches=["B2"]; }
+            return Task.FromResult<AuthoritativeIdentity?>(PurchaseFixtures.Identity());
+        }
+        db.Commands.Clear(); db.Events.Clear(); var before=BusinessSnapshot(db);
+        var observed=await LookupService(db,allocator,Resolve).LookupAsync(save);
+        Assert.Equal(PurchaseRequestLookupOutcome.Denied,observed.Outcome); Assert.Null(observed.Receipt); Assert.Equal(fence,calls);
+        Assert.Equal(before,BusinessSnapshot(db)); AssertLookupOnly(db,allocator);
+        Assert.Contains(db.Commands,c=>c.CommandText==SqlLegacyBranchScope.RestrictedText);
+        if(fence==2) Assert.Contains(db.Commands,c=>c.CommandText==SqlLegacyBranchScope.CatalogText);
+    }
+
     [Theory]
     [InlineData("create")] [InlineData("create-submit")] [InlineData("save")] [InlineData("submit")]
     public async Task Lookup_returns_original_receipt_after_later_edit_without_any_dispatch(string action)
@@ -520,7 +656,7 @@ public sealed class PurchaseRequestCommandTests
     }
     public static IEnumerable<object[]> LookupReaderCases()
     {
-        foreach(var stage in new[]{"credential","grants","branches","probe","transaction","journal","head","details"})
+        foreach(var stage in new[]{"credential","grants","native-user","branches","catalog-shape","catalog","probe","transaction","journal","head","details"})
             foreach(var fault in new[]{"extra-result","missing-column","wrong-type","timeout","cancel"})
                 yield return new object[]{stage,fault};
     }
@@ -530,11 +666,12 @@ public sealed class PurchaseRequestCommandTests
     {
         var db=new PurchaseRecordingModel(); await db.Service().CreateAsync(PurchaseFixtures.Create);
         using var cancelled=new CancellationTokenSource();
+        if(stage is "catalog-shape" or "catalog") { db.NativeBranch=null; db.NativeBranches=[]; }
         var wire=new LookupWire { TargetSql=LookupStageSql(stage),ReaderFault=fault,Cancel=cancelled };
         db.Commands.Clear(); db.Events.Clear(); var snapshot=BusinessSnapshot(db); var allocator=new LookupForbiddenAllocator();
         var result=await WireService(db,allocator,wire).LookupAsync(PurchaseFixtures.Create,cancelled.Token);
         var expected=fault=="cancel" ? PurchaseRequestLookupOutcome.Cancelled : fault=="timeout" ? PurchaseRequestLookupOutcome.Unavailable
-            : stage is "credential" or "grants" or "branches" ? PurchaseRequestLookupOutcome.Denied
+            : stage is "credential" or "grants" or "native-user" or "branches" or "catalog-shape" or "catalog" ? PurchaseRequestLookupOutcome.Denied
             : stage is "probe" or "transaction" ? PurchaseRequestLookupOutcome.QualificationRequired : PurchaseRequestLookupOutcome.Unavailable;
         Assert.Equal(expected,result.Outcome); Assert.Null(result.Receipt); Assert.Equal(1,wire.Injections);
         AssertReadOnlySnapshot(db,allocator,wire,snapshot);
@@ -737,7 +874,9 @@ public sealed class PurchaseRequestCommandTests
     }
     private static string LookupStageSql(string stage)=>stage switch {
         "credential"=>PurchaseRequestSql.CredentialText,"grants"=>PurchaseRequestSql.GrantsText,
-        "branches"=>PurchaseRequestSql.BranchesText,"probe"=>PurchaseRequestSql.ProbeText,
+        "native-user"=>SqlLegacyBranchScope.NativeUserText,"branches"=>SqlLegacyBranchScope.RestrictedText,
+        "catalog-shape"=>SqlLegacyBranchScope.CatalogShapeText,"catalog"=>SqlLegacyBranchScope.CatalogText,
+        "probe"=>PurchaseRequestSql.ProbeText,
         "transaction"=>PurchaseRequestSql.TransactionText,"journal"=>PurchaseRequestSql.LookupText,
         "head"=>PurchaseRequestSql.HeadText,"details"=>PurchaseRequestSql.DetailsText,
         _=>throw new ArgumentException("Unknown synthetic stage.") };
@@ -841,7 +980,8 @@ public sealed class PurchaseRequestCommandTests
     private static void AssertLookupOnly(PurchaseRecordingModel db,LookupForbiddenAllocator allocator)
     {
         Assert.Equal(0,allocator.QualificationCalls); Assert.Equal(0,allocator.AllocationCalls);
-        var allowed=new[]{PurchaseRequestSql.CredentialText,PurchaseRequestSql.GrantsText,PurchaseRequestSql.BranchesText,
+        var allowed=new[]{PurchaseRequestSql.CredentialText,PurchaseRequestSql.GrantsText,
+            SqlLegacyBranchScope.NativeUserText,SqlLegacyBranchScope.RestrictedText,SqlLegacyBranchScope.CatalogShapeText,SqlLegacyBranchScope.CatalogText,
             PurchaseRequestSql.ProbeText,PurchaseRequestSql.TransactionText,PurchaseRequestSql.LookupText,PurchaseRequestSql.HeadText,PurchaseRequestSql.DetailsText};
         Assert.All(db.Commands,c=>Assert.Contains(c.CommandText,allowed));
         Assert.DoesNotContain(db.Events,e=>e.EndsWith(":commit-before",StringComparison.Ordinal) || e.EndsWith(":commit-ack",StringComparison.Ordinal));
