@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Medcom.Contracts;
 
 public sealed record PurchaseRequestListQuery(int Page = 1, int PageSize = 20,
@@ -14,7 +16,10 @@ public sealed record PurchaseRequestCommandAccessState(bool CanSave, bool CanSub
 public sealed record PurchaseRequestLookupState(string Kind, bool Available, string? Reason, string Evidence);
 public sealed record PurchaseRequestWorkspace(IReadOnlyList<string> BranchIds, bool WriteAvailable,
     string WriteReason, IReadOnlyList<PurchaseRequestLookupState> Lookups);
-public sealed record PurchaseRequestChoice(string Id, string Label);
+// Currency-only additive fields are omitted for the unchanged branch wire shape.
+public sealed record PurchaseRequestChoice(string Id, string? Label,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? CurrencyName = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] double? RateExchange = null);
 public sealed record PurchaseRequestLookupPage(bool Available, string? Reason,
     IReadOnlyList<PurchaseRequestChoice> Items, int Page, bool HasMore);
 public sealed record PurchaseRequestScopedResponse<T>(string ScopeKey, T Data);

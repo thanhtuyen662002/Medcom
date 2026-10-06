@@ -140,6 +140,8 @@ public sealed class PurchaseRequestQueryTests
             Assert.Equal(PurchaseRequestQueryOutcome.Invalid, (await source.Service().ListAsync(query)).Outcome);
         Assert.Equal(PurchaseRequestQueryOutcome.Invalid, (await source.Service().OpenAsync("QA-DOC ")).Outcome);
         Assert.Equal(PurchaseRequestQueryOutcome.Invalid, (await source.Service().LookupAsync("dbo.SY_User", "", 1)).Outcome);
+        Assert.Equal(PurchaseRequestQueryOutcome.Invalid, (await source.Service().LookupAsync("purposes", new string('x', 101), 1)).Outcome);
+        Assert.Equal(PurchaseRequestQueryOutcome.Invalid, (await source.Service().LookupAsync("currencies", "", 1001)).Outcome);
         source.Identity=source.Identity! with { TenantId="other" };
         Assert.Equal(PurchaseRequestQueryOutcome.Denied, (await source.Service().WorkspaceAsync()).Outcome); Assert.Equal(0,source.Opens);
     }
@@ -222,6 +224,184 @@ public sealed class PurchaseRequestQueryTests
         Assert.DoesNotContain(source.Commands, c => c.Sql == SqlLegacyBranchScope.CatalogText);
     }
 
+    [Fact]
+    public async Task Source_pinned_reference_reads_preserve_null_names_and_all_finite_rates_without_writes()
+    {
+        var source = new PurchaseQuerySource { LookupShapeOk = true };
+        source.Purposes.AddRange([(-7, null), (1, ""), (2, "  Synthetic purpose  ")]);
+        source.Currencies.AddRange([("NEG", "A synthetic", -2.5), ("ZER", "B synthetic", 0), ("POS", "C synthetic", double.Epsilon)]);
+        var purposes = await source.Service().LookupAsync("purposes", null, 1);
+        Assert.Equal(PurchaseRequestQueryOutcome.Success, purposes.Outcome);
+        Assert.True(purposes.Value!.Available); Assert.Null(purposes.Value.Items[0].Label);
+        Assert.Equal("-7", purposes.Value.Items[0].Id); Assert.Equal("", purposes.Value.Items[1].Label);
+        Assert.Equal("  Synthetic purpose  ", purposes.Value.Items[2].Label);
+        var currencies = await source.Service().LookupAsync("currencies", "", 1);
+        Assert.Equal(PurchaseRequestQueryOutcome.Success, currencies.Outcome);
+        Assert.Equal(new double?[] { -2.5, 0, double.Epsilon }, currencies.Value!.Items.Select(item => item.RateExchange));
+        Assert.All(currencies.Value.Items, item => Assert.Equal(item.Id, item.Label));
+        Assert.Equal("A synthetic", currencies.Value.Items[0].CurrencyName);
+        var workspace = (await source.Service().WorkspaceAsync()).Value!;
+        Assert.True(workspace.Lookups.Single(item => item.Kind == "purposes").Available);
+        Assert.True(workspace.Lookups.Single(item => item.Kind == "currencies").Available);
+        Assert.False(workspace.WriteAvailable); Assert.False(workspace.Lookups.Single(item => item.Kind == "items").Available);
+        Assert.Equal(0, source.Commits); Assert.Equal(3, source.Rollbacks);
+        // The existing native grant read is the one fixed CTE; all other commands are SELECTs.
+        Assert.All(source.Commands, command => Assert.StartsWith(
+            command.Sql == SqlPurchaseRequestQueries.GrantsText ? "WITH Grants AS" : "SELECT",
+            command.Sql.TrimStart(), StringComparison.Ordinal));
+        Assert.DoesNotContain(source.Commands, command => command.Sql.Contains("MedcomPurchaseRequestCommandJournal", StringComparison.Ordinal));
+        Assert.Equal(source.Opens, source.ConnectionDisposals); Assert.Equal(source.Opens, source.TransactionDisposals);
+        Assert.Equal(source.Commands.Count, source.ReaderDisposals); Assert.Equal(source.Commands.Count, source.CommandDisposals);
+    }
+    [Theory]
+    [InlineData("purposes")] [InlineData("currencies")]
+    public async Task Every_binding_value_and_SQL_null_distinction_is_required(string kind)
+    {
+        // Independent synthetic metadata fixture: Source never enters product code or public tests.
+        var baseline = PurchaseQuerySource.Binding(kind == "purposes");
+        foreach (var column in baseline.Where(column => column.Name != "UserAutoID"))
+        {
+            var source = new PurchaseQuerySource { LookupShapeOk = true };
+            source.BindingOverrides[column.Name] = column.Value is null ? "" : column.Value switch
+            { bool value => !value, byte[] => new byte[32], int => 1, _ => "drift" };
+            var result = await source.Service().LookupAsync(kind, "", 1);
+            Assert.True(result.Outcome == PurchaseRequestQueryOutcome.Unavailable
+                || result.Outcome == PurchaseRequestQueryOutcome.Success && result.Value is { Available: false });
+            Assert.DoesNotContain(source.Commands, command => command.Sql == PurchaseRequestLookupSql.PurposeText || command.Sql == PurchaseRequestLookupSql.CurrencyText);
+        }
+    }
+    [Theory]
+    [InlineData("missing")] [InlineData("duplicate")] [InlineData("form-alias")] [InlineData("column-alias")]
+    [InlineData("empty-grid")] [InlineData("padded-grid")] [InlineData("identity-alias")] [InlineData("null-source")]
+    public async Task Ambiguous_or_drifted_header_binding_never_reads_catalog(string failure)
+    {
+        var source = new PurchaseQuerySource { LookupShapeOk = true, BindingMissing = failure == "missing", BindingDuplicate = failure == "duplicate" };
+        switch (failure)
+        {
+            case "form-alias": source.BindingOverrides["FormID"] = "ap_purposerequestlistfrm"; break;
+            case "column-alias": source.BindingOverrides["ColumnID"] = "PurposeID "; break;
+            case "empty-grid": source.BindingOverrides["GridName"] = ""; break;
+            case "padded-grid": source.BindingOverrides["GridName"] = " "; break;
+            case "identity-alias": source.BindingOverrides["IdentityAlias"] = 1; break;
+            case "null-source": source.BindingOverrides["SourceHash"] = null; break;
+        }
+        var result = await source.Service().LookupAsync("purposes", "", 1);
+        Assert.Equal(PurchaseRequestQueryOutcome.Success, result.Outcome); Assert.False(result.Value!.Available);
+        Assert.DoesNotContain(source.Commands, command => command.Sql == PurchaseRequestLookupSql.PurposeText);
+    }
+    [Theory]
+    [InlineData("binding-shape")] [InlineData("purpose-shape")] [InlineData("currency-shape")]
+    public async Task Complete_lookup_schema_drift_fails_closed_before_catalog_reads(string projection)
+    {
+        var source = new PurchaseQuerySource { LookupShapeOk = true, FailedLookupShape = projection };
+        var kind = projection == "currency-shape" ? "currencies" : "purposes";
+        var result = await source.Service().LookupAsync(kind, "", 1);
+        Assert.Equal(PurchaseRequestQueryOutcome.Success, result.Outcome); Assert.False(result.Value!.Available);
+        Assert.DoesNotContain(source.Commands, command => command.Sql == PurchaseRequestLookupSql.PurposeText || command.Sql == PurchaseRequestLookupSql.CurrencyText);
+    }
+    [Theory]
+    [InlineData("binding-shape")] [InlineData("purpose-shape")] [InlineData("currency-shape")]
+    [InlineData("binding")] [InlineData("purposes")] [InlineData("currencies")]
+    public async Task Unexpected_lookup_result_columns_names_types_and_extra_sets_are_rejected(string projection)
+    {
+        foreach (var failure in new[] { "type", "name", "extra-column", "extra-result" })
+        {
+            var source = new PurchaseQuerySource { LookupShapeOk = true, BadLookupProjection = projection, BadLookupShape = failure };
+            var kind = projection.StartsWith("currenc", StringComparison.Ordinal) ? "currencies" : "purposes";
+            var result = await source.Service().LookupAsync(kind, "", 1);
+            Assert.Equal(PurchaseRequestQueryOutcome.Unavailable, result.Outcome); Assert.Null(result.Value);
+            Assert.Equal(source.Opens, source.ConnectionDisposals); Assert.Equal(source.Opens, source.TransactionDisposals);
+            Assert.Equal(source.Commands.Count, source.ReaderDisposals);
+        }
+    }
+    [Theory]
+    [InlineData("duplicate")] [InlineData("alias")] [InlineData("too-long")] [InlineData("null-name")]
+    [InlineData("null-rate")] [InlineData("nan")] [InlineData("infinity")] [InlineData("overflow")]
+    public async Task Invalid_currency_catalog_projection_never_releases_partial_rows(string failure)
+    {
+        var source = new PurchaseQuerySource { LookupShapeOk = true };
+        source.Currencies.Add(("AAA", "Synthetic", 1));
+        switch (failure)
+        {
+            case "duplicate": source.Currencies.Add(("AAA", "Duplicate", 2)); break;
+            case "alias": source.Currencies.Add(("aaa", "Alias", 2)); break;
+            case "too-long": source.Currencies[0] = ("LONG", "Synthetic", 1); break;
+            case "null-name": source.Currencies[0] = ("AAA", null, 1); break;
+            case "null-rate": source.Currencies[0] = ("AAA", "Synthetic", null); break;
+            case "nan": source.Currencies[0] = ("AAA", "Synthetic", double.NaN); break;
+            case "infinity": source.Currencies[0] = ("AAA", "Synthetic", double.PositiveInfinity); break;
+            case "overflow": source.LookupIgnorePaging = true; source.Currencies.AddRange(Enumerable.Range(0, 21).Select(i => ($"{i:000}", (string?)"Synthetic", (double?)1))); break;
+        }
+        var result = await source.Service().LookupAsync("currencies", "", 1);
+        Assert.Equal(PurchaseRequestQueryOutcome.Unavailable, result.Outcome); Assert.Null(result.Value);
+    }
+    [Theory]
+    [InlineData("duplicate")] [InlineData("long-name")]
+    public async Task Invalid_purpose_projection_is_not_silently_truncated(string failure)
+    {
+        var source = new PurchaseQuerySource { LookupShapeOk = true };
+        source.Purposes.Add((1, failure == "long-name" ? new string('x', 51) : "Synthetic"));
+        if (failure == "duplicate") source.Purposes.Add((1, "Duplicate"));
+        Assert.Equal(PurchaseRequestQueryOutcome.Unavailable, (await source.Service().LookupAsync("purposes", "", 1)).Outcome);
+    }
+    [Fact]
+    public async Task Lookup_search_is_parameterized_and_paging_is_bounded_with_deterministic_order()
+    {
+        var source = new PurchaseQuerySource { LookupShapeOk = true };
+        source.Purposes.AddRange(Enumerable.Range(1, 22).Select(i => (i, (string?)$"Synthetic {i}")));
+        var first = (await source.Service().LookupAsync("purposes", "", 1)).Value!;
+        Assert.Equal(20, first.Items.Count); Assert.True(first.HasMore);
+        var second = (await source.Service().LookupAsync("purposes", "", 2)).Value!;
+        Assert.Equal(2, second.Items.Count); Assert.False(second.HasMore); Assert.Equal("21", second.Items[0].Id);
+        await source.Service().LookupAsync("currencies", "%'_[]~", 1000);
+        var command = source.Commands.Last();
+        Assert.Equal("%~%'~_~[]~~%", command.Parameters["@search"]);
+        Assert.Equal(19980, command.Parameters["@skip"]); Assert.Equal(21, command.Parameters["@take"]);
+        Assert.DoesNotContain("%'_[]~", command.Sql, StringComparison.Ordinal);
+        Assert.Contains("ORDER BY C.CurrencyName ASC,CONVERT(varbinary(max),C.CurrencyID) ASC", command.Sql);
+        Assert.DoesNotContain("isDisable", PurchaseRequestLookupSql.PurposeText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("CF_CurrencyRateTbl", PurchaseRequestLookupSql.CurrencyText, StringComparison.Ordinal);
+        Assert.Contains("HASHBYTES('SHA2_256',CONVERT(varbinary(max),D.[Source]))", PurchaseRequestLookupSql.BindingText);
+        Assert.Contains("D.GridName IS NULL OR D.GridName=''", PurchaseRequestLookupSql.BindingText);
+    }
+    [Theory]
+    [InlineData("logout")] [InlineData("branch")] [InlineData("stamp")] [InlineData("capability")]
+    public async Task Late_lookup_revocation_suppresses_reference_data_and_releases_resources(string failure)
+    {
+        var source = new PurchaseQuerySource { LookupShapeOk = true };
+        source.Purposes.Add((1, "Synthetic secret reference"));
+        source.AfterLookupData = () => source.Identity = failure switch {
+            "logout" => null, "branch" => source.Identity! with { BranchIds = ["QA-B"] },
+            "stamp" => source.Identity! with { CredentialStamp = "changed" }, _ => source.Identity! with { Capabilities = [] } };
+        var result = await source.Service().LookupAsync("purposes", "", 1);
+        Assert.Equal(PurchaseRequestQueryOutcome.Denied, result.Outcome); Assert.Null(result.Value);
+        Assert.Equal(1, source.ConnectionDisposals); Assert.Equal(1, source.TransactionDisposals);
+        Assert.Equal(source.Commands.Count, source.ReaderDisposals);
+    }
+    [Theory]
+    [InlineData(false)] [InlineData(true)]
+    public async Task Lookup_cleanup_cannot_release_a_late_revoked_or_canceled_response(bool cancel)
+    {
+        using var cancellation = new CancellationTokenSource();
+        var source = new PurchaseQuerySource { LookupShapeOk = true };
+        source.Purposes.Add((1, "Synthetic"));
+        source.AfterCleanup = () => { if (cancel) cancellation.Cancel(); else source.Identity = null; };
+        if (cancel) await Assert.ThrowsAnyAsync<OperationCanceledException>(() => source.Service().LookupAsync("purposes", "", 1, cancellation.Token));
+        else Assert.Equal(PurchaseRequestQueryOutcome.Denied, (await source.Service().LookupAsync("purposes", "", 1)).Outcome);
+        Assert.Equal(1, source.ConnectionDisposals); Assert.Equal(1, source.TransactionDisposals);
+        Assert.Equal(source.Commands.Count, source.ReaderDisposals); Assert.Equal(0, source.Commits);
+    }
+    [Fact]
+    public async Task Cancellation_during_lookup_propagates_and_disposes_all_owned_resources()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var source = new PurchaseQuerySource { LookupShapeOk = true, AfterLookupData = cancellation.Cancel };
+        source.Purposes.Add((1, "Synthetic"));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => source.Service().LookupAsync("purposes", "", 1, cancellation.Token));
+        Assert.Equal(1, source.ConnectionDisposals); Assert.Equal(1, source.TransactionDisposals);
+        Assert.Equal(source.Commands.Count, source.ReaderDisposals); Assert.Equal(0, source.Commits);
+    }
+
 }
 
 // Synthetic source rows only. Native-equality behavior deliberately includes case/accent/space aliases.
@@ -241,7 +421,13 @@ internal sealed class PurchaseQuerySource
     public readonly List<PurchaseRequestAggregate> Documents=[];
     public readonly List<(string ForeignKey,PurchaseRequestPersistedLine Line)> ExtraChildren=[];
     public readonly List<(string Sql,Dictionary<string,object?> Parameters)> Commands=[];
-    public int Opens,Commits,Rollbacks; public Action? AfterData;
+    public int Opens,Commits,Rollbacks,ConnectionDisposals,TransactionDisposals,CommandDisposals,ReaderDisposals;
+    public Action? AfterData, AfterLookupData, AfterCleanup;
+    public bool LookupShapeOk, BindingMissing, BindingDuplicate, LookupIgnorePaging;
+    public string? FailedLookupShape, BadLookupProjection, BadLookupShape;
+    public readonly Dictionary<string, object?> BindingOverrides = new(StringComparer.Ordinal);
+    public readonly List<(int Id, string? Label)> Purposes = [];
+    public readonly List<(string Id, string? Name, double? Rate)> Currencies = [];
     public static AuthoritativeIdentity NewIdentity()=>new("qa-user",Company.TenantId,Company.CompanyId,Company.CompanyName,"Synthetic user",1,
         ["platform.status","purchase-requests.read"],Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes("qa-user\0synthetic-stored-value\0qa-group"))),["QA-A","QA-B"]);
     public SqlPurchaseRequestQueries Service()=>new(Company,()=>new QueryConnection(this),_=>Task.FromResult(Identity));
@@ -268,6 +454,35 @@ internal sealed class PurchaseQuerySource
         {
             if (CatalogUnavailable) throw new InvalidOperationException("Synthetic catalog unavailable.");
             return ScopeRows("catalog", [typeof(string),typeof(int)], CatalogBranches.Select(branch=>new object[]{branch ?? (object)DBNull.Value,CatalogAlias?1:0}));
+        }
+        if (command.CommandText == PurchaseRequestLookupSql.BindingShapeText) return LookupRows("binding-shape", [("ShapeOk", typeof(int))], [[LookupShapeOk && FailedLookupShape != "binding-shape" ? 1 : 0]]);
+        if (command.CommandText == PurchaseRequestLookupSql.PurposeShapeText) return LookupRows("purpose-shape", [("ShapeOk", typeof(int))], [[LookupShapeOk && FailedLookupShape != "purpose-shape" ? 1 : 0]]);
+        if (command.CommandText == PurchaseRequestLookupSql.CurrencyShapeText) return LookupRows("currency-shape", [("ShapeOk", typeof(int))], [[LookupShapeOk && FailedLookupShape != "currency-shape" ? 1 : 0]]);
+        if (command.CommandText == PurchaseRequestLookupSql.BindingText)
+        {
+            Assert.Equal("AP_PurposeRequestListFrm", parameters["@form"]);
+            Assert.Equal(DbType.AnsiString, command.Parameters["@form"].DbType);
+            Assert.Equal(DbType.AnsiString, command.Parameters["@field"].DbType);
+            var binding = Binding((string)parameters["@field"]! == "PurposeID");
+            var values = binding.Select(column => (BindingOverrides.TryGetValue(column.Name, out var value) ? value : column.Value) ?? DBNull.Value).ToArray();
+            return LookupRows("binding", binding.Select(column => (column.Name, column.Type)).ToArray(),
+                BindingMissing ? [] : BindingDuplicate ? [values, values] : [values]);
+        }
+        if (command.CommandText == PurchaseRequestLookupSql.PurposeText || command.CommandText == PurchaseRequestLookupSql.CurrencyText)
+        {
+            Assert.Equal(DbType.String, command.Parameters["@search"].DbType); Assert.Equal(204, command.Parameters["@search"].Size);
+            Assert.Equal(DbType.Int32, command.Parameters["@skip"].DbType); Assert.Equal(DbType.Int32, command.Parameters["@take"].DbType);
+            var skip = LookupIgnorePaging ? 0 : (int)parameters["@skip"]!;
+            var take = LookupIgnorePaging ? int.MaxValue : (int)parameters["@take"]!;
+            DbDataReader lookupReader;
+            if (command.CommandText == PurchaseRequestLookupSql.PurposeText)
+                lookupReader = LookupRows("purposes", [("PurposeID", typeof(int)), ("PurposeName", typeof(string)), ("IdentityAlias", typeof(int))],
+                    Purposes.OrderBy(row => row.Id).Skip(skip).Take(take).Select(row => new object[] { row.Id, row.Label ?? (object)DBNull.Value, Purposes.Count(other => other.Id == row.Id) > 1 ? 1 : 0 }));
+            else
+                lookupReader = LookupRows("currencies", [("CurrencyID", typeof(string)), ("CurrencyName", typeof(string)), ("RateExchange", typeof(double)), ("IdentityAlias", typeof(int))],
+                    Currencies.OrderBy(row => row.Name, StringComparer.Ordinal).ThenBy(row => row.Id, StringComparer.Ordinal).Skip(skip).Take(take)
+                        .Select(row => new object[] { row.Id, row.Name ?? (object)DBNull.Value, row.Rate.HasValue ? row.Rate.Value : DBNull.Value, Currencies.Count(other => Fold(other.Id) == Fold(row.Id)) > 1 ? 1 : 0 }));
+            AfterLookupData?.Invoke(); return lookupReader;
         }
         if(command.CommandText==SqlPurchaseRequestQueries.ShapeText)return Rows(1,[[ShapeOk?1:0]]);
         if(command.CommandText==SqlPurchaseRequestQueries.CredentialText)
@@ -326,6 +541,44 @@ internal sealed class PurchaseQuerySource
         }
         throw new InvalidOperationException("Unrecognized synthetic query.");
     }
+    internal static (string Name, Type Type, object? Value)[] Binding(bool purpose) => [
+        ("UserAutoID", typeof(string), "synthetic-binding"),
+        ("FormID", typeof(string), "AP_PurposeRequestListFrm"),
+        ("GridName", typeof(string), null),
+        ("ColumnID", typeof(string), purpose ? "PurposeID" : "CurrencyID"),
+        ("ValueColumn", typeof(string), purpose ? "PurposeID" : "CurrencyID"),
+        ("DisplayColumn", typeof(string), purpose ? "PurposeName" : "CurrencyID"),
+        ("ColumnArr", typeof(string), purpose ? "PurposeID;PurposeName" : "CurrencyID;CurrencyName;RateExchange"),
+        ("WidthArr", typeof(string), purpose ? null : "60;120;70"),
+        ("LinkColumn", typeof(string), purpose ? "PurposeID;PurposeName" : "RateExchange"),
+        ("DisableAddNew", typeof(bool), true),
+        ("ParaArr", typeof(string), null), ("ParaRequireArr", typeof(string), null),
+        ("Type", typeof(string), "Dropdown"), ("KeepValue", typeof(bool), false),
+        ("SummaryFieldArr", typeof(string), null), ("IsMultiSelect", typeof(bool), false),
+        ("IsNotInList", typeof(bool), false), ("IsDisable", typeof(bool), false),
+        ("ColumnName_Filter", typeof(string), null), ("ColumnValue_Filter", typeof(string), null), ("OnlyValue_Filter", typeof(string), null),
+        ("ManualSQLSearch", typeof(bool), false), ("ManualSQLOrderBy", typeof(string), null), ("DefaultValue", typeof(string), null),
+        ("IsReload", typeof(bool), false), ("EditableColumns", typeof(string), null), ("Caption", typeof(string), null),
+        ("isLock", typeof(bool), false), ("isInvisible", typeof(bool), false), ("isWordWrap", typeof(bool), false), ("isMultiValue", typeof(bool), false),
+        ("GroupCaption", typeof(string), null), ("WordWrapArr", typeof(string), null), ("GroupColumnArr", typeof(string), null),
+        ("DisplayMember2", typeof(string), null), ("TreeViewColumn", typeof(string), null), ("TreeViewColumnParent", typeof(string), null),
+        ("ReloadType", typeof(int), null), ("EditType", typeof(int), null), ("DefaultValueSQL", typeof(string), null), ("TriggerOnOpenForm", typeof(bool), false),
+        ("SourceHash", typeof(byte[]), Convert.FromHexString(purpose
+            ? "83B4D2F350A6DC45B9840BC7AC4ED14AAE86106088210A6846FCE8ACE0003125"
+            : "9401708F1504420CA7A3F16DFEE1A5E4DE8D80D038519F94B4B9645B6DDAF534")),
+        ("IdentityAlias", typeof(int), 0)];
+    private DbDataReader LookupRows(string projection, (string Name, Type Type)[] columns, IEnumerable<object[]> rows)
+    {
+        var table = new DataTable(); var bad = projection == BadLookupProjection;
+        for (var index = 0; index < columns.Length; index++)
+            table.Columns.Add(bad && BadLookupShape == "name" && index == 0 ? "Unexpected" : columns[index].Name,
+                bad && BadLookupShape == "type" && index == 0 ? typeof(object) : columns[index].Type);
+        if (bad && BadLookupShape == "extra-column") table.Columns.Add("Extra", typeof(string));
+        foreach (var row in rows) table.Rows.Add(row);
+        if (!bad || BadLookupShape != "extra-result") return table.CreateDataReader();
+        var extra = new DataTable(); extra.Columns.Add("Extra", typeof(string)); extra.Rows.Add("Synthetic");
+        return new DataTableReader([table, extra]);
+    }
     private DbDataReader ScopeRows(string projection, Type[] types, IEnumerable<object[]> rows)
     {
         var table = new DataTable();
@@ -350,19 +603,45 @@ internal sealed class QueryConnection(PurchaseQuerySource source):DbConnection
     public override void Open(){source.Opens++;state=ConnectionState.Open;}
     protected override DbTransaction BeginDbTransaction(IsolationLevel level)=>new QueryTransaction(this,source,level);
     protected override DbCommand CreateDbCommand()=>new QueryCommand(this,source);
+    protected override void Dispose(bool disposing){if(disposing){source.ConnectionDisposals++;source.AfterCleanup?.Invoke();}base.Dispose(disposing);}
 }
 internal sealed class QueryTransaction(QueryConnection connection,PurchaseQuerySource source,IsolationLevel level):DbTransaction
-{public override IsolationLevel IsolationLevel=>level;protected override DbConnection DbConnection=>connection;public override void Commit(){source.Commits++;throw new InvalidOperationException("Read must not commit.");}public override void Rollback()=>source.Rollbacks++;}
+{public override IsolationLevel IsolationLevel=>level;protected override DbConnection DbConnection=>connection;public override void Commit(){source.Commits++;throw new InvalidOperationException("Read must not commit.");}public override void Rollback()=>source.Rollbacks++;protected override void Dispose(bool disposing){if(disposing)source.TransactionDisposals++;base.Dispose(disposing);}}
 internal sealed class QueryCommand(QueryConnection connection,PurchaseQuerySource source):DbCommand
 {
     private readonly QueryParameters parameters=new();[AllowNull] public override string CommandText{get;set;}="";public override int CommandTimeout{get;set;}public override CommandType CommandType{get;set;}public override bool DesignTimeVisible{get;set;}public override UpdateRowSource UpdatedRowSource{get;set;}
     protected override DbConnection? DbConnection{get;set;}=connection;protected override DbTransaction? DbTransaction{get;set;}protected override DbParameterCollection DbParameterCollection=>parameters;
     public override void Cancel(){}public override int ExecuteNonQuery()=>throw new InvalidOperationException("No DML allowed.");public override object? ExecuteScalar()=>throw new NotSupportedException();public override void Prepare(){}
-    protected override DbParameter CreateDbParameter()=>new QueryParameter();protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior){Assert.NotNull(DbTransaction);Assert.Equal(IsolationLevel.Serializable,DbTransaction!.IsolationLevel);return source.Read(this);}
+    protected override DbParameter CreateDbParameter()=>new QueryParameter();protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior){Assert.NotNull(DbTransaction);Assert.Equal(IsolationLevel.Serializable,DbTransaction!.IsolationLevel);return new TrackingQueryReader(source.Read(this), source);}
+    protected override void Dispose(bool disposing){if(disposing)source.CommandDisposals++;base.Dispose(disposing);}
 }
 internal sealed class QueryParameter:DbParameter
 {public override DbType DbType{get;set;}public override ParameterDirection Direction{get;set;}=ParameterDirection.Input;public override bool IsNullable{get;set;}[AllowNull] public override string ParameterName{get;set;}="";[AllowNull] public override string SourceColumn{get;set;}="";public override object? Value{get;set;}public override bool SourceColumnNullMapping{get;set;}public override int Size{get;set;}public override void ResetDbType(){}}
 internal sealed class QueryParameters:DbParameterCollection
 {
  private readonly List<DbParameter> values=[];public override int Count=>values.Count;public override object SyncRoot=>this;public override int Add(object value){values.Add((DbParameter)value);return values.Count-1;}public override void AddRange(Array array){foreach(var value in array)Add(value!);}public override void Clear()=>values.Clear();public override bool Contains(object value)=>values.Contains((DbParameter)value);public override bool Contains(string name)=>IndexOf(name)>=0;public override void CopyTo(Array array,int index)=>((ICollection)values).CopyTo(array,index);public override IEnumerator GetEnumerator()=>values.GetEnumerator();public override int IndexOf(object value)=>values.IndexOf((DbParameter)value);public override int IndexOf(string name)=>values.FindIndex(value=>value.ParameterName==name);public override void Insert(int index,object value)=>values.Insert(index,(DbParameter)value);public override void Remove(object value)=>values.Remove((DbParameter)value);public override void RemoveAt(int index)=>values.RemoveAt(index);public override void RemoveAt(string name)=>RemoveAt(IndexOf(name));protected override DbParameter GetParameter(int index)=>values[index];protected override DbParameter GetParameter(string name)=>values[IndexOf(name)];protected override void SetParameter(int index,DbParameter value)=>values[index]=value;protected override void SetParameter(string name,DbParameter value){var index=IndexOf(name);if(index<0)values.Add(value);else values[index]=value;}
+}
+
+internal sealed class TrackingQueryReader(DbDataReader inner, PurchaseQuerySource source) : DbDataReader
+{
+    private bool disposed;
+    public override object this[int ordinal] => inner[ordinal]; public override object this[string name] => inner[name];
+    public override int Depth => inner.Depth; public override int FieldCount => inner.FieldCount;
+    public override bool HasRows => inner.HasRows; public override bool IsClosed => inner.IsClosed; public override int RecordsAffected => inner.RecordsAffected;
+    public override bool Read() => inner.Read(); public override bool NextResult() => inner.NextResult(); public override void Close() => inner.Close();
+    public override string GetName(int ordinal) => inner.GetName(ordinal); public override string GetDataTypeName(int ordinal) => inner.GetDataTypeName(ordinal);
+    public override Type GetFieldType(int ordinal) => inner.GetFieldType(ordinal); public override object GetValue(int ordinal) => inner.GetValue(ordinal);
+    public override int GetValues(object[] values) => inner.GetValues(values); public override int GetOrdinal(string name) => inner.GetOrdinal(name);
+    public override bool GetBoolean(int ordinal) => inner.GetBoolean(ordinal); public override byte GetByte(int ordinal) => inner.GetByte(ordinal);
+    public override long GetBytes(int ordinal, long offset, byte[]? buffer, int bufferOffset, int length) => inner.GetBytes(ordinal, offset, buffer, bufferOffset, length);
+    public override char GetChar(int ordinal) => inner.GetChar(ordinal);
+    public override long GetChars(int ordinal, long offset, char[]? buffer, int bufferOffset, int length) => inner.GetChars(ordinal, offset, buffer, bufferOffset, length);
+    public override Guid GetGuid(int ordinal) => inner.GetGuid(ordinal); public override short GetInt16(int ordinal) => inner.GetInt16(ordinal);
+    public override int GetInt32(int ordinal) => inner.GetInt32(ordinal); public override long GetInt64(int ordinal) => inner.GetInt64(ordinal);
+    public override float GetFloat(int ordinal) => inner.GetFloat(ordinal); public override double GetDouble(int ordinal) => inner.GetDouble(ordinal);
+    public override string GetString(int ordinal) => inner.GetString(ordinal); public override decimal GetDecimal(int ordinal) => inner.GetDecimal(ordinal);
+    public override DateTime GetDateTime(int ordinal) => inner.GetDateTime(ordinal); public override bool IsDBNull(int ordinal) => inner.IsDBNull(ordinal);
+    public override IEnumerator GetEnumerator() => ((IEnumerable)inner).GetEnumerator();
+    protected override void Dispose(bool disposing)
+    { if (disposing && !disposed) { disposed = true; source.ReaderDisposals++; inner.Dispose(); } base.Dispose(disposing); }
 }

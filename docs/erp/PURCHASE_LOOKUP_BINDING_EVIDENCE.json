@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "ticket": "I32",
+  "sourceSet": "owner-attachment-20261002",
+  "sourceMember": {
+    "bytes": 1212595716,
+    "sha256": "61a8744c7a9a007b13ef37fbda26ea8c78af11fcc469963a528eba9469174096",
+    "crc32": "16a9a7e6"
+  },
+  "sourceVerification": "Full SQL member streamed and hash verified by the read-only source investigator; exact two INSERT records were re-parsed and hash pins independently recomputed. No owner SQL or database execution.",
+  "configuration": {
+    "table": "dbo.SY_FrmDrdwTbl",
+    "sourceLine": 30774,
+    "schemaColumns": 42,
+    "inventory": "inventories/source/20261002/table-16.json",
+    "form": "AP_PurposeRequestListFrm",
+    "grid": "SQL NULL, not empty text",
+    "bindingType": "Dropdown",
+    "enabled": true,
+    "singleSelect": true,
+    "listConstrained": true,
+    "disableAddNew": true,
+    "autoDefaults": false,
+    "filterParameterDefaultFields": "SQL NULL; no empty strings in either source binding",
+    "sourceHashEncoding": "SQL nvarchar bytes: UTF-16 little-endian, no BOM; original CRLF retained",
+    "sourceExecution": "Never executed. HASHBYTES SHA2_256 only. Fixed feature SELECTs read each qualified reference table."
+  },
+  "bindings": [
+    {
+      "kind": "purposes",
+      "sourceLine": 308051,
+      "field": "PurposeID",
+      "valueColumn": "PurposeID",
+      "displayColumn": "PurposeName",
+      "linkColumn": "PurposeID;PurposeName",
+      "table": "dbo.AP_PurposePurchaseTbl",
+      "tableSourceLine": 23263,
+      "inventory": "inventories/source/20261002/table-08.json",
+      "schemaColumns": 3,
+      "id": "int NOT NULL IDENTITY; canonical invariant decimal string in JSON",
+      "label": "nvarchar(50) NULL; JSON null preserved",
+      "disabledFilter": false,
+      "sort": "Deterministic Web pagination by PurposeID; source has no order/predicate",
+      "sourceHashes": {
+        "sourceLine": 308051,
+        "utf16LEBytes": 70,
+        "utf16LESha256": "83b4d2f350a6dc45b9840bc7ac4ed14aae86106088210a6846fce8ace0003125",
+        "utf8Sha256": "515dae5748fe9b0a87a92d58c90138b4dd0760fa1e1b8686ad4e66cf09bd888d",
+        "semanticMetadataSlotsCompared": 40,
+        "sqlNullCount": 21,
+        "emptyStringCount": 0
+      }
+    },
+    {
+      "kind": "currencies",
+      "sourceLine": 308060,
+      "field": "CurrencyID",
+      "valueColumn": "CurrencyID",
+      "displayColumn": "CurrencyID",
+      "linkColumn": "RateExchange",
+      "table": "dbo.CF_CurrencyTbl",
+      "tableSourceLine": 19667,
+      "inventory": "inventories/source/20261002/table-06.json",
+      "schemaColumns": 10,
+      "id": "varchar(3) NOT NULL; exact ID is the display label",
+      "name": "nvarchar(100) NOT NULL; separate currencyName JSON field",
+      "rate": "float NOT NULL; finite IEEE double in JSON, zero/negative allowed, no default or recalculation",
+      "sort": "Source CurrencyName order preserved; exact binary CurrencyID tie-break for deterministic Web pagination",
+      "dateEffectiveRateLookup": false,
+      "sourceHashes": {
+        "sourceLine": 308060,
+        "utf16LEBytes": 178,
+        "utf16LESha256": "9401708f1504420ca7a3f16dfee1a5e4de8d80d038519f94b4b9645b6ddaf534",
+        "utf8Sha256": "ffbb557ca05095a8fa6fcb7f0566324b7da0a1781f97cde5da49910435dbec81",
+        "semanticMetadataSlotsCompared": 40,
+        "sqlNullCount": 20,
+        "emptyStringCount": 0
+      }
+    }
+  ],
+  "runtimeQualification": [
+    "Complete known configuration/source columns, types, lengths, nullability, identity/computed flags, precision/scale. Extra columns or inadequate metadata visibility fail closed.",
+    "Native-equality header tuple selector catches case/accent/padding aliases; reader requires exact strings and SQL NULL GridName. At most one binding; global UserAutoID alias/duplicate check. Source row IDs are neither published nor hard-coded.",
+    "Forty exact semantic configuration values plus a directly source-verified, server-computed Source fingerprint. No hash-bypass or configurable acceptance seam.",
+    "Exact reader column aliases/types/counts, bounded 21-row sentinel page, no extra result sets, required NULL distinctions, label limits, finite rates and whole-catalog native ID alias detection.",
+    "Native Run, current credential/group, explicit intersected branch scope and serializable transaction retained. Session scope/cancellation checked again after rollback and resource cleanup."
+  ],
+  "wireContract": {
+    "branches": "Unchanged {id,label}; currency-only properties omitted.",
+    "purposes": "{id,label}; label may be null; no invented fallback.",
+    "currencies": "{id,label,currencyName,rateExchange}; label equals id.",
+    "paging": "20 items, page 1..1000, parameterized escaped search <=100 characters, validated 21st sentinel.",
+    "unqualified": "available=false, source_binding_unqualified, empty items, hasMore=false; malformed projections/SQL errors are unavailable at query boundary."
+  },
+  "unchangedGates": [
+    "No API/BFF route additions, editor unlock, Create/Add/allocator/reservation, DML, SQL/schema deployment, default command-DI activation or monetary recalculation.",
+    "Items and objects remain unavailable.",
+    "Synthetic recording-query/client/endpoint tests do not prove live SQL execution, deployed binding, SQL optimizer/collation behavior, or production acceptance. Exact-head/current-base hosted CI and independent review remain required."
+  ],
+  "privacy": "Only technical metadata, hashes and synthetic fixtures. No owner SQL bodies, source rows, binaries, secrets, data exports or private configuration."
+}
