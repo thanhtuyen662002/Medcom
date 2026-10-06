@@ -100,7 +100,7 @@ public sealed class PurchaseRequestEndpointTests
 internal sealed class PurchaseHttpFixture(WebApplication app,HttpClient client,X509Certificate2 certificate,string configPath,PurchaseQuerySource source,PurchaseHttpAuthority authority,PurchaseClock clock):IAsyncDisposable
 {
     public HttpClient Client=>client;public PurchaseQuerySource Source=>source;public PurchaseHttpAuthority Authority=>authority;public PurchaseClock Clock=>clock;
-    public static async Task<PurchaseHttpFixture> Start()
+    public static async Task<PurchaseHttpFixture> Start(Action<IServiceCollection>? commandServices = null)
     {
         // Only a generated fixture certificate and an empty synthetic configuration file.
         using var key=RSA.Create(2048);var request=new CertificateRequest("CN=localhost",key,HashAlgorithmName.SHA256,RSASignaturePadding.Pkcs1);
@@ -117,6 +117,7 @@ internal sealed class PurchaseHttpFixture(WebApplication app,HttpClient client,X
                 var sessions=provider.GetRequiredService<IWebSessions>();
                 return new SqlPurchaseRequestQueries(PurchaseQuerySource.Company,()=>new QueryConnection(source),async cancellation=>(await sessions.ResolveAsync(token,false,cancellation))?.Identity);
             });
+            commandServices?.Invoke(builder.Services);
         });
         await app.StartAsync();var address=app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single();
         var client=new HttpClient(new HttpClientHandler{AllowAutoRedirect=false,CookieContainer=new CookieContainer(),ServerCertificateCustomValidationCallback=(_,cert,_,_)=>cert?.Thumbprint==certificate.Thumbprint}){BaseAddress=new Uri(address)};

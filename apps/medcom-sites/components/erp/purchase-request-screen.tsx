@@ -1,24 +1,65 @@
 "use client";
-import {useEffect,useRef,useState,type FormEvent,type CSSProperties} from "react";
-import {MobileRequest,type MobileRequestAccess} from "./mobile-request";
+import {useCallback,useEffect,useLayoutEffect,useRef,useState,type FormEvent,type CSSProperties} from "react";
+import {MobileRequest,type MobileRequestAccess,type PurchaseRequestSnapshot} from "./mobile-request";
+import {useNavigationGuard} from "./navigation-guard";
 import {ApiError,errorMessage} from "@/lib/erp/api";
-import {getPurchaseWorkspace,getPurchaseDocuments,mobilePurchaseSnapshot,type PurchaseWorkspace,type PurchasePage,type PurchaseReadback} from "@/lib/erp/purchase-request-api";
+import {getPurchaseWorkspace,getPurchaseDocuments,postPurchaseCommand,type PurchaseWorkspace,type PurchasePage,type PurchaseReadback} from "@/lib/erp/purchase-request-api";
+import {createPurchaseCommandAdapter,commandPurchaseSnapshot} from "@/lib/erp/purchase-request-command-adapter";
 import type {WorkspaceData} from "@/lib/erp/contracts";
-import {workspaceStateScope} from "@/lib/erp/navigation";
 
-const control:CSSProperties={border:"1px solid var(--border)",borderRadius:8,padding:"8px 12px",background:"var(--background)",color:"var(--foreground)"};
+const control:CSSProperties={border:"1px solid var(--border)",borderRadius:8,padding:"8px 12px",minHeight:44,background:"var(--background)",color:"var(--foreground)"};
 const gap:CSSProperties={display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"};
-const qualification="Chỉ đọc ERP. Tạo, lưu và gửi chưa được mở: cấp số, nhật ký lệnh và kiểm thử SQL thực tế chưa được xác nhận.";
+const qualification="Chỉ phiếu có sẵn. Không tạo hoặc thêm dòng; cấp số, nhật ký lệnh và quyền ghi thực tế không được tự kích hoạt. Lưu/Gửi chỉ khả dụng khi server xác minh riêng từng thao tác.";
 type ReadState={key:string;observation?:WorkspaceData|null;scopeKey?:string;bootstrap?:PurchaseWorkspace;list?:PurchasePage;detail?:PurchaseReadback;detailError?:unknown;error?:unknown;loading:boolean};
-
-type PurchaseRequestScreenProps={workspace:WorkspaceData|null;loginBoundary:number;onDenied:(error:unknown)=>void;onLogin:()=>void};
+type RetainedEditor={scopeKey:string;raw:PurchaseReadback;snapshot:PurchaseRequestSnapshot;bridge:ReturnType<typeof createPurchaseCommandAdapter>;
+ observation:WorkspaceData|null;revision:number;receiptId?:string;grant:PurchaseReadback["commandAccess"]};
+type PurchaseRequestScreenProps={workspace:WorkspaceData|null;loginBoundary:number;sessionEnded:boolean;onVerifyWorkspace:()=>Promise<void>;onDenied:(error:unknown)=>void;onLogin:()=>void};
 export function PurchaseRequestScreen(props:PurchaseRequestScreenProps){
- const boundary=workspaceStateScope(props.workspace,props.loginBoundary);
- return <PurchaseRequestReader key={boundary} {...props} boundary={boundary}/>;
+ // A completed login rotates this boundary even while the shell has no workspace.
+ return <PurchaseRequestSession key={props.loginBoundary} {...props}/>;
 }
-function PurchaseRequestReader({workspace,boundary,onDenied,onLogin}:PurchaseRequestScreenProps&{boundary:string}){
+function PurchaseRequestSession(props:PurchaseRequestScreenProps){
+ const session=props.workspace?.session;
+ const observedBoundary=session?JSON.stringify([session.tenantId,session.companyId,session.absoluteExpiresAt]):null;
+ const [retainedBoundary,setRetainedBoundary]=useState<string|null>(observedBoundary),[checking,setChecking]=useState(false);
+ // workspace=null after network/503 is loss of evidence, not logout. Keep the last
+ // verified identity only as a component-lifetime key; it is never used as authority.
+ // Guarded state adjustment is synchronous: React retries this component before
+ // committing its children. A real boundary retires the reader without an effect
+ // delay, while a null outage preserves the same reader and its unresolved intent.
+ const currentBoundary=props.sessionEnded?null:observedBoundary??retainedBoundary;
+ if(retainedBoundary!==currentBoundary)setRetainedBoundary(currentBoundary);
+ const sessionUnverified=!props.workspace&&!props.sessionEnded&&currentBoundary!==null;
+ const boundary=JSON.stringify([props.loginBoundary,currentBoundary,props.sessionEnded]);
+ async function verifySession(){
+  if(props.workspace||props.sessionEnded||checking)return;
+  setChecking(true);try{await props.onVerifyWorkspace();}finally{setChecking(false);}
+ }
+ return <>
+  {sessionUnverified&&<section aria-label="Xác minh lại phiên mua hàng" style={{display:"grid",gap:8}}>
+   <p role="status">Chưa xác minh được phiên ERP. Dữ liệu và thao tác mua hàng đang bị ẩn/khóa; yêu cầu chưa rõ kết quả vẫn được giữ để đối chiếu sau khi parent Workspace xác minh lại.</p>
+   <button type="button" style={control} disabled={checking} onClick={()=>void verifySession()}>{checking?"Đang xác minh phiên…":"Xác minh lại phiên ERP"}</button>
+  </section>}
+  <PurchaseRequestReader key={boundary} {...props} boundary={boundary} sessionUnverified={sessionUnverified}/>
+ </>;
+}
+function PurchaseRequestReader({workspace,boundary,sessionUnverified,onDenied,onLogin}:PurchaseRequestScreenProps&{boundary:string;sessionUnverified:boolean}){
  const [searchInput,setSearchInput]=useState(""),[search,setSearch]=useState(""),[branch,setBranch]=useState(""),[page,setPage]=useState(1),[selected,setSelected]=useState<string|null>(null),[refresh,setRefresh]=useState(0);
- const [state,setState]=useState<ReadState>({key:"",loading:false});const generation=useRef(0),serverScope=useRef<string|null>(null);
+ const [state,setState]=useState<ReadState>({key:"",loading:false}),[editor,setEditor]=useState<RetainedEditor|null>(null);
+ const [knownScope,setKnownScope]=useState<string|null>(null);
+ const [observedWorkspace,setObservedWorkspace]=useState(workspace),[verifiedWorkspace,setVerifiedWorkspace]=useState<WorkspaceData|null>(null);
+ // Even restoration of the same object must pass fresh scope/authority reads.
+ if(observedWorkspace!==workspace){setObservedWorkspace(workspace);setVerifiedWorkspace(null);}
+ const generation=useRef(0),serverScope=useRef<string|null>(null),editorRef=useRef<RetainedEditor|null>(null),work=useRef({dirty:false,unresolved:false});
+ const {request:guardNavigation}=useNavigationGuard();
+ const retain=useCallback((value:RetainedEditor|null)=>{editorRef.current=value;setEditor(value);},[]);
+ const onWorkStateChange=useCallback((value:{dirty:boolean;unresolved:boolean})=>{work.current=value;},[]);
+ const onConfirmed=useCallback((snapshot:PurchaseRequestSnapshot,receiptId:string)=>{
+  const current=editorRef.current;if(!current||current.raw.document.purchaseRequestId!==snapshot.documentId)return;
+  retain({...current,raw:current.bridge.currentReadback(),snapshot,receiptId});
+ },[retain]);
+ useEffect(()=>()=>{editorRef.current?.bridge.retire();},[]);
+ useLayoutEffect(()=>{generation.current++;},[workspace]);
  const allowed=!!workspace?.session.capabilities.includes("purchase-requests.read")&&!!workspace.branchIds.length;
  const safeBranch=workspace?.branchIds.includes(branch)?branch:"";
  const key=JSON.stringify([boundary,workspace?.session.authorityVersion,workspace?.session.capabilities,workspace?.branchIds,search,safeBranch,page,selected,refresh]);
@@ -28,47 +69,84 @@ function PurchaseRequestReader({workspace,boundary,onDenied,onLogin}:PurchaseReq
   void (async()=>{
    const bootstrap=await getPurchaseWorkspace(controller.signal);
    if(controller.signal.aborted||current!==generation.current)return;
-   const changedScope=serverScope.current!==null&&serverScope.current!==bootstrap.scopeKey;serverScope.current=bootstrap.scopeKey;
-   if(changedScope){setSearchInput("");setSearch("");setBranch("");setPage(1);setSelected(null);setRefresh(value=>value+1);return;}
-   if(safeBranch&&!bootstrap.data.branchIds.includes(safeBranch)){setBranch("");setPage(1);setSelected(null);return;}
+   const changedScope=serverScope.current!==null&&serverScope.current!==bootstrap.scopeKey;serverScope.current=bootstrap.scopeKey;setKnownScope(bootstrap.scopeKey);
+   if(changedScope){editorRef.current?.bridge.retire();retain(null);work.current={dirty:false,unresolved:false};setSearchInput("");setSearch("");setBranch("");setPage(1);setSelected(null);setRefresh(value=>value+1);return;}
+   if(safeBranch&&!bootstrap.data.branchIds.includes(safeBranch)){setBranch("");setPage(1);if(!editorRef.current?.bridge.hasPending())setSelected(null);return;}
+   const startingBridge=editorRef.current?.bridge,readEpoch=startingBridge?.readVersion();
    const result=await getPurchaseDocuments(bootstrap.scopeKey,bootstrap.data.branchIds,page,search,safeBranch,selected,controller.signal);
    if(controller.signal.aborted||current!==generation.current)return;
    setState({key,observation:workspace,scopeKey:bootstrap.scopeKey,bootstrap:bootstrap.data,...result,loading:false});
-  })().catch(error=>{if(controller.signal.aborted||current!==generation.current)return;setState({key,observation:workspace,error,loading:false});onDenied(error);});
+   setVerifiedWorkspace(workspace);
+   const existing=editorRef.current;
+   if(result.detail){
+    if(existing&&existing.raw.document.purchaseRequestId===result.detail.document.purchaseRequestId){
+     if(existing.bridge.hasPending()||work.current.dirty){retain({...existing,observation:workspace,grant:result.detail.commandAccess});return;}
+     // A GET begun before dispatch/ACK cannot overwrite the confirmed receipt.
+     existing.bridge.adoptReadback(result.detail,existing.bridge===startingBridge?readEpoch:undefined);
+     retain({...existing,raw:result.detail,snapshot:commandPurchaseSnapshot(result.detail),observation:workspace,grant:result.detail.commandAccess,revision:existing.revision+1});
+    }else if(!existing?.bridge.hasPending()){
+     existing?.bridge.retire();const bridge=createPurchaseCommandAdapter(bootstrap.scopeKey,result.detail,postPurchaseCommand);
+     retain({scopeKey:bootstrap.scopeKey,raw:result.detail,snapshot:commandPurchaseSnapshot(result.detail),bridge,observation:workspace,grant:result.detail.commandAccess,revision:(existing?.revision??0)+1});
+    }
+   }else if(existing&&!existing.bridge.hasPending()&&!existing.receiptId&&!work.current.dirty){existing.bridge.retire();retain(null);}
+  })().catch(error=>{
+   if(controller.signal.aborted||current!==generation.current)return;
+   if(error instanceof ApiError&&error.status===401){
+    // Current server evidence ends this session. Retire immediately so a late ACK
+    // cannot land before the parent propagates sessionEnded and remounts us.
+    editorRef.current?.bridge.retire();retain(null);work.current={dirty:false,unresolved:false};
+    setSearchInput("");setSearch("");setBranch("");setPage(1);setSelected(null);setKnownScope(null);serverScope.current=null;setVerifiedWorkspace(null);
+   }
+   setState({key,observation:workspace,error,loading:false});onDenied(error);
+  });
   return ()=>controller.abort();
- },[key,allowed,safeBranch,page,search,selected,onDenied,workspace]);
- // Render gating hides old rows synchronously, before effect cleanup on changed authority.
- const active=allowed&&state.key===key&&state.observation===workspace?state:null, busy=!active||active.loading;
- function find(event:FormEvent){event.preventDefault();setSearch(searchInput);setPage(1);setSelected(null);setRefresh(value=>value+1);}
- if(!workspace)return <section><h2>Đề nghị mua hàng</h2><p>Đăng nhập ERP để đọc đề nghị mua hàng.</p><button style={control} onClick={onLogin}>Đăng nhập ERP</button></section>;
- if(!allowed)return <section role="status"><h2>Đề nghị mua hàng</h2><p>Bạn không có quyền đọc đề nghị mua hàng trong phạm vi hiện tại.</p></section>;
- const snapshot=active?.detail?mobilePurchaseSnapshot(active.detail):null;
- const access:MobileRequestAccess={scopeKey:active?.scopeKey??null,canRead:true,canEdit:false,canSaveDraft:false,canSubmit:false,available:false,
-  branches:(active?.bootstrap?.branchIds??[]).map(id=>({id,label:id})),currencies:active?.detail?[{id:active.detail.document.header.currencyId,label:active.detail.document.header.currencyId}]:[],
-  purposes:active?.detail?.document.header.purposeId!==null&&active?.detail?[{id:String(active.detail.document.header.purposeId),label:String(active.detail.document.header.purposeId)}]:[],
-  maxNotesLength:65536,maxPurposeLength:65536,maxLines:100,itemLookupId:"items",objectLookupId:"objects"};
+ },[key,allowed,safeBranch,page,search,selected,onDenied,workspace,retain]);
+ const active=allowed&&state.key===key&&state.observation===workspace?state:null,busy=!active||active.loading;
+ function move(action:()=>void){
+  // The synchronous bridge check covers the interval before the editor's guard effect.
+  if(editorRef.current?.bridge.hasPending()||work.current.unresolved){guardNavigation(()=>{});return;}
+  guardNavigation(()=>{work.current={dirty:false,unresolved:false};action();});
+ }
+ function close(){move(()=>{editorRef.current?.bridge.retire();retain(null);setSelected(null);});}
+ function find(event:FormEvent){event.preventDefault();move(()=>{setSearch(searchInput);setPage(1);setSelected(null);editorRef.current?.bridge.retire();retain(null);setRefresh(value=>value+1);});}
+ const denied=active?.error instanceof ApiError&&[401,403,409].includes(active.error.status);
+ const canRead=!!editor&&allowed&&verifiedWorkspace===workspace&&!denied&&editor.scopeKey===knownScope&&editor.observation===workspace
+  &&workspace?.branchIds.includes(editor.raw.document.branchId)===true&&selected===editor.raw.document.purchaseRequestId;
+ const freshRequired=!!editor&&(editor.bridge.needsFreshRead()||busy||!!active?.error||!!active?.detailError||editor.observation!==workspace);
+ const grant=editor?.grant,draft=editor?.raw.document.statusId===1&&editor.raw.document.isLocked!==true;
+ const access:MobileRequestAccess={scopeKey:editor?.scopeKey??null,canRead,canEdit:canRead&&draft&&grant?.canSave===true&&!freshRequired,
+  canSaveDraft:draft&&grant?.canSave===true,canSubmit:draft&&grant?.canSubmit===true,canReconcile:grant?.canLookup===true,
+  existingOnly:true,canAddLines:false,requiresFreshRead:freshRequired,available:true,
+  authorityKey:JSON.stringify([workspace?.session.authorityVersion,workspace?.session.capabilities,workspace?.branchIds,grant]),
+  branches:[],currencies:[],purposes:[],maxNotesLength:65536,maxPurposeLength:65536,maxLines:500,itemLookupId:"items",objectLookupId:"objects"};
  return <section aria-label="Danh sách đề nghị mua hàng" style={{display:"grid",gap:16}}>
   <h2>Đề nghị mua hàng</h2><p id="purchase-write-qualification" role="status">{qualification}</p>
-  <div style={gap}>{["Tạo đề nghị","Lưu nháp","Gửi đề nghị"].map(label=><button key={label} style={control} disabled aria-describedby="purchase-write-qualification">{label}</button>)}</div>
-  <form onSubmit={find} style={gap}><label>Tìm mã đề nghị <input style={control} value={searchInput} maxLength={100} onChange={event=>setSearchInput(event.target.value)}/></label>
-   <button type="submit" style={control} disabled={busy}>Tìm kiếm</button>
-   <label>Chi nhánh <select aria-label="Chi nhánh" style={control} value={safeBranch} disabled={busy} onChange={event=>{setBranch(event.target.value);setPage(1);setSelected(null);}}><option value="">Tất cả chi nhánh được phép</option>{(active?.bootstrap?.branchIds??[]).map(id=><option key={id} value={id}>{id}</option>)}</select></label>
-   <button style={control} type="button" disabled={busy} onClick={()=>setRefresh(value=>value+1)}>Làm mới</button>
-  </form>
-  {busy?<p role="status">Đang đọc ERP…</p>:active.error?<p role="alert">{active.error instanceof ApiError&&active.error.code==="purchase_scope_changed"?"Phiên ERP đã thay đổi. Hãy làm mới dữ liệu.":errorMessage(active.error)}</p>:<>
-   <div style={{display:"grid",gap:8}}>{active.list?.rows.map(row=><article key={row.documentId} style={{border:"1px solid var(--border)",padding:12,borderRadius:8}}>
-    <strong>{row.documentId}</strong><p>{row.purchaseDate??"Ngày: NULL"} · {row.branchId} · Trạng thái ERP: {row.statusId}</p><p>{row.personSuggest} · {row.department}</p>
-    <button style={control} onClick={()=>setSelected(row.documentId)} aria-label={`Mở đề nghị ${row.documentId}`}>Mở đề nghị</button>
-   </article>)}{active.list?.rows.length===0&&<p>Không có đề nghị phù hợp trong phạm vi của bạn.</p>}</div>
-   <nav aria-label="Phân trang đề nghị" style={gap}><button style={control} disabled={page===1} onClick={()=>{setPage(value=>value-1);setSelected(null);}}>Trang trước</button><span>Trang {page}</span><button style={control} disabled={!active.list?.hasMore||page>=1000} onClick={()=>{setPage(value=>value+1);setSelected(null);}}>Trang sau</button></nav>
-   {selected&&<section aria-label={`Chi tiết đề nghị ${selected}`} style={{display:"grid",gap:12}}>
-    <div style={gap}><h3>{selected}</h3><button style={control} onClick={()=>setSelected(null)}>Đóng đề nghị</button></div>
-    {active.detail?<>
-     {snapshot?<MobileRequest key={JSON.stringify([active.scopeKey,active.detail.document.purchaseRequestId,active.detail.stateToken])} initial={snapshot} access={access}/>:<p>Hiển thị toàn bộ dữ liệu ở chế độ chỉ đọc; biểu mẫu di động không hỗ trợ đầy đủ hình dạng phiếu này.</p>}
-     <FullPurchaseReadback readback={active.detail}/>
-    </>:<p role="alert">{errorMessage(active.detailError)}</p>}
-   </section>}
+  <button style={control} disabled aria-describedby="purchase-write-qualification">Tạo đề nghị</button>
+  {!workspace?sessionUnverified?<p role="status">Phiên ERP tạm chưa được xác minh. Bộ lọc, phiếu đang chọn và dữ liệu nghiệp vụ đang được ẩn cho tới khi parent Workspace xác minh lại.</p>:<><p>Đăng nhập ERP để đọc đề nghị mua hàng.</p><button style={control} onClick={onLogin}>Đăng nhập ERP</button></>:!allowed?<p role="status">Bạn không có quyền đọc đề nghị mua hàng trong phạm vi hiện tại.</p>:verifiedWorkspace!==workspace?<section aria-label="Đang xác minh phạm vi mua hàng">
+   <p role={active?.error?"alert":"status"}>{active?.error?errorMessage(active.error):"Đang xác minh lại phạm vi và quyền ERP; dữ liệu vẫn bị ẩn."}</p>
+   {!!active?.error&&<button type="button" style={control} onClick={()=>setRefresh(value=>value+1)}>Xác minh lại phạm vi ERP</button>}
+  </section>:<>
+   <form onSubmit={find} style={gap}><label>Tìm mã đề nghị <input style={control} value={searchInput} maxLength={100} onChange={event=>setSearchInput(event.target.value)}/></label>
+    <button type="submit" style={control} disabled={busy}>Tìm kiếm</button>
+    <label>Chi nhánh <select aria-label="Chi nhánh" style={control} value={safeBranch} disabled={busy} onChange={event=>{const id=event.target.value;move(()=>{setBranch(id);setPage(1);setSelected(null);editorRef.current?.bridge.retire();retain(null);});}}><option value="">Tất cả chi nhánh được phép</option>{(active?.bootstrap?.branchIds??[]).map(id=><option key={id} value={id}>{id}</option>)}</select></label>
+    <button style={control} type="button" disabled={busy} onClick={()=>move(()=>setRefresh(value=>value+1))}>Làm mới</button>
+   </form>
+   {busy?<p role="status">Đang đọc ERP…</p>:active.error?<p role="alert">{errorMessage(active.error)}</p>:<>
+    <div style={{display:"grid",gap:8}}>{active.list?.rows.map(row=><article key={row.documentId} style={{border:"1px solid var(--border)",padding:12,borderRadius:8}}>
+     <strong>{row.documentId}</strong><p>{row.purchaseDate??"Ngày: NULL"} · {row.branchId} · Trạng thái ERP: {row.statusId}</p><p>{row.personSuggest} · {row.department}</p>
+     <button style={control} onClick={()=>move(()=>setSelected(row.documentId))} aria-label={`Mở đề nghị ${row.documentId}`}>Mở đề nghị</button>
+    </article>)}{active.list?.rows.length===0&&<p>Không có đề nghị phù hợp trong phạm vi của bạn.</p>}</div>
+    <nav aria-label="Phân trang đề nghị" style={gap}><button style={control} disabled={page===1} onClick={()=>move(()=>{setPage(value=>value-1);setSelected(null);editorRef.current?.bridge.retire();retain(null);})}>Trang trước</button><span>Trang {page}</span><button style={control} disabled={!active.list?.hasMore||page>=1000} onClick={()=>move(()=>{setPage(value=>value+1);setSelected(null);editorRef.current?.bridge.retire();retain(null);})}>Trang sau</button></nav>
+   </>}
+   {selected&&<div style={gap}><h3>{selected}</h3><button style={control} onClick={close}>Đóng đề nghị</button></div>}
+   {active?.detailError&&<p role="alert">{errorMessage(active.detailError)}</p>}
   </>}
+  {/* Outside the busy/error/selection fragment. Never key by token or discard an unknown intent. */}
+  {editor&&<section aria-label="Phiếu mua hàng hiện có" hidden={!canRead}>
+   <MobileRequest initial={editor.snapshot} access={access} adapter={editor.bridge.adapter} readRevision={editor.revision} onConfirmed={onConfirmed} onWorkStateChange={onWorkStateChange}/>
+   {canRead&&<>{editor.receiptId&&<p role="status">ERP đã xác nhận yêu cầu {editor.receiptId}. Receipt vẫn được giữ khi đọc lại thất bại.</p>}
+    <p role="status">{grant?.reason??"command_access_provider_unavailable"}</p><FullPurchaseReadback readback={editor.raw}/></>}
+  </section>}
  </section>;
 }
 

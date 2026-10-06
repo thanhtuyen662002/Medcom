@@ -175,7 +175,7 @@ public sealed class PurchaseRequestCommandTests
     }
     [Theory]
     [InlineData("committed","revoke")] [InlineData("pending","revoke")] [InlineData("absent","revoke")]
-    [InlineData("committed","version")] [InlineData("pending","actor")] [InlineData("absent","tenant")]
+    [InlineData("pending","actor")] [InlineData("absent","tenant")]
     [InlineData("committed","company")] [InlineData("pending","credential")] [InlineData("absent","branch")]
     [InlineData("committed","grant")] [InlineData("committed","cancel")]
     public async Task Lookup_fences_late_revocation_scope_changes_and_cancellation_including_negative_observations(string state,string change)
@@ -190,7 +190,7 @@ public sealed class PurchaseRequestCommandTests
             if(change=="grant") db.Denial="add";
             if(change=="cancel") cancelled.Cancel();
             id=change switch {
-                "version"=>id with { AuthorityVersion=2 }, "actor"=>id with { PrincipalId="other.actor" },
+                "actor"=>id with { PrincipalId="other.actor" },
                 "tenant"=>id with { TenantId="other.tenant" }, "company"=>id with { CompanyId="other.company" },
                 "credential"=>id with { CredentialStamp="changed" }, "branch"=>id with { BranchIds=["B2"] },_=>id };
             return Task.FromResult<AuthoritativeIdentity?>(id);
@@ -200,6 +200,41 @@ public sealed class PurchaseRequestCommandTests
         Assert.Equal(change=="cancel" ? PurchaseRequestLookupOutcome.Cancelled : PurchaseRequestLookupOutcome.Denied,result.Outcome);
         Assert.Null(result.Receipt); Assert.Equal(journal,JournalState(db)); AssertLookupOnly(db,allocator);
     }
+    [Fact]
+    public async Task Lookup_accepts_monotone_authority_version_advances_when_security_scope_is_unchanged()
+    {
+        var db=new PurchaseRecordingModel(); var committed=await db.Service().CreateAsync(PurchaseFixtures.Create);
+        Assert.Equal(PurchaseRequestCommandOutcome.Committed,committed.Outcome);
+        db.Commands.Clear(); db.Events.Clear(); var allocator=new LookupForbiddenAllocator(); var calls=0;
+        Task<AuthoritativeIdentity?> Resolve(CancellationToken _) =>
+            Task.FromResult<AuthoritativeIdentity?>(PurchaseFixtures.Identity(++calls));
+        var observed=await LookupService(db,allocator,Resolve).LookupAsync(PurchaseFixtures.Create);
+        Assert.Equal(PurchaseRequestLookupOutcome.Committed,observed.Outcome);
+        Assert.Equal(JsonSerializer.Serialize(committed.Receipt,PurchaseRequestCommandRules.Json),
+            JsonSerializer.Serialize(observed.Receipt,PurchaseRequestCommandRules.Json));
+        Assert.True(calls>=3); AssertLookupOnly(db,allocator);
+    }
+
+    [Theory]
+    [InlineData(0L)] [InlineData(-1L)]
+    public async Task Writer_and_lookup_reject_nonpositive_authority_versions_before_SQL(long version)
+    {
+        var db=new PurchaseRecordingModel(); db.Seed();
+        var resolver=new Func<CancellationToken,Task<AuthoritativeIdentity?>>(_=>
+            Task.FromResult<AuthoritativeIdentity?>(PurchaseFixtures.Identity(version)));
+        var writer=new SqlPurchaseRequestCommands(PurchaseFixtures.Binding,PurchaseFixtures.Company,
+            (Func<DbConnection>)(()=>new PurchaseRecordingConnection(db,db.Connections++)),resolver,db,true);
+        var save=SaveIntent(db);
+        Assert.Equal(PurchaseRequestCommandOutcome.Denied,(await writer.SaveAsync(save)).Outcome);
+        Assert.Empty(db.Commands); Assert.Empty(db.Journal); Assert.Equal(0,db.AllocatorCalls);
+
+        var lookupAllocator=new LookupForbiddenAllocator();
+        var lookup=new SqlPurchaseRequestCommands(PurchaseFixtures.Binding,PurchaseFixtures.Company,
+            (Func<DbConnection>)(()=>new PurchaseRecordingConnection(db,db.Connections++)),resolver,lookupAllocator,true);
+        Assert.Equal(PurchaseRequestLookupOutcome.Denied,(await lookup.LookupAsync(save)).Outcome);
+        Assert.Empty(db.Commands); AssertLookupOnly(db,lookupAllocator);
+    }
+
     [Fact]
     public async Task Lookup_current_foreign_branch_does_not_disclose_committed_receipt()
     {
@@ -914,11 +949,14 @@ public sealed class PurchaseRequestCommandTests
         Assert.Equal(PurchaseRequestCommandOutcome.Denied,answer.Outcome); Assert.Null(answer.Receipt); Assert.Empty(db.Documents);
     }
     [Fact]
-    public async Task Authority_version_change_between_reservation_and_write_denies_without_overwriting_source()
+    public async Task Authority_version_regression_1_1_2_1_between_reservation_and_write_denies_without_overwriting_source()
     {
+        // Existing fixture sequence is 1 -> 1 -> 2 -> 1: the increase is accepted,
+        // but the later decrease below the last accepted observation must deny.
         var db=new PurchaseRecordingModel { VersionChangeAt=3 };
         var result=await db.Service().CreateAsync(PurchaseFixtures.Create);
         Assert.Equal(PurchaseRequestCommandOutcome.Denied,result.Outcome); Assert.Empty(db.Documents); Assert.Single(db.Journal);
+        Assert.True(db.SessionCalls>=4);
     }
     [Fact]
     public async Task Pending_slot_cannot_be_resumed_by_another_invocation_or_after_lost_reservation_ack()
