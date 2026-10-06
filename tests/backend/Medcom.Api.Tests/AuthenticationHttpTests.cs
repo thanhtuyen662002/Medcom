@@ -42,6 +42,65 @@ public sealed class AuthenticationHttpTests
     }
 
     [Fact]
+    public async Task ReadScopeHeadersTrackSessionAndRightsNotObservationOrActivity()
+    {
+        await using var server = await SecureTestServer.Start(documentReader: new ScopeDocuments());
+        server.Authority.Identity = server.Authority.Identity with
+        { Capabilities = ["purchase-orders.read", "platform.status"], BranchIds = ["B", "A"] };
+        async Task<(string Session, string Read)> Scope(string route)
+        {
+            using var response = await server.Client.GetAsync(route);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var session = response.Headers.GetValues("X-Medcom-Session-Scope").Single();
+            var read = response.Headers.GetValues("X-Medcom-Read-Scope").Single();
+            Assert.Matches("^[a-f0-9]{64}$", session); Assert.Matches("^[a-f0-9]{64}$", read);
+            Assert.NotEqual(session, read);
+            var body = await response.Content.ReadAsStringAsync();
+            Assert.DoesNotContain(session, body); Assert.DoesNotContain(read, body);
+            return (session, read);
+        }
+        using var login = await server.Post("/api/auth/login", new { username = "synthetic-user", password = "synthetic-password" }, await server.Csrf());
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+        var initial = await Scope("/api/workspace");
+        Assert.Equal(initial, await Scope("/api/documents/purchase-orders"));
+        Assert.Equal(initial, await Scope("/api/documents/purchase-orders/detail?documentId=TEST"));
+        server.Authority.Identity = server.Authority.Identity with
+        { AuthorityVersion = 2, Capabilities = ["platform.status", "purchase-orders.read"], BranchIds = ["A", "B", "A"] };
+        using var continued = await server.Post("/api/auth/session/continue", null, await server.Csrf());
+        Assert.Equal(HttpStatusCode.OK, continued.StatusCode);
+        Assert.Equal(initial, await Scope("/api/workspace"));
+        server.Authority.Identity = server.Authority.Identity with { AuthorityVersion = 3, BranchIds = ["A"] };
+        var changed = await Scope("/api/workspace");
+        Assert.Equal(initial.Session, changed.Session); Assert.NotEqual(initial.Read, changed.Read);
+        Assert.Equal(changed, await Scope("/api/documents/purchase-orders"));
+        using var rotated = await server.Post("/api/auth/login", new { username = "synthetic-user", password = "synthetic-password" }, await server.Csrf());
+        Assert.Equal(HttpStatusCode.OK, rotated.StatusCode);
+        var replacement = await Scope("/api/workspace");
+        Assert.NotEqual(changed.Session, replacement.Session); Assert.NotEqual(changed.Read, replacement.Read);
+        using var anonymous = server.NewClient();
+        using var spoof = new HttpRequestMessage(HttpMethod.Get, "/api/workspace");
+        spoof.Headers.Add("X-Medcom-Session-Scope", replacement.Session);
+        spoof.Headers.Add("X-Medcom-Read-Scope", replacement.Read);
+        using var denied = await anonymous.SendAsync(spoof);
+        Assert.Equal(HttpStatusCode.Unauthorized, denied.StatusCode);
+        Assert.False(denied.Headers.Contains("X-Medcom-Session-Scope"));
+        Assert.False(denied.Headers.Contains("X-Medcom-Read-Scope"));
+        server.Authority.Identity = server.Authority.Identity with { AuthorityVersion = 4, Capabilities = [] };
+        using var forbidden = await server.Client.GetAsync("/api/documents/purchase-orders");
+        Assert.Equal(HttpStatusCode.Forbidden, forbidden.StatusCode);
+        Assert.False(forbidden.Headers.Contains("X-Medcom-Read-Scope"));
+    }
+
+    private sealed class ScopeDocuments : IDocumentReader
+    {
+        private static readonly Medcom.Contracts.DocumentSummary Row = new("TEST", "2026-10-06", "A", 1, false);
+        public Task<DocumentResult> ReadAsync(AuthoritativeIdentity identity, DocumentKind kind, DocumentQuery query, CancellationToken token) =>
+            Task.FromResult(new DocumentResult(DocumentOutcome.Success, new([Row], query.Page, query.PageSize, false)));
+        public Task<DocumentDetailResult> ReadDetailAsync(AuthoritativeIdentity identity, DocumentKind kind, DocumentDetailQuery query, CancellationToken token) =>
+            Task.FromResult(new DocumentDetailResult(DocumentOutcome.Success, new(Row, [], [], query.Page, query.PageSize, false)));
+    }
+
+    [Fact]
     public async Task LoginCsrfIsRequiredAndRejectedRequestsNeverIssueSessionCookie()
     {
         await using var server = await SecureTestServer.Start();

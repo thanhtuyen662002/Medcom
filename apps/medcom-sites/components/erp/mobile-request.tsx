@@ -1,4 +1,5 @@
 "use client";
+import {RequestButton,RequestInput,RequestTextarea,RequestNotice,requestStyles} from "./request-presentation";
 
 import {useEffect, useId, useLayoutEffect, useRef, useState} from "react";
 import {RemoteLookup} from "./lookup";
@@ -41,6 +42,8 @@ export type MobileRequestAccess = {
   canReconcile?: boolean;
   authorityKey?: string;
   requiresFreshRead?: boolean;
+  /** A same-scope read/grant refresh blocks new actions without retiring an in-flight intent. */
+  verifying?: boolean;
   branches: readonly Choice[];
   currencies: readonly Choice[];
   purposes: readonly Choice[];
@@ -212,10 +215,10 @@ function RequestEditor({initial, access, adapter, onConfirmed, readRevision=0, o
   const pending = phase === "pending" || phase === "reconciling";
   const uncertain = phase === "unknown" || phase === "reconciling";
   const serviceAvailable = !!adapter && access.available && validAccess(access) && isSnapshot(initial);
-  const editable = access.canRead && serviceAvailable && access.canEdit && !access.requiresFreshRead && !documentSwitchBlocked && baseline.confirmation !== "submitted" && !pending && !uncertain && phase !== "conflict";
+  const editable = access.canRead && serviceAvailable && access.canEdit && !access.verifying && !access.requiresFreshRead && !documentSwitchBlocked && baseline.confirmation !== "submitted" && !pending && !uncertain && phase !== "conflict";
   useDirtyGuard(dirty || pending || uncertain, !pending && !uncertain);
   useLayoutEffect(()=>{onWorkStateChange?.({dirty,unresolved:hasUnresolvedIntent});},[dirty,hasUnresolvedIntent,onWorkStateChange]);
-  const canSubmitExisting=access.existingOnly&&serviceAvailable&&access.canRead&&access.canSubmit
+  const canSubmitExisting=access.existingOnly&&serviceAvailable&&access.canRead&&!access.verifying&&access.canSubmit
     &&baseline.confirmation==="draft"&&!!baseline.documentId&&!!baseline.version&&!dirty&&!pending&&!uncertain&&!documentSwitchBlocked;
 
   function change(patch: Partial<PurchaseRequestDraft>) {
@@ -268,7 +271,7 @@ function RequestEditor({initial, access, adapter, onConfirmed, readRevision=0, o
     }
   }
   async function send(action: PurchaseRequestIntent["action"]) {
-    if (!adapter || originalIntent.current || queuedDocument.current || lock.current || pending || uncertain || phase === "conflict" || !review
+    if (!adapter || access.verifying || originalIntent.current || queuedDocument.current || lock.current || pending || uncertain || phase === "conflict" || !review
       || (action==="submit"&&access.existingOnly ? !canSubmitExisting : !editable)
       || (access.existingOnly&&!baseline.documentId)
       || (action === "saveDraft" ? !access.canSaveDraft || !dirty && !!baseline.documentId : !access.canSubmit)) return;
@@ -287,50 +290,52 @@ function RequestEditor({initial, access, adapter, onConfirmed, readRevision=0, o
   }
   async function reconcile() {
     const intent = originalIntent.current;
-    if (!adapter || !serviceAvailable || !access.canRead || access.canReconcile===false || originalAdapter.current!==adapter || !intent || lock.current || phase !== "unknown") return;
+    if (!adapter || !serviceAvailable || !access.canRead || access.verifying || access.canReconcile===false || originalAdapter.current!==adapter || !intent || lock.current || phase !== "unknown") return;
     lock.current = true; const token = ++generation.current; const controller = new AbortController(); request.current = controller; setPhase("reconciling");
     try {const next = await adapter.reconcile(intent, controller.signal); if (generation.current === token && !controller.signal.aborted && currentAccess.current.canRead && currentAdapter.current===adapter) accept(next, intent, true);}
     catch {if (generation.current === token && !controller.signal.aborted && currentAccess.current.canRead && currentAdapter.current===adapter) accept(unknown(intent, "Chưa kiểm tra được kết quả. Yêu cầu gốc vẫn chưa được xác nhận."), intent, true);}
     finally {if (generation.current === token) lock.current = false;}
   }
-  const stateLabel = pending ? (phase === "pending" ? "Đang gửi yêu cầu…" : "Đang kiểm tra kết quả…") : uncertain ? "Chưa xác nhận kết quả" : phase === "conflict" ? "Phiếu đã thay đổi trên ERP" : phase === "rejected" ? "Yêu cầu bị từ chối; nội dung chưa được lưu" : dirty ? "Có nội dung chưa lưu" : baseline.confirmation === "submitted" ? "ERP đã xác nhận gửi phiếu" : baseline.confirmation === "draft" ? "Nháp đã được ERP xác nhận" : "Phiếu mới chưa lưu";
+  const stateLabel = pending ? (phase === "pending" ? "Đang gửi yêu cầu…" : "Đang kiểm tra kết quả…") : uncertain ? "Chưa xác nhận kết quả" : phase === "conflict" ? "Phiếu đã thay đổi trên ERP" : phase === "rejected" ? "Yêu cầu bị từ chối; nội dung chưa được lưu" : dirty ? "Có nội dung chưa lưu" : baseline.confirmation === "submitted" ? "ERP đã xác nhận gửi phiếu" : baseline.confirmation === "draft" ? "Nháp đã được ERP xác nhận" : baseline.documentId ? "Phiếu hiện có trên ERP" : "Phiếu mới chưa lưu";
   const headerFields = [
     ["purchaseDate", "Ngày đề nghị", "date", 10], ["personSuggest", "Người đề nghị", "text", 500], ["department", "Phòng ban", "text", 100],
     ["purposeDescOrClient", "Mục đích / khách hàng", "textarea", access.maxPurposeLength], ["notes", "Ghi chú", "textarea", access.maxNotesLength],
   ] as const;
   if (!access.canRead) return <section role="status"><h2>Đề nghị mua hàng</h2><p>Đăng nhập bằng tài khoản được cấp quyền để mở phiếu.</p></section>;
   if (!serviceAvailable || !adapter) return <section role="status"><h2>Đề nghị mua hàng</h2><p>Dịch vụ tạo và gửi đề nghị mua hàng chưa khả dụng.</p>{hasUnresolvedIntent && <p>Yêu cầu gốc vẫn cần được kiểm tra trước khi gửi yêu cầu khác.</p>}</section>;
-  if (documentSwitchBlocked) return <section aria-label="Chờ xác nhận phiếu trước" style={{padding: 16, display: "grid", gap: 12}}><h1>Đề nghị mua hàng</h1><p role="status">{pending ? "Đang chờ kết quả phiếu trước…" : "Phiếu trước chưa được xác nhận. Kiểm tra yêu cầu gốc trước khi mở phiếu khác."}</p>{phase === "unknown" && <button type="button" style={requestInputStyle} disabled={access.canReconcile===false || dispatchAdapter!==adapter} onClick={() => void reconcile()}>Kiểm tra kết quả yêu cầu gốc</button>}</section>;
-  return <form ref={form} onSubmit={event => {event.preventDefault(); if (!review && editable) inspect();}} aria-label="Đề nghị mua hàng trên điện thoại" style={{maxWidth: 640, width: "100%", margin: "0 auto", display: "grid", gap: 20, padding: 16, boxSizing: "border-box", minWidth: 0}}>
-    <header><h1>Đề nghị mua hàng</h1><p role="status" aria-live="polite">{stateLabel}</p>{baseline.documentId && <p>Mã phiếu: <strong>{baseline.documentId}</strong></p>}{baseline.status && <p>Trạng thái ERP: <strong>{baseline.status.label}</strong></p>}</header>
-    {!access.canEdit && <p role="status">Phiếu hiện chỉ được xem theo quyền của bạn.</p>}
-    {access.existingOnly&&<p role="status">Phiếu có sẵn; không tạo hoặc thêm dòng. Ngày/giờ, chi nhánh và danh mục chưa có binding bị khóa. Giá trị ẩn và NULL được giữ nguyên; không tự tính tiền.</p>}
-    {access.requiresFreshRead&&<p role="status">Receipt đã xác nhận được giữ lại. Đọc lại phiếu trước lần chỉnh sửa tiếp theo; Submit là thao tác riêng.</p>}
+  if (documentSwitchBlocked) return <section aria-label="Chờ xác nhận phiếu trước" style={{padding: 16, display: "grid", gap: 12}}><h1>Đề nghị mua hàng</h1><p role="status">{pending ? "Đang chờ kết quả phiếu trước…" : "Phiếu trước chưa được xác nhận. Kiểm tra yêu cầu gốc trước khi mở phiếu khác."}</p>{phase === "unknown" && <RequestButton type="button" disabled={access.verifying || access.canReconcile===false || dispatchAdapter!==adapter} onClick={() => void reconcile()}>Kiểm tra kết quả yêu cầu gốc</RequestButton>}</section>;
+  return <form ref={form} onSubmit={event => {event.preventDefault(); if (!review && editable) inspect();}} aria-label="Đề nghị mua hàng trên điện thoại" className={requestStyles.editor}>
+    <header className={requestStyles.section}><h2 className={requestStyles.title}>Đề nghị mua hàng</h2><p role="status" aria-live="polite">{stateLabel}</p>{baseline.documentId && <p>Mã phiếu: <strong>{baseline.documentId}</strong></p>}{baseline.status && <p className={requestStyles.muted}>{baseline.status.label}</p>}</header>
+    {!access.canEdit&&!access.canSubmit && <RequestNotice>Phiếu hiện chỉ được xem theo quyền của bạn.</RequestNotice>}
+    {access.existingOnly&&access.canEdit&&<p className={requestStyles.muted} role="status">Ngày đề nghị, chi nhánh và danh mục được giữ nguyên. Chỉ các trường được cấp quyền mới có thể chỉnh sửa.</p>}
+    {access.requiresFreshRead&&<p role="status">Cần đọc lại phiếu trước khi chỉnh sửa tiếp. Nếu ERP đã xác nhận, không gửi lại thao tác.</p>}
     {message && <p role="alert">{message}</p>}
-    {result && result.kind !== "confirmed" && <section role="alert" style={{border: "1px solid #a1a1aa", padding: 12, borderRadius: 8}}>
+    {result && result.kind !== "confirmed" && <section role="alert" className={requestStyles.section}>
       <p>{result.message}</p>{result.referenceId && <p>Mã hỗ trợ: {result.referenceId}</p>}
-      {phase === "unknown" && <button type="button" style={requestInputStyle} disabled={access.canReconcile===false || dispatchAdapter!==adapter} onClick={() => void reconcile()}>Kiểm tra kết quả yêu cầu gốc</button>}
-      {result.kind === "conflict" && <><p>Nội dung đang nhập vẫn được giữ. Bản ERP: {result.current.documentId}; trạng thái: {result.current.status?.label ?? "Chưa được dịch vụ cung cấp"}.</p><button type="button" style={requestInputStyle} onClick={() => {if (lock.current) return; setBaseline(result.current); setValues(copy(result.current.values)); setPhase("editing"); setResult(null); setReview(false); setErrors({}); originalIntent.current = null;}}>Tải bản ERP và bỏ nội dung đang nhập</button></>}
+      {phase === "unknown" && <RequestButton type="button" disabled={access.verifying || access.canReconcile===false || dispatchAdapter!==adapter} onClick={() => void reconcile()}>Kiểm tra kết quả yêu cầu gốc</RequestButton>}
+      {result.kind === "conflict" && <><p>Nội dung đang nhập vẫn được giữ. Bản ERP: {result.current.documentId}; trạng thái: {result.current.status?.label ?? "Chưa được dịch vụ cung cấp"}.</p><RequestButton type="button" onClick={() => {if (lock.current) return; setBaseline(result.current); setValues(copy(result.current.values)); setPhase("editing"); setResult(null); setReview(false); setErrors({}); originalIntent.current = null;}}>Tải bản ERP và bỏ nội dung đang nhập</RequestButton></>}
     </section>}
-    <section aria-label={review ? "Rà soát thông tin phiếu" : "Thông tin phiếu"} style={{display: "grid", gap: 14}}>
-      <h2>{review ? "Rà soát phiếu trước khi gửi" : "Thông tin phiếu"}</h2>
+    <section aria-label={review ? "Rà soát thông tin phiếu" : "Thông tin phiếu"} className={requestStyles.section}>
+      <h2 className={requestStyles.title}>{review ? "Rà soát phiếu trước khi gửi" : "Thông tin phiếu"}</h2>
+      <div className="grid min-w-0 gap-5 sm:grid-cols-2">
       {headerFields.map(([field, label, type, max]) => {
         const id = `${prefix}-${field}`; const error = errors[field];
-        return <div key={field} style={{display: "grid", gap: 6, overflowWrap: "anywhere"}}><label htmlFor={id}>{label}{field === "personSuggest" || field === "department" ? " *" : ""}</label>
-          {review ? <strong>{values[field] || "—"}</strong> : type === "textarea" ? <textarea id={id} name={field} rows={3} value={values[field]} maxLength={max} disabled={!editable} aria-invalid={!!error} aria-describedby={error ? `${id}-error` : undefined} style={requestInputStyle} onChange={event => change({[field]: event.target.value})}/> : <input id={id} name={field} type={type} value={values[field]} maxLength={max} disabled={!editable || !!access.existingOnly&&field==="purchaseDate"} aria-invalid={!!error} aria-describedby={error ? `${id}-error` : undefined} style={requestInputStyle} onChange={event => change({[field]: event.target.value})}/>}
+        return <div key={field} className={requestStyles.field}><label htmlFor={id}>{label}{field === "personSuggest" || field === "department" ? " *" : ""}</label>
+          {review ? <strong>{values[field] || "—"}</strong> : type === "textarea" ? <RequestTextarea id={id} name={field} rows={3} value={values[field]} maxLength={max} disabled={!editable} aria-invalid={!!error} aria-describedby={error ? `${id}-error` : undefined} style={requestInputStyle} onChange={event => change({[field]: event.target.value})}/> : <RequestInput id={id} name={field} type={type} value={values[field]} maxLength={max} disabled={!editable || !!access.existingOnly&&field==="purchaseDate"} aria-invalid={!!error} aria-describedby={error ? `${id}-error` : undefined} style={requestInputStyle} onChange={event => change({[field]: event.target.value})}/>}
           {error && <p id={`${id}-error`} role="alert">{error}</p>}</div>;
       })}
       {([["branchId", "Chi nhánh", access.branches], ["currencyId", "Tiền tệ", access.currencies], ["purposeId", "Mục đích", access.purposes]] as const).map(([field, label, options]) => {
         const id = `${prefix}-${field}`; const error = errors[field];
-        return <div key={field} style={{display: "grid", gap: 6}}><label htmlFor={id}>{label}{field !== "purposeId" ? " *" : ""}</label>{review || access.existingOnly ? <strong>{options.find(option => option.id === values[field])?.label || values[field] || "—"}</strong> : <select id={id} name={field} disabled={!editable} value={values[field]} style={requestInputStyle} aria-invalid={!!error} aria-describedby={error ? `${id}-error` : undefined} onChange={event => change({[field]: event.target.value})}><option value="">Chọn {label.toLowerCase()}</option>{options.map(option => <option key={option.id} value={option.id}>{option.label}</option>)}</select>}{error && <p id={`${id}-error`} role="alert">{error}</p>}</div>;
+        return <div key={field} className={requestStyles.field}><label htmlFor={id}>{label}{field !== "purposeId" ? " *" : ""}</label>{review || access.existingOnly ? <strong>{options.find(option => option.id === values[field])?.label || values[field] || "—"}</strong> : <select id={id} name={field} disabled={!editable} value={values[field]} style={requestInputStyle} aria-invalid={!!error} aria-describedby={error ? `${id}-error` : undefined} onChange={event => change({[field]: event.target.value})}><option value="">Chọn {label.toLowerCase()}</option>{options.map(option => <option key={option.id} value={option.id}>{option.label}</option>)}</select>}{error && <p id={`${id}-error`} role="alert">{error}</p>}</div>;
       })}
       {review || access.existingOnly ? <p>Đối tượng: <strong>{values.objectLabel || values.objectId || "—"}</strong></p> : <RemoteLookup id={access.objectLookupId} label="Đối tượng" value={values.objectId ? {id: values.objectId, label: values.objectLabel || values.objectId} : null} disabled={!editable} error={errors.objectId} adapter={adapter.lookup} onChange={item => change({objectId: item?.id ?? "", objectLabel: item?.label})}/>}
       {errors.objectId && <p role="alert">{errors.objectId}</p>}
+      </div>
     </section>
     <MobileRequestLines lines={values.lines} disabled={!editable} canAdd={access.canAddLines!==false && values.lines.length < access.maxLines} lockItem={access.existingOnly===true} readOnly={review} errors={errors} lookupAdapter={adapter.lookup} itemLookupId={access.itemLookupId} onChange={(key, patch) => change({lines: values.lines.map(line => line.localKey === key ? {...line, ...patch, localKey: line.localKey, lineId: line.lineId} : line)})} onAdd={() => {if (access.canAddLines!==false && values.lines.length < access.maxLines) change({lines: [...values.lines, {localKey: crypto.randomUUID(), lineId: null, itemId: "", quantity: "", unitPrice: "", budget: "", timeRequired: "", model: ""}]});}} onRemove={key => change({lines: values.lines.filter(line => line.localKey !== key)})}/>
-    <footer style={{display: "grid", gap: 10, position: "sticky", bottom: 0, padding: "12px 0 max(12px, env(safe-area-inset-bottom))", background: "var(--background, white)", borderTop: "1px solid #a1a1aa"}}>
-      <p style={{margin: 0}}>ERP kiểm tra lại quyền và điều kiện nghiệp vụ khi nhận yêu cầu.</p>
-      {review ? <><button type="button" disabled={!editable} style={requestInputStyle} onClick={() => setReview(false)}>Quay lại chỉnh sửa</button><button type="button" disabled={!editable || !access.canSaveDraft || !dirty && !!baseline.documentId} style={requestInputStyle} onClick={() => void send("saveDraft")}>Lưu nháp trên ERP</button><button type="button" disabled={access.existingOnly ? !canSubmitExisting : !editable || !access.canSubmit} style={requestInputStyle} onClick={() => void send("submit")}>Gửi đề nghị</button></> : <button type="submit" disabled={!editable&&!canSubmitExisting} style={requestInputStyle} onClick={()=>{if(canSubmitExisting&&!editable)setReview(true);}}>Rà soát phiếu</button>}
+    <footer className={requestStyles.actionBar}>
+      <p className={requestStyles.muted}>Kiểm tra nội dung trước khi lưu hoặc gửi.</p>
+      {review ? <><RequestButton type="button" disabled={!editable} onClick={() => setReview(false)}>Quay lại chỉnh sửa</RequestButton><RequestButton type="button" disabled={!editable || !access.canSaveDraft || !dirty && !!baseline.documentId} onClick={() => void send("saveDraft")}>Lưu nháp trên ERP</RequestButton><RequestButton variant="default" type="button" disabled={access.existingOnly ? !canSubmitExisting : !editable || !access.canSubmit} onClick={() => void send("submit")}>Gửi đề nghị</RequestButton></> : <RequestButton variant="default" type="submit" disabled={!editable&&!canSubmitExisting} onClick={()=>{if(canSubmitExisting&&!editable)setReview(true);}}>Rà soát phiếu</RequestButton>}
     </footer>
   </form>;
 }

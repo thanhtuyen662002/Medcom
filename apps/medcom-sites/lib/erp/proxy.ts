@@ -68,6 +68,14 @@ export async function proxyErpRequest(request:Request,path:string[],configuredOr
   if(r.status>=300&&r.status<400)return problem(502,"upstream_redirect_rejected");
   const outgoing=new Headers({"Cache-Control":"no-store","X-Content-Type-Options":"nosniff"});
   for(const name of ["content-type","x-correlation-id","retry-after"]){const v=r.headers.get(name);if(v)outgoing.set(name,v);}
+  // Response correlation only. Browser-supplied scope markers are never sent
+  // upstream and neither marker can grant access or identify a session token.
+  if(request.method==="GET"&&r.status===200&&/^(?:api\/workspace|api\/documents\/(?:purchase-orders|inbound-requests)(?:\/detail)?)$/.test(route)){
+   const session=r.headers.get("X-Medcom-Session-Scope"),read=r.headers.get("X-Medcom-Read-Scope");
+   if(session&&read&&/^[a-f0-9]{64}$/.test(session)&&/^[a-f0-9]{64}$/.test(read)){
+    outgoing.set("X-Medcom-Session-Scope",session);outgoing.set("X-Medcom-Read-Scope",read);
+   }
+  }
   for(const value of r.headers.getSetCookie()){const safe=relayCookie(value);if(safe)outgoing.append("Set-Cookie",safe);}
   return new Response(r.body,{status:r.status,headers:outgoing});
  }catch{return problem(503,"backend_unavailable");}

@@ -25,6 +25,51 @@ public sealed class LocalFrontendHostCollection { }
 public sealed class LocalFrontendHostTests
 {
     [Theory]
+    [InlineData("/api/erp/api/workspace", 200, "valid", true)]
+    [InlineData("/api/erp/api/documents/purchase-orders", 200, "valid", true)]
+    [InlineData("/api/erp/api/documents/purchase-orders/detail", 200, "valid", true)]
+    [InlineData("/api/erp/api/documents/inbound-requests", 200, "valid", true)]
+    [InlineData("/api/erp/api/documents/inbound-requests/detail", 200, "valid", true)]
+    [InlineData("/api/erp/api/workspace", 401, "valid", false)]
+    [InlineData("/api/erp/api/workspace", 503, "valid", false)]
+    [InlineData("/api/erp/api/auth/session", 200, "valid", false)]
+    [InlineData("/", 200, "valid", false)]
+    [InlineData("/api/erp/api/workspace", 200, "missing", false)]
+    [InlineData("/api/erp/api/workspace", 200, "uppercase", false)]
+    [InlineData("/api/erp/api/workspace", 200, "duplicate", false)]
+    [InlineData("/api/erp/api/workspace", 200, "hop", false)]
+    public async Task ReadMarkersAreResponseOnlyAndBoundedToSuccessfulNamedReads(string path, int status, string shape, bool expected)
+    {
+        await using var fixture = await RelayFixture.Start(async context =>
+        {
+            Assert.False(context.Request.Headers.ContainsKey("X-Medcom-Session-Scope"));
+            Assert.False(context.Request.Headers.ContainsKey("X-Medcom-Read-Scope"));
+            context.Response.StatusCode = status;
+            context.Response.Headers["X-Medcom-Session-Scope"] = new string('a', 64);
+            if (shape != "missing") context.Response.Headers["X-Medcom-Read-Scope"] = new string(shape == "uppercase" ? 'B' : 'b', 64);
+            if (shape == "duplicate") context.Response.Headers.Append("X-Medcom-Read-Scope", new string('b', 64));
+            if (shape == "hop") context.Response.Headers.Connection = "X-Medcom-Read-Scope";
+            await context.Response.WriteAsync("{}");
+        });
+        using var request = new HttpRequestMessage(HttpMethod.Get, path);
+        request.Headers.Add("X-Medcom-Session-Scope", new string('c', 64));
+        request.Headers.Add("X-Medcom-Read-Scope", new string('d', 64));
+        using var response = await fixture.Client.SendAsync(request);
+        if (expected)
+        {
+            Assert.True(response.Headers.Contains("X-Medcom-Session-Scope"));
+            Assert.True(response.Headers.Contains("X-Medcom-Read-Scope"));
+            Assert.Equal(new string('a', 64), response.Headers.GetValues("X-Medcom-Session-Scope").Single());
+            Assert.Equal(new string('b', 64), response.Headers.GetValues("X-Medcom-Read-Scope").Single());
+        }
+        else
+        {
+            Assert.False(response.Headers.Contains("X-Medcom-Session-Scope"));
+            Assert.False(response.Headers.Contains("X-Medcom-Read-Scope"));
+        }
+    }
+
+    [Theory]
     [InlineData("http://example.invalid/secret")]
     [InlineData("https://localhost:5187/")]
     [InlineData("//example.invalid/secret")]
