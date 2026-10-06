@@ -19,15 +19,18 @@ export function PurchaseRequestScreen(props:PurchaseRequestScreenProps){
  return <PurchaseRequestSession key={props.loginBoundary} {...props}/>;
 }
 function PurchaseRequestSession(props:PurchaseRequestScreenProps){
- const retainedBoundary=useRef<string|null>(null);const [checking,setChecking]=useState(false);
  const session=props.workspace?.session;
  const observedBoundary=session?JSON.stringify([session.tenantId,session.companyId,session.absoluteExpiresAt]):null;
+ const [retainedBoundary,setRetainedBoundary]=useState<string|null>(observedBoundary),[checking,setChecking]=useState(false);
  // workspace=null after network/503 is loss of evidence, not logout. Keep the last
  // verified identity only as a component-lifetime key; it is never used as authority.
- if(props.sessionEnded)retainedBoundary.current=null;
- else if(observedBoundary!==null)retainedBoundary.current=observedBoundary;
- const sessionUnverified=!props.workspace&&!props.sessionEnded&&retainedBoundary.current!==null;
- const boundary=JSON.stringify([props.loginBoundary,observedBoundary??retainedBoundary.current,props.sessionEnded]);
+ // Guarded state adjustment is synchronous: React retries this component before
+ // committing its children. A real boundary retires the reader without an effect
+ // delay, while a null outage preserves the same reader and its unresolved intent.
+ const currentBoundary=props.sessionEnded?null:observedBoundary??retainedBoundary;
+ if(retainedBoundary!==currentBoundary)setRetainedBoundary(currentBoundary);
+ const sessionUnverified=!props.workspace&&!props.sessionEnded&&currentBoundary!==null;
+ const boundary=JSON.stringify([props.loginBoundary,currentBoundary,props.sessionEnded]);
  async function verifySession(){
   if(props.workspace||props.sessionEnded||checking)return;
   setChecking(true);try{await props.onVerifyWorkspace();}finally{setChecking(false);}

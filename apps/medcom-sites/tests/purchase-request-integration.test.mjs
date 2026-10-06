@@ -582,6 +582,14 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
    assert.equal(await screen.locator('input,textarea,select,table').count(),0);await assertSingleWriter();assert.equal(lookups().length,0);
    await recoverSame();await screen.getByRole('button',{name:'Kiểm tra kết quả yêu cầu gốc',exact:true}).click();await screen.getByText(/^ERP đã xác nhận yêu cầu /).waitFor();assert.equal(lookups()[0].body,original.body);await assertSingleWriter();
   });
+  await t.test('repeated null and verified transitions retain one reader and exact original intent until lookup',async()=>{
+   const original=await begin('lost');
+   for(const failure of [503,'network',503]){
+    await suspend(failure);await recoverSame();await assertSingleWriter();assert.equal(lookups().length,0);
+   }
+   await screen.getByRole('button',{name:'Kiểm tra kết quả yêu cầu gốc',exact:true}).click();await screen.getByText(/^ERP đã xác nhận yêu cầu /).waitFor();
+   assert.equal(lookups().length,1);assert.equal(lookups()[0].body,original.body);assert.deepEqual(JSON.parse(lookups()[0].body),original.dto);await assertSingleWriter();
+  });
   for(const change of ['session-tuple','opaque-scope'])await t.test(`verified ${change} after null retires prior data and delayed ACK`,async()=>{
    await begin('hold');await suspend(503);state.failure=null;state.scope='b'.repeat(64);state.displayName='SYNTHETIC ACCOUNT B';
    if(change==='session-tuple')state.lifetime.absoluteExpiresAt=new Date(Date.now()+14400000).toISOString();
