@@ -93,7 +93,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
  const script=Buffer.from(built.outputFiles[0].contents),logo=await readFile(path.join(app,'public/medcom-logo.png'));
  const html='<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/app.css"><div id="root"></div><script src="/app.js"></script></html>';
  let model,serial=0,browser,context,page,origin,completed=false,fatal=null;const expectedCases=26;const errors=[],results=[],failures=[],captures=[],calls=[],transportEvidence=[],readonlyEvidence=[];
- const reset=(patch={})=>{model={serial:++serial,writable:false,empty:false,status:200,holdList:false,waiters:[],listResponses:0,listResponseHeaders:null,holdDetail:false,detailWaiters:[],detailStatus:200,draftEnvelope:null,draftNetwork:false,draftNetworkFailures:0,draftMalformed:false,draftResponses:0,afterWriteDraftEnvelope:null,holdProjection:false,projectionWaiters:[],projectionStatus:200,projectionKind:null,projectionResponses:0,unknown:false,workspaceReads:0,workspaceResponses:0,workspaceVersions:[],advanceAuthority:false,deniedLists:0,workspaceStatus:200,purchase:structuredClone(purchase),inbound:structuredClone(inbound),purchaseVersion:1,inboundVersion:1,effects:0,originals:new Map(),receipts:new Map(),writes:[],reconciles:[],control:{closed:[],bff:[]},holdCommands:false,commandWaiters:[],commandResponses:0,rejected:false,conflict:false,malformed:false,...patch};calls.length=0;};
+ const reset=(patch={})=>{model={serial:++serial,writable:false,empty:false,status:200,holdList:false,waiters:[],listResponses:0,listResponseHeaders:null,holdDetail:false,detailWaiters:[],detailStatus:200,draftEnvelope:null,draftNetwork:false,draftNetworkFailures:0,draftMalformed:false,draftResponses:0,afterWriteDraftEnvelope:null,holdProjection:false,projectionWaiters:[],projectionStatus:200,projectionKind:null,projectionResponses:0,unknown:false,workspaceReads:0,workspaceResponses:0,workspacePending:0,workspaceVersions:[],advanceAuthority:false,deniedLists:0,workspaceStatus:200,purchase:structuredClone(purchase),inbound:structuredClone(inbound),purchaseVersion:1,inboundVersion:1,effects:0,originals:new Map(),receipts:new Map(),writes:[],reconciles:[],control:{closed:[],bff:[]},holdCommands:false,commandWaiters:[],commandResponses:0,rejected:false,conflict:false,malformed:false,...patch};calls.length=0;};
  const workspace=()=>({session:{displayName:'SYNTHETIC USER',tenantId:'QA-T',companyId:'QA-C',companyName:'SYNTHETIC',authorityVersion:model.advanceAuthority?model.workspaceReads:1,idleExpiresAt:new Date(Date.now()+3600000).toISOString(),absoluteExpiresAt:new Date(Date.now()+7200000).toISOString(),capabilities:model.workspaceCapabilities??['purchase-requests.read','inbound-requests.read','purchase-orders.read']},branchIds:['QA-BRANCH'],navigation:['purchase-requests','inbound-requests','purchase-orders'].map(id=>({id,label:id,href:'/?screen='+id}))});
  const send=(res,status,data,headers={})=>{if(res.destroyed)return;res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store',...headers});res.end(JSON.stringify(data));};
  const readHeaders={'X-Medcom-Session-Scope':session,'X-Medcom-Read-Scope':scope};
@@ -110,7 +110,11 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
    if(!url.pathname.startsWith('/api/erp/')){res.setHeader('Content-Type','text/html');return res.end(html);}
    const route=url.pathname.slice('/api/erp'.length);calls.push({route,method:req.method,documentId:url.searchParams.get('documentId'),page:url.searchParams.get('page'),pageSize:url.searchParams.get('pageSize')});
    if(route==='/health/ready')return send(res,503,{status:'not_ready',checks:[]});
-   if(route==='/api/workspace'){m.workspaceReads++;const current=workspace();m.workspaceVersions.push(current.session.authorityVersion);m.workspaceResponses++;return send(res,m.workspaceStatus,m.workspaceStatus===200?current:{code:m.workspaceStatus===401?'authentication_required':'backend_unavailable'},readHeaders);}
+   if(route==='/api/workspace'){
+    m.workspaceReads++;m.workspacePending++;let settled=false;
+    const settle=()=>{if(!settled){settled=true;m.workspacePending--;}};res.once('finish',settle);res.once('close',settle);if(res.destroyed||res.writableFinished)settle();
+    const current=workspace();m.workspaceVersions.push(current.session.authorityVersion);m.workspaceResponses++;return send(res,m.workspaceStatus,m.workspaceStatus===200?current:{code:m.workspaceStatus===401?'authentication_required':'backend_unavailable'},readHeaders);
+   }
    if(route==='/api/auth/csrf')return send(res,200,{token:'synthetic-only'});
    if(route==='/api/purchase-requests/workspace')return send(res,200,{scopeKey:scope,data:{branchIds:['QA-BRANCH'],writeAvailable:false,writeReason:'numbering_journal_runtime_unqualified',lookups:[]}});
    if(route==='/api/purchase-requests'||route==='/api/documents/inbound-requests'){
@@ -353,7 +357,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
   async function recordReadonlyClockSnapshot(group,observation,stage,scenario,baseline){
    if(diagnosticSnapshots++>=64)return;
    const count=route=>calls.filter(call=>call.route===route).length;
-   const server={requests:{workspace:count('/api/workspace'),list:count('/api/documents/inbound-requests'),draft:count('/api/inbound-requests/draft'),projection:projectionCalls().length},responseAttempts:{workspace:model.workspaceResponses,list:model.listResponses,draft:model.draftResponses,projection:model.projectionResponses},authorityObservationCount:model.workspaceVersions.length,authorityVersions:model.workspaceVersions.slice(-32)};
+   const server={requests:{workspace:count('/api/workspace'),list:count('/api/documents/inbound-requests'),draft:count('/api/inbound-requests/draft'),projection:projectionCalls().length},responseAttempts:{workspace:model.workspaceResponses,list:model.listResponses,draft:model.draftResponses,projection:model.projectionResponses},workspacePending:model.workspacePending,authorityObservationCount:model.workspaceVersions.length,authorityVersions:model.workspaceVersions.slice(-32)};
    try{
     const client=await page.evaluate(()=>{
      const fixedPhase=(element,allowed)=>{const phase=element?.getAttribute('data-phase');return phase===undefined||phase===null?'absent':allowed.includes(phase)?phase:'other';};
@@ -538,26 +542,50 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
     ['wrong-list-both-scopes',{'X-Medcom-Session-Scope':'c'.repeat(64),'X-Medcom-Read-Scope':'d'.repeat(64)}],
    ]){
     assert.ok(Object.values(listResponseHeaders).every(value=>/^[a-f0-9]{64}$/.test(value)),'Scope-denial fixtures use valid marker syntax');assert.notDeepEqual(listResponseHeaders,readHeaders);
-    await start(390,'inbound-requests',{...fullLists(),installClock:true,advanceAuthority:true,listResponseHeaders,draftEnvelope:unavailableDraft(false)});
+    await start(390,'inbound-requests',{...fullLists(),installClock:true,advanceAuthority:true,holdList:true,listResponseHeaders,draftEnvelope:unavailableDraft(false)});
     const observations=[];
+    const workspaceDispatchState=()=>page.evaluate(()=>({...window.i33WorkspaceDispatchState}));
+    async function settledListWorkspace(expected){
+     await page.waitForFunction(()=>window.i33WorkspaceDispatchState.total>0&&window.i33WorkspaceDispatchState.pending===0);await eventually(()=>model.workspacePending===0);await paint();
+     assert.deepEqual(await workspaceDispatchState(),{total:expected,settled:expected,pending:0},name+' has exactly the intended current-page body-complete Workspace dispatches');
+     assert.equal(await page.evaluate(()=>window.i33WorkspaceDispatches.every(event=>event.settled&&event.fetchState==='fulfilled'&&event.httpStatus===200)),true);
+     assert.equal(model.workspaceResponses,model.workspaceReads);assert.equal(model.workspacePending,0);
+    }
+    // Establish the causal boundary before the invalid LIST can reach the UI.
+    // The shared HTTP server may have earlier wire traffic that is not a fetch
+    // from this page. Preserve that history, but never absorb additions after
+    // this single baseline or attribute them to the denied-list response.
+    let workspaceBaseline;
+    try{
+     await eventually(()=>model.waiters.length===1);await settledListWorkspace(1);
+     assert.equal(model.listResponses,0);assert.equal(calls.filter(call=>call.route==='/api/documents/inbound-requests').length,1);
+     assert.equal(calls.filter(call=>call.route==='/api/inbound-requests/draft').length,0);assert.equal(projectionCalls().length,0);await noReadonlyValues();
+     workspaceBaseline={count:model.workspaceReads,history:[...model.workspaceVersions]};
+     assert.deepEqual(workspaceBaseline.history,Array.from({length:workspaceBaseline.count},(_,index)=>index+1));
+     readonlyEvidence.push({kind:'list-scope-pre-denial-baseline',scenario:name,serverWorkspace:workspaceBaseline.count,serverAuthorityVersions:[...workspaceBaseline.history],currentPageWorkspace:await workspaceDispatchState(),heldListRequests:1,listResponses:0});
+     await recordReadonlyClockSnapshot(name,'held-initial-list','before',undefined,workspaceBaseline);
+    }catch(error){await recordReadonlyClockSnapshot(name,'held-initial-list','failure',undefined,workspaceBaseline);throw error;}
+    model.holdList=false;model.waiters.splice(0).forEach(resolve=>resolve());
     async function boundedListScopeDenial(label,expected){
-     await recordReadonlyClockSnapshot(name,label,'before');
+     await recordReadonlyClockSnapshot(name,label,'before',undefined,workspaceBaseline);
      try{
-     await eventually(()=>model.listResponses>=expected);await page.getByText('Chưa xác minh được quyền xem phiếu. Yêu cầu đang xử lý vẫn được giữ.',{exact:true}).waitFor();await paint();
+     await eventually(()=>model.listResponses>=expected);await page.getByText('Chưa xác minh được quyền xem phiếu. Yêu cầu đang xử lý vẫn được giữ.',{exact:true}).waitFor();await paint();await settledListWorkspace(expected);
      const counts=()=>({workspace:model.workspaceReads,list:calls.filter(call=>call.route==='/api/documents/inbound-requests').length,draft:calls.filter(call=>call.route==='/api/inbound-requests/draft').length,projection:projectionCalls().length});
-     const expectedCounts={workspace:expected,list:expected,draft:0,projection:0};
-     assert.deepEqual(counts(),expectedCounts,name+' '+label+' permits one scoped list attempt per deliberate observation');
+     const expectedCounts={workspace:workspaceBaseline.count+expected-1,list:expected,draft:0,projection:0};
+     const expectedHistory=[...workspaceBaseline.history,...Array.from({length:expected-1},(_,index)=>workspaceBaseline.count+index+1)];
+     assert.deepEqual(counts(),expectedCounts,name+' '+label+' permits one scoped list attempt per deliberate observation and no Workspace addition from denial');assert.equal(model.listResponses,expected);
+     assert.deepEqual(model.workspaceVersions,expectedHistory,name+' preserves the pre-denial history and adds exactly one authority observation per deliberate revalidation');
      assert.equal(await host('inbound-requests').getByRole('button',{name:/^Mở phiếu /}).count(),0,'An invalid list scope cannot expose source rows');assert.equal(await focusRegion('inbound-requests').count(),0,'An invalid list scope cannot create a visible selection');assert.equal(await readonlyPanel().count(),0);assert.equal((await draftCalls()).length,0);await noReadonlyValues();
-     await page.clock.fastForward(1000);await paint();assert.deepEqual(counts(),expectedCounts,name+' cannot create a 409-to-parent-reload feedback loop');assert.equal(calls.filter(call=>call.method==='POST').length,0);
-     observations.push({observation:label,...counts()});
-     await recordReadonlyClockSnapshot(name,label,'after');
-     }catch(error){await recordReadonlyClockSnapshot(name,label,'failure');throw error;}
+     await page.clock.fastForward(1000);await paint();await settledListWorkspace(expected);assert.deepEqual(counts(),expectedCounts,name+' cannot create a 409-to-parent-reload feedback loop');assert.deepEqual(model.workspaceVersions,expectedHistory);assert.equal(calls.filter(call=>call.method==='POST').length,0);
+     observations.push({observation:label,...counts(),currentPageWorkspace:await workspaceDispatchState()});
+     await recordReadonlyClockSnapshot(name,label,'after',undefined,workspaceBaseline);
+     }catch(error){await recordReadonlyClockSnapshot(name,label,'failure',undefined,workspaceBaseline);throw error;}
     }
     await boundedListScopeDenial('initial-list',1);
     await page.evaluate(()=>{window.dispatchEvent(new FocusEvent('blur'));window.dispatchEvent(new Event('focus'));});await boundedListScopeDenial('synthetic-window-focus',2);
     await page.clock.fastForward(60001);await boundedListScopeDenial('actual-60-second-poll',3);
-    assert.deepEqual(model.workspaceVersions,[1,2,3]);
-    readonlyEvidence.push({kind:'list-scope-fail-closed',scenario:name,advancingAuthorityVersions:[...model.workspaceVersions],observations,writeRequests:0});
+    assert.deepEqual(model.workspaceVersions,[...workspaceBaseline.history,workspaceBaseline.count+1,workspaceBaseline.count+2]);
+    readonlyEvidence.push({kind:'list-scope-fail-closed',scenario:name,preDenialWorkspace:workspaceBaseline.count,advancingAuthorityVersions:[...model.workspaceVersions],observations,writeRequests:0});
    }
    for(const laterAction of ['input','window-blur','close','read-capability-loss']){
     await start(390,'inbound-requests',{...fullLists(),draftEnvelope:unavailableDraft(true),holdProjection:true});await openRow('inbound-requests',1).click();await eventually(()=>model.projectionWaiters.length===1);
