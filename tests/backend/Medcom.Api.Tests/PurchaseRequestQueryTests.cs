@@ -160,6 +160,68 @@ public sealed class PurchaseRequestQueryTests
         var branches=await source.Service().LookupAsync("branches","QA-A",1); Assert.Equal(new PurchaseRequestChoice("QA-A","QA-A"),Assert.Single(branches.Value!.Items));
         Assert.DoesNotContain(source.Commands,c=>c.Sql.Contains("CF_ItemTbl",StringComparison.Ordinal));
     }
+    [Theory]
+    [InlineData(null)] [InlineData("")]
+    public async Task Native_blank_catalog_scope_is_applied_to_actual_query_parameters(string? native)
+    {
+        var source = new PurchaseQuerySource { NativeBranch = native, NativeBranches = [] };
+        source.Seed();
+        source.Documents.Add(source.Documents[0] with { PurchaseRequestId = "QA-B-DOC", BranchId = "QA-B" });
+        source.Documents.Add(source.Documents[0] with { PurchaseRequestId = "QA-HIDDEN", BranchId = "QA-C" });
+        var page = await source.Service().ListAsync(new());
+        Assert.Equal(PurchaseRequestQueryOutcome.Success, page.Outcome);
+        Assert.Equal(2, page.Value!.Rows.Count);
+        var command = source.Commands.Single(c => c.Sql.Contains("OFFSET @skip", StringComparison.Ordinal));
+        Assert.Equal("QA-A", command.Parameters["@branch0"]);
+        Assert.Equal("QA-B", command.Parameters["@branch1"]);
+        Assert.Contains("DATALENGTH(@branch0)", command.Sql);
+        Assert.DoesNotContain(source.Commands, c => c.Sql == SqlPurchaseRequestQueries.BranchesText);
+    }
+    [Theory]
+    [InlineData("missing")] [InlineData("duplicate")] [InlineData("whitespace")]
+    [InlineData("shape")] [InlineData("alias")] [InlineData("overflow")] [InlineData("empty")]
+    public async Task Invalid_native_or_catalog_scope_never_reads_documents(string failure)
+    {
+        var source = new PurchaseQuerySource { NativeBranch = null }; source.Seed();
+        switch (failure)
+        {
+            case "missing": source.NativeMissing = true; break;
+            case "duplicate": source.NativeDuplicate = true; break;
+            case "whitespace": source.NativeBranch = " "; break;
+            case "shape": source.CatalogShapeOk = false; break;
+            case "alias": source.CatalogAlias = true; break;
+            case "overflow": source.CatalogBranches = Enumerable.Range(0, 201).Select(i => $"B{i}").ToArray(); break;
+            case "empty": source.CatalogBranches = []; break;
+        }
+        var result = await source.Service().ListAsync(new());
+        Assert.Contains(result.Outcome, new[] { PurchaseRequestQueryOutcome.Unavailable, PurchaseRequestQueryOutcome.Denied });
+        Assert.Null(result.Value);
+        Assert.DoesNotContain(source.Commands, c => c.Sql.Contains("FROM dbo.AP_PurchaseRequestTbl", StringComparison.Ordinal));
+    }
+    [Fact]
+    public async Task Catalog_changes_and_native_restriction_replace_scope_at_each_read()
+    {
+        var source = new PurchaseQuerySource { NativeBranch = "" }; source.Seed();
+        Assert.Equal(2, (await source.Service().WorkspaceAsync()).Value!.BranchIds.Count);
+        source.CatalogBranches = ["QA-B"];
+        Assert.Equal(PurchaseRequestQueryOutcome.NotFound, (await source.Service().OpenAsync("QA-DOC")).Outcome);
+        source.NativeBranch = "QA-A"; source.NativeBranches = ["QA-A"];
+        Assert.Equal(PurchaseRequestQueryOutcome.Success, (await source.Service().OpenAsync("QA-DOC")).Outcome);
+        source.NativeBranch = null; source.CatalogBranches = ["QA-B"];
+        Assert.Equal(PurchaseRequestQueryOutcome.NotFound, (await source.Service().OpenAsync("QA-DOC")).Outcome);
+    }
+    [Theory]
+    [InlineData("run")] [InlineData("credential")] [InlineData("group")]
+    public async Task Native_all_never_bypasses_native_rights_or_identity(string failure)
+    {
+        var source = new PurchaseQuerySource { NativeBranch = null }; source.Seed();
+        if (failure == "run") source.CanRun = false;
+        else if (failure == "credential") source.StoredHash = "revoked";
+        else source.Group = "other-group";
+        Assert.Equal(PurchaseRequestQueryOutcome.Denied, (await source.Service().ListAsync(new())).Outcome);
+        Assert.DoesNotContain(source.Commands, c => c.Sql == SqlLegacyBranchScope.CatalogText);
+    }
+
 }
 
 // Synthetic source rows only. Native-equality behavior deliberately includes case/accent/space aliases.
@@ -170,6 +232,12 @@ internal sealed class PurchaseQuerySource
     public string Username="qa-user",StoredHash="synthetic-stored-value",Group="qa-group",Menu="05011",Form="AP_PurposeRequestListFrm",Parent="05";
     public string? Parameter; public bool Disabled,CanRun=true,ShapeOk=true;
     public string[] NativeBranches=["QA-A","QA-B"];
+    public string? NativeBranch = "QA-A";
+    public string?[] CatalogBranches = ["QA-A", "QA-B"];
+    public bool NativeMissing, NativeDuplicate, CatalogShapeOk = true, CatalogAlias, NativeUnavailable, CatalogUnavailable;
+    public string NativeGroupRowId = "qa-group";
+    public string? MalformedScopeProjection, ExtraScopeResult, ExtraScopeColumn;
+    public List<(string Owner, string Branch)>? NativeAssignments;
     public readonly List<PurchaseRequestAggregate> Documents=[];
     public readonly List<(string ForeignKey,PurchaseRequestPersistedLine Line)> ExtraChildren=[];
     public readonly List<(string Sql,Dictionary<string,object?> Parameters)> Commands=[];
@@ -184,6 +252,23 @@ internal sealed class PurchaseQuerySource
     {
         var parameters=command.Parameters.Cast<DbParameter>().ToDictionary(p=>p.ParameterName,p=>p.Value==DBNull.Value?null:p.Value,StringComparer.Ordinal);
         Commands.Add((command.CommandText,parameters));
+        if(command.CommandText==SqlLegacyBranchScope.NativeUserText)
+        {
+            if (NativeUnavailable) throw new InvalidOperationException("Synthetic native lookup unavailable.");
+            var rows = new List<object[]>();
+            var exactGroup = command.CommandText.Contains("DATALENGTH(CONVERT(nvarchar(max),G.UserGroupID))=DATALENGTH(CONVERT(nvarchar(max),U.UserGroupID))", StringComparison.Ordinal)
+                && command.CommandText.Contains("CONVERT(varbinary(max),CONVERT(nvarchar(max),G.UserGroupID))=CONVERT(varbinary(max),CONVERT(nvarchar(max),U.UserGroupID))", StringComparison.Ordinal);
+            var groupMatched = exactGroup ? Group == NativeGroupRowId : Fold(Group) == Fold(NativeGroupRowId);
+            if (!NativeMissing) rows.Add([Username,StoredHash,Disabled,Group,groupMatched ? (object)false : DBNull.Value,NativeBranch ?? (object)DBNull.Value]);
+            if (NativeDuplicate) rows.Add(rows[0]);
+            return ScopeRows("native", [typeof(string),typeof(string),typeof(bool),typeof(string),typeof(bool),typeof(string)], rows);
+        }
+        if(command.CommandText==SqlLegacyBranchScope.CatalogShapeText)return ScopeRows("shape", [typeof(int)], [[CatalogShapeOk?1:0]]);
+        if(command.CommandText==SqlLegacyBranchScope.CatalogText)
+        {
+            if (CatalogUnavailable) throw new InvalidOperationException("Synthetic catalog unavailable.");
+            return ScopeRows("catalog", [typeof(string),typeof(int)], CatalogBranches.Select(branch=>new object[]{branch ?? (object)DBNull.Value,CatalogAlias?1:0}));
+        }
         if(command.CommandText==SqlPurchaseRequestQueries.ShapeText)return Rows(1,[[ShapeOk?1:0]]);
         if(command.CommandText==SqlPurchaseRequestQueries.CredentialText)
         {
@@ -195,7 +280,16 @@ internal sealed class PurchaseQuerySource
             Assert.Contains("G.IsRun=1 THEN 1",command.CommandText);Assert.Contains("DATALENGTH(@username)",command.CommandText);
             return Rows(8,[[Menu,Form,Parameter??(object)DBNull.Value,false,Parent,false,CanRun?1:0,1]]);
         }
-        if(command.CommandText==SqlPurchaseRequestQueries.BranchesText)return Rows(1,NativeBranches.Select(branch=>new object[]{branch}));
+        if(command.CommandText==SqlPurchaseRequestQueries.BranchesText)
+        {
+            var actor = (string)parameters["@actor"]!;
+            var supplemental = command.CommandText.Split("UNION ALL", StringSplitOptions.None)[1];
+            var exact = supplemental.Contains("DATALENGTH(CONVERT(nvarchar(max),UserName))=DATALENGTH(@actor)", StringComparison.Ordinal)
+                && supplemental.Contains("CONVERT(varbinary(max),CONVERT(nvarchar(max),UserName))=CONVERT(varbinary(max),@actor)", StringComparison.Ordinal);
+            var branches = NativeAssignments is null ? NativeBranches : NativeAssignments
+                .Where(row => exact ? row.Owner == actor : Fold(row.Owner) == Fold(actor)).Select(row => row.Branch).ToArray();
+            return ScopeRows("restricted", [typeof(string)], branches.Select(branch=>new object[]{branch}));
+        }
         var id=parameters.GetValueOrDefault("@document") as string;
         IEnumerable<object[]> result;
         if(command.CommandText.Contains("OFFSET @skip",StringComparison.Ordinal))
@@ -231,6 +325,17 @@ internal sealed class PurchaseQuerySource
             var reader=Rows(10,result);AfterData?.Invoke();return reader;
         }
         throw new InvalidOperationException("Unrecognized synthetic query.");
+    }
+    private DbDataReader ScopeRows(string projection, Type[] types, IEnumerable<object[]> rows)
+    {
+        var table = new DataTable();
+        for (var i = 0; i < types.Length; i++) table.Columns.Add($"c{i}",
+            projection == MalformedScopeProjection && i == 0 ? typeof(object) : types[i]);
+        if (projection == ExtraScopeColumn) table.Columns.Add("unexpected", typeof(string));
+        foreach (var row in rows) table.Rows.Add(row);
+        if (projection != ExtraScopeResult) return table.CreateDataReader();
+        var extra = new DataTable(); extra.Columns.Add("unexpected", typeof(string)); extra.Rows.Add("synthetic");
+        return new DataTableReader([table, extra]);
     }
     private static object Date(string? text)=>text is null?DBNull.Value:DateTime.ParseExact(text,"yyyy-MM-dd'T'HH:mm:ss.fff",CultureInfo.InvariantCulture);
     private static object Number(string? text)=>text is null?DBNull.Value:decimal.Parse(text,CultureInfo.InvariantCulture);

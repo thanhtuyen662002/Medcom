@@ -36,31 +36,17 @@ public sealed class SqlDocumentReader(string connectionString, LegacyCompany com
             if (branches.Length == 0) return new(DocumentOutcome.Denied);
             await using var connection = database.CreateConnection();
             await connection.OpenAsync(cancellationToken);
-            var parameters = string.Join(",", branches.Select((_, i) => $"@branch{i}"));
-            // Only these two reviewed shapes are executable. No identifier comes from an HTTP request.
-            var projection = kind == DocumentKind.PurchaseOrders
-                ? "D.DocumentID, D.DocumentDate, D.BranchID, D.StatusID, D.isLock FROM dbo.AP_OrderTbl D"
-                : "D.DocumentID, D.DocumentDate, D.BranchID, D.StatusID, CAST(NULL AS bit) FROM dbo.IV_InboundRequestTbl D";
-            await using var command = new SqlCommand(SqlLegacyPolicy.GrantsCte + $"""
-                SELECT {projection}
-                WHERE D.BranchID IN ({parameters}) AND (@search = '' OR DocumentID LIKE @search ESCAPE '~')
-                  AND EXISTS (SELECT 1 FROM dbo.SY_User U JOIN dbo.SY_UserGroup G ON G.UserGroupID=U.UserGroupID
-                    WHERE U.UserName=@username AND U.[Password] COLLATE Latin1_General_100_BIN2=@storedHash COLLATE Latin1_General_100_BIN2 AND U.UserGroupID=@group
-                      AND U.[Disable]=0 AND G.IsDisable=0
-                      AND (U.BranchID=D.BranchID OR EXISTS (SELECT 1 FROM dbo.SY_UserBranch B
-                        WHERE B.UserName=U.UserName AND B.BranchID=D.BranchID)))
-                  AND EXISTS (SELECT 1 FROM Grants P JOIN dbo.SY_Menu M ON M.MenuID=P.MenuID
-                    WHERE M.MenuID=@menu AND M.FormName=@form AND M.isDisable=0 AND COALESCE(M.Para,'')=''
-                      AND {SqlLegacyPolicy.ViewGrant})
-                ORDER BY DocumentDate DESC, DocumentID ASC
-                OFFSET @skip ROWS FETCH NEXT @take ROWS ONLY;
-                """, connection) { CommandTimeout = 5 };
+            await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+            var nativeBranches = await SqlLegacyBranchScope.ReadAsync(transaction, current, cancellationToken);
+            branches = branches.Intersect(nativeBranches, StringComparer.Ordinal).ToArray();
+            if (branches.Length == 0) return new(DocumentOutcome.Denied);
+            await using var command = new SqlCommand(ListSql(kind, branches.Length), connection, transaction) { CommandTimeout = 5 };
             command.Parameters.Add("@username",SqlDbType.VarChar,100).Value=current.Username;
             command.Parameters.Add("@storedHash",SqlDbType.VarChar,200).Value=current.StoredHash;
             command.Parameters.Add("@group",SqlDbType.VarChar,50).Value=current.GroupId!;
             command.Parameters.Add("@menu",SqlDbType.VarChar,50).Value=kind==DocumentKind.PurchaseOrders?"050129":"07011";
             command.Parameters.Add("@form",SqlDbType.VarChar,100).Value=kind==DocumentKind.PurchaseOrders?"AP_OrderFrm":"IV_InboundRequestFrm";
-            for (var i = 0; i < branches.Length; i++) command.Parameters.Add($"@branch{i}",SqlDbType.VarChar,50).Value=branches[i];
+            for (var i = 0; i < branches.Length; i++) command.Parameters.Add($"@branch{i}",SqlDbType.NVarChar,50).Value=branches[i];
             var search = query.Search?.Trim() ?? "";
             search = search.Replace("~","~~",StringComparison.Ordinal).Replace("%","~%",StringComparison.Ordinal)
                 .Replace("_","~_",StringComparison.Ordinal).Replace("[","~[",StringComparison.Ordinal);
@@ -101,40 +87,19 @@ public sealed class SqlDocumentReader(string connectionString, LegacyCompany com
             if (branches.Length == 0) return new(DocumentOutcome.Denied);
             await using var connection = database.CreateConnection();
             await connection.OpenAsync(cancellationToken);
-            var parameters = string.Join(",", branches.Select((_, i) => $"@branch{i}"));
+            await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+            var nativeBranches = await SqlLegacyBranchScope.ReadAsync(transaction, current, cancellationToken);
+            branches = branches.Intersect(nativeBranches, StringComparer.Ordinal).ToArray();
+            if (branches.Length == 0) return new(DocumentOutcome.Denied);
             var purchase = kind == DocumentKind.PurchaseOrders;
-            // Parent authorization and line selection share one statement. Child rows never authorize themselves.
-            // These identifiers and projections are fixed reviewed shapes, never request-provided SQL.
-            var parent = purchase ? "dbo.AP_OrderTbl" : "dbo.IV_InboundRequestTbl";
-            var child = purchase ? "dbo.AP_OrderDetailTbl" : "dbo.IV_InboundRequestDetailsTbl";
-            var locked = purchase ? "D.isLock" : "CAST(NULL AS bit)";
-            var quantities = purchase
-                ? "CONVERT(varchar(40),C.Quantity) AS Q1, CONVERT(varchar(40),C.Quantity2) AS Q2, CAST(NULL AS varchar(40)) AS Q3, CAST(NULL AS varchar(40)) AS Q4"
-                : "CONVERT(varchar(40),C.SetQuantityByDocument) AS Q1, CONVERT(varchar(40),C.BarrelQuantityByDocument) AS Q2, CONVERT(varchar(40),C.SetQuantityByReal) AS Q3, CONVERT(varchar(40),C.BarrelQuantityByReal) AS Q4";
-            await using var command = new SqlCommand(SqlLegacyPolicy.GrantsCte + $"""
-                SELECT D.DocumentID,D.DocumentDate,D.BranchID,D.StatusID,{locked},L.UserAutoID,L.ItemID,L.Q1,L.Q2,L.Q3,L.Q4
-                FROM {parent} D
-                OUTER APPLY (SELECT C.UserAutoID,C.ItemID,{quantities} FROM {child} C
-                  WHERE C.DocumentID=D.DocumentID ORDER BY C.UserAutoID
-                  OFFSET @skip ROWS FETCH NEXT @take ROWS ONLY) L
-                WHERE D.DocumentID=@document AND D.BranchID IN ({parameters})
-                  AND EXISTS (SELECT 1 FROM dbo.SY_User U JOIN dbo.SY_UserGroup G ON G.UserGroupID=U.UserGroupID
-                    WHERE U.UserName=@username AND U.[Password] COLLATE Latin1_General_100_BIN2=@storedHash COLLATE Latin1_General_100_BIN2 AND U.UserGroupID=@group
-                      AND U.[Disable]=0 AND G.IsDisable=0
-                      AND (U.BranchID=D.BranchID OR EXISTS (SELECT 1 FROM dbo.SY_UserBranch B
-                        WHERE B.UserName=U.UserName AND B.BranchID=D.BranchID)))
-                  AND EXISTS (SELECT 1 FROM Grants P JOIN dbo.SY_Menu M ON M.MenuID=P.MenuID
-                    WHERE M.MenuID=@menu AND M.FormName=@form AND M.isDisable=0 AND COALESCE(M.Para,'')=''
-                      AND {SqlLegacyPolicy.ViewGrant})
-                ORDER BY L.UserAutoID;
-                """, connection) { CommandTimeout = 5 };
+            await using var command = new SqlCommand(DetailSql(kind, branches.Length), connection, transaction) { CommandTimeout = 5 };
             command.Parameters.Add("@username",SqlDbType.VarChar,100).Value=current.Username;
             command.Parameters.Add("@storedHash",SqlDbType.VarChar,200).Value=current.StoredHash;
             command.Parameters.Add("@group",SqlDbType.VarChar,50).Value=current.GroupId!;
             command.Parameters.Add("@menu",SqlDbType.VarChar,50).Value=purchase?"050129":"07011";
             command.Parameters.Add("@form",SqlDbType.VarChar,100).Value=purchase?"AP_OrderFrm":"IV_InboundRequestFrm";
             command.Parameters.Add("@document",SqlDbType.VarChar,purchase?30:50).Value=query.DocumentId;
-            for (var i=0;i<branches.Length;i++) command.Parameters.Add($"@branch{i}",SqlDbType.VarChar,50).Value=branches[i];
+            for (var i=0;i<branches.Length;i++) command.Parameters.Add($"@branch{i}",SqlDbType.NVarChar,50).Value=branches[i];
             command.Parameters.Add("@skip",SqlDbType.Int).Value=(query.Page-1)*query.PageSize;
             command.Parameters.Add("@take",SqlDbType.Int).Value=query.PageSize+1;
             await using var reader=await command.ExecuteReaderAsync(cancellationToken);
@@ -156,5 +121,60 @@ public sealed class SqlDocumentReader(string connectionString, LegacyCompany com
                 orderLines.Count>query.PageSize || inboundLines.Count>query.PageSize));
         }
         catch(Exception) when(!cancellationToken.IsCancellationRequested) { return new(DocumentOutcome.Unavailable); }
+    }
+
+    internal static string ListSql(DocumentKind kind, int branchCount)
+    {
+        var scope = SqlLegacyBranchScope.ExactBranchPredicate("D.BranchID", branchCount);
+        // Only these two reviewed shapes are executable. No identifier comes from an HTTP request.
+        var projection = kind == DocumentKind.PurchaseOrders
+                ? "D.DocumentID, D.DocumentDate, D.BranchID, D.StatusID, D.isLock FROM dbo.AP_OrderTbl D"
+                : "D.DocumentID, D.DocumentDate, D.BranchID, D.StatusID, CAST(NULL AS bit) FROM dbo.IV_InboundRequestTbl D";
+        return SqlLegacyPolicy.GrantsCte + $"""
+                SELECT {projection}
+                WHERE ({scope}) AND (@search = '' OR DocumentID LIKE @search ESCAPE '~')
+                  AND EXISTS (SELECT 1 FROM dbo.SY_User U JOIN dbo.SY_UserGroup G ON G.UserGroupID=U.UserGroupID
+                    WHERE U.UserName=@username AND U.[Password] COLLATE Latin1_General_100_BIN2=@storedHash COLLATE Latin1_General_100_BIN2 AND U.UserGroupID=@group
+                      AND U.[Disable]=0 AND G.IsDisable=0
+                      AND (U.BranchID IS NULL OR DATALENGTH(U.BranchID)=0
+                        OR U.BranchID=D.BranchID OR EXISTS (SELECT 1 FROM dbo.SY_UserBranch B
+                          WHERE B.UserName=U.UserName AND B.BranchID=D.BranchID)))
+                  AND EXISTS (SELECT 1 FROM Grants P JOIN dbo.SY_Menu M ON M.MenuID=P.MenuID
+                    WHERE M.MenuID=@menu AND M.FormName=@form AND M.isDisable=0 AND COALESCE(M.Para,'')=''
+                      AND {SqlLegacyPolicy.ViewGrant})
+                ORDER BY DocumentDate DESC, DocumentID ASC
+                OFFSET @skip ROWS FETCH NEXT @take ROWS ONLY;
+                """;
+    }
+    internal static string DetailSql(DocumentKind kind, int branchCount)
+    {
+        var scope = SqlLegacyBranchScope.ExactBranchPredicate("D.BranchID", branchCount);
+        var purchase = kind == DocumentKind.PurchaseOrders;
+        // Parent authorization and line selection share one statement. Child rows never authorize themselves.
+        // These identifiers and projections are fixed reviewed shapes, never request-provided SQL.
+        var parent = purchase ? "dbo.AP_OrderTbl" : "dbo.IV_InboundRequestTbl";
+        var child = purchase ? "dbo.AP_OrderDetailTbl" : "dbo.IV_InboundRequestDetailsTbl";
+        var locked = purchase ? "D.isLock" : "CAST(NULL AS bit)";
+        var quantities = purchase
+                ? "CONVERT(varchar(40),C.Quantity) AS Q1, CONVERT(varchar(40),C.Quantity2) AS Q2, CAST(NULL AS varchar(40)) AS Q3, CAST(NULL AS varchar(40)) AS Q4"
+                : "CONVERT(varchar(40),C.SetQuantityByDocument) AS Q1, CONVERT(varchar(40),C.BarrelQuantityByDocument) AS Q2, CONVERT(varchar(40),C.SetQuantityByReal) AS Q3, CONVERT(varchar(40),C.BarrelQuantityByReal) AS Q4";
+        return SqlLegacyPolicy.GrantsCte + $"""
+                SELECT D.DocumentID,D.DocumentDate,D.BranchID,D.StatusID,{locked},L.UserAutoID,L.ItemID,L.Q1,L.Q2,L.Q3,L.Q4
+                FROM {parent} D
+                OUTER APPLY (SELECT C.UserAutoID,C.ItemID,{quantities} FROM {child} C
+                  WHERE C.DocumentID=D.DocumentID ORDER BY C.UserAutoID
+                  OFFSET @skip ROWS FETCH NEXT @take ROWS ONLY) L
+                WHERE D.DocumentID=@document AND ({scope})
+                  AND EXISTS (SELECT 1 FROM dbo.SY_User U JOIN dbo.SY_UserGroup G ON G.UserGroupID=U.UserGroupID
+                    WHERE U.UserName=@username AND U.[Password] COLLATE Latin1_General_100_BIN2=@storedHash COLLATE Latin1_General_100_BIN2 AND U.UserGroupID=@group
+                      AND U.[Disable]=0 AND G.IsDisable=0
+                      AND (U.BranchID IS NULL OR DATALENGTH(U.BranchID)=0
+                        OR U.BranchID=D.BranchID OR EXISTS (SELECT 1 FROM dbo.SY_UserBranch B
+                          WHERE B.UserName=U.UserName AND B.BranchID=D.BranchID)))
+                  AND EXISTS (SELECT 1 FROM Grants P JOIN dbo.SY_Menu M ON M.MenuID=P.MenuID
+                    WHERE M.MenuID=@menu AND M.FormName=@form AND M.isDisable=0 AND COALESCE(M.Para,'')=''
+                      AND {SqlLegacyPolicy.ViewGrant})
+                ORDER BY L.UserAutoID;
+                """;
     }
 }

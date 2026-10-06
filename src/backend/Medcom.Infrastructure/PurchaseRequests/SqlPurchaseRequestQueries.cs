@@ -69,16 +69,7 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
             OR C.precision<>E.PrecisionValue OR C.scale<>E.ScaleValue)
           THEN 1 ELSE 0 END) AS ShapeOk;
         """;
-    public const string BranchesText = """
-        SELECT TOP (401) BranchID FROM (
-          SELECT BranchID FROM dbo.SY_User WITH (HOLDLOCK)
-          WHERE DATALENGTH(CONVERT(nvarchar(max),UserName))=DATALENGTH(@actor)
-            AND CONVERT(varbinary(max),CONVERT(nvarchar(max),UserName))=CONVERT(varbinary(max),@actor)
-          UNION ALL SELECT BranchID FROM dbo.SY_UserBranch WITH (HOLDLOCK)
-          WHERE DATALENGTH(CONVERT(nvarchar(max),UserName))=DATALENGTH(@actor)
-            AND CONVERT(varbinary(max),CONVERT(nvarchar(max),UserName))=CONVERT(varbinary(max),@actor)
-        ) B WHERE BranchID IS NOT NULL AND DATALENGTH(CONVERT(nvarchar(max),BranchID))>0;
-        """;
+    public const string BranchesText = SqlLegacyBranchScope.RestrictedText;
     // Native equality deliberately fetches aliases as well; the reader rejects them.
     public const string HeadText = """
         SELECT TOP (2) PurchaseRequestID,PurchaseDate,PurposeID,PersonSuggest,Department,PurposeDescOrClient,Price,Notes,
@@ -113,7 +104,7 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
         {
             await Task.CompletedTask;
             return new(branches, false, PurchaseRequestQueryRules.WriteReason, [
-                new("branches", true, null, "SY_User.BranchID + SY_UserBranch.BranchID; current physical principal"),
+                new("branches", true, null, "Native explicit branch scope; validated CF_BranchTbl only for native blank BranchID"),
                 new("items", false, "source_binding_unqualified", "inventories/source/20261002/table-02.json: CF_ItemTbl; F4 filters UNKNOWN"),
                 new("objects", false, "source_binding_unqualified", "inventories/source/20261002/table-01.json: CF_ObjectTbl; F4/branch filters UNKNOWN"),
                 new("purposes", false, "source_binding_unqualified", "inventories/source/20261002/table-08.json: AP_PurposePurchaseTbl; F4 binding UNKNOWN"),
@@ -216,7 +207,8 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
             await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.Serializable, token);
             var user = await Credential(transaction, identity!, token);
             if (user is null || !await Grant(transaction, user, token)) return new(PurchaseRequestQueryOutcome.Denied);
-            var branches = await Branches(transaction, identity!, token);
+            var branches = (await SqlLegacyBranchScope.ReadAsync(transaction, user, token))
+                .Intersect(identity!.BranchIds!, StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
             if (branches.Length == 0) return new(PurchaseRequestQueryOutcome.Denied);
             await using (var shape = PurchaseRequestSql.Command(transaction, ShapeText))
             {
@@ -264,20 +256,6 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
             && (reader.IsDBNull(2) || reader.GetString(2).Length == 0) && !reader.GetBoolean(3)
             && reader.GetString(4) == "05" && !reader.GetBoolean(5) && reader.GetInt32(6) == 1;
         return !await reader.ReadAsync(token) && allowed;
-    }
-    private static async Task<string[]> Branches(DbTransaction transaction, AuthoritativeIdentity identity, CancellationToken token)
-    {
-        await using var command = PurchaseRequestSql.Command(transaction, BranchesText);
-        PurchaseRequestSql.Parameter(command, "@actor", DbType.String, identity.PrincipalId, 100);
-        await using var reader = await command.ExecuteReaderAsync(token);
-        var branches = new HashSet<string>(StringComparer.Ordinal); var count = 0;
-        while (await reader.ReadAsync(token))
-        {
-            if (++count > 400 || reader.IsDBNull(0) || !PurchaseRequestCommandRules.Identifier(reader.GetString(0), 50)) throw new QueryDenied();
-            if (identity.BranchIds!.Contains(reader.GetString(0), StringComparer.Ordinal)) branches.Add(reader.GetString(0));
-            if (branches.Count > 200) throw new QueryDenied();
-        }
-        return branches.Order(StringComparer.Ordinal).ToArray();
     }
     internal static async Task<bool> HasNativeReadGrantAsync(DbConnection connection, LegacyUser user, CancellationToken token)
     {

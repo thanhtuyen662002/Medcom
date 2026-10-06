@@ -24,3 +24,9 @@ Purchase-order and inbound-request lists consume two allow-listed API shapes, wi
 The separate private runtime fixture runs actual SQL + owner DLL + HTTPS browser login/Grid/search/scope-denial/logout; it is not a mocked frontend acceptance. General browser checks still label their synthetic frontend contract separately. See `tools/legacy/README.md`; complete business/production admission is not established.
 
 The two read-only pilots include bounded line detail panels. Enter or the document-number button opens details; Escape closes and restores focus. Exact decimal strings preserve ERP precision. No unit conversion, monetary fields or write actions are inferred. Error responses hide previous detail rows; tenant/company/authority/document/page keys scope the query cache.
+
+## Bundled workspace compatibility
+
+The API also advertises the known `purchase-requests` route for authorized sessions. This bundled client accepts that exact contract route without failing the workspace, but does not implement that business screen. Its desktop/mobile menus show only supported server-granted id/href pairs; a direct unsupported or ungranted screen shows an explicit unavailable message and return-to-overview action. No purchase-request API calls or write actions are introduced. The separate business frontend remains the destination for that feature; this client does not guess its deployment URL.
+
+Unknown/external/executable navigation hrefs still fail closed. Malformed successful API responses display a generic compatibility error rather than a misleading network error; response bodies and validation details are not shown. Contract tests and synthetic browser fixtures cover this distinction and do not establish real ERP/runtime acceptance.

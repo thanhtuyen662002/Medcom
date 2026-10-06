@@ -101,6 +101,23 @@ public sealed class SessionTests
     }
 
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task BranchScopeChangeWithoutVersionChangeRevokesSession(bool expanding)
+    {
+        var authority = new ControlledAuthority();
+        authority.Identity = authority.Identity with { BranchIds = expanding ? ["QA-A"] : ["QA-A", "QA-B"] };
+        var original = authority.Identity;
+        var sessions = Store(authority, new ManualClock());
+        var session = sessions.Create(original)!;
+        authority.Identity = original with { BranchIds = expanding ? ["QA-A", "QA-B"] : ["QA-A"] };
+
+        Assert.Null(await sessions.ResolveAsync(session.Token, false, default));
+        authority.Identity = original;
+        Assert.Null(await sessions.ResolveAsync(session.Token, false, default));
+    }
+
+    [Theory]
     [InlineData(IdentityOutcome.Rejected)]
     [InlineData(IdentityOutcome.Unavailable)]
     public async Task FailedAuthorityRevalidationCannotAuthorize(IdentityOutcome outcome)
@@ -257,6 +274,106 @@ public sealed class SessionTests
         Assert.NotNull(await first.WaitAsync(TimeSpan.FromSeconds(5)));
     }
 
+    [Fact]
+    public async Task LegacyDerivedRestrictedAndAllScopesReplaceCachedSessionBranches()
+    {
+        // The store supplies synthetic, already-derived explicit scopes. This is
+        // authority/session coverage, not a native SQL resolver or live ERP test.
+        var users = new GatedLegacyUsers();
+        users.User = users.User with { BranchIds = ["QA-A"] };
+        var (sessions, original) = await LegacySession(users, new ManualClock());
+        Assert.Equal(["QA-A"], original.Identity.BranchIds);
+
+        users.User = users.User with { BranchIds = ["QA-C", "QA-A", "QA-B"] };
+        var expanded = await sessions.ResolveAsync(original.Token, false, default);
+        Assert.NotNull(expanded);
+        Assert.Equal(["QA-A", "QA-B", "QA-C"], expanded.Identity.BranchIds);
+        Assert.Equal(original.Token, expanded.Token);
+        Assert.Equal(original.Identity.CredentialStamp, expanded.Identity.CredentialStamp);
+        Assert.Equal(original.View.Capabilities, expanded.View.Capabilities);
+        Assert.Equal(original.View.IdleExpiresAt, expanded.View.IdleExpiresAt);
+        Assert.True(expanded.View.AuthorityVersion > original.View.AuthorityVersion);
+
+        users.User = users.User with { BranchIds = ["QA-B"] };
+        var narrowed = await sessions.ResolveAsync(original.Token, false, default);
+        Assert.NotNull(narrowed);
+        Assert.Equal(["QA-B"], narrowed.Identity.BranchIds);
+        Assert.Equal(original.Token, narrowed.Token);
+        Assert.Equal(original.Identity.CredentialStamp, narrowed.Identity.CredentialStamp);
+        Assert.Equal(original.View.Capabilities, narrowed.View.Capabilities);
+        Assert.True(narrowed.View.AuthorityVersion > expanded.View.AuthorityVersion);
+        Assert.Equal(["QA-A"], original.Identity.BranchIds);
+        Assert.Equal(["QA-A", "QA-B", "QA-C"], expanded.Identity.BranchIds);
+        Assert.Equal(3, users.Reads);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task LegacyEmptyOrMissingDerivedScopeRemovesAllCachedBranchGrants(bool missing)
+    {
+        var users = new GatedLegacyUsers();
+        users.User = users.User with { BranchIds = ["QA-A", "QA-B"] };
+        var (sessions, original) = await LegacySession(users, new ManualClock());
+        users.User = users.User with { BranchIds = missing ? null : [] };
+
+        var revalidated = await sessions.ResolveAsync(original.Token, false, default);
+        Assert.NotNull(revalidated);
+        Assert.NotNull(revalidated.Identity.BranchIds);
+        Assert.Empty(revalidated.Identity.BranchIds);
+        Assert.Equal(original.View.Capabilities, revalidated.View.Capabilities);
+        Assert.True(revalidated.View.AuthorityVersion > original.View.AuthorityVersion);
+        var repeated = await sessions.ResolveAsync(original.Token, false, default);
+        Assert.NotNull(repeated);
+        Assert.Empty(repeated.Identity.BranchIds!);
+    }
+
+    [Fact]
+    public async Task LegacyExpandedBranchScopeDoesNotRestoreRevokedSessionCapabilities()
+    {
+        var users = new GatedLegacyUsers();
+        users.User = users.User with { Capabilities = ["purchase-orders.read", "purchase-requests.read"], BranchIds = ["QA-A"] };
+        var (sessions, original) = await LegacySession(users, new ManualClock());
+        users.User = users.User with { Capabilities = [], BranchIds = ["QA-A", "QA-B"] };
+
+        var revalidated = await sessions.ResolveAsync(original.Token, false, default);
+        Assert.NotNull(revalidated);
+        Assert.Equal(["QA-A", "QA-B"], revalidated.Identity.BranchIds);
+        Assert.Equal(["platform.status"], revalidated.Identity.Capabilities);
+        Assert.Equal(["platform.status"], revalidated.View.Capabilities);
+        var repeated = await sessions.ResolveAsync(original.Token, false, default);
+        Assert.NotNull(repeated);
+        Assert.Equal(["platform.status"], repeated.View.Capabilities);
+    }
+
+    [Theory]
+    [InlineData("credential")]
+    [InlineData("disabled-user")]
+    [InlineData("group")]
+    [InlineData("missing-group")]
+    [InlineData("disabled-group")]
+    public async Task LegacyExpandedBranchScopeCannotResurrectRevokedSession(string change)
+    {
+        var users = new GatedLegacyUsers();
+        users.User = users.User with { BranchIds = ["QA-A"] };
+        var originalUser = users.User;
+        var (sessions, session) = await LegacySession(users, new ManualClock());
+        users.User = users.User with { BranchIds = ["QA-A", "QA-B"] };
+        users.User = change switch
+        {
+            "credential" => users.User with { StoredHash = "changed-synthetic-hash" },
+            "disabled-user" => users.User with { Disabled = true },
+            "group" => users.User with { GroupId = "other-group" },
+            "missing-group" => users.User with { GroupId = null },
+            _ => users.User with { GroupEnabled = false }
+        };
+
+        Assert.Null(await sessions.ResolveAsync(session.Token, false, default));
+        users.User = originalUser with { BranchIds = ["QA-A", "QA-B"] };
+        Assert.Null(await sessions.ResolveAsync(session.Token, true, default));
+        Assert.Equal(2, users.Reads);
+    }
+
     private static async Task<(LocalWebSessions Sessions, ResolvedSession Session)> LegacySession(
         GatedLegacyUsers users, ManualClock clock)
     {
@@ -277,6 +394,8 @@ public sealed class SessionTests
     private sealed class GatedLegacyUsers : ILegacyUserStore
     {
         private int reads;
+        public LegacyUser User { get; set; } = new("synthetic-user", "Synthetic user", "synthetic-stored-hash", false,
+            "synthetic-group", true, ["purchase-orders.read"], ["synthetic-branch"]);
         public int Reads => Volatile.Read(ref reads);
         public bool DelayNextRead { get; set; }
         public TaskCompletionSource ReadEntered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -290,8 +409,7 @@ public sealed class SessionTests
                 ReadEntered.SetResult();
                 await ReleaseRead.Task.WaitAsync(cancellationToken);
             }
-            return new("synthetic-user", "Synthetic user", "synthetic-stored-hash", false,
-                "synthetic-group", true, ["purchase-orders.read"], ["synthetic-branch"]);
+            return User;
         }
     }
 

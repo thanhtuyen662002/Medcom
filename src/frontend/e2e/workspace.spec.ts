@@ -46,3 +46,48 @@ test("synthetic frontend contract shows scoped workspace and confirmed logout", 
   await page.getByRole("button", { name: "Đăng xuất" }).click();
   await expect(page).toHaveURL("https://127.0.0.1:5186/");
 });
+
+for (const width of [1280, 390]) {
+  test(`synthetic native purchase navigation preserves bundled workspace at ${width}px`, async ({ page }) => {
+    // Contract-only fixture. Does not prove real login, SQL or business acceptance.
+    await page.setViewportSize({ width, height: 844 });
+    const session = { displayName: "Synthetic", tenantId: "test", companyId: "test", companyName: "Synthetic company",
+      authorityVersion: 1, capabilities: ["platform.status", "purchase-requests.read", "purchase-orders.read"],
+      idleExpiresAt: new Date(Date.now() + 3600000).toISOString(), absoluteExpiresAt: new Date(Date.now() + 86400000).toISOString() };
+    const requests: string[] = [];
+    page.on("request", request => { if (request.url().includes("/api/")) requests.push(request.url()); });
+    await page.route("**/api/workspace", route => route.fulfill({ json: { session, branchIds: ["TEST"], navigation: [
+      { id: "platform-status", label: "Trạng thái hệ thống", href: "/workspace/" },
+      { id: "purchase-requests", label: "Đề nghị mua hàng", href: "/workspace/?screen=purchase-requests" },
+      { id: "purchase-orders", label: "Đơn đặt hàng mua", href: "/workspace/?screen=purchase-orders" },
+    ] } }));
+    await page.route("**/api/documents/purchase-orders?*", route => route.fulfill({ json: { rows: [], page: 1, pageSize: 50, hasMore: false } }));
+    await page.goto("/workspace/");
+    await expect(page.getByRole("heading", { name: "Chào bạn, Synthetic." })).toBeVisible();
+    // Assert across both navigation variants, including the CSS-hidden one.
+    await expect(page.locator('a[href="/workspace/?screen=purchase-requests"]')).toHaveCount(0);
+    const menu = page.getByRole("navigation", { name: width < 600 ? "Điều hướng nghiệp vụ" : "Điều hướng chính" });
+    await menu.getByRole("link", { name: "Đơn đặt hàng mua" }).click();
+    await expect(page.getByRole("heading", { name: "Đơn đặt hàng mua", exact: true })).toBeVisible();
+    for (const screen of ["purchase-requests", "unknown", "inbound-requests"]) {
+      await page.goto(`/workspace/?screen=${screen}`);
+      await expect(page.getByRole("heading", { name: "Màn hình không khả dụng trong giao diện đi kèm" })).toBeVisible();
+      await expect(page.getByText("Không thể mở không gian làm việc", { exact: true })).toHaveCount(0);
+      await page.getByRole("button", { name: "Về tổng quan" }).click();
+      await expect(page).toHaveURL("https://127.0.0.1:5186/workspace/");
+      await expect(page.getByRole("heading", { name: "Chào bạn, Synthetic." })).toBeVisible();
+      await page.reload();
+      await expect(page.getByRole("heading", { name: "Chào bạn, Synthetic." })).toBeVisible();
+    }
+    expect(requests.some(url => /\/api\/(?:documents\/)?(?:purchase-requests|inbound-requests)/.test(url))).toBe(false);
+  });
+}
+
+test("synthetic malformed workspace reports compatibility without leaking the payload", async ({ page }) => {
+  await page.route("**/api/workspace", route => route.fulfill({ status: 200, json: { private: "synthetic-private-detail" } }));
+  await page.goto("/workspace/");
+  await expect(page.getByRole("heading", { name: "Không thể mở không gian làm việc" })).toBeVisible();
+  await expect(page.getByText("Dữ liệu máy chủ không tương thích với giao diện này. Vui lòng liên hệ quản trị viên.")).toBeVisible();
+  await expect(page.getByText("synthetic-private-detail")).toHaveCount(0);
+  await expect(page.getByText("Không thể kết nối. Kiểm tra mạng rồi thử lại.")).toHaveCount(0);
+});
