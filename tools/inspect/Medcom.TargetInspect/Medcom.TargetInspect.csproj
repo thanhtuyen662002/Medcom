@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode>true</RestoreLockedMode>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.3" />
+    <Compile Include="../../../src/backend/Medcom.Api/ServerConfiguration.cs" Link="Policy/ServerConfiguration.cs" />
+    <Compile Include="../../../src/backend/Medcom.Infrastructure/SqlDevelopmentTestTlsTarget.cs" Link="Policy/SqlDevelopmentTestTlsTarget.cs" />
+    <Using Include="Microsoft.Extensions.Configuration" />
+  </ItemGroup>
+</Project>
