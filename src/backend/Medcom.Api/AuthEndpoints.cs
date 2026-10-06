@@ -82,6 +82,8 @@ public static class AuthEndpoints
                 navigation.Add(new("platform-status", "Trạng thái hệ thống", "/workspace/"));
             if (session.Identity.Capabilities.Contains("purchase-orders.read", StringComparer.Ordinal))
                 navigation.Add(new("purchase-orders", "Đơn đặt hàng mua", "/workspace/?screen=purchase-orders"));
+            if (session.Identity.Capabilities.Contains("purchase-requests.read", StringComparer.Ordinal))
+                navigation.Add(new("purchase-requests", "Đề nghị mua hàng", "/workspace/?screen=purchase-requests"));
             if (session.Identity.Capabilities.Contains("inbound-requests.read", StringComparer.Ordinal))
                 navigation.Add(new("inbound-requests", "Yêu cầu nhập kho", "/workspace/?screen=inbound-requests"));
             return Results.Ok(new WorkspaceView(session.View, navigation, session.Identity.BranchIds ?? []));

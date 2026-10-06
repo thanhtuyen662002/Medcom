@@ -93,6 +93,19 @@ jobs:
       - name: Test ERP proxy and application contracts
         working-directory: apps/medcom-sites
         run: node scripts/test-erp.mjs
+      - name: Test inbound editor with synthetic mobile browser
+        working-directory: apps/medcom-sites
+        env:
+          I18_TEST_BROWSER: ${{ env.MEDCOM_EDGE_PATH }}
+        run: node --test --test-reporter=tap tests/mobile-inbound-request.test.mjs
+      - name: Upload synthetic inbound editor evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: medcom-inbound-editor-evidence-${{ matrix.platform }}-x64-${{ github.sha }}
+          path: |
+            apps/medcom-sites/.test-runtime/i18-mobile-inbound/browser-result.json
+            apps/medcom-sites/.test-runtime/i18-mobile-inbound/synthetic-mobile-inbound.png
+          if-no-files-found: error
       - name: Test QR scanner with synthetic camera in installed browser
         working-directory: apps/medcom-sites
         env:
