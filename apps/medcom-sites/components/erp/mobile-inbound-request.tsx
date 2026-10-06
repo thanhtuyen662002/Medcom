@@ -206,7 +206,7 @@ function InboundEditor({documentId,access,adapter,onConfirmed}:MobileInboundRequ
   if(!documentId&&!state.awaitingSnapshot)return <section role="status" className={requestStyles.section}><h2 className={requestStyles.title}>Yêu cầu nhập kho</h2><p>Chọn một phiếu trong danh sách để xem thông tin và dòng hàng. Tạo mới chưa được mở.</p>{unresolved&&<RequestButton disabled={state.phase!=="unknown"} onClick={()=>void reconcile()}>Kiểm tra yêu cầu gốc</RequestButton>}</section>;
   const pageCount=Math.max(1,Math.ceil(state.details.length/25)),shownPage=Math.min(page,pageCount);
   const receipt=state.receipt?.documentId===documentId||state.awaitingSnapshot?state.receipt:null;
-  return <section data-testid="inbound-editor" data-document-id={documentId??""} data-phase={state.phase} aria-busy={busy} aria-label="Yêu cầu nhập kho trên điện thoại" className={requestStyles.editor}>
+  return <section data-testid="inbound-editor" data-document-id={documentId??""} data-phase={state.phase} aria-busy={busy} aria-label="Yêu cầu nhập kho trên điện thoại" className={requestStyles.editor} style={{width:"100%",minWidth:0,boxSizing:"border-box",overflowWrap:"anywhere"}}>
     <h2 className={requestStyles.title}>Yêu cầu nhập kho</h2><p className={requestStyles.muted} role="status">{requestMessage(state.message)||"Đang chờ đọc ERP."}</p>
     {state.phase==="checking"&&!unresolved&&<RequestButton type="button" onClick={cancelSendCheck}>Hủy kiểm tra trước khi gửi</RequestButton>}
     {receipt&&<p data-testid="confirmed-receipt">ERP đã xác nhận {state.receiptAction==="Save"?"Lưu":"Gửi"} phiếu {receipt.documentId}, trạng thái {receipt.statusId}. Mã thao tác: {receipt.operationId}. Mã xác nhận: {receipt.auditId}. Thời điểm UTC: {receipt.committedAtUtc}</p>}
@@ -225,9 +225,9 @@ function InboundEditor({documentId,access,adapter,onConfirmed}:MobileInboundRequ
       <section aria-label="Dòng yêu cầu nhập kho" style={{display:"grid",gap:12,minWidth:0}}>
         {state.details.slice((shownPage-1)*25,shownPage*25).map(row=>{
           const key=lineKey(row),domKey=encodeURIComponent(key);
-          return <fieldset key={key} disabled={!editable} className={requestStyles.line}><legend className="max-w-full px-1 text-sm font-semibold">{row.rowId??"Dòng mới"}</legend>
+          return <fieldset key={key} disabled={!editable} className={requestStyles.line} style={{minWidth:0}}><legend className="max-w-full px-1 text-sm font-semibold" style={{maxWidth:"100%",overflowWrap:"anywhere"}}>{row.rowId??"Dòng mới"}</legend>
             <div className="grid min-w-0 gap-4 sm:grid-cols-2">{detailFields.map(([field,label,nullable,multiline])=><ExactField key={field} label={label} id={`inbound-detail-${domKey}-${field}`} value={row[field]} nullable={nullable} multiline={multiline} error={state.errors[`detail.${key}.${field}`]} onChange={value=>patchDetail(key,field,value)}/>)}</div>
-            <RequestButton type="button" onClick={()=>removeDetail(key)}>Xóa dòng {row.rowId??"mới"}</RequestButton>
+            <RequestButton type="button" style={{maxWidth:"100%",whiteSpace:"normal",overflowWrap:"anywhere"}} onClick={()=>removeDetail(key)}>Xóa dòng {row.rowId??"mới"}</RequestButton>
           </fieldset>;
         })}
         {state.errors.details&&<p role="alert">{state.errors.details}</p>}

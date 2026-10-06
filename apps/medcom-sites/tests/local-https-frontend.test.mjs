@@ -279,18 +279,21 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       assert.equal(missing, 0, `${label}: existing rows/detail must stay rendered throughout unchanged-scope background refresh`);
     };
     const activate = async (other, value) => {
-      await page.evaluate(() => {delete document.visibilityState;});
+      const restoredOverride = await page.evaluate(() => {
+        const overridden = Object.prototype.hasOwnProperty.call(document, 'visibilityState');
+        delete document.visibilityState; return overridden;
+      });
       if (value === 'hidden') await other.bringToFront(); else await page.bringToFront();
       // Some headless targets never occlude. Real tab activation still happens;
       // record a supplemental visibility event honestly when the browser needs it.
       const native = await page.evaluate(() => document.visibilityState);
-      const fallback = native !== value;
+      const fallback = native !== value || restoredOverride;
       if (fallback) await page.evaluate(value => {
         Object.defineProperty(document, 'visibilityState', {configurable: true, get: () => value});
         document.dispatchEvent(new Event('visibilitychange'));
         if (value === 'visible') window.dispatchEvent(new Event('focus'));
       }, value);
-      lifecycleEvidence.visibility.push({requested: value, native, supplementalEvent: fallback});
+      lifecycleEvidence.visibility.push({requested: value, native, restoredOverride, supplementalEvent: fallback});
       await paint();
     };
     const assertOrderMasked = async () => {
