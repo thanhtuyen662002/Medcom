@@ -2,6 +2,8 @@ using System.Globalization;
 using System.Net;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Primitives;
@@ -69,6 +71,11 @@ public static class LoopbackRelay
         });
         // No environment, appsettings or command-line values may introduce another listener or proxy target.
         builder.Configuration.Sources.Clear();
+        var publicOrigin = $"https://localhost:{options.HttpsPort.ToString(CultureInfo.InvariantCulture)}";
+        // GenericWebHostService also retains host settings captured before configuration providers are cleared.
+        // Override those fallbacks and always prefer our explicit ListenLocalhost endpoint.
+        builder.WebHost.UseUrls(publicOrigin);
+        builder.WebHost.PreferHostingUrls(false);
         builder.Logging.ClearProviders();
         builder.WebHost.UseKestrelHttpsConfiguration();
         builder.WebHost.ConfigureKestrel(server =>
@@ -103,6 +110,11 @@ public static class LoopbackRelay
         };
         var client = new HttpClient(handler) { Timeout = Timeout.InfiniteTimeSpan };
         var app = builder.Build();
+        var addresses = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()
+            ?? throw new InvalidOperationException("The local server did not expose its binding addresses.");
+        addresses.Addresses.Clear();
+        addresses.Addresses.Add(publicOrigin);
+        addresses.PreferHostingUrls = false;
         app.Lifetime.ApplicationStopped.Register(client.Dispose);
         app.Run(context => RelayAsync(context, options, client));
         return app;
@@ -183,7 +195,8 @@ public static class LoopbackRelay
             await RejectAsync(context, 405, "method_or_route_unavailable");
             return;
         }
-        // Connection-nominated security headers must never disappear on the hop to the BFF.
+        // Reject observable unknown Connection options. Kestrel may canonicalize mixed options to "close";
+        // provenance below is therefore always copied from native headers and is never stripped by nomination.
         if (context.Request.Headers.Connection.SelectMany(value => (value ?? "").Split(','))
             .Any(value => !value.Trim().Equals("close", StringComparison.OrdinalIgnoreCase) && !value.Trim().Equals("keep-alive", StringComparison.OrdinalIgnoreCase)) ||
             (context.Request.Headers.TryGetValue("Next-Url", out var nextUrl) && (nextUrl.Count != 1 || !IsSafeRequestTarget(nextUrl[0]))))
@@ -206,7 +219,9 @@ public static class LoopbackRelay
             var buffer = new byte[8192];
             while (true)
             {
-                var read = await context.Request.Body.ReadAsync(buffer, cancellation.Token);
+                // Inspect at most one byte beyond the route limit; retain the independent 1 MiB Kestrel cap.
+                var remaining = Math.Min(buffer.Length, limit + 1 - (int)body.Length);
+                var read = await context.Request.Body.ReadAsync(buffer.AsMemory(0, remaining), cancellation.Token);
                 if (read == 0) break;
                 if (body.Length + read > limit)
                 {

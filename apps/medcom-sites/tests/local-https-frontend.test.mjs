@@ -24,7 +24,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
   const {chromium} = require('playwright-core');
   const directory = await mkdtemp(path.join(tmpdir(), 'medcom-i28-synthetic-'));
   const output = path.resolve('.test-runtime/i28-local-https'); await mkdir(output, {recursive: true}); await rm(path.join(output,'result.json'),{force:true});
-  const children = [], errors = [], external = [], results = [];
+  const children = [], errors = [], external = [], results = [], responses = [];
   let browser, context, page, ca, ready;
   function child(executable, args, env) {
     const running = spawn(executable, args, {cwd: packageRoot, env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true});
@@ -63,13 +63,18 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
     const server = net.createServer(); await new Promise((resolve, reject) => {server.once('error', reject); server.listen(0, '127.0.0.1', resolve);});
     const port = server.address().port; await new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve())); return port;
   }
-  function request(url, {method = 'GET', headers = {}, body, certificate = ca} = {}) {
+  function request(url, {method = 'GET', headers = {}, body, certificate = ca, expectContinue = false} = {}) {
     return new Promise((resolve, reject) => {
-      const req = https.request(url, {method, headers, ...(certificate === false ? {} : {ca: certificate}), rejectUnauthorized: true, family: 4, signal: t.signal}, res => {
+      let sent = false;
+      const wireHeaders = expectContinue ? {...headers, Expect:'100-continue', 'Content-Length':String(Buffer.byteLength(body ?? ''))} : headers;
+      const req = https.request(url, {method, headers:wireHeaders, ...(certificate === false ? {} : {ca: certificate}), rejectUnauthorized: true, family: 4, signal: t.signal}, res => {
         const parts = []; res.on('data', b => parts.push(b)); res.on('error', reject);
-        res.on('end', () => resolve({status: res.statusCode, headers: res.headers, body: Buffer.concat(parts).toString('utf8')}));
+        res.on('end', () => {resolve({status: res.statusCode, headers: res.headers, body: Buffer.concat(parts).toString('utf8')});if(expectContinue&&!sent)req.destroy();});
       });
-      req.setTimeout(10000, () => req.destroy(Error('bounded synthetic request timeout'))); req.on('error', reject); req.end(body);
+      req.setTimeout(10000, () => req.destroy(Error('bounded synthetic request timeout'))); req.on('error', reject);
+      // Declared overflow can be refused before a body is sent. Keep its exact
+      // HTTP413 assertion independent of an early-close client write race.
+      if(expectContinue){req.once('continue',()=>{sent=true;req.end(body);});req.flushHeaders();}else{sent=true;req.end(body);}
     });
   }
   async function run(name, action) {let failure; await t.test(name, async () => {try {await action(); results.push({name, result: 'PASS'});} catch (error) {failure = error; throw error;}}); t.signal.throwIfAborted(); if (failure) throw failure;}
@@ -89,6 +94,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
     t.signal.throwIfAborted(); context = await browser.newContext({viewport: {width: 390, height: 844}}); page = await context.newPage();
     page.setDefaultTimeout(10000);
     page.on('pageerror', error => errors.push(error.message));
+    page.on('response', response => {const url=new URL(response.url());if(url.origin===ready.publicOrigin&&url.pathname.startsWith('/api/erp/')){responses.push({path:url.pathname,status:response.status()});if(responses.length>30)responses.shift();}});
     page.on('request', req => {if (!req.url().startsWith(ready.publicOrigin + '/') && !req.url().startsWith('data:')) external.push(new URL(req.url()).origin);});
     const address = route => ready.publicOrigin + '/api/erp/' + route;
     const snapshot = async () => JSON.parse((await request(ready.apiOrigin + '/__fixture/state')).body);
@@ -101,7 +107,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       const dialog = page.getByRole('dialog');
       await dialog.getByLabel('Tên đăng nhập', {exact: true}).fill('i28-user');
       await dialog.getByLabel('Mật khẩu', {exact: true}).fill('synthetic-i28-password');
-      await dialog.getByRole('button', {name: 'Đăng nhập ERP', exact: true}).click();
+      await dialog.getByRole('button', {name: 'Đăng nhập', exact: true}).click();
       await page.waitForFunction(() => document.querySelector('.topbar .user-button')?.textContent.includes('SYNTHETIC I28'));
       const cookies = await context.cookies();
       assert.deepEqual(cookies.map(c => c.name).sort(), ['__Host-Medcom.Csrf','__Host-Medcom.Session']);
@@ -121,7 +127,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
     await run('forged Host, Origin and forwarded headers cannot broaden origin admission', async () => {
       const badHost = await request(ready.publicOrigin + '/', {headers: {Host: 'attacker.invalid'}}); assert.equal(badHost.status, 400);
       const before = (await snapshot()).calls.filter(c=>c.path==='/api/auth/login').length;
-      const rejected = await request(address('api/auth/login'), {method: 'POST', headers: {'Content-Type':'application/json', Origin:'https://attacker.invalid', Forwarded:'host=localhost;proto=https', 'X-Forwarded-Host':new URL(ready.publicOrigin).host}, body:'{}'});
+      const rejected = await request(address('api/auth/login'), {method: 'POST', headers: {'Content-Type':'application/json', Origin:'https://attacker.invalid', Connection:'Origin, close', Forwarded:'host=localhost;proto=https', 'X-Forwarded-Host':new URL(ready.publicOrigin).host}, body:'{}'});
       assert.equal(rejected.status,403); assert.equal(JSON.parse(rejected.body).code,'origin_rejected');
       assert.equal((await snapshot()).calls.filter(c=>c.path==='/api/auth/login').length,before);
       const missing = await request(address('api/auth/login'), {method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}); assert.equal(missing.status,403);
@@ -134,8 +140,8 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       const bytes = Buffer.from('{ "note": "' + 'x'.repeat(1048576-14) + '" }'); assert.equal(bytes.length,1048576);
       const accepted = await request(address('api/inbound-requests/draft/save'),{method:'POST',headers,body:bytes});assert.equal(accepted.status,200);assert.equal(JSON.parse(accepted.body).sha256,createHash('sha256').update(bytes).digest('hex'));
       const before = (await snapshot()).calls.filter(c=>c.method==='POST').length;
-      assert.equal((await request(address('api/inbound-requests/draft/save'),{method:'POST',headers,body:Buffer.concat([bytes,Buffer.from(' ')])})).status,413);
-      assert.equal((await request(address('api/auth/login'),{method:'POST',headers,body:'x'.repeat(16385)})).status,413);
+      assert.equal((await request(address('api/inbound-requests/draft/save'),{method:'POST',headers,body:Buffer.concat([bytes,Buffer.from(' ')]),expectContinue:true})).status,413);
+      assert.equal((await request(address('api/auth/login'),{method:'POST',headers,body:'x'.repeat(16385),expectContinue:true})).status,413);
       assert.equal((await snapshot()).calls.filter(c=>c.method==='POST').length,before);
       const sent = (await snapshot()).calls.filter(c => c.path==='/api/inbound-requests/draft/save').at(-1);
       assert.equal(sent.origin,ready.apiOrigin);assert.equal(sent.forwarded,false);assert.equal(sent.scope,'a'.repeat(64));assert.deepEqual(sent.cookieNames,['__Host-Medcom.Csrf','__Host-Medcom.Session']);
@@ -169,6 +175,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       actualBuiltApp:true,actualShippingRelay:true,api:'explicit synthetic HTTPS double',tls:'ephemeral fixture CA in Next child; exact leaf SPKI in isolated browser; no global trust changes',
       ownerCertificateTrust:'NOT_RUN',realSql:'NOT_RUN',productionAccepted:false},null,2));
   } catch (error) {
-    console.error(JSON.stringify({fixture:'I28',errors,external,children:children.map(c=>({closed:c.closed,diagnostic:c.diagnostic})),pageUrl:page?.url()},null,2));throw error;
+    const ui=await page?.evaluate(()=>({readyState:document.readyState,dialogs:[...document.querySelectorAll('[role="dialog"]')].map(dialog=>({title:dialog.querySelector('[data-slot="dialog-title"]')?.textContent,buttons:[...dialog.querySelectorAll('button')].map(button=>({text:button.textContent?.slice(0,100),type:button.type,disabled:button.disabled}))}))})).catch(()=>null);
+    console.error(JSON.stringify({fixture:'I28',errors,external,responses,ui,children:children.map(c=>({closed:c.closed,diagnostic:c.diagnostic})),pageUrl:page?.url()},null,2));throw error;
   } finally {t.signal.removeEventListener('abort',aborted);await cleanup();}
 });

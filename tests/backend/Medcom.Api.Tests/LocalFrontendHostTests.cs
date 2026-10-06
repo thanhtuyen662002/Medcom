@@ -47,7 +47,8 @@ public sealed class LocalFrontendHostTests
         Assert.False(LoopbackRelay.IsSafeRequestTarget(target));
         await using var fixture = await RelayFixture.Start(context => context.Response.WriteAsync("unreachable"));
         var response = await fixture.Raw("GET", target);
-        Assert.StartsWith("HTTP/1.1 400", response, StringComparison.Ordinal);
+        // Kestrel's OnAsteriskFormTarget rejects GET * before the application with OptionsMethodRequired (405).
+        Assert.StartsWith(target == "*" ? "HTTP/1.1 405" : "HTTP/1.1 400", response, StringComparison.Ordinal);
         Assert.Equal(0, fixture.UpstreamCalls);
     }
 
@@ -239,9 +240,33 @@ public sealed class LocalFrontendHostTests
     public async Task RoutingHeaderAmbiguitiesFailBeforeUpstream(string headers)
     {
         await using var fixture = await RelayFixture.Start(context => context.Response.WriteAsync("unreachable"));
-        var response = await fixture.Raw("GET", "/", headers);
+        // Do not add "close": Kestrel's ParseConnection canonicalizes Origin + close to close before middleware.
+        var response = await fixture.Raw("GET", "/", headers, appendConnectionClose: false);
         Assert.StartsWith("HTTP/1.1 400", response, StringComparison.Ordinal);
         Assert.Equal(0, fixture.UpstreamCalls);
+    }
+
+    [Theory]
+    [InlineData("Connection: Origin, close\r\n")]
+    [InlineData("Connection: Origin\r\nConnection: close\r\n")]
+    [InlineData("Connection: close\r\nConnection: Origin\r\n")]
+    public async Task KestrelNormalizedConnectionOptionsCannotEraseNativeProvenance(string connectionHeaders)
+    {
+        string? origin = null;
+        string? site = null;
+        await using var fixture = await RelayFixture.Start(context =>
+        {
+            origin = context.Request.Headers.Origin.ToString();
+            site = context.Request.Headers["Sec-Fetch-Site"].ToString();
+            context.Response.StatusCode = 403;
+            return context.Response.WriteAsync("origin_rejected");
+        });
+        var response = await fixture.Raw("GET", "/api/erp/api/inbound-requests/draft",
+            connectionHeaders + "Origin: https://attacker.invalid\r\nSec-Fetch-Site: cross-site\r\n", appendConnectionClose: false);
+        Assert.StartsWith("HTTP/1.1 403", response, StringComparison.Ordinal);
+        Assert.Equal("https://attacker.invalid", origin);
+        Assert.Equal("cross-site", site);
+        Assert.Equal(1, fixture.UpstreamCalls);
     }
 
     [Theory]
@@ -262,11 +287,17 @@ public sealed class LocalFrontendHostTests
         using var accepted = await fixture.Client.PostAsync(path, new ByteArrayContent(bytes));
         Assert.Equal(HttpStatusCode.Created, accepted.StatusCode);
         Assert.Equal(bytes, received);
-        using var declaredOverflow = await fixture.Client.PostAsync(path, new ByteArrayContent(new byte[limit + 1]));
-        Assert.Equal(HttpStatusCode.RequestEntityTooLarge, declaredOverflow.StatusCode);
-        using var streamedOverflow = await fixture.Client.PostAsync(path, new StreamingContent(new byte[limit + 1]));
-        Assert.Equal(HttpStatusCode.RequestEntityTooLarge, streamedOverflow.StatusCode);
-        Assert.Equal(1, fixture.UpstreamCalls);
+        using var acceptedStreamed = await fixture.Client.PostAsync(path, new StreamingContent(bytes));
+        Assert.Equal(HttpStatusCode.Created, acceptedStreamed.StatusCode);
+        Assert.Equal(bytes, received);
+        // Read TLS responses while sending: an early 413 can close the request write side before HttpClient
+        // finishes serializing a large body. A write failure alone never satisfies either rejection assertion.
+        var declaredOverflow = await fixture.Raw("POST", path, body: new byte[limit + 1]);
+        Assert.StartsWith("HTTP/1.1 413", declaredOverflow, StringComparison.Ordinal);
+        Assert.Equal(2, fixture.UpstreamCalls);
+        var streamedOverflow = await fixture.Raw("POST", path, body: new byte[limit + 1], chunked: true);
+        Assert.StartsWith("HTTP/1.1 413", streamedOverflow, StringComparison.Ordinal);
+        Assert.Equal(2, fixture.UpstreamCalls);
     }
 
     [Fact]
@@ -338,7 +369,11 @@ public sealed class LocalFrontendHostTests
             ["ASPNETCORE_URLS"] = "http://0.0.0.0:0",
             ["ASPNETCORE_PREFERHOSTINGURLS"] = "true",
             ["DOTNET_URLS"] = "http://0.0.0.0:0",
-            ["Kestrel__Endpoints__Injected__Url"] = "http://0.0.0.0:0"
+            ["DOTNET_PREFERHOSTINGURLS"] = "true",
+            ["ASPNETCORE_HTTP_PORTS"] = "0",
+            ["ASPNETCORE_HTTPS_PORTS"] = "0",
+            ["Kestrel__Endpoints__Injected__Url"] = "http://0.0.0.0:0",
+            ["ASPNETCORE_Kestrel__Endpoints__Injected__Url"] = "http://0.0.0.0:0"
         };
         var saved = hostile.Keys.ToDictionary(key => key, Environment.GetEnvironmentVariable);
         using var certificate = MakeCertificate();
@@ -350,9 +385,12 @@ public sealed class LocalFrontendHostTests
         {
             foreach (var entry in hostile) Environment.SetEnvironmentVariable(entry.Key, entry.Value);
             await using var relay = LoopbackRelay.Build(new(httpsPort, httpsPort == 3100 ? 3101 : 3100), certificate);
+            var bindings = relay.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!;
+            Assert.False(bindings.PreferHostingUrls);
+            Assert.Equal($"https://localhost:{httpsPort}", Assert.Single(bindings.Addresses));
             await relay.StartAsync();
-            var addresses = relay.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses;
-            Assert.Equal($"https://localhost:{httpsPort}", Assert.Single(addresses));
+            Assert.False(bindings.PreferHostingUrls);
+            Assert.Equal($"https://localhost:{httpsPort}", Assert.Single(bindings.Addresses));
             await relay.StopAsync();
         }
         finally
@@ -486,7 +524,8 @@ public sealed class LocalFrontendHostTests
             return new(upstream, relay, certificate, client, httpsPort, () => Volatile.Read(ref count));
         }
 
-        public async Task<string> Raw(string method, string target, string headers = "", string? host = null)
+        public async Task<string> Raw(string method, string target, string headers = "", string? host = null,
+            byte[]? body = null, bool chunked = false, bool appendConnectionClose = true)
         {
             using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             using var socket = new TcpClient();
@@ -497,11 +536,51 @@ public sealed class LocalFrontendHostTests
             {
                 TargetHost = "localhost", EnabledSslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13
             }, cancellation.Token);
-            var request = Encoding.ASCII.GetBytes($"{method} {target} HTTP/1.1\r\nHost: {host ?? $"localhost:{HttpsPort}"}\r\n{headers}Connection: close\r\n\r\n");
+            var framing = body is null ? "" : chunked ? "Transfer-Encoding: chunked\r\n" : $"Content-Length: {body.Length}\r\n";
+            var connection = appendConnectionClose ? "Connection: close\r\n" : "";
+            var request = Encoding.ASCII.GetBytes($"{method} {target} HTTP/1.1\r\nHost: {host ?? $"localhost:{HttpsPort}"}\r\n{headers}{framing}{connection}\r\n");
             await stream.WriteAsync(request, cancellation.Token);
+            var response = ReadResponseHeaders(stream, cancellation.Token);
+            IOException? uploadFailure = null;
+            try
+            {
+                if (body is not null)
+                {
+                    if (chunked)
+                    {
+                        for (var offset = 0; offset < body.Length; offset += 8192)
+                        {
+                            var length = Math.Min(8192, body.Length - offset);
+                            await stream.WriteAsync(Encoding.ASCII.GetBytes(length.ToString("X", System.Globalization.CultureInfo.InvariantCulture) + "\r\n"), cancellation.Token);
+                            await stream.WriteAsync(body.AsMemory(offset, length), cancellation.Token);
+                            await stream.WriteAsync("\r\n"u8.ToArray(), cancellation.Token);
+                        }
+                        await stream.WriteAsync("0\r\n\r\n"u8.ToArray(), cancellation.Token);
+                    }
+                    else await stream.WriteAsync(body, cancellation.Token);
+                }
+            }
+            catch (IOException exception) { uploadFailure = exception; }
+            var result = await response;
+            if (uploadFailure is not null && !result.StartsWith("HTTP/1.1 413", StringComparison.Ordinal))
+                throw new IOException("The upload failed without an observed HTTP 413 response.", uploadFailure);
+            return result;
+        }
+
+        private static async Task<string> ReadResponseHeaders(Stream stream, CancellationToken cancellation)
+        {
             using var response = new MemoryStream();
-            await stream.CopyToAsync(response, cancellation.Token);
-            return Encoding.UTF8.GetString(response.ToArray());
+            var buffer = new byte[1024];
+            while (response.Length <= 64 * 1024)
+            {
+                var read = await stream.ReadAsync(buffer, cancellation);
+                if (read == 0) throw new IOException("The connection ended before complete HTTP response headers.");
+                response.Write(buffer, 0, read);
+                var value = Encoding.ASCII.GetString(response.GetBuffer(), 0, (int)response.Length);
+                var end = value.IndexOf("\r\n\r\n", StringComparison.Ordinal);
+                if (end >= 0) return value[..(end + 4)];
+            }
+            throw new IOException("The response headers exceeded the fixture limit.");
         }
 
         public async ValueTask DisposeAsync()
