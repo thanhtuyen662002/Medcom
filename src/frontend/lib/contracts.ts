@@ -7,7 +7,7 @@ export const sessionSchema = z.object({
   absoluteExpiresAt: z.string().datetime({ offset: true }), capabilities: z.array(z.string().max(100)).max(256),
 }).strict();
 export const workspaceSchema = z.object({ session: sessionSchema,
-  navigation: z.array(z.object({ id: z.string(), label: z.string(), href: z.enum(["/workspace/", "/workspace/?screen=purchase-orders", "/workspace/?screen=inbound-requests"]) }).strict()),
+  navigation: z.array(z.object({ id: z.string(), label: z.string(), href: z.enum(["/workspace/", "/workspace/?screen=purchase-orders", "/workspace/?screen=purchase-requests", "/workspace/?screen=inbound-requests"]) }).strict()),
   branchIds: z.array(z.string().min(1).max(50)).max(200).default([]),
 }).strict();
 export const healthSchema = z.object({ status: z.literal("not_ready"), checks: z.array(
