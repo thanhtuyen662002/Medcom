@@ -37,3 +37,10 @@ public enum PurchaseRequestCommandOutcome
 { Committed, Replayed, InvalidInput, Denied, Conflict, QualificationRequired, Unavailable, OutcomeUnknown, Cancelled }
 public sealed record PurchaseRequestCommandResult(PurchaseRequestCommandOutcome Outcome,
     PurchaseRequestCommandReceipt? Receipt = null);
+// Instantaneous journal observations, not write admission. Only Committed carries a validated original receipt.
+// EVERY other result (including Absent, Pending, Unavailable and Cancelled) retains the unresolved original intent.
+// Never infer permission to dispatch/retry/replace from a lookup result. This adds no HTTP route.
+public enum PurchaseRequestLookupOutcome
+{ Committed, Pending, Absent, InvalidInput, Denied, Conflict, QualificationRequired, Unavailable, Cancelled }
+public sealed record PurchaseRequestLookupResult(PurchaseRequestLookupOutcome Outcome,
+    PurchaseRequestCommandReceipt? Receipt = null);
