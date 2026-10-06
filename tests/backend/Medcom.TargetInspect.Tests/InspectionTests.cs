@@ -704,6 +704,157 @@ public sealed class InspectionTests
         Assert.Contains("INPUT_OR_PACKAGE_REJECTED", output.ToString(), StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData(false, false)] [InlineData(false, true)]
+    [InlineData(true, false)] [InlineData(true, true)]
+    public void Cli_accepts_only_fixed_optional_options_then_explicit_trailing_tls_flag(bool options, bool optIn)
+    {
+        var arguments = new List<string> { "inspect", "--config", "synthetic-private.json" };
+        if (options) arguments.AddRange(["--options", "synthetic-options.json"]);
+        if (optIn) arguments.Add("--allow-development-sql-tls");
+        var parsed = Program.ParseArguments(arguments.ToArray());
+        Assert.Equal("synthetic-private.json", parsed.ConfigPath);
+        Assert.Equal(options ? "synthetic-options.json" : null, parsed.OptionsPath);
+        Assert.Equal(optIn, parsed.AllowDevelopmentSqlTls);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("inspect|--config|private|--allow-development-sql-tls|--allow-development-sql-tls")]
+    [InlineData("inspect|--config|private|--allow-development-sql-tls|--options|options")]
+    [InlineData("inspect|--allow-development-sql-tls|--config|private")]
+    [InlineData("--allow-development-sql-tls|inspect|--config|private")]
+    [InlineData("inspect|--config|private|--allow-development-sql-tls=true")]
+    [InlineData("inspect|--config|private|--allow-development-sql-tls|false")]
+    [InlineData("inspect|--config|private|--Allow-Development-Sql-Tls")]
+    [InlineData("inspect|--config|private|--server|other")]
+    [InlineData("inspect|--config|private|--options|options|--database|other|--allow-development-sql-tls")]
+    [InlineData("inspect|--config|--allow-development-sql-tls")]
+    [InlineData("inspect|--config|private|--options|--allow-development-sql-tls")]
+    [InlineData("inspect|--config|private|--options|options|--unknown")]
+    public void Cli_rejects_duplicate_misplaced_valued_or_target_selecting_tls_arguments(string joined)
+    {
+        Assert.Throws<InvalidOperationException>(() => Program.ParseArguments(joined.Split('|')));
+    }
+
+    [Fact]
+    public void Explicit_opt_in_supports_existing_development_connection_without_persisting_or_sticking()
+    {
+        using var files = new ConfigurationFiles();
+        WriteConfigurationWithoutTlsSection(files, ConfigurationFiles.Connection + ";Encrypt=False;TrustServerCertificate=True");
+        File.WriteAllText(files.Options, JsonSerializer.Serialize(new { ExpectedBindingId = Binding.ToString("D") }));
+        var configBefore = File.ReadAllBytes(files.Config);
+        var optionsBefore = File.ReadAllBytes(files.Options);
+        Assert.Throws<InvalidOperationException>(() => Program.ReadConfiguration(files.Config, files.Options, files.ContentRoot));
+        var result = Program.ReadConfiguration(files.Config, files.Options, files.ContentRoot, allowDevelopmentSqlTls: true);
+        var parsed = new SqlConnectionStringBuilder(result.ConnectionString);
+        Assert.Equal(SqlConnectionEncryptOption.Mandatory, parsed.Encrypt);
+        Assert.True(parsed.TrustServerCertificate);
+        Assert.False(parsed.PersistSecurityInfo);
+        Assert.False(parsed.Pooling);
+        Assert.False(parsed.Enlist);
+        Assert.Equal(InspectionRunner.ExpectedServer, parsed.DataSource);
+        Assert.Equal(InspectionRunner.ExpectedDatabase, parsed.InitialCatalog);
+        Assert.Equal(Binding, result.ExpectedBinding);
+        Assert.Equal(configBefore, File.ReadAllBytes(files.Config));
+        Assert.Equal(optionsBefore, File.ReadAllBytes(files.Options));
+        // A second default invocation still refuses the original unsafe configuration.
+        Assert.Throws<InvalidOperationException>(() => Program.ReadConfiguration(files.Config, null, files.ContentRoot));
+    }
+
+    [Fact]
+    public void Explicit_opt_in_can_repeat_identical_existing_fixed_exception()
+    {
+        using var files = new ConfigurationFiles();
+        files.WriteConfig(ConfigurationFiles.Connection + ";Encrypt=False;TrustServerCertificate=True", true);
+        var before = File.ReadAllBytes(files.Config);
+        var parsed = new SqlConnectionStringBuilder(Program.ReadConfiguration(files.Config, null, files.ContentRoot, true).ConnectionString);
+        Assert.Equal(SqlConnectionEncryptOption.Mandatory, parsed.Encrypt);
+        Assert.True(parsed.TrustServerCertificate);
+        Assert.Equal(before, File.ReadAllBytes(files.Config));
+    }
+
+    [Theory]
+    [InlineData("disabled")] [InlineData("malformed-enabled")] [InlineData("missing-enabled")]
+    [InlineData("missing-server")] [InlineData("missing-database")] [InlineData("other-server")]
+    [InlineData("other-database")] [InlineData("alias-server")] [InlineData("extra-key")]
+    [InlineData("scalar-section")] [InlineData("nested-enabled")]
+    [InlineData("null-section")] [InlineData("empty-object-section")] [InlineData("empty-array-section")]
+    public void Opt_in_does_not_repair_or_override_malformed_disabled_or_conflicting_exception_sections(string fault)
+    {
+        using var files = new ConfigurationFiles();
+        files.WriteConfig(ConfigurationFiles.Connection + ";Encrypt=False;TrustServerCertificate=True", true);
+        var config = JsonNode.Parse(File.ReadAllText(files.Config))!.AsObject();
+        var policy = config["Medcom"]!["SqlDevelopmentTestTls"]!.AsObject();
+        switch (fault)
+        {
+            case "disabled": policy["Enabled"] = false; break;
+            case "malformed-enabled": policy["Enabled"] = Canary; break;
+            case "missing-enabled": policy.Remove("Enabled"); break;
+            case "missing-server": policy.Remove("Server"); break;
+            case "missing-database": policy.Remove("Database"); break;
+            case "other-server": policy["Server"] = "other.example.invalid"; break;
+            case "other-database": policy["Database"] = "other-synthetic"; break;
+            case "alias-server": policy["Server"] = "tcp:" + InspectionRunner.ExpectedServer; break;
+            case "extra-key": policy["AllowAllHosts"] = true; break;
+            case "scalar-section": config["Medcom"]!["SqlDevelopmentTestTls"] = Canary; break;
+            case "null-section": config["Medcom"]!["SqlDevelopmentTestTls"] = null; break;
+            case "empty-object-section": config["Medcom"]!["SqlDevelopmentTestTls"] = new JsonObject(); break;
+            case "empty-array-section": config["Medcom"]!["SqlDevelopmentTestTls"] = new JsonArray(); break;
+            case "nested-enabled": policy["Enabled"] = new JsonObject { ["Value"] = true }; break;
+        }
+        File.WriteAllText(files.Config, config.ToJsonString());
+        var before = File.ReadAllBytes(files.Config);
+        Assert.Throws<InvalidOperationException>(() => Program.ReadConfiguration(files.Config, null, files.ContentRoot, true));
+        Assert.Equal(before, File.ReadAllBytes(files.Config));
+    }
+
+    [Theory]
+    [InlineData("Server=other.example.invalid,17456;Database=MedData;Encrypt=False;TrustServerCertificate=True")]
+    [InlineData("Server=ZMC.BMS79.COM,17456;Database=MedData;Encrypt=False;TrustServerCertificate=True")]
+    [InlineData("Server=tcp:zmc.bms79.com,17456;Database=MedData;Encrypt=False;TrustServerCertificate=True")]
+    [InlineData("Server=zmc.bms79.com,17456;Database=meddata;Encrypt=False;TrustServerCertificate=True")]
+    [InlineData("Server=zmc.bms79.com,17456;Database=MedData;Failover Partner=other.example.invalid")]
+    [InlineData("Server=zmc.bms79.com,17456;Database=MedData;Application Intent=ReadOnly")]
+    [InlineData("Server=zmc.bms79.com,17456;Database=MedData;User Instance=True")]
+    [InlineData("Server=zmc.bms79.com,17456;Database=MedData;AttachDBFilename=synthetic.mdf")]
+    public void Opt_in_never_authorizes_an_alternate_target_or_routing(string connection)
+    {
+        using var files = new ConfigurationFiles();
+        WriteConfigurationWithoutTlsSection(files, connection);
+        Assert.Throws<InvalidOperationException>(() => Program.ReadConfiguration(files.Config, null, files.ContentRoot, true));
+    }
+
+    [Theory]
+    [InlineData("Medcom__SqlDevelopmentTestTls__Server")]
+    [InlineData("ConnectionStrings__Medcom")]
+    [InlineData("Legacy__ConnectionString")]
+    [InlineData("SQLCONNSTR_Medcom")]
+    public void Explicit_flag_does_not_bypass_inherited_environment_rejection(string name)
+    {
+        var previous = Environment.GetEnvironmentVariable(name);
+        try
+        {
+            Environment.SetEnvironmentVariable(name, Canary);
+            using var files = new ConfigurationFiles();
+            WriteConfigurationWithoutTlsSection(files, ConfigurationFiles.Connection + ";Encrypt=False;TrustServerCertificate=True");
+            Assert.Throws<InvalidOperationException>(() => Program.ReadConfiguration(files.Config, null, files.ContentRoot, true));
+        }
+        finally { Environment.SetEnvironmentVariable(name, previous); }
+    }
+
+    [Fact]
+    public void Options_cannot_silently_enable_the_development_exception()
+    {
+        using var files = new ConfigurationFiles();
+        files.WriteConfig(ConfigurationFiles.Connection + ";Encrypt=True;TrustServerCertificate=False");
+        File.WriteAllText(files.Options, "{\"AllowDevelopmentSqlTls\":true}");
+        Assert.Throws<InvalidOperationException>(() => Program.ReadConfiguration(files.Config, files.Options, files.ContentRoot));
+    }
+
+    private static void WriteConfigurationWithoutTlsSection(ConfigurationFiles files, string connection)
+        => File.WriteAllText(files.Config, JsonSerializer.Serialize(new { ConnectionStrings = new { Medcom = connection } }));
+
     [Fact]
     public async Task Help_does_not_require_or_open_private_configuration()
     {

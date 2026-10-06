@@ -13,7 +13,7 @@ public static class Program
     {
         if (args.Length == 1 && args[0] == "--help")
         {
-            Console.WriteLine("dotnet Medcom.TargetInspect.dll inspect --config <absolute private JSON path> [--options <absolute options JSON path>]");
+            Console.WriteLine("dotnet Medcom.TargetInspect.dll inspect --config <absolute private JSON path> [--options <absolute options JSON path>] [--allow-development-sql-tls]");
             return 0;
         }
         var report = new InspectionReport();
@@ -22,16 +22,17 @@ public static class Program
         var stage = "arguments";
         try
         {
-            if ((args.Length != 3 && args.Length != 5) || args[0] != "inspect" || args[1] != "--config"
-                || (args.Length == 5 && args[3] != "--options")) throw new InvalidOperationException();
+            var invocation = ParseArguments(args);
             report.Add(stage, InspectionStatus.PASS, "FIXED_INSPECT_MODE");
             stage = "package";
             ValidatePackage(AppContext.BaseDirectory, report);
             report.Add(stage, InspectionStatus.PASS, "INVENTORY_HASHES_VERIFIED");
             stage = "configuration";
             EnsureSafeEnvironment(System.Environment.GetEnvironmentVariables().Keys.Cast<string>());
-            var (connectionString, expectedBinding) = ReadConfiguration(args[2], args.Length == 5 ? args[4] : null, AppContext.BaseDirectory);
-            report.Add(stage, InspectionStatus.PASS, "CURRENT_POLICY_EXACT_TARGET");
+            var (connectionString, expectedBinding) = ReadConfiguration(invocation.ConfigPath, invocation.OptionsPath,
+                AppContext.BaseDirectory, invocation.AllowDevelopmentSqlTls);
+            report.Add(stage, InspectionStatus.PASS, invocation.AllowDevelopmentSqlTls
+                ? "EXPLICIT_FIXED_TARGET_DEVELOPMENT_TLS" : "CURRENT_POLICY_EXACT_TARGET");
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60));
             // Only this executable entry point creates a real provider connection. CI calls the runner with doubles.
             await InspectionRunner.RunAsync(new SqlConnection(connectionString), expectedBinding, report, timeout.Token);
@@ -44,6 +45,18 @@ public static class Program
         // A metadata PASS never establishes runtime qualification. BLOCKED is intentionally nonzero.
         return report.Checks.Any(c => c.Status == InspectionStatus.FAIL) ? 1
             : report.Checks.Any(c => c.Status == InspectionStatus.BLOCKED) ? 2 : 0;
+    }
+
+    public static (string ConfigPath, string? OptionsPath, bool AllowDevelopmentSqlTls) ParseArguments(string[] args)
+    {
+        ArgumentNullException.ThrowIfNull(args);
+        var optIn = args.Length > 0 && args[^1] == "--allow-development-sql-tls";
+        var count = args.Length - (optIn ? 1 : 0);
+        if ((count != 3 && count != 5) || args[0] != "inspect" || args[1] != "--config"
+            || string.IsNullOrWhiteSpace(args[2]) || args[2].StartsWith("--", StringComparison.Ordinal)
+            || (count == 5 && (args[3] != "--options" || string.IsNullOrWhiteSpace(args[4])
+                || args[4].StartsWith("--", StringComparison.Ordinal)))) throw new InvalidOperationException();
+        return (args[2], count == 5 ? args[4] : null, optIn);
     }
 
     public static void EnsureSafeEnvironment(IEnumerable<string> names)
@@ -63,13 +76,39 @@ public static class Program
         }
     }
 
-    public static (string ConnectionString, Guid? ExpectedBinding) ReadConfiguration(string configPath, string? optionsPath, string contentRoot)
+    public static (string ConnectionString, Guid? ExpectedBinding) ReadConfiguration(string configPath, string? optionsPath, string contentRoot,
+        bool allowDevelopmentSqlTls = false)
     {
         EnsureSafeEnvironment(System.Environment.GetEnvironmentVariables().Keys.Cast<string>());
         RequirePrivateInput(configPath, contentRoot);
         using var configuration = new ConfigurationManager();
         configuration.AddInMemoryCollection(new Dictionary<string, string?> { [ServerConfiguration.PrivateConfigPathKey] = configPath });
         ServerConfiguration.LoadPrivateConfiguration(configuration, contentRoot, []);
+        if (allowDevelopmentSqlTls)
+        {
+            // The explicit invocation may fill an absent exception or repeat the identical enabled one.
+            // It must not repair malformed settings, override an explicit disable or redirect permission.
+            var section = configuration.GetSection("Medcom:SqlDevelopmentTestTls");
+            var existing = section.GetChildren().ToArray();
+            // GetSection.Value alone cannot distinguish absent from an explicit JSON null/{}.
+            var sectionPresent = configuration.GetSection("Medcom").GetChildren()
+                .Any(item => item.Key.Equals("SqlDevelopmentTestTls", StringComparison.OrdinalIgnoreCase));
+            if (section.Value is not null || (sectionPresent &&
+                (existing.Length != 3
+                    || existing.Any(item => item.GetChildren().Any())
+                    || !existing.Select(item => item.Key).ToHashSet(StringComparer.OrdinalIgnoreCase)
+                        .SetEquals(["Enabled", "Server", "Database"])
+                    || !bool.TryParse(section["Enabled"], out var enabled) || !enabled
+                    || !string.Equals(section["Server"], InspectionRunner.ExpectedServer, StringComparison.Ordinal)
+                    || !string.Equals(section["Database"], InspectionRunner.ExpectedDatabase, StringComparison.Ordinal))))
+                throw new InvalidOperationException();
+            configuration.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Medcom:SqlDevelopmentTestTls:Enabled"] = "true",
+                ["Medcom:SqlDevelopmentTestTls:Server"] = InspectionRunner.ExpectedServer,
+                ["Medcom:SqlDevelopmentTestTls:Database"] = InspectionRunner.ExpectedDatabase
+            });
+        }
         var resolved = ServerConfiguration.ResolveConnectionString(configuration, out _);
         var connection = new SqlConnectionStringBuilder(resolved);
         if (!string.Equals(connection.DataSource, InspectionRunner.ExpectedServer, StringComparison.Ordinal)
@@ -78,8 +117,9 @@ public static class Program
             || connection.ApplicationIntent != ApplicationIntent.ReadWrite
             || !string.IsNullOrWhiteSpace(connection.AttachDBFilename) || connection.UserInstance)
             throw new InvalidOperationException();
-        // Do not introduce or broaden certificate trust. Only the linked current policy may apply the
-        // owner's existing explicit development exception. Strict remains Strict when no exception applies.
+        // Only the unchanged shared policy applies the fixed development exception from existing
+        // settings or the explicit invocation. No persisted configuration or certificate is changed.
+        // Strict remains Strict when neither exception source applies.
         connection.ConnectTimeout = 5; connection.PersistSecurityInfo = false;
         connection.Pooling = false; connection.Enlist = false;
         connection.ApplicationName = "Medcom.TargetInspect";

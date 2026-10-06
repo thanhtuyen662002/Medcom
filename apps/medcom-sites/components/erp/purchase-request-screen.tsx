@@ -3,6 +3,7 @@ import {RequestButton,RequestInput,RequestNotice,RequestEmpty,RequestLoading,Req
 import {useCallback,useEffect,useLayoutEffect,useRef,useState,type FormEvent} from "react";
 import {MobileRequest,type MobileRequestAccess,type PurchaseRequestSnapshot} from "./mobile-request";
 import {useNavigationGuard} from "./navigation-guard";
+import {useRequestSelectionFocus} from "./request-selection-focus";
 import {ApiError} from "@/lib/erp/api";
 import {getPurchaseWorkspace,getPurchaseDocuments,postPurchaseCommand,type PurchaseWorkspace,type PurchasePage,type PurchaseReadback} from "@/lib/erp/purchase-request-api";
 import {createPurchaseCommandAdapter,commandPurchaseSnapshot} from "@/lib/erp/purchase-request-command-adapter";
@@ -129,12 +130,36 @@ function PurchaseRequestReader({workspace,boundary,sessionUnverified,onDenied,on
   if(editorRef.current?.bridge.hasPending()||work.current.unresolved){guardNavigation(()=>{});return;}
   guardNavigation(()=>{work.current={dirty:false,unresolved:false};action();});
  }
- function close(){move(()=>{editorRef.current?.bridge.retire();retain(null);setSelected(null);});}
- function find(event:FormEvent){event.preventDefault();move(()=>{setSearch(searchInput);setPage(1);setSelected(null);editorRef.current?.bridge.retire();retain(null);setRefresh(value=>value+1);});}
+ function open(documentId:string){
+  if(selected===documentId){
+   // This is focus only, not navigation. Do not accept a discard for a no-op
+   // selection: the mounted dirty editor must retain its registered guard.
+   if(editorRef.current?.bridge.hasPending()||work.current.unresolved){guardNavigation(()=>{});return;}
+   if(canRead&&!busy&&!verifying&&!freshRequired)focusOpen(documentId);
+   return;
+  }
+  move(()=>{focusOpen(documentId);setSelected(documentId);});
+ }
+ function close(){move(()=>{focusClose();editorRef.current?.bridge.retire();retain(null);setSelected(null);});}
+ function find(event:FormEvent){event.preventDefault();move(()=>{cancelFocus();setSearch(searchInput);setPage(1);setSelected(null);editorRef.current?.bridge.retire();retain(null);setRefresh(value=>value+1);});}
  const denied=active?.error instanceof ApiError&&[401,403,409].includes(active.error.status);
  const canRead=!!editor&&allowed&&verifiedWorkspace===workspace&&!denied&&!active?.error&&!active?.detailError&&editor.scopeKey===knownScope&&(editor.observation===workspace||sameReadAuthority(editor.observation,workspace))
   &&workspace?.branchIds.includes(editor.raw.document.branchId)===true&&selected===editor.raw.document.purchaseRequestId;
  const freshRequired=!!editor&&(editor.bridge.needsFreshRead()||busy||!!active?.error||!!active?.detailError||editor.observation!==workspace);
+ // Only a committed, current read may finish an explicitly accepted Open/Close.
+ // Read identity stays stable across harmless observations; revalidation still
+ // cancels pending movement without discarding this list's return destination.
+ const focusOwner=allowed&&verifiedWorkspace===workspace&&!denied&&workspace
+  ?JSON.stringify([boundary,workspaceReadViewScope(workspace),workspace.session.capabilities.slice().sort(),workspace.branchIds.slice().sort(),knownScope]):null;
+ const {open:focusOpen,close:focusClose,cancel:cancelFocus,row:registerFocusRow,detail:registerFocusDetail,list:registerFocusList}=useRequestSelectionFocus({owner:focusOwner,selected,listKey:JSON.stringify([search,safeBranch,page]),
+  openReady:canRead&&!busy&&!verifying&&!freshRequired&&active?.observation===workspace&&active?.detail?.document.purchaseRequestId===selected,
+  openFailed:!allowed||!!active?.error||!!active?.detailError,
+  listReady:!!active?.list&&!busy&&!verifying&&verifiedWorkspace===workspace&&!active?.error,
+  listFailed:!allowed||!!active?.error});
+ useLayoutEffect(()=>{cancelFocus();},[cancelFocus,workspace,verifying,refresh]);
+ // A newly confirmed receipt cancels movement; clearing an old editor during an
+ // accepted Open/Close must not cancel that new navigation's focus ticket.
+ useLayoutEffect(()=>{if(editor?.receiptId)cancelFocus();},[cancelFocus,editor?.receiptId]);
  const grant=editor?.grant,draft=editor?.raw.document.statusId===1&&editor.raw.document.isLocked!==true;
  const access:MobileRequestAccess={scopeKey:editor?.scopeKey??null,canRead,canEdit:canRead&&draft&&grant?.canSave===true&&!freshRequired,
   canSaveDraft:draft&&grant?.canSave===true,canSubmit:draft&&grant?.canSubmit===true,canReconcile:grant?.canLookup===true,
@@ -147,27 +172,27 @@ function PurchaseRequestReader({workspace,boundary,sessionUnverified,onDenied,on
  return <section aria-label="Danh sách đề nghị mua hàng" className={requestStyles.stack}>
   {!workspace?sessionUnverified?<RequestNotice>Đang xác minh phiên ERP để mở lại danh sách và phiếu đã chọn.</RequestNotice>:<RequestEmpty title="Danh sách đề nghị mua hàng"><span className="mb-4 block">Đăng nhập ERP để đọc đề nghị mua hàng.</span><RequestButton onClick={onLogin}>Đăng nhập ERP</RequestButton></RequestEmpty>:!allowed?<RequestNotice>Bạn không có quyền đọc đề nghị mua hàng trong phạm vi hiện tại.</RequestNotice>:verifiedWorkspace!==workspace?<section aria-label="Đang xác minh phạm vi mua hàng">
    {active?.error?<RequestError error={active.error}/>:<RequestLoading label="Đang xác minh phạm vi và quyền ERP…"/>}
-   {!!active?.error&&<RequestButton type="button" onClick={()=>setRefresh(value=>value+1)}>Xác minh lại phạm vi ERP</RequestButton>}
+   {!!active?.error&&<RequestButton type="button" onClick={()=>{cancelFocus();setRefresh(value=>value+1);}}>Xác minh lại phạm vi ERP</RequestButton>}
   </section>:<div className={requestStyles.panel}>
-   <div className={requestStyles.header}><div className="grid gap-1"><h2 className={requestStyles.title}>Danh sách đề nghị</h2><p id="purchase-write-qualification" className={requestStyles.muted}>Chỉ mở các phiếu hiện có.</p></div><RequestButton disabled className="request-unavailable" aria-describedby="purchase-write-qualification">Tạo đề nghị</RequestButton></div>
+   <div className={requestStyles.header}><div className="grid gap-1"><h2 ref={registerFocusList} tabIndex={-1} className={`${requestStyles.title} scroll-mt-24`}>Danh sách đề nghị</h2><p id="purchase-write-qualification" className={requestStyles.muted}>Chỉ mở các phiếu hiện có.</p></div><RequestButton disabled className="request-unavailable" aria-describedby="purchase-write-qualification">Tạo đề nghị</RequestButton></div>
    <form onSubmit={find} className="grid min-w-0 gap-3 border-b border-border p-4 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto] sm:items-end sm:p-5"><label className={requestStyles.field}>Tìm mã đề nghị <RequestInput placeholder="Nhập mã đề nghị…" value={searchInput} maxLength={100} onChange={event=>setSearchInput(event.target.value)}/></label>
     <RequestButton type="submit" variant="secondary" disabled={busy}>Tìm kiếm</RequestButton>
-    <label className={requestStyles.field}>Chi nhánh <select aria-label="Chi nhánh" className="min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2 text-base font-normal" value={safeBranch} disabled={busy} onChange={event=>{const id=event.target.value;move(()=>{setBranch(id);setPage(1);setSelected(null);editorRef.current?.bridge.retire();retain(null);});}}><option value="">Tất cả chi nhánh được phép</option>{(active?.bootstrap?.branchIds??[]).map(id=><option key={id} value={id}>{id}</option>)}</select></label>
-    <RequestButton type="button" disabled={busy} onClick={()=>move(()=>setRefresh(value=>value+1))}>Làm mới</RequestButton>
+    <label className={requestStyles.field}>Chi nhánh <select aria-label="Chi nhánh" className="min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2 text-base font-normal" value={safeBranch} disabled={busy} onChange={event=>{const id=event.target.value;move(()=>{cancelFocus();setBranch(id);setPage(1);setSelected(null);editorRef.current?.bridge.retire();retain(null);});}}><option value="">Tất cả chi nhánh được phép</option>{(active?.bootstrap?.branchIds??[]).map(id=><option key={id} value={id}>{id}</option>)}</select></label>
+    <RequestButton type="button" disabled={busy} onClick={()=>move(()=>{cancelFocus();setRefresh(value=>value+1);})}>Làm mới</RequestButton>
    </form>
    {busy&&!active?.list?<RequestLoading label="Đang đọc ERP…"/>:active?.error?<RequestError error={active.error}/>:<>
     <div className={requestStyles.cards}>{active?.list?.rows.map(row=><article key={row.documentId} className={requestStyles.card}>
      <div className={requestStyles.cardHeading}><strong>{row.documentId}</strong><RequestStatus value={row.statusId}/></div>
      <dl className={requestStyles.values}><div><dt>Ngày đề nghị</dt><dd>{requestDate(row.purchaseDate)}</dd></div><div><dt>Chi nhánh</dt><dd>{row.branchId}</dd></div><div><dt>Người đề nghị</dt><dd>{row.personSuggest||"Chưa có thông tin"}</dd></div><div><dt>Phòng ban</dt><dd>{row.department||"Chưa có thông tin"}</dd></div></dl>
-     <RequestButton onClick={()=>move(()=>setSelected(row.documentId))} aria-label={`Mở đề nghị ${row.documentId}`}>Mở đề nghị</RequestButton>
+     <RequestButton ref={element=>registerFocusRow(row.documentId,element)} className="scroll-mt-24 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" onClick={()=>open(row.documentId)} aria-label={`Mở đề nghị ${row.documentId}`}>Mở đề nghị</RequestButton>
     </article>)}{active?.list?.rows.length===0&&<RequestEmpty title="Không có đề nghị phù hợp">Thử điều chỉnh mã đề nghị hoặc chi nhánh.</RequestEmpty>}</div>
-    <nav aria-label="Phân trang đề nghị" className={requestStyles.footer}><RequestButton disabled={page===1} onClick={()=>move(()=>{setPage(value=>value-1);setSelected(null);editorRef.current?.bridge.retire();retain(null);})}>Trang trước</RequestButton><span>Trang {page}</span><RequestButton disabled={!active?.list?.hasMore||page>=1000} onClick={()=>move(()=>{setPage(value=>value+1);setSelected(null);editorRef.current?.bridge.retire();retain(null);})}>Trang sau</RequestButton></nav>
+    <nav aria-label="Phân trang đề nghị" className={requestStyles.footer}><RequestButton disabled={page===1} onClick={()=>move(()=>{cancelFocus();setPage(value=>value-1);setSelected(null);editorRef.current?.bridge.retire();retain(null);})}>Trang trước</RequestButton><span>Trang {page}</span><RequestButton disabled={!active?.list?.hasMore||page>=1000} onClick={()=>move(()=>{cancelFocus();setPage(value=>value+1);setSelected(null);editorRef.current?.bridge.retire();retain(null);})}>Trang sau</RequestButton></nav>
    </>}
    {selected&&<div className={requestStyles.footer}><h3 className={`${requestStyles.title} min-w-0 max-w-full [overflow-wrap:anywhere]`}>{selected}</h3><RequestButton onClick={close}>Đóng đề nghị</RequestButton></div>}
    {!!active?.detailError&&<RequestError error={active.detailError}/>}
   </div>}
   {/* Outside the busy/error/selection fragment. Never key by token or discard an unknown intent. */}
-  {editor&&<section aria-label="Phiếu mua hàng hiện có" hidden={!canRead}><div className={requestStyles.stack}>
+  {editor&&<section ref={registerFocusDetail} aria-label="Phiếu mua hàng hiện có" tabIndex={-1} className="scroll-mt-24 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" hidden={!canRead}><div className={requestStyles.stack}>
    <MobileRequest initial={editor.snapshot} access={access} adapter={editor.bridge.adapter} readRevision={editor.revision} onConfirmed={onConfirmed} onWorkStateChange={onWorkStateChange}/>
    {canRead&&<>{editor.receiptId&&<p role="status">ERP đã xác nhận yêu cầu {editor.receiptId}. Receipt vẫn được giữ khi đọc lại thất bại.</p>}
     <FullPurchaseReadback readback={editor.raw}/></>}

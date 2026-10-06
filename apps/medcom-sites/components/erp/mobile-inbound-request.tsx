@@ -6,7 +6,8 @@ import {useDirtyGuard} from "./navigation-guard";
 import {accessAvailable,buildCommand,canSend,commandBytes,commandResult,draftErrors,lineKey,observedView,outcomeMessage,sameDraft,sameSnapshot,snapshotAcknowledges,
   type InboundDraftAccess,type InboundDraftAdapter,type InboundDraftCommand,type InboundDraftDetailUpsert,type InboundDraftHeader,type InboundDraftReceipt,type InboundDraftView} from "@/lib/erp/inbound-draft";
 
-export type MobileInboundRequestProps={documentId:string|null;access:InboundDraftAccess;adapter?:InboundDraftAdapter;onConfirmed?:(receipt:InboundDraftReceipt)=>void};
+export type InboundPresentedRead={documentId:string;scopeKey:string;state:"pending"|"ready"|"failed"};
+export type MobileInboundRequestProps={documentId:string|null;access:InboundDraftAccess;adapter?:InboundDraftAdapter;onConfirmed?:(receipt:InboundDraftReceipt)=>void;onPresentedRead?:(event:InboundPresentedRead)=>void};
 type Phase="empty"|"loading"|"editing"|"checking"|"pending"|"unknown"|"reconciling"|"failed"|"conflict"|"confirmed"|"readFailed";
 type Binding={documentId:string|null;rights:string;adapter:InboundDraftAdapter|undefined};
 type State={view:InboundDraftView|null;viewBinding:Binding|null;header:InboundDraftHeader|null;details:InboundDraftDetailUpsert[];phase:Phase;
@@ -20,7 +21,7 @@ const unknownMessage=outcomeMessage.OutcomeUnknown;
 /** Injected fixed workflow only. The host must guard document selection/navigation.
  * Keep this component mounted for unresolved custody; key ONLY by login scope. */
 export function MobileInboundRequest(props:MobileInboundRequestProps){return <InboundEditor key={JSON.stringify([props.access.scopeKey])} {...props}/>;}
-function InboundEditor({documentId,access,adapter,onConfirmed}:MobileInboundRequestProps){
+function InboundEditor({documentId,access,adapter,onConfirmed,onPresentedRead}:MobileInboundRequestProps){
   const notify=useRequestNotifications(access.scopeKey,access.canRead&&access.available);
   const [state,setState]=useState<State>(empty),[note,setNote]=useState<string|null>(null),[page,setPage]=useState(1);
   const rights=JSON.stringify([access.scopeKey,access.canRead,access.canSave,access.canSend,access.available,access.maxCommandBytes]);
@@ -39,6 +40,9 @@ function InboundEditor({documentId,access,adapter,onConfirmed}:MobileInboundRequ
   const generation=useRef(0),lock=useRef(false),latest=useRef(state);
   const form=useRef<HTMLFormElement|null>(null);
   const active=useRef<{controller:AbortController;kind:"read"|"check"|"execute"|"reconcile"}|null>(null);
+  // Presentation evidence only. A new read nonce invalidates this proof even
+  // while the prior document fields remain mounted during an explicit reread.
+  const acceptedPresentedRead=useRef<{binding:Binding;nonce:number}|null>(null);
   const live=useRef({documentId,access,adapter,onConfirmed,binding});
   useLayoutEffect(()=>{latest.current=state;},[state]);
   useLayoutEffect(()=>{
@@ -58,6 +62,7 @@ function InboundEditor({documentId,access,adapter,onConfirmed}:MobileInboundRequ
     if(!readTarget||!readEligible||!adapter)return;
     const prior=latest.current;
     if(prior.phase==="editing"&&prior.viewBinding===binding&&!awaitingSnapshot)return;
+    const presentedReadNonce=state.readNonce;
     const controller=new AbortController(),token=++generation.current,transport=adapter;
     active.current={controller,kind:"read"};lock.current=true;
     const current=()=>generation.current===token&&!controller.signal.aborted&&live.current.binding===binding;
@@ -71,6 +76,7 @@ function InboundEditor({documentId,access,adapter,onConfirmed}:MobileInboundRequ
       if(!current())return;
       const view=observedView(response,readTarget);if(!view)throw new Error("read_not_observed");
       if(awaitingSnapshot&&!snapshotAcknowledges(view,awaitingSnapshot)){mismatchedReceipt=true;throw new Error("receipt_snapshot_mismatch");}
+      acceptedPresentedRead.current={binding,nonce:presentedReadNonce};
       setState(previous=>{
         const retain=previous.retainEdits&&previous.view?.documentId===readTarget&&!!previous.header;
         const conflict=retain&&!!previous.view&&!sameSnapshot(previous.view,view);
@@ -96,6 +102,26 @@ function InboundEditor({documentId,access,adapter,onConfirmed}:MobileInboundRequ
   const bound=bindingCurrent&&state.viewBinding===binding&&state.view?.documentId===documentId&&!!access.scopeKey&&access.canRead;
   const unresolved=state.original!==null,busy=["loading","checking","pending","reconciling"].includes(state.phase);
   const service=!!adapter&&accessAvailable(access),currentView=bound?state.view:null;
+  const presentedRead=useRef<{binding:Binding;view:InboundDraftView|null;phase:Phase;nonce:number;status:InboundPresentedRead["state"]}|null>(null);
+  useLayoutEffect(()=>{
+    // Notify only after I18 has committed its own current full-DTO validation.
+    // Bootstrap grants and transport completion are not presentation proof.
+    if(!onPresentedRead||!documentId||!access.scopeKey||!access.canRead||!service
+      ||!bindingCurrent||live.current.binding!==binding)return;
+    const accepted=acceptedPresentedRead.current;
+    const status=state.phase==="readFailed"?"failed"
+      :accepted?.binding===binding&&accepted.nonce===state.readNonce
+        &&bound&&currentView&&state.header&&!unresolved&&!state.awaitingSnapshot
+        &&(state.phase==="editing"||state.phase==="conflict"&&state.retainEdits)?"ready":"pending";
+    const previous=presentedRead.current;
+    if(previous?.binding===binding&&previous.nonce===state.readNonce&&previous.status===status
+      &&(status!=="ready"||previous.view===currentView&&previous.phase===state.phase))return;
+    presentedRead.current={binding,view:currentView,phase:state.phase,nonce:state.readNonce,status};
+    // A presentation consumer cannot turn a successful read into a failure or
+    // interfere with command/receipt custody, even if it returns a rejection.
+    try{void Promise.resolve(onPresentedRead({documentId,scopeKey:access.scopeKey,state:status})).catch(()=>undefined);}catch{}
+  },[onPresentedRead,documentId,access.scopeKey,access.canRead,service,bindingCurrent,binding,bound,currentView,
+    state.header,state.phase,state.awaitingSnapshot,state.retainEdits,state.readNonce,unresolved]);
   const dirty=!!currentView&&!!state.header&&!sameDraft(currentView,state.header,state.details);
   // Send-only input belongs to this document/login, not to a validated snapshot.
   // Keep its guard across hidden/unbound revalidation and read-only Send preflight;

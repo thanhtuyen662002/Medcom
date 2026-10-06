@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I33",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "25bd178e-460b-43ed-ad26-2eca3950f490",
+  "base_sha": "4a791d10404b28ede59c51912b0f07fee7a3bd36",
+  "work_branch": "codex/g45-request-selection-readonly-i33-20261006",
+  "claim_branch": "medcom-claims/g45/direct/I33",
+  "scope": [
+    "apps/medcom-sites/components/erp/request-selection-focus.ts",
+    "apps/medcom-sites/components/erp/purchase-request-screen.tsx",
+    "apps/medcom-sites/components/erp/inbound-request-screen.tsx",
+    "apps/medcom-sites/components/erp/mobile-inbound-request.tsx",
+    "apps/medcom-sites/tests/request-presentation.browser.mjs",
+    "apps/medcom-sites/tests/purchase-request-integration.test.mjs",
+    "apps/medcom-sites/tests/inbound-request-integration.test.mjs",
+    "apps/medcom-sites/tests/mobile-inbound-request.test.mjs",
+    "apps/medcom-sites/components/erp/inbound-request-readonly.tsx",
+    "docs/execution/checkpoints/I33_REQUEST_SELECTION_READONLY.md",
+    "docs/execution/direct-runs/I33.json"
+  ],
+  "purpose": "Explicit request Open/Close focus and a separately authorized inbound read-only fallback",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "constraints": [
+    "No backend authority relaxation or invented command availability. The real inbound draft endpoint ties CanRead to UpdateGranted plus command service availability; a separate READ projection does not change that gate.",
+    "No focus based solely on selected ID, bootstrap access, transport completion, timers or DOM mutation/test-hook inference.",
+    "No request retries, polling or persistent storage introduced by interaction code; no raw errors, grants, scope markers or customer data in UI/test artifacts.",
+    "Root alone admits/publishes. Deliver serial exact-path deltas with verified preimages; no stale whole-tree replacement or production-runtime acceptance claims.",
+    "Implement and independently review guarded Open/Close focus before the separate inbound read-only fallback. Preserve current20 presentation and28 built lifecycle cases; add real full-list20/50-row pointer/keyboard tests at320/390/1440 and authority/dirty/pending/late-response scenarios.",
+    "Focus tickets are armed only by accepted explicit actions and consumed after current authorized detail commits. Never arm from polls, refresh or ACK; cancel on supersession, failure, authority loss or later user interaction. Preserve mounted editor custody.",
+    "Fallback uses only the existing scoped getDetail inbound READ endpoint for positively identified command unavailability. Never reinterpret401/403/404/409 or network/malformed errors as fallback authority. Preserve typed exact values and explicit paging; never feed partial read DTO to the draft editor or release unresolved/receipt custody.",
+    "No backend/API/BFF/SQL/config/dependency changes; source fixes stay in exact admitted paths. Root sole publisher, full exact-head/current-base CI and independent review required before merge."
+  ],
+  "created_at": "2026-10-06T18:35:00Z"
+}

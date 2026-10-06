@@ -52,6 +52,106 @@ test('detail failures retain a fresh list but never soften authorization or scop
  }finally{global.fetch=original;}
 });
 
+test('I33 purchase focus uses accepted current read evidence and stable read identity',async t=>{
+ // Execute the production readiness expressions. These are source/VM assertions,
+ // not claims about browser layout or ERP runtime behavior.
+ const source=await readFile(path.join(app,'components/erp/purchase-request-screen.tsx'),'utf8');
+ const file=ts.createSourceFile('purchase-request-screen.tsx',source,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX),values=new Map();let options,sameAuthority;
+ const visit=node=>{
+  if(ts.isVariableDeclaration(node)&&node.initializer)values.set(node.name.getText(file),node.initializer.getText(file));
+  if(ts.isCallExpression(node)&&node.expression.getText(file)==='useRequestSelectionFocus')options=node.arguments[0].getText(file);
+  if(ts.isFunctionDeclaration(node)&&node.name?.text==='sameReadAuthority')sameAuthority=node.getText(file);
+  ts.forEachChild(node,visit);
+ };visit(file);assert.ok(options&&sameAuthority);
+ const names=['allowed','safeBranch','key','active','busy','denied','canRead','freshRequired','focusOwner'];
+ for(const name of names)assert.ok(values.has(name),`missing production ${name}`);
+ const declarations=names.map(name=>`const ${name}=${values.get(name)};`).join('\n');
+ const code=ts.transpileModule(`${sameAuthority}\nfunction identity(){const safeBranch=${values.get('safeBranch')};return ${values.get('key')};}\nfunction read(){${declarations}\nreturn ${options};}\n({read,identity});`,{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
+ function fixture(){
+  class ReadError extends Error{constructor(status){super('synthetic');this.status=status;}}
+  const workspace={session:{capabilities:['purchase-requests.read']},branchIds:['QA-A'],sessionScope:'session-a',readScope:'read-a'};
+  const context={workspace,verifiedWorkspace:workspace,boundary:'login-a',knownScope:scope,selected:'QA-000',search:'',branch:'',page:1,refresh:0,verifying:false,
+   editor:{raw:readback(),scopeKey:scope,observation:workspace,bridge:{needsFreshRead:()=>false}},
+   state:{key:'',refresh:0,observation:workspace,scopeKey:scope,detail:readback(),list:{rows:[]},loading:false},
+   workspaceReadViewScope:value=>JSON.stringify([value.sessionScope,value.readScope]),ApiError:ReadError};
+  const functions=runInNewContext(code,context);context.state.key=functions.identity();return{...functions,context,ReadError};
+ }
+ await t.test('ready requires full selected detail but does not require command permission',()=>{
+  const f=fixture(),ready=f.read();assert.equal(ready.openReady,true);assert.equal(ready.openFailed,false);assert.equal(ready.listReady,true);assert.ok(ready.owner);
+  f.context.state.detail=undefined;assert.equal(f.read().openReady,false);
+  f.context.state.detail=readback(document('QA-OTHER'));assert.equal(f.read().openReady,false);
+ });
+ for(const [name,change] of [
+  ['stale selection key',f=>{f.context.state.key='old-selection';}],
+  ['superseded document',f=>{f.context.selected='QA-OTHER';}],
+  ['unfinished refresh',f=>{f.context.refresh++;}],
+  ['loading',f=>{f.context.state.loading=true;}],
+  ['workspace verification',f=>{f.context.verifying=true;}],
+  ['unverified workspace',f=>{f.context.verifiedWorkspace=null;}],
+  ['stale observation',f=>{f.context.workspace={...f.context.workspace};f.context.verifiedWorkspace=f.context.workspace;}],
+  ['detail failure',f=>{f.context.state.detailError=new f.ReadError(503);}],
+  ['authority denial',f=>{f.context.state.error=new f.ReadError(403);}],
+  ['lost read capability',f=>{f.context.workspace.session.capabilities=[];}],
+  ['lost selected branch',f=>{f.context.workspace.branchIds=['QA-B'];}],
+  ['post-ACK fresh read requirement',f=>{f.context.editor.bridge.needsFreshRead=()=>true;}],
+ ])await t.test(`${name} cannot admit focus`,()=>{const f=fixture();change(f);assert.equal(f.read().openReady,false);});
+ await t.test('owner and return list stay stable across selection and harmless refresh, but not scope/filter/page changes',()=>{
+  const f=fixture(),first=f.read();f.context.selected=null;f.context.refresh++;let next=f.read();assert.equal(next.owner,first.owner);assert.equal(next.listKey,first.listKey);
+  f.context.search='OTHER';assert.notEqual(f.read().listKey,first.listKey);f.context.search='';f.context.page=2;assert.notEqual(f.read().listKey,first.listKey);
+  f.context.page=1;f.context.branch='QA-A';assert.notEqual(f.read().listKey,first.listKey);
+  f.context.workspace={...f.context.workspace,readScope:'read-b'};f.context.verifiedWorkspace=f.context.workspace;assert.notEqual(f.read().owner,first.owner);
+  f.context.workspace=null;assert.equal(f.read().owner,null);
+ });
+});
+
+test('I33 purchase Open/Close only arm after accepted movement; same-document focus preserves dirty custody',async t=>{
+ const source=await readFile(path.join(app,'components/erp/purchase-request-screen.tsx'),'utf8');
+ const file=ts.createSourceFile('purchase-request-screen.tsx',source,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX),bodies=[];let confirmed,cancelRefresh,cancelReceipt;
+ const visit=node=>{
+  if(ts.isFunctionDeclaration(node)&&['move','open','close','find'].includes(node.name?.text))bodies.push(node.getText(file));
+  if(ts.isVariableDeclaration(node)&&node.name.getText(file)==='onConfirmed')confirmed=node.initializer.arguments[0].getText(file);
+  if(ts.isCallExpression(node)&&node.expression.getText(file)==='useLayoutEffect'&&node.arguments[0]?.getText(file).includes('cancelFocus()')){
+   if(node.arguments[1].getText(file).includes('workspace'))cancelRefresh=node;else if(node.arguments[1].getText(file).includes('receiptId'))cancelReceipt=node;
+  }
+  ts.forEachChild(node,visit);
+ };visit(file);assert.equal(bodies.length,4);assert.ok(confirmed&&cancelRefresh&&cancelReceipt);
+ assert.match(cancelRefresh.arguments[1].getText(file),/workspace,verifying,refresh/);
+ assert.match(cancelReceipt.arguments[1].getText(file),/editor\?\.receiptId/);
+ const code=ts.transpileModule(`${bodies.join('\n')}\n({open,close,find,confirmed:${confirmed},revalidate:${cancelRefresh.arguments[0].getText(file)},receipt:${cancelReceipt.arguments[0].getText(file)}});`,{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
+ function fixture(){
+  const calls=[];let guarded,pending=false;
+  const bridge={hasPending:()=>pending,retire:()=>calls.push('retire'),currentReadback:()=>readback()};
+  const context={selected:'QA-000',canRead:true,busy:false,verifying:false,freshRequired:false,work:{current:{dirty:true,unresolved:false}},editorRef:{current:{bridge,raw:readback()}},
+   focusOpen:id=>calls.push(['open',id]),focusClose:()=>calls.push('close'),cancelFocus:()=>calls.push('cancel'),
+   guardNavigation:action=>{guarded=action;},setSelected:id=>{calls.push(['selected',id]);context.selected=id;},retain:value=>{calls.push(['retain',value]);context.editorRef.current=value;context.editor=value;},
+   searchInput:'SYNTHETIC FILTER',setSearch:value=>calls.push(['search',value]),setPage:value=>calls.push(['page',value]),setRefresh:()=>calls.push('refresh')};
+  return{...runInNewContext(code,context),context,calls,pending:value=>{pending=value;},accept:()=>{assert.ok(guarded);const action=guarded;guarded=null;action();},cancel:()=>{guarded=null;},guarded:()=>!!guarded};
+ }
+ await t.test('cancelled Open and Close leave selection, editor and focus untouched',()=>{
+  const f=fixture();f.open('QA-001');assert.equal(f.guarded(),true);assert.deepEqual(f.calls,[]);f.cancel();assert.equal(f.context.selected,'QA-000');assert.equal(f.context.work.current.dirty,true);
+  f.close();assert.deepEqual(f.calls,[]);f.cancel();assert.ok(f.context.editorRef.current);
+ });
+ await t.test('accepted different Open and Close arm in their original guarded callback',()=>{
+  let f=fixture();f.open('QA-001');f.accept();assert.deepEqual(f.calls,[['open','QA-001'],['selected','QA-001']]);assert.equal(f.context.work.current.dirty,false);
+  f=fixture();f.close();f.accept();assert.deepEqual(f.calls,['close','retire',['retain',null],['selected',null]]);
+ });
+ await t.test('same-document explicit focus neither requests discard nor mutates the dirty draft/guard',()=>{
+  const f=fixture(),work=f.context.work.current,editor=f.context.editorRef.current;f.open('QA-000');assert.deepEqual(f.calls,[['open','QA-000']]);assert.equal(f.guarded(),false);assert.equal(f.context.work.current,work);assert.equal(work.dirty,true);assert.equal(f.context.editorRef.current,editor);
+  f.close();assert.equal(f.guarded(),true);assert.equal(f.calls.length,1,'the next real navigation must still wait for its dirty guard');
+ });
+ for(const mode of ['pending','unresolved'])await t.test(`${mode} custody blocks repeated and different Open and Close`,()=>{
+  for(const action of [f=>f.open('QA-000'),f=>f.open('QA-001'),f=>f.close()]){const f=fixture();if(mode==='pending')f.pending(true);else f.context.work.current.unresolved=true;action(f);f.accept();assert.deepEqual(f.calls,[]);assert.equal(f.context.work.current.dirty,true);}
+ });
+ await t.test('refresh/revalidation/ACK cancel rather than arm; filter cancellation waits for acceptance',()=>{
+  let f=fixture();f.revalidate();assert.deepEqual(f.calls,['cancel']);f.calls.length=0;f.confirmed({documentId:'QA-000'},'synthetic-receipt');assert.equal(f.context.editorRef.current.receiptId,'synthetic-receipt');f.receipt();assert.equal(f.calls.at(-1),'cancel');assert.equal(f.calls.some(value=>Array.isArray(value)&&value[0]==='open'),false);
+  f=fixture();let prevented=false;f.find({preventDefault:()=>{prevented=true;}});assert.equal(prevented,true);assert.deepEqual(f.calls,[]);f.accept();assert.equal(f.calls[0],'cancel');assert.equal(f.calls.at(-1),'refresh');
+ });
+ await t.test('accepted Close clearing a prior receipt keeps its newly armed return ticket',()=>{
+  const f=fixture();f.context.editor=f.context.editorRef.current;f.context.editor.receiptId='previous-receipt';f.close();f.accept();f.receipt();assert.deepEqual(f.calls,['close','retire',['retain',null],['selected',null]]);
+  f.context.editor={};f.calls.length=0;f.receipt();assert.deepEqual(f.calls,[],'a newly opened editor without a receipt does not cancel its Open ticket');
+ });
+});
+
 test('production session continuations cannot mutate a retired account',async()=>{
  // Execute the actual function bodies with synthetic I/O, not a second implementation.
  const source=await readFile(path.join(app,'components/erp/workspace.tsx'),'utf8');
@@ -123,7 +223,7 @@ test('real HTTP → BFF → existing workspace/browser purchase controls and aut
  const records=Array.from({length:25},(_,index)=>document(`QA-${String(index).padStart(3,'0')}`,index%2?'QA-B':'QA-A'));
  records.push(document('QA-LARGE','QA-A',101));const nullable=document('QA-NULL','QA-A');nullable.header.purchaseDate=null;records.push(nullable);
  const lifetime={idleExpiresAt:new Date(Date.now()+3600000).toISOString(),absoluteExpiresAt:new Date(Date.now()+7200000).toISOString()};
- const state={scope,displayName:'SYNTHETIC USER',branches:['QA-A','QA-B'],canRead:true,authenticated:true,hold:false,release:null,started:null};const calls=[];
+ const state={scope,displayName:'SYNTHETIC USER',branches:['QA-A','QA-B'],canRead:true,authenticated:true,hold:false,release:null,started:null,detailFailure:null};const calls=[];
  function workspace(){return {session:{displayName:state.displayName,tenantId:'qa-tenant',companyId:'qa-company',companyName:'SYNTHETIC COMPANY',authorityVersion:1,
   ...lifetime,capabilities:state.canRead?['purchase-requests.read']:[]},
   navigation:state.canRead?[{id:'purchase-requests',label:'Đề nghị mua hàng',href:'/workspace/?screen=purchase-requests'}]:[],branchIds:state.branches};}
@@ -144,6 +244,7 @@ test('real HTTP → BFF → existing workspace/browser purchase controls and aut
    return send(response,200,envelope({rows:filtered.slice((page-1)*size,page*size).map(record=>({documentId:record.purchaseRequestId,purchaseDate:record.header.purchaseDate,branchId:record.branchId,personSuggest:record.header.personSuggest,department:record.header.department,statusId:record.statusId,isLocked:record.isLocked})),page,pageSize:size,hasMore:filtered.length>page*size}));
   }
   if(url.pathname==='/api/purchase-requests/detail'){
+   if(state.detailFailure)return send(response,state.detailFailure,{code:'synthetic_detail_failure'});
    const record=records.find(record=>record.purchaseRequestId===url.searchParams.get('documentId')&&state.branches.includes(record.branchId));
    if(!record)return send(response,404,{code:'purchase_request_not_found'});
    const answer=envelope(readback(structuredClone(record)));
@@ -197,11 +298,16 @@ test('real HTTP → BFF → existing workspace/browser purchase controls and aut
   });
   async function find(id){await screen.getByLabel('Tìm mã đề nghị',{exact:true}).fill(id);await screen.getByRole('button',{name:'Tìm kiếm',exact:true}).click();await screen.getByRole('button',{name:`Mở đề nghị ${id}`,exact:true}).waitFor();}
   async function expandFullReadback(){const detail=screen.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true});await detail.waitFor();const disclosure=detail.locator('details');if(!await disclosure.evaluate(el=>el.open))await disclosure.locator('summary').click();}
+  const focusRegion='[aria-label="Phiếu mua hàng hiện có"]';
+  async function focused(selector){await page.waitForFunction(value=>document.activeElement?.matches(value),selector);}
+  async function focusPaint(){await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));}
   await t.test('open/refresh/close preserve precise values and the full hidden header',async()=>{
    await screen.getByRole('button',{name:'Mở đề nghị QA-003',exact:true}).click();const detail=screen.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true});await detail.waitFor();
+   await focused(focusRegion);assert.equal(await screen.getByRole('region',{name:'Phiếu mua hàng hiện có',exact:true}).getAttribute('tabindex'),'-1');
    await expandFullReadback();assert.match(await detail.innerText(),/2026-10-06T13:14:15.000/);assert.match(await detail.innerText(),/15.25/);assert.match(await detail.innerText(),/999999999999999999/);
    const before=calls.filter(call=>call.path.endsWith('/detail')).length;const refreshed=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/erp/api/purchase-requests/detail');await screen.getByRole('button',{name:'Làm mới',exact:true}).click();await refreshed;await detail.waitFor();assert.ok(calls.filter(call=>call.path.endsWith('/detail')).length>before);
    await screen.getByRole('button',{name:'Đóng đề nghị',exact:true}).click();await screen.getByRole('button',{name:'Mở đề nghị QA-003',exact:true}).waitFor();assert.equal(await detail.count(),0);
+   await focused('[aria-label="Mở đề nghị QA-003"]');
   });
   await t.test('101 lines and nullable source date have complete read-only fallback without truncation',async()=>{
    await find('QA-LARGE');await screen.getByRole('button',{name:'Mở đề nghị QA-LARGE',exact:true}).click();await expandFullReadback();const table=screen.getByRole('table',{name:'Toàn bộ dòng đề nghị',exact:true});await table.waitFor();assert.equal(await table.locator('tbody tr').count(),101);assert.match(await table.innerText(),/QA-L101/);
@@ -226,11 +332,30 @@ test('real HTTP → BFF → existing workspace/browser purchase controls and aut
     assert.equal(await screen.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true}).count(),0);assert.equal(await screen.getByLabel('Tìm mã đề nghị',{exact:true}).inputValue(),'');
    }
   });
+  await t.test('I33 held Open waits for accepted detail; a later user interaction cancels focus',async()=>{
+   await page.evaluate(()=>window.qa.controlled());await find('QA-000');
+   state.hold=true;const started=new Promise(resolve=>{state.started=resolve;});await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).click();await started;
+   assert.equal(await screen.getByRole('region',{name:'Phiếu mua hàng hiện có',exact:true}).count(),0);
+   const input=screen.getByLabel('Tìm mã đề nghị',{exact:true});await input.click();state.hold=false;state.release();
+   await screen.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true}).waitFor();await focusPaint();assert.equal(await input.evaluate(element=>element===document.activeElement),true);
+   await screen.getByRole('button',{name:'Đóng đề nghị',exact:true}).click();await focused('[aria-label="Mở đề nghị QA-000"]');
+  });
+  await t.test('I33 failed and superseded reads never create a deferred detail focus',async()=>{
+   await page.evaluate(()=>{window.purchaseDetailFocuses=0;document.addEventListener('focusin',event=>{if(event.target.matches?.('[aria-label="Phiếu mua hàng hiện có"]'))window.purchaseDetailFocuses++;});});
+   state.detailFailure=503;await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).click();await screen.getByRole('alert').waitFor();await focusPaint();assert.equal(await page.evaluate(()=>window.purchaseDetailFocuses),0);
+   state.detailFailure=null;await screen.getByRole('button',{name:'Làm mới',exact:true}).click();await screen.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true}).waitFor();await focusPaint();assert.equal(await page.evaluate(()=>window.purchaseDetailFocuses),0,'refresh cannot revive a failed Open ticket');
+   await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).click();await focused(focusRegion);assert.equal(await page.evaluate(()=>window.purchaseDetailFocuses),1,'a fresh explicit same-document Open may focus');
+   await screen.getByRole('button',{name:'Đóng đề nghị',exact:true}).click();await focused('[aria-label="Mở đề nghị QA-000"]');
+   state.hold=true;const started=new Promise(resolve=>{state.started=resolve;});await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).click();await started;
+   await screen.getByRole('button',{name:'Đóng đề nghị',exact:true}).click();await focused('[aria-label="Mở đề nghị QA-000"]');state.hold=false;state.release();await focusPaint();
+   assert.equal(await page.evaluate(()=>window.purchaseDetailFocuses),1);assert.equal(await screen.getByRole('region',{name:'Phiếu mua hàng hiện có',exact:true}).count(),0);
+  });
   await t.test('late result after a login boundary is discarded, and grant denial removes rows',async()=>{
    await page.evaluate(()=>window.qa.controlled());await find('QA-000');state.hold=true;const started=new Promise(resolve=>{state.started=resolve;});
    await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).click();await started;
    state.canRead=false;await page.evaluate(()=>window.qa.authority(true));state.hold=false;state.release();await page.getByText('Bạn không có quyền đọc đề nghị mua hàng trong phạm vi hiện tại.',{exact:true}).waitFor();
    await page.waitForTimeout(50);assert.equal(await page.getByRole('table',{name:'Toàn bộ dòng đề nghị',exact:true}).count(),0);assert.equal(await page.getByRole('article').count(),0);
+   assert.equal(await page.evaluate(()=>document.activeElement?.matches('[aria-label="Phiếu mua hàng hiện có"]')),false);
   });
   assert.deepEqual(errors,[]);assert.equal(calls.some(call=>call.method!=='GET'),false);await writeFile(path.join(output,'browser-evidence.json'),JSON.stringify({node:process.version,browser:browser.version(),viewport:[390,844],calls:calls.length,nonGetCalls:0,errors},null,2));
  }catch(error){await writeFile(path.join(output,'synthetic-failure.json'),JSON.stringify({errors,calls,body:await page?.locator('body').innerText().catch(()=>''),error:String(error)},null,2));throw error;}
@@ -515,7 +640,7 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
  }
  const paint=()=>page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
  let screen;
- async function begin(mode,{expiry}={}){
+ async function begin(mode,{expiry,focusOnly=false}={}){
   state?.releaseSave?.();state?.releaseScope?.();state?.releaseWorkspace?.();await context?.close();reset(mode);
   const now=Date.now();if(expiry){const soon=new Date(now+30000).toISOString(),far=new Date(now+300000).toISOString();state.lifetime={idleExpiresAt:expiry==='idle'?soon:far,absoluteExpiresAt:expiry==='absolute'?soon:far};}
   context=await browser.newContext({viewport:{width:390,height:844}});
@@ -527,6 +652,7 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
   await screen.getByRole('button',{name:'Mở đề nghị QA-CUSTODY',exact:true}).waitFor();
   await page.waitForLoadState('networkidle');await screen.getByLabel('Tìm mã đề nghị',{exact:true}).fill('FILTER-CUSTODY');await screen.getByRole('button',{name:'Mở đề nghị QA-CUSTODY',exact:true}).click();
   await screen.getByLabel('Ghi chú',{exact:true}).fill('SYNTHETIC ORIGINAL INTENT — giữ NULL/time/18 digits');
+  if(focusOnly)return;
   await screen.getByRole('button',{name:'Rà soát phiếu',exact:true}).click();
   const sent=page.waitForRequest(request=>new URL(request.url()).pathname==='/api/erp/api/purchase-requests/save');
   await screen.getByRole('button',{name:'Lưu nháp trên ERP',exact:true}).evaluate(button=>{button.click();button.click();});await sent;
@@ -576,6 +702,22 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
  }
  try{
   browser=await chromium.launch({executablePath:process.env.MEDCOM_EDGE_PATH||'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true,args:['--no-first-run','--disable-background-networking','--disable-component-update','--disable-default-apps','--no-default-browser-check']});
+  await t.test('I33 same-document focus keeps the dirty guard; Cancel stays and accepted Close returns to recreated Open',async()=>{
+   await begin('hold',{focusOnly:true});
+   const notes=screen.getByLabel('Ghi chú',{exact:true}),original=await notes.inputValue();
+   await screen.getByRole('button',{name:'Mở đề nghị QA-CUSTODY',exact:true}).click();
+   await page.waitForFunction(()=>document.activeElement?.matches('[aria-label="Phiếu mua hàng hiện có"]'));
+   assert.equal(await notes.inputValue(),original);assert.equal(await page.getByRole('alertdialog').count(),0);
+   assert.equal(await page.evaluate(()=>{const event=new Event('beforeunload',{cancelable:true});window.dispatchEvent(event);return event.defaultPrevented;}),true,'same-document focus must preserve the real dirty guard');
+   await screen.getByRole('button',{name:'Đóng đề nghị',exact:true}).click();await page.getByRole('alertdialog').waitFor();
+   await page.getByRole('button',{name:'Tiếp tục làm việc',exact:true}).click();await page.getByRole('alertdialog').waitFor({state:'hidden'});await paint();assert.equal(await notes.inputValue(),original);
+   assert.equal(await screen.getByRole('region',{name:'Phiếu mua hàng hiện có',exact:true}).isVisible(),true);
+   await screen.getByRole('button',{name:'Đóng đề nghị',exact:true}).click();await page.getByRole('alertdialog').waitFor();
+   await page.getByRole('button',{name:'Bỏ thay đổi và rời màn hình',exact:true}).click();await page.getByRole('alertdialog').waitFor({state:'hidden'});
+   await page.waitForFunction(()=>document.activeElement?.matches('[aria-label="Mở đề nghị QA-CUSTODY"]'));
+   assert.equal(await screen.getByRole('region',{name:'Phiếu mua hàng hiện có',exact:true}).count(),0);assert.equal(writers().length,0);
+   assert.equal(await screen.getByLabel('Tìm mã đề nghị',{exact:true}).inputValue(),'FILTER-CUSTODY');
+  });
   for(const mode of ['lost','hold'])for(const failure of ['network',503])await t.test(`Save ${mode} → background ${failure} → same session → exact original lookup`,async()=>{
    const original=await begin(mode);await suspend(failure);
    if(mode==='hold'){state.releaseSave();await page.waitForFunction(()=>window.custodyIO.replies===1);await paint();assert.ok(await page.evaluate(()=>window.custodyIO.aborted>=1));}
