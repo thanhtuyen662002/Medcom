@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I34",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "9ad82c63-ef1b-4c8e-8e4b-e69bfe3982d1",
+  "base_sha": "04a4730d3ede03dfa4147fc89c9e557ef2735eb0",
+  "work_branch": "codex/g45-readonly-target-inspector-i34-20261006",
+  "claim_branch": "medcom-claims/g45/direct/I34",
+  "scope": [
+    "tools/inspect/Medcom.TargetInspect/Medcom.TargetInspect.csproj",
+    "tools/inspect/Medcom.TargetInspect/Program.cs",
+    "tools/inspect/Medcom.TargetInspect/InspectionRunner.cs",
+    "tools/inspect/Medcom.TargetInspect/InspectionSql.cs",
+    "tools/inspect/Medcom.TargetInspect/InspectionReport.cs",
+    "tools/inspect/Medcom.TargetInspect/packages.lock.json",
+    "tools/inspect/README.md",
+    "tools/inspect/verify_inspect.py",
+    "tests/backend/Medcom.TargetInspect.Tests/Medcom.TargetInspect.Tests.csproj",
+    "tests/backend/Medcom.TargetInspect.Tests/InspectionTests.cs",
+    "tests/backend/Medcom.TargetInspect.Tests/RecordingDbConnection.cs",
+    "tests/backend/Medcom.TargetInspect.Tests/packages.lock.json",
+    "tools/inspect/package.py",
+    ".github/workflows/backend.yml",
+    ".github/workflows/ci-policy.yml",
+    "docs/execution/checkpoints/I34_READONLY_TARGET_INSPECTOR.md",
+    "docs/execution/direct-runs/I34.json"
+  ],
+  "purpose": "Provide a ready-to-run owner-local, fixed read-only catalog and binding inspector, replacing manual SQL snippets without activating commands or manufacturing runtime acceptance.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "constraints": [
+    "Inspect only: no business rows, DML, DDL, reservation, allocator, COMMIT, arbitrary SQL, native DLL execution, impersonated sessions or production activation. Owner runs the verified package later; no private target execution in development/CI.",
+    "Compile-link only unchanged current ServerConfiguration.cs and SqlDevelopmentTestTlsTarget.cs with exact input hashes; no application or writer assembly references, no production source or solution edits. Use pinned SqlClient and existing exact development TLS target policy; reject inherited connection/target overrides and preserve private config unchanged.",
+    "Fixed catalog-first visibility, exact shape/key/FK/check/default/trigger/durability evidence for purchase and inbound prerequisites, including complete17-column inbound journal. Inadequate visibility, missing/ambiguous metadata or unproved predicate semantics remain BLOCKED/UNKNOWN. Never install or repair schema automatically.",
+    "Optional expected binding comes only from explicit owner-local options, never generated or invented. Missing expectation stays blocked while safe inspection can continue. Report only allowlisted status/version/hash/failure codes; no connection strings, credentials, private paths, raw SQL definitions, binding values, customer rows or exception messages.",
+    "Native login/grant/session/document behavior, concurrency, commit durability, numbering, Send rights and runtime qualification remain NOT_RUN; passing metadata checks never creates RuntimeAcceptance or sets runtimeQualified.",
+    "Use an isolated test project and explicit locked restore/build/test steps in both existing backend workflows, with separate results paths/names and unchanged existing gates/permissions. Package compiled portable inspector with deterministic complete inventory and exact source/tree/config-input hashes under a distinct artifact name.",
+    "Synthetic recording/config/secret-canary/cleanup/cancellation and package-integrity tests required. No real owner SQL in CI. Root alone publishes; independent source/privacy review and exact-head/current-base hosted CI before merge."
+  ],
+  "created_at": "2026-10-06T20:16:46.537791+00:00"
+}
