@@ -162,24 +162,10 @@ public sealed class SqlPurchaseRequestCommandAuthorityReader
                 || r.GetString(4) != "05" || r.GetBoolean(5) || r.GetInt32(7) != 1) return false;
             await End(r, token);
         }
-        await using (var cmd = PurchaseRequestSql.Command(tx, PurchaseRequestSql.BranchesText))
-        {
-            PurchaseRequestSql.Parameter(cmd, "@actor", DbType.String, id.PrincipalId, 100);
-            await using var r = await cmd.ExecuteReaderAsync(token);
-            Shape(r, typeof(string));
-            var count = 0;
-            var allowed = false;
-            while (await r.ReadAsync(token))
-            {
-                if (++count > 200) throw new InvalidOperationException("Branch bound.");
-                Required(r, 0);
-                var value = r.GetString(0);
-                if (!PurchaseRequestCommandRules.Identifier(value, 50)) return false;
-                if (value == branch) allowed = true;
-            }
-            if (await r.NextResultAsync(token)) throw new InvalidOperationException("Unexpected result.");
-            return allowed;
-        }
+        // Native blank expands only through the reviewed catalog resolver; the live
+        // identity's exact branch membership remains an independent fence.
+        var branches = await SqlLegacyBranchScope.ReadAsync(tx, user, token);
+        return branches.Contains(branch, StringComparer.Ordinal);
     }
 
     private async Task<bool> Probe(DbTransaction tx, CancellationToken token)

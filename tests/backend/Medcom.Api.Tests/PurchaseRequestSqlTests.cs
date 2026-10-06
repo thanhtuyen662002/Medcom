@@ -18,6 +18,54 @@ namespace Medcom.Api.Tests;
 public sealed class PurchaseRequestSqlTests
 {
     [Theory]
+    [InlineData(0,"native-user")] [InlineData(1,"native-user")]
+    [InlineData(0,"catalog-shape")] [InlineData(1,"catalog-shape")]
+    [InlineData(0,"catalog")] [InlineData(1,"catalog")]
+    public async Task Native_blank_scope_provider_failure_keeps_phase_custody_and_does_not_allocate(int phase,string stage)
+    {
+        var db=new PurchaseRecordingModel { NativeBranch=null,Fault=phase+":"+stage };
+        var result=await db.Service().CreateAsync(PurchaseFixtures.Create);
+        Assert.Equal(PurchaseRequestCommandOutcome.Unavailable,result.Outcome); Assert.Null(result.Receipt);
+        Assert.Equal(0,db.AllocatorCalls); Assert.Empty(db.Documents); Assert.Equal(0,db.SubmitEffects);
+        Assert.Equal(phase,db.Commits);
+        if(phase==0) Assert.Empty(db.Journal);
+        else Assert.Equal((byte)0,Assert.Single(db.Journal.Values).State);
+    }
+
+    [Theory]
+    [InlineData(0)] [InlineData(1)]
+    public async Task Invalid_blank_catalog_in_write_phase_is_unavailable_without_business_effects(int phase)
+    {
+        var db=new PurchaseRecordingModel { NativeBranch="" };
+        db.OnStep=(current,stage)=> { if(current==phase && stage=="catalog") db.CatalogAlias=1; };
+        var result=await db.Service().CreateAsync(PurchaseFixtures.Create);
+        Assert.Equal(PurchaseRequestCommandOutcome.Unavailable,result.Outcome); Assert.Null(result.Receipt);
+        Assert.Equal(0,db.AllocatorCalls); Assert.Empty(db.Documents); Assert.Equal(0,db.SubmitEffects);
+        Assert.Equal(phase,db.Commits);
+        if(phase==0) Assert.Empty(db.Journal);
+        else Assert.Equal((byte)0,Assert.Single(db.Journal.Values).State);
+    }
+
+    [Theory]
+    [InlineData(null)] [InlineData("")]
+    public async Task Blank_native_scope_retains_uncertain_commit_receipt_and_never_reallocates_on_replay(string? native)
+    {
+        var db=new PurchaseRecordingModel { NativeBranch=native,Fault="1:commit-ack" };
+        var first=await db.Service().CreateAsync(PurchaseFixtures.Create);
+        Assert.Equal(PurchaseRequestCommandOutcome.OutcomeUnknown,first.Outcome); Assert.Null(first.Receipt);
+        var original=Assert.Single(db.Journal.Values);
+        Assert.Equal((byte)1,original.State); Assert.Equal(1,db.AllocatorCalls);
+        db.Fault=null; db.NativeBranch="B2"; db.NativeBranches=["B2"];
+        var denied=await db.Service().CreateAsync(PurchaseFixtures.Create);
+        Assert.Equal(PurchaseRequestCommandOutcome.Denied,denied.Outcome); Assert.Null(denied.Receipt);
+        Assert.Same(original,Assert.Single(db.Journal.Values)); Assert.Equal(1,db.AllocatorCalls);
+        db.NativeBranch=native;
+        var replay=await db.Service().CreateAsync(PurchaseFixtures.Create);
+        Assert.Equal(PurchaseRequestCommandOutcome.Replayed,replay.Outcome);
+        Assert.Equal(original.Receipt,JsonSerializer.Serialize(replay.Receipt,PurchaseRequestCommandRules.Json)); Assert.Equal(1,db.AllocatorCalls);
+    }
+
+    [Theory]
     [InlineData("case")] [InlineData("accent")] [InlineData("space")]
     public async Task Sql_related_detail_alias_is_fetched_then_rejected_before_reservation_or_submit(string alias)
     {
@@ -237,6 +285,10 @@ internal sealed class PurchaseRecordingModel : IPurchaseRequestIdentifierAllocat
     internal int Connections,Commits,AllocatorCalls,SubmitEffects,SessionCalls;
     internal string? Fault,Denial,WrongCount,BadAllocation;
     internal int RevokeAt,VersionChangeAt;
+    internal string? NativeBranch="B1";
+    internal string[] NativeBranches=["B1"],CatalogBranches=["B1"];
+    internal int CatalogShape=1,CatalogAlias;
+    internal Action<int,string>? OnStep;
     internal bool AllocatorQualified=true,InvalidProbe,CorruptReadback,CorruptKey;
     internal PurchaseRelatedAlias? RelatedAlias;
     internal PurchaseGrantFixture? PhysicalGrant;
@@ -251,7 +303,7 @@ internal sealed class PurchaseRecordingModel : IPurchaseRequestIdentifierAllocat
         return Task.FromResult<AuthoritativeIdentity?>(RevokeAt==SessionCalls ? null : PurchaseFixtures.Identity(VersionChangeAt==SessionCalls ? 2 : 1));
     }
     internal void Event(int phase,string name)
-    {var key=phase+":"+name;Events.Add(key);if(Fault==key)throw new IOException("Synthetic recording fault.");}
+    {var key=phase+":"+name;Events.Add(key);OnStep?.Invoke(phase,name);if(Fault==key)throw new IOException("Synthetic recording fault.");}
     public bool IsQualified(PurchaseRequestAllocationContext context)=>AllocatorQualified;
     public Task<PurchaseRequestAllocatedIdentifiers> AllocateAsync(DbTransaction transaction,PurchaseRequestAllocationContext context,CancellationToken token)
     {
@@ -296,7 +348,7 @@ internal sealed class PurchaseRecordingCommand(PurchaseRecordingConnection owner
 {
     private readonly RecordingParameters parameters=new();
     [AllowNull] public override string CommandText{get;set;}="";
-    public override int CommandTimeout{get;set;} public override CommandType CommandType{get;set;}
+    public override int CommandTimeout{get;set;} public override CommandType CommandType{get;set;}=CommandType.Text;
     public override bool DesignTimeVisible{get;set;} public override UpdateRowSource UpdatedRowSource{get;set;}
     protected override DbConnection? DbConnection{get=>owner;set=>throw new NotSupportedException();}
     protected override DbTransaction? DbTransaction{get;set;}
@@ -324,8 +376,29 @@ internal sealed class PurchaseRecordingCommand(PurchaseRecordingConnection owner
             return Table([typeof(string),typeof(string),typeof(string),typeof(bool),typeof(string),typeof(bool),typeof(int),typeof(int)],
                 [PurchaseRequestCommandRules.MenuId,denial=="menu" ? "WrongForm" : PurchaseRequestCommandRules.FormId,DBNull.Value,false,"05",denial=="parent",add,update]).CreateDataReader();
         }
-        if(CommandText==PurchaseRequestSql.BranchesText)
-        {model.Event(owner.Phase,"branches");return Table([typeof(string)],[denial=="branch" ? "B2" : "B1"]).CreateDataReader();}
+        if(CommandText==SqlLegacyBranchScope.NativeUserText)
+        {
+            model.Event(owner.Phase,"native-user");
+            Assert.Equal(PurchaseFixtures.Actor,P("@actor"));
+            return Table([typeof(string),typeof(string),typeof(bool),typeof(string),typeof(bool),typeof(string)],
+                [PurchaseFixtures.Actor,PurchaseFixtures.Stored,false,PurchaseFixtures.Group,false,(object?)model.NativeBranch ?? DBNull.Value]).CreateDataReader();
+        }
+        if(CommandText==SqlLegacyBranchScope.RestrictedText)
+        {
+            model.Event(owner.Phase,"branches");
+            var table=Table([typeof(string)]);
+            foreach(var branch in denial=="branch" ? new[]{"B2"} : model.NativeBranches) table.Rows.Add(branch);
+            return table.CreateDataReader();
+        }
+        if(CommandText==SqlLegacyBranchScope.CatalogShapeText)
+        {model.Event(owner.Phase,"catalog-shape");return Table([typeof(int)],[model.CatalogShape]).CreateDataReader();}
+        if(CommandText==SqlLegacyBranchScope.CatalogText)
+        {
+            model.Event(owner.Phase,"catalog");
+            var table=Table([typeof(string),typeof(int)]);
+            foreach(var branch in denial=="branch" ? new[]{"B2"} : model.CatalogBranches) table.Rows.Add(branch,model.CatalogAlias);
+            return table.CreateDataReader();
+        }
         if(CommandText==PurchaseRequestSql.ProbeText)
         {model.Event(owner.Phase,"probe");return Table([typeof(int),typeof(Guid),typeof(int),typeof(int)],[1,PurchaseFixtures.Binding,1,model.InvalidProbe ? 0 : 1]).CreateDataReader();}
         if(CommandText==PurchaseRequestSql.TransactionText)
