@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I26",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "60542c0a-84ae-4fe3-9080-d9c1996e57bf",
+  "base_sha": "079eb767a47cb266bed36be5a34931282835b20f",
+  "work_branch": "codex/g45-native-blank-branch-i26-20261006",
+  "claim_branch": "medcom-claims/g45/direct/I26",
+  "scope": [
+    "src/backend/Medcom.Infrastructure/SqlLegacyBranchScope.cs",
+    "src/backend/Medcom.Infrastructure/SqlLegacyUserStore.cs",
+    "src/backend/Medcom.Infrastructure/SqlDocumentReader.cs",
+    "src/backend/Medcom.Infrastructure/PurchaseRequests/SqlPurchaseRequestQueries.cs",
+    "tests/backend/Medcom.Api.Tests/SqlLegacyBranchScopeTests.cs",
+    "tests/backend/Medcom.Api.Tests/SqlDocumentBranchScopeTests.cs",
+    "tests/backend/Medcom.Api.Tests/PurchaseRequestQueryTests.cs",
+    "tests/backend/Medcom.Api.Tests/LegacyAuthorityTests.cs",
+    "tests/backend/Medcom.Api.Tests/SessionTests.cs",
+    "docs/execution/checkpoints/I26_NATIVE_BLANK_BRANCH_SCOPE.md",
+    "docs/execution/direct-runs/I26.json"
+  ],
+  "purpose": "Map owner-confirmed native blank BranchID to validated explicit all-branch scope for existing authenticated read-only paths without treating failed resolution or empty derived arrays as all.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "constraints": [
+    "Root sole publisher. Scope source-backed native blank NULL/zero-length BranchID after enabled canonical user/credential/group validation only; no username-based admin bypass.",
+    "Resolve explicit branch IDs from pinned CF_BranchTbl within bound database. Preserve functional/native rights. Fail closed on unavailable metadata, unknown scope semantics, invalid IDs, aliases, duplicates and >200 branches; no truncation or fabricated IDs.",
+    "Revalidate effective scope at downstream document and purchase reads; preserve exact row/branch checks, parameterization and limits. Restricted native branch assignments remain restricted.",
+    "No write implementations, SQL migrations, private config, credentials, DLL execution, dependency/workflow changes, registration or actual target activation. No actual DB access in this lane.",
+    "Independent source/privacy review, full existing tests and exact-head/current-base CI before merge; real ERP acceptance remains separate."
+  ],
+  "created_at": "2026-10-06T11:56:20Z"
+}
