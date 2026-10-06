@@ -17,6 +17,14 @@ policy hay sửa chứng chỉ. Công cụ tự kiểm tra đủ tệp và mã b
 Cấu hình giữ nguyên, phải nằm ngoài gói và ngoài Git; đường dẫn tuyệt đối, không qua
 symlink/junction. Không đưa mật khẩu hoặc chuỗi kết nối vào lệnh.
 
+Lệnh trên giữ chế độ mặc định an toàn. Với đúng cơ sở dữ liệu phát triển đã được
+cho phép dùng ngoại lệ TLS, thêm `--allow-development-sql-tls` ở **cuối lệnh** (sau
+`--options` nếu có). Cờ này chỉ áp dụng cho lượt chạy hiện tại, không sửa JSON.
+Nó buộc mã hóa Mandatory nhưng bỏ kiểm tra chứng chỉ máy chủ cho đúng endpoint cố
+định; không phải xác nhận TLS production đáng tin cậy. Không dùng như cách vượt qua
+lỗi TLS của đích khác. Nếu section ngoại lệ có sẵn nhưng bị tắt, thiếu, sai hoặc
+mâu thuẫn, công cụ vẫn từ chối và không tự sửa.
+
 Chỉ gửi lại JSON kết quả cuối cùng. Không gửi cấu hình, GUID, định nghĩa SQL, ảnh chứa
 thiết lập hoặc thông báo lỗi đầy đủ. Công cụ không ghi nhật ký riêng và không tải lên.
 
@@ -40,7 +48,7 @@ Hiện còn ngữ nghĩa chưa đủ bằng chứng nên kết nối thành côn
 - `EXPECTED_BINDING_NOT_SUPPLIED`: tùy chọn cung cấp **GUID binding hiện có** từ lần
   cài control đã duyệt trong tệp riêng ngoài gói, dạng
   `{"ExpectedBindingId":"GUID-binding-hien-co"}`. Thêm `--options 'D:/Config/inspect-options.json'`
-  vào cuối lệnh. Không tạo GUID mới. Bỏ tùy chọn vẫn kiểm tra catalog; chỉ so khớp
+  sau đường dẫn cấu hình, trước cờ TLS nếu có. Không tạo GUID mới. Bỏ tùy chọn vẫn kiểm tra catalog; chỉ so khớp
   binding bị BLOCKED. Tệp tùy chọn không nhận SQL, máy chủ, bảng hoặc khóa khác.
 - Journal inbound thiếu/không thấy được: kiểm tra mục
   `catalog.columns.WebInboundRequestCommandJournalV1` và quyền xem metadata với chủ
@@ -55,14 +63,19 @@ Hiện còn ngữ nghĩa chưa đủ bằng chứng nên kết nối thành côn
 Chỉ dùng endpoint phát triển đã có `zmc.bms79.com,17456` / `MedData`. Hai tệp policy
 `ServerConfiguration.cs` và `SqlDevelopmentTestTlsTarget.cs` hiện hành được liên kết
 biên dịch nguyên trạng; SqlClient khóa phiên bản 7.0.3. Chỉ tái sử dụng ngoại lệ TLS
-đúng đích nếu chủ hệ thống **đã bật rõ ràng** trong cấu hình. Không tự bật hoặc mở rộng
-ngoại lệ; TLS lỗi thì dừng. Từ chối đích thay thế, failover/read-only routing và biến
-môi trường ghi đè Medcom/Legacy/connection strings.
+đúng đích nếu chủ hệ thống đã bật rõ ràng trong cấu hình hoặc chọn cờ cuối lệnh
+`--allow-development-sql-tls` cho lượt này. Không tự bật, mở rộng hay lưu ngoại lệ.
+Mã `EXPLICIT_FIXED_TARGET_DEVELOPMENT_TLS` ghi nhận riêng lựa chọn cờ; không phải
+chứng nhận TLS production. Không có cờ thì hành vi mặc định giữ nguyên. Từ chối đích
+thay thế, failover/read-only routing và biến môi trường ghi đè Medcom/Legacy/connection
+strings.
 
 Kiểm tra cố định 161 cột trên 10 bảng purchase/inbound, gồm đủ 17 cột journal inbound,
 PK năm phần, BIN2, CreatedAtUtc, key/FK, check/default, trigger/RLS và thiết lập durability.
 Chỉ đọc catalog; ngoại lệ duy nhất là tối đa hai hàng control để so binding, không xuất
-GUID. Không đọc chứng từ/dữ liệu khách hàng, Tools.dll hay mật khẩu SQL; không tạo web
+GUID. SqlClient sử dụng chuỗi kết nối riêng hiện có trên máy để mở kết nối đã được
+cho phép. Công cụ không hiển thị/xuất thông tin xác thực hoặc trích xuất chúng cho
+mục đích khác. Không đọc chứng từ/dữ liệu khách hàng hoặc Tools.dll; không tạo web
 session, chạy writer, DML/DDL, reservation, allocator hoặc COMMIT.
 
 So predicate là đối chiếu văn bản bảo thủ, không phải bộ chứng minh SQL tương đương.

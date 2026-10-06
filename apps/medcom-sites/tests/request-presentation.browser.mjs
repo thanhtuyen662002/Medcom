@@ -92,8 +92,8 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
  assert.ok(!css.includes('@import "tailwindcss"'),'Application Tailwind must actually compile.');
  const script=Buffer.from(built.outputFiles[0].contents),logo=await readFile(path.join(app,'public/medcom-logo.png'));
  const html='<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/app.css"><div id="root"></div><script src="/app.js"></script></html>';
- let model,serial=0,browser,context,page,origin,completed=false,fatal=null;const expectedCases=26;const errors=[],results=[],failures=[],captures=[],calls=[],transportEvidence=[],readonlyEvidence=[];
- const reset=(patch={})=>{model={serial:++serial,writable:false,empty:false,status:200,holdList:false,waiters:[],listResponses:0,listResponseHeaders:null,holdDetail:false,detailWaiters:[],detailStatus:200,draftEnvelope:null,draftNetwork:false,draftNetworkFailures:0,draftMalformed:false,draftResponses:0,afterWriteDraftEnvelope:null,holdProjection:false,projectionWaiters:[],projectionStatus:200,projectionKind:null,projectionResponses:0,unknown:false,workspaceReads:0,workspaceResponses:0,workspaceVersions:[],advanceAuthority:false,deniedLists:0,workspaceStatus:200,purchase:structuredClone(purchase),inbound:structuredClone(inbound),purchaseVersion:1,inboundVersion:1,effects:0,originals:new Map(),receipts:new Map(),writes:[],reconciles:[],control:{closed:[],bff:[]},holdCommands:false,commandWaiters:[],commandResponses:0,rejected:false,conflict:false,malformed:false,...patch};calls.length=0;};
+ let model,serial=0,browser,context,page,origin,completed=false,fatal=null,clockPaused=false;const expectedCases=26;const errors=[],results=[],failures=[],captures=[],calls=[],transportEvidence=[],readonlyEvidence=[];
+ const reset=(patch={})=>{model={serial:++serial,writable:false,empty:false,status:200,holdList:false,waiters:[],listResponses:0,listResponseHeaders:null,holdDetail:false,detailWaiters:[],detailStatus:200,draftEnvelope:null,draftNetwork:false,draftNetworkFailures:0,draftMalformed:false,draftResponses:0,afterWriteDraftEnvelope:null,holdProjection:false,projectionWaiters:[],projectionStatus:200,projectionKind:null,projectionResponses:0,unknown:false,workspaceReads:0,workspaceResponses:0,workspacePending:0,workspaceVersions:[],advanceAuthority:false,deniedLists:0,workspaceStatus:200,purchase:structuredClone(purchase),inbound:structuredClone(inbound),purchaseVersion:1,inboundVersion:1,effects:0,originals:new Map(),receipts:new Map(),writes:[],reconciles:[],control:{closed:[],bff:[]},holdCommands:false,commandWaiters:[],commandResponses:0,rejected:false,conflict:false,malformed:false,...patch};calls.length=0;};
  const workspace=()=>({session:{displayName:'SYNTHETIC USER',tenantId:'QA-T',companyId:'QA-C',companyName:'SYNTHETIC',authorityVersion:model.advanceAuthority?model.workspaceReads:1,idleExpiresAt:new Date(Date.now()+3600000).toISOString(),absoluteExpiresAt:new Date(Date.now()+7200000).toISOString(),capabilities:model.workspaceCapabilities??['purchase-requests.read','inbound-requests.read','purchase-orders.read']},branchIds:['QA-BRANCH'],navigation:['purchase-requests','inbound-requests','purchase-orders'].map(id=>({id,label:id,href:'/?screen='+id}))});
  const send=(res,status,data,headers={})=>{if(res.destroyed)return;res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store',...headers});res.end(JSON.stringify(data));};
  const readHeaders={'X-Medcom-Session-Scope':session,'X-Medcom-Read-Scope':scope};
@@ -110,7 +110,11 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
    if(!url.pathname.startsWith('/api/erp/')){res.setHeader('Content-Type','text/html');return res.end(html);}
    const route=url.pathname.slice('/api/erp'.length);calls.push({route,method:req.method,documentId:url.searchParams.get('documentId'),page:url.searchParams.get('page'),pageSize:url.searchParams.get('pageSize')});
    if(route==='/health/ready')return send(res,503,{status:'not_ready',checks:[]});
-   if(route==='/api/workspace'){m.workspaceReads++;const current=workspace();m.workspaceVersions.push(current.session.authorityVersion);m.workspaceResponses++;return send(res,m.workspaceStatus,m.workspaceStatus===200?current:{code:m.workspaceStatus===401?'authentication_required':'backend_unavailable'},readHeaders);}
+   if(route==='/api/workspace'){
+    m.workspaceReads++;m.workspacePending++;let settled=false;
+    const settle=()=>{if(!settled){settled=true;m.workspacePending--;}};res.once('finish',settle);res.once('close',settle);if(res.destroyed||res.writableFinished)settle();
+    const current=workspace();m.workspaceVersions.push(current.session.authorityVersion);m.workspaceResponses++;return send(res,m.workspaceStatus,m.workspaceStatus===200?current:{code:m.workspaceStatus===401?'authentication_required':'backend_unavailable'},readHeaders);
+   }
    if(route==='/api/auth/csrf')return send(res,200,{token:'synthetic-only'});
    if(route==='/api/purchase-requests/workspace')return send(res,200,{scopeKey:scope,data:{branchIds:['QA-BRANCH'],writeAvailable:false,writeReason:'numbering_journal_runtime_unqualified',lookups:[]}});
    if(route==='/api/purchase-requests'||route==='/api/documents/inbound-requests'){
@@ -167,7 +171,38 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
   }catch(error){errors.push('Synthetic server failure: '+String(error));send(res,500,{code:'request_failed'});}
  });
  reset();server.listen(0,'127.0.0.1');await once(server,'listening');origin=`http://127.0.0.1:${server.address().port}`;
- const paint=()=>page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+ const scenarioClock=()=>page.evaluate(()=>({wall:Date.now(),ticks:performance.now(),timers:window.i33ClockDiagnostics.snapshot().activeTimers.map(timer=>({id:timer.id,fires:timer.fires,nominalDue:timer.nominalDue}))}));
+ // Pinned Playwright1.56.1 can overlap its live real-time pump with a manual
+ // advance. Keep only the existing clock scenarios paused after initial mount.
+ // https://playwright.dev/docs/clock#consistent-time-and-timers
+ const nativeFrameDrain=async()=>{await page.evaluate(()=>{window.i33NativeDrainFrames=0;});await page.waitForFunction(()=>++window.i33NativeDrainFrames===3);};
+ async function pauseScenarioClock(){
+  await page.getByTestId('inbound-request-host').waitFor();await page.waitForFunction(()=>window.i33ClockDiagnostics.snapshot().activeTimerCount===1);
+  // Workspace/LIST GETs in api.ts have no client timeout. The inbound API's
+  // 30000ms timeout is not armed until a selected document starts a draft read.
+  assert.deepEqual(await page.evaluate(()=>({reads:window.i33ReadDispatches.length,selected:document.querySelectorAll('[data-testid=inbound-request-host] button[aria-label^="Mở phiếu "][aria-pressed=true]').length})),{reads:0,selected:0});
+  const target=await page.evaluate(()=>window.i33ClockOrigin+30000),before=await scenarioClock();assert.ok(before.wall<target);assert.equal(before.timers[0].fires,0);assert.ok(target<before.timers[0].nominalDue);
+  // Stop the automatic pump, drain any already-running native task, then set
+  // the same fixed anchor once. This is a serial transition, never a retry.
+  // waitForFunction uses Playwright's saved native RAF, not the paused page RAF.
+  await page.clock.pauseAt(target);await nativeFrameDrain();await page.clock.pauseAt(target);
+  const anchored=await scenarioClock();await nativeFrameDrain();assert.deepEqual(await scenarioClock(),anchored,'Paused clock stays stable through native frames before observations');assert.equal(anchored.wall,target);assert.deepEqual(anchored.timers,before.timers);
+  clockPaused=true;readonlyEvidence.push({kind:'paused-clock-baseline',before,anchored,target});
+ }
+ async function advanceScenarioClock(ticks,intervalFires){
+  assert.equal(clockPaused,true);const before=await scenarioClock();assert.equal(before.timers.length,1);
+  // Keep jump semantics for poll/quiet steps: do not run a newly armed HTTP
+  // timeout before real network IO settles. Paint alone needs both RAF ticks.
+  if(ticks===32)await page.clock.runFor(ticks);else await page.clock.fastForward(ticks);const after=await scenarioClock();
+  assert.deepEqual({wall:after.wall,ticks:after.ticks},{wall:before.wall+ticks,ticks:before.ticks+ticks},'Manual clock advance is exact and monotonic');
+  assert.deepEqual(after.timers.map(timer=>({id:timer.id,fires:timer.fires})),before.timers.map(timer=>({id:timer.id,fires:timer.fires+intervalFires})),'Only the intended original60000ms interval fires');
+  if(ticks!==32)readonlyEvidence.push({kind:'paused-clock-advance',milliseconds:ticks,intervalFires,before,after});
+ }
+ const paint=async()=>{
+  if(!clockPaused)return page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  await page.evaluate(()=>{window.i33PaintPromise=new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));});
+  await advanceScenarioClock(32,0);await page.evaluate(()=>window.i33PaintPromise);
+ };
  const eventually=async predicate=>{const deadline=Date.now()+10000;while(!(await predicate())){t.signal.throwIfAborted();assert.ok(Date.now()<deadline,'Synthetic request did not reach expected state');await new Promise(resolve=>setTimeout(resolve,20));}};
  const release=()=>{model.holdList=false;model.waiters.splice(0).forEach(resolve=>resolve());model.holdDetail=false;model.detailWaiters.splice(0).forEach(resolve=>resolve());model.holdCommands=false;model.commandWaiters.splice(0).forEach(resolve=>resolve());model.holdProjection=false;model.projectionWaiters.splice(0).forEach(resolve=>resolve());};
  // Repeatable teardown also closes resources whose launch completed after abort.
@@ -181,7 +216,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
  };
  const abortCleanup=()=>{void cleanup().catch(error=>errors.push(String(error)));};
  t.signal.addEventListener('abort',abortCleanup,{once:true});
- async function start(width,screen,patch={},query=''){release();await context?.close();reset(patch);context=await browser.newContext({viewport:{width,height:900},locale:'vi-VN',serviceWorkers:'block'});page=await context.newPage();if(patch.installClock||patch.observeWorkspace){const clockTime=new Date();if(patch.installClock)await page.clock.install({time:clockTime});await page.addInitScript(({clockOrigin,fakeClock})=>{window.i33ObserveClock=true;window.i33ClockOrigin=clockOrigin;window.i33FakeClock=fakeClock;},{clockOrigin:clockTime.getTime(),fakeClock:!!patch.installClock});}page.setDefaultTimeout(10000);page.on('pageerror',error=>errors.push(error.message));await page.route('**/*',route=>{const url=new URL(route.request().url());if(url.origin!==origin)return route.abort();if(model.draftNetwork&&url.pathname==='/api/erp/api/inbound-requests/draft'){model.draftNetworkFailures++;return route.abort('failed');}return route.continue();});await page.goto(origin+'/?screen='+screen+query);}
+ async function start(width,screen,patch={},query=''){clockPaused=false;release();await context?.close();reset(patch);context=await browser.newContext({viewport:{width,height:900},locale:'vi-VN',serviceWorkers:'block'});page=await context.newPage();if(patch.installClock||patch.observeWorkspace){const clockTime=new Date();if(patch.installClock)await page.clock.install({time:clockTime});await page.addInitScript(({clockOrigin,fakeClock})=>{window.i33ObserveClock=true;window.i33ClockOrigin=clockOrigin;window.i33FakeClock=fakeClock;},{clockOrigin:clockTime.getTime(),fakeClock:!!patch.installClock});}page.setDefaultTimeout(10000);page.on('pageerror',error=>errors.push(error.message));await page.route('**/*',route=>{const url=new URL(route.request().url());if(url.origin!==origin)return route.abort();if(model.draftNetwork&&url.pathname==='/api/erp/api/inbound-requests/draft'){model.draftNetworkFailures++;return route.abort('failed');}return route.continue();});await page.goto(origin+'/?screen='+screen+query);if(patch.installClock)await pauseScenarioClock();}
  const host=screen=>screen==='purchase-requests'?page.getByRole('region',{name:'Danh sách đề nghị mua hàng',exact:true}):page.getByTestId('inbound-request-host');
  async function layout(width,screen){await paint();const overflow=await page.evaluate(()=>({width:innerWidth,scrollWidth:document.documentElement.scrollWidth,elements:document.documentElement.scrollWidth<=innerWidth?[]:[...document.querySelectorAll('body *')].filter(el=>{const r=el.getBoundingClientRect();return r.width>0&&(r.right>innerWidth+.5||r.left<-.5);}).slice(0,24).map(el=>({tag:el.tagName,className:typeof el.className==='string'?el.className:'',width:el.getBoundingClientRect().width,left:el.getBoundingClientRect().left,right:el.getBoundingClientRect().right}))}));assert.ok(overflow.scrollWidth<=overflow.width,'Page overflow at '+width+': '+JSON.stringify(overflow));
   const checks=await host(screen).locator('button:visible,input:not([type=checkbox]):visible,textarea:visible,select:visible,summary:visible').evaluateAll(elements=>elements.map(el=>({tag:el.tagName,height:el.getBoundingClientRect().height,font:parseFloat(getComputedStyle(el).fontSize)})));
@@ -353,7 +388,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
   async function recordReadonlyClockSnapshot(group,observation,stage,scenario,baseline){
    if(diagnosticSnapshots++>=64)return;
    const count=route=>calls.filter(call=>call.route===route).length;
-   const server={requests:{workspace:count('/api/workspace'),list:count('/api/documents/inbound-requests'),draft:count('/api/inbound-requests/draft'),projection:projectionCalls().length},responseAttempts:{workspace:model.workspaceResponses,list:model.listResponses,draft:model.draftResponses,projection:model.projectionResponses},authorityObservationCount:model.workspaceVersions.length,authorityVersions:model.workspaceVersions.slice(-32)};
+   const server={requests:{workspace:count('/api/workspace'),list:count('/api/documents/inbound-requests'),draft:count('/api/inbound-requests/draft'),projection:projectionCalls().length},responseAttempts:{workspace:model.workspaceResponses,list:model.listResponses,draft:model.draftResponses,projection:model.projectionResponses},workspacePending:model.workspacePending,authorityObservationCount:model.workspaceVersions.length,authorityVersions:model.workspaceVersions.slice(-32)};
    try{
     const client=await page.evaluate(()=>{
      const fixedPhase=(element,allowed)=>{const phase=element?.getAttribute('data-phase');return phase===undefined||phase===null?'absent':allowed.includes(phase)?phase:'other';};
@@ -513,7 +548,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
     await noReadonlyValues();const counts=()=>({workspace:model.workspaceReads,draft:calls.filter(call=>call.route==='/api/inbound-requests/draft').length,projection:projectionCalls().length});
     assert.deepEqual(counts(),{workspace:expected,draft:expected,projection:expected},label+' permits one projection attempt per deliberate observation');
     assert.equal((await draftCalls()).length,expected);assert.equal(await readonlyPanel().count(),0);
-    await page.clock.fastForward(1000);await settledReads();assert.deepEqual(counts(),{workspace:expected,draft:expected,projection:expected},label+' cannot trigger an autonomous 403 retry cycle');
+    await advanceScenarioClock(1000,0);await settledReads();assert.deepEqual(counts(),{workspace:expected,draft:expected,projection:expected},label+' cannot trigger an autonomous 403 retry cycle');
     assert.equal(await page.evaluate(()=>[...document.querySelectorAll('[aria-label="Phiếu nhập hàng đã chọn"]')].some(element=>document.activeElement===element)),false);
     deniedCounts.push({observation:label,...counts()});
     await recordReadonlyClockSnapshot('projection-403',label,'after');
@@ -522,11 +557,11 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
    await boundedDeniedObservation('initial-selection',1);
    await page.evaluate(()=>{window.dispatchEvent(new FocusEvent('blur'));window.dispatchEvent(new Event('focus'));});
    await boundedDeniedObservation('synthetic-window-focus',2);
-   await page.clock.fastForward(60001);await boundedDeniedObservation('actual-60-second-poll',3);
+   await advanceScenarioClock(60001,1);await boundedDeniedObservation('actual-60-second-poll',3);
    await page.evaluate(()=>{window.i33Visibility='hidden';Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>window.i33Visibility});window.dispatchEvent(new FocusEvent('blur'));document.dispatchEvent(new Event('visibilitychange'));});await paint();
    await page.evaluate(()=>{window.i33Visibility='visible';document.dispatchEvent(new Event('visibilitychange'));window.dispatchEvent(new Event('focus'));});
    await boundedDeniedObservation('synthetic-visibility-focus',4);
-   await page.clock.fastForward(60001);await boundedDeniedObservation('next-60-second-poll',5);
+   await advanceScenarioClock(60001,1);await boundedDeniedObservation('next-60-second-poll',5);
    assert.deepEqual(model.workspaceVersions,[1,2,3,4,5]);assert.equal(calls.filter(call=>call.method==='POST').length,0);
    readonlyEvidence.push({kind:'persistent-read-403-bounded',sameReadMarkers:true,advancingAuthorityVersions:[...model.workspaceVersions],observations:deniedCounts,writeRequests:0});
    // Exercise the actual Workspace-bound LIST reader, not a list test seam.
@@ -538,26 +573,50 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
     ['wrong-list-both-scopes',{'X-Medcom-Session-Scope':'c'.repeat(64),'X-Medcom-Read-Scope':'d'.repeat(64)}],
    ]){
     assert.ok(Object.values(listResponseHeaders).every(value=>/^[a-f0-9]{64}$/.test(value)),'Scope-denial fixtures use valid marker syntax');assert.notDeepEqual(listResponseHeaders,readHeaders);
-    await start(390,'inbound-requests',{...fullLists(),installClock:true,advanceAuthority:true,listResponseHeaders,draftEnvelope:unavailableDraft(false)});
+    await start(390,'inbound-requests',{...fullLists(),installClock:true,advanceAuthority:true,holdList:true,listResponseHeaders,draftEnvelope:unavailableDraft(false)});
     const observations=[];
+    const workspaceDispatchState=()=>page.evaluate(()=>({...window.i33WorkspaceDispatchState}));
+    async function settledListWorkspace(expected){
+     await page.waitForFunction(()=>window.i33WorkspaceDispatchState.total>0&&window.i33WorkspaceDispatchState.pending===0);await eventually(()=>model.workspacePending===0);await paint();
+     assert.deepEqual(await workspaceDispatchState(),{total:expected,settled:expected,pending:0},name+' has exactly the intended current-page body-complete Workspace dispatches');
+     assert.equal(await page.evaluate(()=>window.i33WorkspaceDispatches.every(event=>event.settled&&event.fetchState==='fulfilled'&&event.httpStatus===200)),true);
+     assert.equal(model.workspaceResponses,model.workspaceReads);assert.equal(model.workspacePending,0);
+    }
+    // Establish the causal boundary before the invalid LIST can reach the UI.
+    // The shared HTTP server may have earlier wire traffic that is not a fetch
+    // from this page. Preserve that history, but never absorb additions after
+    // this single baseline or attribute them to the denied-list response.
+    let workspaceBaseline;
+    try{
+     await eventually(()=>model.waiters.length===1);await settledListWorkspace(1);
+     assert.equal(model.listResponses,0);assert.equal(calls.filter(call=>call.route==='/api/documents/inbound-requests').length,1);
+     assert.equal(calls.filter(call=>call.route==='/api/inbound-requests/draft').length,0);assert.equal(projectionCalls().length,0);await noReadonlyValues();
+     workspaceBaseline={count:model.workspaceReads,history:[...model.workspaceVersions]};
+     assert.deepEqual(workspaceBaseline.history,Array.from({length:workspaceBaseline.count},(_,index)=>index+1));
+     readonlyEvidence.push({kind:'list-scope-pre-denial-baseline',scenario:name,serverWorkspace:workspaceBaseline.count,serverAuthorityVersions:[...workspaceBaseline.history],currentPageWorkspace:await workspaceDispatchState(),heldListRequests:1,listResponses:0});
+     await recordReadonlyClockSnapshot(name,'held-initial-list','before',undefined,workspaceBaseline);
+    }catch(error){await recordReadonlyClockSnapshot(name,'held-initial-list','failure',undefined,workspaceBaseline);throw error;}
+    model.holdList=false;model.waiters.splice(0).forEach(resolve=>resolve());
     async function boundedListScopeDenial(label,expected){
-     await recordReadonlyClockSnapshot(name,label,'before');
+     await recordReadonlyClockSnapshot(name,label,'before',undefined,workspaceBaseline);
      try{
-     await eventually(()=>model.listResponses>=expected);await page.getByText('Chưa xác minh được quyền xem phiếu. Yêu cầu đang xử lý vẫn được giữ.',{exact:true}).waitFor();await paint();
+     await eventually(()=>model.listResponses>=expected);await page.getByText('Chưa xác minh được quyền xem phiếu. Yêu cầu đang xử lý vẫn được giữ.',{exact:true}).waitFor();await paint();await settledListWorkspace(expected);
      const counts=()=>({workspace:model.workspaceReads,list:calls.filter(call=>call.route==='/api/documents/inbound-requests').length,draft:calls.filter(call=>call.route==='/api/inbound-requests/draft').length,projection:projectionCalls().length});
-     const expectedCounts={workspace:expected,list:expected,draft:0,projection:0};
-     assert.deepEqual(counts(),expectedCounts,name+' '+label+' permits one scoped list attempt per deliberate observation');
+     const expectedCounts={workspace:workspaceBaseline.count+expected-1,list:expected,draft:0,projection:0};
+     const expectedHistory=[...workspaceBaseline.history,...Array.from({length:expected-1},(_,index)=>workspaceBaseline.count+index+1)];
+     assert.deepEqual(counts(),expectedCounts,name+' '+label+' permits one scoped list attempt per deliberate observation and no Workspace addition from denial');assert.equal(model.listResponses,expected);
+     assert.deepEqual(model.workspaceVersions,expectedHistory,name+' preserves the pre-denial history and adds exactly one authority observation per deliberate revalidation');
      assert.equal(await host('inbound-requests').getByRole('button',{name:/^Mở phiếu /}).count(),0,'An invalid list scope cannot expose source rows');assert.equal(await focusRegion('inbound-requests').count(),0,'An invalid list scope cannot create a visible selection');assert.equal(await readonlyPanel().count(),0);assert.equal((await draftCalls()).length,0);await noReadonlyValues();
-     await page.clock.fastForward(1000);await paint();assert.deepEqual(counts(),expectedCounts,name+' cannot create a 409-to-parent-reload feedback loop');assert.equal(calls.filter(call=>call.method==='POST').length,0);
-     observations.push({observation:label,...counts()});
-     await recordReadonlyClockSnapshot(name,label,'after');
-     }catch(error){await recordReadonlyClockSnapshot(name,label,'failure');throw error;}
+     await advanceScenarioClock(1000,0);await paint();await settledListWorkspace(expected);assert.deepEqual(counts(),expectedCounts,name+' cannot create a 409-to-parent-reload feedback loop');assert.deepEqual(model.workspaceVersions,expectedHistory);assert.equal(calls.filter(call=>call.method==='POST').length,0);
+     observations.push({observation:label,...counts(),currentPageWorkspace:await workspaceDispatchState()});
+     await recordReadonlyClockSnapshot(name,label,'after',undefined,workspaceBaseline);
+     }catch(error){await recordReadonlyClockSnapshot(name,label,'failure',undefined,workspaceBaseline);throw error;}
     }
     await boundedListScopeDenial('initial-list',1);
     await page.evaluate(()=>{window.dispatchEvent(new FocusEvent('blur'));window.dispatchEvent(new Event('focus'));});await boundedListScopeDenial('synthetic-window-focus',2);
-    await page.clock.fastForward(60001);await boundedListScopeDenial('actual-60-second-poll',3);
-    assert.deepEqual(model.workspaceVersions,[1,2,3]);
-    readonlyEvidence.push({kind:'list-scope-fail-closed',scenario:name,advancingAuthorityVersions:[...model.workspaceVersions],observations,writeRequests:0});
+    await advanceScenarioClock(60001,1);await boundedListScopeDenial('actual-60-second-poll',3);
+    assert.deepEqual(model.workspaceVersions,[...workspaceBaseline.history,workspaceBaseline.count+1,workspaceBaseline.count+2]);
+    readonlyEvidence.push({kind:'list-scope-fail-closed',scenario:name,preDenialWorkspace:workspaceBaseline.count,advancingAuthorityVersions:[...model.workspaceVersions],observations,writeRequests:0});
    }
    for(const laterAction of ['input','window-blur','close','read-capability-loss']){
     await start(390,'inbound-requests',{...fullLists(),draftEnvelope:unavailableDraft(true),holdProjection:true});await openRow('inbound-requests',1).click();await eventually(()=>model.projectionWaiters.length===1);

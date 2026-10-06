@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I35",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "5251e055-f5fe-4a0f-bec4-dfea206fd5c7",
+  "base_sha": "eb4ddd195b59046f867a83e0c4b4897f5d2b620a",
+  "work_branch": "codex/g45-inspector-explicit-tls-opt-in-i35-20261006",
+  "claim_branch": "medcom-claims/g45/direct/I35",
+  "scope": [
+    "tools/inspect/Medcom.TargetInspect/Program.cs",
+    "tests/backend/Medcom.TargetInspect.Tests/InspectionTests.cs",
+    "tools/inspect/README.md",
+    "docs/execution/checkpoints/I35_INSPECTOR_TLS_OPT_IN.md",
+    "docs/execution/direct-runs/I35.json"
+  ],
+  "purpose": "Make the owner-run read-only inspector compatible with the existing approved fixed-target development TLS flow through an explicit per-invocation opt-in, preserving secure defaults and private configuration.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "constraints": [
+    "Add only the explicit trailing CLI flag --allow-development-sql-tls to inspect --config PATH [--options PATH]. Absence retains current behavior. Reject duplicates, unknown/misplaced flags, malformed/conflicting preexisting exception sections and all existing inherited connection/target overrides.",
+    "Only after ordinary private load and validation, the explicit flag may apply the existing three fixed development exception keys in memory for this process. Reuse unchanged ServerConfiguration and SqlDevelopmentTestTlsTarget; no new server/database choices, no JSON/environment/system/certificate writes, no global TLS bypass. The shared resolver must continue forcing mandatory encryption for exactly the already-approved target.",
+    "Output an allowlisted factual code recording use of the fixed development opt-in, never a claim of trusted production TLS or RuntimeAcceptance. All read-only/catalog/packaging safeguards, no business rows/DML/DDL/native DLL execution, and unconditional release blocking remain unchanged.",
+    "No target connection/private file read in development or CI; only synthetic config and recording tests. Owner chooses the flag when running later. Preserve every existing test, linked policy byte, SQL plan, workflow, lockfile, I34 marker and package integrity check.",
+    "Correct README wording: SqlClient consumes the existing private connection string locally for the authorized connection; credentials are not displayed/exported or extracted for another purpose. Give concise Vietnamese default and explicit-opt-in instructions, including the development-only certificate-validation limitation.",
+    "Independent source/privacy/security-default review and exact-head/current-base full hosted CI/package audit required. Root alone publishes. No actual security setting or remote DB action is performed by implementing this option."
+  ],
+  "created_at": "2026-10-06T21:19:29.277681+00:00"
+}
