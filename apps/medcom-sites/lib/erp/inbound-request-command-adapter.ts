@@ -19,6 +19,7 @@ export interface InboundRequestBridge {
   select(documentId: string | null): void;
   revalidate(signal: AbortSignal): Promise<void>;
   hasUnresolved(): boolean;
+  setSessionDeniedHandler(handler: (() => void) | null): void;
   acknowledge(receipt: InboundDraftReceipt): void;
   dispose(): void;
 }
@@ -173,6 +174,7 @@ export function createInboundRequestBridge(initialApi: InboundRequestApi, onSess
     subscribe(listener) { listeners.add(listener); return () => { listeners.delete(listener); }; },
     getSnapshot: () => state,
     hasUnresolved,
+    setSessionDeniedHandler(handler) { onSessionDenied = handler ?? undefined; },
     acknowledge(receipt) {
       const intent = intents.get(receipt.operationId);
       if (disposed || context === null || !intent?.candidate || intent.candidateEpoch !== epoch || !record(receipt, receiptFields)

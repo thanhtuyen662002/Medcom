@@ -49,9 +49,15 @@ function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, hi
   const defaultApi = useMemo(() => createInboundRequestApi(), []), api = suppliedApi ?? defaultApi;
   const callbacks = useRef({onClose, onBack, onDenied});
   const [sessionEnded, setSessionEnded] = useState(false), [deniedContext, setDeniedContext] = useState<string | null>(null);
-  const [bridge] = useState(() => createInboundRequestBridge(api, () => {
-    setSessionEnded(true); callbacks.current.onDenied?.(new ApiError(401, "authentication_required"));
-  }));
+  const [bridge] = useState(() => createInboundRequestBridge(api));
+  // Install the notification after commit. Constructing the bridge must not
+  // expose callback refs to a factory invoked during React render.
+  useLayoutEffect(() => {
+    bridge.setSessionDeniedHandler(() => {
+      setSessionEnded(true); callbacks.current.onDenied?.(new ApiError(401, "authentication_required"));
+    });
+    return () => bridge.setSessionDeniedHandler(null);
+  }, [bridge]);
   const state = useSyncExternalStore(bridge.subscribe, bridge.getSnapshot, bridge.getSnapshot);
   const pendingReceipt = useRef<InboundDraftReceipt | null>(null), [readbackPending, setReadbackPending] = useState(false);
   const readProofGeneration = useRef<object | null>(null), latestAdapterRead = useRef<object | null>(null);

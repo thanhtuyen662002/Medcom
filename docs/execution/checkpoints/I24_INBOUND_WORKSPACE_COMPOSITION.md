@@ -34,3 +34,7 @@ NOT_RUN locally: pinned lint/typecheck/build/package smoke, actual React/browser
 ## Open qualification gates
 
 This is dormant synthetic-tested contract wiring, not production functionality or acceptance. Current authoritative menu/branch Update and separate new-Send admission, real login/database binding, journal/transaction/concurrency semantics, actual SQL/legacy execution, target deployment and real runtime acceptance remain separate qualification gates. Cross-tab cookie replacement has no true incarnation field in the current Workspace DTO; a mismatched opaque scope remains locked and requires confirmed reauthentication rather than rebinding retained intent.
+
+## PR76 first hosted-CI correction
+
+The first candidate `9dafd09d09301aa281b4dddbbf4e6c0ef0848301` passed hosted frontend TypeScript validation but failed `react-hooks/refs` lint: its bridge factory received a notification callback closing over a React ref during render. The bounded correction keeps bridge creation ref-free and installs/removes the current-session-denial callback in a layout effect. It does not suppress the lint rule, weaken current-generation checks or change retained original custody. The existing standalone and composition tests remain intact; fresh exact-head CI is required.
