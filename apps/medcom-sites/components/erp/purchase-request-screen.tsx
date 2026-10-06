@@ -184,7 +184,7 @@ function PurchaseRequestReader({workspace,boundary,sessionUnverified,onDenied,on
     <div className={requestStyles.cards}>{active?.list?.rows.map(row=><article key={row.documentId} className={requestStyles.card}>
      <div className={requestStyles.cardHeading}><strong>{row.documentId}</strong><RequestStatus value={row.statusId}/></div>
      <dl className={requestStyles.values}><div><dt>Ngày đề nghị</dt><dd>{requestDate(row.purchaseDate)}</dd></div><div><dt>Chi nhánh</dt><dd>{row.branchId}</dd></div><div><dt>Người đề nghị</dt><dd>{row.personSuggest||"Chưa có thông tin"}</dd></div><div><dt>Phòng ban</dt><dd>{row.department||"Chưa có thông tin"}</dd></div></dl>
-     <RequestButton ref={element=>registerFocusRow(row.documentId,element)} className="scroll-mt-24" onClick={()=>open(row.documentId)} aria-label={`Mở đề nghị ${row.documentId}`}>Mở đề nghị</RequestButton>
+     <RequestButton ref={element=>registerFocusRow(row.documentId,element)} className="scroll-mt-24 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" onClick={()=>open(row.documentId)} aria-label={`Mở đề nghị ${row.documentId}`}>Mở đề nghị</RequestButton>
     </article>)}{active?.list?.rows.length===0&&<RequestEmpty title="Không có đề nghị phù hợp">Thử điều chỉnh mã đề nghị hoặc chi nhánh.</RequestEmpty>}</div>
     <nav aria-label="Phân trang đề nghị" className={requestStyles.footer}><RequestButton disabled={page===1} onClick={()=>move(()=>{cancelFocus();setPage(value=>value-1);setSelected(null);editorRef.current?.bridge.retire();retain(null);})}>Trang trước</RequestButton><span>Trang {page}</span><RequestButton disabled={!active?.list?.hasMore||page>=1000} onClick={()=>move(()=>{cancelFocus();setPage(value=>value+1);setSelected(null);editorRef.current?.bridge.retire();retain(null);})}>Trang sau</RequestButton></nav>
    </>}
@@ -192,7 +192,7 @@ function PurchaseRequestReader({workspace,boundary,sessionUnverified,onDenied,on
    {!!active?.detailError&&<RequestError error={active.detailError}/>}
   </div>}
   {/* Outside the busy/error/selection fragment. Never key by token or discard an unknown intent. */}
-  {editor&&<section ref={registerFocusDetail} aria-label="Phiếu mua hàng hiện có" tabIndex={-1} className="scroll-mt-24" hidden={!canRead}><div className={requestStyles.stack}>
+  {editor&&<section ref={registerFocusDetail} aria-label="Phiếu mua hàng hiện có" tabIndex={-1} className="scroll-mt-24 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" hidden={!canRead}><div className={requestStyles.stack}>
    <MobileRequest initial={editor.snapshot} access={access} adapter={editor.bridge.adapter} readRevision={editor.revision} onConfirmed={onConfirmed} onWorkStateChange={onWorkStateChange}/>
    {canRead&&<>{editor.receiptId&&<p role="status">ERP đã xác nhận yêu cầu {editor.receiptId}. Receipt vẫn được giữ khi đọc lại thất bại.</p>}
     <FullPurchaseReadback readback={editor.raw}/></>}

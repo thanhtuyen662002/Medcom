@@ -288,35 +288,63 @@ test('Node double: fatal UTF-8 and duplicate envelope response never reach draft
 // ACTUAL host + unchanged I18 + unchanged navigation provider. This fixture's
 // HTTP layer is a browser fetch double, NOT an ASP.NET/BFF integration proof.
 const fixture = `
-import React,{useMemo,useRef,useState} from 'react';import {createRoot} from 'react-dom/client';
+import React,{useLayoutEffect,useMemo,useRef,useState} from 'react';import {createRoot} from 'react-dom/client';
 import {InboundRequestScreen} from './components/erp/inbound-request-screen';
+import {InboundRequestReadOnly} from './components/erp/inbound-request-readonly';
 import {NavigationGuardProvider} from './components/erp/navigation-guard';
 import {createInboundRequestApi} from './lib/erp/inbound-request-api';
 import {ApiError} from './lib/erp/api';
 const originalPush=history.pushState.bind(history);window.qaPushes=0;history.pushState=(...args)=>{window.qaPushes++;return originalPush(...args);};
 const baseline=${JSON.stringify(source)},rights=${JSON.stringify(access)};
-function model(){return {scope:'a'.repeat(64),access:{...rights},mode:'Committed',outcome:'Replayed',held:{},waits:{},readFailure:false,readShape:null,listFailure:null,calls:{read:[],post:[],reconcile:[],list:[]},docs:{'DOC-A':structuredClone(baseline),'DOC-B':{...structuredClone(baseline),documentId:'DOC-B',header:{...baseline.header,orderNumber:'FULL ERP B'}}}};}
+function model(){return {scope:'a'.repeat(64),access:{...rights},mode:'Committed',outcome:'Replayed',held:{},waits:{},readFailure:false,readShape:null,listFailure:null,draftReply:null,draftHttp:null,readMarkers:null,workspaceCapabilities:['inbound-requests.read'],detailLabel:'READ ONLY PROJECTION',detailFailure:null,detailResponseMarkers:null,detailLastPage:1,detailPageSize:50,directReadonly:false,directProps:{documentId:'DOC-A',verifying:false,readRevision:0},useDefaultList:false,listResponseMarkers:null,detailSignals:[],releaseDetailOnAuthorityCommit:false,calls:{read:[],readReplies:[],post:[],reconcile:[],list:[],listGet:[],detail:[],detailCompleted:[],layoutDetailReleases:[]},docs:{'DOC-A':structuredClone(baseline),'DOC-B':{...structuredClone(baseline),documentId:'DOC-B',header:{...baseline.header,orderNumber:'FULL ERP B'}}}};}
+// Production getDetail and the optional default getDocuments path use these synthetic global-fetch responses.
+// Requests intentionally ignore cancellation so stale-success/denial fencing is exercised.
+const originalFetch=globalThis.fetch.bind(globalThis);
+globalThis.fetch=(url,init)=>{const pathname=new URL(typeof url==='string'?url:url.url,location.href).pathname;if(pathname==='/api/erp/api/documents/inbound-requests/detail')return window.qaDetailFetch(url,init);if(pathname==='/api/erp/api/documents/inbound-requests')return window.qaListFetch(url,init);return originalFetch(url,init);};
 function App(){const m=useRef(model()),count=useRef(0);const [config,setConfig]=useState({loginKey:'login-0',version:1,available:true,listRevision:0,apiRevision:0,callbackRevision:0});
  const wait=async(model,kind)=>{if(model.held[kind])await new Promise(r=>(model.waits[kind]??=[]).push(r));};
+ // Child layout effects have committed, while this parent's authority refresh
+ // deliberately releases the retired HTTP failure before passive cleanup.
+ useLayoutEffect(()=>{const x=m.current;if(!x.releaseDetailOnAuthorityCommit)return;x.releaseDetailOnAuthorityCommit=false;
+ const panel=document.querySelector('[data-testid=inbound-request-readonly]');x.calls.layoutDetailReleases.push({authorityVersion:config.version,panelPresent:!!panel,phase:panel?.getAttribute('data-phase')??null,abortedAtRelease:x.detailSignals[0]?.aborted??false});x.waits.detail?.shift()?.();},[config.version]);
+ window.qaListFetch=async(url,init={})=>{const x=m.current,u=new URL(url,location.href),page=Number(u.searchParams.get('page')),markers=structuredClone(x.listResponseMarkers??x.readMarkers);
+ x.calls.listGet.push({path:u.pathname,query:u.search,method:init.method??'GET',credentials:init.credentials,cache:init.cache,redirect:init.redirect});
+ const result={rows:Object.values(x.docs).map(d=>({documentId:d.documentId,documentDate:'2026-10-01',branchId:'BR-A',statusId:0,isLocked:false})),page,pageSize:50,hasMore:false};await wait(x,'list');
+ return new Response(JSON.stringify(result),{headers:{'content-type':'application/json','cache-control':'no-store',...(markers?{'X-Medcom-Session-Scope':markers.sessionScope,'X-Medcom-Read-Scope':markers.readScope}:{})}});
+ };
+ window.qaDetailFetch=async(url,init={})=>{const x=m.current,u=new URL(url,location.href),id=u.searchParams.get('documentId'),page=Number(u.searchParams.get('page'));
+ const call={path:u.pathname,query:u.search,documentId:id,page,method:init.method??'GET',credentials:init.credentials,cache:init.cache,redirect:init.redirect,headers:Object.fromEntries(new Headers(init.headers)),body:init.body??null};x.calls.detail.push(call);x.detailSignals.push(init.signal);
+ const markers=structuredClone(x.detailResponseMarkers??x.readMarkers),failure=x.detailFailure,label=x.detailLabel;
+ const detail={document:{documentId:id,documentDate:'2026-10-01',branchId:'BR-A',statusId:0,isLocked:false},purchaseOrderLines:[],inboundRequestLines:[{lineId:'PROJECTION-'+id,itemId:label,setQuantityByDocument:'1234567890123456789012345678.1234',barrelQuantityByDocument:null,setQuantityByReal:'-0.0001',barrelQuantityByReal:'0'}],page,pageSize:x.detailPageSize,hasMore:page<x.detailLastPage};
+ await wait(x,'detail');x.calls.detailCompleted.push({documentId:id,label,failure,aborted:init.signal?.aborted??false});
+ if(failure==='network')throw new TypeError('synthetic detail network loss');
+ return new Response(JSON.stringify(typeof failure==='number'?{code:'synthetic_detail_error'}:failure==='malformed'?{}:detail),{status:typeof failure==='number'?failure:200,headers:{'content-type':'application/json','cache-control':'no-store',...(markers?{'X-Medcom-Session-Scope':markers.sessionScope,'X-Medcom-Read-Scope':markers.readScope}:{})}});
+ };
  const api=useMemo(()=>createInboundRequestApi(async(url,init)=>{const x=m.current;const u=new URL(url,'https://fixture.invalid');
  const response=data=>new Response(JSON.stringify(data),{headers:{'content-type':'application/json','cache-control':'no-store'}});
  if(u.pathname.endsWith('/csrf'))return response({token:'fake-csrf'});
- if(init.method!=='POST'){const id=u.searchParams.get('documentId'),document=structuredClone(x.docs[id]),scope=x.scope;x.calls.read.push(id);await wait(x,'read');if(x.readFailure)throw Error('synthetic read lost');if(x.nextReadAccess){x.access={...x.access,...x.nextReadAccess};x.nextReadAccess=null;x.held.read=true;}if(x.readShape==='malformed')document.header.rateExchange=1;if(x.readShape==='mismatch')document.stateEqualityToken='D'.repeat(64);return response({scopeKey:scope,access:x.access,data:{outcome:x.access.canRead?'Observed':'Denied',document:x.access.canRead?document:null}});}
+ if(init.method!=='POST'){const id=u.searchParams.get('documentId'),document=structuredClone(x.docs[id]),scope=x.scope;x.calls.read.push(id);await wait(x,'read');if(x.readFailure)throw Error('synthetic read lost');if(x.draftHttp!==null)return new Response('{}',{status:x.draftHttp});if(x.nextReadAccess){x.access={...x.access,...x.nextReadAccess};x.nextReadAccess=null;x.held.read=true;}if(x.readShape==='malformed')document.header.rateExchange=1;if(x.readShape==='mismatch')document.stateEqualityToken='D'.repeat(64);const envelope=x.draftReply??{scopeKey:scope,access:x.access,data:{outcome:x.access.canRead?'Observed':'Denied',document:x.access.canRead?document:null}};x.calls.readReplies.push(structuredClone(envelope));return response(envelope);}
  const c=JSON.parse(init.body),rec=u.pathname.endsWith('/reconcile');x.calls[rec?'reconcile':'post'].push(init.body);await wait(x,rec?'reconcile':'post');
  if(rec)return response({scopeKey:x.scope,data:{outcome:x.outcome,receipt:['Committed','Replayed'].includes(x.outcome)?x.receipt??null:null,code:null}});
  if(['Committed','lost','readFailure','malformedRead','mismatchedRead'].includes(x.mode)){const d=x.docs[c.documentId];if(c.action==='Save')d.header=structuredClone(c.header);else d.statusId=2;d.stateEqualityToken='C'.repeat(64);x.receipt={operationId:c.operationId,documentId:c.documentId,statusId:d.statusId,stateEqualityToken:d.stateEqualityToken,auditId:'${audit}',committedAtUtc:'2026-10-06T00:00:00Z'};if(x.mode==='lost')throw Error('lost ACK');if(x.mode==='readFailure')x.readFailure=true;if(x.mode==='malformedRead')x.readShape='malformed';if(x.mode==='mismatchedRead')x.readShape='mismatch';return response({scopeKey:x.scope,data:{outcome:'Committed',receipt:x.receipt,code:null}});}
  return response({scopeKey:x.scope,data:{outcome:x.mode,receipt:null,code:null}});
  }),[config.apiRevision]);
  const list=useMemo(()=>async(page,search,branch)=>{const x=m.current,failure=x.listFailure;x.calls.list.push({page,search,branch});await wait(x,'list');if(failure!==null){if(failure==='network')throw new TypeError('synthetic network loss');throw new ApiError(failure,'synthetic_list_error');}return {rows:Object.values(x.docs).map(d=>({documentId:d.documentId,documentDate:'2026-10-01',branchId:'BR-A',statusId:0,isLocked:false})),page,pageSize:50,hasMore:page===1};},[config.listRevision]);
- const workspace=config.available&&config.loginKey?{session:{displayName:'Synthetic',tenantId:'T',companyId:'C',companyName:'Synthetic',authorityVersion:config.version,idleExpiresAt:'2026-10-07T00:00:00Z',absoluteExpiresAt:'2026-10-08T00:00:00Z',capabilities:['inbound-requests.read']},navigation:[],branchIds:['BR-A']}:null;
+ const workspace=config.available&&config.loginKey?{session:{displayName:'Synthetic',tenantId:'T',companyId:'C',companyName:'Synthetic',authorityVersion:config.version,idleExpiresAt:'2026-10-07T00:00:00Z',absoluteExpiresAt:'2026-10-08T00:00:00Z',capabilities:m.current.workspaceCapabilities},navigation:[],branchIds:['BR-A'],...(m.current.readMarkers??{})}:null;
  window.qa={reset:patch=>{const next=++count.current;m.current={...model(),scope:next.toString(16).padStart(64,'0'),...patch};window.qaLeft=false;window.qaDenied=[];window.qaCallback=null;setConfig({loginKey:'login-'+next,version:1,available:true,listRevision:0,apiRevision:0,callbackRevision:0});},calls:()=>m.current.calls,
  hold:k=>m.current.held[k]=true,release:k=>{m.current.held[k]=false;(m.current.waits[k]??[]).splice(0).forEach(f=>f());},held:k=>(m.current.waits[k]??[]).length,releaseOne:k=>m.current.waits[k]?.shift()?.(),stopHolding:k=>m.current.held[k]=false,
  failList:status=>{m.current.listFailure=status;setConfig(v=>({...v,listRevision:v.listRevision+1}));},listHealthy:()=>m.current.listFailure=null,
  refreshList:()=>setConfig(v=>({...v,listRevision:v.listRevision+1})),swapApi:()=>setConfig(v=>({...v,apiRevision:v.apiRevision+1})),
  rerender:()=>setConfig(v=>({...v,callbackRevision:v.callbackRevision+1})),callbackRevision:()=>config.callbackRevision,readFailure:value=>m.current.readFailure=value,nextReadRights:value=>m.current.nextReadAccess=value,
  rights:value=>{m.current.access={...rights,...value};setConfig(v=>({...v,version:v.version+1}));},workspace:value=>setConfig(v=>({...v,available:value})),logout:()=>setConfig(v=>({...v,loginKey:null,available:false})),
+ draftReply:value=>m.current.draftReply=value,detail:value=>Object.assign(m.current,value),
+ directProps:value=>{Object.assign(m.current.directProps,value);setConfig(v=>({...v,callbackRevision:v.callbackRevision+1}));},
+ markers:value=>{m.current.readMarkers=value;setConfig(v=>({...v,callbackRevision:v.callbackRevision+1}));},
  retainRelease:k=>{const old=m.current;window.qaOldRelease=()=>{old.held[k]=false;(old.waits[k]??[]).splice(0).forEach(f=>f());};},outcome:v=>m.current.outcome=v,healthy:()=>{m.current.readFailure=false;m.current.readShape=null;},mode:v=>m.current.mode=v};
- return <NavigationGuardProvider><InboundRequestScreen loginKey={config.loginKey} workspace={workspace} api={api} list={list} onDenied={error=>(window.qaDenied??=[]).push(error.status)} onClose={()=>{window.qaLeft=true;window.qaCallback=config.callbackRevision;}} onBack={()=>{window.qaLeft=true;window.qaCallback=config.callbackRevision;}}/></NavigationGuardProvider>;
+ // Explicit intrinsic-child mode: no composed host, draft bridge or navigation
+ // provider. The reset key changes only between cases, never on direct props.
+ if(m.current.directReadonly)return <InboundRequestReadOnly key={config.loginKey} {...m.current.directProps} branchIds={['BR-A']} scope={m.current.readMarkers} initialPage={1} onPageChange={()=>{}} onPresented={()=>{}} onDenied={error=>(window.qaDenied??=[]).push(error.status)}/>;
+ return <NavigationGuardProvider><InboundRequestScreen loginKey={config.loginKey} workspace={workspace} api={api} {...(m.current.useDefaultList?{}:{list})} onDenied={error=>(window.qaDenied??=[]).push(error.status)} onClose={()=>{window.qaLeft=true;window.qaCallback=config.callbackRevision;}} onBack={()=>{window.qaLeft=true;window.qaCallback=config.callbackRevision;}}/></NavigationGuardProvider>;
 }
 createRoot(document.getElementById('root')).render(<App/>);`;
 
@@ -379,6 +407,227 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
     const rowFocus = id => page.getByRole('button', {name:new RegExp('^Mở phiếu '+id+' ')});
     const focused = async locator => {await page.waitForFunction(element=>document.activeElement===element,await locator.elementHandle());};
     const focusPaint = () => page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    // I33 Step 2: exercise the actual host/production draft client and getDetail.
+    // These synthetic markers represent a separately validated workspace READ
+    // scope; command scope, tenant IDs and display names are never substitutes.
+    const readMarkers = {sessionScope:'e'.repeat(64),readScope:'f'.repeat(64)};
+    const unavailable = (scopeKey = null) => ({scopeKey,access:{canRead:false,canSave:false,canSend:false,available:false,maxCommandBytes:1048576},data:{outcome:'Unavailable',document:null}});
+    const readonly = () => page.getByTestId('inbound-request-readonly');
+    const readonlyPhase = phase => page.waitForFunction(phase => document.querySelector('[data-testid=inbound-request-readonly]')?.getAttribute('data-phase')===phase,phase);
+    const resetReadonly = async (patch = {}) => {await page.evaluate(patch=>window.qa.reset(patch),{readMarkers,draftReply:unavailable(),...patch});await open('DOC-A');};
+    const waitUnavailable = () => page.waitForFunction(()=>window.qa.calls().readReplies.at(-1)?.data.outcome==='Unavailable'&&!document.getElementById('inbound-header-orderNumber'));
+    const noProjection = async () => {await focusPaint();assert.equal(await readonly().count(),0);assert.equal((await calls()).detail.length,0);};
+    for (const commandScope of [null,'c'.repeat(64)]) await run(`I33 exact Closed+Unavailable (${commandScope===null?'null':'valid hex'} command scope) opens an independently scoped READ projection`,async()=>{
+      await resetReadonly({draftReply:unavailable(commandScope)});await readonlyPhase('ready');await focused(detailFocus());
+      const c=await calls();assert.deepEqual(c.readReplies[0],unavailable(commandScope));assert.equal(c.read.length,1);
+      assert.deepEqual(c.detail,[{path:'/api/erp/api/documents/inbound-requests/detail',query:'?documentId=DOC-A&page=1&pageSize=50',documentId:'DOC-A',page:1,method:'GET',credentials:'same-origin',cache:'no-store',redirect:'error',headers:{},body:null}]);
+      assert.match(await readonly().innerText(),/READ ONLY PROJECTION/);assert.match(await readonly().innerText(),/1234567890123456789012345678\.1234/);
+      assert.equal(await field('Số đơn').count(),0);assert.equal(await readonly().locator('input,textarea,select').count(),0);assert.equal(c.post.length,0);assert.equal(c.reconcile.length,0);
+      const count=c.detail.length;await open('DOC-A');await focused(detailFocus());assert.equal((await calls()).detail.length,count,'same-selection Open must reuse current read proof');
+    });
+    await run('I33 command scope cannot substitute for the independently verified detail READ response scope',async()=>{
+      await resetReadonly({draftReply:unavailable('c'.repeat(64)),detailResponseMarkers:{sessionScope:readMarkers.sessionScope,readScope:'c'.repeat(64)}});
+      await page.getByText('Chưa xác minh được quyền xem phiếu. Yêu cầu đang xử lý vẫn được giữ.',{exact:true}).waitFor();
+      assert.equal(await readonly().count(),0);assert.equal(await field('Số đơn').count(),0);assert.equal((await calls()).detail.length,1);assert.equal((await calls()).post.length,0);assert.deepEqual(await page.evaluate(()=>window.qaDenied),[]);
+    });
+    await run('I33 actual default list enforces workspace READ markers before admitting rows, selection or detail',async()=>{
+      await page.evaluate(patch=>window.qa.reset(patch),{useDefaultList:true,readMarkers,draftReply:unavailable()});await rowFocus('DOC-A').waitFor();
+      assert.deepEqual((await calls()).listGet,[{path:'/api/erp/api/documents/inbound-requests',query:'?page=1&pageSize=50&search=&branchId=',method:'GET',credentials:'same-origin',cache:'no-store',redirect:'error'}]);assert.equal((await calls()).list.length,0,'supplied list seam is omitted');assert.equal((await calls()).detail.length,0);
+      for(const patch of [{listResponseMarkers:{...readMarkers,sessionScope:'c'.repeat(64)}},{listResponseMarkers:{...readMarkers,readScope:'c'.repeat(64)}},{listResponseMarkers:false},{readMarkers:null}]){
+        await page.evaluate(patch=>window.qa.reset(patch),{useDefaultList:true,readMarkers,draftReply:unavailable(),...patch});
+        const mismatched=!!patch.listResponseMarkers;
+        await page.getByText(mismatched?'Chưa xác minh được quyền xem phiếu. Yêu cầu đang xử lý vẫn được giữ.':'Chưa tải được danh sách.',{exact:true}).waitFor();await focusPaint();
+        assert.equal(await page.getByRole('button',{name:/^Mở phiếu /}).count(),0);assert.equal(await readonly().count(),0);assert.equal(await field('Số đơn').count(),0);
+        const c=await calls();assert.equal(c.list.length,0);assert.equal(c.listGet.length,patch.readMarkers===null?0:1);assert.equal(c.read.length,0);assert.equal(c.detail.length,0);assert.equal(c.post.length,0);assert.deepEqual(await page.evaluate(()=>window.qaDenied),[]);
+        await focusPaint();assert.equal((await calls()).listGet.length,c.listGet.length,'failed default list does not enter an automatic retry loop');
+      }
+    });
+    await run('I33 authority layout commit fences captured readonly 401/403 before parent releases the old response',async()=>{
+      for(const status of [401,403]){
+        await resetReadonly({held:{detail:true},detailFailure:status,detailLabel:'RETIRED LAYOUT RESPONSE'});await page.waitForFunction(()=>window.qa.held('detail')===1);await readonly().evaluate(element=>window.qaBoundaryPanel=element);
+        await page.evaluate(()=>{window.qa.hold('read');window.qa.detail({releaseDetailOnAuthorityCommit:true,detailFailure:null,detailLabel:'CURRENT LAYOUT RESPONSE'});window.qa.rights({});});
+        await page.waitForFunction(()=>window.qa.calls().layoutDetailReleases.length===1&&window.qa.calls().detailCompleted.length===1&&window.qa.held('read')>0);await focusPaint();
+        assert.deepEqual((await calls()).layoutDetailReleases,[{authorityVersion:2,panelPresent:true,phase:'pending',abortedAtRelease:true}],'retired generation is already fenced in child layout, before parent layout releases HTTP failure');
+        const completed=(await calls()).detailCompleted[0];assert.equal(completed.failure,status);assert.equal(completed.aborted,true,'fetch double still delivered the captured non-OK response despite cancellation');
+        assert.deepEqual(await page.evaluate(()=>window.qaDenied),[]);assert.equal(await page.evaluate(()=>window.qaBoundaryPanel.isConnected&&window.qaBoundaryPanel===document.querySelector('[data-testid=inbound-request-readonly]')),true);assert.equal(await readonly().getAttribute('data-phase'),'pending');
+        assert.equal(await rowFocus('DOC-A').getAttribute('aria-pressed'),'true');assert.equal((await calls()).detail.length,1);assert.doesNotMatch(await page.getByTestId('inbound-request-host').innerText(),/Đã kết thúc phiên|Chưa xác minh được quyền xem phiếu/);
+        await page.evaluate(()=>window.qa.release('read'));await page.waitForFunction(()=>window.qa.held('detail')===1&&window.qa.calls().detail.length===2);assert.equal(await page.evaluate(()=>window.qaBoundaryPanel===document.querySelector('[data-testid=inbound-request-readonly]')),true);
+        await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');await focusPaint();assert.match(await readonly().innerText(),/CURRENT LAYOUT RESPONSE/);assert.equal(await detailFocus().evaluate(element=>document.activeElement===element),false);
+        assert.equal(await page.evaluate(()=>window.qaBoundaryPanel===document.querySelector('[data-testid=inbound-request-readonly]')),true);assert.deepEqual(await page.evaluate(()=>window.qaDenied),[]);assert.equal((await calls()).post.length,0);assert.equal((await calls()).reconcile.length,0);
+      }
+    });
+    await run('I33 missing EDIT is Denied with available=true; other draft denials and failed transports never admit detail',async()=>{
+      const denied={scopeKey:'c'.repeat(64),access:{...unavailable().access,available:true},data:{outcome:'Denied',document:null}};
+      const patches=[{draftReply:denied},...['Denied','NotFound','Conflict'].map(outcome=>({draftReply:{...unavailable(),data:{outcome,document:null}}})),
+        {draftReply:{...unavailable(),access:{...unavailable().access,available:true}}},
+        ...[401,403,404,409].map(draftHttp=>({draftHttp})),{readFailure:true},
+        {draftReply:{...unavailable(),scopeKey:'INVALID'}},{draftReply:{...unavailable(),access:{...unavailable().access,maxCommandBytes:0}}},
+        {draftReply:{...unavailable(),data:{outcome:'Unavailable',document:null,extra:true}}}];
+      for(const patch of patches){await resetReadonly(patch);await page.waitForFunction(()=>window.qa.calls().read.length>0);await focusPaint();await noProjection();
+        assert.equal((await calls()).post.length,0);assert.equal((await calls()).reconcile.length,0);
+        if(patch.draftReply===denied){assert.deepEqual((await calls()).readReplies[0],denied);assert.equal(await field('Số đơn').count(),0);}
+        if(patch.draftHttp===401)assert.deepEqual(await page.evaluate(()=>window.qaDenied),[401]);
+      }
+    });
+    await run('I33 missing READ or missing/invalid workspace READ markers cannot issue detail GET',async()=>{
+      await page.evaluate(patch=>window.qa.reset(patch),{readMarkers,draftReply:unavailable(),workspaceCapabilities:[]});await focusPaint();
+      assert.equal(await rowFocus('DOC-A').count(),0);await noProjection();
+      for(const markers of [null,{sessionScope:readMarkers.sessionScope},{readScope:readMarkers.readScope},
+        {sessionScope:'E'.repeat(64),readScope:readMarkers.readScope},{sessionScope:readMarkers.sessionScope,readScope:'not-a-scope'}]){
+        await resetReadonly({readMarkers:markers});await waitUnavailable();await noProjection();assert.equal((await calls()).post.length,0);
+      }
+      await reset({readMarkers});await page.evaluate(reply=>{window.qa.draftReply(reply);window.qa.detail({workspaceCapabilities:[]});window.qa.rights({});},unavailable());
+      await waitUnavailable();await noProjection();assert.equal(await rowFocus('DOC-A').count(),0);assert.equal((await calls()).post.length,0);
+    });
+    await run('I33 failed readonly Open retires focus; retry and later A→B→A never revive the failed projection',async()=>{
+      await resetReadonly({detailFailure:'network',detailLabel:'FAILED A'});await readonlyPhase('failed');await focusPaint();
+      assert.equal(await detailFocus().evaluate(element=>document.activeElement===element),false);
+      await page.evaluate(()=>window.qa.detail({detailFailure:null,detailLabel:'RECOVERED A'}));await readonly().getByRole('button',{name:'Thử lại',exact:true}).click();await readonlyPhase('ready');await focusPaint();
+      assert.match(await readonly().innerText(),/RECOVERED A/);assert.equal(await detailFocus().evaluate(element=>document.activeElement===element),false,'retry has no new Open focus ticket');
+      await page.evaluate(()=>window.qa.detail({detailLabel:'CURRENT B'}));await open('DOC-B');await readonlyPhase('ready');await focused(detailFocus());assert.match(await readonly().innerText(),/CURRENT B/);
+      await page.evaluate(()=>{window.qa.hold('detail');window.qa.detail({detailLabel:'FRESH A'});});await open('DOC-A');await page.waitForFunction(()=>window.qa.held('detail')===1);await readonlyPhase('pending');
+      assert.doesNotMatch(await readonly().innerText(),/RECOVERED A|CURRENT B|FAILED A/);await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');await focused(detailFocus());
+      assert.match(await readonly().innerText(),/FRESH A/);assert.equal((await calls()).detail.length,4);assert.equal((await calls()).post.length,0);
+    });
+    await run('I33 held A→B→A detail success and denial cannot restore a retired projection or consume current focus',async()=>{
+      for(const retiredFailure of [null,401]){
+        await resetReadonly({held:{detail:true},detailLabel:'RETIRED A',detailFailure:retiredFailure});await page.waitForFunction(()=>window.qa.held('detail')===1);
+        await page.evaluate(()=>window.qa.detail({detailLabel:'RETIRED B',detailFailure:null}));await open('DOC-B');await page.waitForFunction(()=>window.qa.held('detail')===2);
+        await page.evaluate(()=>window.qa.detail({detailLabel:'CURRENT A'}));await open('DOC-A');await page.waitForFunction(()=>window.qa.held('detail')===3);await readonlyPhase('pending');
+        await page.evaluate(()=>{window.qa.releaseOne('detail');window.qa.releaseOne('detail');});await page.waitForFunction(()=>window.qa.calls().detailCompleted.length===2);await focusPaint();
+        assert.equal(await readonly().getAttribute('data-phase'),'pending');assert.doesNotMatch(await readonly().innerText(),/RETIRED A|RETIRED B/);
+        assert.equal(await detailFocus().evaluate(element=>document.activeElement===element),false);assert.deepEqual(await page.evaluate(()=>window.qaDenied),[]);
+        assert.ok((await calls()).detailCompleted.every(result=>result.aborted),'double resolves retired responses despite cancellation');
+        await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');await focused(detailFocus());assert.match(await readonly().innerText(),/CURRENT A/);
+        assert.deepEqual((await calls()).detail.map(call=>call.documentId),['DOC-A','DOC-B','DOC-A']);assert.equal((await calls()).post.length,0);
+      }
+    });
+    await run('I33 workspace/API/session-scope/read-scope generations retire held detail and its Open focus',async()=>{
+      for(const generation of ['workspace','api','session-scope','read-scope']){
+        await resetReadonly({held:{detail:true},detailLabel:'RETIRED GENERATION',detailFailure:401});await page.waitForFunction(()=>window.qa.held('detail')===1);
+        await page.evaluate(()=>window.qa.detail({detailLabel:'CURRENT GENERATION',detailFailure:null}));
+        if(generation==='workspace'){await page.evaluate(()=>window.qa.workspace(false));await page.waitForFunction(()=>!document.querySelector('[data-testid=inbound-request-readonly]'));await page.evaluate(()=>window.qa.workspace(true));}
+        else if(generation==='api')await page.evaluate(()=>window.qa.swapApi());
+        else await page.evaluate(({generation,markers})=>window.qa.markers({...markers,[generation==='session-scope'?'sessionScope':'readScope']:'d'.repeat(64)}),{generation,markers:readMarkers});
+        await page.waitForFunction(()=>window.qa.held('detail')===2);await readonlyPhase('pending');await page.evaluate(()=>window.qa.releaseOne('detail'));await page.waitForFunction(()=>window.qa.calls().detailCompleted.length===1);await focusPaint();
+        assert.equal(await readonly().getAttribute('data-phase'),'pending');assert.doesNotMatch(await readonly().innerText(),/RETIRED GENERATION/);assert.deepEqual(await page.evaluate(()=>window.qaDenied),[]);
+        await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');await focusPaint();assert.match(await readonly().innerText(),/CURRENT GENERATION/);
+        assert.equal(await detailFocus().evaluate(element=>document.activeElement===element),false,'authority/API/scope recovery cannot re-arm old Open focus');assert.equal((await calls()).detail.length,2);assert.equal((await calls()).post.length,0);
+      }
+    });
+    await run('I33 healthy authority refresh preserves readonly page-2 DOM; real workspace/API/scope boundaries require fresh masked reads',async()=>{
+      const filter=field('Tìm phiếu nhập hàng'),branch=page.getByRole('form',{name:'Lọc phiếu nhập hàng',exact:true}).getByRole('combobox');
+      const sameReadonlyDom=async()=>assert.equal(await page.evaluate(()=>window.qaContinuityPanel.isConnected&&window.qaContinuityPanel===document.querySelector('[data-testid=inbound-request-readonly]')
+        &&window.qaContinuityRow.isConnected&&window.qaContinuityRow===document.querySelector('[aria-pressed="true"]')
+        &&window.qaContinuityValue.isConnected&&window.qaContinuityPanel.contains(window.qaContinuityValue)),true);
+      const readonlyPagingDisabled=async()=>{assert.equal(await readonly().getByRole('button',{name:'Dòng trước',exact:true}).isDisabled(),true);assert.equal(await readonly().getByRole('button',{name:'Dòng tiếp',exact:true}).isDisabled(),true);};
+      for(const refresh of ['workspace','authority','api']){
+        await page.evaluate(patch=>window.qa.reset(patch),{readMarkers,draftReply:unavailable(),detailLastPage:2,detailLabel:'ORIGINAL PAGE 1'});
+        await filter.fill('KEEP APPLIED FILTER');await branch.selectOption('BR-A');await button('Áp dụng lọc nhập hàng').click();await open('DOC-A');await readonlyPhase('ready');
+        await page.evaluate(()=>window.qa.detail({detailLabel:'ORIGINAL PAGE 2'}));await readonly().getByRole('button',{name:'Dòng tiếp',exact:true}).click();await readonlyPhase('ready');
+        assert.match(await readonly().innerText(),/ORIGINAL PAGE 2/);assert.match(await readonly().getByRole('navigation',{name:'Trang dòng hàng chỉ đọc',exact:true}).innerText(),/Trang 2/);assert.equal((await calls()).detail.at(-1).page,2);
+        await filter.fill('KEEP UNAPPLIED FILTER');const before=(await calls()).detail.length;
+        await readonly().evaluate(element=>window.qaContinuityPanel=element);await rowFocus('DOC-A').evaluate(element=>window.qaContinuityRow=element);await readonly().getByText('ORIGINAL PAGE 2',{exact:true}).evaluate(element=>window.qaContinuityValue=element);
+        await page.evaluate(refresh=>{window.qa.hold('read');window.qa.hold('detail');if(refresh==='authority')window.qa.hold('list');window.qa.detail({detailLabel:'FRESH PAGE 2'});},refresh);
+        if(refresh==='workspace'){await page.evaluate(()=>window.qa.workspace(false));await page.waitForFunction(()=>!document.querySelector('[data-testid=inbound-request-readonly]'));assert.doesNotMatch(await page.getByTestId('inbound-request-host').innerText(),/ORIGINAL PAGE 2/);await page.evaluate(()=>window.qa.workspace(true));}
+        else if(refresh==='authority')await page.evaluate(()=>window.qa.rights({}));
+        else await page.evaluate(()=>window.qa.swapApi());
+        await page.waitForFunction(()=>window.qa.held('read')>0);await focusPaint();assert.equal((await calls()).detail.length,before,'no detail request before new typed Unavailable');
+        if(refresh==='authority'){
+          await readonlyPhase('pending');await page.waitForFunction(()=>window.qa.held('list')>0);await sameReadonlyDom();await readonlyPagingDisabled();assert.match(await readonly().innerText(),/ORIGINAL PAGE 2/);assert.doesNotMatch(await readonly().innerText(),/FRESH PAGE 2/);
+          assert.equal(await filter.inputValue(),'KEEP UNAPPLIED FILTER');assert.equal(await branch.inputValue(),'BR-A');assert.equal(await rowFocus('DOC-A').getAttribute('aria-pressed'),'true');assert.equal(await detailFocus().evaluate(element=>document.activeElement===element),false);
+        }else{assert.equal(await readonly().count(),0);assert.doesNotMatch(await page.getByTestId('inbound-request-host').innerText(),/ORIGINAL PAGE 2/);}
+        await page.evaluate(()=>window.qa.release('read'));await page.waitForFunction(()=>window.qa.held('detail')===1);await readonlyPhase('pending');
+        assert.equal((await calls()).detail.at(-1).documentId,'DOC-A');assert.equal((await calls()).detail.at(-1).page,2,'current page survives same READ identity');
+        if(refresh==='authority'){await sameReadonlyDom();await readonlyPagingDisabled();assert.match(await readonly().innerText(),/ORIGINAL PAGE 2/);assert.doesNotMatch(await readonly().innerText(),/FRESH PAGE 2/);}
+        else assert.doesNotMatch(await readonly().innerText(),/ORIGINAL PAGE 2|FRESH PAGE 2/);
+        assert.equal(await filter.inputValue(),'KEEP UNAPPLIED FILTER');assert.equal(await branch.inputValue(),'BR-A');assert.equal(await rowFocus('DOC-A').getAttribute('aria-pressed'),'true');
+        await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');await focusPaint();assert.match(await readonly().innerText(),/FRESH PAGE 2/);assert.doesNotMatch(await readonly().innerText(),/ORIGINAL PAGE 2/);
+        if(refresh==='authority'){await sameReadonlyDom();assert.equal(await page.evaluate(()=>window.qaContinuityValue.textContent),'FRESH PAGE 2');assert.equal(await readonly().getByRole('button',{name:'Dòng trước',exact:true}).isDisabled(),false);await page.evaluate(()=>window.qa.release('list'));await focusPaint();await sameReadonlyDom();}
+        assert.match(await readonly().getByRole('navigation',{name:'Trang dòng hàng chỉ đọc',exact:true}).innerText(),/Trang 2/);assert.equal(await detailFocus().evaluate(element=>document.activeElement===element),false);
+        assert.equal(await filter.inputValue(),'KEEP UNAPPLIED FILTER');assert.equal(await branch.inputValue(),'BR-A');assert.equal((await calls()).list.at(-1).search,'KEEP APPLIED FILTER');assert.equal((await calls()).list.at(-1).branch,'BR-A');
+        assert.equal((await calls()).detail.length,before+1);assert.equal((await calls()).post.length,0);assert.equal((await calls()).reconcile.length,0);
+      }
+      await page.evaluate(()=>window.qa.detail({detailLabel:'NEW SELECTION PAGE 1'}));await open('DOC-B');await readonlyPhase('ready');assert.equal((await calls()).detail.at(-1).documentId,'DOC-B');assert.equal((await calls()).detail.at(-1).page,1);
+      await open('DOC-A');await readonlyPhase('ready');assert.equal((await calls()).detail.at(-1).documentId,'DOC-A');assert.equal((await calls()).detail.at(-1).page,1,'returning to A is a new selection, not cached page-2 proof');
+      await page.evaluate(()=>window.qa.detail({detailLabel:'RETIRED SCOPE PAGE 2'}));await readonly().getByRole('button',{name:'Dòng tiếp',exact:true}).click();await readonlyPhase('ready');assert.equal((await calls()).detail.at(-1).page,2);
+      await page.evaluate(markers=>{window.qa.hold('read');window.qa.hold('detail');window.qa.detail({detailLabel:'NEW SCOPE PAGE 1'});window.qa.markers(markers);},{...readMarkers,readScope:'d'.repeat(64)});
+      await page.waitForFunction(()=>window.qa.held('read')>0);assert.equal(await readonly().count(),0);assert.doesNotMatch(await page.getByTestId('inbound-request-host').innerText(),/RETIRED SCOPE PAGE 2/);
+      await page.evaluate(()=>window.qa.release('read'));await page.waitForFunction(()=>window.qa.held('detail')===1);await readonlyPhase('pending');assert.equal((await calls()).detail.at(-1).page,1);assert.doesNotMatch(await readonly().innerText(),/RETIRED SCOPE PAGE 2|NEW SCOPE PAGE 1/);
+      await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');await focusPaint();assert.match(await readonly().innerText(),/NEW SCOPE PAGE 1/);assert.equal(await detailFocus().evaluate(element=>document.activeElement===element),false);assert.equal((await calls()).post.length,0);assert.equal((await calls()).reconcile.length,0);
+    });
+    await run('I33 scoped detail pageSize 25 is rejected even when one returned row fits its bound',async()=>{
+      await resetReadonly({detailPageSize:25,detailLabel:'WRONG PAGE SIZE'});await readonlyPhase('failed');await focusPaint();assert.doesNotMatch(await readonly().innerText(),/WRONG PAGE SIZE/);
+      assert.equal(await detailFocus().evaluate(element=>document.activeElement===element),false);assert.equal((await calls()).detail.length,1);assert.equal((await calls()).post.length,0);assert.equal((await calls()).reconcile.length,0);
+    });
+    await run('I33 dirty original editor stays mounted and guarded through temporary readonly fallback, then restores exact full edits',async()=>{
+      await reset({readMarkers});await field('Số đơn').fill('  ORIGINAL EDIT\nKEEP  ');await field('Ghi chú').fill('NOTE\nKEEP');
+      await page.getByLabel('Số lượng bộ theo chứng từ',{exact:true}).first().fill('123.4500');await field('Ghi chú gửi kho NULL').uncheck();await field('Ghi chú gửi kho').fill('SEND NOTE');
+      await page.evaluate(()=>{window.qaEditorWrapper=document.querySelector('[data-testid=inbound-editor]').parentElement;});
+      await page.evaluate(reply=>{window.qa.draftReply(reply);window.qa.rights({});},unavailable());await readonlyPhase('ready');
+      assert.equal(await page.evaluate(()=>window.qaEditorWrapper.isConnected&&window.qaEditorWrapper===document.querySelector('[aria-label="Phiếu nhập hàng đã chọn"]').firstElementChild&&window.qaEditorWrapper.hidden),true);
+      assert.match(await readonly().innerText(),/READ ONLY PROJECTION/);assert.equal(await field('Số đơn').count(),0);
+      await blocked(()=>button('Đóng phiếu nhập hàng').click(),true);await blocked(()=>open('DOC-B'),true);assert.deepEqual((await calls()).detail.map(call=>call.documentId),['DOC-A']);
+      await page.evaluate(()=>{window.qa.draftReply(null);window.qa.rights({});});await ready();assert.equal(await readonly().count(),0);
+      assert.equal(await page.evaluate(()=>window.qaEditorWrapper.isConnected&&window.qaEditorWrapper===document.querySelector('[data-testid=inbound-editor]').parentElement&&!window.qaEditorWrapper.hidden),true);
+      assert.equal(await field('Số đơn').inputValue(),'  ORIGINAL EDIT\nKEEP  ');assert.equal(await field('Ghi chú').inputValue(),'NOTE\nKEEP');assert.equal(await field('Ghi chú gửi kho').inputValue(),'SEND NOTE');
+      const quantities=page.getByLabel('Số lượng bộ theo chứng từ',{exact:true});assert.equal(await quantities.count(),2);assert.equal(await quantities.first().inputValue(),'123.4500');assert.equal(await quantities.nth(1).inputValue(),source.details[1].setQuantityByDocument);
+      assert.equal(await field('Ngày giờ chứng từ').inputValue(),source.header.documentDate);assert.equal(await field('Tỷ giá').inputValue(),source.header.rateExchange);assert.equal(await page.getByLabel('Ngày giờ hết hạn theo chứng từ',{exact:true}).first().inputValue(),source.details[0].expireDateByDocument);
+      assert.doesNotMatch(await page.getByTestId('inbound-editor').innerText(),/READ ONLY PROJECTION|PROJECTION-DOC-A/);await blocked(()=>button('Đóng phiếu nhập hàng').click(),true);assert.equal((await calls()).post.length,0);assert.equal((await calls()).reconcile.length,0);
+      await page.evaluate(()=>window.qa.mode('lost'));await save();await unknown();const original=(await calls()).post[0],dto=JSON.parse(original);
+      assert.equal(dto.header.orderNumber,'  ORIGINAL EDIT\nKEEP  ');assert.equal(dto.header.notes,'NOTE\nKEEP');assert.equal(dto.expectedStateEqualityToken,source.stateEqualityToken);
+      assert.deepEqual(dto.detailUpserts,[{...source.details[0],setQuantityByDocument:'123.4500'}]);assert.deepEqual(dto.removedDetailIds,[]);assert.doesNotMatch(original,/READ ONLY PROJECTION|PROJECTION-DOC-A/);
+      await button('Kiểm tra yêu cầu gốc').click();await confirmed();const c=await calls();assert.deepEqual(c.post,[original]);assert.deepEqual(c.reconcile,[original]);assert.equal(c.detail.length,1);
+    });
+    await run('I33 typed Unavailable cannot replace unknown original custody; recovery reconciles the exact original key/body once',async()=>{
+      await reset({readMarkers,mode:'lost'});await field('Số đơn').fill('EXACT ORIGINAL\nKEEP');await save();await unknown();const original=(await calls()).post[0],originalKey=JSON.parse(original).operationId;
+      await page.evaluate(()=>{window.qaEditorWrapper=document.querySelector('[data-testid=inbound-editor]').parentElement;});
+      await page.evaluate(reply=>{window.qa.draftReply(reply);window.qa.rights({});},unavailable());await waitUnavailable();await noProjection();
+      assert.equal(await page.evaluate(()=>window.qaEditorWrapper.isConnected),true);await blocked(()=>button('Đóng phiếu nhập hàng').click());await blocked(()=>open('DOC-B'));
+      assert.equal((await calls()).post.length,1);assert.equal((await calls()).reconcile.length,0);
+      await page.evaluate(()=>{window.qa.draftReply(null);window.qa.rights({});});await unknown();await button('Kiểm tra yêu cầu gốc').click();await confirmed();await ready();
+      const c=await calls();assert.deepEqual(c.post,[original]);assert.deepEqual(c.reconcile,[original]);assert.equal(JSON.parse(c.reconcile[0]).operationId,originalKey);assert.equal(c.detail.length,0);
+      assert.equal(await field('Số đơn').inputValue(),'EXACT ORIGINAL\nKEEP');assert.equal(await page.evaluate(()=>window.qaEditorWrapper===document.querySelector('[data-testid=inbound-editor]').parentElement),true);
+    });
+    await run('I33 typed Unavailable cannot replace confirmed readback custody or release its barrier through projection',async()=>{
+      await reset({readMarkers,mode:'readFailure'});await field('Số đơn').fill('CONFIRMED ORIGINAL');await save();await confirmed();await page.waitForFunction(()=>document.querySelector('[data-testid=inbound-editor]')?.getAttribute('data-phase')==='readFailed');
+      const original=(await calls()).post[0];await page.evaluate(()=>{window.qaEditorWrapper=document.querySelector('[data-testid=inbound-editor]').parentElement;});
+      await page.evaluate(reply=>{window.qa.healthy();window.qa.draftReply(reply);window.qa.rights({});},unavailable());await waitUnavailable();await noProjection();
+      assert.equal(await page.getByTestId('inbound-request-host').getAttribute('data-readback-pending'),'true');assert.equal(await page.evaluate(()=>window.qaEditorWrapper.isConnected),true);
+      await blocked(()=>open('DOC-B'));await blocked(()=>button('Đóng phiếu nhập hàng').click());assert.equal((await calls()).read.includes('DOC-B'),false);assert.equal(await button('Kiểm tra yêu cầu gốc').count(),0);
+      await page.evaluate(()=>{window.qa.draftReply(null);window.qa.rights({});});await ready();assert.equal(await readonly().count(),0);assert.equal(await field('Số đơn').inputValue(),'CONFIRMED ORIGINAL');
+      const c=await calls();assert.deepEqual(c.post,[original]);assert.deepEqual(c.reconcile,[]);assert.equal(c.detail.length,0);assert.equal(await page.getByTestId('inbound-request-host').getAttribute('data-readback-pending'),'false');
+      assert.equal(await page.evaluate(()=>window.qaEditorWrapper===document.querySelector('[data-testid=inbound-editor]').parentElement),true);
+    });
+    // Intrinsic child contract only: this mode intentionally does not mount
+    // InboundRequestScreen. Composed-host claims belong to the 15 cases above.
+    await run('I33 direct component props: committed A→B→A cannot revive original A; continuous A revisions retain current data',async()=>{
+      for(const retiredFailure of [null,401,403]){
+        await page.evaluate(patch=>window.qa.reset(patch),{directReadonly:true,readMarkers,detailLastPage:2,detailLabel:'ORIGINAL DIRECT A'});await readonlyPhase('ready');
+        assert.equal(await page.getByTestId('inbound-request-host').count(),0);assert.match(await readonly().innerText(),/ORIGINAL DIRECT A/);await readonly().evaluate(element=>window.qaDirectPanel=element);
+        await page.evaluate(failure=>{window.qa.hold('detail');window.qa.detail({detailLabel:'RETIRED DIRECT B',detailFailure:failure});window.qa.directProps({documentId:'DOC-B'});},retiredFailure);
+        await page.waitForFunction(()=>window.qa.held('detail')===1);await readonlyPhase('pending');assert.doesNotMatch(await readonly().innerText(),/ORIGINAL DIRECT A|RETIRED DIRECT B/);
+        await page.evaluate(()=>{window.qa.detail({detailLabel:'CURRENT DIRECT A',detailFailure:null});window.qa.directProps({documentId:'DOC-A'});});await page.waitForFunction(()=>window.qa.held('detail')===2);await readonlyPhase('pending');
+        assert.equal(await page.evaluate(()=>window.qaDirectPanel.isConnected&&window.qaDirectPanel===document.querySelector('[data-testid=inbound-request-readonly]')),true);assert.doesNotMatch(await readonly().innerText(),/ORIGINAL DIRECT A|RETIRED DIRECT B|CURRENT DIRECT A/,'matching document ID cannot revive a retired selection instance');
+        await page.evaluate(()=>window.qa.releaseOne('detail'));await page.waitForFunction(()=>window.qa.calls().detailCompleted.length===2);await focusPaint();
+        assert.equal(await readonly().getAttribute('data-phase'),'pending');assert.doesNotMatch(await readonly().innerText(),/ORIGINAL DIRECT A|RETIRED DIRECT B|CURRENT DIRECT A/);assert.deepEqual(await page.evaluate(()=>window.qaDenied),[]);
+        const retired=(await calls()).detailCompleted[1];assert.equal(retired.documentId,'DOC-B');assert.equal(retired.failure,retiredFailure);assert.equal(retired.aborted,true);
+        await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');assert.match(await readonly().innerText(),/CURRENT DIRECT A/);assert.doesNotMatch(await readonly().innerText(),/ORIGINAL DIRECT A|RETIRED DIRECT B/);assert.deepEqual((await calls()).detail.map(call=>call.documentId),['DOC-A','DOC-B','DOC-A']);
+        await readonly().getByText('CURRENT DIRECT A',{exact:true}).evaluate(element=>window.qaDirectValue=element);let currentLabel='CURRENT DIRECT A';
+        for(const refresh of ['readRevision','verifying']){
+          const nextLabel=refresh==='readRevision'?'REVISION DIRECT A':'VERIFIED DIRECT A',before=(await calls()).detail.length;
+          await page.evaluate(({refresh,label})=>{window.qa.hold('detail');window.qa.detail({detailLabel:label});window.qa.directProps(refresh==='readRevision'?{readRevision:1}:{verifying:true});},{refresh,label:nextLabel});
+          await readonlyPhase('pending');assert.equal(await readonly().getByText(currentLabel,{exact:true}).count(),1);assert.equal(await readonly().getByText(nextLabel,{exact:true}).count(),0);
+          assert.equal(await page.evaluate(()=>window.qaDirectPanel.isConnected&&window.qaDirectPanel===document.querySelector('[data-testid=inbound-request-readonly]')&&window.qaDirectValue.isConnected&&window.qaDirectPanel.contains(window.qaDirectValue)),true);
+          assert.equal(await readonly().getByRole('button',{name:'Dòng tiếp',exact:true}).isDisabled(),true);
+          if(refresh==='verifying'){await focusPaint();assert.equal((await calls()).detail.length,before,'verifying alone must not issue a GET');await page.evaluate(()=>window.qa.directProps({verifying:false}));}
+          await page.waitForFunction(()=>window.qa.held('detail')===1);assert.equal((await calls()).detail.length,before+1);assert.equal(await readonly().getByText(currentLabel,{exact:true}).count(),1);assert.equal(await readonly().getByRole('button',{name:'Dòng tiếp',exact:true}).isDisabled(),true);
+          await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');assert.equal(await readonly().getByText(nextLabel,{exact:true}).count(),1);assert.equal(await readonly().getByText(currentLabel,{exact:true}).count(),0);
+          assert.equal(await page.evaluate(()=>window.qaDirectPanel===document.querySelector('[data-testid=inbound-request-readonly]')&&window.qaDirectValue.isConnected&&window.qaDirectPanel.contains(window.qaDirectValue)),true);assert.equal(await page.evaluate(()=>window.qaDirectValue.textContent),nextLabel);assert.equal(await readonly().getByRole('button',{name:'Dòng tiếp',exact:true}).isDisabled(),false);currentLabel=nextLabel;
+        }
+        const c=await calls();assert.equal(c.read.length,0);assert.equal(c.list.length,0);assert.equal(c.listGet.length,0);assert.equal(c.post.length,0);assert.equal(c.reconcile.length,0);assert.deepEqual(await page.evaluate(()=>window.qaDenied),[]);
+      }
+    });
     await run('I33 accepted full read focuses detail; same-document focus preserves dirty guard and values',async()=>{
       await reset();await focused(detailFocus());await field('Số đơn').fill('FOCUS DIRTY A');const before=await calls();await open('DOC-A');await focused(detailFocus());assert.equal(await field('Số đơn').inputValue(),'FOCUS DIRTY A');assert.equal((await calls()).read.length,before.read.length);
       await blocked(()=>button('Đóng phiếu nhập hàng').click(),true);assert.equal(await field('Số đơn').inputValue(),'FOCUS DIRTY A');assert.equal(await page.getByTestId('inbound-editor').getAttribute('data-document-id'),'DOC-A');
@@ -634,7 +883,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
     for (const width of [320, 360, 390]) {await page.setViewportSize({width, height:844}); await reset(); await page.screenshot({path:path.join(output, `host-${width}.png`), fullPage:true});}
     assert.deepEqual(errors, []); assert.deepEqual(external, []);
     await writeFile(path.join(output, 'react-result.json'), JSON.stringify({node:process.version,browser:browser.version(),results,external,errors,
-      scope:'Actual React host/I18/provider; fake list/fetch only. NOT ASP.NET, BFF, SQL or production.'}, null, 2));
+      scope:'Actual React host/I18/provider cases plus one explicitly labelled direct read-only component contract; fake list/fetch only. NOT ASP.NET, BFF, SQL or production.'}, null, 2));
   } finally {t.signal.removeEventListener('abort', abortCleanup); await cleanup();}
 });
 
