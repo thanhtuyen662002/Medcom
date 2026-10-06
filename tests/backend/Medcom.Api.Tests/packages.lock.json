@@ -289,6 +289,9 @@
           "Medcom.Contracts": "[1.0.0, )",
           "Microsoft.Data.SqlClient": "[7.0.3, )"
         }
+      },
+      "medcom.localfrontendhost": {
+        "type": "Project"
       }
     }
   }
