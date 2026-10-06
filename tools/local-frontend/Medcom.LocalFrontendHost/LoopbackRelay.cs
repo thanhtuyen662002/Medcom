@@ -71,6 +71,7 @@ public static class LoopbackRelay
         });
         // No environment, appsettings or command-line values may introduce another listener or proxy target.
         builder.Configuration.Sources.Clear();
+        builder.Configuration.AddInMemoryCollection();
         var publicOrigin = $"https://localhost:{options.HttpsPort.ToString(CultureInfo.InvariantCulture)}";
         // GenericWebHostService also retains host settings captured before configuration providers are cleared.
         // Override those fallbacks and always prefer our explicit ListenLocalhost endpoint.
