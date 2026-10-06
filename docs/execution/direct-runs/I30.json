@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I30",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "c5a6bfb2-cc9a-445a-9290-f6e1d68a5a30",
+  "base_sha": "3a2a4e90cbbb66e4b4f4caca47ff37859cb397e9",
+  "work_branch": "codex/g45-mobile-request-polish-i30-20261006",
+  "claim_branch": "medcom-claims/g45/direct/I30",
+  "scope": [
+    "apps/medcom-sites/components/erp/purchase-request-screen.tsx",
+    "apps/medcom-sites/components/erp/inbound-request-screen.tsx",
+    "apps/medcom-sites/components/erp/mobile-request.tsx",
+    "apps/medcom-sites/components/erp/mobile-request-lines.tsx",
+    "apps/medcom-sites/components/erp/mobile-inbound-request.tsx",
+    "apps/medcom-sites/components/erp/request-presentation.tsx",
+    "apps/medcom-sites/components/erp/request-presentation.module.css",
+    "apps/medcom-sites/tests/request-presentation.browser.mjs",
+    ".github/workflows/medcom-selfhost.yml",
+    "docs/execution/checkpoints/I30_MOBILE_REQUEST_PRESENTATION.md",
+    "docs/execution/direct-runs/I30.json"
+  ],
+  "purpose": "Align purchase and inbound request bodies with the existing approved site design, with mobile-first accessible presentation and honest read-only states.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "dependencies": [
+    {
+      "ticket": "I29",
+      "pr": 81,
+      "state": "Live lifecycle repair pending; purchase-request-screen.tsx and workflow require serial author custody and root composition after correction. Other presentation paths may progress independently."
+    }
+  ],
+  "constraints": [
+    "Preserve existing shell, theme, purchase-order grid and detail, navigation, all handlers, authority checks, lifecycle fences, pending intent custody, exact decimal/timestamp/NULL semantics and Save/Send separation. No API, adapter, contract, SQL, dependency or configuration changes.",
+    "Only presentation and concise verified Vietnamese labels. Do not invent status meanings, branch rights, editable actions or business data. Authorized readable detail remains visible when command capability is unavailable. Pending/unknown/reconcile warnings remain clear.",
+    "Reuse existing UI components and scoped styles; no global CSS redesign. Private owner screenshots are design references only, never public fixtures or copied customer data.",
+    "Real compiled-app CSS and synthetic browser checks at320/390 and desktop1440 must cover overflow, touch/focus, long labels, loading/empty/denied/read-only and unresolved command states. Preserve and explicitly run existing purchase, inbound, mobile editor and workspace regression suites; no skip called PASS.",
+    "Root alone publishes. Immutable marker and claim; independent review plus exact-head/current-base CI required. Do not overwrite I29 repaired source from old snapshot. No production activation or owner runtime claim."
+  ],
+  "created_at": "2026-10-06T15:04:00Z"
+}
