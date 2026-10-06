@@ -56,6 +56,34 @@ jobs:
         run: dotnet build Medcom.slnx --configuration Release --no-restore
       - name: Test source-free HTTP and application boundaries
         run: dotnet test Medcom.slnx --configuration Release --no-build --filter 'Category!=LegacyRuntime' --logger 'trx;LogFileName=backend-windows.trx'
+      - name: Verify fixed inspector plans and synthetic packaging regressions
+        run: python tools/inspect/verify_inspect.py
+      - name: Restore isolated target inspector with locked dependencies
+        run: dotnet restore tools/inspect/Medcom.TargetInspect/Medcom.TargetInspect.csproj --locked-mode
+      - name: Restore target inspector tests with locked dependencies
+        run: dotnet restore tests/backend/Medcom.TargetInspect.Tests/Medcom.TargetInspect.Tests.csproj --locked-mode
+      - name: Build isolated target inspector with analyzers
+        run: dotnet build tools/inspect/Medcom.TargetInspect/Medcom.TargetInspect.csproj --configuration Release --no-restore
+      - name: Build target inspector tests with analyzers
+        run: dotnet build tests/backend/Medcom.TargetInspect.Tests/Medcom.TargetInspect.Tests.csproj --configuration Release --no-restore
+      - name: Test isolated target inspector without private inputs
+        run: dotnet test tests/backend/Medcom.TargetInspect.Tests/Medcom.TargetInspect.Tests.csproj --configuration Release --no-build --results-directory artifacts/target-inspector-test-results --logger 'trx;LogFileName=target-inspector-windows.trx'
+      - name: Package isolated target inspector from committed source
+        run: python tools/inspect/package.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: target-inspector-windows-test-results
+          path: artifacts/target-inspector-test-results/*.trx
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: medcom-target-inspector-windows
+          path: |
+            artifacts/medcom-target-inspector.zip
+            artifacts/medcom-target-inspector.sha256
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         if: always()
         with:
