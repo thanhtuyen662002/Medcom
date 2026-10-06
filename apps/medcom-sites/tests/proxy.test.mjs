@@ -11,7 +11,7 @@ const site='https://site.example';
 const backend='https://erp.example.com';
 const session={displayName:'Synthetic test user',tenantId:'test',companyId:'test',companyName:'Test only',authorityVersion:1,idleExpiresAt:'2026-10-04T03:00:00Z',absoluteExpiresAt:'2026-10-04T04:00:00Z',capabilities:['purchase-orders.read','inbound-requests.read']};
 const document={documentId:'test-document',documentDate:'2026-10-04',branchId:'test-branch',statusId:1,isLocked:false};
-const reply=(body,status=200,extra={})=>new Response(body===null?null:JSON.stringify(body),{status,headers:{'Content-Type':'application/json','X-Correlation-ID':'synthetic-correlation',...extra}});
+const reply=(body,status=200,extra={})=>new Response(body===null?null:JSON.stringify(body),{status,headers:{'Content-Type':'application/json','X-Correlation-ID':'synthetic-correlation','X-Medcom-Session-Scope':'a'.repeat(64),'X-Medcom-Read-Scope':'b'.repeat(64),...extra}});
 const cookie=(name,value)=>`${name}=${value}; Path=/; Secure; HttpOnly; SameSite=Strict`;
 function request(path,init={}){return new Request(`${site}/api/erp/${path}`,init);}
 function proxy(req,origin=backend,upstream=()=>assert.fail('unexpected backend request')){
@@ -276,5 +276,25 @@ test('I28 local opt-in is supplied only by the private dynamic Node route',async
  }finally{
   global.fetch=originalFetch;
   for(const [key,value] of saved){if(value===undefined)delete process.env[key];else process.env[key]=value;}
+ }
+});
+
+test('I29 response-only read markers are bounded to successful read endpoints and never forwarded as authority',async()=>{
+ const valid={'X-Medcom-Session-Scope':'a'.repeat(64),'X-Medcom-Read-Scope':'b'.repeat(64)};
+ for(const route of ['api/workspace','api/documents/purchase-orders','api/documents/purchase-orders/detail','api/documents/inbound-requests','api/documents/inbound-requests/detail']){
+  const request=new Request('https://frontend.example/api/erp/'+route,{headers:valid});
+  const response=await proxyErpRequest(request,route.split('/'),'https://backend.example','https://frontend.example',async(_url,init)=>{
+   assert.equal(init.headers.has('X-Medcom-Session-Scope'),false);assert.equal(init.headers.has('X-Medcom-Read-Scope'),false);return Response.json({synthetic:true},{headers:valid});
+  });
+  assert.equal(response.status,200);assert.equal(response.headers.get('X-Medcom-Session-Scope'),valid['X-Medcom-Session-Scope']);assert.equal(response.headers.get('X-Medcom-Read-Scope'),valid['X-Medcom-Read-Scope']);
+ }
+ for(const [route,status,headers] of [
+  ['api/workspace',401,valid],['api/workspace',503,valid],['api/auth/session',200,valid],['health/live',200,valid],
+  ['api/workspace',200,{'X-Medcom-Session-Scope':valid['X-Medcom-Session-Scope']}],
+  ['api/workspace',200,{...valid,'X-Medcom-Read-Scope':'B'.repeat(64)}],
+  ['api/workspace',200,{...valid,'X-Medcom-Session-Scope':valid['X-Medcom-Session-Scope']+', '+valid['X-Medcom-Session-Scope']}],
+ ]){
+  const response=await proxyErpRequest(new Request('https://frontend.example/api/erp/'+route),route.split('/'),'https://backend.example','https://frontend.example',async()=>Response.json({synthetic:true},{status,headers}));
+  assert.equal(response.headers.has('X-Medcom-Session-Scope'),false);assert.equal(response.headers.has('X-Medcom-Read-Scope'),false);
  }
 });

@@ -301,6 +301,28 @@ public static class LoopbackRelay
             foreach (var header in response.Headers.Concat(response.Content.Headers))
                 if (ResponseHeaders.Contains(header.Key) && !hopHeaders.Contains(header.Key))
                     context.Response.Headers[header.Key] = new StringValues(header.Value.ToArray());
+            // Narrow response-only correlation for authorized read clients.
+            // Do not add these markers to RequestHeaders or the general response allowlist.
+            if (HttpMethods.IsGet(context.Request.Method) && response.StatusCode == HttpStatusCode.OK
+                && context.Request.Path.Value is "/api/erp/api/workspace"
+                    or "/api/erp/api/documents/purchase-orders" or "/api/erp/api/documents/purchase-orders/detail"
+                    or "/api/erp/api/documents/inbound-requests" or "/api/erp/api/documents/inbound-requests/detail")
+            {
+                const string sessionHeader = "X-Medcom-Session-Scope", readHeader = "X-Medcom-Read-Scope";
+                if (!hopHeaders.Contains(sessionHeader) && !hopHeaders.Contains(readHeader)
+                    && response.Headers.TryGetValues(sessionHeader, out var sessionValues)
+                    && response.Headers.TryGetValues(readHeader, out var readValues))
+                {
+                    var sessions = sessionValues.ToArray(); var reads = readValues.ToArray();
+                    static bool Valid(string[] values) => values.Length == 1 && values[0].Length == 64
+                        && values[0].All(c => c is >= 'a' and <= 'f' or >= '0' and <= '9');
+                    if (Valid(sessions) && Valid(reads))
+                    {
+                        context.Response.Headers[sessionHeader] = sessions[0];
+                        context.Response.Headers[readHeader] = reads[0];
+                    }
+                }
+            }
             if (response.Headers.TryGetValues("Set-Cookie", out var setCookies))
                 foreach (var cookie in setCookies)
                     if (IsSafeRelayCookie(cookie)) context.Response.Headers.Append("Set-Cookie", cookie);

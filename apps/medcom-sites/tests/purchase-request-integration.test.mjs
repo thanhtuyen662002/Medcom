@@ -60,9 +60,9 @@ test('production session continuations cannot mutate a retired account',async()=
  function fixture(){
   let resolveContinue,rejectContinue,resolveLogout,generation=0;const calls=[];
   const continuation=new Promise((resolve,reject)=>{resolveContinue=resolve;rejectContinue=reject;}),logout=new Promise(resolve=>{resolveLogout=resolve;});
-  const context={mounted:{current:true},authorityFence:{current:{begin:()=>++generation,isCurrent:value=>value===generation,invalidate:()=>{generation++;}}},
+  const context={mounted:{current:true},signOutPending:{current:false},authorityFence:{current:{begin:()=>++generation,isCurrent:value=>value===generation,invalidate:()=>{generation++;}}},
    continueSession:()=>continuation,logout:()=>logout,getWorkspace:async()=>{calls.push('read');return{};},loadWorkspace:async()=>{calls.push('read');},
-   setWorkspace:value=>calls.push(['workspace',value]),setSessionError:value=>calls.push(['error',value]),setSessionBusy:()=>{},onDenied:()=>calls.push('denied'),
+   setWorkspace:value=>calls.push(['workspace',value]),setSessionError:value=>calls.push(['error',value]),setSessionBusy:()=>{},setAuthorityChecking:()=>{},onDenied:()=>calls.push('denied'),
    queryClient:{clear(){}},ApiError:api.ApiError??class extends Error{},errorMessage:error=>String(error),toast:{success:()=>calls.push('success'),error:()=>calls.push('error')}};
   const code=ts.transpileModule(bodies.join('\n')+'\n({extend,performSignOut});',{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
   return{...runInNewContext(code,context),context,calls,resolveContinue,rejectContinue,resolveLogout};
@@ -92,7 +92,7 @@ test('Workspace deadline source callbacks fence a completed login while its new 
   const context={workspace:initial,sessionEnded:false,loginBoundary:1,sessionError:null,sessionBusy:false,knownSessionLimit:{current:null},mounted:{current:true},Date:Clock,ApiError:SessionError,
    authorityFence:{current:{begin:()=>++generation,isCurrent:value=>value===generation,invalidate:()=>{invalidated++;generation++;}}},queryClient:{clear(){}},
    getWorkspace:()=>{assert.equal(context.knownSessionLimit.current,null,'clear previous deadline synchronously before starting the new read');pendingRead=new Promise(resolve=>{releaseRead=resolve;});return pendingRead;},
-   setWorkspace:value=>{context.workspace=value;},setSessionError:value=>{context.sessionError=value;},setSessionBusy:value=>{context.sessionBusy=value;},setLoginBoundary:update=>{context.loginBoundary=update(context.loginBoundary);},
+   setWorkspace:value=>{context.workspace=value;},setSessionError:value=>{context.sessionError=value;},setSessionBusy:value=>{context.sessionBusy=value;},setAuthorityChecking:()=>{},setLoginBoundary:update=>{context.loginBoundary=update(context.loginBoundary);},
    setTimeout:(fn,ms)=>{timers.push({fn,ms});return timers.length;},clearTimeout:()=>{}};
   return{...runInNewContext(code,context),context,timers,initial,limit,invalidated:()=>invalidated,finishRead:async value=>{releaseRead(value);await pendingRead;await Promise.resolve();await Promise.resolve();}};
  }
@@ -132,7 +132,7 @@ test('real HTTP → BFF → existing workspace/browser purchase controls and aut
   const url=new URL(request.url,'http://localhost');calls.push({path:url.pathname,query:Object.fromEntries(url.searchParams),method:request.method,cookie:request.headers.cookie??''});
   if(url.pathname==='/health/ready')return send(response,503,{status:'unavailable',checks:[{component:'business_release',status:'not_configured'}]});
   if(!state.authenticated||!request.headers.cookie?.includes('__Host-Medcom.Session=synthetic-i17'))return send(response,401,{code:'authentication_required'});
-  if(url.pathname==='/api/workspace')return send(response,200,workspace());
+  if(url.pathname==='/api/workspace'){response.setHeader('X-Medcom-Session-Scope','a'.repeat(64));response.setHeader('X-Medcom-Read-Scope',state.scope);return send(response,200,workspace());}
   if(url.pathname.startsWith('/api/purchase-requests')&&!state.canRead)return send(response,403,{code:'forbidden'});
   const envelope=data=>({scopeKey:state.scope,data});
   if(url.pathname==='/api/purchase-requests/workspace')return send(response,200,envelope({branchIds:state.branches,writeAvailable:false,writeReason:'numbering_journal_runtime_unqualified',lookups:[
@@ -462,6 +462,7 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
    if(p==='/api/auth/csrf')return json(response,200,{token:'synthetic-custody-csrf'});
    if(p==='/api/auth/login'){assert.equal(request.method,'POST');return json(response,200,workspace().session);}
    if(p==='/api/workspace'){
+    response.setHeader('X-Medcom-Session-Scope','a'.repeat(64));response.setHeader('X-Medcom-Read-Scope',state.scope);
     if(state.holdWorkspace)await new Promise(resolve=>{state.releaseWorkspace=resolve;});
     if(state.failure==='network'){response.destroy();return;}
     if(state.failure===503||state.failure===401)return json(response,state.failure,{code:state.failure===401?'authentication_required':'identity_unavailable'});
@@ -539,15 +540,23 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
   assert.equal(await guard.getByRole('button',{name:'Bỏ thay đổi và rời màn hình',exact:true}).count(),0);
   await guard.getByRole('button',{name:'Tiếp tục làm việc',exact:true}).click();await guard.waitFor({state:'hidden'});
  }
+ async function guardExplicitOutageNavigation(){
+  await page.getByRole('region',{name:'Xác minh lại phiên mua hàng',exact:true}).waitFor();await paint();
+  assert.equal(new URL(page.url()).searchParams.get('screen'),'purchase-requests','a transient outage must keep the purchase screen');
+  assert.equal(await page.getByRole('alertdialog').count(),0,'outage alone must not attempt navigation');
+  await page.locator('.mobile-bottom-nav').getByRole('button',{name:'Không gian làm việc',exact:true}).click();
+  await continueGuard();
+  assert.equal(new URL(page.url()).searchParams.get('screen'),'purchase-requests','Continue retains the original pending screen');
+ }
  async function suspend(failure){
   state.failure=failure;
   const failed=failure==='network'?page.waitForEvent('requestfailed',request=>new URL(request.url()).pathname==='/api/erp/api/workspace'):
    page.waitForResponse(response=>new URL(response.url()).pathname==='/api/erp/api/workspace'&&response.status()===503);
   // Do not inject PurchaseRequestScreen props: invoke Workspace's real focus listener.
   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await failed;
-  // The modal makes the background aria-inaccessible. Verify the nondiscardable
-  // guard and dismiss via Continue before querying the real recovery region.
-  await continueGuard();
+  // Outage retains this screen. A real user navigation attempt must still
+  // raise the nondiscardable custody guard; Continue keeps the same intent.
+  await guardExplicitOutageNavigation();
   await page.getByRole('region',{name:'Xác minh lại phiên mua hàng',exact:true}).waitFor();await paint();
   assert.equal(await screen.locator('input,textarea,select,table').count(),0);
   assert.doesNotMatch(await screen.innerText(),/SYNTHETIC ORIGINAL INTENT|SYNTHETIC REQUESTER|QA-L001/);
@@ -578,7 +587,7 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
   await t.test('repeated failed verification preserves custody; recovery still uses the original writer body',async()=>{
    const original=await begin('lost');await suspend('network');state.failure=503;
    const response=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/erp/api/workspace'&&response.status()===503);
-   await page.getByRole('button',{name:'Xác minh lại phiên ERP',exact:true}).click();await response;await continueGuard();await paint();
+   await page.getByRole('button',{name:'Xác minh lại phiên ERP',exact:true}).click();await response;await guardExplicitOutageNavigation();await paint();
    assert.equal(await screen.locator('input,textarea,select,table').count(),0);await assertSingleWriter();assert.equal(lookups().length,0);
    await recoverSame();await screen.getByRole('button',{name:'Kiểm tra kết quả yêu cầu gốc',exact:true}).click();await screen.getByText(/^ERP đã xác nhận yêu cầu /).waitFor();assert.equal(lookups()[0].body,original.body);await assertSingleWriter();
   });
@@ -682,4 +691,29 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
   assert.deepEqual(errors,[]);await writeFile(path.join(output,'i20-workspace-custody-evidence.json'),JSON.stringify({node:process.version,browser:browser.version(),viewport:[390,844],hierarchy:'actual Workspace → PurchaseRequestScreen → MobileRequest → command adapter',transport:'synthetic HTTP API; completed-response discard and save-only abort-ignoring seams; NOT ASP.NET/SQL',dispatchEvidence:[...dispatchEvidence.values()],errors},null,2));
  }catch(error){await writeFile(path.join(output,'i20-workspace-custody-failure.json'),JSON.stringify({error:String(error),errors,calls,io:await page?.evaluate(()=>window.custodyIO).catch(()=>null),body:await page?.locator('body').innerText().catch(()=>''),dispatchEvidence:[...dispatchEvidence.values()]},null,2));throw error;}
  finally{state?.releaseSave?.();state?.releaseScope?.();state?.releaseWorkspace?.();await context?.close();await browser?.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+});
+
+test('healthy verification blocks new actions without retiring a dispatched purchase intent',async()=>{
+ // Execute the production dispatch continuations; compiled UI coverage is separate.
+ const source=await readFile(path.join(app,'components/erp/mobile-request.tsx'),'utf8');
+ const file=ts.createSourceFile('mobile-request.tsx',source,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX),bodies=[];let retirementDependencies;
+ const visit=node=>{
+  if(ts.isFunctionDeclaration(node)&&['send','reconcile'].includes(node.name?.text))bodies.push(node.getText(file));
+  if(ts.isCallExpression(node)&&node.expression.getText(file)==='useLayoutEffect'&&node.arguments[0]?.getText(file).includes('if(originalIntent.current)'))retirementDependencies=node.arguments[1].getText(file);
+  ts.forEachChild(node,visit);
+ };visit(file);assert.equal(bodies.length,2);assert.ok(retirementDependencies);assert.doesNotMatch(retirementDependencies,/verifying/);
+ const code=ts.transpileModule(bodies.join('\n')+'\n({send,reconcile});',{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
+ function fixture(verifying=false){
+  let release;const calls=[],accepted=[],reply=new Promise(resolve=>{release=resolve;});
+  const access={verifying,canRead:true,existingOnly:true,canSaveDraft:true,canSubmit:true,canReconcile:true};
+  const adapter={execute:async(intent,signal)=>{calls.push({kind:'execute',intent,signal});return reply;},reconcile:async(intent,signal)=>{calls.push({kind:'lookup',intent,signal});return reply;}};
+  const context={adapter,access,serviceAvailable:true,editable:true,canSubmitExisting:true,originalIntent:{current:null},originalAdapter:{current:adapter},queuedDocument:{current:null},lock:{current:false},pending:false,uncertain:false,phase:'editing',review:true,dirty:true,
+   baseline:{documentId:'SYNTHETIC',version:'v1'},values:{lines:[]},validatePurchaseRequest:()=>({}),copy:structuredClone,crypto:{randomUUID:()=> 'synthetic-intent'},generation:{current:0},request:{current:null},currentAccess:{current:access},currentAdapter:{current:adapter},AbortController,
+   setErrors(){},setReview(){},setDispatchAdapter(){},setHasUnresolvedIntent(){},setPhase(){},setResult(){},setMessage(){},accept:(next,intent)=>accepted.push({next,intent}),unknown:()=>assert.fail('healthy verification must not fabricate unknown')};
+  return{...runInNewContext(code,context),context,calls,accepted,release};
+ }
+ const blocked=fixture(true);await blocked.send('saveDraft');blocked.context.originalIntent.current={intentId:'existing'};blocked.context.phase='unknown';await blocked.reconcile();assert.deepEqual(blocked.calls,[]);
+ const pending=fixture();const sent=pending.send('saveDraft');assert.equal(pending.calls.length,1);const original=pending.context.originalIntent.current;
+ pending.context.currentAccess.current={...pending.context.access,verifying:true};pending.release({kind:'confirmed',intentId:original.intentId});await sent;
+ assert.equal(pending.calls.length,1);assert.equal(pending.calls[0].signal.aborted,false);assert.equal(pending.accepted.length,1);assert.equal(pending.accepted[0].intent,original);assert.equal(pending.accepted[0].next.kind,'confirmed');
 });
