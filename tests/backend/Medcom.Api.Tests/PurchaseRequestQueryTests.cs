@@ -245,7 +245,10 @@ public sealed class PurchaseRequestQueryTests
         Assert.True(workspace.Lookups.Single(item => item.Kind == "currencies").Available);
         Assert.False(workspace.WriteAvailable); Assert.False(workspace.Lookups.Single(item => item.Kind == "items").Available);
         Assert.Equal(0, source.Commits); Assert.Equal(3, source.Rollbacks);
-        Assert.All(source.Commands, command => Assert.StartsWith("SELECT", command.Sql.TrimStart(), StringComparison.Ordinal));
+        // The existing native grant read is the one fixed CTE; all other commands are SELECTs.
+        Assert.All(source.Commands, command => Assert.StartsWith(
+            command.Sql == SqlPurchaseRequestQueries.GrantsText ? "WITH Grants AS" : "SELECT",
+            command.Sql.TrimStart(), StringComparison.Ordinal));
         Assert.DoesNotContain(source.Commands, command => command.Sql.Contains("MedcomPurchaseRequestCommandJournal", StringComparison.Ordinal));
         Assert.Equal(source.Opens, source.ConnectionDisposals); Assert.Equal(source.Opens, source.TransactionDisposals);
         Assert.Equal(source.Commands.Count, source.ReaderDisposals); Assert.Equal(source.Commands.Count, source.CommandDisposals);
