@@ -1,7 +1,12 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {stripTypeScriptTypes, createRequire} from 'node:module';
-import {readFile, writeFile, mkdir} from 'node:fs/promises';
+import {readFile, writeFile, mkdir, mkdtemp, chmod, rm} from 'node:fs/promises';
+import {createServer as createHttpsServer} from 'node:https';
+import {execFileSync} from 'node:child_process';
+import {createHash, X509Certificate} from 'node:crypto';
+import {tmpdir} from 'node:os';
+import {Readable} from 'node:stream';
 import {createServer} from 'node:http';
 import {once} from 'node:events';
 import {fileURLToPath, pathToFileURL} from 'node:url';
@@ -708,8 +713,9 @@ test('I24 Node bridge notifies only current read/command 401; other failures ret
 });
 
 // Real Workspace -> production inbound client/bridge -> production BFF -> HTTP
-// backend DOUBLE. Playwright routes supply only the static fixture and server
-// hop; this is synthetic composition, not a deployed browser/TLS/ASP.NET/SQL gate.
+// backend DOUBLE. The frontend hop is real loopback HTTPS with an ephemeral
+// pinned test certificate. Production BFF sees actual on-wire browser headers;
+// no Playwright fulfillment/provenance fabrication. No ASP.NET/SQL acceptance.
 test('I24 actual Workspace and BFF preserve mobile custody, retirement and history position', {timeout: 240000}, async t => {
   const require = createRequire(import.meta.url); let build, chromium;
   try {
@@ -734,8 +740,7 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
       build.onResolve({filter: /^next\/image$/}, () => ({path: 'image', namespace: 'i24-image'}));
       build.onLoad({filter: /.*/, namespace: 'i24-image'}, () => ({resolveDir: app, loader: 'jsx', contents: "import React from 'react';export default function Image({src,alt,width,height}){return <img src={src} alt={alt} width={width} height={height}/>;}"}));
     }}]});
-  // Playwright fulfill accepts Buffer/string, not esbuild's Uint8Array.
-  // Uint8Array.toString('base64') corrupts script bytes and response length.
+  // Preserve esbuild's exact script bytes at the real HTTPS response boundary.
   const script = Buffer.from(built.outputFiles[0].contents);
   const css = await readFile(path.join(app, 'app/globals.css'), 'utf8');
   const html = '<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>' + css + '\nbody{margin:0;font:16px system-ui}img{max-width:100%;height:auto}[role=alertdialog],[role=dialog]{position:fixed;inset:3%;z-index:99;background:white;padding:16px;overflow:auto}[data-slot=alert-dialog-overlay]{position:fixed;inset:0;z-index:98;background:#0004}</style><div id="root"></div><script src="/i24.js"></script></html>';
@@ -781,16 +786,20 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
     } catch (error) {errors.push(String(error)); if (!res.headersSent) json(res, 500, {code: 'synthetic_failure'}); else res.destroy();}
   });
   resetState(); backend.listen(0, '127.0.0.1'); await once(backend, 'listening'); const backendHttp = `http://127.0.0.1:${backend.address().port}`;
-  let browser, context, page;
+  let browser, context, page, frontend, tlsDirectory, testKey, siteOrigin;
   const routes = {started: 0, fulfilled: 0, aborted: 0, pending: new Map()}, loadEvents = [], failedRequests = [], bffResponses = [];
   const releaseAll = () => {for (const model of models) for (const kind of Object.keys(model.waiters)) release(kind, model);};
   const cleanup = async () => {
     // A login/reset can replace state while an old synthetic command is held.
     // Retain/release every model, not merely the most recent one.
-    releaseAll(); backend.closeAllConnections();
-    const outcomes = await Promise.allSettled([context?.close(), browser?.close(), new Promise((resolve, reject) => backend.close(error => {
-      if (error && error.code !== 'ERR_SERVER_NOT_RUNNING') reject(error); else resolve();
-    }))]);
+    releaseAll();
+    const closeServer = server => new Promise((resolve, reject) => {
+      if (!server) return resolve(); server.closeAllConnections();
+      server.close(error => {if (error && error.code !== 'ERR_SERVER_NOT_RUNNING') reject(error); else resolve();});
+    });
+    const outcomes = await Promise.allSettled([context?.close(), browser?.close(), closeServer(frontend), closeServer(backend)]);
+    testKey?.fill(0);
+    if (tlsDirectory) {try {await rm(tlsDirectory, {recursive: true, force: true});} catch (reason) {outcomes.push({status: 'rejected', reason});}}
     // Abort already failed the test; duplicate abort/finally closure is safe.
     // A normal teardown error must still fail after attempting every close.
     const failures = outcomes.filter(outcome => outcome.status === 'rejected');
@@ -798,44 +807,61 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
   };
   const abortCleanup = () => {void cleanup();}; t.signal.addEventListener('abort', abortCleanup, {once: true});
   try {
-    browser = await chromium.launch({headless: true, ...(process.env.I21_TEST_BROWSER ? {executablePath: process.env.I21_TEST_BROWSER} : {})});
-    t.signal.throwIfAborted();
-    context = await browser.newContext({viewport: {width: 390, height: 844}, locale: 'vi-VN', serviceWorkers: 'block'}); page = await context.newPage();
-    page.on('pageerror', error => errors.push(error.message));
-    page.on('domcontentloaded', () => loadEvents.push({event: 'domcontentloaded', url: page.url()}));
-    page.on('load', () => loadEvents.push({event: 'load', url: page.url()}));
-    page.on('requestfailed', request => failedRequests.push({url: request.url(), type: request.resourceType(), failure: request.failure()?.errorText}));
-    await page.route('**/*', async route => {
-      const request = route.request(), url = new URL(request.url()), ticket = ++routes.started;
-      routes.pending.set(ticket, {url: url.href, type: request.resourceType()});
-      const fulfill = async options => {await route.fulfill(options); routes.fulfilled++;};
+    // Same OpenSSL ephemeral-certificate pattern as tools/deploy/serve_test_package.py.
+    // The private key lives only in an owned OS temp directory and is never an artifact.
+    tlsDirectory = await mkdtemp(path.join(tmpdir(), 'medcom-i24-test-tls-'));
+    const certPath = path.join(tlsDirectory, 'cert.pem'), keyPath = path.join(tlsDirectory, 'key.pem');
+    execFileSync('openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1', '-keyout', keyPath, '-out', certPath,
+      '-subj', '/CN=inbound.synthetic.invalid', '-addext', 'subjectAltName=DNS:inbound.synthetic.invalid'], {stdio: 'pipe'});
+    await chmod(keyPath, 0o600); testKey = await readFile(keyPath); const certificate = await readFile(certPath);
+    const spki = createHash('sha256').update(new X509Certificate(certificate).publicKey.export({type: 'spki', format: 'der'})).digest('base64');
+    frontend = createHttpsServer({key: testKey, cert: certificate}, async (request, response) => {
+      const url = new URL(request.url, siteOrigin), ticket = ++routes.started, model = state;
+      routes.pending.set(ticket, {url: url.href, type: request.headers['sec-fetch-dest'] ?? 'fetch'});
+      const controller = new AbortController(); request.once('aborted', () => controller.abort());
+      response.once('close', () => {if (!response.writableFinished) controller.abort();});
+      const send = (status, headers, body) => {if (response.destroyed) {routes.aborted++; return;} response.writeHead(status, headers); response.end(body); routes.fulfilled++;};
       try {
-      if (url.origin !== publicOrigin) {external.push(url.href); await route.abort(); routes.aborted++; return;}
-      if (url.pathname === '/i24.js') return await fulfill({contentType: 'text/javascript', body: script});
-      if (!url.pathname.startsWith('/api/erp/')) return await fulfill({contentType: 'text/html', body: html});
-      const requestHeaders = await request.allHeaders(), buffer = request.postDataBuffer();
-      const incoming = new Request(url, {method: request.method(), headers: requestHeaders, ...(buffer ? {body: buffer} : {})});
-      const model = state;
-      const response = await proxyErpRequest(incoming, url.pathname.slice('/api/erp/'.length).split('/'), backendOrigin, publicOrigin, async (target, init) => {
-        // Deliberate synthetic hop only: backend TLS and sessions are tested in
-        // ASP.NET separately. Ignore transport cancellation to test late ACKs.
-        const rest = {...init}; delete rest.signal;
-        if (model.failure === 'network' && new URL(target).pathname === '/api/workspace') throw Error('Synthetic workspace transport loss');
-        const answer = await fetch(backendHttp + new URL(target).pathname + new URL(target).search, rest);
-        if (model.mode === 'lost' && /\/(save|send-to-warehouse)$/.test(new URL(target).pathname)) {await answer.arrayBuffer(); throw Error('Synthetic completed ACK loss');}
-        return answer;
-      });
-      const problem = response.ok ? null : await response.clone().json().catch(() => null);
-      bffResponses.push({path: url.pathname, method: request.method(), status: response.status, code: typeof problem?.code === 'string' ? problem.code.slice(0, 100) : null,
-        origin: requestHeaders.origin ?? null, fetchSite: requestHeaders['sec-fetch-site'] ?? null, fetchMode: requestHeaders['sec-fetch-mode'] ?? null,
-        frameOrigin: new URL(request.frame().url()).origin, scopePresent: incoming.headers.has('X-Inbound-Scope')});
-      await fulfill({status: response.status, headers: Object.fromEntries(response.headers), body: Buffer.from(await response.arrayBuffer())});
+        if (url.pathname === '/i24.js') return send(200, {'Content-Type': 'text/javascript'}, script);
+        if (!url.pathname.startsWith('/api/erp/')) return send(200, {'Content-Type': 'text/html'}, html);
+        const requestHeaders = new Headers();
+        for (let index = 0; index < request.rawHeaders.length; index += 2) requestHeaders.append(request.rawHeaders[index], request.rawHeaders[index + 1]);
+        const incoming = new Request(url, {method: request.method, headers: requestHeaders, signal: controller.signal,
+          ...(request.method === 'POST' ? {body: Readable.toWeb(request), duplex: 'half'} : {})});
+        const result = await proxyErpRequest(incoming, url.pathname.slice('/api/erp/'.length).split('/'), backendOrigin, siteOrigin, async (target, init) => {
+          // Only the BFF-to-backend hop is a transport double. Ignore cancellation
+          // deliberately so current-generation checks must reject late ACKs.
+          const rest = {...init}; delete rest.signal;
+          if (model.failure === 'network' && new URL(target).pathname === '/api/workspace') throw Error('Synthetic workspace transport loss');
+          const answer = await fetch(backendHttp + new URL(target).pathname + new URL(target).search, rest);
+          if (model.mode === 'lost' && /\/(save|send-to-warehouse)$/.test(new URL(target).pathname)) {await answer.arrayBuffer(); throw Error('Synthetic completed ACK loss');}
+          return answer;
+        });
+        const problem = result.ok ? null : await result.clone().json().catch(() => null);
+        bffResponses.push({path: url.pathname, method: request.method, status: result.status, code: typeof problem?.code === 'string' ? problem.code.slice(0, 100) : null,
+          origin: requestHeaders.get('origin'), fetchSite: requestHeaders.get('sec-fetch-site'), fetchMode: requestHeaders.get('sec-fetch-mode'),
+          scopePresent: requestHeaders.has('X-Inbound-Scope'), provenance: 'actual HTTPS request.rawHeaders'});
+        send(result.status, Object.fromEntries(result.headers), Buffer.from(await result.arrayBuffer()));
       } catch (error) {
-        // Aborted fetches/closed pages are intentional in custody/reset cases.
-        if (!t.signal.aborted && !request.failure() && !page.isClosed()) errors.push('Synthetic route failure: ' + String(error));
-        await route.abort().then(() => {routes.aborted++;}).catch(() => {});
+        if (!t.signal.aborted && !controller.signal.aborted) errors.push('Synthetic HTTPS route failure: ' + String(error));
+        if (!response.headersSent) send(500, {'Content-Type': 'application/json'}, '{"code":"synthetic_fixture_failure"}'); else response.destroy();
       } finally {routes.pending.delete(ticket);}
     });
+    frontend.listen(0, '127.0.0.1'); await once(frontend, 'listening'); siteOrigin = `https://inbound.synthetic.invalid:${frontend.address().port}`;
+    browser = await chromium.launch({headless: true, args: ['--host-resolver-rules=MAP inbound.synthetic.invalid 127.0.0.1', '--no-proxy-server', `--ignore-certificate-errors-spki-list=${spki}`],
+      ...(process.env.I21_TEST_BROWSER ? {executablePath: process.env.I21_TEST_BROWSER} : {})});
+    t.signal.throwIfAborted();
+    context = await browser.newContext({viewport: {width: 390, height: 844}, locale: 'vi-VN', serviceWorkers: 'block'});
+    await context.route('**/*', route => {if (new URL(route.request().url()).origin === siteOrigin) return route.continue(); external.push(route.request().url()); return route.abort();});
+    const newPage = async viewport => {
+      const next = await context.newPage(); if (viewport) await next.setViewportSize(viewport);
+      next.on('pageerror', error => errors.push(error.message));
+      next.on('domcontentloaded', () => loadEvents.push({event: 'domcontentloaded', url: next.url()}));
+      next.on('load', () => loadEvents.push({event: 'load', url: next.url()}));
+      next.on('requestfailed', request => failedRequests.push({url: request.url(), type: request.resourceType(), failure: request.failure()?.errorText}));
+      return next;
+    };
+    page = await newPage();
     const button = name => page.getByRole('button', {name, exact: true}), field = name => page.getByLabel(name, {exact: true});
     const host = () => page.getByTestId('inbound-request-host');
     const ready = () => page.waitForFunction(() => {const field = document.getElementById('inbound-header-orderNumber'); return field && !field.disabled && document.querySelector('[data-testid=inbound-request-host]')?.getAttribute('data-readback-pending') !== 'true';});
@@ -843,8 +869,11 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
     const paint = () => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     const go = async screen => {await page.keyboard.press('Control+k'); const label = screen === 'settings' ? 'Thiết lập' : screen === 'home' ? 'Không gian làm việc' : 'Yêu cầu nhập kho'; await page.getByRole('option', {name: label, exact: true}).click();};
     const start = async (patch = {}) => {
-      resetState(patch);
-      try {await page.goto(publicOrigin + '/?screen=home'); await page.getByRole('button', {name: 'Yêu cầu nhập kho', exact: true}).last().waitFor(); await go('inbound-requests'); await open();}
+      // Each case starts in a fresh page, not a navigation attempt out of the
+      // previous case's deliberately dirty/unknown document. Actual guard and
+      // Back/Forward assertions within each case still use the same live page.
+      const viewport = page.viewportSize(); await page.close(); page = await newPage(viewport); resetState(patch);
+      try {await page.goto(siteOrigin + '/?screen=home'); await page.getByRole('button', {name: 'Yêu cầu nhập kho', exact: true}).last().waitFor(); await go('inbound-requests'); await open();}
       catch (error) {
         let timer;
         const dom = await Promise.race([page.evaluate(() => ({readyState: document.readyState, url: location.href, hostCount: document.querySelectorAll('[data-testid=inbound-request-host]').length, text: document.body?.innerText.slice(0, 500)})),
@@ -948,9 +977,12 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
       release('workspace'); await field('Tìm phiếu nhập hàng').waitFor(); await open(); assert.equal(await field('Số đơn').inputValue(), 'FULL ERP A');
       assert.equal(await page.getByTestId('confirmed-receipt').count(), 0); assert.equal(calls.filter(call => /\/(save|send-to-warehouse|reconcile)$/.test(call.path)).length, 0);
     });
+    const inboundWire = bffResponses.filter(item => item.path.startsWith('/api/erp/' + inboundPath));
+    assert.ok(inboundWire.some(item => item.method === 'GET') && inboundWire.some(item => item.method === 'POST'));
+    for (const item of inboundWire) {assert.equal(item.fetchSite, 'same-origin'); if (item.method === 'POST') assert.equal(item.origin, siteOrigin);}
     assert.deepEqual(errors, []); assert.deepEqual(external, []);
-    const evidence = {node: process.version, browser: browser.version(), viewports: [320, 360, 390], results, errors, external,
-      scope: 'Synthetic actual Workspace/client/BFF/HTTP composition. No ASP.NET, TLS, SQL, provider or production acceptance.'};
+    const evidence = {node: process.version, browser: browser.version(), viewports: [320, 360, 390], results, errors, external, inboundWire,
+      scope: 'Actual Workspace/client/HTTPS frontend/BFF composition with pinned ephemeral test TLS and actual on-wire browser provenance; backend HTTP double. No ASP.NET/SQL/provider/production acceptance.'};
     await writeFile(path.join(output, 'i24-workspace-bff-react.json'), JSON.stringify(evidence, null, 2));
     // Preserve all standalone evidence while including composition results in
     // its already-uploaded artifact; no workflow or dependency change needed.
