@@ -1,4 +1,6 @@
 "use client";
+import {useRequestNotifications} from "./request-notifications";
+import {RequestButton,RequestInput,RequestTextarea,RequestNotice,RequestStatus,requestMessage,requestStyles} from "./request-presentation";
 import {useEffect,useLayoutEffect,useRef,useState,type CSSProperties} from "react";
 import {useDirtyGuard} from "./navigation-guard";
 import {accessAvailable,buildCommand,canSend,commandBytes,commandResult,draftErrors,lineKey,observedView,outcomeMessage,sameDraft,sameSnapshot,snapshotAcknowledges,
@@ -12,14 +14,14 @@ type State={view:InboundDraftView|null;viewBinding:Binding|null;header:InboundDr
   awaitingSnapshot:InboundDraftReceipt|null;retainEdits:boolean;message:string;errors:Record<string,string>;reviewed:boolean;readNonce:number};
 const empty:State={view:null,viewBinding:null,header:null,details:[],phase:"empty",original:null,originalStatus:null,receipt:null,receiptAction:null,
   awaitingSnapshot:null,retainEdits:false,message:"",errors:{},reviewed:false,readNonce:0};
-const control:CSSProperties={width:"100%",minWidth:0,minHeight:44,border:"1px solid var(--border,#bbb)",borderRadius:8,padding:8,background:"var(--background,#fff)",color:"var(--foreground,#18181b)",font:"inherit",boxSizing:"border-box"};
-const button:CSSProperties={...control,width:"auto",maxWidth:"100%",whiteSpace:"normal",overflowWrap:"anywhere"};
+const control:CSSProperties={width:"100%",minWidth:0,minHeight:44,border:"1px solid var(--border,#bbb)",borderRadius:8,padding:8,background:"var(--background,#fff)",color:"var(--foreground,#18181b)",fontSize:16,fontFamily:"inherit",boxSizing:"border-box"};
 const unknownMessage=outcomeMessage.OutcomeUnknown;
 
 /** Injected fixed workflow only. The host must guard document selection/navigation.
  * Keep this component mounted for unresolved custody; key ONLY by login scope. */
 export function MobileInboundRequest(props:MobileInboundRequestProps){return <InboundEditor key={JSON.stringify([props.access.scopeKey])} {...props}/>;}
 function InboundEditor({documentId,access,adapter,onConfirmed}:MobileInboundRequestProps){
+  const notify=useRequestNotifications(access.scopeKey,access.canRead&&access.available);
   const [state,setState]=useState<State>(empty),[note,setNote]=useState<string|null>(null),[page,setPage]=useState(1);
   const rights=JSON.stringify([access.scopeKey,access.canRead,access.canSave,access.canSend,access.available,access.maxCommandBytes]);
   const [binding,setBinding]=useState<Binding>({documentId,rights,adapter});
@@ -173,6 +175,8 @@ function InboundEditor({documentId,access,adapter,onConfirmed}:MobileInboundRequ
       const result=commandResult(response,command,originalView.statusId);
       if(!result||result.outcome==="OutcomeUnknown"){setState(previous=>({...previous,phase:"unknown",message:unknownMessage}));return;}
       if(result.receipt){confirmed(result.receipt,action);return;}
+      if(result.outcome==="Conflict")notify(command.operationId,"conflict");
+      else notify(command.operationId,"rejected");
       setState(previous=>({...previous,original:null,originalStatus:null,phase:result.outcome==="Conflict"?"conflict":"failed",message:outcomeMessage[result.outcome],reviewed:false}));
     }catch{
       if(stillCurrent(token,controller))setState(previous=>({...previous,phase:command?"unknown":"editing",message:command?unknownMessage:"Chưa thể chuẩn bị hoặc kiểm tra chứng từ; chưa gửi thao tác."}));
@@ -182,6 +186,7 @@ function InboundEditor({documentId,access,adapter,onConfirmed}:MobileInboundRequ
     // Parent callbacks cannot mutate our evidence, erase an acknowledgment, or
     // turn callback/readback failure into a failed Save or a replacement command.
     const evidence=Object.freeze({...receipt});
+    notify(evidence.operationId,action==="Save"?"saved":"sentToWarehouse");
     setState(previous=>({...previous,original:null,originalStatus:null,receipt:evidence,receiptAction:action,awaitingSnapshot:evidence,retainEdits:false,
       phase:"confirmed",readNonce:previous.readNonce+1,message:"ERP đã xác nhận thao tác. Đang đọc lại chứng từ.",reviewed:false}));
     if(action==="SendToWarehouse")setNote(null);
@@ -201,49 +206,50 @@ function InboundEditor({documentId,access,adapter,onConfirmed}:MobileInboundRequ
     finally{if(active.current?.controller===controller){active.current=null;lock.current=false;}}
   }
 
-  if(!access.scopeKey||!access.canRead)return <section role="status"><h2>Yêu cầu nhập kho</h2><p>Phiên hoặc quyền đọc hiện tại không khả dụng. Dữ liệu của phiên trước được ẩn.</p></section>;
-  if(!service)return <section role="status"><h2>Yêu cầu nhập kho</h2><p>Adapter và giới hạn truyền chưa được cấp; không có thao tác ERP khả dụng.</p>{unresolved&&<p>{unknownMessage}</p>}</section>;
-  if(!documentId&&!state.awaitingSnapshot)return <section role="status"><h2>Yêu cầu nhập kho</h2><p>Chọn chứng từ hiện có. Tạo mới chưa được mở vì cấp số chưa được xác nhận.</p>{unresolved&&<button style={button} disabled={state.phase!=="unknown"} onClick={()=>void reconcile()}>Kiểm tra yêu cầu gốc</button>}</section>;
+  if(!access.scopeKey||!access.canRead)return <section role="status" className={requestStyles.section}><h2 className={requestStyles.title}>Yêu cầu nhập kho</h2><p>Phiên hoặc quyền đọc hiện tại không khả dụng. Dữ liệu của phiên trước được ẩn.</p></section>;
+  if(!service)return <section role="status" className={requestStyles.section}><h2 className={requestStyles.title}>Yêu cầu nhập kho</h2><p>Chưa thể mở dữ liệu phiếu trong phạm vi hiện tại.</p>{unresolved&&<p>{unknownMessage}</p>}</section>;
+  if(!documentId&&!state.awaitingSnapshot)return <section role="status" className={requestStyles.section}><h2 className={requestStyles.title}>Yêu cầu nhập kho</h2><p>Chọn một phiếu trong danh sách để xem thông tin và dòng hàng. Tạo mới chưa được mở.</p>{unresolved&&<RequestButton disabled={state.phase!=="unknown"} onClick={()=>void reconcile()}>Kiểm tra yêu cầu gốc</RequestButton>}</section>;
   const pageCount=Math.max(1,Math.ceil(state.details.length/25)),shownPage=Math.min(page,pageCount);
   const receipt=state.receipt?.documentId===documentId||state.awaitingSnapshot?state.receipt:null;
-  return <section data-testid="inbound-editor" data-document-id={documentId??""} data-phase={state.phase} aria-busy={busy} aria-label="Yêu cầu nhập kho trên điện thoại" style={{maxWidth:640,width:"100%",minWidth:0,margin:"0 auto",padding:16,display:"grid",gap:16,boxSizing:"border-box",overflowWrap:"anywhere"}}>
-    <h1>Yêu cầu nhập kho</h1><p role="status">{state.message||"Đang chờ đọc ERP."}</p>
-    {state.phase==="checking"&&!unresolved&&<button type="button" style={button} onClick={cancelSendCheck}>Hủy kiểm tra trước khi gửi</button>}
+  return <section data-testid="inbound-editor" data-document-id={documentId??""} data-phase={state.phase} aria-busy={busy} aria-label="Yêu cầu nhập kho trên điện thoại" className={requestStyles.editor} style={{width:"100%",minWidth:0,boxSizing:"border-box",overflowWrap:"anywhere"}}>
+    <h2 className={requestStyles.title}>Yêu cầu nhập kho</h2><p className={requestStyles.muted} role="status">{requestMessage(state.message)||"Đang chờ đọc ERP."}</p>
+    {state.phase==="checking"&&!unresolved&&<RequestButton type="button" onClick={cancelSendCheck}>Hủy kiểm tra trước khi gửi</RequestButton>}
     {receipt&&<p data-testid="confirmed-receipt">ERP đã xác nhận {state.receiptAction==="Save"?"Lưu":"Gửi"} phiếu {receipt.documentId}, trạng thái {receipt.statusId}. Mã thao tác: {receipt.operationId}. Mã xác nhận: {receipt.auditId}. Thời điểm UTC: {receipt.committedAtUtc}</p>}
-    {unresolved&&<div><p>Yêu cầu gốc: {state.original?.documentId}. Dữ liệu không được lưu bền trên thiết bị; tải lại hoặc đóng trang có thể mất khả năng kiểm tra.</p><button type="button" style={button} disabled={state.phase!=="unknown"} onClick={()=>void reconcile()}>Kiểm tra yêu cầu gốc</button></div>}
-    {!unresolved&&<button type="button" style={button} disabled={busy} onClick={reload}>Đọc lại ERP</button>}
-    {state.awaitingSnapshot&&<p role="alert">Đang chờ snapshot khớp xác nhận của phiếu {state.awaitingSnapshot.documentId}. Chưa được sửa hoặc gửi tiếp; đọc lại không thực thi lại lệnh.</p>}
+    {unresolved&&<div><p>Yêu cầu gốc: {state.original?.documentId}. Dữ liệu không được lưu bền trên thiết bị; tải lại hoặc đóng trang có thể mất khả năng kiểm tra.</p><RequestButton type="button" disabled={state.phase!=="unknown"} onClick={()=>void reconcile()}>Kiểm tra yêu cầu gốc</RequestButton></div>}
+    {!unresolved&&<RequestButton type="button" disabled={busy} onClick={reload}>Đọc lại ERP</RequestButton>}
+    {state.awaitingSnapshot&&<p role="alert">Đang đọc lại phiếu đã được ERP xác nhận: {state.awaitingSnapshot.documentId}. Chưa thể chỉnh sửa hoặc gửi tiếp. Không gửi lại thao tác đã xác nhận.</p>}
     {!bound&&unresolved&&<p>Chờ kết quả yêu cầu gốc trước khi mở chứng từ đã chọn.</p>}
-    {currentView&&state.header&&<form ref={form} onSubmit={event=>{event.preventDefault();review();}} style={{display:"grid",gap:16,minWidth:0}}>
-      <p><strong>{currentView.documentId}</strong> · Trạng thái ERP {currentView.statusId} · {state.details.length} dòng đầy đủ</p>
-      <p>{currentView.costRowCount} dòng chi phí được giữ nguyên, chỉ đọc. Các trường tính toán, kiểm tra, dòng không phù hợp và nhật ký do server bảo toàn; DTO này không cung cấp nội dung đầy đủ của chúng.</p>
-      <p>Ngày giờ và chi nhánh được giữ nguyên. Tạo mới và ánh xạ QR chưa được mở. Gửi chỉ chuyển yêu cầu sang trạng thái 2, không phải nhập tồn kho.</p>
-      <fieldset disabled={!editable} style={{border:0,padding:0,minWidth:0,display:"grid",gap:12}}><legend>Thông tin chứng từ</legend>
+    {currentView&&state.header&&<form ref={form} onSubmit={event=>{event.preventDefault();review();}} className={requestStyles.stack}>
+      <header className={requestStyles.section}><div className={requestStyles.cardHeading}><strong>{currentView.documentId}</strong><RequestStatus value={currentView.statusId}/></div><p className={requestStyles.muted}>{state.details.length} dòng đầy đủ</p></header>
+      {!access.canSave&&!access.canSend&&<RequestNotice>Phiếu hiện chỉ được xem theo quyền của bạn.</RequestNotice>}
+      <p className={requestStyles.muted}>{currentView.costRowCount} dòng chi phí được giữ nguyên, chỉ đọc.</p>
+      <p className={requestStyles.muted}>Ngày chứng từ và chi nhánh được giữ nguyên. Gửi yêu cầu chưa làm thay đổi tồn kho.</p>
+      <fieldset disabled={!editable} className={requestStyles.fields}><legend className={requestStyles.title}>Thông tin chứng từ</legend>
         {headerFields.map(([field,label,nullable,multiline])=><ExactField key={field} label={label} id={`inbound-header-${field}`} value={state.header![field]} nullable={nullable} multiline={multiline} disabled={field==="branchId"||field==="documentDate"} error={state.errors[`header.${field}`]} onChange={value=>patchHeader(field,value)}/>)}
       </fieldset>
       <section aria-label="Dòng yêu cầu nhập kho" style={{display:"grid",gap:12,minWidth:0}}>
         {state.details.slice((shownPage-1)*25,shownPage*25).map(row=>{
           const key=lineKey(row),domKey=encodeURIComponent(key);
-          return <fieldset key={key} disabled={!editable} style={{minWidth:0,border:"1px solid var(--border,#bbb)",borderRadius:8,padding:12,display:"grid",gap:10}}><legend style={{maxWidth:"100%"}}>{row.rowId??"Dòng mới"}</legend>
-            {detailFields.map(([field,label,nullable,multiline])=><ExactField key={field} label={label} id={`inbound-detail-${domKey}-${field}`} value={row[field]} nullable={nullable} multiline={multiline} error={state.errors[`detail.${key}.${field}`]} onChange={value=>patchDetail(key,field,value)}/>)}
-            <button type="button" style={button} onClick={()=>removeDetail(key)}>Xóa dòng {row.rowId??"mới"}</button>
+          return <fieldset key={key} disabled={!editable} className={requestStyles.line} style={{minWidth:0}}><legend className="max-w-full px-1 text-sm font-semibold" style={{maxWidth:"100%",overflowWrap:"anywhere"}}>{row.rowId??"Dòng mới"}</legend>
+            <div className="grid min-w-0 gap-4 sm:grid-cols-2">{detailFields.map(([field,label,nullable,multiline])=><ExactField key={field} label={label} id={`inbound-detail-${domKey}-${field}`} value={row[field]} nullable={nullable} multiline={multiline} error={state.errors[`detail.${key}.${field}`]} onChange={value=>patchDetail(key,field,value)}/>)}</div>
+            <RequestButton type="button" style={{maxWidth:"100%",whiteSpace:"normal",overflowWrap:"anywhere"}} onClick={()=>removeDetail(key)}>Xóa dòng {row.rowId??"mới"}</RequestButton>
           </fieldset>;
         })}
         {state.errors.details&&<p role="alert">{state.errors.details}</p>}
-        <nav aria-label="Trang dòng hàng" style={{display:"flex",gap:8,flexWrap:"wrap"}}><button type="button" style={button} disabled={shownPage===1||busy||unresolved} onClick={()=>setPage(shownPage-1)}>Dòng trước</button><span>Trang {shownPage}/{pageCount}; giữ đủ {state.details.length} dòng</span><button type="button" style={button} disabled={shownPage===pageCount||busy||unresolved} onClick={()=>setPage(shownPage+1)}>Dòng tiếp</button></nav>
-        <button type="button" style={button} disabled={!editable||state.details.length>=500} onClick={addDetail}>Thêm dòng</button>
+        <nav aria-label="Trang dòng hàng" style={{display:"flex",gap:8,flexWrap:"wrap"}}><RequestButton type="button" disabled={shownPage===1||busy||unresolved} onClick={()=>setPage(shownPage-1)}>Dòng trước</RequestButton><span>Trang {shownPage}/{pageCount}; giữ đủ {state.details.length} dòng</span><RequestButton type="button" disabled={shownPage===pageCount||busy||unresolved} onClick={()=>setPage(shownPage+1)}>Dòng tiếp</RequestButton></nav>
+        <RequestButton type="button" disabled={!editable||state.details.length>=500} onClick={addDetail}>Thêm dòng</RequestButton>
       </section>
       <ExactField id="inbound-note" label="Ghi chú gửi kho" nullable multiline value={note} disabled={!ready||state.reviewed||!access.canSend} error={state.errors.note} onChange={value=>{if(!lock.current&&currentBinding()&&ready&&!state.reviewed&&access.canSend)setNote(value);}}/>
       {state.reviewed&&<div><p>Rà soát: {dirty?"có thay đổi cần lưu riêng":"không có thay đổi chưa lưu"}.</p><p>Dòng sẽ xóa: {currentView.details.filter(row=>!state.details.some(next=>next.rowId===row.rowId)).map(row=>row.rowId).join(", ")||"không"}</p></div>}
-      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-        {!state.reviewed?<button type="submit" style={button} disabled={!ready}>Rà soát phiếu</button>:<>
-          <button type="button" style={button} disabled={!ready} onClick={()=>setState(previous=>({...previous,reviewed:false}))}>Quay lại chỉnh sửa</button>
-          <button type="button" style={button} disabled={!ready||!access.canSave||!dirty} onClick={()=>void dispatch("Save")}>Lưu thay đổi</button>
-          <button type="button" style={button} disabled={!ready||!access.canSend||dirty||!!state.errors.note||!canSend(currentView)} onClick={()=>void dispatch("SendToWarehouse")}>Gửi yêu cầu nhập kho</button>
+      <div className={requestStyles.actionBar}>
+        {!state.reviewed?<RequestButton variant="default" type="submit" disabled={!ready}>Rà soát phiếu</RequestButton>:<>
+          <RequestButton type="button" disabled={!ready} onClick={()=>setState(previous=>({...previous,reviewed:false}))}>Quay lại chỉnh sửa</RequestButton>
+          <RequestButton type="button" disabled={!ready||!access.canSave||!dirty} onClick={()=>void dispatch("Save")}>Lưu thay đổi</RequestButton>
+          <RequestButton variant="default" type="button" disabled={!ready||!access.canSend||dirty||!!state.errors.note||!canSend(currentView)} onClick={()=>void dispatch("SendToWarehouse")}>Gửi yêu cầu nhập kho</RequestButton>
         </>}
       </div>
       {currentView.statusId!==0&&currentView.statusId!==1&&<p>Trạng thái hiện tại chỉ đọc; không có thao tác tiếp theo được cấp.</p>}
-      {!dirty&&[0,1].includes(currentView.statusId)&&!canSend(currentView)&&<p>Cần có ít nhất một dòng; lô, số lượng bộ, số lượng thùng và ngày giờ hết hạn không được NULL trước khi gửi. Các kiểm tra không có trong DTO vẫn do ERP quyết định.</p>}
+      {!dirty&&[0,1].includes(currentView.statusId)&&!canSend(currentView)&&<p>Cần có ít nhất một dòng; lô, số lượng bộ, số lượng thùng và ngày giờ hết hạn cần có giá trị trước khi gửi. ERP kiểm tra điều kiện trước khi nhận yêu cầu.</p>}
       {dirty&&<p>Lưu và đọc lại thay đổi trước khi gửi. Gửi chỉ chuyển yêu cầu sang trạng thái 2; không phải nhập tồn kho.</p>}
     </form>}
   </section>;
@@ -260,9 +266,9 @@ const detailFields:[keyof InboundDraftDetailUpsert,string,boolean,boolean?][]=[
   ["expireDateByDocument","Ngày giờ hết hạn theo chứng từ",true],["unitPrice","Đơn giá",true]];
 function ExactField({id,label,value,nullable=false,multiline=false,disabled=false,error,onChange}:{id:string;label:string;value:string|null;nullable?:boolean;multiline?:boolean;disabled?:boolean;error?:string;onChange:(value:string|null)=>void}){
   const attributes={id,name:id,value:value??"",disabled:disabled||value===null,"aria-invalid":!!error,"aria-describedby":error?`${id}-error`:undefined,style:control};
-  return <div style={{display:"grid",gap:4,minWidth:0}}><label htmlFor={id}>{label}</label>
-    {nullable&&<label style={{display:"flex",gap:8,alignItems:"center",minHeight:44}}><input type="checkbox" aria-label={`${label} NULL`} checked={value===null} disabled={disabled} onChange={event=>onChange(event.target.checked?null:"")}/>NULL</label>}
-    {multiline?<textarea {...attributes} rows={2} onChange={event=>onChange(event.target.value)}/>:<input {...attributes} type="text" onChange={event=>onChange(event.target.value)}/>}
+  return <div className={requestStyles.field}><label htmlFor={id}>{label}</label>
+    {nullable&&<label style={{display:"flex",gap:8,alignItems:"center",minHeight:44}}><input type="checkbox" aria-label={`${label} NULL`} checked={value===null} disabled={disabled} onChange={event=>onChange(event.target.checked?null:"")}/>Chưa có giá trị</label>}
+    {multiline?<RequestTextarea {...attributes} rows={2} onChange={event=>onChange(event.target.value)}/>:<RequestInput {...attributes} type="text" onChange={event=>onChange(event.target.value)}/>}
     {error&&<p id={`${id}-error`} role="alert">{error}</p>}
   </div>;
 }

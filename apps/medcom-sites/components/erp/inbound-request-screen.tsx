@@ -1,5 +1,6 @@
 "use client";
-import {useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties} from "react";
+import {RequestButton,RequestInput,RequestNotice,RequestEmpty,RequestLoading,RequestStatus,requestDate,requestStyles} from "./request-presentation";
+import {useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore} from "react";
 import {ApiError, getDocuments} from "@/lib/erp/api";
 import type {DocumentPage, WorkspaceData} from "@/lib/erp/contracts";
 import {observedView, snapshotAcknowledges, type InboundDraftAccess, type InboundDraftAdapter, type InboundDraftReceipt} from "@/lib/erp/inbound-draft";
@@ -24,8 +25,6 @@ export type InboundRequestScreenProps = {
   // Existing inbound LIST only. Test seam; never use paginated detail as draft.
   list?: (page: number, search: string, branchId: string, signal: AbortSignal) => Promise<DocumentPage>;
 };
-const control: CSSProperties = {font: "inherit", boxSizing: "border-box", minHeight: 44, minWidth: 0, maxWidth: "100%",
-  padding: 8, border: "1px solid var(--border,#bbb)", borderRadius: 8, overflowWrap: "anywhere"};
 const defaultList = (page: number, search: string, branchId: string, signal: AbortSignal) =>
   getDocuments("inbound-requests", page, search, branchId, signal);
 function CustodyGuard({active, readbackPending}: {active: boolean; readbackPending: boolean}) {
@@ -206,48 +205,50 @@ function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, hi
   }, [loginKey, requestBack, historyOwner]);
   const access: InboundDraftAccess = contextCurrent ? state.access : {...state.access, canRead: false, canSave: false, canSend: false, available: false};
   return <section data-testid="inbound-request-host" data-readback-pending={readbackPending} aria-label="Phiếu đề nghị nhập hàng"
-    style={{maxWidth: 960, width: "100%", minWidth: 0, margin: "0 auto", padding: 12, boxSizing: "border-box", display: "grid", gap: 12, overflowWrap: "anywhere"}}>
+    className={requestStyles.stack}>
     <CustodyGuard key={guardRevision} active={state.unresolved} readbackPending={readbackPending}/>
-    <header style={{display: "flex", gap: 8, flexWrap: "wrap"}}>
-      <h1 style={{flexBasis: "100%", margin: 0}}>Đề nghị nhập hàng</h1>
-      <button type="button" style={control} onClick={requestBack}>Quay lại danh sách</button>
-      <button type="button" style={control} onClick={() => navigate(() => { select(null); callbacks.current.onClose?.(); })}>Đóng phiếu nhập hàng</button>
+    <header className={requestStyles.actions} hidden={selected===null&&!onBack&&!onClose}>
+      <RequestButton type="button" onClick={requestBack}>Quay lại danh sách</RequestButton>
+      <RequestButton type="button" onClick={() => navigate(() => { select(null); callbacks.current.onClose?.(); })}>Đóng phiếu nhập hàng</RequestButton>
     </header>
-    {loginKey === null || sessionEnded ? <p role="status">Đã kết thúc phiên. Dữ liệu bị ẩn; đăng nhập lại để tiếp tục.</p>
-      : authorityDenied ? <p role="status">Quyền hoặc phạm vi nhập hàng chưa được xác nhận. Dữ liệu bị ẩn; ý định gốc vẫn được giữ.</p>
-      : !contextCurrent ? <p role="status">Workspace tạm không khả dụng. Dữ liệu bị ẩn và thao tác bị khóa; ý định của phiên này vẫn được giữ.</p> : null}
-    {notice && !sessionEnded && <p role="status">{notice}</p>}
+    {loginKey === null || sessionEnded ? <RequestNotice>Đã kết thúc phiên. Đăng nhập lại để tiếp tục.</RequestNotice>
+      : authorityDenied ? <RequestNotice>Chưa xác minh được quyền xem phiếu. Yêu cầu đang xử lý vẫn được giữ.</RequestNotice>
+      : !contextCurrent ? <RequestNotice>Chưa xác minh được phiên ERP. Dữ liệu tạm ẩn; yêu cầu đang xử lý vẫn được giữ.</RequestNotice> : null}
+    {notice && !sessionEnded && <RequestNotice warning>{notice}</RequestNotice>}
     {state.receipt && state.receipt.documentId === selected && contextCurrent && !state.needsRefresh && state.access.scopeKey !== null && state.access.canRead && state.access.available && <p data-testid="inbound-host-receipt">ERP đã xác nhận phiếu {state.receipt.documentId}.
       Mã thao tác {state.receipt.operationId}; xác nhận {state.receipt.auditId}. Lỗi tải lại không có nghĩa là lưu thất bại.</p>}
-    {!sessionEnded && workspaceContext !== null && (selected !== null || authorityDenied) && <button type="button" style={control}
+    {!sessionEnded && workspaceContext !== null && (selected !== null || authorityDenied) && <RequestButton type="button"
       onClick={() => { setDeniedContext(null); setRetry(value => value + 1); }}>
-      Xác minh lại quyền nhập hàng</button>}
-    {listAllowed && <>
-      <form aria-label="Lọc phiếu nhập hàng" style={{display: "grid", gap: 8, minWidth: 0}} onSubmit={event => {
+      Xác minh lại quyền nhập hàng</RequestButton>}
+    {listAllowed && <div className={requestStyles.panel}>
+      <form aria-label="Lọc phiếu nhập hàng" className={requestStyles.toolbar} onSubmit={event => {
         event.preventDefault(); navigate(() => { select(null); setFilter({search, branch}); setPage(1); });
       }}>
-        <label>Tìm phiếu nhập hàng<input style={{...control, width: "100%"}} value={search} maxLength={100} onChange={event => setSearch(event.target.value)}/></label>
-        <label>Lọc chi nhánh<select style={{...control, width: "100%"}} value={branch} onChange={event => setBranch(event.target.value)}>
+        <label className={requestStyles.field}>Tìm phiếu nhập hàng<RequestInput placeholder="Nhập mã phiếu…" value={search} maxLength={100} onChange={event => setSearch(event.target.value)}/></label>
+        <label className={requestStyles.field}>Lọc chi nhánh<select className="min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2 text-base font-normal" value={branch} onChange={event => setBranch(event.target.value)}>
           <option value="">Tất cả chi nhánh được cấp</option>{workspace?.branchIds.map(id => <option key={id} value={id}>{id}</option>)}
         </select></label>
-        <button type="submit" style={control}>Áp dụng lọc nhập hàng</button>
+        <RequestButton type="submit" variant="secondary">Áp dụng lọc nhập hàng</RequestButton>
       </form>
-      <section aria-label="Danh sách phiếu nhập hàng" style={{display: "grid", gap: 8, minWidth: 0}}>
-        {!currentRows ? <p role="status">{rows.binding === listBinding && rows.failed ? "Chưa tải được danh sách." : "Đang tải danh sách."}</p>
-          : currentRows.rows.length === 0 ? <p>Không có phiếu trong trang này.</p>
-          : currentRows.rows.map(row => <button key={row.documentId} type="button" style={{...control, textAlign: "left"}}
+      <section aria-label="Danh sách phiếu nhập hàng" className={requestStyles.cards}>
+        {!currentRows ? rows.binding === listBinding && rows.failed ? <RequestNotice warning>Chưa tải được danh sách.</RequestNotice> : <RequestLoading label="Đang tải danh sách."/>
+          : currentRows.rows.length === 0 ? <RequestEmpty title="Không có phiếu trong trang này.">Thử điều chỉnh mã phiếu hoặc chi nhánh.</RequestEmpty>
+          : currentRows.rows.map(row => <button key={row.documentId} type="button" className={requestStyles.card}
+            aria-label={`Mở phiếu ${row.documentId} · ${row.documentDate} · ${row.branchId} · trạng thái ${row.statusId ?? "NULL"}`}
             aria-pressed={selected === row.documentId} onClick={() => { if (selected !== row.documentId) navigate(() => select(row.documentId)); }}>
-            Mở phiếu {row.documentId} · {row.documentDate} · {row.branchId} · trạng thái {row.statusId ?? "NULL"}</button>)}
+            <span className={requestStyles.cardHeading}><strong>{row.documentId}</strong><RequestStatus value={row.statusId}/></span>
+            <span className={requestStyles.values}><span><span className="mb-1 block text-xs text-muted-foreground">Ngày chứng từ</span><strong className="font-medium">{requestDate(row.documentDate)}</strong></span><span><span className="mb-1 block text-xs text-muted-foreground">Chi nhánh</span><strong className="font-medium">{row.branchId}</strong></span></span>
+            <span className="border-t border-border pt-3 text-sm font-medium">Xem phiếu</span></button>)}
       </section>
-      <nav aria-label="Trang danh sách phiếu" style={{display: "flex", flexWrap: "wrap", gap: 8}}>
-        <button type="button" style={control} disabled={page === 1} onClick={() => navigate(() => { select(null); setPage(value => value - 1); })}>Trang phiếu trước</button>
+      <nav aria-label="Trang danh sách phiếu" className={requestStyles.footer}>
+        <RequestButton type="button" disabled={page === 1} onClick={() => navigate(() => { select(null); setPage(value => value - 1); })}>Trang phiếu trước</RequestButton>
         <span>Trang {page}</span>
-        <button type="button" style={control} disabled={!currentRows?.hasMore} onClick={() => navigate(() => { select(null); setPage(value => value + 1); })}>Trang phiếu tiếp</button>
+        <RequestButton type="button" disabled={!currentRows?.hasMore} onClick={() => navigate(() => { select(null); setPage(value => value + 1); })}>Trang phiếu tiếp</RequestButton>
       </nav>
-    </>}
+    </div>}
     {/* Always mounted, even on close, permission change, list error or transient
         workspace=null. Only loginKey above retires this I18 instance. */}
-    <MobileInboundRequest documentId={selected} access={access} adapter={adapter} onConfirmed={acknowledge}/>
-    <p>Chọn phiếu hiện hữu rồi đọc đầy đủ. Lưu và Gửi kho là hai thao tác riêng. Tạo mới, sửa chi phí, đổi ngày/chi nhánh và ánh xạ QR chưa được mở.</p>
+    <div hidden={selected===null&&!state.unresolved&&!readbackPending}><MobileInboundRequest documentId={selected} access={access} adapter={adapter} onConfirmed={acknowledge}/></div>
+    <p className={requestStyles.muted}>Lưu thay đổi và Gửi kho là hai thao tác riêng.</p>
   </section>;
 }

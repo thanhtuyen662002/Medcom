@@ -1,4 +1,5 @@
 "use client";
+import {RequestButton,RequestInput,RequestEmpty,requestStyles} from "./request-presentation";
 
 import {useId} from "react";
 import {RemoteLookup} from "./lookup";
@@ -18,7 +19,7 @@ export type PurchaseRequestLine = {
 };
 
 export const requestInputStyle = {
-  width: "100%", minHeight: 44, padding: "10px 12px", border: "1px solid #a1a1aa",
+  width: "100%", minHeight: 44, padding: "10px 12px", border: "1px solid var(--border)",
   borderRadius: 8, background: "var(--background, white)", color: "inherit", fontSize: 16,
   boxSizing: "border-box" as const,
 };
@@ -43,27 +44,27 @@ export function MobileRequestLines({lines, disabled, canAdd = true, lockItem = f
 }) {
   const prefix = useId();
   return <section aria-labelledby={`${prefix}-title`} style={{display: "grid", gap: 16, minWidth: 0}}>
-    <h2 id={`${prefix}-title`}>Hàng đề nghị ({lines.length})</h2>
+    <h2 className={requestStyles.title} id={`${prefix}-title`}>Hàng đề nghị ({lines.length})</h2>
     {errors.lines && <p role="alert">{errors.lines}</p>}
-    {!lines.length && <p>Chưa có dòng hàng.</p>}
-    {lines.map((line, index) => <article key={line.localKey} aria-label={`Dòng hàng ${index + 1}`} style={{border: "1px solid #a1a1aa", borderRadius: 12, padding: 16, display: "grid", gap: 12, minWidth: 0, overflowWrap: "anywhere"}}>
-      <h3>Dòng {index + 1}</h3>
+    {!lines.length && <RequestEmpty title="Chưa có dòng hàng">Các dòng hàng sẽ hiển thị tại đây.</RequestEmpty>}
+    {lines.map((line, index) => <article className={requestStyles.line} key={line.localKey} aria-label={`Dòng hàng ${index + 1}`} >
+      <h3 className={requestStyles.title}>Dòng {index + 1}</h3>
       {readOnly || lockItem ? <p><strong>{line.itemLabel || line.itemId || "Chưa chọn hàng"}</strong></p> : <RemoteLookup id={itemLookupId} label={`Mặt hàng dòng ${index + 1}`} value={line.itemId ? {id: line.itemId, label: line.itemLabel || line.itemId} : null} adapter={lookupAdapter} disabled={disabled} error={errors[`lines.${line.localKey}.itemId`]} onChange={item => onChange(line.localKey, {itemId: item?.id ?? "", itemLabel: item?.label})}/>}
       {errors[`lines.${line.localKey}.itemId`] && <p role="alert">{errors[`lines.${line.localKey}.itemId`]}</p>}
-      {([
+      <div className="grid min-w-0 gap-4 sm:grid-cols-2">{([
         ["quantity", "Số lượng", 40], ["unitPrice", "Đơn giá", 40], ["budget", "Ngân sách", 40],
         ["timeRequired", "Thời gian cần", 200], ["model", "Model", 50],
       ] as const).map(([field, label, maxLength]) => {
         const id = `${prefix}-${index}-${field}`;
         const error = errors[`lines.${line.localKey}.${field}`];
-        return <div key={field} style={{display: "grid", gap: 6}}>
+        return <div key={field} className={requestStyles.field}>
           <label htmlFor={id}>{label}{field === "quantity" || field === "unitPrice" ? " *" : ""}</label>
-          {readOnly ? <strong>{line[field] || "—"}</strong> : <input id={id} name={`lines.${line.localKey}.${field}`} value={line[field]} inputMode={["quantity", "unitPrice", "budget"].includes(field) ? "numeric" : undefined} maxLength={maxLength} disabled={disabled} aria-invalid={!!error} aria-describedby={error ? `${id}-error` : undefined} style={requestInputStyle} onChange={event => onChange(line.localKey, {[field]: event.target.value})}/>}
+          {readOnly ? <strong>{line[field] || "—"}</strong> : <RequestInput id={id} name={`lines.${line.localKey}.${field}`} value={line[field]} inputMode={["quantity", "unitPrice", "budget"].includes(field) ? "numeric" : undefined} maxLength={maxLength} disabled={disabled} aria-invalid={!!error} aria-describedby={error ? `${id}-error` : undefined} style={requestInputStyle} onChange={event => onChange(line.localKey, {[field]: event.target.value})}/>}
           {error && <p id={`${id}-error`} role="alert">{error}</p>}
         </div>;
-      })}
-      {!readOnly && <button type="button" disabled={disabled} style={requestInputStyle} onClick={() => onRemove(line.localKey)}>Bỏ dòng {index + 1}</button>}
+      })}</div>
+      {!readOnly && <RequestButton type="button" disabled={disabled} onClick={() => onRemove(line.localKey)}>Bỏ dòng {index + 1}</RequestButton>}
     </article>)}
-    {!readOnly && <button type="button" disabled={disabled || !canAdd} style={requestInputStyle} onClick={onAdd}>Thêm dòng hàng</button>}
+    {!readOnly && <RequestButton type="button" disabled={disabled || !canAdd} onClick={onAdd}>Thêm dòng hàng</RequestButton>}
   </section>;
 }

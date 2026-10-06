@@ -210,7 +210,18 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
     };
     const freshPurchaseDetail = async () => {
       await purchaseEditor().waitFor();
+      const disclosure = purchaseEditor().getByRole('region', {name: 'Dữ liệu ERP đầy đủ', exact: true}).locator('details');
+      // The fixed pre-I30 control has no disclosure; preserve that exact control.
+      if (await disclosure.count() && !await disclosure.evaluate(element => element.open)) await disclosure.locator('summary').click();
       await purchaseEditor().getByRole('table', {name: 'Toàn bộ dòng đề nghị', exact: true}).getByText('SYNTHETIC-PURCHASE-ITEM', {exact: true}).waitFor();
+    };
+    const assertPurchaseGrant = async (responsePromise, enabled) => {
+      const response = await responsePromise; assert.equal(response.status(), 200);
+      const body = await response.json();
+      assert.equal(body.scopeKey, controls.purchaseScope, 'grant evidence belongs to the current purchase scope');
+      assert.equal(body.data.document.purchaseRequestId, 'I29-PR-P2-00');
+      assert.deepEqual(body.data.commandAccess, {canSave: enabled, canSubmit: enabled, canLookup: true, canAddLines: false,
+        reason: enabled ? 'synthetic_grant_enabled' : 'synthetic_grant_revoked'}, 'fresh wire grants, not internal UI copy, prove the command authority');
     };
     const prepareOrders = async () => {
       await control({extendedRows: true, holds: [], failures: {}, expired: false, commandAllowed: true,
@@ -423,7 +434,8 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).isEnabled(), false, 'new edits must wait for fresh command grants while existing values remain mounted');
       const detailFinished = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200);
       await control({holds: []}); await (await detailFinished).finished();
-      await purchaseEditor().getByText('synthetic_grant_revoked', {exact: true}).waitFor(); await paint();
+      await assertPurchaseGrant(detailFinished, false);
+      await purchaseEditor().getByText('Phiếu hiện chỉ được xem theo quyền của bạn.', {exact: true}).waitFor(); await paint();
       await stopStableData('purchase read'); await purchaseControls();
       assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).isEnabled(), false, 'fresh command denial must replace the old grant');
       assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).inputValue(), 'UNSAVED SYNTHETIC NOTE', 'background grants must not overwrite an unsaved draft');
@@ -431,8 +443,9 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       const delta = difference(await counts(), before);
       for (const route of routes) assert.ok(delta[route] >= 1 && delta[route] <= 2, `${route}: unchanged-scope background read must refresh once, without a loop`);
       lifecycleEvidence.background.push({kind: 'purchase', requests: delta, commandGrant: 'revoked', unsavedDraft: 'retained'});
+      const restoredDetail = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200);
       await control({commandAllowed: true}); await page.clock.fastForward(60001);
-      await purchaseEditor().getByText('synthetic_grant_enabled', {exact: true}).waitFor();
+      await assertPurchaseGrant(restoredDetail, true);
       await waitFor(() => purchaseEditor().getByLabel('Ghi chú', {exact: true}).isEnabled(), 'restored command grant');
       assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).inputValue(), 'UNSAVED SYNTHETIC NOTE');
       await purchaseEditor().getByLabel('Ghi chú', {exact: true}).fill('SYNTHETIC NOTES');
@@ -657,8 +670,9 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await page.clock.fastForward(60001); await held('workspace');
       await control({holds: ['purchase-save', 'purchase-bootstrap', 'purchase-list', 'purchase-detail']}); await held('purchase-bootstrap'); await assertPurchaseMasked();
       await control({holds: ['purchase-save', 'purchase-list', 'purchase-detail']}); await held('purchase-list'); await held('purchase-detail'); await assertPurchaseMasked();
-      await control({holds: []}); await freshPurchaseDetail();
-      await purchaseEditor().getByText('synthetic_grant_revoked', {exact: true}).waitFor(); await assertOriginalCustody(pending, 0);
+      const revokedDetail = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200);
+      await control({holds: []}); await freshPurchaseDetail(); await assertPurchaseGrant(revokedDetail, false);
+      await purchaseEditor().getByText('Phiếu hiện chỉ được xem theo quyền của bạn.', {exact: true}).waitFor(); await assertVerifiedActionsBlocked(); await assertOriginalCustody(pending, 0);
       assert.equal(controls.purchaseScope, 'c'.repeat(64), 'production purchase scope does not rotate for read rights changes');
       assert.equal(await purchaseEditor().getByText('Nháp đã được ERP xác nhận', {exact: true}).count(), 0);
       await purchaseEditor().getByRole('button', {name: 'Kiểm tra kết quả yêu cầu gốc', exact: true}).click();
