@@ -106,6 +106,38 @@ jobs:
             apps/medcom-sites/.test-runtime/i18-mobile-inbound/browser-result.json
             apps/medcom-sites/.test-runtime/i18-mobile-inbound/synthetic-mobile-inbound.png
           if-no-files-found: error
+      - name: Require inbound host HTTP and mobile tests
+        working-directory: apps/medcom-sites
+        env:
+          I21_TEST_BROWSER: ${{ env.MEDCOM_EDGE_PATH }}
+          I21_REACT_REQUIRED: '1'
+        run: |
+          node --input-type=module <<'NODE'
+          import {spawnSync} from 'node:child_process';
+          import {readFileSync, rmSync} from 'node:fs';
+          const evidencePath='.test-runtime/i21-inbound/react-result.json';
+          rmSync(evidencePath,{force:true});
+          const result=spawnSync(process.execPath,['--test','--test-reporter=tap','tests/inbound-request-integration.test.mjs'],{encoding:'utf8',maxBuffer:32*1024*1024});
+          process.stdout.write(result.stdout??''); process.stderr.write(result.stderr??'');
+          if(result.error)throw result.error;
+          if(result.status!==0)process.exit(result.status??1);
+          if(/#\s*SKIP\b/i.test((result.stdout??'')+(result.stderr??'')))throw new Error('Required I21 tests may not skip');
+          const evidence=JSON.parse(readFileSync(evidencePath,'utf8'));
+          if(!Array.isArray(evidence.results)||evidence.results.length===0||evidence.results.some(item=>item.result!=='PASS')
+            ||!Array.isArray(evidence.errors)||evidence.errors.length!==0||!Array.isArray(evidence.external)||evidence.external.length!==0
+            ||typeof evidence.browser!=='string'||!evidence.browser)throw new Error('Required I21 React evidence incomplete');
+          console.log(`Verified ${evidence.results.length} synthetic I21 React scenarios; no skipped test gate`);
+          NODE
+      - name: Upload synthetic inbound host evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: medcom-inbound-host-evidence-${{ matrix.platform }}-x64-${{ github.sha }}
+          path: |
+            apps/medcom-sites/.test-runtime/i21-inbound/react-result.json
+            apps/medcom-sites/.test-runtime/i21-inbound/host-320.png
+            apps/medcom-sites/.test-runtime/i21-inbound/host-360.png
+            apps/medcom-sites/.test-runtime/i21-inbound/host-390.png
+          if-no-files-found: error
       - name: Test QR scanner with synthetic camera in installed browser
         working-directory: apps/medcom-sites
         env:
