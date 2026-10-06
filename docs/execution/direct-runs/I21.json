@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "role": "direct_interactive",
+  "owner": "Mika under owner-requested parallel fixed mobile workflow continuation",
+  "base_sha": "b1eb57077c2112a808c7ce2e581511741fa971a1",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "automation_policy": "No schedule changes",
+  "publication_policy": "Parent sole publisher/integrator. User routes manual coding chats; exact candidate privacy/code review and current-head/base CI required.",
+  "created_at": "2026-10-06T04:50:00Z",
+  "ticket_id": "I21",
+  "run_id": "9e3159d4-9f05-4c5e-8f75-067f6f587882",
+  "work_branch": "codex/g45-inbound-bridge-i21-20261006",
+  "claim_branch": "medcom-claims/g45/direct/I21",
+  "scope": [
+    "apps/medcom-sites/components/erp/inbound-request-screen.tsx",
+    "apps/medcom-sites/lib/erp/inbound-request-api.ts",
+    "apps/medcom-sites/lib/erp/inbound-request-command-adapter.ts",
+    "apps/medcom-sites/tests/inbound-request-integration.test.mjs",
+    "src/backend/Medcom.Api/InboundDraftEndpoints.cs",
+    "src/backend/Medcom.Api/InboundDraftCommandAccess.cs",
+    "src/backend/Medcom.Contracts/Inbound/InboundDraftWorkspace.cs",
+    "tests/backend/Medcom.Api.Tests/InboundDraftEndpointTests.cs",
+    "docs/execution/checkpoints/I21_INBOUND_DRAFT_BRIDGE.md",
+    "docs/execution/direct-runs/I21.json"
+  ],
+  "purpose": "Fixed existing inbound draft full-read/Save/Send/Reconcile HTTP facade, frontend adapter and retained mobile host using accepted I15 and I18; shared host/proxy wiring reserved to parent.",
+  "dependencies": {
+    "I15": "Accepted on pinned main; existing ReadAsync/ExecuteAsync/ReconcileAsync unchanged.",
+    "I18": "Accepted R2 on pinned main; editor and contracts unchanged.",
+    "I20": "Independent new paths only; no shared ApiHost/proxy/workspace changes while I20 correction remains pending."
+  },
+  "http_contract": {
+    "read": "GET /api/inbound-requests/draft?documentId=...",
+    "save": "POST /api/inbound-requests/draft/save",
+    "send": "POST /api/inbound-requests/draft/send-to-warehouse",
+    "reconcile": "POST /api/inbound-requests/draft/reconcile",
+    "scope_header": "X-Inbound-Scope",
+    "read_response": "{scopeKey,access:{canRead,canSave,canSend,available,maxCommandBytes},data:InboundDraftReadResult}",
+    "command_response": "{scopeKey,data:InboundDraftResult}",
+    "command_body": "Original InboundDraftCommand unchanged; Save or SendToWarehouse only."
+  },
+  "constraints": [
+    "Nine mutable new files plus immutable marker. Do not edit I15/I18 implementations, purchase files, ApiHost, proxy, workspace, Documents, navigation provider, test runners, dependencies, lockfiles, schema or configuration.",
+    "Read must use I15 full ReadAsync, not paginated DocumentDetailPage. Preserve I15 stricter update-grant read boundary. Reconcile only existing ReconcileAsync; no duplicate writer/lookup engine.",
+    "Keep default service/access unavailable. Parent-callable registration/mapping helper may be in owned API files, uncalled on main. No actual SQL service activation or fabricated runtime qualification.",
+    "Scope is opaque nonsecret server-bound database/company/principal/login identity, not document/token/rights identity. Preserve pending intent across transient workspace null, same-session authority refresh and stale responses; hide data and disable actions until authorization is revalidated.",
+    "Cookie auth/CSRF, same-origin, no-store, current session/branch/scope checks before/after awaits; strict JSON/UTF8/duplicate-member/action validation and at most1MiB streamed body. Require matching X-Inbound-Scope on commands; validate supplied scope on subsequent reads.",
+    "I15 string enums, uppercase64hex state tokens, decimal strings, NULL/empty, SQL wall-clock and full<=500detail snapshots must remain exact. Only existing-document Save/Send. Create, cost editing, date/branch rebinding and QR mapping remain closed.",
+    "Keep I18 mounted under dedicated fixed host. Guard selection/filter/page/close/back; unresolved original command cannot be discarded or redispatched. Valid receipt retained on readback failure; exact original DTO/key/serialized body for reconcile.",
+    "Synthetic HTTP/BFF/React mobile tests with truthful PASS/FAIL/NOT_RUN and production default-off assertions. Full raw local integration hooks are instructions for parent, not evidence of app mount.",
+    "No SQL/DLL/private configuration or actual customer data access in this coding task, no deployment, journal application, TLS/security change, publishing or production acceptance."
+  ]
+}
