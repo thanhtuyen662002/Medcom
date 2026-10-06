@@ -52,7 +52,32 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
  await build({absWorkingDir:app,entryPoints:['components/erp/request-notifications.ts'],outfile:notificationFile,bundle:true,platform:'node',format:'esm',packages:'external',logLevel:'warning'});
  const {createRequestNotifications}=await import(pathToFileURL(notificationFile).href);
  const entry=`import React from 'react';import{createRoot}from'react-dom/client';import Workspace from './components/erp/workspace';import{RequestError}from'./components/erp/request-presentation';import{ApiError}from'./lib/erp/api';import{MobileInboundRequest}from'./components/erp/mobile-inbound-request';import{NavigationGuardProvider,useNavigationGuard}from'./components/erp/navigation-guard';import{Toaster}from'sonner';
- window.i30SaveDispatches=[];window.i30ControlDispatches=[];window.i33ReadDispatches=[];const nativeFetch=window.fetch.bind(window);window.fetch=(input,init)=>{const pathname=typeof input==='string'?new URL(input,location.href).pathname:'';if(init?.method==='POST'){if(pathname==='/api/erp/api/inbound-requests/draft/save')window.i30SaveDispatches.push(String(init.body));if(pathname.startsWith('/i30/network-control/'))window.i30ControlDispatches.push({kind:pathname.split('/').at(-1),body:String(init.body)});}const pending=nativeFetch(input,init);if(['/api/erp/api/inbound-requests/draft','/api/erp/api/documents/inbound-requests/detail'].includes(pathname)){const event={path:pathname,settled:false};window.i33ReadDispatches.push(event);void pending.then(async response=>{try{await response.clone().arrayBuffer();}finally{event.settled=true;}},()=>{event.settled=true;}).catch(()=>{});}return pending;};
+ function installReadonlyClockDiagnostics(){
+  if(!window.i33ObserveClock)return;
+  const nativeSetInterval=window.setInterval,nativeClearInterval=window.clearInterval,active=new Map(),events=[];let serial=0,droppedEvents=0;
+  const initialClock=window.i33ClockOrigin,clock=()=>({browserTime:Date.now(),clockDelta:Date.now()-initialClock,performanceTime:performance.now(),visibility:['visible','hidden','prerender'].includes(document.visibilityState)?document.visibilityState:'other',hidden:document.hidden===true});
+  const observe=event=>{try{events.push({...event,...clock()});if(events.length>128){events.shift();droppedEvents++;}}catch{}};
+  window.setInterval=function(...args){
+   const delegated=[...args],observed=args[1]===60000,callback=args[0],timer=observed?{id:++serial,armedAt:Date.now(),lastFireAt:null,fires:0,nominalDue:Date.now()+60000}:null;
+   if(timer&&typeof callback==='function')delegated[0]=function(...callbackArgs){
+    try{timer.fires++;timer.lastFireAt=Date.now();observe({type:'interval-fire',timer:timer.id,fires:timer.fires,previousNominalDue:timer.nominalDue});timer.nominalDue=timer.lastFireAt+60000;}catch{}
+    return Reflect.apply(callback,this,callbackArgs);
+   };
+   const handle=Reflect.apply(nativeSetInterval,this,delegated);
+   if(timer){try{active.set(handle,timer);observe({type:'interval-arm',timer:timer.id,delay:60000,callbackType:typeof callback==='function'?'function':'other',nominalDue:timer.nominalDue});}catch{}}
+   return handle;
+  };
+  window.clearInterval=function(...args){
+   const result=Reflect.apply(nativeClearInterval,this,args);
+   try{const timer=active.get(args[0]);if(timer){observe({type:'interval-clear',timer:timer.id,fires:timer.fires,nominalDue:timer.nominalDue});active.delete(args[0]);}}catch{}
+   return result;
+  };
+  for(const type of ['focus','blur'])window.addEventListener(type,event=>{if(event.target===window)observe({type:'window-'+type,trusted:event.isTrusted===true});});
+  document.addEventListener('visibilitychange',event=>observe({type:'document-visibilitychange',trusted:event.isTrusted===true}));
+  window.i33ClockDiagnostics={snapshot:()=>({...clock(),initialClock,activeTimerCount:active.size,activeTimers:[...active.values()].slice(-16).map(timer=>({...timer})),events:events.map(event=>({...event})),droppedEvents})};
+ }
+ installReadonlyClockDiagnostics();
+ window.i30SaveDispatches=[];window.i30ControlDispatches=[];window.i33ReadDispatches=[];window.i33WorkspaceDispatches=[];window.i33WorkspaceDispatchState={total:0,settled:0,pending:0};const nativeFetch=window.fetch.bind(window);window.fetch=(input,init)=>{const pathname=typeof input==='string'?new URL(input,location.href).pathname:'';if(init?.method==='POST'){if(pathname==='/api/erp/api/inbound-requests/draft/save')window.i30SaveDispatches.push(String(init.body));if(pathname.startsWith('/i30/network-control/'))window.i30ControlDispatches.push({kind:pathname.split('/').at(-1),body:String(init.body)});}const pending=nativeFetch(input,init);if(window.i33ObserveClock&&pathname==='/api/erp/api/workspace'){const event={startedAt:Date.now(),settled:false,httpStatus:null,fetchState:'pending'};window.i33WorkspaceDispatchState.total++;window.i33WorkspaceDispatchState.pending++;window.i33WorkspaceDispatches.push(event);if(window.i33WorkspaceDispatches.length>128)window.i33WorkspaceDispatches.shift();void pending.then(response=>{event.httpStatus=response.status;event.fetchState='fulfilled';event.settled=true;event.settledAt=Date.now();window.i33WorkspaceDispatchState.settled++;window.i33WorkspaceDispatchState.pending--;},()=>{event.fetchState='rejected';event.settled=true;event.settledAt=Date.now();window.i33WorkspaceDispatchState.settled++;window.i33WorkspaceDispatchState.pending--;}).catch(()=>{});}if(['/api/erp/api/inbound-requests/draft','/api/erp/api/documents/inbound-requests/detail'].includes(pathname)){const event={path:pathname,settled:false,hasCommandScope:new Headers(init?.headers).has('X-Inbound-Scope')};if(window.i33ObserveClock)Object.assign(event,{startedAt:Date.now(),httpStatus:null,fetchState:'pending'});window.i33ReadDispatches.push(event);void pending.then(async response=>{if(window.i33ObserveClock)Object.assign(event,{httpStatus:response.status,fetchState:'fulfilled'});try{await response.clone().arrayBuffer();}finally{event.settled=true;if(window.i33ObserveClock)event.settledAt=Date.now();}},()=>{event.settled=true;if(window.i33ObserveClock)Object.assign(event,{fetchState:'rejected',settledAt:Date.now()});}).catch(()=>{});}return pending;};
  window.i30Notices=[];const seenNotices=new WeakSet();new MutationObserver(()=>{for(const node of document.querySelectorAll('[data-sonner-toast]'))if(!seenNotices.has(node)){seenNotices.add(node);window.i30Notices.push({type:node.getAttribute('data-type'),text:node.textContent});}}).observe(document.documentElement,{childList:true,subtree:true});
  // Separate component contract fixture, never a replacement for the mounted HTTP bridge.
  const params=new URLSearchParams(location.search),terminalOutcome=params.get('component-outcome');window.i30ComponentCalls=[];window.i30ComponentLeft=false;
@@ -68,7 +93,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
  const script=Buffer.from(built.outputFiles[0].contents),logo=await readFile(path.join(app,'public/medcom-logo.png'));
  const html='<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/app.css"><div id="root"></div><script src="/app.js"></script></html>';
  let model,serial=0,browser,context,page,origin,completed=false,fatal=null;const expectedCases=26;const errors=[],results=[],failures=[],captures=[],calls=[],transportEvidence=[],readonlyEvidence=[];
- const reset=(patch={})=>{model={serial:++serial,writable:false,empty:false,status:200,holdList:false,waiters:[],listResponses:0,listResponseHeaders:null,holdDetail:false,detailWaiters:[],detailStatus:200,draftEnvelope:null,draftNetwork:false,draftNetworkFailures:0,draftMalformed:false,draftResponses:0,afterWriteDraftEnvelope:null,holdProjection:false,projectionWaiters:[],projectionStatus:200,projectionKind:null,projectionResponses:0,unknown:false,workspaceReads:0,workspaceVersions:[],advanceAuthority:false,deniedLists:0,workspaceStatus:200,purchase:structuredClone(purchase),inbound:structuredClone(inbound),purchaseVersion:1,inboundVersion:1,effects:0,originals:new Map(),receipts:new Map(),writes:[],reconciles:[],control:{closed:[],bff:[]},holdCommands:false,commandWaiters:[],commandResponses:0,rejected:false,conflict:false,malformed:false,...patch};calls.length=0;};
+ const reset=(patch={})=>{model={serial:++serial,writable:false,empty:false,status:200,holdList:false,waiters:[],listResponses:0,listResponseHeaders:null,holdDetail:false,detailWaiters:[],detailStatus:200,draftEnvelope:null,draftNetwork:false,draftNetworkFailures:0,draftMalformed:false,draftResponses:0,afterWriteDraftEnvelope:null,holdProjection:false,projectionWaiters:[],projectionStatus:200,projectionKind:null,projectionResponses:0,unknown:false,workspaceReads:0,workspaceResponses:0,workspaceVersions:[],advanceAuthority:false,deniedLists:0,workspaceStatus:200,purchase:structuredClone(purchase),inbound:structuredClone(inbound),purchaseVersion:1,inboundVersion:1,effects:0,originals:new Map(),receipts:new Map(),writes:[],reconciles:[],control:{closed:[],bff:[]},holdCommands:false,commandWaiters:[],commandResponses:0,rejected:false,conflict:false,malformed:false,...patch};calls.length=0;};
  const workspace=()=>({session:{displayName:'SYNTHETIC USER',tenantId:'QA-T',companyId:'QA-C',companyName:'SYNTHETIC',authorityVersion:model.advanceAuthority?model.workspaceReads:1,idleExpiresAt:new Date(Date.now()+3600000).toISOString(),absoluteExpiresAt:new Date(Date.now()+7200000).toISOString(),capabilities:model.workspaceCapabilities??['purchase-requests.read','inbound-requests.read','purchase-orders.read']},branchIds:['QA-BRANCH'],navigation:['purchase-requests','inbound-requests','purchase-orders'].map(id=>({id,label:id,href:'/?screen='+id}))});
  const send=(res,status,data,headers={})=>{if(res.destroyed)return;res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store',...headers});res.end(JSON.stringify(data));};
  const readHeaders={'X-Medcom-Session-Scope':session,'X-Medcom-Read-Scope':scope};
@@ -85,7 +110,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
    if(!url.pathname.startsWith('/api/erp/')){res.setHeader('Content-Type','text/html');return res.end(html);}
    const route=url.pathname.slice('/api/erp'.length);calls.push({route,method:req.method,documentId:url.searchParams.get('documentId'),page:url.searchParams.get('page'),pageSize:url.searchParams.get('pageSize')});
    if(route==='/health/ready')return send(res,503,{status:'not_ready',checks:[]});
-   if(route==='/api/workspace'){m.workspaceReads++;const current=workspace();m.workspaceVersions.push(current.session.authorityVersion);return send(res,m.workspaceStatus,m.workspaceStatus===200?current:{code:m.workspaceStatus===401?'authentication_required':'backend_unavailable'},readHeaders);}
+   if(route==='/api/workspace'){m.workspaceReads++;const current=workspace();m.workspaceVersions.push(current.session.authorityVersion);m.workspaceResponses++;return send(res,m.workspaceStatus,m.workspaceStatus===200?current:{code:m.workspaceStatus===401?'authentication_required':'backend_unavailable'},readHeaders);}
    if(route==='/api/auth/csrf')return send(res,200,{token:'synthetic-only'});
    if(route==='/api/purchase-requests/workspace')return send(res,200,{scopeKey:scope,data:{branchIds:['QA-BRANCH'],writeAvailable:false,writeReason:'numbering_journal_runtime_unqualified',lookups:[]}});
    if(route==='/api/purchase-requests'||route==='/api/documents/inbound-requests'){
@@ -156,7 +181,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
  };
  const abortCleanup=()=>{void cleanup().catch(error=>errors.push(String(error)));};
  t.signal.addEventListener('abort',abortCleanup,{once:true});
- async function start(width,screen,patch={},query=''){release();await context?.close();reset(patch);context=await browser.newContext({viewport:{width,height:900},locale:'vi-VN',serviceWorkers:'block'});page=await context.newPage();if(patch.installClock)await page.clock.install({time:new Date()});page.setDefaultTimeout(10000);page.on('pageerror',error=>errors.push(error.message));await page.route('**/*',route=>{const url=new URL(route.request().url());if(url.origin!==origin)return route.abort();if(model.draftNetwork&&url.pathname==='/api/erp/api/inbound-requests/draft'){model.draftNetworkFailures++;return route.abort('failed');}return route.continue();});await page.goto(origin+'/?screen='+screen+query);}
+ async function start(width,screen,patch={},query=''){release();await context?.close();reset(patch);context=await browser.newContext({viewport:{width,height:900},locale:'vi-VN',serviceWorkers:'block'});page=await context.newPage();if(patch.installClock){const clockTime=new Date();await page.clock.install({time:clockTime});await page.addInitScript(clockOrigin=>{window.i33ObserveClock=true;window.i33ClockOrigin=clockOrigin;},clockTime.getTime());}page.setDefaultTimeout(10000);page.on('pageerror',error=>errors.push(error.message));await page.route('**/*',route=>{const url=new URL(route.request().url());if(url.origin!==origin)return route.abort();if(model.draftNetwork&&url.pathname==='/api/erp/api/inbound-requests/draft'){model.draftNetworkFailures++;return route.abort('failed');}return route.continue();});await page.goto(origin+'/?screen='+screen+query);}
  const host=screen=>screen==='purchase-requests'?page.getByRole('region',{name:'Danh sách đề nghị mua hàng',exact:true}):page.getByTestId('inbound-request-host');
  async function layout(width,screen){await paint();const overflow=await page.evaluate(()=>({width:innerWidth,scrollWidth:document.documentElement.scrollWidth,elements:document.documentElement.scrollWidth<=innerWidth?[]:[...document.querySelectorAll('body *')].filter(el=>{const r=el.getBoundingClientRect();return r.width>0&&(r.right>innerWidth+.5||r.left<-.5);}).slice(0,24).map(el=>({tag:el.tagName,className:typeof el.className==='string'?el.className:'',width:el.getBoundingClientRect().width,left:el.getBoundingClientRect().left,right:el.getBoundingClientRect().right}))}));assert.ok(overflow.scrollWidth<=overflow.width,'Page overflow at '+width+': '+JSON.stringify(overflow));
   const checks=await host(screen).locator('button:visible,input:not([type=checkbox]):visible,textarea:visible,select:visible,summary:visible').evaluateAll(elements=>elements.map(el=>({tag:el.tagName,height:el.getBoundingClientRect().height,font:parseFloat(getComputedStyle(el).fontSize)})));
@@ -324,6 +349,21 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
   async function noReadonlyValues(){assert.equal(await page.getByText(readonlyLines[0].itemId,{exact:true}).count(),0);assert.equal(await page.getByText(readonlyLines[50].itemId,{exact:true}).count(),0);assert.equal(await page.getByLabel('Số đơn',{exact:true}).count(),0);assert.equal(calls.filter(call=>call.method==='POST').length,0);}
   function releaseDraft(){model.holdDetail=false;model.detailWaiters.splice(0).forEach(resolve=>resolve());}
   function releaseProjection(){model.holdProjection=false;model.projectionWaiters.splice(0).forEach(resolve=>resolve());}
+  let diagnosticSnapshots=0;
+  async function recordReadonlyClockSnapshot(group,observation,stage){
+   if(diagnosticSnapshots++>=64)return;
+   const count=route=>calls.filter(call=>call.route===route).length;
+   const server={requests:{workspace:count('/api/workspace'),list:count('/api/documents/inbound-requests'),draft:count('/api/inbound-requests/draft'),projection:projectionCalls().length},responseAttempts:{workspace:model.workspaceResponses,list:model.listResponses,draft:model.draftResponses,projection:model.projectionResponses},authorityObservationCount:model.workspaceVersions.length,authorityVersions:model.workspaceVersions.slice(-32)};
+   try{
+    const client=await page.evaluate(()=>{
+     const fixedPhase=(element,allowed)=>{const phase=element?.getAttribute('data-phase');return phase===undefined||phase===null?'absent':allowed.includes(phase)?phase:'other';};
+     const host=document.querySelector('[data-testid=inbound-request-host]'),panel=document.querySelector('[data-testid=inbound-request-readonly]'),editor=document.querySelector('[data-testid=inbound-editor]');
+     const summarize=(events,counts)=>({total:counts?.total??events.length,retained:events.length,settled:counts?.settled??events.filter(event=>event.settled).length,pending:counts?.pending??events.filter(event=>!event.settled).length,recent:events.slice(-32).map(event=>({kind:event.path==='/api/erp/api/inbound-requests/draft'?'draft':event.path==='/api/erp/api/documents/inbound-requests/detail'?'projection':'workspace',settled:event.settled===true,hasCommandScope:event.hasCommandScope===true,fetchState:['pending','fulfilled','rejected'].includes(event.fetchState)?event.fetchState:'unobserved',httpStatus:Number.isInteger(event.httpStatus)?event.httpStatus:null,startedClockDelta:Number.isFinite(event.startedAt)?event.startedAt-window.i33ClockOrigin:null,settledClockDelta:Number.isFinite(event.settledAt)?event.settledAt-window.i33ClockOrigin:null}))});
+     return {clock:window.i33ClockDiagnostics?.snapshot()??null,fetch:{workspace:summarize(window.i33WorkspaceDispatches??[],window.i33WorkspaceDispatchState),reads:summarize(window.i33ReadDispatches??[])},ui:{hostPresent:!!host,hostPhase:!host?'absent':host.getAttribute('data-readback-pending')==='true'?'readback-pending':host.querySelector('button[aria-label^="Mở phiếu "][aria-pressed=true]')?'visible-selected-row':'no-visible-selected-row',readbackPending:host?.getAttribute('data-readback-pending')==='true',panelPhase:fixedPhase(panel,['pending','ready','failed']),editorPhase:fixedPhase(editor,['empty','loading','editing','checking','pending','unknown','reconciling','failed','conflict','confirmed','readFailed']),selectedRowCount:host?.querySelectorAll('button[aria-label^="Mở phiếu "][aria-pressed=true]').length??0,listRowCount:host?.querySelectorAll('button[aria-label^="Mở phiếu "]').length??0,detailFocused:document.activeElement?.getAttribute('aria-label')==='Phiếu nhập hàng đã chọn'}};
+    });
+    readonlyEvidence.push({kind:'clock-observation-diagnostic',group,observation,stage,server,client});
+   }catch{readonlyEvidence.push({kind:'clock-observation-diagnostic',group,observation,stage,server,clientUnavailable:true});}
+  }
   async function roundedKeyboardFocus(locator){
    assert.equal(await locator.evaluate(element=>element===document.activeElement&&element.matches(':focus-visible')),true);
    const style=await locator.evaluate(element=>{const value=getComputedStyle(element);return {outline:value.outlineStyle,width:parseFloat(value.outlineWidth),radius:parseFloat(value.borderTopLeftRadius)};});
@@ -417,11 +457,14 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
     {name:'inconsistent-Unavailable-available-true',patch:{draftEnvelope:{...unavailableDraft(false),access:{...unavailableDraft(false).access,available:true}}}},
     {name:'available-false-alone',patch:{draftEnvelope:{...unavailableDraft(true),data:{outcome:'NumberingUnavailable',document:null}}}},
     {name:'Unavailable-with-document',patch:{draftEnvelope:{...unavailableDraft(false),data:{outcome:'Unavailable',document:structuredClone(inbound)}}}},
-    {name:'Unavailable-with-read-right',patch:{draftEnvelope:{...unavailableDraft(false),access:{...unavailableDraft(false).access,available:true,canRead:true}}}}];
+    {name:'service-Unavailable-with-current-read-right',patch:{draftEnvelope:{...unavailableDraft(false),access:{...unavailableDraft(false).access,available:true,canRead:true}}}}];
    for(const {name,patch} of variants){
-    await start(390,'inbound-requests',patch);await open('inbound-requests').click();await settledReads();
+    const expectedReads=name==='service-Unavailable-with-current-read-right'?2:1;
+    await start(390,'inbound-requests',patch);await open('inbound-requests').click();await page.waitForFunction(expected=>window.i33ReadDispatches.filter(event=>event.path==='/api/erp/api/inbound-requests/draft').length>=expected,expectedReads);await settledReads();
     assert.equal(await readonlyPanel().count(),0,name);assert.equal(projectionCalls().length,0,name+' must not issue detail GET');await noReadonlyValues();
-    assert.equal((await draftCalls()).length,1,name+' has no application retry');if(patch.draftNetwork)assert.equal(model.draftNetworkFailures,1);
+    // Current canRead/available legitimately binds I18 after bootstrap. Its one
+    // scoped full read rejects Unavailable; it is not a replacement retry.
+    assert.equal((await draftCalls()).length,expectedReads,name+' has exactly the source-required read phases');assert.deepEqual((await draftCalls()).map(event=>event.hasCommandScope),expectedReads===2?[false,true]:[false],name+' distinguishes bootstrap from the bound full read');await page.waitForTimeout(100);await settledReads();assert.equal((await draftCalls()).length,expectedReads,name+' stays quiet after settled reads');if(patch.draftNetwork)assert.equal(model.draftNetworkFailures,1);
     assert.equal(await page.evaluate(()=>[...document.querySelectorAll('[aria-label="Phiếu nhập hàng đã chọn"]')].some(element=>document.activeElement===element)),false,name+' cannot complete Open focus');
     readonlyEvidence.push({kind:'draft-fail-closed',scenario:name,draftDispatches:(await draftCalls()).length,projectionRequests:0,writeRequests:0});
    }
@@ -450,6 +493,8 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
    await start(390,'inbound-requests',{installClock:true,advanceAuthority:true,draftEnvelope:unavailableDraft(false),projectionStatus:403});
    await open('inbound-requests').click();const deniedCounts=[];
    async function boundedDeniedObservation(label,expected){
+    await recordReadonlyClockSnapshot('projection-403',label,'before');
+    try{
     await eventually(()=>model.projectionResponses>=expected);await settledReads();
     await page.getByText('Chưa xác minh được quyền xem phiếu. Yêu cầu đang xử lý vẫn được giữ.',{exact:true}).waitFor();
     await noReadonlyValues();const counts=()=>({workspace:model.workspaceReads,draft:calls.filter(call=>call.route==='/api/inbound-requests/draft').length,projection:projectionCalls().length});
@@ -458,6 +503,8 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
     await page.clock.fastForward(1000);await settledReads();assert.deepEqual(counts(),{workspace:expected,draft:expected,projection:expected},label+' cannot trigger an autonomous 403 retry cycle');
     assert.equal(await page.evaluate(()=>[...document.querySelectorAll('[aria-label="Phiếu nhập hàng đã chọn"]')].some(element=>document.activeElement===element)),false);
     deniedCounts.push({observation:label,...counts()});
+    await recordReadonlyClockSnapshot('projection-403',label,'after');
+    }catch(error){await recordReadonlyClockSnapshot('projection-403',label,'failure');throw error;}
    }
    await boundedDeniedObservation('initial-selection',1);
    await page.evaluate(()=>{window.dispatchEvent(new FocusEvent('blur'));window.dispatchEvent(new Event('focus'));});
@@ -481,6 +528,8 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
     await start(390,'inbound-requests',{...fullLists(),installClock:true,advanceAuthority:true,listResponseHeaders,draftEnvelope:unavailableDraft(false)});
     const observations=[];
     async function boundedListScopeDenial(label,expected){
+     await recordReadonlyClockSnapshot(name,label,'before');
+     try{
      await eventually(()=>model.listResponses>=expected);await page.getByText('Chưa xác minh được quyền xem phiếu. Yêu cầu đang xử lý vẫn được giữ.',{exact:true}).waitFor();await paint();
      const counts=()=>({workspace:model.workspaceReads,list:calls.filter(call=>call.route==='/api/documents/inbound-requests').length,draft:calls.filter(call=>call.route==='/api/inbound-requests/draft').length,projection:projectionCalls().length});
      const expectedCounts={workspace:expected,list:expected,draft:0,projection:0};
@@ -488,6 +537,8 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
      assert.equal(await host('inbound-requests').getByRole('button',{name:/^Mở phiếu /}).count(),0,'An invalid list scope cannot expose source rows');assert.equal(await focusRegion('inbound-requests').count(),0,'An invalid list scope cannot create a visible selection');assert.equal(await readonlyPanel().count(),0);assert.equal((await draftCalls()).length,0);await noReadonlyValues();
      await page.clock.fastForward(1000);await paint();assert.deepEqual(counts(),expectedCounts,name+' cannot create a 409-to-parent-reload feedback loop');assert.equal(calls.filter(call=>call.method==='POST').length,0);
      observations.push({observation:label,...counts()});
+     await recordReadonlyClockSnapshot(name,label,'after');
+     }catch(error){await recordReadonlyClockSnapshot(name,label,'failure');throw error;}
     }
     await boundedListScopeDenial('initial-list',1);
     await page.evaluate(()=>{window.dispatchEvent(new FocusEvent('blur'));window.dispatchEvent(new Event('focus'));});await boundedListScopeDenial('synthetic-window-focus',2);
@@ -514,7 +565,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
     await eventually(()=>model.commandResponses===1);if(mode==='unknown')await page.waitForFunction(()=>document.querySelector('[data-testid=inbound-editor]')?.getAttribute('data-phase')==='unknown');else await page.waitForFunction(()=>document.querySelector('[data-testid=inbound-request-host]')?.getAttribute('data-readback-pending')==='true');
     const unavailableReads=model.draftResponses;await page.getByRole('button',{name:'Xác minh lại quyền nhập hàng',exact:true}).click();await eventually(()=>model.draftResponses>unavailableReads);await settledReads();const bodies=await page.evaluate(()=>window.i30SaveDispatches);assert.equal(bodies.length,1);const originalBody=bodies[0],bodySha256=sha(originalBody);
     assert.equal(model.writes.length,1);assert.equal(model.writes[0].bodySha256,bodySha256);assert.equal(model.originals.get(model.writes[0].operationId),originalBody);assert.equal(model.effects,1);assert.equal(projectionCalls().length,0,'Custody blocks even an otherwise eligible independent projection');assert.equal(await readonlyPanel().count(),0);
-    const attempts=[()=>closeSelection('inbound-requests').click(),()=>openRow('inbound-requests',26).click(),()=>page.getByRole('button',{name:'Áp dụng lọc nhập hàng',exact:true}).click(),()=>page.getByRole('navigation',{name:'Điều hướng nhanh trên điện thoại',exact:true}).getByRole('button',{name:'Tổng quan',exact:true}).click()];
+    const attempts=[()=>closeSelection('inbound-requests').click(),()=>openRow('inbound-requests',26).click(),()=>page.getByRole('button',{name:'Áp dụng lọc nhập hàng',exact:true}).click(),()=>page.getByRole('navigation',{name:'Điều hướng nhanh trên điện thoại',exact:true}).getByRole('button',{name:'Không gian làm việc',exact:true}).click()];
     for(const attempt of attempts){await attempt();await page.getByRole('alertdialog').waitFor();assert.equal(await page.getByRole('button',{name:'Bỏ thay đổi và rời màn hình',exact:true}).count(),0);assert.equal(new URL(page.url()).searchParams.get('screen'),'inbound-requests');assert.equal(await host('inbound-requests').locator('button[aria-label^="Mở phiếu QA-INBOUND-001 "]').getAttribute('aria-pressed'),'true');assert.equal(await host('inbound-requests').locator('button[aria-label^="Mở phiếu QA-INBOUND-026 "]').getAttribute('aria-pressed'),'false');assert.equal(projectionCalls().length,0);await page.getByRole('button',{name:'Tiếp tục làm việc',exact:true}).click();await page.getByRole('alertdialog').waitFor({state:'detached'});}
     assert.deepEqual(await page.evaluate(()=>window.i30SaveDispatches),[originalBody]);assert.equal(model.effects,1);assert.equal(model.writes.length,1);await capture(`inbound-readonly-custody-${mode}-${nullScope?'null-scope':'scoped'}-390`,{viewport:true,keepFocus:true});
     // Recover only through current full-draft rights and the original receipt.

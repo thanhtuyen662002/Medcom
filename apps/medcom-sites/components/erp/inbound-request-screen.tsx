@@ -376,7 +376,7 @@ function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, hi
       <section aria-label="Danh sách phiếu nhập hàng" ref={focusList} tabIndex={-1} className={`${requestStyles.cards} scroll-mt-24`}>
         {!currentRows ? rows.binding === listBinding && rows.failed ? <RequestNotice warning>Chưa tải được danh sách.</RequestNotice> : <RequestLoading label="Đang tải danh sách."/>
           : currentRows.rows.length === 0 ? <RequestEmpty title="Không có phiếu trong trang này.">Thử điều chỉnh mã phiếu hoặc chi nhánh.</RequestEmpty>
-          : currentRows.rows.map(row => <button key={row.documentId} ref={element => focusRow(row.documentId, element)} type="button" className={`${requestStyles.card} focus-visible:rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring`}
+          : currentRows.rows.map(row => <button key={row.documentId} ref={element => focusRow(row.documentId, element)} type="button" className={`${requestStyles.card} focus-visible:rounded-lg! focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring`}
             aria-label={`Mở phiếu ${row.documentId} · ${row.documentDate} · ${row.branchId} · trạng thái ${row.statusId ?? "NULL"}`}
             aria-pressed={selected === row.documentId} onClick={() => {
               if (selected === row.documentId) {
