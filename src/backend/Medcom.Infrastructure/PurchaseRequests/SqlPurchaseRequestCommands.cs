@@ -54,6 +54,107 @@ public sealed class SqlPurchaseRequestCommands : IPurchaseRequestCommands
         => Start(request,token);
     public Task<PurchaseRequestCommandResult> SubmitAsync(SubmitPurchaseRequest request,CancellationToken token=default)
         => Start(request,token);
+    public Task<PurchaseRequestLookupResult> LookupAsync(CreatePurchaseRequestDraft originalIntent,CancellationToken token=default)
+        => StartLookup(originalIntent,token);
+    public Task<PurchaseRequestLookupResult> LookupAsync(SavePurchaseRequestDraft originalIntent,CancellationToken token=default)
+        => StartLookup(originalIntent,token);
+    public Task<PurchaseRequestLookupResult> LookupAsync(SubmitPurchaseRequest originalIntent,CancellationToken token=default)
+        => StartLookup(originalIntent,token);
+    private Task<PurchaseRequestLookupResult> StartLookup(object? input,CancellationToken token)
+    {
+        try
+        {
+            // Freeze before the first await, with precisely the dispatch canonicalization.
+            var command=input switch
+            {
+                CreatePurchaseRequestDraft c=>Submitted.Create(PurchaseRequestCommandRules.Freeze(c)),
+                SavePurchaseRequestDraft s=>Submitted.Save(PurchaseRequestCommandRules.Freeze(s)),
+                SubmitPurchaseRequest s=>Submitted.Submit(PurchaseRequestCommandRules.Freeze(s)),
+                _=>throw new ArgumentException("Fixed original intent required.")
+            };
+            return Observe(command,token);
+        }
+        catch(ArgumentException) { return Task.FromResult(new PurchaseRequestLookupResult(PurchaseRequestLookupOutcome.InvalidInput)); }
+    }
+    private async Task<PurchaseRequestLookupResult> Observe(Submitted command,CancellationToken token)
+    {
+        if(token.IsCancellationRequested) return new(PurchaseRequestLookupOutcome.Cancelled);
+        if(System.Transactions.Transaction.Current is not null) return new(PurchaseRequestLookupOutcome.Unavailable);
+        DbConnection? connection=null; DbTransaction? transaction=null; var owned=false; var cleanupOk=true;
+        AuthoritativeIdentity? identity=null;
+        var answer=new PurchaseRequestLookupResult(PurchaseRequestLookupOutcome.Unavailable);
+        try
+        {
+            identity=await Resolve(token).WaitAsync(token);
+            if(identity is null) return new(PurchaseRequestLookupOutcome.Denied);
+            if(!runtimeQualified) return new(PurchaseRequestLookupOutcome.QualificationRequired);
+            var key=Key(identity,command); var slot=SHA256.HashData(key);
+            connection=factory();
+            if(connection is null || connection.State!=ConnectionState.Closed) return new(PurchaseRequestLookupOutcome.Unavailable);
+            owned=true; await connection.OpenAsync(token);
+            var started=await connection.BeginTransactionAsync(IsolationLevel.Serializable,token);
+            // Never roll back/dispose a transaction reported as belonging to another owner.
+            if(!ReferenceEquals(started.Connection,connection)) return new(PurchaseRequestLookupOutcome.Unavailable);
+            transaction=started;
+            if(transaction.IsolationLevel!=IsolationLevel.Serializable) return new(PurchaseRequestLookupOutcome.Unavailable);
+            if(!await Authority(transaction,identity,command,token,strict:true)) return new(PurchaseRequestLookupOutcome.Denied);
+            if(!await Probe(transaction,token,strict:true) || !await TransactionValid(transaction,token,strict:true))
+                return new(PurchaseRequestLookupOutcome.QualificationRequired);
+            var found=await Lookup(transaction,key,slot,command.Intent,token,strict:true);
+            if(!found.Valid) return new(PurchaseRequestLookupOutcome.Unavailable);
+            answer=new(PurchaseRequestLookupOutcome.Absent);
+            if(found.Row is {} row)
+            {
+                if(!row.Intent.AsSpan().SequenceEqual(command.Intent)) answer=new(PurchaseRequestLookupOutcome.Conflict);
+                else if(row.Receipt is {} receipt)
+                {
+                    if(!LookupReceiptMatches(receipt,command)
+                        || !row.Aggregate!.AsSpan().SequenceEqual(PurchaseRequestCommandRules.IntentBytes(receipt.Document)))
+                        return new(PurchaseRequestLookupOutcome.Unavailable);
+                    // Prove CURRENT scope/physical relations; do not compare current state to an old receipt/token.
+                    var current=await Read(transaction,receipt.Document.PurchaseRequestId,command.Branch,token,strict:true);
+                    answer=current is null ? new(PurchaseRequestLookupOutcome.Conflict)
+                        : new(PurchaseRequestLookupOutcome.Committed,receipt);
+                }
+                else answer=new(PurchaseRequestLookupOutcome.Pending);
+            }
+            // Fence negative observations too. No attempt custody, allocator or commit path exists here.
+            if(!await TransactionValid(transaction,token,strict:true)) return new(PurchaseRequestLookupOutcome.Unavailable);
+            if(!await StillAuthorized(transaction,identity,command,token,strict:true)) return new(PurchaseRequestLookupOutcome.Denied);
+            token.ThrowIfCancellationRequested();
+        }
+        catch(OperationCanceledException) { answer=new(PurchaseRequestLookupOutcome.Cancelled); }
+        catch(PurchaseConflictException) { answer=new(PurchaseRequestLookupOutcome.Conflict); }
+        catch(Exception) { answer=new(PurchaseRequestLookupOutcome.Unavailable); }
+        finally
+        {
+            // SELECT-only transaction. A cleanup fault must never release a receipt or a false absence.
+            if(transaction is not null)
+            {
+                try { await transaction.RollbackAsync(CancellationToken.None); } catch(Exception) { cleanupOk=false; }
+                try { await transaction.DisposeAsync(); } catch(Exception) { cleanupOk=false; }
+            }
+            if(owned && connection is not null)
+                try { await connection.DisposeAsync(); } catch(Exception) { cleanupOk=false; }
+        }
+        if(!cleanupOk) return new(PurchaseRequestLookupOutcome.Unavailable);
+        if(answer.Outcome is not (PurchaseRequestLookupOutcome.Committed or PurchaseRequestLookupOutcome.Pending
+            or PurchaseRequestLookupOutcome.Absent or PurchaseRequestLookupOutcome.Conflict)) return answer;
+        // Cleanup awaited above. Do not disclose a pre-cleanup receipt after logout/cancellation during that await.
+        // SQL grants are a point-in-time observation at the preceding native-authority fence, not a delivery lease.
+        try
+        {
+            token.ThrowIfCancellationRequested();
+            var live=await Resolve(token).WaitAsync(token);
+            if(identity is null || live is null || !SameSession(identity,live)
+                || live.BranchIds is null || !live.BranchIds.Contains(command.Branch,StringComparer.Ordinal))
+                return new(PurchaseRequestLookupOutcome.Denied);
+            token.ThrowIfCancellationRequested();
+            return answer;
+        }
+        catch(OperationCanceledException) { return new(PurchaseRequestLookupOutcome.Cancelled); }
+        catch(Exception) { return new(PurchaseRequestLookupOutcome.Unavailable); }
+    }
     private Task<PurchaseRequestCommandResult> Start(object? input,CancellationToken token)
     {
         try
@@ -243,11 +344,12 @@ public sealed class SqlPurchaseRequestCommands : IPurchaseRequestCommands
     }
     private static bool SameSession(AuthoritativeIdentity a,AuthoritativeIdentity b) => a.PrincipalId==b.PrincipalId
         && a.TenantId==b.TenantId && a.CompanyId==b.CompanyId && a.AuthorityVersion==b.AuthorityVersion && a.CredentialStamp==b.CredentialStamp;
-    private async Task<bool> StillAuthorized(DbTransaction tx,AuthoritativeIdentity first,Submitted command,CancellationToken token)
+    private async Task<bool> StillAuthorized(DbTransaction tx,AuthoritativeIdentity first,Submitted command,CancellationToken token,bool strict=false)
     {
-        var live=await Resolve(token); return live is not null && SameSession(first,live) && await Authority(tx,live,command,token);
+        var live=strict ? await Resolve(token).WaitAsync(token) : await Resolve(token);
+        return live is not null && SameSession(first,live) && await Authority(tx,live,command,token,strict);
     }
-    private static async Task<bool> Authority(DbTransaction tx,AuthoritativeIdentity id,Submitted input,CancellationToken token)
+    private static async Task<bool> Authority(DbTransaction tx,AuthoritativeIdentity id,Submitted input,CancellationToken token,bool strict=false)
     {
         if(id.BranchIds is null || !id.BranchIds.Contains(input.Branch,StringComparer.Ordinal)) return false;
         LegacyUser user;
@@ -255,11 +357,13 @@ public sealed class SqlPurchaseRequestCommands : IPurchaseRequestCommands
         {
             PurchaseRequestSql.Parameter(cmd,"@actor",DbType.String,id.PrincipalId,100);
             await using var r=await cmd.ExecuteReaderAsync(token);
+            if(strict && !LookupShape(r,typeof(string),typeof(string),typeof(bool),typeof(string),typeof(bool))) return false;
             if(!await r.ReadAsync(token) || Enumerable.Range(0,5).Any(r.IsDBNull)) return false;
             user=new(r.GetString(0),"",r.GetString(1),r.GetBoolean(2),r.GetString(3),!r.GetBoolean(4));
             if(await r.ReadAsync(token) || user.Username!=id.PrincipalId || user.Disabled || !user.GroupEnabled
                 || !PurchaseRequestCommandRules.Identifier(user.GroupId,20) || string.IsNullOrEmpty(user.StoredHash)
                 || LegacyIdentityAuthority.Stamp(user)!=id.CredentialStamp) return false;
+            if(strict && await r.NextResultAsync(token)) return false;
         }
         await using(var cmd=PurchaseRequestSql.Command(tx,PurchaseRequestSql.GrantsText))
         {
@@ -267,30 +371,37 @@ public sealed class SqlPurchaseRequestCommands : IPurchaseRequestCommands
             PurchaseRequestSql.Parameter(cmd,"@group",DbType.String,user.GroupId,20);
             PurchaseRequestSql.Parameter(cmd,"@menu",DbType.String,PurchaseRequestCommandRules.MenuId,50);
             await using var r=await cmd.ExecuteReaderAsync(token);
+            if(strict && !LookupShape(r,typeof(string),typeof(string),typeof(string),typeof(bool),typeof(string),typeof(bool),typeof(int),typeof(int))) return false;
             if(!await r.ReadAsync(token) || new[]{0,1,3,4,5,6,7}.Any(r.IsDBNull)) return false;
             var valid=r.GetString(0)==PurchaseRequestCommandRules.MenuId && r.GetString(1)==PurchaseRequestCommandRules.FormId
                 && (r.IsDBNull(2) || r.GetString(2).Length==0) && !r.GetBoolean(3) && r.GetString(4)=="05" && !r.GetBoolean(5)
                 && (!input.Creates || r.GetInt32(6)==1) && (!(input.Submits || !input.Creates) || r.GetInt32(7)==1);
             if(await r.ReadAsync(token) || !valid) return false;
+            if(strict && await r.NextResultAsync(token)) return false;
         }
         await using(var cmd=PurchaseRequestSql.Command(tx,PurchaseRequestSql.BranchesText))
         {
             PurchaseRequestSql.Parameter(cmd,"@actor",DbType.String,id.PrincipalId,100);
             await using var r=await cmd.ExecuteReaderAsync(token); var count=0; var allowed=false;
+            if(strict && !LookupShape(r,typeof(string))) return false;
             while(await r.ReadAsync(token)) { if(++count>200 || r.IsDBNull(0)) return false; if(r.GetString(0)==input.Branch) allowed=true; }
-            return allowed;
+            return allowed && (!strict || !await r.NextResultAsync(token));
         }
     }
-    private async Task<bool> Probe(DbTransaction tx,CancellationToken token)
+    private async Task<bool> Probe(DbTransaction tx,CancellationToken token,bool strict=false)
     {
         await using var cmd=PurchaseRequestSql.Command(tx,PurchaseRequestSql.ProbeText); await using var r=await cmd.ExecuteReaderAsync(token);
+        if(strict && !LookupShape(r,typeof(int),typeof(Guid),typeof(int),typeof(int))) return false;
         return await r.ReadAsync(token) && !Enumerable.Range(0,4).Any(r.IsDBNull) && r.GetInt32(0)==1
-            && r.GetGuid(1)==binding && r.GetInt32(2)==1 && r.GetInt32(3)==1 && !await r.ReadAsync(token);
+            && r.GetGuid(1)==binding && r.GetInt32(2)==1 && r.GetInt32(3)==1 && !await r.ReadAsync(token)
+            && (!strict || !await r.NextResultAsync(token));
     }
-    private static async Task<bool> TransactionValid(DbTransaction tx,CancellationToken token)
+    private static async Task<bool> TransactionValid(DbTransaction tx,CancellationToken token,bool strict=false)
     {
         await using var cmd=PurchaseRequestSql.Command(tx,PurchaseRequestSql.TransactionText); await using var r=await cmd.ExecuteReaderAsync(token);
-        return await r.ReadAsync(token) && r.GetInt32(0)==1 && r.GetInt32(1)==1 && !await r.ReadAsync(token);
+        if(strict && !LookupShape(r,typeof(int),typeof(int))) return false;
+        return await r.ReadAsync(token) && r.GetInt32(0)==1 && r.GetInt32(1)==1 && !await r.ReadAsync(token)
+            && (!strict || !await r.NextResultAsync(token));
     }
     private void JournalParameters(DbCommand cmd,byte[] key,byte[] slot,byte[] intent)
     {
@@ -298,11 +409,13 @@ public sealed class SqlPurchaseRequestCommands : IPurchaseRequestCommands
         PurchaseRequestSql.Parameter(cmd,"@keyBytes",DbType.Binary,key,-1); PurchaseRequestSql.Parameter(cmd,"@intentBytes",DbType.Binary,intent,-1);
         PurchaseRequestSql.Parameter(cmd,"@keyLength",DbType.Int32,key.Length); PurchaseRequestSql.Parameter(cmd,"@intentLength",DbType.Int32,intent.Length);
     }
-    private async Task<(bool Valid,JournalRow? Row)> Lookup(DbTransaction tx,byte[] key,byte[] slot,byte[] intent,CancellationToken token)
+    private async Task<(bool Valid,JournalRow? Row)> Lookup(DbTransaction tx,byte[] key,byte[] slot,byte[] intent,CancellationToken token,bool strict=false)
     {
         await using var cmd=PurchaseRequestSql.Command(tx,PurchaseRequestSql.LookupText); JournalParameters(cmd,key,slot,intent);
         await using var r=await cmd.ExecuteReaderAsync(token);
-        if(!await r.ReadAsync(token)) return (true,null);
+        if(strict && !LookupShape(r,typeof(Guid),typeof(byte[]),typeof(byte[]),typeof(byte[]),typeof(Guid),typeof(byte),typeof(string),typeof(string),typeof(byte[])))
+            return (false,null);
+        if(!await r.ReadAsync(token)) return (!strict || !await r.NextResultAsync(token),null);
         if(Enumerable.Range(0,6).Any(r.IsDBNull) || r.GetGuid(0)!=binding || !((byte[])r.GetValue(1)).AsSpan().SequenceEqual(slot)
             || !((byte[])r.GetValue(2)).AsSpan().SequenceEqual(key)) return (false,null);
         var storedIntent=(byte[])r.GetValue(3); var attempt=r.GetGuid(4); var state=r.GetByte(5);
@@ -313,24 +426,116 @@ public sealed class SqlPurchaseRequestCommands : IPurchaseRequestCommands
         else if(state==1)
         {
             if(r.IsDBNull(6) || r.IsDBNull(7) || r.IsDBNull(8) || r.GetString(7).Length>PurchaseRequestCommandRules.MaxIntentBytes*2) return (false,null);
-            receipt=JsonSerializer.Deserialize<PurchaseRequestCommandReceipt>(r.GetString(7),PurchaseRequestCommandRules.Json);
+            var json=r.GetString(7);
+            receipt=JsonSerializer.Deserialize<PurchaseRequestCommandReceipt>(json,PurchaseRequestCommandRules.Json);
+            if(strict)
+            {
+                using var raw=JsonDocument.Parse(json);
+                // Reject duplicate, missing, unknown or case-aliased properties at every nesting level.
+                if(receipt is null || !LookupJsonShape(raw.RootElement,JsonSerializer.SerializeToElement(receipt,PurchaseRequestCommandRules.Json)))
+                    return (false,null);
+            }
             aggregate=(byte[])r.GetValue(8);
             if(receipt is null || receipt.Document.PurchaseRequestId!=r.GetString(6)
                 || receipt.StateToken!=PurchaseRequestCommandRules.EqualityToken(receipt.Document)) return (false,null);
         }
         else return (false,null);
-        return await r.ReadAsync(token) ? (false,null) : (true,new(attempt,storedIntent,receipt,aggregate));
+        return await r.ReadAsync(token) || (strict && await r.NextResultAsync(token))
+            ? (false,null) : (true,new(attempt,storedIntent,receipt,aggregate));
+    }
+    private static bool LookupShape(DbDataReader reader,params Type[] types) => reader.FieldCount==types.Length
+        && types.Select((type,index)=>reader.GetFieldType(index)==type).All(value=>value);
+    private static bool LookupJsonShape(JsonElement raw,JsonElement typed)
+    {
+        if(raw.ValueKind!=typed.ValueKind) return false;
+        if(raw.ValueKind==JsonValueKind.Object)
+        {
+            var actual=raw.EnumerateObject().ToArray(); var expected=typed.EnumerateObject().ToArray();
+            return actual.Length==expected.Length && actual.Select(p=>p.Name).Distinct(StringComparer.Ordinal).Count()==actual.Length
+                && expected.All(p=>raw.TryGetProperty(p.Name,out var child) && LookupJsonShape(child,p.Value));
+        }
+        if(raw.ValueKind==JsonValueKind.Array)
+            return raw.GetArrayLength()==typed.GetArrayLength()
+                && raw.EnumerateArray().Zip(typed.EnumerateArray(),LookupJsonShape).All(value=>value);
+        return true;
+    }
+    private static bool LookupReceiptMatches(PurchaseRequestCommandReceipt receipt,Submitted command)
+    {
+        if(receipt.Document is null || receipt.Document.Header is null || receipt.Document.Lines is null
+            || receipt.AllocatedLines is null || !ReceiptMatches(receipt,command)) return false;
+        var document=receipt.Document;
+        // The persisted writer emits canonical aggregates. Do not silently repair a corrupted receipt.
+        if(!PurchaseRequestCommandRules.IntentBytes(document).AsSpan().SequenceEqual(
+                PurchaseRequestCommandRules.IntentBytes(PurchaseRequestCommandRules.Normalize(document)))
+            || document.StatusId!=(command.Submits ? 2 : 1)
+            || (command.Submits ? document.IsLocked is not true : document.IsLocked is true)
+            || (command.Creates && !command.Submits && document.IsLocked is not false)) return false;
+        if(command.Header is not null && !PurchaseRequestCommandRules.IntentBytes(command.Header).AsSpan()
+            .SequenceEqual(PurchaseRequestCommandRules.IntentBytes(document.Header))) return false;
+        var additions=command.NewLines.Concat(command.Changes.Where(c=>c.Kind==PurchaseRequestLineChangeKind.Add)
+            .Select(c=>new PurchaseRequestNewLine(c.ClientLineKey!,c.Values!))).ToArray();
+        var maps=receipt.AllocatedLines;
+        if(maps.Count!=additions.Length || maps.Any(m=>m is null || !PurchaseRequestCommandRules.Identifier(m.LineId,50)
+                || !additions.Any(a=>a.ClientLineKey==m.ClientLineKey))
+            || maps.Select(m=>m.ClientLineKey).Distinct(StringComparer.Ordinal).Count()!=maps.Count
+            || maps.Select(m=>m.LineId).Distinct(StringComparer.Ordinal).Count()!=maps.Count) return false;
+        // ValidateChanges requires each non-Add ID to exist in the writer's prestate.
+        // Track that known occupancy and the final effect in the same order as BuildDesired/Run.
+        // A Remove may free an ID for a later Add; allocation uniqueness is not a no-reuse rule.
+        var occupied=command.Changes.Where(c=>c.Kind!=PurchaseRequestLineChangeKind.Add)
+            .Select(c=>c.LineId!).ToHashSet(StringComparer.Ordinal);
+        var effects=new Dictionary<string,PurchaseRequestLineValues?>(StringComparer.Ordinal);
+        foreach(var addition in command.NewLines)
+        {
+            var id=maps.Single(m=>m.ClientLineKey==addition.ClientLineKey).LineId;
+            if(!occupied.Add(id)) return false;
+            effects[id]=addition.Values;
+        }
+        foreach(var change in command.Changes)
+        {
+            var id=change.Kind==PurchaseRequestLineChangeKind.Add
+                ? maps.Single(m=>m.ClientLineKey==change.ClientLineKey).LineId : change.LineId!;
+            if(change.Kind==PurchaseRequestLineChangeKind.Remove)
+            {
+                if(!occupied.Remove(id)) return false;
+                effects[id]=null;
+            }
+            else
+            {
+                if(change.Kind==PurchaseRequestLineChangeKind.Add ? !occupied.Add(id) : !occupied.Contains(id)) return false;
+                effects[id]=change.Values!;
+            }
+        }
+        if(command.Creates && document.Lines.Count!=maps.Count) return false;
+        // Compare only the last effect for each touched physical ID, not intermediate states.
+        // Untouched preimage values are not present in the original Save DTO or journal.
+        foreach(var effect in effects)
+        {
+            var line=document.Lines.SingleOrDefault(l=>l.LineId==effect.Key);
+            if(effect.Value is null ? line is not null : line is null || line.Values!=effect.Value) return false;
+        }
+        if(command.Action==PurchaseRequestCommandRules.SubmitAction
+            && PurchaseRequestCommandRules.EqualityToken(document with { StatusId=1,IsLocked=false })!=command.ExpectedToken
+            && PurchaseRequestCommandRules.EqualityToken(document with { StatusId=1,IsLocked=null })!=command.ExpectedToken)
+            return false;
+        return true;
     }
     private static bool ReceiptMatches(PurchaseRequestCommandReceipt receipt,Submitted command) => receipt.ActionId==command.Action
         && receipt.IdempotencyKey==command.Key && receipt.Document.BranchId==command.Branch
         && (command.Document is null || receipt.Document.PurchaseRequestId==command.Document);
-    private static async Task<PurchaseRequestAggregate?> Read(DbTransaction tx,string document,string branch,CancellationToken token)
+    private static async Task<PurchaseRequestAggregate?> Read(DbTransaction tx,string document,string branch,CancellationToken token,bool strict=false)
     {
         PurchaseRequestAggregate head;
         await using(var cmd=PurchaseRequestSql.Command(tx,PurchaseRequestSql.HeadText))
         {
             PurchaseRequestSql.Document(cmd,document); await using var r=await cmd.ExecuteReaderAsync(token);
-            if(!await r.ReadAsync(token)) return null;
+            if(strict && !LookupShape(r,typeof(string),typeof(DateTime),typeof(int),typeof(string),typeof(string),typeof(string),typeof(decimal),typeof(string),typeof(int),typeof(bool),typeof(string),typeof(string),typeof(double),typeof(string)))
+                throw new InvalidOperationException("Invalid observation head shape.");
+            if(!await r.ReadAsync(token))
+            {
+                if(strict && await r.NextResultAsync(token)) throw new InvalidOperationException("Unexpected observation head result.");
+                return null;
+            }
             if(new[]{0,3,4,8,10,11,12,13}.Any(r.IsDBNull) || r.GetString(0)!=document || r.GetString(13)!=branch) throw new PurchaseConflictException();
             var header=new PurchaseRequestHeaderInput(r.IsDBNull(1) ? null : r.GetDateTime(1).ToString("yyyy-MM-dd'T'HH:mm:ss.fff",CultureInfo.InvariantCulture),
                 r.IsDBNull(2) ? null : r.GetInt32(2),r.GetString(3),r.GetString(4),r.IsDBNull(5) ? null : r.GetString(5),
@@ -338,11 +543,14 @@ public sealed class SqlPurchaseRequestCommands : IPurchaseRequestCommands
                 r.GetString(10),r.GetString(11),r.GetDouble(12));
             head=new(document,branch,header,r.GetInt32(8),r.IsDBNull(9) ? null : r.GetBoolean(9),Array.Empty<PurchaseRequestPersistedLine>());
             if(await r.ReadAsync(token)) throw new InvalidOperationException("Duplicate master.");
+            if(strict && await r.NextResultAsync(token)) throw new InvalidOperationException("Unexpected observation head result.");
         }
         var lines=new List<PurchaseRequestPersistedLine>();
         await using(var cmd=PurchaseRequestSql.Command(tx,PurchaseRequestSql.DetailsText))
         {
             PurchaseRequestSql.Document(cmd,document); await using var r=await cmd.ExecuteReaderAsync(token);
+            if(strict && !LookupShape(r,typeof(string),typeof(string),typeof(decimal),typeof(string),typeof(decimal),typeof(decimal),typeof(decimal),typeof(string),typeof(string)))
+                throw new InvalidOperationException("Invalid observation detail shape.");
             while(await r.ReadAsync(token))
             {
                 if(lines.Count==PurchaseRequestCommandRules.MaxLines || new[]{0,1,4,5,8}.Any(r.IsDBNull))
@@ -353,6 +561,7 @@ public sealed class SqlPurchaseRequestCommands : IPurchaseRequestCommands
                 string? D(int i)=>r.IsDBNull(i) ? null : r.GetDecimal(i).ToString("0",CultureInfo.InvariantCulture);
                 lines.Add(new(r.GetString(0),new(r.GetString(1),D(2),r.IsDBNull(3) ? null : r.GetString(3),D(4)!,D(5)!,D(6),r.IsDBNull(7) ? null : r.GetString(7))));
             }
+            if(strict && await r.NextResultAsync(token)) throw new InvalidOperationException("Unexpected observation detail result.");
         }
         return PurchaseRequestCommandRules.Normalize(head with { Lines=lines });
     }

@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I19",
+  "role": "direct_interactive",
+  "owner": "Mika under owner-approved fixed mobile command integration",
+  "run_id": "cd45fcb1-c576-49a5-8576-60ddcfbf123a",
+  "base_sha": "2c578d8f822bd2f5466bc2382bfc2439de595469",
+  "work_branch": "codex/g45-purchase-lookup-i19-20261006",
+  "claim_branch": "medcom-claims/g45/direct/I19",
+  "scope": [
+    "src/backend/Medcom.Contracts/PurchaseRequests.cs",
+    "src/backend/Medcom.Application/PurchaseRequests/PurchaseRequestCommands.cs",
+    "src/backend/Medcom.Infrastructure/PurchaseRequests/SqlPurchaseRequestCommands.cs",
+    "tests/backend/Medcom.Api.Tests/PurchaseRequestCommandTests.cs",
+    "docs/execution/checkpoints/I19_PURCHASE_INTENT_LOOKUP.md",
+    "docs/execution/direct-runs/I19.json"
+  ],
+  "purpose": "Read-only original-intent purchase journal lookup for safe reconciliation; never redispatch/reserve or mutate business data.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "automation_policy": "No schedule changes",
+  "publication_policy": "Parent sole publisher; isolated checkout; independent code/privacy and exact-current-base CI required.",
+  "sql_policy": "Offline synthetic recording tests only; no actualSQL/privateconfig/customerdata/DLL.",
+  "constraints": [
+    "Five mutable files only; immutable marker unchanged; no schema,SQLliteralfile,API,DI,BFF,FE or shared policy changes.",
+    "Add separate typed lookup outcome/result and three LookupAsync overloads taking exact original Create/Save/Submit DTOs.",
+    "Independent SELECT-only execution path; never call Run, commands, allocator, reservation/completion, DML, attempt takeover or commit business effects.",
+    "Preserve exact Freeze/canonical bytes, full key and intent byte comparisons, physical identity/branch guards, current live authority/session and schema/runtime qualification.",
+    "Committed returns original validated receipt only with authorized current scoped read; later document edits do not erase proof of originalcommit. Pending/Absent truthful instantaneous observations, never permission to replace or dispatch.",
+    "Corruption/alias/timeout/revocation fail closed, no receipt disclosure. No request/body/customer logs.",
+    "Regression tests prove zero allocator/reservation/business DML for every lookup; race absent then originalreserve; corruptedkeys/receipt/intent; actor/binding/branch/session changes; postcommitlateredit.",
+    "Verify existing no-Add Save and Submit bypass allocation without bypassing other gates; Create/Add remain gated. Do not invent numbering.",
+    "FE mapping contract documented: only confirmedCommitted resolves priorunknown; all other observations retain originalintent/unknown. No FE implementation in thisscope.",
+    "Preserve acceptedI14 command semantics/DTOs; only additive lookup API. No actualSQL, security changes, deployment or production activation."
+  ],
+  "created_at": "2026-10-05T20:53:00Z"
+}

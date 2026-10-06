@@ -34,6 +34,8 @@ public static class ApiHost
         builder.Services.AddSingleton(TimeProvider.System);
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddSingleton<IPurchaseRequestQueries, UnavailablePurchaseRequestQueries>();
+        builder.Services.AddSingleton<IPurchaseRequestCommandAccess, UnavailablePurchaseRequestCommandAccess>();
+        builder.Services.AddSingleton<IPurchaseRequestCommands, UnavailablePurchaseRequestCommands>();
         if (builder.Configuration.GetValue("Legacy:Enabled", false))
         {
             string Required(string key) => builder.Configuration[key] is { Length: > 0 } value

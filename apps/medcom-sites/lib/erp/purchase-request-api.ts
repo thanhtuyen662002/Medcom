@@ -1,5 +1,6 @@
 import {z} from "zod";
 import {ApiError,request} from "./api";
+import type {PurchaseCommandRoute} from "./purchase-request-command-adapter";
 import type {PurchaseRequestSnapshot} from "@/components/erp/mobile-request";
 
 const id=z.string().min(1).max(100), text=z.string().max(65536), decimal=z.string().regex(/^-?\d+(?:\.\d+)?$/);
@@ -10,7 +11,8 @@ const header=z.object({purchaseDate:wallClock,purposeId:z.number().int().nullabl
 const values=z.object({itemId:id,budget:decimal.nullable(),timeRequired:text.nullable(),quantity:decimal,unitPrice:decimal,totalPrice:decimal.nullable(),model:text.nullable()}).strict();
 const document=z.object({purchaseRequestId:id,branchId:id,header,statusId:z.number().int(),isLocked:z.boolean().nullable(),
  lines:z.array(z.object({lineId:id,values}).strict()).max(500)}).strict();
-const snapshot=z.object({document,stateToken:z.string().regex(/^prs1\.[a-f0-9]{64}$/)}).strict().superRefine((value,context)=>{
+const commandAccess=z.object({canSave:z.boolean(),canSubmit:z.boolean(),canLookup:z.boolean(),canAddLines:z.literal(false),reason:z.string().min(1)}).strict();
+const snapshot=z.object({document,commandAccess:commandAccess.nullable().optional(),stateToken:z.string().regex(/^prs1\.[a-f0-9]{64}$/)}).strict().superRefine((value,context)=>{
  if(new Set(value.document.lines.map(line=>line.lineId)).size!==value.document.lines.length)context.addIssue({code:z.ZodIssueCode.custom,message:"Duplicate source line identity"});
 });
 const workspace=z.object({branchIds:z.array(id).min(1).max(200),writeAvailable:z.literal(false),writeReason:z.literal("numbering_journal_runtime_unqualified"),
@@ -59,4 +61,16 @@ export function mobilePurchaseSnapshot(readback:PurchaseReadback):PurchaseReques
    department:h.department,purposeId:h.purposeId===null?"":String(h.purposeId),purposeDescOrClient:h.purposeDescOrClient??"",notes:h.notes??"",branchId:source.branchId,
    currencyId:h.currencyId,objectId:h.objectId,lines:source.lines.map(line=>({localKey:line.lineId,lineId:line.lineId,itemId:line.values.itemId,
     quantity:line.values.quantity,unitPrice:line.values.unitPrice,budget:line.values.budget??"",timeRequired:line.values.timeRequired??"",model:line.values.model??""}))}};
+}
+
+/** The body is frozen once by the adapter. Never rebuild it for reconciliation. */
+export async function postPurchaseCommand(scopeKey:string,route:PurchaseCommandRoute,body:string,signal:AbortSignal):Promise<unknown>{
+ if(!["save","submit","save/lookup","submit/lookup"].includes(route))throw new ApiError(400,"invalid_purchase_command");
+ if(new TextEncoder().encode(body).byteLength>1048576)throw new ApiError(413,"payload_too_large");
+ signal.throwIfAborted();
+ const csrf=await request("api/auth/csrf",z.object({token:z.string().min(1)}),{signal});
+ signal.throwIfAborted();
+ const response=await request(`api/purchase-requests/${route}`,envelope(z.object({outcome:z.number().int().min(0).max(8),receipt:z.unknown()}).strict()),{
+  method:"POST",signal,headers:{"Content-Type":"application/json","X-CSRF-TOKEN":csrf.token,"X-Purchase-Scope":scopeKey},body});
+ assertScope(response.scopeKey,scopeKey);return response;
 }

@@ -11,6 +11,11 @@ public interface IPurchaseRequestCommands
     Task<PurchaseRequestCommandResult> CreateAsync(CreatePurchaseRequestDraft request, CancellationToken token = default);
     Task<PurchaseRequestCommandResult> SaveAsync(SavePurchaseRequestDraft request, CancellationToken token = default);
     Task<PurchaseRequestCommandResult> SubmitAsync(SubmitPurchaseRequest request, CancellationToken token = default);
+    // Supply the retained original DTO, not a form rebuilt from the document's latest state.
+    // Read-only reconciliation; no overload grants permission to run a write command.
+    Task<PurchaseRequestLookupResult> LookupAsync(CreatePurchaseRequestDraft originalIntent, CancellationToken token = default);
+    Task<PurchaseRequestLookupResult> LookupAsync(SavePurchaseRequestDraft originalIntent, CancellationToken token = default);
+    Task<PurchaseRequestLookupResult> LookupAsync(SubmitPurchaseRequest originalIntent, CancellationToken token = default);
 }
 
 public static class PurchaseRequestCommandRules

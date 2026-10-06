@@ -197,3 +197,135 @@ No real SQL, TLS-policy change, private configuration read, business write,
 publication, merge or deployment is performed. This correction is not production
 acceptance. Pinned-toolchain exact-tree integration and independent re-review of
 these new corrections remain required.
+
+## I20 — existing-document command bridge (current additive boundary)
+
+The I17 sections above are historical read-slice evidence. I20 extends only the
+admitted PR72 scope; it does **not** activate business writes or qualify SQL.
+Implementation integration base: `b1eb57077c2112a808c7ce2e581511741fa971a1`.
+Immutable I20 control: `074637d9c0b8819fcafec9e61a80b98abbeac170`.
+The marker retains its original base/dependency wording unchanged. I19 is now
+merged in the integration base; no old overlay or pending I19 candidate is used.
+
+### Fixed transport and server gates
+
+Four POST endpoints are added: `/api/purchase-requests/save`, `/submit`,
+`/save/lookup`, `/submit/lookup`. The latter two accept the original Save/Submit
+DTO and invoke **only** the corresponding merged I19 `LookupAsync` overload.
+`GET /api/purchase-requests/lookup` remains the catalogue lookup. No Create route,
+Add change, generic dispatcher, allocator, SQL/schema or I19 implementation change.
+
+`ApiHost` registers `UnavailablePurchaseRequestCommands` and
+`UnavailablePurchaseRequestCommandAccess`. Enabling read-only pilots cannot replace
+them. Synthetic fixtures may replace both services explicitly. A real
+`IPurchaseRequestCommandAccess` provider is still missing: it must prove live native
+EDIT for menu05011 / AP_PurposeRequestListFrm, exact document/branch authority and
+binding/schema/journal/runtime qualification. This observation never replaces the
+existing command implementation's transaction-native and session fences. No
+`runtimeQualified=true`, database factory or production configuration is introduced.
+
+GET detail supplies additive `commandAccess` flags (default false, including
+`canAddLines=false`), independent of the read capability. Submitted/locked documents
+cannot advertise Save/Submit. Lookup admission is separate so a recorded intent
+may be checked without advertising a new write.
+
+All POSTs retain cookie authentication and ApiHost antiforgery middleware. They
+require HTTPS, a single exact same-origin Origin and `X-Purchase-Scope` matching
+the opaque current session scope. Fresh server sessions and branch membership are
+checked around provider/command awaits; post-dispatch revocation prevents receipt
+release. The real command implementation retains its own native authority checks.
+A final-grant failure is not permission to re-execute a possibly committed command.
+
+BFF raises its streaming input budget to exactly 1,048,576 bytes **only** for the
+four exact POST routes. Auth retains 16,384 bytes. Declared and chunked oversize
+input, invalid UTF-8, malformed JSON, BOM, non-object command roots and non-JSON
+content types fail closed. BFF validates the browser's configured public Origin,
+then sends the fixed backend Origin for its server-to-server hop, along with the
+existing filtered cookies, CSRF token and opaque scope header. Redirects remain
+rejected; upstream fetch and responses are no-store. No certificate bypass is used.
+ASP.NET independently bounds/decodes/parses the body and rejects duplicate, missing,
+unknown and case-aliased property names and nonmatching JSON kinds before dispatch.
+It validates but passes the original typed DTO unchanged into I19.
+
+Actual Contracts serialization is pinned, not guessed: command outcome numbers
+are Committed=0, Replayed=1, InvalidInput=2, Denied=3, Conflict=4,
+QualificationRequired=5, Unavailable=6, OutcomeUnknown=7, Cancelled=8. Lookup numbers
+are Committed=0, Pending=1, Absent=2, InvalidInput=3, Denied=4, Conflict=5,
+QualificationRequired=6, Unavailable=7, Cancelled=8. Only line-change kind has the
+string converter: `Update` / `Remove` here; `Add` is rejected. API validates receipt
+identity/action/key, canonical aggregate/equality token, status/lock, no allocation
+and the requested effects. HTTP 200 alone is not confirmation.
+
+### Raw aggregate overlay and existing mobile editor
+
+`purchase-request-command-adapter.ts` implements the existing MobileRequest seam.
+It never sends `mobilePurchaseSnapshot` as a writer DTO. It retains the complete
+raw aggregate, copies it, then overlays only supported edits. Header price,
+rateExchange, source SQL wall-clock (including NULL) and every untouched line's
+totalPrice/NULL/empty/decimal-string value survive. No money is computed. Decimal
+integer edits use exact BigInt/string canonicalization with the source 18-digit
+bound, never Number/parseFloat. Full raw readback remains visible.
+
+Supported controls: requester, department, notes, purpose/client description,
+existing-line quantity/unit price/budget, time required and model; existing lines
+may be removed. Branch, SQL date/time, item/object/currency/purpose bindings and
+hidden price/rate/total fields are locked. No fabricated options or default values.
+`canAddLines=false` is explicit; an attempted added/duplicated line is also rejected
+by the adapter and server. Up to the inherited 500-line source bound is retained;
+there is no slicing to fit the editor. Larger source/intent bounds still fail
+closed, not partially. The backend canonical escaped-JSON budget can be more
+restrictive than the raw UTF-8 transport budget for large Unicode documents.
+
+Unchanged nullable text preserves NULL rather than becoming empty. A user can type
+new text or clear an existing string to empty; explicit NULL-to-empty with no
+visible edit, empty-to-NULL toggles and clearing a non-NULL numeric budget to NULL
+are not exposed by this editor. They must not be inferred from a blank control.
+
+Dirty Submit is blocked: Save must return a valid confirmation first, then a
+separate intentional Submit uses the receipt token. DTO/key and serialized bytes
+are frozen before the first dispatch await. Double taps do not re-execute. Unknown
+custody accepts only a valid Committed lookup; Pending/Absent/Denied/Conflict/
+Unavailable/cancelled/invalid responses retain the exact original command. A
+replacement DTO, key, scope, incomplete receipt, wrong effect or old token cannot
+resolve it. No automatic retry or reconstructed lookup body exists.
+
+The reader retains the editor outside its busy/error fragments and never keys it
+by document token. Selection, page, search, branch, close and manual refresh use
+the existing navigation guard; a synchronous retained-intent check closes the
+pre-effect double-tap/navigation interval. Authority/adapter changes fence late
+responses but do not discard unknown custody. Only a true login/lifetime/company
+boundary or observed opaque server-scope change retires that custody. Reconciliation
+through a replacement adapter is disabled rather than silently reconstructing an
+intent. Confirmed receipt is kept through refresh failure; another edit requires
+a successful authorized read. Submit after a confirmed Save remains a separate
+operation using that confirmed aggregate/token. Each read captures a command epoch;
+a GET begun before dispatch or acknowledgment cannot replace the confirmed receipt
+or satisfy the fresh-read requirement for another edit.
+
+### New evidence and limits (2026-10-06)
+
+- Executed this run: 46/46 Node tests on transpiled **actual candidate** adapter and
+  BFF modules. This includes one real local HTTP hop through production BFF logic
+  to a Node synthetic upstream. It is **not** ASP.NET, React or SQL evidence.
+- Isolated strict BFF TypeScript check passed for proxy.ts and proxy-policy.ts with
+  installed TypeScript 5.8.3 / Node 22.16.0. This is not the pinned full-app toolchain.
+- Application suite launch failed before tests loaded: `ERR_MODULE_NOT_FOUND` for
+  `esbuild`. Do not count a startup failure as an executed business test.
+- Source-authored ASP.NET/Kestrel fixtures cover auth/CSRF/origin/scope, default-off
+  admission, bounded fixed/chunked bodies, malformed input, actual enum binding,
+  Save/Submit, lost ACK lookup, every negative lookup outcome and revocation.
+  They reuse synthetic identity/read source and command doubles, never real SQL.
+  Compile/analyzers/xUnit are NOT_RUN here (.NET SDK absent from PATH/full checkout unavailable).
+- Source-authored React mobile cases cover Save→Submit, double tap/navigation,
+  all lookup outcomes, failed refresh, authority/adapter/document/session changes.
+  Actual browser execution is NOT_RUN here. The tests require the existing pinned
+  Playwright/browser/dependency environment and do not skip or install a browser.
+- In-memory tab custody is not crash recovery. beforeunload warns; forced reload,
+  tab/process loss and recovery of a frozen DTO after browser restart are not
+  qualified by this slice. Equality tokens do not claim monotonic/ABA protection.
+
+Parent must inspect the full delta, verify exact preimages/dependency pins on a
+complete checkout, run the pinned full suites and independent review, and qualify
+the missing native admission/provider/DB/runtime separately. No push, merge,
+deployment, SQL/DLL execution, private configuration read, TLS weakening or
+production activation is part of this handoff.
