@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I25",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "ef24461f-1a26-4bd9-9502-3a870f4f6d16",
+  "base_sha": "079eb767a47cb266bed36be5a34931282835b20f",
+  "work_branch": "codex/g45-bundled-workspace-i25-20261006",
+  "claim_branch": "medcom-claims/g45/direct/I25",
+  "scope": [
+    "src/frontend/lib/contracts.ts",
+    "src/frontend/lib/api.ts",
+    "src/frontend/lib/navigation.ts",
+    "src/frontend/components/workspace-page.tsx",
+    "src/frontend/tests/api.test.ts",
+    "src/frontend/tests/navigation.test.ts",
+    "src/frontend/e2e/workspace.spec.ts",
+    "src/frontend/README.md",
+    "docs/execution/checkpoints/I25_BUNDLED_WORKSPACE_COMPATIBILITY.md",
+    "docs/execution/direct-runs/I25.json"
+  ],
+  "purpose": "Repair bundled smoke UI rejection of valid purchase-request navigation and misleading network error; retain exact href allowlist and explicitly unavailable unimplemented screen.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "constraints": [
+    "Root sole publisher. Preserve prior markers and claims. No backend, SQL, private config, dependencies, workflows or modern apps/medcom-sites edits.",
+    "Synthetic reproducer and regression for valid server navigation, malicious/unknown href rejection, supported id/href route pairs and safe malformed response classification.",
+    "Do not fake an implemented purchase screen, broaden authority or activate business writes. Full exact-head CI and independent review before merge."
+  ],
+  "created_at": "2026-10-06T11:45:20Z"
+}
