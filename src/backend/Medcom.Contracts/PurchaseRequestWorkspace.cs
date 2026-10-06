@@ -6,7 +6,11 @@ public sealed record PurchaseRequestListRow(string DocumentId, string? PurchaseD
     string PersonSuggest, string Department, int StatusId, bool? IsLocked);
 public sealed record PurchaseRequestListPage(IReadOnlyList<PurchaseRequestListRow> Rows,
     int Page, int PageSize, bool HasMore);
-public sealed record PurchaseRequestReadback(PurchaseRequestAggregate Document, string StateToken);
+public sealed record PurchaseRequestReadback(PurchaseRequestAggregate Document, string StateToken,
+    PurchaseRequestCommandAccessState? CommandAccess = null);
+// Fixed existing-document bridge. No Create/Add capability is exposed.
+public sealed record PurchaseRequestCommandAccessState(bool CanSave, bool CanSubmit, bool CanLookup,
+    bool CanAddLines, string Reason);
 public sealed record PurchaseRequestLookupState(string Kind, bool Available, string? Reason, string Evidence);
 public sealed record PurchaseRequestWorkspace(IReadOnlyList<string> BranchIds, bool WriteAvailable,
     string WriteReason, IReadOnlyList<PurchaseRequestLookupState> Lookups);

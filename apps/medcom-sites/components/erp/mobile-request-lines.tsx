@@ -28,10 +28,11 @@ export function isRequestInteger(value: string) {
   return /^-?\d+$/.test(value) && value.replace(/^-/, "").replace(/^0+/, "").length <= 18;
 }
 
-export function MobileRequestLines({lines, disabled, canAdd = true, readOnly = false, errors, lookupAdapter, itemLookupId, onChange, onAdd, onRemove}: {
+export function MobileRequestLines({lines, disabled, canAdd = true, lockItem = false, readOnly = false, errors, lookupAdapter, itemLookupId, onChange, onAdd, onRemove}: {
   lines: readonly PurchaseRequestLine[];
   disabled: boolean;
   canAdd?: boolean;
+  lockItem?: boolean;
   readOnly?: boolean;
   errors: Record<string, string>;
   lookupAdapter: LookupAdapter;
@@ -47,7 +48,7 @@ export function MobileRequestLines({lines, disabled, canAdd = true, readOnly = f
     {!lines.length && <p>Chưa có dòng hàng.</p>}
     {lines.map((line, index) => <article key={line.localKey} aria-label={`Dòng hàng ${index + 1}`} style={{border: "1px solid #a1a1aa", borderRadius: 12, padding: 16, display: "grid", gap: 12, minWidth: 0, overflowWrap: "anywhere"}}>
       <h3>Dòng {index + 1}</h3>
-      {readOnly ? <p><strong>{line.itemLabel || line.itemId || "Chưa chọn hàng"}</strong></p> : <RemoteLookup id={itemLookupId} label={`Mặt hàng dòng ${index + 1}`} value={line.itemId ? {id: line.itemId, label: line.itemLabel || line.itemId} : null} adapter={lookupAdapter} disabled={disabled} error={errors[`lines.${line.localKey}.itemId`]} onChange={item => onChange(line.localKey, {itemId: item?.id ?? "", itemLabel: item?.label})}/>}
+      {readOnly || lockItem ? <p><strong>{line.itemLabel || line.itemId || "Chưa chọn hàng"}</strong></p> : <RemoteLookup id={itemLookupId} label={`Mặt hàng dòng ${index + 1}`} value={line.itemId ? {id: line.itemId, label: line.itemLabel || line.itemId} : null} adapter={lookupAdapter} disabled={disabled} error={errors[`lines.${line.localKey}.itemId`]} onChange={item => onChange(line.localKey, {itemId: item?.id ?? "", itemLabel: item?.label})}/>}
       {errors[`lines.${line.localKey}.itemId`] && <p role="alert">{errors[`lines.${line.localKey}.itemId`]}</p>}
       {([
         ["quantity", "Số lượng", 40], ["unitPrice", "Đơn giá", 40], ["budget", "Ngân sách", 40],
