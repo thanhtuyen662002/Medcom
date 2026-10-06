@@ -163,7 +163,7 @@ function PurchaseRequestReader({workspace,boundary,sessionUnverified,onDenied,on
     </article>)}{active?.list?.rows.length===0&&<RequestEmpty title="Không có đề nghị phù hợp">Thử điều chỉnh mã đề nghị hoặc chi nhánh.</RequestEmpty>}</div>
     <nav aria-label="Phân trang đề nghị" className={requestStyles.footer}><RequestButton disabled={page===1} onClick={()=>move(()=>{setPage(value=>value-1);setSelected(null);editorRef.current?.bridge.retire();retain(null);})}>Trang trước</RequestButton><span>Trang {page}</span><RequestButton disabled={!active?.list?.hasMore||page>=1000} onClick={()=>move(()=>{setPage(value=>value+1);setSelected(null);editorRef.current?.bridge.retire();retain(null);})}>Trang sau</RequestButton></nav>
    </>}
-   {selected&&<div className={requestStyles.footer}><h3 className={requestStyles.title}>{selected}</h3><RequestButton onClick={close}>Đóng đề nghị</RequestButton></div>}
+   {selected&&<div className={requestStyles.footer}><h3 className={`${requestStyles.title} min-w-0 max-w-full [overflow-wrap:anywhere]`}>{selected}</h3><RequestButton onClick={close}>Đóng đề nghị</RequestButton></div>}
    {!!active?.detailError&&<RequestError error={active.detailError}/>}
   </div>}
   {/* Outside the busy/error/selection fragment. Never key by token or discard an unknown intent. */}
