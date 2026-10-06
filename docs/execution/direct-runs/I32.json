@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I32",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "a0b56e51-96e2-4e54-a74e-7a78f1116321",
+  "base_sha": "79261930cd6c0bbb147939a720f207b95bf1a9d8",
+  "work_branch": "codex/g45-purchase-reference-lookups-i32-20261006",
+  "claim_branch": "medcom-claims/g45/direct/I32",
+  "scope": [
+    "src/backend/Medcom.Infrastructure/PurchaseRequests/SqlPurchaseRequestQueries.cs",
+    "src/backend/Medcom.Infrastructure/PurchaseRequests/PurchaseRequestLookupSql.cs",
+    "src/backend/Medcom.Contracts/PurchaseRequestWorkspace.cs",
+    "tests/backend/Medcom.Api.Tests/PurchaseRequestQueryTests.cs",
+    "tests/backend/Medcom.Api.Tests/PurchaseRequestEndpointTests.cs",
+    "apps/medcom-sites/lib/erp/purchase-request-api.ts",
+    "apps/medcom-sites/tests/purchase-request-lookup.test.mjs",
+    "apps/medcom-sites/scripts/test-erp.mjs",
+    "docs/erp/PURCHASE_LOOKUP_BINDING_EVIDENCE.json",
+    "docs/execution/checkpoints/I32_PURCHASE_REFERENCE_LOOKUPS.md",
+    "docs/execution/direct-runs/I32.json"
+  ],
+  "purpose": "Provide source-verified fixed purpose and currency reference reads through the existing purchase lookup API, with strict binding/schema qualification and typed exact source values.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "constraints": [
+    "Use only directly verified source bindings AP_PurposeRequestListFrm header PurposeID at308051 and CurrencyID at308060; sanitize evidence to metadata/addresses/query hashes, no raw owner SQL or rows.",
+    "Fixed feature SQL only; never execute arbitrary SQL from configuration. Validate exact live binding tuple, uniqueness/aliases, schema/types and required NULL distinctions. Drift, malformed shape, extra result sets or inadequate visibility stay unavailable.",
+    "Purpose source AP_PurposePurchaseTbl has nullable PurposeName and does not filter isDisable. Currency source CF_CurrencyTbl provides CurrencyID/displayID, CurrencyName order and float RateExchange. Do not invent defaults, positive-rate rules, disabled filtering or date-effective rates.",
+    "Preserve existing native read authorization, request/session/branch scope fences and cleanup ownership. Parameterized bounded search/paging, deterministic ordering, duplicate/alias rejection and no silent truncation. Zero DML/allocator/reservation.",
+    "Coordinate typed currency rate and nullable purpose labels with strict client parsing. Preserve existing branch lookup behavior/JSON where possible; document any additive shape. Lookup availability does not unlock editors, Create, Add, writes or monetary recalculation.",
+    "No new API/BFF routes, generic config interpreter, SQL/schema changes, private configuration, DLL/DB execution, allocator or UI changes. Existing unavailable kinds remain honest.",
+    "Actual production module tests plus endpoint and client regressions required, including NULL/rate fidelity, source/config/schema drift, aliases, late revocation, cancellation/cleanup and zero-write. Root alone publishes; independent review and exact-head/current-base CI precede merge."
+  ],
+  "created_at": "2026-10-06T17:20:00Z"
+}
