@@ -385,7 +385,7 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
  assert.ok(existsSync(executable),'I43 browser NOT_RUN: an already installed Chromium/Edge executable is required; do not install or disable sandbox.');
  const toolchain=process.env.MEDCOM_BROWSER_TOOLCHAIN;
  const {chromium}=(toolchain?createRequire(path.join(path.resolve(toolchain),'package.json')):require)('playwright-core');
- let model,browser,context,page,origin,currentScenario,firstFailure=null,fatal=null;const expectedCases=13,results=[],errors=[],waiters=[];
+ let model,browser,context,page,origin,currentScenario,firstFailure=null,fatal=null;const expectedCases=13,results=[],errors=[],waiters=[],viewportEvidence=[];
  const reset=()=>{model={calls:[],detailStatus:200,holdDetail:false,holdCommand:false,unknown:false,readOnly:false,receipts:new Map(),purchase:structuredClone(purchase),inbound:structuredClone(inbound)};};
  const send=(res,{status,data,headers})=>{if(!res.destroyed){res.writeHead(status,headers);res.end(JSON.stringify(data));}};
  const server=createServer(async(req,res)=>{try{
@@ -437,7 +437,19 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
   assert.ok(await page.getByRole('dialog').getAttribute('aria-labelledby'));
   await page.keyboard.press('Tab');assert.equal(await page.getByRole('dialog').evaluate(e=>e.contains(document.activeElement)),true);
  };
- const attempt=async path=>{if(path==='escape')await page.keyboard.press('Escape');else if(path==='backdrop')await page.locator('.request-detail-backdrop').click({position:{x:2,y:2},force:true});else await page.getByRole('dialog').getByRole('button',{name:path==='x'?'Đóng hộp thoại':/^(Đóng đề nghị|Quay lại danh sách)$/}).click();};
+ const actualViewport=async expected=>{
+  const configured=page.viewportSize(),windowViewport=await page.evaluate(()=>({width:innerWidth,height:innerHeight,devicePixelRatio,visualViewport:visualViewport?{width:visualViewport.width,height:visualViewport.height,scale:visualViewport.scale}:null}));
+  assert.deepEqual(configured,expected,'The current Playwright viewport must match the named scenario');assert.deepEqual({width:windowViewport.width,height:windowViewport.height},expected,'The rendered window must match the named scenario');
+  currentScenario.actualViewport={width:windowViewport.width,height:windowViewport.height};return {configured,windowViewport};
+ };
+ const captureViewport=async(file,expected,role='dialog')=>{
+  const viewport=await actualViewport(expected),box=await page.getByRole(role).boundingBox();assert.ok(box&&box.width>0&&box.height>0&&box.x>=-1&&box.y>=-1&&box.x+box.width<=expected.width+1&&box.y+box.height<=expected.height+1,'Capture the current visible '+role+' within the actual viewport');
+  const png=await page.screenshot({path:path.join(output,file),fullPage:false,scale:'css'});assert.equal(png.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
+  const imagePixels={width:png.readUInt32BE(16),height:png.readUInt32BE(20)};assert.deepEqual(imagePixels,expected,'Viewport-only evidence must have the actual CSS viewport dimensions');await actualViewport(expected);
+  viewportEvidence.push({file,kind:currentScenario.kind,stage:currentScenario.stage,role,fullPage:false,scale:'css',viewport,observedSurfaceBox:box,imagePixels});
+  await writeFile(path.join(output,'viewport-evidence.json'),JSON.stringify(viewportEvidence,null,2));
+ };
+ const attempt=async path=>{if(path==='escape')await page.keyboard.press('Escape');else if(path==='backdrop')await page.locator('.request-detail-backdrop').click({position:{x:2,y:2}});else await page.getByRole('dialog').getByRole('button',{name:path==='x'?'Đóng hộp thoại':/^(Đóng đề nghị|Quay lại danh sách)$/}).click();};
  try{
   browser=await chromium.launch({executablePath:executable,headless:true,chromiumSandbox:true});
   for(const kind of ['purchase','inbound'])await run('I43 R1 '+kind+' higher Radix command modal owns focus and Escape above dirty detail',async()=>{
@@ -474,6 +486,7 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
    assert.equal(layers.surface,45);assert.equal(layers.nav,40);assert.equal(layers.later,true);assert.equal(layers.hit,true,'detail owns actual nav-button coordinates');
    for(const ancestor of layers.ancestors){assert.equal(ancestor.z,'auto');assert.equal(ancestor.transform,'none');assert.equal(ancestor.filter,'none');assert.equal(ancestor.perspective,'none');assert.equal(ancestor.opacity,'1');assert.equal(ancestor.isolation,'auto');assert.equal(ancestor.contain,'none');}
    await page.touchscreen.tap(location.x,location.y);assert.equal(await page.evaluate(()=>window.i43.navCalls.length),1);assert.deepEqual(await snapshot(),before);assert.equal(await notes().inputValue(),'R1 LAYER RETAINED');
+   await captureViewport('r1-'+kind+'-mobile-dialog-viewport.png',{width:390,height:844});
    await attempt('x');const guard=page.getByRole('alertdialog');await guard.waitFor();
    assert.equal(await guard.evaluate(node=>node.contains(document.activeElement)),true);
    const guardLayers={content:Number(await guard.evaluate(node=>getComputedStyle(node).zIndex)),overlay:Number(await page.locator('[data-slot="alert-dialog-overlay"]').evaluate(node=>getComputedStyle(node).zIndex))};
@@ -484,6 +497,7 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
    assert.equal(await page.evaluate(({x,y})=>!!document.elementFromPoint(x,y)?.closest('[role=alertdialog]'),{x:guardBox.x+guardBox.width/2,y:guardBox.y+guardBox.height/2}),true,'guard content owns its center');
    await page.touchscreen.tap(location.x,location.y);assert.equal(await guard.isVisible(),true);assert.equal(await page.evaluate(()=>window.i43.navCalls.length),1);
    await page.screenshot({path:path.join(output,'r1-'+kind+'-mobile-guard.png'),fullPage:true});
+   await captureViewport('r1-'+kind+'-mobile-guard-viewport.png',{width:390,height:844},'alertdialog');
    await guard.getByRole('button',{name:'Tiếp tục làm việc',exact:true}).click();await waitForGuardDismissal(page);await paint();assert.deepEqual(await snapshot(),before);assert.equal(await notes().inputValue(),'R1 LAYER RETAINED');
    assert.equal(await page.getByRole('dialog').evaluate(node=>node.contains(document.activeElement)),true);
    await attempt('x');await page.getByRole('alertdialog').getByRole('button',{name:'Bỏ thay đổi và rời màn hình',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});currentScenario.stage='accepted-guard-dismissal';await waitForGuardDismissal(page);await paint();
@@ -493,7 +507,7 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
    results.push({case:'R1-mobile-stacking',kind,result:'PASS',layers,guardLayers,lifetime:before,navCalls:await page.evaluate(()=>window.i43.navCalls)});
   });
   for(const kind of ['purchase','inbound'])for(const width of [1280,390])await run(kind+' '+width+' retained dirty dialog and guarded dismissal matrix',async()=>{
-   await start(kind,width);
+   const scenarioViewport={width,height:844},dismissalPaths=width===390?['x','visible','escape']:['x','visible','escape','backdrop'],dismissalViewports=[];let coveredBackdropPoint=null;await start(kind,scenarioViewport.width,scenarioViewport.height);
    await page.getByLabel(kind==='purchase'?'Tìm mã đề nghị':'Tìm phiếu nhập hàng',{exact:true}).fill('QA');
    await page.getByRole('button',{name:'Tìm kiếm',exact:true}).click();await paint();
    await page.getByRole('navigation',{name:kind==='purchase'?'Phân trang đề nghị':'Trang danh sách phiếu'}).getByRole('button',{name:'Trang sau',exact:true}).click();await paint();
@@ -503,20 +517,37 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
    for(const size of [{width:390,height:844},{width:844,height:390},{width:1280,height:900}]){
     await page.setViewportSize(size);await geometry();assert.equal(await notes().inputValue(),'I43 DIRTY RETAINED');assert.deepEqual(await snapshot(),before);
    }
-   for(const path of ['x','visible','escape','backdrop']){
+   // The resize sweep ends on desktop. Restore the named scenario before
+   // exercising any dismissal path, not only before writing its screenshot.
+   await page.setViewportSize(scenarioViewport);await paint();currentScenario.stage='restored-dismissal-viewport';await actualViewport(scenarioViewport);await geometry();
+   assert.equal(await notes().inputValue(),'I43 DIRTY RETAINED');assert.deepEqual(await snapshot(),before);
+   const restoredBox=await page.getByRole('dialog').boundingBox();assert.ok(restoredBox);if(width===390)assert.ok(restoredBox.x<=1&&restoredBox.y<=1&&restoredBox.width>=389&&restoredBox.height>=843,'Mobile detail covers the full viewport, including its backdrop');
+   for(const path of dismissalPaths){
+    currentScenario.stage='dirty-dismissal-'+path;const viewport=await actualViewport(scenarioViewport);await geometry();
+    if(path==='backdrop')assert.equal(await page.evaluate(()=>!!document.elementFromPoint(2,2)?.closest('.request-detail-backdrop')),true,'Desktop backdrop point must be genuinely exposed before a normal pointer click');
     await attempt(path);const guard=page.getByRole('alertdialog');await guard.waitFor();
+    const guardBox=await guard.boundingBox();assert.ok(guardBox&&guardBox.x>=-1&&guardBox.y>=-1&&guardBox.x+guardBox.width<=width+1&&guardBox.y+guardBox.height<=scenarioViewport.height+1);dismissalViewports.push({path,outcome:'guard-cancel',viewport,guardBox});
+    if(width===390&&path==='x')await captureViewport(kind+'-'+width+'-dirty-guard-viewport.png',scenarioViewport,'alertdialog');
     assert.equal(await guard.evaluate(e=>e.contains(document.activeElement)),true);
     assert.ok(Number(await guard.evaluate(e=>getComputedStyle(e).zIndex))>Number(await page.locator('[data-request-detail-surface]').evaluate(e=>getComputedStyle(e).zIndex)));
     await guard.getByRole('button',{name:'Tiếp tục làm việc',exact:true}).click();await waitForGuardDismissal(page);await paint();
     assert.equal(await notes().inputValue(),'I43 DIRTY RETAINED');assert.deepEqual(await snapshot(),before);
     assert.equal(await page.getByRole('dialog').evaluate(e=>e.contains(document.activeElement)),true);
    }
+   if(width===390){
+    currentScenario.stage='mobile-covered-backdrop-point';const viewport=await actualViewport(scenarioViewport),point={x:2,y:2};
+    assert.equal(await page.evaluate(({x,y})=>!!document.elementFromPoint(x,y)?.closest('.request-detail-dialog'),point),true,'The fullscreen mobile dialog, not its covered backdrop, receives this point');
+    await page.mouse.click(point.x,point.y);await paint();assert.equal(await page.getByRole('alertdialog').count(),0);assert.equal(await page.getByRole('dialog').isVisible(),true);
+    assert.equal(await notes().inputValue(),'I43 DIRTY RETAINED');assert.deepEqual(await snapshot(),before);assert.equal(await page.getByRole('dialog').evaluate(e=>e.contains(document.activeElement)),true);
+    coveredBackdropPoint={point,viewport,outcome:'dialog-retained-without-guard'};
+   }
    assert.equal(model.calls.length,calls,'presentation and cancellation do not issue API requests');
+   currentScenario.stage='retained-dirty-viewport';await captureViewport(kind+'-'+width+'-dirty-viewport.png',scenarioViewport);
    await page.screenshot({path:path.join(output,kind+'-'+width+'-dirty.png'),fullPage:true});
    await attempt('x');await page.getByRole('alertdialog').getByRole('button',{name:'Bỏ thay đổi và rời màn hình',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});currentScenario.stage='accepted-guard-dismissal';await waitForGuardDismissal(page);await paint();
    assert.equal(await scroller.evaluate(e=>e.scrollTop),scroll);assert.match(await page.evaluate(()=>document.activeElement?.getAttribute('aria-label')??''),/QA-001/);
    assert.equal(await page.getByLabel(kind==='purchase'?'Tìm mã đề nghị':'Tìm phiếu nhập hàng',{exact:true}).inputValue(),'QA');
-   assert.equal(model.calls.length,calls);results.push({kind,width,result:'PASS',lifetime:await snapshot(),calls:model.calls});
+   assert.equal(model.calls.length,calls);results.push({kind,width,viewport:scenarioViewport,dismissalPaths,dismissalViewports,coveredBackdropPoint,result:'PASS',lifetime:await snapshot(),calls:model.calls});
   });
   for(const kind of ['purchase','inbound'])await run(kind+' obscured custody, current read proof, pending/unknown and navigation fixture adapter',async()=>{
    await start(kind,390);await open(kind);await notes().fill('KEPT THROUGH HIDE');const before=await snapshot();
@@ -551,7 +582,7 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
   });
   assert.deepEqual(errors,[]);assert.equal(results.length,expectedCases,'Every required dialog case must complete');
  }catch(error){fatal=String(error);throw error;}finally{
-  release();await writeFile(path.join(output,'browser-evidence.json'),JSON.stringify({status:fatal||results.length!==expectedCases||errors.length?'failed':'passed',expectedCases,completedCases:results.length,results,errors,firstFailure,fatal,composedRootBackForward:'NOT_RUN',note:'Root registration and history integration have separate required composed gates; this gate uses the fixture adapter.'},null,2));
+  release();await writeFile(path.join(output,'browser-evidence.json'),JSON.stringify({status:fatal||results.length!==expectedCases||errors.length?'failed':'passed',expectedCases,completedCases:results.length,results,errors,firstFailure,fatal,viewportEvidence,composedRootBackForward:'NOT_RUN',note:'Root registration and history integration have separate required composed gates; this gate uses the fixture adapter.'},null,2));
   await context?.close();await browser?.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));
  }
 });

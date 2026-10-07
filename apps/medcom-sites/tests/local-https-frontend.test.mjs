@@ -9,7 +9,57 @@ import path from 'node:path';
 import net from 'node:net';
 import https from 'node:https';
 import {setTimeout as delay} from 'node:timers/promises';
+import {fileURLToPath, pathToFileURL} from 'node:url';
 import {verifyStandalone} from '../scripts/verify-standalone.mjs';
+
+const loginName = 'Đăng nhập ERP';
+async function requireLoginGate(page) {
+  const form = page.getByRole('form', {name: loginName, exact: true});
+  await form.waitFor({state: 'visible'});
+  assert.equal(await page.locator('.topbar:visible, .erp-sidebar:visible, #main-content:visible').count(), 0, 'retired or anonymous sessions cannot expose protected Workspace chrome');
+  assert.equal(await page.getByRole('dialog').count(), 0, 'login-first must not expose a protected or legacy login dialog');
+  assert.equal(await page.getByRole('alertdialog').count(), 0, 'retirement must close pending protected confirmation dialogs');
+  return form;
+}
+async function submitFixtureLogin(surface) {
+  await surface.getByLabel('Tên đăng nhập', {exact: true}).fill('i28-user');
+  await surface.getByLabel('Mật khẩu', {exact: true}).fill('synthetic-i28-password');
+  await surface.getByRole('button', {name: 'Đăng nhập', exact: true}).click();
+}
+
+// This named check renders the real production gate without starting a browser,
+// relay or server. The complete hosted invocation still runs the built TLS case.
+test('I28 login-first fixture contract matches the production auth gate', async () => {
+  const app = fileURLToPath(new URL('../', import.meta.url));
+  const out = path.join(app, '.test-runtime/i28-auth-contract');
+  await mkdir(out, {recursive: true});
+  const [{build}, {default: React}, {renderToStaticMarkup}] = await Promise.all([import('esbuild'), import('react'), import('react-dom/server')]);
+  await build({absWorkingDir: app, stdin: {contents: `export {WorkspaceAuthGate} from './components/erp/workspace-auth-gate'; export {deriveWorkspaceAuthState} from './lib/erp/workspace-auth-state';`, resolveDir: app, loader: 'tsx'},
+    outfile: path.join(out, 'production.mjs'), bundle: true, platform: 'node', format: 'esm', packages: 'external', alias: {'@': app}, loader: {'.css': 'empty'}, jsx: 'automatic'});
+  const {WorkspaceAuthGate, deriveWorkspaceAuthState} = await import(pathToFileURL(path.join(out, 'production.mjs')));
+  for (const session of ['anonymous', 'expired']) {
+    const state = deriveWorkspaceAuthState({lifecycleKey: 'synthetic-retired', session, hasAuthenticatedProof: false, authority: 'unavailable', proofLifecycleKey: null, signOutPending: false});
+    const html = renderToStaticMarkup(React.createElement(WorkspaceAuthGate, {state, onRetry() {}, login: {configured: true, onSuccess() {}}}, React.createElement('div', {className: 'topbar'}, 'PROTECTED SYNTHETIC CONTENT')));
+    assert.match(html, /<form\b[^>]*aria-label="Đăng nhập ERP"/);
+    assert.match(html, />Tên đăng nhập<\/label>/); assert.match(html, />Mật khẩu<\/label>/);
+    assert.match(html, /<button\b[^>]*type="submit"[^>]*>Đăng nhập<\/button>/);
+    assert.doesNotMatch(html, /PROTECTED SYNTHETIC CONTENT|role="(?:alert)?dialog"/);
+  }
+  // Exercise the fixture's exact entry contract too: no menu/dialog fallback,
+  // no acceptance of a form while protected chrome or portals remain visible.
+  function fixture({chrome = 0, dialog = 0, alertdialog = 0, missing = false} = {}) {
+    const form = {async waitFor(options) {assert.deepEqual(options, {state: 'visible'}); if (missing) throw Error('login form missing');}};
+    return {form, getByRole(role, options) {
+      if (role === 'form') {assert.deepEqual(options, {name: loginName, exact: true}); return form;}
+      assert.ok(role === 'dialog' || role === 'alertdialog'); return {async count() {return role === 'dialog' ? dialog : alertdialog;}};
+    }, locator(selector) {assert.equal(selector, '.topbar:visible, .erp-sidebar:visible, #main-content:visible'); return {async count() {return chrome;}};}};
+  }
+  const valid = fixture(); assert.equal(await requireLoginGate(valid), valid.form);
+  await assert.rejects(requireLoginGate(fixture({missing: true})), /login form missing/);
+  await assert.rejects(requireLoginGate(fixture({chrome: 1})), /protected Workspace chrome/);
+  await assert.rejects(requireLoginGate(fixture({dialog: 1})), /legacy login dialog/);
+  await assert.rejects(requireLoginGate(fixture({alertdialog: 1})), /protected confirmation dialogs/);
+});
 
 // Built modern app -> actual shipping TLS relay -> built BFF -> synthetic HTTPS
 // API. Only this test process knows the ephemeral CA/leaf pin. Owner trust and
@@ -107,12 +157,14 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       const home=await page.goto(ready.publicOrigin + '/', {waitUntil: 'load', timeout: 20000});
       const security=await home.allHeaders();assert.equal(security['x-frame-options'],'DENY');assert.equal(security['x-content-type-options'],'nosniff');assert.equal(security['referrer-policy'],'no-referrer');assert.equal(security['permissions-policy'],'camera=(self), microphone=(), geolocation=()');
       assert.ok(await page.locator('script[src*="/_next/static/"]').count());
-      await page.locator('.topbar .user-button').click();
-      await page.getByRole('menuitem', {name: 'Đăng nhập ERP', exact: true}).click();
-      const dialog = page.getByRole('dialog');
-      await dialog.getByLabel('Tên đăng nhập', {exact: true}).fill('i28-user');
-      await dialog.getByLabel('Mật khẩu', {exact: true}).fill('synthetic-i28-password');
-      await dialog.getByRole('button', {name: 'Đăng nhập', exact: true}).click();
+      let login;
+      if (baselineControl) {
+        // Only the exact pinned pre-I44 negative control has this old entry UI.
+        await page.locator('.topbar .user-button').click();
+        await page.getByRole('menuitem', {name: loginName, exact: true}).click();
+        login = page.getByRole('dialog');
+      } else login = await requireLoginGate(page);
+      await submitFixtureLogin(login);
       await page.waitForFunction(() => document.querySelector('.topbar .user-button')?.textContent.includes('SYNTHETIC I28'));
       const cookies = await context.cookies();
       assert.deepEqual(cookies.map(c => c.name).sort(), ['__Host-Medcom.Csrf','__Host-Medcom.Session']);
@@ -769,15 +821,11 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
     });
     await run('I29 built expiry fences selected purchase data until explicit login', async () => {
       await preparePurchase(); await control({expired: true}); await page.clock.fastForward(60001);
-      await page.waitForFunction(() => document.querySelector('.topbar .user-button')?.textContent.includes('Tài khoản ERP'));
+      await requireLoginGate(page);
       await assertPurchaseMasked(); await control({expired: false});
       const before = await counts(); await page.clock.fastForward(60001); await delay(200);
       assert.deepEqual(await counts(), before, 'retired expiry must not silently restore a live synthetic cookie');
-      await page.locator('.topbar .user-button').click(); await page.getByRole('menuitem', {name: 'Đăng nhập ERP', exact: true}).click();
-      const dialog = page.getByRole('dialog', {name: 'Đăng nhập ERP', exact: true});
-      await dialog.getByLabel('Tên đăng nhập', {exact: true}).fill('i28-user');
-      await dialog.getByLabel('Mật khẩu', {exact: true}).fill('synthetic-i28-password');
-      await dialog.getByRole('button', {name: 'Đăng nhập', exact: true}).click();
+      await submitFixtureLogin(await requireLoginGate(page));
       await purchasePanel().getByLabel('Tìm mã đề nghị', {exact: true}).waitFor();
       assert.equal(await purchasePanel().getByLabel('Tìm mã đề nghị', {exact: true}).inputValue(), '');
       assert.equal(await purchaseEditor().isVisible(), false);
@@ -790,7 +838,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
     });
     await run('UI logout retires the cookie-backed session and denies a later read', async () => {
       await page.locator('.topbar .user-button').click();await page.getByRole('menuitem',{name:'Đăng xuất ERP',exact:true}).click();
-      await page.waitForFunction(()=>document.querySelector('.topbar .user-button')?.textContent.includes('Tài khoản ERP'));
+      await requireLoginGate(page);
       const status = await page.evaluate(async()=> (await fetch('/api/erp/api/auth/session')).status);assert.equal(status,401);assert.equal((await snapshot()).loggedIn,false);
     });
     assert.deepEqual(errors,[]);assert.deepEqual(external,[]);
@@ -798,7 +846,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       actualBuiltApp:true,actualShippingRelay:true,lifecycleEvidence,api:'explicit synthetic HTTPS double',tls:'ephemeral fixture CA in Next child; exact leaf SPKI in isolated browser; no global trust changes',
       ownerCertificateTrust:'NOT_RUN',realSql:'NOT_RUN',productionAccepted:false},null,2));
   } catch (error) {
-    const ui=await page?.evaluate(()=>({readyState:document.readyState,dialogs:[...document.querySelectorAll('[role="dialog"]')].map(dialog=>({title:dialog.querySelector('[data-slot="dialog-title"]')?.textContent,buttons:[...dialog.querySelectorAll('button')].map(button=>({text:button.textContent?.slice(0,100),type:button.type,disabled:button.disabled}))}))})).catch(()=>null);
+    const ui=await page?.evaluate(()=>({readyState:document.readyState,headings:[...document.querySelectorAll('h1')].map(heading=>heading.textContent),loginForms:[...document.querySelectorAll('form[aria-label="Đăng nhập ERP"]')].map(form=>({visible:form.getClientRects().length>0,busy:form.getAttribute('aria-busy'),submitDisabled:form.querySelector('button[type="submit"]')?.disabled})),dialogs:[...document.querySelectorAll('[role="dialog"]')].map(dialog=>({title:dialog.querySelector('[data-slot="dialog-title"]')?.textContent,buttons:[...dialog.querySelectorAll('button')].map(button=>({text:button.textContent?.slice(0,100),type:button.type,disabled:button.disabled}))}))})).catch(()=>null);
     console.error(JSON.stringify({fixture:'I28',errors,external,responses,ui,children:children.map(c=>({closed:c.closed,diagnostic:c.diagnostic})),pageUrl:page?.url()},null,2));throw error;
   } finally {t.signal.removeEventListener('abort',aborted);await cleanup();}
 });
