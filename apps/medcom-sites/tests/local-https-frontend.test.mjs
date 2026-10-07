@@ -26,6 +26,11 @@ async function submitFixtureLogin(surface) {
   await surface.getByLabel('Mật khẩu', {exact: true}).fill('synthetic-i28-password');
   await surface.getByRole('button', {name: 'Đăng nhập', exact: true}).click();
 }
+const recoveryTitle = 'Chưa thể xác minh phiên làm việc';
+function workspaceRecoveryButton(page) {
+  return page.getByRole('region', {name: recoveryTitle, exact: true})
+    .getByRole('button', {name: 'Thử lại', exact: true});
+}
 const purchaseIdentitySelector = 'form[aria-label="Đề nghị mua hàng trên điện thoại"] > header > p > strong';
 function purchaseDocumentIdentity(page, baselineControl) {
   // The exact historical control used a document heading. Current request
@@ -54,6 +59,20 @@ test('I28 login-first fixture contract matches the production auth gate', async 
     assert.match(html, /<button\b[^>]*type="submit"[^>]*>Đăng nhập<\/button>/);
     assert.doesNotMatch(html, /PROTECTED SYNTHETIC CONTENT|role="(?:alert)?dialog"/);
   }
+  const recoveryState = deriveWorkspaceAuthState({lifecycleKey: 'synthetic-live', session: 'live', hasAuthenticatedProof: true, authority: 'unavailable', proofLifecycleKey: null, signOutPending: false});
+  const recoveryHtml = renderToStaticMarkup(React.createElement(WorkspaceAuthGate, {state: recoveryState, onRetry() {}, login: {configured: true, onSuccess() {}}}, React.createElement('div', null, 'RETAINED SYNTHETIC INTENT')));
+  const labelledBy = recoveryHtml.match(/<section\b[^>]*aria-labelledby="([^"]+)"/)?.[1];
+  assert.ok(labelledBy, 'the root recovery region must have an accessible heading label');
+  assert.ok(recoveryHtml.includes(`<h1 id="${labelledBy}">${recoveryTitle}</h1>`));
+  assert.match(recoveryHtml, /<button type="button">Thử lại<\/button>/);
+  assert.match(recoveryHtml, /<div\b[^>]*hidden=""[^>]*inert=""[^>]*aria-hidden="true"[^>]*style="display:none"><div>RETAINED SYNTHETIC INTENT<\/div><\/div>/);
+  assert.doesNotMatch(recoveryHtml, /<form\b|Xác minh lại phiên ERP/);
+  const retry = {}, recoveryCalls = [];
+  const recoveryPage = {getByRole(role, options) {
+    recoveryCalls.push(role); assert.equal(role, 'region'); assert.deepEqual(options, {name: recoveryTitle, exact: true});
+    return {getByRole(childRole, childOptions) {recoveryCalls.push(childRole); assert.equal(childRole, 'button'); assert.deepEqual(childOptions, {name: 'Thử lại', exact: true}); return retry;}};
+  }};
+  assert.equal(workspaceRecoveryButton(recoveryPage), retry); assert.deepEqual(recoveryCalls, ['region', 'button']);
   // Exercise the fixture's exact entry contract too: no menu/dialog fallback,
   // no acceptance of a form while protected chrome or portals remain visible.
   function fixture({chrome = 0, dialog = 0, alertdialog = 0, missing = false} = {}) {
@@ -754,7 +773,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       assert.equal(await purchasePanel().getByRole('button', {name: 'Mở đề nghị I29-PR-P2-00', exact: true}).count(), 0);
       assert.equal(await purchaseEditor().getByRole('button', {name: 'Kiểm tra kết quả yêu cầu gốc', exact: true}).count(), 0);
       await assertOriginalCustody(pending, 0);
-      const recovery = page.getByRole('button', {name: 'Xác minh lại phiên ERP', exact: true}); await recovery.waitFor();
+      const recovery = workspaceRecoveryButton(page); await recovery.waitFor();
       const quiet = await counts(); await delay(500); assert.deepEqual(await counts(), quiet, 'narrowed bootstrap cannot create an automatic authority/read storm');
       await page.clock.fastForward(60001);
       await waitFor(async () => difference(await counts(), quiet)['/api/workspace'] >= 2, 'periodic probe and one branch-denial recheck');
@@ -790,7 +809,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
         await preparePurchase(); const before = await counts(); await control({failures: {[kind]: 403}});
         const failed = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp' + route && response.status() === 403);
         await purchasePanel().getByRole('button', {name: 'Làm mới', exact: true}).click(); await failed;
-        const recovery = page.getByRole('button', {name: 'Xác minh lại phiên ERP', exact: true});
+        const recovery = workspaceRecoveryButton(page);
         await recovery.waitFor(); await assertPurchaseMasked();
         await delay(500); const settled = await counts(); await delay(500);
         assert.deepEqual(await counts(), settled, 'persistent 403 must not schedule automatic request retries');
