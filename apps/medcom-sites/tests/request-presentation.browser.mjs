@@ -34,8 +34,31 @@ const readonlyLines=Array.from({length:51},(_,index)=>({
  barrelQuantityByDocument:index===50?'0.0000':null,
  setQuantityByReal:index===50?null:'-1234567890123456789012345678.0001',
  barrelQuantityByReal:index===50?'-0.0001':'0.0000'}));
+const orderRow=index=>({documentId:'QA-ORDER-'+String(index).padStart(3,'0'),documentDate:'2026-10-01',branchId:'QA-BRANCH',statusId:999,statusName:null,isLocked:false});
+const orderPages=()=>[Array.from({length:12},(_,index)=>orderRow(index+1)),Array.from({length:3},(_,index)=>orderRow(index+13))];
 const readonlyProjection=(documentId,page=1)=>({document:{documentId,documentDate:'2026-10-01',branchId:'QA-BRANCH',statusId:null,isLocked:null},
  purchaseOrderLines:[],inboundRequestLines:structuredClone(readonlyLines.slice((page-1)*50,page*50)),page,pageSize:50,hasMore:page===1});
+
+test('I42 actual shared components render one safe semantic surface without a browser',async()=>{
+ const require=createRequire(import.meta.url),{build}=require('esbuild'),{createElement:h,createRef}=require('react'),{renderToStaticMarkup}=require('react-dom/server');
+ await mkdir(output,{recursive:true});const file=path.join(output,'i42-shared-components.mjs');
+ await build({absWorkingDir:app,stdin:{contents:'export {ErpGrid} from "./components/erp/grid"; export {RequestListTable,RequestListToolbar,RequestSearch,RequestBranch,RequestPagination} from "./components/erp/request-list-shell"; export {RequestSelect,RequestStatus} from "./components/erp/request-presentation"; export {ServerQueryControls} from "./components/erp/query-controls";',resolveDir:app,loader:'tsx'},outfile:file,bundle:true,platform:'node',format:'esm',packages:'external',alias:{'@':app},jsx:'automatic',logLevel:'warning'});
+ const {ErpGrid,RequestListTable,RequestListToolbar,RequestSearch,RequestBranch,RequestPagination,RequestSelect,RequestStatus,ServerQueryControls}=await import(pathToFileURL(file).href);
+ const exact='1234567890123456789012345678.0001',ref=createRef(),calls=[];
+ const rows=[{id:'QA-SSR-001',cells:['<script>synthetic</script>',exact,h(RequestStatus,{value:null})],action:'Mở',actionLabel:'Mở QA-SSR-001',buttonRef:ref,onOpen:()=>calls.push('open-1')},{id:'QA-SSR-002',cells:['QA-SSR-002',null,h(RequestStatus,{value:999,statusName:'<img src=x onerror=synthetic>'})],action:'Mở',actionLabel:'Mở QA-SSR-002',buttonRef:createRef(),onOpen:()=>calls.push('open-2')}];
+ const html=renderToStaticMarkup(h(RequestListTable,{label:'SSR request adapter',columns:[{id:'identity',label:'Mã kiểm thử'},{id:'amount',label:'Số lượng'},{id:'status',label:'Trạng thái'}],rows}));
+ assert.equal((html.match(/<table\b/g)??[]).length,1);assert.match(html,/role="table"/);assert.match(html,/data-shared-grid="true"/);assert.equal((html.match(/data-grid-row=/g)??[]).length,2);
+ for(const row of rows)assert.equal((html.match(new RegExp('aria-label="'+row.actionLabel+'"','g'))??[]).length,1,'Each supplied request has one exact Open action');
+ assert.doesNotMatch(html,/mobile-document-list|Tùy chỉnh bảng|role="checkbox"/);assert.match(html,/&lt;script&gt;synthetic&lt;\/script&gt;/);assert.match(html,/&lt;img src=x onerror=synthetic&gt;/);assert.doesNotMatch(html,/<script|<img/);assert.ok(html.includes(exact));assert.match(html,/Chưa có trạng thái/);assert.deepEqual(calls,[]);
+ const controls=renderToStaticMarkup(h(RequestListToolbar,{onSubmit:()=>calls.push('submit')},h(RequestSearch,{label:'Tìm kiểm thử',placeholder:'Tìm…',value:'QA',onChange:()=>{},inputRef:createRef(),maxLength:50,shortcut:'Ctrl F'}),h(RequestBranch,{label:'Chi nhánh kiểm thử',value:'QA-BRANCH',branches:['QA-BRANCH'],onChange:()=>{}}),h(RequestSelect,{name:'native-contract',disabled:true,'aria-label':'Native contract',value:'one',onChange:()=>{},ref:createRef()},h('option',{value:'one'},'Một'))));
+ assert.match(controls,/class="request-list-toolbar"/);assert.match(controls,/<input[^>]*aria-label="Tìm kiểm thử"[^>]*maxLength="50"/);assert.equal((controls.match(/<select\b/g)??[]).length,2);assert.match(controls,/<select[^>]*name="native-contract"[^>]*disabled=""/);assert.match(controls,/<option value="QA-BRANCH" selected="">QA-BRANCH<\/option>/);assert.doesNotMatch(controls,/role="combobox"|data-slot="select-trigger"/);
+ const pager=renderToStaticMarkup(h(RequestPagination,{label:'Phân trang kiểm thử',page:2,previousDisabled:false,nextDisabled:true,onPrevious:()=>{},onNext:()=>{},previousLabel:'Trang trước',nextLabel:'Trang sau'}));assert.match(pager,/<nav[^>]*aria-label="Phân trang kiểm thử"/);assert.match(pager,/request-panel-footer/);assert.match(pager,/request-list-pagination/);assert.match(pager,/Trang 2/);assert.match(pager,/<button[^>]*aria-label="Trang sau"[^>]*disabled=""/);
+ const contextualPager=renderToStaticMarkup(h(RequestPagination,{label:"Phân trang ngữ cảnh",page:1,previousDisabled:true,nextDisabled:false,onPrevious:()=>{},onNext:()=>{},nextLabel:"Chứng từ kế tiếp"}));assert.match(contextualPager,/aria-label="Trang sau — Chứng từ kế tiếp"/);
+ const advanced=renderToStaticMarkup(h(ErpGrid,{rows:[{id:'QA-GRID-001',amount:exact}],columns:[{id:'id',label:'Identity',width:200,required:true},{id:'amount',label:'Amount',width:160}],rowId:row=>row.id,renderCell:(row,id)=>row[id],rowAction:row=>({label:'Open',accessibleLabel:'Open '+row.id}),onOpen:()=>{},schemaVersion:'ssr-v1',scopeKey:'ssr-scope',compact:false,label:'SSR advanced grid'}));assert.match(advanced,/role="grid"/);assert.match(advanced,/data-compact="false"/);assert.match(advanced,/Tùy chỉnh bảng/);assert.match(advanced,/Chọn tất cả dòng trên trang này/);assert.match(advanced,/role="separator"/);assert.ok(advanced.includes(exact));assert.equal((advanced.match(/aria-label="Open QA-GRID-001"/g)??[]).length,1);
+ const query=renderToStaticMarkup(h(ServerQueryControls,{fields:[],sortFields:[],groups:[],value:{filters:[],sort:[]},busy:false,onApply:()=>calls.push('query')}));assert.match(query,/Lọc &amp; sắp xếp/);assert.deepEqual(calls,[]);
+ // SSR can verify accepted public props and safe markup; live focus/ref attachment,
+ // responsive geometry and query edits remain browser-only assertions below.
+});
 
 test('I30 compiled application presentation at 320,390,1440',{timeout:240000},async t=>{
  const require=createRequire(import.meta.url);let build,postcss,tailwind,chromium;
@@ -51,7 +74,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
  const notificationFile=path.join(output,'notification-contract.mjs');
  await build({absWorkingDir:app,entryPoints:['components/erp/request-notifications.ts'],outfile:notificationFile,bundle:true,platform:'node',format:'esm',packages:'external',logLevel:'warning'});
  const {createRequestNotifications}=await import(pathToFileURL(notificationFile).href);
- const entry=`import React from 'react';import{createRoot}from'react-dom/client';import Workspace from './components/erp/workspace';import{RequestError}from'./components/erp/request-presentation';import{ApiError}from'./lib/erp/api';import{MobileInboundRequest}from'./components/erp/mobile-inbound-request';import{NavigationGuardProvider,useNavigationGuard}from'./components/erp/navigation-guard';import{Toaster}from'sonner';
+ const entry=`import React from 'react';import{createRoot}from'react-dom/client';import Workspace from './components/erp/workspace';import{RequestError}from'./components/erp/request-presentation';import{ApiError}from'./lib/erp/api';import{MobileInboundRequest}from'./components/erp/mobile-inbound-request';import{NavigationGuardProvider,useNavigationGuard}from'./components/erp/navigation-guard';import{Toaster}from'sonner';import{ServerQueryControls}from'./components/erp/query-controls';import{ErpGrid}from'./components/erp/grid';
  function installReadonlyClockDiagnostics(){
   if(!window.i33ObserveClock)return;
   const nativeSetInterval=window.setInterval,nativeClearInterval=window.clearInterval,active=new Map(),events=[];let serial=0,droppedEvents=0;
@@ -85,14 +108,21 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
  const componentAdapter={read:async()=>({outcome:'Observed',document:structuredClone(componentDocument)}),execute:async command=>{window.i30ComponentCalls.push({body:JSON.stringify(command),frozen:Object.isFrozen(command)&&Object.isFrozen(command.header)});return {outcome:terminalOutcome,receipt:null,code:null};},reconcile:async()=>({outcome:'OutcomeUnknown',receipt:null,code:null})};
  function ComponentLeave(){const guard=useNavigationGuard();return <button type='button' onClick={()=>guard.request(()=>{window.i30ComponentLeft=true;})}>Rời kiểm thử thành phần</button>;}
  function TerminalComponentFixture(){return <NavigationGuardProvider><main className='workspace-content'><h1>Kiểm thử thành phần với adapter tổng hợp</h1><p>Không đi qua Workspace hoặc API. Phản hồi xác định chỉ thuộc hợp đồng thành phần.</p><MobileInboundRequest documentId={componentDocument.documentId} access={componentAccess} adapter={componentAdapter}/><ComponentLeave/></main><Toaster position='top-center' duration={3000} offset='88px' mobileOffset={{top:'76px'}}/></NavigationGuardProvider>;}
- createRoot(document.getElementById('root')).render(params.has('diagnostics')?<RequestError error={new ApiError(503,'PRIVATE_SQL_SENTINEL','PRIVATE_COOKIE_SENTINEL')}/>:['Rejected','Conflict'].includes(terminalOutcome)?<TerminalComponentFixture/>:<Workspace/>);`;
+ // Real generic component with synthetic definitions; deliberately not wired to
+ // Workspace, a list query, or any backend capability claim.
+ window.i42QueryApplied=[];
+ const queryFields=[{id:'status',label:'Trạng thái kiểm thử',kind:'enum',operators:['eq'],options:[{id:'draft',label:'Nháp kiểm thử'},{id:'sent',label:'Đã gửi kiểm thử'}]},{id:'date',label:'Ngày kiểm thử',kind:'date',operators:['gte','lte']},{id:'amount',label:'Số lượng kiểm thử',kind:'decimal',operators:['gte','lte','eq']}];
+ function QueryControlsComponentFixture(){const[value,setValue]=React.useState({filters:[],sort:[]});return <main data-testid='i42-query-fixture' className='workspace-content'><h1>ServerQueryControls component contract</h1><p>Isolated component with synthetic definitions. Not connected to Workspace or the ERP API.</p><ServerQueryControls fields={queryFields} sortFields={[{id:'date',label:'Ngày kiểm thử'},{id:'amount',label:'Số lượng kiểm thử'}]} groups={[{id:'branch',label:'Chi nhánh kiểm thử'}]} value={value} busy={false} onApply={next=>{window.i42QueryApplied.push(structuredClone(next));setValue(next);}}/></main>;}
+ const wideColumns=[{id:'identity',label:'Identity',width:200,required:true},...Array.from({length:16},(_,index)=>({id:'c'+String(index+1).padStart(2,'0'),label:'Field '+String(index+1).padStart(2,'0'),width:160}))],wideRows=[{id:'QA-WIDE-001'},{id:'QA-WIDE-002'}];window.i42WideOpens=[];
+ function WideGridComponentFixture(){return <main data-testid='i42-wide-grid-fixture' className='workspace-content'><h1>Wide ErpGrid component contract</h1><p>Isolated virtual-column fixture with synthetic rows. Not connected to Workspace or the ERP API.</p><section style={{width:880,maxWidth:'100%'}}><ErpGrid rows={wideRows} columns={wideColumns} rowId={row=>row.id} renderCell={(row,id)=>id==='identity'?row.id:row.id+' '+id} rowAction={row=>({label:'Open',accessibleLabel:'Open '+row.id})} onOpen={row=>window.i42WideOpens.push(row.id)} schemaVersion='wide-fixture-v1' scopeKey='wide-fixture' compact={false} label='Wide column component contract'/></section></main>;}
+ createRoot(document.getElementById('root')).render(params.has('wide-grid-component')?<WideGridComponentFixture/>:params.has('query-component')?<QueryControlsComponentFixture/>:params.has('diagnostics')?<RequestError error={new ApiError(503,'PRIVATE_SQL_SENTINEL','PRIVATE_COOKIE_SENTINEL')}/>:['Rejected','Conflict'].includes(terminalOutcome)?<TerminalComponentFixture/>:<Workspace/>);`;
  const built=await build({absWorkingDir:app,stdin:{contents:entry,resolveDir:app,loader:'tsx'},bundle:true,write:false,platform:'browser',format:'iife',alias:{'@':app},jsx:'automatic',define:{'process.env.NODE_ENV':'"production"','process.env':'{}'},logLevel:'warning',plugins:[{name:'next-image-only',setup(build){build.onResolve({filter:/^next\/image$/},()=>({path:'image',namespace:'i30-image'}));build.onLoad({filter:/.*/,namespace:'i30-image'},()=>({contents:"import React from 'react';export default function Image({src,alt,width,height}){return <img src={src} alt={alt} width={width} height={height}/>;}",resolveDir:app,loader:'jsx'}));}}]});
  const cssSource=await readFile(path.join(app,'app/globals.css'),'utf8');
  const css=(await postcss([tailwind({base:app})]).process(cssSource,{from:path.join(app,'app/globals.css')})).css;
  assert.ok(!css.includes('@import "tailwindcss"'),'Application Tailwind must actually compile.');
  const script=Buffer.from(built.outputFiles[0].contents),logo=await readFile(path.join(app,'public/medcom-logo.png'));
  const html='<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/app.css"><div id="root"></div><script src="/app.js"></script></html>';
- let model,serial=0,browser,context,page,origin,completed=false,fatal=null,clockPaused=false;const expectedCases=29;const errors=[],results=[],failures=[],captures=[],calls=[],transportEvidence=[],readonlyEvidence=[],commandGeometryEvidence=[];
+ let model,serial=0,browser,context,page,origin,completed=false,fatal=null,clockPaused=false;const expectedCases=36;const errors=[],results=[],failures=[],captures=[],calls=[],transportEvidence=[],readonlyEvidence=[],commandGeometryEvidence=[],sharedGridEvidence=[];
  const reset=(patch={})=>{model={serial:++serial,writable:false,empty:false,status:200,holdList:false,waiters:[],listResponses:0,listResponseHeaders:null,holdDetail:false,detailWaiters:[],detailStatus:200,draftEnvelope:null,draftNetwork:false,draftNetworkFailures:0,draftMalformed:false,draftResponses:0,afterWriteDraftEnvelope:null,holdProjection:false,projectionWaiters:[],projectionStatus:200,projectionKind:null,projectionResponses:0,unknown:false,workspaceReads:0,workspaceResponses:0,workspacePending:0,workspaceVersions:[],advanceAuthority:false,deniedLists:0,workspaceStatus:200,purchase:structuredClone(purchase),inbound:structuredClone(inbound),purchaseVersion:1,inboundVersion:1,effects:0,originals:new Map(),receipts:new Map(),writes:[],reconciles:[],control:{closed:[],bff:[]},holdCommands:false,commandWaiters:[],commandResponses:0,rejected:false,conflict:false,malformed:false,...patch};calls.length=0;};
  const workspace=()=>({session:{displayName:'SYNTHETIC USER',tenantId:'QA-T',companyId:'QA-C',companyName:'SYNTHETIC',authorityVersion:model.advanceAuthority?model.workspaceReads:1,idleExpiresAt:new Date(Date.now()+3600000).toISOString(),absoluteExpiresAt:new Date(Date.now()+7200000).toISOString(),capabilities:model.workspaceCapabilities??['purchase-requests.read','inbound-requests.read','purchase-orders.read']},branchIds:['QA-BRANCH'],navigation:['purchase-requests','inbound-requests','purchase-orders'].map(id=>({id,label:id,href:'/?screen='+id}))});
  const send=(res,status,data,headers={})=>{if(res.destroyed)return;res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store',...headers});res.end(JSON.stringify(data));};
@@ -108,7 +138,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
     if(kind==='closed'){res.destroy();return;}return send(res,503,{code:'backend_unavailable'});
    }
    if(!url.pathname.startsWith('/api/erp/')){res.setHeader('Content-Type','text/html');return res.end(html);}
-   const route=url.pathname.slice('/api/erp'.length);calls.push({route,method:req.method,documentId:url.searchParams.get('documentId'),page:url.searchParams.get('page'),pageSize:url.searchParams.get('pageSize')});
+   const route=url.pathname.slice('/api/erp'.length);calls.push({route,method:req.method,documentId:url.searchParams.get('documentId'),page:url.searchParams.get('page'),pageSize:url.searchParams.get('pageSize'),search:url.searchParams.get('search'),branchId:url.searchParams.get('branchId')});
    if(route==='/health/ready')return send(res,503,{status:'not_ready',checks:[]});
    if(route==='/api/workspace'){
     m.workspaceReads++;m.workspacePending++;let settled=false;
@@ -117,7 +147,15 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
    }
    if(route==='/api/auth/csrf')return send(res,200,{token:'synthetic-only'});
    if(route==='/api/purchase-requests/workspace')return send(res,200,{scopeKey:scope,data:{branchIds:['QA-BRANCH'],writeAvailable:false,writeReason:'numbering_journal_runtime_unqualified',lookups:[]}});
-   if(route==='/api/documents/purchase-orders')return send(res,200,{rows:[{documentId:'QA-ORDER-001',documentDate:'2026-10-01',branchId:'QA-BRANCH',statusId:999,statusName:null,isLocked:false}],page:1,pageSize:50,hasMore:false},readHeaders);
+   if(route==='/api/documents/purchase-orders'){
+    const page=Number(url.searchParams.get('page')??1),pages=m.orderPages??[[orderRow(1)]];
+    return send(res,200,{rows:pages[page-1]??[],page,pageSize:50,hasMore:page<pages.length},readHeaders);
+   }
+   if(route==='/api/documents/purchase-orders/detail'){
+    const document=(m.orderPages??[[orderRow(1)]]).flat().find(row=>row.documentId===url.searchParams.get('documentId'));
+    if(!document)return send(res,404,{code:'request_failed'},readHeaders);
+    return send(res,200,{document,purchaseOrderLines:[{lineId:'QA-ORDER-LINE-001',itemId:'QA-ORDER-ITEM-001',quantity:'999999999999999999.0001',quantity2:null}],inboundRequestLines:[],page:Number(url.searchParams.get('page')??1),pageSize:50,hasMore:false},readHeaders);
+   }
    if(route==='/api/purchase-requests'||route==='/api/documents/inbound-requests'){
     if(m.holdList)await new Promise(resolve=>m.waiters.push(resolve));
     if(m.status!==200){if(m.status===403)m.deniedLists++;return send(res,m.status,{code:'request_failed'},readHeaders);}
@@ -225,6 +263,22 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
   if(width<768)assert.ok(checks.filter(v=>['INPUT','TEXTAREA','SELECT'].includes(v.tag)).every(v=>v.font>=16),'Mobile input/textarea fonts must be 16px');
  }
  async function capture(name,{viewport=false,keepFocus=false}={}){if(!keepFocus)await page.evaluate(()=>{if(document.activeElement instanceof HTMLElement)document.activeElement.blur();window.scrollTo(0,0);});await paint();const file=name+'.png';await page.screenshot({path:path.join(output,file),fullPage:!viewport});const bytes=await readFile(path.join(output,file));captures.push({file,sha256:sha(bytes),fullPage:!viewport,keepsFocus:keepFocus});}
+ // Read-only, bounded diagnostics. Preserve the original two-frame fit sample:
+ // screenshots and later samples cannot turn a failing measurement into a pass.
+ async function resizeGeometry(){return page.evaluate(()=>{
+  const root=document.documentElement,viewport={width:innerWidth,height:innerHeight,scrollX,scrollY,visual:window.visualViewport?{width:visualViewport.width,height:visualViewport.height,offsetLeft:visualViewport.offsetLeft,offsetTop:visualViewport.offsetTop,scale:visualViewport.scale}:null};
+  const rect=element=>{const value=element.getBoundingClientRect();return {left:value.left,right:value.right,top:value.top,bottom:value.bottom,width:value.width,height:value.height};};
+  const identity=element=>({tag:element.tagName,id:element.id||null,className:typeof element.className==='string'?element.className.slice(0,400):'',slot:element.getAttribute('data-slot'),state:element.getAttribute('data-state'),sidebar:element.getAttribute('data-sidebar'),customizable:element.getAttribute('data-customizable'),mobileCard:element.getAttribute('data-mobile-card')});
+  const describe=element=>{const css=getComputedStyle(element);return {...identity(element),rect:rect(element),clientWidth:element.clientWidth,scrollWidth:element.scrollWidth,style:{display:css.display,visibility:css.visibility,position:css.position,width:css.width,minWidth:css.minWidth,maxWidth:css.maxWidth,boxSizing:css.boxSizing,overflowX:css.overflowX,overflowY:css.overflowY,whiteSpace:css.whiteSpace,overflowWrap:css.overflowWrap,wordBreak:css.wordBreak,flex:css.flex,flexBasis:css.flexBasis,gridTemplateColumns:css.gridTemplateColumns,transform:css.transform,transitionProperty:css.transitionProperty,transitionDuration:css.transitionDuration,transitionDelay:css.transitionDelay,animationName:css.animationName}};};
+  const documentSize={clientWidth:root.clientWidth,scrollWidth:root.scrollWidth,bodyClientWidth:document.body.clientWidth,bodyScrollWidth:document.body.scrollWidth};
+  const candidates=[...document.querySelectorAll('body *')].filter(element=>{const box=element.getBoundingClientRect();return box.width>0&&box.height>0&&(box.right>viewport.width||box.left<0);});
+  const offenders=candidates.slice(0,48).map(element=>({...describe(element),ancestors:(()=>{const values=[];for(let parent=element.parentElement;parent&&values.length<4;parent=parent.parentElement)values.push(describe(parent));return values;})()}));
+  const animationState=animation=>({playState:animation.playState,pending:animation.pending,currentTime:animation.currentTime,animationName:animation.animationName??null,transitionProperty:animation.transitionProperty??null,endTime:animation.effect?.getComputedTiming().endTime,target:animation.effect?.target instanceof Element?identity(animation.effect.target):null});
+  const animations=root.getAnimations({subtree:true}).filter(animation=>animation.pending||animation.playState==='running').slice(0,24).map(animationState);
+  const search=document.querySelector('.global-search'),globalSearch=search?{...describe(search),animations:search.getAnimations({subtree:true}).slice(0,8).map(animationState)}:null;
+  const layout=[...document.querySelectorAll('[data-slot=sidebar-wrapper],[data-slot=sidebar-gap],[data-slot=sidebar-container],[data-slot=sidebar-inset],.topbar,.topbar-context,.topbar-actions,.global-search,.user-button,.workspace-content,.request-list-toolbar,.desktop-grid-viewport,.request-list-table,.request-list-pagination,.mobile-bottom-nav')].slice(0,24).map(describe);
+  return {viewport,documentSize,mobileMedia:matchMedia('(max-width: 767px)').matches,fits:documentSize.scrollWidth<=viewport.width,offenderCount:candidates.length,offenders,animations,globalSearch,layout,activeElement:document.activeElement instanceof Element?identity(document.activeElement):null};
+ });}
  async function expandFullReadback(){const region=page.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true});await region.waitFor();const disclosure=region.locator('details');if(!await disclosure.evaluate(el=>el.open))await disclosure.locator('summary').click();return region;}
  const open=screen=>screen==='purchase-requests'?page.getByRole('button',{name:'Mở đề nghị '+model.purchase.purchaseRequestId,exact:true}):page.getByRole('button',{name:new RegExp('^Mở phiếu '+model.inbound.documentId+' ')});
  async function run(name,fn){await t.test(name,async()=>{try{await fn();results.push(name);}catch(error){failures.push(name);throw error;}});}
@@ -297,6 +351,220 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
    if(width>=768){const widths=await page.locator('.desktop-grid-viewport').evaluate(el=>({viewport:el.clientWidth,table:el.querySelector('table').getBoundingClientRect().width}));assert.ok(Math.abs(widths.table-widths.viewport)<=1,'Orders table fills its available viewport');const lastHeader=page.locator('.shared-grid-table th').filter({hasText:'Khóa chứng từ'});const before=await lastHeader.evaluate(el=>el.getBoundingClientRect().width);const resize=page.getByRole('separator',{name:'Độ rộng Khóa chứng từ',exact:true});await resize.focus();await page.keyboard.press('ArrowRight');await paint();assert.ok(Math.abs((await lastHeader.evaluate(el=>el.getBoundingClientRect().width))-before-16)<=1,'Trailing data column keeps its real resize behavior even with viewport fill');await page.keyboard.press('ArrowLeft');await paint();}
    assert.equal(await page.getByText('Trạng thái chưa xác định (mã 999)',{exact:true}).locator('visible=true').count(),1);
    await capture(`i36-orders-${width}`,{viewport:true});
+  });
+  for(const width of [320,390,1440])await run(`I42 shared list surface and native controls ${width}`,async()=>{
+   for(const screen of ['purchase-requests','inbound-requests','purchase-orders']){
+    await start(width,screen);
+    const orders=screen==='purchase-orders',list=orders?page.locator('.document-panel'):host(screen);
+    const action=orders?list.getByRole('button',{name:'Mở chứng từ QA-ORDER-001',exact:true}):open(screen);
+    await action.waitFor();await paint();
+    const table=list.locator('table.request-list-table.shared-grid-table[data-shared-grid=true]');
+    assert.equal(await table.count(),1,'Each list uses exactly one shared table');
+    assert.equal(await table.locator('tbody tr[data-grid-row]').count(),1,'Mobile and desktop reuse the same semantic data row');
+    assert.equal(await list.locator('.mobile-document-list').count(),0,'There is no duplicate hidden mobile renderer');
+    assert.equal(await table.evaluate(el=>el.getAttribute('role')??'table'),orders?'grid':'table','Request adapters retain native table semantics');
+    const toolbar=list.locator('form.request-list-toolbar'),pager=orders?list.locator('.request-list-pagination'):list.getByRole('navigation',{name:screen==='purchase-requests'?'Phân trang đề nghị':'Trang danh sách phiếu',exact:true});
+    assert.equal(await toolbar.count(),1);assert.equal(await pager.count(),1);
+    assert.equal(await pager.evaluate(el=>el.classList.contains('request-panel-footer')),true,'All list pagers share the request footer surface');
+    assert.match(await pager.innerText(),/Trang 1/);assert.equal(await pager.getByRole('button',{name:/^Trang (trước|phiếu trước)$/}).isDisabled(),true);assert.equal(await pager.getByRole('button',{name:/^Trang (sau|tiếp theo|phiếu tiếp)$/}).isDisabled(),true);
+    const branch=toolbar.getByLabel(screen==='inbound-requests'?'Lọc chi nhánh':'Chi nhánh',{exact:true});
+    assert.equal(await branch.evaluate(el=>el.tagName),'SELECT','Every branch control uses the native select contract');
+    assert.deepEqual(await branch.locator('option').allTextContents(),['Tất cả chi nhánh được cấp quyền','QA-BRANCH']);
+    const controlGeometry=await toolbar.locator('button,input,select').evaluateAll(elements=>elements.filter(el=>el.getBoundingClientRect().width>0).map(el=>({tag:el.tagName,height:el.getBoundingClientRect().height,font:parseFloat(getComputedStyle(el).fontSize)})));
+    assert.ok(controlGeometry.length>=3);assert.ok(controlGeometry.every(control=>control.height>=43.5),'Shared toolbar touch targets remain 44px: '+JSON.stringify(controlGeometry));
+    if(width<768)assert.ok(controlGeometry.filter(control=>['INPUT','SELECT'].includes(control.tag)).every(control=>control.font>=16),'Mobile native input fonts remain 16px');
+    const route=orders?'/api/documents/purchase-orders':screen==='purchase-requests'?'/api/purchase-requests':'/api/documents/inbound-requests';
+    const search=toolbar.locator('input');await search.fill('QA');await branch.selectOption('QA-BRANCH');
+    await toolbar.getByRole('button',{name:'Tìm kiếm',exact:true}).click();
+    await eventually(()=>calls.some(call=>call.route===route&&call.search==='QA'&&call.branchId==='QA-BRANCH'&&call.page==='1'));
+    await action.waitFor();await paint();
+    // Count every DOM node, including hidden nodes, and retain its identity through
+    // both responsive modes. A visually hidden duplicate can steal the row ref.
+    const actionSelector=orders?'button[aria-label="Mở chứng từ QA-ORDER-001"]':screen==='purchase-requests'?'button[aria-label="Mở đề nghị QA-PURCHASE-001"]':'button[aria-label^="Mở phiếu QA-INBOUND-001 "]';
+    assert.equal(await list.locator(actionSelector).count(),1);await action.evaluate(el=>window.i42LiveOpen=el);
+    for(const nextWidth of [width<768?1440:320,width]){
+     const previousWidth=page.viewportSize().width;
+     await page.setViewportSize({width:nextWidth,height:900});await paint();
+     assert.equal(await action.evaluate(el=>el===window.i42LiveOpen&&el.isConnected),true,'Responsive changes preserve the one live Open action and its ref');
+     assert.equal(await list.locator(actionSelector).count(),1);
+     const measured=await resizeGeometry(),name=`i42-${screen}-resize-${width}-from-${previousWidth}-to-${nextWidth}`;
+     const diagnostic={kind:'resize-geometry',screen,initialWidth:width,previousWidth,nextWidth,measured,screenshot:name+'.png',afterScreenshot:null};
+     sharedGridEvidence.push(diagnostic);
+     await writeFile(path.join(output,name+'.json'),JSON.stringify(diagnostic,null,2));
+     await capture(name,{viewport:true,keepFocus:true});
+     diagnostic.afterScreenshot=await resizeGeometry();await writeFile(path.join(output,name+'.json'),JSON.stringify(diagnostic,null,2));
+     assert.equal(measured.fits,true,`${screen} must stay contained at ${nextWidth}px: `+JSON.stringify({viewport:measured.viewport,documentSize:measured.documentSize,offenderCount:measured.offenderCount,offenders:measured.offenders.slice(0,8),animations:measured.animations,globalSearch:measured.globalSearch}));
+    }
+    if(!orders){
+     const detail=page.getByRole('region',{name:screen==='purchase-requests'?'Phiếu mua hàng hiện có':'Phiếu nhập hàng đã chọn',exact:true});
+     await action.focus();await page.keyboard.press('Enter');await eventually(()=>detail.evaluate(el=>el===document.activeElement));
+     await page.getByRole('button',{name:screen==='purchase-requests'?'Đóng đề nghị':'Đóng phiếu nhập hàng',exact:true}).click();
+     await eventually(()=>action.evaluate(el=>el===document.activeElement));
+     assert.equal(await search.inputValue(),'QA','Opening and closing preserves the applied filter draft');
+    }
+    if(orders&&width<768){
+     assert.equal(await table.locator('.column-resizer[tabindex]:not([tabindex="-1"])').count(),0,'Mobile never retains a hidden keyboard-focusable column resizer');
+     await list.getByRole('button',{name:'Tùy chỉnh bảng',exact:true}).click();const settings=page.getByRole('dialog',{name:'Tùy chỉnh bảng',exact:true});await settings.waitFor();await paint();
+     const geometry=await settings.evaluate(el=>{const box=el.getBoundingClientRect();return {left:box.left,right:box.right,top:box.top,bottom:box.bottom,width:innerWidth,height:innerHeight};});
+     assert.ok(geometry.left>=0&&geometry.right<=geometry.width&&geometry.top>=0&&geometry.bottom<=geometry.height,'Orders settings stay inside the mobile viewport: '+JSON.stringify(geometry));
+     assert.ok((await settings.locator('input').evaluateAll(elements=>elements.map(el=>parseFloat(getComputedStyle(el).fontSize)))).every(font=>font>=16),'Mobile settings inputs retain native 16px text');
+     await page.keyboard.press('Escape');await settings.waitFor({state:'hidden'});
+    }
+    assert.equal(calls.filter(call=>call.method==='POST').length,0);
+    sharedGridEvidence.push({kind:'shared-list',screen,width,sharedTables:await table.count(),liveOpenActions:await list.locator(actionSelector).count(),nativeBranch:true,responsiveNodeIdentity:true,controlGeometry});
+    await capture(`i42-${screen}-shared-${width}`,{viewport:true});
+   }
+  });
+  await run('I42 Orders keyboard, page-scoped selection and real detail activation',async()=>{
+   await start(1440,'purchase-orders',{orderPages:orderPages()});
+   const grid=page.getByRole('grid',{name:'Đặt mua hàng',exact:true}),panel=page.locator('.document-panel');
+   await grid.locator('[data-cell="0:0"]').waitFor();assert.equal(await grid.locator('tbody tr[data-grid-row]').count(),12);
+   const cell=(row,col)=>grid.locator(`[data-cell="${row}:${col}"]`);
+   async function key(key,row,col){await page.keyboard.press(key);await eventually(()=>cell(row,col).evaluate(el=>el===document.activeElement));assert.equal(await grid.locator('[data-cell][tabindex="0"]').count(),1,'Advanced grid keeps one roving data-cell tab stop');}
+   await cell(0,0).focus();await key('ArrowRight',0,1);await key('ArrowDown',1,1);await key('Home',1,0);await key('End',1,4);await key('Control+Home',0,0);await key('PageDown',8,0);await key('PageUp',0,0);await key('Control+End',11,4);await key('ArrowDown',11,4);await key('ArrowRight',11,4);await key('Control+Home',0,0);
+   await page.keyboard.press('Space');assert.equal(await grid.getByRole('checkbox',{name:'Chọn QA-ORDER-001',exact:true}).getAttribute('data-state'),'checked');
+   await key('ArrowDown',1,0);await key('ArrowDown',2,0);await page.keyboard.press('Shift+Space');
+   assert.match(await panel.locator('.grid-selection').innerText(),/Đã chọn 3\/12/);await page.keyboard.press('Escape');assert.equal(await panel.locator('.grid-selection').count(),0);
+   const all=grid.getByRole('checkbox',{name:'Chọn tất cả dòng trên trang này',exact:true});
+   await grid.getByRole('checkbox',{name:'Chọn QA-ORDER-002',exact:true}).click();assert.equal(await all.getAttribute('data-state'),'indeterminate');
+   await all.click();assert.match(await panel.locator('.grid-selection').innerText(),/Đã chọn 12\/12/);
+   const pager=panel.locator('.request-list-pagination');await pager.getByRole('button',{name:'Trang sau',exact:true}).click();
+   await grid.getByRole('checkbox',{name:'Chọn QA-ORDER-013',exact:true}).waitFor();assert.equal(await grid.locator('tbody tr[data-grid-row]').count(),3);assert.equal(await panel.locator('.grid-selection').count(),0);assert.equal(await all.getAttribute('data-state'),'unchecked');
+   await all.click();assert.match(await panel.locator('.grid-selection').innerText(),/Đã chọn 3\/3/);assert.equal(await pager.getByRole('button',{name:'Trang sau',exact:true}).isDisabled(),true);
+   await pager.getByRole('button',{name:'Trang trước',exact:true}).click();await grid.getByRole('checkbox',{name:'Chọn QA-ORDER-001',exact:true}).waitFor();assert.equal(await panel.locator('.grid-selection').count(),0);assert.equal(await all.getAttribute('data-state'),'unchecked','Returning to a page does not revive stale selection');
+   // Enter on a cell and Enter on the embedded document button must each dispatch
+   // one real detail read, never bubble into a duplicate Open activation.
+   for(const source of ['cell','document-button']){
+    const before=calls.filter(call=>call.route==='/api/documents/purchase-orders/detail').length;
+    await (source==='cell'?cell(0,0):cell(0,0).getByRole('button',{name:'QA-ORDER-001',exact:true})).focus();await page.keyboard.press('Enter');
+    const detail=page.getByRole('dialog',{name:'QA-ORDER-001',exact:true});await detail.waitFor();await detail.getByText('QA-ORDER-ITEM-001',{exact:true}).locator('visible=true').waitFor();
+    assert.equal(calls.filter(call=>call.route==='/api/documents/purchase-orders/detail').length,before+1,'Exactly one detail GET per keyboard activation');
+    await page.keyboard.press('Escape');await detail.waitFor({state:'hidden'});
+   }
+   await grid.getByRole('checkbox',{name:'Chọn QA-ORDER-001',exact:true}).click();await panel.getByLabel('Chi nhánh',{exact:true}).selectOption('QA-BRANCH');await eventually(()=>calls.some(call=>call.route==='/api/documents/purchase-orders'&&call.branchId==='QA-BRANCH'));await grid.getByRole('checkbox',{name:'Chọn QA-ORDER-001',exact:true}).waitFor();assert.equal(await panel.locator('.grid-selection').count(),0,'Changing branch clears selection even when the returned row identities overlap');
+   await page.keyboard.press('Control+f');assert.equal(await panel.getByLabel('Tìm mã chứng từ',{exact:true}).evaluate(el=>el===document.activeElement),true,'Orders preserves its keyboard search shortcut');
+   await cell(11,4).focus();model.orderPages[0]=model.orderPages[0].slice(0,3);
+   const shrunk=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/erp/api/documents/purchase-orders');await panel.getByRole('button',{name:'Làm mới',exact:true}).click();await shrunk;await eventually(async()=>await grid.locator('tbody tr[data-grid-row]').count()===3);await paint();
+   assert.equal(await grid.locator('[data-cell][tabindex="0"]').count(),1,'A same-scope row shrink preserves exactly one valid roving data cell');assert.equal(await grid.locator('[data-cell][tabindex="0"]').getAttribute('data-cell'),'2:4');await cell(2,4).focus();await key('ArrowUp',1,4);
+   assert.equal(calls.filter(call=>call.method==='POST').length,0);
+   const pageRequests=calls.filter(call=>call.route==='/api/documents/purchase-orders').map(call=>({page:call.page,branchId:call.branchId}));
+   await start(1440,'purchase-orders',{orderPages:[Array.from({length:50},(_,index)=>orderRow(index+1))]});
+   const virtualGrid=page.getByRole('grid',{name:'Đặt mua hàng',exact:true});await virtualGrid.locator('[data-cell="0:0"]').waitFor();await paint();
+   assert.equal(await page.locator('.document-panel .desktop-grid-viewport').getAttribute('data-virtualized'),'true');assert.ok(await virtualGrid.locator('tbody tr[data-grid-row]').count()<50,'Desktop keeps bounded row virtualization');
+   const virtualRowGeometry=[];
+   async function rowHeight(compact,estimate){
+    const root=page.locator('.document-panel .erp-grid');await eventually(async()=>await root.getAttribute('data-compact')===String(compact));await paint();
+    const geometry=await root.evaluate(el=>({estimate:parseFloat(el.querySelector('.desktop-grid-viewport').style.getPropertyValue('--grid-row-height')),rows:[...el.querySelectorAll('tbody tr[data-grid-row]')].map(row=>({id:row.getAttribute('data-grid-row'),height:row.getBoundingClientRect().height})),spacers:[...el.querySelectorAll('tbody tr.grid-spacer > td')].map(cell=>parseFloat(cell.style.height)||0),bodyHeight:el.querySelector('tbody').getBoundingClientRect().height,headerHeight:el.querySelector('thead').getBoundingClientRect().height,scrollHeight:el.querySelector('.desktop-grid-viewport').scrollHeight}));
+    assert.equal(geometry.estimate,estimate);assert.ok(geometry.rows.length>0);for(const row of geometry.rows)assert.equal(row.height,estimate,'Actual virtualized row height must exactly match its estimate: '+JSON.stringify({compact,...row}));assert.equal(geometry.spacers.reduce((sum,height)=>sum+height,0)+geometry.rows.length*estimate,50*estimate,'Density changes invalidate cached virtual spacer estimates');assert.equal(geometry.bodyHeight,50*estimate,'Rendered data rows and spacers cover exactly the virtual body');assert.equal(geometry.scrollHeight,geometry.headerHeight+50*estimate,'Scroll extent follows the current density, not cached prior heights');virtualRowGeometry.push({compact,...geometry});
+   }
+   await rowHeight(false,65);await page.getByRole('button',{name:'Thu gọn dòng',exact:true}).click();await rowHeight(true,45);
+   await virtualGrid.locator('[data-cell="0:0"]').focus();await page.keyboard.press('Control+End');await eventually(()=>virtualGrid.locator('[data-cell="49:4"]').evaluate(el=>el===document.activeElement));assert.equal(await virtualGrid.locator('[data-grid-row="QA-ORDER-050"]').count(),1,'Keyboard reaches the final virtualized row');
+   for(const mobileWidth of [320,390]){await page.setViewportSize({width:mobileWidth,height:900});await eventually(async()=>await virtualGrid.locator('tbody tr[data-grid-row]').count()===50);assert.equal(await virtualGrid.locator('[data-grid-row="QA-ORDER-050"]').count(),1);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'All fifty mobile rows remain page-contained');}
+   sharedGridEvidence.push({kind:'orders-keyboard-selection',keyboardNavigation:true,selectionCounts:[3,12,3],pageScopeReset:true,detailActivations:2,serverPages:pageRequests,sameScopeRowShrink:{from:12,to:3,roving:'2:4'},virtualizedKeyboardLastRow:49,virtualRowGeometry,mobileRows:50,writeRequests:0});
+  });
+  await run('I42 Orders resize, pin, reorder, hide and session-only saved views',async()=>{
+   await start(1440,'purchase-orders');const panel=page.locator('.document-panel'),grid=page.getByRole('grid',{name:'Đặt mua hàng',exact:true});
+   await grid.locator('[data-cell="0:0"]').waitFor();
+   const headers=()=>grid.getByRole('columnheader').allTextContents();
+   const header=label=>grid.getByRole('columnheader').filter({hasText:label});
+   const widthOf=label=>header(label).evaluate(el=>el.getBoundingClientRect().width);
+   const before=await widthOf('Khóa chứng từ'),resizer=grid.getByRole('separator',{name:'Độ rộng Khóa chứng từ',exact:true});
+   await resizer.focus();await page.keyboard.press('ArrowRight');await paint();assert.ok(Math.abs(await widthOf('Khóa chứng từ')-before-16)<=1);
+   await resizer.scrollIntoViewIfNeeded();const box=await resizer.boundingBox();assert.ok(box);await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();await page.mouse.move(box.x+box.width/2+32,box.y+box.height/2,{steps:4});await page.mouse.up();await paint();assert.ok(Math.abs(await widthOf('Khóa chứng từ')-before-48)<=1,'Pointer resizing changes the real column width');
+   const settings=page.getByRole('dialog',{name:'Tùy chỉnh bảng',exact:true}),show=()=>panel.getByRole('button',{name:'Tùy chỉnh bảng',exact:true}).click();
+   await grid.locator('[data-cell="0:4"]').focus();await show();await settings.waitFor();assert.equal(await settings.getByRole('checkbox',{name:'Hiển thị Mã chứng từ',exact:true}).isDisabled(),true,'Required document identity cannot be hidden');
+   await settings.getByRole('checkbox',{name:'Hiển thị Khóa chứng từ',exact:true}).click();
+   await settings.getByRole('button',{name:'Cố định Chi nhánh',exact:true}).click();assert.equal(await settings.getByRole('button',{name:'Cố định Chi nhánh',exact:true}).getAttribute('aria-pressed'),'true');
+   await settings.getByRole('button',{name:'Đưa Trạng thái lên',exact:true}).click();await settings.getByRole('button',{name:'Đưa Trạng thái lên',exact:true}).click();
+   await settings.getByRole('spinbutton',{name:'Độ rộng Ngày chứng từ',exact:true}).fill('224');
+   await settings.getByRole('textbox',{name:'Tên chế độ xem',exact:true}).fill('QA SESSION VIEW');await settings.getByRole('button',{name:'Lưu bố cục',exact:true}).click();
+   assert.equal(await settings.getByRole('button',{name:'QA SESSION VIEW',exact:true}).count(),1);await page.keyboard.press('Escape');await settings.waitFor({state:'hidden'});await paint();
+   const roving=grid.locator('[data-cell][tabindex="0"]');assert.equal(await roving.count(),1,'Hiding the active last data column retains one valid roving cell');assert.equal(await roving.getAttribute('data-cell'),'0:3');await roving.focus();await page.keyboard.press('ArrowLeft');await eventually(()=>grid.locator('[data-cell="0:2"]').evaluate(el=>el===document.activeElement));assert.equal(await grid.locator('[data-cell][tabindex="0"]').count(),1);
+   const savedHeaders=await headers();assert.ok(savedHeaders.indexOf('Chi nhánh')<savedHeaders.indexOf('Trạng thái'));assert.ok(savedHeaders.indexOf('Trạng thái')<savedHeaders.indexOf('Ngày chứng từ'),'Column order applies independently of pinning');assert.equal(savedHeaders.includes('Khóa chứng từ'),false);
+   assert.equal(await header('Chi nhánh').evaluate(el=>getComputedStyle(el).position),'sticky');assert.ok(Math.abs(await widthOf('Ngày chứng từ')-224)<=1);
+   const originalMobileColumns=['Mã chứng từ','Ngày chứng từ','Chi nhánh','Trạng thái','Khóa chứng từ'];
+   const orderAction=panel.getByRole('button',{name:'Mở chứng từ QA-ORDER-001',exact:true});await orderAction.evaluate(el=>window.i42LayoutOpen=el);
+   for(const mobileWidth of [320,390]){
+    await page.setViewportSize({width:mobileWidth,height:900});await eventually(async()=>await grid.locator('[data-grid-row="QA-ORDER-001"] td[data-label]').count()===5);await paint();
+    const columns=await grid.locator('[data-grid-row="QA-ORDER-001"] td[data-label]').evaluateAll(elements=>elements.map(el=>({label:el.getAttribute('data-label'),visible:el.getBoundingClientRect().width>0&&el.getBoundingClientRect().height>0,text:el.textContent})));
+    assert.deepEqual(columns.map(column=>column.label),originalMobileColumns,'Mobile restores every original column in source order despite desktop hide/reorder/pin settings');assert.ok(columns.every(column=>column.visible));assert.match(columns.at(-1).text,/Không khóa/);
+    assert.equal(await grid.locator('.column-resizer[tabindex]:not([tabindex="-1"])').count(),0);assert.equal(await orderAction.evaluate(el=>el===window.i42LayoutOpen),true,'Layout changes retain the same explicit Open action');
+   }
+   await page.setViewportSize({width:1440,height:900});await eventually(async()=>await grid.locator('[data-grid-row="QA-ORDER-001"] td[data-label]').count()===4);await paint();assert.deepEqual(await headers(),savedHeaders,'Returning to desktop restores the saved desktop projection');
+   await show();await settings.getByRole('button',{name:'Mặc định',exact:true}).click();await page.keyboard.press('Escape');await settings.waitFor({state:'hidden'});assert.ok((await headers()).includes('Khóa chứng từ'));assert.ok(Math.abs(await widthOf('Ngày chứng từ')-170)<=1);
+   await show();await settings.getByRole('button',{name:'QA SESSION VIEW',exact:true}).click();await page.keyboard.press('Escape');await settings.waitFor({state:'hidden'});assert.deepEqual(await headers(),savedHeaders);assert.ok(Math.abs(await widthOf('Ngày chứng từ')-224)<=1);
+   // A saved layout is held only by this mounted grid. It must survive a data
+   // refresh, but must never be written into local/session storage.
+   const refreshed=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/erp/api/documents/purchase-orders');await panel.getByRole('button',{name:'Làm mới',exact:true}).click();await refreshed;await eventually(()=>panel.getByRole('button',{name:'Làm mới',exact:true}).isEnabled());await paint();assert.deepEqual(await headers(),savedHeaders);
+   await show();await settings.getByRole('button',{name:'Xóa chế độ xem QA SESSION VIEW',exact:true}).click();assert.equal(await settings.getByRole('button',{name:'QA SESSION VIEW',exact:true}).count(),0);
+   await settings.getByRole('textbox',{name:'Tên chế độ xem',exact:true}).fill('QA RELOAD VIEW');await settings.getByRole('button',{name:'Lưu bố cục',exact:true}).click();
+   await settings.getByRole('spinbutton',{name:'Độ rộng Ngày chứng từ',exact:true}).fill('300');await settings.getByRole('button',{name:'Khôi phục bố cục mặc định',exact:true}).click();assert.equal(await settings.getByRole('spinbutton',{name:'Độ rộng Ngày chứng từ',exact:true}).inputValue(),'170');
+   const stored=await page.evaluate(()=>[localStorage,sessionStorage].flatMap(storage=>Array.from({length:storage.length},(_,index)=>({key:storage.key(index),value:storage.getItem(storage.key(index))}))));assert.equal(stored.some(item=>/QA SESSION VIEW|QA RELOAD VIEW/.test(item.value??'')),false,'Saved views are never written to durable browser storage');
+   await page.reload();await panel.getByRole('button',{name:'Tùy chỉnh bảng',exact:true}).click();await settings.waitFor();assert.equal(await settings.getByRole('button',{name:'QA RELOAD VIEW',exact:true}).count(),0,'Reload starts with no saved views from the prior mounted session');assert.equal(await settings.getByRole('spinbutton',{name:'Độ rộng Ngày chứng từ',exact:true}).inputValue(),'170');await page.keyboard.press('Escape');
+   assert.equal(calls.filter(call=>call.method==='POST').length,0);sharedGridEvidence.push({kind:'orders-layout',keyboardResizeDelta:16,pointerResizeDelta:32,pinned:'Chi nhánh',hidden:'Khóa chứng từ',resizedWidth:224,savedHeaders,originalMobileColumns,hiddenActiveColumnRoving:'0:3',restored:true,deleted:true,reloadClearsViews:true,writeRequests:0});
+  });
+  await run('I42 component contract only: native ServerQueryControls preserves exact typed query intent',async()=>{
+   await start(390,'purchase-orders',{},'&query-component=1');
+   const fixture=page.getByTestId('i42-query-fixture'),dialog=page.getByRole('dialog',{name:'Lọc và sắp xếp dữ liệu',exact:true});
+   await fixture.getByRole('heading',{name:'ServerQueryControls component contract',exact:true}).waitFor();
+   const openQuery=()=>fixture.getByRole('button',{name:/^Lọc & sắp xếp/}).click();
+   const control=name=>dialog.getByLabel(name,{exact:true}),apply=()=>dialog.getByRole('button',{name:'Áp dụng truy vấn',exact:true});
+   const applied=()=>page.evaluate(()=>window.i42QueryApplied);
+   await openQuery();await dialog.getByRole('button',{name:'Thêm điều kiện',exact:true}).click();await control('Giá trị 1').selectOption('draft');await page.keyboard.press('Escape');await dialog.waitFor({state:'hidden'});
+   assert.deepEqual(await applied(),[],'Cancelling an unsubmitted draft never invokes onApply');await openQuery();assert.equal(await dialog.locator('.query-term').count(),0,'Reopening discards the cancelled draft');
+   await dialog.getByRole('button',{name:'Thêm điều kiện',exact:true}).click();assert.equal(await apply().isDisabled(),true,'An empty enum term cannot be applied');
+   await control('Trường lọc 1').selectOption('date');assert.equal(await control('Giá trị 1').getAttribute('type'),'date');assert.deepEqual(await control('Điều kiện 1').locator('option').evaluateAll(elements=>elements.map(el=>el.value)),['gte','lte']);
+   await control('Trường lọc 1').selectOption('status');assert.equal(await control('Giá trị 1').evaluate(el=>el.tagName),'SELECT');assert.equal(await control('Giá trị 1').inputValue(),'');assert.deepEqual(await control('Điều kiện 1').locator('option').evaluateAll(elements=>elements.map(el=>el.value)),['eq']);await control('Giá trị 1').selectOption('sent');
+   await dialog.getByRole('button',{name:'Thêm điều kiện',exact:true}).click();await control('Trường lọc 2').selectOption('date');await control('Điều kiện 2').selectOption('lte');await control('Giá trị 2').fill('2026-10-01');
+   await dialog.getByRole('button',{name:'Thêm điều kiện',exact:true}).click();await control('Trường lọc 3').selectOption('amount');assert.equal(await control('Giá trị 3').getAttribute('inputmode'),'decimal');await control('Điều kiện 3').selectOption('eq');await control('Giá trị 3').fill('1e3');assert.equal(await apply().isDisabled(),true,'Decimal query values cannot silently use exponent notation');
+   const decimal='12345678901234567890.0001';await control('Điều kiện 3').selectOption('gte');await control('Giá trị 3').fill(decimal);assert.equal(await control('Giá trị 3').inputValue(),decimal);
+   await control('Trường sắp xếp').selectOption('date');await control('Chiều sắp xếp').selectOption('desc');await control('Nhóm dữ liệu').selectOption('branch');
+   for(const width of [320,390,1440]){
+    await page.setViewportSize({width,height:900});await paint();
+    assert.ok(await dialog.locator('select').count()>=8,'Term, operator, enum, sort and group controls all stay native');
+    const geometry=await dialog.evaluate(el=>{const box=el.getBoundingClientRect();return {left:box.left,right:box.right,top:box.top,bottom:box.bottom,width:innerWidth,height:innerHeight};});assert.ok(geometry.left>=0&&geometry.right<=geometry.width&&geometry.top>=0&&geometry.bottom<=geometry.height,'Query component fits each viewport: '+JSON.stringify(geometry));
+    if(width<768)assert.ok((await dialog.locator('input,select').evaluateAll(elements=>elements.map(el=>parseFloat(getComputedStyle(el).fontSize)))).every(font=>font>=16));
+   }
+   const expected={filters:[{fieldId:'status',operator:'eq',value:'sent'},{fieldId:'date',operator:'lte',value:'2026-10-01'},{fieldId:'amount',operator:'gte',value:decimal}],sort:[{fieldId:'date',direction:'desc'}],groupId:'branch'};
+   assert.equal(await apply().isEnabled(),true);await apply().click();await dialog.waitFor({state:'hidden'});assert.deepEqual(await applied(),[expected],'onApply receives exact opaque IDs, operators, date and decimal strings');
+   await openQuery();assert.equal(await control('Giá trị 3').inputValue(),decimal);await control('Giá trị 3').fill('7');await page.keyboard.press('Escape');await dialog.waitFor({state:'hidden'});await openQuery();assert.equal(await control('Giá trị 3').inputValue(),decimal,'Cancelled edits never mutate the last applied query');assert.deepEqual(await applied(),[expected]);
+   await dialog.getByRole('button',{name:'Xóa điều kiện',exact:true}).click();assert.equal(await dialog.locator('.query-term').count(),0);assert.equal(await control('Trường sắp xếp').inputValue(),'none');assert.equal(await control('Nhóm dữ liệu').inputValue(),'none');await page.keyboard.press('Escape');await dialog.waitFor({state:'hidden'});await openQuery();assert.equal(await dialog.locator('.query-term').count(),3,'Cancelling Clear restores the applied terms');assert.equal(await control('Nhóm dữ liệu').inputValue(),'branch');
+   await dialog.getByRole('button',{name:'Xóa điều kiện',exact:true}).click();await apply().click();await dialog.waitFor({state:'hidden'});assert.deepEqual(await applied(),[expected,{filters:[],sort:[]}]);
+   assert.equal(calls.length,0,'This generic component fixture never mounts Workspace or dispatches an ERP API query');
+   sharedGridEvidence.push({kind:'component-contract-only-query-controls',workspaceWiring:false,backendRequests:0,applied:await applied(),cancelledDraftPreserved:true,clearCancelReopen:true,viewportWidths:[320,390,1440]});
+  });
+  await run('I42 component contract only: virtual columns retain logical accessibility and updated geometry',async()=>{
+   await start(1440,'purchase-orders',{},'&wide-grid-component=1');
+   const fixture=page.getByTestId('i42-wide-grid-fixture'),grid=fixture.getByRole('grid',{name:'Wide column component contract',exact:true}),viewport=fixture.locator('.desktop-grid-viewport');
+   await fixture.getByRole('heading',{name:'Wide ErpGrid component contract',exact:true}).waitFor();await grid.locator('[data-cell="0:0"]').waitFor();await paint();const column=label=>grid.getByRole('columnheader').filter({hasText:label});
+   const initial=['Identity',...Array.from({length:16},(_,index)=>'Field '+String(index+1).padStart(2,'0'))],widths=Object.fromEntries(initial.map(label=>[label,label==='Identity'?200:160])),observations=[];
+   async function verifyColumns(order,pinned,stage){
+    await paint();const data=await grid.evaluate(el=>({
+     count:Number(el.getAttribute('aria-colcount')),width:el.getBoundingClientRect().width,
+     headers:[...el.querySelectorAll('thead [role=columnheader]')].map(header=>({label:header.textContent.trim(),index:Number(header.getAttribute('aria-colindex')),width:header.getBoundingClientRect().width,offset:header.getBoundingClientRect().left-el.getBoundingClientRect().left})),
+     rows:[...el.querySelectorAll('tbody tr[data-grid-row]')].map(row=>({id:row.getAttribute('data-grid-row'),cells:[...row.querySelectorAll('[role=gridcell]')].map(cell=>({label:cell.getAttribute('data-label'),action:cell.classList.contains('request-list-open'),index:Number(cell.getAttribute('aria-colindex'))}))}))
+    }));
+    assert.equal(data.count,order.length+2,'Selection, logical data columns and Open action all count toward aria-colcount');
+    const expectedWidth=44+132+order.reduce((sum,label)=>sum+widths[label],0);assert.equal(data.width,expectedWidth);assert.equal(await viewport.evaluate(el=>el.scrollWidth),expectedWidth,'Horizontal scroll extent uses the current widths and visible columns');
+    assert.equal(data.headers[0].index,1);assert.equal(data.headers.at(-1).index,order.length+2);
+    const dataHeaders=data.headers.filter(header=>order.includes(header.label));assert.ok(dataHeaders.length>0&&dataHeaders.length<order.length,'The fixture actually virtualizes its greater-than-twelve unpinned columns');
+    for(const header of dataHeaders){
+     const logical=order.indexOf(header.label);assert.equal(header.index,logical+2,'Rendered header aria-colindex uses its logical position');assert.equal(header.width,widths[header.label]);
+     if(!pinned.includes(header.label))assert.ok(Math.abs(header.offset-(44+order.slice(0,logical).reduce((sum,label)=>sum+widths[label],0)))<=.5,'Virtual padding follows current width/order: '+JSON.stringify({stage,header,order}));
+    }
+    for(const row of data.rows){assert.equal(row.cells[0].index,1);assert.equal(row.cells.at(-1).action,true);assert.equal(row.cells.at(-1).index,order.length+2);for(const cell of row.cells.filter(cell=>cell.label))assert.equal(cell.index,order.indexOf(cell.label)+2,'Data-cell indexes match their logical column after virtual scrolling');assert.equal(await grid.getByRole('button',{name:'Open '+row.id,exact:true}).count(),1);}
+    assert.deepEqual(data.rows.map(row=>row.cells.map(cell=>cell.index)),data.rows.map(()=>data.headers.map(header=>header.index)),'Each row and its rendered headers expose identical logical positions');observations.push({stage,...data});
+   }
+   await column('Field 01').waitFor();await verifyColumns(initial,['Identity'],'initial');assert.equal(await column('Field 16').count(),0);
+   await viewport.evaluate(el=>{el.scrollLeft=el.scrollWidth;});await column('Field 16').waitFor();await verifyColumns(initial,['Identity'],'scrolled-end');
+   await fixture.getByRole('button',{name:'Tùy chỉnh bảng',exact:true}).click();const settings=page.getByRole('dialog',{name:'Tùy chỉnh bảng',exact:true});await settings.waitFor();
+   await settings.getByRole('button',{name:'Cố định Field 08',exact:true}).click();await settings.getByRole('checkbox',{name:'Hiển thị Field 04',exact:true}).click();await settings.getByRole('spinbutton',{name:'Độ rộng Field 01',exact:true}).fill('240');widths['Field 01']=240;
+   await settings.getByRole('button',{name:'Đưa Field 01 xuống',exact:true}).click();await settings.getByRole('button',{name:'Đưa Field 01 xuống',exact:true}).click();await page.keyboard.press('Escape');await settings.waitFor({state:'hidden'});
+   const changed=['Identity','Field 08','Field 02','Field 03','Field 01',...initial.slice(5).filter(label=>label!=='Field 08')];
+   await viewport.evaluate(el=>{el.scrollLeft=0;});await column('Field 01').waitFor();await verifyColumns(changed,['Identity','Field 08'],'resized-reordered-start');assert.equal(await column('Field 04').count(),0);
+   await viewport.evaluate(el=>{el.scrollLeft=el.scrollWidth;});await column('Field 16').waitFor();await verifyColumns(changed,['Identity','Field 08'],'resized-reordered-end');
+   assert.deepEqual(await page.evaluate(()=>window.i42WideOpens),[]);assert.equal(calls.length,0,'The wide virtual-column fixture never claims Workspace or backend acceptance');
+   sharedGridEvidence.push({kind:'component-contract-only-wide-grid',workspaceWiring:false,backendRequests:0,observations});
   });
   for(const screen of ['purchase-requests','inbound-requests']){
    await run(`${screen} loading, empty and failed list`,async()=>{
@@ -514,7 +782,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
     await recordReadonlyClockSnapshot('positive-healthy','before-deliberate-focus','before',{width,shape},healthyBaseline);
     await page.evaluate(()=>{window.dispatchEvent(new FocusEvent('blur'));window.dispatchEvent(new Event('focus'));});
     await eventually(()=>model.workspaceReads>visibleWorkspaceReads);await eventually(()=>model.detailWaiters.length===1&&model.waiters.length===1);await recordReadonlyClockSnapshot('positive-healthy','held-workspace-list-draft','after',{width,shape},healthyBaseline);await stableHealthyRead(true);assert.equal(projectionCalls().length,2,'Healthy refresh waits for current draft eligibility without removing prior READ data');
-    releaseDraft();await eventually(()=>model.projectionWaiters.length===1);await stableHealthyRead(true);assert.deepEqual(projectionCalls().at(-1),{route:projectionRoute,method:'GET',documentId:document.documentId,page:'2',pageSize:'50'});
+    releaseDraft();await eventually(()=>model.projectionWaiters.length===1);await stableHealthyRead(true);assert.deepEqual(projectionCalls().at(-1),{route:projectionRoute,method:'GET',documentId:document.documentId,page:'2',pageSize:'50',search:null,branchId:null});
     const listResponses=model.listResponses;model.holdList=false;model.waiters.splice(0).forEach(resolve=>resolve());await eventually(()=>model.listResponses>listResponses);await stableHealthyRead(true);
     releaseProjection();await eventually(()=>model.projectionResponses===3);await settledReads();await eventually(()=>readonlyPanel().getByRole('button',{name:'Dòng trước',exact:true}).isEnabled());await exactReadonlyPage(2);await stableHealthyRead(false);await recordReadonlyClockSnapshot('positive-healthy','fresh-projection','after',{width,shape},healthyBaseline);assert.deepEqual({count:model.workspaceReads,history:model.workspaceVersions},{count:healthyBaseline.count+1,history:[...healthyBaseline.history,healthyBaseline.count+1]});await continuity.dispose();
     await capture('inbound-readonly-'+shape+'-page2-healthy-refresh-'+width,{viewport:true,keepFocus:true});
@@ -531,7 +799,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
     assert.equal(await open('inbound-requests').getAttribute('aria-pressed'),'true');assert.equal(await filter.inputValue(),'UNAPPLIED READONLY FILTER');assert.equal(await readonlyPanel().count(),0);assert.equal(projectionCalls().length,3,'Same-scope refresh still waits for current typed Unavailable');
     assert.equal(await page.getByText(readonlyLines[50].itemId,{exact:true}).count(),0);assert.equal(await focusRegion('inbound-requests').evaluate(element=>document.activeElement===element),false);
     releaseDraft();await eventually(()=>model.projectionWaiters.length===1);await paint();assert.equal(await readonlyPanel().getAttribute('data-phase'),'pending');
-    assert.deepEqual(projectionCalls().at(-1),{route:projectionRoute,method:'GET',documentId:document.documentId,page:'2',pageSize:'50'});assert.equal(await page.getByText(readonlyLines[50].itemId,{exact:true}).count(),0,'Remembered page2 cannot expose cached values before the current READ response');
+    assert.deepEqual(projectionCalls().at(-1),{route:projectionRoute,method:'GET',documentId:document.documentId,page:'2',pageSize:'50',search:null,branchId:null});assert.equal(await page.getByText(readonlyLines[50].itemId,{exact:true}).count(),0,'Remembered page2 cannot expose cached values before the current READ response');
     assert.equal(await open('inbound-requests').getAttribute('aria-pressed'),'true');assert.equal(await filter.inputValue(),'UNAPPLIED READONLY FILTER');assert.equal(await focusRegion('inbound-requests').evaluate(element=>document.activeElement===element),false);
     releaseProjection();await exactReadonlyPage(2);await paint();assert.equal(await focusRegion('inbound-requests').evaluate(element=>document.activeElement===element),false,'Workspace revalidation cannot auto-focus the restored page');
     assert.equal(await open('inbound-requests').getAttribute('aria-pressed'),'true');assert.equal(await filter.inputValue(),'UNAPPLIED READONLY FILTER');assert.equal(calls.filter(call=>call.method==='POST').length,0);await recordReadonlyClockSnapshot('positive-hidden','fresh-projection','after',{width,shape},hiddenBaseline);assert.deepEqual({count:model.workspaceReads,history:model.workspaceVersions},{count:hiddenBaseline.count+1,history:[...hiddenBaseline.history,hiddenBaseline.count+1]},'Both healthy and temporarily unverified observations advance authority while retaining READ markers');
@@ -688,7 +956,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
     await eventually(()=>model.commandResponses===1);if(mode==='unknown')await page.waitForFunction(()=>document.querySelector('[data-testid=inbound-editor]')?.getAttribute('data-phase')==='unknown');else await page.waitForFunction(()=>document.querySelector('[data-testid=inbound-request-host]')?.getAttribute('data-readback-pending')==='true');
     const unavailableReads=model.draftResponses;await page.getByRole('button',{name:'Xác minh lại quyền nhập hàng',exact:true}).click();await eventually(()=>model.draftResponses>unavailableReads);await settledReads();const bodies=await page.evaluate(()=>window.i30SaveDispatches);assert.equal(bodies.length,1);const originalBody=bodies[0],bodySha256=sha(originalBody);
     assert.equal(model.writes.length,1);assert.equal(model.writes[0].bodySha256,bodySha256);assert.equal(model.originals.get(model.writes[0].operationId),originalBody);assert.equal(model.effects,1);assert.equal(projectionCalls().length,0,'Custody blocks even an otherwise eligible independent projection');assert.equal(await readonlyPanel().count(),0);
-    const attempts=[()=>closeSelection('inbound-requests').click(),()=>openRow('inbound-requests',26).click(),()=>page.getByRole('button',{name:'Áp dụng lọc nhập hàng',exact:true}).click(),()=>page.getByRole('navigation',{name:'Điều hướng nhanh trên điện thoại',exact:true}).getByRole('button',{name:'Không gian làm việc',exact:true}).click()];
+    const attempts=[()=>closeSelection('inbound-requests').click(),()=>openRow('inbound-requests',26).click(),()=>page.getByRole('button',{name:'Tìm kiếm',exact:true}).click(),()=>page.getByRole('navigation',{name:'Điều hướng nhanh trên điện thoại',exact:true}).getByRole('button',{name:'Không gian làm việc',exact:true}).click()];
     for(const attempt of attempts){await attempt();await page.getByRole('alertdialog').waitFor();assert.equal(await page.getByRole('button',{name:'Bỏ thay đổi và rời màn hình',exact:true}).count(),0);assert.equal(new URL(page.url()).searchParams.get('screen'),'inbound-requests');assert.equal(await host('inbound-requests').locator('button[aria-label^="Mở phiếu QA-INBOUND-001 "]').getAttribute('aria-pressed'),'true');assert.equal(await host('inbound-requests').locator('button[aria-label^="Mở phiếu QA-INBOUND-026 "]').getAttribute('aria-pressed'),'false');assert.equal(projectionCalls().length,0);await page.getByRole('button',{name:'Tiếp tục làm việc',exact:true}).click();await page.getByRole('alertdialog').waitFor({state:'detached'});}
     assert.deepEqual(await page.evaluate(()=>window.i30SaveDispatches),[originalBody]);assert.equal(model.effects,1);assert.equal(model.writes.length,1);await capture(`inbound-readonly-custody-${mode}-${nullScope?'null-scope':'scoped'}-390`,{viewport:true,keepFocus:true});
     // Recover only through current full-draft rights and the original receipt.
@@ -705,7 +973,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
  }catch(error){fatal=String(error);throw error;}finally{
   let teardownError;try{await cleanup();}catch(error){teardownError=error;errors.push(String(error));}
   t.signal.removeEventListener('abort',abortCleanup);
-  const evidence={node:process.version,css:{sourceSha256:sha(cssSource),compiledSha256:sha(css),bytes:Buffer.byteLength(css)},viewportWidths:[320,390,1440],hierarchy:'Actual Workspace and production request components',backend:'Synthetic HTTP host plus separately labelled trusted-adapter component contract; no ERP/SQL acceptance',status:completed&&!t.signal.aborted&&!fatal&&!failures.length&&!errors.length&&results.length===expectedCases?'passed':'failed',expectedCases,completedCases:results.length,fatal,results,failures,captures,transportEvidence,readonlyEvidence,commandGeometryEvidence,errors};
+  const evidence={node:process.version,css:{sourceSha256:sha(cssSource),compiledSha256:sha(css),bytes:Buffer.byteLength(css)},viewportWidths:[320,390,1440],hierarchy:'Actual Workspace and production request components',backend:'Synthetic HTTP host plus separately labelled trusted-adapter component contract; no ERP/SQL acceptance',status:completed&&!t.signal.aborted&&!fatal&&!failures.length&&!errors.length&&results.length===expectedCases?'passed':'failed',expectedCases,completedCases:results.length,fatal,results,failures,captures,transportEvidence,readonlyEvidence,commandGeometryEvidence,sharedGridEvidence,errors};
   await writeFile(path.join(output,'browser-result.json'),JSON.stringify(evidence,null,2));
   if(teardownError)throw teardownError;
  }

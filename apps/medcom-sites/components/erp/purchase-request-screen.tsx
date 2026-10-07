@@ -1,13 +1,13 @@
 "use client";
 import {RequestButton,RequestNotice,RequestEmpty,RequestLoading,RequestStatus,RequestError,requestDate,requestStyles} from "./request-presentation";
 import {documentStatusLabel} from "@/lib/erp/document-status";
-import {RequestListHeader,RequestSearch,RequestBranch,RequestListTable} from "./request-list-shell";
+import {RequestListHeader,RequestSearch,RequestBranch,RequestListTable,RequestListToolbar,RequestPagination} from "./request-list-shell";
 import {useCallback,useEffect,useLayoutEffect,useRef,useState,type FormEvent} from "react";
 import {MobileRequest,type MobileRequestAccess,type PurchaseRequestSnapshot} from "./mobile-request";
 import {useNavigationGuard} from "./navigation-guard";
 import {useRequestSelectionFocus} from "./request-selection-focus";
 import {ApiError} from "@/lib/erp/api";
-import {getPurchaseWorkspace,getPurchaseDocuments,postPurchaseCommand,type PurchaseWorkspace,type PurchasePage,type PurchaseReadback} from "@/lib/erp/purchase-request-api";
+import {getPurchaseWorkspace,getPurchaseList,getPurchaseDetail,postPurchaseCommand,type PurchaseWorkspace,type PurchasePage,type PurchaseReadback} from "@/lib/erp/purchase-request-api";
 import {createPurchaseCommandAdapter,commandPurchaseSnapshot} from "@/lib/erp/purchase-request-command-adapter";
 import {workspaceReadViewScope} from "@/lib/erp/navigation";
 import type {WorkspaceData} from "@/lib/erp/contracts";
@@ -16,7 +16,10 @@ function sameReadAuthority(left:WorkspaceData|null|undefined,right:WorkspaceData
  return !!left?.sessionScope&&!!left.readScope&&!!right?.sessionScope&&!!right.readScope
   &&workspaceReadViewScope(left)===workspaceReadViewScope(right);
 }
-type ReadState={key:string;refresh?:number;observation?:WorkspaceData|null;scopeKey?:string;bootstrap?:PurchaseWorkspace;list?:PurchasePage;detail?:PurchaseReadback;detailError?:unknown;error?:unknown;loading:boolean};
+type ReadState={key:string;refresh?:number;observation?:WorkspaceData|null;scopeKey?:string;bootstrap?:PurchaseWorkspace;list?:PurchasePage;error?:unknown;loading:boolean};
+type ReadAuthority={key:string;refresh:number;observation:WorkspaceData|null;scopeKey:string;bootstrap:PurchaseWorkspace;generation:number;observationVersion:number};
+type Selection={id:string|null;version:number};
+type DetailState={authority:ReadAuthority;selection:Selection;detail?:PurchaseReadback;error?:unknown;refresh:number};
 type RetainedEditor={scopeKey:string;raw:PurchaseReadback;snapshot:PurchaseRequestSnapshot;bridge:ReturnType<typeof createPurchaseCommandAdapter>;
  observation:WorkspaceData|null;revision:number;receiptId?:string;grant:PurchaseReadback["commandAccess"]};
 type PurchaseRequestScreenProps={workspace:WorkspaceData|null;verifying?:boolean;loginBoundary:number;sessionEnded:boolean;onVerifyWorkspace:()=>Promise<void>;onDenied:(error:unknown)=>void;onLogin:()=>void};
@@ -50,18 +53,28 @@ function PurchaseRequestSession(props:PurchaseRequestScreenProps){
  </>;
 }
 function PurchaseRequestReader({workspace,boundary,sessionUnverified,onDenied,onLogin,verifying=false}:PurchaseRequestScreenProps&{boundary:string;sessionUnverified:boolean}){
- const [searchInput,setSearchInput]=useState(""),[search,setSearch]=useState(""),[branch,setBranch]=useState(""),[page,setPage]=useState(1),[selected,setSelected]=useState<string|null>(null),[refresh,setRefresh]=useState(0);
+ const [searchInput,setSearchInput]=useState(""),[search,setSearch]=useState(""),[branch,setBranch]=useState(""),[page,setPage]=useState(1),[refresh,setRefresh]=useState(0);
+ const [selection,setSelection]=useState<Selection>({id:null,version:0}),selected=selection.id;
+ const selectionRef=useRef(selection);
+ const setSelected=useCallback((id:string|null)=>{
+  const current=selectionRef.current;if(current.id===id)return;
+  const next={id,version:current.version+1};selectionRef.current=next;setSelection(next);
+ },[]);
+ const [readAuthority,setReadAuthority]=useState<ReadAuthority|null>(null),[detailState,setDetailState]=useState<DetailState|null>(null),[detailRefresh,setDetailRefresh]=useState(0);
+ const [verifiedDetailWorkspace,setVerifiedDetailWorkspace]=useState<WorkspaceData|null>(null);
  const [state,setState]=useState<ReadState>({key:"",loading:false}),[editor,setEditor]=useState<RetainedEditor|null>(null);
  const [knownScope,setKnownScope]=useState<string|null>(null);
  const [observedWorkspace,setObservedWorkspace]=useState(workspace),[verifiedWorkspace,setVerifiedWorkspace]=useState<WorkspaceData|null>(null);
+ const [observationVersion,setObservationVersion]=useState(0);
  // An observation counter is not a rights change. A visible background check
  // can retain already authorized read-only rows while fresh document/grant reads
  // run. Loss of evidence, return from hidden, or a real scope change still masks.
  if(observedWorkspace!==workspace){
-  setObservedWorkspace(workspace);
+  setObservedWorkspace(workspace);setObservationVersion(value=>value+1);
   setVerifiedWorkspace(verifiedWorkspace!==null&&sameReadAuthority(observedWorkspace,workspace)?workspace:null);
+  setVerifiedDetailWorkspace(verifiedDetailWorkspace!==null&&sameReadAuthority(observedWorkspace,workspace)?workspace:null);
  }
- const generation=useRef(0),serverScope=useRef<string|null>(null),editorRef=useRef<RetainedEditor|null>(null),work=useRef({dirty:false,unresolved:false});
+ const generation=useRef(0),detailGeneration=useRef(0),serverScope=useRef<string|null>(null),editorRef=useRef<RetainedEditor|null>(null),work=useRef({dirty:false,unresolved:false});
  const {request:guardNavigation}=useNavigationGuard();
  const retain=useCallback((value:RetainedEditor|null)=>{editorRef.current=value;setEditor(value);},[]);
  const onWorkStateChange=useCallback((value:{dirty:boolean;unresolved:boolean})=>{work.current=value;},[]);
@@ -70,10 +83,23 @@ function PurchaseRequestReader({workspace,boundary,sessionUnverified,onDenied,on
   retain({...current,raw:current.bridge.currentReadback(),snapshot,receiptId});
  },[retain]);
  useEffect(()=>()=>{editorRef.current?.bridge.retire();},[]);
- useLayoutEffect(()=>{generation.current++;},[workspace]);
  const allowed=!!workspace?.session.capabilities.includes("purchase-requests.read")&&!!workspace.branchIds.length;
  const safeBranch=workspace?.branchIds.includes(branch)?branch:"";
- const key=JSON.stringify([boundary,workspace?workspaceReadViewScope(workspace):null,workspace?.session.capabilities.slice().sort(),workspace?.branchIds.slice().sort(),search,safeBranch,page,selected]);
+ // Selection is deliberately absent: Open/Close cannot invalidate a verified list.
+ const criteriaKey=JSON.stringify([boundary,workspace?workspaceReadViewScope(workspace):null,workspace?.session.capabilities.slice().sort(),workspace?.branchIds.slice().sort(),search,safeBranch,page]);
+ const [criteria,setCriteria]=useState({key:criteriaKey,version:0});
+ if(criteria.key!==criteriaKey)setCriteria({key:criteriaKey,version:criteria.version+1});
+ const key=JSON.stringify([criteriaKey,criteria.version]);
+ useLayoutEffect(()=>{generation.current++;},[workspace,key,refresh]);
+ const failRead=useCallback((error:unknown)=>{
+  // A current authority failure wins over either concurrently completing read.
+  generation.current++;detailGeneration.current++;setReadAuthority(null);
+  if(error instanceof ApiError&&error.status===401){
+   editorRef.current?.bridge.retire();retain(null);work.current={dirty:false,unresolved:false};
+   setSearchInput("");setSearch("");setBranch("");setPage(1);setSelected(null);setKnownScope(null);serverScope.current=null;setVerifiedWorkspace(null);setVerifiedDetailWorkspace(null);
+  }
+  setState({key,refresh,observation:workspace,error,loading:false});onDenied(error);
+ },[key,refresh,workspace,onDenied,retain,setSelected]);
  useEffect(()=>{
   const current=++generation.current,controller=new AbortController();
   if(!allowed)return ()=>controller.abort();
@@ -81,59 +107,73 @@ function PurchaseRequestReader({workspace,boundary,sessionUnverified,onDenied,on
    const bootstrap=await getPurchaseWorkspace(controller.signal);
    if(controller.signal.aborted||current!==generation.current)return;
    const changedScope=serverScope.current!==null&&serverScope.current!==bootstrap.scopeKey;serverScope.current=bootstrap.scopeKey;setKnownScope(bootstrap.scopeKey);
-   if(changedScope){editorRef.current?.bridge.retire();retain(null);work.current={dirty:false,unresolved:false};setSearchInput("");setSearch("");setBranch("");setPage(1);setSelected(null);setRefresh(value=>value+1);return;}
+   if(changedScope){editorRef.current?.bridge.retire();retain(null);work.current={dirty:false,unresolved:false};setReadAuthority(null);setVerifiedDetailWorkspace(null);setSearchInput("");setSearch("");setBranch("");setPage(1);setSelected(null);setRefresh(value=>value+1);return;}
    const retained=editorRef.current;
-   if(retained&&selected===retained.raw.document.purchaseRequestId&&!bootstrap.data.branchIds.includes(retained.raw.document.branchId)){
-    // The fresh bootstrap is already definitive denial for this selected branch.
-    // Mask now; preserve original command/receipt custody for the existing403
-    // boundary and at most one parent recheck, never wait for a later detail GET.
-    setVerifiedWorkspace(null);throw new ApiError(403,"purchase_branch_denied");
+   if(retained&&selectionRef.current.id===retained.raw.document.purchaseRequestId&&!bootstrap.data.branchIds.includes(retained.raw.document.branchId)){
+    // Definitive current branch denial masks both reads, preserving command custody.
+    setVerifiedWorkspace(null);setVerifiedDetailWorkspace(null);throw new ApiError(403,"purchase_branch_denied");
    }
    if(safeBranch&&!bootstrap.data.branchIds.includes(safeBranch)){setBranch("");setPage(1);if(!editorRef.current?.bridge.hasPending())setSelected(null);return;}
-   const startingBridge=editorRef.current?.bridge,readEpoch=startingBridge?.readVersion();
-   const result=await getPurchaseDocuments(bootstrap.scopeKey,bootstrap.data.branchIds,page,search,safeBranch,selected,controller.signal);
+   const authority={key,refresh,observation:workspace,scopeKey:bootstrap.scopeKey,bootstrap:bootstrap.data,generation:current,observationVersion};
+   // Publish the read binding before awaiting the list so an explicit refresh
+   // still starts list and selected detail together after the fresh bootstrap.
+   setReadAuthority(authority);
+   const list=await getPurchaseList(bootstrap.scopeKey,page,search,safeBranch,controller.signal);
    if(controller.signal.aborted||current!==generation.current)return;
-   const existing=editorRef.current;
-   // A command dispatch/ACK can supersede an already-started GET. Its rows and
-   // grants are not current proof; ignore them and obtain a new read, without
-   // throwing away the legitimate receipt or replacing it with an error.
-   if(result.detail&&existing&&startingBridge&&existing.bridge===startingBridge&&readEpoch!==existing.bridge.readVersion()){
-    setRefresh(value=>value+1);return;
-   }
-   setState({key,refresh,observation:workspace,scopeKey:bootstrap.scopeKey,bootstrap:bootstrap.data,...result,loading:false});
-   setVerifiedWorkspace(workspace);
-   if(result.detail){
-    if(existing&&existing.raw.document.purchaseRequestId===result.detail.document.purchaseRequestId){
-     if(existing.bridge.hasPending()||work.current.dirty){retain({...existing,observation:workspace,grant:result.detail.commandAccess});return;}
-     // A GET begun before dispatch/ACK cannot overwrite the confirmed receipt.
-     existing.bridge.adoptReadback(result.detail,existing.bridge===startingBridge?readEpoch:undefined);
-     retain({...existing,raw:result.detail,snapshot:commandPurchaseSnapshot(result.detail),observation:workspace,grant:result.detail.commandAccess,revision:existing.revision+1});
-    }else if(!existing?.bridge.hasPending()){
-     existing?.bridge.retire();const bridge=createPurchaseCommandAdapter(bootstrap.scopeKey,result.detail,postPurchaseCommand);
-     retain({scopeKey:bootstrap.scopeKey,raw:result.detail,snapshot:commandPurchaseSnapshot(result.detail),bridge,observation:workspace,grant:result.detail.commandAccess,revision:(existing?.revision??0)+1});
-    }
-   }else if(existing&&!existing.bridge.hasPending()&&!existing.receiptId&&!work.current.dirty){existing.bridge.retire();retain(null);}
+   if(list.rows.some(row=>!bootstrap.data.branchIds.includes(row.branchId)))throw new ApiError(502,"invalid_api_response");
+   setState({...authority,list,loading:false});setVerifiedWorkspace(workspace);
   })().catch(error=>{
    if(controller.signal.aborted||current!==generation.current)return;
-   if(error instanceof ApiError&&error.status===401){
-    // Current server evidence ends this session. Retire immediately so a late ACK
-    // cannot land before the parent propagates sessionEnded and remounts us.
-    editorRef.current?.bridge.retire();retain(null);work.current={dirty:false,unresolved:false};
-    setSearchInput("");setSearch("");setBranch("");setPage(1);setSelected(null);setKnownScope(null);serverScope.current=null;setVerifiedWorkspace(null);
-   }
-   setState({key,refresh,observation:workspace,error,loading:false});onDenied(error);
+   failRead(error);
   });
   return ()=>controller.abort();
- },[key,refresh,allowed,safeBranch,page,search,selected,onDenied,workspace,retain]);
+ },[key,refresh,allowed,safeBranch,page,search,workspace,observationVersion,retain,failRead,setSelected]);
  const active=allowed&&state.key===key&&(!!state.error||state.scopeKey===knownScope)&&(state.observation===workspace||verifiedWorkspace===workspace&&sameReadAuthority(state.observation,workspace))?state:null;
  const busy=!active||active.loading||active.observation!==workspace||active.refresh!==refresh;
+ const currentAuthority=allowed&&readAuthority?.key===key&&readAuthority.refresh===refresh&&readAuthority.observation===workspace&&readAuthority.observationVersion===observationVersion&&readAuthority.scopeKey===knownScope?readAuthority:null;
+ // A -> B -> A has distinct Selection objects. Fence before passive cleanup so
+ // an abort-ignoring reply from the first A can never become the later A's proof.
+ useLayoutEffect(()=>{detailGeneration.current++;},[currentAuthority,selection,detailRefresh]);
+ useEffect(()=>{
+  const current=++detailGeneration.current,controller=new AbortController(),authority=currentAuthority;
+  if(!authority||!selection.id)return ()=>controller.abort();
+  const startingBridge=editorRef.current?.bridge,readEpoch=startingBridge?.readVersion();
+  const isCurrent=()=>!controller.signal.aborted&&current===detailGeneration.current&&authority.generation===generation.current;
+  void getPurchaseDetail(authority.scopeKey,selection.id,controller.signal).then(detail=>{
+   if(!isCurrent())return;
+   if(!authority.bootstrap.branchIds.includes(detail.document.branchId))throw new ApiError(502,"invalid_api_response");
+   const existing=editorRef.current;
+   // A dispatch/ACK supersedes its older GET, never the frozen original intent.
+   if(existing&&startingBridge&&existing.bridge===startingBridge&&readEpoch!==existing.bridge.readVersion()){
+    setDetailRefresh(value=>value+1);return;
+   }
+   setDetailState({authority,selection,detail,refresh:detailRefresh});setVerifiedDetailWorkspace(authority.observation);
+   if(existing&&existing.raw.document.purchaseRequestId===detail.document.purchaseRequestId){
+    if(existing.bridge.hasPending()||work.current.dirty){retain({...existing,observation:authority.observation,grant:detail.commandAccess});return;}
+    existing.bridge.adoptReadback(detail,existing.bridge===startingBridge?readEpoch:undefined);
+    retain({...existing,raw:detail,snapshot:commandPurchaseSnapshot(detail),observation:authority.observation,grant:detail.commandAccess,revision:existing.revision+1});
+   }else if(!existing?.bridge.hasPending()){
+    existing?.bridge.retire();const bridge=createPurchaseCommandAdapter(authority.scopeKey,detail,postPurchaseCommand);
+    retain({scopeKey:authority.scopeKey,raw:detail,snapshot:commandPurchaseSnapshot(detail),bridge,observation:authority.observation,grant:detail.commandAccess,revision:(existing?.revision??0)+1});
+   }
+  }).catch(error=>{
+   if(!isCurrent())return;
+   if(error instanceof ApiError&&([401,403,409].includes(error.status)||error.code==="invalid_api_response")){failRead(error);return;}
+   // A missing/unavailable detail cannot erase its independently verified list.
+   setDetailState({authority,selection,error,refresh:detailRefresh});
+  });
+  return ()=>controller.abort();
+ },[currentAuthority,selection,detailRefresh,failRead,retain]);
+ const activeDetail=allowed&&detailState?.selection===selection&&detailState.authority.key===key&&detailState.authority.scopeKey===knownScope
+  &&(detailState.authority.observation===workspace||verifiedDetailWorkspace===workspace&&sameReadAuthority(detailState.authority.observation,workspace))?detailState:null;
+ const detailBusy=!!selected&&(!activeDetail||activeDetail.authority!==currentAuthority||activeDetail.refresh!==detailRefresh);
  function move(action:()=>void){
   // The synchronous bridge check covers the interval before the editor's guard effect.
   if(editorRef.current?.bridge.hasPending()||work.current.unresolved){guardNavigation(()=>{});return;}
   guardNavigation(()=>{work.current={dirty:false,unresolved:false};action();});
  }
  function open(documentId:string){
-  if(selected===documentId){
+  if(selectionRef.current.id===documentId){
    // This is focus only, not navigation. Do not accept a discard for a no-op
    // selection: the mounted dirty editor must retain its registered guard.
    if(editorRef.current?.bridge.hasPending()||work.current.unresolved){guardNavigation(()=>{});return;}
@@ -145,17 +185,17 @@ function PurchaseRequestReader({workspace,boundary,sessionUnverified,onDenied,on
  function close(){move(()=>{focusClose();editorRef.current?.bridge.retire();retain(null);setSelected(null);});}
  function find(event:FormEvent){event.preventDefault();move(()=>{cancelFocus();setSearch(searchInput);setPage(1);setSelected(null);editorRef.current?.bridge.retire();retain(null);setRefresh(value=>value+1);});}
  const denied=active?.error instanceof ApiError&&[401,403,409].includes(active.error.status);
- const canRead=!!editor&&allowed&&verifiedWorkspace===workspace&&!denied&&!active?.error&&!active?.detailError&&editor.scopeKey===knownScope&&(editor.observation===workspace||sameReadAuthority(editor.observation,workspace))
+ const canRead=!!editor&&allowed&&verifiedWorkspace===workspace&&verifiedDetailWorkspace===workspace&&!!activeDetail&&!denied&&!active?.error&&!activeDetail.error&&editor.scopeKey===knownScope&&(editor.observation===workspace||sameReadAuthority(editor.observation,workspace))
   &&workspace?.branchIds.includes(editor.raw.document.branchId)===true&&selected===editor.raw.document.purchaseRequestId;
- const freshRequired=!!editor&&(editor.bridge.needsFreshRead()||busy||!!active?.error||!!active?.detailError||editor.observation!==workspace);
+ const freshRequired=!!editor&&(editor.bridge.needsFreshRead()||busy||detailBusy||!!active?.error||!!activeDetail?.error||editor.observation!==workspace);
  // Only a committed, current read may finish an explicitly accepted Open/Close.
  // Read identity stays stable across harmless observations; revalidation still
  // cancels pending movement without discarding this list's return destination.
  const focusOwner=allowed&&verifiedWorkspace===workspace&&!denied&&workspace
   ?JSON.stringify([boundary,workspaceReadViewScope(workspace),workspace.session.capabilities.slice().sort(),workspace.branchIds.slice().sort(),knownScope]):null;
  const {open:focusOpen,close:focusClose,cancel:cancelFocus,row:registerFocusRow,detail:registerFocusDetail,list:registerFocusList}=useRequestSelectionFocus({owner:focusOwner,selected,listKey:JSON.stringify([search,safeBranch,page]),
-  openReady:canRead&&!busy&&!verifying&&!freshRequired&&active?.observation===workspace&&active?.detail?.document.purchaseRequestId===selected,
-  openFailed:!allowed||!!active?.error||!!active?.detailError,
+  openReady:canRead&&!busy&&!verifying&&!freshRequired&&activeDetail?.authority===currentAuthority&&activeDetail?.detail?.document.purchaseRequestId===selected,
+  openFailed:!allowed||!!active?.error||!!activeDetail?.error,
   listReady:!!active?.list&&!busy&&!verifying&&verifiedWorkspace===workspace&&!active?.error,
   listFailed:!allowed||!!active?.error});
  useLayoutEffect(()=>{cancelFocus();},[cancelFocus,workspace,verifying,refresh]);
@@ -168,7 +208,7 @@ function PurchaseRequestReader({workspace,boundary,sessionUnverified,onDenied,on
   existingOnly:true,canAddLines:false,requiresFreshRead:freshRequired,
   // Keep data visible during a same-scope background refresh, but never expose
   // actions while the latest document command grants are still unverified.
-  available:true,verifying:verifying||busy||!!active?.error||!!active?.detailError||editor?.observation!==workspace,
+  available:true,verifying:verifying||busy||detailBusy||!!active?.error||!!activeDetail?.error||editor?.observation!==workspace,
   authorityKey:JSON.stringify([workspace?workspaceReadViewScope(workspace):null,workspace?.session.capabilities.slice().sort(),workspace?.branchIds.slice().sort(),grant]),
   branches:[],currencies:[],purposes:[],maxNotesLength:65536,maxPurposeLength:65536,maxLines:500,itemLookupId:"items",objectLookupId:"objects"};
  return <section aria-label="Danh sách đề nghị mua hàng" className={requestStyles.stack}>
@@ -177,19 +217,20 @@ function PurchaseRequestReader({workspace,boundary,sessionUnverified,onDenied,on
    {!!active?.error&&<RequestButton type="button" onClick={()=>{cancelFocus();setRefresh(value=>value+1);}}>Xác minh lại phạm vi ERP</RequestButton>}
   </section>:<div className={requestStyles.panel}>
    <RequestListHeader title="Danh sách đề nghị" listRef={registerFocusList}><div className="request-list-qualification"><span id="purchase-write-qualification">Chỉ mở các phiếu hiện có.</span><RequestButton disabled className="request-unavailable" aria-describedby="purchase-write-qualification">Tạo đề nghị</RequestButton></div></RequestListHeader>
-   <form onSubmit={find} className="request-list-toolbar">
+   <RequestListToolbar onSubmit={find}>
     <RequestSearch label="Tìm mã đề nghị" placeholder="Tìm mã đề nghị…" value={searchInput} onChange={setSearchInput}/>
     <RequestBranch label="Chi nhánh" value={safeBranch} disabled={busy} branches={active?.bootstrap?.branchIds??[]} onChange={id=>move(()=>{cancelFocus();setBranch(id);setPage(1);setSelected(null);editorRef.current?.bridge.retire();retain(null);})}/>
     <RequestButton type="submit" variant="secondary" disabled={busy}>Tìm kiếm</RequestButton>
     <RequestButton className="request-list-refresh" type="button" disabled={busy} onClick={()=>move(()=>{cancelFocus();setRefresh(value=>value+1);})}>Làm mới</RequestButton>
-   </form>
+   </RequestListToolbar>
    {busy&&!active?.list?<RequestLoading label="Đang đọc ERP…"/>:active?.error?<RequestError error={active.error}/>:<>
     <RequestListTable label="Danh sách đề nghị" columns={[{id:"id",label:"Mã đề nghị"},{id:"date",label:"Ngày đề nghị"},{id:"branch",label:"Chi nhánh"},{id:"person",label:"Người đề nghị"},{id:"department",label:"Phòng ban"},{id:"status",label:"Trạng thái"}]} rows={(active?.list?.rows??[]).map(row=>({id:row.documentId,cells:[row.documentId,requestDate(row.purchaseDate),row.branchId,row.personSuggest||"Chưa có thông tin",row.department||"Chưa có thông tin",<RequestStatus key="status" value={row.statusId} statusName={row.statusName}/>],action:"Mở đề nghị",actionLabel:`Mở đề nghị ${row.documentId}`,selected:selected===row.documentId,onOpen:()=>open(row.documentId),buttonRef:element=>registerFocusRow(row.documentId,element)}))}/>
     {active?.list?.rows.length===0&&<RequestEmpty title="Không có đề nghị phù hợp">Thử điều chỉnh mã đề nghị hoặc chi nhánh.</RequestEmpty>}
-    <nav aria-label="Phân trang đề nghị" className={requestStyles.footer}><RequestButton disabled={page===1} onClick={()=>move(()=>{cancelFocus();setPage(value=>value-1);setSelected(null);editorRef.current?.bridge.retire();retain(null);})}>Trang trước</RequestButton><span>Trang {page}</span><RequestButton disabled={!active?.list?.hasMore||page>=1000} onClick={()=>move(()=>{cancelFocus();setPage(value=>value+1);setSelected(null);editorRef.current?.bridge.retire();retain(null);})}>Trang sau</RequestButton></nav>
+    <RequestPagination label="Phân trang đề nghị" page={page} previousDisabled={page===1} nextDisabled={!active?.list?.hasMore||page>=1000} onPrevious={()=>move(()=>{cancelFocus();setPage(value=>value-1);setSelected(null);editorRef.current?.bridge.retire();retain(null);})} onNext={()=>move(()=>{cancelFocus();setPage(value=>value+1);setSelected(null);editorRef.current?.bridge.retire();retain(null);})}/>
    </>}
    {selected&&<div className={requestStyles.footer}><h3 className={`${requestStyles.title} min-w-0 max-w-full [overflow-wrap:anywhere]`}>{selected}</h3><RequestButton onClick={close}>Đóng đề nghị</RequestButton></div>}
-   {!!active?.detailError&&<RequestError error={active.detailError}/>}
+   {detailBusy&&!canRead&&<RequestLoading label="Đang đọc phiếu từ ERP…"/>}
+   {!!activeDetail?.error&&<RequestError error={activeDetail.error}/>}
   </div>}
   {/* Outside the busy/error/selection fragment. Never key by token or discard an unknown intent. */}
   {editor&&<section ref={registerFocusDetail} aria-label="Phiếu mua hàng hiện có" tabIndex={-1} className="scroll-mt-24 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" hidden={!canRead}><div className={requestStyles.stack}>

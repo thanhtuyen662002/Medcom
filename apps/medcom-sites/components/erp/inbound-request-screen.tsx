@@ -1,5 +1,5 @@
 "use client";
-import {RequestListHeader,RequestSearch,RequestBranch,RequestListTable} from "./request-list-shell";
+import {RequestListHeader,RequestSearch,RequestBranch,RequestListTable,RequestListToolbar,RequestPagination} from "./request-list-shell";
 import {RequestButton,RequestNotice,RequestEmpty,RequestLoading,RequestStatus,requestDate,requestStyles} from "./request-presentation";
 import {useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore} from "react";
 import {ApiError, getDocuments, type ReadScope} from "@/lib/erp/api";
@@ -159,7 +159,7 @@ function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, hi
   const [search, setSearch] = useState(""), [branch, setBranch] = useState("");
   const [filter, setFilter] = useState({search: "", branch: ""});
   const [retry, setRetry] = useState(0), [guardRevision, setGuardRevision] = useState(0), [notice, setNotice] = useState("");
-  const [rows, setRows] = useState<{binding: string; data: DocumentPage | null; failed: boolean; readIdentity: string | null; viewKey: string}>({binding: "", data: null, failed: false, readIdentity: null, viewKey: ""});
+  const [rows, setRows] = useState<{view: object | null; binding: string; data: DocumentPage | null; failed: boolean; readIdentity: string | null; viewKey: string}>({view: null, binding: "", data: null, failed: false, readIdentity: null, viewKey: ""});
   // Revalidation identity ONLY, not a login scope or an editor remount key.
   const workspaceContext = loginKey !== null && workspace !== null ? JSON.stringify([loginKey, workspace.session.tenantId, workspace.session.companyId, workspace.session.authorityVersion,
     workspace.session.capabilities, workspace.branchIds]) : null;
@@ -177,11 +177,16 @@ function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, hi
     workspace.session.companyId, [...workspace.session.capabilities].sort(), [...workspace.branchIds].sort()]) : null;
   const verifiedReadAuthority = context !== null && !!workspace?.session.capabilities.includes("inbound-requests.read")
     && isInboundScope(workspace.sessionScope) && isInboundScope(workspace.readScope);
-  const listBinding = JSON.stringify([context, filter, page, retry]), listViewKey = JSON.stringify([filter, page]);
+  const listBinding = JSON.stringify([context, readIdentity, filter, page, retry]), listViewKey = JSON.stringify([filter, page]);
+  // Equal values after an intervening loss/scope/filter/page change are a new
+  // presentation, not permission to revive an earlier positive snapshot. Keep
+  // this identity across detail selection and healthy same-scope observations.
+  const listAuthorityPresent = context !== null;
+  const listView = useMemo(() => ({readIdentity, listViewKey, listAuthorityPresent}), [readIdentity, listViewKey, listAuthorityPresent]);
   // An observation counter is not a READ-scope change. Keep the authorized
   // list's geometry while its same-scope background request is outstanding.
-  const retainedRows = verifiedReadAuthority && rows.readIdentity === readIdentity && rows.viewKey === listViewKey ? rows.data : null;
-  const currentRows = listAllowed && rows.binding === listBinding ? rows.data : retainedRows;
+  const retainedRows = rows.view === listView && verifiedReadAuthority && rows.readIdentity === readIdentity && rows.viewKey === listViewKey ? rows.data : null;
+  const currentRows = rows.view === listView && listAllowed && rows.binding === listBinding ? rows.data : retainedRows;
   const listPresented = listAllowed || retainedRows !== null;
   const presentedCurrent = presented !== null && presented.context === context && presented.api === api && presented.access === state.access
     && presented.documentId === selected && presented.scopeKey === state.access.scopeKey;
@@ -215,7 +220,7 @@ function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, hi
     openReady: readonlyReady || selected !== null && presentedCurrent && presented.state === "ready"
       && contextCurrent && state.access.canRead && state.access.available && !state.needsRefresh && !state.unresolved && !readbackPending,
     openFailed: selected !== null && (readonlyFailed || !readonlyEligible && (focusFailure === selected || presentedCurrent && presented.state === "failed")),
-    listReady: currentRows !== null, listFailed: rows.binding === listBinding && rows.failed,
+    listReady: currentRows !== null, listFailed: rows.view === listView && rows.binding === listBinding && rows.failed,
   });
   // Automatic authority observations and ACKs never complete an earlier focus request.
   useLayoutEffect(() => { cancelFocus(); }, [workspace, cancelFocus]);
@@ -277,26 +282,36 @@ function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, hi
     });
     return () => controller.abort();
   }, [bridge, contextCurrent, context, api, selected, retry, fallbackBinding, readObservation]);
+  // List data belongs to authority/filter/page, not the selected detail. A
+  // separate synchronous ticket retires denial callbacks on every selection,
+  // including batched A→B→A, without aborting/refetching an authorized list.
+  const selectionDenialGeneration = useRef<object>({});
+  const branchIdsKey = JSON.stringify(workspace?.branchIds ?? []);
+  const authorizedBranches = useMemo<string[]>(() => JSON.parse(branchIdsKey), [branchIdsKey]);
   const listGeneration = useRef<object | null>(null);
   useLayoutEffect(() => {
     // Invalidate at commit, before passive-effect cleanup: a superseded list
-    // error must never end a newer authority/API/selection/filter context.
+    // error must never end a newer authority/API/scope/filter context.
     const generation = {}; listGeneration.current = generation;
     return () => { if (listGeneration.current === generation) listGeneration.current = null; };
-  }, [listAllowed, listBinding, list, workspace, api, selected]);
+  }, [listAllowed, listBinding, list, api, readScope, readIdentity, verifiedReadAuthority, authorizedBranches, listView]);
   useEffect(() => {
     if (!listAllowed) return;
-    const controller = new AbortController(), generation = listGeneration.current;
+    const controller = new AbortController(), generation = listGeneration.current, selectionTicket = selectionDenialGeneration.current;
     const current = () => !controller.signal.aborted && listGeneration.current === generation;
     void list(page, filter.search, filter.branch, controller.signal, readScope ?? undefined).then(data => {
       if (!current()) return;
       if (data.page !== page || data.rows.length > 100 || data.rows.some(row => !isInboundId(row.documentId)
-        || !workspace?.branchIds.includes(row.branchId))) throw new Error("invalid_inbound_list");
-      setRows({binding: listBinding, data, failed: false, readIdentity: verifiedReadAuthority ? readIdentity : null, viewKey: listViewKey});
+        || !authorizedBranches.includes(row.branchId))) throw new Error("invalid_inbound_list");
+      setRows({view: listView, binding: listBinding, data, failed: false, readIdentity: verifiedReadAuthority ? readIdentity : null, viewKey: listViewKey});
     }).catch(error => {
       if (!current()) return;
-      setRows({binding: listBinding, data: null, failed: true, readIdentity: null, viewKey: listViewKey});
-      if (!(error instanceof ApiError) || ![401, 403, 409].includes(error.status)) return;
+      const denied = error instanceof ApiError && [401, 403, 409].includes(error.status);
+      // A denial issued for an older detail selection is not current proof.
+      // Ignore it before changing rows, bridge authority or session state.
+      if (denied && selectionDenialGeneration.current !== selectionTicket) return;
+      setRows({view: listView, binding: listBinding, data: null, failed: true, readIdentity: null, viewKey: listViewKey});
+      if (!denied) return;
       // Fence synchronously, before React or the parent can rerender. In-flight
       // command/receipt callbacks cannot confirm after this positive denial.
       listGeneration.current = null;
@@ -307,7 +322,7 @@ function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, hi
       } else setDeniedContext(workspaceContext);
     });
     return () => controller.abort();
-  }, [bridge, listAllowed, listBinding, list, page, filter, workspace, workspaceContext, api, selected, verifiedReadAuthority, readIdentity, listViewKey, readScope]);
+  }, [bridge, listAllowed, listBinding, list, page, filter, workspaceContext, api, verifiedReadAuthority, readIdentity, listViewKey, readScope, authorizedBranches, listView]);
 
   const navigate = useCallback((action: () => void) => {
     guardNavigation(() => {
@@ -327,6 +342,7 @@ function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, hi
   }, [bridge, guardNavigation]);
   const select = useCallback((documentId: string | null) => {
     // Fence synchronously, including batched A→B→A selection before a commit.
+    selectionDenialGeneration.current = {};
     readObservation.bind(null); setReadonlyPage(null); setUnavailable(null); setReadonlyPresented(null);
     bridge.select(documentId); setSelected(documentId); setSelectionVersion(value => value + 1); setNotice(""); setPresented(null); setFocusFailure(null);
   }, [bridge, readObservation]);
@@ -367,17 +383,17 @@ function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, hi
       Xác minh lại quyền nhập hàng</RequestButton>}
     {listPresented && <div className={requestStyles.panel}>
       <RequestListHeader title="Danh sách phiếu nhập hàng"/>
-      <form aria-label="Lọc phiếu nhập hàng" className="request-list-toolbar" onSubmit={event => {
+      <RequestListToolbar aria-label="Lọc phiếu nhập hàng" onSubmit={event => {
         event.preventDefault(); navigate(() => { cancelFocus(); select(null); setFilter({search, branch}); setPage(1); });
       }}>
         <RequestSearch label="Tìm phiếu nhập hàng" placeholder="Tìm mã phiếu…" value={search} onChange={setSearch}/>
         <RequestBranch label="Lọc chi nhánh" value={branch} branches={workspace?.branchIds??[]} onChange={setBranch}/>
-        <RequestButton type="submit" variant="secondary">Áp dụng lọc nhập hàng</RequestButton>
-      </form>
+        <RequestButton type="submit" variant="secondary" aria-label="Tìm kiếm">Tìm kiếm</RequestButton>
+      </RequestListToolbar>
       <section aria-label="Danh sách phiếu nhập hàng" ref={focusList} tabIndex={-1} className="request-list-content scroll-mt-24">
-        {!currentRows ? rows.binding === listBinding && rows.failed ? <RequestNotice warning>Chưa tải được danh sách.</RequestNotice> : <RequestLoading label="Đang tải danh sách."/>
+        {!currentRows ? rows.view === listView && rows.binding === listBinding && rows.failed ? <RequestNotice warning>Chưa tải được danh sách.</RequestNotice> : <RequestLoading label="Đang tải danh sách."/>
           : currentRows.rows.length === 0 ? <RequestEmpty title="Không có phiếu trong trang này.">Thử điều chỉnh mã phiếu hoặc chi nhánh.</RequestEmpty>
-          : <RequestListTable label="Phiếu nhập hàng" columns={[{id:"id",label:"Mã phiếu"},{id:"date",label:"Ngày chứng từ"},{id:"branch",label:"Chi nhánh"},{id:"status",label:"Trạng thái"}]} rows={currentRows.rows.map(row=>({id:row.documentId,cells:[row.documentId,requestDate(row.documentDate),row.branchId,<RequestStatus key="status" value={row.statusId} statusName={row.statusName}/>],action:"Xem phiếu",actionLabel:`Mở phiếu ${row.documentId} · ${row.documentDate} · ${row.branchId} · trạng thái ${row.statusId ?? "NULL"}`,selected:selected===row.documentId,buttonRef:element=>focusRow(row.documentId,element),onOpen:() => {
+          : <RequestListTable label="Phiếu nhập hàng" columns={[{id:"id",label:"Mã phiếu"},{id:"date",label:"Ngày chứng từ"},{id:"branch",label:"Chi nhánh"},{id:"status",label:"Trạng thái"}]} rows={currentRows.rows.map(row=>({id:row.documentId,cells:[row.documentId,requestDate(row.documentDate),row.branchId,<RequestStatus key="status" value={row.statusId} statusName={row.statusName}/>],action:"Mở phiếu",actionLabel:`Mở phiếu ${row.documentId} · ${row.documentDate} · ${row.branchId} · trạng thái ${row.statusId ?? "NULL"}`,selected:selected===row.documentId,buttonRef:element=>focusRow(row.documentId,element),onOpen:() => {
               if (selected === row.documentId) {
                 // Re-focus does not navigate or discard dirty state/guard registration.
                 if (!bridge.hasUnresolved() && pendingReceipt.current === null && contextCurrent
@@ -386,11 +402,9 @@ function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, hi
               } else navigate(() => { focusOpen(row.documentId); select(row.documentId); });
             }}))}/>}
       </section>
-      <nav aria-label="Trang danh sách phiếu" className={requestStyles.footer}>
-        <RequestButton type="button" disabled={page === 1} onClick={() => navigate(() => { cancelFocus(); select(null); setPage(value => value - 1); })}>Trang phiếu trước</RequestButton>
-        <span>Trang {page}</span>
-        <RequestButton type="button" disabled={!currentRows?.hasMore} onClick={() => navigate(() => { cancelFocus(); select(null); setPage(value => value + 1); })}>Trang phiếu tiếp</RequestButton>
-      </nav>
+      <RequestPagination label="Trang danh sách phiếu" page={page} previousDisabled={page === 1} nextDisabled={!currentRows?.hasMore}
+        onPrevious={() => navigate(() => { cancelFocus(); select(null); setPage(value => value - 1); })}
+        onNext={() => navigate(() => { cancelFocus(); select(null); setPage(value => value + 1); })}/>
     </div>}
     {/* Always mounted, even on close, permission change, list error or transient
         workspace=null. Only loginKey above retires this I18 instance. */}

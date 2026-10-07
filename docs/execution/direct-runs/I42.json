@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I42",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "0bb63e0c-6055-46d8-a50f-7a5c2b002120",
+  "base_sha": "b30d7dbd1e05d351ac7109844297e57d76f3399f",
+  "work_branch": "codex/g45-shared-list-components-i42-20261007",
+  "claim_branch": "medcom-claims/g45/direct/I42",
+  "scope": [
+    "apps/medcom-sites/components/erp/grid.tsx",
+    "apps/medcom-sites/components/erp/request-list-shell.tsx",
+    "apps/medcom-sites/components/erp/request-presentation.tsx",
+    "apps/medcom-sites/components/erp/query-controls.tsx",
+    "apps/medcom-sites/components/erp/documents.tsx",
+    "apps/medcom-sites/app/globals.css",
+    "apps/medcom-sites/tests/request-presentation.browser.mjs",
+    "docs/execution/checkpoints/I42_SHARED_LIST_COMPONENTS.md",
+    "docs/execution/direct-runs/I42.json"
+  ],
+  "purpose": "Unify document grids and filter/dropdown/pager/feedback presentation using Purchase Request visuals and existing ErpGrid mechanics.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "constraints": [
+    "Root alone publishes after independent review and exact full CI. No private data or screenshots in public repository.",
+    "Preserve column resize/pin/order/hide/views, keyboard, virtualization, optional selection and one live request row Open action/ref across breakpoints.",
+    "No purchase/inbound controller edits, backend/API/authorization/adapter changes, dependencies, SQL/DLL/config access or runtime activation.",
+    "Orders migration is presentation/imports only; preserve hooks, query keys/effects, data scopes, selection reset and scroll restoration.",
+    "Retain original browser tests and add actual shared-component checks across desktop/mobile and safe state variants; no unsupported business controls."
+  ],
+  "created_at": "2026-10-07T06:05:35.383801+00:00"
+}

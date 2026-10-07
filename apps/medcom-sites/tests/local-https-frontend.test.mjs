@@ -230,9 +230,8 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await page.getByRole('button', {name: 'I29-PO-P1-00', exact: true}).waitFor();
       await page.getByLabel('Tìm mã chứng từ', {exact: true}).fill('APPLIED');
       await page.getByRole('button', {name: 'Tìm kiếm', exact: true}).click();
-      await page.getByRole('combobox', {name: 'Chi nhánh', exact: true}).click();
-      await page.getByRole('option', {name: 'BR-A', exact: true}).click();
-      await page.getByRole('button', {name: 'Trang tiếp theo', exact: true}).click();
+      await page.locator('.document-panel').getByRole('combobox', {name: 'Chi nhánh', exact: true}).selectOption('BR-A');
+      await page.getByRole('navigation', {name: 'Phân trang chứng từ', exact: true}).getByRole('button', {name: 'Trang sau', exact: true}).click();
       await page.getByRole('button', {name: 'I29-PO-P2-00', exact: true}).waitFor();
       await page.getByLabel('Tìm mã chứng từ', {exact: true}).fill('UNSUBMITTED DRAFT');
       await page.getByRole('button', {name: 'I29-PO-P2-00', exact: true}).click();
@@ -255,10 +254,12 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await purchaseRow().click(); await freshPurchaseDetail();
       await page.evaluate(() => window.scrollTo(0, 420)); await paint();
     };
+    // The open detail modal aria-hides these retained background controls.
+    // Inspect their exact DOM values here; prepareOrders keeps visible role-based interactions.
     const orderControls = async () => {
       assert.equal(await page.getByLabel('Tìm mã chứng từ', {exact: true}).inputValue(), 'UNSUBMITTED DRAFT');
-      assert.match(await page.locator('.branch-select').innerText(), /BR-A/);
-      assert.match(await page.locator('.document-panel .pagination').innerText(), /Trang 2/);
+      assert.equal(await page.locator('.document-panel select[aria-label="Chi nhánh"]').inputValue(), 'BR-A');
+      assert.match(await page.locator('.document-panel nav[aria-label="Phân trang chứng từ"]').innerText(), /Trang 2/);
     };
     const purchaseControls = async () => {
       assert.equal(await purchasePanel().getByLabel('Tìm mã đề nghị', {exact: true}).inputValue(), 'UNSUBMITTED DRAFT');
@@ -266,9 +267,14 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       assert.match(await purchasePanel().getByRole('navigation', {name: 'Phân trang đề nghị', exact: true}).innerText(), /Trang 2/);
       await page.getByRole('heading', {name: 'I29-PR-P2-00', exact: true}).waitFor();
     };
-    const watchStableData = kind => page.evaluate(kind => {
+    const watchStableData = kind => page.evaluate(({kind, baselineControl}) => {
       window.i29StableObserver?.disconnect();
       const visible = selector => {const node = document.querySelector(selector); return !!node && !node.closest('[hidden]') && node.getClientRects().length > 0;};
+      // The exact historical2712 control still has article rows. Current lists
+      // must prove the actual shared-grid row/action, never an editor article.
+      const purchaseListRow = baselineControl
+        ? '[aria-label="Danh sách đề nghị mua hàng"] article'
+        : '[aria-label="Danh sách đề nghị mua hàng"] table[data-shared-grid="true"] tbody tr[data-grid-row="I29-PR-P2-00"] button[aria-label="Mở đề nghị I29-PR-P2-00"]';
       const editorForm = document.querySelector('form[aria-label="Đề nghị mua hàng trên điện thoại"]');
       const noteInput = editorForm?.querySelector('textarea[name="notes"]');
       const check = () => {
@@ -278,13 +284,13 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
             : visible('[aria-label="Phiếu mua hàng hiện có"] textarea[name="notes"]') && editorForm?.querySelector('textarea[name="notes"]') === noteInput);
         const present = kind === 'orders'
           ? visible('.document-link') && visible('.detail-sheet .desktop-detail-lines') && document.querySelector('.detail-sheet')?.textContent.includes('I29-ITEM-P2-0')
-          : visible('[aria-label="Danh sách đề nghị mua hàng"] article') && visible('[aria-label="Phiếu mua hàng hiện có"]') && stableEditor && document.querySelector('[aria-label="Phiếu mua hàng hiện có"]')?.textContent.includes('SYNTHETIC-PURCHASE-ITEM');
+          : visible(purchaseListRow) && visible('[aria-label="Phiếu mua hàng hiện có"]') && stableEditor && document.querySelector('[aria-label="Phiếu mua hàng hiện có"]')?.textContent.includes('SYNTHETIC-PURCHASE-ITEM');
         if (!present) window.i29MissingFrames++;
       };
       window.i29MissingFrames = 0; check();
       window.i29StableObserver = new MutationObserver(check);
       window.i29StableObserver.observe(document.body, {childList: true, subtree: true, attributes: true});
-    }, kind);
+    }, {kind, baselineControl});
     const stopStableData = async label => {
       const missing = await page.evaluate(() => {window.i29StableObserver.disconnect(); return window.i29MissingFrames;});
       assert.equal(missing, 0, `${label}: existing rows/detail must stay rendered throughout unchanged-scope background refresh`);
@@ -600,8 +606,12 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await stopStableData('ACK before old GET'); await assertOriginalCustody(pending, 0);
       await assertPendingNoteVisible();
       const delta = difference(await counts(), before);
-      assert.equal(delta['/api/workspace'], 1);
-      for (const route of routes.slice(1)) assert.equal(delta[route], 2, 'one stale read plus one fresh read, without a retry loop');
+      // I41 retries the superseded detail only. Keep the exact four-route
+      // budget visible even if this assertion fails before result.json is saved.
+      console.info(JSON.stringify({fixture: 'I29', scenario: 'ack-before-stale-get', requests: delta}));
+      assert.deepEqual(delta, {'/api/workspace': 1, '/api/purchase-requests/workspace': 1,
+        '/api/purchase-requests': 1, '/api/purchase-requests/detail': 2},
+      'one stale detail plus one fresh detail; no repeated parent, bootstrap or list read');
       lifecycleEvidence.requests.push({kind: 'ack-before-stale-get', requests: delta, writes: 1, effects: 1, lookups: 0, originalBodyHash: pending.original.sha256});
     });
     await run('I29 built pending save plus background detail 503 masks data and reconciles the exact original intent once', async () => {
@@ -690,10 +700,22 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
         assert.deepEqual(await counts(), settled, 'persistent 403 must not schedule automatic request retries');
         const initial = difference(settled, before);
         for (const count of Object.values(initial)) assert.ok(count <= 2, 'one denied read must not cascade into a workspace/purchase storm');
+        // This is the in-flight denial case: make the selected detail start
+        // before releasing list403. An earlier list denial may safely prevent
+        // that request altogether; the separate React regression covers zero.
+        if (kind === 'purchase-list') await control({holds: ['purchase-list', 'purchase-detail']});
         await page.clock.fastForward(60001);
+        if (kind === 'purchase-list') {
+          await held('purchase-list'); await held('purchase-detail');
+          const periodicDenied = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp' + route && response.status() === 403);
+          await control({holds: ['purchase-detail']}); await periodicDenied;
+          await recovery.waitFor(); await assertPurchaseMasked();
+          await control({holds: []});
+        }
         await waitFor(async () => difference(await counts(), settled)['/api/workspace'] >= 2, 'periodic probe and one endpoint-denial recheck');
         await recovery.waitFor(); await delay(500);
         const periodic = difference(await counts(), settled);
+        console.info(JSON.stringify({fixture: 'I29', scenario: 'persistent-403-periodic', kind, requests: periodic}));
         assert.equal(periodic['/api/workspace'], 2, 'one periodic workspace probe plus one denial recheck');
         assert.equal(periodic['/api/purchase-requests/workspace'], 1, 'one purchase bootstrap per periodic probe');
         assert.equal(periodic['/api/purchase-requests'], kind === 'purchase-bootstrap' ? 0 : 1);
@@ -730,7 +752,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await page.clock.fastForward(60001);
       await waitFor(async () => await page.getByLabel('Tìm mã chứng từ', {exact: true}).inputValue() === '', 'order scope replacement');
       assert.equal(await page.getByRole('heading', {name: 'I29-PO-P2-00', exact: true}).count(), 0);
-      assert.match(await page.locator('.document-panel .pagination').innerText(), /Trang 1/);
+      assert.match(await page.getByRole('navigation', {name: 'Phân trang chứng từ', exact: true}).innerText(), /Trang 1/);
       await preparePurchase(); await control({purchaseScope: 'e'.repeat(64), readScope: 'f'.repeat(64), branchIds: ['BR-B']});
       await page.clock.fastForward(60001);
       await waitFor(async () => await purchasePanel().getByLabel('Tìm mã đề nghị', {exact: true}).inputValue() === '', 'purchase scope replacement');
