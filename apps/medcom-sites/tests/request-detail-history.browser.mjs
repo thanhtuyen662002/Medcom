@@ -25,14 +25,98 @@ const orderRow=index=>({documentId:'QA-ORDER-'+index,documentDate:'2026-10-01',b
 const readonlyProjection=(documentId,page=1)=>({document:{documentId,documentDate:'2026-10-01',branchId:'QA-BRANCH',statusId:0,isLocked:false},purchaseOrderLines:[],inboundRequestLines:[],page,pageSize:50,hasMore:false});
 // Currency label is its exact source ID; the human-readable name is separate.
 const historyCurrency={id:'VND',label:'VND',currencyName:'Synthetic currency',rateExchange:1};
-test('history currency fixture passes the actual strict lookup client',async()=>{
- const require=createRequire(import.meta.url),{build}=require('esbuild');await mkdir(output,{recursive:true});const file=path.join(output,'currency-fixture-contract.mjs');
- await build({absWorkingDir:app,stdin:{contents:'export {getPurchaseLookup} from "./lib/erp/purchase-request-api";',resolveDir:app,loader:'tsx'},outfile:file,bundle:true,platform:'node',format:'esm',packages:'external',alias:{'@':app},logLevel:'warning'});
- const {getPurchaseLookup}=await import(pathToFileURL(file).href),native=globalThis.fetch;let item=historyCurrency;
- globalThis.fetch=async()=>Response.json({scopeKey:scope,data:{available:true,reason:null,items:[item],page:1,hasMore:false}});
+function historyOutcome(results,errors,firstFailure,fatal,expectedCases=28){
+ const passedCases=results.length,failedCases=firstFailure?1:0,completedCases=passedCases+failedCases,notRunCases=expectedCases-completedCases;
+ const passed=!fatal&&!firstFailure&&!errors.length&&passedCases===expectedCases;
+ return {status:passed?'passed':'failed',passed,expectedCases,completedCases,passedCases,failedCases,notRunCases,remainingStatus:notRunCases>0?'NOT_RUN':null};
+}
+async function runRequiredHistoryCase(context,name,body,diagnose){
+ context.signal?.throwIfAborted();let failure;
+ await context.test(name,async()=>{try{await body();}catch(error){failure=error;await diagnose(name,error);throw error;}});
+ // node:test resolves failed children; rethrow the first cause before another
+ // scenario can reset its evidence or manufacture a passed partial receipt.
+ if(failure)throw failure;context.signal?.throwIfAborted();
+}
+test('history fixture branches pass real list/detail clients and failures stop subsequent cases',async()=>{
+ const require=createRequire(import.meta.url),{build}=require('esbuild'),ts=require('typescript'),{runInNewContext}=require('node:vm');
+ await mkdir(output,{recursive:true});const file=path.join(output,'history-fixture-contract.mjs');
+ await build({absWorkingDir:app,stdin:{contents:'export {getPurchaseList,getPurchaseLookup,getPurchaseWorkspace,getPurchaseDetail} from "./lib/erp/purchase-request-api";export {getDocuments,getDetail,getWorkspace} from "./lib/erp/api";export {createInboundRequestApi} from "./lib/erp/inbound-request-api";export {observedView} from "./lib/erp/inbound-draft";',resolveDir:app,loader:'tsx'},outfile:file,bundle:true,platform:'node',format:'esm',packages:'external',alias:{'@':app},logLevel:'warning'});
+ const clients=await import(pathToFileURL(file).href),source=await readFile(fileURLToPath(import.meta.url),'utf8'),ast=ts.createSourceFile('history-fixture.mjs',source,ts.ScriptTarget.Latest,true,ts.ScriptKind.JS),declarations={};let handler;
+ const visit=node=>{if(ts.isVariableDeclaration(node)){
+  const name=node.name.getText(ast);if(['reset','workspace','send'].includes(name)){assert.equal(declarations[name],undefined);declarations[name]=node.getText(ast);}
+  if(name==='server'&&node.initializer?.expression?.getText(ast)==='createServer'){assert.equal(handler,undefined);handler=node.initializer.arguments[0].getText(ast);}
+ }ts.forEachChild(node,visit);};const browserTest=ast.statements.find(node=>ts.isExpressionStatement(node)&&ts.isCallExpression(node.expression)&&node.expression.arguments[0]?.text==='composed request detail history, guarded traversal and original custody');assert.ok(browserTest);visit(browserTest.expression.arguments.at(-1));assert.equal(Object.keys(declarations).length,3);assert.ok(handler);
+ // Execute the exact current HTTP handler and reset bytes with request/response
+ // doubles. No local server/browser, copied envelopes or replacement decoders.
+ const harness=runInNewContext('let model;const calls=[],errors=[],origin="http://synthetic.invalid";const '+Object.values(declarations).join(';const ')+';const handler='+handler+';({reset,handler,calls,errors,getModel:()=>model})',{purchase,inbound,historyCurrency,orderRow,readonlyProjection,scope,session,sha,structuredClone,URL,Buffer,Date,assert});
+ const native=globalThis.fetch,calls=[],checked=[],readScope={sessionScope:session,readScope:scope},signal=new AbortController().signal;let changeReply=reply=>reply;
+ globalThis.fetch=async(url,init={})=>{
+  const req={url:String(url),method:init.method??'GET',async *[Symbol.asyncIterator](){if(init.body)yield Buffer.from(init.body);}};
+  let status,headers,body;await harness.handler(req,{destroyed:false,writeHead:(value,fields)=>{status=value;headers=fields;},end:value=>{body=value;}});
+  assert.ok(status,'Fixture handler must complete its response');const reply=changeReply({status,headers,body},url);calls.push({url:String(url),method:req.method,status:reply.status});
+  return new Response(reply.body,{status:reply.status,headers:reply.headers});
+ };
+ const inboundApi=clients.createInboundRequestApi(globalThis.fetch);
+ const list=(kind,page=1)=>kind==='purchase'?clients.getPurchaseList(scope,page,'','',signal):clients.getDocuments('inbound-requests',page,'','',signal,readScope);
  try{
-  const valid=await getPurchaseLookup(scope,'currencies','VND',1);assert.deepEqual(valid.items,[historyCurrency]);
-  item={...historyCurrency,label:'Synthetic currency'};await assert.rejects(()=>getPurchaseLookup(scope,'currencies','VND',1),error=>error.code==='invalid_api_response');
+  for(const kind of ['purchase','inbound']){
+   const isPurchase=kind==='purchase',key=isPurchase?'purchaseDocuments':'inboundDocuments',size=isPurchase?20:50,base=isPurchase?purchase:inbound,idKey=isPurchase?'purchaseRequestId':'documentId';
+   const documents=Array.from({length:size*2},(_,i)=>({...structuredClone(base),[idKey]:'QA-'+kind.toUpperCase()+'-'+String(i+1).padStart(3,'0')}));
+   for(const [mode,patch,pages] of [['default',{},[1]],['two rows',{[key]:documents.slice(0,2)},[1]],['paged',{paged:true,[key]:documents},[1,2]],['empty',{empty:true},[1]]]){
+    harness.reset(patch);
+    for(const page of pages){const data=await list(kind,page);assert.equal(typeof data.hasMore,'boolean');assert.equal(data.page,page);assert.equal(data.pageSize,size);
+     assert.equal(data.rows.length,mode==='paged'?size:mode==='two rows'?2:mode==='empty'?0:1);assert.equal(data.hasMore,mode==='paged'&&page===1);
+     if(mode==='default')assert.equal(data.rows[0].documentId,base[idKey]);
+    }
+    checked.push(kind+' '+mode+' list');
+   }
+   // Exact old omission: undefined is removed by JSON serialization.
+   harness.reset({paged:undefined});await assert.rejects(()=>list(kind),error=>error.code==='invalid_api_response');
+   harness.reset({status:503});await assert.rejects(()=>list(kind),error=>error.status===503);
+  }
+  harness.reset();const workspace=await clients.getWorkspace(signal);assert.deepEqual(workspace.branchIds,['QA-BRANCH']);assert.equal(workspace.readScope,scope);
+  assert.equal((await clients.getPurchaseWorkspace(signal)).data.writeAvailable,false);checked.push('workspace and purchase workspace');
+  for(const [kind,search,expected] of [['purposes','1',[{id:'1',label:'Synthetic purpose'}]],['currencies','VND',[historyCurrency]]])assert.deepEqual((await clients.getPurchaseLookup(scope,kind,search,1,signal)).items,expected);
+  changeReply=reply=>{const value=JSON.parse(reply.body);value.data.items[0].label='Synthetic currency';return {...reply,body:JSON.stringify(value)};};
+  await assert.rejects(()=>clients.getPurchaseLookup(scope,'currencies','VND',1,signal),error=>error.code==='invalid_api_response');changeReply=reply=>reply;checked.push('purpose and strict source currency lookups');
+  for(const writable of [true,false]){
+   harness.reset({writable});const detail=await clients.getPurchaseDetail(scope,purchase.purchaseRequestId,signal);assert.deepEqual(detail.document,purchase);assert.equal(detail.commandAccess.canSave,writable);
+   for(const readKey of [null,scope]){const result=await inboundApi.read(inbound.documentId,readKey,signal);assert.deepEqual(clients.observedView(result.data,inbound.documentId),inbound);assert.equal(result.access.canSave,writable);}
+  }
+  for(const [kind,base,idKey] of [['purchase',purchase,'purchaseRequestId'],['inbound',inbound,'documentId']]){
+   const second={...structuredClone(base),[idKey]:'QA-SECOND'};harness.reset({[kind==='purchase'?'purchaseDocuments':'inboundDocuments']:[base,second]});
+   if(kind==='purchase')assert.deepEqual((await clients.getPurchaseDetail(scope,'QA-SECOND',signal)).document,second);else assert.deepEqual(clients.observedView((await inboundApi.read('QA-SECOND',scope,signal)).data,'QA-SECOND'),second);
+   await assert.rejects(()=>kind==='purchase'?clients.getPurchaseDetail(scope,'QA-MISSING',signal):inboundApi.read('QA-MISSING',scope,signal),error=>error.status===404);
+  }
+  checked.push('purchase and complete inbound default/multiple/read-only details');
+  harness.reset({detailStatus:503});await assert.rejects(()=>clients.getPurchaseDetail(scope,purchase.purchaseRequestId,signal),error=>error.status===503);await assert.rejects(()=>inboundApi.read(inbound.documentId,scope,signal),error=>error.status===503);
+  harness.reset({draftMalformed:true});await assert.rejects(()=>inboundApi.read(inbound.documentId,scope,signal),error=>error.status===502&&error.reason==='invalid');
+  const unavailable={scopeKey:null,access:{canRead:false,canSave:false,canSend:false,available:false,maxCommandBytes:1048576},data:{outcome:'Unavailable',document:null}};
+  harness.reset({draftEnvelope:unavailable});assert.deepEqual(await inboundApi.read(inbound.documentId,null,signal),unavailable);checked.push('draft errors, malformed JSON and unavailable override');
+  harness.reset();assert.deepEqual((await clients.getDocuments('purchase-orders',1,'','',signal,readScope)).rows,[orderRow(1)]);
+  const order=await clients.getDetail('purchase-orders',orderRow(1).documentId,1,signal,readScope);assert.equal(order.purchaseOrderLines[0].quantity,'999999999999999999.0001');
+  harness.reset({orderPages:[[orderRow(1)],[orderRow(2)]]});for(const page of [1,2]){const orders=await clients.getDocuments('purchase-orders',page,'','',signal,readScope);assert.deepEqual(orders.rows,[orderRow(page)]);assert.equal(orders.hasMore,page===1);assert.deepEqual((await clients.getDetail('purchase-orders',orderRow(page).documentId,page,signal,readScope)).document,orderRow(page));}
+  await assert.rejects(()=>clients.getDetail('purchase-orders','QA-MISSING',1,signal,readScope),error=>error.status===404);
+  for(const page of [1,2])assert.deepEqual(await clients.getDetail('inbound-requests',inbound.documentId,page,signal,readScope),readonlyProjection(inbound.documentId,page));
+  harness.reset({projectionStatus:404});await assert.rejects(()=>clients.getDetail('inbound-requests',inbound.documentId,1,signal,readScope),error=>error.status===404);
+  for(const projectionKind of ['malformed','wrong-document','wrong-page','wrong-read-scope','wrong-session-scope','missing-read-scope']){
+   harness.reset({projectionKind});await assert.rejects(()=>clients.getDetail('inbound-requests',inbound.documentId,1,signal,readScope),error=>[409,502].includes(error.status));
+  }
+  // These projections remain structurally decodable. The read-only host owns
+  // branch authorization and stable page-size checks, not the generic client.
+  harness.reset({projectionKind:'wrong-branch'});assert.equal((await clients.getDetail('inbound-requests',inbound.documentId,1,signal,readScope)).document.branchId,'QA-UNAUTHORIZED-BRANCH');
+  harness.reset({projectionKind:'wrong-page-size'});assert.equal((await clients.getDetail('inbound-requests',inbound.documentId,2,signal,readScope)).pageSize,25);
+  for(const listResponseHeaders of [{},{'X-Medcom-Session-Scope':'c'.repeat(64),'X-Medcom-Read-Scope':scope}]){harness.reset({listResponseHeaders});await assert.rejects(()=>list('inbound'),error=>[409,502].includes(error.status));}
+  checked.push('purchase-order list/detail and every independent inbound projection failure/scope branch');
+  assert.deepEqual(Array.from(harness.errors),[]);
+  const original=Error('synthetic first readiness failure'),runs=[],diagnostics=[],context={test:async(name,body)=>{try{await body();}catch{}}};
+  await assert.rejects(async()=>{for(const name of ['first','must-not-start'])await runRequiredHistoryCase(context,name,async()=>{runs.push(name);throw original;},async(name,error)=>diagnostics.push({name,error}));},error=>error===original);
+  assert.deepEqual(runs,['first']);assert.deepEqual(diagnostics,[{name:'first',error:original}]);
+  assert.deepEqual(historyOutcome(['completed'],[],{name:'first'},'failed'),{status:'failed',passed:false,expectedCases:28,completedCases:2,passedCases:1,failedCases:1,notRunCases:26,remainingStatus:'NOT_RUN'});
+  assert.equal(historyOutcome(Array(4).fill('completed'),[],null,null).passed,false,'A partial receipt can never claim success');
+  const complete=Array(28).fill('completed');assert.equal(historyOutcome(complete,[],null,null).passed,true);
+  assert.equal(historyOutcome(complete,['fixture error'],null,null).passed,false);assert.equal(historyOutcome(complete,[],null,'fatal').passed,false);
+  await writeFile(path.join(output,'fixture-api-contract.json'),JSON.stringify({result:'PASS',realClients:true,exactHandlerAndReset:true,browserExecuted:false,missingHasMoreRejected:true,firstFailureStopsSetup:true,checked,calls},null,2));
  }finally{globalThis.fetch=native;}
 });
 let compiled;
@@ -72,9 +156,9 @@ test('composed request detail history, guarded traversal and original custody',{
  const {chromium}=(toolchain?createRequire(path.join(path.resolve(toolchain),'package.json')):require)('playwright-core');
  const executable=process.env.MEDCOM_EDGE_PATH??(process.platform==='win32'?'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe':'/usr/bin/chromium');
  assert.ok(existsSync(executable),'NOT_RUN: existing supported browser required; never install or bypass sandbox');
- let model,browser,context,page,origin;const calls=[],errors=[],results=[],evidence=[];
+ let model,browser,context,page,origin,currentScenario,firstFailure=null,fatal=null;const expectedCases=28,calls=[],errors=[],results=[],evidence=[];
  const html='<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/app.css"><div id="root"></div><script src="/app.js"></script></html>';
- const reset=(patch={})=>{model={authenticated:true,loginStatus:200,loginCalls:0,holdLogin:false,loginWaiters:[],workspaceStatus:200,holdWorkspace:false,workspaceWaiters:[],sessionScope:session,version:1,lifetime:{idleExpiresAt:new Date(Date.now()+3600000).toISOString(),absoluteExpiresAt:new Date(Date.now()+7200000).toISOString()},writable:true,status:200,holdList:false,waiters:[],listResponses:0,holdDetail:false,detailWaiters:[],detailStatus:200,draftResponses:0,projectionStatus:200,projectionResponses:0,holdProjection:false,projectionWaiters:[],purchase:structuredClone(purchase),inbound:structuredClone(inbound),purchaseVersion:1,inboundVersion:1,originals:new Map(),receipts:new Map(),writes:[],reconciles:[],effects:0,holdCommands:false,commandWaiters:[],commandResponses:0,unknown:false,...patch};calls.length=0;};
+ const reset=(patch={})=>{model={paged:false,authenticated:true,loginStatus:200,loginCalls:0,holdLogin:false,loginWaiters:[],workspaceStatus:200,holdWorkspace:false,workspaceWaiters:[],sessionScope:session,version:1,lifetime:{idleExpiresAt:new Date(Date.now()+3600000).toISOString(),absoluteExpiresAt:new Date(Date.now()+7200000).toISOString()},writable:true,status:200,holdList:false,waiters:[],listResponses:0,holdDetail:false,detailWaiters:[],detailStatus:200,draftResponses:0,projectionStatus:200,projectionResponses:0,holdProjection:false,projectionWaiters:[],purchase:structuredClone(purchase),inbound:structuredClone(inbound),purchaseVersion:1,inboundVersion:1,originals:new Map(),receipts:new Map(),writes:[],reconciles:[],effects:0,holdCommands:false,commandWaiters:[],commandResponses:0,unknown:false,...patch};calls.length=0;};
  const workspace=()=>({session:{displayName:'SYNTHETIC USER',tenantId:'QA-T',companyId:'QA-C',companyName:'SYNTHETIC',authorityVersion:model.version,...model.lifetime,capabilities:model.capabilities??['purchase-requests.read','inbound-requests.read','purchase-orders.read']},branchIds:['QA-BRANCH'],navigation:(model.navigation??['purchase-requests','inbound-requests','purchase-orders']).map(id=>({id,label:id,href:'https://untrusted.invalid/'+id}))});
  const send=(res,status,data,headers={})=>{if(res.destroyed)return;res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store',...headers});res.end(status===204?undefined:JSON.stringify(data));};
  const release=kind=>{model['hold'+kind]=false;(model[kind[0].toLowerCase()+kind.slice(1)+'Waiters']??[]).splice(0).forEach(resolve=>resolve());};
@@ -115,7 +199,7 @@ test('composed request detail history, guarded traversal and original custody',{
    if(route==='/api/documents/inbound-requests/detail'){
     const detail=readonlyProjection(url.searchParams.get('documentId'),Number(url.searchParams.get('page')??1));
     let headers=readHeaders;const status=m.projectionStatus;
-    if(m.projectionKind==='malformed')detail.inboundRequestLines[0].setQuantityByDocument=42;
+    if(m.projectionKind==='malformed')detail.inboundRequestLines.push({lineId:'QA-PROJECTION-LINE',itemId:'QA-ITEM',setQuantityByDocument:42,barrelQuantityByDocument:'0',setQuantityByReal:null,barrelQuantityByReal:null});
     if(m.projectionKind==='wrong-document')detail.document.documentId='QA-OTHER-DOCUMENT';
     if(m.projectionKind==='wrong-branch')detail.document.branchId='QA-UNAUTHORIZED-BRANCH';
     if(m.projectionKind==='wrong-page')detail.page++;
@@ -160,7 +244,7 @@ test('composed request detail history, guarded traversal and original custody',{
  reset();server.listen(0,'127.0.0.1');await once(server,'listening');origin=`http://127.0.0.1:${server.address().port}`;
  const paint=()=>page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
  const eventually=async check=>{const deadline=Date.now()+10000;while(!await check()){assert.ok(Date.now()<deadline,'Expected fixture condition did not settle');await new Promise(resolve=>setTimeout(resolve,20));}};
- const start=async(width,screen,patch={})=>{releaseAll();await context?.close();reset(patch);context=await browser.newContext({viewport:{width,height:900}});page=await context.newPage();page.setDefaultTimeout(10000);page.on('pageerror',error=>errors.push(error.message));await page.route('**/api/erp/api/workspace',route=>model.workspaceNetwork?route.abort('failed'):route.continue());await page.goto(origin+'/?screen='+encodeURIComponent(screen)+(patch.configured?'&configured=1':''));};
+ const start=async(width,screen,patch={})=>{currentScenario={width,screen,stage:'start',responses:[],networkFailures:[]};releaseAll();await context?.close();reset(patch);context=await browser.newContext({viewport:{width,height:900}});page=await context.newPage();page.setDefaultTimeout(10000);page.on('pageerror',error=>errors.push(error.message));const scenario=currentScenario,bounded=(values,value)=>{values.push(value);if(values.length>32)values.shift();};page.on('response',response=>{const url=new URL(response.url());if(url.pathname.startsWith('/api/erp/'))bounded(scenario.responses,{path:url.pathname,status:response.status()});});page.on('requestfailed',request=>bounded(scenario.networkFailures,{path:new URL(request.url()).pathname,error:request.failure()?.errorText}));await page.route('**/api/erp/api/workspace',route=>model.workspaceNetwork?route.abort('failed'):route.continue());await page.goto(origin+'/?screen='+encodeURIComponent(screen)+(patch.configured?'&configured=1':''));};
  const recovery=()=>page.getByRole('heading',{name:'Chưa thể xác minh phiên làm việc',exact:true});
  const refresh=async()=>{const response=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/erp/api/workspace');await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await response;await paint();};
  const gateOnly=async()=>{await paint();assert.equal(await page.locator('.topbar:visible,.erp-sidebar:visible,.workspace-content:visible,.mobile-bottom-nav:visible').count(),0);assert.equal(await page.getByRole('dialog').count(),0);assert.equal(await page.getByRole('alertdialog').count(),0);assert.equal(await page.getByRole('menu').count(),0);assert.equal(await page.locator('[data-sonner-toast]:visible').count(),0);assert.equal(await page.evaluate(()=>!!document.activeElement?.closest('section[tabindex="-1"]')),true);};
@@ -169,7 +253,13 @@ test('composed request detail history, guarded traversal and original custody',{
  const save=async screen=>{await field(screen).fill('EXACT ORIGINAL AUTH CUSTODY');await page.getByRole('button',{name:'Rà soát phiếu',exact:true}).click();await page.getByRole('button',{name:screen==='purchase-requests'?'Lưu nháp trên ERP':'Lưu thay đổi',exact:true}).click();};
  const life=screen=>page.evaluate(name=>({life:window.authFixture.life[name],adapters:window.authFixture.adapters[name]}),screen==='purchase-requests'?'RequestEditor':'InboundEditor');
  const go=id=>page.evaluate(id=>window.authFixture.tools.navigate_medcom_screen.execute({screen:id}),id);
- const run=async(name,fn)=>{await t.test(name,async()=>{await fn();results.push(name);});};
+ const diagnose=async(name,error)=>{
+  if(firstFailure)return;firstFailure={name,error:String(error).slice(0,3000),scenario:currentScenario,passedCases:results.length,failedCases:1,completedCases:results.length+1,expectedCases,notRunCases:expectedCases-results.length-1,remainingStatus:'NOT_RUN',pageErrors:errors.slice(0,8),calls:calls.slice(-32),model:{paged:model.paged,listResponses:model.listResponses,detailStatus:model.detailStatus,writes:model.writes.length,reconciles:model.reconciles.length}};
+  try{firstFailure.dom=await page.evaluate(()=>({readyState:document.readyState,screen:new URL(location.href).searchParams.get('screen'),selected:window.authFixture.navigation?.selectedId??null,historyIndex:history.state?.medcomWorkspace?.index,body:document.body?.innerText.slice(0,6000),tables:[...document.querySelectorAll('[data-shared-grid]')].slice(0,3).map(node=>({label:node.getAttribute('aria-label'),rows:node.querySelectorAll('[data-grid-row]').length,hidden:!!node.closest('[hidden],[inert],[aria-hidden="true"]')})),dialogs:[...document.querySelectorAll('[role="dialog"],[role="alertdialog"]')].slice(0,4).map(node=>({role:node.getAttribute('role'),text:node.textContent?.slice(0,500),hidden:!!node.closest('[hidden],[inert]'),ariaHidden:!!node.closest('[aria-hidden="true"]')})),overlays:[...document.querySelectorAll('[data-slot$="overlay"]')].slice(0,6).map(node=>({slot:node.getAttribute('data-slot'),state:node.getAttribute('data-state'),pointerEvents:getComputedStyle(node).pointerEvents,animationName:getComputedStyle(node).animationName})),bodyPointerEvents:getComputedStyle(document.body).pointerEvents}));}catch(diagnosticError){firstFailure.domError=String(diagnosticError).slice(0,500);}
+  try{await page.screenshot({path:path.join(output,'first-failure.png'),fullPage:false,timeout:2000});firstFailure.screenshot='first-failure.png';}catch(diagnosticError){firstFailure.screenshotError=String(diagnosticError).slice(0,500);}
+  await writeFile(path.join(output,'first-failure.json'),JSON.stringify(firstFailure,null,2));t.diagnostic(JSON.stringify(firstFailure));
+ };
+ const run=(name,fn)=>runRequiredHistoryCase(t,name,async()=>{await fn();results.push(name);},diagnose);
  const selected=()=>page.evaluate(()=>window.authFixture.navigation?.selectedId??null);
  const index=()=>page.evaluate(()=>history.state?.medcomWorkspace?.index);
  const atIndex=async expected=>{await paint();await eventually(async()=>await index()===expected);};
@@ -177,7 +267,7 @@ test('composed request detail history, guarded traversal and original custody',{
  const cancel=()=>page.getByRole('button',{name:'Tiếp tục làm việc',exact:true}).click();
  const accept=()=>page.getByRole('button',{name:'Bỏ thay đổi và rời màn hình',exact:true}).click();
  const idFor=screen=>screen==='purchase-requests'?purchase.purchaseRequestId:inbound.documentId;
- const openReady=async screen=>{await open(screen);await field(screen).waitFor();await eventually(async()=>await selected()===idFor(screen));await paint();};
+ const openReady=async screen=>{currentScenario.stage='open-list-row';await open(screen);currentScenario.stage='detail-ready';await field(screen).waitFor();await eventually(async()=>await selected()===idFor(screen));await paint();currentScenario.stage='scenario';};
  const back=()=>page.evaluate(()=>history.back());
  const forward=()=>page.evaluate(()=>history.forward());
  const privacy=async()=>{
@@ -274,10 +364,11 @@ test('composed request detail history, guarded traversal and original custody',{
     await back();await atIndex(0);await forward();await atIndex(1);assert.equal(await selected(),null);assert.equal(await page.locator('.request-detail-dialog:visible').count(),0);assert.equal(await warning().count(),0);assert.equal(model.writes.length,0);await privacy();
    });
   }
-  assert.deepEqual(errors,[]);
+  assert.deepEqual(errors,[]);assert.equal(results.length,expectedCases,'Every required history case must complete');
+ }catch(error){fatal=String(error);throw error;}finally{
   const sourcePaths=['components/erp/workspace.tsx','components/erp/navigation-guard.tsx','components/erp/request-detail-dialog.tsx','components/erp/purchase-request-screen.tsx','components/erp/inbound-request-screen.tsx','tests/request-detail-history.browser.mjs'];
   const sourceHashes=Object.fromEntries(await Promise.all(sourcePaths.map(async file=>[file,sha(await readFile(path.join(app,file)))])));
-  await mkdir(output,{recursive:true});await writeFile(path.join(output,'evidence.json'),JSON.stringify({status:'passed',passed:true,results,errors,browserVersion:browser.version(),node:process.version,sourceHashes,evidence,scope:'Actual composed Workspace, request hosts, production clients and guard; synthetic HTTP and native history timing instrumentation. Not ERP/SQL acceptance.'},null,2));
- }finally{releaseAll();await context?.close();await browser?.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+  await mkdir(output,{recursive:true});await writeFile(path.join(output,'evidence.json'),JSON.stringify({...historyOutcome(results,errors,firstFailure,fatal,expectedCases),firstFailure,fatal,results,errors,browserVersion:browser?.version()??null,node:process.version,sourceHashes,evidence,scope:'Actual composed Workspace, request hosts, production clients and guard; synthetic HTTP and native history timing instrumentation. Not ERP/SQL acceptance.'},null,2));
+  releaseAll();await context?.close();await browser?.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
  async function openReadyOrExisting(screen){await field(screen).waitFor();await eventually(async()=>await selected()===idFor(screen));}
 });
