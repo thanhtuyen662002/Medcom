@@ -66,6 +66,38 @@ test('I43 failed required child preserves the first cause and stops subsequent s
  assert.deepEqual(runs,['first']);assert.deepEqual(childErrors,[original]);assert.deepEqual(diagnostics,[{name:'first',error:original}]);
 });
 
+// Radix's locked hideOthers implementation preserves live announcements and
+// their ancestors. Verify every underlying control, not one outer wrapper.
+function retainedDetailAccessibility(surface){
+ const blocked=node=>!!node?.closest('[aria-hidden="true"],[hidden],[inert]');
+ const controls=[...surface.querySelectorAll('button,input:not([type="hidden"]),select,textarea,a[href],summary,[role="button"],[role="combobox"],[contenteditable="true"],[tabindex]:not([tabindex="-1"])')];
+ const live=[...surface.querySelectorAll('[aria-live]')],exposed=controls.filter(node=>!blocked(node));
+ return {controlCount:controls.length,exposedControlCount:exposed.length,exposedControls:exposed.slice(0,12).map(node=>({tag:node.tagName,role:node.getAttribute('role'),label:node.getAttribute('aria-label'),id:node.id||null})),liveCount:live.length,exposedLiveCount:live.filter(node=>!blocked(node)).length,surfaceBlocked:blocked(surface),dialogBlocked:blocked(surface.querySelector('[role="dialog"]'))};
+}
+test('I43 locked Radix isolation preserves live ancestors and hides every retained interactive control',()=>{
+ const {hideOthers}=require('aria-hidden');
+ class Element{
+  constructor(tag,parent=null,attributes={}){this.tagName=tag.toUpperCase();this.parentNode=this.parentElement=parent;this.children=[];this.attributes={...attributes};this.id=attributes.id??'';if(parent)parent.children.push(this);this.ownerDocument=parent?.ownerDocument??{body:this};}
+  contains(node){for(let current=node;current;current=current.parentNode)if(current===this)return true;return false;}
+  getAttribute(name){return this.attributes[name]??null;}setAttribute(name,value){this.attributes[name]=value;}removeAttribute(name){delete this.attributes[name];}
+  closest(){if(this.getAttribute('aria-hidden')==='true'||Object.hasOwn(this.attributes,'hidden')||Object.hasOwn(this.attributes,'inert'))return this;return this.parentNode?.closest()??null;}
+  querySelectorAll(selector){return this.children.flatMap(node=>{const match=selector.includes('[aria-live]')?(Object.hasOwn(node.attributes,'aria-live')||selector.includes('script')&&node.tagName==='SCRIPT'):selector==='[role="dialog"]'?node.getAttribute('role')==='dialog':['BUTTON','INPUT','SELECT','TEXTAREA','A','SUMMARY'].includes(node.tagName);return [...(match?[node]:[]),...node.querySelectorAll(selector)];});}
+  querySelector(selector){return this.querySelectorAll(selector)[0]??null;}
+ }
+ const body=new Element('body'),root=new Element('main',body),surface=new Element('div',root),detail=new Element('div',surface,{role:'dialog'}),header=new Element('header',detail),close=new Element('button',header),content=new Element('div',detail),editorHeader=new Element('header',content),live=new Element('p',editorHeader,{'aria-live':'polite'}),fields=new Element('section',content),notes=new Element('textarea',fields),reference=new Element('section',content),referenceLive=new Element('div',reference,{'aria-live':'polite'}),retry=new Element('button',reference),command=new Element('div',body,{role:'dialog'}),input=new Element('input',command);
+ assert.equal(retainedDetailAccessibility(surface).exposedControlCount,3);
+ // Explicit body is equivalent to command.ownerDocument.body in the browser;
+ // only the DOM is doubled. This executes the actual locked dependency.
+ const undo=hideOthers(command,body);
+ try{
+  const result=retainedDetailAccessibility(surface);
+  assert.deepEqual(result,{controlCount:3,exposedControlCount:0,exposedControls:[],liveCount:2,exposedLiveCount:2,surfaceBlocked:false,dialogBlocked:false});
+  assert.ok(close.closest()&&notes.closest()&&retry.closest());assert.equal(live.closest(),null);assert.equal(referenceLive.closest(),null);assert.equal(input.closest(),null);
+  const leaked=new Element('button',live,{'aria-label':'synthetic exposed control'});assert.equal(retainedDetailAccessibility(surface).exposedControlCount,1,'The contract rejects an interactive leak inside a preserved live subtree');live.children.splice(live.children.indexOf(leaked),1);
+ }finally{undo();}
+ assert.equal(retainedDetailAccessibility(surface).exposedControlCount,3,'Modal cleanup restores the original controls without replacing their nodes');
+});
+
 const entry=`import React,{useState,useCallback}from'react';import{createRoot}from'react-dom/client';
  import{PurchaseRequestScreen}from'./components/erp/purchase-request-screen';
  import{InboundRequestScreen}from'./components/erp/inbound-request-screen';
@@ -79,13 +111,16 @@ const entry=`import React,{useState,useCallback}from'react';import{createRoot}fr
   React.useEffect(()=>{const onKey=event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){event.preventDefault();setCommandOpen(true);}};document.addEventListener('keydown',onKey);return()=>document.removeEventListener('keydown',onKey);},[]);
   const [config,setConfig]=useState({allowed:true,workspace:true,version:1,login:1});
   const register=useCallback(value=>{window.i43.navigation=value;},[]);
+  const onDenied=useCallback(error=>window.i43.denials.push(error.status),[]);
+  const verifyWorkspace=useCallback(async()=>setConfig(value=>({...value,workspace:true,version:value.version+1})),[]);
+  const onLogin=useCallback(()=>{},[]);
   window.i43.configure=patch=>setConfig(value=>({...value,...patch}));
   const workspace=React.useMemo(()=>config.workspace?{...base,session:{...base.session,authorityVersion:config.version}}:null,[config.workspace,config.version]);
   const purchase=new URLSearchParams(location.search).get('kind')==='purchase';
   return <NavigationGuardProvider><SidebarProvider><SidebarInset className='erp-inset'><main className='workspace-content' style={{height:'100vh',overflow:'auto'}} data-testid='list-scroll'>
    <div style={{height:350}}>Synthetic fixture. No ERP connection.</div>
-   {purchase?<PurchaseRequestScreen workspace={workspace} loginBoundary={config.login} sessionEnded={false} verifying={false} onVerifyWorkspace={async()=>setConfig(v=>({...v,workspace:true,version:v.version+1}))} onDenied={e=>window.i43.denials.push(e.status)} onLogin={()=>{}} presentationAllowed={config.allowed} registerDetailNavigation={register}/>
-   :<InboundRequestScreen workspace={workspace} loginKey={'synthetic-'+config.login} historyOwner='workspace' presentationAllowed={config.allowed} registerDetailNavigation={register} onDenied={e=>window.i43.denials.push(e.status)}/>}
+   {purchase?<PurchaseRequestScreen workspace={workspace} loginBoundary={config.login} sessionEnded={false} verifying={false} onVerifyWorkspace={verifyWorkspace} onDenied={onDenied} onLogin={onLogin} presentationAllowed={config.allowed} registerDetailNavigation={register}/>
+   :<InboundRequestScreen workspace={workspace} loginKey={'synthetic-'+config.login} historyOwner='workspace' presentationAllowed={config.allowed} registerDetailNavigation={register} onDenied={onDenied}/>}
    <div style={{height:700}}/>
   </main></SidebarInset><MobileBottomNav screen={purchase?'purchase-requests':'inbound-requests'} workspace={workspace} navigate={id=>window.i43.navCalls.push(id)} onSearch={()=>window.i43.navCalls.push('search')} searchOpen={false}/><Dialog open={commandOpen} onOpenChange={setCommandOpen}><DialogContent aria-describedby={undefined}><DialogTitle>R1 command modal</DialogTitle><input aria-label='R1 command input'/></DialogContent></Dialog></SidebarProvider></NavigationGuardProvider>;
  }createRoot(document.getElementById('root')).render(<Fixture/>);`;
@@ -122,6 +157,26 @@ async function compile(){
  await writeFile(path.join(output,'fixture-build.json'),JSON.stringify({result:'PASS',node:process.version,actualScreens:true,actualEditors:true,actualGuard:true,actualMobileBottomNav:true,actualSidebarAncestors:true,syntheticHTTP:true,browserExecuted:false},null,2));
  return compiled;
 }
+test('I43 fixture callbacks stay stable for modal presentation while explicit authority changes remain live',async()=>{
+ const {build}=require('esbuild'),React=require('react'),{act,create}=require('react-test-renderer');
+ // Execute the actual fixture's hook declarations, omitting only its JSX view.
+ const base=entry.slice(entry.indexOf(' const base='),entry.indexOf(' window.i43='));
+ const setup=entry.slice(entry.indexOf(' function Fixture(){'),entry.indexOf('  return <NavigationGuardProvider>')).replace('function Fixture(){','export function Fixture({observe}){');
+ assert.ok(base&&setup.includes('const onDenied=useCallback'));
+ const file=path.join(output,'fixture-callback-contract.mjs');await mkdir(output,{recursive:true});
+ await build({stdin:{contents:"import React,{useState,useCallback}from'react';"+base+setup+'observe({onDenied,verifyWorkspace,onLogin,workspace,commandOpen,setCommandOpen,presentationAllowed:config.allowed});return null;}',resolveDir:app,loader:'tsx'},outfile:file,bundle:true,platform:'node',format:'esm',packages:'external',logLevel:'warning'});
+ const {Fixture}=await import(pathToFileURL(file).href),names=['window','document','location','IS_REACT_ACT_ENVIRONMENT'],saved=new Map(names.map(name=>[name,Object.getOwnPropertyDescriptor(globalThis,name)])),listeners=new Map();let renderer,current;
+ try{
+  Object.assign(globalThis,{window:{i43:{denials:[]}},document:{addEventListener:(name,handler)=>listeners.set(name,handler),removeEventListener:name=>listeners.delete(name)},location:{search:'?kind=purchase'},IS_REACT_ACT_ENVIRONMENT:true});
+  await act(async()=>{renderer=create(React.createElement(Fixture,{observe:value=>{current=value;}}));});const initial=current;
+  await act(async()=>listeners.get('keydown')({ctrlKey:true,key:'k',preventDefault(){}}));assert.equal(current.commandOpen,true);assert.strictEqual(current.workspace,initial.workspace);
+  for(const key of ['onDenied','verifyWorkspace','onLogin'])assert.strictEqual(current[key],initial[key],key+' must not turn command presentation into authority revalidation');
+  await act(async()=>current.setCommandOpen(false));assert.strictEqual(current.workspace,initial.workspace);assert.strictEqual(current.onDenied,initial.onDenied);
+  await act(async()=>window.i43.configure({version:2}));assert.notStrictEqual(current.workspace,initial.workspace);assert.equal(current.workspace.session.authorityVersion,2);
+  await act(async()=>current.verifyWorkspace());assert.equal(current.workspace.session.authorityVersion,3,'Explicit verification still creates a new authority observation');
+  await act(async()=>window.i43.configure({allowed:false}));assert.equal(current.presentationAllowed,false,'Permission obscuring is not removed by callback stabilization');
+ }finally{if(renderer)await act(async()=>renderer.unmount());for(const [name,descriptor] of saved)if(descriptor)Object.defineProperty(globalThis,name,descriptor);else delete globalThis[name];}
+});
 test('I43 actual dialog fixture compiles with the locked application dependencies',async()=>{await compile();});
 test('I43 R1 source layer contract places the retained surface strictly between actual mobile navigation and guard',async()=>{
  const postcss=require('postcss');
@@ -245,7 +300,8 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
  const diagnose=async(name,error)=>{
   if(firstFailure)return;
   firstFailure={name,error:String(error).slice(0,3000),scenario:currentScenario,completedCases:results.length,expectedCases,pageErrors:errors.slice(0,8),calls:model.calls.slice(-32).map(({route,method,query})=>({route,method,query}))};
-  try{firstFailure.dom=await page.evaluate(()=>({readyState:document.readyState,body:document.body?.innerText.slice(0,6000),tables:[...document.querySelectorAll('[data-shared-grid]')].slice(0,3).map(table=>({role:table.getAttribute('role'),label:table.getAttribute('aria-label'),rows:table.querySelectorAll('[data-grid-row]').length,visible:table.getClientRects().length>0})),dialogs:[...document.querySelectorAll('[role=dialog],[role=alertdialog]')].slice(0,4).map(dialog=>({role:dialog.getAttribute('role'),text:dialog.textContent?.slice(0,500),hidden:!!dialog.closest('[hidden],[inert]')})),selected:window.i43?.navigation?.selectedId,denials:window.i43?.denials?.slice(0,8)}));}catch(diagnosticError){firstFailure.domError=String(diagnosticError).slice(0,500);}
+  try{firstFailure.dom=await page.evaluate(()=>({readyState:document.readyState,body:document.body?.innerText.slice(0,6000),tables:[...document.querySelectorAll('[data-shared-grid]')].slice(0,3).map(table=>({role:table.getAttribute('role'),label:table.getAttribute('aria-label'),rows:table.querySelectorAll('[data-grid-row]').length,visible:table.getClientRects().length>0})),dialogs:[...document.querySelectorAll('[role=dialog],[role=alertdialog]')].slice(0,4).map(dialog=>({role:dialog.getAttribute('role'),text:dialog.textContent?.slice(0,500),hidden:!!dialog.closest('[hidden],[inert]'),ariaHidden:dialog.getAttribute('aria-hidden'),ariaHiddenAncestor:dialog.closest('[aria-hidden="true"]')?.tagName??null,ancestors:(()=>{const ancestors=[];for(let node=dialog;node&&ancestors.length<8;node=node.parentElement)ancestors.push({tag:node.tagName,role:node.getAttribute('role'),ariaHidden:node.getAttribute('aria-hidden'),ariaLive:node.getAttribute('aria-live'),id:node.id||null});return ancestors;})()})),selected:window.i43?.navigation?.selectedId,denials:window.i43?.denials?.slice(0,8)}));}catch(diagnosticError){firstFailure.domError=String(diagnosticError).slice(0,500);}
+  try{firstFailure.retainedAccessibility=await page.locator('[data-request-detail-surface]').evaluate(retainedDetailAccessibility);}catch(diagnosticError){firstFailure.accessibilityError=String(diagnosticError).slice(0,500);}
   try{await page.screenshot({path:path.join(output,'first-failure.png'),fullPage:false,timeout:2000});firstFailure.screenshot='first-failure.png';}catch(diagnosticError){firstFailure.screenshotError=String(diagnosticError).slice(0,500);}
   await writeFile(path.join(output,'first-failure.json'),JSON.stringify(firstFailure,null,2));t.diagnostic(JSON.stringify(firstFailure));
  };
@@ -260,15 +316,23 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
  try{
   browser=await chromium.launch({executablePath:executable,headless:true,chromiumSandbox:true});
   for(const kind of ['purchase','inbound'])await run('I43 R1 '+kind+' higher Radix command modal owns focus and Escape above dirty detail',async()=>{
-   await start(kind,390);await open(kind);await notes().fill('R1 COMMAND DIRTY');const before=await snapshot();
+   await start(kind,390);await open(kind);await notes().fill('R1 COMMAND DIRTY');await page.waitForLoadState('networkidle');const before=await snapshot(),beforeCalls=model.calls.length;
+   const retainedNotes=await notes().elementHandle(),retainedClose=await page.getByRole('button',{name:'Đóng hộp thoại',exact:true}).elementHandle();
    await page.keyboard.press('Control+k');const command=page.getByRole('dialog',{name:'R1 command modal'});await command.waitFor();
    const input=page.getByRole('textbox',{name:'R1 command input'});await input.focus();await input.fill('COMMAND RETAINS FOCUS');await paint();
-   assert.equal(await input.evaluate(node=>node===document.activeElement),true);assert.equal(await page.locator('[data-request-detail-surface]').evaluate(node=>!!node.closest('[aria-hidden="true"]')),true);
+   assert.equal(await input.evaluate(node=>node===document.activeElement),true);assert.equal(await input.evaluate(node=>!!node.closest('[aria-hidden="true"],[hidden],[inert]')),false,'The higher command input remains accessibility-exposed');
+   for(const control of [retainedNotes,retainedClose])assert.equal(await control.evaluate(node=>node.isConnected&&!!node.closest('[aria-hidden="true"]')),true,'The exact retained Notes/Close nodes are aria-hidden while the command owns focus');
+   assert.equal(model.calls.length,beforeCalls,'Opening a pure command modal must not manufacture a new authority observation');
+   const retainedSurface=page.locator('[data-request-detail-surface]'),accessibility=await retainedSurface.evaluate(retainedDetailAccessibility);
+   assert.ok(accessibility.controlCount>0,'Original retained controls must remain mounted');assert.equal(accessibility.exposedControlCount,0,'Every retained detail control is excluded from accessibility: '+JSON.stringify(accessibility));
+   for(const role of ['button','textbox','combobox','checkbox','spinbutton','link','heading','table'])assert.equal(await retainedSurface.getByRole(role).count(),0,'Higher modal hides underlying accessible '+role+' roles');
+   if(kind==='purchase'){assert.ok(accessibility.liveCount>0,'Actual purchase live statuses remain mounted');assert.equal(accessibility.exposedLiveCount,accessibility.liveCount,'Radix intentionally preserves live status announcements and their ancestors');}
    await page.keyboard.press('Escape');await command.waitFor({state:'hidden'});await paint();assert.equal(await page.getByRole('alertdialog').count(),0);assert.deepEqual(await snapshot(),before);assert.equal(await notes().inputValue(),'R1 COMMAND DIRTY');
+   for(const control of [retainedNotes,retainedClose])assert.equal(await control.evaluate(node=>node.isConnected&&!node.closest('[aria-hidden="true"],[hidden],[inert]')),true,'Escape restores the same retained control nodes to accessibility');assert.equal(model.calls.length,beforeCalls,'Closing the higher modal does not reread or replace retained data');
    assert.equal(await page.getByRole('dialog').evaluate(node=>node.contains(document.activeElement)),true);
    await page.keyboard.press('Meta+k');await command.waitFor();await input.focus();await page.evaluate(()=>window.i43.configure({allowed:false}));await input.fill('NO STALE DETAIL FOCUS');await paint();assert.equal(await input.evaluate(node=>node===document.activeElement),true);
    await page.keyboard.press('Escape');await command.waitFor({state:'hidden'});await paint();assert.equal(await page.locator('[data-request-detail-surface]').evaluate(node=>node.contains(document.activeElement)),false);assert.equal(await page.getByRole('alertdialog').count(),0);assert.deepEqual(await snapshot(),before);
-   results.push({case:'R1-command-focus',kind,result:'PASS',lifetime:before});
+   results.push({case:'R1-command-focus',kind,result:'PASS',lifetime:before,accessibility});
   });
   for(const kind of ['purchase','inbound'])await run('I43 R1 '+kind+' mobile detail intercepts touches above actual later navigation and yields to guard',async()=>{
    await start(kind,390,844,true);const nav=page.locator('.mobile-bottom-nav');await nav.waitFor();
