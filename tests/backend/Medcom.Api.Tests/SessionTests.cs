@@ -374,6 +374,76 @@ public sealed class SessionTests
         Assert.Equal(2, users.Reads);
     }
 
+    [Fact]
+    public async Task UnknownSessionImplementationInspectionFallsBackToFullPassiveResolution()
+    {
+        var implementation = new ConservativeSessions(); IWebSessions sessions = implementation;
+        Assert.Null(await sessions.InspectAsync("synthetic-token", default));
+        Assert.Equal(1, implementation.Calls); Assert.False(implementation.UserInteraction);
+    }
+
+    private sealed class ConservativeSessions : IWebSessions
+    {
+        public int Calls; public bool UserInteraction = true;
+        public ResolvedSession? Create(AuthoritativeIdentity identity) => null;
+        public void Revoke(string token) { }
+        public Task<ResolvedSession?> ResolveAsync(string token, bool userInteraction, CancellationToken cancellationToken)
+        { Calls++; UserInteraction = userInteraction; return Task.FromResult<ResolvedSession?>(null); }
+    }
+
+    [Fact]
+    public async Task InspectionCannotMutateFrozenCollectionsOrOutliveAbsoluteExpiry()
+    {
+        var authority = new ControlledAuthority(); var clock = new ManualClock();
+        authority.Identity = authority.Identity with { BranchIds = ["QA-A"] };
+        var sessions = Store(authority, clock); var session = sessions.Create(authority.Identity)!;
+        var inspected = (await sessions.InspectAsync(session.Token, default))!;
+        Assert.Throws<NotSupportedException>(() => ((IList<string>)inspected.Identity.Capabilities)[0] = "injected");
+        Assert.Throws<NotSupportedException>(() => ((IList<string>)inspected.Identity.BranchIds!)[0] = "other");
+        Assert.Equal("QA-A", Assert.Single((await sessions.InspectAsync(session.Token, default))!.Identity.BranchIds!));
+        for (var i = 0; i < 3; i++) { clock.Advance(TimeSpan.FromMinutes(9)); Assert.NotNull(await sessions.ResolveAsync(session.Token, true, default)); }
+        clock.Advance(TimeSpan.FromMinutes(3));
+        Assert.Null(await sessions.InspectAsync(session.Token, default));
+    }
+
+    [Fact]
+    public async Task LocalInspectionDoesNotReadAuthorityTouchExpiryOrWaitBehindSqlRevalidation()
+    {
+        var users = new GatedLegacyUsers(); var clock = new ManualClock();
+        var (sessions, session) = await LegacySession(users, clock);
+        var reads = users.Reads;
+        clock.Advance(TimeSpan.FromMinutes(9));
+        var inspected = await sessions.InspectAsync(session.Token, default);
+        Assert.Equal(session.View.IdleExpiresAt, inspected!.View.IdleExpiresAt);
+        Assert.Equal(session.Identity.AuthorityVersion, inspected.Identity.AuthorityVersion);
+        Assert.Equal(reads, users.Reads);
+        users.DelayNextRead = true;
+        var validating = sessions.ResolveAsync(session.Token, false, default);
+        await users.ReadEntered.Task;
+        Assert.True(sessions.InspectAsync(session.Token, default).IsCompletedSuccessfully);
+        sessions.Revoke(session.Token);
+        Assert.Null(await sessions.InspectAsync(session.Token, default));
+        users.ReleaseRead.SetResult();
+        Assert.Null(await validating);
+        Assert.Null(await sessions.InspectAsync(session.Token, default));
+    }
+
+    [Fact]
+    public async Task LocalInspectionFencesExpiryCancellationAndCurrentObservedRights()
+    {
+        var authority = new ControlledAuthority(); var clock = new ManualClock();
+        var sessions = Store(authority, clock); var session = sessions.Create(authority.Identity)!;
+        authority.Identity = authority.Identity with { AuthorityVersion = 2, Capabilities = [] };
+        await sessions.ResolveAsync(session.Token, false, default);
+        Assert.Empty((await sessions.InspectAsync(session.Token, default))!.Identity.Capabilities);
+        Assert.Null(await sessions.InspectAsync("invalid", default));
+        using var canceled = new CancellationTokenSource(); canceled.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await sessions.InspectAsync(session.Token, canceled.Token));
+        clock.Advance(TimeSpan.FromMinutes(10));
+        Assert.Null(await sessions.InspectAsync(session.Token, default));
+        Assert.Null(await sessions.ResolveAsync(session.Token, true, default));
+    }
+
     private static async Task<(LocalWebSessions Sessions, ResolvedSession Session)> LegacySession(
         GatedLegacyUsers users, ManualClock clock)
     {

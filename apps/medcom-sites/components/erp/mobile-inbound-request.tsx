@@ -7,7 +7,7 @@ import {accessAvailable,buildCommand,canSend,commandBytes,commandResult,draftErr
   type InboundDraftAccess,type InboundDraftAdapter,type InboundDraftCommand,type InboundDraftDetailUpsert,type InboundDraftHeader,type InboundDraftReceipt,type InboundDraftView} from "@/lib/erp/inbound-draft";
 
 export type InboundPresentedRead={documentId:string;scopeKey:string;state:"pending"|"ready"|"failed"};
-export type MobileInboundRequestProps={documentId:string|null;access:InboundDraftAccess;adapter?:InboundDraftAdapter;onConfirmed?:(receipt:InboundDraftReceipt)=>void;onPresentedRead?:(event:InboundPresentedRead)=>void};
+export type MobileInboundRequestProps={documentId:string|null;statusPresentation?:{documentId:string;id:number|null;name?:string|null};access:InboundDraftAccess;adapter?:InboundDraftAdapter;onConfirmed?:(receipt:InboundDraftReceipt)=>void;onPresentedRead?:(event:InboundPresentedRead)=>void};
 type Phase="empty"|"loading"|"editing"|"checking"|"pending"|"unknown"|"reconciling"|"failed"|"conflict"|"confirmed"|"readFailed";
 type Binding={documentId:string|null;rights:string;adapter:InboundDraftAdapter|undefined};
 type State={view:InboundDraftView|null;viewBinding:Binding|null;header:InboundDraftHeader|null;details:InboundDraftDetailUpsert[];phase:Phase;
@@ -21,7 +21,7 @@ const unknownMessage=outcomeMessage.OutcomeUnknown;
 /** Injected fixed workflow only. The host must guard document selection/navigation.
  * Keep this component mounted for unresolved custody; key ONLY by login scope. */
 export function MobileInboundRequest(props:MobileInboundRequestProps){return <InboundEditor key={JSON.stringify([props.access.scopeKey])} {...props}/>;}
-function InboundEditor({documentId,access,adapter,onConfirmed,onPresentedRead}:MobileInboundRequestProps){
+function InboundEditor({documentId,statusPresentation,access,adapter,onConfirmed,onPresentedRead}:MobileInboundRequestProps){
   const notify=useRequestNotifications(access.scopeKey,access.canRead&&access.available);
   const [state,setState]=useState<State>(empty),[note,setNote]=useState<string|null>(null),[page,setPage]=useState(1);
   const rights=JSON.stringify([access.scopeKey,access.canRead,access.canSave,access.canSend,access.available,access.maxCommandBytes]);
@@ -246,7 +246,7 @@ function InboundEditor({documentId,access,adapter,onConfirmed,onPresentedRead}:M
     {state.awaitingSnapshot&&<p role="alert">Đang đọc lại phiếu đã được ERP xác nhận: {state.awaitingSnapshot.documentId}. Chưa thể chỉnh sửa hoặc gửi tiếp. Không gửi lại thao tác đã xác nhận.</p>}
     {!bound&&unresolved&&<p>Chờ kết quả yêu cầu gốc trước khi mở chứng từ đã chọn.</p>}
     {currentView&&state.header&&<form ref={form} onSubmit={event=>{event.preventDefault();review();}} className={requestStyles.stack}>
-      <header className={requestStyles.section}><div className={requestStyles.cardHeading}><strong>{currentView.documentId}</strong><RequestStatus value={currentView.statusId}/></div><p className={requestStyles.muted}>{state.details.length} dòng đầy đủ</p></header>
+      <header className={requestStyles.section}><div className={requestStyles.cardHeading}><strong>{currentView.documentId}</strong><RequestStatus value={currentView.statusId} statusName={statusPresentation?.documentId===currentView.documentId&&statusPresentation.id===currentView.statusId?statusPresentation.name:undefined}/></div><p className={requestStyles.muted}>{state.details.length} dòng đầy đủ</p></header>
       {!access.canSave&&!access.canSend&&<RequestNotice>Phiếu hiện chỉ được xem theo quyền của bạn.</RequestNotice>}
       <p className={requestStyles.muted}>{currentView.costRowCount} dòng chi phí được giữ nguyên, chỉ đọc.</p>
       <p className={requestStyles.muted}>Ngày chứng từ và chi nhánh được giữ nguyên. Gửi yêu cầu chưa làm thay đổi tồn kho.</p>

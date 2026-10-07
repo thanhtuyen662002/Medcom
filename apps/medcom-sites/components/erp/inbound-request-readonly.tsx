@@ -138,7 +138,7 @@ export function InboundRequestReadOnly({documentId, branchIds, scope, initialPag
       <header className={requestStyles.section}>
         <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
           <h3 className="min-w-0 whitespace-pre-wrap text-base font-semibold [overflow-wrap:anywhere]">{detail.document.documentId}</h3>
-          <RequestStatus value={detail.document.statusId ?? "NULL"}/>
+          <RequestStatus value={detail.document.statusId} statusName={detail.document.statusName}/>
         </div>
         <dl className={cn(requestStyles.values, "grid-cols-1 sm:grid-cols-2")}>
           <div><dt>Ngày chứng từ</dt><dd><time dateTime={detail.document.documentDate}>{requestDate(detail.document.documentDate)}</time></dd></div>

@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I38",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "addec9a2-b70d-4edf-9cf7-4df399fe9de6",
+  "base_sha": "830d6c710b0fb47dd75a01dfb163ca2619bf5ea5",
+  "work_branch": "codex/g45-live-erp-status-labels-i38-20261007",
+  "claim_branch": "medcom-claims/g45/direct/I38",
+  "scope": [
+    "apps/medcom-sites/lib/erp/contracts.ts",
+    "apps/medcom-sites/lib/erp/document-status.ts",
+    "apps/medcom-sites/lib/erp/purchase-request-api.ts",
+    "apps/medcom-sites/scripts/test-erp.mjs",
+    "apps/medcom-sites/tests/document-status.test.mjs",
+    "docs/execution/checkpoints/I38_ERP_STATUS_LABELS.md",
+    "inventories/source/20261007/document-status-bindings.json",
+    "src/backend/Medcom.Contracts/Documents.cs",
+    "src/backend/Medcom.Contracts/PurchaseRequestWorkspace.cs",
+    "src/backend/Medcom.Infrastructure/DocumentStatusSql.cs",
+    "src/backend/Medcom.Infrastructure/PurchaseRequests/SqlPurchaseRequestQueries.cs",
+    "src/backend/Medcom.Infrastructure/SqlDocumentReader.cs",
+    "src/frontend/lib/contracts.ts",
+    "tests/backend/Medcom.Api.Tests/DocumentStatusTests.cs",
+    "tests/backend/Medcom.Api.Tests/PurchaseRequestQueryTests.cs",
+    "docs/execution/direct-runs/I38.json"
+  ],
+  "purpose": "Show current ERP status names for purchase requests, purchase orders and inbound requests using source-backed fixed dictionary bindings.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "constraints": [
+    "Root alone publishes after independent source/privacy review and exact head/base CI. No private customer rows, raw SQL/archive, credentials or screenshots in public repository.",
+    "Preserve raw numeric statusId. Live fixed typed LEFT JOINs only, one grouped dictionary row per ID to avoid pagination multiplication; duplicate, missing, null, blank or invalid labels use explicit unknown fallback, never guessed workflow meaning. No arbitrary stored config SQL or per-row network lookup.",
+    "Status labels are read-only metadata, not additions to aggregate command DTOs, canonical intent, receipts, token hashing, workflow transitions or editability. No new status filter in this slice.",
+    "New apps/medcom-sites helper/contracts are owned here; rendering owned by I36. Legacy src/frontend/lib/contracts.ts may gain optional nullable statusName for strict parser compatibility only.",
+    "SqlPurchaseRequestQueries and query tests overlap I37 only in independent status projection/fixture hunks. Root must compose by exact hunks and rerun combined tests; never overwrite the other candidate.",
+    "No actual SQL, private config or native DLL execution, schema/settings changes or runtime/write activation. Source labels are technical metadata backed by verified archive/member identity and line references."
+  ],
+  "created_at": "2026-10-07T03:02:49.233228+00:00"
+}

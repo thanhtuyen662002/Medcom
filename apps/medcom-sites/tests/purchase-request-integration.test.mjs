@@ -285,15 +285,15 @@ test('real HTTP → BFF → existing workspace/browser purchase controls and aut
   await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).waitFor();
   await t.test('existing workspace navigation mounts the real screen and available read controls',async()=>{
    await page.getByRole('heading',{level:1,name:'Đề nghị mua hàng',exact:true}).waitFor();
-   assert.equal(await screen.getByRole('article').count(),20);assert.ok(await screen.getByRole('button',{name:'Tạo đề nghị',exact:true}).isDisabled());
+   assert.equal(await screen.getByRole('table',{name:'Danh sách đề nghị',exact:true}).locator('tbody tr').count(),20);assert.ok(await screen.getByRole('button',{name:'Tạo đề nghị',exact:true}).isDisabled());
    assert.match(await screen.innerText(),/Chỉ mở các phiếu hiện có\./);assert.ok(calls.some(call=>call.path==='/api/purchase-requests'&&call.cookie.includes('synthetic-i17')));
   });
   await t.test('next/previous pages, branch selection and exact search all use actual BFF HTTP',async()=>{
-   await screen.getByRole('button',{name:'Trang sau',exact:true}).click();await screen.getByText('Trang 2',{exact:true}).waitFor();assert.equal(await screen.getByRole('article').count(),7);
+   await screen.getByRole('button',{name:'Trang sau',exact:true}).click();await screen.getByText('Trang 2',{exact:true}).waitFor();assert.equal(await screen.getByRole('table',{name:'Danh sách đề nghị',exact:true}).locator('tbody tr').count(),7);
    await screen.getByRole('button',{name:'Trang trước',exact:true}).click();await screen.getByText('Trang 1',{exact:true}).waitFor();
-   await screen.getByLabel('Chi nhánh',{exact:true}).selectOption('QA-B');await screen.getByRole('button',{name:'Mở đề nghị QA-001',exact:true}).waitFor();assert.equal(await screen.getByRole('article').count(),12);
+   await screen.getByLabel('Chi nhánh',{exact:true}).selectOption('QA-B');await screen.getByRole('button',{name:'Mở đề nghị QA-001',exact:true}).waitFor();assert.equal(await screen.getByRole('table',{name:'Danh sách đề nghị',exact:true}).locator('tbody tr').count(),12);
    await screen.getByLabel('Chi nhánh',{exact:true}).selectOption('');await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).waitFor();
-   await screen.getByLabel('Tìm mã đề nghị',{exact:true}).fill('QA-003');await screen.getByRole('button',{name:'Tìm kiếm',exact:true}).click();await screen.getByRole('button',{name:'Mở đề nghị QA-003',exact:true}).waitFor();assert.equal(await screen.getByRole('article').count(),1);
+   await screen.getByLabel('Tìm mã đề nghị',{exact:true}).fill('QA-003');await screen.getByRole('button',{name:'Tìm kiếm',exact:true}).click();await screen.getByRole('button',{name:'Mở đề nghị QA-003',exact:true}).waitFor();assert.equal(await screen.getByRole('table',{name:'Danh sách đề nghị',exact:true}).locator('tbody tr').count(),1);
    assert.ok(calls.some(call=>call.query.page==='2'));assert.ok(calls.some(call=>call.query.branchId==='QA-B'));assert.ok(calls.some(call=>call.query.search==='QA-003'));
   });
   async function find(id){await screen.getByLabel('Tìm mã đề nghị',{exact:true}).fill(id);await screen.getByRole('button',{name:'Tìm kiếm',exact:true}).click();await screen.getByRole('button',{name:`Mở đề nghị ${id}`,exact:true}).waitFor();}
@@ -354,7 +354,7 @@ test('real HTTP → BFF → existing workspace/browser purchase controls and aut
    await page.evaluate(()=>window.qa.controlled());await find('QA-000');state.hold=true;const started=new Promise(resolve=>{state.started=resolve;});
    await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).click();await started;
    state.canRead=false;await page.evaluate(()=>window.qa.authority(true));state.hold=false;state.release();await page.getByText('Bạn không có quyền đọc đề nghị mua hàng trong phạm vi hiện tại.',{exact:true}).waitFor();
-   await page.waitForTimeout(50);assert.equal(await page.getByRole('table',{name:'Toàn bộ dòng đề nghị',exact:true}).count(),0);assert.equal(await page.getByRole('article').count(),0);
+   await page.waitForTimeout(50);assert.equal(await page.getByRole('table',{name:'Toàn bộ dòng đề nghị',exact:true}).count(),0);assert.equal(await page.getByRole('table',{name:'Danh sách đề nghị',exact:true}).locator('tbody tr').count(),0);
    assert.equal(await page.evaluate(()=>document.activeElement?.matches('[aria-label="Phiếu mua hàng hiện có"]')),false);
   });
   assert.deepEqual(errors,[]);assert.equal(calls.some(call=>call.method!=='GET'),false);await writeFile(path.join(output,'browser-evidence.json'),JSON.stringify({node:process.version,browser:browser.version(),viewport:[390,844],calls:calls.length,nonGetCalls:0,errors},null,2));

@@ -16,6 +16,86 @@ namespace Medcom.Api.Tests;
 
 public sealed class PurchaseRequestQueryTests
 {
+    [Theory]
+    [InlineData("Đã duyệt", 1L, "Đã duyệt")]
+    [InlineData("Nháp", 2L, null)]
+    [InlineData(null, 0L, null)]
+    [InlineData(null, 1L, null)]
+    [InlineData("   ", 1L, null)]
+    [InlineData("bad\nlabel", 1L, null)]
+    public async Task Status_is_read_only_nullable_metadata_and_never_changes_identity_or_token(string? name, long count, string? expected)
+    {
+        var source = new PurchaseQuerySource { StatusName = name, StatusRows = count }; source.Seed();
+        var list = await source.Service().ListAsync(new());
+        var opened = await source.Service().OpenAsync("QA-DOC");
+        Assert.Equal(PurchaseRequestQueryOutcome.Success, list.Outcome);
+        Assert.Equal(PurchaseRequestQueryOutcome.Success, opened.Outcome);
+        Assert.Equal(expected, Assert.Single(list.Value!.Rows).StatusName);
+        Assert.Equal(expected, opened.Value!.StatusName);
+        Assert.Equal(1, opened.Value.Document.StatusId);
+        Assert.Equal(PurchaseRequestCommandRules.EqualityToken(source.Documents[0]), opened.Value.StateToken);
+        Assert.Equal(0, source.Commits);
+    }
+    [Fact]
+    public async Task Refresh_uses_live_dictionary_name_without_changing_state_token()
+    {
+        var source = new PurchaseQuerySource(); source.Seed();
+        var first = (await source.Service().OpenAsync("QA-DOC")).Value!;
+        source.StatusName = "Tên trạng thái mới";
+        var second = (await source.Service().OpenAsync("QA-DOC")).Value!;
+        Assert.Equal("Nháp", first.StatusName);
+        Assert.Equal("Tên trạng thái mới", second.StatusName);
+        Assert.Equal(first.StateToken, second.StateToken);
+    }
+    [Fact]
+    public async Task OmittedInspectionDelegateConservativelyKeepsThreeFullCallbacks()
+    {
+        var source = new PurchaseQuerySource(); source.Seed(); var full = 0;
+        var service = new SqlPurchaseRequestQueries(PurchaseQuerySource.Company, () => new QueryConnection(source),
+            _ => { full++; return Task.FromResult(source.Identity); });
+        Assert.Equal(PurchaseRequestQueryOutcome.Success, (await service.ListAsync(new())).Outcome);
+        Assert.Equal(3, full);
+    }
+
+    [Theory]
+    [InlineData(false, 6)]
+    [InlineData(true, 7)]
+    public async Task ReadCheckpointsAvoidFullAuthorityWhileSqlIsOpenButRevalidateAfterCleanup(bool nativeAll, int selectCount)
+    {
+        var source = new PurchaseQuerySource(); source.Seed();
+        if (nativeAll) source.NativeBranch = null;
+        var inspections = 0; var fullValidations = 0;
+        var service = new SqlPurchaseRequestQueries(PurchaseQuerySource.Company, () => new QueryConnection(source), _ =>
+        {
+            fullValidations++;
+            Assert.Equal(1, source.ConnectionDisposals); Assert.Equal(1, source.TransactionDisposals);
+            Assert.Equal(1, source.Rollbacks);
+            return Task.FromResult(source.Identity);
+        }, _ => { inspections++; return Task.FromResult(source.Identity); });
+        var result = await service.ListAsync(new());
+        Assert.Equal(PurchaseRequestQueryOutcome.Success, result.Outcome);
+        Assert.Equal(2, inspections); Assert.Equal(1, fullValidations);
+        Assert.Equal(selectCount, source.Commands.Count);
+        Assert.Equal(0, source.Commits);
+    }
+
+    [Theory]
+    [InlineData("logout")] [InlineData("branch")] [InlineData("credential")] [InlineData("capability")]
+    public async Task FinalFullAuthorityStillRejectsDatabaseChangesNotYetInLocalSession(string failure)
+    {
+        var source = new PurchaseQuerySource(); source.Seed();
+        var local = source.Identity;
+        var latest = failure switch {
+            "logout" => null, "branch" => local! with { BranchIds = [] },
+            "credential" => local! with { CredentialStamp = "revoked" }, _ => local! with { Capabilities = [] } };
+        var service = new SqlPurchaseRequestQueries(PurchaseQuerySource.Company, () => new QueryConnection(source),
+            _ => { Assert.Equal(1, source.ConnectionDisposals); return Task.FromResult(latest); },
+            _ => Task.FromResult(local));
+        var result = await service.OpenAsync("QA-DOC");
+        Assert.Equal(PurchaseRequestQueryOutcome.Denied, result.Outcome); Assert.Null(result.Value);
+        Assert.Equal(0, source.Commits);
+    }
+
     [Fact]
     public async Task Complete_read_preserves_101_lines_hidden_values_and_exact_I14_token()
     {
@@ -419,6 +499,7 @@ internal sealed class PurchaseQuerySource
     public string? MalformedScopeProjection, ExtraScopeResult, ExtraScopeColumn;
     public List<(string Owner, string Branch)>? NativeAssignments;
     public readonly List<PurchaseRequestAggregate> Documents=[];
+    public string? StatusName = "Nháp"; public long StatusRows = 1;
     public readonly List<(string ForeignKey,PurchaseRequestPersistedLine Line)> ExtraChildren=[];
     public readonly List<(string Sql,Dictionary<string,object?> Parameters)> Commands=[];
     public int Opens,Commits,Rollbacks,ConnectionDisposals,TransactionDisposals,CommandDisposals,ReaderDisposals;
@@ -430,7 +511,7 @@ internal sealed class PurchaseQuerySource
     public readonly List<(string Id, string? Name, double? Rate)> Currencies = [];
     public static AuthoritativeIdentity NewIdentity()=>new("qa-user",Company.TenantId,Company.CompanyId,Company.CompanyName,"Synthetic user",1,
         ["platform.status","purchase-requests.read"],Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes("qa-user\0synthetic-stored-value\0qa-group"))),["QA-A","QA-B"]);
-    public SqlPurchaseRequestQueries Service()=>new(Company,()=>new QueryConnection(this),_=>Task.FromResult(Identity));
+    public SqlPurchaseRequestQueries Service()=>new(Company,()=>new QueryConnection(this),_=>Task.FromResult(Identity),_=>Task.FromResult(Identity));
     public void Seed(int count=1)=>Documents.Add(new("QA-DOC","QA-A",new("2026-10-06T13:14:15.000",1,"Synthetic requester","Synthetic department",null,"15.25",null,"VND","QA-OBJECT",1.25),1,null,
         Enumerable.Range(1,count).Select(i=>new PurchaseRequestPersistedLine($"QA-L{i:000}",new("QA-ITEM",null,"synthetic time","999999999999999999","2","7",null))).ToArray()));
     private static string Fold(string input)=>new string(input.TrimEnd().Normalize(NormalizationForm.FormD).Where(c=>CharUnicodeInfo.GetUnicodeCategory(c)!=UnicodeCategory.NonSpacingMark).ToArray()).ToUpperInvariant();
@@ -517,15 +598,15 @@ internal sealed class PurchaseQuerySource
                     command.CommandText.Contains("AS IdentityAlias",StringComparison.Ordinal)
                         &&(command.CommandText.Contains("SELECT COUNT_BIG(*)",StringComparison.Ordinal)
                             ? Documents.Count(a=>Fold(a.PurchaseRequestId)==Fold(d.PurchaseRequestId))>1
-                            : Documents.Any(a=>Fold(a.PurchaseRequestId)==Fold(d.PurchaseRequestId)&&a.PurchaseRequestId!=d.PurchaseRequestId))?1:0});
-            var reader=Rows(8,result);AfterData?.Invoke();return reader;
+                            : Documents.Any(a=>Fold(a.PurchaseRequestId)==Fold(d.PurchaseRequestId)&&a.PurchaseRequestId!=d.PurchaseRequestId))?1:0,StatusName??(object)DBNull.Value,StatusRows});
+            var reader=Rows(10,result);AfterData?.Invoke();return reader;
         }
         if(command.CommandText.Contains("FROM dbo.AP_PurchaseRequestTbl",StringComparison.Ordinal))
         {
-            var native=command.CommandText.Contains("WHERE PurchaseRequestID=@document",StringComparison.Ordinal);
+            var native=command.CommandText.Contains("WHERE D.PurchaseRequestID=@document",StringComparison.Ordinal);
             result=Documents.Where(d=>native?Fold(d.PurchaseRequestId)==Fold(id!):d.PurchaseRequestId==id).Take(2).Select(d=>new object[]{d.PurchaseRequestId,Date(d.Header.PurchaseDate),d.Header.PurposeId??(object)DBNull.Value,
                 d.Header.PersonSuggest,d.Header.Department,d.Header.PurposeDescOrClient??(object)DBNull.Value,Number(d.Header.Price),d.Header.Notes??(object)DBNull.Value,d.StatusId,d.IsLocked??(object)DBNull.Value,
-                d.Header.CurrencyId,d.Header.ObjectId,d.Header.RateExchange,d.BranchId});return Rows(14,result);
+                d.Header.CurrencyId,d.Header.ObjectId,d.Header.RateExchange,d.BranchId,StatusName??(object)DBNull.Value,StatusRows});return Rows(16,result);
         }
         if(command.CommandText.Contains("FROM dbo.AP_PurchaseRequestDetailTbl C",StringComparison.Ordinal))
         {

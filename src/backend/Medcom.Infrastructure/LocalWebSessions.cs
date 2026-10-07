@@ -124,6 +124,27 @@ public sealed class LocalWebSessions : IWebSessions
         }
     }
 
+    // Read-only checkpoints already protected by native SQL authorization use this
+    // to fence logout/expiry without opening another SQL connection while locks are held.
+    // It never refreshes authority, advances activity, or resurrects a removed entry.
+    public Task<ResolvedSession?> InspectAsync(string token, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (token.Length != 64 || token.Any(c => !Uri.IsHexDigit(c)))
+            return Task.FromResult<ResolvedSession?>(null);
+        lock (gate)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var key = Hash(token);
+            if (!entries.TryGetValue(key, out var entry) || Expired(entry, clock.GetUtcNow()))
+            {
+                entries.Remove(key);
+                return Task.FromResult<ResolvedSession?>(null);
+            }
+            return Task.FromResult<ResolvedSession?>(Resolve(token, entry));
+        }
+    }
+
     public void Revoke(string token)
     {
         lock (gate) entries.Remove(Hash(token));

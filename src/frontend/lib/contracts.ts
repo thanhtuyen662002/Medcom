@@ -20,7 +20,7 @@ export type Health = z.infer<typeof healthSchema>;
 
 export const documentPageSchema = z.object({
   rows: z.array(z.object({ documentId: z.string().min(1).max(50), documentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-    branchId: z.string().min(1).max(50), statusId: z.number().int().nullable(), isLocked: z.boolean().nullable() }).strict()).max(100),
+    branchId: z.string().min(1).max(50), statusId: z.number().int().nullable(), statusName: z.string().max(100).nullable().optional(), isLocked: z.boolean().nullable() }).strict()).max(100),
   page: z.number().int().min(1).max(1000), pageSize: z.number().int().min(1).max(100), hasMore: z.boolean(),
 }).strict();
 export type DocumentKind = "purchase-orders" | "inbound-requests";

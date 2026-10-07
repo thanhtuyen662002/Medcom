@@ -131,7 +131,12 @@ public sealed class SqlInboundDraftCommandService : IInboundDraftCommandService
                         Require(grants!.Contains(request.Header!.BranchId,StringComparer.Ordinal),InboundDraftOutcome.Denied);
                         reservationBranch=request.Header.BranchId;
                     }
-                    else reservationBranch=await Scope(tx,request.DocumentId!,grants!,token);
+                    else
+                    {
+                        // Reject observable invalid existing-document intents before the durable
+                        // reservation. The snapshot is not carried across transactions.
+                        (reservationBranch,_)=await ValidateExistingMutation(tx,request,grants!,token);
+                    }
                     attempt=Guid.NewGuid();
                     wrote=true;
                     await One(InboundDraftSql.Reserve(tx,binding,identity!,request,intent!,attempt,reservationBranch),token);
@@ -158,28 +163,12 @@ public sealed class SqlInboundDraftCommandService : IInboundDraftCommandService
                     else
                     {
                         document=request.DocumentId!;
-                        branch=await Scope(tx,document,grants!,token);
-                        before=await Snapshot.Read(tx,document,token);
-                        Require(before is not null && before.View.StatusId is 0 or 1,InboundDraftOutcome.Rejected);
-                        Require(before!.Token==request.ExpectedStateEqualityToken,InboundDraftOutcome.Conflict);
-                        if(request.Header is {} header)
-                        {
-                            Require(header.BranchId==branch,InboundDraftOutcome.Denied);
-                            // Changing the date can change the masked document number; never guess that rebinding.
-                            Require(header.DocumentDate==before.View.Header.DocumentDate,InboundDraftOutcome.NumberingUnavailable);
-                        }
+                        // Phase 0 is only a preflight: repeat every predicate against a new
+                        // locked snapshot before effects, retaining genuine pending custody.
+                        (branch,before)=await ValidateExistingMutation(tx,request,grants!,token);
                     }
-                    if(request.Action==InboundDraftAction.SendToWarehouse)
-                        Require(before!.CanSend(),InboundDraftOutcome.Rejected);
-                    else foreach(var row in request.DetailUpserts ?? [])
-                        if(row.RowId is not null) Require(before is not null && before.HasDetail(row.RowId),InboundDraftOutcome.Conflict);
-                    foreach(var row in request.RemovedDetailIds ?? [])
-                        Require(before is not null && before.HasDetail(row),InboundDraftOutcome.Conflict);
-                    Require((before?.View.Details.Count ?? 0)-(request.RemovedDetailIds?.Count ?? 0)
-                        +(request.DetailUpserts?.Count(x=>x.RowId is null) ?? 0)<=InboundDraftValidation.MaximumDetails,InboundDraftOutcome.Rejected);
+                    if(request.Action==InboundDraftAction.Create) ValidateMutation(before,request);
                     Require(saved!.Branch==branch,InboundDraftOutcome.Denied);
-                    if(request.Action!=InboundDraftAction.SendToWarehouse)
-                        Require(Snapshot.SupportsExactCalculations(before,request),InboundDraftOutcome.Unavailable,"derived_calculation_not_qualified");
                     await Live(tx,identity!,request.Action,branch,token);
                     var inserted=new Dictionary<string,InboundDraftDetailUpsert>(StringComparer.Ordinal);
                     wrote=true;
@@ -245,6 +234,37 @@ public sealed class SqlInboundDraftCommandService : IInboundDraftCommandService
             if(terminal is not null) return terminal;
         }
         return new(InboundDraftOutcome.Unavailable);
+    }
+
+    private static async Task<(string Branch,Snapshot Before)> ValidateExistingMutation(DbTransaction tx,
+        InboundDraftCommand request,IReadOnlyList<string> grants,CancellationToken token)
+    {
+        var branch=await Scope(tx,request.DocumentId!,grants,token);
+        var before=await Snapshot.Read(tx,request.DocumentId!,token);
+        Require(before is not null && before.View.StatusId is 0 or 1,InboundDraftOutcome.Rejected);
+        Require(before!.Token==request.ExpectedStateEqualityToken,InboundDraftOutcome.Conflict);
+        if(request.Header is {} header)
+        {
+            Require(header.BranchId==branch,InboundDraftOutcome.Denied);
+            // Changing the date can change the masked document number; never guess that rebinding.
+            Require(header.DocumentDate==before.View.Header.DocumentDate,InboundDraftOutcome.NumberingUnavailable);
+        }
+        ValidateMutation(before,request);
+        return (branch,before!);
+    }
+
+    private static void ValidateMutation(Snapshot? before,InboundDraftCommand request)
+    {
+        if(request.Action==InboundDraftAction.SendToWarehouse)
+            Require(before!.CanSend(),InboundDraftOutcome.Rejected);
+        else foreach(var row in request.DetailUpserts ?? [])
+            if(row.RowId is not null) Require(before is not null && before.HasDetail(row.RowId),InboundDraftOutcome.Conflict);
+        foreach(var row in request.RemovedDetailIds ?? [])
+            Require(before is not null && before.HasDetail(row),InboundDraftOutcome.Conflict);
+        Require((before?.View.Details.Count ?? 0)-(request.RemovedDetailIds?.Count ?? 0)
+            +(request.DetailUpserts?.Count(x=>x.RowId is null) ?? 0)<=InboundDraftValidation.MaximumDetails,InboundDraftOutcome.Rejected);
+        if(request.Action!=InboundDraftAction.SendToWarehouse)
+            Require(Snapshot.SupportsExactCalculations(before,request),InboundDraftOutcome.Unavailable,"derived_calculation_not_qualified");
     }
 
     public async Task<InboundDraftReadResult> ReadAsync(string documentId,CancellationToken token=default)

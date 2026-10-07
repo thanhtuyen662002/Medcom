@@ -12,12 +12,12 @@ const values=z.object({itemId:id,budget:decimal.nullable(),timeRequired:text.nul
 const document=z.object({purchaseRequestId:id,branchId:id,header,statusId:z.number().int(),isLocked:z.boolean().nullable(),
  lines:z.array(z.object({lineId:id,values}).strict()).max(500)}).strict();
 const commandAccess=z.object({canSave:z.boolean(),canSubmit:z.boolean(),canLookup:z.boolean(),canAddLines:z.literal(false),reason:z.string().min(1)}).strict();
-const snapshot=z.object({document,commandAccess:commandAccess.nullable().optional(),stateToken:z.string().regex(/^prs1\.[a-f0-9]{64}$/)}).strict().superRefine((value,context)=>{
+const snapshot=z.object({document,statusName:z.string().max(50).nullable().optional(),commandAccess:commandAccess.nullable().optional(),stateToken:z.string().regex(/^prs1\.[a-f0-9]{64}$/)}).strict().superRefine((value,context)=>{
  if(new Set(value.document.lines.map(line=>line.lineId)).size!==value.document.lines.length)context.addIssue({code:z.ZodIssueCode.custom,message:"Duplicate source line identity"});
 });
 const workspace=z.object({branchIds:z.array(id).min(1).max(200),writeAvailable:z.literal(false),writeReason:z.literal("numbering_journal_runtime_unqualified"),
  lookups:z.array(z.object({kind:z.enum(["branches","items","objects","purposes","currencies"]),available:z.boolean(),reason:z.string().nullable(),evidence:z.string()}).strict()).max(5)}).strict();
-const list=z.object({rows:z.array(z.object({documentId:id,purchaseDate:wallClock,branchId:id,personSuggest:text,department:text,statusId:z.number().int(),isLocked:z.boolean().nullable()}).strict()).max(50),
+const list=z.object({rows:z.array(z.object({documentId:id,purchaseDate:wallClock,branchId:id,personSuggest:text,department:text,statusId:z.number().int(),statusName:z.string().max(50).nullable().optional(),isLocked:z.boolean().nullable()}).strict()).max(50),
  page:z.number().int().min(1).max(1000),pageSize:z.number().int().min(1).max(50),hasMore:z.boolean()}).strict();
 // These read-only choices preserve the qualified source values. In particular,
 // NULL purpose names and finite zero/negative currency rates are not defaults.

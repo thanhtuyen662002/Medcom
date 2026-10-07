@@ -35,6 +35,120 @@ public sealed class InboundDraftCommandTests
     }
 
     [Theory]
+    [InlineData("stale",InboundDraftOutcome.Conflict)]
+    [InlineData("status",InboundDraftOutcome.Rejected)]
+    [InlineData("date",InboundDraftOutcome.NumberingUnavailable)]
+    [InlineData("branch",InboundDraftOutcome.Denied)]
+    [InlineData("foreign-upsert",InboundDraftOutcome.Conflict)]
+    [InlineData("foreign-remove",InboundDraftOutcome.Conflict)]
+    [InlineData("detail-limit",InboundDraftOutcome.Rejected)]
+    [InlineData("send-empty",InboundDraftOutcome.Rejected)]
+    [InlineData("send-null-lot",InboundDraftOutcome.Rejected)]
+    [InlineData("rounding",InboundDraftOutcome.Unavailable)]
+    public async Task Observable_existing_intent_rejections_do_not_reserve_commit_or_write(string scenario,InboundDraftOutcome expected)
+    {
+        var m=new InboundModel();var s=m.Service();
+        if(scenario=="status")m.Tables[0].Rows[0]["StatusID"]=2;
+        if(scenario=="send-empty")m.Tables[1].Clear();
+        if(scenario=="send-null-lot")m.Tables[1].Rows[0]["LotNumberByDocument"]=DBNull.Value;
+        var request=scenario.StartsWith("send-",StringComparison.Ordinal) ? await m.Send(s) : await m.Save(s);
+        if(scenario=="stale")m.Tables[0].Rows[0]["Notes"]="changed since read";
+        if(scenario=="date")request=request with{Header=InboundModel.Header with{DocumentDate=InboundModel.Header.DocumentDate.AddDays(1)}};
+        if(scenario=="branch")request=request with{Header=InboundModel.Header with{BranchId="BR-B"}};
+        if(scenario=="foreign-upsert")request=request with{DetailUpserts=[InboundModel.Detail with{RowId="FOREIGN"}]};
+        if(scenario=="foreign-remove")request=request with{RemovedDetailIds=["FOREIGN"]};
+        if(scenario=="detail-limit")request=request with{DetailUpserts=Enumerable.Range(0,500).Select(_=>
+            InboundModel.Detail with{RowId=null,ClientLineId=Guid.NewGuid()}).ToArray()};
+        if(scenario=="rounding")request=request with{Header=InboundModel.Header with{RateExchange=1.5m}};
+        m.Commands.Clear();m.Events.Clear();
+        var result=await s.ExecuteAsync(request);
+        Assert.Equal(expected,result.Outcome);Assert.Null(result.Receipt);
+        Assert.Empty(m.Journal.Rows.Cast<DataRow>());Assert.Equal(0,m.CommitAcks);Assert.Equal(0,m.BusinessWrites);
+        Assert.DoesNotContain("reserve",m.Events);Assert.DoesNotContain("record",m.Events);
+        Assert.DoesNotContain("reserve-commit-before",m.Events);Assert.DoesNotContain("business-commit-before",m.Events);
+    }
+
+    [Theory]
+    [InlineData(false)] [InlineData(true)]
+    public async Task Valid_existing_intents_validate_in_both_transactions_and_replay_before_draft_validation(bool send)
+    {
+        var m=new InboundModel();var s=m.Service();var request=send ? await m.Send(s) : await m.Save(s);
+        m.Commands.Clear();m.Events.Clear();
+        var result=await s.ExecuteAsync(request);
+        Assert.Equal(InboundDraftOutcome.Committed,result.Outcome);Assert.NotNull(result.Receipt);
+        Assert.Equal(2,m.CommitAcks);Assert.Single(m.Journal.Rows.Cast<DataRow>());
+        var snapshots=m.Commands.Where(c=>c.CommandText.Contains("inbound:snapshot",StringComparison.Ordinal)).ToArray();
+        Assert.Equal(3,snapshots.Length);
+        var reserve=Assert.Single(m.Commands,c=>c.CommandText.Contains("inbound:reserve",StringComparison.Ordinal));
+        var effect=Assert.Single(m.Commands,c=>c.CommandText.Contains(send ? "inbound:send" : "inbound:header",StringComparison.Ordinal));
+        Assert.Same(reserve.Transaction,snapshots[0].Transaction);
+        Assert.Same(effect.Transaction,snapshots[1].Transaction);Assert.Same(effect.Transaction,snapshots[2].Transaction);
+        Assert.NotSame(snapshots[0].Transaction,snapshots[1].Transaction);
+        Assert.True(m.Commands.IndexOf(snapshots[0])<m.Commands.IndexOf(reserve));
+        Assert.True(m.Commands.IndexOf(snapshots[1])<m.Commands.IndexOf(effect));
+        // Original receipt disclosure must precede current draft validation, including
+        // status 2 after Send and an externally advanced status after Save.
+        m.Tables[0].Rows[0]["StatusID"]=2;var writes=m.BusinessWrites;
+        m.Commands.Clear();m.Events.Clear();
+        Assert.Equal(result.Receipt,(await s.ExecuteAsync(request)).Receipt);
+        Assert.Equal(result.Receipt,(await s.ReconcileAsync(request)).Receipt);
+        Assert.Equal(writes,m.BusinessWrites);Assert.Equal(2,m.CommitAcks);
+        Assert.DoesNotContain("snapshot-before",m.Events);Assert.DoesNotContain("reserve",m.Events);
+    }
+
+    [Theory]
+    [InlineData(false,"token",InboundDraftOutcome.Conflict)]
+    [InlineData(true,"token",InboundDraftOutcome.Conflict)]
+    [InlineData(false,"status",InboundDraftOutcome.Rejected)]
+    [InlineData(true,"status",InboundDraftOutcome.Rejected)]
+    [InlineData(false,"scope",InboundDraftOutcome.Denied)]
+    public async Task Interphase_change_revalidates_and_preserves_only_genuine_pending_custody(bool send,string change,InboundDraftOutcome expected)
+    {
+        var m=new InboundModel();var s=m.Service();var request=send ? await m.Send(s) : await m.Save(s);
+        m.Commands.Clear();m.Events.Clear();
+        m.OnEvent=name=>
+        {
+            if(name!="reserve-commit-ack")return;
+            if(change=="token")m.Tables[0].Rows[0]["Notes"]="concurrent writer";
+            if(change=="status")m.Tables[0].Rows[0]["StatusID"]=2;
+            if(change=="scope")m.Tables[0].Rows[0]["BranchID"]="BR-B";
+        };
+        var result=await s.ExecuteAsync(request);
+        Assert.Equal(expected,result.Outcome);Assert.Null(result.Receipt);
+        var pending=Assert.Single(m.Journal.Rows.Cast<DataRow>());
+        Assert.Equal(request.OperationId,pending["OperationId"]);Assert.Equal(0,pending["State"]);
+        Assert.Equal(1,m.CommitAcks);Assert.Equal(0,m.BusinessWrites);
+        Assert.Single(m.Events,name=>name=="reserve");Assert.DoesNotContain("record",m.Events);
+        var intent=((byte[])pending["IntentHash"]).ToArray();
+        m.OnEvent=null;m.Tables[0].Rows[0]["BranchID"]="BR-A";
+        m.Commands.Clear();m.Events.Clear();
+        Assert.Equal(InboundDraftOutcome.OutcomeUnknown,(await s.ExecuteAsync(request)).Outcome);
+        Assert.Equal(InboundDraftOutcome.OutcomeUnknown,(await s.ReconcileAsync(request)).Outcome);
+        Assert.Equal(1,m.CommitAcks);Assert.Equal(0,m.BusinessWrites);
+        Assert.Equal(intent,(byte[])Assert.Single(m.Journal.Rows.Cast<DataRow>())["IntentHash"]);
+        Assert.DoesNotContain("reserve",m.Events);Assert.DoesNotContain("snapshot-before",m.Events);
+    }
+
+    [Fact]
+    public async Task Phase_one_snapshot_failure_retains_the_genuine_pending_operation_without_dispatch()
+    {
+        var m=new InboundModel();var s=m.Service();var request=await m.Save(s);
+        m.Events.Clear();
+        m.OnEvent=name=>{if(name=="reserve-commit-ack")m.Fault="snapshot-before";};
+        var result=await s.ExecuteAsync(request);
+        Assert.Equal(InboundDraftOutcome.Unavailable,result.Outcome);Assert.Null(result.Receipt);
+        Assert.Equal(2,m.Events.Count(name=>name=="snapshot-before"));
+        Assert.Equal(1,m.CommitAcks);Assert.Equal(0,m.BusinessWrites);
+        var pending=Assert.Single(m.Journal.Rows.Cast<DataRow>());
+        Assert.Equal(request.OperationId,pending["OperationId"]);Assert.Equal(0,pending["State"]);
+        m.OnEvent=null;m.Fault=null;m.Events.Clear();
+        Assert.Equal(InboundDraftOutcome.OutcomeUnknown,(await s.ExecuteAsync(request)).Outcome);
+        Assert.Equal(InboundDraftOutcome.OutcomeUnknown,(await s.ReconcileAsync(request)).Outcome);
+        Assert.Equal(1,m.CommitAcks);Assert.Equal(0,m.BusinessWrites);
+        Assert.DoesNotContain("snapshot-before",m.Events);Assert.DoesNotContain("reserve",m.Events);
+    }
+
+    [Theory]
     [InlineData("probe")] [InlineData("reserve")] [InlineData("snapshot-before")]
     [InlineData("header")] [InlineData("detail-update")] [InlineData("snapshot-after")]
     [InlineData("record")] [InlineData("reserve-commit-before")] [InlineData("business-commit-before")]
@@ -305,8 +419,11 @@ public sealed class InboundDraftDerivedReadbackTests
         if(scenario=="near-midpoint")request=request with{Header=InboundModel.Header with{RateExchange=0.4999999999m}};
         var result=await s.ExecuteAsync(request);
         Assert.Equal(InboundDraftOutcome.Unavailable,result.Outcome);Assert.Equal("derived_calculation_not_qualified",result.Code);
-        Assert.Null(result.Receipt);Assert.Equal(0,m.BusinessWrites);Assert.Equal(1,m.CommitAcks);
-        Assert.Equal(0,m.Journal.Rows[0]["State"]);Assert.DoesNotContain("record",m.Events);
+        Assert.Null(result.Receipt);Assert.Equal(0,m.BusinessWrites);Assert.DoesNotContain("record",m.Events);
+        if(scenario=="rounded-create")
+        {Assert.Equal(1,m.CommitAcks);Assert.Equal(0,Assert.Single(m.Journal.Rows.Cast<DataRow>())["State"]);}
+        else
+        {Assert.Equal(0,m.CommitAcks);Assert.Empty(m.Journal.Rows.Cast<DataRow>());Assert.DoesNotContain("reserve",m.Events);}
     }
 
     [Fact]

@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I37",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "886cf6fb-c648-4325-b616-3e056d92e698",
+  "base_sha": "830d6c710b0fb47dd75a01dfb163ca2619bf5ea5",
+  "work_branch": "codex/g45-reduce-redundant-read-validation-i37-20261007",
+  "claim_branch": "medcom-claims/g45/direct/I37",
+  "scope": [
+    "src/backend/Medcom.Application/Authentication.cs",
+    "src/backend/Medcom.Infrastructure/LocalWebSessions.cs",
+    "src/backend/Medcom.Infrastructure/PurchaseRequests/SqlPurchaseRequestQueries.cs",
+    "src/backend/Medcom.Api/ApiHost.cs",
+    "src/backend/Medcom.Api/PurchaseRequestEndpoints.cs",
+    "src/backend/Medcom.Api/InboundDraftEndpoints.cs",
+    "tests/backend/Medcom.Api.Tests/SessionTests.cs",
+    "tests/backend/Medcom.Api.Tests/PurchaseRequestQueryTests.cs",
+    "tests/backend/Medcom.Api.Tests/PurchaseRequestEndpointTests.cs",
+    "tests/backend/Medcom.Api.Tests/InboundDraftEndpointTests.cs",
+    "docs/execution/checkpoints/I37_READ_LATENCY.md",
+    "docs/execution/direct-runs/I37.json"
+  ],
+  "purpose": "Reduce redundant SQL-backed session revalidation on read paths while retaining native read authorization and final live revocation checks.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "constraints": [
+    "Root alone publishes after independent source review and exact current head/base CI. No force push, no private customer data, raw SQL/archives, credentials or screenshots in public repository.",
+    "No actual DB or native DLL execution, private configuration/security setting changes, or business/runtime activation in this code slice. Preserve all existing tests and disclose unexecuted checks.",
+    "Add non-authorizing current-memory session inspection for token existence, expiry/logout and latest frozen identity without SQL/activity/version mutation. Keep full ResolveAsync behavior unchanged. No cross-request authority cache, TTL, fake versions or relaxed native permissions.",
+    "Purchase reads use cheap inspection at entry/pre-cleanup and retain fresh full authority revalidation after SQL cleanup; endpoint pre-access can inspect but post-access must revalidate. Preserve midflight revoke/cancel/branch and native credential/grant/schema checks.",
+    "Inbound GET may fast-return existing scope-null Closed/Unavailable only when BOTH exact built-in unavailable access and service registrations are present, after normal request authentication/origin/query syntax and current-session validation. No custom-provider shortcut, POST change or protected data/receipt exposure.",
+    "Record static SELECT/full-revalidation counts separately from real measured latency. SqlPurchaseRequestQueries overlaps I38 only in disjoint status-projection hunks; root owns composition."
+  ],
+  "created_at": "2026-10-07T02:55:16.025918+00:00"
+}

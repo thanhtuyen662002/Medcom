@@ -41,7 +41,8 @@ public static class PurchaseRequestEndpoints
             var result = await queries.OpenAsync(context.Request.Query["documentId"].ToString(), context.RequestAborted);
             if (result.Outcome != PurchaseRequestQueryOutcome.Success || result.Value is null) return Response(context, result);
             var original = AuthEndpoints.Current(context);
-            var live = await Live(context, sessions, original, result.Value.Document.BranchId);
+            var live = await Live(context, sessions, original, result.Value.Document.BranchId,
+                inspectOnly: queries is Medcom.Infrastructure.PurchaseRequests.SqlPurchaseRequestQueries);
             if (live is null) return Denied();
             PurchaseRequestCommandAccessState grant;
             try { grant = await access.ResolveAsync(live, result.Value.Document.PurchaseRequestId, result.Value.Document.BranchId, context.RequestAborted); }
@@ -202,9 +203,13 @@ public static class PurchaseRequestEndpoints
             && raw.EnumerateArray().Zip(typed.EnumerateArray(), ExactShape).All(value => value);
     }
 
-    private static async Task<ResolvedSession?> Live(HttpContext context, IWebSessions sessions, ResolvedSession original, string branch)
+    private static async Task<ResolvedSession?> Live(HttpContext context, IWebSessions sessions, ResolvedSession original, string branch, bool inspectOnly = false)
     {
-        var live = await sessions.ResolveAsync(original.Token, false, context.RequestAborted);
+        // The concrete SQL GET reader has just completed its full post-cleanup authority check.
+        // POST callers and the post-access GET check still use full revalidation.
+        var live = inspectOnly
+            ? await sessions.InspectAsync(original.Token, context.RequestAborted)
+            : await sessions.ResolveAsync(original.Token, false, context.RequestAborted);
         if (live is null || live.Token != original.Token || live.Identity.PrincipalId != original.Identity.PrincipalId
             || live.Identity.TenantId != original.Identity.TenantId || live.Identity.CompanyId != original.Identity.CompanyId
             || live.Identity.CredentialStamp != original.Identity.CredentialStamp
