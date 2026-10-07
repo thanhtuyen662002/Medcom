@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I45",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "939a67fc-dfd3-471c-b4c6-da7a1b74dfc9",
+  "base_sha": "c291634482d41b8925445b132b7775cc22000ffd",
+  "work_branch": "codex/g45-purchase-transaction-fences-i45-20261007",
+  "claim_branch": "medcom-claims/g45/direct/I45",
+  "scope": [
+    "src/backend/Medcom.Api/PurchaseRequestCommandRegistration.cs",
+    "src/backend/Medcom.Infrastructure/PurchaseRequests/PurchaseRequestCommandFactory.cs",
+    "src/backend/Medcom.Infrastructure/PurchaseRequests/SqlPurchaseRequestCommandAuthorityReader.cs",
+    "src/backend/Medcom.Infrastructure/PurchaseRequests/SqlPurchaseRequestCommands.cs",
+    "tests/backend/Medcom.Api.Tests/PurchaseRequestCommandAdmissionTests.cs",
+    "tests/backend/Medcom.Api.Tests/PurchaseRequestCommandCompositionTests.cs",
+    "tests/backend/Medcom.Api.Tests/PurchaseRequestCommandTests.cs",
+    "tests/backend/Medcom.Api.Tests/PurchaseRequestCommandLivenessTests.cs",
+    "docs/execution/direct-runs/I45.json"
+  ],
+  "purpose": "Make purchase fences transaction-safe",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "constraints": [
+    "Root is sole GitHub integrator/publisher. External Work implementation is isolated and has no GitHub mutation authority.",
+    "Admission only; implementation and actual tests are NOT_RUN at this commit.",
+    "No private data, credentials, owner SQL/DLL/config access, runtime activation or deployment.",
+    "Preserve current safety, original-intent custody and all existing tests. No dependency/lock/CI edits.",
+    "Use exact verified c291 source; shared composition, history, host and test registration remain root-owned."
+  ],
+  "created_at": "2026-10-07T09:17:08.140656+00:00"
+}

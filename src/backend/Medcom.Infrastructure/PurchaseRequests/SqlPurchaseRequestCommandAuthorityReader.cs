@@ -21,16 +21,19 @@ public sealed class SqlPurchaseRequestCommandAuthorityReader
     private readonly Func<DbConnection> connections;
     private readonly Func<CancellationToken, Task<AuthoritativeIdentity?>> session;
     private readonly PurchaseRequestCommandRuntimeAcceptance? acceptance;
+    private readonly Func<CancellationToken, Task<AuthoritativeIdentity?>>? inspect;
 
     internal SqlPurchaseRequestCommandAuthorityReader(Guid databaseBindingId, LegacyCompany company,
         Func<DbConnection> connections, Func<CancellationToken, Task<AuthoritativeIdentity?>> resolveLiveSession,
-        PurchaseRequestCommandRuntimeAcceptance? acceptance = null)
+        PurchaseRequestCommandRuntimeAcceptance? acceptance = null,
+        Func<CancellationToken, Task<AuthoritativeIdentity?>>? inspectLocalSession = null)
     {
         binding = databaseBindingId;
         this.company = company ?? throw new ArgumentNullException(nameof(company));
         this.connections = connections ?? throw new ArgumentNullException(nameof(connections));
         session = resolveLiveSession ?? throw new ArgumentNullException(nameof(resolveLiveSession));
         this.acceptance = acceptance;
+        inspect = inspectLocalSession;
     }
 
     public async Task<PurchaseRequestCommandAuthorityOutcome> ReadAsync(string documentId, string branchId,
@@ -38,7 +41,7 @@ public sealed class SqlPurchaseRequestCommandAuthorityReader
     {
         // An absent attestation must not even invoke the live-session resolver: that
         // resolver may perform its own SQL revalidation. A SELECT probe cannot qualify us.
-        if (acceptance?.Covers(binding, company) != true) return PurchaseRequestCommandAuthorityOutcome.Unavailable;
+        if (acceptance?.Covers(binding, company) != true || inspect is null) return PurchaseRequestCommandAuthorityOutcome.Unavailable;
         if (!PurchaseRequestCommandRules.Identifier(documentId, 50)
             || !PurchaseRequestCommandRules.Identifier(branchId, 50)) return PurchaseRequestCommandAuthorityOutcome.Denied;
         if (token.IsCancellationRequested) return PurchaseRequestCommandAuthorityOutcome.Cancelled;
@@ -107,17 +110,17 @@ public sealed class SqlPurchaseRequestCommandAuthorityReader
         if (!await Authority(tx, first, branch, token)) return PurchaseRequestCommandAuthorityOutcome.Denied;
         if (!await DocumentInScope(tx, document, branch, token)) return PurchaseRequestCommandAuthorityOutcome.Denied;
         if (!await TransactionValid(tx, token)) return PurchaseRequestCommandAuthorityOutcome.Unavailable;
-        var live = await Resolve(branch, token);
+        var live = await Resolve(branch, token, localOnly: true);
         if (!sessionFence.TryAccept(live, out var accepted) || !await Authority(tx, accepted, branch, token))
             return PurchaseRequestCommandAuthorityOutcome.Denied;
         token.ThrowIfCancellationRequested();
         return PurchaseRequestCommandAuthorityOutcome.Admitted;
     }
 
-    private async Task<AuthoritativeIdentity?> Resolve(string branch, CancellationToken token)
+    private async Task<AuthoritativeIdentity?> Resolve(string branch, CancellationToken token, bool localOnly = false)
     {
         token.ThrowIfCancellationRequested();
-        var id = await session(token).WaitAsync(token);
+        var id = await (localOnly ? inspect!(token) : session(token)).WaitAsync(token);
         token.ThrowIfCancellationRequested();
         if (id is null || id.TenantId != company.TenantId || id.CompanyId != company.CompanyId
             || !PurchaseRequestCommandRules.Identifier(id.PrincipalId, 100)
