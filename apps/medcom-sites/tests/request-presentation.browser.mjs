@@ -92,7 +92,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
  assert.ok(!css.includes('@import "tailwindcss"'),'Application Tailwind must actually compile.');
  const script=Buffer.from(built.outputFiles[0].contents),logo=await readFile(path.join(app,'public/medcom-logo.png'));
  const html='<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/app.css"><div id="root"></div><script src="/app.js"></script></html>';
- let model,serial=0,browser,context,page,origin,completed=false,fatal=null,clockPaused=false;const expectedCases=29;const errors=[],results=[],failures=[],captures=[],calls=[],transportEvidence=[],readonlyEvidence=[];
+ let model,serial=0,browser,context,page,origin,completed=false,fatal=null,clockPaused=false;const expectedCases=29;const errors=[],results=[],failures=[],captures=[],calls=[],transportEvidence=[],readonlyEvidence=[],commandGeometryEvidence=[];
  const reset=(patch={})=>{model={serial:++serial,writable:false,empty:false,status:200,holdList:false,waiters:[],listResponses:0,listResponseHeaders:null,holdDetail:false,detailWaiters:[],detailStatus:200,draftEnvelope:null,draftNetwork:false,draftNetworkFailures:0,draftMalformed:false,draftResponses:0,afterWriteDraftEnvelope:null,holdProjection:false,projectionWaiters:[],projectionStatus:200,projectionKind:null,projectionResponses:0,unknown:false,workspaceReads:0,workspaceResponses:0,workspacePending:0,workspaceVersions:[],advanceAuthority:false,deniedLists:0,workspaceStatus:200,purchase:structuredClone(purchase),inbound:structuredClone(inbound),purchaseVersion:1,inboundVersion:1,effects:0,originals:new Map(),receipts:new Map(),writes:[],reconciles:[],control:{closed:[],bff:[]},holdCommands:false,commandWaiters:[],commandResponses:0,rejected:false,conflict:false,malformed:false,...patch};calls.length=0;};
  const workspace=()=>({session:{displayName:'SYNTHETIC USER',tenantId:'QA-T',companyId:'QA-C',companyName:'SYNTHETIC',authorityVersion:model.advanceAuthority?model.workspaceReads:1,idleExpiresAt:new Date(Date.now()+3600000).toISOString(),absoluteExpiresAt:new Date(Date.now()+7200000).toISOString(),capabilities:model.workspaceCapabilities??['purchase-requests.read','inbound-requests.read','purchase-orders.read']},branchIds:['QA-BRANCH'],navigation:['purchase-requests','inbound-requests','purchase-orders'].map(id=>({id,label:id,href:'/?screen='+id}))});
  const send=(res,status,data,headers={})=>{if(res.destroyed)return;res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store',...headers});res.end(JSON.stringify(data));};
@@ -259,8 +259,37 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
    const dialog=page.getByRole('dialog',{name:'Tìm màn hình',exact:true});await dialog.waitFor();
    await paint();assert.equal(await dialog.getByRole('combobox').evaluate(el=>el===document.activeElement),true,'Opening command search focuses its input without test intervention');
    for(let n=0;n<5;n++){await page.keyboard.press('Tab');assert.equal(await dialog.evaluate(el=>el.contains(document.activeElement)),true,'Tab focus stays in modal');}
-   const geometry=await dialog.evaluate(el=>{const r=el.getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:innerHeight,rows:[...el.querySelectorAll('[data-slot=command-item]')].map(row=>row.getBoundingClientRect().height)}});assert.ok(geometry.top>=0&&geometry.bottom<=geometry.height);assert.ok(geometry.rows.every(height=>height>=44));
-   await capture(`i36-command-${width}`,{viewport:true,keepFocus:true});await dialog.getByRole('button',{name:'Đóng tìm màn hình',exact:true}).click();await dialog.waitFor({state:'hidden'});await paint();assert.equal(await page.evaluate(()=>document.activeElement===window.i36ExpectedOpener),true,'Close restores the search opener');
+   const commandGeometry=()=>dialog.evaluate(el=>{
+    const r=el.getBoundingClientRect(),style=getComputedStyle(el);
+    return {top:r.top,bottom:r.bottom,height:innerHeight,transform:style.transform,scale:style.scale,
+     animations:el.getAnimations({subtree:true}).map(animation=>({playState:animation.playState,pending:animation.pending,currentTime:animation.currentTime,
+      endTime:animation.effect?.getComputedTiming().endTime,animationName:animation instanceof CSSAnimation?animation.animationName:null})),
+     rows:[...el.querySelectorAll('[data-slot=command-item]')].map((row,index)=>({index,height:row.getBoundingClientRect().height,offsetHeight:row.offsetHeight,
+      minHeight:getComputedStyle(row).minHeight,display:getComputedStyle(row).display,visibility:getComputedStyle(row).visibility,hidden:row.hidden,
+      role:row.getAttribute('role'),ariaDisabled:row.getAttribute('aria-disabled'),rectCount:row.getClientRects().length,
+      ancestors:(()=>{const values=[];for(let ancestor=row.parentElement;ancestor;ancestor=ancestor.parentElement){const css=getComputedStyle(ancestor);
+       values.push({role:ancestor.getAttribute('role'),slot:ancestor.getAttribute('data-slot'),display:css.display,visibility:css.visibility,hidden:ancestor.hidden,
+        transform:css.transform,scale:css.scale,animations:ancestor.getAnimations().map(animation=>({playState:animation.playState,pending:animation.pending,currentTime:animation.currentTime,endTime:animation.effect?.getComputedTiming().endTime}))});
+       if(ancestor===el)break;}return values;})()}))};
+   });
+   const opening=await commandGeometry();commandGeometryEvidence.push({width,phase:'opening',...opening});
+   await capture(`i36-command-opening-${width}`,{viewport:true,keepFocus:true});
+   // Touch-target geometry is measured after the real finite entrance animation,
+   // not at an arbitrary number of frames while an ancestor may still be scaled.
+   // Keep both layout and transformed geometry as evidence; a genuine small row
+   // still fails the unchanged 44px rendered-height requirement below.
+   await dialog.evaluate(async el=>{
+    await Promise.all(el.getAnimations({subtree:true}).filter(animation=>
+     (animation.pending||animation.playState==='running')&&Number.isFinite(animation.effect?.getComputedTiming().endTime)
+    ).map(animation=>animation.finished));
+   });
+   await paint();const geometry=await commandGeometry();commandGeometryEvidence.push({width,phase:'settled',...geometry});
+   await capture(`i36-command-${width}`,{viewport:true,keepFocus:true});
+   await writeFile(path.join(output,`i36-command-geometry-${width}.json`),JSON.stringify({opening,settled:geometry},null,2));
+   assert.ok(!geometry.animations.some(animation=>(animation.pending||animation.playState==='running')&&Number.isFinite(animation.endTime)),'Command entrance animations must be finished: '+JSON.stringify(geometry));
+   assert.ok(geometry.top>=0&&geometry.bottom<=geometry.height,'Command dialog must fit the viewport: '+JSON.stringify(geometry));
+   assert.ok(geometry.rows.length>0&&geometry.rows.every(row=>row.offsetHeight>=44&&row.height>=44),'Every command row must retain at least 44px layout and rendered height: '+JSON.stringify(geometry));
+   await dialog.getByRole('button',{name:'Đóng tìm màn hình',exact:true}).click();await dialog.waitFor({state:'hidden'});await paint();assert.equal(await page.evaluate(()=>document.activeElement===window.i36ExpectedOpener),true,'Close restores the search opener');
    if(width<768)await page.locator('.mobile-bottom-nav').getByRole('button',{name:'Tìm màn hình được cấp quyền',exact:true}).click();else await page.locator('.global-search').click();
    await dialog.waitFor();await page.keyboard.press('Escape');await dialog.waitFor({state:'hidden'});await paint();assert.equal(await page.evaluate(()=>document.activeElement===window.i36ExpectedOpener),true,'Escape restores the search opener');assert.equal(new URL(page.url()).searchParams.get('screen'),'purchase-requests');
    const searchInput=host('purchase-requests').getByLabel('Tìm mã đề nghị',{exact:true});await searchInput.focus();await page.keyboard.press('Control+k');await dialog.waitFor();await paint();assert.equal(await dialog.getByRole('combobox').evaluate(el=>el===document.activeElement),true);await page.keyboard.press('Escape');await dialog.waitFor({state:'hidden'});await paint();assert.equal(await searchInput.evaluate(el=>el===document.activeElement),true,'Keyboard invocation restores its original focused field');
@@ -676,7 +705,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
  }catch(error){fatal=String(error);throw error;}finally{
   let teardownError;try{await cleanup();}catch(error){teardownError=error;errors.push(String(error));}
   t.signal.removeEventListener('abort',abortCleanup);
-  const evidence={node:process.version,css:{sourceSha256:sha(cssSource),compiledSha256:sha(css),bytes:Buffer.byteLength(css)},viewportWidths:[320,390,1440],hierarchy:'Actual Workspace and production request components',backend:'Synthetic HTTP host plus separately labelled trusted-adapter component contract; no ERP/SQL acceptance',status:completed&&!t.signal.aborted&&!fatal&&!failures.length&&!errors.length&&results.length===expectedCases?'passed':'failed',expectedCases,completedCases:results.length,fatal,results,failures,captures,transportEvidence,readonlyEvidence,errors};
+  const evidence={node:process.version,css:{sourceSha256:sha(cssSource),compiledSha256:sha(css),bytes:Buffer.byteLength(css)},viewportWidths:[320,390,1440],hierarchy:'Actual Workspace and production request components',backend:'Synthetic HTTP host plus separately labelled trusted-adapter component contract; no ERP/SQL acceptance',status:completed&&!t.signal.aborted&&!fatal&&!failures.length&&!errors.length&&results.length===expectedCases?'passed':'failed',expectedCases,completedCases:results.length,fatal,results,failures,captures,transportEvidence,readonlyEvidence,commandGeometryEvidence,errors};
   await writeFile(path.join(output,'browser-result.json'),JSON.stringify(evidence,null,2));
   if(teardownError)throw teardownError;
  }
