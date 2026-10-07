@@ -17,6 +17,18 @@ const api=await import(pathToFileURL(path.join(output,'api.mjs')).href);
 const {proxyErpRequest}=await import('../.test-runtime/erp-tests/proxy.js');
 const {routeAllowed}=await import('../.test-runtime/erp-tests/proxy-policy.js');
 const scope='a'.repeat(64);
+// Test-only native observer; fresh pages start with zero and each scenario
+// compares a captured baseline so legitimate modal opening is never miscounted.
+function installPurchaseDetailFocusObserver(){
+ window.purchaseDetailFocuses=0;const native=HTMLElement.prototype.focus;
+ HTMLElement.prototype.focus=function(...args){if(this.matches('.request-detail-dialog[role="dialog"],[aria-label="Phiếu mua hàng hiện có"]'))window.purchaseDetailFocuses++;return Reflect.apply(native,this,args);};
+}
+test('purchase focus observer counts repeated target calls while preserving native receiver and options',()=>{
+ const calls=[],token={},error=Error('synthetic-focus-error');class HTMLElement{constructor(target){this.target=target;}matches(){return this.target;}focus(...args){calls.push({receiver:this,args});if(args[0]?.fail)throw error;return token;}}
+ const window={};runInNewContext(`(${installPurchaseDetailFocusObserver.toString()})();`,{window,HTMLElement,Reflect});
+ const target=new HTMLElement(true),other=new HTMLElement(false),options={preventScroll:true};assert.strictEqual(target.focus(options),token);assert.strictEqual(target.focus(options),token);assert.strictEqual(other.focus(options),token);
+ assert.equal(window.purchaseDetailFocuses,2);assert.deepEqual(calls.map(call=>call.receiver),[target,target,other]);assert.ok(calls.every(call=>call.args.length===1&&call.args[0]===options));assert.throws(()=>other.focus({fail:true}),caught=>caught===error);assert.equal(window.purchaseDetailFocuses,2);
+});
 function document(id='QA-000',branch='QA-A',count=1){return {purchaseRequestId:id,branchId:branch,statusId:1,isLocked:null,
  header:{purchaseDate:'2026-10-06T13:14:15.000',purposeId:1,personSuggest:'SYNTHETIC REQUESTER',department:'SYNTHETIC DEPARTMENT',purposeDescOrClient:null,price:'15.25',notes:null,currencyId:'VND',objectId:'QA-OBJECT',rateExchange:1.25},
  lines:Array.from({length:count},(_,index)=>({lineId:`QA-L${String(index+1).padStart(3,'0')}`,values:{itemId:'QA-ITEM',budget:null,timeRequired:'synthetic wall clock',quantity:'999999999999999999',unitPrice:'2',totalPrice:'7',model:null}}))};}
@@ -391,7 +403,7 @@ test('real HTTP → BFF → existing workspace/browser purchase controls and aut
   // Chromium permits secure cookies on localhost; no production cookie/TLS policy changes.
   await context.addCookies([{name:'__Host-Medcom.Session',value:'synthetic-i17',domain:'localhost',path:'/',secure:true,httpOnly:true,sameSite:'Strict'}]);
   await context.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());
-  page=await context.newPage();page.setDefaultTimeout(5000);page.on('pageerror',error=>errors.push(error.message));await page.goto(origin+'/?screen=purchase-requests');
+  page=await context.newPage();await page.addInitScript(installPurchaseDetailFocusObserver);page.setDefaultTimeout(5000);page.on('pageerror',error=>errors.push(error.message));await page.goto(origin+'/?screen=purchase-requests');
   const screen=page.locator('section[aria-label="Danh sách đề nghị mua hàng"]');
   await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).waitFor();
   await t.test('existing workspace navigation mounts the real screen and available read controls',async()=>{
@@ -466,22 +478,28 @@ test('real HTTP → BFF → existing workspace/browser purchase controls and aut
    await screen.getByRole('button',{name:'Đóng đề nghị',exact:true}).click();await focused('[aria-label="Mở đề nghị QA-000"]');
   });
   await t.test('I33 failed and superseded reads never create a deferred detail focus',async()=>{
-   await page.evaluate(()=>{window.purchaseDetailFocuses=0;document.addEventListener('focusin',event=>{if(event.target.matches?.('[aria-label="Phiếu mua hàng hiện có"]'))window.purchaseDetailFocuses++;});});
-   state.detailFailure=503;await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).click();await screen.getByRole('alert').waitFor();await focusPaint();assert.equal(await page.evaluate(()=>window.purchaseDetailFocuses),0);
-   await focused(focusRegion);state.detailFailure=null;await screen.getByRole('button',{name:'Xác minh lại phiếu',exact:true}).click();await screen.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true}).waitFor();await focusPaint();assert.equal(await page.evaluate(()=>window.purchaseDetailFocuses),0,'refresh cannot revive a failed Open ticket');
+   // Observe actual target.focus calls, including a repeated focus on the already
+   // active frame. Modal opening has its own legitimate initial focus baseline.
+   const frameFocusCount=()=>page.evaluate(()=>window.purchaseDetailFocuses);const beforeFailedOpen=await frameFocusCount();
+   state.detailFailure=503;await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).click();await screen.getByRole('alert').waitFor();await focused(focusRegion);await focusPaint();
+   const initialModalFocus=await frameFocusCount();assert.equal(initialModalFocus,beforeFailedOpen+1,'Failed Open still gives the named modal its one immediate focus');
+   state.detailFailure=null;state.hold=true;const retryStarted=new Promise(resolve=>{state.started=resolve;});await screen.getByRole('button',{name:'Xác minh lại phiếu',exact:true}).click();await retryStarted;
+   const laterControl=screen.getByRole('button',{name:'Đóng hộp thoại',exact:true});await laterControl.focus();const retryFocus=await frameFocusCount();
+   state.hold=false;state.release();await screen.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true}).waitFor();await focusPaint();assert.equal(await frameFocusCount(),retryFocus,'refresh cannot revive a failed Open ticket');assert.equal(await laterControl.evaluate(element=>element===document.activeElement),true,'refresh preserves the newer modal-control focus');
    // Same-document Open is a programmatic mounted-handler challenge while the modal blocks the list.
-   await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).evaluate(button=>button.click());await focused('[aria-label="Phiếu mua hàng hiện có"]');assert.equal(await page.evaluate(()=>window.purchaseDetailFocuses),1,'an explicit same-document handler may focus without a new read');
+   const explicitFocus=await frameFocusCount();await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).evaluate(button=>button.click());await focused(focusRegion);assert.equal(await frameFocusCount(),explicitFocus+1,'an explicit same-document handler focuses its owned frame exactly once without a new read');
    await screen.getByRole('button',{name:'Đóng đề nghị',exact:true}).click();await focused('[aria-label="Mở đề nghị QA-000"]');
-   state.hold=true;const started=new Promise(resolve=>{state.started=resolve;});await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).click();await started;
+   const beforeHeldOpen=await frameFocusCount();state.hold=true;const started=new Promise(resolve=>{state.started=resolve;});await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).click();await started;await focused(focusRegion);await focusPaint();
+   const heldModalFocus=await frameFocusCount();assert.equal(heldModalFocus,beforeHeldOpen+1,'A second deliberate modal opening adds only its immediate focus');
    await screen.getByRole('button',{name:'Đóng đề nghị',exact:true}).click();await focused('[aria-label="Mở đề nghị QA-000"]');state.hold=false;state.release();await focusPaint();
-   assert.equal(await page.evaluate(()=>window.purchaseDetailFocuses),1);assert.equal(await screen.getByRole('region',{name:'Phiếu mua hàng hiện có',exact:true}).count(),0);
+   assert.equal(await frameFocusCount(),heldModalFocus,'A late closed read cannot restore focus to either the frame or obsolete region');assert.equal(await screen.getByRole('region',{name:'Phiếu mua hàng hiện có',exact:true}).count(),0);
   });
   await t.test('late result after a login boundary is discarded, and grant denial removes rows',async()=>{
    await page.evaluate(()=>window.qa.controlled());await find('QA-000');state.hold=true;const started=new Promise(resolve=>{state.started=resolve;});
    await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).click();await started;
    state.canRead=false;await page.evaluate(()=>window.qa.authority(true));state.hold=false;state.release();await page.getByText('Bạn không có quyền đọc đề nghị mua hàng trong phạm vi hiện tại.',{exact:true}).waitFor();
    await page.waitForTimeout(50);assert.equal(await page.getByRole('table',{name:'Toàn bộ dòng đề nghị',exact:true}).count(),0);assert.equal(await page.getByRole('table',{name:'Danh sách đề nghị',exact:true}).locator('tbody tr').count(),0);
-   assert.equal(await page.evaluate(()=>document.activeElement?.matches('[aria-label="Phiếu mua hàng hiện có"]')),false);
+   assert.equal(await page.evaluate(()=>document.activeElement?.matches('.request-detail-dialog[role="dialog"],[aria-label="Phiếu mua hàng hiện có"]')),false);
   });
   assert.deepEqual(errors,[]);assert.equal(calls.some(call=>call.method!=='GET'),false);await writeFile(path.join(output,'browser-evidence.json'),JSON.stringify({node:process.version,browser:browser.version(),viewport:[390,844],calls:calls.length,nonGetCalls:0,errors},null,2));
  }catch(error){await writeFile(path.join(output,'synthetic-failure.json'),JSON.stringify({errors,calls,body:await page?.locator('body').innerText().catch(()=>''),error:String(error)},null,2));throw error;}
@@ -744,7 +762,7 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
   const now=Date.now();if(expiry){const soon=new Date(now+30000).toISOString(),far=new Date(now+300000).toISOString();state.lifetime={idleExpiresAt:expiry==='idle'?soon:far,absoluteExpiresAt:expiry==='absolute'?soon:far};}
   context=await browser.newContext({viewport:{width:390,height:844}});
   await context.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());
-  page=await context.newPage();page.setDefaultTimeout(6000);page.on('pageerror',error=>errors.push(error.message));
+  page=await context.newPage();await page.addInitScript(installPurchaseDetailFocusObserver);page.setDefaultTimeout(6000);page.on('pageerror',error=>errors.push(error.message));
   if(expiry)await page.clock.install({time:new Date(now)});
   await page.goto(origin+'/?screen=purchase-requests');screen=page.locator('section[aria-label="Danh sách đề nghị mua hàng"]');
   // Let both the initial and the real Workspace background authority read settle.
@@ -855,8 +873,8 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
    const notes=screen.getByLabel('Ghi chú',{exact:true}),original=await notes.inputValue();
    // Programmatic same-document activation; the selected modal blocks the background list.
    await page.keyboard.press('Control+k');assert.equal(await page.locator('.command-modal:visible').count(),0);
-   await screen.getByRole('button',{name:'Mở đề nghị QA-CUSTODY',exact:true}).evaluate(button=>button.click());
-   await page.waitForFunction(()=>document.activeElement?.matches('[aria-label="Phiếu mua hàng hiện có"]'));
+   const beforeSameDocument=await page.evaluate(()=>window.purchaseDetailFocuses);await screen.getByRole('button',{name:'Mở đề nghị QA-CUSTODY',exact:true}).evaluate(button=>button.click());
+   await page.waitForFunction(()=>{const editor=document.querySelector('[aria-label="Phiếu mua hàng hiện có"]');return !!editor&&document.activeElement===editor.closest('.request-detail-dialog[role="dialog"]');});assert.equal(await page.evaluate(()=>window.purchaseDetailFocuses),beforeSameDocument+1,'Accepted same-document focus adds exactly one owned-frame call');
    assert.equal(await notes.inputValue(),original);assert.equal(await page.getByRole('alertdialog').count(),0);
    assert.equal(await page.evaluate(()=>{const event=new Event('beforeunload',{cancelable:true});window.dispatchEvent(event);return event.defaultPrevented;}),true,'same-document focus must preserve the real dirty guard');
    await screen.getByRole('button',{name:'Đóng đề nghị',exact:true}).click();await page.getByRole('alertdialog').waitFor();

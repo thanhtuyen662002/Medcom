@@ -731,6 +731,42 @@ function App(){const registerNavigation=useCallback(value=>{window.qaNavigation=
 }
 createRoot(document.getElementById('root')).render(<App/>);`;
 
+// Count native calls, including a repeated focus on an already-active target.
+// Observation must never swallow focus, change its receiver/options, or replace
+// browser behavior; both the bounded frame and former body target are recorded.
+function installInboundFocusObserver() {
+  const nativeFocus = HTMLElement.prototype.focus;
+  window.requestDetailFocusCalls = [];
+  HTMLElement.prototype.focus = function (...args) {
+    if (this instanceof HTMLElement) {
+      const frame = this.matches('.request-detail-dialog[role="dialog"]');
+      const region = this.matches('[role="region"][aria-label="Phiếu nhập hàng đã chọn"]');
+      if (frame || region) window.requestDetailFocusCalls.push({kind: frame ? 'frame' : 'region',
+        label: frame ? this.querySelector('.request-detail-header h2')?.textContent : this.getAttribute('aria-label')});
+    }
+    return Reflect.apply(nativeFocus, this, args);
+  };
+}
+
+test('Node focus observer delegates exact receiver/options, return values and native failures', () => {
+  const invocations = [], result = {}, failure = Error('native failure'), window = {};
+  class Element {
+    constructor(kind) {this.kind = kind;}
+    matches(selector) {return this.kind === 'frame' ? selector.startsWith('.request-detail-dialog') : this.kind === 'region' && selector.startsWith('[role="region"]');}
+    querySelector() {return {textContent: 'Phiếu nhập hàng đã chọn'};}
+    getAttribute() {return 'Phiếu nhập hàng đã chọn';}
+    focus(...args) {invocations.push({receiver: this, args}); if (this.kind === 'throws') throw failure; return result;}
+  }
+  new Function('HTMLElement', 'window', `(${installInboundFocusObserver.toString()})()`)(Element, window);
+  const options = Object.freeze({get preventScroll() {throw Error('observer must not inspect options');}});
+  const frame = new Element('frame'), region = new Element('region'), other = new Element('other');
+  assert.strictEqual(frame.focus(options), result); frame.focus(options); region.focus(); other.focus(undefined);
+  assert.strictEqual(invocations[0].receiver, frame); assert.strictEqual(invocations[0].args[0], options);
+  assert.deepEqual(invocations[2].args, []); assert.deepEqual(invocations[3].args, [undefined]);
+  assert.deepEqual(window.requestDetailFocusCalls.map(call => call.kind), ['frame', 'frame', 'region']);
+  assert.throws(() => new Element('throws').focus(options), error => error === failure);
+});
+
 test('React host mobile 320/360/390: ACTUAL React gate (separate from Node double)', {timeout: 240000}, async t => {
   const require = createRequire(import.meta.url); let build, chromium;
   try {
@@ -770,6 +806,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
     const page = await context.newPage(); page.on('pageerror', e => errors.push(e.message));
     const origin = `http://127.0.0.1:${server.address().port}`;
     await page.route('**/*', r => {if (r.request().url().startsWith(origin + '/')) return r.continue(); external.push(r.request().url()); return r.abort();});
+    await page.addInitScript(installInboundFocusObserver);
     await page.goto(origin);
     const button = name => page.getByRole('button', {name, exact: true}), field = name => page.getByLabel(name, {exact: true});
     // Open in an already active modal uses the production typed navigation
@@ -790,13 +827,26 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await button('Tiếp tục làm việc').click(); assert.equal(await page.evaluate(() => window.qaLeft), false);
     };
     const run = async (name, fn) => {await t.test(name, async () => {try {await fn(); results.push({name, result: 'PASS'});} catch (e) {results.push({name, result: 'FAIL'}); throw e;}});};
-    const detailFocused=()=>page.evaluate(()=>{const region=document.querySelector('[role="region"][aria-label="Phiếu nhập hàng đã chọn"]');return !!region&&document.activeElement===region;});
     const dialog=()=>page.getByRole('dialog',{name:'Phiếu nhập hàng đã chọn',exact:true});
     const modalClose=()=>dialog().getByRole('button',{name:'Đóng hộp thoại',exact:true});
     const focusedDialog=async()=>{await page.waitForFunction(()=>{const dialog=document.querySelector('.request-detail-dialog');return !!dialog&&dialog.contains(document.activeElement)&&!document.activeElement.matches('input,textarea,select,[contenteditable=true]');});};
     const rowFocus = id => page.getByRole('button', {name:new RegExp('^Mở phiếu '+id+' ')});
     const focused = async locator => {await page.waitForFunction(element=>document.activeElement===element,await locator.elementHandle());};
     const focusPaint = () => page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    const detailFocusCalls = () => page.evaluate(() => {
+      const calls = window.requestDetailFocusCalls.filter(call => call.label === 'Phiếu nhập hàng đã chọn');
+      return {frame: calls.filter(call => call.kind === 'frame').length, region: calls.filter(call => call.kind === 'region').length};
+    });
+    const focusBaseline = async () => {await dialog().waitFor(); await focusPaint(); return detailFocusCalls();};
+    const noDetailFocus = async (baseline, message = 'read completion cannot dispatch an extra frame or former-region focus') => {
+      await focusPaint(); assert.deepEqual(await detailFocusCalls(), baseline, message);
+    };
+    const oneDetailFocus = async (baseline, message = 'explicit same-document Open focuses its bounded frame exactly once') => {
+      await page.waitForFunction(before => window.requestDetailFocusCalls.filter(call => call.label === 'Phiếu nhập hàng đã chọn' && call.kind === 'frame').length > before.frame, baseline);
+      await focusPaint(); assert.deepEqual(await detailFocusCalls(), {frame: baseline.frame + 1, region: baseline.region}, message);
+      assert.equal(await dialog().evaluate(element => document.activeElement === element), true);
+    };
+
     const readMarkers = {sessionScope:'e'.repeat(64),readScope:'f'.repeat(64)};
     await run('I40 Open/Close and unchanged parent observations reuse the authorized list; refresh/filter/page/branch/authority fetch', async () => {
       await reset({readMarkers});
@@ -877,7 +927,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       assert.deepEqual(c.detail,[{path:'/api/erp/api/documents/inbound-requests/detail',query:'?documentId=DOC-A&page=1&pageSize=50',documentId:'DOC-A',page:1,method:'GET',credentials:'same-origin',cache:'no-store',redirect:'error',headers:{},body:null}]);
       assert.match(await readonly().innerText(),/READ ONLY PROJECTION/);assert.match(await readonly().innerText(),/1234567890123456789012345678\.1234/);
       assert.equal(await field('Số đơn').count(),0);assert.equal(await readonly().locator('input,textarea,select').count(),0);assert.equal(c.post.length,0);assert.equal(c.reconcile.length,0);
-      const count=c.detail.length;await open('DOC-A');await focusedDialog();assert.equal((await calls()).detail.length,count,'same-selection Open must reuse current read proof');
+      const count=c.detail.length,sameOpenFocus=await focusBaseline();await open('DOC-A');await oneDetailFocus(sameOpenFocus);assert.equal((await calls()).detail.length,count,'same-selection Open must reuse current read proof');
     });
     await run('I33 command scope cannot substitute for the independently verified detail READ response scope',async()=>{
       await resetReadonly({draftReply:unavailable('c'.repeat(64)),detailResponseMarkers:{sessionScope:readMarkers.sessionScope,readScope:'c'.repeat(64)}});
@@ -898,7 +948,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
     });
     await run('I33 authority layout commit fences captured readonly 401/403 before parent releases the old response',async()=>{
       for(const status of [401,403]){
-        await resetReadonly({held:{detail:true},detailFailure:status,detailLabel:'RETIRED LAYOUT RESPONSE'});await page.waitForFunction(()=>window.qa.held('detail')===1);await readonly().evaluate(element=>window.qaBoundaryPanel=element);
+        await resetReadonly({held:{detail:true},detailFailure:status,detailLabel:'RETIRED LAYOUT RESPONSE'});await page.waitForFunction(()=>window.qa.held('detail')===1);await readonly().evaluate(element=>window.qaBoundaryPanel=element);const authorityFocus=await focusBaseline();
         await page.evaluate(()=>{window.qa.hold('read');window.qa.detail({releaseDetailOnAuthorityCommit:true,detailFailure:null,detailLabel:'CURRENT LAYOUT RESPONSE'});window.qa.rights({});});
         await page.waitForFunction(()=>window.qa.calls().layoutDetailReleases.length===1&&window.qa.calls().detailCompleted.length===1&&window.qa.held('read')>0);await focusPaint();
         assert.deepEqual((await calls()).layoutDetailReleases,[{authorityVersion:2,panelPresent:true,phase:'pending',abortedAtRelease:true}],'retired generation is already fenced in child layout, before parent layout releases HTTP failure');
@@ -906,7 +956,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
         assert.deepEqual(await page.evaluate(()=>window.qaDenied),[]);assert.equal(await page.evaluate(()=>window.qaBoundaryPanel.isConnected&&window.qaBoundaryPanel===document.querySelector('[data-testid=inbound-request-readonly]')),true);assert.equal(await readonly().getAttribute('data-phase'),'pending');
         assert.equal(await rowFocus('DOC-A').getAttribute('aria-pressed'),'true');assert.equal((await calls()).detail.length,1);assert.doesNotMatch(await page.getByTestId('inbound-request-host').innerText(),/Đã kết thúc phiên|Chưa xác minh được quyền xem phiếu/);
         await page.evaluate(()=>window.qa.release('read'));await page.waitForFunction(()=>window.qa.held('detail')===1&&window.qa.calls().detail.length===2);assert.equal(await page.evaluate(()=>window.qaBoundaryPanel===document.querySelector('[data-testid=inbound-request-readonly]')),true);
-        await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');await focusPaint();assert.match(await readonly().innerText(),/CURRENT LAYOUT RESPONSE/);assert.equal(await detailFocused(),false);
+        await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');await focusPaint();assert.match(await readonly().innerText(),/CURRENT LAYOUT RESPONSE/);await noDetailFocus(authorityFocus);
         assert.equal(await page.evaluate(()=>window.qaBoundaryPanel===document.querySelector('[data-testid=inbound-request-readonly]')),true);assert.deepEqual(await page.evaluate(()=>window.qaDenied),[]);assert.equal((await calls()).post.length,0);assert.equal((await calls()).reconcile.length,0);
       }
     });
@@ -934,10 +984,13 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await waitUnavailable();await noProjection();assert.equal(await rowFocus('DOC-A').count(),0);assert.equal((await calls()).post.length,0);
     });
     await run('I33 failed readonly Open retires focus; retry and later A→B→A never revive the failed projection',async()=>{
-      await resetReadonly({detailFailure:'network',detailLabel:'FAILED A'});await readonlyPhase('failed');await focusPaint();
-      assert.equal(await detailFocused(),false);
-      await page.evaluate(()=>window.qa.detail({detailFailure:null,detailLabel:'RECOVERED A'}));await readonly().getByRole('button',{name:'Thử lại',exact:true}).click();await readonlyPhase('ready');await focusPaint();
-      assert.match(await readonly().innerText(),/RECOVERED A/);assert.equal(await detailFocused(),false,'retry has no new Open focus ticket');
+      await resetReadonly({held:{detail:true},detailFailure:'network',detailLabel:'FAILED A'});await page.waitForFunction(()=>window.qa.held('detail')===1);
+      const failedFocus=await focusBaseline();await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('failed');await noDetailFocus(failedFocus);
+      await page.evaluate(()=>{window.qa.hold('detail');window.qa.detail({detailFailure:null,detailLabel:'RECOVERED A'});});
+      await modalClose().focus();const retryFocus=await focusBaseline();
+      await readonly().getByRole('button',{name:'Thử lại',exact:true}).evaluate(element=>element.click());await page.waitForFunction(()=>window.qa.held('detail')===1);
+      await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');await noDetailFocus(retryFocus,'retry has no new Open focus ticket');
+      assert.equal(await modalClose().evaluate(element=>document.activeElement===element),true);assert.match(await readonly().innerText(),/RECOVERED A/);
       await page.evaluate(()=>window.qa.detail({detailLabel:'CURRENT B'}));await open('DOC-B');await readonlyPhase('ready');await focusedDialog();assert.match(await readonly().innerText(),/CURRENT B/);
       await page.evaluate(()=>{window.qa.hold('detail');window.qa.detail({detailLabel:'FRESH A'});});await open('DOC-A');await page.waitForFunction(()=>window.qa.held('detail')===1);await readonlyPhase('pending');
       assert.doesNotMatch(await readonly().innerText(),/RECOVERED A|CURRENT B|FAILED A/);await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');await focusedDialog();
@@ -947,12 +1000,12 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       for(const retiredFailure of [null,401]){
         await resetReadonly({held:{detail:true},detailLabel:'RETIRED A',detailFailure:retiredFailure});await page.waitForFunction(()=>window.qa.held('detail')===1);
         await page.evaluate(()=>window.qa.detail({detailLabel:'RETIRED B',detailFailure:null}));await open('DOC-B');await page.waitForFunction(()=>window.qa.held('detail')===2);
-        await page.evaluate(()=>window.qa.detail({detailLabel:'CURRENT A'}));await open('DOC-A');await page.waitForFunction(()=>window.qa.held('detail')===3);await readonlyPhase('pending');
+        await page.evaluate(()=>window.qa.detail({detailLabel:'CURRENT A'}));await open('DOC-A');await page.waitForFunction(()=>window.qa.held('detail')===3);await readonlyPhase('pending');const staleFocus=await focusBaseline();
         await page.evaluate(()=>{window.qa.releaseOne('detail');window.qa.releaseOne('detail');});await page.waitForFunction(()=>window.qa.calls().detailCompleted.length===2);await focusPaint();
         assert.equal(await readonly().getAttribute('data-phase'),'pending');assert.doesNotMatch(await readonly().innerText(),/RETIRED A|RETIRED B/);
-        assert.equal(await detailFocused(),false);assert.deepEqual(await page.evaluate(()=>window.qaDenied),[]);
+        await noDetailFocus(staleFocus);assert.deepEqual(await page.evaluate(()=>window.qaDenied),[]);
         assert.ok((await calls()).detailCompleted.every(result=>result.aborted),'double resolves retired responses despite cancellation');
-        await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');await focusedDialog();assert.match(await readonly().innerText(),/CURRENT A/);
+        await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');await oneDetailFocus(staleFocus,'only the current A read completes its explicit Open focus');assert.match(await readonly().innerText(),/CURRENT A/);
         assert.deepEqual((await calls()).detail.map(call=>call.documentId),['DOC-A','DOC-B','DOC-A']);assert.equal((await calls()).post.length,0);
       }
     });
@@ -963,10 +1016,10 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
         if(generation==='workspace'){await page.evaluate(()=>window.qa.workspace(false));await page.waitForFunction(()=>!document.querySelector('[data-testid=inbound-request-readonly]'));await page.evaluate(()=>window.qa.workspace(true));}
         else if(generation==='api')await page.evaluate(()=>window.qa.swapApi());
         else await page.evaluate(({generation,markers})=>window.qa.markers({...markers,[generation==='session-scope'?'sessionScope':'readScope']:'d'.repeat(64)}),{generation,markers:readMarkers});
-        await page.waitForFunction(()=>window.qa.held('detail')===2);await readonlyPhase('pending');await page.evaluate(()=>window.qa.releaseOne('detail'));await page.waitForFunction(()=>window.qa.calls().detailCompleted.length===1);await focusPaint();
+        await page.waitForFunction(()=>window.qa.held('detail')===2);await readonlyPhase('pending');const recoveredFocus=await focusBaseline();await page.evaluate(()=>window.qa.releaseOne('detail'));await page.waitForFunction(()=>window.qa.calls().detailCompleted.length===1);await focusPaint();
         assert.equal(await readonly().getAttribute('data-phase'),'pending');assert.doesNotMatch(await readonly().innerText(),/RETIRED GENERATION/);assert.deepEqual(await page.evaluate(()=>window.qaDenied),[]);
         await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');await focusPaint();assert.match(await readonly().innerText(),/CURRENT GENERATION/);
-        assert.equal(await detailFocused(),false,'authority/API/scope recovery cannot re-arm old Open focus');assert.equal((await calls()).detail.length,2);assert.equal((await calls()).post.length,0);
+        await noDetailFocus(recoveredFocus,'authority/API/scope recovery cannot re-arm old Open focus');assert.equal((await calls()).detail.length,2);assert.equal((await calls()).post.length,0);
       }
     });
     await run('I33 healthy authority refresh preserves readonly page-2 DOM; real workspace/API/scope boundaries require fresh masked reads',async()=>{
@@ -986,10 +1039,10 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
         if(refresh==='workspace'){await page.evaluate(()=>window.qa.workspace(false));await page.waitForFunction(()=>!document.querySelector('[data-testid=inbound-request-readonly]'));assert.doesNotMatch(await page.getByTestId('inbound-request-host').innerText(),/ORIGINAL PAGE 2/);await page.evaluate(()=>window.qa.workspace(true));}
         else if(refresh==='authority')await page.evaluate(()=>window.qa.rights({}));
         else await page.evaluate(()=>window.qa.swapApi());
-        await page.waitForFunction(()=>window.qa.held('read')>0);await focusPaint();assert.equal((await calls()).detail.length,before,'no detail request before new typed Unavailable');
+        await page.waitForFunction(()=>window.qa.held('read')>0);const refreshFocus=await focusBaseline();assert.equal((await calls()).detail.length,before,'no detail request before new typed Unavailable');
         if(refresh==='authority'){
           await readonlyPhase('pending');await page.waitForFunction(()=>window.qa.held('list')>0);await sameReadonlyDom();await readonlyPagingDisabled();assert.match(await readonly().innerText(),/ORIGINAL PAGE 2/);assert.doesNotMatch(await readonly().innerText(),/FRESH PAGE 2/);
-          assert.equal(await filter.inputValue(),'KEEP UNAPPLIED FILTER');assert.equal(await branch.inputValue(),'BR-A');assert.equal(await rowFocus('DOC-A').getAttribute('aria-pressed'),'true');assert.equal(await detailFocused(),false);
+          assert.equal(await filter.inputValue(),'KEEP UNAPPLIED FILTER');assert.equal(await branch.inputValue(),'BR-A');assert.equal(await rowFocus('DOC-A').getAttribute('aria-pressed'),'true');await noDetailFocus(refreshFocus);
         }else{assert.equal(await readonly().count(),0);assert.doesNotMatch(await page.getByTestId('inbound-request-host').innerText(),/ORIGINAL PAGE 2/);}
         await page.evaluate(()=>window.qa.release('read'));await page.waitForFunction(()=>window.qa.held('detail')===1);await readonlyPhase('pending');
         assert.equal((await calls()).detail.at(-1).documentId,'DOC-A');assert.equal((await calls()).detail.at(-1).page,2,'current page survives same READ identity');
@@ -998,7 +1051,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
         assert.equal(await filter.inputValue(),'KEEP UNAPPLIED FILTER');assert.equal(await branch.inputValue(),'BR-A');assert.equal(await rowFocus('DOC-A').getAttribute('aria-pressed'),'true');
         await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');await focusPaint();assert.match(await readonly().innerText(),/FRESH PAGE 2/);assert.doesNotMatch(await readonly().innerText(),/ORIGINAL PAGE 2/);
         if(refresh==='authority'){await sameReadonlyDom();assert.equal(await page.evaluate(()=>window.qaContinuityValue.textContent),'FRESH PAGE 2');assert.equal(await readonly().getByRole('button',{name:'Dòng trước',exact:true}).isDisabled(),false);await page.evaluate(()=>window.qa.release('list'));await focusPaint();await sameReadonlyDom();}
-        assert.match(await readonly().getByRole('navigation',{name:'Trang dòng hàng chỉ đọc',exact:true}).innerText(),/Trang 2/);assert.equal(await detailFocused(),false);
+        assert.match(await readonly().getByRole('navigation',{name:'Trang dòng hàng chỉ đọc',exact:true}).innerText(),/Trang 2/);await noDetailFocus(refreshFocus);
         assert.equal(await filter.inputValue(),'KEEP UNAPPLIED FILTER');assert.equal(await branch.inputValue(),'BR-A');assert.equal((await calls()).list.at(-1).search,'KEEP APPLIED FILTER');assert.equal((await calls()).list.at(-1).branch,'BR-A');
         assert.equal((await calls()).detail.length,before+1);assert.equal((await calls()).post.length,0);assert.equal((await calls()).reconcile.length,0);
       }
@@ -1006,13 +1059,14 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await open('DOC-A');await readonlyPhase('ready');assert.equal((await calls()).detail.at(-1).documentId,'DOC-A');assert.equal((await calls()).detail.at(-1).page,1,'returning to A is a new selection, not cached page-2 proof');
       await page.evaluate(()=>window.qa.detail({detailLabel:'RETIRED SCOPE PAGE 2'}));await readonly().getByRole('button',{name:'Dòng tiếp',exact:true}).click();await readonlyPhase('ready');assert.equal((await calls()).detail.at(-1).page,2);
       await page.evaluate(markers=>{window.qa.hold('read');window.qa.hold('detail');window.qa.detail({detailLabel:'NEW SCOPE PAGE 1'});window.qa.markers(markers);},{...readMarkers,readScope:'d'.repeat(64)});
-      await page.waitForFunction(()=>window.qa.held('read')>0);assert.equal(await readonly().count(),0);assert.doesNotMatch(await page.getByTestId('inbound-request-host').innerText(),/RETIRED SCOPE PAGE 2/);
+      await page.waitForFunction(()=>window.qa.held('read')>0);const scopeFocus=await focusBaseline();assert.equal(await readonly().count(),0);assert.doesNotMatch(await page.getByTestId('inbound-request-host').innerText(),/RETIRED SCOPE PAGE 2/);
       await page.evaluate(()=>window.qa.release('read'));await page.waitForFunction(()=>window.qa.held('detail')===1);await readonlyPhase('pending');assert.equal((await calls()).detail.at(-1).page,1);assert.doesNotMatch(await readonly().innerText(),/RETIRED SCOPE PAGE 2|NEW SCOPE PAGE 1/);
-      await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');await focusPaint();assert.match(await readonly().innerText(),/NEW SCOPE PAGE 1/);assert.equal(await detailFocused(),false);assert.equal((await calls()).post.length,0);assert.equal((await calls()).reconcile.length,0);
+      await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');await focusPaint();assert.match(await readonly().innerText(),/NEW SCOPE PAGE 1/);await noDetailFocus(scopeFocus);assert.equal((await calls()).post.length,0);assert.equal((await calls()).reconcile.length,0);
     });
     await run('I33 scoped detail pageSize 25 is rejected even when one returned row fits its bound',async()=>{
-      await resetReadonly({detailPageSize:25,detailLabel:'WRONG PAGE SIZE'});await readonlyPhase('failed');await focusPaint();assert.doesNotMatch(await readonly().innerText(),/WRONG PAGE SIZE/);
-      assert.equal(await detailFocused(),false);assert.equal((await calls()).detail.length,1);assert.equal((await calls()).post.length,0);assert.equal((await calls()).reconcile.length,0);
+      await resetReadonly({held:{detail:true},detailPageSize:25,detailLabel:'WRONG PAGE SIZE'});await page.waitForFunction(()=>window.qa.held('detail')===1);
+      const rejectedFocus=await focusBaseline();await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('failed');await noDetailFocus(rejectedFocus);assert.doesNotMatch(await readonly().innerText(),/WRONG PAGE SIZE/);
+      assert.equal((await calls()).detail.length,1);assert.equal((await calls()).post.length,0);assert.equal((await calls()).reconcile.length,0);
     });
     await run('I33 dirty original editor stays mounted and guarded through temporary readonly fallback, then restores exact full edits',async()=>{
       await reset({readMarkers});await field('Số đơn').fill('  ORIGINAL EDIT\nKEEP  ');await field('Ghi chú').fill('NOTE\nKEEP');
@@ -1083,7 +1137,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       }
     });
     await run('I33 accepted full read focuses detail; same-document focus preserves dirty guard and values',async()=>{
-      await reset();await focusedDialog();await field('Số đơn').fill('FOCUS DIRTY A');const before=await calls();await open('DOC-A');await focusedDialog();assert.equal(await field('Số đơn').inputValue(),'FOCUS DIRTY A');assert.equal((await calls()).read.length,before.read.length);
+      await reset();await focusedDialog();await field('Số đơn').fill('FOCUS DIRTY A');const before=await calls(),sameOpenFocus=await focusBaseline();await open('DOC-A');await oneDetailFocus(sameOpenFocus);assert.equal(await field('Số đơn').inputValue(),'FOCUS DIRTY A');assert.equal((await calls()).read.length,before.read.length);
       await blocked(()=>button('Đóng phiếu nhập hàng').click(),true);assert.equal(await field('Số đơn').inputValue(),'FOCUS DIRTY A');assert.equal(await page.getByTestId('inbound-editor').getAttribute('data-document-id'),'DOC-A');
       await open('DOC-B');await page.getByRole('alertdialog').waitFor();await button('Bỏ thay đổi và rời màn hình').click();await ready();await focusedDialog();assert.equal(await field('Số đơn').inputValue(),'FULL ERP B');assert.equal((await calls()).post.length,0);
     });
@@ -1091,21 +1145,26 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await reset({searchDraft:'UNAPPLIED FOCUS FILTER'});await focusedDialog();await field('Số đơn').fill('DIRTY CLOSE VALUE');await button('Đóng phiếu nhập hàng').click();await page.getByRole('alertdialog').waitFor();assert.equal(await page.evaluate(()=>window.qaLeft),false);await button('Bỏ thay đổi và rời màn hình').click();await focused(rowFocus('DOC-A'));assert.equal(await field('Tìm phiếu nhập hàng').inputValue(),'UNAPPLIED FOCUS FILTER');assert.equal(await page.getByTestId('inbound-editor').count(),0);assert.equal((await calls()).post.length,0);
     });
     await run('I33 held Open read respects later modal-control focus and authority revalidation never creates a new focus ticket',async()=>{
-      await page.evaluate(()=>window.qa.reset({held:{read:true}}));await open('DOC-A');await page.waitForFunction(()=>window.qa.held('read')>0);await modalClose().focus();await page.evaluate(()=>window.qa.release('read'));await ready();await focusPaint();assert.equal(await modalClose().evaluate(element=>document.activeElement===element),true);
+      await page.evaluate(()=>window.qa.reset({held:{read:true}}));await open('DOC-A');await page.waitForFunction(()=>window.qa.held('read')>0);await modalClose().focus();const laterControlFocus=await focusBaseline();await page.evaluate(()=>window.qa.release('read'));await ready();await noDetailFocus(laterControlFocus);assert.equal(await modalClose().evaluate(element=>document.activeElement===element),true);
       await page.evaluate(()=>window.qa.reset({held:{read:true}}));await open('DOC-A');await page.waitForFunction(()=>window.qa.held('read')>0);
-      // No intervening pointer/key/focus input cancels this live Open ticket: authority alone must retire it.
-      await page.evaluate(()=>{window.qa.rights({canRead:false,canSave:false,canSend:false});window.qa.release('read');});await page.waitForFunction(()=>!document.getElementById('inbound-header-orderNumber'));await focusPaint();assert.equal(await detailFocused(),false);
-      await page.evaluate(()=>window.qa.rights({}));await ready();await focusPaint();assert.equal(await detailFocused(),false);assert.equal((await calls()).post.length,0);
+      // Baseline after legitimate modal entry; no later user input retires the
+      // read's focus intent. Authority loss/recovery must add no native calls.
+      const deniedFocus=await focusBaseline();
+      await page.evaluate(()=>{window.qa.rights({canRead:false,canSave:false,canSend:false});window.qa.release('read');});await page.waitForFunction(()=>!document.getElementById('inbound-header-orderNumber'));await noDetailFocus(deniedFocus);
+      await page.evaluate(()=>window.qa.rights({}));await ready();await noDetailFocus(deniedFocus);assert.equal((await calls()).post.length,0);
     });
     await run('I33 failed Open is retired; explicit retry can recover data without delayed focus theft',async()=>{
-      await page.evaluate(()=>window.qa.reset({readFailure:true}));await open('DOC-A');await dialog().getByText('Chưa xác minh được quyền nhập hàng. Ý định đang giữ không bị bỏ; thử xác minh lại trong đúng phiên.',{exact:true}).waitFor();await page.evaluate(()=>window.qa.healthy());await dialog().getByRole('button', {name: 'Xác minh lại quyền nhập hàng', exact: true}).click();await ready();await focusPaint();assert.equal(await detailFocused(),false);assert.equal(await field('Số đơn').inputValue(),'FULL ERP A');const before=(await calls()).read.length;await open('DOC-A');await focusedDialog();assert.equal((await calls()).read.length,before);assert.equal((await calls()).post.length,0);
+      await page.evaluate(()=>window.qa.reset({held:{read:true},readFailure:true}));await open('DOC-A');await page.waitForFunction(()=>window.qa.held('read')>0);
+      const failedFocus=await focusBaseline();await page.evaluate(()=>window.qa.release('read'));await dialog().getByText('Chưa xác minh được quyền nhập hàng. Ý định đang giữ không bị bỏ; thử xác minh lại trong đúng phiên.',{exact:true}).waitFor();await noDetailFocus(failedFocus);
+      await page.evaluate(()=>window.qa.healthy());await dialog().getByRole('button', {name: 'Xác minh lại quyền nhập hàng', exact: true}).click();await ready();await noDetailFocus(failedFocus);
+      assert.equal(await field('Số đơn').inputValue(),'FULL ERP A');const before=(await calls()).read.length,sameOpenFocus=await focusBaseline();await open('DOC-A');await oneDetailFocus(sameOpenFocus);assert.equal((await calls()).read.length,before);assert.equal((await calls()).post.length,0);
     });
     await run('I33 same-document Open waits for new bound full read after bootstrap, not an old readiness event',async()=>{
       await reset();await focusedDialog();await modalClose().focus();await page.evaluate(()=>{window.qa.hold('read');window.qa.rights({});});await page.waitForFunction(()=>window.qa.held('read')>0);const before=(await calls()).read.length;
-      await page.evaluate(()=>window.qa.releaseOne('read'));await page.waitForFunction(before=>window.qa.calls().read.length>before&&window.qa.held('read')>0,before);await open('DOC-A');await focusPaint();assert.equal(await detailFocused(),false,'bootstrap is not current I18 presentation proof');
-      await page.evaluate(()=>window.qa.release('read'));await ready();await focusedDialog();assert.equal(await field('Số đơn').inputValue(),'FULL ERP A');
-      await page.evaluate(()=>window.qa.hold('read'));await button('Đọc lại ERP').click();await page.waitForFunction(()=>window.qa.held('read')>0);await open('DOC-A');await focusPaint();assert.equal(await detailFocused(),false,'an old ready event cannot satisfy explicit child reread');
-      await page.evaluate(()=>window.qa.release('read'));await ready();await focusedDialog();assert.equal((await calls()).post.length,0);
+      await page.evaluate(()=>window.qa.releaseOne('read'));await page.waitForFunction(before=>window.qa.calls().read.length>before&&window.qa.held('read')>0,before);const bootstrapFocus=await focusBaseline();await open('DOC-A');await noDetailFocus(bootstrapFocus,'bootstrap is not current I18 presentation proof');
+      await page.evaluate(()=>window.qa.release('read'));await ready();await oneDetailFocus(bootstrapFocus,'only the newly bound child read completes same-document Open');assert.equal(await field('Số đơn').inputValue(),'FULL ERP A');
+      await page.evaluate(()=>window.qa.hold('read'));await button('Đọc lại ERP').click();await page.waitForFunction(()=>window.qa.held('read')>0);const rereadFocus=await focusBaseline();await open('DOC-A');await noDetailFocus(rereadFocus,'an old ready event cannot satisfy explicit child reread');
+      await page.evaluate(()=>window.qa.release('read'));await ready();await oneDetailFocus(rereadFocus,'only the explicit child reread completes same-document Open');assert.equal((await calls()).post.length,0);
     });
     for (const width of [320, 360, 390]) await run(`${width}px real host uses full read; dirty selection/filter/page/close/Back show dialog`, async () => {
       await page.setViewportSize({width, height: 844}); await reset(); assert.equal(await field('Số đơn').inputValue(), 'FULL ERP A');
