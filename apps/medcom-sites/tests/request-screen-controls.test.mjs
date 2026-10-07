@@ -11,9 +11,27 @@ const output=path.join(app,'.test-runtime','request-screen-controls');await mkdi
 // All screen, guard, editor, scanner, reference, API and adapter code is real.
 // Only DOM presentation primitives are replaced. The register observer records
 // calls from the real provider; it makes no admission/discard/state decisions.
+const guardRegistration='if(value)blockers.current.set(key,value);else blockers.current.delete(key);';
+const guardObservation='globalThis.__screenGuardObserve?.(key,value);';
+function observeGuardRegistration(source){
+ assert.equal(source.split(guardRegistration).length-1,1,'real guard must contain exactly one registration insertion point');
+ assert.equal(source.split(guardObservation).length-1,0,'real guard must not already contain the test observer');
+ return source.replace(guardRegistration,guardObservation+guardRegistration);
+}
+function navigationGuardObserver(resolveSourcePath=sourcePath=>sourcePath){
+ let observedLoads=0;
+ return{name:'actual-navigation-guard-observer',setup(builder){
+  // esbuild supplies native absolute paths to onLoad, including Windows backslashes.
+  builder.onLoad({filter:/[\\/]navigation-guard\.tsx$/},async args=>{
+   assert.equal(++observedLoads,1,'real guard must be loaded exactly once for observation');
+   const sourcePath=resolveSourcePath(args.path);
+   return{contents:observeGuardRegistration(await readFile(sourcePath,'utf8')),loader:'tsx',resolveDir:path.dirname(sourcePath)};
+  });
+  builder.onEnd(result=>{if(!result.errors.length)assert.equal(observedLoads,1,'real guard must be loaded exactly once for observation');});
+ }};
+}
 const primitive={button:'Button',input:'Input',textarea:'Textarea',badge:'Badge',skeleton:'Skeleton',checkbox:'Checkbox'};
-await build({stdin:{contents:`export {PurchaseRequestScreen} from './components/erp/purchase-request-screen';export {InboundRequestScreen} from './components/erp/inbound-request-screen';export {MobileRequest} from './components/erp/mobile-request';export {MobileInboundRequest} from './components/erp/mobile-inbound-request';export {RequestQrSearch} from './components/erp/request-qr-search';export {QrScanner} from './components/erp/qr-scanner';export {PurchaseReferenceDetails} from './components/erp/purchase-reference-details';export {NavigationGuardProvider,useNavigationGuard} from './components/erp/navigation-guard';export {getDocuments} from './lib/erp/api';`,resolveDir:app,loader:'tsx'},outfile:path.join(output,'fixture.cjs'),bundle:true,platform:'node',format:'cjs',packages:'external',jsx:'automatic',alias:{'@':app},logLevel:'warning',plugins:[{name:'DOM-primitives-and-observation',setup(builder){
- builder.onLoad({filter:/\/navigation-guard\.tsx$/},async args=>({contents:(await readFile(args.path,'utf8')).replace('if(value)blockers.current.set(key,value);else blockers.current.delete(key);','globalThis.__screenGuardObserve?.(key,value);if(value)blockers.current.set(key,value);else blockers.current.delete(key);'),loader:'tsx',resolveDir:path.dirname(args.path)}));
+await build({stdin:{contents:`export {PurchaseRequestScreen} from './components/erp/purchase-request-screen';export {InboundRequestScreen} from './components/erp/inbound-request-screen';export {MobileRequest} from './components/erp/mobile-request';export {MobileInboundRequest} from './components/erp/mobile-inbound-request';export {RequestQrSearch} from './components/erp/request-qr-search';export {QrScanner} from './components/erp/qr-scanner';export {PurchaseReferenceDetails} from './components/erp/purchase-reference-details';export {NavigationGuardProvider,useNavigationGuard} from './components/erp/navigation-guard';export {getDocuments} from './lib/erp/api';`,resolveDir:app,loader:'tsx'},outfile:path.join(output,'fixture.cjs'),bundle:true,platform:'node',format:'cjs',packages:'external',jsx:'automatic',alias:{'@':app},logLevel:'warning',plugins:[navigationGuardObserver(),{name:'DOM-primitives',setup(builder){
  builder.onResolve({filter:/components\/ui\/(button|input|textarea|badge|skeleton|checkbox|empty|table|dialog|alert-dialog)$/},args=>({path:args.path.split('/').at(-1),namespace:'dom'}));
  builder.onLoad({filter:/.*/,namespace:'dom'},args=>{
   let code;
@@ -25,6 +43,37 @@ await build({stdin:{contents:`export {PurchaseRequestScreen} from './components/
   return{contents:`import React from 'react';${code}`,loader:'tsx',resolveDir:app};
  });
 }}]});
+test('guard observer inserts once into the actual provider and rejects missing, duplicate or already observed source',async()=>{
+ const source=await readFile(path.join(app,'components/erp/navigation-guard.tsx'),'utf8'),observed=observeGuardRegistration(source);
+ assert.equal(observed.split(guardObservation).length-1,1);
+ assert.equal(observed.replace(guardObservation,''),source,'observation preserves all actual provider logic');
+ assert.throws(()=>observeGuardRegistration(source.replace(guardRegistration,'')),/exactly one registration insertion point/);
+ assert.throws(()=>observeGuardRegistration(source+'\n'+guardRegistration),/exactly one registration insertion point/);
+ assert.throws(()=>observeGuardRegistration(observed),/must not already contain the test observer/);
+});
+const guardPathCases=[['POSIX','/workspace/components/erp/navigation-guard.tsx'],['Windows',String.raw`D:\a\Medcom\Medcom\apps\medcom-sites\components\erp\navigation-guard.tsx`]];
+function buildGuardPathFixture(virtualPaths){
+ const observedPaths=[];
+ const result=build({stdin:{contents:virtualPaths.length?virtualPaths.map((_,index)=>`export * from 'actual-guard-${index}';`).join(''):'export const noGuard=true;',resolveDir:app},bundle:true,write:false,platform:'node',format:'cjs',packages:'external',jsx:'automatic',alias:{'@':app},logLevel:'silent',plugins:[{name:'actual-guard-path-regression',setup(builder){
+  builder.onResolve({filter:/^actual-guard-\d+$/},args=>({path:virtualPaths[Number(args.path.split('-').at(-1))],namespace:'actual-guard-path-regression'}));
+ }},navigationGuardObserver(sourcePath=>{
+  assert.ok(virtualPaths.includes(sourcePath));observedPaths.push(sourcePath);
+  // Only the path spelling is simulated. Always compile the real provider file.
+  return path.join(app,'components/erp/navigation-guard.tsx');
+ })]});
+ return{result,observedPaths};
+}
+for(const [platform,sourcePath] of guardPathCases)test(`guard observer instruments the actual provider exactly once through esbuild ${platform} path dispatch`,async()=>{
+ const {result,observedPaths}=buildGuardPathFixture([sourcePath]),built=await result;
+ assert.deepEqual(observedPaths,[sourcePath]);
+ assert.equal(built.outputFiles[0].text.split('__screenGuardObserve').length-1,1);
+});
+test('guard observer rejects a build that never loads the provider',async()=>{
+ await assert.rejects(buildGuardPathFixture([]).result,/real guard must be loaded exactly once for observation/);
+});
+test('guard observer rejects a build that loads two provider copies',async()=>{
+ await assert.rejects(buildGuardPathFixture(guardPathCases.map(([,sourcePath])=>sourcePath)).result,/real guard must be loaded exactly once for observation/);
+});
 const {PurchaseRequestScreen,InboundRequestScreen,MobileRequest,MobileInboundRequest,RequestQrSearch,QrScanner,PurchaseReferenceDetails,NavigationGuardProvider,useNavigationGuard,getDocuments}=require(path.join(output,'fixture.cjs'));
 globalThis.IS_REACT_ACT_ENVIRONMENT=true;
 const scope='a'.repeat(64),sessionScope='b'.repeat(64),readScope='c'.repeat(64);

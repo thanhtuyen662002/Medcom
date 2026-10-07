@@ -250,8 +250,50 @@ async function compileReadBrowser(){
   plugins:[{name:'fixture-next-image',setup(build){build.onResolve({filter:/^next\/image$/},()=>({path:'fixture-next-image',namespace:'i17-fixture'}));build.onLoad({filter:/.*/,namespace:'i17-fixture'},()=>({contents:"import React from 'react';export default function Image({src,alt,width,height}){return React.createElement('img',{src,alt,width,height});}",resolveDir:app,loader:'jsx'}));}}]});
   return browserAssets(built);
 }
+// Observe the synchronous native Retry click, without replacing its production
+// handler. Focus/online/poll requests must not consume a planned retry response.
+// eventPhase returns to NONE after dispatch, so no timer or sticky flag is needed.
+function installCustodyWorkspaceObserver(){
+ const nativeFetch=window.fetch.bind(window),io={events:[],requests:[]};let retryClick=null;
+ window.custodyWorkspaceIO=io;
+ window.addEventListener('click',event=>{retryClick=event.target?.closest?.('button')?.textContent?.trim()==='Thử lại'?event:null;},true);
+ for(const type of ['focus','online'])window.addEventListener(type,()=>io.events.push({type,at:Date.now()}));
+ document.addEventListener('visibilitychange',()=>io.events.push({type:'visibilitychange',visibility:document.visibilityState,at:Date.now()}));
+ window.fetch=(input,init)=>{
+  if(String(input).split('?')[0]!=='/api/erp/api/workspace'||(init?.method??'GET').toUpperCase()!=='GET')return nativeFetch(input,init);
+  const explicitRetry=!!retryClick&&retryClick.eventPhase!==0,headers=new Headers(init?.headers);
+  if(explicitRetry)headers.set('X-Synthetic-Workspace-Retry','1');
+  const request={explicitRetry,status:'pending',at:Date.now()};io.requests.push(request);
+  return nativeFetch(input,{...init,headers}).then(response=>{request.status=response.status;return response;},error=>{request.status='network';throw error;});
+ };
+}
+function custodyWorkspaceFailure(state,explicitRetry){
+ if(explicitRetry&&state.retryOutcome){state.failure=state.retryOutcome.failure;state.retryOutcome=null;}
+ return state.failure;
+}
+test('custody fixture recovery is consumed only by a dispatched Retry, never incidental focus',async()=>{
+ const listeners=new Map(),requests=[],response={status:200};
+ const window={addEventListener:(type,handler)=>listeners.set(type,handler),fetch:async(input,init)=>{requests.push({input,init});return response;}};
+ runInNewContext(`(${installCustodyWorkspaceObserver.toString()})();`,{window,document:{addEventListener(){}},Headers,Date});
+ const state={failure:503,retryOutcome:{failure:null}},signal=new AbortController().signal;
+ const read=()=>window.fetch('/api/erp/api/workspace',{signal,headers:{'X-Existing':'preserved'}});
+ await read();assert.equal(requests.at(-1).init.headers.has('X-Synthetic-Workspace-Retry'),false);
+ assert.equal(custodyWorkspaceFailure(state,false),503);assert.ok(state.retryOutcome);
+ const event={target:{closest:()=>({textContent:'Thử lại'})},eventPhase:1};listeners.get('click')(event);event.eventPhase=3;
+ assert.equal(await read(),response);assert.equal(requests.at(-1).init.headers.get('X-Synthetic-Workspace-Retry'),'1');
+ assert.equal(requests.at(-1).init.headers.get('X-Existing'),'preserved');assert.equal(requests.at(-1).init.signal,signal);
+ assert.equal(custodyWorkspaceFailure(state,true),null);assert.equal(state.retryOutcome,null);
+ const workspacePost={method:'POST',body:'unchanged',signal};await window.fetch('/api/erp/api/workspace',workspacePost);
+ assert.equal(requests.at(-1).init,workspacePost,'the active click observer only annotates Workspace GET');
+ event.eventPhase=0;state.failure='network';state.retryOutcome={failure:401};listeners.get('focus')();await read();
+ assert.equal(requests.at(-1).init.headers.has('X-Synthetic-Workspace-Retry'),false);
+ assert.equal(custodyWorkspaceFailure(state,false),'network');assert.equal(state.retryOutcome.failure,401);
+ const save={method:'POST',body:'original body',signal};await window.fetch('/api/erp/api/purchase-requests/save',save);
+ assert.equal(requests.at(-1).init,save,'observer does not change the command DTO, signal or dispatch');
+});
 async function compileCustodyBrowser(){
  const entry=`import React from 'react';import{createRoot}from'react-dom/client';import Workspace from './components/erp/workspace';
+ (${installCustodyWorkspaceObserver.toString()})();
  // Deliberately let an old HTTP save response finish even after the application's
  // AbortSignal fires. The production adapter/editor must reject that late ACK.
  // Lost ACK is an explicit transport seam: consume the entire synthetic HTTP
@@ -350,8 +392,15 @@ test('real HTTP → BFF → existing workspace/browser purchase controls and aut
   await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).waitFor();
   await t.test('existing workspace navigation mounts the real screen and available read controls',async()=>{
    await page.getByRole('heading',{level:1,name:'Đề nghị mua hàng',exact:true}).waitFor();
-   assert.equal(await screen.getByRole('table',{name:'Danh sách đề nghị',exact:true}).locator('tbody tr').count(),20);assert.ok(await screen.getByRole('button',{name:'Tạo đề nghị',exact:true}).isDisabled());
-   assert.match(await screen.innerText(),/Chỉ mở các phiếu hiện có\./);assert.ok(calls.some(call=>call.path==='/api/purchase-requests'&&call.cookie.includes('synthetic-i17')));
+   assert.equal(await screen.getByRole('table',{name:'Danh sách đề nghị',exact:true}).locator('tbody tr').count(),20);
+   const create=screen.getByRole('button',{name:'Tạo đề nghị',exact:true}),qualification=screen.locator('#purchase-write-qualification');
+   assert.equal(await create.isVisible(),true);assert.equal(await create.isDisabled(),true);
+   assert.equal(await create.getAttribute('aria-describedby'),'purchase-write-qualification');
+   assert.equal(await qualification.textContent(),'Chỉ mở các phiếu hiện có.','mobile retains the disabled action’s accessible explanation');
+   await page.setViewportSize({width:1280,height:900});await qualification.waitFor({state:'visible'});
+   assert.equal(await qualification.innerText(),'Chỉ mở các phiếu hiện có.');assert.equal(await create.isDisabled(),true);
+   await page.setViewportSize({width:390,height:844});
+   assert.ok(calls.some(call=>call.path==='/api/purchase-requests'&&call.cookie.includes('synthetic-i17')));
   });
   await t.test('next/previous pages, branch selection and exact search all use actual BFF HTTP',async()=>{
    await screen.getByRole('button',{name:'Trang sau',exact:true}).click();await screen.getByText('Trang 2',{exact:true}).waitFor();assert.equal(await screen.getByRole('table',{name:'Danh sách đề nghị',exact:true}).locator('tbody tr').count(),7);
@@ -611,7 +660,7 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
  const access={canSave:true,canSubmit:true,canLookup:true,canAddLines:false,reason:'synthetic_only_NOT_runtime_qualified'};
  const calls=[],errors=[],dispatchEvidence=new Map();let state;
  function reset(mode){
-  state={failure:null,readerFailure:null,scope,sessionScope:'a'.repeat(64),displayName:'SYNTHETIC CUSTODY ACCOUNT A',lifetime:{...lifetime},canRead:true,
+  state={failure:null,retryOutcome:null,readerFailure:null,scope,sessionScope:'a'.repeat(64),displayName:'SYNTHETIC CUSTODY ACCOUNT A',lifetime:{...lifetime},canRead:true,
    saveMode:mode,record:document('QA-CUSTODY','QA-A',2),stateToken:'prs1.'+'1'.repeat(64),originalBody:null,receipt:null,
    releaseSave:null,holdScope:false,scopeStarted:null,releaseScope:null,holdWorkspace:false,releaseWorkspace:null,holdLogin:false,releaseLogin:null,effects:0};calls.length=0;
  }
@@ -631,11 +680,13 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
    if(p==='/api/auth/csrf')return json(response,200,{token:'synthetic-custody-csrf'});
    if(p==='/api/auth/login'){assert.equal(request.method,'POST');if(state.holdLogin)await new Promise(resolve=>{state.releaseLogin=resolve;});return json(response,200,workspace().session);}
    if(p==='/api/workspace'){
+    const explicitRetry=request.method==='GET'&&request.headers['x-synthetic-workspace-retry']==='1',failure=custodyWorkspaceFailure(state,explicitRetry),answer=workspace();
+    Object.assign(calls.at(-1),{explicitRetry,outcome:failure??200});
     response.setHeader('X-Medcom-Session-Scope',state.sessionScope);response.setHeader('X-Medcom-Read-Scope',state.scope);
     if(state.holdWorkspace)await new Promise(resolve=>{state.releaseWorkspace=resolve;});
-    if(state.failure==='network'){response.destroy();return;}
-    if(state.failure===503||state.failure===401)return json(response,state.failure,{code:state.failure===401?'authentication_required':'identity_unavailable'});
-    return json(response,200,workspace());
+    if(failure==='network'){response.destroy();return;}
+    if(failure===503||failure===401)return json(response,failure,{code:failure===401?'authentication_required':'identity_unavailable'});
+    return json(response,200,answer);
    }
    if(state.failure===401)return json(response,401,{code:'authentication_required'});
    const scoped=data=>({scopeKey:state.scope,data});
@@ -744,9 +795,10 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
   await guardExplicitOutageNavigation();
  }
  async function recoverSame(){
-  state.failure=null;state.holdScope=true;state.releaseScope=null;
+  state.holdScope=true;state.releaseScope=null;
   const started=page.waitForRequest(request=>new URL(request.url()).pathname==='/api/erp/api/purchase-requests/workspace');
-  await page.getByRole('button',{name:'Thử lại',exact:true}).click();await started;
+  await retryWorkspace(null);await started;
+  assert.equal(state.retryOutcome,null,'the explicit retry must consume its planned recovery before scoped proof begins');
   const deadline=Date.now()+5000;while(!state.releaseScope){assert.ok(Date.now()<deadline,'synthetic scope verification did not start');await new Promise(resolve=>setTimeout(resolve,1));}await paint();
   assert.equal(await screen.locator('input:visible,textarea:visible,select:visible,table:visible').count(),0,'a workspace 200 alone must NOT expose the old scope');
   assert.equal(lookups().length,0);await assertSingleWriter();
@@ -758,6 +810,21 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
   assert.equal(await page.evaluate(()=>window.custodyNodes.host===document.querySelector('[aria-label="Danh sách đề nghị mua hàng"]')&&window.custodyNodes.editor===document.querySelector('[aria-label="Phiếu mua hàng hiện có"]')),true,'same-session recovery retains exact host/editor identity');
   assert.equal(await screen.getByLabel('Tìm mã đề nghị',{exact:true}).inputValue(),'FILTER-CUSTODY','same-session parent recovery preserves local filter only after scope revalidation');
   assert.equal(await screen.getByText(/^ERP đã xác nhận yêu cầu /).count(),0,'late ACK must not resolve retained unknown');
+ }
+ async function retryWorkspace(failure){
+  // Tab coverage can return focus from browser chrome and trigger a real parent
+  // refresh. Keep the old outage until the actual click dispatches its request;
+  // clearing it before Playwright clicks can remove Retry via auto-recovery.
+  assert.equal(state.retryOutcome,null,'the previous explicit retry must have been consumed');
+  state.retryOutcome={failure};
+  const dispatched=page.waitForRequest(request=>new URL(request.url()).pathname==='/api/erp/api/workspace'&&request.headers()['x-synthetic-workspace-retry']==='1');
+  try{await Promise.all([page.getByRole('button',{name:'Thử lại',exact:true}).click(),dispatched]);}
+  catch(error){
+   // Node subtest failures do not throw through the outer parent try/catch.
+   // Emit the actual stage evidence here so both hosted OS logs retain it.
+   t.diagnostic(JSON.stringify({stage:'explicit Workspace retry',error:String(error),retryOutcome:state.retryOutcome,calls:calls.filter(call=>call.path==='/api/workspace'),workspaceIO:await page.evaluate(()=>window.custodyWorkspaceIO).catch(()=>null),body:await page.locator('body').innerText().catch(()=>null)}));
+   throw error;
+  }
  }
  try{
   browser=await chromium.launch({executablePath:process.env.MEDCOM_EDGE_PATH||'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true,args:['--no-first-run','--disable-background-networking','--disable-component-update','--disable-default-apps','--no-default-browser-check']});
@@ -789,9 +856,9 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
    assert.equal(JSON.parse(lookups()[0].body).expectedStateToken,'prs1.'+'1'.repeat(64),'do not rebuild from fresh detail token 2');await assertSingleWriter();
   });
   await t.test('repeated failed verification preserves custody; recovery still uses the original writer body',async()=>{
-   const original=await begin('lost');await suspend('network');state.failure=503;
+   const original=await begin('lost');await suspend('network');
    const response=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/erp/api/workspace'&&response.status()===503);
-   await page.getByRole('button',{name:'Thử lại',exact:true}).click();await response;await guardExplicitOutageNavigation();await paint();
+   await retryWorkspace(503);await response;await guardExplicitOutageNavigation();await paint();
    await assertProtectedConcealed();await assertSingleWriter();assert.equal(lookups().length,0);
    await recoverSame();await screen.getByRole('button',{name:'Kiểm tra kết quả yêu cầu gốc',exact:true}).click();await screen.getByText(/^ERP đã xác nhận yêu cầu /).waitFor();assert.equal(lookups()[0].body,original.body);await assertSingleWriter();
   });
@@ -804,19 +871,19 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
    assert.equal(lookups().length,1);assert.equal(lookups()[0].body,original.body);assert.deepEqual(JSON.parse(lookups()[0].body),original.dto);await assertSingleWriter();
   });
   for(const change of ['server-session','opaque-scope'])await t.test(`verified ${change} after null retires prior data and delayed ACK`,async()=>{
-   await begin('hold');await suspend(503);state.failure=null;state.scope='b'.repeat(64);state.displayName='SYNTHETIC ACCOUNT B';
+   await begin('hold');await suspend(503);state.scope='b'.repeat(64);state.displayName='SYNTHETIC ACCOUNT B';
    if(change==='server-session')state.sessionScope='c'.repeat(64);
    state.record=document('QA-NEW-ACCOUNT','QA-A',1);state.record.header.personSuggest='SYNTHETIC NEW ACCOUNT ONLY';state.stateToken='prs1.'+'3'.repeat(64);
-   await page.getByRole('button',{name:'Thử lại',exact:true}).click();await screen.getByRole('button',{name:'Mở đề nghị QA-NEW-ACCOUNT',exact:true}).waitFor();
+   await retryWorkspace(null);await screen.getByRole('button',{name:'Mở đề nghị QA-NEW-ACCOUNT',exact:true}).waitFor();
    state.releaseSave();await page.waitForFunction(()=>window.custodyIO.replies===1);await paint();
    assert.equal(await screen.getByRole('button',{name:'Kiểm tra kết quả yêu cầu gốc',exact:true}).count(),0);assert.equal(await screen.getByText(/^ERP đã xác nhận yêu cầu /).count(),0);
    assert.doesNotMatch(await screen.innerText(),/SYNTHETIC ORIGINAL INTENT|SYNTHETIC REQUESTER|QA-CUSTODY/);await assertSingleWriter();assert.equal(lookups().length,0);
    await screen.getByRole('button',{name:'Mở đề nghị QA-NEW-ACCOUNT',exact:true}).click();await screen.getByLabel('Ghi chú',{exact:true}).waitFor();assert.equal(await screen.getByLabel('Ghi chú',{exact:true}).inputValue(),'');
   });
   await t.test('confirmed server logout (401), unlike 503, retires original intent before a delayed ACK',async()=>{
-   await begin('hold');await suspend(503);state.failure=401;
+   await begin('hold');await suspend(503);
    const ended=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/erp/api/workspace'&&response.status()===401);
-   await page.getByRole('button',{name:'Thử lại',exact:true}).click();await ended;await paint();
+   await retryWorkspace(401);await ended;await paint();
    // A confirmed end retires protected custody while preserving the intended return route.
    await page.getByRole('heading',{name:'Phiên làm việc đã kết thúc',exact:true}).waitFor();
    async function assertRetired(){
@@ -863,7 +930,7 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
   await t.test('completed login survives the previous deadline while the new Workspace read is delayed',async()=>{
    await begin('hold',{expiry:'idle'});const previousLimit=Date.parse(state.lifetime.idleExpiresAt);await suspend(503);
    // A transient outage is recovery only. Obtain current 401 retirement before a new login.
-   state.failure=401;await page.getByRole('button',{name:'Thử lại',exact:true}).click();await page.getByRole('heading',{name:'Phiên làm việc đã kết thúc',exact:true}).waitFor();
+   await retryWorkspace(401);await page.getByRole('heading',{name:'Phiên làm việc đã kết thúc',exact:true}).waitFor();
    state.failure=null;state.holdWorkspace=true;state.holdLogin=true;state.scope='b'.repeat(64);state.displayName='SYNTHETIC NEW LOGIN';
    state.lifetime={idleExpiresAt:new Date(previousLimit+300000).toISOString(),absoluteExpiresAt:new Date(previousLimit+600000).toISOString()};
    state.record=document('QA-NEW-LOGIN','QA-A',1);state.stateToken='prs1.'+'3'.repeat(64);
@@ -897,7 +964,7 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
    await assertSingleWriter();assert.equal(lookups().length,0);
   });
   assert.deepEqual(errors,[]);await writeFile(path.join(output,'i20-workspace-custody-evidence.json'),JSON.stringify({node:process.version,browser:browser.version(),viewport:[390,844],hierarchy:'actual Workspace → PurchaseRequestScreen → MobileRequest → command adapter',transport:'synthetic HTTP API; completed-response discard and save-only abort-ignoring seams; NOT ASP.NET/SQL',dispatchEvidence:[...dispatchEvidence.values()],errors},null,2));
- }catch(error){await writeFile(path.join(output,'i20-workspace-custody-failure.json'),JSON.stringify({error:String(error),errors,calls,io:await page?.evaluate(()=>window.custodyIO).catch(()=>null),body:await page?.locator('body').innerText().catch(()=>''),dispatchEvidence:[...dispatchEvidence.values()]},null,2));throw error;}
+ }catch(error){await writeFile(path.join(output,'i20-workspace-custody-failure.json'),JSON.stringify({error:String(error),errors,calls,retryOutcome:state?.retryOutcome,workspaceIO:await page?.evaluate(()=>window.custodyWorkspaceIO).catch(()=>null),io:await page?.evaluate(()=>window.custodyIO).catch(()=>null),body:await page?.locator('body').innerText().catch(()=>''),dispatchEvidence:[...dispatchEvidence.values()]},null,2));throw error;}
  finally{state?.releaseSave?.();state?.releaseScope?.();state?.releaseWorkspace?.();state?.releaseLogin?.();await context?.close();await browser?.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
 });
 
