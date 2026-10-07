@@ -83,7 +83,9 @@ test('I29 actual Workspace retains same-session read controls and fences retired
  };
  const freshDetail=async()=>{await page.getByRole('heading',{name:'A-P2-00',exact:true}).waitFor();await page.locator('.detail-sheet :is(.desktop-detail-lines,.mobile-detail-lines):visible').getByText('A-ITEM-P2-0',{exact:true}).waitFor();await paint();};
  const hiddenData=async()=>{assert.equal(await page.locator('.document-link').count(),0);assert.equal(await page.getByText('A-ITEM-P2-0',{exact:true}).count(),0);assert.equal(await page.getByRole('heading',{name:'A-P2-00',exact:true}).count(),0);};
- const checkControls=async()=>{assert.equal(await page.getByLabel('Tìm mã chứng từ',{exact:true}).inputValue(),'UNSUBMITTED DRAFT');assert.equal(await page.locator('.document-panel').getByRole('combobox',{name:'Chi nhánh',exact:true}).inputValue(),'BR-A');assert.match(await page.getByRole('navigation',{name:'Phân trang chứng từ',exact:true}).innerText(),/Trang 2/);assert.ok(calls.some(c=>c.route==='/api/documents/purchase-orders'&&c.query.page==='2'&&c.query.search==='APPLIED'&&c.query.branchId==='BR-A'));};
+ // Read retained background DOM while the open modal intentionally aria-hides it.
+ // Interaction helpers still require visible accessible controls; values/pages remain exact.
+ const checkControls=async()=>{assert.equal(await page.getByLabel('Tìm mã chứng từ',{exact:true}).inputValue(),'UNSUBMITTED DRAFT');assert.equal(await page.locator('.document-panel select[aria-label="Chi nhánh"]').inputValue(),'BR-A');assert.match(await page.locator('.document-panel nav[aria-label="Phân trang chứng từ"]').innerText(),/Trang 2/);assert.ok(calls.some(c=>c.route==='/api/documents/purchase-orders'&&c.query.page==='2'&&c.query.search==='APPLIED'&&c.query.branchId==='BR-A'));};
  async function run(name,fn){await t.test(name,async()=>{try{await fn();results.push(name);}catch(error){failures.push(name);throw error;}});}
  try{
   browser=await chromium.launch({executablePath:executable,headless:true,args:['--no-sandbox']});

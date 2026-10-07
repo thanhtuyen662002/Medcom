@@ -254,10 +254,12 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await purchaseRow().click(); await freshPurchaseDetail();
       await page.evaluate(() => window.scrollTo(0, 420)); await paint();
     };
+    // The open detail modal aria-hides these retained background controls.
+    // Inspect their exact DOM values here; prepareOrders keeps visible role-based interactions.
     const orderControls = async () => {
       assert.equal(await page.getByLabel('Tìm mã chứng từ', {exact: true}).inputValue(), 'UNSUBMITTED DRAFT');
-      assert.equal(await page.locator('.document-panel').getByRole('combobox', {name: 'Chi nhánh', exact: true}).inputValue(), 'BR-A');
-      assert.match(await page.getByRole('navigation', {name: 'Phân trang chứng từ', exact: true}).innerText(), /Trang 2/);
+      assert.equal(await page.locator('.document-panel select[aria-label="Chi nhánh"]').inputValue(), 'BR-A');
+      assert.match(await page.locator('.document-panel nav[aria-label="Phân trang chứng từ"]').innerText(), /Trang 2/);
     };
     const purchaseControls = async () => {
       assert.equal(await purchasePanel().getByLabel('Tìm mã đề nghị', {exact: true}).inputValue(), 'UNSUBMITTED DRAFT');
