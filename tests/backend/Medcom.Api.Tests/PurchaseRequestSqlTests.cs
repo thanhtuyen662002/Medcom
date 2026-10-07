@@ -296,8 +296,12 @@ internal sealed class PurchaseRecordingModel : IPurchaseRequestIdentifierAllocat
     internal Task<AuthoritativeIdentity?>? FirstSession;
     internal void Seed(int count=1)=>Documents[PurchaseFixtures.DocumentId]=PurchaseFixtures.Aggregate(count);
     internal SqlPurchaseRequestCommands Service(bool qualified=true)=>new(PurchaseFixtures.Binding,PurchaseFixtures.Company,
-        (Func<DbConnection>)(()=>new PurchaseRecordingConnection(this,Connections++)),Resolve,this,qualified);
-    private Task<AuthoritativeIdentity?> Resolve(CancellationToken token)
+        (Func<DbConnection>)(()=>new PurchaseRecordingConnection(this,Connections++)),Resolve,this,qualified,Inspect);
+    // Both callbacks read only this synthetic model; neither opens identity SQL.
+    // Keep the existing observation sequence and fault/authority semantics intact.
+    private Task<AuthoritativeIdentity?> Resolve(CancellationToken token) => ObserveSession(token);
+    private Task<AuthoritativeIdentity?> Inspect(CancellationToken token) => ObserveSession(token);
+    private Task<AuthoritativeIdentity?> ObserveSession(CancellationToken token)
     {
         SessionCalls++; if(SessionCalls==1 && FirstSession is not null) return FirstSession;
         return Task.FromResult<AuthoritativeIdentity?>(RevokeAt==SessionCalls ? null : PurchaseFixtures.Identity(VersionChangeAt==SessionCalls ? 2 : 1));

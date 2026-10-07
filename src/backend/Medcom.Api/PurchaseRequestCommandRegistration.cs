@@ -2,6 +2,7 @@ using Medcom.Application;
 using Medcom.Application.PurchaseRequests;
 using Medcom.Contracts;
 using Medcom.Infrastructure.PurchaseRequests;
+using Medcom.Infrastructure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -14,8 +15,11 @@ namespace Medcom.Api;
 /// </summary>
 public static class PurchaseRequestCommandRegistration
 {
+    // Custom session stores must explicitly supply an inspector that performs only
+    // local liveness/identity inspection. Missing adapters leave commands unavailable.
     public static IServiceCollection AddDormantPurchaseRequestCommands(this IServiceCollection services,
-        PurchaseRequestCommandFactory? factory = null)
+        PurchaseRequestCommandFactory? factory = null,
+        Func<IWebSessions, string, CancellationToken, Task<ResolvedSession?>>? inspectLocalSession = null)
     {
         ArgumentNullException.ThrowIfNull(services);
         services.AddHttpContextAccessor();
@@ -34,7 +38,7 @@ public static class PurchaseRequestCommandRegistration
                 if (claims.Length == 1 && claims[0].Value == server.Token) anchor = server;
             }
             return new PurchaseRequestCommandRequestScope(factory, provider.GetService<IWebSessions>(),
-                anchor, context?.RequestAborted ?? CancellationToken.None);
+                anchor, context?.RequestAborted ?? CancellationToken.None, inspectLocalSession);
         });
         services.AddScoped<IPurchaseRequestCommandAccess>(provider =>
             new SqlPurchaseRequestCommandAccess(provider.GetRequiredService<PurchaseRequestCommandRequestScope>()));
@@ -51,18 +55,27 @@ internal sealed class PurchaseRequestCommandRequestScope
     private readonly PurchaseRequestCommandFactory? factory;
     private readonly IWebSessions? sessions;
     private readonly ResolvedSession? anchor;
+    private readonly Func<string, CancellationToken, Task<ResolvedSession?>>? inspect;
     private readonly CancellationToken requestAborted;
     public IPurchaseRequestCommands Commands { get; }
     internal bool RuntimeAccepted => factory?.RuntimeAccepted == true;
 
     internal PurchaseRequestCommandRequestScope(PurchaseRequestCommandFactory? factory, IWebSessions? sessions,
-        ResolvedSession? serverSession, CancellationToken requestAborted)
+        ResolvedSession? serverSession, CancellationToken requestAborted,
+        Func<IWebSessions, string, CancellationToken, Task<ResolvedSession?>>? inspectLocalSession = null)
     {
         this.factory = factory;
         this.sessions = sessions;
         this.requestAborted = requestAborted;
+        // IWebSessions.InspectAsync has a full-resolution fallback. Only the sealed
+        // LocalWebSessions implementation is known here to be SQL-free. Other stores
+        // require a server-owned, explicitly local adapter; never infer this from an
+        // override or invoke the interface fallback while a transaction is active.
+        inspect = sessions is LocalWebSessions local ? local.InspectAsync
+            : sessions is not null && inspectLocalSession is not null
+                ? (token, ct) => inspectLocalSession(sessions, token, ct) : null;
         if (serverSession is { Identity: { Capabilities: not null, BranchIds: not null } } server
-            && !string.IsNullOrEmpty(server.Token))
+            && server.Token is { Length: 64 } && server.Token.All(Uri.IsHexDigit))
         {
             var initial = new PurchaseRequestSessionFence();
             if (initial.TryAccept(server.Identity, out var accepted)) anchor = server with { Identity = accepted };
@@ -76,11 +89,13 @@ internal sealed class PurchaseRequestCommandRequestScope
         if (!RuntimeAccepted) return PurchaseRequestCommandAuthorityOutcome.Unavailable;
         if (anchor is null || supplied is null || supplied.Token != anchor.Token)
             return PurchaseRequestCommandAuthorityOutcome.Denied;
+        if (inspect is null) return PurchaseRequestCommandAuthorityOutcome.Unavailable;
         var sessionFence = NewInvocationFence();
         if (sessionFence is null || !sessionFence.TryAccept(supplied.Identity, out _))
             return PurchaseRequestCommandAuthorityOutcome.Denied;
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, requestAborted);
-        return await factory!.CreateAuthorityReader(t => ResolveLive(sessionFence, t))
+        return await factory!.CreateAuthorityReader(t => ResolveLive(sessionFence, t),
+                t => ResolveLive(sessionFence, t, localOnly: true))
             .ReadAsync(documentId, branchId, linked.Token);
     }
 
@@ -97,15 +112,18 @@ internal sealed class PurchaseRequestCommandRequestScope
         var sessionFence = NewInvocationFence();
         return factory.CreateCommands(sessionFence is null
             ? _ => Task.FromResult<AuthoritativeIdentity?>(null)
-            : t => ResolveLive(sessionFence, t));
+            : t => ResolveLive(sessionFence, t), inspect is null ? null
+            : t => sessionFence is null ? Task.FromResult<AuthoritativeIdentity?>(null)
+                : ResolveLive(sessionFence, t, localOnly: true));
     }
 
-    private async Task<AuthoritativeIdentity?> ResolveLive(PurchaseRequestSessionFence sessionFence, CancellationToken token)
+    private async Task<AuthoritativeIdentity?> ResolveLive(PurchaseRequestSessionFence sessionFence, CancellationToken token, bool localOnly = false)
     {
         if (!RuntimeAccepted || anchor is null || sessions is null) return null;
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, requestAborted);
         linked.Token.ThrowIfCancellationRequested();
-        var live = await sessions.ResolveAsync(anchor.Token, false, linked.Token).WaitAsync(linked.Token);
+        var live = await (localOnly ? inspect!(anchor.Token, linked.Token)
+            : sessions.ResolveAsync(anchor.Token, false, linked.Token)).WaitAsync(linked.Token);
         linked.Token.ThrowIfCancellationRequested();
         if (live is null || live.Token != anchor.Token || !sessionFence.TryAccept(live.Identity, out var accepted)) return null;
         // Preserve the authority's actual positive, nondecreasing observation version.
