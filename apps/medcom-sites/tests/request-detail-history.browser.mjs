@@ -40,15 +40,15 @@ async function runRequiredHistoryCase(context,name,body,diagnose){
 test('history fixture branches pass real list/detail clients and failures stop subsequent cases',async()=>{
  const require=createRequire(import.meta.url),{build}=require('esbuild'),ts=require('typescript'),{runInNewContext}=require('node:vm');
  await mkdir(output,{recursive:true});const file=path.join(output,'history-fixture-contract.mjs');
- await build({absWorkingDir:app,stdin:{contents:'export {getPurchaseList,getPurchaseLookup,getPurchaseWorkspace,getPurchaseDetail} from "./lib/erp/purchase-request-api";export {getDocuments,getDetail,getWorkspace} from "./lib/erp/api";export {createInboundRequestApi} from "./lib/erp/inbound-request-api";export {observedView} from "./lib/erp/inbound-draft";',resolveDir:app,loader:'tsx'},outfile:file,bundle:true,platform:'node',format:'esm',packages:'external',alias:{'@':app},logLevel:'warning'});
+ await build({absWorkingDir:app,stdin:{contents:'export {getPurchaseList,getPurchaseLookup,getPurchaseWorkspace,getPurchaseDetail,postPurchaseCommand} from "./lib/erp/purchase-request-api";export {getDocuments,getDetail,getWorkspace} from "./lib/erp/api";export {createInboundRequestApi} from "./lib/erp/inbound-request-api";export {observedView} from "./lib/erp/inbound-draft";',resolveDir:app,loader:'tsx'},outfile:file,bundle:true,platform:'node',format:'esm',packages:'external',alias:{'@':app},logLevel:'warning'});
  const clients=await import(pathToFileURL(file).href),source=await readFile(fileURLToPath(import.meta.url),'utf8'),ast=ts.createSourceFile('history-fixture.mjs',source,ts.ScriptTarget.Latest,true,ts.ScriptKind.JS),declarations={};let handler;
  const visit=node=>{if(ts.isVariableDeclaration(node)){
-  const name=node.name.getText(ast);if(['reset','workspace','send'].includes(name)){assert.equal(declarations[name],undefined);declarations[name]=node.getText(ast);}
+  const name=node.name.getText(ast);if(['reset','workspace','send','release','releaseAll'].includes(name)){assert.equal(declarations[name],undefined);declarations[name]=node.getText(ast);}
   if(name==='server'&&node.initializer?.expression?.getText(ast)==='createServer'){assert.equal(handler,undefined);handler=node.initializer.arguments[0].getText(ast);}
- }ts.forEachChild(node,visit);};const browserTest=ast.statements.find(node=>ts.isExpressionStatement(node)&&ts.isCallExpression(node.expression)&&node.expression.arguments[0]?.text==='composed request detail history, guarded traversal and original custody');assert.ok(browserTest);visit(browserTest.expression.arguments.at(-1));assert.equal(Object.keys(declarations).length,3);assert.ok(handler);
- // Execute the exact current HTTP handler and reset bytes with request/response
+ }ts.forEachChild(node,visit);};const browserTest=ast.statements.find(node=>ts.isExpressionStatement(node)&&ts.isCallExpression(node.expression)&&node.expression.arguments[0]?.text==='composed request detail history, guarded traversal and original custody');assert.ok(browserTest);visit(browserTest.expression.arguments.at(-1));assert.equal(Object.keys(declarations).length,5);assert.ok(handler);
+ // Execute the exact current HTTP handler, reset and release bytes with request/response
  // doubles. No local server/browser, copied envelopes or replacement decoders.
- const harness=runInNewContext('let model;const calls=[],errors=[],origin="http://synthetic.invalid";const '+Object.values(declarations).join(';const ')+';const handler='+handler+';({reset,handler,calls,errors,getModel:()=>model})',{purchase,inbound,historyCurrency,orderRow,readonlyProjection,scope,session,sha,structuredClone,URL,Buffer,Date,assert});
+ const harness=runInNewContext('let model;const calls=[],errors=[],origin="http://synthetic.invalid";const '+Object.values(declarations).join(';const ')+';const handler='+handler+';({reset,release,releaseAll,handler,calls,errors,getModel:()=>model})',{purchase,inbound,historyCurrency,orderRow,readonlyProjection,scope,session,sha,structuredClone,URL,Buffer,Date,assert});
  const native=globalThis.fetch,calls=[],checked=[],readScope={sessionScope:session,readScope:scope},signal=new AbortController().signal;let changeReply=reply=>reply;
  globalThis.fetch=async(url,init={})=>{
   const req={url:String(url),method:init.method??'GET',async *[Symbol.asyncIterator](){if(init.body)yield Buffer.from(init.body);}};
@@ -108,6 +108,21 @@ test('history fixture branches pass real list/detail clients and failures stop s
   harness.reset({projectionKind:'wrong-page-size'});assert.equal((await clients.getDetail('inbound-requests',inbound.documentId,2,signal,readScope)).pageSize,25);
   for(const listResponseHeaders of [{},{'X-Medcom-Session-Scope':'c'.repeat(64),'X-Medcom-Read-Scope':scope}]){harness.reset({listResponseHeaders});await assert.rejects(()=>list('inbound'),error=>[409,502].includes(error.status));}
   checked.push('purchase-order list/detail and every independent inbound projection failure/scope branch');
+  for(const kind of ['purchase','inbound'])for(const unknown of [false,true]){
+   harness.reset({holdCommands:true,unknown});const model=harness.getModel(),isPurchase=kind==='purchase',id='11111111-1111-4111-8111-111111111111';
+   const body=JSON.stringify(isPurchase?{idempotencyKey:id,header:purchase.header,lineChanges:[]}:{operationId:id,action:'Save',header:inbound.header,removedDetailIds:[],detailUpserts:[]});
+   const command=(lookup=false)=>isPurchase?clients.postPurchaseCommand(scope,lookup?'save/lookup':'save',body,signal):inboundApi.command(lookup?'reconcile':'save',body,scope,signal,()=>{});
+   let settled=false;const completion=command().then(value=>{settled=true;return {value};},error=>{settled=true;return {error};});
+   // Only in-memory request/response microtasks run before the queued latch.
+   await new Promise(setImmediate);assert.equal(model.commandWaiters.length,1);assert.equal(settled,false);assert.equal(model.effects,0);assert.equal(model.commandResponses,0);
+   assert.equal(model.writes.length,1);assert.equal(model.originals.get(id),body);assert.equal(model.writes[0].bodySha256,sha(body));
+   harness.release('Commands');assert.equal(model.holdCommands,false);assert.equal(model.commandWaiters.length,0,'Commands release must drain the exact queue holding the already-dispatched POST');
+   const result=await completion;if(unknown)assert.equal(result.error?.status,503);else{assert.equal(result.error,undefined);assert.equal(result.value.data.outcome,isPurchase?0:'Committed');}
+   assert.equal(model.effects,1);assert.equal(model.commandResponses,1);assert.equal(model.writes.length,1);assert.equal(model.originals.get(id),body);
+   harness.release('Commands');assert.equal(model.commandWaiters.length,0);assert.equal(model.effects,1,'Repeated release cannot dispatch or apply the original again');
+   const reconciled=await command(true);assert.equal(reconciled.data.outcome,isPurchase?0:'Replayed');assert.deepEqual(Array.from(model.reconciles),[sha(body)]);assert.equal(model.effects,1);assert.equal(model.writes.length,1);
+   checked.push(kind+' held command release '+(unknown?'lost acknowledgement':'committed')+' and exact-original reconciliation');
+  }
   assert.deepEqual(Array.from(harness.errors),[]);
   const original=Error('synthetic first readiness failure'),runs=[],diagnostics=[],context={test:async(name,body)=>{try{await body();}catch{}}};
   await assert.rejects(async()=>{for(const name of ['first','must-not-start'])await runRequiredHistoryCase(context,name,async()=>{runs.push(name);throw original;},async(name,error)=>diagnostics.push({name,error}));},error=>error===original);
@@ -116,8 +131,8 @@ test('history fixture branches pass real list/detail clients and failures stop s
   assert.equal(historyOutcome(Array(4).fill('completed'),[],null,null).passed,false,'A partial receipt can never claim success');
   const complete=Array(28).fill('completed');assert.equal(historyOutcome(complete,[],null,null).passed,true);
   assert.equal(historyOutcome(complete,['fixture error'],null,null).passed,false);assert.equal(historyOutcome(complete,[],null,'fatal').passed,false);
-  await writeFile(path.join(output,'fixture-api-contract.json'),JSON.stringify({result:'PASS',realClients:true,exactHandlerAndReset:true,browserExecuted:false,missingHasMoreRejected:true,firstFailureStopsSetup:true,checked,calls},null,2));
- }finally{globalThis.fetch=native;}
+  await writeFile(path.join(output,'fixture-api-contract.json'),JSON.stringify({result:'PASS',realClients:true,exactHandlerAndReset:true,exactReleaseHelper:true,browserExecuted:false,missingHasMoreRejected:true,heldCommandsCompleteOnce:true,firstFailureStopsSetup:true,checked,calls},null,2));
+ }finally{harness.releaseAll();globalThis.fetch=native;}
 });
 let compiled;
 async function compile(){
@@ -161,7 +176,7 @@ test('composed request detail history, guarded traversal and original custody',{
  const reset=(patch={})=>{model={paged:false,authenticated:true,loginStatus:200,loginCalls:0,holdLogin:false,loginWaiters:[],workspaceStatus:200,holdWorkspace:false,workspaceWaiters:[],sessionScope:session,version:1,lifetime:{idleExpiresAt:new Date(Date.now()+3600000).toISOString(),absoluteExpiresAt:new Date(Date.now()+7200000).toISOString()},writable:true,status:200,holdList:false,waiters:[],listResponses:0,holdDetail:false,detailWaiters:[],detailStatus:200,draftResponses:0,projectionStatus:200,projectionResponses:0,holdProjection:false,projectionWaiters:[],purchase:structuredClone(purchase),inbound:structuredClone(inbound),purchaseVersion:1,inboundVersion:1,originals:new Map(),receipts:new Map(),writes:[],reconciles:[],effects:0,holdCommands:false,commandWaiters:[],commandResponses:0,unknown:false,...patch};calls.length=0;};
  const workspace=()=>({session:{displayName:'SYNTHETIC USER',tenantId:'QA-T',companyId:'QA-C',companyName:'SYNTHETIC',authorityVersion:model.version,...model.lifetime,capabilities:model.capabilities??['purchase-requests.read','inbound-requests.read','purchase-orders.read']},branchIds:['QA-BRANCH'],navigation:(model.navigation??['purchase-requests','inbound-requests','purchase-orders']).map(id=>({id,label:id,href:'https://untrusted.invalid/'+id}))});
  const send=(res,status,data,headers={})=>{if(res.destroyed)return;res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store',...headers});res.end(status===204?undefined:JSON.stringify(data));};
- const release=kind=>{model['hold'+kind]=false;(model[kind[0].toLowerCase()+kind.slice(1)+'Waiters']??[]).splice(0).forEach(resolve=>resolve());};
+ const release=kind=>{model['hold'+kind]=false;(model[kind==='Commands'?'commandWaiters':kind[0].toLowerCase()+kind.slice(1)+'Waiters']??[]).splice(0).forEach(resolve=>resolve());};
  const releaseAll=()=>{for(const kind of ['Workspace','Login','Commands','Detail','Projection'])release(kind);model.holdList=false;model.waiters.splice(0).forEach(resolve=>resolve());model.commandWaiters.splice(0).forEach(resolve=>resolve());};
  const server=createServer(async(req,res)=>{const m=model;try{
   const url=new URL(req.url,origin??'http://localhost');
