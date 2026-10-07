@@ -282,19 +282,35 @@ test('I43 fixture callbacks stay stable for modal presentation while explicit au
  }finally{if(renderer)await act(async()=>renderer.unmount());for(const [name,descriptor] of saved)if(descriptor)Object.defineProperty(globalThis,name,descriptor);else delete globalThis[name];}
 });
 test('I43 actual dialog fixture compiles with the locked application dependencies',async()=>{await compile();});
-test('I43 R1 source layer contract places the retained surface strictly between actual mobile navigation and guard',async()=>{
+test('I43 R1 source and compiled layers place the retained surface between mobile navigation and the workspace guard',async()=>{
  const postcss=require('postcss');
  const globals=postcss.parse(await readFile(path.join(app,'app/globals.css'),'utf8'));
- const navigationLayers=[];globals.walkRules('.mobile-bottom-nav',rule=>rule.walkDecls('z-index',decl=>navigationLayers.push(Number(decl.value))));
- assert.deepEqual([...new Set(navigationLayers)],[40]);
+ const emitted=postcss.parse((await compile()).css);
+ const declarations=(css,selector)=>{const values=[];css.walkRules(selector,rule=>rule.walkDecls('z-index',decl=>{
+  const layers=[];for(let parent=rule.parent;parent;parent=parent.parent)if(parent.type==='atrule'&&parent.name==='layer')layers.push(parent.params);
+  values.push({value:Number(decl.value),layers});
+ }));return values;};
+ const selectors={navigation:'.mobile-bottom-nav',guardContent:'.workspace-navigation-warning',guardOverlay:'[data-slot="alert-dialog-overlay"]:has(+ .workspace-navigation-warning)'},evidence={};
+ for(const [name,css] of [['source',globals],['compiled',emitted]]){
+  const values=Object.fromEntries(Object.entries(selectors).map(([key,selector])=>[key,declarations(css,selector)]));
+  assert.deepEqual(values.navigation,[{value:40,layers:[]}]);
+  assert.deepEqual(values.guardContent,[{value:80,layers:[]}]);assert.deepEqual(values.guardOverlay,[{value:79,layers:[]}]);
+  evidence[name]=values;
+ }
+ // The primitive's utility is a base layer, not the composed guard's value.
+ // Unlayered application rules override the emitted Tailwind utility layer.
+ assert.deepEqual(declarations(emitted,'.z-50'),[{value:50,layers:['utilities']}]);
  const surface=await readFile(path.join(app,'components/erp/request-detail-dialog.tsx'),'utf8');
  const layer=Number(/\.request-detail-surface:not\(\[hidden\]\)\{[^}]*z-index:(\d+)/.exec(surface)?.[1]);
- const guard=await readFile(path.join(app,'components/ui/alert-dialog.tsx'),'utf8');
- assert.equal((guard.match(/fixed[^"\n]*z-50/g)??[]).length,2,'actual guard overlay and content both use level 50');
- assert.equal(layer,45);assert.ok(layer>Math.max(...navigationLayers)&&layer<50);
+ const primitive=await readFile(path.join(app,'components/ui/alert-dialog.tsx'),'utf8');
+ assert.equal((primitive.match(/fixed[^"\n]*z-50/g)??[]).length,2,'primitive overlay/content retain their base utility');
+ assert.match(primitive,/<AlertDialogOverlay \/>\s*<AlertDialogPrimitive.Content/,'the workspace guard overlay remains the preceding sibling matched by application CSS');
+ assert.match(await readFile(path.join(app,'components/erp/navigation-guard.tsx'),'utf8'),/className="workspace-navigation-warning"/);
+ const navigation=evidence.compiled.navigation[0].value,guardOverlay=evidence.compiled.guardOverlay[0].value,guardContent=evidence.compiled.guardContent[0].value;
+ assert.equal(layer,45);assert.ok(guardContent>guardOverlay&&guardOverlay>layer&&layer>navigation);
  assert.ok(entry.indexOf('<MobileBottomNav')>entry.indexOf('</SidebarInset>'),'fixture keeps the later Workspace sibling order');
  // Source/compilation evidence only: no claim about computed browser stacking.
- await writeFile(path.join(output,'r1-layer-contract.json'),JSON.stringify({result:'PASS',navigation:navigationLayers,surface:layer,guardOverlay:50,guardContent:50,actualMobileBottomNav:true,browserExecuted:false},null,2));
+ await writeFile(path.join(output,'r1-layer-contract.json'),JSON.stringify({result:'PASS',navigation,surface:layer,guardPrimitiveBase:50,guardOverlay,guardContent,evidence,actualMobileBottomNav:true,browserExecuted:false},null,2));
 });
 test('I43 R1 production layout effect yields focus and Escape to higher modal ownership (DOM model, not browser)',async()=>{
  const ts=require('typescript'),{runInNewContext}=require('node:vm');
@@ -318,7 +334,7 @@ test('I43 R1 production layout effect yields focus and Escape to higher modal ow
   focus(){document.activeElement=this;emit('focusin',{target:this});}
  }
  const body=new Element('body'),surface=new Element('surface',body,null,'45'),detail=new Element('detail',surface,'dialog'),detailInput=new Element('detail-input',detail);
- const command=new Element('command',body,'dialog','50'),commandInput=new Element('command-input',command),alert=new Element('guard',body,'alertdialog','50'),alertInput=new Element('guard-cancel',alert),outside=new Element('outside',body);
+ const command=new Element('command',body,'dialog','50'),commandInput=new Element('command-input',command),alert=new Element('guard',body,'alertdialog','80'),alertInput=new Element('guard-cancel',alert),outside=new Element('outside',body);
  command.hidden=true;alert.hidden=true;document.body=body;
  document.querySelectorAll=selector=>[detail,command,alert].filter(node=>selector.includes('[role="'+node.role+'"]'));
  class Observer{constructor(callback){this.callback=callback;observers.push(this);}observe(node,options){this.options=options;}disconnect(){this.disconnected=true;}}
@@ -436,7 +452,9 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
    await page.touchscreen.tap(location.x,location.y);assert.equal(await page.evaluate(()=>window.i43.navCalls.length),1);assert.deepEqual(await snapshot(),before);assert.equal(await notes().inputValue(),'R1 LAYER RETAINED');
    await attempt('x');const guard=page.getByRole('alertdialog');await guard.waitFor();
    assert.equal(await guard.evaluate(node=>node.contains(document.activeElement)),true);
-   assert.equal(Number(await guard.evaluate(node=>getComputedStyle(node).zIndex)),50);
+   const guardLayers={content:Number(await guard.evaluate(node=>getComputedStyle(node).zIndex)),overlay:Number(await page.locator('[data-slot="alert-dialog-overlay"]').evaluate(node=>getComputedStyle(node).zIndex))};
+   assert.deepEqual(guardLayers,{content:80,overlay:79},'The composed workspace guard overrides the base z-50 primitive');
+   assert.ok(guardLayers.content>guardLayers.overlay&&guardLayers.overlay>layers.surface&&layers.surface>layers.nav,'Guard content and overlay stay above detail, which stays above later navigation');
    assert.equal(await page.evaluate(({x,y})=>!!document.elementFromPoint(x,y)?.closest('[data-slot=alert-dialog-overlay],[role=alertdialog]'),location),true,'guard overlay owns bottom navigation coordinates above detail');
    const guardBox=await guard.boundingBox();assert.ok(guardBox);
    assert.equal(await page.evaluate(({x,y})=>!!document.elementFromPoint(x,y)?.closest('[role=alertdialog]'),{x:guardBox.x+guardBox.width/2,y:guardBox.y+guardBox.height/2}),true,'guard content owns its center');
@@ -448,7 +466,7 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
    location=await point();assert.equal(await page.evaluate(({x,y})=>!!document.elementFromPoint(x,y)?.closest('.mobile-bottom-nav'),location),true);
    await page.touchscreen.tap(location.x,location.y);assert.equal(await page.evaluate(()=>window.i43.navCalls.length),2,'accepted dismissal exposes the unchanged navigation again');
    assert.equal(model.calls.filter(call=>call.method==='POST').length,0);
-   results.push({case:'R1-mobile-stacking',kind,result:'PASS',layers,lifetime:before,navCalls:await page.evaluate(()=>window.i43.navCalls)});
+   results.push({case:'R1-mobile-stacking',kind,result:'PASS',layers,guardLayers,lifetime:before,navCalls:await page.evaluate(()=>window.i43.navCalls)});
   });
   for(const kind of ['purchase','inbound'])for(const width of [1280,390])await run(kind+' '+width+' retained dirty dialog and guarded dismissal matrix',async()=>{
    await start(kind,width);
