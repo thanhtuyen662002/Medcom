@@ -502,7 +502,7 @@ public sealed class PurchaseRequestCommandCompositionTests
             var secondObservations = sessions.Delivered;
             Assert.Equal(3, secondObservations.Length);
             Assert.Same(secondSnapshot, secondObservations[0].Session);
-            Assert.True(secondObservations[1].Session!.Identity.AuthorityVersion > poll.Identity.AuthorityVersion);
+            Assert.True(secondObservations[1].Session!.Identity.AuthorityVersion >= poll.Identity.AuthorityVersion);
             Assert.True(secondObservations[^1].Session!.Identity.AuthorityVersion > firstSnapshot.Identity.AuthorityVersion);
             Assert.Equal(1, db.Connections);
 
@@ -524,7 +524,7 @@ public sealed class PurchaseRequestCommandCompositionTests
                     Assert.Equal(real.Session.Token, observation.Token); Assert.False(observation.UserInteraction);
                     var live = Assert.IsType<ResolvedSession>(observation.Session);
                     Assert.Equal(real.Session.Token, live.Token);
-                    Assert.True(live.Identity.AuthorityVersion > previous);
+                    Assert.True(live.Identity.AuthorityVersion >= previous);
                     previous = live.Identity.AuthorityVersion;
                 }
             }
@@ -641,6 +641,12 @@ public sealed class PurchaseRequestCommandCompositionTests
         internal SessionObservation[] Delivered => delivered.ToArray();
         internal void ReleaseFirst() => firstRelease.TrySetResult();
         internal void ReleaseSecond() => secondRelease.TrySetResult();
+        public async Task<ResolvedSession?> InspectAsync(string token, CancellationToken cancellationToken)
+        {
+            var live = await inner.InspectAsync(token, cancellationToken);
+            delivered.Enqueue(new(token, false, live));
+            return live;
+        }
         public ResolvedSession? Create(AuthoritativeIdentity identity) => inner.Create(identity);
         public void Revoke(string token) => inner.Revoke(token);
         public async Task<ResolvedSession?> ResolveAsync(string token, bool userInteraction, CancellationToken cancellationToken)
@@ -680,6 +686,8 @@ public sealed class PurchaseRequestCommandCompositionTests
             if (revoked.Contains(token)) return Task.FromResult<ResolvedSession?>(null);
             return OnResolve?.Invoke(token, Calls, cancellationToken) ?? Task.FromResult<ResolvedSession?>(Session(token));
         }
+        public Task<ResolvedSession?> InspectAsync(string token, CancellationToken cancellationToken) =>
+            ResolveAsync(token, false, cancellationToken); // This fixture reads memory only.
         public void Revoke(string token) => revoked.Add(token);
     }
     private sealed class Harness : IDisposable
@@ -687,7 +695,8 @@ public sealed class PurchaseRequestCommandCompositionTests
         private readonly ServiceProvider provider;
         internal Harness(PurchaseRequestCommandFactory? factory, IWebSessions sessions)
         {
-            var services = new ServiceCollection(); services.AddSingleton(sessions); services.AddDormantPurchaseRequestCommands(factory);
+            var services = new ServiceCollection(); services.AddSingleton(sessions); services.AddDormantPurchaseRequestCommands(factory,
+                sessions is FakeSessions or GatedSnapshotSessions ? (store, token, ct) => store.InspectAsync(token, ct) : null);
             provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
         }
         internal RequestServices Request(ResolvedSession session, CancellationToken aborted = default, Action<HttpContext>? alter = null)

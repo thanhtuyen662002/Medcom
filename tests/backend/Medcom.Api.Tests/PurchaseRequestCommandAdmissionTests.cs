@@ -141,7 +141,7 @@ public sealed class PurchaseRequestCommandAdmissionTests
             PurchaseFixtures.Company, (Func<DbConnection>)db.NewConnection, a);
         Assert.False(factory.RuntimeAccepted);
         Assert.Equal(PurchaseRequestCommandAuthorityOutcome.Unavailable,
-            await factory.CreateAuthorityReader(db.Resolve).ReadAsync(PurchaseFixtures.DocumentId, "B1"));
+            await factory.CreateAuthorityReader(db.Resolve, db.Inspect).ReadAsync(PurchaseFixtures.DocumentId, "B1"));
         Assert.Equal(0, db.SessionCalls); Assert.Equal(0, db.FactoryCalls); Assert.Equal(0, db.Opens);
         db.AssertReadOnly();
     }
@@ -413,7 +413,7 @@ public sealed class PurchaseRequestCommandAdmissionTests
         var db = new I22AdmissionModel();
         var never = new TaskCompletionSource<AuthoritativeIdentity?>(TaskCreationOptions.RunContinuationsAsynchronously);
         using var stop = new CancellationTokenSource();
-        var pending = db.Factory().CreateAuthorityReader(_ => never.Task).ReadAsync(PurchaseFixtures.DocumentId, "B1", stop.Token);
+        var pending = db.Factory().CreateAuthorityReader(_ => never.Task, db.Inspect).ReadAsync(PurchaseFixtures.DocumentId, "B1", stop.Token);
         stop.Cancel();
         Assert.Equal(PurchaseRequestCommandAuthorityOutcome.Cancelled, await pending);
         Assert.Equal(0, db.Opens); db.AssertReadOnly();
@@ -427,14 +427,14 @@ public sealed class PurchaseRequestCommandAdmissionTests
         var factory = new PurchaseRequestCommandFactory(PurchaseFixtures.Binding, PurchaseFixtures.Company,
             (Func<DbConnection>)(() => connection), I22AdmissionModel.SyntheticAcceptance());
         Assert.Equal(PurchaseRequestCommandAuthorityOutcome.Unavailable,
-            await factory.CreateAuthorityReader(db.Resolve).ReadAsync(PurchaseFixtures.DocumentId, "B1"));
+            await factory.CreateAuthorityReader(db.Resolve, db.Inspect).ReadAsync(PurchaseFixtures.DocumentId, "B1"));
         Assert.Equal(ConnectionState.Open, connection.State); Assert.Equal(0, db.ConnectionDisposals);
         connection.Close();
         Assert.Equal(PurchaseRequestCommandAuthorityOutcome.Admitted,
-            await factory.CreateAuthorityReader(db.Resolve).ReadAsync(PurchaseFixtures.DocumentId, "B1"));
+            await factory.CreateAuthorityReader(db.Resolve, db.Inspect).ReadAsync(PurchaseFixtures.DocumentId, "B1"));
         var opens = db.Opens;
         Assert.Equal(PurchaseRequestCommandAuthorityOutcome.Unavailable,
-            await factory.CreateAuthorityReader(db.Resolve).ReadAsync(PurchaseFixtures.DocumentId, "B1"));
+            await factory.CreateAuthorityReader(db.Resolve, db.Inspect).ReadAsync(PurchaseFixtures.DocumentId, "B1"));
         Assert.Equal(opens, db.Opens); db.AssertReadOnly();
         db = new I22AdmissionModel { ForeignTransaction = true };
         Assert.Equal(PurchaseRequestCommandAuthorityOutcome.Unavailable,
@@ -473,7 +473,7 @@ internal sealed class I22AdmissionModel
     internal readonly List<string> Events = [];
     internal int FactoryCalls, SessionCalls, Opens, Rollbacks, TransactionDisposals, ConnectionDisposals, ForbiddenCalls, GrantEvaluations;
     internal string? FaultAt, ExtraResultAt;
-    internal bool ForeignTransaction, WrongIsolation;
+    internal bool ForeignTransaction, WrongIsolation, TransactionActive;
     internal Action<string>? OnStep;
     internal Func<string, DataTable, DataTable>? Transform;
     internal Func<int, AuthoritativeIdentity?>? SessionObservation;
@@ -481,9 +481,15 @@ internal sealed class I22AdmissionModel
         PurchaseFixtures.Company.TenantId, PurchaseFixtures.Company.CompanyId, "synthetic-recording-only-NOT-production-acceptance");
     internal PurchaseRequestCommandFactory Factory() => new(PurchaseFixtures.Binding, PurchaseFixtures.Company,
         (Func<DbConnection>)NewConnection, SyntheticAcceptance());
-    internal SqlPurchaseRequestCommandAuthorityReader Reader() => Factory().CreateAuthorityReader(Resolve);
+    internal SqlPurchaseRequestCommandAuthorityReader Reader() => Factory().CreateAuthorityReader(Resolve, Inspect);
     internal DbConnection NewConnection() { FactoryCalls++; return new Connection(this); }
     internal Task<AuthoritativeIdentity?> Resolve(CancellationToken token)
+    {
+        Assert.False(TransactionActive, "Full session resolution under an owned transaction.");
+        return Inspect(token);
+    }
+    // Synthetic local snapshot only: no authority or connection factory call.
+    internal Task<AuthoritativeIdentity?> Inspect(CancellationToken token)
     {
         token.ThrowIfCancellationRequested(); SessionCalls++; Step("session"); token.ThrowIfCancellationRequested();
         return Task.FromResult(SessionObservation is null ? Identity : SessionObservation(SessionCalls));
@@ -580,6 +586,7 @@ internal sealed class I22AdmissionModel
         protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
         {
             Assert.Equal(IsolationLevel.Serializable, isolationLevel); model.Step("begin");
+            model.TransactionActive = true;
             return new Transaction(model.ForeignTransaction ? new Connection(model) : this, model,
                 model.WrongIsolation ? IsolationLevel.ReadCommitted : isolationLevel);
         }
@@ -595,7 +602,7 @@ internal sealed class I22AdmissionModel
         public override void Commit() { model.ForbiddenCalls++; throw new InvalidOperationException("Admission COMMIT forbidden."); }
         public override void Rollback() { model.Rollbacks++; model.Step("rollback"); }
         public override ValueTask DisposeAsync()
-        { model.TransactionDisposals++; model.Step("transaction-dispose"); return ValueTask.CompletedTask; }
+        { model.TransactionDisposals++; model.Step("transaction-dispose"); model.TransactionActive = false; return ValueTask.CompletedTask; }
     }
     private sealed class Command(Connection owner, I22AdmissionModel model) : DbCommand
     {
