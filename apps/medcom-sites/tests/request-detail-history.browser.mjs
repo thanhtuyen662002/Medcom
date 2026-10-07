@@ -56,6 +56,19 @@ async function waitForHistoryOriginal(page,screen,documentId,originalValue,event
  }
  return reconcile;
 }
+// A healthy Workspace observation may reuse its authorized list. Explicit
+// list controls, rather than focus revalidation, request these changed rows.
+async function refreshHistoryRows(page,screen,expectedIds,eventually){
+ const isPurchase=screen==='purchase-requests',listPath=isPurchase?'/api/erp/api/purchase-requests':'/api/erp/api/documents/inbound-requests';
+ const response=page.waitForResponse(reply=>reply.request().method()==='GET'&&new URL(reply.url()).pathname===listPath);
+ await page.getByRole('button',{name:isPurchase?'Làm mới':'Tìm kiếm',exact:true}).click();
+ const reply=await response;assert.equal(reply.status(),200);assert.equal(await reply.headerValue('x-medcom-session-scope'),session);assert.equal(await reply.headerValue('x-medcom-read-scope'),scope);
+ const body=await reply.json(),data=isPurchase?body.data:body;if(isPurchase)assert.equal(body.scopeKey,scope);
+ assert.equal(data.page,1);assert.equal(data.pageSize,isPurchase?20:50);assert.deepEqual(data.rows.map(row=>row.documentId),expectedIds);
+ const table=page.locator(`[data-shared-grid][aria-label="${isPurchase?'Danh sách đề nghị':'Phiếu nhập hàng'}"]`);
+ if(expectedIds.length)await table.waitFor();else await page.getByText(isPurchase?'Không có đề nghị phù hợp':'Không có phiếu trong trang này.',{exact:true}).waitFor();
+ await eventually(async()=>JSON.stringify(await table.locator('[data-grid-row]').evaluateAll(rows=>rows.map(row=>row.getAttribute('data-grid-row'))))===JSON.stringify(expectedIds));
+}
 test('history fixture branches pass real list/detail clients and failures stop subsequent cases',async()=>{
  const require=createRequire(import.meta.url),{build}=require('esbuild'),ts=require('typescript'),{runInNewContext}=require('node:vm');
  await mkdir(output,{recursive:true});const file=path.join(output,'history-fixture-contract.mjs');
@@ -68,11 +81,12 @@ test('history fixture branches pass real list/detail clients and failures stop s
  // Execute the exact current HTTP handler, reset and release bytes with request/response
  // doubles. No local server/browser, copied envelopes or replacement decoders.
  const harness=runInNewContext('let model;const calls=[],errors=[],origin="http://synthetic.invalid";const '+Object.values(declarations).join(';const ')+';const handler='+handler+';({reset,release,releaseAll,handler,calls,errors,getModel:()=>model})',{purchase,inbound,historyCurrency,orderRow,readonlyProjection,scope,session,sha,structuredClone,URL,Buffer,Date,assert});
- const native=globalThis.fetch,calls=[],checked=[],readScope={sessionScope:session,readScope:scope},signal=new AbortController().signal;let changeReply=reply=>reply;
+ const native=globalThis.fetch,calls=[],checked=[],readScope={sessionScope:session,readScope:scope},signal=new AbortController().signal;let changeReply=reply=>reply,observeReply=()=>{};
  globalThis.fetch=async(url,init={})=>{
   const req={url:String(url),method:init.method??'GET',async *[Symbol.asyncIterator](){if(init.body)yield Buffer.from(init.body);}};
   let status,headers,body;await harness.handler(req,{destroyed:false,writeHead:(value,fields)=>{status=value;headers=fields;},end:value=>{body=value;}});
   assert.ok(status,'Fixture handler must complete its response');const reply=changeReply({status,headers,body},url);calls.push({url:String(url),method:req.method,status:reply.status});
+  observeReply({url:()=>new URL(String(url),'http://synthetic.invalid').href,request:()=>({method:()=>req.method}),status:()=>reply.status,headerValue:async name=>new Headers(reply.headers).get(name),json:async()=>JSON.parse(reply.body)});
   return new Response(reply.body,{status:reply.status,headers:reply.headers});
  };
  const inboundApi=clients.createInboundRequestApi(globalThis.fetch);
@@ -92,6 +106,29 @@ test('history fixture branches pass real list/detail clients and failures stop s
    // Exact old omission: undefined is removed by JSON serialization.
    harness.reset({paged:undefined});await assert.rejects(()=>list(kind),error=>error.code==='invalid_api_response');
    harness.reset({status:503});await assert.rejects(()=>list(kind),error=>error.status===503);
+  }
+  // Exercise the exact browser list-refresh helper through the real clients
+  // and exact HTTP handler. Only Playwright's click/response/DOM transport is
+  // doubled; native history and actual control wiring remain browser coverage.
+  for(const kind of ['purchase','inbound']){
+   const isPurchase=kind==='purchase',screen=kind+'-requests',base=isPurchase?purchase:inbound,idKey=isPurchase?'purchaseRequestId':'documentId',second={...structuredClone(base),[idKey]:'QA-SECOND'};
+   harness.reset({[isPurchase?'purchaseDocuments':'inboundDocuments']:[base,second]});let renderedIds=[base[idKey],second[idKey]],waiting,clicks=0;
+   const listPath=isPurchase?'/api/erp/api/purchase-requests':'/api/erp/api/documents/inbound-requests',replyAt=(route,method='GET')=>({url:()=>`http://synthetic.invalid${route}`,request:()=>({method:()=>method})});
+   const page={
+    waitForResponse:predicate=>{assert.equal(predicate(replyAt(listPath)),true);assert.equal(predicate(replyAt('/api/erp/api/workspace')),false);assert.equal(predicate(replyAt(listPath,'POST')),false);return new Promise(resolve=>{waiting={predicate,resolve};});},
+    getByRole:(role,options)=>{assert.equal(role,'button');assert.deepEqual(options,{name:isPurchase?'Làm mới':'Tìm kiếm',exact:true});return {click:async()=>{assert.ok(waiting,'Arm the current list response before clicking');clicks++;const data=await list(kind);renderedIds=data.rows.map(row=>row.documentId);}};},
+    getByText:(value,options)=>{assert.equal(value,isPurchase?'Không có đề nghị phù hợp':'Không có phiếu trong trang này.');assert.deepEqual(options,{exact:true});return {waitFor:async()=>assert.deepEqual(renderedIds,[])};},
+    locator:selector=>{assert.equal(selector,`[data-shared-grid][aria-label="${isPurchase?'Danh sách đề nghị':'Phiếu nhập hàng'}"]`);return {waitFor:async()=>assert.ok(renderedIds.length),locator:rows=>{assert.equal(rows,'[data-grid-row]');return {evaluateAll:async evaluate=>evaluate(renderedIds.map(id=>({getAttribute:name=>{assert.equal(name,'data-grid-row');return id;}})))};}};},
+   };
+   observeReply=reply=>{if(waiting?.predicate(reply)){waiting.resolve(reply);waiting=null;}};
+   for(const empty of [true,false]){
+    harness.getModel().empty=empty;const at=calls.length,expected=empty?[]:[base[idKey],second[idKey]];
+    await refreshHistoryRows(page,screen,expected,async condition=>assert.equal(await condition(),true));
+    assert.deepEqual(renderedIds,expected);assert.equal(calls.length,at+1);assert.equal(harness.getModel().listResponses,clicks);
+   }
+   assert.equal(clicks,2);harness.getModel().empty=false;
+   await assert.rejects(()=>refreshHistoryRows(page,screen,['QA-WRONG-ROW'],async condition=>assert.equal(await condition(),true)));
+   observeReply=()=>{};checked.push(kind+' explicit list controls, prearmed authorized GET, exact empty/restored rows and wrong-row rejection');
   }
   harness.reset();const workspace=await clients.getWorkspace(signal);assert.deepEqual(workspace.branchIds,['QA-BRANCH']);assert.equal(workspace.readScope,scope);
   assert.equal((await clients.getPurchaseWorkspace(signal)).data.writeAvailable,false);checked.push('workspace and purchase workspace');
@@ -450,9 +487,9 @@ test('composed request detail history, guarded traversal and original custody',{
     const rowsPatch={[isPurchase?'purchaseDocuments':'inboundDocuments']:[isPurchase?structuredClone(purchase):structuredClone(inbound),second]};
     await start(width,screen,rowsPatch);await openReady(screen);await page.evaluate(id=>window.authFixture.navigation.requestOpen(id),secondId);await eventually(async()=>await selected()===secondId);await atIndex(2);await field(screen).waitFor();
     await back();await eventually(async()=>await selected()===idFor(screen));await atIndex(1);await field(screen).waitFor();await back();await eventually(async()=>await selected()===null);await atIndex(0);
-    model.empty=true;await refresh();await eventually(()=>page.getByText(isPurchase?'Không có đề nghị phù hợp':'Không có phiếu trong trang này.',{exact:true}).isVisible());
+    model.empty=true;await refreshHistoryRows(page,screen,[],eventually);await atIndex(0);assert.equal(await selected(),null);
     await forward();await paint();await atIndex(0);assert.equal(await selected(),null);assert.equal(await page.locator('.request-detail-dialog:visible').count(),0);
-    model.empty=false;await refresh();await page.getByRole('button',{name:isPurchase?'Mở đề nghị '+idFor(screen):new RegExp('^Mở phiếu '+idFor(screen)+' '),exact:isPurchase}).waitFor();
+    model.empty=false;await refreshHistoryRows(page,screen,[idFor(screen),secondId],eventually);await atIndex(0);assert.equal(await selected(),null);await page.getByRole('button',{name:isPurchase?'Mở đề nghị '+idFor(screen):new RegExp('^Mở phiếu '+idFor(screen)+' '),exact:isPurchase}).waitFor();
     const afterRefusal=await page.evaluate(()=>window.authFixture.historyCalls.length);await openReady(screen);await atIndex(1);assert.equal(await page.evaluate(()=>window.authFixture.historyCalls.length),afterRefusal,'A later manual Open creates a new entry, never applies a refused Forward');await forward();await paint();await atIndex(1);assert.equal(await selected(),idFor(screen),'Manual Open truncates the old Forward B entry');
     await page.evaluate(id=>window.authFixture.navigation.requestOpen(id),secondId);await eventually(async()=>await selected()===secondId);await atIndex(2);await field(screen).waitFor();await back();await eventually(async()=>await selected()===idFor(screen));await atIndex(1);await field(screen).fill('CANCELED FORWARD');
     await forward();await warning().waitFor();await atIndex(1);await cancel();const afterCancel=await page.evaluate(()=>window.authFixture.historyCalls.length);
