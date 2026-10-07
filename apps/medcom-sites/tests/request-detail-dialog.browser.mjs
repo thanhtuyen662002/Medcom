@@ -37,26 +37,130 @@ async function runRequiredDialogCase(context,name,body,diagnose){
  if(failure)throw failure;
  context.signal?.throwIfAborted();
 }
-test('I43 exact synthetic lists pass real purchase and inbound clients; mixed legacy rows fail closed',async()=>{
+// Reuse the exact response bytes/metadata in the browser and decoder checks.
+// The inbound transport requires no-store even for bootstrap and CSRF replies.
+function dialogJson(status,data,headers={}){
+ return {status,data,headers:{'Content-Type':'application/json','Cache-Control':'no-store',...headers}};
+}
+function dialogApiResponse(m,route,query,method='GET'){
+ const headers={'X-Medcom-Session-Scope':session,'X-Medcom-Read-Scope':scope};
+ if(route.endsWith('/csrf'))return dialogJson(200,{token:'synthetic-csrf'});
+ if(route.endsWith('/workspace'))return dialogJson(200,{scopeKey:scope,data:{branchIds:['QA-BRANCH'],writeAvailable:false,writeReason:'numbering_journal_runtime_unqualified',lookups:[]}});
+ if(['/api/erp/api/purchase-requests','/api/erp/api/documents/inbound-requests'].includes(route)){
+  const data=dialogList(route.includes('/documents/')?'inbound':'purchase',Number(query.get('page')));
+  return dialogJson(200,route.includes('/documents/')?data:{scopeKey:scope,data},headers);
+ }
+ if(method==='GET'&&(route.endsWith('/detail')||route.endsWith('/draft'))){
+  if(m.detailStatus!==200)return dialogJson(m.detailStatus,{code:'request_failed'});
+  const id=query.get('documentId');
+  if(route.includes('/purchase-requests/'))return dialogJson(200,{scopeKey:scope,data:{document:{...m.purchase,purchaseRequestId:id},stateToken:'prs1.'+'1'.repeat(64),commandAccess:{canSave:true,canSubmit:true,canLookup:true,canAddLines:false,reason:'available'}}});
+  if(route.includes('/documents/'))return dialogJson(200,{document:{documentId:id,branchId:'QA-BRANCH',documentDate:'2026-10-01',statusId:0,isLocked:false},purchaseOrderLines:[],inboundRequestLines:[],page:Number(query.get('page')),pageSize:50,hasMore:false},headers);
+  if(m.readOnly)return dialogJson(200,{scopeKey:null,access:{canRead:false,canSave:false,canSend:false,available:false,maxCommandBytes:1048576},data:{outcome:'Unavailable',document:null}});
+  return dialogJson(200,{scopeKey:scope,access:{canRead:true,canSave:true,canSend:true,available:true,maxCommandBytes:1048576},data:{outcome:'Observed',document:{...m.inbound,documentId:id}}});
+ }
+ // Deliberately unknown, never a manufactured successful server receipt.
+ if(method==='POST')return dialogJson(503,{code:'backend_unavailable'});
+ return dialogJson(404,{code:'request_failed'});
+}
+test('I43 exact synthetic responses pass real clients and full draft validation; malformed fixtures fail closed',async()=>{
  const {build}=require('esbuild');await mkdir(output,{recursive:true});const file=path.join(output,'fixture-api-contract.mjs');
- await build({absWorkingDir:app,stdin:{contents:'export {getPurchaseList} from "./lib/erp/purchase-request-api";export {getDocuments} from "./lib/erp/api";',resolveDir:app,loader:'tsx'},outfile:file,bundle:true,platform:'node',format:'esm',packages:'external',alias:{'@':app},logLevel:'warning'});
- const {getPurchaseList,getDocuments}=await import(pathToFileURL(file).href),nativeFetch=globalThis.fetch,calls=[];
- const headers={'X-Medcom-Session-Scope':session,'X-Medcom-Read-Scope':scope};let reply;
- globalThis.fetch=async(url,init)=>{calls.push({url:String(url),method:init.method??'GET'});return Response.json(reply,{headers});};
+ await build({absWorkingDir:app,stdin:{contents:'export {getPurchaseList,getPurchaseWorkspace,getPurchaseDetail,getPurchaseLookup,postPurchaseCommand} from "./lib/erp/purchase-request-api";export {getDocuments,getDetail} from "./lib/erp/api";export {createInboundRequestApi} from "./lib/erp/inbound-request-api";export {observedView,buildCommand} from "./lib/erp/inbound-draft";export {createInboundRequestBridge} from "./lib/erp/inbound-request-command-adapter";',resolveDir:app,loader:'tsx'},outfile:file,bundle:true,platform:'node',format:'esm',packages:'external',alias:{'@':app},logLevel:'warning'});
+ const {getPurchaseList,getPurchaseWorkspace,getPurchaseDetail,getPurchaseLookup,postPurchaseCommand,getDocuments,getDetail,createInboundRequestApi,observedView,buildCommand,createInboundRequestBridge}=await import(pathToFileURL(file).href);
+ const nativeFetch=globalThis.fetch,calls=[],checked=[],signal=new AbortController().signal,readScope={sessionScope:session,readScope:scope};
+ const model={detailStatus:200,readOnly:false,purchase:structuredClone(purchase),inbound:structuredClone(inbound)};let changeReply=reply=>reply;
+ globalThis.fetch=async(url,init={})=>{
+  const u=new URL(url,'http://synthetic.invalid'),method=init.method??'GET';
+  const reply=changeReply(dialogApiResponse(model,u.pathname,u.searchParams,method),u);
+  calls.push({url:String(url),method,status:reply.status,body:init.body??null});
+  return new Response(JSON.stringify(reply.data),{status:reply.status,headers:reply.headers});
+ };
+ const api=createInboundRequestApi(globalThis.fetch);
  try{
   for(const kind of ['purchase','inbound'])for(const page of [1,2]){
-   const data=dialogList(kind,page);reply=kind==='purchase'?{scopeKey:scope,data}:data;
-   const actual=kind==='purchase'?await getPurchaseList(scope,page,'',''):await getDocuments('inbound-requests',page,'','',undefined,{sessionScope:session,readScope:scope});
+   const data=dialogList(kind,page);
+   const actual=kind==='purchase'?await getPurchaseList(scope,page,'',''):await getDocuments('inbound-requests',page,'','',undefined,readScope);
    assert.deepEqual(actual,data);assert.equal(actual.rows.length,18);assert.deepEqual(actual.rows.map(row=>row.documentId),Array.from({length:18},(_,index)=>'QA-'+String(index+1).padStart(3,'0')));
    assert.ok(actual.rows.every(row=>kind==='purchase'?!Object.hasOwn(row,'documentDate'):/^\d{4}-\d{2}-\d{2}$/.test(row.documentDate)));
   }
-  // Reproduce the exact pre-repair mixed schema, not an invented decoder error.
+  checked.push('purchase and inbound list pages 1 and 2, all 18 rows');
+  const workspace=await getPurchaseWorkspace();assert.deepEqual(workspace,dialogApiResponse(model,'/api/erp/api/purchase-requests/workspace',new URLSearchParams()).data);
+  checked.push('purchase workspace');
+  for(const documentId of ['QA-001','QA-018']){
+   const detail=await getPurchaseDetail(scope,documentId,signal);assert.deepEqual(detail.document,{...purchase,purchaseRequestId:documentId});
+   assert.deepEqual(detail.commandAccess,{canSave:true,canSubmit:true,canLookup:true,canAddLines:false,reason:'available'});
+   for(const readKey of [null,scope]){
+    const result=await api.read(documentId,readKey,signal);assert.equal(result.scopeKey,scope);
+    assert.deepEqual(result.access,{canRead:true,canSave:true,canSend:true,available:true,maxCommandBytes:1048576});
+    assert.deepEqual(observedView(result.data,documentId),{...inbound,documentId},'The real complete I18 schema must admit every synthetic draft field');
+   }
+  }
+  checked.push('purchase detail, full inbound bootstrap and scoped draft');
+  model.readOnly=true;
+  const unavailable=await api.read('QA-001',null,signal);
+  assert.deepEqual(unavailable,{scopeKey:null,access:{canRead:false,canSave:false,canSend:false,available:false,maxCommandBytes:1048576},data:{outcome:'Unavailable',document:null}});
+  assert.equal(observedView(unavailable.data,'QA-001'),null);
+  for(const page of [1,2]){
+   const fallback=await getDetail('inbound-requests','QA-001',page,signal,readScope);
+   assert.deepEqual(fallback,dialogApiResponse(model,'/api/erp/api/documents/inbound-requests/detail',new URLSearchParams({documentId:'QA-001',page:String(page)})).data);
+  }
+  model.readOnly=false;checked.push('unavailable draft and independent read-only fallback');
+  // Successful CSRF must reach each original POST; a 503 is intentionally
+  // unresolved. Assert the actual clients cannot turn it into a receipt.
+  const body=JSON.stringify({synthetic:'original bytes'});
+  for(const route of ['save','submit','save/lookup','submit/lookup']){
+   const at=calls.length;await assert.rejects(()=>postPurchaseCommand(scope,route,body,signal),error=>error.status===503&&error.code==='backend_unavailable');
+   assert.deepEqual(calls.slice(at).map(call=>[call.method,call.status]),[['GET',200],['POST',503]]);assert.equal(calls.at(-1).body,body);
+  }
+  for(const route of ['save','send','reconcile']){
+   let beforeSend=0;const at=calls.length;
+   await assert.rejects(()=>api.command(route,body,scope,signal,()=>beforeSend++),error=>error.status===503&&error.reason==='http');
+   assert.equal(beforeSend,1);assert.deepEqual(calls.slice(at).map(call=>[call.method,call.status]),[['GET',200],['POST',503]]);assert.equal(calls.at(-1).body,body);
+  }
+  checked.push('CSRF, purchase and inbound unavailable commands');
+  const bridge=createInboundRequestBridge(api);bridge.configure('synthetic-login',api);bridge.select('QA-001');
+  try{
+   await bridge.revalidate(signal);assert.equal(bridge.getSnapshot().access.canRead,true);
+   const view=observedView(await bridge.adapter.read('QA-001',signal),'QA-001');assert.ok(view);
+   const command=buildCommand(view,{...view.header,notes:'KEPT THROUGH HIDE'},view.details,'Save',null,'11111111-1111-4111-8111-111111111111'),at=calls.length;
+   for(const action of ['execute','reconcile']){
+    assert.deepEqual(await bridge.adapter[action](command,signal),{outcome:'OutcomeUnknown',receipt:null,code:null});
+    assert.equal(bridge.hasUnresolved(),true);assert.equal(bridge.getSnapshot().phase,'unknown');
+   }
+   const posts=calls.slice(at).filter(call=>call.method==='POST');assert.equal(posts.length,2);assert.equal(posts[0].body,JSON.stringify(command));assert.equal(posts[1].body,posts[0].body);
+  }finally{bridge.dispose();}
+  checked.push('inbound bridge preserves original command custody through 503 and reconcile');
+  model.detailStatus=404;
+  await assert.rejects(()=>getPurchaseDetail(scope,'QA-001',signal),error=>error.status===404&&error.code==='request_failed');
+  await assert.rejects(()=>api.read('QA-001',scope,signal),error=>error.status===404&&error.reason==='http');
+  await assert.rejects(()=>getDetail('inbound-requests','QA-001',1,signal,readScope),error=>error.status===404&&error.code==='request_failed');
+  model.detailStatus=200;
+  await assert.rejects(()=>getPurchaseLookup(scope,'items','',1,signal),error=>error.status===404&&error.code==='request_failed');
+  changeReply=()=>dialogJson(500,{code:'synthetic_fixture_error'});
+  await assert.rejects(()=>getPurchaseDetail(scope,'QA-001',signal),error=>error.status===500&&error.code==='synthetic_fixture_error');
+  await assert.rejects(()=>api.read('QA-001',scope,signal),error=>error.status===500&&error.reason==='http');
+  checked.push('detail 404, unmapped 404 and fixture error 500');
+  // Reproduce the exact pre-repair metadata omission for draft, unavailable
+  // fallback and CSRF, without relaxing the production transport requirement.
+  changeReply=reply=>{const headers={...reply.headers};delete headers['Cache-Control'];return {...reply,headers};};
+  for(const readOnly of [false,true]){
+   model.readOnly=readOnly;await assert.rejects(()=>api.read('QA-001',null,signal),error=>error.status===502&&error.reason==='invalid');
+  }
+  model.readOnly=false;let beforeSend=0;const beforeCsrf=calls.length;
+  await assert.rejects(()=>api.command('save',body,scope,signal,()=>beforeSend++),error=>error.status===502&&error.reason==='invalid');
+  assert.equal(beforeSend,0);assert.deepEqual(calls.slice(beforeCsrf).map(call=>call.method),['GET']);
+  changeReply=reply=>reply;
+  checked.push('missing no-store fails closed before draft/fallback or command dispatch');
+  const malformed=structuredClone((await api.read('QA-001',scope,signal)).data);delete malformed.document.header.notes;
+  assert.equal(observedView(malformed,'QA-001'),null);malformed.document.header.notes='';malformed.document.details[0].unitPrice=1;
+  assert.equal(observedView(malformed,'QA-001'),null);checked.push('full draft rejects incomplete header and numeric decimal');
+  // Preserve the exact pre-repair mixed list schema negative regression.
   for(const kind of ['purchase','inbound']){
    const data={rows:Array.from({length:18},(_,index)=>({documentId:'QA-'+String(index+1).padStart(3,'0'),branchId:'QA-BRANCH',purchaseDate:purchase.header.purchaseDate,documentDate:inbound.header.documentDate,personSuggest:'SYNTHETIC',department:'SYNTHETIC',statusId:kind==='purchase'?1:0,isLocked:false})),page:1,pageSize:kind==='purchase'?20:50,hasMore:true};
-   reply=kind==='purchase'?{scopeKey:scope,data}:data;
-   await assert.rejects(()=>kind==='purchase'?getPurchaseList(scope,1,'',''):getDocuments('inbound-requests',1,'','',undefined,{sessionScope:session,readScope:scope}),error=>error.code==='invalid_api_response');
+   changeReply=reply=>({...reply,data:kind==='purchase'?{scopeKey:scope,data}:data});
+   await assert.rejects(()=>kind==='purchase'?getPurchaseList(scope,1,'',''):getDocuments('inbound-requests',1,'','',undefined,readScope),error=>error.code==='invalid_api_response');
   }
-  assert.ok(calls.every(call=>call.method==='GET'));await writeFile(path.join(output,'fixture-api-contract.json'),JSON.stringify({result:'PASS',realClients:true,browserExecuted:false,pages:[1,2],rowsPerPage:18,legacyPurchaseRejected:true,legacyInboundRejected:true,calls},null,2));
+  checked.push('legacy mixed purchase and inbound list schemas rejected');
+  await writeFile(path.join(output,'fixture-api-contract.json'),JSON.stringify({result:'PASS',realClients:true,fullInboundDecoder:true,browserExecuted:false,pages:[1,2],rowsPerPage:18,legacyPurchaseRejected:true,legacyInboundRejected:true,missingNoStoreRejected:true,checked,calls},null,2));
  }finally{globalThis.fetch=nativeFetch;}
 });
 test('I43 failed required child preserves the first cause and stops subsequent setup',async()=>{
@@ -248,36 +352,17 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
  const {chromium}=(toolchain?createRequire(path.join(path.resolve(toolchain),'package.json')):require)('playwright-core');
  let model,browser,context,page,origin,currentScenario,firstFailure=null,fatal=null;const expectedCases=13,results=[],errors=[],waiters=[];
  const reset=()=>{model={calls:[],detailStatus:200,holdDetail:false,holdCommand:false,unknown:false,readOnly:false,receipts:new Map(),purchase:structuredClone(purchase),inbound:structuredClone(inbound)};};
- const send=(res,status,data,headers={})=>{if(!res.destroyed){res.writeHead(status,{'Content-Type':'application/json',...headers});res.end(JSON.stringify(data));}};
- const headers={'X-Medcom-Session-Scope':session,'X-Medcom-Read-Scope':scope};
+ const send=(res,{status,data,headers})=>{if(!res.destroyed){res.writeHead(status,headers);res.end(JSON.stringify(data));}};
  const server=createServer(async(req,res)=>{try{
   const u=new URL(req.url,origin??'http://localhost'),route=u.pathname;
   if(route==='/fixture.js'){res.setHeader('Content-Type','text/javascript');return res.end(script);}
   if(route==='/fixture.css'){res.setHeader('Content-Type','text/css');return res.end(css);}
   if(!route.startsWith('/api/erp/')){res.setHeader('Content-Type','text/html');return res.end('<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/fixture.css"><div id="root"></div><script src="/fixture.js"></script>');}
   const m=model,parts=[];for await(const part of req)parts.push(part);const body=Buffer.concat(parts).toString();m.calls.push({route,query:Object.fromEntries(u.searchParams),method:req.method,body});
-  if(route.endsWith('/csrf'))return send(res,200,{token:'synthetic-csrf'});
-  if(route.endsWith('/workspace'))return send(res,200,{scopeKey:scope,data:{branchIds:['QA-BRANCH'],writeAvailable:false,writeReason:'numbering_journal_runtime_unqualified',lookups:[]}});
-  if(['/api/erp/api/purchase-requests','/api/erp/api/documents/inbound-requests'].includes(route)){
-   const data=dialogList(route.includes('/documents/')?'inbound':'purchase',Number(u.searchParams.get('page')));
-   return send(res,200,route.includes('/documents/')?data:{scopeKey:scope,data},headers);
-  }
-  if(req.method==='GET'&&(route.endsWith('/detail')||route.endsWith('/draft'))){
-   if(m.holdDetail)await new Promise(resolve=>waiters.push(resolve));
-   if(m.detailStatus!==200)return send(res,m.detailStatus,{code:'request_failed'});
-   const id=u.searchParams.get('documentId');
-   if(route.includes('/purchase-requests/'))return send(res,200,{scopeKey:scope,data:{document:{...m.purchase,purchaseRequestId:id},stateToken:'prs1.'+'1'.repeat(64),commandAccess:{canSave:true,canSubmit:true,canLookup:true,canAddLines:false,reason:'available'}}});
-   if(route.includes('/documents/'))return send(res,200,{document:{documentId:id,branchId:'QA-BRANCH',documentDate:'2026-10-01',statusId:0,isLocked:false},purchaseOrderLines:[],inboundRequestLines:[],page:Number(u.searchParams.get('page')),pageSize:50,hasMore:false},headers);
-   if(m.readOnly)return send(res,200,{scopeKey:null,access:{canRead:false,canSave:false,canSend:false,available:false,maxCommandBytes:1048576},data:{outcome:'Unavailable',document:null}});
-   return send(res,200,{scopeKey:scope,access:{canRead:true,canSave:true,canSend:true,available:true,maxCommandBytes:1048576},data:{outcome:'Observed',document:{...m.inbound,documentId:id}}});
-  }
-  if(req.method==='POST'){
-   if(m.holdCommand)await new Promise(resolve=>waiters.push(resolve));
-   // Deliberately unknown, never a manufactured successful server receipt.
-   return send(res,503,{code:'backend_unavailable'});
-  }
-  send(res,404,{code:'request_failed'});
- }catch(error){errors.push(String(error));send(res,500,{code:'synthetic_fixture_error'});}});
+  if(req.method==='GET'&&(route.endsWith('/detail')||route.endsWith('/draft'))&&m.holdDetail)await new Promise(resolve=>waiters.push(resolve));
+  if(req.method==='POST'&&!route.endsWith('/csrf')&&m.holdCommand)await new Promise(resolve=>waiters.push(resolve));
+  send(res,dialogApiResponse(m,route,u.searchParams,req.method));
+ }catch(error){errors.push(String(error));send(res,dialogJson(500,{code:'synthetic_fixture_error'}));}});
  reset();server.listen(0,'127.0.0.1');await once(server,'listening');origin='http://127.0.0.1:'+server.address().port;
  const release=()=>{model.holdDetail=false;model.holdCommand=false;waiters.splice(0).forEach(done=>done());};
  const paint=()=>page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
