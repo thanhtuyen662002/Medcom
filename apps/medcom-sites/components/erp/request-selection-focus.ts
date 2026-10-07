@@ -76,10 +76,21 @@ export function useRequestSelectionFocus(options: SelectionFocusOptions) {
           schedule(); return; // Let the guard's final focus restoration finish.
         }
         const row = rows.current.get(ticket.documentId) ?? null;
-        const target = ticket.kind === "open" ? detailTarget.current
+        let target = ticket.kind === "open" ? detailTarget.current
           : ticket.restoreRow && visible(row) ? row : listTarget.current;
         if (!visible(target) || target.matches('input,textarea,select,[contenteditable="true"]')) {
           cancel(); return;
+        }
+        // Keep the read-proved region's visibility fence above. A retained
+        // modal can surround an unavailable/hidden region, so its frame alone
+        // cannot prove readiness. Once ready, focus that region's own bounded,
+        // named dialog instead of a potentially thousands-of-pixels-tall body.
+        if (ticket.kind === "open") {
+          const dialog = target.closest<HTMLElement>('.request-detail-dialog[role="dialog"]');
+          if (dialog) {
+            if (!visible(dialog)) { cancel(); return; }
+            target = dialog;
+          }
         }
         // Consume before dispatching focus events. Later commits cannot repeat it.
         pending.current = null;

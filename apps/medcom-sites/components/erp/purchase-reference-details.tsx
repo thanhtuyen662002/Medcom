@@ -1,5 +1,6 @@
 "use client";
 import {useEffect,useLayoutEffect,useMemo,useRef,useState} from "react";
+import {RequestButton} from "./request-presentation";
 import {
  createPurchaseReferenceController,initialPurchaseReferenceContext,purchaseReferenceIdentity,PURCHASE_REFERENCE_LIMITS,
  type PurchaseReferenceInput,type PurchaseReferenceContext,type PurchaseReferenceController,type PurchaseReferenceKind,
@@ -75,8 +76,8 @@ export function PurchaseReferenceDetails(props: PurchaseReferenceDetailsProps) {
    </div>
    {kind==="currencies"&&<p>Tỷ giá lưu trên chứng từ: {String(props.documentRateExchange)}</p>}
    {"progress" in state&&<><p>Đã đọc {state.progress.pages}/{PURCHASE_REFERENCE_LIMITS.pages} trang; {state.progress.requests}/{PURCHASE_REFERENCE_LIMITS.requests} yêu cầu.</p>
-    {state.progress.canContinue&&<button type="button" onClick={()=>continueLookup(kind)}>Đọc thêm một trang {kind==="purposes"?"mục đích":"tiền tệ"}</button>}
-    {state.progress.canRetry&&<button type="button" onClick={()=>retryLookup(kind)}>Thử lại tham chiếu {kind==="purposes"?"mục đích":"tiền tệ"}</button>}
+    {state.progress.canContinue&&<RequestButton type="button" onClick={()=>continueLookup(kind)}>Đọc thêm một trang {kind==="purposes"?"mục đích":"tiền tệ"}</RequestButton>}
+    {state.progress.canRetry&&<RequestButton type="button" onClick={()=>retryLookup(kind)}>Thử lại tham chiếu {kind==="purposes"?"mục đích":"tiền tệ"}</RequestButton>}
     {state.status==="failed"&&!state.progress.canRetry&&!["authentication","authority","scope"].includes(state.failure)&&<p>Đã hết ngân sách tra cứu; cần đọc lại chứng từ để bắt đầu lần xác minh mới.</p>}
    </>}
   </div>;

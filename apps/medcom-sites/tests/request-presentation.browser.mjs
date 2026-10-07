@@ -60,6 +60,72 @@ test('I42 actual shared components render one safe semantic surface without a br
  // responsive geometry and query edits remain browser-only assertions below.
 });
 
+test('I43 actual selection-focus hook keeps modal focus bounded without bypassing read visibility (DOM model)',async()=>{
+ const require=createRequire(import.meta.url),{build}=require('esbuild'),React=require('react'),{act,create}=require('react-test-renderer');
+ await mkdir(output,{recursive:true});const file=path.join(output,'selection-focus-contract.mjs');
+ await build({absWorkingDir:app,entryPoints:['components/erp/request-selection-focus.ts'],outfile:file,bundle:true,platform:'node',format:'esm',packages:'external',logLevel:'warning'});
+ const {useRequestSelectionFocus}=await import(pathToFileURL(file).href);
+ const names=['document','window','Node','getComputedStyle','requestAnimationFrame','cancelAnimationFrame','IS_REACT_ACT_ENVIRONMENT'];
+ const saved=new Map(names.map(name=>[name,Object.getOwnPropertyDescriptor(globalThis,name)]));
+ const events=()=>{const handlers=new Map();return {addEventListener(name,fn){const set=handlers.get(name)??new Set();set.add(fn);handlers.set(name,set);},removeEventListener(name,fn){handlers.get(name)?.delete(fn);},emit(name,event){for(const fn of [...handlers.get(name)??[]])fn(event);}};};
+ const document={...events(),hidden:false,activeElement:null,body:null,querySelector:()=>guard};
+ const window=events(),frames=new Map(),focusCalls=[];let frameId=0,guard=null,renderer,api;
+ class Node {
+  constructor(id,parentElement=null){Object.assign(this,{id,parentElement,isConnected:true,hidden:false,inert:false,ariaHidden:false,visibility:'visible',scrollTop:0,scrollLeft:0,tagName:'DIV',role:null,className:''});}
+  contains(node){for(let current=node;current;current=current.parentElement)if(current===this)return true;return false;}
+  closest(selector){if(selector==='.request-detail-dialog[role="dialog"]'){if(this.role==='dialog'&&this.className==='request-detail-dialog')return this;}else if(this.hidden||this.inert||this.ariaHidden)return this;return this.parentElement?.closest(selector)??null;}
+  matches(){return ['INPUT','TEXTAREA','SELECT'].includes(this.tagName);}
+  getClientRects(){return this.hidden?[]:[{}];}
+  focus(options){focusCalls.push({id:this.id,options});document.activeElement=this;document.emit('focusin',{isTrusted:true,target:this});}
+ }
+ const body=new Node('body'),scroller=new Node('scroller',body),row=new Node('row',scroller),list=new Node('list',scroller),dialog=new Node('owned-dialog',body),region=new Node('read-proved-region',dialog),later=new Node('later-modal-control',dialog),higher=new Node('higher-dialog',body),higherInput=new Node('higher-dialog-input',higher);
+ dialog.role=higher.role='dialog';dialog.className='request-detail-dialog';higherInput.tagName='INPUT';document.body=body;document.activeElement=row;
+ const owner={};let options={owner,selected:null,listKey:'list-A',openReady:false,openFailed:false,listReady:true,listFailed:false};
+ function Harness({value}){api=useRequestSelectionFocus(value);return null;}
+ const flush=()=>{const pending=[...frames.values()];frames.clear();for(const callback of pending)callback();};
+ const update=async patch=>{options={...options,...patch};await act(async()=>{const value=React.createElement(Harness,{value:options});if(renderer)renderer.update(value);else renderer=create(value);});};
+ const reset=async()=>{api.cancel();guard=null;document.hidden=false;region.hidden=region.inert=region.ariaHidden=dialog.hidden=false;region.visibility=dialog.visibility='visible';region.parentElement=dialog;await update({owner,selected:null,listKey:'list-A',openReady:false,openFailed:false});api.detail(region);api.list(list);api.row('DOC-A',row);focusCalls.length=0;document.activeElement=row;};
+ const open=async()=>{api.open('DOC-A');await update({selected:'DOC-A',openReady:true});flush();};
+ try{
+  Object.assign(globalThis,{document,window,Node,getComputedStyle:node=>({visibility:node.visibility}),requestAnimationFrame:callback=>{const id=++frameId;frames.set(id,callback);return id;},cancelAnimationFrame:id=>frames.delete(id),IS_REACT_ACT_ENVIRONMENT:true});
+  await update({});await reset();scroller.scrollTop=740;dialog.scrollTop=23;await open();
+  assert.deepEqual(focusCalls,[{id:'owned-dialog',options:{preventScroll:true}}]);assert.equal(scroller.scrollTop,740);assert.equal(dialog.scrollTop,23,'Open never scrolls either owner');
+  api.open('DOC-A');flush();assert.deepEqual(focusCalls.map(call=>call.id),['owned-dialog','owned-dialog'],'Repeated Open targets the bounded current owned frame, never its potentially huge region');
+  scroller.scrollTop=991;api.close();await update({selected:null});flush();assert.equal(focusCalls.at(-1).id,'row');assert.equal(scroller.scrollTop,740,'Close still restores the original row scroll');
+  await reset();region.parentElement=body;await open();assert.deepEqual(focusCalls,[{id:'read-proved-region',options:{preventScroll:true}}],'Non-modal selection keeps the prior exact target');
+  for(const field of ['hidden','inert','ariaHidden']){await reset();region[field]=true;await open();assert.deepEqual(focusCalls,[],'A visible frame cannot bypass '+field+' on its original read-proved region');}
+  await reset();region.visibility='hidden';await open();assert.deepEqual(focusCalls,[],'Hidden computed region visibility also fences the frame');
+  await reset();dialog.visibility='hidden';await open();assert.deepEqual(focusCalls,[],'The chosen frame must independently remain visible');
+  for(const patch of [{owner:null},{openFailed:true},{listKey:'list-B'}]){await reset();api.open('DOC-A');await update({selected:'DOC-A',openReady:true,...patch});flush();assert.deepEqual(focusCalls,[],'Authority, failed read and list identity retire pending focus');}
+  await reset();api.open('DOC-A');await update({selected:'DOC-A'});flush();assert.deepEqual(focusCalls,[],'Selection alone cannot focus before full read readiness');await update({openReady:true});flush();assert.equal(focusCalls[0].id,'owned-dialog');
+  for(const target of [later,higherInput]){await reset();api.open('DOC-A');await update({selected:'DOC-A'});target.focus({preventScroll:true});focusCalls.length=0;await update({openReady:true});flush();assert.deepEqual(focusCalls,[],'A later owned or higher-modal focus retires the old Open ticket');assert.strictEqual(document.activeElement,target);}
+  for(const event of ['keydown','blur','visibilitychange']){await reset();api.open('DOC-A');if(event==='blur')window.emit(event,{target:window});else{if(event==='visibilitychange')document.hidden=true;document.emit(event,{isTrusted:true});}await update({selected:'DOC-A',openReady:true});flush();assert.deepEqual(focusCalls,[],event+' suppresses stale focus');}
+  await reset();guard=new Node('guard',body);api.open('DOC-A');await update({selected:'DOC-A',openReady:true});flush();assert.deepEqual(focusCalls,[],'A captured mounted guard retains focus ownership');guard.isConnected=false;flush();assert.deepEqual(focusCalls,[],'Wait one frame after the guard unmounts');flush();assert.equal(focusCalls[0].id,'owned-dialog');
+  await reset();api.open('DOC-A');await update({selected:'DOC-A',openReady:true});await act(async()=>renderer.unmount());renderer=null;flush();assert.deepEqual(focusCalls,[],'An unmounted host cannot restore focus');
+  await writeFile(path.join(output,'selection-focus-dom-model.json'),JSON.stringify({status:'passed',actualProductionHook:true,browserExecuted:false,dom:'explicit doubles',cases:['bounded owned frame','repeat Open','nonmodal fallback','no Open scroll','Close row scroll restoration','hidden/inert/aria-hidden original region','hidden original/target visibility','authority/read/list gates','later modal focus','keyboard/blur/visibility cancellation','captured guard ownership','unmount']},null,2));
+ }finally{if(renderer)await act(async()=>renderer.unmount());for(const [name,descriptor] of saved)if(descriptor)Object.defineProperty(globalThis,name,descriptor);else delete globalThis[name];}
+});
+
+test('I48 actual reference retry and continuation actions retain shared 44px button contract',async()=>{
+ const require=createRequire(import.meta.url),{build}=require('esbuild'),React=require('react'),{act,create}=require('react-test-renderer');
+ await mkdir(output,{recursive:true});const file=path.join(output,'reference-actions-contract.mjs');
+ await build({absWorkingDir:app,entryPoints:['components/erp/purchase-reference-details.tsx'],outfile:file,bundle:true,platform:'node',format:'esm',packages:'external',alias:{'@':app},jsx:'automatic',logLevel:'warning'});
+ const {PurchaseReferenceDetails}=await import(pathToFileURL(file).href),savedFetch=globalThis.fetch,savedAct=globalThis.IS_REACT_ACT_ENVIRONMENT;
+ const evidence=[];let renderer;
+ try{
+  globalThis.IS_REACT_ACT_ENVIRONMENT=true;
+  for(const mode of ['retry','continue']){
+   const calls=[];globalThis.fetch=async(url,init)=>{const query=Object.fromEntries(new URL(url,'http://synthetic.invalid').searchParams);calls.push({query,method:init.method??'GET'});return mode==='retry'?Response.json({code:'backend_unavailable'},{status:503}):Response.json({scopeKey:scope,data:{available:true,reason:null,items:[],page:Number(query.page),hasMore:true}});};
+   await act(async()=>{renderer=create(React.createElement(PurchaseReferenceDetails,{scopeKey:scope,readIdentity:'selection-A',authorityKey:'authority-A',documentId:'QA-PURCHASE-001',allowed:true,presentationAllowed:true,purposeId:1,currencyId:'VND',documentRateExchange:1}));await new Promise(resolve=>setImmediate(resolve));});
+   const buttons=renderer.root.findAllByType('button');assert.equal(buttons.length,2,'Both purpose and currency expose their explicit action');
+   for(const button of buttons){assert.match(button.props.className,/\brequest-button\b/);assert.match(button.props.className,/\bmin-h-11\b/);assert.match(button.props.className,/\bmin-w-11\b/);assert.match(button.props.className,/\bmax-w-full\b/);assert.match(button.props.className,/\bwhitespace-normal\b/);assert.match(button.props.className,/focus-visible:/);assert.equal(button.props.type,'button');}
+   assert.equal(calls.length,2);await act(async()=>{buttons[0].props.onClick();await new Promise(resolve=>setImmediate(resolve));});assert.equal(calls.length,3,'Shared control preserves its exact explicit lookup action');assert.equal(calls.at(-1).query.kind,'purposes');assert.equal(calls.at(-1).query.page,mode==='continue'?'2':'1');assert.ok(calls.every(call=>call.method==='GET'));
+   evidence.push({mode,controls:2,calls,shared44pxClass:true,browserExecuted:false});await act(async()=>renderer.unmount());renderer=null;
+  }
+  await writeFile(path.join(output,'reference-actions-contract.json'),JSON.stringify(evidence,null,2));
+ }finally{if(renderer)await act(async()=>renderer.unmount());globalThis.fetch=savedFetch;if(savedAct===undefined)delete globalThis.IS_REACT_ACT_ENVIRONMENT;else globalThis.IS_REACT_ACT_ENVIRONMENT=savedAct;}
+});
+
 let compiledPresentation;
 async function compilePresentation(){
  if(compiledPresentation)return compiledPresentation;
@@ -289,7 +355,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
  }
 
  async function layout(width,screen){await paint();const overflow=await page.evaluate(()=>({width:innerWidth,scrollWidth:document.documentElement.scrollWidth,elements:document.documentElement.scrollWidth<=innerWidth?[]:[...document.querySelectorAll('body *')].filter(el=>{const r=el.getBoundingClientRect();return r.width>0&&(r.right>innerWidth+.5||r.left<-.5);}).slice(0,24).map(el=>({tag:el.tagName,className:typeof el.className==='string'?el.className:'',width:el.getBoundingClientRect().width,left:el.getBoundingClientRect().left,right:el.getBoundingClientRect().right}))}));assert.ok(overflow.scrollWidth<=overflow.width,'Page overflow at '+width+': '+JSON.stringify(overflow));
-  const checks=await host(screen).locator('button:visible,input:not([type=checkbox]):visible,textarea:visible,select:visible,summary:visible').evaluateAll(elements=>elements.map(el=>({tag:el.tagName,height:el.getBoundingClientRect().height,font:parseFloat(getComputedStyle(el).fontSize)})));
+  const checks=await host(screen).locator('button:visible,input:not([type=checkbox]):visible,textarea:visible,select:visible,summary:visible').evaluateAll(elements=>elements.map(el=>({tag:el.tagName,name:el.getAttribute('aria-label')??el.textContent?.trim().slice(0,100)??'',height:el.getBoundingClientRect().height,font:parseFloat(getComputedStyle(el).fontSize)})));
   assert.ok(checks.length);assert.ok(checks.every(v=>v.height>=43.5),'Request touch targets must be at least 44px: '+JSON.stringify(checks));
   if(width<768)assert.ok(checks.filter(v=>['INPUT','TEXTAREA','SELECT'].includes(v.tag)).every(v=>v.font>=16),'Mobile input/textarea fonts must be 16px');
  }
@@ -719,7 +785,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
    for(const screen of ['purchase-requests','inbound-requests']){
     await start(390,screen,{...fullLists(),holdDetail:true});await openRow(screen,1).click();await eventually(()=>model.detailWaiters.length>0);const laterControl=detailDialog(screen).getByRole('button',{name:'Đóng hộp thoại',exact:true});await laterControl.focus();release();await focusRegion(screen).waitFor();if(screen==='purchase-requests')await page.getByLabel('Ghi chú',{exact:true}).waitFor();else await page.getByLabel('Số đơn',{exact:true}).waitFor();await paint();assert.equal(await laterControl.evaluate(element=>document.activeElement===element),true,'A late detail read cannot steal a newer modal-control focus');await capture(`${screen}-cancelled-focus-390`,{viewport:true,keepFocus:true});
     await start(390,screen,{...fullLists(),holdDetail:true});await openRow(screen,1).click();await eventually(()=>model.detailWaiters.length>0);assert.equal(await page.evaluate(()=>document.hidden),false);await page.evaluate(()=>window.dispatchEvent(new FocusEvent('blur')));release();if(screen==='purchase-requests')await page.getByLabel('Ghi chú',{exact:true}).waitFor();else await page.getByLabel('Số đơn',{exact:true}).waitFor();await paint();assert.equal(await detailRegionFocused(screen),false,'A window-blur signal retires focus even while the document remains visible');
-    await start(390,screen,{...fullLists(),detailStatus:503});await openRow(screen,1).click();const retry=page.getByRole('button',{name:screen==='purchase-requests'?'Xác minh lại phiếu':'Xác minh lại quyền nhập hàng',exact:true});if(screen==='purchase-requests')await host(screen).getByRole('alert').waitFor();else await host(screen).getByText('Chưa xác minh được quyền nhập hàng. Ý định đang giữ không bị bỏ; thử xác minh lại trong đúng phiên.',{exact:true}).waitFor();model.detailStatus=200;await retry.click();if(screen==='purchase-requests')await page.getByLabel('Ghi chú',{exact:true}).waitFor();else await page.getByLabel('Số đơn',{exact:true}).waitFor();await paint();assert.equal(await detailRegionFocused(screen),false);await closeSelection(screen).click();await openRow(screen,1).click();await focusedDetail(screen);assert.equal(calls.filter(call=>call.method==='POST').length,0);
+    await start(390,screen,{...fullLists(),detailStatus:503});await openRow(screen,1).click();const retry=detailDialog(screen).getByRole('button',{name:screen==='purchase-requests'?'Xác minh lại phiếu':'Xác minh lại quyền nhập hàng',exact:true});if(screen==='purchase-requests')await detailDialog(screen).getByRole('alert').waitFor();else await detailDialog(screen).getByText('Chưa xác minh được quyền nhập hàng. Ý định đang giữ không bị bỏ; thử xác minh lại trong đúng phiên.',{exact:true}).waitFor();model.detailStatus=200;await retry.click();if(screen==='purchase-requests')await page.getByLabel('Ghi chú',{exact:true}).waitFor();else await page.getByLabel('Số đơn',{exact:true}).waitFor();await paint();assert.equal(await detailRegionFocused(screen),false);await closeSelection(screen).click();await openRow(screen,1).click();await focusedDetail(screen);assert.equal(calls.filter(call=>call.method==='POST').length,0);
    }
   });
   await run('support details never expose arbitrary errors or references',async()=>{
@@ -840,7 +906,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
     // The temporary authority gap correctly retires the old focus origin.
     // Re-activating the retained Open handler establishes today's origin without
     // another GET; the modal backdrop still prevents actual pointer access.
-    await backgroundActivate(open('inbound-requests'));await focusedDetail('inbound-requests');assert.equal(projectionCalls().length,5);
+    await backgroundActivate(open('inbound-requests'));await eventually(()=>detailDialog('inbound-requests').evaluate(element=>document.activeElement===element));await focusedDetail('inbound-requests');assert.equal(projectionCalls().length,5);
     await closeSelection('inbound-requests').click();await focusedVisible(open('inbound-requests'));assert.equal(await readonlyPanel().count(),0);assert.equal(await filter.inputValue(),'UNAPPLIED READONLY FILTER');
     await openRow('inbound-requests',26).focus();await page.keyboard.press('Enter');await readonlyReady();await focusedDetail('inbound-requests');await detailDialog('inbound-requests').getByRole('button',{name:'Đóng hộp thoại',exact:true}).focus();await roundedKeyboardFocus(detailDialog('inbound-requests').getByRole('button',{name:'Đóng hộp thoại',exact:true}));assert.equal(await readonlyPanel().getByRole('heading',{name:'QA-INBOUND-026',exact:true}).count(),1);
     await closeSelection('inbound-requests').focus();await page.keyboard.press('Enter');await focusedVisible(openRow('inbound-requests',26));await roundedKeyboardFocus(openRow('inbound-requests',26));assert.equal(await filter.inputValue(),'UNAPPLIED READONLY FILTER');assert.equal(calls.filter(call=>call.method==='POST').length,0);assert.deepEqual(await notices(),[]);
@@ -986,14 +1052,14 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
    for(const mode of ['unknown','confirmed-readback'])for(const nullScope of [false,true]){
     await start(390,'inbound-requests',{...fullLists(),writable:true,unknown:mode==='unknown',afterWriteDraftEnvelope:unavailableDraft(nullScope)});await saveInbound();
     await eventually(()=>model.commandResponses===1);if(mode==='unknown')await page.waitForFunction(()=>document.querySelector('[data-testid=inbound-editor]')?.getAttribute('data-phase')==='unknown');else await page.waitForFunction(()=>document.querySelector('[data-testid=inbound-request-host]')?.getAttribute('data-readback-pending')==='true');
-    const unavailableReads=model.draftResponses;await page.getByRole('button',{name:'Xác minh lại quyền nhập hàng',exact:true}).click();await eventually(()=>model.draftResponses>unavailableReads);await settledReads();const bodies=await page.evaluate(()=>window.i30SaveDispatches);assert.equal(bodies.length,1);const originalBody=bodies[0],bodySha256=sha(originalBody);
+    const unavailableReads=model.draftResponses;await detailDialog('inbound-requests').getByRole('button',{name:'Xác minh lại quyền nhập hàng',exact:true}).click();await eventually(()=>model.draftResponses>unavailableReads);await settledReads();const bodies=await page.evaluate(()=>window.i30SaveDispatches);assert.equal(bodies.length,1);const originalBody=bodies[0],bodySha256=sha(originalBody);
     assert.equal(model.writes.length,1);assert.equal(model.writes[0].bodySha256,bodySha256);assert.equal(model.originals.get(model.writes[0].operationId),originalBody);assert.equal(model.effects,1);assert.equal(projectionCalls().length,0,'Custody blocks even an otherwise eligible independent projection');assert.equal(await readonlyPanel().count(),0);
     const attempts=[()=>closeSelection('inbound-requests').click(),()=>backgroundActivate(openRow('inbound-requests',26)),()=>backgroundActivate(page.getByRole('button',{name:'Tìm kiếm',exact:true})),()=>backgroundActivate(page.getByRole('navigation',{name:'Điều hướng nhanh trên điện thoại',exact:true}).getByRole('button',{name:'Không gian làm việc',exact:true}))];
     for(const attempt of attempts){await attempt();await page.getByRole('alertdialog').waitFor();assert.equal(await page.getByRole('button',{name:'Bỏ thay đổi và rời màn hình',exact:true}).count(),0);assert.equal(new URL(page.url()).searchParams.get('screen'),'inbound-requests');assert.equal(await host('inbound-requests').locator('button[aria-label^="Mở phiếu QA-INBOUND-001 "]').getAttribute('aria-pressed'),'true');assert.equal(await host('inbound-requests').locator('button[aria-label^="Mở phiếu QA-INBOUND-026 "]').getAttribute('aria-pressed'),'false');assert.equal(projectionCalls().length,0);await page.getByRole('button',{name:'Tiếp tục làm việc',exact:true}).click();await page.getByRole('alertdialog').waitFor({state:'detached'});}
     assert.deepEqual(await page.evaluate(()=>window.i30SaveDispatches),[originalBody]);assert.equal(model.effects,1);assert.equal(model.writes.length,1);await capture(`inbound-readonly-custody-${mode}-${nullScope?'null-scope':'scoped'}-390`,{viewport:true,keepFocus:true});
     // Recover only through current full-draft rights and the original receipt.
     // The paginated READ projection can never discharge either custody gate.
-    model.draftEnvelope=null;model.inboundDocuments[0]=structuredClone(model.inbound);await page.getByRole('button',{name:'Xác minh lại quyền nhập hàng',exact:true}).click();
+    model.draftEnvelope=null;model.inboundDocuments[0]=structuredClone(model.inbound);await detailDialog('inbound-requests').getByRole('button',{name:'Xác minh lại quyền nhập hàng',exact:true}).click();
     if(mode==='unknown'){const reconcile=page.getByTestId('inbound-editor').getByRole('button',{name:'Kiểm tra yêu cầu gốc',exact:true});await eventually(()=>reconcile.isEnabled());await reconcile.click();}
     await inboundReady();await page.waitForFunction(()=>document.querySelector('[data-testid=inbound-request-host]')?.getAttribute('data-readback-pending')==='false');
     assert.equal(await page.getByLabel('Số đơn',{exact:true}).inputValue(),'SYNTHETIC TOAST EDIT');assert.equal(model.effects,1);assert.equal(model.writes.length,1);assert.deepEqual(await page.evaluate(()=>window.i30SaveDispatches),[originalBody]);assert.deepEqual(model.reconciles,mode==='unknown'?[bodySha256]:[]);assert.equal(projectionCalls().length,0);
