@@ -15,6 +15,8 @@ namespace Medcom.Infrastructure.Inbound;
 public interface IInboundCommandAuthority
 {
     Task<AuthoritativeIdentity?> ResolveAsync(CancellationToken token);
+    // No fallback to full resolution while an owned transaction is active.
+    Task<AuthoritativeIdentity?> InspectAsync(CancellationToken token) => Task.FromResult<AuthoritativeIdentity?>(null);
     Task<IReadOnlyList<string>?> ReadGrantsAsync(DbTransaction transaction, AuthoritativeIdentity identity,
         InboundDraftAction action, CancellationToken token);
 }
@@ -30,8 +32,9 @@ public sealed class SqlInboundDraftCommandService : IInboundDraftCommandService
 
     public SqlInboundDraftCommandService(Guid databaseBindingId, LegacyCompany company,
         Func<SqlConnection> connectionFactory, Func<CancellationToken,Task<AuthoritativeIdentity?>> resolveLiveSession,
-        IInboundDocumentNumberAllocator? allocator = null)
-        : this(databaseBindingId,company,()=>connectionFactory(),new SqlAuthority(resolveLiveSession),allocator) { }
+        IInboundDocumentNumberAllocator? allocator = null,
+        Func<CancellationToken,Task<AuthoritativeIdentity?>>? inspectLocalSession = null)
+        : this(databaseBindingId,company,()=>connectionFactory(),new SqlAuthority(resolveLiveSession, inspectLocalSession),allocator) { }
 
     // Trusted dependency seam for recording tests and I31's bound factory, which
     // always supplies NativeAuthority. Never register caller-supplied authority.
@@ -49,7 +52,8 @@ public sealed class SqlInboundDraftCommandService : IInboundDraftCommandService
     // I31 reuses the actual I15 credential/menu/native-rights reader. This seam
     // does not add permission SQL, a new writer, or runtime qualification.
     internal static IInboundCommandAuthority NativeAuthority(
-        Func<CancellationToken, Task<AuthoritativeIdentity?>> resolve) => new SqlAuthority(resolve);
+        Func<CancellationToken, Task<AuthoritativeIdentity?>> resolve,
+        Func<CancellationToken, Task<AuthoritativeIdentity?>>? inspect = null) => new SqlAuthority(resolve, inspect);
 
     internal static async Task<string?> ReadAuthorizedDocumentBranchAsync(DbTransaction tx,
         string document, IReadOnlyList<string> grants, CancellationToken token)
@@ -81,6 +85,7 @@ public sealed class SqlInboundDraftCommandService : IInboundDraftCommandService
             return new(InboundDraftOutcome.NumberingUnavailable,Code:"numbering_not_qualified");
         if(System.Transactions.Transaction.Current is not null) return new(InboundDraftOutcome.Unavailable);
         AuthoritativeIdentity? originalIdentity=null;
+        var sessionFence=new InboundDraftSessionFence();
         byte[]? intent=null;
         Guid attempt=Guid.Empty;
         // A committed reservation gives THIS stack the only custody to enter phase 1.
@@ -88,23 +93,26 @@ public sealed class SqlInboundDraftCommandService : IInboundDraftCommandService
         for(var phase=0;phase<2;phase++)
         {
             DbConnection? connection=null; DbTransaction? tx=null;
-            var owns=false; var commitAttempted=false; var committed=false; var wrote=false;
+            var owns=false; var commitAttempted=false; var committed=false; var wrote=false; var cleanupOk=true;
             InboundDraftResult? terminal=null;
             try
             {
+                Require(System.Transactions.Transaction.Current is null,InboundDraftOutcome.Unavailable);
+                token.ThrowIfCancellationRequested();
                 var identity=await authority.ResolveAsync(token);
-                Require(Identity(identity),InboundDraftOutcome.Denied);
+                Require(Identity(identity) && sessionFence.TryAccept(identity,out _),InboundDraftOutcome.Denied);
                 if(originalIdentity is null){originalIdentity=identity; intent=Intent(request,identity!);}
-                Require(SameScope(originalIdentity!,identity!),InboundDraftOutcome.Denied);
                 connection=factory();
                 Require(connection is not null && connection.State==ConnectionState.Closed,InboundDraftOutcome.Unavailable);
                 owns=true;
                 await connection!.OpenAsync(token);
-                tx=await connection.BeginTransactionAsync(IsolationLevel.Serializable,token);
-                Require(tx.IsolationLevel==IsolationLevel.Serializable && ReferenceEquals(tx.Connection,connection),InboundDraftOutcome.Unavailable);
+                var started=await connection.BeginTransactionAsync(IsolationLevel.Serializable,token);
+                Require(ReferenceEquals(started.Connection,connection),InboundDraftOutcome.Unavailable);
+                tx=started;
+                await InboundDraftTargetQualification.VerifyAsync(connection,tx,binding,company,token);
+                Require(sessionFence.TryAccept(await authority.InspectAsync(token),out _),InboundDraftOutcome.Denied);
                 var grants=await authority.ReadGrantsAsync(tx,identity!,request.Action,token);
                 Require(ValidGrants(grants),InboundDraftOutcome.Denied);
-                await Probe(tx,token);
                 var saved=await Lookup(tx,identity!,request.OperationId,token);
                 if(saved is not null)
                 {
@@ -113,7 +121,7 @@ public sealed class SqlInboundDraftCommandService : IInboundDraftCommandService
                     {
                         var replayBranch=await Scope(tx,receipt.DocumentId,grants!,token);
                         Require(saved.Branch==replayBranch,InboundDraftOutcome.Denied);
-                        await Live(tx,identity!,request.Action,replayBranch,token);
+                        await Live(tx,sessionFence,request.Action,replayBranch,token);
                         token.ThrowIfCancellationRequested();
                         terminal=new(InboundDraftOutcome.Replayed,receipt);
                     }
@@ -143,7 +151,7 @@ public sealed class SqlInboundDraftCommandService : IInboundDraftCommandService
                     var reserved=await Lookup(tx,identity!,request.OperationId,token);
                     Require(reserved is not null && reserved.Receipt is null && reserved.Attempt==attempt
                         && reserved.Matches(binding,identity!,request,intent!),InboundDraftOutcome.Unavailable);
-                    await Live(tx,identity!,request.Action,reservationBranch,token);
+                    await Live(tx,sessionFence,request.Action,reservationBranch,token);
                     token.ThrowIfCancellationRequested(); commitAttempted=true;
                     await tx.CommitAsync(token); committed=true; token.ThrowIfCancellationRequested();
                 }
@@ -169,7 +177,7 @@ public sealed class SqlInboundDraftCommandService : IInboundDraftCommandService
                     }
                     if(request.Action==InboundDraftAction.Create) ValidateMutation(before,request);
                     Require(saved!.Branch==branch,InboundDraftOutcome.Denied);
-                    await Live(tx,identity!,request.Action,branch,token);
+                    await Live(tx,sessionFence,request.Action,branch,token);
                     var inserted=new Dictionary<string,InboundDraftDetailUpsert>(StringComparer.Ordinal);
                     wrote=true;
                     if(request.Action==InboundDraftAction.SendToWarehouse)
@@ -206,7 +214,7 @@ public sealed class SqlInboundDraftCommandService : IInboundDraftCommandService
                         && recorded.Attempt==attempt && recorded.Before==beforeToken && recorded.Receipt is {} ack
                         && ack.DocumentId==document && ack.StateEqualityToken==after.Token && ack.StatusId==after.View.StatusId
                         && ack.AuditId==audit,InboundDraftOutcome.Unavailable);
-                    await Live(tx,identity!,request.Action,branch,token);
+                    await Live(tx,sessionFence,request.Action,branch,token);
                     token.ThrowIfCancellationRequested(); commitAttempted=true;
                     await tx.CommitAsync(token); committed=true; token.ThrowIfCancellationRequested();
                     terminal=new(InboundDraftOutcome.Committed,recorded!.Receipt);
@@ -226,10 +234,24 @@ public sealed class SqlInboundDraftCommandService : IInboundDraftCommandService
                 {
                     if(!committed && !commitAttempted)
                         try{await tx.RollbackAsync(CancellationToken.None);}
-                        catch(Exception e) when(e is not OutOfMemoryException){if(wrote) terminal=new(InboundDraftOutcome.OutcomeUnknown,Code:"rollback_ack_unknown");}
-                    try{await tx.DisposeAsync();}catch(Exception e) when(e is not OutOfMemoryException){ }
+                        catch(Exception e) when(e is not OutOfMemoryException){cleanupOk=false;if(wrote) terminal=new(InboundDraftOutcome.OutcomeUnknown,Code:"rollback_ack_unknown");}
+                    try{await tx.DisposeAsync();}catch(Exception e) when(e is not OutOfMemoryException){cleanupOk=false;}
                 }
-                if(owns) try{await connection!.DisposeAsync();}catch(Exception e) when(e is not OutOfMemoryException){ }
+                if(owns) try{await connection!.DisposeAsync();}catch(Exception e) when(e is not OutOfMemoryException){cleanupOk=false;}
+            }
+            if(!cleanupOk) return new(wrote || commitAttempted || terminal?.Receipt is not null
+                ? InboundDraftOutcome.OutcomeUnknown : InboundDraftOutcome.Unavailable,Code:"cleanup_not_acknowledged_reconcile_only");
+            if(terminal?.Receipt is not null)
+            {
+                try
+                {
+                    token.ThrowIfCancellationRequested();
+                    if(!sessionFence.TryAccept(await authority.ResolveAsync(token),out _))
+                        return new(InboundDraftOutcome.OutcomeUnknown,Code:"result_authority_changed_reconcile_only");
+                    token.ThrowIfCancellationRequested();
+                }
+                catch(Exception e) when(e is not OutOfMemoryException)
+                {return new(InboundDraftOutcome.OutcomeUnknown,Code:"result_authority_changed_reconcile_only");}
             }
             if(terminal is not null) return terminal;
         }
@@ -271,40 +293,69 @@ public sealed class SqlInboundDraftCommandService : IInboundDraftCommandService
     {
         if(!InboundDraftValidation.Ansi(documentId,50)) return new(InboundDraftOutcome.InvalidInput);
         if(System.Transactions.Transaction.Current is not null) return new(InboundDraftOutcome.Unavailable);
+        DbConnection? connection=null; DbTransaction? tx=null; var owned=false; var cleanupOk=true;
+        AuthoritativeIdentity? identity=null;
+        var sessionFence=new InboundDraftSessionFence();
+        var result=new InboundDraftReadResult(InboundDraftOutcome.Unavailable);
         try
         {
-            var identity=await authority.ResolveAsync(token);
-            if(!Identity(identity)) return new(InboundDraftOutcome.Denied);
-            await using var c=factory();
-            if(c.State!=ConnectionState.Closed) return new(InboundDraftOutcome.Unavailable);
-            await c.OpenAsync(token);
-            await using var tx=await c.BeginTransactionAsync(IsolationLevel.Serializable,token);
+            token.ThrowIfCancellationRequested();
+            identity=await authority.ResolveAsync(token);
+            Require(Identity(identity) && sessionFence.TryAccept(identity,out _),InboundDraftOutcome.Denied);
+            connection=factory();
+            Require(connection is not null && connection.State==ConnectionState.Closed,InboundDraftOutcome.Unavailable);
+            owned=true;
+            await connection!.OpenAsync(token);
+            var started=await connection.BeginTransactionAsync(IsolationLevel.Serializable,token);
+            Require(ReferenceEquals(started.Connection,connection),InboundDraftOutcome.Unavailable);
+            tx=started;
+            await InboundDraftTargetQualification.VerifyAsync(connection,tx,binding,company,token);
+            Require(sessionFence.TryAccept(await authority.InspectAsync(token),out _),InboundDraftOutcome.Denied);
             var grants=await authority.ReadGrantsAsync(tx,identity!,InboundDraftAction.Save,token);
             Require(ValidGrants(grants),InboundDraftOutcome.Denied);
             var branch=await Scope(tx,documentId,grants!,token);
             var snapshot=await Snapshot.Read(tx,documentId,token);
             Require(snapshot is not null,InboundDraftOutcome.NotFound);
-            await Live(tx,identity!,InboundDraftAction.Save,branch,token);
+            await Live(tx,sessionFence,InboundDraftAction.Save,branch,token);
             token.ThrowIfCancellationRequested();
-            return new(InboundDraftOutcome.Observed,snapshot!.View);
+            result=new(InboundDraftOutcome.Observed,snapshot!.View);
         }
-        catch(Stop stop){return new(stop.Outcome);}
+        catch(Stop stop){result=new(stop.Outcome);}
+        catch(Exception e) when(e is not OutOfMemoryException){result=new(InboundDraftOutcome.Unavailable);}
+        finally
+        {
+            if(tx is not null)
+            {
+                try{await tx.RollbackAsync(CancellationToken.None);}catch(Exception e) when(e is not OutOfMemoryException){cleanupOk=false;}
+                try{await tx.DisposeAsync();}catch(Exception e) when(e is not OutOfMemoryException){cleanupOk=false;}
+            }
+            if(owned)try{await connection!.DisposeAsync();}catch(Exception e) when(e is not OutOfMemoryException){cleanupOk=false;}
+        }
+        if(!cleanupOk)return new(InboundDraftOutcome.Unavailable);
+        if(result.Outcome!=InboundDraftOutcome.Observed)return result;
+        try
+        {
+            token.ThrowIfCancellationRequested();
+            var current=await authority.ResolveAsync(token);
+            token.ThrowIfCancellationRequested();
+            return sessionFence.TryAccept(current,out _) ? result : new(InboundDraftOutcome.Denied);
+        }
         catch(Exception e) when(e is not OutOfMemoryException){return new(InboundDraftOutcome.Unavailable);}
     }
 
     private bool Identity(AuthoritativeIdentity? id) => id is not null && id.TenantId==company.TenantId && id.CompanyId==company.CompanyId
         && InboundDraftValidation.Ansi(id.PrincipalId,50) && !string.IsNullOrWhiteSpace(id.CredentialStamp)
         && InboundDraftValidation.Text(id.TenantId,100,true) && InboundDraftValidation.Text(id.CompanyId,100,true);
-    private static bool SameScope(AuthoritativeIdentity a,AuthoritativeIdentity b)=>a.PrincipalId==b.PrincipalId && a.TenantId==b.TenantId
-        && a.CompanyId==b.CompanyId && a.CredentialStamp==b.CredentialStamp;
     private static bool ValidGrants(IReadOnlyList<string>? grants)=>grants is {Count:>0 and <=200}
         && grants.All(x=>InboundDraftValidation.Ansi(x,50));
-    private async Task Live(DbTransaction tx,AuthoritativeIdentity original,InboundDraftAction action,string branch,CancellationToken token)
+    private async Task Live(DbTransaction tx,InboundDraftSessionFence fence,InboundDraftAction action,string branch,CancellationToken token)
     {
-        var current=await authority.ResolveAsync(token);
-        Require(Identity(current) && SameScope(original,current!),InboundDraftOutcome.Denied);
+        var current=await authority.InspectAsync(token);
+        Require(fence.TryAccept(current,out _),InboundDraftOutcome.Denied);
         var grants=await authority.ReadGrantsAsync(tx,current!,action,token);
         Require(ValidGrants(grants) && grants!.Contains(branch,StringComparer.Ordinal),InboundDraftOutcome.Denied);
+        Require(fence.TryAccept(await authority.InspectAsync(token),out _),InboundDraftOutcome.Denied);
+        token.ThrowIfCancellationRequested();
     }
     private static InboundDraftCommand Freeze(InboundDraftCommand request)=>request with
     {
@@ -341,12 +392,6 @@ public sealed class SqlInboundDraftCommandService : IInboundDraftCommandService
         "Action","AttemptId","State","BranchId","DocumentId","BeforeState","AfterState","StatusAfter","AuditId","CommittedAtUtc"];
     private static void Shape(DbDataReader r,string[] columns)=>Require(r.FieldCount==columns.Length
         && Enumerable.Range(0,columns.Length).All(i=>r.GetName(i)==columns[i]),InboundDraftOutcome.Unavailable);
-    private static async Task Probe(DbTransaction tx,CancellationToken token)
-    {
-        await using var c=InboundDraftSql.Command(tx,InboundDraftSql.ProbeText);
-        await using var r=await c.ExecuteReaderAsync(token); Shape(r,JournalColumns);
-        Require(!await r.ReadAsync(token) && !await r.NextResultAsync(token),InboundDraftOutcome.Unavailable);
-    }
     private async Task<JournalRow?> Lookup(DbTransaction tx,AuthoritativeIdentity id,Guid operation,CancellationToken token)
     {
         await using var c=InboundDraftSql.Journal(tx,InboundDraftSql.LookupText,binding,id,operation);
@@ -577,9 +622,12 @@ public sealed class SqlInboundDraftCommandService : IInboundDraftCommandService
         }
     }
 
-    private sealed class SqlAuthority(Func<CancellationToken,Task<AuthoritativeIdentity?>> resolve):IInboundCommandAuthority
+    private sealed class SqlAuthority(Func<CancellationToken,Task<AuthoritativeIdentity?>> resolve,
+        Func<CancellationToken,Task<AuthoritativeIdentity?>>? inspect):IInboundCommandAuthority
     {
         public Task<AuthoritativeIdentity?> ResolveAsync(CancellationToken token)=>resolve(token);
+        public Task<AuthoritativeIdentity?> InspectAsync(CancellationToken token)=>inspect is null
+            ? Task.FromResult<AuthoritativeIdentity?>(null) : inspect(token);
         public async Task<IReadOnlyList<string>?> ReadGrantsAsync(DbTransaction tx,AuthoritativeIdentity id,InboundDraftAction action,CancellationToken token)
         {
             string group; LegacyUser user;

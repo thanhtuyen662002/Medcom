@@ -149,7 +149,7 @@ public sealed class InboundDraftCommandTests
     }
 
     [Theory]
-    [InlineData("probe")] [InlineData("reserve")] [InlineData("snapshot-before")]
+    [InlineData("target-environment")] [InlineData("reserve")] [InlineData("snapshot-before")]
     [InlineData("header")] [InlineData("detail-update")] [InlineData("snapshot-after")]
     [InlineData("record")] [InlineData("reserve-commit-before")] [InlineData("business-commit-before")]
     public async Task Faults_do_not_fabricate_success_and_business_effects_are_not_committed(string fault)
@@ -471,10 +471,14 @@ internal sealed class InboundModel:IInboundCommandAuthority
 {
     internal static readonly InboundDraftHeader Header=new(new DateTime(2026,10,1),"synthetic order","synthetic invoice","from","to","type","BR-A",RateExchange:1m,Notes:"original");
     internal static readonly InboundDraftDetailUpsert Detail=new("ROW-1",null,"ITEM-1","lot",2m,1m,new DateTime(2027,1,1),3m);
-    internal static readonly AuthoritativeIdentity Identity=new("sample-user","synthetic-tenant","synthetic-company","Synthetic","Sample",1,[],"synthetic-stamp");
+    internal static readonly AuthoritativeIdentity Identity=new("sample-user","synthetic-tenant","synthetic-company","Synthetic","Sample",1,[],"synthetic-stamp",["BR-A"]);
     internal DataTable[] Tables=InitialTables();internal DataTable Journal=JournalTable();
     internal AuthoritativeIdentity ActiveIdentity=Identity;
     internal bool SqlEqualChildren;
+    internal readonly InboundTargetModel Target = new();
+    internal bool TransactionActive;
+    internal int FullDuringTransaction,LocalCalls;
+    internal bool ForeignTransaction,BrokenTransaction,WrongIsolation;
     internal InboundAuthorityComparison? SourceAuthority;
     internal readonly List<InboundCommand> Commands=[];internal readonly List<string> Events=[];
     internal string? Fault;internal string? Revoke;internal bool RollbackFails;
@@ -492,7 +496,7 @@ internal sealed class InboundModel:IInboundCommandAuthority
         // Reflection avoids widening production visibility solely for these offline tests.
         var type=typeof(SqlInboundDraftCommandService).GetNestedType("SqlAuthority",BindingFlags.NonPublic)!;
         Func<CancellationToken,Task<AuthoritativeIdentity?>> resolve=ResolveAsync;
-        var reader=(IInboundCommandAuthority)Activator.CreateInstance(type,[resolve])!;
+        var reader=(IInboundCommandAuthority)Activator.CreateInstance(type,[resolve,(Func<CancellationToken,Task<AuthoritativeIdentity?>>)InspectAsync])!;
         return new(Guid.Parse("11111111-1111-1111-1111-111111111111"),new LegacyCompany(Identity.TenantId,Identity.CompanyId,"Synthetic"),
             ()=>new InboundConnection(this),reader);
     }
@@ -502,7 +506,14 @@ internal sealed class InboundModel:IInboundCommandAuthority
     {var r=await Save(service);return r with{Action=InboundDraftAction.SendToWarehouse,Header=null,Note="source note"};}
     internal static InboundDraftCommand Create()=>new(Guid.NewGuid(),InboundDraftAction.Create,null,null,Header,
         [Detail with{RowId=null,ClientLineId=Guid.Parse("22222222-2222-2222-2222-222222222222")}]);
-    public Task<AuthoritativeIdentity?> ResolveAsync(CancellationToken token)=>Task.FromResult<AuthoritativeIdentity?>(
+    public Task<AuthoritativeIdentity?> ResolveAsync(CancellationToken token)
+    {
+        if(TransactionActive){FullDuringTransaction++;throw new InvalidOperationException("full authority while transaction active");}
+        token.ThrowIfCancellationRequested();return InspectValue();
+    }
+    public Task<AuthoritativeIdentity?> InspectAsync(CancellationToken token)
+    {LocalCalls++;token.ThrowIfCancellationRequested();return InspectValue();}
+    private Task<AuthoritativeIdentity?> InspectValue()=>Task.FromResult<AuthoritativeIdentity?>(
         Active?.Business==true && Revoke=="identity" ? null : ActiveIdentity);
     public Task<IReadOnlyList<string>?> ReadGrantsAsync(DbTransaction tx,AuthoritativeIdentity id,InboundDraftAction action,CancellationToken token)
         =>Task.FromResult<IReadOnlyList<string>?>(Active?.Business==true && Revoke=="scope" ? ["BR-B"] : ["BR-A"]);
@@ -540,7 +551,8 @@ internal sealed class InboundConnection(InboundModel model):DbConnection
     public override string Database=>"SyntheticOnly";public override string DataSource=>"RecordingOnly";public override string ServerVersion=>"RecordingOnly";
     public override ConnectionState State=>state;public override void ChangeDatabase(string name)=>throw new NotSupportedException();
     public override void Open(){model.OpenCalls++;state=ConnectionState.Open;}public override void Close()=>state=ConnectionState.Closed;
-    protected override DbTransaction BeginDbTransaction(IsolationLevel level)=>model.Active=new InboundTransaction(this,level);
+    protected override DbTransaction BeginDbTransaction(IsolationLevel level)
+    {model.TransactionActive=true;return model.Active=new InboundTransaction(this,model.WrongIsolation?IsolationLevel.ReadCommitted:level);}
     protected override DbCommand CreateDbCommand(){var c=new InboundCommand(this);model.Commands.Add(c);return c;}
     protected override void Dispose(bool disposing)
     {
@@ -553,7 +565,7 @@ internal sealed class InboundTransaction(InboundConnection owner,IsolationLevel 
 {
     internal readonly DataTable[] Tables=owner.Model.Tables.Select(t=>t.Copy()).ToArray();
     internal readonly DataTable Journal=owner.Model.Journal.Copy();internal bool Business;
-    public override IsolationLevel IsolationLevel=>level;protected override DbConnection DbConnection=>owner;
+    public override IsolationLevel IsolationLevel=>level;protected override DbConnection? DbConnection=>owner.Model.BrokenTransaction ? null : owner.Model.ForeignTransaction ? new InboundConnection(owner.Model) : owner;
     public override void Commit()
     {
         var kind=Business?"business":"reserve";owner.Model.Event(kind+"-commit-before");
@@ -564,6 +576,7 @@ internal sealed class InboundTransaction(InboundConnection owner,IsolationLevel 
     protected override void Dispose(bool disposing)
     {
         if(disposing){owner.Model.TransactionDisposes++;owner.Model.Event("transaction-dispose");
+            owner.Model.TransactionActive=false;
             if(owner.Model.TransactionDisposeFails)throw new IOException("synthetic cleanup failure");}
         base.Dispose(disposing);
     }
@@ -598,7 +611,7 @@ internal sealed class InboundCommand(InboundConnection owner):DbCommand
         owner.Model.Event(tag=="snapshot" ? Tx.Business?"snapshot-after":"snapshot-before" : tag);
         if(tag=="snapshot" && Tx.Business)owner.Model.ReadbackMutation?.Invoke(Tx.Tables);
         if(tag is "user" or "grants" or "branches" or "native-user" or "native-restricted" or "catalog-shape" or "catalog")return owner.Model.SourceAuthority!.Read(this,tag);
-        if(tag=="probe")return Tx.Journal.Clone().CreateDataReader();
+        if(tag.StartsWith("target-",StringComparison.Ordinal))return owner.Model.Target.Read(tag);
         if(tag=="lookup"){var t=Tx.Journal.Clone();if(JournalRow is {} row)t.ImportRow(row);return t.CreateDataReader();}
         if(tag=="branch"){var t=InboundModel.Table(("DocumentID",typeof(string)),("BranchID",typeof(string)));if(Head is {} h)t.Rows.Add(h["DocumentID"],h["BranchID"]);return t.CreateDataReader();}
         if(tag=="snapshot")return new DataTableReader(Tx.Tables.Select(t=>
