@@ -26,6 +26,15 @@ async function submitFixtureLogin(surface) {
   await surface.getByLabel('Mật khẩu', {exact: true}).fill('synthetic-i28-password');
   await surface.getByRole('button', {name: 'Đăng nhập', exact: true}).click();
 }
+const purchaseIdentitySelector = 'form[aria-label="Đề nghị mua hàng trên điện thoại"] > header > p > strong';
+function purchaseDocumentIdentity(page, baselineControl) {
+  // The exact historical control used a document heading. Current request
+  // dialogs have a generic title; their protected form owns the actual ID.
+  if (baselineControl) return page.getByRole('heading', {name: 'I29-PR-P2-00', exact: true});
+  return page.getByRole('dialog', {name: 'Phiếu mua hàng hiện có', exact: true})
+    .getByRole('region', {name: 'Phiếu mua hàng hiện có', exact: true})
+    .locator(purchaseIdentitySelector).filter({hasText: /^I29-PR-P2-00$/});
+}
 
 // This named check renders the real production gate without starting a browser,
 // relay or server. The complete hosted invocation still runs the built TLS case.
@@ -59,6 +68,38 @@ test('I28 login-first fixture contract matches the production auth gate', async 
   await assert.rejects(requireLoginGate(fixture({chrome: 1})), /protected Workspace chrome/);
   await assert.rejects(requireLoginGate(fixture({dialog: 1})), /legacy login dialog/);
   await assert.rejects(requireLoginGate(fixture({alertdialog: 1})), /protected confirmation dialogs/);
+});
+
+test('I29 purchase identity fixture matches the production editor and generic dialog title', async () => {
+  const app = fileURLToPath(new URL('../', import.meta.url)), out = path.join(app, '.test-runtime/i29-purchase-identity-contract');
+  await mkdir(out, {recursive: true});
+  const [{build}, {default: React}, {renderToStaticMarkup}] = await Promise.all([import('esbuild'), import('react'), import('react-dom/server')]);
+  await build({absWorkingDir: app, stdin: {contents: `export {MobileRequest} from './components/erp/mobile-request'; export {RequestDetailDialog} from './components/erp/request-detail-dialog';`, resolveDir: app, loader: 'tsx'},
+    outfile: path.join(out, 'production.mjs'), bundle: true, platform: 'node', format: 'esm', packages: 'external', alias: {'@': app}, loader: {'.css': 'empty'}, jsx: 'automatic'});
+  const {MobileRequest, RequestDetailDialog} = await import(pathToFileURL(path.join(out, 'production.mjs')));
+  const initial = {documentId: 'I29-PR-P2-00', version: 'synthetic-v1', confirmation: 'draft', status: null,
+    values: {purchaseDate: '2026-10-07', personSuggest: 'SYNTHETIC', department: '', purposeId: '', purposeDescOrClient: '', notes: '', branchId: 'BR-A', currencyId: '', objectId: '', lines: []}};
+  const access = {scopeKey: 'synthetic', canRead: true, canEdit: false, canSaveDraft: false, canSubmit: false, available: true, existingOnly: true,
+    branches: [], currencies: [], purposes: [], maxNotesLength: 2000, maxPurposeLength: 2000, maxLines: 500, itemLookupId: 'synthetic-item', objectLookupId: 'synthetic-object'};
+  const html = renderToStaticMarkup(React.createElement(RequestDetailDialog, {open: true, title: 'Phiếu mua hàng hiện có', closeLabel: 'Đóng đề nghị', onRequestClose() {}},
+    React.createElement(MobileRequest, {initial, access, adapter: {execute() {assert.fail('source render must not dispatch');}, reconcile() {assert.fail('source render must not reconcile');}}})));
+  assert.match(html, /<h2\b[^>]*>Phiếu mua hàng hiện có<\/h2>/);
+  assert.match(html, /<form\b[^>]*aria-label="Đề nghị mua hàng trên điện thoại"[^>]*><header\b[^>]*>.*?<p>Mã phiếu: <strong>I29-PR-P2-00<\/strong><\/p>/s);
+  assert.doesNotMatch(html, /<h[1-6]\b[^>]*>I29-PR-P2-00<\/h[1-6]>/);
+  const identity = {}, legacyHeading = {}, calls = [];
+  const page = {getByRole(role, options) {
+    calls.push(role);
+    if (role === 'heading') {assert.deepEqual(options, {name: 'I29-PR-P2-00', exact: true}); return legacyHeading;}
+    assert.equal(role, 'dialog'); assert.deepEqual(options, {name: 'Phiếu mua hàng hiện có', exact: true});
+    return {getByRole(region, regionOptions) {assert.equal(region, 'region'); assert.deepEqual(regionOptions, {name: 'Phiếu mua hàng hiện có', exact: true});
+      return {locator(selector) {assert.equal(selector, purchaseIdentitySelector); return {filter({hasText}) {
+      assert.equal(hasText.test('I29-PR-P2-00'), true);
+      for (const wrong of ['OTHER', 'I29-PR-P2-001', 'prefix I29-PR-P2-00']) assert.equal(hasText.test(wrong), false);
+      return identity;
+    }};}};}};
+  }};
+  assert.equal(purchaseDocumentIdentity(page, false), identity); assert.deepEqual(calls, ['dialog']);
+  assert.equal(purchaseDocumentIdentity(page, true), legacyHeading); assert.deepEqual(calls, ['dialog', 'heading']);
 });
 
 // Built modern app -> actual shipping TLS relay -> built BFF -> synthetic HTTPS
@@ -255,6 +296,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
     const paint = () => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     const purchasePanel = () => page.getByRole('region', {name: 'Danh sách đề nghị mua hàng', exact: true});
     const purchaseEditor = () => page.getByRole('region', {name: 'Phiếu mua hàng hiện có', exact: true});
+    const purchaseIdentity = () => purchaseDocumentIdentity(page, baselineControl);
     const purchaseRow = () => page.getByRole('button', {name: 'Mở đề nghị I29-PR-P2-00', exact: true});
     const freshOrderDetail = async () => {
       await page.getByRole('heading', {name: 'I29-PO-P2-00', exact: true}).waitFor();
@@ -262,6 +304,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
     };
     const freshPurchaseDetail = async () => {
       await purchaseEditor().waitFor();
+      await purchaseIdentity().waitFor({state: 'visible'});
       const disclosure = purchaseEditor().getByRole('region', {name: 'Dữ liệu ERP đầy đủ', exact: true}).locator('details');
       // The fixed pre-I30 control has no disclosure; preserve that exact control.
       if (await disclosure.count() && !await disclosure.evaluate(element => element.open)) await disclosure.locator('summary').click();
@@ -317,7 +360,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       assert.equal(await purchasePanel().getByLabel('Tìm mã đề nghị', {exact: true}).inputValue(), 'UNSUBMITTED DRAFT');
       assert.equal(await purchasePanel().getByRole('combobox', {name: 'Chi nhánh', exact: true}).inputValue(), 'BR-A');
       assert.match(await purchasePanel().getByRole('navigation', {name: 'Phân trang đề nghị', exact: true}).innerText(), /Trang 2/);
-      await page.getByRole('heading', {name: 'I29-PR-P2-00', exact: true}).waitFor();
+      await purchaseIdentity().waitFor({state: 'visible'});
     };
     const watchStableData = kind => page.evaluate(({kind, baselineControl}) => {
       window.i29StableObserver?.disconnect();
@@ -372,6 +415,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
     const assertPurchaseMasked = async () => {
       assert.equal(await purchasePanel().getByRole('button', {name: /^Mở đề nghị I29-/}).count(), 0);
       assert.equal(await purchaseEditor().isVisible(), false);
+      assert.equal(await purchaseIdentity().isVisible(), false, 'masked purchase identity must not remain visible');
     };
     await page.setViewportSize({width: 1024, height: 900});
     await page.clock.install();
@@ -809,7 +853,8 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await page.clock.fastForward(60001);
       await waitFor(async () => await purchasePanel().getByLabel('Tìm mã đề nghị', {exact: true}).inputValue() === '', 'purchase scope replacement');
       assert.equal(await purchaseEditor().isVisible(), false);
-      assert.equal(await page.getByRole('heading', {name: 'I29-PR-P2-00', exact: true}).count(), 0);
+      assert.equal(await purchaseIdentity().isVisible(), false);
+      assert.equal(await page.getByRole('dialog', {name: 'Phiếu mua hàng hiện có', exact: true}).count(), 0, 'scope retirement must close the selected purchase dialog');
       assert.match(await purchasePanel().getByRole('navigation', {name: 'Phân trang đề nghị', exact: true}).innerText(), /Trang 1/);
     });
     await run('I29 built same-display-name session marker replacement retires purchase selection and filters', async () => {
@@ -817,7 +862,8 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await page.clock.fastForward(60001);
       await waitFor(async () => await purchasePanel().getByLabel('Tìm mã đề nghị', {exact: true}).inputValue() === '', 'session marker replacement');
       assert.equal(await purchaseEditor().isVisible(), false);
-      assert.equal(await page.getByRole('heading', {name: 'I29-PR-P2-00', exact: true}).count(), 0);
+      assert.equal(await purchaseIdentity().isVisible(), false);
+      assert.equal(await page.getByRole('dialog', {name: 'Phiếu mua hàng hiện có', exact: true}).count(), 0, 'session retirement must close the selected purchase dialog');
     });
     await run('I29 built expiry fences selected purchase data until explicit login', async () => {
       await preparePurchase(); await control({expired: true}); await page.clock.fastForward(60001);
