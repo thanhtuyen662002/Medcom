@@ -285,6 +285,222 @@ test('Node double: fatal UTF-8 and duplicate envelope response never reach draft
   } finally {await f.close();}
 });
 
+// I40 headless React effect integration: production host + production bridge,
+// synthetic list/draft transports. Child rendering, focus and navigation are
+// explicit doubles; this does NOT replace the unchanged full browser gates.
+test('I40 synthetic React host list lifecycle and stale-denial integration', async t => {
+  // Required CI coverage uses the application's exact locked React toolchain.
+  // A missing renderer is a setup failure, never a successful optional skip.
+  const require = createRequire(import.meta.url);
+  const React = require('react'), {create, act} = require('react-test-renderer');
+  assert.equal(React.version, '19.2.6');
+  assert.equal(require('react-test-renderer/package.json').version, '19.2.6');
+  const {build} = createRequire(import.meta.url)('esbuild');
+  const bundlePath = path.join(output, 'i40-react-host.mjs');
+  await build({stdin:{contents:`export {InboundRequestScreen} from './components/erp/inbound-request-screen'; export {ApiError} from './lib/erp/api';`, resolveDir:app, loader:'tsx'},
+    outfile:bundlePath, bundle:true, platform:'node', format:'esm', jsx:'automatic', alias:{'@':app}, logLevel:'warning',
+    banner:{js:"import {createRequire as i40CreateRequire} from 'node:module';const require=i40CreateRequire(import.meta.url);"},
+    plugins:[{name:'i40-explicit-child-doubles',setup(build){
+      build.onResolve({filter:/^react(?:\/.*)?$/}, args => ({path:require.resolve(args.path), external:true}));
+      build.onResolve({filter:/^\.\/(mobile-inbound-request|inbound-request-readonly|request-selection-focus|navigation-guard)$/}, args=>({path:args.path,namespace:'i40-double'}));
+      build.onLoad({filter:/.*/,namespace:'i40-double'}, args=>({loader:'js',contents:args.path.endsWith('mobile-inbound-request')
+        ? `import React from 'react'; export const MobileInboundRequest=props=>React.createElement('div',{'data-testid':'i40-editor-double','data-document':props.documentId});`
+        : args.path.endsWith('inbound-request-readonly') ? `export const InboundRequestReadOnly=()=>null;`
+        : args.path.endsWith('navigation-guard') ? `const request=action=>action(),register=()=>{}; export const useNavigationGuard=()=>({request,register});export const useDirtyGuard=()=>{};`
+        : `const noop=()=>{},focus={open:noop,close:noop,cancel:noop,row:noop,detail:null,list:null};export const useRequestSelectionFocus=()=>focus;`}));
+    }}]});
+  const {InboundRequestScreen,ApiError:HostApiError}=await import(pathToFileURL(bundlePath).href);
+  const previousActEnvironment=globalThis.IS_REACT_ACT_ENVIRONMENT;
+  globalThis.IS_REACT_ACT_ENVIRONMENT=true;
+  const workspace = () => ({session:{tenantId:'T',companyId:'C',authorityVersion:1,capabilities:['inbound-requests.read']},
+    branchIds:['BR-A'],sessionScope:'e'.repeat(64),readScope:'f'.repeat(64),navigation:[]});
+  const listData=page=>({rows:['DOC-A','DOC-B'].map(documentId=>({documentId,documentDate:'2026-10-01',branchId:'BR-A',statusId:0,isLocked:false})),page,pageSize:50,hasMore:page===1});
+  async function host(){
+    const calls=[],denied=[],held=[]; let hold=false,failure=null,renderer,nextRows=null;
+    const list=async(page,search,branch,signal,scope)=>{
+      const captured=failure,data=listData(page);
+      if(nextRows)data.rows=nextRows.map(documentId=>({...data.rows[0],documentId}));
+      calls.push({page,search,branch,signal,scope});
+      if(hold)await new Promise(resolve=>held.push(resolve));
+      if(captured!==null)throw new HostApiError(captured,'synthetic_i40_denied');
+      return data;
+    };
+    const api={read:async documentId=>({scopeKey:'a'.repeat(64),access:{...access},data:{outcome:'Observed',document:{...structuredClone(source),documentId}}}),
+      command:async()=>assert.fail('I40 read tests must never send commands')};
+    let props={loginKey:'i40-login-1',workspace:workspace(),historyOwner:'workspace',list,api,onDenied:e=>denied.push(e.status)};
+    const flush=async()=>act(async()=>{await new Promise(resolve=>setImmediate(resolve));});
+    const render=async patch=>{props={...props,...patch};await act(async()=>{if(renderer)renderer.update(React.createElement(InboundRequestScreen,props));else renderer=create(React.createElement(InboundRequestScreen,props));});await flush();};
+    const button=name=>renderer.root.findAllByType('button').find(n=>n.props.children===name);
+    const openHandler=id=>renderer.root.findAllByType('button').find(n=>n.props['aria-label']?.startsWith('Mở phiếu '+id+' ')).props.onClick;
+    const click=async name=>{await act(async()=>button(name).props.onClick());await flush();};
+    const open=async id=>{await act(async()=>openHandler(id)());await flush();};
+    const refresh=async()=>render({list:(...args)=>list(...args)});
+    await render({});
+    return {calls,denied,held,render,flush,click,open,openHandler,refresh,props:()=>props,root:()=>renderer.root,
+      rows:value=>nextRows=value,fail:value=>failure=value,hold:()=>hold=true,release:async()=>{hold=false;await act(async()=>held.splice(0).forEach(resolve=>resolve()));await flush();},
+      close:async()=>{await act(async()=>renderer.unmount());await flush();}};
+  }
+  try {
+    await t.test('Open/Close, A→B→A and equivalent workspace keep one list request; all list boundaries fetch',async()=>{
+      const f=await host();try{
+        assert.equal(f.calls.length,1);
+        await f.open('DOC-A');await f.open('DOC-B');await f.open('DOC-A');await f.click('Đóng phiếu nhập hàng');
+        await f.render({workspace:structuredClone(f.props().workspace)});
+        assert.equal(f.calls.length,1);
+        assert.equal(f.root().findAll(n=>n.props['data-testid']==='i40-editor-double').length,1);
+        await f.open('DOC-A');await f.click('Xác minh lại quyền nhập hàng');assert.equal(f.calls.length,2);
+        const search=f.root().findAllByType('input').find(n=>n.props.maxLength===100);
+        await act(async()=>search.props.onChange({target:{value:'I40 FILTER'}}));
+        await act(async()=>f.root().findByType('form').props.onSubmit({preventDefault(){}}));await f.flush();
+        assert.equal(f.calls.length,3);assert.equal(f.calls.at(-1).search,'I40 FILTER');
+        await f.click('Trang phiếu tiếp');assert.equal(f.calls.length,4);assert.equal(f.calls.at(-1).page,2);
+        await act(async()=>f.root().findByType('select').props.onChange({target:{value:'BR-A'}}));
+        await act(async()=>f.root().findByType('form').props.onSubmit({preventDefault(){}}));await f.flush();
+        assert.equal(f.calls.length,5);assert.equal(f.calls.at(-1).branch,'BR-A');assert.equal(f.calls.at(-1).page,1);
+        await f.render({workspace:{...f.props().workspace,session:{...f.props().workspace.session,authorityVersion:2}}});assert.equal(f.calls.length,6);
+        await f.refresh();assert.equal(f.calls.length,7);
+        await f.render({workspace:{...f.props().workspace,branchIds:['BR-A','BR-B']}});assert.equal(f.calls.length,8);
+        await f.render({workspace:{...f.props().workspace,readScope:'d'.repeat(64)}});assert.equal(f.calls.length,9);
+        assert.deepEqual(f.calls.at(-1).scope,{sessionScope:'e'.repeat(64),readScope:'d'.repeat(64)});
+        await f.render({workspace:{...f.props().workspace,session:{...f.props().workspace.session,capabilities:[]}}});assert.equal(f.calls.length,9);
+        assert.equal(f.root().findAllByType('table').length,0,'authority loss hides old list');
+        await f.render({workspace:workspace()});assert.equal(f.calls.length,10);
+      }finally{await f.close();}
+    });
+    await t.test('review: healthy same-scope authority observation retains rows until its current denial', async () => {
+      const f=await host();try{
+        f.hold();f.fail(403);
+        await f.render({workspace:{...f.props().workspace,session:{...f.props().workspace.session,authorityVersion:2}}});
+        assert.equal(f.calls.length,2);assert.equal(f.root().findAllByType('table').length,1);
+        await f.release();assert.equal(f.root().findAllByType('table').length,0);
+        assert.deepEqual(f.denied,[],'403 suspends this authority rather than reporting a terminal login denial');
+      }finally{await f.close();}
+    });
+    for (const boundary of ['workspace', 'capability', 'branch', 'scope', 'filter', 'page'])
+      await t.test(`review: returning from ${boundary} cannot revive rows from a retired list view`, async () => {
+        const f = await host(); try {
+          const original = f.props().workspace;
+          f.hold();
+          if (boundary === 'workspace') await f.render({workspace:null});
+          else if (boundary === 'capability') await f.render({workspace:{...original,session:{...original.session,capabilities:[]}}});
+          else if (boundary === 'branch') await f.render({workspace:{...original,branchIds:['BR-B']}});
+          else if (boundary === 'scope') await f.render({workspace:{...original,readScope:'d'.repeat(64)}});
+          else if (boundary === 'page') await f.click('Trang phiếu tiếp');
+          else {
+            await act(async()=>f.root().findAllByType('input').find(n=>n.props.maxLength===100).props.onChange({target:{value:'OTHER'}}));
+            await act(async()=>f.root().findByType('form').props.onSubmit({preventDefault(){}}));await f.flush();
+          }
+          assert.equal(f.root().findAllByType('table').length,0,'boundary hides the old rows');
+          if (boundary === 'page') await f.click('Trang phiếu trước');
+          else if (boundary === 'filter') {
+            await act(async()=>f.root().findAllByType('input').find(n=>n.props.maxLength===100).props.onChange({target:{value:''}}));
+            await act(async()=>f.root().findByType('form').props.onSubmit({preventDefault(){}}));await f.flush();
+          } else await f.render({workspace:original});
+          assert.equal(f.root().findAllByType('table').length,0,'return to identical values is a new view; wait for its own read');
+          await f.release();assert.equal(f.root().findAllByType('table').length,1);
+        } finally {await f.close();}
+      });
+    for(const status of [401,403,409])for(const boundary of ['open','close','aba','batched-aba','authority','scope','api','login','logout','filter','page'])
+      await t.test(`late ${status} after ${boundary} cannot change newer authority, selection or rows`,async()=>{
+        const f=await host();try{
+          await f.open('DOC-A');f.hold();f.fail(status);await f.refresh();
+          assert.equal(f.held.length,1);const before=f.calls.length,oldSignal=f.calls.at(-1).signal;
+          f.fail(null);
+          if(boundary==='open')await f.open('DOC-B');
+          else if(boundary==='close')await f.click('Đóng phiếu nhập hàng');
+          else if(boundary==='aba'){await f.open('DOC-B');await f.open('DOC-A');}
+          else if(boundary==='batched-aba'){
+            await f.click('Đóng phiếu nhập hàng');
+            const b=f.openHandler('DOC-B'),a=f.openHandler('DOC-A');
+            await act(async()=>{a();b();a();});await f.flush();
+          }else if(boundary==='authority')await f.render({workspace:{...f.props().workspace,session:{...f.props().workspace.session,authorityVersion:2}}});
+          else if(boundary==='scope'){
+            await f.render({workspace:{...f.props().workspace,readScope:'d'.repeat(64)}});
+            assert.equal(f.root().findAllByType('table').length,0,'new scope cannot present old rows while held');
+          }else if(boundary==='api')await f.render({api:{...f.props().api}});
+          else if(boundary==='login')await f.render({loginKey:'i40-login-2',workspace:workspace()});
+          else if(boundary==='logout')await f.render({loginKey:null,workspace:null});
+          else if(boundary==='filter')await act(async()=>f.root().findByType('form').props.onSubmit({preventDefault(){}}));
+          else await f.click('Trang phiếu tiếp');
+          await f.flush();
+          const selectionOnly=['open','close','aba','batched-aba'].includes(boundary);
+          if(selectionOnly){assert.equal(f.calls.length,before);assert.equal(oldSignal.aborted,false,'selection does not abort authorized list');}
+          else assert.equal(oldSignal.aborted,true,'authority/list boundary aborts old request');
+          await f.release();
+          assert.deepEqual(f.denied,[]);
+          assert.equal(f.root().findAll(n=>n.props.children==='Chưa xác minh được quyền xem phiếu. Yêu cầu đang xử lý vẫn được giữ.').length,0);
+          if(boundary!=='logout')assert.equal(f.root().findAllByType('table').length,1);
+          else assert.equal(f.root().findAllByType('table').length,0);
+          const editor=f.root().find(n=>n.props['data-testid']==='i40-editor-double');
+          assert.equal(editor.props['data-document'],boundary==='open'?'DOC-B':['close','login','logout','filter','page'].includes(boundary)?null:'DOC-A');
+        }finally{await f.close();}
+      });
+    for (const boundary of ['authority', 'branch', 'scope', 'login', 'page'])
+      await t.test(`review: late successful ${boundary} request cannot replace newer rows`, async () => {
+        const f = await host(); try {
+          f.rows(['DOC-RETIRED']);f.hold();await f.refresh();
+          const oldRelease=f.held.shift();assert.ok(oldRelease);
+          f.rows(['DOC-CURRENT']);
+          if(boundary==='authority')await f.render({workspace:{...f.props().workspace,session:{...f.props().workspace.session,authorityVersion:2}}});
+          else if(boundary==='branch')await f.render({workspace:{...f.props().workspace,branchIds:['BR-A','BR-B']}});
+          else if(boundary==='scope')await f.render({workspace:{...f.props().workspace,readScope:'d'.repeat(64)}});
+          else if(boundary==='login')await f.render({loginKey:'i40-login-2',workspace:workspace()});
+          else await f.click('Trang phiếu tiếp');
+          await f.release();
+          const visible=()=>f.root().findAllByType('button').filter(n=>n.props['aria-label']?.startsWith('Mở phiếu ')).map(n=>n.props['aria-label']);
+          assert.equal(visible().length,1);assert.match(visible()[0],/DOC-CURRENT/);
+          await act(async()=>oldRelease());await f.flush();
+          assert.equal(visible().length,1);assert.match(visible()[0],/DOC-CURRENT/);
+          assert.deepEqual(f.denied,[]);
+        } finally {await f.close();}
+      });
+    for (const status of [401,403,409])
+      await t.test(`review: current list ${status} fences a pending write without dropping original custody`, async () => {
+        const f=await host();try{
+          let releaseWrite;const sends=[];
+          const transport={...f.props().api,command:async(route,body,scope,signal,beforeSend)=>{
+            beforeSend();sends.push({route,body,scope});
+            if(route!=='reconcile')await new Promise(resolve=>releaseWrite=resolve);
+            return {scopeKey:scope,data:{outcome:'OutcomeUnknown',receipt:null,code:null}};
+          }};
+          await f.render({api:transport});await f.open('DOC-A');
+          const editor=()=>f.root().find(n=>typeof n.type==='function'&&n.props.adapter&&n.props.onConfirmed);
+          const adapter=editor().props.adapter,original=command(),body=JSON.stringify(original);
+          assert.ok(Object.isFrozen(original));assert.ok(Object.isFrozen(original.header));
+          let pending;await act(async()=>{pending=adapter.execute(original,signal());});await f.flush();
+          assert.equal(sends.length,1);assert.equal(sends[0].body,body);
+          f.fail(status);await f.refresh();
+          // Navigation double immediately admits the callback. The production
+          // host's independent custody check must still refuse selection/Close.
+          await f.click('Đóng phiếu nhập hàng');
+          assert.equal(editor().props.documentId,'DOC-A');assert.equal(editor().props.adapter,adapter);
+          await act(async()=>releaseWrite());assert.equal((await pending).outcome,'OutcomeUnknown');await f.flush();
+          assert.equal(JSON.stringify(original),body);assert.equal(sends.length,1);
+          if(status!==401){
+            f.fail(null);await f.click('Xác minh lại quyền nhập hàng');
+            await act(async()=>{assert.equal((await adapter.execute(original,signal())).outcome,'OutcomeUnknown');});
+            assert.equal(sends.length,1,'original execute cannot be resent');
+            await act(async()=>{assert.equal((await adapter.reconcile(original,signal())).outcome,'OutcomeUnknown');});
+            assert.equal(sends.length,2);assert.equal(sends[1].route,'reconcile');assert.equal(sends[1].body,body);
+            assert.equal(sends[1].scope,sends[0].scope);
+            await f.click('Đóng phiếu nhập hàng');assert.equal(editor().props.documentId,'DOC-A','unknown original still blocks Close');
+          }else assert.deepEqual(f.denied,[401]);
+        }finally{await f.close();}
+      });
+    for(const status of [401,403,409])await t.test(`current ${status} still retires current authorized list`,async()=>{
+      const f=await host();try{await f.open('DOC-A');f.fail(status);await f.refresh();
+        assert.equal(f.root().findAllByType('table').length,0);
+        assert.deepEqual(f.denied,status===401?[401]:[]);
+      }finally{await f.close();}
+    });
+    await t.test('late authorized list success survives Open/Close without a replacement fetch',async()=>{
+      const f=await host();try{f.hold();await f.refresh();const count=f.calls.length;await f.open('DOC-A');await f.click('Đóng phiếu nhập hàng');
+        await f.release();assert.equal(f.calls.length,count);assert.equal(f.root().findAllByType('table').length,1);
+      }finally{await f.close();}
+    });
+  } finally {globalThis.IS_REACT_ACT_ENVIRONMENT=previousActEnvironment;}
+});
+
 // ACTUAL host + unchanged I18 + unchanged navigation provider. This fixture's
 // HTTP layer is a browser fetch double, NOT an ASP.NET/BFF integration proof.
 const fixture = `
@@ -407,10 +623,74 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
     const rowFocus = id => page.getByRole('button', {name:new RegExp('^Mở phiếu '+id+' ')});
     const focused = async locator => {await page.waitForFunction(element=>document.activeElement===element,await locator.elementHandle());};
     const focusPaint = () => page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    const readMarkers = {sessionScope:'e'.repeat(64),readScope:'f'.repeat(64)};
+    await run('I40 Open/Close and unchanged parent observations reuse the authorized list; refresh/filter/page/branch/authority fetch', async () => {
+      await reset({readMarkers});
+      const initial = (await calls()).list.length;
+      assert.equal(initial, 1, 'initial authorized list fetches once');
+      await button('Đóng phiếu nhập hàng').click(); await focusPaint();
+      assert.equal((await calls()).list.length, initial);
+      await open('DOC-B'); await ready();
+      await open('DOC-A'); await ready();
+      await page.evaluate(() => window.qa.rerender()); await focusPaint();
+      assert.equal((await calls()).list.length, initial, 'Open/Close and equivalent workspace object do not fetch');
+      assert.equal(await page.getByTestId('inbound-editor').count(), 1);
+      await button('Xác minh lại quyền nhập hàng').click(); await ready(); await focusPaint();
+      assert.equal((await calls()).list.length, initial + 1, 'explicit verification refresh');
+      await field('Tìm phiếu nhập hàng').fill('I40 FILTER');
+      await button('Áp dụng lọc nhập hàng').click(); await focusPaint();
+      assert.equal((await calls()).list.length, initial + 2);
+      assert.equal((await calls()).list.at(-1).search, 'I40 FILTER');
+      await button('Trang phiếu tiếp').click(); await focusPaint();
+      assert.equal((await calls()).list.length, initial + 3);
+      assert.equal((await calls()).list.at(-1).page, 2);
+      await field('Lọc chi nhánh').selectOption('BR-A');
+      await button('Áp dụng lọc nhập hàng').click(); await focusPaint();
+      assert.equal((await calls()).list.length, initial + 4);
+      assert.equal((await calls()).list.at(-1).branch, 'BR-A');
+      assert.equal((await calls()).list.at(-1).page, 1);
+      await page.evaluate(() => window.qa.rights({})); await focusPaint();
+      assert.equal((await calls()).list.length, initial + 5, 'authority observation fetches');
+      await page.evaluate(() => window.qa.refreshList()); await focusPaint();
+      assert.equal((await calls()).list.length, initial + 6, 'explicit list transport refresh');
+      assert.equal((await calls()).post.length, 0);
+    });
+    for (const status of [401, 403, 409]) for (const newer of ['selection', 'aba', 'close', 'authority', 'api', 'login', 'scope'])
+      await run(`I40 late list ${status} cannot affect newer ${newer} even when cancellation is ignored`, async () => {
+        await reset({readMarkers});
+        await page.evaluate(status => {window.qa.hold('list'); window.qa.failList(status);}, status);
+        await page.waitForFunction(() => window.qa.held('list') > 0);
+        const before = (await calls()).list.length;
+        await page.evaluate(() => {window.qa.retainRelease('list'); window.qa.stopHolding('list'); window.qa.listHealthy();});
+        if (newer === 'selection' || newer === 'aba') {
+          await open('DOC-B'); await ready();
+          if (newer === 'aba') {await open('DOC-A'); await ready();}
+        } else if (newer === 'close') await button('Đóng phiếu nhập hàng').click();
+        else if (newer === 'authority') {await page.evaluate(() => window.qa.rights({})); await ready();}
+        else if (newer === 'api') {await page.evaluate(() => window.qa.swapApi()); await ready();}
+        else if (newer === 'scope') {
+          await page.evaluate(() => {window.qa.hold('list'); window.qa.markers({sessionScope:'c'.repeat(64),readScope:'d'.repeat(64)});});
+          await focusPaint();
+          assert.equal(await rowFocus('DOC-A').count(), 0, 'old scoped rows hidden before replacement resolves');
+          await page.evaluate(() => window.qa.releaseOne('list')); // retire old denial first
+        } else {await page.evaluate(markers => window.qa.reset({readMarkers:markers}), readMarkers); await open('DOC-A'); await ready();}
+        await page.evaluate(() => window.qaOldRelease()); await focusPaint();
+        assert.deepEqual(await page.evaluate(() => window.qaDenied), []);
+        assert.equal(await page.getByText('Đã kết thúc phiên. Đăng nhập lại để tiếp tục.', {exact:true}).count(), 0);
+        assert.equal(await page.getByText('Chưa xác minh được quyền xem phiếu. Yêu cầu đang xử lý vẫn được giữ.', {exact:true}).count(), 0);
+        if (['selection', 'aba', 'close'].includes(newer)) {
+          assert.equal((await calls()).list.length, before, 'selection did not replace the held list request');
+          assert.equal(await rowFocus('DOC-A').count(), 1);
+        }
+        if (newer === 'scope') {
+          await page.evaluate(() => window.qa.release('list')); await rowFocus('DOC-A').waitFor();
+        } else if (newer !== 'close') assert.equal(await field('Số đơn').inputValue(), newer === 'selection' ? 'FULL ERP B' : 'FULL ERP A');
+        assert.equal((await calls()).post.length, 0);
+      });
     // I33 Step 2: exercise the actual host/production draft client and getDetail.
     // These synthetic markers represent a separately validated workspace READ
     // scope; command scope, tenant IDs and display names are never substitutes.
-    const readMarkers = {sessionScope:'e'.repeat(64),readScope:'f'.repeat(64)};
+
     const unavailable = (scopeKey = null) => ({scopeKey,access:{canRead:false,canSave:false,canSend:false,available:false,maxCommandBytes:1048576},data:{outcome:'Unavailable',document:null}});
     const readonly = () => page.getByTestId('inbound-request-readonly');
     const readonlyPhase = phase => page.waitForFunction(phase => document.querySelector('[data-testid=inbound-request-readonly]')?.getAttribute('data-phase')===phase,phase);
