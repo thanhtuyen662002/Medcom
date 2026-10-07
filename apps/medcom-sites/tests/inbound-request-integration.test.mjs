@@ -297,11 +297,16 @@ test('I40 synthetic React host list lifecycle and stale-denial integration', asy
   assert.equal(require('react-test-renderer/package.json').version, '19.2.6');
   const {build} = createRequire(import.meta.url)('esbuild');
   const bundlePath = path.join(output, 'i40-react-host.mjs');
-  await build({stdin:{contents:`export {InboundRequestScreen} from './components/erp/inbound-request-screen'; export {ApiError} from './lib/erp/api';`, resolveDir:app, loader:'tsx'},
+  const bundled = await build({metafile:true, stdin:{contents:`export {InboundRequestScreen} from './components/erp/inbound-request-screen'; export {ApiError} from './lib/erp/api';`, resolveDir:app, loader:'tsx'},
     outfile:bundlePath, bundle:true, platform:'node', format:'esm', jsx:'automatic', alias:{'@':app}, logLevel:'warning',
     banner:{js:"import {createRequire as i40CreateRequire} from 'node:module';const require=i40CreateRequire(import.meta.url);"},
     plugins:[{name:'i40-explicit-child-doubles',setup(build){
-      build.onResolve({filter:/^react(?:\/.*)?$/}, args => ({path:require.resolve(args.path), external:true}));
+      build.onResolve({filter:/^react(?:\/.*)?$/}, args => {
+        const resolved = require.resolve(args.path);
+        // ESM imports need file URLs on Windows; bundled CommonJS require
+        // calls still need native paths. Both resolve the renderer's React.
+        return {path:args.kind.startsWith('require-') ? resolved : pathToFileURL(resolved).href, external:true};
+      });
       build.onResolve({filter:/^\.\/(mobile-inbound-request|inbound-request-readonly|request-selection-focus|navigation-guard)$/}, args=>({path:args.path,namespace:'i40-double'}));
       build.onLoad({filter:/.*/,namespace:'i40-double'}, args=>({loader:'js',contents:args.path.endsWith('mobile-inbound-request')
         ? `import React from 'react'; export const MobileInboundRequest=props=>React.createElement('div',{'data-testid':'i40-editor-double','data-document':props.documentId});`
@@ -309,6 +314,22 @@ test('I40 synthetic React host list lifecycle and stale-denial integration', asy
         : args.path.endsWith('navigation-guard') ? `const request=action=>action(),register=()=>{}; export const useNavigationGuard=()=>({request,register});export const useDirtyGuard=()=>{};`
         : `const noop=()=>{},focus={open:noop,close:noop,cancel:noop,row:noop,detail:null,list:null};export const useRequestSelectionFocus=()=>focus;`}));
     }}]});
+  await t.test('React external imports use portable file URLs and the exact locked React instance', async () => {
+    const imports = Object.values(bundled.metafile.outputs).flatMap(output => output.imports).filter(item => item.external);
+    const resolved = ['react', 'react/jsx-runtime'].map(name => require.resolve(name));
+    const expectedUrls = new Set(resolved.map(file => pathToFileURL(file).href));
+    assert.strictEqual(createRequire(require.resolve('react-test-renderer/package.json'))('react'), React);
+    assert.strictEqual((await import(pathToFileURL(require.resolve('react')).href)).default, React);
+    assert.ok(imports.some(item => item.kind === 'import-statement'), 'exercise actual ESM imports');
+    assert.ok(imports.some(item => item.kind === 'require-call'), 'exercise bundled CommonJS dependencies');
+    for (const {path:specifier, kind} of imports) {
+      if (kind.startsWith('require-')) assert.ok(resolved.includes(specifier), 'CommonJS needs the exact native React path');
+      else {
+        assert.equal(new URL(specifier).protocol, 'file:', 'raw POSIX/Windows paths are not portable ESM specifiers');
+        assert.ok(expectedUrls.has(specifier), 'ESM imports must resolve to the same locked React files');
+      }
+    }
+  });
   const {InboundRequestScreen,ApiError:HostApiError}=await import(pathToFileURL(bundlePath).href);
   const previousActEnvironment=globalThis.IS_REACT_ACT_ENVIRONMENT;
   globalThis.IS_REACT_ACT_ENVIRONMENT=true;
