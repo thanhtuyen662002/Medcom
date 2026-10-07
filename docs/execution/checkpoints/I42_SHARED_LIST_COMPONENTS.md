@@ -168,3 +168,52 @@ A final accessibility correction makes custom pagination names include their
 visible caption. Existing browser selectors are adapted to the standardized
 names and native select controls without removing behavioral assertions; the
 exact historical pre-fix control keeps its original interaction selectors.
+
+
+## Composed-head resize diagnostics and exact request expectations
+
+Correction base: PR94 head `76efbe`, exact tree
+`c583a5d2b23bb5df8356c5dd98ab011c1d878046`.
+
+Both Linux and Windows presentation artifacts completed 34/36 cases with no
+page errors. Their same two failures were the Purchase Request 1440-to-320
+resize fit assertion and an I33 exact request-object expectation. The successful
+320/390 captures and desktop Purchase Request capture were inspected. Neither
+artifact captured the failing resize geometry or a failure screenshot, so the
+specific overflowing element and causal production fix remain UNKNOWN.
+
+Source review also identified a bounded responsiveness hazard: the global
+search button inherits `transition-all` and `shrink-0`, while responsive rules
+change its width from 260px to 35px. Width interpolation can retain a large
+button in a narrow topbar. The production correction limits this one button's
+transition properties to color, background color, border color and box shadow.
+It does not suppress overflow, alter breakpoints or change any controller.
+This is a source-grounded correction, not experimental proof that it caused
+the prior hosted failure; the next hosted run must establish the result.
+
+The test correction:
+
+- Capture viewport/document/body widths, bounded offending-element rectangles,
+  computed sizing/overflow/layout styles, ancestor context, active animations
+  and a viewport screenshot before each resize fit assertion. Capture the
+  global-search geometry/transition/animations explicitly and persist records
+  in the uploaded browser-result evidence as well as local JSON. Record a second
+  observation after the screenshot to distinguish a transient layout from a
+  persistent overflow, without substituting it for the original result.
+- Keep the original two-frame measurement and strict document scroll-width
+  versus viewport-width condition. Do not add a tolerance, settling retry,
+  arbitrary wait, overflow clipping or scenario skip.
+- Include `search:null` and `branchId:null` in the two exact I33 detail GET
+  expectations. The existing request observer records those fields for every
+  request; the assertions still compare the entire expected object, including
+  route, GET method, document identity, page 2 and page size 50.
+
+Fresh exact-head hosted evidence is required before claiming the mobile fit
+regression resolved; remaining overflow must be diagnosed from those records.
+
+Local correction checks: JavaScript syntax, focused ESLint and the actual shared
+component SSR test (1/1) passed. The production Tailwind CSS compiled and its
+unlayered `.global-search` transition declaration was verified to contain exactly
+color/background-color/border-color/box-shadow, excluding geometry. This is not a
+browser or old/new counterfactual test. All 36 hosted browser scenarios and strict
+fit assertions remain required; no browser pass is claimed locally.

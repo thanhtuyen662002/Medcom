@@ -263,6 +263,22 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
   if(width<768)assert.ok(checks.filter(v=>['INPUT','TEXTAREA','SELECT'].includes(v.tag)).every(v=>v.font>=16),'Mobile input/textarea fonts must be 16px');
  }
  async function capture(name,{viewport=false,keepFocus=false}={}){if(!keepFocus)await page.evaluate(()=>{if(document.activeElement instanceof HTMLElement)document.activeElement.blur();window.scrollTo(0,0);});await paint();const file=name+'.png';await page.screenshot({path:path.join(output,file),fullPage:!viewport});const bytes=await readFile(path.join(output,file));captures.push({file,sha256:sha(bytes),fullPage:!viewport,keepsFocus:keepFocus});}
+ // Read-only, bounded diagnostics. Preserve the original two-frame fit sample:
+ // screenshots and later samples cannot turn a failing measurement into a pass.
+ async function resizeGeometry(){return page.evaluate(()=>{
+  const root=document.documentElement,viewport={width:innerWidth,height:innerHeight,scrollX,scrollY,visual:window.visualViewport?{width:visualViewport.width,height:visualViewport.height,offsetLeft:visualViewport.offsetLeft,offsetTop:visualViewport.offsetTop,scale:visualViewport.scale}:null};
+  const rect=element=>{const value=element.getBoundingClientRect();return {left:value.left,right:value.right,top:value.top,bottom:value.bottom,width:value.width,height:value.height};};
+  const identity=element=>({tag:element.tagName,id:element.id||null,className:typeof element.className==='string'?element.className.slice(0,400):'',slot:element.getAttribute('data-slot'),state:element.getAttribute('data-state'),sidebar:element.getAttribute('data-sidebar'),customizable:element.getAttribute('data-customizable'),mobileCard:element.getAttribute('data-mobile-card')});
+  const describe=element=>{const css=getComputedStyle(element);return {...identity(element),rect:rect(element),clientWidth:element.clientWidth,scrollWidth:element.scrollWidth,style:{display:css.display,visibility:css.visibility,position:css.position,width:css.width,minWidth:css.minWidth,maxWidth:css.maxWidth,boxSizing:css.boxSizing,overflowX:css.overflowX,overflowY:css.overflowY,whiteSpace:css.whiteSpace,overflowWrap:css.overflowWrap,wordBreak:css.wordBreak,flex:css.flex,flexBasis:css.flexBasis,gridTemplateColumns:css.gridTemplateColumns,transform:css.transform,transitionProperty:css.transitionProperty,transitionDuration:css.transitionDuration,transitionDelay:css.transitionDelay,animationName:css.animationName}};};
+  const documentSize={clientWidth:root.clientWidth,scrollWidth:root.scrollWidth,bodyClientWidth:document.body.clientWidth,bodyScrollWidth:document.body.scrollWidth};
+  const candidates=[...document.querySelectorAll('body *')].filter(element=>{const box=element.getBoundingClientRect();return box.width>0&&box.height>0&&(box.right>viewport.width||box.left<0);});
+  const offenders=candidates.slice(0,48).map(element=>({...describe(element),ancestors:(()=>{const values=[];for(let parent=element.parentElement;parent&&values.length<4;parent=parent.parentElement)values.push(describe(parent));return values;})()}));
+  const animationState=animation=>({playState:animation.playState,pending:animation.pending,currentTime:animation.currentTime,animationName:animation.animationName??null,transitionProperty:animation.transitionProperty??null,endTime:animation.effect?.getComputedTiming().endTime,target:animation.effect?.target instanceof Element?identity(animation.effect.target):null});
+  const animations=root.getAnimations({subtree:true}).filter(animation=>animation.pending||animation.playState==='running').slice(0,24).map(animationState);
+  const search=document.querySelector('.global-search'),globalSearch=search?{...describe(search),animations:search.getAnimations({subtree:true}).slice(0,8).map(animationState)}:null;
+  const layout=[...document.querySelectorAll('[data-slot=sidebar-wrapper],[data-slot=sidebar-gap],[data-slot=sidebar-container],[data-slot=sidebar-inset],.topbar,.topbar-context,.topbar-actions,.global-search,.user-button,.workspace-content,.request-list-toolbar,.desktop-grid-viewport,.request-list-table,.request-list-pagination,.mobile-bottom-nav')].slice(0,24).map(describe);
+  return {viewport,documentSize,mobileMedia:matchMedia('(max-width: 767px)').matches,fits:documentSize.scrollWidth<=viewport.width,offenderCount:candidates.length,offenders,animations,globalSearch,layout,activeElement:document.activeElement instanceof Element?identity(document.activeElement):null};
+ });}
  async function expandFullReadback(){const region=page.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true});await region.waitFor();const disclosure=region.locator('details');if(!await disclosure.evaluate(el=>el.open))await disclosure.locator('summary').click();return region;}
  const open=screen=>screen==='purchase-requests'?page.getByRole('button',{name:'Mở đề nghị '+model.purchase.purchaseRequestId,exact:true}):page.getByRole('button',{name:new RegExp('^Mở phiếu '+model.inbound.documentId+' ')});
  async function run(name,fn){await t.test(name,async()=>{try{await fn();results.push(name);}catch(error){failures.push(name);throw error;}});}
@@ -367,10 +383,17 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
     const actionSelector=orders?'button[aria-label="Mở chứng từ QA-ORDER-001"]':screen==='purchase-requests'?'button[aria-label="Mở đề nghị QA-PURCHASE-001"]':'button[aria-label^="Mở phiếu QA-INBOUND-001 "]';
     assert.equal(await list.locator(actionSelector).count(),1);await action.evaluate(el=>window.i42LiveOpen=el);
     for(const nextWidth of [width<768?1440:320,width]){
+     const previousWidth=page.viewportSize().width;
      await page.setViewportSize({width:nextWidth,height:900});await paint();
      assert.equal(await action.evaluate(el=>el===window.i42LiveOpen&&el.isConnected),true,'Responsive changes preserve the one live Open action and its ref');
      assert.equal(await list.locator(actionSelector).count(),1);
-     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`${screen} must stay contained at ${nextWidth}px`);
+     const measured=await resizeGeometry(),name=`i42-${screen}-resize-${width}-from-${previousWidth}-to-${nextWidth}`;
+     const diagnostic={kind:'resize-geometry',screen,initialWidth:width,previousWidth,nextWidth,measured,screenshot:name+'.png',afterScreenshot:null};
+     sharedGridEvidence.push(diagnostic);
+     await writeFile(path.join(output,name+'.json'),JSON.stringify(diagnostic,null,2));
+     await capture(name,{viewport:true,keepFocus:true});
+     diagnostic.afterScreenshot=await resizeGeometry();await writeFile(path.join(output,name+'.json'),JSON.stringify(diagnostic,null,2));
+     assert.equal(measured.fits,true,`${screen} must stay contained at ${nextWidth}px: `+JSON.stringify({viewport:measured.viewport,documentSize:measured.documentSize,offenderCount:measured.offenderCount,offenders:measured.offenders.slice(0,8),animations:measured.animations,globalSearch:measured.globalSearch}));
     }
     if(!orders){
      const detail=page.getByRole('region',{name:screen==='purchase-requests'?'Phiếu mua hàng hiện có':'Phiếu nhập hàng đã chọn',exact:true});
@@ -759,7 +782,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
     await recordReadonlyClockSnapshot('positive-healthy','before-deliberate-focus','before',{width,shape},healthyBaseline);
     await page.evaluate(()=>{window.dispatchEvent(new FocusEvent('blur'));window.dispatchEvent(new Event('focus'));});
     await eventually(()=>model.workspaceReads>visibleWorkspaceReads);await eventually(()=>model.detailWaiters.length===1&&model.waiters.length===1);await recordReadonlyClockSnapshot('positive-healthy','held-workspace-list-draft','after',{width,shape},healthyBaseline);await stableHealthyRead(true);assert.equal(projectionCalls().length,2,'Healthy refresh waits for current draft eligibility without removing prior READ data');
-    releaseDraft();await eventually(()=>model.projectionWaiters.length===1);await stableHealthyRead(true);assert.deepEqual(projectionCalls().at(-1),{route:projectionRoute,method:'GET',documentId:document.documentId,page:'2',pageSize:'50'});
+    releaseDraft();await eventually(()=>model.projectionWaiters.length===1);await stableHealthyRead(true);assert.deepEqual(projectionCalls().at(-1),{route:projectionRoute,method:'GET',documentId:document.documentId,page:'2',pageSize:'50',search:null,branchId:null});
     const listResponses=model.listResponses;model.holdList=false;model.waiters.splice(0).forEach(resolve=>resolve());await eventually(()=>model.listResponses>listResponses);await stableHealthyRead(true);
     releaseProjection();await eventually(()=>model.projectionResponses===3);await settledReads();await eventually(()=>readonlyPanel().getByRole('button',{name:'Dòng trước',exact:true}).isEnabled());await exactReadonlyPage(2);await stableHealthyRead(false);await recordReadonlyClockSnapshot('positive-healthy','fresh-projection','after',{width,shape},healthyBaseline);assert.deepEqual({count:model.workspaceReads,history:model.workspaceVersions},{count:healthyBaseline.count+1,history:[...healthyBaseline.history,healthyBaseline.count+1]});await continuity.dispose();
     await capture('inbound-readonly-'+shape+'-page2-healthy-refresh-'+width,{viewport:true,keepFocus:true});
@@ -776,7 +799,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
     assert.equal(await open('inbound-requests').getAttribute('aria-pressed'),'true');assert.equal(await filter.inputValue(),'UNAPPLIED READONLY FILTER');assert.equal(await readonlyPanel().count(),0);assert.equal(projectionCalls().length,3,'Same-scope refresh still waits for current typed Unavailable');
     assert.equal(await page.getByText(readonlyLines[50].itemId,{exact:true}).count(),0);assert.equal(await focusRegion('inbound-requests').evaluate(element=>document.activeElement===element),false);
     releaseDraft();await eventually(()=>model.projectionWaiters.length===1);await paint();assert.equal(await readonlyPanel().getAttribute('data-phase'),'pending');
-    assert.deepEqual(projectionCalls().at(-1),{route:projectionRoute,method:'GET',documentId:document.documentId,page:'2',pageSize:'50'});assert.equal(await page.getByText(readonlyLines[50].itemId,{exact:true}).count(),0,'Remembered page2 cannot expose cached values before the current READ response');
+    assert.deepEqual(projectionCalls().at(-1),{route:projectionRoute,method:'GET',documentId:document.documentId,page:'2',pageSize:'50',search:null,branchId:null});assert.equal(await page.getByText(readonlyLines[50].itemId,{exact:true}).count(),0,'Remembered page2 cannot expose cached values before the current READ response');
     assert.equal(await open('inbound-requests').getAttribute('aria-pressed'),'true');assert.equal(await filter.inputValue(),'UNAPPLIED READONLY FILTER');assert.equal(await focusRegion('inbound-requests').evaluate(element=>document.activeElement===element),false);
     releaseProjection();await exactReadonlyPage(2);await paint();assert.equal(await focusRegion('inbound-requests').evaluate(element=>document.activeElement===element),false,'Workspace revalidation cannot auto-focus the restored page');
     assert.equal(await open('inbound-requests').getAttribute('aria-pressed'),'true');assert.equal(await filter.inputValue(),'UNAPPLIED READONLY FILTER');assert.equal(calls.filter(call=>call.method==='POST').length,0);await recordReadonlyClockSnapshot('positive-hidden','fresh-projection','after',{width,shape},hiddenBaseline);assert.deepEqual({count:model.workspaceReads,history:model.workspaceVersions},{count:hiddenBaseline.count+1,history:[...hiddenBaseline.history,hiddenBaseline.count+1]},'Both healthy and temporarily unverified observations advance authority while retaining READ markers');
