@@ -37,6 +37,13 @@ async function runRequiredDialogCase(context,name,body,diagnose){
  if(failure)throw failure;
  context.signal?.throwIfAborted();
 }
+// A closed/hidden content node does not mean the separate Radix Presence
+// overlay has finished its exit animation or released outside pointer state.
+async function waitForGuardDismissal(page){
+ await page.locator('[data-slot="alert-dialog-content"]').waitFor({state:'detached'});
+ await page.locator('[data-slot="alert-dialog-overlay"]').waitFor({state:'detached'});
+ await page.waitForFunction(()=>getComputedStyle(document.body).pointerEvents!=='none');
+}
 // Reuse the exact response bytes/metadata in the browser and decoder checks.
 // The inbound transport requires no-store even for bootstrap and CSRF replies.
 function dialogJson(status,data,headers={}){
@@ -178,7 +185,7 @@ function retainedDetailAccessibility(surface){
  const live=[...surface.querySelectorAll('[aria-live]')],exposed=controls.filter(node=>!blocked(node));
  return {controlCount:controls.length,exposedControlCount:exposed.length,exposedControls:exposed.slice(0,12).map(node=>({tag:node.tagName,role:node.getAttribute('role'),label:node.getAttribute('aria-label'),id:node.id||null})),liveCount:live.length,exposedLiveCount:live.filter(node=>!blocked(node)).length,surfaceBlocked:blocked(surface),dialogBlocked:blocked(surface.querySelector('[role="dialog"]'))};
 }
-test('I43 locked Radix isolation preserves live ancestors and hides every retained interactive control',()=>{
+test('I43 locked Radix isolation preserves live ancestors and waits for complete modal cleanup',async()=>{
  const {hideOthers}=require('aria-hidden');
  class Element{
   constructor(tag,parent=null,attributes={}){this.tagName=tag.toUpperCase();this.parentNode=this.parentElement=parent;this.children=[];this.attributes={...attributes};this.id=attributes.id??'';if(parent)parent.children.push(this);this.ownerDocument=parent?.ownerDocument??{body:this};}
@@ -200,6 +207,18 @@ test('I43 locked Radix isolation preserves live ancestors and hides every retain
   const leaked=new Element('button',live,{'aria-label':'synthetic exposed control'});assert.equal(retainedDetailAccessibility(surface).exposedControlCount,1,'The contract rejects an interactive leak inside a preserved live subtree');live.children.splice(live.children.indexOf(leaked),1);
  }finally{undo();}
  assert.equal(retainedDetailAccessibility(surface).exposedControlCount,3,'Modal cleanup restores the original controls without replacing their nodes');
+ // Execute the exact browser helper against staged lifecycle completions.
+ // Neither a hidden content node nor a fixed number of paint frames can end it.
+ const steps=[],release=[];let finished=false;
+ const page={locator:selector=>({waitFor:options=>{assert.deepEqual(options,{state:'detached'});steps.push(selector);return new Promise(resolve=>release.push(resolve));}}),waitForFunction:predicate=>{assert.match(String(predicate),/getComputedStyle\(document.body\).pointerEvents!=='none'/);steps.push('body pointer state');return new Promise(resolve=>release.push(resolve));}};
+ const closing=waitForGuardDismissal(page).then(()=>{finished=true;});
+ assert.deepEqual(steps,['[data-slot="alert-dialog-content"]']);assert.equal(finished,false);
+ release.shift()();await Promise.resolve();assert.deepEqual(steps,['[data-slot="alert-dialog-content"]','[data-slot="alert-dialog-overlay"]']);assert.equal(finished,false);
+ release.shift()();await Promise.resolve();assert.equal(steps.at(-1),'body pointer state');assert.equal(finished,false);
+ release.shift()();await closing;assert.equal(finished,true);
+ const failure=Error('overlay did not detach');
+ await assert.rejects(()=>waitForGuardDismissal({locator:()=>({waitFor:async()=>{throw failure;}})}),error=>error===failure);
+
 });
 
 const entry=`import React,{useState,useCallback}from'react';import{createRoot}from'react-dom/client';
@@ -402,6 +421,11 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
   if(firstFailure)return;
   firstFailure={name,error:String(error).slice(0,3000),scenario:currentScenario,completedCases:results.length,expectedCases,pageErrors:errors.slice(0,8),calls:model.calls.slice(-32).map(({route,method,query})=>({route,method,query}))};
   try{firstFailure.dom=await page.evaluate(()=>({readyState:document.readyState,body:document.body?.innerText.slice(0,6000),tables:[...document.querySelectorAll('[data-shared-grid]')].slice(0,3).map(table=>({role:table.getAttribute('role'),label:table.getAttribute('aria-label'),rows:table.querySelectorAll('[data-grid-row]').length,visible:table.getClientRects().length>0})),dialogs:[...document.querySelectorAll('[role=dialog],[role=alertdialog]')].slice(0,4).map(dialog=>({role:dialog.getAttribute('role'),text:dialog.textContent?.slice(0,500),hidden:!!dialog.closest('[hidden],[inert]'),ariaHidden:dialog.getAttribute('aria-hidden'),ariaHiddenAncestor:dialog.closest('[aria-hidden="true"]')?.tagName??null,ancestors:(()=>{const ancestors=[];for(let node=dialog;node&&ancestors.length<8;node=node.parentElement)ancestors.push({tag:node.tagName,role:node.getAttribute('role'),ariaHidden:node.getAttribute('aria-hidden'),ariaLive:node.getAttribute('aria-live'),id:node.id||null});return ancestors;})()})),selected:window.i43?.navigation?.selectedId,denials:window.i43?.denials?.slice(0,8)}));}catch(diagnosticError){firstFailure.domError=String(diagnosticError).slice(0,500);}
+  try{firstFailure.pointerState=await page.evaluate(()=>{
+   const describe=node=>{if(!node)return null;const css=getComputedStyle(node);return {tag:node.tagName,role:node.getAttribute('role'),slot:node.getAttribute('data-slot'),state:node.getAttribute('data-state'),className:node.className,display:css.display,visibility:css.visibility,opacity:css.opacity,pointerEvents:css.pointerEvents,zIndex:css.zIndex,animationName:css.animationName,animationDuration:css.animationDuration};};
+   const button=document.querySelector('.mobile-bottom-nav button'),rect=button?.getBoundingClientRect(),point=rect?{x:rect.x+rect.width/2,y:rect.y+rect.height/2}:null;
+   return {body:{inline:document.body.style.pointerEvents,computed:getComputedStyle(document.body).pointerEvents},overlays:[...document.querySelectorAll('[data-slot="alert-dialog-overlay"],[data-slot="alert-dialog-content"],[data-slot="dialog-overlay"]')].map(describe),navigationHit:point?{point,target:describe(document.elementFromPoint(point.x,point.y)),stack:document.elementsFromPoint(point.x,point.y).slice(0,8).map(describe)}:null};
+  });}catch(diagnosticError){firstFailure.pointerStateError=String(diagnosticError).slice(0,500);}
   try{firstFailure.retainedAccessibility=await page.locator('[data-request-detail-surface]').evaluate(retainedDetailAccessibility);}catch(diagnosticError){firstFailure.accessibilityError=String(diagnosticError).slice(0,500);}
   try{await page.screenshot({path:path.join(output,'first-failure.png'),fullPage:false,timeout:2000});firstFailure.screenshot='first-failure.png';}catch(diagnosticError){firstFailure.screenshotError=String(diagnosticError).slice(0,500);}
   await writeFile(path.join(output,'first-failure.json'),JSON.stringify(firstFailure,null,2));t.diagnostic(JSON.stringify(firstFailure));
@@ -460,9 +484,9 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
    assert.equal(await page.evaluate(({x,y})=>!!document.elementFromPoint(x,y)?.closest('[role=alertdialog]'),{x:guardBox.x+guardBox.width/2,y:guardBox.y+guardBox.height/2}),true,'guard content owns its center');
    await page.touchscreen.tap(location.x,location.y);assert.equal(await guard.isVisible(),true);assert.equal(await page.evaluate(()=>window.i43.navCalls.length),1);
    await page.screenshot({path:path.join(output,'r1-'+kind+'-mobile-guard.png'),fullPage:true});
-   await guard.getByRole('button',{name:'Tiếp tục làm việc',exact:true}).click();await paint();assert.deepEqual(await snapshot(),before);assert.equal(await notes().inputValue(),'R1 LAYER RETAINED');
+   await guard.getByRole('button',{name:'Tiếp tục làm việc',exact:true}).click();await waitForGuardDismissal(page);await paint();assert.deepEqual(await snapshot(),before);assert.equal(await notes().inputValue(),'R1 LAYER RETAINED');
    assert.equal(await page.getByRole('dialog').evaluate(node=>node.contains(document.activeElement)),true);
-   await attempt('x');await page.getByRole('alertdialog').getByRole('button',{name:'Bỏ thay đổi và rời màn hình',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});await paint();
+   await attempt('x');await page.getByRole('alertdialog').getByRole('button',{name:'Bỏ thay đổi và rời màn hình',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});currentScenario.stage='accepted-guard-dismissal';await waitForGuardDismissal(page);await paint();
    location=await point();assert.equal(await page.evaluate(({x,y})=>!!document.elementFromPoint(x,y)?.closest('.mobile-bottom-nav'),location),true);
    await page.touchscreen.tap(location.x,location.y);assert.equal(await page.evaluate(()=>window.i43.navCalls.length),2,'accepted dismissal exposes the unchanged navigation again');
    assert.equal(model.calls.filter(call=>call.method==='POST').length,0);
@@ -483,13 +507,13 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
     await attempt(path);const guard=page.getByRole('alertdialog');await guard.waitFor();
     assert.equal(await guard.evaluate(e=>e.contains(document.activeElement)),true);
     assert.ok(Number(await guard.evaluate(e=>getComputedStyle(e).zIndex))>Number(await page.locator('[data-request-detail-surface]').evaluate(e=>getComputedStyle(e).zIndex)));
-    await guard.getByRole('button',{name:'Tiếp tục làm việc',exact:true}).click();await paint();
+    await guard.getByRole('button',{name:'Tiếp tục làm việc',exact:true}).click();await waitForGuardDismissal(page);await paint();
     assert.equal(await notes().inputValue(),'I43 DIRTY RETAINED');assert.deepEqual(await snapshot(),before);
     assert.equal(await page.getByRole('dialog').evaluate(e=>e.contains(document.activeElement)),true);
    }
    assert.equal(model.calls.length,calls,'presentation and cancellation do not issue API requests');
    await page.screenshot({path:path.join(output,kind+'-'+width+'-dirty.png'),fullPage:true});
-   await attempt('x');await page.getByRole('alertdialog').getByRole('button',{name:'Bỏ thay đổi và rời màn hình',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});await paint();
+   await attempt('x');await page.getByRole('alertdialog').getByRole('button',{name:'Bỏ thay đổi và rời màn hình',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});currentScenario.stage='accepted-guard-dismissal';await waitForGuardDismissal(page);await paint();
    assert.equal(await scroller.evaluate(e=>e.scrollTop),scroll);assert.match(await page.evaluate(()=>document.activeElement?.getAttribute('aria-label')??''),/QA-001/);
    assert.equal(await page.getByLabel(kind==='purchase'?'Tìm mã đề nghị':'Tìm phiếu nhập hàng',{exact:true}).inputValue(),'QA');
    assert.equal(model.calls.length,calls);results.push({kind,width,result:'PASS',lifetime:await snapshot(),calls:model.calls});
@@ -505,11 +529,11 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
    await page.getByRole('dialog').getByRole('button',{name:kind==='purchase'?'Lưu nháp trên ERP':'Lưu thay đổi',exact:true}).click();
    await page.waitForFunction(()=>document.querySelector('[role="dialog"]')?.textContent.includes('Đang'));
    await page.evaluate(()=>window.i43.navigation.requestClose());await page.getByRole('alertdialog').waitFor();assert.equal(await page.getByRole('alertdialog').getByRole('button',{name:'Bỏ thay đổi và rời màn hình',exact:true}).count(),0);
-   await page.getByRole('alertdialog').getByRole('button',{name:'Tiếp tục làm việc',exact:true}).click();release();
+   await page.getByRole('alertdialog').getByRole('button',{name:'Tiếp tục làm việc',exact:true}).click();await waitForGuardDismissal(page);release();
    await page.getByRole('dialog').getByRole('button',{name:kind==='purchase'?'Kiểm tra kết quả yêu cầu gốc':'Kiểm tra yêu cầu gốc',exact:true}).waitFor();
    const commands=()=>model.calls.filter(c=>c.method==='POST'&&!c.route.endsWith('/csrf'));assert.equal(commands().length,1);const original=commands()[0].body;
    await page.evaluate(()=>window.i43.navigation.requestClose());await page.getByRole('alertdialog').waitFor();assert.equal((await snapshot()).selected,'QA-001');assert.equal(commands().length,1);
-   await page.getByRole('alertdialog').getByRole('button',{name:'Tiếp tục làm việc',exact:true}).click();
+   await page.getByRole('alertdialog').getByRole('button',{name:'Tiếp tục làm việc',exact:true}).click();await waitForGuardDismissal(page);
    await page.getByRole('dialog').getByRole('button',{name:kind==='purchase'?'Kiểm tra kết quả yêu cầu gốc':'Kiểm tra yêu cầu gốc',exact:true}).click();
    await page.waitForTimeout(100);assert.equal(commands().length,2);assert.equal(commands()[1].body,original);assert.deepEqual(await snapshot(),before);
    results.push({kind,result:'PASS',lifetime:await snapshot(),commands:commands()});
