@@ -12,6 +12,50 @@ import {setTimeout as delay} from 'node:timers/promises';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {verifyStandalone} from '../scripts/verify-standalone.mjs';
 
+async function responseDuring(page, predicate, action) {
+  // Arm before the trigger, and observe BOTH rejections before running it.
+  // Promise.all keeps the losing promise observed after the first failure.
+  const response = page.waitForResponse(predicate);
+  const [received] = await Promise.all([response, Promise.resolve().then(action)]);
+  return received;
+}
+async function runRequiredCase(context, results, name, action) {
+  let failed = false, failure;
+  await context.test(name, async () => {try {await action(); results.push({name, result: 'PASS'});} catch (error) {failed = true; failure = error; throw error;}});
+  if (failed) throw failure;
+  context.signal.throwIfAborted();
+}
+
+test('I29 response-action fixture observes both failures and stops after the first failed case', async () => {
+  const deferred = () => {let resolve, reject; const promise = new Promise((yes, no) => {resolve = yes; reject = no;}); return {promise, resolve, reject};};
+  const predicate = () => true, events = [], success = deferred(), received = {};
+  const page = {waitForResponse(value) {assert.equal(value, predicate); events.push('armed'); return success.promise;}};
+  const paired = responseDuring(page, predicate, () => {events.push('action'); success.resolve(received);});
+  assert.deepEqual(events, ['armed']); assert.equal(await paired, received); assert.deepEqual(events, ['armed', 'action']);
+  for (const first of ['response', 'action']) {
+    const response = deferred(), action = deferred(), original = Error(`synthetic ${first} failure`), late = Error('synthetic late failure');
+    const started = deferred();
+    const pending = responseDuring({waitForResponse: () => response.promise}, predicate, () => {started.resolve(); return action.promise;});
+    const rejected = assert.rejects(pending, error => error === original); await started.promise;
+    (first === 'response' ? response : action).reject(original); await rejected;
+    (first === 'response' ? action : response).reject(late); await delay(0);
+  }
+  const lateResponse = deferred(), synchronous = Error('synthetic synchronous action failure');
+  await assert.rejects(responseDuring({waitForResponse: () => lateResponse.promise}, predicate, () => {throw synchronous;}), error => error === synchronous);
+  lateResponse.reject(Error('synthetic late response')); await delay(0);
+  const original = Error('synthetic first response failure'), results = [], setup = [], failures = [];
+  const context = {signal: new AbortController().signal, test: async (name, action) => {try {await action();} catch (error) {failures.push(error);}}};
+  await assert.rejects(async () => {
+    for (const name of ['first', 'must-not-start']) await runRequiredCase(context, results, name, async () => {
+      setup.push(name); await responseDuring({waitForResponse: () => Promise.reject(original)}, predicate, () => Promise.resolve());
+    });
+  }, error => error === original);
+  assert.deepEqual(setup, ['first']); assert.deepEqual(failures, [original]); assert.deepEqual(results, []);
+  // Every hosted response waiter must go through the immediately observed pair.
+  const source = await readFile(fileURLToPath(import.meta.url), 'utf8');
+  assert.equal(source.match(/\bpage\.waitForResponse\(/g)?.length, 1);
+});
+
 const loginName = 'Đăng nhập ERP';
 async function requireLoginGate(page) {
   const form = page.getByRole('form', {name: loginName, exact: true});
@@ -192,7 +236,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       if(expectContinue){req.once('continue',()=>{sent=true;req.end(body);});req.flushHeaders();}else{sent=true;req.end(body);}
     });
   }
-  async function run(name, action) {let failure; await t.test(name, async () => {try {await action(); results.push({name, result: 'PASS'});} catch (error) {failure = error; throw error;}}); t.signal.throwIfAborted(); if (failure) throw failure;}
+  const run = (name, action) => runRequiredCase(t, results, name, action);
   try {
     const ports = new Set(); while (ports.size < 3) ports.add(await freePort());
     const [apiPort, httpsPort, nodePort] = [...ports];
@@ -470,8 +514,8 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
         assert.ok(healthyWorkspace.length >= 2 && healthyWorkspace.at(-1).authorityVersion > healthyWorkspace[0].authorityVersion, 'healthy baseline refresh must have increasing observation versions');
         assert.ok(healthyWorkspace.every(item => item.sessionScope === 'a'.repeat(64) && item.readScope === 'b'.repeat(64)), 'baseline read scopes stay unchanged');
         const before = await counts(), stormObservationIndex = observed.length; await control({failures: {'purchase-bootstrap': 403}});
-        const denied = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/workspace' && response.status() === 403);
-        await purchasePanel().getByRole('button', {name: 'Làm mới', exact: true}).click(); await denied;
+        await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/workspace' && response.status() === 403,
+          () => purchasePanel().getByRole('button', {name: 'Làm mới', exact: true}).click());
         const started = Date.now(), deadline = started + 3000;
         do {
           await delay(100); stormCounts = difference(await counts(), before);
@@ -512,10 +556,10 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await page.clock.fastForward(60001); await held('workspace'); await orderControls();
       await control({holds: ['orders-list', 'orders-detail']}); await held('orders-list');
       await orderControls();
-      const listFinished = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/documents/purchase-orders' && response.status() === 200);
-      await control({holds: ['orders-detail']}); await (await listFinished).finished(); await held('orders-detail');
-      const detailFinished = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/documents/purchase-orders/detail' && response.status() === 200);
-      await control({holds: []}); await (await detailFinished).finished();
+      const listFinished = await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp/api/documents/purchase-orders' && response.status() === 200,
+        () => control({holds: ['orders-detail']})); await listFinished.finished(); await held('orders-detail');
+      const detailFinished = await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp/api/documents/purchase-orders/detail' && response.status() === 200,
+        () => control({holds: []})); await detailFinished.finished();
       await waitFor(async () => !(await snapshot()).waiting.some(entry => entry.value > 0), 'background order refresh released');
       await freshOrderDetail(); await paint(); await orderControls(); await stopStableData('order read');
       assert.deepEqual(await page.locator('.desktop-grid-viewport').evaluate(e => ({top: e.scrollTop, left: e.scrollLeft})), scroll);
@@ -553,8 +597,8 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await control({holds: ['purchase-bootstrap', 'purchase-list', 'purchase-detail']}); await held('purchase-bootstrap'); await purchaseControls();
       await control({holds: ['purchase-list', 'purchase-detail']}); await held('purchase-list'); await held('purchase-detail'); await purchaseControls();
       assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).isEnabled(), false, 'new edits must wait for fresh command grants while existing values remain mounted');
-      const detailFinished = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200);
-      await control({holds: []}); await (await detailFinished).finished();
+      const detailFinished = await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200,
+        () => control({holds: []})); await detailFinished.finished();
       await assertPurchaseGrant(detailFinished, false);
       await purchaseEditor().getByText('Phiếu hiện chỉ được xem theo quyền của bạn.', {exact: true}).waitFor(); await paint();
       await stopStableData('purchase read'); await purchaseControls();
@@ -564,8 +608,8 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       const delta = difference(await counts(), before);
       for (const route of routes) assert.ok(delta[route] >= 1 && delta[route] <= 2, `${route}: unchanged-scope background read must refresh once, without a loop`);
       lifecycleEvidence.background.push({kind: 'purchase', requests: delta, commandGrant: 'revoked', unsavedDraft: 'retained'});
-      const restoredDetail = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200);
-      await control({commandAllowed: true}); await page.clock.fastForward(60001);
+      const restoredDetail = await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200,
+        async () => {await control({commandAllowed: true}); await page.clock.fastForward(60001);});
       await assertPurchaseGrant(restoredDetail, true);
       await waitFor(() => purchaseEditor().getByLabel('Ghi chú', {exact: true}).isEnabled(), 'restored command grant');
       assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).inputValue(), 'UNSAVED SYNTHETIC NOTE');
@@ -598,8 +642,8 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
         assert.equal(await page.evaluate(() => window.i29ReviewForm === document.querySelector('form[aria-label="Đề nghị mua hàng trên điện thoại"]')), true);
         await button.evaluate(button => button.click());
         assert.equal((await snapshot()).calls.slice(before).filter(call => call.path === '/api/purchase-requests/save' || call.path === '/api/purchase-requests/submit').length, 0);
-        const detailFinished = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200);
-        await control({holds: []}); await (await detailFinished).finished();
+        const detailFinished = await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200,
+          () => control({holds: []})); await detailFinished.finished();
         // A clean read revision may deliberately leave review mode; review the
         // newly read values before admitting a NEW Submit. Dirty Save retains it.
         const review = purchaseEditor().getByRole('button', {name: 'Rà soát phiếu', exact: true});
@@ -666,12 +710,12 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await page.clock.fastForward(60001); await held('workspace');
       await control({holds: ['purchase-save', 'purchase-bootstrap', 'purchase-list', 'purchase-detail']}); await held('purchase-bootstrap');
       await control({holds: ['purchase-save', 'purchase-list', 'purchase-detail']}); await held('purchase-list'); await held('purchase-detail');
-      const detailFinished = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200);
-      await control({holds: ['purchase-save']}); await (await detailFinished).finished(); await paint();
+      const detailFinished = await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200,
+        () => control({holds: ['purchase-save']})); await detailFinished.finished(); await paint();
       await stopStableData('pending save'); await purchaseEditor().getByText('Đang gửi yêu cầu…', {exact: true}).waitFor();
       await assertOriginalCustody(pending, 0);
-      const ack = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/save' && response.status() === 200);
-      await control({holds: []}); await (await ack).finished();
+      const ack = await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/save' && response.status() === 200,
+        () => control({holds: []})); await ack.finished();
       await purchaseEditor().getByText('Nháp đã được ERP xác nhận', {exact: true}).waitFor();
       await assertPendingNoteVisible();
       await assertOriginalCustody(pending, 0);
@@ -680,14 +724,14 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
     await run('I29 built pending ACK is accepted while the parent workspace check is still held', async () => {
       const pending = await beginPendingSave(); await watchStableData('pending');
       await control({holds: ['purchase-save', 'workspace']}); await page.clock.fastForward(60001); await held('workspace');
-      const ack = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/save' && response.status() === 200);
-      await control({holds: ['workspace']}); await (await ack).finished();
+      const ack = await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/save' && response.status() === 200,
+        () => control({holds: ['workspace']})); await ack.finished();
       await purchaseEditor().getByText('Nháp đã được ERP xác nhận', {exact: true}).waitFor();
       await assertPendingNoteVisible();
       await assertVerifiedActionsBlocked();
       await assertOriginalCustody(pending, 0);
-      const detailFinished = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200);
-      await control({holds: []}); await (await detailFinished).finished();
+      const detailFinished = await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200,
+        () => control({holds: []})); await detailFinished.finished();
       await waitFor(() => purchaseEditor().getByLabel('Ghi chú', {exact: true}).isEnabled(), 'post-ACK parent and grant verification'); await paint();
       await stopStableData('ACK during parent verification'); await assertOriginalCustody(pending, 0);
       lifecycleEvidence.requests.push({kind: 'ack-during-parent-verification', writes: 1, effects: 1, lookups: 0, originalBodyHash: pending.original.sha256});
@@ -701,22 +745,22 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await assertOriginalCustody(pending, 0, 0);
       // The fixture captured GET token 1 before committing; release only Save
       // so its token-2 ACK reaches the actual editor before those stale bodies.
-      const ack = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/save' && response.status() === 200);
-      await control({holds: ['purchase-list', 'purchase-detail']}); await (await ack).finished();
+      const ack = await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/save' && response.status() === 200,
+        () => control({holds: ['purchase-list', 'purchase-detail']})); await ack.finished();
       await purchaseEditor().getByText('Nháp đã được ERP xác nhận', {exact: true}).waitFor();
       await assertOriginalCustody(pending, 0);
-      const staleDetail = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200);
-      const readsBefore = await counts();
-      await control({holds: ['purchase-list', 'purchase-detail'], releaseHolds: ['purchase-list', 'purchase-detail']});
-      assert.equal((await (await staleDetail).json()).data.stateToken, 'prs1.' + '1'.repeat(64), 'the held reply must really predate the ACK');
+      let readsBefore;
+      const staleDetail = await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200,
+        async () => {readsBefore = await counts(); await control({holds: ['purchase-list', 'purchase-detail'], releaseHolds: ['purchase-list', 'purchase-detail']});});
+      assert.equal((await staleDetail.json()).data.stateToken, 'prs1.' + '1'.repeat(64), 'the held reply must really predate the ACK');
       await waitFor(async () => (await counts())['/api/purchase-requests/detail'] > readsBefore['/api/purchase-requests/detail'], 'one bounded fresh read after superseded GET');
       await held('purchase-detail'); await paint();
       await purchaseEditor().getByText('Nháp đã được ERP xác nhận', {exact: true}).waitFor();
       await assertPendingNoteVisible();
       await assertVerifiedActionsBlocked();
       assert.equal(await purchasePanel().getByRole('alert').count(), 0, 'superseded GET is not a fabricated outage');
-      const freshDetail = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200);
-      await control({holds: []}); assert.equal((await (await freshDetail).json()).data.stateToken, 'prs1.' + '2'.repeat(64));
+      const freshDetail = await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200,
+        () => control({holds: []})); assert.equal((await freshDetail.json()).data.stateToken, 'prs1.' + '2'.repeat(64));
       await waitFor(() => purchaseEditor().getByLabel('Ghi chú', {exact: true}).isEnabled(), 'post-ACK grant verified'); await paint();
       await stopStableData('ACK before old GET'); await assertOriginalCustody(pending, 0);
       await assertPendingNoteVisible();
@@ -731,8 +775,8 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
     });
     await run('I29 built pending save plus background detail 503 masks data and reconciles the exact original intent once', async () => {
       const pending = await beginPendingSave(); await control({failures: {'purchase-detail': 503}});
-      const failed = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 503);
-      await page.clock.fastForward(60001); await failed;
+      await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 503,
+        () => page.clock.fastForward(60001));
       await waitFor(async () => !await purchaseEditor().isVisible(), 'pending detail error masks protected data');
       await control({holds: []}); await assertOriginalCustody(pending, 0);
       await control({failures: {}}); await page.clock.fastForward(60001); await freshPurchaseDetail();
@@ -742,8 +786,8 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await page.clock.fastForward(60001); await held('workspace'); await paint();
       assert.equal(await reconcile.isEnabled(), false, 'new reconciliation waits for the parent authority check');
       await reconcile.evaluate(button => button.click()); await assertOriginalCustody(pending, 0);
-      const detailFinished = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200);
-      await control({holds: []}); await (await detailFinished).finished(); await waitFor(() => reconcile.isEnabled(), 'reconcile grant restored');
+      const detailFinished = await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200,
+        () => control({holds: []})); await detailFinished.finished(); await waitFor(() => reconcile.isEnabled(), 'reconcile grant restored');
       await stopStableData('unknown intent during parent verification');
       assert.equal(await purchaseEditor().getByText('Nháp đã được ERP xác nhận', {exact: true}).count(), 0, 'retired ACK cannot resolve the retained unknown');
       await reconcile.click(); await purchaseEditor().getByText('Nháp đã được ERP xác nhận', {exact: true}).waitFor();
@@ -759,15 +803,14 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       // must honor a later, narrower bootstrap even with the old parent DTO and
       // the SAME purchase scope. The blocked detail cannot rescue this check.
       await control({purchaseBranchIds: ['BR-B']});
-      const parent = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/workspace' && response.status() === 200);
-      await control({holds: ['purchase-save', 'purchase-bootstrap', 'purchase-list', 'purchase-detail']});
-      const parentResponse = await parent;
+      const parentResponse = await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp/api/workspace' && response.status() === 200,
+        () => control({holds: ['purchase-save', 'purchase-bootstrap', 'purchase-list', 'purchase-detail']}));
       assert.deepEqual((await parentResponse.json()).branchIds, ['BR-A', 'BR-B']);
       assert.equal(parentResponse.headers()['x-medcom-read-scope'], 'b'.repeat(64));
       await held('purchase-bootstrap');
-      const bootstrap = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/workspace' && response.status() === 200);
-      await control({holds: ['purchase-save', 'purchase-list', 'purchase-detail']});
-      const admitted = await (await bootstrap).json();
+      const bootstrap = await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/workspace' && response.status() === 200,
+        () => control({holds: ['purchase-save', 'purchase-list', 'purchase-detail']}));
+      const admitted = await bootstrap.json();
       assert.equal(admitted.scopeKey, 'c'.repeat(64)); assert.deepEqual(admitted.data.branchIds, ['BR-B']);
       await waitFor(async () => !await purchaseEditor().isVisible(), 'narrowed bootstrap fences branch A before held detail');
       assert.equal(await purchasePanel().getByRole('button', {name: 'Mở đề nghị I29-PR-P2-00', exact: true}).count(), 0);
@@ -795,8 +838,8 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await page.clock.fastForward(60001); await held('workspace');
       await control({holds: ['purchase-save', 'purchase-bootstrap', 'purchase-list', 'purchase-detail']}); await held('purchase-bootstrap'); await assertPurchaseMasked();
       await control({holds: ['purchase-save', 'purchase-list', 'purchase-detail']}); await held('purchase-list'); await held('purchase-detail'); await assertPurchaseMasked();
-      const revokedDetail = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200);
-      await control({holds: []}); await freshPurchaseDetail(); await assertPurchaseGrant(revokedDetail, false);
+      const revokedDetail = await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200,
+        async () => {await control({holds: []}); await freshPurchaseDetail();}); await assertPurchaseGrant(revokedDetail, false);
       await purchaseEditor().getByText('Phiếu hiện chỉ được xem theo quyền của bạn.', {exact: true}).waitFor(); await assertVerifiedActionsBlocked(); await assertOriginalCustody(pending, 0);
       assert.equal(controls.purchaseScope, 'c'.repeat(64), 'production purchase scope does not rotate for read rights changes');
       assert.equal(await purchaseEditor().getByText('Nháp đã được ERP xác nhận', {exact: true}).count(), 0);
@@ -807,8 +850,14 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
     for (const [kind, route] of [['purchase-bootstrap', '/api/purchase-requests/workspace'], ['purchase-list', '/api/purchase-requests'], ['purchase-detail', '/api/purchase-requests/detail']]) {
       await run(`I29 built persistent 403 at ${kind} cannot storm and explicit recovery is bounded`, async () => {
         await preparePurchase(); const before = await counts(); await control({failures: {[kind]: 403}});
-        const failed = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp' + route && response.status() === 403);
-        await purchasePanel().getByRole('button', {name: 'Làm mới', exact: true}).click(); await failed;
+        // The selected detail is modal. A real tab return refreshes its current
+        // reads without clicking through the backdrop or dropping selection.
+        const other = await context.newPage();
+        try {
+          await other.goto('about:blank'); await activate(other, 'hidden'); await assertPurchaseMasked();
+          await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp' + route && response.status() === 403,
+            () => activate(other, 'visible'));
+        } finally {await other.close();}
         const recovery = workspaceRecoveryButton(page);
         await recovery.waitFor(); await assertPurchaseMasked();
         await delay(500); const settled = await counts(); await delay(500);
@@ -822,8 +871,8 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
         await page.clock.fastForward(60001);
         if (kind === 'purchase-list') {
           await held('purchase-list'); await held('purchase-detail');
-          const periodicDenied = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp' + route && response.status() === 403);
-          await control({holds: ['purchase-detail']}); await periodicDenied;
+          await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp' + route && response.status() === 403,
+            () => control({holds: ['purchase-detail']}));
           await recovery.waitFor(); await assertPurchaseMasked();
           await control({holds: []});
         }
@@ -837,8 +886,9 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
         assert.equal(periodic['/api/purchase-requests/detail'], kind === 'purchase-bootstrap' ? 0 : 1);
         const periodicQuiet = await counts(); await delay(500); assert.deepEqual(await counts(), periodicQuiet, 'no immediate self-trigger loop after the bounded periodic cycle');
         await assertPurchaseMasked();
-        const retryBefore = await counts(); const deniedAgain = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp' + route && response.status() === 403);
-        await recovery.click(); await deniedAgain; await recovery.waitFor(); await delay(500);
+        const retryBefore = await counts();
+        await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp' + route && response.status() === 403,
+          () => recovery.click()); await recovery.waitFor(); await delay(500);
         const explicit = difference(await counts(), retryBefore);
         for (const count of Object.values(explicit)) assert.ok(count <= 2, 'one explicit denied recovery must remain bounded');
         const quiet = await counts(); await delay(500); assert.deepEqual(await counts(), quiet);
@@ -853,8 +903,8 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
         await preparePurchase();
         await purchaseEditor().getByLabel('Ghi chú', {exact: true}).fill('UNSAVED AFTER 503');
         await control({failures: {[kind]: 503}});
-        const failed = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp' + route && response.status() === 503);
-        await page.clock.fastForward(60001); await failed; await paint();
+        await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp' + route && response.status() === 503,
+          () => page.clock.fastForward(60001)); await paint();
         await waitFor(async () => !await purchaseEditor().isVisible(), 'background failure masks purchase editor');
         assert.equal(await purchasePanel().getByRole('button', {name: /^Mở đề nghị I29-/}).count(), kind === 'purchase-detail' ? 20 : 0, 'a successful current list may remain when only its selected detail fails');
         await control({failures: {}}); await page.clock.fastForward(60001); await freshPurchaseDetail(); await purchaseControls();
