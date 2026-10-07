@@ -52,14 +52,18 @@ public sealed class InboundDraftCommandFactory
     public bool NewSendAccepted => RuntimeAccepted && acceptance!.CoversNewSend;
     public Guid DatabaseBindingId => binding;
 
+    // Inspect must be a trusted local-only callback. Omission is closed, never a
+    // fallback to resolve; arbitrary IWebSessions.InspectAsync can run SQL.
     public SqlInboundDraftCommandAuthorityReader CreateAuthorityReader(
-        Func<CancellationToken, Task<AuthoritativeIdentity?>> resolveLiveSession) =>
-        new(binding, company, FreshConnection, resolveLiveSession, acceptance);
+        Func<CancellationToken, Task<AuthoritativeIdentity?>> resolveLiveSession,
+        Func<CancellationToken, Task<AuthoritativeIdentity?>>? inspectLocalSession = null) =>
+        new(binding, company, FreshConnection, resolveLiveSession, inspectLocalSession, acceptance);
 
-    public IInboundDraftCommandService CreateCommands(Func<CancellationToken, Task<AuthoritativeIdentity?>> resolveLiveSession)
+    public IInboundDraftCommandService CreateCommands(Func<CancellationToken, Task<AuthoritativeIdentity?>> resolveLiveSession,
+        Func<CancellationToken, Task<AuthoritativeIdentity?>>? inspectLocalSession = null)
     {
         ArgumentNullException.ThrowIfNull(resolveLiveSession);
-        return new ExistingDocumentCommands(this, resolveLiveSession);
+        return new ExistingDocumentCommands(this, resolveLiveSession, inspectLocalSession);
     }
 
     private static Func<DbConnection> Adapt(Func<SqlConnection> connections)
@@ -89,9 +93,10 @@ public sealed class InboundDraftCommandFactory
     }
 
     private sealed class ExistingDocumentCommands(InboundDraftCommandFactory owner,
-        Func<CancellationToken, Task<AuthoritativeIdentity?>> resolve) : IInboundDraftCommandService
+        Func<CancellationToken, Task<AuthoritativeIdentity?>> resolve,
+        Func<CancellationToken, Task<AuthoritativeIdentity?>>? inspect) : IInboundDraftCommandService
     {
-        private Invocation NewInvocation() => new(owner, resolve);
+        private Invocation NewInvocation() => new(owner, resolve, inspect);
 
         public async Task<InboundDraftReadResult> ReadAsync(string documentId, CancellationToken token = default)
         {
@@ -132,12 +137,14 @@ public sealed class InboundDraftCommandFactory
         private readonly InboundDraftCommandFactory owner;
         private readonly Func<CancellationToken, Task<AuthoritativeIdentity?>> resolve;
         private readonly InboundDraftSessionFence fence = new();
+        private readonly Func<CancellationToken, Task<AuthoritativeIdentity?>>? inspect;
         internal SqlInboundDraftCommandService Service { get; }
-        internal Invocation(InboundDraftCommandFactory owner, Func<CancellationToken, Task<AuthoritativeIdentity?>> resolve)
+        internal Invocation(InboundDraftCommandFactory owner, Func<CancellationToken, Task<AuthoritativeIdentity?>> resolve,
+            Func<CancellationToken, Task<AuthoritativeIdentity?>>? inspect)
         {
-            this.owner = owner; this.resolve = resolve;
+            this.owner = owner; this.resolve = resolve; this.inspect = inspect;
             Service = new(owner.binding, owner.company, (Func<DbConnection>)owner.FreshConnection,
-                SqlInboundDraftCommandService.NativeAuthority(Resolve), new NoDocumentAllocation());
+                SqlInboundDraftCommandService.NativeAuthority(Resolve, Inspect), new NoDocumentAllocation());
         }
         private async Task<AuthoritativeIdentity?> Resolve(CancellationToken token)
         {
@@ -146,6 +153,13 @@ public sealed class InboundDraftCommandFactory
             token.ThrowIfCancellationRequested();
             return current is not null && current.TenantId == owner.company.TenantId && current.CompanyId == owner.company.CompanyId
                 && fence.TryAccept(current, out var accepted) ? accepted : null;
+        }
+        private async Task<AuthoritativeIdentity?> Inspect(CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+            var current = inspect is null ? null : await inspect(token).WaitAsync(token);
+            token.ThrowIfCancellationRequested();
+            return current is not null && fence.TryAccept(current, out var accepted) ? accepted : null;
         }
         internal async Task<bool> FinalFence(CancellationToken token)
         {

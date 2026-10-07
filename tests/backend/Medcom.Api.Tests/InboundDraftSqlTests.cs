@@ -10,6 +10,32 @@ namespace Medcom.Api.Tests;
 
 public sealed class InboundDraftSqlTests
 {
+
+    [Fact]
+    public void Qualification_plans_are_fixed_SELECTs_and_include_catalog_safety_predicates()
+    {
+        var plans=typeof(InboundDraftSql).GetFields(System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic)
+            .Where(field=>field.Name.StartsWith("Target",StringComparison.Ordinal)).ToDictionary(field=>field.Name,field=>(string)field.GetRawConstantValue()!);
+        Assert.Equal(6,plans.Count);
+        Assert.All(plans.Values,sql=>
+        {
+            Assert.Contains("SELECT",sql);
+            Assert.DoesNotContain("CREATE ",sql);Assert.DoesNotContain("ALTER ",sql);Assert.DoesNotContain("INSERT ",sql);
+            Assert.DoesNotContain("UPDATE ",sql);Assert.DoesNotContain("DELETE ",sql);Assert.DoesNotContain("EXEC",sql);
+            Assert.DoesNotContain("Purchase",sql);
+        });
+        var columns=plans["TargetColumnsText"];
+        foreach(var field in new[]{"max_length","is_nullable","precision","scale","collation_name","is_user_defined",
+            "is_identity","is_computed","generated_always_type","is_hidden","encryption_type","default_object_id"})Assert.Contains(field,columns);
+        foreach(var field in new[]{"is_primary_key","key_ordinal","is_unique","is_disabled","has_filter","is_descending_key","ignore_dup_key"})
+            Assert.Contains(field,plans["TargetKeysText"]);
+        foreach(var field in new[]{"sys.triggers","sys.security_predicates","durability","sys.check_constraints","sys.default_constraints"})
+            Assert.Contains(field,plans["TargetTablesText"]);
+        Assert.Contains("XACT_STATE()",plans["TargetEnvironmentText"]);Assert.Contains("@@TRANCOUNT=1",plans["TargetEnvironmentText"]);
+        Assert.Contains("is_not_trusted",plans["TargetDefinitionsText"]);Assert.Contains("OBJECT_NAME(C.parent_object_id)",plans["TargetDefinitionsText"]);
+        Assert.Contains("TOP(2)",plans["TargetBindingText"]);Assert.Contains("WITH(HOLDLOCK)",plans["TargetBindingText"]);
+        Assert.DoesNotContain("WHERE",plans["TargetBindingText"]);
+    }
     [Fact]
     public void Real_SqlClient_parameters_keep_source_decimal_types_without_a_database_connection()
     {

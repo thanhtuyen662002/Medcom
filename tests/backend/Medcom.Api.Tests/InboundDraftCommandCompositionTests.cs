@@ -288,7 +288,17 @@ public sealed class InboundDraftCommandCompositionTests
         var db = Model(); var real = await RealSession();
         using var host = new Harness(Factory(db), real.Sessions); using var request = host.Request(real.Session);
         var original = (await Save(request.Commands)) with { Header = InboundModel.Header with { Notes = "must roll back" } };
-        db.OnEvent = name => { if (name == "record") Change(real, db, change); };
+        db.OnEvent = name =>
+        {
+            if(name != "record")return;
+            Change(real,db,change);
+            // Mirror the native authority change in the recording database. Local
+            // session inspection must not poll full authority inside this transaction.
+            if(change=="branch")db.SourceAuthority!.Users[0]=db.SourceAuthority.Users[0] with {Branch="BR-B"};
+            if(change=="credential")db.SourceAuthority!.ChangeProjection=(tag,table)=>
+            {if(tag=="user")table.Rows[0][1]="changed-synthetic-stored-hash";return table;};
+            if(change=="capabilities")db.SourceAuthority!.Direct[0]=new("sample-user","07011",Update:false);
+        };
         var result = await request.Commands.ExecuteAsync(original);
         Assert.Equal(InboundDraftOutcome.Denied, result.Outcome); Assert.Null(result.Receipt);
         Assert.Equal("original", db.Tables[0].Rows[0]["Notes"]);
@@ -455,10 +465,10 @@ public sealed class InboundDraftCommandCompositionTests
         var original = await Save(request.Commands);
         var call = 0;
         sessions.OnResolve = (token, _, _) => Task.FromResult<ResolvedSession?>(Session(db.ActiveIdentity with
-        { AuthorityVersion = (++call) switch { 1 => 2, 2 => 4, _ => 3 } }, token));
+        { AuthorityVersion = (++call) switch { 1 => 4, _ => 3 } }, token));
         var result = await request.Commands.ExecuteAsync(original);
         Assert.Equal(InboundDraftOutcome.Denied, result.Outcome); Assert.Null(result.Receipt);
-        Assert.Equal(3, call); Assert.Equal(0, db.BusinessWrites); Assert.Equal(1, db.CommitAcks);
+        Assert.Equal(2, call); Assert.Equal(0, db.BusinessWrites); Assert.Equal(1, db.CommitAcks);
         Assert.Equal(original.OperationId, Assert.Single(db.Journal.Rows.Cast<DataRow>())["OperationId"]);
         Assert.Equal(0, db.Journal.Rows[0]["State"]);
     }
@@ -652,6 +662,7 @@ public sealed class InboundDraftCommandCompositionTests
     private sealed record SessionObservation(string Token, bool UserInteraction, ResolvedSession? Session);
     private sealed class RecordingSessions(IWebSessions inner) : IWebSessions
     {
+        public Task<ResolvedSession?> InspectAsync(string token,CancellationToken ct)=>inner.InspectAsync(token,ct);
         internal readonly List<SessionObservation> Observations = [];
         public ResolvedSession? Create(AuthoritativeIdentity identity) => inner.Create(identity);
         public void Revoke(string token) => inner.Revoke(token);
@@ -666,6 +677,8 @@ public sealed class InboundDraftCommandCompositionTests
         internal readonly List<SessionObservation> Observations = [];
         internal Func<string, int, CancellationToken, Task<ResolvedSession?>>? OnResolve;
         private int calls;
+        private ResolvedSession? latest;
+        public Task<ResolvedSession?> InspectAsync(string token,CancellationToken ct) {ct.ThrowIfCancellationRequested();return Task.FromResult(latest);}
         public ResolvedSession? Create(AuthoritativeIdentity current) => throw new NotSupportedException();
         public void Revoke(string token) => throw new NotSupportedException();
         public async Task<ResolvedSession?> ResolveAsync(string token, bool userInteraction, CancellationToken cancellationToken)
@@ -673,11 +686,12 @@ public sealed class InboundDraftCommandCompositionTests
             cancellationToken.ThrowIfCancellationRequested(); Assert.False(userInteraction); calls++;
             var current = OnResolve is null ? Session(identity with { AuthorityVersion = identity.AuthorityVersion + calls }, token)
                 : await OnResolve(token, calls, cancellationToken);
-            Observations.Add(new(token, userInteraction, current)); return current;
+            latest=current;Observations.Add(new(token, userInteraction, current)); return current;
         }
     }
     private sealed class GatedSnapshotSessions(IWebSessions inner) : IWebSessions
     {
+        public Task<ResolvedSession?> InspectAsync(string token,CancellationToken ct)=>inner.InspectAsync(token,ct);
         private readonly TaskCompletionSource<ResolvedSession?> firstCaptured = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly TaskCompletionSource<ResolvedSession?> secondCaptured = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly TaskCompletionSource firstRelease = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -705,7 +719,7 @@ public sealed class InboundDraftCommandCompositionTests
         private readonly ServiceProvider provider;
         internal Harness(InboundDraftCommandFactory? factory, IWebSessions sessions)
         {
-            var services = new ServiceCollection(); services.AddSingleton(sessions); services.AddDormantInboundDraftCommands(factory);
+            var services = new ServiceCollection(); services.AddSingleton(sessions); services.AddDormantInboundDraftCommands(factory, (store,key,ct)=>store.InspectAsync(key,ct));
             provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
         }
         internal RequestServices Request(ResolvedSession session, CancellationToken aborted = default, Action<HttpContext>? alter = null)

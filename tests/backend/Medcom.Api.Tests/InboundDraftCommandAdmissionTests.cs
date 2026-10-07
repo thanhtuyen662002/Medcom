@@ -66,7 +66,7 @@ public sealed class InboundDraftCommandAdmissionTests
     {
         var (model, native) = Model(); native.Users[0] = native.Users[0] with { Branch = branch };
         model.ActiveIdentity = model.ActiveIdentity with { BranchIds = ["BR-A"] };
-        var result = await Factory(model, Acceptance()).CreateAuthorityReader(model.ResolveAsync).ReadAsync("DOC-IN-1");
+        var result = await Factory(model, Acceptance()).CreateAuthorityReader(model.ResolveAsync, model.InspectAsync).ReadAsync("DOC-IN-1");
         Assert.Equal(InboundDraftCommandAuthorityOutcome.Admitted, result.Outcome); Assert.Equal("BR-A", result.BranchId);
         Assert.Equal(1, model.OpenCalls); Assert.Equal(1, model.ConnectionDisposes); Assert.Equal(1, model.TransactionDisposes);
         Assert.Contains(branch is null or "" ? "catalog" : "native-restricted", model.Events); ReadOnly(model);
@@ -86,7 +86,7 @@ public sealed class InboundDraftCommandAdmissionTests
         if (denial == "stamp") model.ActiveIdentity = model.ActiveIdentity with { CredentialStamp = "wrong-stamp" };
         if (denial == "principal-alias") native.Users.Add(native.Users[0] with { Name = "SAMPLE-USER" });
         if (denial == "group-alias") native.Users[0] = native.Users[0] with { Group = "group-a" };
-        var result = await Factory(model, Acceptance()).CreateAuthorityReader(model.ResolveAsync).ReadAsync("DOC-IN-1");
+        var result = await Factory(model, Acceptance()).CreateAuthorityReader(model.ResolveAsync, model.InspectAsync).ReadAsync("DOC-IN-1");
         Assert.NotEqual(InboundDraftCommandAuthorityOutcome.Admitted, result.Outcome); Assert.Null(result.BranchId); ReadOnly(model);
     }
 
@@ -109,7 +109,7 @@ public sealed class InboundDraftCommandAdmissionTests
             }
             return table;
         };
-        var result = await Factory(model, Acceptance()).CreateAuthorityReader(model.ResolveAsync).ReadAsync("DOC-IN-1");
+        var result = await Factory(model, Acceptance()).CreateAuthorityReader(model.ResolveAsync, model.InspectAsync).ReadAsync("DOC-IN-1");
         Assert.Equal(InboundDraftCommandAuthorityOutcome.Denied, result.Outcome); Assert.Null(result.BranchId); ReadOnly(model);
     }
 
@@ -119,7 +119,7 @@ public sealed class InboundDraftCommandAdmissionTests
         var (model, native) = Model();
         native.Direct[0] = native.Direct[0] with { Update = false };
         native.GroupRights.Add(new("GROUP-A", "07011", Run: false, Update: true));
-        var result = await Factory(model, Acceptance()).CreateAuthorityReader(model.ResolveAsync).ReadAsync("DOC-IN-1");
+        var result = await Factory(model, Acceptance()).CreateAuthorityReader(model.ResolveAsync, model.InspectAsync).ReadAsync("DOC-IN-1");
         Assert.Equal(InboundDraftCommandAuthorityOutcome.Denied, result.Outcome); Assert.Null(result.BranchId); ReadOnly(model);
     }
 
@@ -140,7 +140,7 @@ public sealed class InboundDraftCommandAdmissionTests
             case "excessive": native.Catalog = Enumerable.Range(0, 201).Select(i => "B" + i).ToArray(); break;
             case "native-whitespace": native.Users[0] = native.Users[0] with { Branch = " " }; break;
         }
-        var result = await Factory(model, Acceptance()).CreateAuthorityReader(model.ResolveAsync).ReadAsync("DOC-IN-1");
+        var result = await Factory(model, Acceptance()).CreateAuthorityReader(model.ResolveAsync, model.InspectAsync).ReadAsync("DOC-IN-1");
         Assert.NotEqual(InboundDraftCommandAuthorityOutcome.Admitted, result.Outcome); Assert.Null(result.BranchId); ReadOnly(model);
     }
 
@@ -152,7 +152,7 @@ public sealed class InboundDraftCommandAdmissionTests
         var row = model.Tables[child].NewRow();
         if (model.Tables[child].Rows.Count != 0) row.ItemArray = model.Tables[child].Rows[0].ItemArray.ToArray();
         row["UserAutoID"] = "FOREIGN-ALIAS"; row["DocumentID"] = "doc-in-1"; model.Tables[child].Rows.Add(row);
-        var result = await Factory(model, Acceptance()).CreateAuthorityReader(model.ResolveAsync).ReadAsync("DOC-IN-1");
+        var result = await Factory(model, Acceptance()).CreateAuthorityReader(model.ResolveAsync, model.InspectAsync).ReadAsync("DOC-IN-1");
         Assert.Equal(InboundDraftCommandAuthorityOutcome.Unavailable, result.Outcome); Assert.Null(result.BranchId); ReadOnly(model);
     }
 
@@ -163,7 +163,7 @@ public sealed class InboundDraftCommandAdmissionTests
         var (model, native) = Model();
         native.Users[0] = native.Users[0] with { Branch = stage is "catalog" or "catalog-shape" ? null : "BR-A" };
         native.ChangeProjection = (tag, table) => tag == stage ? InboundModel.Table(("wrong", typeof(bool))) : table;
-        var result = await Factory(model, Acceptance()).CreateAuthorityReader(model.ResolveAsync).ReadAsync("DOC-IN-1");
+        var result = await Factory(model, Acceptance()).CreateAuthorityReader(model.ResolveAsync, model.InspectAsync).ReadAsync("DOC-IN-1");
         Assert.Equal(InboundDraftCommandAuthorityOutcome.Unavailable, result.Outcome); Assert.Null(result.BranchId); ReadOnly(model);
     }
 
@@ -176,7 +176,7 @@ public sealed class InboundDraftCommandAdmissionTests
         var (model, native) = Model();
         if (stage is "catalog-shape" or "catalog") native.Users[0] = native.Users[0] with { Branch = null };
         model.Fault = stage;
-        var result = await Factory(model, Acceptance()).CreateAuthorityReader(model.ResolveAsync).ReadAsync("DOC-IN-1");
+        var result = await Factory(model, Acceptance()).CreateAuthorityReader(model.ResolveAsync, model.InspectAsync).ReadAsync("DOC-IN-1");
         Assert.Equal(InboundDraftCommandAuthorityOutcome.Unavailable, result.Outcome); Assert.Null(result.BranchId);
         Assert.Equal(1, model.TransactionDisposes); Assert.Equal(1, model.ConnectionDisposes); ReadOnly(model);
     }
@@ -189,7 +189,7 @@ public sealed class InboundDraftCommandAdmissionTests
         var (model, native) = Model(); native.Users[0] = native.Users[0] with { Branch = null };
         using var cancellation = new CancellationTokenSource();
         model.OnEvent = tag => { if (tag == stage) cancellation.Cancel(); };
-        var result = await Factory(model, Acceptance()).CreateAuthorityReader(model.ResolveAsync).ReadAsync("DOC-IN-1", cancellation.Token);
+        var result = await Factory(model, Acceptance()).CreateAuthorityReader(model.ResolveAsync, model.InspectAsync).ReadAsync("DOC-IN-1", cancellation.Token);
         Assert.Equal(InboundDraftCommandAuthorityOutcome.Cancelled, result.Outcome); Assert.Null(result.BranchId);
         Assert.Equal(1, model.TransactionDisposes); Assert.Equal(1, model.ConnectionDisposes); ReadOnly(model);
     }
@@ -200,9 +200,9 @@ public sealed class InboundDraftCommandAdmissionTests
         var (model, _) = Model();
         var connection = new InboundConnection(model);
         var factory = new InboundDraftCommandFactory(Binding, Company, (Func<DbConnection>)(() => connection), Acceptance());
-        var first = await factory.CreateAuthorityReader(model.ResolveAsync).ReadAsync("DOC-IN-1");
+        var first = await factory.CreateAuthorityReader(model.ResolveAsync, model.InspectAsync).ReadAsync("DOC-IN-1");
         Assert.Equal(InboundDraftCommandAuthorityOutcome.Admitted, first.Outcome);
-        var second = await factory.CreateAuthorityReader(model.ResolveAsync).ReadAsync("DOC-IN-1");
+        var second = await factory.CreateAuthorityReader(model.ResolveAsync, model.InspectAsync).ReadAsync("DOC-IN-1");
         Assert.Equal(InboundDraftCommandAuthorityOutcome.Unavailable, second.Outcome);
         Assert.Equal(1, model.OpenCalls); Assert.Equal(1, model.ConnectionDisposes); ReadOnly(model);
     }
@@ -213,7 +213,7 @@ public sealed class InboundDraftCommandAdmissionTests
         var (model, _) = Model();
         using var connection = new InboundConnection(model); connection.Open();
         var factory = new InboundDraftCommandFactory(Binding, Company, (Func<DbConnection>)(() => connection), Acceptance());
-        var result = await factory.CreateAuthorityReader(model.ResolveAsync).ReadAsync("DOC-IN-1");
+        var result = await factory.CreateAuthorityReader(model.ResolveAsync, model.InspectAsync).ReadAsync("DOC-IN-1");
         Assert.Equal(InboundDraftCommandAuthorityOutcome.Unavailable, result.Outcome);
         Assert.Equal(ConnectionState.Open, connection.State); Assert.Equal(0, model.ConnectionDisposes);
         Assert.Equal(0, model.TransactionDisposes); Assert.Empty(model.Commands); ReadOnly(model);
@@ -224,7 +224,7 @@ public sealed class InboundDraftCommandAdmissionTests
     public async Task Native_blank_to_restricted_fences_both_phases_without_replacing_original_pending_intent(string phase)
     {
         var (model, native) = Model(); native.Users[0] = native.Users[0] with { Branch = null };
-        var commands = Factory(model, Acceptance()).CreateCommands(model.ResolveAsync);
+        var commands = Factory(model, Acceptance()).CreateCommands(model.ResolveAsync, model.InspectAsync);
         var read = await commands.ReadAsync("DOC-IN-1"); Assert.Equal(InboundDraftOutcome.Observed, read.Outcome);
         var request = new InboundDraftCommand(Guid.NewGuid(), InboundDraftAction.Save, "DOC-IN-1",
             read.Document!.StateEqualityToken, InboundModel.Header with { Notes = "must not commit" });
@@ -258,7 +258,7 @@ public sealed class InboundDraftCommandAdmissionTests
     public async Task Committed_original_receipt_requires_current_native_scope_and_read_remains_eligible_after_Send(bool loseAck)
     {
         var (model, native) = Model(); native.Users[0] = native.Users[0] with { Branch = null };
-        var commands = Factory(model, Acceptance()).CreateCommands(model.ResolveAsync);
+        var commands = Factory(model, Acceptance()).CreateCommands(model.ResolveAsync, model.InspectAsync);
         var read = await commands.ReadAsync("DOC-IN-1");
         var original = new InboundDraftCommand(Guid.NewGuid(), InboundDraftAction.SendToWarehouse, "DOC-IN-1",
             read.Document!.StateEqualityToken, null, Note: "synthetic send");

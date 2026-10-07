@@ -2,6 +2,7 @@ using Medcom.Application;
 using Medcom.Application.Inbound;
 using Medcom.Contracts.Inbound;
 using Medcom.Infrastructure.Inbound;
+using Medcom.Infrastructure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,7 +13,8 @@ namespace Medcom.Api;
 public static class InboundDraftCommandRegistration
 {
     public static IServiceCollection AddDormantInboundDraftCommands(this IServiceCollection services,
-        InboundDraftCommandFactory? factory = null)
+        InboundDraftCommandFactory? factory = null,
+        Func<IWebSessions, string, CancellationToken, Task<ResolvedSession?>>? trustedLocalInspection = null)
     {
         ArgumentNullException.ThrowIfNull(services);
         services.AddHttpContextAccessor();
@@ -30,7 +32,7 @@ public static class InboundDraftCommandRegistration
                 if (claims.Length == 1 && claims[0].Value == server.Token) anchor = server;
             }
             return new(factory, provider.GetService<IWebSessions>(), anchor,
-                context?.RequestAborted ?? CancellationToken.None);
+                context?.RequestAborted ?? CancellationToken.None, trustedLocalInspection);
         });
         services.AddScoped<IInboundDraftCommandAccess>(provider =>
             new SqlInboundDraftCommandAccess(provider.GetRequiredService<InboundDraftCommandRequestScope>()));
@@ -46,12 +48,18 @@ internal sealed class InboundDraftCommandRequestScope
     private readonly IWebSessions? sessions;
     private readonly ResolvedSession? anchor;
     private readonly CancellationToken requestAborted;
+    private readonly Func<IWebSessions, string, CancellationToken, Task<ResolvedSession?>>? inspect;
     internal IInboundDraftCommandService Commands { get; }
 
     internal InboundDraftCommandRequestScope(InboundDraftCommandFactory? factory, IWebSessions? sessions,
-        ResolvedSession? server, CancellationToken requestAborted)
+        ResolvedSession? server, CancellationToken requestAborted,
+        Func<IWebSessions, string, CancellationToken, Task<ResolvedSession?>>? trustedLocalInspection = null)
     {
         this.factory = factory; this.sessions = sessions; this.requestAborted = requestAborted;
+        // IWebSessions default InspectAsync calls ResolveAsync. Only the known local
+        // implementation is used automatically; other implementations require an
+        // explicit, owner-reviewed SQL-free local inspection delegate.
+        inspect = sessions is LocalWebSessions ? (store, key, ct) => store.InspectAsync(key, ct) : trustedLocalInspection;
         if (server is not null && !string.IsNullOrEmpty(server.Token)
             && new InboundDraftSessionFence().TryAccept(server.Identity, out var accepted))
             anchor = server with { Identity = accepted };
@@ -65,7 +73,7 @@ internal sealed class InboundDraftCommandRequestScope
         var fence = NewFence();
         if (fence is null || !fence.TryAccept(supplied.Identity, out _)) return null;
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, requestAborted);
-        var result = await factory.CreateAuthorityReader(t => Resolve(fence, t)).ReadAsync(document, linked.Token);
+        var result = await factory.CreateAuthorityReader(t => Resolve(fence, t), t => Inspect(fence, t)).ReadAsync(document, linked.Token);
         return result.Outcome switch
         {
             InboundDraftCommandAuthorityOutcome.Admitted => new(factory.DatabaseBindingId, document,
@@ -94,6 +102,16 @@ internal sealed class InboundDraftCommandRequestScope
         return live is not null && live.Token == anchor.Token && fence.TryAccept(live.Identity, out var accepted) ? accepted : null;
     }
 
+    private async Task<AuthoritativeIdentity?> Inspect(InboundDraftSessionFence fence, CancellationToken token)
+    {
+        if (factory?.RuntimeAccepted != true || anchor is null || sessions is null || inspect is null) return null;
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, requestAborted);
+        linked.Token.ThrowIfCancellationRequested();
+        var live = await inspect(sessions, anchor.Token, linked.Token).WaitAsync(linked.Token);
+        linked.Token.ThrowIfCancellationRequested();
+        return live is not null && live.Token == anchor.Token && fence.TryAccept(live.Identity, out var accepted) ? accepted : null;
+    }
+
     private sealed class RequestCommands(InboundDraftCommandRequestScope scope) : IInboundDraftCommandService
     {
         private IInboundDraftCommandService Create()
@@ -101,7 +119,8 @@ internal sealed class InboundDraftCommandRequestScope
             if (scope.factory?.RuntimeAccepted != true) return new UnavailableInboundDraftCommandService();
             var fence = scope.NewFence();
             return scope.factory.CreateCommands(fence is null ? _ => Task.FromResult<AuthoritativeIdentity?>(null)
-                : token => scope.Resolve(fence, token));
+                : token => scope.Resolve(fence, token),
+                fence is null ? _ => Task.FromResult<AuthoritativeIdentity?>(null) : token => scope.Inspect(fence, token));
         }
         public async Task<InboundDraftReadResult> ReadAsync(string documentId, CancellationToken token = default)
         {
