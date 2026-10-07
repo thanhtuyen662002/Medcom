@@ -886,3 +886,12 @@ body {font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;l
  .mobile-primary-icon {background:transparent;color:inherit;border-radius:0}
  .mobile-nav-item > span:last-child {max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;overflow-wrap:normal;line-height:16px}
 }
+
+/* Auth gate keeps the existing sidebar/inset flex and peer layout intact. */
+.workspace-auth-layout > div[tabindex="-1"]:not([hidden]) { display: contents; }
+.workspace-auth-layout > section { flex: 1 1 100%; min-width: 0; }
+.workspace-navigation-warning { z-index: 80; }
+/* Portaled exit animations must not cover the newly active auth gate. */
+body:has(.workspace-auth-layout > section[tabindex="-1"]) :is([data-slot="dialog-overlay"], [data-slot="sheet-overlay"], [data-slot="alert-dialog-overlay"]) { display: none !important; }
+[data-slot="alert-dialog-overlay"]:has(+ .workspace-navigation-warning) { z-index: 79; }
+.workspace-screen-presentation > .erp-feedback { margin: 0 0 20px; }

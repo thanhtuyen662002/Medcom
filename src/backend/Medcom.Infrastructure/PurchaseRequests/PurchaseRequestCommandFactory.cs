@@ -53,20 +53,25 @@ public sealed class PurchaseRequestCommandFactory
 
     public bool RuntimeAccepted => acceptance?.Covers(binding, company) == true;
 
+    // The inspector is an explicit server-composition contract: local session state only,
+    // no SQL, activity refresh or full revalidation. An omitted inspector fails closed;
+    // the old single-resolver overload remains source-compatible, not operational.
     public SqlPurchaseRequestCommandAuthorityReader CreateAuthorityReader(
-        Func<CancellationToken, Task<AuthoritativeIdentity?>> resolveLiveSession) =>
-        new(binding, company, FreshConnection, resolveLiveSession, acceptance);
+        Func<CancellationToken, Task<AuthoritativeIdentity?>> resolveLiveSession,
+        Func<CancellationToken, Task<AuthoritativeIdentity?>>? inspectLocalSession = null) =>
+        new(binding, company, FreshConnection, resolveLiveSession, acceptance, inspectLocalSession);
 
     public IPurchaseRequestCommands CreateCommands(
-        Func<CancellationToken, Task<AuthoritativeIdentity?>> resolveLiveSession)
+        Func<CancellationToken, Task<AuthoritativeIdentity?>> resolveLiveSession,
+        Func<CancellationToken, Task<AuthoritativeIdentity?>>? inspectLocalSession = null)
     {
         ArgumentNullException.ThrowIfNull(resolveLiveSession);
         // No session revalidation (which may itself query SQL), writer construction
         // or connection factory call while acceptance is absent/mismatched.
-        if (!RuntimeAccepted) return new ExistingDocumentCommands(null);
+        if (!RuntimeAccepted || inspectLocalSession is null) return new ExistingDocumentCommands(null);
         return new ExistingDocumentCommands(new SqlPurchaseRequestCommands(binding, company,
             (Func<DbConnection>)FreshConnection, resolveLiveSession, new NoIdentifierAllocation(),
-            runtimeQualified: RuntimeAccepted));
+            runtimeQualified: RuntimeAccepted, inspectLocalSession: inspectLocalSession));
     }
 
     private static Func<DbConnection> Adapt(Func<SqlConnection> factory)

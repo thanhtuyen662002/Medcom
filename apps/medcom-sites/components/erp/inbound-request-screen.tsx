@@ -1,4 +1,6 @@
 "use client";
+import {RequestDetailDialog,useRequestDetailNavigation,useDetailPresentationProof,type RegisterRequestDetailNavigation} from "./request-detail-dialog";
+import {RequestQrSearch} from "./request-qr-search";
 import {RequestListHeader,RequestSearch,RequestBranch,RequestListTable,RequestListToolbar,RequestPagination} from "./request-list-shell";
 import {RequestButton,RequestNotice,RequestEmpty,RequestLoading,RequestStatus,requestDate,requestStyles} from "./request-presentation";
 import {useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore} from "react";
@@ -11,9 +13,11 @@ import {MobileInboundRequest, type InboundPresentedRead} from "./mobile-inbound-
 import {InboundRequestReadOnly} from "./inbound-request-readonly";
 import {useRequestSelectionFocus} from "./request-selection-focus";
 import {workspaceReadViewScope} from "@/lib/erp/navigation";
-import {useDirtyGuard, useNavigationGuard} from "./navigation-guard";
+import {useDirtyGuard, useNavigationGuard, type NavigationGuardValidationPhase} from "./navigation-guard";
 
 export type InboundRequestScreenProps = {
+  presentationAllowed?: boolean;
+  registerDetailNavigation?: RegisterRequestDetailNavigation;
   // A non-secret AUTH login incarnation supplied by the parent. Null means
   // actual logout, NEVER a failed workspace fetch. Do not derive this from
   // document/token/capabilities/authorityVersion or use a cookie as this prop.
@@ -72,11 +76,12 @@ function CustodyGuard({active, readbackPending}: {active: boolean; readbackPendi
 export function InboundRequestScreen(props: InboundRequestScreenProps) {
   return <RetainedInboundHost key={JSON.stringify([props.loginKey])} {...props}/>;
 }
-function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, historyOwner = "standalone", api: suppliedApi, list = defaultList}: InboundRequestScreenProps) {
+function RetainedInboundHost({presentationAllowed = true, registerDetailNavigation, loginKey, workspace, onClose, onBack, onDenied, historyOwner = "standalone", api: suppliedApi, list = defaultList}: InboundRequestScreenProps) {
   const defaultApi = useMemo(() => createInboundRequestApi(), []), rawApi = suppliedApi ?? defaultApi;
   const [readObservation] = useState(createReadObservation);
   const [unavailable, setUnavailable] = useState<{binding: ReadFallbackBinding} | null>(null);
   const [readingFallback, setReadingFallback] = useState<ReadFallbackBinding | null>(null);
+  const [presentationReadProof, setPresentationReadProof] = useState<{binding: ReadFallbackBinding; access: InboundDraftAccess} | null>(null);
   const [readonlyPresented, setReadonlyPresented] = useState<{binding: ReadFallbackBinding; state: "pending" | "ready" | "failed"} | null>(null);
   // Observe exact returned envelopes without transforming the draft API. This
   // wrapper never grants command rights and delegates every original argument.
@@ -142,6 +147,9 @@ function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, hi
     }
     return result;
   }}), [bridge]);
+  const {request: guardNavigation} = useNavigationGuard();
+  const openAuthority = useRef<{scope: string; rows: ReadonlySet<string>} | null>(null);
+  useLayoutEffect(() => () => { openAuthority.current = null; }, []);
   const acknowledge = useCallback((receipt: InboundDraftReceipt) => {
     const previous = bridge.getSnapshot().receipt;
     bridge.acknowledge(receipt);
@@ -150,7 +158,6 @@ function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, hi
       pendingReceipt.current = accepted; latestAdapterRead.current = null; setReadbackPending(true);
     }
   }, [bridge]);
-  const {request: guardNavigation} = useNavigationGuard();
   useLayoutEffect(() => { callbacks.current = {onClose, onBack, onDenied}; }, [onClose, onBack, onDenied]);
   const [selected, setSelected] = useState<string | null>(null), [page, setPage] = useState(1);
   const [selectionVersion, setSelectionVersion] = useState(0);
@@ -213,6 +220,9 @@ function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, hi
     && !state.unresolved && !readbackPending;
   const readonlyVerifying = readonlyEligible && (unavailable.binding !== fallbackBinding || readingFallback === fallbackBinding);
   const readonlyReady = readonlyEligible && !readonlyVerifying && readonlyPresented?.binding === fallbackBinding && readonlyPresented.state === "ready";
+  const currentPresentationProof = presentationReadProof?.binding === fallbackBinding && contextCurrent
+    && presentationReadProof.access === state.access && state.access.canRead && state.access.available && !state.needsRefresh ? presentationReadProof : null;
+  const presentationReady = useDetailPresentationProof(presentationAllowed, readonlyReady ? readonlyPresented : currentPresentationProof, () => setRetry(value => value + 1));
   const readonlyFailed = readonlyEligible && readonlyPresented?.binding === fallbackBinding && readonlyPresented.state === "failed";
   const focusOwner = useMemo(() => ({loginKey, api, readIdentity}), [loginKey, api, readIdentity]);
   const {open: focusOpen, close: focusClose, cancel: cancelFocus, row: focusRow, detail: focusDetail, list: focusList} = useRequestSelectionFocus({
@@ -272,6 +282,12 @@ function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, hi
     if (!contextCurrent || selected === null) return;
     const controller = new AbortController();
     void bridge.revalidate(controller.signal).then(() => {
+      const proof = bridge.getSnapshot();
+      // A current successful full bootstrap also permits the editor's original
+      // intent/recovery UI while it is unresolved. It does not acknowledge a
+      // receipt or release the separate matching-readback navigation guard.
+      if (!controller.signal.aborted && proof.contextKey === context && !proof.needsRefresh && proof.access.canRead && proof.access.available)
+        setPresentationReadProof({binding: fallbackBinding, access: proof.access});
       if (!controller.signal.aborted && bridge.getSnapshot().needsRefresh
         && readObservation.getUnavailable() !== fallbackBinding) setFocusFailure(selected);
     }).catch(() => {
@@ -324,12 +340,19 @@ function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, hi
     return () => controller.abort();
   }, [bridge, listAllowed, listBinding, list, page, filter, workspaceContext, api, verifiedReadAuthority, readIdentity, listViewKey, readScope, authorizedBranches, listView]);
 
-  const navigate = useCallback((action: () => void) => {
+  useLayoutEffect(() => {
+    openAuthority.current = presentationAllowed && loginKey !== null && !sessionEnded && contextCurrent && listAllowed && currentRows
+      ? {scope: JSON.stringify([loginKey, readIdentity, state.access.scopeKey]), rows: new Set(currentRows.rows.map(row => row.documentId))} : null;
+  });
+  const navigate = useCallback((action: () => void, admit: () => boolean = () => true) => {
+    // Validate live target/custody before the provider clears dirty blockers.
+    const eligible = (phase: NavigationGuardValidationPhase = "accept") => lifetime.current !== null && admit()
+      && (phase === "request" || !bridge.hasUnresolved() && pendingReceipt.current === null);
     guardNavigation(() => {
       if (lifetime.current === null) return;
       // A dialog can have opened before a command became pending. Do not trust
-      // its cached canDiscard flag to retire intent; re-register our blocker
-      // after the unchanged provider clears its entries for that old dialog.
+      // its cached canDiscard flag to retire intent; retain the acceptance-time
+      // check even though the root also runs eligible before clearing blockers.
       if (bridge.hasUnresolved() || pendingReceipt.current !== null) {
         setGuardRevision(value => value + 1);
         setNotice(pendingReceipt.current
@@ -337,16 +360,50 @@ function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, hi
           : "Kết quả thao tác chưa rõ. Chỉ đối soát yêu cầu gốc; không rời phiếu hoặc gửi lại.");
         return;
       }
+      if (!admit()) {
+        setNotice("Phiếu muốn mở không còn hợp lệ trong danh sách/quyền hiện tại. Phiếu đang sửa vẫn được giữ.");
+        return;
+      }
       action();
-    });
+    }, eligible);
   }, [bridge, guardNavigation]);
+  const selectedRef = useRef(selected);
+  useLayoutEffect(() => { selectedRef.current = selected; }, [selected]);
   const select = useCallback((documentId: string | null) => {
+    selectedRef.current = documentId;
     // Fence synchronously, including batched A→B→A selection before a commit.
     selectionDenialGeneration.current = {};
     readObservation.bind(null); setReadonlyPage(null); setUnavailable(null); setReadonlyPresented(null);
     bridge.select(documentId); setSelected(documentId); setSelectionVersion(value => value + 1); setNotice(""); setPresented(null); setFocusFailure(null);
   }, [bridge, readObservation]);
-  const requestBack = useCallback(() => navigate(() => { focusClose(); select(null); callbacks.current.onBack?.(); }), [navigate, select, focusClose]);
+  const requestBack = useCallback(() => {
+    if (selectedRef.current === null) return;
+    navigate(() => {
+      if (selectedRef.current === null) return;
+      selectedRef.current = null; focusClose(); select(null); callbacks.current.onBack?.();
+    });
+  }, [navigate, select, focusClose]);
+  function requestOpen(documentId: string) {
+    const queuedAuthority = openAuthority.current;
+    if (!queuedAuthority?.rows.has(documentId)) return;
+    if (selectedRef.current === documentId) {
+      if (!bridge.hasUnresolved() && pendingReceipt.current === null && contextCurrent
+        && (readonlyEligible && !readonlyFailed || state.access.canRead && state.access.available && !state.needsRefresh
+          && focusFailure !== documentId && !(presentedCurrent && presented.state === "failed"))) focusOpen(documentId);
+      return;
+    }
+    navigate(() => { focusOpen(documentId); select(documentId); }, () => {
+      const current = openAuthority.current;
+      return current !== null && current.scope === queuedAuthority.scope && current.rows.has(documentId);
+    });
+  }
+  useRequestDetailNavigation(registerDetailNavigation, {selectedId: selected, getSelectedId: () => selectedRef.current, requestClose: requestBack, requestOpen});
+  // Preserve standalone Back at the list level, including the host callback.
+  // The detail seam itself is idempotent when the selection is already closed.
+  const standaloneBack = useCallback(() => navigate(() => {
+    if (selectedRef.current !== null) { selectedRef.current = null; focusClose(); select(null); }
+    callbacks.current.onBack?.();
+  }), [navigate, focusClose, select]);
   const historyMarker = useRef<string | null>(null);
   useEffect(() => {
     if (loginKey === null || historyOwner === "workspace") return;
@@ -359,24 +416,22 @@ function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, hi
     // The stable guard request and committed callback refs avoid resubscribing
     // on dialogs or parent callback identity changes. StrictMode also reuses it.
     if (window.history.state?.medcomInboundHost !== marker) sentinel();
-    const back = () => { sentinel(); requestBack(); };
+    const back = () => { sentinel(); standaloneBack(); };
     window.addEventListener("popstate", back);
     return () => window.removeEventListener("popstate", back);
-  }, [loginKey, requestBack, historyOwner]);
+  }, [loginKey, standaloneBack, historyOwner]);
   const statusRow=currentRows?.rows.find(row=>row.documentId===selected);
   const access: InboundDraftAccess = contextCurrent ? state.access : {...state.access, canRead: false, canSave: false, canSend: false, available: false};
-  return <section data-testid="inbound-request-host" data-readback-pending={readbackPending} aria-label="Phiếu đề nghị nhập hàng"
+  const qrScopeKey = loginKey !== null && !sessionEnded && context !== null && readIdentity !== null
+    ? JSON.stringify([loginKey, readIdentity, state.access.scopeKey]) : null;
+  return <section hidden={!presentationAllowed} inert={!presentationAllowed} data-testid="inbound-request-host" data-readback-pending={readbackPending} aria-label="Phiếu đề nghị nhập hàng"
     className={requestStyles.stack}>
     <CustodyGuard key={guardRevision} active={state.unresolved} readbackPending={readbackPending}/>
-    <header className={requestStyles.actions} hidden={selected===null&&!onBack&&!onClose}>
-      <RequestButton type="button" onClick={requestBack}>Quay lại danh sách</RequestButton>
-      <RequestButton type="button" onClick={() => navigate(() => { focusClose(); select(null); callbacks.current.onClose?.(); })}>Đóng phiếu nhập hàng</RequestButton>
-    </header>
     {loginKey === null || sessionEnded ? <RequestNotice>Đã kết thúc phiên. Đăng nhập lại để tiếp tục.</RequestNotice>
       : authorityDenied ? <RequestNotice>Chưa xác minh được quyền xem phiếu. Yêu cầu đang xử lý vẫn được giữ.</RequestNotice>
       : !contextCurrent ? <RequestNotice>Chưa xác minh được phiên ERP. Dữ liệu tạm ẩn; yêu cầu đang xử lý vẫn được giữ.</RequestNotice> : null}
     {notice && !sessionEnded && <RequestNotice warning>{notice}</RequestNotice>}
-    {state.receipt && state.receipt.documentId === selected && contextCurrent && !state.needsRefresh && state.access.scopeKey !== null && state.access.canRead && state.access.available && <p data-testid="inbound-host-receipt">ERP đã xác nhận phiếu {state.receipt.documentId}.
+    {presentationReady && state.receipt && state.receipt.documentId === selected && contextCurrent && !state.needsRefresh && state.access.scopeKey !== null && state.access.canRead && state.access.available && <p data-testid="inbound-host-receipt">ERP đã xác nhận phiếu {state.receipt.documentId}.
       Mã thao tác {state.receipt.operationId}; xác nhận {state.receipt.auditId}. Lỗi tải lại không có nghĩa là lưu thất bại.</p>}
     {!sessionEnded && workspaceContext !== null && (selected !== null || authorityDenied) && <RequestButton type="button"
       onClick={() => { cancelFocus(); setDeniedContext(null); setRetry(value => value + 1); }}>
@@ -387,20 +442,14 @@ function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, hi
         event.preventDefault(); navigate(() => { cancelFocus(); select(null); setFilter({search, branch}); setPage(1); });
       }}>
         <RequestSearch label="Tìm phiếu nhập hàng" placeholder="Tìm mã phiếu…" value={search} onChange={setSearch}/>
+        <RequestQrSearch scopeKey={qrScopeKey} disabled={!verifiedReadAuthority||!contextCurrent||!listAllowed||!currentRows} presentationAllowed={presentationAllowed} onConfirmedSearchText={setSearch}/>
         <RequestBranch label="Lọc chi nhánh" value={branch} branches={workspace?.branchIds??[]} onChange={setBranch}/>
         <RequestButton type="submit" variant="secondary" aria-label="Tìm kiếm">Tìm kiếm</RequestButton>
       </RequestListToolbar>
       <section aria-label="Danh sách phiếu nhập hàng" ref={focusList} tabIndex={-1} className="request-list-content scroll-mt-24">
         {!currentRows ? rows.view === listView && rows.binding === listBinding && rows.failed ? <RequestNotice warning>Chưa tải được danh sách.</RequestNotice> : <RequestLoading label="Đang tải danh sách."/>
           : currentRows.rows.length === 0 ? <RequestEmpty title="Không có phiếu trong trang này.">Thử điều chỉnh mã phiếu hoặc chi nhánh.</RequestEmpty>
-          : <RequestListTable label="Phiếu nhập hàng" columns={[{id:"id",label:"Mã phiếu"},{id:"date",label:"Ngày chứng từ"},{id:"branch",label:"Chi nhánh"},{id:"status",label:"Trạng thái"}]} rows={currentRows.rows.map(row=>({id:row.documentId,cells:[row.documentId,requestDate(row.documentDate),row.branchId,<RequestStatus key="status" value={row.statusId} statusName={row.statusName}/>],action:"Mở phiếu",actionLabel:`Mở phiếu ${row.documentId} · ${row.documentDate} · ${row.branchId} · trạng thái ${row.statusId ?? "NULL"}`,selected:selected===row.documentId,buttonRef:element=>focusRow(row.documentId,element),onOpen:() => {
-              if (selected === row.documentId) {
-                // Re-focus does not navigate or discard dirty state/guard registration.
-                if (!bridge.hasUnresolved() && pendingReceipt.current === null && contextCurrent
-                  && (readonlyEligible && !readonlyFailed || state.access.canRead && state.access.available && !state.needsRefresh
-                    && focusFailure !== row.documentId && !(presentedCurrent && presented.state === "failed"))) focusOpen(row.documentId);
-              } else navigate(() => { focusOpen(row.documentId); select(row.documentId); });
-            }}))}/>}
+          : <RequestListTable label="Phiếu nhập hàng" columns={[{id:"id",label:"Mã phiếu"},{id:"date",label:"Ngày chứng từ"},{id:"branch",label:"Chi nhánh"},{id:"status",label:"Trạng thái"}]} rows={currentRows.rows.map(row=>({id:row.documentId,cells:[row.documentId,requestDate(row.documentDate),row.branchId,<RequestStatus key="status" value={row.statusId} statusName={row.statusName}/>],action:"Mở phiếu",actionLabel:`Mở phiếu ${row.documentId} · ${row.documentDate} · ${row.branchId} · trạng thái ${row.statusId ?? "NULL"}`,selected:selected===row.documentId,buttonRef:element=>focusRow(row.documentId,element),onOpen:() => requestOpen(row.documentId)}))}/>}
       </section>
       <RequestPagination label="Trang danh sách phiếu" page={page} previousDisabled={page === 1} nextDisabled={!currentRows?.hasMore}
         onPrevious={() => navigate(() => { cancelFocus(); select(null); setPage(value => value - 1); })}
@@ -408,13 +457,23 @@ function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, hi
     </div>}
     {/* Always mounted, even on close, permission change, list error or transient
         workspace=null. Only loginKey above retires this I18 instance. */}
-    <div ref={focusDetail} tabIndex={-1} role="region" aria-label="Phiếu nhập hàng đã chọn" className="scroll-mt-24 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" hidden={selected===null&&!state.unresolved&&!readbackPending}>
+    <RequestDetailDialog open={selected!==null||state.unresolved||readbackPending} presentationAllowed={presentationAllowed&&workspace!==null}
+      title="Phiếu nhập hàng đã chọn" closeLabel="Quay lại danh sách" onRequestClose={requestBack}>
+    <RequestButton type="button" onClick={() => navigate(() => {
+      if (selectedRef.current === null) return;
+      selectedRef.current = null; focusClose(); select(null); callbacks.current.onClose?.();
+    })}>Đóng phiếu nhập hàng</RequestButton>
+    {notice && <RequestNotice warning>{notice}</RequestNotice>}
+    {!contextCurrent && <RequestNotice>Dữ liệu tạm ẩn. Xác minh lại phiên ERP để tiếp tục.</RequestNotice>}
+    {!sessionEnded && workspaceContext !== null && <RequestButton type="button" onClick={() => { cancelFocus(); setDeniedContext(null); setRetry(value => value + 1); }}>Xác minh lại quyền nhập hàng</RequestButton>}
+    <div ref={focusDetail} tabIndex={-1} role="region" aria-label="Phiếu nhập hàng đã chọn" className="scroll-mt-24 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" hidden={!presentationReady||selected===null&&!state.unresolved&&!readbackPending}>
       <div hidden={readonlyEligible}><MobileInboundRequest statusPresentation={statusRow?{documentId:statusRow.documentId,id:statusRow.statusId,name:statusRow.statusName}:undefined} documentId={selected} access={access} adapter={adapter} onConfirmed={acknowledge} onPresentedRead={onPresentedRead}/></div>
       {readonlyEligible && selected !== null && readScope !== null && <InboundRequestReadOnly documentId={selected}
         branchIds={workspace?.branchIds ?? []} scope={readScope} initialPage={readonlyPageNumber} onPageChange={onReadonlyPageChange}
         verifying={readonlyVerifying} readRevision={unavailable}
         onDenied={onReadonlyDenied} onPresented={onReadonlyPresented}/>}
     </div>
+    </RequestDetailDialog>
     <p className={requestStyles.muted}>Lưu thay đổi và Gửi kho là hai thao tác riêng.</p>
   </section>;
 }

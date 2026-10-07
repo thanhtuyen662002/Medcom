@@ -44,7 +44,7 @@ public sealed class PurchaseRequestCommandTests
     {
         foreach(var native in new string?[]{null,""})
             foreach(var action in new[]{"save","submit"})
-                foreach(var fence in new[]{2,3,4,5})
+                foreach(var fence in new[]{2,4,5,6})
                     yield return new object?[]{native,action,fence};
     }
     [Theory]
@@ -57,20 +57,22 @@ public sealed class PurchaseRequestCommandTests
         var calls=0;
         Task<AuthoritativeIdentity?> Resolve(CancellationToken _)
         {
-            // 2: reservation final fence; 3: write entry; 4: before source writes; 5: before business commit.
+            // 2: reservation local fence; 3: post-cleanup full resolution;
+            // 4: write entry; 5: local pre-write fence; 6: local pre-commit fence.
             if(++calls==fence) { db.NativeBranch="B2"; db.NativeBranches=["B2"]; }
             return Task.FromResult<AuthoritativeIdentity?>(PurchaseFixtures.Identity());
         }
         var allocator=new LookupForbiddenAllocator(); var service=LookupService(db,allocator,Resolve);
         var result=action=="save" ? await service.SaveAsync(save) : await service.SubmitAsync(submit);
-        Assert.Equal(PurchaseRequestCommandOutcome.Denied,result.Outcome); Assert.Null(result.Receipt); Assert.Equal(fence,calls);
+        Assert.Equal(fence==2 ? PurchaseRequestCommandOutcome.Denied : PurchaseRequestCommandOutcome.OutcomeUnknown,result.Outcome);
+        Assert.Null(result.Receipt); Assert.Equal(fence,calls);
         Assert.Equal(document,PurchaseRequestCommandRules.IntentBytes(db.Documents[PurchaseFixtures.DocumentId]));
         Assert.Equal(0,allocator.QualificationCalls); Assert.Equal(0,allocator.AllocationCalls); Assert.Equal(0,db.AllocatorCalls);
         Assert.Contains(db.Commands,c=>c.CommandText==SqlLegacyBranchScope.CatalogText);
         Assert.Contains(db.Commands,c=>c.CommandText==SqlLegacyBranchScope.RestrictedText);
         Assert.DoesNotContain(db.Commands,c=>c.CommandText==PurchaseRequestSql.BranchesText);
         Assert.Equal(fence==2 ? 0 : 1,db.Commits);
-        if(fence<5)
+        if(fence<6)
             Assert.DoesNotContain(db.Commands,c=>c.CommandText==PurchaseRequestSql.UpdateHeadText || c.CommandText==PurchaseRequestSql.SubmitText);
         if(fence==2) { Assert.Empty(db.Journal); return; }
         var pending=Assert.Single(db.Journal.Values); Assert.Equal((byte)0,pending.State); Assert.NotEqual(Guid.Empty,pending.Attempt);
@@ -359,14 +361,14 @@ public sealed class PurchaseRequestCommandTests
         var resolver=new Func<CancellationToken,Task<AuthoritativeIdentity?>>(_=>
             Task.FromResult<AuthoritativeIdentity?>(PurchaseFixtures.Identity(version)));
         var writer=new SqlPurchaseRequestCommands(PurchaseFixtures.Binding,PurchaseFixtures.Company,
-            (Func<DbConnection>)(()=>new PurchaseRecordingConnection(db,db.Connections++)),resolver,db,true);
+            (Func<DbConnection>)(()=>new PurchaseRecordingConnection(db,db.Connections++)),resolver,db,true,resolver);
         var save=SaveIntent(db);
         Assert.Equal(PurchaseRequestCommandOutcome.Denied,(await writer.SaveAsync(save)).Outcome);
         Assert.Empty(db.Commands); Assert.Empty(db.Journal); Assert.Equal(0,db.AllocatorCalls);
 
         var lookupAllocator=new LookupForbiddenAllocator();
         var lookup=new SqlPurchaseRequestCommands(PurchaseFixtures.Binding,PurchaseFixtures.Company,
-            (Func<DbConnection>)(()=>new PurchaseRecordingConnection(db,db.Connections++)),resolver,lookupAllocator,true);
+            (Func<DbConnection>)(()=>new PurchaseRecordingConnection(db,db.Connections++)),resolver,lookupAllocator,true,resolver);
         Assert.Equal(PurchaseRequestLookupOutcome.Denied,(await lookup.LookupAsync(save)).Outcome);
         Assert.Empty(db.Commands); AssertLookupOnly(db,lookupAllocator);
     }
@@ -584,7 +586,8 @@ public sealed class PurchaseRequestCommandTests
         var allocation=new ExactTestAllocator(new(PurchaseFixtures.DocumentId,[new("replacement-client","line-1")]));
         var writer=new SqlPurchaseRequestCommands(PurchaseFixtures.Binding,PurchaseFixtures.Company,
             (Func<DbConnection>)(()=>new PurchaseRecordingConnection(control,control.Connections++)),
-            _=>Task.FromResult<AuthoritativeIdentity?>(PurchaseFixtures.Identity()),allocation,true);
+            _=>Task.FromResult<AuthoritativeIdentity?>(PurchaseFixtures.Identity()),allocation,true,
+            _=>Task.FromResult<AuthoritativeIdentity?>(PurchaseFixtures.Identity()));
         var originalDocument=PurchaseRequestCommandRules.IntentBytes(control.Documents[PurchaseFixtures.DocumentId]);
         var rejected=await writer.SaveAsync(reversed);
         Assert.Equal(PurchaseRequestCommandOutcome.Conflict,rejected.Outcome); Assert.Null(rejected.Receipt);
@@ -616,7 +619,8 @@ public sealed class PurchaseRequestCommandTests
         var allocator=new ExactTestAllocator(new(PurchaseFixtures.DocumentId,[new("replacement-client","line-1")]));
         var writer=new SqlPurchaseRequestCommands(PurchaseFixtures.Binding,PurchaseFixtures.Company,
             (Func<DbConnection>)(()=>new PurchaseRecordingConnection(db,db.Connections++)),
-            _=>Task.FromResult<AuthoritativeIdentity?>(PurchaseFixtures.Identity()),allocator,true);
+            _=>Task.FromResult<AuthoritativeIdentity?>(PurchaseFixtures.Identity()),allocator,true,
+            _=>Task.FromResult<AuthoritativeIdentity?>(PurchaseFixtures.Identity()));
         var written=await writer.SaveAsync(input);
         Assert.Equal(PurchaseRequestCommandOutcome.Committed,written.Outcome);
         var receipt=Assert.IsType<PurchaseRequestCommandReceipt>(written.Receipt);
@@ -782,7 +786,8 @@ public sealed class PurchaseRequestCommandTests
         var allocator=new ExactTestAllocator(new(documentId,[new(clientKey,"allocator-issued-detail-Z")]));
         var service=new SqlPurchaseRequestCommands(PurchaseFixtures.Binding,PurchaseFixtures.Company,
             (Func<DbConnection>)(()=>new PurchaseRecordingConnection(db,db.Connections++)),
-            _=>Task.FromResult<AuthoritativeIdentity?>(PurchaseFixtures.Identity()),allocator,true);
+            _=>Task.FromResult<AuthoritativeIdentity?>(PurchaseFixtures.Identity()),allocator,true,
+            _=>Task.FromResult<AuthoritativeIdentity?>(PurchaseFixtures.Identity()));
         var result=operation=="create" ? await service.CreateAsync(PurchaseFixtures.Create)
             : await service.SaveAsync(SaveIntent(db) with { LineChanges=[new(PurchaseRequestLineChangeKind.Add,null,clientKey,PurchaseFixtures.Values)] });
         Assert.Equal(PurchaseRequestCommandOutcome.Committed,result.Outcome);
@@ -852,7 +857,8 @@ public sealed class PurchaseRequestCommandTests
         using var connection=new LookupWireConnection(new PurchaseRecordingConnection(db,db.Connections++),wire);
         connection.Open();
         var service=new SqlPurchaseRequestCommands(PurchaseFixtures.Binding,PurchaseFixtures.Company,
-            (Func<DbConnection>)(()=>connection),_=>Task.FromResult<AuthoritativeIdentity?>(PurchaseFixtures.Identity()),allocator,true);
+            (Func<DbConnection>)(()=>connection),_=>Task.FromResult<AuthoritativeIdentity?>(PurchaseFixtures.Identity()),allocator,true,
+            _=>Task.FromResult<AuthoritativeIdentity?>(PurchaseFixtures.Identity()));
         var before=BusinessSnapshot(db);
         var result=await service.LookupAsync(PurchaseFixtures.Create);
         Assert.Equal(PurchaseRequestLookupOutcome.Unavailable,result.Outcome); Assert.Null(result.Receipt);
@@ -883,7 +889,8 @@ public sealed class PurchaseRequestCommandTests
     private static SqlPurchaseRequestCommands WireService(PurchaseRecordingModel db,LookupForbiddenAllocator allocator,LookupWire wire,
         Func<CancellationToken,Task<AuthoritativeIdentity?>>? resolve=null)=>new(PurchaseFixtures.Binding,PurchaseFixtures.Company,
             (Func<DbConnection>)(()=>new LookupWireConnection(new PurchaseRecordingConnection(db,db.Connections++),wire)),
-            resolve ?? (_=>Task.FromResult<AuthoritativeIdentity?>(PurchaseFixtures.Identity())),allocator,true);
+            resolve ?? (_=>Task.FromResult<AuthoritativeIdentity?>(PurchaseFixtures.Identity())),allocator,true,
+            resolve ?? (_=>Task.FromResult<AuthoritativeIdentity?>(PurchaseFixtures.Identity())));
     // Test-only ADO decorator, confined to this owned file. It wraps the unchanged I14 recording provider.
     // Every write-shaped API is a trap. Shape/fault injection never contacts an actual SQL server.
     private sealed class LookupWire
@@ -976,7 +983,8 @@ public sealed class PurchaseRequestCommandTests
         Func<CancellationToken,Task<AuthoritativeIdentity?>>? resolve=null,bool qualified=true,Guid? binding=null)
         =>new(binding ?? PurchaseFixtures.Binding,PurchaseFixtures.Company,
             (Func<DbConnection>)(()=>new PurchaseRecordingConnection(db,db.Connections++)),
-            resolve ?? (_=>Task.FromResult<AuthoritativeIdentity?>(PurchaseFixtures.Identity())),allocator,qualified);
+            resolve ?? (_=>Task.FromResult<AuthoritativeIdentity?>(PurchaseFixtures.Identity())),allocator,qualified,
+            resolve ?? (_=>Task.FromResult<AuthoritativeIdentity?>(PurchaseFixtures.Identity())));
     private static void AssertLookupOnly(PurchaseRecordingModel db,LookupForbiddenAllocator allocator)
     {
         Assert.Equal(0,allocator.QualificationCalls); Assert.Equal(0,allocator.AllocationCalls);
@@ -1086,7 +1094,8 @@ public sealed class PurchaseRequestCommandTests
     {
         var db=new PurchaseRecordingModel { RevokeAt=call };
         var answer=await db.Service().CreateAsync(PurchaseFixtures.Create);
-        Assert.Equal(PurchaseRequestCommandOutcome.Denied,answer.Outcome); Assert.Null(answer.Receipt); Assert.Empty(db.Documents);
+        Assert.Equal(call<=2 ? PurchaseRequestCommandOutcome.Denied : PurchaseRequestCommandOutcome.OutcomeUnknown,answer.Outcome);
+        Assert.Null(answer.Receipt); Assert.Empty(db.Documents);
     }
     [Fact]
     public async Task Authority_version_regression_1_1_2_1_between_reservation_and_write_denies_without_overwriting_source()
@@ -1095,7 +1104,7 @@ public sealed class PurchaseRequestCommandTests
         // but the later decrease below the last accepted observation must deny.
         var db=new PurchaseRecordingModel { VersionChangeAt=3 };
         var result=await db.Service().CreateAsync(PurchaseFixtures.Create);
-        Assert.Equal(PurchaseRequestCommandOutcome.Denied,result.Outcome); Assert.Empty(db.Documents); Assert.Single(db.Journal);
+        Assert.Equal(PurchaseRequestCommandOutcome.OutcomeUnknown,result.Outcome); Assert.Empty(db.Documents); Assert.Single(db.Journal);
         Assert.True(db.SessionCalls>=4);
     }
     [Fact]

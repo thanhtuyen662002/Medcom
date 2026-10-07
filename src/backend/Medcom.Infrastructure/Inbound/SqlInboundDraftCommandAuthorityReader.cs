@@ -17,12 +17,15 @@ public sealed class SqlInboundDraftCommandAuthorityReader
     private readonly LegacyCompany company;
     private readonly Func<DbConnection> connections;
     private readonly Func<CancellationToken, Task<AuthoritativeIdentity?>> resolve;
+    private readonly Func<CancellationToken, Task<AuthoritativeIdentity?>>? inspect;
     private readonly InboundDraftCommandRuntimeAcceptance? acceptance;
 
     internal SqlInboundDraftCommandAuthorityReader(Guid binding, LegacyCompany company, Func<DbConnection> connections,
-        Func<CancellationToken, Task<AuthoritativeIdentity?>> resolve, InboundDraftCommandRuntimeAcceptance? acceptance)
+        Func<CancellationToken, Task<AuthoritativeIdentity?>> resolve,
+        Func<CancellationToken, Task<AuthoritativeIdentity?>>? inspect, InboundDraftCommandRuntimeAcceptance? acceptance)
     {
         this.binding = binding; this.company = company; this.connections = connections;
+        this.inspect = inspect;
         this.resolve = resolve ?? throw new ArgumentNullException(nameof(resolve)); this.acceptance = acceptance;
     }
 
@@ -34,15 +37,15 @@ public sealed class SqlInboundDraftCommandAuthorityReader
         if (token.IsCancellationRequested) return new(InboundDraftCommandAuthorityOutcome.Cancelled);
         if (System.Transactions.Transaction.Current is not null) return new(InboundDraftCommandAuthorityOutcome.Unavailable);
         var fence = new InboundDraftSessionFence();
-        async Task<AuthoritativeIdentity?> Live(CancellationToken ct)
+        async Task<AuthoritativeIdentity?> Live(CancellationToken ct, bool local = false)
         {
             ct.ThrowIfCancellationRequested();
-            var observed = await resolve(ct).WaitAsync(ct);
+            var observed = local ? inspect is null ? null : await inspect(ct).WaitAsync(ct) : await resolve(ct).WaitAsync(ct);
             ct.ThrowIfCancellationRequested();
             return observed is not null && observed.TenantId == company.TenantId && observed.CompanyId == company.CompanyId
                 && fence.TryAccept(observed, out var accepted) ? accepted : null;
         }
-        var native = SqlInboundDraftCommandService.NativeAuthority(Live);
+        var native = SqlInboundDraftCommandService.NativeAuthority(ct => Live(ct), ct => Live(ct, true));
         DbConnection? connection = null;
         DbTransaction? transaction = null;
         var owned = false;
@@ -64,17 +67,19 @@ public sealed class SqlInboundDraftCommandAuthorityReader
                 if (!ReferenceEquals(started.Connection, connection)) return new(InboundDraftCommandAuthorityOutcome.Unavailable);
                 transaction = started;
                 if (transaction.IsolationLevel != IsolationLevel.Serializable) return new(InboundDraftCommandAuthorityOutcome.Unavailable);
+                await InboundDraftTargetQualification.VerifyAsync(connection, transaction, binding, company, token);
+                if (await Live(token, true) is null) return new(InboundDraftCommandAuthorityOutcome.Denied);
                 var grants = await native.ReadGrantsAsync(transaction, first, InboundDraftAction.Save, token);
                 if (grants is not { Count: > 0 and <= 200 }) answer = new(InboundDraftCommandAuthorityOutcome.Denied);
                 else
                 {
                     var branch = await SqlInboundDraftCommandService.ReadAuthorizedDocumentBranchAsync(transaction, documentId, grants, token);
-                    var last = await Live(token);
+                    var last = await Live(token, true);
                     if (branch is null || last is null) answer = new(InboundDraftCommandAuthorityOutcome.Denied);
                     else
                     {
                         var current = await native.ReadGrantsAsync(transaction, last, InboundDraftAction.Save, token);
-                        answer = current?.Contains(branch, StringComparer.Ordinal) == true
+                        answer = current?.Contains(branch, StringComparer.Ordinal) == true && await Live(token, true) is not null
                             ? new(InboundDraftCommandAuthorityOutcome.Admitted, branch)
                             : new(InboundDraftCommandAuthorityOutcome.Denied);
                     }

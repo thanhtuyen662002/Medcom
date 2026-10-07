@@ -95,7 +95,7 @@ jobs:
         run: pnpm lint
       - name: Test ERP proxy and application contracts
         working-directory: apps/medcom-sites
-        run: node scripts/test-erp.mjs
+        run: node scripts/test-erp.mjs --contracts-only
       - name: Test inbound editor with synthetic mobile browser
         working-directory: apps/medcom-sites
         env:
@@ -137,6 +137,7 @@ jobs:
           name: medcom-inbound-host-evidence-${{ matrix.platform }}-x64-${{ github.sha }}
           path: |
             apps/medcom-sites/.test-runtime/i21-inbound/react-result.json
+            apps/medcom-sites/.test-runtime/i21-inbound/i24-workspace-bff-react.json
             apps/medcom-sites/.test-runtime/i21-inbound/host-320.png
             apps/medcom-sites/.test-runtime/i21-inbound/host-360.png
             apps/medcom-sites/.test-runtime/i21-inbound/host-390.png
@@ -167,6 +168,41 @@ jobs:
             apps/medcom-sites/.test-runtime/i30-request-presentation/browser-result.json
             apps/medcom-sites/.test-runtime/i30-request-presentation/*.png
           if-no-files-found: error
+      - name: Require integrated auth, detail, history, QR and reference UI gates
+        working-directory: apps/medcom-sites
+        run: node tests/required-ui-gates.mjs
+      - name: Upload required integrated UI JSON evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: medcom-integrated-ui-${{ matrix.platform }}-x64-${{ github.sha }}
+          # The runner separately verifies every required JSON file and its
+          # complete scenario count. Optional PNGs cannot satisfy that gate.
+          path: |
+            apps/medcom-sites/.test-runtime/integrated-ui-gates/result.json
+            apps/medcom-sites/.test-runtime/i44-browser/result.json
+            apps/medcom-sites/.test-runtime/i43-detail-dialog/browser-evidence.json
+            apps/medcom-sites/.test-runtime/i43-detail-dialog/fixture-build.json
+            apps/medcom-sites/.test-runtime/i43-detail-dialog/r1-layer-contract.json
+            apps/medcom-sites/.test-runtime/i43-detail-dialog/r1-focus-dom-model.json
+            apps/medcom-sites/.test-runtime/i47-request-qr/browser-receipt.json
+            apps/medcom-sites/.test-runtime/i48-browser/lifetime-call-count.json
+            apps/medcom-sites/.test-runtime/workspace-auth-integration/browser-result.json
+            apps/medcom-sites/.test-runtime/request-detail-history/evidence.json
+          if-no-files-found: error
+      - name: Upload integrated UI screenshots when produced
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: medcom-integrated-ui-screenshots-${{ matrix.platform }}-x64-${{ github.sha }}
+          path: |
+            apps/medcom-sites/.test-runtime/i44-browser/*.png
+            apps/medcom-sites/.test-runtime/i43-detail-dialog/*.png
+            apps/medcom-sites/.test-runtime/i47-request-qr/*.png
+            apps/medcom-sites/.test-runtime/i48-browser/*.png
+            apps/medcom-sites/.test-runtime/workspace-auth-integration/*.png
+            apps/medcom-sites/.test-runtime/request-detail-history/*.png
+          if-no-files-found: warn
       - name: Test standalone package guards
         working-directory: apps/medcom-sites
         run: node --test tests/standalone-package.test.mjs
