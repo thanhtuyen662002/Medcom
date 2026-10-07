@@ -8,7 +8,7 @@ import {once} from 'node:events';
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
 import {existsSync} from 'node:fs';
 import path from 'node:path';
-import {fileURLToPath} from 'node:url';
+import {fileURLToPath,pathToFileURL} from 'node:url';
 const app=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const output=path.join(app,'.test-runtime','i43-detail-dialog');
 const require=createRequire(import.meta.url),scope='a'.repeat(64),session='b'.repeat(64);
@@ -18,6 +18,54 @@ const purchase={purchaseRequestId:'QA-001',branchId:'QA-BRANCH',statusId:1,isLoc
 const inbound={documentId:'QA-001',statusId:0,stateEqualityToken:'C'.repeat(64),costRowCount:0,costEditingSupported:false,
  header:{documentDate:'2026-10-01T14:22:11.003',orderNumber:'SYNTHETIC',invoiceNo:'',departurePoint:'FROM',destinationPoint:'TO',orderTypeId:'QA-TYPE',branchId:'QA-BRANCH',objectId:null,currencyId:'VND',rateExchange:'1.0000000000',notes:''},
  details:[{rowId:'QA-ROW',clientLineId:null,itemId:'QA-ITEM',lotNumberByDocument:'QA-LOT',setQuantityByDocument:'1',barrelQuantityByDocument:'0',expireDateByDocument:'2027-01-02T12:34:56.997',unitPrice:'1'}]};
+// The fixed purchase client is strict; the generic inbound list uses a source
+// date-only projection. Never combine the two endpoint-specific row shapes.
+function dialogList(kind,page){
+ const isPurchase=kind==='purchase';
+ return {rows:Array.from({length:18},(_,index)=>{
+  const common={documentId:'QA-'+String(index+1).padStart(3,'0'),branchId:'QA-BRANCH',statusId:isPurchase?1:0,isLocked:false};
+  return isPurchase?{...common,purchaseDate:purchase.header.purchaseDate,personSuggest:'SYNTHETIC',department:'SYNTHETIC'}
+   :{...common,documentDate:inbound.header.documentDate.slice(0,10)};
+ }),page,pageSize:isPurchase?20:50,hasMore:true};
+}
+async function runRequiredDialogCase(context,name,body,diagnose){
+ context.signal?.throwIfAborted();
+ let failure;
+ await context.test(name,async()=>{try{await body();}catch(error){failure=error;await diagnose(name,error);throw error;}});
+ // node:test resolves a failed child rather than throwing into this loop.
+ // Propagate the original failure so setup cannot cascade into 8 x 30s waits.
+ if(failure)throw failure;
+ context.signal?.throwIfAborted();
+}
+test('I43 exact synthetic lists pass real purchase and inbound clients; mixed legacy rows fail closed',async()=>{
+ const {build}=require('esbuild');await mkdir(output,{recursive:true});const file=path.join(output,'fixture-api-contract.mjs');
+ await build({absWorkingDir:app,stdin:{contents:'export {getPurchaseList} from "./lib/erp/purchase-request-api";export {getDocuments} from "./lib/erp/api";',resolveDir:app,loader:'tsx'},outfile:file,bundle:true,platform:'node',format:'esm',packages:'external',alias:{'@':app},logLevel:'warning'});
+ const {getPurchaseList,getDocuments}=await import(pathToFileURL(file).href),nativeFetch=globalThis.fetch,calls=[];
+ const headers={'X-Medcom-Session-Scope':session,'X-Medcom-Read-Scope':scope};let reply;
+ globalThis.fetch=async(url,init)=>{calls.push({url:String(url),method:init.method??'GET'});return Response.json(reply,{headers});};
+ try{
+  for(const kind of ['purchase','inbound'])for(const page of [1,2]){
+   const data=dialogList(kind,page);reply=kind==='purchase'?{scopeKey:scope,data}:data;
+   const actual=kind==='purchase'?await getPurchaseList(scope,page,'',''):await getDocuments('inbound-requests',page,'','',undefined,{sessionScope:session,readScope:scope});
+   assert.deepEqual(actual,data);assert.equal(actual.rows.length,18);assert.deepEqual(actual.rows.map(row=>row.documentId),Array.from({length:18},(_,index)=>'QA-'+String(index+1).padStart(3,'0')));
+   assert.ok(actual.rows.every(row=>kind==='purchase'?!Object.hasOwn(row,'documentDate'):/^\d{4}-\d{2}-\d{2}$/.test(row.documentDate)));
+  }
+  // Reproduce the exact pre-repair mixed schema, not an invented decoder error.
+  for(const kind of ['purchase','inbound']){
+   const data={rows:Array.from({length:18},(_,index)=>({documentId:'QA-'+String(index+1).padStart(3,'0'),branchId:'QA-BRANCH',purchaseDate:purchase.header.purchaseDate,documentDate:inbound.header.documentDate,personSuggest:'SYNTHETIC',department:'SYNTHETIC',statusId:kind==='purchase'?1:0,isLocked:false})),page:1,pageSize:kind==='purchase'?20:50,hasMore:true};
+   reply=kind==='purchase'?{scopeKey:scope,data}:data;
+   await assert.rejects(()=>kind==='purchase'?getPurchaseList(scope,1,'',''):getDocuments('inbound-requests',1,'','',undefined,{sessionScope:session,readScope:scope}),error=>error.code==='invalid_api_response');
+  }
+  assert.ok(calls.every(call=>call.method==='GET'));await writeFile(path.join(output,'fixture-api-contract.json'),JSON.stringify({result:'PASS',realClients:true,browserExecuted:false,pages:[1,2],rowsPerPage:18,legacyPurchaseRejected:true,legacyInboundRejected:true,calls},null,2));
+ }finally{globalThis.fetch=nativeFetch;}
+});
+test('I43 failed required child preserves the first cause and stops subsequent setup',async()=>{
+ const original=Error('synthetic initial readiness failure'),runs=[],diagnostics=[],childErrors=[];
+ const context={test:async(name,body)=>{try{await body();}catch(error){childErrors.push(error);}}};
+ await assert.rejects(async()=>{for(const name of ['first','must-not-start'])await runRequiredDialogCase(context,name,async()=>{runs.push(name);throw original;},async(name,error)=>diagnostics.push({name,error}));},error=>error===original);
+ assert.deepEqual(runs,['first']);assert.deepEqual(childErrors,[original]);assert.deepEqual(diagnostics,[{name:'first',error:original}]);
+});
+
 const entry=`import React,{useState,useCallback}from'react';import{createRoot}from'react-dom/client';
  import{PurchaseRequestScreen}from'./components/erp/purchase-request-screen';
  import{InboundRequestScreen}from'./components/erp/inbound-request-screen';
@@ -25,7 +73,7 @@ const entry=`import React,{useState,useCallback}from'react';import{createRoot}fr
  import{MobileBottomNav}from'./components/erp/workspace';
  import{SidebarProvider,SidebarInset}from'./components/ui/sidebar';
  import{Dialog,DialogContent,DialogTitle}from'./components/ui/dialog';
- const base={session:{tenantId:'QA-T',companyId:'QA-C',displayName:'SYNTHETIC',companyName:'SYNTHETIC',absoluteExpiresAt:'2099-01-01T00:00:00Z',authorityVersion:1,capabilities:['purchase-requests.read','inbound-requests.read']},branchIds:['QA-BRANCH'],sessionScope:'${session}',readScope:'${scope}',navigation:[]};
+ const base={session:{tenantId:'QA-T',companyId:'QA-C',displayName:'SYNTHETIC',companyName:'SYNTHETIC',idleExpiresAt:'2099-01-01T00:00:00Z',absoluteExpiresAt:'2099-01-01T00:00:00Z',authorityVersion:1,capabilities:['purchase-requests.read','inbound-requests.read']},branchIds:['QA-BRANCH'],sessionScope:'${session}',readScope:'${scope}',navigation:[]};
  window.i43={life:[],adapters:[],navigation:null,denials:[],navCalls:[]};
  function Fixture(){const [commandOpen,setCommandOpen]=useState(false);
   React.useEffect(()=>{const onKey=event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){event.preventDefault();setCommandOpen(true);}};document.addEventListener('keydown',onKey);return()=>document.removeEventListener('keydown',onKey);},[]);
@@ -143,7 +191,7 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
  assert.ok(existsSync(executable),'I43 browser NOT_RUN: an already installed Chromium/Edge executable is required; do not install or disable sandbox.');
  const toolchain=process.env.MEDCOM_BROWSER_TOOLCHAIN;
  const {chromium}=(toolchain?createRequire(path.join(path.resolve(toolchain),'package.json')):require)('playwright-core');
- let model,browser,context,page,origin;const results=[],errors=[],waiters=[];
+ let model,browser,context,page,origin,currentScenario,firstFailure=null,fatal=null;const expectedCases=13,results=[],errors=[],waiters=[];
  const reset=()=>{model={calls:[],detailStatus:200,holdDetail:false,holdCommand:false,unknown:false,readOnly:false,receipts:new Map(),purchase:structuredClone(purchase),inbound:structuredClone(inbound)};};
  const send=(res,status,data,headers={})=>{if(!res.destroyed){res.writeHead(status,{'Content-Type':'application/json',...headers});res.end(JSON.stringify(data));}};
  const headers={'X-Medcom-Session-Scope':session,'X-Medcom-Read-Scope':scope};
@@ -156,7 +204,7 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
   if(route.endsWith('/csrf'))return send(res,200,{token:'synthetic-csrf'});
   if(route.endsWith('/workspace'))return send(res,200,{scopeKey:scope,data:{branchIds:['QA-BRANCH'],writeAvailable:false,writeReason:'numbering_journal_runtime_unqualified',lookups:[]}});
   if(['/api/erp/api/purchase-requests','/api/erp/api/documents/inbound-requests'].includes(route)){
-   const data={rows:Array.from({length:18},(_,i)=>({documentId:'QA-'+String(i+1).padStart(3,'0'),branchId:'QA-BRANCH',purchaseDate:purchase.header.purchaseDate,documentDate:inbound.header.documentDate,personSuggest:'SYNTHETIC',department:'SYNTHETIC',statusId:route.includes('/documents/')?0:1,isLocked:false})),page:Number(u.searchParams.get('page')),pageSize:route.includes('/documents/')?50:20,hasMore:true};
+   const data=dialogList(route.includes('/documents/')?'inbound':'purchase',Number(u.searchParams.get('page')));
    return send(res,200,route.includes('/documents/')?data:{scopeKey:scope,data},headers);
   }
   if(req.method==='GET'&&(route.endsWith('/detail')||route.endsWith('/draft'))){
@@ -181,7 +229,27 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
  const notes=()=>page.getByRole('dialog').getByLabel('Ghi chú',{exact:true});
  const snapshot=()=>page.evaluate(()=>({life:window.i43.life,adapters:window.i43.adapters.length,selected:window.i43.navigation?.selectedId}));
  const open=async kind=>{await page.getByRole('button',{name:kind==='purchase'?'Mở đề nghị QA-001':/^Mở phiếu QA-001 ·/}).click();await notes().waitFor();};
- const start=async(kind,width,height=844,hasTouch=false)=>{release();await context?.close();reset();context=await browser.newContext({viewport:{width,height},hasTouch});page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(origin+'/?kind='+kind);await page.getByRole('table').waitFor();await paint();};
+ const start=async(kind,width,height=844,hasTouch=false)=>{
+  release();await context?.close();reset();currentScenario={kind,width,height,hasTouch,stage:'create-context',responses:[],networkFailures:[]};
+  context=await browser.newContext({viewport:{width,height},hasTouch});page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
+  const scenario=currentScenario,bounded=(values,value)=>{values.push(value);if(values.length>32)values.shift();};
+  page.on('response',response=>{const url=new URL(response.url());if(url.pathname.startsWith('/api/erp/'))bounded(scenario.responses,{path:url.pathname,status:response.status()});});
+  page.on('requestfailed',request=>bounded(scenario.networkFailures,{path:new URL(request.url()).pathname,error:request.failure()?.errorText}));
+  currentScenario.stage='load-fixture';await page.goto(origin+'/?kind='+kind);
+  currentScenario.stage='authorized-list';const list=page.getByRole('table',{name:kind==='purchase'?'Danh sách đề nghị':'Phiếu nhập hàng',exact:true});await list.waitFor();
+  currentScenario.stage='exact-open-actions';await list.getByRole('button',{name:kind==='purchase'?'Mở đề nghị QA-001':/^Mở phiếu QA-001 ·/,exact:kind==='purchase'}).waitFor();
+  await list.getByRole('button',{name:kind==='purchase'?'Mở đề nghị QA-018':/^Mở phiếu QA-018 ·/,exact:kind==='purchase'}).waitFor();
+  assert.deepEqual(await list.locator('[data-grid-row]').evaluateAll(rows=>rows.map(row=>row.getAttribute('data-grid-row'))),dialogList(kind,1).rows.map(row=>row.documentId),'All 18 authorized source rows must be present before dialog tests');
+  await paint();currentScenario.stage='scenario';
+ };
+ const diagnose=async(name,error)=>{
+  if(firstFailure)return;
+  firstFailure={name,error:String(error).slice(0,3000),scenario:currentScenario,completedCases:results.length,expectedCases,pageErrors:errors.slice(0,8),calls:model.calls.slice(-32).map(({route,method,query})=>({route,method,query}))};
+  try{firstFailure.dom=await page.evaluate(()=>({readyState:document.readyState,body:document.body?.innerText.slice(0,6000),tables:[...document.querySelectorAll('[data-shared-grid]')].slice(0,3).map(table=>({role:table.getAttribute('role'),label:table.getAttribute('aria-label'),rows:table.querySelectorAll('[data-grid-row]').length,visible:table.getClientRects().length>0})),dialogs:[...document.querySelectorAll('[role=dialog],[role=alertdialog]')].slice(0,4).map(dialog=>({role:dialog.getAttribute('role'),text:dialog.textContent?.slice(0,500),hidden:!!dialog.closest('[hidden],[inert]')})),selected:window.i43?.navigation?.selectedId,denials:window.i43?.denials?.slice(0,8)}));}catch(diagnosticError){firstFailure.domError=String(diagnosticError).slice(0,500);}
+  try{await page.screenshot({path:path.join(output,'first-failure.png'),fullPage:false,timeout:2000});firstFailure.screenshot='first-failure.png';}catch(diagnosticError){firstFailure.screenshotError=String(diagnosticError).slice(0,500);}
+  await writeFile(path.join(output,'first-failure.json'),JSON.stringify(firstFailure,null,2));t.diagnostic(JSON.stringify(firstFailure));
+ };
+ const run=(name,body)=>runRequiredDialogCase(t,name,body,diagnose);
  const geometry=async()=>{
   const box=await page.getByRole('dialog').boundingBox(),viewport=page.viewportSize();assert.ok(box&&box.x>=0&&box.y>=0&&box.x+box.width<=viewport.width+1&&box.y+box.height<=viewport.height+1);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
@@ -191,7 +259,7 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
  const attempt=async path=>{if(path==='escape')await page.keyboard.press('Escape');else if(path==='backdrop')await page.locator('.request-detail-backdrop').click({position:{x:2,y:2},force:true});else await page.getByRole('dialog').getByRole('button',{name:path==='x'?'Đóng hộp thoại':/^(Đóng đề nghị|Quay lại danh sách)$/}).click();};
  try{
   browser=await chromium.launch({executablePath:executable,headless:true,chromiumSandbox:true});
-  for(const kind of ['purchase','inbound'])await t.test('I43 R1 '+kind+' higher Radix command modal owns focus and Escape above dirty detail',async()=>{
+  for(const kind of ['purchase','inbound'])await run('I43 R1 '+kind+' higher Radix command modal owns focus and Escape above dirty detail',async()=>{
    await start(kind,390);await open(kind);await notes().fill('R1 COMMAND DIRTY');const before=await snapshot();
    await page.keyboard.press('Control+k');const command=page.getByRole('dialog',{name:'R1 command modal'});await command.waitFor();
    const input=page.getByRole('textbox',{name:'R1 command input'});await input.focus();await input.fill('COMMAND RETAINS FOCUS');await paint();
@@ -202,7 +270,7 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
    await page.keyboard.press('Escape');await command.waitFor({state:'hidden'});await paint();assert.equal(await page.locator('[data-request-detail-surface]').evaluate(node=>node.contains(document.activeElement)),false);assert.equal(await page.getByRole('alertdialog').count(),0);assert.deepEqual(await snapshot(),before);
    results.push({case:'R1-command-focus',kind,result:'PASS',lifetime:before});
   });
-  for(const kind of ['purchase','inbound'])await t.test('I43 R1 '+kind+' mobile detail intercepts touches above actual later navigation and yields to guard',async()=>{
+  for(const kind of ['purchase','inbound'])await run('I43 R1 '+kind+' mobile detail intercepts touches above actual later navigation and yields to guard',async()=>{
    await start(kind,390,844,true);const nav=page.locator('.mobile-bottom-nav');await nav.waitFor();
    const navButton=nav.locator('button').first();
    const point=async()=>{const box=await navButton.boundingBox();assert.ok(box);return {x:box.x+box.width/2,y:box.y+box.height/2};};
@@ -233,7 +301,7 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
    assert.equal(model.calls.filter(call=>call.method==='POST').length,0);
    results.push({case:'R1-mobile-stacking',kind,result:'PASS',layers,lifetime:before,navCalls:await page.evaluate(()=>window.i43.navCalls)});
   });
-  for(const kind of ['purchase','inbound'])for(const width of [1280,390])await t.test(kind+' '+width+' retained dirty dialog and guarded dismissal matrix',async()=>{
+  for(const kind of ['purchase','inbound'])for(const width of [1280,390])await run(kind+' '+width+' retained dirty dialog and guarded dismissal matrix',async()=>{
    await start(kind,width);
    await page.getByLabel(kind==='purchase'?'Tìm mã đề nghị':'Tìm phiếu nhập hàng',{exact:true}).fill('QA');
    await page.getByRole('button',{name:'Tìm kiếm',exact:true}).click();await paint();
@@ -259,7 +327,7 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
    assert.equal(await page.getByLabel(kind==='purchase'?'Tìm mã đề nghị':'Tìm phiếu nhập hàng',{exact:true}).inputValue(),'QA');
    assert.equal(model.calls.length,calls);results.push({kind,width,result:'PASS',lifetime:await snapshot(),calls:model.calls});
   });
-  for(const kind of ['purchase','inbound'])await t.test(kind+' obscured custody, current read proof, pending/unknown and navigation fixture adapter',async()=>{
+  for(const kind of ['purchase','inbound'])await run(kind+' obscured custody, current read proof, pending/unknown and navigation fixture adapter',async()=>{
    await start(kind,390);await open(kind);await notes().fill('KEPT THROUGH HIDE');const before=await snapshot();
    await page.evaluate(()=>window.i43.configure({allowed:false}));await page.getByRole('dialog').waitFor({state:'hidden'});
    model.holdDetail=true;await page.evaluate(()=>window.i43.configure({allowed:true}));await paint();assert.equal(await notes().isVisible(),false);
@@ -279,20 +347,20 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
    await page.waitForTimeout(100);assert.equal(commands().length,2);assert.equal(commands()[1].body,original);assert.deepEqual(await snapshot(),before);
    results.push({kind,result:'PASS',lifetime:await snapshot(),commands:commands()});
   });
-  for(const kind of ['purchase','inbound'])await t.test(kind+' loading and failed detail remain guarded and closable',async()=>{
+  for(const kind of ['purchase','inbound'])await run(kind+' loading and failed detail remain guarded and closable',async()=>{
    await start(kind,390);model.holdDetail=true;await page.evaluate(()=>window.i43.navigation.requestOpen('QA-001'));await page.getByRole('dialog').waitFor();
    await page.getByRole('dialog').getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});release();
    model.detailStatus=404;await page.evaluate(()=>window.i43.navigation.requestOpen('QA-001'));await page.getByRole('dialog').waitFor();await page.getByRole('dialog').getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});
    assert.equal(model.calls.filter(c=>c.method==='POST').length,0);results.push({kind,result:'PASS',case:'loading/404'});
   });
-  await t.test('inbound independent read-only fallback remains in the same dialog',async()=>{
+  await run('inbound independent read-only fallback remains in the same dialog',async()=>{
    await start('inbound',390);model.readOnly=true;await page.evaluate(()=>window.i43.navigation.requestOpen('QA-001'));await page.getByTestId('inbound-request-readonly').waitFor();await geometry();
    await page.getByRole('dialog').getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});
    assert.equal(model.calls.filter(c=>c.method==='POST').length,0);results.push({result:'PASS',case:'readonly'});
   });
-  assert.deepEqual(errors,[]);
- }finally{
-  release();await writeFile(path.join(output,'browser-evidence.json'),JSON.stringify({results,errors,composedRootBackForward:'NOT_RUN',note:'Root registration and history integration belong to Mika; fixture adapter only.'},null,2));
+  assert.deepEqual(errors,[]);assert.equal(results.length,expectedCases,'Every required dialog case must complete');
+ }catch(error){fatal=String(error);throw error;}finally{
+  release();await writeFile(path.join(output,'browser-evidence.json'),JSON.stringify({status:fatal||results.length!==expectedCases||errors.length?'failed':'passed',expectedCases,completedCases:results.length,results,errors,firstFailure,fatal,composedRootBackForward:'NOT_RUN',note:'Root registration and history integration have separate required composed gates; this gate uses the fixture adapter.'},null,2));
   await context?.close();await browser?.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));
  }
 });

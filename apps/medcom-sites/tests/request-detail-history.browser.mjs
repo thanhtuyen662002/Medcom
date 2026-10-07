@@ -9,7 +9,7 @@ import {once} from 'node:events';
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
 import {existsSync} from 'node:fs';
 import path from 'node:path';
-import {fileURLToPath} from 'node:url';
+import {fileURLToPath,pathToFileURL} from 'node:url';
 const app=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const output=process.env.MEDCOM_HISTORY_EVIDENCE_DIR??path.join(app,'.test-runtime','request-detail-history');
 const sha=value=>createHash('sha256').update(value).digest('hex');
@@ -23,6 +23,18 @@ const inbound={documentId:'QA-INBOUND-001',statusId:0,stateEqualityToken:'C'.rep
 
 const orderRow=index=>({documentId:'QA-ORDER-'+index,documentDate:'2026-10-01',branchId:'QA-BRANCH',statusId:1,isLocked:false});
 const readonlyProjection=(documentId,page=1)=>({document:{documentId,documentDate:'2026-10-01',branchId:'QA-BRANCH',statusId:0,isLocked:false},purchaseOrderLines:[],inboundRequestLines:[],page,pageSize:50,hasMore:false});
+// Currency label is its exact source ID; the human-readable name is separate.
+const historyCurrency={id:'VND',label:'VND',currencyName:'Synthetic currency',rateExchange:1};
+test('history currency fixture passes the actual strict lookup client',async()=>{
+ const require=createRequire(import.meta.url),{build}=require('esbuild');await mkdir(output,{recursive:true});const file=path.join(output,'currency-fixture-contract.mjs');
+ await build({absWorkingDir:app,stdin:{contents:'export {getPurchaseLookup} from "./lib/erp/purchase-request-api";',resolveDir:app,loader:'tsx'},outfile:file,bundle:true,platform:'node',format:'esm',packages:'external',alias:{'@':app},logLevel:'warning'});
+ const {getPurchaseLookup}=await import(pathToFileURL(file).href),native=globalThis.fetch;let item=historyCurrency;
+ globalThis.fetch=async()=>Response.json({scopeKey:scope,data:{available:true,reason:null,items:[item],page:1,hasMore:false}});
+ try{
+  const valid=await getPurchaseLookup(scope,'currencies','VND',1);assert.deepEqual(valid.items,[historyCurrency]);
+  item={...historyCurrency,label:'Synthetic currency'};await assert.rejects(()=>getPurchaseLookup(scope,'currencies','VND',1),error=>error.code==='invalid_api_response');
+ }finally{globalThis.fetch=native;}
+});
 let compiled;
 async function compile(){
  if(compiled)return compiled;
@@ -83,7 +95,7 @@ test('composed request detail history, guarded traversal and original custody',{
   if(route==='/api/auth/logout'){m.authenticated=false;return send(res,204,null);}
   if(route==='/api/auth/session/continue')return send(res,200,workspace().session);
    if(route==='/api/purchase-requests/workspace')return send(res,200,{scopeKey:scope,data:{branchIds:['QA-BRANCH'],writeAvailable:false,writeReason:'numbering_journal_runtime_unqualified',lookups:[]}});
-   if(route==='/api/purchase-requests/lookup')return send(res,200,{scopeKey:scope,data:{available:true,reason:null,items:url.searchParams.get('kind')==='purposes'?[{id:'1',label:'Synthetic purpose'}]:[{id:'VND',label:'Synthetic currency',currencyName:'Synthetic currency',rateExchange:1}],page:Number(url.searchParams.get('page')??1),hasMore:false}});
+   if(route==='/api/purchase-requests/lookup')return send(res,200,{scopeKey:scope,data:{available:true,reason:null,items:url.searchParams.get('kind')==='purposes'?[{id:'1',label:'Synthetic purpose'}]:[historyCurrency],page:Number(url.searchParams.get('page')??1),hasMore:false}});
    if(route==='/api/documents/purchase-orders'){
     const page=Number(url.searchParams.get('page')??1),pages=m.orderPages??[[orderRow(1)]];
     return send(res,200,{rows:pages[page-1]??[],page,pageSize:50,hasMore:page<pages.length},readHeaders);

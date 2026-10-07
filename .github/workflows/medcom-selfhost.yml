@@ -207,6 +207,13 @@ jobs:
           # Bounded synthetic state only; no headers, bodies, or browser storage.
           path: apps/medcom-sites/.test-runtime/i21-inbound/i24-browser-failure.json
           if-no-files-found: warn
+      - name: Upload synthetic detail dialog diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: medcom-detail-dialog-failure-${{ matrix.platform }}-x64-${{ github.sha }}
+          path: apps/medcom-sites/.test-runtime/i43-detail-dialog/first-failure.json
+          if-no-files-found: warn
       - name: Upload integrated UI screenshots when produced
         if: always()
         uses: actions/upload-artifact@v4
