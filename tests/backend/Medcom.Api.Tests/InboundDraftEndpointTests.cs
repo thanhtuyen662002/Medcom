@@ -113,6 +113,57 @@ public sealed class InboundDraftEndpointTests
         Assert.Equal("nosniff", Assert.Single(response.Headers.GetValues("X-Content-Type-Options")));
     }
 
+    [Fact]
+    public async Task BuiltInUnavailableGetUsesOneFullAuthenticationAndNoDocumentAccess()
+    {
+        await using var f = await Fixture.Start(composed: true, realAuthority: true);
+        f.Real!.Observed.Clear();
+        using var response = await f.Get();
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Single(f.Real.Observed.Delivered);
+        Assert.Equal(1, f.Real.Observed.Inspections);
+        Assert.Equal(0, f.Writer.Reads);
+        using var json = await Json(response);
+        Assert.Equal(JsonValueKind.Null, json.RootElement.GetProperty("scopeKey").ValueKind);
+        Assert.Equal(JsonValueKind.Null, json.RootElement.GetProperty("data").GetProperty("document").ValueKind);
+        foreach (var right in new[] { "available", "canRead", "canSave", "canSend" })
+            Assert.False(json.RootElement.GetProperty("access").GetProperty(right).GetBoolean());
+    }
+
+    [Theory]
+    [InlineData("access")] [InlineData("service")]
+    public async Task MixedCustomAndUnavailableProvidersRetainNormalReadFences(string provider)
+    {
+        await using var f = await Fixture.Start(composed: true, realAuthority: true, partialProvider: provider);
+        f.Real!.Observed.Clear();
+        using var response = await f.Get();
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(4, f.Real.Observed.Delivered.Length); Assert.Equal(0, f.Real.Observed.Inspections);
+        using var json = await Json(response);
+        Assert.Equal("Unavailable", json.RootElement.GetProperty("data").GetProperty("outcome").GetString());
+        Assert.Equal(JsonValueKind.Null, json.RootElement.GetProperty("data").GetProperty("document").ValueKind);
+        Assert.Equal(provider == "access", json.RootElement.GetProperty("scopeKey").ValueKind == JsonValueKind.String);
+        Assert.Equal(0, f.Writer.Reads);
+    }
+
+    [Theory]
+    [InlineData(false)] [InlineData(true)]
+    public async Task BuiltInUnavailableGetStillFencesLogoutOrExpiryAfterAuthentication(bool expire)
+    {
+        await using var f = await Fixture.Start(composed: true, realAuthority: true);
+        f.Real!.Observed.Clear();
+        f.Real.Observed.AfterResolve = (call, session, _) => {
+            if (call == 1 && session is not null) {
+                if (expire) f.Real.Clock.Advance(TimeSpan.FromMinutes(10));
+                else f.Real.Sessions.Revoke(session.Token);
+            }
+            return Task.CompletedTask;
+        };
+        using var response = await f.Get();
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(0, f.Writer.Reads);
+    }
+
     [Theory]
     [InlineData("save", InboundDraftAction.Save)]
     [InlineData("send-to-warehouse", InboundDraftAction.SendToWarehouse)]
@@ -341,7 +392,11 @@ public sealed class InboundDraftEndpointTests
         // Includes the real cookie middleware and every facade revalidation.
         // The decorator records returned snapshots unchanged, without rewriting versions.
         var observations = f.Real.Observed.Delivered;
-        Assert.True(observations.Length >= (route == "read" ? enabled ? 6 : 4 : enabled ? 9 : 7));
+        if (route == "read" && !enabled)
+        {
+            Assert.Single(observations); Assert.Equal(1, f.Real.Observed.Inspections);
+        }
+        else Assert.True(observations.Length >= (route == "read" ? 6 : enabled ? 9 : 7));
         long previous = f.Real.Created.Identity.AuthorityVersion;
         foreach (var observation in observations)
         {
@@ -948,9 +1003,12 @@ public sealed class InboundDraftEndpointTests
     {
         private readonly ConcurrentQueue<SessionObservation> delivered = new();
         private int calls;
+        public int Inspections;
         public Func<int, ResolvedSession?, CancellationToken, Task>? AfterResolve;
         public SessionObservation[] Delivered => delivered.ToArray();
-        public void Clear() { delivered.Clear(); Interlocked.Exchange(ref calls, 0); }
+        public void Clear() { delivered.Clear(); Interlocked.Exchange(ref calls, 0); Inspections = 0; }
+        public Task<ResolvedSession?> InspectAsync(string token, CancellationToken cancellationToken)
+        { Interlocked.Increment(ref Inspections); return inner.InspectAsync(token, cancellationToken); }
         public ResolvedSession? Create(AuthoritativeIdentity identity) => inner.Create(identity);
         public void Revoke(string token) => inner.Revoke(token);
         public async Task<ResolvedSession?> ResolveAsync(string token, bool userInteraction, CancellationToken cancellationToken)
@@ -998,11 +1056,11 @@ public sealed class InboundDraftEndpointTests
         public string Origin { get; private set; } = "";
         public string HttpOrigin { get; private set; } = "";
         public string? PrivateConfigPath { get; private set; }
-        private string? privateDirectory;
+        private string? privateDirectory, publicDirectory;
         private string csrfPath = "/qa/csrf";
         private X509Certificate2 certificate = null!;
         public static async Task<Fixture> Start(bool defaults = false, bool login = true, bool composed = false,
-            bool realAuthority = false, bool enabled = false)
+            bool realAuthority = false, bool enabled = false, string? partialProvider = null)
         {
             var f = new Fixture();
             try
@@ -1020,7 +1078,14 @@ public sealed class InboundDraftEndpointTests
                 if (composed)
                 {
                     f.privateDirectory = Directory.CreateTempSubdirectory("medcom-i24-host-").FullName;
-                    var contentRoot = Directory.CreateDirectory(Path.Combine(f.privateDirectory, "public")).FullName;
+                    // Keep public application content on the app/repository side and
+                    // synthetic private JSON in a separate temp root. Some executors
+                    // expose a .git marker in the temp root; sibling directories there
+                    // are correctly rejected by the production repository-boundary guard.
+                    // This layout needs no guard exception and probes no machine config.
+                    f.publicDirectory = Directory.CreateDirectory(Path.Combine(AppContext.BaseDirectory,
+                        "synthetic-public-" + Guid.NewGuid().ToString("N"))).FullName;
+                    var contentRoot = f.publicDirectory;
                     f.PrivateConfigPath = Path.Combine(f.privateDirectory, "synthetic-private.json");
                     await File.WriteAllTextAsync(f.PrivateConfigPath, "{\"Legacy\":{\"Enabled\":false}}");
                     // The explicit external path is supplied before Build reads configuration,
@@ -1039,6 +1104,8 @@ public sealed class InboundDraftEndpointTests
                             builder.Services.AddSingleton<IInboundDraftCommandAccess>(f.Access);
                             builder.Services.AddSingleton<IInboundDraftCommandService>(f.Writer);
                         }
+                        else if (partialProvider == "access") builder.Services.AddSingleton<IInboundDraftCommandAccess>(f.Access);
+                        else if (partialProvider == "service") builder.Services.AddSingleton<IInboundDraftCommandService>(f.Writer);
                     });
                     f.csrfPath = "/api/auth/csrf";
                 }
@@ -1156,6 +1223,7 @@ public sealed class InboundDraftEndpointTests
             {
                 certificate?.Dispose();
                 if (privateDirectory is not null) Directory.Delete(privateDirectory, recursive: true);
+                if (publicDirectory is not null) Directory.Delete(publicDirectory, recursive: true);
             }
         }
     }

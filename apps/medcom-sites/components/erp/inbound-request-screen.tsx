@@ -1,5 +1,6 @@
 "use client";
-import {RequestButton,RequestInput,RequestNotice,RequestEmpty,RequestLoading,RequestStatus,requestDate,requestStyles} from "./request-presentation";
+import {RequestListHeader,RequestSearch,RequestBranch,RequestListTable} from "./request-list-shell";
+import {RequestButton,RequestNotice,RequestEmpty,RequestLoading,RequestStatus,requestDate,requestStyles} from "./request-presentation";
 import {useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore} from "react";
 import {ApiError, getDocuments, type ReadScope} from "@/lib/erp/api";
 import type {DocumentPage, WorkspaceData} from "@/lib/erp/contracts";
@@ -346,6 +347,7 @@ function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, hi
     window.addEventListener("popstate", back);
     return () => window.removeEventListener("popstate", back);
   }, [loginKey, requestBack, historyOwner]);
+  const statusRow=currentRows?.rows.find(row=>row.documentId===selected);
   const access: InboundDraftAccess = contextCurrent ? state.access : {...state.access, canRead: false, canSave: false, canSend: false, available: false};
   return <section data-testid="inbound-request-host" data-readback-pending={readbackPending} aria-label="Phiếu đề nghị nhập hàng"
     className={requestStyles.stack}>
@@ -364,31 +366,25 @@ function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, hi
       onClick={() => { cancelFocus(); setDeniedContext(null); setRetry(value => value + 1); }}>
       Xác minh lại quyền nhập hàng</RequestButton>}
     {listPresented && <div className={requestStyles.panel}>
-      <form aria-label="Lọc phiếu nhập hàng" className={requestStyles.toolbar} onSubmit={event => {
+      <RequestListHeader title="Danh sách phiếu nhập hàng"/>
+      <form aria-label="Lọc phiếu nhập hàng" className="request-list-toolbar" onSubmit={event => {
         event.preventDefault(); navigate(() => { cancelFocus(); select(null); setFilter({search, branch}); setPage(1); });
       }}>
-        <label className={requestStyles.field}>Tìm phiếu nhập hàng<RequestInput placeholder="Nhập mã phiếu…" value={search} maxLength={100} onChange={event => setSearch(event.target.value)}/></label>
-        <label className={requestStyles.field}>Lọc chi nhánh<select className="min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2 text-base font-normal" value={branch} onChange={event => setBranch(event.target.value)}>
-          <option value="">Tất cả chi nhánh được cấp</option>{workspace?.branchIds.map(id => <option key={id} value={id}>{id}</option>)}
-        </select></label>
+        <RequestSearch label="Tìm phiếu nhập hàng" placeholder="Tìm mã phiếu…" value={search} onChange={setSearch}/>
+        <RequestBranch label="Lọc chi nhánh" value={branch} branches={workspace?.branchIds??[]} onChange={setBranch}/>
         <RequestButton type="submit" variant="secondary">Áp dụng lọc nhập hàng</RequestButton>
       </form>
-      <section aria-label="Danh sách phiếu nhập hàng" ref={focusList} tabIndex={-1} className={`${requestStyles.cards} scroll-mt-24`}>
+      <section aria-label="Danh sách phiếu nhập hàng" ref={focusList} tabIndex={-1} className="request-list-content scroll-mt-24">
         {!currentRows ? rows.binding === listBinding && rows.failed ? <RequestNotice warning>Chưa tải được danh sách.</RequestNotice> : <RequestLoading label="Đang tải danh sách."/>
           : currentRows.rows.length === 0 ? <RequestEmpty title="Không có phiếu trong trang này.">Thử điều chỉnh mã phiếu hoặc chi nhánh.</RequestEmpty>
-          : currentRows.rows.map(row => <button key={row.documentId} ref={element => focusRow(row.documentId, element)} type="button" className={`${requestStyles.card} focus-visible:rounded-lg! focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring`}
-            aria-label={`Mở phiếu ${row.documentId} · ${row.documentDate} · ${row.branchId} · trạng thái ${row.statusId ?? "NULL"}`}
-            aria-pressed={selected === row.documentId} onClick={() => {
+          : <RequestListTable label="Phiếu nhập hàng" columns={[{id:"id",label:"Mã phiếu"},{id:"date",label:"Ngày chứng từ"},{id:"branch",label:"Chi nhánh"},{id:"status",label:"Trạng thái"}]} rows={currentRows.rows.map(row=>({id:row.documentId,cells:[row.documentId,requestDate(row.documentDate),row.branchId,<RequestStatus key="status" value={row.statusId} statusName={row.statusName}/>],action:"Xem phiếu",actionLabel:`Mở phiếu ${row.documentId} · ${row.documentDate} · ${row.branchId} · trạng thái ${row.statusId ?? "NULL"}`,selected:selected===row.documentId,buttonRef:element=>focusRow(row.documentId,element),onOpen:() => {
               if (selected === row.documentId) {
                 // Re-focus does not navigate or discard dirty state/guard registration.
                 if (!bridge.hasUnresolved() && pendingReceipt.current === null && contextCurrent
                   && (readonlyEligible && !readonlyFailed || state.access.canRead && state.access.available && !state.needsRefresh
                     && focusFailure !== row.documentId && !(presentedCurrent && presented.state === "failed"))) focusOpen(row.documentId);
               } else navigate(() => { focusOpen(row.documentId); select(row.documentId); });
-            }}>
-            <span className={requestStyles.cardHeading}><strong>{row.documentId}</strong><RequestStatus value={row.statusId}/></span>
-            <span className={requestStyles.values}><span><span className="mb-1 block text-xs text-muted-foreground">Ngày chứng từ</span><strong className="font-medium">{requestDate(row.documentDate)}</strong></span><span><span className="mb-1 block text-xs text-muted-foreground">Chi nhánh</span><strong className="font-medium">{row.branchId}</strong></span></span>
-            <span className="border-t border-border pt-3 text-sm font-medium">Xem phiếu</span></button>)}
+            }}))}/>}
       </section>
       <nav aria-label="Trang danh sách phiếu" className={requestStyles.footer}>
         <RequestButton type="button" disabled={page === 1} onClick={() => navigate(() => { cancelFocus(); select(null); setPage(value => value - 1); })}>Trang phiếu trước</RequestButton>
@@ -399,7 +395,7 @@ function RetainedInboundHost({loginKey, workspace, onClose, onBack, onDenied, hi
     {/* Always mounted, even on close, permission change, list error or transient
         workspace=null. Only loginKey above retires this I18 instance. */}
     <div ref={focusDetail} tabIndex={-1} role="region" aria-label="Phiếu nhập hàng đã chọn" className="scroll-mt-24 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" hidden={selected===null&&!state.unresolved&&!readbackPending}>
-      <div hidden={readonlyEligible}><MobileInboundRequest documentId={selected} access={access} adapter={adapter} onConfirmed={acknowledge} onPresentedRead={onPresentedRead}/></div>
+      <div hidden={readonlyEligible}><MobileInboundRequest statusPresentation={statusRow?{documentId:statusRow.documentId,id:statusRow.statusId,name:statusRow.statusName}:undefined} documentId={selected} access={access} adapter={adapter} onConfirmed={acknowledge} onPresentedRead={onPresentedRead}/></div>
       {readonlyEligible && selected !== null && readScope !== null && <InboundRequestReadOnly documentId={selected}
         branchIds={workspace?.branchIds ?? []} scope={readScope} initialPage={readonlyPageNumber} onPageChange={onReadonlyPageChange}
         verifying={readonlyVerifying} readRevision={unavailable}

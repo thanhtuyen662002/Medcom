@@ -13,18 +13,22 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
     private readonly LegacyCompany company;
     private readonly Func<DbConnection> factory;
     private readonly Func<CancellationToken, Task<AuthoritativeIdentity?>> live;
+    private readonly Func<CancellationToken, Task<AuthoritativeIdentity?>> inspect;
 
     public SqlPurchaseRequestQueries(SqlLegacyUserStore database, LegacyCompany company,
-        Func<CancellationToken, Task<AuthoritativeIdentity?>> resolveLiveSession)
-        : this(company, () => database.CreateConnection(), resolveLiveSession) { }
+        Func<CancellationToken, Task<AuthoritativeIdentity?>> resolveLiveSession,
+        Func<CancellationToken, Task<AuthoritativeIdentity?>>? inspectCurrentSession = null)
+        : this(company, () => database.CreateConnection(), resolveLiveSession, inspectCurrentSession) { }
 
     // Recording connections exercise this same SQL orchestration offline.
     public SqlPurchaseRequestQueries(LegacyCompany company, Func<DbConnection> connectionFactory,
-        Func<CancellationToken, Task<AuthoritativeIdentity?>> resolveLiveSession)
+        Func<CancellationToken, Task<AuthoritativeIdentity?>> resolveLiveSession,
+        Func<CancellationToken, Task<AuthoritativeIdentity?>>? inspectCurrentSession = null)
     {
         this.company = company ?? throw new ArgumentNullException(nameof(company));
         factory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
         live = resolveLiveSession ?? throw new ArgumentNullException(nameof(resolveLiveSession));
+        inspect = inspectCurrentSession ?? live; // Existing/custom callers stay conservative.
     }
 
     public static readonly string CredentialText = ReadOnly(PurchaseRequestSql.CredentialText);
@@ -71,11 +75,11 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
         """;
     public const string BranchesText = SqlLegacyBranchScope.RestrictedText;
     // Native equality deliberately fetches aliases as well; the reader rejects them.
-    public const string HeadText = """
-        SELECT TOP (2) PurchaseRequestID,PurchaseDate,PurposeID,PersonSuggest,Department,PurposeDescOrClient,Price,Notes,
-          StatusID,isLock,CurrencyID,ObjectID,RateExchange,BranchID
-        FROM dbo.AP_PurchaseRequestTbl WITH (HOLDLOCK) WHERE PurchaseRequestID=@document;
-        """;
+    public static readonly string HeadText = """
+        SELECT TOP (2) D.PurchaseRequestID,D.PurchaseDate,D.PurposeID,D.PersonSuggest,D.Department,D.PurposeDescOrClient,D.Price,D.Notes,
+          D.StatusID,D.isLock,D.CurrencyID,D.ObjectID,D.RateExchange,D.BranchID,S.StatusName,S.StatusRows
+        FROM dbo.AP_PurchaseRequestTbl D WITH (HOLDLOCK)
+        """ + " " + DocumentStatusSql.PurchaseRequests + " WHERE D.PurchaseRequestID=@document;";
     // A byte-identical duplicate in another parent is ambiguous too.
     public const string DetailsText = """
         SELECT TOP (501) C.UserAutoID,C.ItemID,C.Budget,C.TimeRequired,C.Quantity,C.UnitPrice,C.TotalPrice,C.Model,C.PurchaseRequestID,
@@ -91,8 +95,9 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
         return $$"""
             SELECT D.PurchaseRequestID,D.PurchaseDate,D.BranchID,D.PersonSuggest,D.Department,D.StatusID,D.isLock,
               CONVERT(int,CASE WHEN (SELECT COUNT_BIG(*) FROM dbo.AP_PurchaseRequestTbl A WITH (HOLDLOCK)
-                WHERE A.PurchaseRequestID=D.PurchaseRequestID)>1 THEN 1 ELSE 0 END) AS IdentityAlias
+                WHERE A.PurchaseRequestID=D.PurchaseRequestID)>1 THEN 1 ELSE 0 END) AS IdentityAlias,S.StatusName,S.StatusRows
             FROM dbo.AP_PurchaseRequestTbl D WITH (HOLDLOCK)
+            {{DocumentStatusSql.PurchaseRequests}}
             WHERE ({{scope}}) AND (@search='' OR D.PurchaseRequestID LIKE @search ESCAPE '~')
             ORDER BY D.PurchaseDate DESC,CONVERT(varbinary(max),D.PurchaseRequestID) ASC
             OFFSET @skip ROWS FETCH NEXT @take ROWS ONLY;
@@ -138,7 +143,7 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
                     || !PurchaseRequestCommandRules.Identifier(reader.GetString(0), 50) || !seen.Add(reader.GetString(0))
                     || rows.Count > query.PageSize) throw new InvalidOperationException("Invalid source projection.");
                 rows.Add(new(reader.GetString(0), Date(reader, 1), reader.GetString(2), reader.GetString(3), reader.GetString(4),
-                    reader.GetInt32(5), reader.IsDBNull(6) ? null : reader.GetBoolean(6)));
+                    reader.GetInt32(5), reader.IsDBNull(6) ? null : reader.GetBoolean(6), DocumentStatusSql.ReadName(reader, 8, 50)));
             }
             return new(rows.Take(query.PageSize).ToArray(), query.Page, query.PageSize, rows.Count > query.PageSize);
         }, token);
@@ -150,6 +155,7 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
         return Run<PurchaseRequestReadback>(async (tx, branches, ct) =>
         {
             PurchaseRequestAggregate head;
+            string? statusName;
             await using (var command = PurchaseRequestSql.Command(tx, HeadText))
             {
                 PurchaseRequestSql.Document(command, documentId);
@@ -160,6 +166,7 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
                 var header = new PurchaseRequestHeaderInput(Date(reader, 1), reader.IsDBNull(2) ? null : reader.GetInt32(2),
                     reader.GetString(3), reader.GetString(4), Text(reader, 5), Decimal(reader, 6, "0.00"), Text(reader, 7),
                     reader.GetString(10), reader.GetString(11), reader.GetDouble(12));
+                statusName = DocumentStatusSql.ReadName(reader, 14, 50);
                 head = new(documentId, reader.GetString(13), header, reader.GetInt32(8), reader.IsDBNull(9) ? null : reader.GetBoolean(9), []);
                 if (await reader.ReadAsync(ct)) throw new QueryNotFound();
             }
@@ -177,7 +184,7 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
                 }
             }
             var document = PurchaseRequestCommandRules.Normalize(head with { Lines = lines });
-            return new(document, PurchaseRequestCommandRules.EqualityToken(document));
+            return new(document, PurchaseRequestCommandRules.EqualityToken(document), StatusName: statusName);
         }, token);
     }
 
@@ -199,7 +206,8 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
     {
         try
         {
-            var identity = await live(token);
+            token.ThrowIfCancellationRequested();
+            var identity = await inspect(token);
             if (!Eligible(identity)) return new(PurchaseRequestQueryOutcome.Denied);
             if (System.Transactions.Transaction.Current is not null) return new(PurchaseRequestQueryOutcome.Unavailable);
             string[] branches;
@@ -221,7 +229,9 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
                         return new(PurchaseRequestQueryOutcome.Unavailable);
                 }
                 value = await read(transaction, branches, token);
-                if (!SameReadScope(await live(token), identity!, branches)) return new(PurchaseRequestQueryOutcome.Denied);
+                // Native credential/grant/branch checks above protect this transaction.
+                // Check local logout/expiry here; full SQL revalidation follows cleanup.
+                if (!SameReadScope(await inspect(token), identity!, branches)) return new(PurchaseRequestQueryOutcome.Denied);
                 await transaction.RollbackAsync(token); // Read-only: release locks without any durable writes.
             }
             // Cleanup can await and race logout too. Publish only after all SQL resources are released.

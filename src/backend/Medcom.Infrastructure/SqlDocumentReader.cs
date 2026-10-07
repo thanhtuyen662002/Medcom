@@ -57,7 +57,8 @@ public sealed class SqlDocumentReader(string connectionString, LegacyCompany com
             var rows=new List<DocumentSummary>();
             while(await reader.ReadAsync(cancellationToken))
                 rows.Add(new(reader.GetString(0), reader.GetDateTime(1).ToString("yyyy-MM-dd",System.Globalization.CultureInfo.InvariantCulture),
-                    reader.GetString(2),reader.IsDBNull(3)?null:reader.GetInt32(3),reader.IsDBNull(4)?null:reader.GetBoolean(4)));
+                    reader.GetString(2),reader.IsDBNull(3)?null:reader.GetInt32(3),reader.IsDBNull(4)?null:reader.GetBoolean(4),
+                    DocumentStatusSql.ReadName(reader,5,kind==DocumentKind.PurchaseOrders?50:100)));
             var more=rows.Count>query.PageSize;
             return new(DocumentOutcome.Success,new(rows.Take(query.PageSize).ToArray(),query.Page,query.PageSize,more));
         }
@@ -108,7 +109,8 @@ public sealed class SqlDocumentReader(string connectionString, LegacyCompany com
             while(await reader.ReadAsync(cancellationToken))
             {
                 document ??= new(reader.GetString(0),reader.GetDateTime(1).ToString("yyyy-MM-dd",System.Globalization.CultureInfo.InvariantCulture),
-                    reader.GetString(2),reader.IsDBNull(3)?null:reader.GetInt32(3),reader.IsDBNull(4)?null:reader.GetBoolean(4));
+                    reader.GetString(2),reader.IsDBNull(3)?null:reader.GetInt32(3),reader.IsDBNull(4)?null:reader.GetBoolean(4),
+                    DocumentStatusSql.ReadName(reader,11,purchase?50:100));
                 if (reader.IsDBNull(5)) continue; // Visible parent with no lines on this page.
                 string? Value(int ordinal) => reader.IsDBNull(ordinal)?null:reader.GetString(ordinal);
                 if(purchase) orderLines.Add(new(reader.GetString(5),reader.GetString(6),Value(7),Value(8)));
@@ -128,8 +130,8 @@ public sealed class SqlDocumentReader(string connectionString, LegacyCompany com
         var scope = SqlLegacyBranchScope.ExactBranchPredicate("D.BranchID", branchCount);
         // Only these two reviewed shapes are executable. No identifier comes from an HTTP request.
         var projection = kind == DocumentKind.PurchaseOrders
-                ? "D.DocumentID, D.DocumentDate, D.BranchID, D.StatusID, D.isLock FROM dbo.AP_OrderTbl D"
-                : "D.DocumentID, D.DocumentDate, D.BranchID, D.StatusID, CAST(NULL AS bit) FROM dbo.IV_InboundRequestTbl D";
+                ? "D.DocumentID, D.DocumentDate, D.BranchID, D.StatusID, D.isLock, S.StatusName, S.StatusRows FROM dbo.AP_OrderTbl D " + DocumentStatusSql.PurchaseOrders
+                : "D.DocumentID, D.DocumentDate, D.BranchID, D.StatusID, CAST(NULL AS bit), S.StatusName, S.StatusRows FROM dbo.IV_InboundRequestTbl D " + DocumentStatusSql.InboundRequests;
         return SqlLegacyPolicy.GrantsCte + $"""
                 SELECT {projection}
                 WHERE ({scope}) AND (@search = '' OR DocumentID LIKE @search ESCAPE '~')
@@ -154,13 +156,15 @@ public sealed class SqlDocumentReader(string connectionString, LegacyCompany com
         // These identifiers and projections are fixed reviewed shapes, never request-provided SQL.
         var parent = purchase ? "dbo.AP_OrderTbl" : "dbo.IV_InboundRequestTbl";
         var child = purchase ? "dbo.AP_OrderDetailTbl" : "dbo.IV_InboundRequestDetailsTbl";
+        var statusJoin = purchase ? DocumentStatusSql.PurchaseOrders : DocumentStatusSql.InboundRequests;
         var locked = purchase ? "D.isLock" : "CAST(NULL AS bit)";
         var quantities = purchase
                 ? "CONVERT(varchar(40),C.Quantity) AS Q1, CONVERT(varchar(40),C.Quantity2) AS Q2, CAST(NULL AS varchar(40)) AS Q3, CAST(NULL AS varchar(40)) AS Q4"
                 : "CONVERT(varchar(40),C.SetQuantityByDocument) AS Q1, CONVERT(varchar(40),C.BarrelQuantityByDocument) AS Q2, CONVERT(varchar(40),C.SetQuantityByReal) AS Q3, CONVERT(varchar(40),C.BarrelQuantityByReal) AS Q4";
         return SqlLegacyPolicy.GrantsCte + $"""
-                SELECT D.DocumentID,D.DocumentDate,D.BranchID,D.StatusID,{locked},L.UserAutoID,L.ItemID,L.Q1,L.Q2,L.Q3,L.Q4
+                SELECT D.DocumentID,D.DocumentDate,D.BranchID,D.StatusID,{locked},L.UserAutoID,L.ItemID,L.Q1,L.Q2,L.Q3,L.Q4,S.StatusName,S.StatusRows
                 FROM {parent} D
+                {statusJoin}
                 OUTER APPLY (SELECT C.UserAutoID,C.ItemID,{quantities} FROM {child} C
                   WHERE C.DocumentID=D.DocumentID ORDER BY C.UserAutoID
                   OFFSET @skip ROWS FETCH NEXT @take ROWS ONLY) L

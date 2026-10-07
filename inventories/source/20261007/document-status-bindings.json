@@ -1,0 +1,192 @@
+{
+  "sourceSet": "owner-attachment-20261002",
+  "archiveSha256": "6a74eb02dc747e9c6ab679f69ca515783a8724ad767f6702fcebd28f195b1144",
+  "sqlMemberSha256": "61a8744c7a9a007b13ef37fbda26ea8c78af11fcc469963a528eba9469174096",
+  "sqlMemberBytes": 1212595716,
+  "sqlMemberCrc32": "16a9a7e6",
+  "verification": "Archive hash, full member hash, size and CRC verified through private static streaming; no SQL or ERP code execution.",
+  "bindings": [
+    {
+      "document": "AP_PurchaseRequest",
+      "dictionary": "dbo.AP_PurchaseStatusTbl",
+      "key": "StatusID",
+      "label": "StatusName",
+      "labelType": "nvarchar(50) NULL",
+      "schemaInventory": "inventories/source/20261002/table-08.json",
+      "foreignKeyLines": [
+        820325,
+        820326,
+        820328
+      ],
+      "dropdownLines": [
+        308052,
+        308058,
+        308068,
+        308073
+      ]
+    },
+    {
+      "document": "AP_Order",
+      "dictionary": "dbo.AP_OrderStatusTbl",
+      "key": "StatusID",
+      "label": "StatusName",
+      "labelType": "nvarchar(50) NOT NULL",
+      "schemaInventory": "inventories/source/20261002/table-07.json",
+      "formBindingLines": [
+        296981,
+        296982,
+        296983,
+        296984,
+        296985
+      ]
+    },
+    {
+      "document": "IV_InboundRequest",
+      "dictionary": "dbo.IV_InboundRequestStatusTbl",
+      "key": "StatusID",
+      "label": "StatusName",
+      "labelType": "nvarchar(100) NOT NULL",
+      "schemaInventory": "inventories/source/20261002/table-14.json",
+      "formBindingLines": [
+        300558,
+        300559,
+        300560,
+        300561,
+        300573
+      ],
+      "dropdownLines": [
+        308129
+      ]
+    }
+  ],
+  "baselineLabels": {
+    "AP_OrderStatusTbl": [
+      {
+        "statusId": 0,
+        "statusName": "Chờ sản xuất",
+        "sourceLine": 33235
+      },
+      {
+        "statusId": 3,
+        "statusName": "Đã sản xuất xong",
+        "sourceLine": 33236
+      },
+      {
+        "statusId": 6,
+        "statusName": "Đã hoàn thiện",
+        "sourceLine": 33237
+      },
+      {
+        "statusId": 9,
+        "statusName": "Hủy",
+        "sourceLine": 33238
+      }
+    ],
+    "AP_PurchaseStatusTbl": [
+      {
+        "statusId": 1,
+        "statusName": "Nháp",
+        "sourceLine": 33458
+      },
+      {
+        "statusId": 2,
+        "statusName": "Chờ duyệt",
+        "sourceLine": 33459
+      },
+      {
+        "statusId": 3,
+        "statusName": "Đã duyệt",
+        "sourceLine": 33460
+      },
+      {
+        "statusId": 4,
+        "statusName": "Đã từ chối",
+        "sourceLine": 33461
+      },
+      {
+        "statusId": 5,
+        "statusName": "Đã gửi đặt mua hàng",
+        "sourceLine": 33462
+      }
+    ],
+    "IV_InboundRequestStatusTbl": [
+      {
+        "statusId": 0,
+        "statusName": "Nháp",
+        "sourceLine": 278245
+      },
+      {
+        "statusId": 1,
+        "statusName": "Yêu cầu TM xem lại",
+        "sourceLine": 278246
+      },
+      {
+        "statusId": 2,
+        "statusName": "Đã gửi thủ kho",
+        "sourceLine": 278247
+      },
+      {
+        "statusId": 3,
+        "statusName": "Yêu cầu thủ kho xem lại",
+        "sourceLine": 278248
+      },
+      {
+        "statusId": 4,
+        "statusName": "Đã gửi TP SA",
+        "sourceLine": 278249
+      },
+      {
+        "statusId": 5,
+        "statusName": "Yêu cầu TP SA xem lại",
+        "sourceLine": 278250
+      },
+      {
+        "statusId": 6,
+        "statusName": "Đã gửi PM",
+        "sourceLine": 278251
+      },
+      {
+        "statusId": 7,
+        "statusName": "Yêu cầu PM xem lại",
+        "sourceLine": 278252
+      },
+      {
+        "statusId": 8,
+        "statusName": "Đã gửi Kỹ thuật",
+        "sourceLine": 278253
+      },
+      {
+        "statusId": 9,
+        "statusName": "Yêu cầu Kỹ thuật xem lại",
+        "sourceLine": 278254
+      },
+      {
+        "statusId": 10,
+        "statusName": "Đã gửi BLĐ",
+        "sourceLine": 278255
+      },
+      {
+        "statusId": 11,
+        "statusName": "BLĐ từ chối",
+        "sourceLine": 278256
+      },
+      {
+        "statusId": 12,
+        "statusName": "Hủy PA",
+        "sourceLine": 278257
+      },
+      {
+        "statusId": 13,
+        "statusName": "Đã gửi kế toán",
+        "sourceLine": 278258
+      }
+    ]
+  },
+  "runtimePolicy": "Read live dictionary values, not these snapshot labels. Group dictionary by StatusID before LEFT JOIN. Missing, duplicate, null, blank, overlong, control-character or invalid-Unicode names yield nullable StatusName, never an inferred state. StatusId and command semantics remain unchanged.",
+  "limits": [
+    "No live ERP/runtime verification",
+    "No new status filter",
+    "IV_InboundRequestCTCPStatusTbl belongs to a separate detail-grid status and is not this document dictionary"
+  ],
+  "privacy": "Contains only technical dictionary/schema names, non-personal status labels and source provenance; excludes raw SQL/config, identifiers, customer rows and credentials."
+}

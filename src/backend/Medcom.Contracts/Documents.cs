@@ -1,7 +1,7 @@
 namespace Medcom.Contracts;
 
 public sealed record DocumentSummary(string DocumentId, string DocumentDate, string BranchId,
-    int? StatusId, bool? IsLocked);
+    int? StatusId, bool? IsLocked, string? StatusName = null);
 public sealed record DocumentPage(IReadOnlyList<DocumentSummary> Rows, int Page, int PageSize, bool HasMore);
 
 // Quantities stay decimal strings across JSON; ERP decimal(28,4) must not lose precision in JavaScript.

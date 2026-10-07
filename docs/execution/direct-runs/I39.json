@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I39",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "516470b3-2118-482d-94c9-c0e57e4c0829",
+  "base_sha": "830d6c710b0fb47dd75a01dfb163ca2619bf5ea5",
+  "work_branch": "codex/g45-inbound-prevalidation-before-reserve-i39-20261007",
+  "claim_branch": "medcom-claims/g45/direct/I39",
+  "scope": [
+    "src/backend/Medcom.Infrastructure/Inbound/SqlInboundDraftCommandService.cs",
+    "tests/backend/Medcom.Api.Tests/InboundDraftCommandTests.cs",
+    "docs/execution/checkpoints/I39_INBOUND_PREVALIDATION.md",
+    "docs/execution/direct-runs/I39.json"
+  ],
+  "purpose": "Reject known-invalid existing inbound Save/Send before creating a durable pending reservation, preserving genuine unknown outcomes.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "constraints": [
+    "Root alone publishes after independent source review and exact current head/base CI. No force push, no private customer data, raw SQL/archives, credentials or screenshots in public repository.",
+    "No actual DB or native DLL execution, private configuration/security setting changes, or business/runtime activation in this code slice. Preserve all existing tests and disclose unexecuted checks.",
+    "After original-intent lookup/replay handling, validate existing-document Save/Send in phase-zero transaction before Reserve; reuse the same helper and revalidate in phase one, never reuse phase-zero snapshot as authority.",
+    "Preserve Create, committed replay, existing pending, receipt reconciliation, lost ACK, no takeover and original command identity. No business rule changes or broader schema hardening in this slice.",
+    "Test invalid/stale zero reservations/commits/business effects, valid two-phase behavior, interphase mutation/revocation leaves only genuinely committed pending, and replay after final status."
+  ],
+  "created_at": "2026-10-07T02:55:16.026039+00:00"
+}

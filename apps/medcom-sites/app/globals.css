@@ -788,3 +788,71 @@ body {font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;l
  .mobile-nav-item > span:not(.mobile-primary-icon) {display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:normal;max-height:2.6em;line-height:1.3}
 }
 .request-panel-header .request-unavailable:disabled {opacity:1;min-height:44px;font-size:.875rem;font-weight:400;padding:6px 10px;box-shadow:none;background:var(--background);color:var(--muted-foreground);border:1px dashed var(--border)}
+
+/* I36: one compact document-list language, with a single responsive row DOM. */
+.topbar { background:var(--card); backdrop-filter:none; isolation:isolate; }
+.request-panel { overflow:hidden; }
+.request-list-header {display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border);background:var(--card)}
+.request-list-header .request-title {font-size:14px;font-weight:600}
+.request-list-qualification {display:flex;align-items:center;gap:12px;font-size:12px;color:var(--muted-foreground)}
+.request-panel > .request-list-toolbar {display:flex;flex-wrap:wrap;align-items:center;padding:16px 20px;gap:10px;background:var(--card)}
+.request-list-search {display:flex;position:relative;align-items:center;flex:1 1 240px;max-width:340px;min-width:0}
+.request-list-search > svg {position:absolute;left:12px;pointer-events:none;color:var(--muted-foreground)}
+.request-list-search .request-input {padding-left:36px;font-size:14px}
+.request-list-branch {position:relative;display:flex;align-items:center;flex:0 1 260px;min-width:0;max-width:100%}
+.request-list-branch > svg {position:absolute;left:12px;pointer-events:none;color:var(--muted-foreground)}
+.request-list-branch > svg:last-child {left:auto;right:12px}
+.request-list-branch select {appearance:none;width:100%;min-width:0;min-height:44px;padding:8px 32px 8px 36px;border:1px solid var(--input);border-radius:8px;background:var(--card);font-size:14px;text-overflow:ellipsis}
+.request-list-branch select:focus-visible {outline:2px solid var(--ring);outline-offset:2px}
+.request-list-refresh {margin-left:auto}
+.request-list-table {width:100%;table-layout:fixed;border-collapse:collapse;text-align:left;font-size:14px}
+.request-list-table th {padding:12px 16px;font-size:12px;font-weight:550;background:var(--secondary);color:var(--muted-foreground);border-bottom:1px solid var(--border)}
+.request-list-table td {padding:10px 16px;border-bottom:1px solid var(--border);vertical-align:middle;overflow-wrap:anywhere;line-height:1.5}
+.request-list-table th:first-child {width:19%}
+.request-list-table th:last-child {width:132px}
+.request-list-table tbody tr:last-child td {border-bottom:0}
+.request-list-table tr[data-selected=true] td,.request-list-table tbody tr:hover td {background:var(--accent)}
+.request-document-id {display:flex;align-items:center;gap:8px;min-width:0}
+.request-document-id svg {flex:none;color:var(--muted-foreground)}
+.request-document-id strong {min-width:0;font-weight:550}
+.request-list-table .request-status {font-size:12px;line-height:1.4;padding:3px 7px;border-radius:999px}
+.request-list-open .request-button {min-height:44px;padding:8px 10px;font-size:13px;width:100%}
+.command-modal {display:flex!important;flex-direction:column;gap:0!important;max-height:calc(100dvh - 32px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
+.command-heading {display:flex;flex-direction:row;align-items:center;justify-content:space-between;padding:6px 8px 6px 16px;border-bottom:1px solid var(--border);text-align:left}
+.command-heading [data-slot=dialog-title] {font-size:14px}
+.command-heading button {width:44px;height:44px}
+.command-modal [data-slot=command] {min-height:0;flex:1}
+.command-modal [data-slot=command-input-wrapper] {height:48px;flex-shrink:0;margin:0 8px;padding-inline:8px}
+.command-modal [data-slot=command-input] {min-height:44px;font-size:16px}
+.command-modal [data-slot=command-list] {min-height:0;max-height:min(440px,calc(100dvh - 150px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)));overscroll-behavior:contain}
+.command-modal [data-slot=command-item] {min-height:44px;padding:10px 12px}
+@media(max-width:767px) {
+ .request-list-header {padding:12px 14px;gap:8px}
+ .request-list-qualification {flex-wrap:wrap;gap:6px}
+ .request-list-qualification > span {display:none}
+ .request-panel > .request-list-toolbar {display:grid;grid-template-columns:minmax(0,1fr) auto;padding:14px;gap:10px}
+ .request-list-search {grid-column:1/-1;max-width:none}
+ .request-list-search .request-input,.request-list-branch select {font-size:16px}
+ .request-list-branch {grid-column:1/-1;max-width:none}
+ .request-list-toolbar .request-button {max-width:none!important;font-size:14px;min-height:44px}
+ .request-list-refresh {margin-left:0}
+ .request-list-table,.request-list-table tbody {display:block}
+ .request-list-table thead {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+ .request-list-table tr {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:16px 14px;border-bottom:1px solid var(--border)}
+ .request-list-table tr:last-child {border-bottom:0}
+ .request-list-table td {display:block;min-width:0;padding:0;border:0;font-size:14px}
+ .request-list-table td::before {content:attr(data-label);display:block;margin-bottom:4px;font-size:12px;color:var(--muted-foreground)}
+ .request-list-table td:first-child,.request-list-table .request-list-open {grid-column:1/-1}
+ .request-list-table td:first-child::before,.request-list-table .request-list-open::before {display:none}
+ .request-list-table .request-list-open button {background:var(--background)}
+ .request-list-table tr[data-selected=true],.request-list-table tbody tr:hover {background:var(--accent)}
+ .request-list-table tr[data-selected=true] td,.request-list-table tbody tr:hover td {background:transparent}
+ .mobile-nav-item {font-size:11px;gap:5px;min-height:56px}
+ .mobile-nav-item > svg,.mobile-primary-icon,.mobile-primary-icon > svg {width:22px;height:22px;flex-shrink:0}
+ .mobile-primary-icon {background:transparent;color:inherit;border-radius:0}
+ .mobile-nav-item > span:last-child {max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;overflow-wrap:normal;line-height:16px}
+}
+/* The orders reference toolbar follows the same touch/control rhythm. */
+.table-toolbar [data-slot=button],.table-toolbar .branch-select,.table-toolbar .search-field {min-height:44px}
+.table-toolbar .search-field input {min-height:42px}
+@media(max-width:767px) { .table-toolbar .search-field input {font-size:16px} }

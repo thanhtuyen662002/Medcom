@@ -69,7 +69,8 @@ public static class ApiHost
                 var sessions = provider.GetRequiredService<IWebSessions>();
                 return new SqlPurchaseRequestQueries(provider.GetRequiredService<SqlLegacyUserStore>(),
                     provider.GetRequiredService<LegacyCompany>(), async cancellation =>
-                        (await sessions.ResolveAsync(token, false, cancellation))?.Identity);
+                        (await sessions.ResolveAsync(token, false, cancellation))?.Identity,
+                    async cancellation => (await sessions.InspectAsync(token, cancellation))?.Identity);
             });
         }
         else
@@ -123,6 +124,16 @@ public static class ApiHost
                         StatusCodes.Status403Forbidden, "forbidden", "Access denied."),
                     OnValidatePrincipal = async context =>
                     {
+                        // These exact public GETs expose only fixed/cached health data.
+                        // Treat even a supplied cookie as anonymous, not as authority;
+                        // never refresh, resolve, or revoke its server session here.
+                        if (HttpMethods.IsGet(context.Request.Method)
+                            && context.Request.Path.Value is "/health/live" or "/health/ready")
+                        {
+                            context.RejectPrincipal();
+                            context.ShouldRenew = false;
+                            return;
+                        }
                         var token = context.Principal?.FindFirst(AuthEndpoints.SessionClaim)?.Value;
                         if (token is null) { context.RejectPrincipal(); return; }
                         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(context.HttpContext.RequestAborted);

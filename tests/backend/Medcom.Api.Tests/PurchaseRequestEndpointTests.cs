@@ -6,6 +6,7 @@ using System.Text.Json;
 using Medcom.Api;
 using Medcom.Application;
 using Medcom.Application.PurchaseRequests;
+using Medcom.Contracts;
 using Medcom.Infrastructure;
 using Medcom.Infrastructure.PurchaseRequests;
 using Microsoft.AspNetCore.Builder;
@@ -21,6 +22,137 @@ namespace Medcom.Api.Tests;
 
 public sealed class PurchaseRequestEndpointTests
 {
+    [Theory]
+    [InlineData("/health/live", 200)]
+    [InlineData("/health/ready", 503)]
+    public async Task ExactPublicHealthGetIgnoresCookieAuthorityWithoutResolvingOrRetiringSession(string path, int status)
+    {
+        HealthSessions? sessions = null;
+        var observations = new System.Collections.Concurrent.ConcurrentQueue<(bool Authenticated, bool Resolved)>();
+        await using var fixture = await PurchaseHttpFixture.Start(services => {
+            services.AddSingleton<LocalWebSessions>();
+            services.AddSingleton<IWebSessions>(provider => sessions = new HealthSessions(provider.GetRequiredService<LocalWebSessions>()));
+        }, context => {
+            if (context.Request.Path == path) observations.Enqueue((context.User.Identity?.IsAuthenticated == true,
+                context.Items.ContainsKey(AuthEndpoints.ResolvedKey)));
+        });
+        using var anonymous = await fixture.Client.GetAsync(path);
+        Assert.Equal(status, (int)anonymous.StatusCode);
+        var expected = await anonymous.Content.ReadAsStringAsync();
+        await fixture.Login();
+        sessions!.Clear(); var beforeAuthority = fixture.Authority.Revalidations;
+        using var authenticatedCookie = await fixture.Client.GetAsync(path);
+        Assert.Equal(status, (int)authenticatedCookie.StatusCode);
+        Assert.Equal(expected, await authenticatedCookie.Content.ReadAsStringAsync());
+        Assert.False(authenticatedCookie.Headers.Contains("Set-Cookie"));
+        Assert.Equal(0, sessions.Resolves); Assert.Equal(0, sessions.Inspections); Assert.Equal(0, sessions.Revocations);
+        Assert.Equal(beforeAuthority, fixture.Authority.Revalidations);
+        // Health did not remove or replace the real session. A protected route
+        // still resolves its cookie and sees current database authority.
+        using var protectedRead = await fixture.Client.GetAsync("/api/workspace");
+        Assert.Equal(HttpStatusCode.OK, protectedRead.StatusCode);
+        Assert.Equal(1, sessions.Resolves); Assert.Equal(beforeAuthority + 1, fixture.Authority.Revalidations);
+        sessions.Revoke(sessions.Created!.Token); sessions.Clear();
+        using var revokedCookie = await fixture.Client.GetAsync(path);
+        Assert.Equal(status, (int)revokedCookie.StatusCode);
+        Assert.Equal(expected, await revokedCookie.Content.ReadAsStringAsync());
+        Assert.False(revokedCookie.Headers.Contains("Set-Cookie"));
+        Assert.Equal(0, sessions.Resolves); Assert.Equal(0, sessions.Inspections); Assert.Equal(0, sessions.Revocations);
+        using var denied = await fixture.Client.GetAsync("/api/workspace");
+        Assert.Equal(HttpStatusCode.Unauthorized, denied.StatusCode); Assert.Equal(1, sessions.Resolves);
+        Assert.Equal(3, observations.Count);
+        Assert.All(observations, observation => { Assert.False(observation.Authenticated); Assert.False(observation.Resolved); });
+    }
+
+    [Theory]
+    [InlineData("HEAD", "/health/live")]
+    [InlineData("GET", "/health/live/")]
+    [InlineData("GET", "/HEALTH/live")]
+    [InlineData("GET", "/api/auth/csrf")]
+    [InlineData("GET", "/api/auth/session")]
+    public async Task HealthOptimizationDoesNotApplyToOtherMethodsPathsOrAnonymousRoutes(string method, string path)
+    {
+        HealthSessions? sessions = null;
+        await using var fixture = await PurchaseHttpFixture.Start(services => {
+            services.AddSingleton<LocalWebSessions>();
+            services.AddSingleton<IWebSessions>(provider => sessions = new HealthSessions(provider.GetRequiredService<LocalWebSessions>()));
+        });
+        await fixture.Login(); sessions!.Clear(); var before = fixture.Authority.Revalidations;
+        using var request = new HttpRequestMessage(new HttpMethod(method), path);
+        using var response = await fixture.Client.SendAsync(request);
+        Assert.Equal(1, sessions.Resolves); Assert.Equal(before + 1, fixture.Authority.Revalidations);
+    }
+
+    private sealed class HealthSessions(IWebSessions inner) : IWebSessions
+    {
+        public int Resolves, Inspections, Revocations;
+        public ResolvedSession? Created;
+        public void Clear() { Resolves = 0; Inspections = 0; Revocations = 0; }
+        public ResolvedSession? Create(AuthoritativeIdentity identity) => Created = inner.Create(identity);
+        public Task<ResolvedSession?> ResolveAsync(string token, bool userInteraction, CancellationToken cancellationToken)
+        { Resolves++; return inner.ResolveAsync(token, userInteraction, cancellationToken); }
+        public Task<ResolvedSession?> InspectAsync(string token, CancellationToken cancellationToken)
+        { Inspections++; return inner.InspectAsync(token, cancellationToken); }
+        public void Revoke(string token) { Revocations++; inner.Revoke(token); }
+    }
+
+    [Theory]
+    [InlineData("/api/purchase-requests/workspace", 2)]
+    [InlineData("/api/purchase-requests?page=1&pageSize=20", 2)]
+    [InlineData("/api/purchase-requests/detail?documentId=QA-DOC", 3)]
+    public async Task ReadRoutesHaveBoundedFullAuthorityChecksWithoutDroppingNativeQueries(string path, int expected)
+    {
+        await using var fixture = await PurchaseHttpFixture.Start(); fixture.Source.Seed(101);
+        await fixture.Login(); var before = fixture.Authority.Revalidations;
+        using var response = await fixture.Client.GetAsync(path);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(expected, fixture.Authority.Revalidations - before);
+        Assert.Contains(fixture.Source.Commands, command => command.Sql == SqlPurchaseRequestQueries.CredentialText);
+        Assert.Contains(fixture.Source.Commands, command => command.Sql == SqlPurchaseRequestQueries.GrantsText);
+        Assert.Contains(fixture.Source.Commands, command => command.Sql == SqlLegacyBranchScope.NativeUserText);
+        Assert.Equal(0, fixture.Source.Commits);
+    }
+
+    [Fact]
+    public async Task CustomReadProviderStillGetsFullAuthorityBeforeAccessResolution()
+    {
+        var source = new PurchaseQuerySource(); source.Seed();
+        var custom = new CustomReadQueries(source.Documents[0]); var access = new RecordingReadAccess();
+        await using var fixture = await PurchaseHttpFixture.Start(services => {
+            services.AddSingleton<IPurchaseRequestQueries>(custom);
+            services.AddSingleton<IPurchaseRequestCommandAccess>(access);
+        });
+        await fixture.Login();
+        // A custom read provider need not own the SQL reader's final full fence.
+        custom.AfterRead = () => fixture.Authority.Rejected = true;
+        using var response = await fixture.Client.GetAsync("/api/purchase-requests/detail?documentId=QA-DOC");
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.DoesNotContain("Synthetic requester", await response.Content.ReadAsStringAsync());
+        Assert.Equal(2, fixture.Authority.Revalidations); Assert.Equal(0, access.Calls);
+    }
+
+    private sealed class RecordingReadAccess : IPurchaseRequestCommandAccess
+    {
+        public int Calls;
+        public Task<PurchaseRequestCommandAccessState> ResolveAsync(ResolvedSession session, string documentId, string branchId, CancellationToken token)
+        { Calls++; return Task.FromResult(UnavailablePurchaseRequestCommandAccess.State); }
+    }
+
+    private sealed class CustomReadQueries(PurchaseRequestAggregate document) : IPurchaseRequestQueries
+    {
+        private readonly UnavailablePurchaseRequestQueries unavailable = new();
+        public Action? AfterRead;
+        public Task<PurchaseRequestQueryResult<PurchaseRequestReadback>> OpenAsync(string documentId, CancellationToken token = default)
+        {
+            AfterRead?.Invoke();
+            return Task.FromResult(new PurchaseRequestQueryResult<PurchaseRequestReadback>(PurchaseRequestQueryOutcome.Success,
+                new(document, PurchaseRequestCommandRules.EqualityToken(document))));
+        }
+        public Task<PurchaseRequestQueryResult<PurchaseRequestWorkspace>> WorkspaceAsync(CancellationToken token = default) => unavailable.WorkspaceAsync(token);
+        public Task<PurchaseRequestQueryResult<PurchaseRequestListPage>> ListAsync(PurchaseRequestListQuery query, CancellationToken token = default) => unavailable.ListAsync(query, token);
+        public Task<PurchaseRequestQueryResult<PurchaseRequestLookupPage>> LookupAsync(string kind, string? search, int page, CancellationToken token = default) => unavailable.LookupAsync(kind, search, page, token);
+    }
+
     [Fact]
     public async Task Real_cookie_session_reads_full_source_data_and_separates_purchase_order_navigation()
     {
@@ -163,7 +295,7 @@ public sealed class PurchaseRequestEndpointTests
 internal sealed class PurchaseHttpFixture(WebApplication app,HttpClient client,X509Certificate2 certificate,string configPath,PurchaseQuerySource source,PurchaseHttpAuthority authority,PurchaseClock clock):IAsyncDisposable
 {
     public HttpClient Client=>client;public PurchaseQuerySource Source=>source;public PurchaseHttpAuthority Authority=>authority;public PurchaseClock Clock=>clock;
-    public static async Task<PurchaseHttpFixture> Start(Action<IServiceCollection>? commandServices = null)
+    public static async Task<PurchaseHttpFixture> Start(Action<IServiceCollection>? commandServices = null, Action<HttpContext>? observeRequest = null)
     {
         // Only a generated fixture certificate and an empty synthetic configuration file.
         using var key=RSA.Create(2048);var request=new CertificateRequest("CN=localhost",key,HashAlgorithmName.SHA256,RSASignaturePadding.Pkcs1);
@@ -178,10 +310,12 @@ internal sealed class PurchaseHttpFixture(WebApplication app,HttpClient client,X
             builder.Services.AddScoped<IPurchaseRequestQueries>(provider=>{
                 var context=provider.GetRequiredService<IHttpContextAccessor>().HttpContext!;var token=AuthEndpoints.Current(context).Token;
                 var sessions=provider.GetRequiredService<IWebSessions>();
-                return new SqlPurchaseRequestQueries(PurchaseQuerySource.Company,()=>new QueryConnection(source),async cancellation=>(await sessions.ResolveAsync(token,false,cancellation))?.Identity);
+                return new SqlPurchaseRequestQueries(PurchaseQuerySource.Company,()=>new QueryConnection(source),async cancellation=>(await sessions.ResolveAsync(token,false,cancellation))?.Identity,
+                    async cancellation=>(await sessions.InspectAsync(token,cancellation))?.Identity);
             });
             commandServices?.Invoke(builder.Services);
         });
+        if (observeRequest is not null) app.Use(async (context, next) => { await next(context); observeRequest(context); });
         await app.StartAsync();var address=app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single();
         var client=new HttpClient(new HttpClientHandler{AllowAutoRedirect=false,CookieContainer=new CookieContainer(),ServerCertificateCustomValidationCallback=(_,cert,_,_)=>cert?.Thumbprint==certificate.Thumbprint}){BaseAddress=new Uri(address)};
         return new(app,client,certificate,configPath,source,authority,clock);
@@ -197,8 +331,9 @@ internal sealed class PurchaseHttpFixture(WebApplication app,HttpClient client,X
 }
 internal sealed class PurchaseHttpAuthority:IIdentityAuthority
 {
-    public AuthoritativeIdentity Identity=PurchaseQuerySource.NewIdentity();public bool Rejected;private long version;
+    public AuthoritativeIdentity Identity=PurchaseQuerySource.NewIdentity();public bool Rejected;private long version;public int Revalidations;
     public Task<IdentityResult> AuthenticateAsync(string username,string password,CancellationToken token)=>Task.FromResult(username=="qa-user"&&password=="synthetic-password"&&!Rejected?new IdentityResult(IdentityOutcome.Success,Identity with {AuthorityVersion=Interlocked.Increment(ref version)}):new IdentityResult(IdentityOutcome.Rejected));
-    public Task<IdentityResult> RevalidateAsync(AuthoritativeIdentity identity,CancellationToken token)=>Task.FromResult(Rejected?new IdentityResult(IdentityOutcome.Rejected):new IdentityResult(IdentityOutcome.Success,Identity with {AuthorityVersion=Interlocked.Increment(ref version)}));
+    public Task<IdentityResult> RevalidateAsync(AuthoritativeIdentity identity,CancellationToken token)
+    { Interlocked.Increment(ref Revalidations); return Task.FromResult(Rejected?new IdentityResult(IdentityOutcome.Rejected):new IdentityResult(IdentityOutcome.Success,Identity with {AuthorityVersion=Interlocked.Increment(ref version)})); }
 }
 internal sealed class PurchaseClock:TimeProvider{public DateTimeOffset Now=DateTimeOffset.UtcNow;public override DateTimeOffset GetUtcNow()=>Now;}

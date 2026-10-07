@@ -9,6 +9,7 @@ import {Badge} from "@/components/ui/badge";
 import {Empty, EmptyDescription, EmptyHeader, EmptyTitle} from "@/components/ui/empty";
 import {Skeleton} from "@/components/ui/skeleton";
 import {ApiError, errorMessage} from "@/lib/erp/api";
+import {documentStatusLabel} from "@/lib/erp/document-status";
 import {cn} from "@/lib/utils";
 
 /** Shared presentation only. No request, authority, storage or command state. */
@@ -55,8 +56,8 @@ export function RequestEmpty({title,children}:{title:string;children:ReactNode})
 export function RequestLoading({label="Đang tải chứng từ…"}:{label?:string}){
   return <div role="status" aria-label={label} className="grid min-w-0 gap-3 p-4 sm:p-5"><span className="text-sm text-muted-foreground">{label}</span>{[1,2,3].map(i=><Skeleton key={i} className="h-24 w-full rounded-lg"/>)}</div>;
 }
-export function RequestStatus({value}:{value:string|number|null|undefined}){
-  return <Badge variant="outline" className="request-status max-w-full whitespace-normal font-normal">Trạng thái: {value??"Chưa xác định"}</Badge>;
+export function RequestStatus({value,statusName}:{value:number|null|undefined;statusName?:string|null}){
+  return <Badge variant="outline" className="request-status max-w-full whitespace-normal font-normal">{documentStatusLabel(value,statusName)}</Badge>;
 }
 /** Display source wall-clock dates without converting time zone or editing data. */
 export function requestDate(value:string|null|undefined){

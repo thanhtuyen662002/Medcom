@@ -24,5 +24,9 @@ public interface IWebSessions
 {
     ResolvedSession? Create(AuthoritativeIdentity identity);
     Task<ResolvedSession?> ResolveAsync(string token, bool userInteraction, CancellationToken cancellationToken);
+    // Liveness only, never proof of current database authority. Implementations without
+    // a local session store conservatively retain full revalidation.
+    Task<ResolvedSession?> InspectAsync(string token, CancellationToken cancellationToken)
+        => ResolveAsync(token, false, cancellationToken);
     void Revoke(string token);
 }

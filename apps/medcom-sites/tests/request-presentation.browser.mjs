@@ -92,7 +92,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
  assert.ok(!css.includes('@import "tailwindcss"'),'Application Tailwind must actually compile.');
  const script=Buffer.from(built.outputFiles[0].contents),logo=await readFile(path.join(app,'public/medcom-logo.png'));
  const html='<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/app.css"><div id="root"></div><script src="/app.js"></script></html>';
- let model,serial=0,browser,context,page,origin,completed=false,fatal=null,clockPaused=false;const expectedCases=26;const errors=[],results=[],failures=[],captures=[],calls=[],transportEvidence=[],readonlyEvidence=[];
+ let model,serial=0,browser,context,page,origin,completed=false,fatal=null,clockPaused=false;const expectedCases=29;const errors=[],results=[],failures=[],captures=[],calls=[],transportEvidence=[],readonlyEvidence=[];
  const reset=(patch={})=>{model={serial:++serial,writable:false,empty:false,status:200,holdList:false,waiters:[],listResponses:0,listResponseHeaders:null,holdDetail:false,detailWaiters:[],detailStatus:200,draftEnvelope:null,draftNetwork:false,draftNetworkFailures:0,draftMalformed:false,draftResponses:0,afterWriteDraftEnvelope:null,holdProjection:false,projectionWaiters:[],projectionStatus:200,projectionKind:null,projectionResponses:0,unknown:false,workspaceReads:0,workspaceResponses:0,workspacePending:0,workspaceVersions:[],advanceAuthority:false,deniedLists:0,workspaceStatus:200,purchase:structuredClone(purchase),inbound:structuredClone(inbound),purchaseVersion:1,inboundVersion:1,effects:0,originals:new Map(),receipts:new Map(),writes:[],reconciles:[],control:{closed:[],bff:[]},holdCommands:false,commandWaiters:[],commandResponses:0,rejected:false,conflict:false,malformed:false,...patch};calls.length=0;};
  const workspace=()=>({session:{displayName:'SYNTHETIC USER',tenantId:'QA-T',companyId:'QA-C',companyName:'SYNTHETIC',authorityVersion:model.advanceAuthority?model.workspaceReads:1,idleExpiresAt:new Date(Date.now()+3600000).toISOString(),absoluteExpiresAt:new Date(Date.now()+7200000).toISOString(),capabilities:model.workspaceCapabilities??['purchase-requests.read','inbound-requests.read','purchase-orders.read']},branchIds:['QA-BRANCH'],navigation:['purchase-requests','inbound-requests','purchase-orders'].map(id=>({id,label:id,href:'/?screen='+id}))});
  const send=(res,status,data,headers={})=>{if(res.destroyed)return;res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store',...headers});res.end(JSON.stringify(data));};
@@ -117,11 +117,12 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
    }
    if(route==='/api/auth/csrf')return send(res,200,{token:'synthetic-only'});
    if(route==='/api/purchase-requests/workspace')return send(res,200,{scopeKey:scope,data:{branchIds:['QA-BRANCH'],writeAvailable:false,writeReason:'numbering_journal_runtime_unqualified',lookups:[]}});
+   if(route==='/api/documents/purchase-orders')return send(res,200,{rows:[{documentId:'QA-ORDER-001',documentDate:'2026-10-01',branchId:'QA-BRANCH',statusId:999,statusName:null,isLocked:false}],page:1,pageSize:50,hasMore:false},readHeaders);
    if(route==='/api/purchase-requests'||route==='/api/documents/inbound-requests'){
     if(m.holdList)await new Promise(resolve=>m.waiters.push(resolve));
     if(m.status!==200){if(m.status===403)m.deniedLists++;return send(res,m.status,{code:'request_failed'},readHeaders);}
     const isPurchase=route==='/api/purchase-requests';
-    const rows=m.empty?[]:isPurchase?(m.purchaseDocuments??[m.purchase]).map(document=>({documentId:document.purchaseRequestId,purchaseDate:document.header.purchaseDate,branchId:document.branchId,personSuggest:document.header.personSuggest,department:document.header.department,statusId:document.statusId,isLocked:document.isLocked})):(m.inboundDocuments??[m.inbound]).map(document=>({documentId:document.documentId,documentDate:'2026-10-01',branchId:document.header.branchId,statusId:document.statusId,isLocked:false}));
+    const rows=m.empty?[]:isPurchase?(m.purchaseDocuments??[m.purchase]).map(document=>({documentId:document.purchaseRequestId,purchaseDate:document.header.purchaseDate,branchId:document.branchId,personSuggest:document.header.personSuggest,department:document.header.department,statusId:document.statusId,statusName:"Trạng thái tổng hợp",isLocked:document.isLocked})):(m.inboundDocuments??[m.inbound]).map(document=>({documentId:document.documentId,documentDate:'2026-10-01',branchId:document.header.branchId,statusId:document.statusId,statusName:"Trạng thái tổng hợp",isLocked:false}));
     const data={rows,page:Number(url.searchParams.get('page')??1),pageSize:isPurchase?20:50,hasMore:false};m.listResponses++;return send(res,200,isPurchase?{scopeKey:scope,data}:data,isPurchase?readHeaders:m.listResponseHeaders??readHeaders);
    }
    if(route==='/api/documents/inbound-requests/detail'){
@@ -228,10 +229,10 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
  const open=screen=>screen==='purchase-requests'?page.getByRole('button',{name:'Mở đề nghị '+model.purchase.purchaseRequestId,exact:true}):page.getByRole('button',{name:new RegExp('^Mở phiếu '+model.inbound.documentId+' ')});
  async function run(name,fn){await t.test(name,async()=>{try{await fn();results.push(name);}catch(error){failures.push(name);throw error;}});}
  try{
-  browser=await chromium.launch({executablePath:executable,headless:true,args:['--no-sandbox']});t.signal.throwIfAborted();
+  browser=await chromium.launch({executablePath:executable,headless:true,chromiumSandbox:true});t.signal.throwIfAborted();
   for(const width of [320,390,1440])for(const screen of ['purchase-requests','inbound-requests']){
    await run(`${width} ${screen} list and authorized read-only detail`,async()=>{
-    await start(width,screen);await open(screen).waitFor();if(screen==='inbound-requests')assert.equal(await page.getByText('Phiên hoặc quyền đọc hiện tại không khả dụng. Dữ liệu của phiên trước được ẩn.',{exact:true}).isVisible(),false);await layout(width,screen);assert.match(await host(screen).innerText(),/01\/10\/2026/);await capture(`${screen}-list-${width}`);
+    await start(width,screen);await open(screen).waitFor();if(screen==='inbound-requests')assert.equal(await page.getByText('Phiên hoặc quyền đọc hiện tại không khả dụng. Dữ liệu của phiên trước được ẩn.',{exact:true}).isVisible(),false);await layout(width,screen);assert.match(await host(screen).innerText(),/01\/10\/2026/);assert.equal(await host(screen).getByText('Trạng thái tổng hợp',{exact:true}).count(),1);await capture(`${screen}-list-${width}`);
     const filter=host(screen).locator('input').first();await filter.focus();assert.equal(await filter.evaluate(el=>el===document.activeElement),true);
     await open(screen).click();if(screen==='purchase-requests')await page.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true}).waitFor();else await page.getByLabel('Số đơn',{exact:true}).waitFor();
     await layout(width,screen);assert.equal(calls.filter(v=>v.method==='POST').length,0);assert.equal((await page.evaluate(()=>window.i30Notices)).length,0,'Read-only reads do not notify');
@@ -247,6 +248,27 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
     }
    });
   }
+  for(const width of [320,390,1440])await run(`I36 compact shell and command dialog ${width}`,async()=>{
+   await start(width,'purchase-requests');await open('purchase-requests').waitFor();
+   const table=host('purchase-requests').getByRole('table',{name:'Danh sách đề nghị',exact:true});
+   assert.equal(await table.locator('tbody tr').count(),1);assert.equal(await table.getByRole('columnheader').count(),7);
+   assert.equal(await table.getByRole('button',{name:'Mở đề nghị '+purchase.purchaseRequestId,exact:true}).count(),1,'One responsive row has one focus destination');
+   const topbar=await page.locator('.topbar').evaluate(el=>({background:getComputedStyle(el).backgroundColor,card:getComputedStyle(document.querySelector('.request-list-header')).backgroundColor}));assert.equal(topbar.background,topbar.card,'Sticky shell must use an opaque card background');
+   if(width<768){const nav=page.locator('.mobile-bottom-nav');const labels=await nav.locator('.mobile-nav-item > span:last-child').evaluateAll(els=>els.map(el=>({height:el.getBoundingClientRect().height,line:parseFloat(getComputedStyle(el).lineHeight),nowrap:getComputedStyle(el).whiteSpace})));assert.ok(labels.every(el=>el.nowrap==='nowrap'&&el.height<=el.line+1));await nav.getByRole('button',{name:'Tìm màn hình được cấp quyền',exact:true}).evaluate(el=>window.i36ExpectedOpener=el);await nav.getByRole('button',{name:'Tìm màn hình được cấp quyền',exact:true}).click();}
+   else {await page.locator('.global-search').evaluate(el=>window.i36ExpectedOpener=el);await page.locator('.global-search').click();}
+   const dialog=page.getByRole('dialog',{name:'Tìm màn hình',exact:true});await dialog.waitFor();
+   await paint();assert.equal(await dialog.getByRole('combobox').evaluate(el=>el===document.activeElement),true,'Opening command search focuses its input without test intervention');
+   for(let n=0;n<5;n++){await page.keyboard.press('Tab');assert.equal(await dialog.evaluate(el=>el.contains(document.activeElement)),true,'Tab focus stays in modal');}
+   const geometry=await dialog.evaluate(el=>{const r=el.getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:innerHeight,rows:[...el.querySelectorAll('[data-slot=command-item]')].map(row=>row.getBoundingClientRect().height)}});assert.ok(geometry.top>=0&&geometry.bottom<=geometry.height);assert.ok(geometry.rows.every(height=>height>=44));
+   await capture(`i36-command-${width}`,{viewport:true,keepFocus:true});await dialog.getByRole('button',{name:'Đóng tìm màn hình',exact:true}).click();await dialog.waitFor({state:'hidden'});await paint();assert.equal(await page.evaluate(()=>document.activeElement===window.i36ExpectedOpener),true,'Close restores the search opener');
+   if(width<768)await page.locator('.mobile-bottom-nav').getByRole('button',{name:'Tìm màn hình được cấp quyền',exact:true}).click();else await page.locator('.global-search').click();
+   await dialog.waitFor();await page.keyboard.press('Escape');await dialog.waitFor({state:'hidden'});await paint();assert.equal(await page.evaluate(()=>document.activeElement===window.i36ExpectedOpener),true,'Escape restores the search opener');assert.equal(new URL(page.url()).searchParams.get('screen'),'purchase-requests');
+   const searchInput=host('purchase-requests').getByLabel('Tìm mã đề nghị',{exact:true});await searchInput.focus();await page.keyboard.press('Control+k');await dialog.waitFor();await paint();assert.equal(await dialog.getByRole('combobox').evaluate(el=>el===document.activeElement),true);await page.keyboard.press('Escape');await dialog.waitFor({state:'hidden'});await paint();assert.equal(await searchInput.evaluate(el=>el===document.activeElement),true,'Keyboard invocation restores its original focused field');
+   await start(width,'purchase-orders');await page.getByText('QA-ORDER-001',{exact:true}).locator('visible=true').first().waitFor();await paint();
+   if(width>=768){const widths=await page.locator('.desktop-grid-viewport').evaluate(el=>({viewport:el.clientWidth,table:el.querySelector('table').getBoundingClientRect().width}));assert.ok(Math.abs(widths.table-widths.viewport)<=1,'Orders table fills its available viewport');const lastHeader=page.locator('.shared-grid-table th').filter({hasText:'Khóa chứng từ'});const before=await lastHeader.evaluate(el=>el.getBoundingClientRect().width);const resize=page.getByRole('separator',{name:'Độ rộng Khóa chứng từ',exact:true});await resize.focus();await page.keyboard.press('ArrowRight');await paint();assert.ok(Math.abs((await lastHeader.evaluate(el=>el.getBoundingClientRect().width))-before-16)<=1,'Trailing data column keeps its real resize behavior even with viewport fill');await page.keyboard.press('ArrowLeft');await paint();}
+   assert.equal(await page.getByText('Trạng thái chưa xác định (mã 999)',{exact:true}).locator('visible=true').count(),1);
+   await capture(`i36-orders-${width}`,{viewport:true});
+  });
   for(const screen of ['purchase-requests','inbound-requests']){
    await run(`${screen} loading, empty and failed list`,async()=>{
     await start(390,screen,{holdList:true});await eventually(()=>model.waiters.length>0);await host(screen).getByRole('status').first().waitFor();await capture(`${screen}-loading-390`);release();await open(screen).waitFor();
@@ -415,7 +437,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
    await readonlyReady(number);const panel=readonlyPanel(),expected=readonlyProjection(model.inbound.documentId,number);
    assert.equal(await panel.getAttribute('aria-label'),'Phiếu nhập hàng chỉ đọc');
    assert.equal(await panel.locator('time').getAttribute('datetime'),expected.document.documentDate);assert.equal(await panel.locator('time').innerText(),'01/10/2026');
-   assert.equal(await panel.getByRole('heading',{name:expected.document.documentId,exact:true}).count(),1);assert.equal(await panel.getByText('Trạng thái: NULL',{exact:true}).count(),1);
+   assert.equal(await panel.getByRole('heading',{name:expected.document.documentId,exact:true}).count(),1);assert.equal(await panel.getByText('Chưa có trạng thái',{exact:true}).count(),1);
    assert.equal(await panel.locator('header dd').last().textContent(),'NULL');
    assert.deepEqual(await panel.locator('article').evaluateAll(rows=>rows.map(row=>[...row.querySelectorAll('dd')].map(value=>value.textContent))),expected.inboundRequestLines.map(line=>[line.lineId,line.itemId,line.setQuantityByDocument,line.barrelQuantityByDocument,line.setQuantityByReal,line.barrelQuantityByReal].map(value=>value??'NULL')));
    assert.equal(await panel.locator('input,textarea,select,form,[contenteditable=true]').count(),0,'The projection has no editable form or keyboard input');

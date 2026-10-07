@@ -80,6 +80,22 @@ public static class InboundDraftEndpoints
             Require(authenticated.Succeeded && claims is { Length: 1 }, 401, "authentication_required");
             var token = claims![0].Value;
             var sessions = context.RequestServices.GetRequiredService<IWebSessions>();
+            // The exact built-in disabled pair cannot return document data, receipts,
+            // scope, or permissions. Avoid repeated SQL authority reads for that GET
+            // only; custom providers and every POST retain the normal fences below.
+            if (route is null
+                && context.RequestServices.GetService<IInboundDraftCommandAccess>() is UnavailableInboundDraftCommandAccess
+                && context.RequestServices.GetService<IInboundDraftCommandService>() is UnavailableInboundDraftCommandService)
+            {
+                _ = ReadScope(context, false);
+                Require(context.Request.Query.Count == 1 && context.Request.Query.Keys.Single() == "documentId"
+                    && context.Request.Query.TryGetValue("documentId", out var disabledIds)
+                    && disabledIds.Count == 1 && InboundDraftValidation.Ansi(disabledIds[0], 50));
+                var current = await sessions.InspectAsync(token, context.RequestAborted);
+                context.RequestAborted.ThrowIfCancellationRequested();
+                Require(current is not null && current.Token == token, 401, "authentication_required");
+                return Json(new InboundDraftWorkspace(null, Closed, new(InboundDraftOutcome.Unavailable)));
+            }
             // This invocation owns its baseline and last observed version. Other
             // requests may advance the authority sequence independently.
             var sessionFence = new SessionFence(context, sessions, token);

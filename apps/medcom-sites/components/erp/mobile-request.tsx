@@ -1,4 +1,5 @@
 "use client";
+import {documentStatusLabel} from "@/lib/erp/document-status";
 import {useRequestNotifications} from "./request-notifications";
 import {RequestButton,RequestInput,RequestTextarea,RequestNotice,requestStyles} from "./request-presentation";
 
@@ -76,6 +77,7 @@ export type MobileRequestAdapter = {
 };
 export type MobileRequestProps = {
   initial: PurchaseRequestSnapshot;
+  statusPresentation?: {documentId:string;id:number|null;name?:string|null};
   access: MobileRequestAccess;
   adapter?: MobileRequestAdapter;
   onConfirmed?: (snapshot: PurchaseRequestSnapshot, receiptId: string) => void;
@@ -157,7 +159,7 @@ export function MobileRequest(props: MobileRequestProps) {
 
 const emptySnapshot = (): PurchaseRequestSnapshot => ({documentId: null, version: null, confirmation: null, status: null, values: {purchaseDate: "", personSuggest: "", department: "", purposeId: "", purposeDescOrClient: "", notes: "", branchId: "", currencyId: "", objectId: "", lines: []}});
 
-function RequestEditor({initial, access, adapter, onConfirmed, readRevision=0, onWorkStateChange}: MobileRequestProps) {
+function RequestEditor({initial, statusPresentation, access, adapter, onConfirmed, readRevision=0, onWorkStateChange}: MobileRequestProps) {
   const prefix = useId();
   const notify=useRequestNotifications(access.scopeKey,access.canRead&&access.available);
   // Invalid input is never rendered as a synthetic fallback. This only permits
@@ -310,7 +312,7 @@ function RequestEditor({initial, access, adapter, onConfirmed, readRevision=0, o
   if (!serviceAvailable || !adapter) return <section role="status"><h2>Đề nghị mua hàng</h2><p>Dịch vụ tạo và gửi đề nghị mua hàng chưa khả dụng.</p>{hasUnresolvedIntent && <p>Yêu cầu gốc vẫn cần được kiểm tra trước khi gửi yêu cầu khác.</p>}</section>;
   if (documentSwitchBlocked) return <section aria-label="Chờ xác nhận phiếu trước" style={{padding: 16, display: "grid", gap: 12}}><h1>Đề nghị mua hàng</h1><p role="status">{pending ? "Đang chờ kết quả phiếu trước…" : "Phiếu trước chưa được xác nhận. Kiểm tra yêu cầu gốc trước khi mở phiếu khác."}</p>{phase === "unknown" && <RequestButton type="button" disabled={access.verifying || access.canReconcile===false || dispatchAdapter!==adapter} onClick={() => void reconcile()}>Kiểm tra kết quả yêu cầu gốc</RequestButton>}</section>;
   return <form ref={form} onSubmit={event => {event.preventDefault(); if (!review && editable) inspect();}} aria-label="Đề nghị mua hàng trên điện thoại" className={requestStyles.editor}>
-    <header className={requestStyles.section}><h2 className={requestStyles.title}>Đề nghị mua hàng</h2><p role="status" aria-live="polite">{stateLabel}</p>{baseline.documentId && <p>Mã phiếu: <strong>{baseline.documentId}</strong></p>}{baseline.status && <p className={requestStyles.muted}>{baseline.status.label}</p>}</header>
+    <header className={requestStyles.section}><h2 className={requestStyles.title}>Đề nghị mua hàng</h2><p role="status" aria-live="polite">{stateLabel}</p>{baseline.documentId && <p>Mã phiếu: <strong>{baseline.documentId}</strong></p>}{baseline.status && <p className={requestStyles.muted}>{statusPresentation&&baseline.documentId===statusPresentation.documentId&&baseline.status.id===String(statusPresentation.id)?documentStatusLabel(statusPresentation.id,statusPresentation.name):/^\d+$/.test(baseline.status.id)?documentStatusLabel(Number(baseline.status.id)):baseline.status.id==="null"?documentStatusLabel(null):baseline.status.label}</p>}</header>
     {!access.canEdit&&!access.canSubmit && <RequestNotice>Phiếu hiện chỉ được xem theo quyền của bạn.</RequestNotice>}
     {access.existingOnly&&access.canEdit&&<p className={requestStyles.muted} role="status">Ngày đề nghị, chi nhánh và danh mục được giữ nguyên. Chỉ các trường được cấp quyền mới có thể chỉnh sửa.</p>}
     {access.requiresFreshRead&&<p role="status">Cần đọc lại phiếu trước khi chỉnh sửa tiếp. Nếu ERP đã xác nhận, không gửi lại thao tác.</p>}
