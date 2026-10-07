@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I47",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "805881c7-06b6-41e8-b293-ef98617879ce",
+  "base_sha": "c291634482d41b8925445b132b7775cc22000ffd",
+  "work_branch": "codex/g45-qr-search-control-i47-20261007",
+  "claim_branch": "medcom-claims/g45/direct/I47",
+  "scope": [
+    "apps/medcom-sites/components/erp/request-qr-search.tsx",
+    "apps/medcom-sites/lib/erp/request-qr-search.ts",
+    "apps/medcom-sites/tests/request-qr-search.test.mjs",
+    "apps/medcom-sites/tests/request-qr-search.browser.mjs",
+    "docs/execution/direct-runs/I47.json"
+  ],
+  "purpose": "Scan QR into search",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "constraints": [
+    "Root is sole GitHub integrator/publisher. External Work implementation is isolated and has no GitHub mutation authority.",
+    "Admission only; implementation and actual tests are NOT_RUN at this commit.",
+    "No private data, credentials, owner SQL/DLL/config access, runtime activation or deployment.",
+    "Preserve current safety, original-intent custody and all existing tests. No dependency/lock/CI edits.",
+    "Use exact verified c291 source; shared composition, history, host and test registration remain root-owned."
+  ],
+  "created_at": "2026-10-07T09:17:08.140864+00:00"
+}
