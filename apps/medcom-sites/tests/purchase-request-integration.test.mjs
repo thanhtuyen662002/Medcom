@@ -256,7 +256,11 @@ async function compileReadBrowser(){
 function installCustodyWorkspaceObserver(){
  const nativeFetch=window.fetch.bind(window),io={events:[],requests:[]};let retryClick=null;
  window.custodyWorkspaceIO=io;
- window.addEventListener('click',event=>{retryClick=event.target?.closest?.('button')?.textContent?.trim()==='Thử lại'?event:null;},true);
+ window.addEventListener('click',event=>{
+  retryClick=event.target?.closest?.('button')?.textContent?.trim()==='Thử lại'?event:null;
+  if(retryClick)io.events.push({type:'retry-click',at:Date.now(),focused:document.hasFocus()});
+ },true);
+ window.addEventListener('pointerdown',event=>{if(event.target?.closest?.('button')?.textContent?.trim()==='Thử lại')io.events.push({type:'retry-pointerdown',at:Date.now(),focused:document.hasFocus()});},true);
  for(const type of ['focus','online'])window.addEventListener(type,()=>io.events.push({type,at:Date.now()}));
  document.addEventListener('visibilitychange',()=>io.events.push({type:'visibilitychange',visibility:document.visibilityState,at:Date.now()}));
  window.fetch=(input,init)=>{
@@ -274,7 +278,7 @@ function custodyWorkspaceFailure(state,explicitRetry){
 test('custody fixture recovery is consumed only by a dispatched Retry, never incidental focus',async()=>{
  const listeners=new Map(),requests=[],response={status:200};
  const window={addEventListener:(type,handler)=>listeners.set(type,handler),fetch:async(input,init)=>{requests.push({input,init});return response;}};
- runInNewContext(`(${installCustodyWorkspaceObserver.toString()})();`,{window,document:{addEventListener(){}},Headers,Date});
+ runInNewContext(`(${installCustodyWorkspaceObserver.toString()})();`,{window,document:{addEventListener(){},hasFocus:()=>true},Headers,Date});
  const state={failure:503,retryOutcome:{failure:null}},signal=new AbortController().signal;
  const read=()=>window.fetch('/api/erp/api/workspace',{signal,headers:{'X-Existing':'preserved'}});
  await read();assert.equal(requests.at(-1).init.headers.has('X-Synthetic-Workspace-Retry'),false);
@@ -796,10 +800,12 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
  }
  async function recoverSame(){
   state.holdScope=true;state.releaseScope=null;
-  const started=page.waitForRequest(request=>new URL(request.url()).pathname==='/api/erp/api/purchase-requests/workspace');
-  await retryWorkspace(null);await started;
-  assert.equal(state.retryOutcome,null,'the explicit retry must consume its planned recovery before scoped proof begins');
+  await retryWorkspace(null);
+  // The server-side hold below proves scoped-request arrival. Do not arm a
+  // second independent timeout before Retry: it can fail the subtest while
+  // retryWorkspace is still gathering the original failure's diagnostics.
   const deadline=Date.now()+5000;while(!state.releaseScope){assert.ok(Date.now()<deadline,'synthetic scope verification did not start');await new Promise(resolve=>setTimeout(resolve,1));}await paint();
+  assert.equal(state.retryOutcome,null,'the explicit retry must consume its planned recovery before scoped proof begins');
   assert.equal(await screen.locator('input:visible,textarea:visible,select:visible,table:visible').count(),0,'a workspace 200 alone must NOT expose the old scope');
   assert.equal(lookups().length,0);await assertSingleWriter();
   state.holdScope=false;state.releaseScope();
@@ -815,14 +821,30 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
   // Tab coverage can return focus from browser chrome and trigger a real parent
   // refresh. Keep the old outage until the actual click dispatches its request;
   // clearing it before Playwright clicks can remove Retry via auto-recovery.
-  assert.equal(state.retryOutcome,null,'the previous explicit retry must have been consumed');
-  state.retryOutcome={failure};
-  const dispatched=page.waitForRequest(request=>new URL(request.url()).pathname==='/api/erp/api/workspace'&&request.headers()['x-synthetic-workspace-retry']==='1');
-  try{await Promise.all([page.getByRole('button',{name:'Thử lại',exact:true}).click(),dispatched]);}
+  let stage='restore recovery focus';
+  try{
+   const retry=page.getByRole('button',{name:'Thử lại',exact:true});
+   // Tab coverage deliberately exercises the browser's focus boundary. Restore
+   // window/content focus while the old outage is still active; otherwise the
+   // pointer's focus event can replace Retry between pointerdown and click.
+   await page.bringToFront();await retry.waitFor();await retry.focus();
+   await page.waitForFunction(()=>document.hasFocus()&&window.custodyWorkspaceIO.requests.every(request=>request.status!=='pending')&&[...document.querySelectorAll('button')].some(button=>button.textContent?.trim()==='Thử lại'&&button.getClientRects().length>0));
+   await paint();await retry.focus();
+   await page.waitForFunction(()=>document.hasFocus()&&document.activeElement?.textContent?.trim()==='Thử lại'&&window.custodyWorkspaceIO.requests.every(request=>request.status!=='pending'));
+   assert.equal(state.retryOutcome,null,'the previous explicit retry must have been consumed');
+   state.retryOutcome={failure};
+   stage='dispatch explicit Workspace retry';
+   const dispatched=page.waitForRequest(request=>new URL(request.url()).pathname==='/api/erp/api/workspace'&&request.headers()['x-synthetic-workspace-retry']==='1');
+   const [,request]=await Promise.all([retry.click(),dispatched]);
+   stage='receive explicit Workspace retry';
+   const response=await request.response();assert.ok(response,'the exact Retry request must receive its planned HTTP response');
+   assert.equal(response.status(),failure??200);assert.equal(await response.finished(),null);
+  }
   catch(error){
    // Node subtest failures do not throw through the outer parent try/catch.
    // Emit the actual stage evidence here so both hosted OS logs retain it.
-   t.diagnostic(JSON.stringify({stage:'explicit Workspace retry',error:String(error),retryOutcome:state.retryOutcome,calls:calls.filter(call=>call.path==='/api/workspace'),workspaceIO:await page.evaluate(()=>window.custodyWorkspaceIO).catch(()=>null),body:await page.locator('body').innerText().catch(()=>null)}));
+   const diagnostic={stage,error:String(error),retryOutcome:state.retryOutcome,calls:calls.filter(call=>call.path==='/api/workspace'),workspaceIO:await page.evaluate(()=>window.custodyWorkspaceIO).catch(()=>null),body:await page.locator('body').innerText().catch(()=>null)};
+   t.diagnostic(JSON.stringify(diagnostic));await writeFile(path.join(output,'i20-workspace-custody-failure.json'),JSON.stringify(diagnostic,null,2));
    throw error;
   }
  }
@@ -857,8 +879,7 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
   });
   await t.test('repeated failed verification preserves custody; recovery still uses the original writer body',async()=>{
    const original=await begin('lost');await suspend('network');
-   const response=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/erp/api/workspace'&&response.status()===503);
-   await retryWorkspace(503);await response;await guardExplicitOutageNavigation();await paint();
+   await retryWorkspace(503);await guardExplicitOutageNavigation();await paint();
    await assertProtectedConcealed();await assertSingleWriter();assert.equal(lookups().length,0);
    await recoverSame();await screen.getByRole('button',{name:'Kiểm tra kết quả yêu cầu gốc',exact:true}).click();await screen.getByText(/^ERP đã xác nhận yêu cầu /).waitFor();assert.equal(lookups()[0].body,original.body);await assertSingleWriter();
   });
@@ -882,8 +903,7 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
   });
   await t.test('confirmed server logout (401), unlike 503, retires original intent before a delayed ACK',async()=>{
    await begin('hold');await suspend(503);
-   const ended=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/erp/api/workspace'&&response.status()===401);
-   await retryWorkspace(401);await ended;await paint();
+   await retryWorkspace(401);await paint();
    // A confirmed end retires protected custody while preserving the intended return route.
    await page.getByRole('heading',{name:'Phiên làm việc đã kết thúc',exact:true}).waitFor();
    async function assertRetired(){

@@ -35,6 +35,14 @@ export type InboundRequestScreenProps = {
 };
 type PresentedReadProof = InboundPresentedRead & {context: string; api: InboundRequestApi; access: InboundDraftAccess};
 type ReadFallbackBinding = {context: string | null; documentId: string | null; scope: ReadScope | null; api: InboundRequestApi; readIdentity: string | null; selectionVersion: number};
+// The bridge publishes a fresh access object for custody-only phase/receipt
+// changes too. Compare the entire read grant within its separately fenced
+// binding; reference churn is neither revoked authority nor a fresh read.
+function sameReadAccess(left: InboundDraftAccess, right: InboundDraftAccess): boolean {
+  return left.scopeKey === right.scopeKey && left.canRead === right.canRead && left.canSave === right.canSave
+    && left.canSend === right.canSend && left.available === right.available && left.maxCommandBytes === right.maxCommandBytes;
+}
+
 // Per-mounted-host presentation observation; no authority or command storage.
 function createReadObservation() {
   let binding: ReadFallbackBinding | null = null, unavailable: ReadFallbackBinding | null = null;
@@ -221,7 +229,10 @@ function RetainedInboundHost({presentationAllowed = true, registerDetailNavigati
   const readonlyVerifying = readonlyEligible && (unavailable.binding !== fallbackBinding || readingFallback === fallbackBinding);
   const readonlyReady = readonlyEligible && !readonlyVerifying && readonlyPresented?.binding === fallbackBinding && readonlyPresented.state === "ready";
   const currentPresentationProof = presentationReadProof?.binding === fallbackBinding && contextCurrent
-    && presentationReadProof.access === state.access && state.access.canRead && state.access.available && !state.needsRefresh ? presentationReadProof : null;
+    && sameReadAccess(presentationReadProof.access, state.access) && state.access.canRead && state.access.available && !state.needsRefresh ? presentationReadProof : null;
+  // A real grant/binding loss retires this proof. Returning to equal values is
+  // not permission to reuse a snapshot from before that observed boundary.
+  if (presentationReadProof !== null && currentPresentationProof === null) setPresentationReadProof(null);
   const presentationReady = useDetailPresentationProof(presentationAllowed, readonlyReady ? readonlyPresented : currentPresentationProof, () => setRetry(value => value + 1));
   const readonlyFailed = readonlyEligible && readonlyPresented?.binding === fallbackBinding && readonlyPresented.state === "failed";
   const focusOwner = useMemo(() => ({loginKey, api, readIdentity}), [loginKey, api, readIdentity]);

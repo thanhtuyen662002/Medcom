@@ -336,7 +336,7 @@ test('I40 synthetic React host list lifecycle and stale-denial integration', asy
   const workspace = () => ({session:{tenantId:'T',companyId:'C',authorityVersion:1,capabilities:['inbound-requests.read']},
     branchIds:['BR-A'],sessionScope:'e'.repeat(64),readScope:'f'.repeat(64),navigation:[]});
   const listData=page=>({rows:['DOC-A','DOC-B'].map(documentId=>({documentId,documentDate:'2026-10-01',branchId:'BR-A',statusId:0,isLocked:false})),page,pageSize:50,hasMore:page===1});
-  async function host(){
+  async function host(options = {}){
     const guard=globalThis.i43InboundGuard={queue:false,dirty:false,pending:null,blockers:new Map()};
     const calls=[],denied=[],held=[]; let hold=false,failure=null,renderer,nextRows=null;
     const list=async(page,search,branch,signal,scope)=>{
@@ -347,8 +347,8 @@ test('I40 synthetic React host list lifecycle and stale-denial integration', asy
       if(captured!==null)throw new HostApiError(captured,'synthetic_i40_denied');
       return data;
     };
-    const api={read:async documentId=>({scopeKey:'a'.repeat(64),access:{...access},data:{outcome:'Observed',document:{...structuredClone(source),documentId}}}),
-      command:async()=>assert.fail('I40 read tests must never send commands')};
+    const api={read: options.read ?? (async documentId=>({scopeKey:'a'.repeat(64),access:{...access},data:{outcome:'Observed',document:{...structuredClone(source),documentId}}})),
+      command: options.command ?? (async()=>assert.fail('I40 read tests must never send commands'))};
     let props={loginKey:'i40-login-1',workspace:workspace(),historyOwner:'workspace',list,api,onDenied:e=>denied.push(e.status)};
     const flush=async()=>act(async()=>{await new Promise(resolve=>setImmediate(resolve));});
     const render=async patch=>{props={...props,...patch};await act(async()=>{if(renderer)renderer.update(React.createElement(InboundRequestScreen,props));else renderer=create(React.createElement(InboundRequestScreen,props));});await flush();};
@@ -363,6 +363,84 @@ test('I40 synthetic React host list lifecycle and stale-denial integration', asy
       close:async()=>{await act(async()=>renderer.unmount());await flush();}};
   }
   try {
+    await t.test('I43 recovered inbound presentation survives custody phase changes without replacing the authorized read proof', async () => {
+      const commands = [], receipt = {operationId: op, documentId: 'DOC-A', statusId: 0,
+        stateEqualityToken: 'C'.repeat(64), auditId: audit, committedAtUtc: '2026-10-06T00:00:00Z'};
+      const f = await host({command: async (route, body, scope) => {
+        commands.push({route, body, scope});
+        return {scopeKey: scope, data: {outcome: route === 'reconcile' ? 'Replayed' : 'OutcomeUnknown', receipt: route === 'reconcile' ? receipt : null, code: null}};
+      }});
+      try {
+        await f.open('DOC-A');
+        const editor = () => f.root().find(node => typeof node.type === 'function' && node.props.adapter && node.props.onConfirmed);
+        const region = () => f.root().findByProps({role: 'region', 'aria-label': 'Phiếu nhập hàng đã chọn'});
+        const original = command(), adapter = editor().props.adapter, originalEditor = editor();
+        await act(async () => adapter.execute(original, signal())); await f.flush();
+        await f.render({workspace: null, presentationAllowed: false});
+        assert.equal(region().props.hidden, true, 'lost authority hides the retained original');
+        await f.render({workspace: workspace(), presentationAllowed: true});
+        assert.equal(region().props.hidden, false, 'fresh authorized full read restores the original recovery UI');
+        const recoveredAccess = editor().props.access;
+        let result;
+        await act(async () => {result = await adapter.reconcile(original, signal());}); await f.flush();
+        assert.deepEqual(editor().props.access, recoveredAccess, 'reconciliation has not changed any read authority value');
+        assert.strictEqual(editor(), originalEditor); assert.strictEqual(editor().props.adapter, adapter);
+        assert.equal(region().props.hidden, false, 'custody-only access object replacement must not hide freshly authorized recovery UI');
+        await act(async () => editor().props.onConfirmed(result.receipt)); await f.flush();
+        assert.equal(region().props.hidden, false, 'matching receipt remains presented after acknowledgement');
+        assert.equal(f.root().findAllByProps({'data-testid': 'inbound-host-receipt'}).length, 1);
+        assert.equal(f.root().findByProps({'data-testid': 'inbound-request-host'}).props['data-readback-pending'], true,
+          'presentation does not release the independent matching-snapshot navigation barrier');
+        assert.deepEqual(commands.map(call => call.route), ['save', 'reconcile']);
+        assert.equal(commands[0].body, JSON.stringify(original)); assert.equal(commands[1].body, commands[0].body);
+        assert.equal(commands[1].scope, commands[0].scope);
+      } finally {await f.close();}
+    });
+    for (const changedGrant of [{canRead: false}, {canSave: false}, {canSend: false}, {available: false}, {maxCommandBytes: 524288}])
+      await t.test(`I43 recovered inbound proof rejects changed ${Object.keys(changedGrant)[0]} grant until fresh host validation`, async () => {
+        let grant = {...access};
+        const f = await host({read: async documentId => ({scopeKey: 'a'.repeat(64), access: {...grant},
+          data: {outcome: 'Observed', document: {...structuredClone(source), documentId}}})});
+        try {
+          await f.open('DOC-A'); await f.render({workspace: null, presentationAllowed: false});
+          await f.render({workspace: workspace(), presentationAllowed: true});
+          const region = () => f.root().findByProps({role: 'region', 'aria-label': 'Phiếu nhập hàng đã chọn'});
+          const editor = () => f.root().find(node => typeof node.type === 'function' && node.props.adapter && node.props.onConfirmed);
+          assert.equal(region().props.hidden, false);
+          grant = {...access, ...changedGrant};
+          await act(async () => editor().props.adapter.read('DOC-A', signal())); await f.flush();
+          assert.equal(region().props.hidden, true, 'an old equal-scope proof cannot authorize a changed grant');
+          grant = {...access};
+          if (changedGrant.canRead !== false && changedGrant.available !== false) {
+            await act(async () => editor().props.adapter.read('DOC-A', signal())); await f.flush();
+            assert.equal(region().props.hidden, true, 'equal-valued access cannot revive a retired host presentation proof');
+          }
+          await f.click('Xác minh lại quyền nhập hàng');
+          assert.equal(region().props.hidden, false, 'a new successful host read can establish a new presentation proof');
+        } finally {await f.close();}
+      });
+    for (const boundary of ['presentation', 'workspace', 'read-scope', 'authority', 'api'])
+      await t.test(`I43 recovered inbound proof waits for a fresh current read after ${boundary} replacement`, async () => {
+        let hold = false; const waiting = [];
+        const read = async documentId => {if (hold) await new Promise(resolve => waiting.push(resolve));
+          return {scopeKey: 'a'.repeat(64), access: {...access}, data: {outcome: 'Observed', document: {...structuredClone(source), documentId}}};};
+        const f = await host({read});
+        try {
+          await f.open('DOC-A'); await f.render({workspace: null, presentationAllowed: false});
+          await f.render({workspace: workspace(), presentationAllowed: true});
+          const region = () => f.root().findByProps({role: 'region', 'aria-label': 'Phiếu nhập hàng đã chọn'});
+          assert.equal(region().props.hidden, false); hold = true;
+          if (boundary === 'presentation') {await f.render({presentationAllowed: false}); await f.render({presentationAllowed: true});}
+          if (boundary === 'workspace') {await f.render({workspace: null}); await f.render({workspace: workspace()});}
+          if (boundary === 'read-scope') await f.render({workspace: {...workspace(), readScope: 'd'.repeat(64)}});
+          if (boundary === 'authority') await f.render({workspace: {...workspace(), session: {...workspace().session, authorityVersion: 2}}});
+          if (boundary === 'api') await f.render({api: {...f.props().api}});
+          assert.ok(waiting.length > 0, 'a fresh read was requested');
+          assert.equal(region().props.hidden, true, 'retained proof is masked until the current read resolves');
+          await act(async () => {hold = false; waiting.splice(0).forEach(resolve => resolve());}); await f.flush();
+          assert.equal(region().props.hidden, false);
+        } finally {hold = false; waiting.splice(0).forEach(resolve => resolve()); await f.close();}
+      });
     for(const change of ['removed-row','scope','presentation','workspace-null'])await t.test('I43 R1 queued inbound Open rechecks current '+change+' at discard acceptance',async()=>{
       const f=await host();let navigation;try{
         await f.render({registerDetailNavigation:value=>navigation=value});await f.open('DOC-A');
@@ -731,7 +809,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await page.evaluate(() => window.qa.rerender()); await focusPaint();
       assert.equal((await calls()).list.length, initial, 'Open/Close and equivalent workspace object do not fetch');
       assert.equal(await page.getByTestId('inbound-editor').count(), 1);
-      await button('Xác minh lại quyền nhập hàng').click(); await ready(); await focusPaint();
+      await dialog().getByRole('button', {name: 'Xác minh lại quyền nhập hàng', exact: true}).click(); await ready(); await focusPaint();
       assert.equal((await calls()).list.length, initial + 1, 'explicit verification refresh');
       await button('Đóng phiếu nhập hàng').click();await field('Tìm phiếu nhập hàng').fill('I40 FILTER');
       await activateBackground(button('Tìm kiếm')); await focusPaint();
@@ -1020,7 +1098,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await page.evaluate(()=>window.qa.rights({}));await ready();await focusPaint();assert.equal(await detailFocused(),false);assert.equal((await calls()).post.length,0);
     });
     await run('I33 failed Open is retired; explicit retry can recover data without delayed focus theft',async()=>{
-      await page.evaluate(()=>window.qa.reset({readFailure:true}));await open('DOC-A');await page.getByText('Chưa xác minh được quyền nhập hàng. Ý định đang giữ không bị bỏ; thử xác minh lại trong đúng phiên.',{exact:true}).waitFor();await page.evaluate(()=>window.qa.healthy());await button('Xác minh lại quyền nhập hàng').click();await ready();await focusPaint();assert.equal(await detailFocused(),false);assert.equal(await field('Số đơn').inputValue(),'FULL ERP A');const before=(await calls()).read.length;await open('DOC-A');await focusedDialog();assert.equal((await calls()).read.length,before);assert.equal((await calls()).post.length,0);
+      await page.evaluate(()=>window.qa.reset({readFailure:true}));await open('DOC-A');await dialog().getByText('Chưa xác minh được quyền nhập hàng. Ý định đang giữ không bị bỏ; thử xác minh lại trong đúng phiên.',{exact:true}).waitFor();await page.evaluate(()=>window.qa.healthy());await dialog().getByRole('button', {name: 'Xác minh lại quyền nhập hàng', exact: true}).click();await ready();await focusPaint();assert.equal(await detailFocused(),false);assert.equal(await field('Số đơn').inputValue(),'FULL ERP A');const before=(await calls()).read.length;await open('DOC-A');await focusedDialog();assert.equal((await calls()).read.length,before);assert.equal((await calls()).post.length,0);
     });
     await run('I33 same-document Open waits for new bound full read after bootstrap, not an old readiness event',async()=>{
       await reset();await focusedDialog();await modalClose().focus();await page.evaluate(()=>{window.qa.hold('read');window.qa.rights({});});await page.waitForFunction(()=>window.qa.held('read')>0);const before=(await calls()).read.length;
@@ -1139,7 +1217,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await page.evaluate(status=>window.qa.failList(status),status);await page.waitForFunction(()=>!document.getElementById('inbound-header-orderNumber'));
       assert.deepEqual(await page.evaluate(()=>window.qaDenied),[]);await blocked(()=>button('Đóng phiếu nhập hàng').click());
       await page.evaluate(()=>{window.qa.release('post');window.qa.listHealthy();window.qa.hold('read');});
-      await button('Xác minh lại quyền nhập hàng').click();await page.waitForFunction(()=>window.qa.held('read')>0);
+      await dialog().getByRole('button', {name: 'Xác minh lại quyền nhập hàng', exact: true}).click();await page.waitForFunction(()=>window.qa.held('read')>0);
       assert.equal(await field('Số đơn').count(),0);await page.evaluate(()=>window.qa.release('read'));await unknown();
       await button('Kiểm tra yêu cầu gốc').click();await confirmed();const c=await calls();assert.equal(c.post.length,1);assert.equal(c.reconcile[0],original);
     });
@@ -1216,7 +1294,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       const receipt=await page.getByTestId('inbound-host-receipt').innerText();
       await page.evaluate(()=>{window.qa.readFailure(true);window.qa.rights({});});
       await page.waitForFunction(()=>!document.getElementById('inbound-header-orderNumber'));assert.equal(await page.locator('[data-testid=inbound-host-receipt],[data-testid=confirmed-receipt]').count(),0);
-      await page.evaluate(()=>window.qa.healthy());await button('Xác minh lại quyền nhập hàng').click();await ready();
+      await page.evaluate(()=>window.qa.healthy());await dialog().getByRole('button', {name: 'Xác minh lại quyền nhập hàng', exact: true}).click();await ready();
       assert.equal(await page.getByTestId('inbound-host-receipt').innerText(),receipt);const c=await calls();assert.equal(c.post.length,1);assert.equal(c.reconcile.length,0);
     });
     await run('accepted discard permits selection/filter/close callbacks, not a no-op navigation fixture', async () => {
@@ -1535,6 +1613,7 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
     page = await newPage();
     const button = name => page.getByRole('button', {name, exact: true}), field = name => page.getByLabel(name, {exact: true});
     const host = () => page.getByTestId('inbound-request-host');
+    const dialog = () => page.getByRole('dialog', {name: 'Phiếu nhập hàng đã chọn', exact: true});
     const ready = () => page.waitForFunction(() => {const field = document.getElementById('inbound-header-orderNumber'); return field && !field.disabled && document.querySelector('[data-testid=inbound-request-host]')?.getAttribute('data-readback-pending') !== 'true';});
     const open = async (id = 'DOC-A') => {await page.getByRole('button', {name: new RegExp('^Mở phiếu ' + id + ' ')}).click(); await ready();};
     const paint = () => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
@@ -1568,9 +1647,45 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
     const settled = () => page.waitForFunction(() => document.querySelector('[data-testid=inbound-request-host]')?.getAttribute('data-readback-pending') === 'false');
     const recover = async () => {state.failure = null; await button('Thử lại').click(); await field('Tìm phiếu nhập hàng').waitFor(); await page.waitForFunction(() => [...document.querySelectorAll('button')].some(b => b.textContent === 'Kiểm tra yêu cầu gốc' && !b.disabled) || document.querySelector('[data-testid=confirmed-receipt]'));};
     const single = async () => {const io = await page.evaluate(() => window.i24IO), writers = calls.filter(c => /\/(save|send-to-warehouse)$/.test(c.path)); assert.equal(io.execute.length, 1); assert.equal(io.fetch.filter(c => /\/(save|send-to-warehouse)$/.test(c.url)).length, 1); assert.equal(writers.length, 1); assert.equal(state.effects, 1); for (const c of calls.filter(c => /\/(save|send-to-warehouse|reconcile)$/.test(c.path))) {assert.equal(c.body, io.execute[0].body); assert.equal(c.scope, state.scope);} for (const c of io.fetch) assert.equal(c.body, io.execute[0].body);};
+    const failurePath = path.join(output, 'i24-browser-failure.json');
+    await rm(failurePath, {force: true});
+    const diagnoseFailure = async (name, error) => {
+      let timer;
+      const dom = await Promise.race([page.evaluate(() => {
+        const inspect = selector => [...document.querySelectorAll(selector)].slice(0, 3).map(node => {
+          const ancestors = [];
+          for (let current = node; current && ancestors.length < 10; current = current.parentElement) {
+            const css = getComputedStyle(current);
+            ancestors.push({tag: current.tagName, role: current.getAttribute('role'), testId: current.getAttribute('data-testid'),
+              hidden: current.hasAttribute('hidden'), inert: current.hasAttribute('inert'), ariaHidden: current.getAttribute('aria-hidden'),
+              display: css.display, visibility: css.visibility, opacity: css.opacity, rectangles: current.getClientRects().length});
+          }
+          return {phase: node.getAttribute('data-phase'), readbackPending: node.getAttribute('data-readback-pending'), ancestors};
+        });
+        return {visibility: document.visibilityState, host: inspect('[data-testid=inbound-request-host]'),
+          detail: inspect('[role=region][aria-label="Phiếu nhập hàng đã chọn"]'), editor: inspect('[data-testid=inbound-editor]'),
+          receipt: inspect('[data-testid=confirmed-receipt]'), dialog: inspect('.request-detail-dialog'),
+          active: {tag: document.activeElement?.tagName, role: document.activeElement?.getAttribute('role')},
+          commandCounts: {execute: window.i24IO.execute.length, fetch: window.i24IO.fetch.length}};
+      }), new Promise(resolve => {timer = setTimeout(() => resolve({diagnostic: 'DOM inspection timed out'}), 1500);})])
+        .catch(problem => ({diagnostic: String(problem).slice(0, 500)})).finally(() => clearTimeout(timer));
+      // Only bounded synthetic fixture state. Never include request bodies,
+      // credentials, headers, storage, or arbitrary DOM/HTML in CI artifacts.
+      const diagnostic = {name, error: String(error).slice(0, 2000), dom,
+        fixture: {failure: state.failure, effects: state.effects, originalCount: state.originals.size, receiptCount: state.receipts.size},
+        backendCalls: calls.slice(-20).map(({path, method}) => ({path, method})),
+        bffResponses: bffResponses.slice(-20).map(({path, method, status, code}) => ({path, method, status, code})),
+        routes: {started: routes.started, fulfilled: routes.fulfilled, aborted: routes.aborted, pending: routes.pending.size}};
+      await writeFile(failurePath, JSON.stringify(diagnostic, null, 2));
+      console.error('I24 failure diagnostics: ' + JSON.stringify(diagnostic));
+    };
     const run = async (name, fn) => {
       let failure;
-      await t.test(name, async () => {try {await fn(); results.push(name);} catch (error) {failure = error; throw error;} finally {releaseAll();}});
+      await t.test(name, async () => {try {await fn(); results.push(name);} catch (error) {
+        failure = error;
+        try {await diagnoseFailure(name, error);} catch (diagnosticError) {console.error('I24 diagnostic capture failed: ' + String(diagnosticError));}
+        throw error;
+      } finally {releaseAll();}});
       // Stop a broken fixture at its first preserved failure instead of letting
       // later cases cascade on invalid setup. Every case still runs on success.
       if (failure) throw failure;
@@ -1636,7 +1751,7 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
     });
     for (const kind of ['list', 'read', 'command']) await run(`current ${kind} 401 retires once and later 503 cannot revive that login`, async () => {
       await start(); state[kind === 'command' ? 'commandStatus' : kind + 'Status'] = 401;
-      if (kind === 'command') await save(); else if (kind === 'read') await button('Xác minh lại quyền nhập hàng').click(); else await backgroundActivate(button('Tìm kiếm'));
+      if (kind === 'command') await save(); else if (kind === 'read') await dialog().getByRole('button', {name: 'Xác minh lại quyền nhập hàng', exact: true}).click(); else await backgroundActivate(button('Tìm kiếm'));
       await page.getByRole('heading',{name:'Phiên làm việc đã kết thúc',exact:true}).waitFor(); await paint(); assert.equal(await field('Số đơn').count(), 0); assert.equal(await button('Xác minh lại phiên nhập hàng').count(), 0);
       state.failure = 503; await page.evaluate(() => window.dispatchEvent(new Event('focus'))); await paint(); assert.equal(await button('Xác minh lại phiên nhập hàng').count(), 0);
     });

@@ -96,6 +96,15 @@ jobs:
       - name: Test ERP proxy and application contracts
         working-directory: apps/medcom-sites
         run: node scripts/test-erp.mjs --contracts-only
+      - name: Upload synthetic purchase recovery diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: medcom-purchase-recovery-failure-${{ matrix.platform }}-x64-${{ github.sha }}
+          # This exact file contains only the synthetic browser fixture state.
+          # Failure diagnostics never satisfy a required success evidence gate.
+          path: apps/medcom-sites/.test-runtime/i17-purchase-workspace/i20-workspace-custody-failure.json
+          if-no-files-found: warn
       - name: Test inbound editor with synthetic mobile browser
         working-directory: apps/medcom-sites
         env:
@@ -190,6 +199,14 @@ jobs:
             apps/medcom-sites/.test-runtime/workspace-auth-integration/browser-result.json
             apps/medcom-sites/.test-runtime/request-detail-history/evidence.json
           if-no-files-found: error
+      - name: Upload synthetic inbound recovery diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: medcom-inbound-recovery-failure-${{ matrix.platform }}-x64-${{ github.sha }}
+          # Bounded synthetic state only; no headers, bodies, or browser storage.
+          path: apps/medcom-sites/.test-runtime/i21-inbound/i24-browser-failure.json
+          if-no-files-found: warn
       - name: Upload integrated UI screenshots when produced
         if: always()
         uses: actions/upload-artifact@v4
