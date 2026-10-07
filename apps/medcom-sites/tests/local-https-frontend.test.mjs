@@ -606,8 +606,12 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await stopStableData('ACK before old GET'); await assertOriginalCustody(pending, 0);
       await assertPendingNoteVisible();
       const delta = difference(await counts(), before);
-      assert.equal(delta['/api/workspace'], 1);
-      for (const route of routes.slice(1)) assert.equal(delta[route], 2, 'one stale read plus one fresh read, without a retry loop');
+      // I41 retries the superseded detail only. Keep the exact four-route
+      // budget visible even if this assertion fails before result.json is saved.
+      console.info(JSON.stringify({fixture: 'I29', scenario: 'ack-before-stale-get', requests: delta}));
+      assert.deepEqual(delta, {'/api/workspace': 1, '/api/purchase-requests/workspace': 1,
+        '/api/purchase-requests': 1, '/api/purchase-requests/detail': 2},
+      'one stale detail plus one fresh detail; no repeated parent, bootstrap or list read');
       lifecycleEvidence.requests.push({kind: 'ack-before-stale-get', requests: delta, writes: 1, effects: 1, lookups: 0, originalBodyHash: pending.original.sha256});
     });
     await run('I29 built pending save plus background detail 503 masks data and reconciles the exact original intent once', async () => {
@@ -696,10 +700,22 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
         assert.deepEqual(await counts(), settled, 'persistent 403 must not schedule automatic request retries');
         const initial = difference(settled, before);
         for (const count of Object.values(initial)) assert.ok(count <= 2, 'one denied read must not cascade into a workspace/purchase storm');
+        // This is the in-flight denial case: make the selected detail start
+        // before releasing list403. An earlier list denial may safely prevent
+        // that request altogether; the separate React regression covers zero.
+        if (kind === 'purchase-list') await control({holds: ['purchase-list', 'purchase-detail']});
         await page.clock.fastForward(60001);
+        if (kind === 'purchase-list') {
+          await held('purchase-list'); await held('purchase-detail');
+          const periodicDenied = page.waitForResponse(response => new URL(response.url()).pathname === '/api/erp' + route && response.status() === 403);
+          await control({holds: ['purchase-detail']}); await periodicDenied;
+          await recovery.waitFor(); await assertPurchaseMasked();
+          await control({holds: []});
+        }
         await waitFor(async () => difference(await counts(), settled)['/api/workspace'] >= 2, 'periodic probe and one endpoint-denial recheck');
         await recovery.waitFor(); await delay(500);
         const periodic = difference(await counts(), settled);
+        console.info(JSON.stringify({fixture: 'I29', scenario: 'persistent-403-periodic', kind, requests: periodic}));
         assert.equal(periodic['/api/workspace'], 2, 'one periodic workspace probe plus one denial recheck');
         assert.equal(periodic['/api/purchase-requests/workspace'], 1, 'one purchase bootstrap per periodic probe');
         assert.equal(periodic['/api/purchase-requests'], kind === 'purchase-bootstrap' ? 0 : 1);

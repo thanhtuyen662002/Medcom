@@ -1010,6 +1010,18 @@ test('I41 actual React purchase read lifecycles and retained command custody',as
     assert.ok(f.rows()[0]===current,'late reply cannot replace the current row');assert.deepEqual(f.denied,[]);
    }finally{await f.close();}
   });
+  await t.test('an immediate list403 before read-binding commit makes zero detail requests and masks both reads',async()=>{
+   const f=await host();try{
+    await f.open('QA-000');const before=f.counts();
+    // The synthetic transport returns the denial in the same React act turn as
+    // bootstrap completion, before its state binding can start the detail effect.
+    f.fail('list',403);await f.render({workspace:structuredClone(f.props().workspace)});
+    const after=f.counts(),delta=Object.fromEntries(Object.keys(after).map(kind=>[kind,after[kind]-before[kind]]));
+    assert.deepEqual(delta,{workspace:1,list:1,detail:0,save:0,lookup:0});
+    assert.equal(f.rows().length,0);assert.equal(f.shown(),0);assert.deepEqual(f.denied,[403]);
+    await f.flush();assert.deepEqual(f.counts(),after,'early denial cannot schedule a detail or retry later');
+   }finally{await f.close();}
+  });
   await t.test('current detail denial wins over an independently delayed list success',async()=>{
    const f=await host();try{
     await f.open('QA-000');const list=f.hold('list');f.fail('detail',403);await f.render({workspace:structuredClone(f.props().workspace)});
