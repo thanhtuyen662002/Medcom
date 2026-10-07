@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I36",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "2d5504dc-d3b6-4b58-8f22-3b06cd4c57a1",
+  "base_sha": "830d6c710b0fb47dd75a01dfb163ca2619bf5ea5",
+  "work_branch": "codex/g45-unified-mobile-request-ui-i36-20261007",
+  "claim_branch": "medcom-claims/g45/direct/I36",
+  "scope": [
+    "apps/medcom-sites/components/erp/workspace.tsx",
+    "apps/medcom-sites/components/erp/purchase-request-screen.tsx",
+    "apps/medcom-sites/components/erp/inbound-request-screen.tsx",
+    "apps/medcom-sites/components/erp/documents.tsx",
+    "apps/medcom-sites/components/erp/grid.tsx",
+    "apps/medcom-sites/components/erp/query-controls.tsx",
+    "apps/medcom-sites/components/erp/request-presentation.tsx",
+    "apps/medcom-sites/components/erp/request-list-shell.tsx",
+    "apps/medcom-sites/app/globals.css",
+    "apps/medcom-sites/tests/request-presentation.browser.mjs",
+    "apps/medcom-sites/tests/purchase-request-integration.test.mjs",
+    "apps/medcom-sites/tests/inbound-request-integration.test.mjs",
+    "docs/execution/checkpoints/I36_UNIFIED_REQUEST_UI.md",
+    "apps/medcom-sites/components/erp/inbound-request-readonly.tsx",
+    "apps/medcom-sites/components/erp/mobile-inbound-request.tsx",
+    "apps/medcom-sites/components/erp/mobile-request.tsx",
+    "docs/execution/direct-runs/I36.json"
+  ],
+  "purpose": "Unify actual purchase/inbound/order presentation from owner screenshot evidence, modern mobile controls and preserved usable state.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "constraints": [
+    "Root alone publishes after independent source review and exact current head/base CI. No force push, no private customer data, raw SQL/archives, credentials or screenshots in public repository.",
+    "No actual DB or native DLL execution, private configuration/security setting changes, or business/runtime activation in this code slice. Preserve all existing tests and disclose unexecuted checks.",
+    "Use private screenshots only for visual review, with synthetic fixtures for published tests/screenshots. Keep orders-style compact common filters/panel, responsive table/cards, opaque sticky header, full-width grid, accessible mobile command dialog and equal bottom navigation.",
+    "Preserve single mounted editor, original pending intents, cancellation/scoping, selection focus and navigation guards. No permission or business rule changes. Status dictionary names owned by I38; do not guess mappings.",
+    "Do not change load effects except a separately reviewed bounded amendment. Require actual 320/390/1440 screenshots and retained full browser assertions.",
+    "Additional three editor/readonly files are admitted solely to display/pass optional readback statusName; do not mutate command aggregate/receipt/token serialization."
+  ],
+  "created_at": "2026-10-07T02:55:16.025670+00:00"
+}
