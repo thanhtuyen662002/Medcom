@@ -230,9 +230,8 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await page.getByRole('button', {name: 'I29-PO-P1-00', exact: true}).waitFor();
       await page.getByLabel('Tìm mã chứng từ', {exact: true}).fill('APPLIED');
       await page.getByRole('button', {name: 'Tìm kiếm', exact: true}).click();
-      await page.getByRole('combobox', {name: 'Chi nhánh', exact: true}).click();
-      await page.getByRole('option', {name: 'BR-A', exact: true}).click();
-      await page.getByRole('button', {name: 'Trang tiếp theo', exact: true}).click();
+      await page.locator('.document-panel').getByRole('combobox', {name: 'Chi nhánh', exact: true}).selectOption('BR-A');
+      await page.getByRole('navigation', {name: 'Phân trang chứng từ', exact: true}).getByRole('button', {name: 'Trang sau', exact: true}).click();
       await page.getByRole('button', {name: 'I29-PO-P2-00', exact: true}).waitFor();
       await page.getByLabel('Tìm mã chứng từ', {exact: true}).fill('UNSUBMITTED DRAFT');
       await page.getByRole('button', {name: 'I29-PO-P2-00', exact: true}).click();
@@ -257,8 +256,8 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
     };
     const orderControls = async () => {
       assert.equal(await page.getByLabel('Tìm mã chứng từ', {exact: true}).inputValue(), 'UNSUBMITTED DRAFT');
-      assert.match(await page.locator('.branch-select').innerText(), /BR-A/);
-      assert.match(await page.locator('.document-panel .pagination').innerText(), /Trang 2/);
+      assert.equal(await page.locator('.document-panel').getByRole('combobox', {name: 'Chi nhánh', exact: true}).inputValue(), 'BR-A');
+      assert.match(await page.getByRole('navigation', {name: 'Phân trang chứng từ', exact: true}).innerText(), /Trang 2/);
     };
     const purchaseControls = async () => {
       assert.equal(await purchasePanel().getByLabel('Tìm mã đề nghị', {exact: true}).inputValue(), 'UNSUBMITTED DRAFT');
@@ -266,9 +265,14 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       assert.match(await purchasePanel().getByRole('navigation', {name: 'Phân trang đề nghị', exact: true}).innerText(), /Trang 2/);
       await page.getByRole('heading', {name: 'I29-PR-P2-00', exact: true}).waitFor();
     };
-    const watchStableData = kind => page.evaluate(kind => {
+    const watchStableData = kind => page.evaluate(({kind, baselineControl}) => {
       window.i29StableObserver?.disconnect();
       const visible = selector => {const node = document.querySelector(selector); return !!node && !node.closest('[hidden]') && node.getClientRects().length > 0;};
+      // The exact historical2712 control still has article rows. Current lists
+      // must prove the actual shared-grid row/action, never an editor article.
+      const purchaseListRow = baselineControl
+        ? '[aria-label="Danh sách đề nghị mua hàng"] article'
+        : '[aria-label="Danh sách đề nghị mua hàng"] table[data-shared-grid="true"] tbody tr[data-grid-row="I29-PR-P2-00"] button[aria-label="Mở đề nghị I29-PR-P2-00"]';
       const editorForm = document.querySelector('form[aria-label="Đề nghị mua hàng trên điện thoại"]');
       const noteInput = editorForm?.querySelector('textarea[name="notes"]');
       const check = () => {
@@ -278,13 +282,13 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
             : visible('[aria-label="Phiếu mua hàng hiện có"] textarea[name="notes"]') && editorForm?.querySelector('textarea[name="notes"]') === noteInput);
         const present = kind === 'orders'
           ? visible('.document-link') && visible('.detail-sheet .desktop-detail-lines') && document.querySelector('.detail-sheet')?.textContent.includes('I29-ITEM-P2-0')
-          : visible('[aria-label="Danh sách đề nghị mua hàng"] article') && visible('[aria-label="Phiếu mua hàng hiện có"]') && stableEditor && document.querySelector('[aria-label="Phiếu mua hàng hiện có"]')?.textContent.includes('SYNTHETIC-PURCHASE-ITEM');
+          : visible(purchaseListRow) && visible('[aria-label="Phiếu mua hàng hiện có"]') && stableEditor && document.querySelector('[aria-label="Phiếu mua hàng hiện có"]')?.textContent.includes('SYNTHETIC-PURCHASE-ITEM');
         if (!present) window.i29MissingFrames++;
       };
       window.i29MissingFrames = 0; check();
       window.i29StableObserver = new MutationObserver(check);
       window.i29StableObserver.observe(document.body, {childList: true, subtree: true, attributes: true});
-    }, kind);
+    }, {kind, baselineControl});
     const stopStableData = async label => {
       const missing = await page.evaluate(() => {window.i29StableObserver.disconnect(); return window.i29MissingFrames;});
       assert.equal(missing, 0, `${label}: existing rows/detail must stay rendered throughout unchanged-scope background refresh`);
@@ -730,7 +734,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await page.clock.fastForward(60001);
       await waitFor(async () => await page.getByLabel('Tìm mã chứng từ', {exact: true}).inputValue() === '', 'order scope replacement');
       assert.equal(await page.getByRole('heading', {name: 'I29-PO-P2-00', exact: true}).count(), 0);
-      assert.match(await page.locator('.document-panel .pagination').innerText(), /Trang 1/);
+      assert.match(await page.getByRole('navigation', {name: 'Phân trang chứng từ', exact: true}).innerText(), /Trang 1/);
       await preparePurchase(); await control({purchaseScope: 'e'.repeat(64), readScope: 'f'.repeat(64), branchIds: ['BR-B']});
       await page.clock.fastForward(60001);
       await waitFor(async () => await purchasePanel().getByLabel('Tìm mã đề nghị', {exact: true}).inputValue() === '', 'purchase scope replacement');

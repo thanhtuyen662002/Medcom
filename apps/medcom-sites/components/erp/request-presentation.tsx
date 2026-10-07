@@ -1,7 +1,7 @@
 "use client";
 
-import type {ComponentProps, ReactNode} from "react";
-import {AlertCircle, FileText, ShieldCheck} from "lucide-react";
+import {useState, type ComponentProps, type ReactNode} from "react";
+import {AlertCircle, Copy, FileText, ShieldCheck} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Textarea} from "@/components/ui/textarea";
@@ -40,6 +40,10 @@ export function RequestButton({className, variant="outline", ...props}:Component
 export function RequestInput({className,...props}:ComponentProps<typeof Input>){
   return <Input className={cn("request-input h-auto min-h-11 w-full min-w-0 bg-background text-base md:text-base",className)} {...props}/>;
 }
+/** Native finite choices share the same input geometry and keyboard behavior. */
+export function RequestSelect({className,...props}:ComponentProps<"select">){
+  return <select className={cn("request-select",className)} {...props}/>;
+}
 export function RequestTextarea({className,...props}:ComponentProps<typeof Textarea>){
   return <Textarea className={cn("request-textarea min-h-24 w-full min-w-0 bg-background text-base md:text-base",className)} {...props}/>;
 }
@@ -56,8 +60,11 @@ export function RequestEmpty({title,children}:{title:string;children:ReactNode})
 export function RequestLoading({label="Đang tải chứng từ…"}:{label?:string}){
   return <div role="status" aria-label={label} className="grid min-w-0 gap-3 p-4 sm:p-5"><span className="text-sm text-muted-foreground">{label}</span>{[1,2,3].map(i=><Skeleton key={i} className="h-24 w-full rounded-lg"/>)}</div>;
 }
+export function RequestDocumentIdentity({children}:{children:ReactNode}){
+  return <span className="request-document-id"><FileText size={16} aria-hidden="true"/><strong>{children}</strong></span>;
+}
 export function RequestStatus({value,statusName}:{value:number|null|undefined;statusName?:string|null}){
-  return <Badge variant="outline" className="request-status max-w-full whitespace-normal font-normal">{documentStatusLabel(value,statusName)}</Badge>;
+  return <Badge variant="outline" title={documentStatusLabel(value,statusName)} className="request-status max-w-full whitespace-normal font-normal">{documentStatusLabel(value,statusName)}</Badge>;
 }
 /** Display source wall-clock dates without converting time zone or editing data. */
 export function requestDate(value:string|null|undefined){
@@ -67,13 +74,14 @@ export function requestDate(value:string|null|undefined){
 }
 const supportCodes=new Set(["authentication_required","backend_not_configured","frontend_not_configured","backend_unavailable","identity_unavailable","invalid_api_response","invalid_read_scope","read_scope_changed","request_failed"]);
 export function RequestError({error,retry}:{error:unknown;retry?:()=>void}){
+  const [copied,setCopied]=useState(false);
   const api=error instanceof ApiError?error:null;
   const status=api&&Number.isInteger(api.status)&&api.status>=100&&api.status<=599?api.status:null;
   const code=api&&supportCodes.has(api.code)?api.code:"unknown_code";
   const reference=api?.correlationId&&/^[a-f0-9]{32}$/i.test(api.correlationId)?api.correlationId:null;
   return <RequestNotice role="alert" warning title={errorMessage(error)}>
     {retry&&<RequestButton onClick={retry}>Thử lại</RequestButton>}
-    <details className="text-xs text-muted-foreground"><summary className="flex min-h-11 cursor-pointer items-center">Thông tin hỗ trợ</summary><dl className="grid gap-1">{status!==null&&<div><dt className="inline">Mã trạng thái xử lý: </dt><dd className="inline">{status}</dd></div>}<div><dt className="inline">Mã: </dt><dd className="inline">{code}</dd></div>{reference&&<div><dt className="inline">Mã hỗ trợ: </dt><dd className="inline break-all">{reference}</dd></div>}</dl></details>
+    <details className="text-xs text-muted-foreground"><summary className="flex min-h-11 cursor-pointer items-center">Thông tin hỗ trợ</summary><dl className="grid gap-1">{status!==null&&<div><dt className="inline">Mã trạng thái xử lý: </dt><dd className="inline">{status}</dd></div>}<div><dt className="inline">Mã: </dt><dd className="inline">{code}</dd></div>{reference&&<div><dt className="inline">Mã hỗ trợ: </dt><dd className="inline break-all">{reference}<RequestButton type="button" variant="ghost" aria-label="Sao chép mã hỗ trợ" onClick={async()=>{try{await navigator.clipboard.writeText(reference);setCopied(true);}catch{setCopied(false);}}}><Copy size={14}/>{copied?"Đã sao chép":"Sao chép"}</RequestButton></dd></div>}</dl></details>
   </RequestNotice>;
 }
 

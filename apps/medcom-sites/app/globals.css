@@ -498,14 +498,25 @@ html { scroll-padding-top: 88px; }
 .grid-selection { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 20px; background: var(--accent); font-size: 13px; }
 .desktop-grid-viewport { max-height: 480px; min-height: 45px; overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
 .desktop-grid-viewport [data-slot="table-container"] { overflow: visible; }
-.shared-grid-table { table-layout: fixed; border-collapse: separate; border-spacing: 0; }
-.shared-grid-table thead { position: sticky; top: 0; z-index: 5; }
-.shared-grid-table th { position: relative; height: 44px; background: var(--secondary); color: var(--muted-foreground); font-weight: 550; font-size: 12px; padding: 10px 16px; border-bottom: 1px solid var(--border); text-align: left; }
-.shared-grid-table td { height: var(--grid-row-height); padding: 10px 16px; font-size: 14px; border-bottom: 1px solid var(--border); background: var(--card); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.shared-grid-table tr[aria-selected="true"] td { background: var(--accent); }
-.shared-grid-table tr:hover td { background: var(--secondary); }
-.shared-grid-table td:focus-visible { outline-offset: -3px; position: relative; z-index: 3; }
-.shared-grid-table .grid-select-cell { width: 44px; min-width: 44px; max-width: 44px; padding: 10px 14px; position: sticky; left: 0; z-index: 3; }
+/* The grid engine and compact request adapter share the list skin below. */
+.erp-grid {min-width:0}
+.erp-grid[data-customizable=false] .desktop-grid-viewport {max-height:none;min-height:0;overflow:visible;scrollbar-gutter:auto}
+.shared-grid-table {border-collapse:separate;border-spacing:0}
+.shared-grid-table thead {position:sticky;top:0;z-index:5}
+.shared-grid-table th {position:relative;height:44px}
+.erp-grid[data-customizable=true] .shared-grid-table td {height:var(--grid-row-height);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.erp-grid[data-customizable=true][data-compact=true] .shared-grid-table td {padding-block:0}
+.shared-grid-table .grid-select-cell {width:44px;min-width:44px;max-width:44px;padding:10px 14px;position:sticky;left:0;z-index:3}
+.grid-cell-value {display:block;min-width:0;max-width:100%;overflow:inherit;text-overflow:inherit;white-space:inherit}
+.grid-mobile-card-content {display:none}
+@media(min-width:768px) {
+ .erp-grid[data-customizable=true] .grid-cell-value {max-height:44px}
+ .erp-grid[data-customizable=true][data-compact=true] .grid-cell-value {max-height:44px}
+ .erp-grid[data-customizable=true] .request-list-open .request-button {height:44px;min-height:44px;padding-inline:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .erp-grid[data-customizable=true] .request-status {display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;max-height:44px;white-space:normal;overflow-wrap:anywhere;line-height:16px}
+ .erp-grid[data-customizable=true][data-compact=true] .request-status {-webkit-line-clamp:1}
+}
+.shared-grid-table td:focus-visible {outline-offset:-3px;position:relative;z-index:3}
 .column-resizer { position: absolute; right: 0; top: 0; width: 10px; height: 100%; cursor: col-resize; touch-action: none; }
 .column-resizer::after { content: ""; display: block; margin: 12px 4px; height: 20px; width: 2px; border-radius: 2px; background: var(--border); }
 .column-resizer:hover::after, .column-resizer:focus-visible::after { background: var(--foreground); }
@@ -567,10 +578,7 @@ html { scroll-padding-top: 88px; }
 .query-sort { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; border-top: 1px solid var(--border); padding-top: 18px; font-size: 13px; }
 .role-nav-editor { margin-top: 20px; }
 @media (max-width: 767px) {
- .desktop-grid-viewport, .desktop-detail-lines { display: none; }
- .mobile-document-list { display: grid; gap: 12px; padding: 14px; }
- .mobile-document-card { text-align: left; border: 1px solid var(--border); border-radius: 9px; padding: 16px; background: var(--card); width: 100%; min-width: 0; }
- .mobile-document-card:active { background: var(--secondary); }
+ .desktop-detail-lines { display: none; }
  .mobile-card-heading { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
  .mobile-card-heading strong { flex: 1; font-size: 15px; overflow-wrap: anywhere; }
  .mobile-card-heading > svg { color: var(--muted-foreground); flex-shrink: 0; }
@@ -789,34 +797,49 @@ body {font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;l
 }
 .request-panel-header .request-unavailable:disabled {opacity:1;min-height:44px;font-size:.875rem;font-weight:400;padding:6px 10px;box-shadow:none;background:var(--background);color:var(--muted-foreground);border:1px dashed var(--border)}
 
-/* I36: one compact document-list language, with a single responsive row DOM. */
+/* I42: one list/control skin for the shared grid and request compatibility API. */
 .topbar { background:var(--card); backdrop-filter:none; isolation:isolate; }
 .request-panel { overflow:hidden; }
 .request-list-header {display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border);background:var(--card)}
 .request-list-header .request-title {font-size:14px;font-weight:600}
 .request-list-qualification {display:flex;align-items:center;gap:12px;font-size:12px;color:var(--muted-foreground)}
-.request-panel > .request-list-toolbar {display:flex;flex-wrap:wrap;align-items:center;padding:16px 20px;gap:10px;background:var(--card)}
+.request-list-toolbar,.request-panel .request-list-toolbar {display:flex;flex-wrap:wrap;align-items:center;padding:16px 20px;gap:10px;background:var(--card)}
 .request-list-search {display:flex;position:relative;align-items:center;flex:1 1 240px;max-width:340px;min-width:0}
 .request-list-search > svg {position:absolute;left:12px;pointer-events:none;color:var(--muted-foreground)}
 .request-list-search .request-input {padding-left:36px;font-size:14px}
+.request-list-search:has(kbd) .request-input {padding-right:48px}
+.request-list-search > kbd {position:absolute;right:10px;font-size:10px;color:var(--muted-foreground);border:1px solid var(--border);border-radius:3px;padding:1px 4px}
 .request-list-branch {position:relative;display:flex;align-items:center;flex:0 1 260px;min-width:0;max-width:100%}
 .request-list-branch > svg {position:absolute;left:12px;pointer-events:none;color:var(--muted-foreground)}
 .request-list-branch > svg:last-child {left:auto;right:12px}
-.request-list-branch select {appearance:none;width:100%;min-width:0;min-height:44px;padding:8px 32px 8px 36px;border:1px solid var(--input);border-radius:8px;background:var(--card);font-size:14px;text-overflow:ellipsis}
-.request-list-branch select:focus-visible {outline:2px solid var(--ring);outline-offset:2px}
+.request-select {appearance:auto;width:100%;min-width:0;min-height:44px;padding:8px 12px;border:1px solid var(--input);border-radius:8px;background:var(--card);color:var(--foreground);font-size:14px;text-overflow:ellipsis}
+.request-select:disabled {opacity:.5;cursor:not-allowed}
+.request-select[aria-invalid=true] {border-color:var(--destructive)}
+.request-list-branch .request-select {appearance:none;padding-inline:36px 32px}
+.request-select:focus-visible {outline:2px solid var(--ring);outline-offset:2px}
 .request-list-refresh {margin-left:auto}
-.request-list-table {width:100%;table-layout:fixed;border-collapse:collapse;text-align:left;font-size:14px}
-.request-list-table th {padding:12px 16px;font-size:12px;font-weight:550;background:var(--secondary);color:var(--muted-foreground);border-bottom:1px solid var(--border)}
-.request-list-table td {padding:10px 16px;border-bottom:1px solid var(--border);vertical-align:middle;overflow-wrap:anywhere;line-height:1.5}
-.request-list-table th:first-child {width:19%}
-.request-list-table th:last-child {width:132px}
+.request-list-table {width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;text-align:left;font-size:14px}
+.request-list-table th {padding:12px 16px;white-space:normal;font-size:12px;font-weight:550;background:var(--secondary);color:var(--muted-foreground);border-bottom:1px solid var(--border)}
+.request-list-table td {padding:10px 16px;border-bottom:1px solid var(--border);vertical-align:middle;overflow-wrap:anywhere;white-space:normal;line-height:1.5;background:var(--card)}
+.erp-grid[data-customizable=false] .request-list-table th:first-child {width:19%}
+.request-list-table .request-list-action-heading {width:132px}
 .request-list-table tbody tr:last-child td {border-bottom:0}
-.request-list-table tr[data-selected=true] td,.request-list-table tbody tr:hover td {background:var(--accent)}
+.request-list-table tr[data-selected=true] td,.request-list-table tr[aria-selected=true] td,.request-list-table tbody tr:hover td {background:var(--accent)}
 .request-document-id {display:flex;align-items:center;gap:8px;min-width:0}
 .request-document-id svg {flex:none;color:var(--muted-foreground)}
 .request-document-id strong {min-width:0;font-weight:550}
 .request-list-table .request-status {font-size:12px;line-height:1.4;padding:3px 7px;border-radius:999px}
 .request-list-open .request-button {min-height:44px;padding:8px 10px;font-size:13px;width:100%}
+.request-list-pagination {gap:12px}
+.request-list-page-meta {min-width:0;flex:1}
+.request-list-page-controls {display:flex;align-items:center;justify-content:space-between;gap:12px;flex:1}
+.request-list-page-controls > span {white-space:nowrap}
+.request-list-pagination:has(.request-list-page-meta) .request-list-page-controls {flex:0 1 auto}
+.request-panel .document-tabs {padding-inline:20px}
+.request-list-toolbar .toolbar-end {margin-left:auto;display:flex;flex-wrap:wrap;gap:8px}
+.request-list-toolbar.table-toolbar button {font-size:14px}
+.grid-settings-modal .column-setting .request-button {min-width:44px;padding-inline:10px;flex-shrink:0}
+
 .command-modal {display:flex!important;flex-direction:column;gap:0!important;max-height:calc(100dvh - 32px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
 .command-heading {display:flex;flex-direction:row;align-items:center;justify-content:space-between;padding:6px 8px 6px 16px;border-bottom:1px solid var(--border);text-align:left}
 .command-heading [data-slot=dialog-title] {font-size:14px}
@@ -830,29 +853,36 @@ body {font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;l
  .request-list-header {padding:12px 14px;gap:8px}
  .request-list-qualification {flex-wrap:wrap;gap:6px}
  .request-list-qualification > span {display:none}
- .request-panel > .request-list-toolbar {display:grid;grid-template-columns:minmax(0,1fr) auto;padding:14px;gap:10px}
+ .request-list-toolbar,.request-panel .request-list-toolbar {display:grid;grid-template-columns:minmax(0,1fr) auto;padding:14px;gap:10px}
  .request-list-search {grid-column:1/-1;max-width:none}
- .request-list-search .request-input,.request-list-branch select {font-size:16px}
+ .request-list-search .request-input,.request-select {font-size:16px}
  .request-list-branch {grid-column:1/-1;max-width:none}
  .request-list-toolbar .request-button {max-width:none!important;font-size:14px;min-height:44px}
  .request-list-refresh {margin-left:0}
- .request-list-table,.request-list-table tbody {display:block}
+ .erp-grid .desktop-grid-viewport {display:block;max-height:none!important;height:auto!important;overflow:visible;scrollbar-gutter:auto}
+ .request-list-table,.request-list-table tbody {display:block;width:100%!important}
+ .erp-grid .request-list-table .grid-select-cell,.erp-grid .request-list-table .grid-spacer {display:none}
+ .erp-grid[data-mobile-card=custom] .request-list-table td:not(.grid-identity-cell):not(.request-list-open) {display:none}
+ .erp-grid[data-mobile-card=custom] .grid-identity-cell .grid-cell-value {display:none}
+ .erp-grid[data-mobile-card=custom] .grid-mobile-card-content {display:block;width:100%;text-align:left;min-height:44px}
+ .request-list-table .grid-mobile-card-content {white-space:normal}
+ .request-list-table .column-resizer {display:none}
  .request-list-table thead {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
- .request-list-table tr {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:16px 14px;border-bottom:1px solid var(--border)}
+ .request-list-table tr {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:16px 14px;border:0;border-bottom:1px solid var(--border);border-radius:0;min-width:0;width:100%;text-align:left}
  .request-list-table tr:last-child {border-bottom:0}
- .request-list-table td {display:block;min-width:0;padding:0;border:0;font-size:14px}
+ .erp-grid .request-list-table td {display:block;position:static!important;width:auto!important;min-width:0!important;max-width:none!important;height:auto!important;padding:0;border:0;font-size:14px;overflow-wrap:anywhere;overflow:visible;white-space:normal}
  .request-list-table td::before {content:attr(data-label);display:block;margin-bottom:4px;font-size:12px;color:var(--muted-foreground)}
- .request-list-table td:first-child,.request-list-table .request-list-open {grid-column:1/-1}
- .request-list-table td:first-child::before,.request-list-table .request-list-open::before {display:none}
+ .request-list-table .grid-identity-cell,.request-list-table .request-list-open {grid-column:1/-1}
+ .request-list-table .grid-identity-cell::before,.request-list-table .request-list-open::before {display:none}
  .request-list-table .request-list-open button {background:var(--background)}
- .request-list-table tr[data-selected=true],.request-list-table tbody tr:hover {background:var(--accent)}
- .request-list-table tr[data-selected=true] td,.request-list-table tbody tr:hover td {background:transparent}
+ .request-list-table tr[data-selected=true],.request-list-table tr[aria-selected=true],.request-list-table tbody tr:hover {background:var(--accent)}
+ .request-list-table tr[data-selected=true] td,.request-list-table tr[aria-selected=true] td,.request-list-table tbody tr:hover td {background:transparent}
+ .request-list-table .document-link {white-space:normal;overflow-wrap:anywhere;text-align:left;min-height:44px}
+ .request-list-pagination .request-list-page-controls {width:100%;flex:1 1 100%}
+ .request-list-toolbar .toolbar-end {grid-column:1/-1;margin-left:0;justify-content:flex-end}
+ .request-panel .document-tabs {padding-inline:14px}
  .mobile-nav-item {font-size:11px;gap:5px;min-height:56px}
  .mobile-nav-item > svg,.mobile-primary-icon,.mobile-primary-icon > svg {width:22px;height:22px;flex-shrink:0}
  .mobile-primary-icon {background:transparent;color:inherit;border-radius:0}
  .mobile-nav-item > span:last-child {max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;overflow-wrap:normal;line-height:16px}
 }
-/* The orders reference toolbar follows the same touch/control rhythm. */
-.table-toolbar [data-slot=button],.table-toolbar .branch-select,.table-toolbar .search-field {min-height:44px}
-.table-toolbar .search-field input {min-height:42px}
-@media(max-width:767px) { .table-toolbar .search-field input {font-size:16px} }

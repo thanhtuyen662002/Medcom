@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I41",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "d7ab9181-21a5-4226-90d6-ba2f862c4a80",
+  "base_sha": "b30d7dbd1e05d351ac7109844297e57d76f3399f",
+  "work_branch": "codex/g45-purchase-list-lifecycle-i41-20261007",
+  "claim_branch": "medcom-claims/g45/direct/I41",
+  "scope": [
+    "apps/medcom-sites/components/erp/purchase-request-screen.tsx",
+    "apps/medcom-sites/tests/purchase-request-integration.test.mjs",
+    "docs/execution/checkpoints/I41_PURCHASE_READ_REQUESTS.md",
+    "docs/execution/direct-runs/I41.json"
+  ],
+  "purpose": "Remove unnecessary purchase workspace/list refetch on accepted detail Open/Close while preserving current authority and original unresolved intents.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "constraints": [
+    "Root alone publishes after independent review and exact-head CI; no force push or private data.",
+    "Keep backend authorization, session/scope/branch fences, accepted selection identity, current-versus-late denials, A-to-B-to-A and original frozen command bytes.",
+    "No backend, adapter, API, dependency, workflow, SQL, DLL or private configuration changes. Explicit refresh and changed authority must still revalidate.",
+    "Add synthetic regression tests on actual screen behavior and request counts; actual owner UI observations do not prove API or database timing. Browser acceptance required."
+  ],
+  "created_at": "2026-10-07T05:57:13.632317+00:00"
+}

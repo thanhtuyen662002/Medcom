@@ -199,14 +199,15 @@ jobs:
           git worktree add --detach "$CONTROL_ROOT" "$CONTROL_REV"
           trap 'git worktree remove --force "$CONTROL_ROOT"' EXIT
           test "$(git -C "$CONTROL_ROOT" rev-parse HEAD)" = "$CONTROL_REV"
-          cmp apps/medcom-sites/pnpm-lock.yaml "$CONTROL_ROOT/apps/medcom-sites/pnpm-lock.yaml"
-          cmp apps/medcom-sites/package.json "$CONTROL_ROOT/apps/medcom-sites/package.json"
-          cmp apps/medcom-sites/.npmrc "$CONTROL_ROOT/apps/medcom-sites/.npmrc"
+          # The historical control owns its exact manifests and source; current
+          # test-only dependencies need not match or warm its entire old cache.
+          git -C "$CONTROL_ROOT" diff --exit-code "$CONTROL_REV" --
           (
             cd "$CONTROL_ROOT/apps/medcom-sites"
-            pnpm install --offline --frozen-lockfile
+            pnpm install --frozen-lockfile
             SOURCE_REVISION="$CONTROL_REV" node scripts/package-standalone.mjs
           )
+          git -C "$CONTROL_ROOT" diff --exit-code "$CONTROL_REV" --
           cd apps/medcom-sites
           SOURCE_REVISION="$CONTROL_REV" I28_PACKAGE_DIRECTORY="$CONTROL_ROOT/artifacts/medcom-frontend-linux-x64" \
             node --test --test-reporter=tap tests/local-https-frontend.test.mjs
