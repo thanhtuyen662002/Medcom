@@ -744,7 +744,9 @@ function installInboundFocusObserver() {
       const frame = this.matches('.request-detail-dialog[role="dialog"]');
       const region = this.matches('[role="region"][aria-label="Phiếu nhập hàng đã chọn"]');
       if (frame || region) window.requestDetailFocusCalls.push({kind: frame ? 'frame' : 'region',
-        label: frame ? this.querySelector('.request-detail-header h2')?.textContent : this.getAttribute('aria-label')});
+        // The heading's first text node is its title; the following span is the current document number.
+        label: frame ? this.querySelector('.request-detail-header h2')?.firstChild?.textContent : this.getAttribute('aria-label'),
+        documentNumber: frame ? this.querySelector('.request-detail-header .record-document-number')?.textContent ?? null : null});
     }
     return Reflect.apply(nativeFocus, this, args);
   };
@@ -753,9 +755,9 @@ function installInboundFocusObserver() {
 test('Node focus observer delegates exact receiver/options, return values and native failures', () => {
   const invocations = [], result = {}, failure = Error('native failure'), window = {};
   class Element {
-    constructor(kind) {this.kind = kind;}
+    constructor(kind, title = 'Phiếu nhập hàng đã chọn', documentNumber = null) {this.kind = kind; this.title = title; this.documentNumber = documentNumber;}
     matches(selector) {return this.kind === 'frame' ? selector.startsWith('.request-detail-dialog') : this.kind === 'region' && selector.startsWith('[role="region"]');}
-    querySelector() {return {textContent: 'Phiếu nhập hàng đã chọn'};}
+    querySelector(selector) {return selector.endsWith('.record-document-number') ? this.documentNumber === null ? null : {textContent: this.documentNumber} : {textContent: this.title + (this.documentNumber ?? ''), firstChild: {textContent: this.title}};}
     getAttribute() {return 'Phiếu nhập hàng đã chọn';}
     focus(...args) {invocations.push({receiver: this, args}); if (this.kind === 'throws') throw failure; return result;}
   }
@@ -767,6 +769,12 @@ test('Node focus observer delegates exact receiver/options, return values and na
   assert.deepEqual(invocations[2].args, []); assert.deepEqual(invocations[3].args, [undefined]);
   assert.deepEqual(window.requestDetailFocusCalls.map(call => call.kind), ['frame', 'frame', 'region']);
   assert.throws(() => new Element('throws').focus(options), error => error === failure);
+  for (const documentNumber of [null, 'DOC-A', 'DOC-B']) new Element('frame', 'Phiếu nhập hàng đã chọn', documentNumber).focus(options);
+  new Element('frame', 'Phiếu khác', 'DOC-A').focus(options);
+  assert.deepEqual(window.requestDetailFocusCalls.slice(-4), [
+    ...[null, 'DOC-A', 'DOC-B'].map(documentNumber => ({kind: 'frame', label: 'Phiếu nhập hàng đã chọn', documentNumber})),
+    {kind: 'frame', label: 'Phiếu khác', documentNumber: 'DOC-A'},
+  ], 'Document identity changes do not hide native frame focus, and other dialog titles remain distinct');
 });
 
 test('React host mobile 320/360/390: ACTUAL React gate (separate from Node double)', {timeout: 240000}, async t => {
@@ -851,10 +859,12 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
     const noDetailFocus = async (baseline, message = 'read completion cannot dispatch an extra frame or former-region focus') => {
       await focusPaint(); assert.deepEqual(await detailFocusCalls(), baseline, message);
     };
-    const oneDetailFocus = async (baseline, message = 'explicit same-document Open focuses its bounded frame exactly once') => {
+    const oneDetailFocus = async (baseline, message = 'explicit same-document Open focuses its bounded frame exactly once', documentId = 'DOC-A') => {
       await page.waitForFunction(before => window.requestDetailFocusCalls.filter(call => call.label === 'Phiếu nhập hàng đã chọn' && call.kind === 'frame').length > before.frame, baseline);
       await focusPaint(); assert.deepEqual(await detailFocusCalls(), {frame: baseline.frame + 1, region: baseline.region}, message);
-      assert.equal(await (await dialog()).evaluate(element => document.activeElement === element), true);
+      const focusedDocument = await page.evaluate(() => window.requestDetailFocusCalls.filter(call => call.label === 'Phiếu nhập hàng đã chọn' && call.kind === 'frame').at(-1)?.documentNumber);
+      assert.equal(focusedDocument, documentId, 'The one admitted native focus belongs to the currently expected document');
+      assert.equal(await (await dialog(documentId)).evaluate(element => document.activeElement === element), true);
     };
 
     const readMarkers = {sessionScope:'e'.repeat(64),readScope:'f'.repeat(64)};
@@ -1803,6 +1813,9 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
     });
     for (const queued of [false, true]) await run(`command starting during approved history traversal blocks the actual ${queued ? 'queued route' : 'Back'} commit`, async () => {
       await start({mode: 'lost', held: {post: true}}); await field('Số đơn').fill('TRAVERSAL RACE'); await button('Rà soát phiếu').click();
+      // I50 retains this editor's action in its owning dialog footer.
+      const retainedSave = host().locator('.request-detail-dialog .record-dialog-actions').getByRole('button', {name: 'Lưu thay đổi', exact: true, includeHidden: true});
+      assert.equal(await retainedSave.count(), 1); const originalSave = await retainedSave.elementHandle();
       const position = await page.evaluate(() => ({href: location.href, index: history.state.medcomWorkspace.index}));
       const target = await page.evaluate(() => window.i24IO.historyStages.find(stage => stage.phase === 'home'));
       assert.equal(new URL(target.href).searchParams.get('screen'), 'home');
@@ -1824,8 +1837,8 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
       if (queued) await go('settings');
       // Dispatch the exact retained control while a closing guard portal may
       // still aria-hide its background. No stale handler or replacement draft.
-      const retainedSave = page.getByTestId('inbound-editor').getByRole('button', {name: 'Lưu thay đổi', exact: true, includeHidden: true});
       assert.equal(await retainedSave.count(), 1); assert.equal(await retainedSave.isEnabled(), true);
+      assert.equal(await retainedSave.evaluate((element, original) => element === original && element.isConnected, originalSave), true, 'Dispatch the identical retained footer control after approval');
       await retainedSave.evaluate(element => element.click()); await eventually(() => state.waiters.post?.length > 0);
       await page.evaluate(() => window.i24ReleaseTraversal()); await page.getByRole('alertdialog').waitFor(); await paint();
       assert.equal(await button('Bỏ thay đổi và rời màn hình').count(), 0); assert.equal(await host().count(), 1);

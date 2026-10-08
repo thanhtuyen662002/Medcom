@@ -49,7 +49,7 @@ async function waitForHistoryOriginal(page,screen,documentId,originalValue,event
   await editor.getByText('Chưa xác nhận kết quả',{exact:true}).waitFor();await editor.getByText(documentId,{exact:true}).waitFor();
   const review=editor.getByRole('region',{name:'Rà soát thông tin phiếu',exact:true});await review.waitFor();
   assert.equal(await review.locator('label[for$="-notes"] + strong').innerText(),originalValue);assert.equal(await editor.getByLabel('Ghi chú',{exact:true}).count(),0);
-  for(const name of ['Quay lại chỉnh sửa','Lưu nháp trên ERP','Gửi đề nghị'])assert.equal(await editor.getByRole('button',{name,exact:true}).isDisabled(),true);
+  for(const name of ['Quay lại chỉnh sửa','Lưu nháp trên ERP','Gửi đề nghị'])assert.equal(await dialog.getByRole('button',{name,exact:true}).isDisabled(),true);
  }else{
   assert.equal(await editor.getAttribute('data-document-id'),documentId);
   await editor.getByText(`Yêu cầu gốc: ${documentId}. Dữ liệu không được lưu bền trên thiết bị; tải lại hoặc đóng trang có thể mất khả năng kiểm tra.`,{exact:true}).waitFor();

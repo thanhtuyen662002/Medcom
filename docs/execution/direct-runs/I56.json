@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I56",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "daf704b5-4686-4842-92eb-9bacb09b7a29",
+  "base_sha": "1b1ec44554cff6886ae02015baec07c650592bfc",
+  "work_branch": "codex/g45-live-erp-configuration-i56-20261008",
+  "claim_branch": "medcom-claims/g45/direct/I56",
+  "scope": [
+    "src/backend/Medcom.Api/Program.cs",
+    "src/backend/Medcom.Api/ErpConfigurationProbe.cs",
+    "src/backend/Medcom.Infrastructure/Configuration/ErpConfigurationProbeSql.cs",
+    "tests/backend/Medcom.Api.Tests/ErpConfigurationProbeTests.cs",
+    "docs/deploy/ERP_CONFIGURATION_PROBE.md",
+    "docs/execution/direct-runs/I56.json"
+  ],
+  "purpose": "Add an isolated CLI-only read of live purchase/inbound ERP form, button and dropdown bindings with bounded fixed SQL and sanitized technical output; do not activate business commands",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "constraints": [
+    "Admission candidate only; no implementation or actual DB calls have run. Root publishes immutable admission before implementation.",
+    "Root sole GitHub publisher; workers prepare bounded local files only.",
+    "Priority is live ERP configuration mappings, not SELECT 1 or schema-only qualification.",
+    "Exact menu/form filters and selected column names must be verified against committed source catalog and live metadata; unknown or changed shapes fail closed and are reported as unknown. Newly supplied ERP archive is supplementary until worker verification.",
+    "CLI-only --probe-erp-configuration purchase or inbound; no HTTP endpoint, host startup, private-file loading, new credentials or SSH. Existing environment connection and unchanged TLS policy only.",
+    "Fixed allowlisted SELECT projections only, row/time/byte caps, no dynamic SQL, configured SQL execution, stored procedures, DML/DDL, reservations, allocator calls, business reads or COMMIT.",
+    "Exclude account/customer/transaction rows, user/group permissions and secrets. No raw Source/Para/Filter/KeyValue/default expressions or full SQL bodies in output; only validated technical identifiers, booleans, lengths and SHA-256 fingerprints as applicable.",
+    "Report partial/missing/ambiguous/truncated mappings explicitly; metadata evidence does not confer action permissions, RuntimeAcceptance, runtimeQualified=true or production acceptance.",
+    "Do not modify ApiHost command defaults, factories, authentication/session/CSRF/security policies, frontend, schemas, dependencies, workflows or existing I55 probe contract.",
+    "Read-only live execution occurs only after root review, exact-head CI and approved deployment; no actual DB calls during preparation or CI.",
+    "Writer qualification remains a separate explicit checklist; existing purchase pilot Save/Submit still requires owner write approval and actual runtime evidence."
+  ],
+  "created_at": "2026-10-08T18:00:00Z"
+}

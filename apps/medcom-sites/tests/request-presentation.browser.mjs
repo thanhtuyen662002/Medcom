@@ -133,26 +133,30 @@ function installDetailFocusObserver(){
  HTMLElement.prototype.focus=function(...args){
   const frame=this.matches('.request-detail-dialog[role="dialog"]');
   if(frame||this.matches('[aria-label="Phiếu mua hàng hiện có"],[role="region"][aria-label="Phiếu nhập hàng đã chọn"]')){
-   window.requestDetailFocusCalls.push({kind:frame?'frame':'region',label:frame?document.getElementById(this.getAttribute('aria-labelledby'))?.textContent:this.getAttribute('aria-label')});
+   const heading=frame?document.getElementById(this.getAttribute('aria-labelledby')):null;
+   // The title text and current record number occupy separate nodes in the shared heading.
+   window.requestDetailFocusCalls.push({kind:frame?'frame':'region',label:frame?heading?.firstChild?.textContent:this.getAttribute('aria-label'),documentNumber:frame?heading?.querySelector('.record-document-number')?.textContent??null:null});
   }
   return Reflect.apply(native,this,args);
  };
 }
 test('detail focus observer preserves native behavior and counts repeated frame calls separately from regions',()=>{
- const require=createRequire(import.meta.url),{runInNewContext}=require('node:vm'),nativeCalls=[],token={},error=Error('synthetic-native-error');
+ const require=createRequire(import.meta.url),{runInNewContext}=require('node:vm'),nativeCalls=[],token={},error=Error('synthetic-native-error'),headings=new Map();
  class HTMLElement{
-  constructor(frame,label){this.frame=frame;this.label=label;}
+  constructor(frame,label='Phiếu nhập hàng đã chọn',documentNumber=null){this.frame=frame;this.label=label;this.titleId='title-'+headings.size;headings.set(this.titleId,{textContent:label+(documentNumber??''),firstChild:{textContent:label},querySelector:()=>documentNumber===null?null:{textContent:documentNumber}});}
   matches(selector){return selector.startsWith('.request-detail-dialog')?this.frame:!this.frame&&this.label==='Phiếu nhập hàng đã chọn';}
-  getAttribute(name){return name==='aria-labelledby'?'title':this.label;}
+  getAttribute(name){return name==='aria-labelledby'?this.titleId:this.label;}
   focus(...args){nativeCalls.push({receiver:this,args});if(args[0]?.fail)throw error;return token;}
  }
- const window={},document={getElementById:()=>({textContent:'Phiếu nhập hàng đã chọn'})};
+ const window={},document={getElementById:id=>headings.get(id)};
  runInNewContext(`(${installDetailFocusObserver.toString()})();`,{window,document,HTMLElement,Reflect});
  const frame=new HTMLElement(true),region=new HTMLElement(false,'Phiếu nhập hàng đã chọn'),other=new HTMLElement(false,'other'),options={preventScroll:true};
  assert.strictEqual(frame.focus(options),token);assert.strictEqual(frame.focus(options),token);assert.strictEqual(region.focus(options),token);assert.strictEqual(other.focus(options),token);
  assert.deepEqual(nativeCalls.map(call=>call.receiver),[frame,frame,region,other]);assert.ok(nativeCalls.every(call=>call.args.length===1&&call.args[0]===options));
- assert.deepEqual(JSON.parse(JSON.stringify(window.requestDetailFocusCalls)),[{kind:'frame',label:'Phiếu nhập hàng đã chọn'},{kind:'frame',label:'Phiếu nhập hàng đã chọn'},{kind:'region',label:'Phiếu nhập hàng đã chọn'}]);
+ assert.deepEqual(JSON.parse(JSON.stringify(window.requestDetailFocusCalls)),[{kind:'frame',label:'Phiếu nhập hàng đã chọn',documentNumber:null},{kind:'frame',label:'Phiếu nhập hàng đã chọn',documentNumber:null},{kind:'region',label:'Phiếu nhập hàng đã chọn',documentNumber:null}]);
  assert.throws(()=>other.focus({fail:true}),caught=>caught===error);assert.equal(nativeCalls.length,5);assert.equal(window.requestDetailFocusCalls.length,3);
+ for(const label of ['Phiếu nhập hàng đã chọn','Phiếu mua hàng hiện có'])for(const documentNumber of [null,'DOC-A','DOC-B'])new HTMLElement(true,label,documentNumber).focus(options);
+ assert.deepEqual(JSON.parse(JSON.stringify(window.requestDetailFocusCalls.slice(-6))),['Phiếu nhập hàng đã chọn','Phiếu mua hàng hiện có'].flatMap(label=>[null,'DOC-A','DOC-B'].map(documentNumber=>({kind:'frame',label,documentNumber}))), 'Both exact dialog titles retain separate changing document identities');
 });
 
 let compiledPresentation;
@@ -836,7 +840,11 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
   const focusRegion=screen=>page.getByRole('region',{name:screen==='purchase-requests'?/^Phiếu mua hàng hiện có/:/^Phiếu nhập hàng đã chọn/});
   const detailFocusCounts=screen=>page.evaluate(label=>{const calls=window.requestDetailFocusCalls.filter(call=>call.label===label);return {frame:calls.filter(call=>call.kind==='frame').length,region:calls.filter(call=>call.kind==='region').length};},screen==='purchase-requests'?'Phiếu mua hàng hiện có':'Phiếu nhập hàng đã chọn');
   const unchangedDetailFocus=async(screen,before,message)=>assert.deepEqual(await detailFocusCounts(screen),before,message??'Read completion cannot add frame or obsolete-region focus');
-  const oneExplicitDetailFocus=async(screen,before)=>{await eventually(async()=> (await detailFocusCounts(screen)).frame>before.frame);await focusedDetail(screen);assert.deepEqual(await detailFocusCounts(screen),{frame:before.frame+1,region:before.region},'Same-document Open calls its bounded frame once and never the obsolete region');};
+  const oneExplicitDetailFocus=async(screen,before,documentId)=>{
+   await eventually(async()=> (await detailFocusCounts(screen)).frame>before.frame);await focusedDetail(screen);assert.deepEqual(await detailFocusCounts(screen),{frame:before.frame+1,region:before.region},'Same-document Open calls its bounded frame once and never the obsolete region');
+   const focusedDocument=await page.evaluate(label=>window.requestDetailFocusCalls.filter(call=>call.label===label&&call.kind==='frame').at(-1)?.documentNumber,screen==='purchase-requests'?'Phiếu mua hàng hiện có':'Phiếu nhập hàng đã chọn');
+   assert.equal(focusedDocument,documentId,'The one admitted native focus belongs to the explicitly opened document');assert.equal(await detailDialog(screen).locator('.record-document-number').textContent(),documentId);
+  };
   const openRow=(screen,index)=>screen==='purchase-requests'?page.getByRole('button',{name:'Mở đề nghị QA-PURCHASE-'+String(index).padStart(3,'0'),exact:true}):page.getByRole('button',{name:new RegExp('^Mở phiếu QA-INBOUND-'+String(index).padStart(3,'0')+' ')});
   const closeSelection=screen=>page.getByRole('button',{name:screen==='purchase-requests'?'Đóng đề nghị':'Đóng phiếu nhập hàng',exact:true});
   async function focusedVisible(locator){await eventually(()=>locator.evaluate(element=>document.activeElement===element));await paint();const metrics=await locator.evaluate(element=>({top:element.getBoundingClientRect().top,header:document.querySelector('.topbar')?.getBoundingClientRect().bottom??0,height:innerHeight,tag:element.tagName}));assert.ok(metrics.top>=metrics.header-1&&metrics.top<metrics.height-90,JSON.stringify(metrics));assert.ok(!['INPUT','TEXTAREA','SELECT'].includes(metrics.tag));}
@@ -845,7 +853,7 @@ for(const width of [320,390,1440])for(const screen of ['purchase-requests','inbo
     await start(width,screen,fullLists());await openRow(screen,1).waitFor();assert.equal(await host(screen).getByRole('button',{name:screen==='purchase-requests'?/^Mở đề nghị QA-PURCHASE-/:/^Mở phiếu QA-INBOUND-/}).count(),screen==='purchase-requests'?20:50);
     const filter=host(screen).locator('input').first();await filter.fill('UNAPPLIED FILTER DRAFT');
     await openRow(screen,1).click();await focusedDetail(screen);await capture(`${screen}-full-list-open-${width}`,{viewport:true,keepFocus:true});await layout(width,screen);await closeSelection(screen).click();await focusedVisible(openRow(screen,1));assert.equal(await filter.inputValue(),'UNAPPLIED FILTER DRAFT');
-    const middle=screen==='purchase-requests'?11:26;await openRow(screen,middle).focus();await page.keyboard.press('Enter');await focusedDetail(screen);await capture(`${screen}-full-list-keyboard-open-${width}`,{viewport:true,keepFocus:true});if(screen==='purchase-requests')await page.getByLabel('Ghi chú',{exact:true}).waitFor();else await page.getByLabel('Số đơn',{exact:true}).waitFor();await paint();const repeatFocus=await detailFocusCounts(screen);await backgroundActivate(openRow(screen,middle));await oneExplicitDetailFocus(screen,repeatFocus);await closeSelection(screen).focus();await page.keyboard.press('Enter');await focusedVisible(openRow(screen,middle));await capture(`${screen}-full-list-close-${width}`,{viewport:true,keepFocus:true});assert.equal(await filter.inputValue(),'UNAPPLIED FILTER DRAFT');assert.equal(calls.filter(call=>call.method==='POST').length,0);
+    const middle=screen==='purchase-requests'?11:26;await openRow(screen,middle).focus();await page.keyboard.press('Enter');await focusedDetail(screen);await capture(`${screen}-full-list-keyboard-open-${width}`,{viewport:true,keepFocus:true});if(screen==='purchase-requests')await page.getByLabel('Ghi chú',{exact:true}).waitFor();else await page.getByLabel('Số đơn',{exact:true}).waitFor();await paint();const repeatFocus=await detailFocusCounts(screen);await backgroundActivate(openRow(screen,middle));await oneExplicitDetailFocus(screen,repeatFocus,(screen==='purchase-requests'?'QA-PURCHASE-':'QA-INBOUND-')+String(middle).padStart(3,'0'));await closeSelection(screen).focus();await page.keyboard.press('Enter');await focusedVisible(openRow(screen,middle));await capture(`${screen}-full-list-close-${width}`,{viewport:true,keepFocus:true});assert.equal(await filter.inputValue(),'UNAPPLIED FILTER DRAFT');assert.equal(calls.filter(call=>call.method==='POST').length,0);
    }
   });
   await run('late or failed explicit reads never steal later modal-control or refresh focus',async()=>{
@@ -974,7 +982,7 @@ for(const width of [320,390,1440])for(const screen of ['purchase-requests','inbo
     // The temporary authority gap correctly retires the old focus origin.
     // Re-activating the retained Open handler establishes today's origin without
     // another GET; the modal backdrop still prevents actual pointer access.
-    const repeatedReadonlyFocus=await detailFocusCounts('inbound-requests');await backgroundActivate(open('inbound-requests'));await oneExplicitDetailFocus('inbound-requests',repeatedReadonlyFocus);assert.equal(projectionCalls().length,5);
+    const repeatedReadonlyFocus=await detailFocusCounts('inbound-requests');await backgroundActivate(open('inbound-requests'));await oneExplicitDetailFocus('inbound-requests',repeatedReadonlyFocus,document.documentId);assert.equal(projectionCalls().length,5);
     await closeSelection('inbound-requests').click();await focusedVisible(open('inbound-requests'));assert.equal(await readonlyPanel().count(),0);assert.equal(await filter.inputValue(),'UNAPPLIED READONLY FILTER');
     await openRow('inbound-requests',26).focus();await page.keyboard.press('Enter');await readonlyReady();await focusedDetail('inbound-requests');await detailDialog('inbound-requests').getByRole('button',{name:'Đóng hộp thoại',exact:true}).focus();await roundedKeyboardFocus(detailDialog('inbound-requests').getByRole('button',{name:'Đóng hộp thoại',exact:true}));assert.equal(await readonlyPanel().getByRole('heading',{name:'QA-INBOUND-026',exact:true}).count(),1);
     await closeSelection('inbound-requests').focus();await page.keyboard.press('Enter');await focusedVisible(openRow('inbound-requests',26));await roundedKeyboardFocus(openRow('inbound-requests',26));assert.equal(await filter.inputValue(),'UNAPPLIED READONLY FILTER');assert.equal(calls.filter(call=>call.method==='POST').length,0);assert.deepEqual(await notices(),[]);
