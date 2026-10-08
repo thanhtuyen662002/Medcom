@@ -27,14 +27,15 @@ export function Documents({kind,workspace,verified,generation,compact,setCompact
  const query=useQuery({queryKey:["erp-documents",scope?.sessionScope,scope?.readScope,generation,scopeKey],queryFn:({signal})=>getDocuments(kind,page,applied,branch,signal,scope??undefined),enabled:allowed,gcTime:0,retry:false,staleTime:interval,refetchInterval:interval,refetchIntervalInBackground:false,refetchOnWindowFocus:false,refetchOnReconnect:false,networkMode:"always"});
  const denied=query.error instanceof ApiError&&[401,403].includes(query.error.status);const data=allowed&&!query.error?query.data:undefined;
  useLayoutEffect(()=>{liveRows.current={allowed:allowed&&!query.error,rows:data?.rows??[]};return()=>{liveRows.current={allowed:false,rows:[]};};},[allowed,query.error,data]);
- // Reset selection before rendering a changed scope or denial; never show a stale document.
- const selectionScope=JSON.stringify([scope?.sessionScope,scope?.readScope,scopeKey,denied]);
- const [previousSelectionScope,setPreviousSelectionScope]=useState(selectionScope);
+ // Temporary workspace loss masks data but does not retire mounted detail custody.
+ // Remember only the last observed identity for invalidation, never read authority.
+ const readScopeKey=scope?JSON.stringify([scope.sessionScope,scope.readScope]):null;
+ const [selectionScope,setSelectionScope]=useState({readScopeKey,scopeKey,denied});
  const selected=data?.rows.find(row=>row.documentId===selectedId)??null;
  const viewport=useRef<HTMLDivElement>(null),scroll=useRef({top:0,left:0});
  useLayoutEffect(()=>{if(!data)return;const element=viewport.current?.querySelector<HTMLElement>(".desktop-grid-viewport");if(element){element.scrollTop=scroll.current.top;element.scrollLeft=scroll.current.left;}},[data]);
  if(data&&selectedId&&!data.rows.some(row=>row.documentId===selectedId))setSelectedId(null);
- if(previousSelectionScope!==selectionScope){setPreviousSelectionScope(selectionScope);setSelected(null);}
+ if(selectionScope.scopeKey!==scopeKey||selectionScope.denied!==denied||readScopeKey!==null&&selectionScope.readScopeKey!==readScopeKey){setSelectionScope({readScopeKey:readScopeKey??selectionScope.readScopeKey,scopeKey,denied});setSelected(null);}
  useEffect(()=>{if(query.error)onDenied(query.error);},[query.error,onDenied]);
  useEffect(()=>{const listener=(e:KeyboardEvent)=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="f"){e.preventDefault();searchRef.current?.focus();}};window.addEventListener("keydown",listener);return()=>window.removeEventListener("keydown",listener);},[]);
  const submit=(e:FormEvent)=>{e.preventDefault();setApplied(search.trim());setPage(1);if(applied===search.trim()&&page===1)void query.refetch();};

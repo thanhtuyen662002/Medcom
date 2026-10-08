@@ -365,9 +365,10 @@ function WorkspaceContent({extensions,auth}:{extensions?:WorkspaceExtensions;aut
  const [previousPresentation,setPreviousPresentation]=useState(presentationAllowed);
  if(previousPresentation!==presentationAllowed){setPreviousPresentation(presentationAllowed);if(!presentationAllowed){setAccountOpen(false);setCommandVisible(false);}}
  useLayoutEffect(()=>{toast.dismiss();if(!presentationAllowed)setOpenMobile(false);},[presentationAllowed,setOpenMobile]);
+ // A suspended observer may report the same cached denial after the first remount.
  const onDenied=useCallback((e:unknown)=>{if(loginLifecycle.current.key!==inboundLoginKey)return;if(e instanceof ApiError&&e.status===401){authorityFence.current.invalidate();setWorkspace(null);setSessionError(e);}
-  else if(e instanceof ApiError&&(e.status===403||e.code==="read_scope_changed")){recheckBlockedScope.current=serverReadScope.current;setReadViewScope(current=>current+":denied");suspendReads();void loadWorkspace();}
- },[inboundLoginKey,setWorkspace,setSessionError,suspendReads,loadWorkspace]);
+  else if(e instanceof ApiError&&(e.status===403||e.code==="read_scope_changed")&&!readBlockedRef.current){listViews.retire();recheckBlockedScope.current=serverReadScope.current;setReadViewScope(current=>current+":denied");suspendReads();void loadWorkspace();}
+ },[inboundLoginKey,setWorkspace,setSessionError,suspendReads,loadWorkspace,listViews]);
  useEffect(()=>{if(!hasWorkspace)queryClient.clear();},[hasWorkspace,queryClient]);
  const toggleFavorite=(id:ScreenId)=>setFavorites(old=>{const current=old??initial.favorites;return current.includes(id)?current.filter(x=>x!==id):[...current,id];});
  async function signOut(){guardNavigation(()=>{void performSignOut();});}

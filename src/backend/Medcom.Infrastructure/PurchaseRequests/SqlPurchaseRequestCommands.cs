@@ -35,6 +35,8 @@ public sealed class SqlPurchaseRequestCommands : IPurchaseRequestCommands
     private readonly IPurchaseRequestIdentifierAllocator allocator;
     private readonly Func<CancellationToken, Task<AuthoritativeIdentity?>>? inspect;
     private readonly bool runtimeQualified;
+    private readonly PurchaseRequestPilotAuthorization? pilot;
+    private readonly TimeProvider clock = TimeProvider.System;
     public SqlPurchaseRequestCommands(Guid databaseBindingId, LegacyCompany company, Func<SqlConnection> connectionFactory,
         Func<CancellationToken, Task<AuthoritativeIdentity?>> resolveLiveSession,
         IPurchaseRequestIdentifierAllocator identifierAllocator, bool runtimeQualified = false,
@@ -55,6 +57,21 @@ public sealed class SqlPurchaseRequestCommands : IPurchaseRequestCommands
         inspect=inspectLocalSession;
         allocator=identifierAllocator ?? throw new ArgumentNullException(nameof(identifierAllocator)); this.runtimeQualified=runtimeQualified;
     }
+    // This overload admits an owner-authorized bounded experiment. It deliberately
+    // leaves runtimeQualified FALSE: no metadata/offline result becomes acceptance.
+    internal SqlPurchaseRequestCommands(Guid databaseBindingId, LegacyCompany company,
+        Func<DbConnection> connectionFactory, Func<CancellationToken, Task<AuthoritativeIdentity?>> resolveLiveSession,
+        IPurchaseRequestIdentifierAllocator identifierAllocator, PurchaseRequestPilotAuthorization pilot,
+        TimeProvider clock, Func<CancellationToken, Task<AuthoritativeIdentity?>> inspectLocalSession)
+        : this(databaseBindingId, company, connectionFactory, resolveLiveSession, identifierAllocator,
+            runtimeQualified: false, inspectLocalSession: inspectLocalSession)
+    {
+        ArgumentNullException.ThrowIfNull(pilot);
+        ArgumentNullException.ThrowIfNull(clock);
+        if (!pilot.Covers(binding, company)) throw new ArgumentException("Purchase pilot composition mismatch.");
+        this.pilot = pilot; this.clock = clock;
+    }
+
     public Task<PurchaseRequestCommandResult> CreateAsync(CreatePurchaseRequestDraft request,CancellationToken token=default)
         => Start(request,token);
     public Task<PurchaseRequestCommandResult> SaveAsync(SavePurchaseRequestDraft request,CancellationToken token=default)
@@ -85,7 +102,9 @@ public sealed class SqlPurchaseRequestCommands : IPurchaseRequestCommands
     }
     private async Task<PurchaseRequestLookupResult> Observe(Submitted command,PurchaseRequestSessionFence sessionFence,CancellationToken token)
     {
-        if(!runtimeQualified) return new(PurchaseRequestLookupOutcome.QualificationRequired);
+        if(!runtimeQualified && pilot is null) return new(PurchaseRequestLookupOutcome.QualificationRequired);
+        if(pilot is not null && (!pilot.CoversDocument(command.Document,command.Branch)
+            || !pilot.CanObserve(clock.GetUtcNow()))) return new(PurchaseRequestLookupOutcome.Denied);
         if(inspect is null) return new(PurchaseRequestLookupOutcome.Unavailable);
         if(token.IsCancellationRequested) return new(PurchaseRequestLookupOutcome.Cancelled);
         if(System.Transactions.Transaction.Current is not null) return new(PurchaseRequestLookupOutcome.Unavailable);
@@ -99,7 +118,7 @@ public sealed class SqlPurchaseRequestCommands : IPurchaseRequestCommands
             var key=Key(identity,command); var slot=SHA256.HashData(key);
             connection=factory();
             if(connection is null || connection.State!=ConnectionState.Closed) return new(PurchaseRequestLookupOutcome.Unavailable);
-            owned=true; await connection.OpenAsync(token);
+            owned=true; pilot?.VerifyTarget(connection); await connection.OpenAsync(token); pilot?.VerifyTarget(connection);
             var started=await connection.BeginTransactionAsync(IsolationLevel.Serializable,token);
             // Never roll back/dispose a transaction reported as belonging to another owner.
             if(!ReferenceEquals(started.Connection,connection)) return new(PurchaseRequestLookupOutcome.Unavailable);
@@ -182,7 +201,10 @@ public sealed class SqlPurchaseRequestCommands : IPurchaseRequestCommands
     }
     private async Task<PurchaseRequestCommandResult> Run(Submitted command,PurchaseRequestSessionFence sessionFence,CancellationToken token)
     {
-        if(!runtimeQualified) return Result(PurchaseRequestCommandOutcome.QualificationRequired);
+        if(!runtimeQualified && pilot is null) return Result(PurchaseRequestCommandOutcome.QualificationRequired);
+        if(pilot is not null && (!pilot.CoversDocument(command.Document,command.Branch)
+            || command.Creates || command.Changes.Any(change=>change.Kind!=PurchaseRequestLineChangeKind.Update)
+            || !pilot.CanWrite(clock.GetUtcNow()))) return Result(PurchaseRequestCommandOutcome.Denied);
         if(inspect is null) return Result(PurchaseRequestCommandOutcome.Unavailable);
         if(token.IsCancellationRequested) return Result(PurchaseRequestCommandOutcome.Cancelled);
         if(System.Transactions.Transaction.Current is not null) return Result(PurchaseRequestCommandOutcome.Unavailable);
@@ -198,7 +220,7 @@ public sealed class SqlPurchaseRequestCommands : IPurchaseRequestCommands
             var answer=Result(PurchaseRequestCommandOutcome.Unavailable);
             async Task<PurchaseRequestCommandResult> ExecutePhase()
             {
-                var observed=await Resolve(token);
+                var observed=await Resolve(token,pilotWrite:true);
                 if(!sessionFence.TryAccept(observed,out var identity)) return Result(PurchaseRequestCommandOutcome.Denied);
                 if(first is null)
                 {
@@ -207,7 +229,7 @@ public sealed class SqlPurchaseRequestCommands : IPurchaseRequestCommands
                 var allocation=AllocationContext(identity,command);
                 connection=factory();
                 if(connection is null || connection.State!=ConnectionState.Closed) return Result(PurchaseRequestCommandOutcome.Unavailable);
-                owned=true; await connection.OpenAsync(token);
+                owned=true; pilot?.VerifyTarget(connection); await connection.OpenAsync(token); pilot?.VerifyTarget(connection);
                 var started=await connection.BeginTransactionAsync(IsolationLevel.Serializable,token);
                 if(!ReferenceEquals(started.Connection,connection)) return Result(PurchaseRequestCommandOutcome.Unavailable);
                 transaction=started;
@@ -227,7 +249,7 @@ public sealed class SqlPurchaseRequestCommands : IPurchaseRequestCommands
                             return Result(PurchaseRequestCommandOutcome.Unavailable);
                         var current=await Read(transaction,receipt.Document.PurchaseRequestId,command.Branch,token);
                         if(current is null) return Result(PurchaseRequestCommandOutcome.Conflict);
-                        if(!await StillAuthorized(transaction,sessionFence,command,token)) return Result(PurchaseRequestCommandOutcome.Denied);
+                        if(!await StillAuthorized(transaction,sessionFence,command,token,pilotWrite:true)) return Result(PurchaseRequestCommandOutcome.Denied);
                         token.ThrowIfCancellationRequested(); commitAttempted=true; possibleWrite=true;
                         await transaction.CommitAsync(token); committed=true; token.ThrowIfCancellationRequested();
                         return new(PurchaseRequestCommandOutcome.Replayed,receipt);
@@ -260,14 +282,14 @@ public sealed class SqlPurchaseRequestCommands : IPurchaseRequestCommands
                     var stored=await Lookup(transaction,key!,slot!,command.Intent,token);
                     if(!stored.Valid || stored.Row is not {} reserved || reserved.Attempt!=attempt || reserved.Receipt is not null
                         || !reserved.Intent.AsSpan().SequenceEqual(command.Intent)) throw new InvalidOperationException("Reservation readback mismatch.");
-                    if(!await StillAuthorized(transaction,sessionFence,command,token)) return Result(PurchaseRequestCommandOutcome.Denied);
+                    if(!await StillAuthorized(transaction,sessionFence,command,token,pilotWrite:true)) return Result(PurchaseRequestCommandOutcome.Denied);
                     token.ThrowIfCancellationRequested(); commitAttempted=true; possibleWrite=true;
                     await transaction.CommitAsync(token); committed=true; token.ThrowIfCancellationRequested();
                     custody=attempt; // only this invocation's acknowledged reservation permits phase 1.
                     advance=true;
                     return Result(PurchaseRequestCommandOutcome.OutcomeUnknown);
                 }
-                if(!await StillAuthorized(transaction,sessionFence,command,token)) return Result(PurchaseRequestCommandOutcome.Denied);
+                if(!await StillAuthorized(transaction,sessionFence,command,token,pilotWrite:true)) return Result(PurchaseRequestCommandOutcome.Denied);
                 writeAttempted=true;
                 var ids=command.NeedsAllocation ? await allocator.AllocateAsync(transaction,allocation,token)
                     : new PurchaseRequestAllocatedIdentifiers(command.Document!,Array.Empty<PurchaseRequestAllocatedLine>());
@@ -331,7 +353,7 @@ public sealed class SqlPurchaseRequestCommands : IPurchaseRequestCommands
                     || JsonSerializer.Serialize(completed.Receipt,PurchaseRequestCommandRules.Json)!=JsonSerializer.Serialize(result,PurchaseRequestCommandRules.Json))
                     throw new InvalidOperationException("Receipt readback mismatch.");
                 if(!await TransactionValid(transaction,token)) throw new InvalidOperationException("Transaction boundary mismatch.");
-                if(!await StillAuthorized(transaction,sessionFence,command,token)) return Result(PurchaseRequestCommandOutcome.Denied);
+                if(!await StillAuthorized(transaction,sessionFence,command,token,pilotWrite:true)) return Result(PurchaseRequestCommandOutcome.Denied);
                 token.ThrowIfCancellationRequested(); commitAttempted=true; possibleWrite=true;
                 await transaction.CommitAsync(token); committed=true; token.ThrowIfCancellationRequested();
                 return new(PurchaseRequestCommandOutcome.Committed,result);
@@ -379,7 +401,7 @@ public sealed class SqlPurchaseRequestCommands : IPurchaseRequestCommands
         }
         return Result(PurchaseRequestCommandOutcome.Unavailable);
     }
-    private async Task<AuthoritativeIdentity?> Resolve(CancellationToken token,bool localOnly=false)
+    private async Task<AuthoritativeIdentity?> Resolve(CancellationToken token,bool localOnly=false,bool pilotWrite=false)
     {
         token.ThrowIfCancellationRequested();
         AuthoritativeIdentity? id;
@@ -391,12 +413,15 @@ public sealed class SqlPurchaseRequestCommands : IPurchaseRequestCommands
             || !PurchaseRequestCommandRules.Identifier(id.PrincipalId,100) || !PurchaseRequestCommandRules.Identifier(id.TenantId,100)
             || !PurchaseRequestCommandRules.Identifier(id.CompanyId,100) || string.IsNullOrEmpty(id.CredentialStamp)
             || id.Capabilities is null) return null;
+        if(pilot is not null && (!pilot.CoversIdentity(id)
+            || !(pilotWrite ? pilot.CanWrite(clock.GetUtcNow()) : pilot.CanObserve(clock.GetUtcNow())))) return null;
         return id with { BranchIds=id.BranchIds?.ToArray(),Capabilities=id.Capabilities.ToArray() };
     }
-    private async Task<bool> StillAuthorized(DbTransaction tx,PurchaseRequestSessionFence sessionFence,Submitted command,CancellationToken token,bool strict=false)
+    private async Task<bool> StillAuthorized(DbTransaction tx,PurchaseRequestSessionFence sessionFence,Submitted command,CancellationToken token,bool strict=false,bool pilotWrite=false)
     {
-        var live=await Resolve(token,localOnly:true);
-        return sessionFence.TryAccept(live,out var accepted) && await Authority(tx,accepted,command,token,strict);
+        var live=await Resolve(token,localOnly:true,pilotWrite:pilotWrite);
+        return sessionFence.TryAccept(live,out var accepted) && await Authority(tx,accepted,command,token,strict)
+            && (pilot is null || (pilotWrite ? pilot.CanWrite(clock.GetUtcNow()) : pilot.CanObserve(clock.GetUtcNow())));
     }
     private static async Task<bool> Authority(DbTransaction tx,AuthoritativeIdentity id,Submitted input,CancellationToken token,bool strict=false)
     {

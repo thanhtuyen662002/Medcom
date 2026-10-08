@@ -21,12 +21,15 @@ public sealed class SqlPurchaseRequestCommandAuthorityReader
     private readonly Func<DbConnection> connections;
     private readonly Func<CancellationToken, Task<AuthoritativeIdentity?>> session;
     private readonly PurchaseRequestCommandRuntimeAcceptance? acceptance;
+    private readonly PurchaseRequestPilotAuthorization? pilot;
+    private readonly TimeProvider clock;
     private readonly Func<CancellationToken, Task<AuthoritativeIdentity?>>? inspect;
 
     internal SqlPurchaseRequestCommandAuthorityReader(Guid databaseBindingId, LegacyCompany company,
         Func<DbConnection> connections, Func<CancellationToken, Task<AuthoritativeIdentity?>> resolveLiveSession,
         PurchaseRequestCommandRuntimeAcceptance? acceptance = null,
-        Func<CancellationToken, Task<AuthoritativeIdentity?>>? inspectLocalSession = null)
+        Func<CancellationToken, Task<AuthoritativeIdentity?>>? inspectLocalSession = null,
+        PurchaseRequestPilotAuthorization? pilot = null, TimeProvider? clock = null)
     {
         binding = databaseBindingId;
         this.company = company ?? throw new ArgumentNullException(nameof(company));
@@ -34,16 +37,23 @@ public sealed class SqlPurchaseRequestCommandAuthorityReader
         session = resolveLiveSession ?? throw new ArgumentNullException(nameof(resolveLiveSession));
         this.acceptance = acceptance;
         inspect = inspectLocalSession;
+        if (pilot is not null && (acceptance is not null || !pilot.Covers(binding, company)))
+            throw new ArgumentException("Purchase pilot composition mismatch.");
+        this.pilot = pilot;
+        this.clock = clock ?? TimeProvider.System;
     }
 
     public async Task<PurchaseRequestCommandAuthorityOutcome> ReadAsync(string documentId, string branchId,
         CancellationToken token = default)
     {
-        // An absent attestation must not even invoke the live-session resolver: that
-        // resolver may perform its own SQL revalidation. A SELECT probe cannot qualify us.
-        if (acceptance?.Covers(binding, company) != true || inspect is null) return PurchaseRequestCommandAuthorityOutcome.Unavailable;
+        // Production needs its external attestation; the separately named pilot
+        // path needs its exact experiment authorization. With neither, do not even
+        // invoke session resolution. A SELECT probe cannot qualify either path.
+        if ((acceptance?.Covers(binding, company) != true && pilot is null) || inspect is null) return PurchaseRequestCommandAuthorityOutcome.Unavailable;
         if (!PurchaseRequestCommandRules.Identifier(documentId, 50)
             || !PurchaseRequestCommandRules.Identifier(branchId, 50)) return PurchaseRequestCommandAuthorityOutcome.Denied;
+        if (pilot is not null && (!pilot.CoversDocument(documentId, branchId)
+            || !pilot.CanObserve(clock.GetUtcNow()))) return PurchaseRequestCommandAuthorityOutcome.Denied;
         if (token.IsCancellationRequested) return PurchaseRequestCommandAuthorityOutcome.Cancelled;
         if (System.Transactions.Transaction.Current is not null) return PurchaseRequestCommandAuthorityOutcome.Unavailable;
 
@@ -64,7 +74,9 @@ public sealed class SqlPurchaseRequestCommandAuthorityReader
                 if (connection is null || connection.State != ConnectionState.Closed)
                     return PurchaseRequestCommandAuthorityOutcome.Unavailable;
                 owned = true;
+                pilot?.VerifyTarget(connection);
                 await connection.OpenAsync(token);
+                pilot?.VerifyTarget(connection);
                 var started = await connection.BeginTransactionAsync(IsolationLevel.Serializable, token);
                 // Never roll back/dispose a transaction reporting a foreign owner.
                 if (!ReferenceEquals(started.Connection, connection)) return PurchaseRequestCommandAuthorityOutcome.Unavailable;
@@ -128,6 +140,7 @@ public sealed class SqlPurchaseRequestCommandAuthorityReader
             || !PurchaseRequestCommandRules.Identifier(id.CompanyId, 100)
             || string.IsNullOrEmpty(id.CredentialStamp) || id.AuthorityVersion < 1
             || id.BranchIds is null || id.BranchIds.Count > 200 || id.Capabilities is null) return null;
+        if (pilot is not null && (!pilot.CoversIdentity(id) || !pilot.CanObserve(clock.GetUtcNow()))) return null;
         var frozen = id with { BranchIds = Array.AsReadOnly(id.BranchIds.ToArray()),
             Capabilities = Array.AsReadOnly(id.Capabilities.ToArray()) };
         return frozen.BranchIds!.Contains(branch, StringComparer.Ordinal) ? frozen : null;
