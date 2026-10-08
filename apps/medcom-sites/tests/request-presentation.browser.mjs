@@ -490,16 +490,30 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
     const form=screen==='purchase-requests'?page.locator('form[aria-label="Đề nghị mua hàng trên điện thoại"]'):page.getByTestId('inbound-editor');await form.waitFor();
     const note=form.locator(screen==='purchase-requests'?'textarea[name="notes"]':'textarea#inbound-header-notes');await note.fill('SYNTHETIC PRESENTATION CUSTODY');const editor=await note.elementHandle();
     const lines=()=>form.locator(screen==='purchase-requests'?'article':'fieldset.request-line');const count=await lines().count();assert.ok(count>0);
-    await form.getByRole('button',{name:screen==='purchase-requests'?'Bỏ dòng 1':'Xóa dòng 1',exact:true}).click();const confirmation=page.getByRole('alertdialog');await confirmation.waitFor();
-    assert.equal(await confirmation.evaluate(element=>element.closest('[data-testid="inbound-request-host"],[aria-label="Danh sách đề nghị mua hàng"]')===null),true,'Radix confirmation is a real body portal');
-    await confirmation.getByRole('button',{name:'Xóa dòng',exact:true}).evaluate(element=>{const key=Object.keys(element).find(key=>key.startsWith('__reactProps$'));if(!key||typeof element[key].onClick!=='function')throw Error('Actual React confirmation handler required');window.i50QueuedConfirm=element[key].onClick;});
+    if(screen==='purchase-requests'){
+     assert.equal(await form.getByRole('button',{name:/^Bỏ dòng /}).count(),0,'ExistingOnly has no Remove affordance');assert.equal(await form.getByRole('button',{name:'Thêm dòng hàng',exact:true}).isDisabled(),true);
+     // Capture the production line callbacks even though this fixed profile has
+     // no removal control or dialog. No synthetic no-op may stand in for them.
+     await lines().first().evaluate(element=>{
+      const key=Object.keys(element).find(key=>key.startsWith('__reactFiber$'));let owner=key?element[key]:null;
+      while(owner&&!(Array.isArray(owner.memoizedProps?.lines)&&typeof owner.memoizedProps.onRemove==='function'&&typeof owner.memoizedProps.onAdd==='function'))owner=owner.return;
+      if(!owner||!owner.memoizedProps.lines[0]?.localKey)throw Error('Actual purchase line callbacks required');
+      const {onRemove,onAdd,lines}=owner.memoizedProps;window.i50QueuedConfirm=()=>{onRemove(lines[0].localKey);onAdd();};
+     });
+     await page.evaluate(()=>window.i50QueuedConfirm());await paint();assert.equal(await lines().count(),count);assert.equal(await page.getByRole('alertdialog').count(),0,'Fixed profile cannot open a removal portal');
+    }else{
+     await form.getByRole('button',{name:'Xóa dòng 1',exact:true}).click();const confirmation=page.getByRole('alertdialog');await confirmation.waitFor();
+     assert.equal(await confirmation.evaluate(element=>element.closest('[data-testid="inbound-request-host"],[aria-label="Danh sách đề nghị mua hàng"]')===null),true,'Radix confirmation is a real body portal');
+     await confirmation.getByRole('button',{name:'Xóa dòng',exact:true}).evaluate(element=>{const key=Object.keys(element).find(key=>key.startsWith('__reactProps$'));if(!key||typeof element[key].onClick!=='function')throw Error('Actual React confirmation handler required');window.i50QueuedConfirm=element[key].onClick;});
+    }
     const ownerForm=screen==='purchase-requests'?form:form.locator('form');await ownerForm.evaluate(element=>{const key=Object.keys(element).find(key=>key.startsWith('__reactProps$'));if(!key||typeof element[key].onSubmit!=='function')throw Error('Actual portaled footer form owner required');window.i50QueuedReview=element[key].onSubmit;});
     await page.evaluate(()=>window.i50Presentation(false));await paint();assert.equal(await page.getByRole('alertdialog').count(),0);assert.equal(await page.locator('.record-dialog-actions .request-action-bar:visible').count(),0);
     await page.evaluate(()=>(()=>{window.i50QueuedConfirm({preventDefault(){},stopPropagation(){}});window.i50QueuedReview({preventDefault(){}});})());await paint();assert.equal(await lines().count(),count);assert.equal(await editor.evaluate(element=>element.isConnected),true);
     await page.evaluate(()=>window.i50Presentation(true));await note.waitFor();await eventually(()=>note.isEnabled());await paint();await page.evaluate(()=>(()=>{window.i50QueuedConfirm({preventDefault(){},stopPropagation(){}});window.i50QueuedReview({preventDefault(){}});})());await paint();
     assert.equal(await lines().count(),count);assert.equal(await page.getByRole('alertdialog').count(),0,'Restore does not revive the old confirmation');assert.equal(await note.inputValue(),'SYNTHETIC PRESENTATION CUSTODY');assert.equal(await page.getByRole('button',{name:'Quay lại chỉnh sửa',exact:true}).count(),0,'Old footer/form action cannot revive review on restore');
     assert.equal(await page.locator('.record-dialog-actions .request-action-bar:visible').count(),1);assert.ok(calls.every(call=>call.method==='GET'));
-    portalPresentationEvidence.push({screen,nativePortal:'PASS',maskedConfirmation:'hidden',maskedFooter:'hidden',queuedAction:'rejected during loss and after restore',lineCount:count,requests:'GET only'});
+    if(screen==='purchase-requests'){assert.equal(await form.getByRole('button',{name:/^Bỏ dòng /}).count(),0);assert.equal(await form.getByRole('button',{name:'Thêm dòng hàng',exact:true}).isDisabled(),true);}
+    portalPresentationEvidence.push({screen,nativePortal:screen==='purchase-requests'?'absent by existingOnly profile':'PASS',maskedConfirmation:'hidden',maskedFooter:'hidden',queuedAction:'rejected during loss and after restore',lineCount:count,requests:'GET only'});
    }
   });
   for(const width of [320,390,1440])for(const screen of ['purchase-requests','inbound-requests']){

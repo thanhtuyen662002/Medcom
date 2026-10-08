@@ -29,10 +29,11 @@ export function isRequestInteger(value: string) {
   return /^-?\d+$/.test(value) && value.replace(/^-/, "").replace(/^0+/, "").length <= 18;
 }
 
-export function MobileRequestLines({lines, disabled, canAdd = true, lockItem = false, readOnly = false, errors, lookupAdapter, itemLookupId, onChange, onAdd, onRemove}: {
+export function MobileRequestLines({lines, disabled, canAdd = true, canRemove = true, lockItem = false, readOnly = false, errors, lookupAdapter, itemLookupId, onChange, onAdd, onRemove}: {
   lines: readonly PurchaseRequestLine[];
   disabled: boolean;
   canAdd?: boolean;
+  canRemove?: boolean;
   lockItem?: boolean;
   readOnly?: boolean;
   errors: Record<string, string>;
@@ -63,7 +64,7 @@ export function MobileRequestLines({lines, disabled, canAdd = true, lockItem = f
           {error && <p id={`${id}-error`} role="alert">{error}</p>}
         </div>;
       })}</div>
-      {!readOnly && <RequestButton type="button" disabled={disabled} onClick={() => onRemove(line.localKey)}>Bỏ dòng {index + 1}</RequestButton>}
+      {!readOnly && canRemove && <RequestButton type="button" disabled={disabled} onClick={() => onRemove(line.localKey)}>Bỏ dòng {index + 1}</RequestButton>}
     </article>)}
     {!readOnly && <RequestButton type="button" disabled={disabled || !canAdd} onClick={onAdd}>Thêm dòng hàng</RequestButton>}
   </section>;

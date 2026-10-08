@@ -537,7 +537,7 @@ register('lossless full raw overlay, timestamp, NULL, empty, float and decimal s
  assert.equal(f.desired.lines[1].values.totalPrice,null);assert.equal(r.document.header.notes,null);assert.ok(Object.isFrozen(f.dto.header));assert.ok(Object.isFrozen(f.dto.lineChanges[0].values));
 });
 register('NULL SQL date and unchanged nullable text are retained, not defaulted',()=>{const r=raw();r.document.header.purchaseDate=null;const i=intent(r);i.values.notes='';i.values.department='OTHER';const f=freezePurchaseCommand(r,i);assert.equal(f.dto.header.purchaseDate,null);assert.equal(f.dto.header.notes,null);assert.equal(f.dto.header.purposeDescOrClient,'');});
-register('all 500 rows retained; only explicit updates/removals become changes',()=>{const r=raw(500),i=intent(r);i.values.lines=i.values.lines.slice(1);const f=freezePurchaseCommand(r,i);assert.equal(f.desired.lines.length,499);assert.deepEqual(f.dto.lineChanges,[{kind:'Remove',lineId:'L000',clientLineKey:null,values:null}]);});
+register('all 500 original rows retained; only explicit updates become changes',()=>{const r=raw(500),i=intent(r);i.values.lines[0].quantity='9007199254740993';const f=freezePurchaseCommand(r,i);assert.equal(f.desired.lines.length,500);assert.deepEqual(f.dto.lineChanges,[{kind:'Update',lineId:'L000',clientLineKey:null,values:{...r.document.lines[0].values,quantity:'9007199254740993'}}]);assert.deepEqual(f.desired.lines.slice(1),r.document.lines.slice(1));const missing=intent(r);missing.values.lines=missing.values.lines.slice(1);assert.throws(()=>freezePurchaseCommand(r,missing),/Original line set required/);});
 for(const field of ['branchId','purchaseDate','purposeId','currencyId','objectId'])register('locked field '+field,()=>{const r=raw(),i=intent(r);i.values[field]='different';assert.throws(()=>freezePurchaseCommand(r,i));});
 register('no Create/Add, duplicate IDs or item substitution',()=>{for(const change of [i=>i.documentId=null,i=>i.values.lines.push({...i.values.lines[0],lineId:null,localKey:'NEW'}),i=>i.values.lines.push({...i.values.lines[0]}),i=>i.values.lines[0].itemId='OTHER']){const r=raw(),i=intent(r);change(i);assert.throws(()=>freezePurchaseCommand(r,i));}});
 register('exact integer edits reject fractions, overflow and malformed nullable value',()=>{for(const value of ['1.5','9999999999999999999','1e9','']){const r=raw(),i=intent(r);i.values.lines[0].quantity=value;assert.throws(()=>freezePurchaseCommand(r,i));}const r=raw(),i=intent(r);i.values.lines[0].quantity='0002';assert.equal(freezePurchaseCommand(r,i).dto.lineChanges[0].values.quantity,'2');});
@@ -1324,4 +1324,55 @@ test('I41 actual React purchase read lifecycles and retained command custody',as
    }finally{await f.close();}
   });
  }finally{global.fetch=previousFetch;globalThis.IS_REACT_ACT_ENVIRONMENT=previousAct;}
+});
+
+// Pure production-adapter tests. Every malformed structural intent is rejected
+// before the recording transport; no browser, listener, ERP or SQL is involved.
+test('I58 actual existing purchase adapter rejects structural edits before transport', async t => {
+ const {commandPurchaseSnapshot,freezePurchaseCommand,createPurchaseCommandAdapter}=await import(pathToFileURL(path.join(output,'i20-command.mjs')).href);
+ const signal=()=>new AbortController().signal;
+ const raw=count=>readback(document('QA-FIXED','QA-A',count));
+ const intent=(r,action='saveDraft')=>({intentId:crypto.randomUUID(),action,documentId:r.document.purchaseRequestId,expectedVersion:r.stateToken,values:commandPurchaseSnapshot(r).values});
+ const mutations=[
+  ['one original row omitted',i=>{i.values.lines.pop();}],
+  ['all original rows omitted',i=>{i.values.lines=[];}],
+  ['additional allocated-looking ID',i=>{i.values.lines.push({...i.values.lines[0],localKey:'QA-NEW',lineId:'QA-NEW'});}],
+  ['new row without ERP ID',i=>{i.values.lines.push({...i.values.lines[0],localKey:'QA-NEW',lineId:null});}],
+  ['duplicate ID replaces an original at equal length',i=>{i.values.lines[1]={...i.values.lines[0]};}],
+  ['substituted original ID at equal length',i=>{i.values.lines[1]={...i.values.lines[1],lineId:'QA-OTHER',localKey:'QA-OTHER'};}],
+  ['missing original ERP ID at equal length',i=>{i.values.lines[1].lineId=null;}],
+  ['substituted local key',i=>{i.values.lines[0].localKey='QA-OTHER';}],
+  ['substituted item on original ID',i=>{i.values.lines[0].itemId='QA-OTHER';}],
+ ];
+ for(const action of ['saveDraft','submit'])for(const [name,mutate] of mutations)await t.test(`${action}: ${name} has zero transport and leaves original custody untouched`,async()=>{
+  const r=raw(2),before=structuredClone(r),i=intent(r,action);mutate(i);const supplied=structuredClone(i),calls=[];
+  const bridge=createPurchaseCommandAdapter(scope,r,async(...args)=>{calls.push(args);throw Error('Invalid structural intent reached transport');});
+  assert.throws(()=>freezePurchaseCommand(r,i));assert.equal((await bridge.adapter.execute(i,signal())).kind,'rejected');
+  assert.deepEqual(calls,[]);assert.equal(bridge.hasPending(),false);assert.equal(bridge.readVersion(),0);assert.equal(bridge.needsFreshRead(),false);
+  assert.deepEqual(bridge.currentReadback(),before);assert.deepEqual(r,before);assert.deepEqual(i,supplied,'Do not silently restore omitted rows or modify the proposed edit');
+  assert.equal((await bridge.adapter.reconcile(i,signal())).kind,'unknown');assert.deepEqual(calls,[],'Rejected intent has no retained lookup command');
+ });
+ await t.test('all 500 exact original IDs may reorder and update while every hidden value remains untouched',async()=>{
+  const r=raw(500),before=structuredClone(r),i=intent(r);r.document.header.price='9999999999999999.99';before.document.header.price=r.document.header.price;
+  r.document.header.rateExchange=0.125;before.document.header.rateExchange=0.125;r.document.lines[0].values.totalPrice=null;before.document.lines[0].values.totalPrice=null;
+  i.values.department='EDITED HEADER';i.values.lines[0].quantity='9007199254740993';i.values.lines.reverse();
+  const frozen=freezePurchaseCommand(r,i),calls=[];
+  const bridge=createPurchaseCommandAdapter(scope,r,async(s,route,body)=>{calls.push({s,route,body});return{scopeKey:s,data:{outcome:0,receipt:{actionId:'purchase-request.save-draft',idempotencyKey:i.intentId,document:structuredClone(frozen.desired),stateToken:'prs1.'+'2'.repeat(64),allocatedLines:[]}}};});
+  assert.equal((await bridge.adapter.execute(i,signal())).kind,'confirmed');assert.equal(calls.length,1);assert.equal(calls[0].route,'save');assert.equal(calls[0].body,frozen.json);
+  const dto=JSON.parse(calls[0].body);assert.deepEqual(dto.header,{...r.document.header,department:'EDITED HEADER'});
+  assert.deepEqual(dto.lineChanges,[{kind:'Update',lineId:r.document.lines[0].lineId,clientLineKey:null,values:{...r.document.lines[0].values,quantity:'9007199254740993'}}]);
+  assert.equal(frozen.desired.lines.length,500);assert.deepEqual(frozen.desired.lines.slice(1),r.document.lines.slice(1));assert.deepEqual(r,before);
+  assert.ok(Object.isFrozen(frozen.dto));assert.ok(Object.isFrozen(frozen.dto.lineChanges[0].values));assert.equal(bridge.needsFreshRead(),true);
+  const freshEdit=intent(bridge.currentReadback());freshEdit.values.notes='NEXT EDIT';assert.equal((await bridge.adapter.execute(freshEdit,signal())).kind,'rejected');assert.equal(calls.length,1,'Receipt does not authorize another Save without a fresh read');
+ });
+ await t.test('local rejection does not spend the original key or silently drop a row from the later valid command',async()=>{
+  const r=raw(2),i=intent(r),calls=[];i.values.lines.pop();
+  const bridge=createPurchaseCommandAdapter(scope,r,async(s,route,body)=>{calls.push({s,route,body});throw Error('Synthetic lost ACK');});
+  assert.equal((await bridge.adapter.execute(i,signal())).kind,'rejected');assert.equal(calls.length,0);
+  const corrected={...i,values:commandPurchaseSnapshot(r).values};corrected.values.department='EDITED';
+  assert.equal((await bridge.adapter.execute(corrected,signal())).kind,'unknown');assert.equal(calls.length,1);assert.equal(JSON.parse(calls[0].body).idempotencyKey,i.intentId);assert.deepEqual(JSON.parse(calls[0].body).lineChanges,[]);
+  assert.equal(bridge.hasPending(),true);assert.equal((await bridge.adapter.execute(corrected,signal())).kind,'unknown');assert.equal(calls.length,1);
+  assert.equal((await bridge.adapter.reconcile(i,signal())).kind,'unknown');assert.equal(calls.length,1,'Rejected shortened DTO cannot replace the full frozen original');
+  assert.equal((await bridge.adapter.reconcile(corrected,signal())).kind,'unknown');assert.equal(calls.length,2);assert.equal(calls[1].route,'save/lookup');assert.equal(calls[1].body,calls[0].body);
+ });
 });

@@ -242,3 +242,138 @@ test('actual mobile component interactions and adversarial async states in insta
     await context?.close(); await browser?.close(); await new Promise(resolve => server.close(resolve));
   }
 });
+
+// Node/React contract coverage of the production editor, line controls and delete
+// confirmation. Only portal/focus primitives are replaced; this is not browser QA.
+test('I58 actual purchase editor restricts structural changes to the generic profile', async t => {
+  const require = createRequire(import.meta.url), React = require('react'), {create, act} = require('react-test-renderer');
+  assert.equal(React.version, '19.2.6'); assert.equal(require('react-test-renderer/package.json').version, '19.2.6');
+  const names = ['AlertDialog', 'AlertDialogContent', 'AlertDialogHeader', 'AlertDialogTitle', 'AlertDialogDescription', 'AlertDialogFooter', 'AlertDialogCancel', 'AlertDialogAction'];
+  const primitives = "import React from 'react';" + names.map(name => `export function ${name}({children,...props}){return React.createElement('${name === 'AlertDialogAction' || name === 'AlertDialogCancel' ? 'button' : 'div'}',props,children);}`).join('');
+  const compiled = path.join(output, 'i58-editor.cjs');
+  await build({stdin: {contents: "export {MobileRequest} from './components/erp/mobile-request'; export {MobileRequestLines} from './components/erp/mobile-request-lines'; export {RecordDeleteConfirmation} from './components/erp/record-delete-confirmation'; export {createPurchaseCommandAdapter,commandPurchaseSnapshot} from './lib/erp/purchase-request-command-adapter';", resolveDir: app, loader: 'tsx'}, outfile: compiled, bundle: true, platform: 'node', format: 'cjs', packages: 'external', alias: {'@': app}, jsx: 'automatic', logLevel: 'warning', plugins: [{name: 'DOM-only-alert-primitives', setup(build) {build.onLoad({filter: /components[\\/]ui[\\/]alert-dialog\.tsx$/}, () => ({contents: primitives, loader: 'jsx'}));}}]});
+  const {MobileRequest, MobileRequestLines, RecordDeleteConfirmation, createPurchaseCommandAdapter, commandPurchaseSnapshot} = require(compiled);
+  const priorAct = globalThis.IS_REACT_ACT_ENVIRONMENT; globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+  const draft = {...initial, documentId: 'QA-EXISTING', version: 'QA-V1', confirmation: 'draft', values: {...values, lines: values.lines.map(line => ({...line, localKey: 'QA-L1', lineId: 'QA-L1'}))}};
+  async function fixture(profile = {}, overrides = {}) {
+    const calls = [];
+    let props = {initial: structuredClone(draft), access: {...access, ...profile}, adapter: {lookup: async () => ({items: [], hasMore: false}), execute: async intent => {calls.push(intent); return {kind: 'unknown', intentId: intent.intentId, message: 'Synthetic unknown'};}, reconcile: async () => {throw Error('unexpected lookup');}}, ...overrides}, tree;
+    const render = async patch => {props = {...props, ...patch}; await act(async () => {if (tree) tree.update(React.createElement(MobileRequest, props)); else tree = create(React.createElement(MobileRequest, props));});};
+    await render({});
+    const lines = () => tree.root.findByType(MobileRequestLines).props;
+    const confirmation = () => tree.root.findByType(RecordDeleteConfirmation).props;
+    const buttons = () => tree.root.findAllByType('button');
+    const button = text => {const found = buttons().find(node => node.children.join('') === text); assert.ok(found, text); return found;};
+    const field = name => tree.root.findAll(node => ['input', 'textarea'].includes(node.type)).find(node => node.props.name === name);
+    return {calls, lines, confirmation, buttons, button, field, render, props: () => props, form: () => tree.root.findByType('form'), click: async text => {const target = button(text); assert.equal(!!target.props.disabled, false, text); await act(async () => target.props.onClick?.({preventDefault() {}}));}, close: async () => {await act(async () => tree.unmount());}};
+  }
+  try {
+    for (const canAddLines of [undefined, true, false]) await t.test(`existingOnly hides Remove and denies Add even with canAddLines=${canAddLines}`, async () => {
+      const f = await fixture({existingOnly: true, canAddLines});
+      try {
+        const before = structuredClone(f.lines().lines), handlers = f.lines();
+        assert.equal(f.buttons().some(node => /^Bỏ dòng /.test(node.children.join(''))), false);
+        assert.equal(f.button('Thêm dòng hàng').props.disabled, true);
+        assert.equal(f.field('department').props.disabled, false); assert.equal(f.field('lines.QA-L1.quantity').props.disabled, false);
+        await act(async () => {handlers.onAdd(); handlers.onRemove('QA-L1');});
+        assert.deepEqual(f.lines().lines, before); assert.equal(f.confirmation().open, false); assert.equal(f.confirmation().isAllowed(), false);
+        await act(async () => f.confirmation().onConfirm()); assert.deepEqual(f.lines().lines, before); assert.deepEqual(f.calls, []);
+        await act(async () => f.field('department').props.onChange({target: {value: 'EDITED HEADER'}}));
+        await act(async () => f.field('lines.QA-L1.quantity').props.onChange({target: {value: '9007199254740993'}}));
+        assert.equal(f.field('department').props.value, 'EDITED HEADER'); assert.equal(f.lines().lines[0].quantity, '9007199254740993');
+        assert.equal(f.lines().lines[0].lineId, 'QA-L1'); assert.equal(f.lines().lines.length, 1); assert.deepEqual(f.calls, []);
+      } finally {await f.close();}
+    });
+    await t.test('generic profile still adds and removes only after actual confirmation; cancel keeps every value', async () => {
+      const f = await fixture();
+      try {
+        const before = structuredClone(f.lines().lines);
+        await f.click('Thêm dòng hàng'); assert.equal(f.lines().lines.length, 2); assert.deepEqual(f.lines().lines[0], before[0]);
+        const added = structuredClone(f.lines().lines);
+        await f.click('Bỏ dòng 2'); assert.equal(f.confirmation().open, true); assert.deepEqual(f.lines().lines, added); assert.deepEqual(f.calls, []);
+        await f.click('Giữ dòng'); assert.equal(f.confirmation().open, false); assert.deepEqual(f.lines().lines, added);
+        await f.click('Bỏ dòng 2'); await f.click('Xóa dòng'); assert.deepEqual(f.lines().lines, before); assert.equal(f.confirmation().open, false); assert.deepEqual(f.calls, []);
+      } finally {await f.close();}
+    });
+    await t.test('switching a mounted generic editor to existingOnly retires its dialog and fences every retained structural callback', async () => {
+      const f = await fixture();
+      try {
+        const before = structuredClone(f.lines().lines), staleLines = f.lines();
+        await f.click('Bỏ dòng 1'); const staleDialog = f.confirmation(), staleAction = f.button('Xóa dòng').props.onClick;
+        assert.equal(staleDialog.open, true); assert.equal(staleDialog.isAllowed(), true);
+        await f.render({access: {...f.props().access, existingOnly: true, canAddLines: true}});
+        assert.equal(f.confirmation().open, false); assert.equal(f.confirmation().intent, null); assert.equal(staleDialog.isAllowed(), false);
+        assert.equal(f.buttons().some(node => /^Bỏ dòng /.test(node.children.join(''))), false);
+        await act(async () => {staleLines.onAdd(); staleLines.onRemove('QA-L1'); staleDialog.onConfirm(); staleAction();});
+        assert.deepEqual(f.lines().lines, before); assert.equal(f.confirmation().open, false); assert.deepEqual(f.calls, []);
+        await f.render({access: {...f.props().access, existingOnly: false}});
+        await act(async () => staleAction()); assert.deepEqual(f.lines().lines, before); assert.equal(f.confirmation().open, false, 'retired confirmation cannot revive after switching back');
+        await f.click('Bỏ dòng 1'); await f.click('Xóa dòng'); assert.deepEqual(f.lines().lines, [], 'a fresh generic confirmation remains usable');
+      } finally {await f.close();}
+    });
+    for (const unavailable of ['canRead', 'available', 'adapter']) await t.test(`retired removal cannot survive confirmation unmount through ${unavailable} loss and generic-profile recovery`, async () => {
+      const f = await fixture();
+      try {
+        const before = structuredClone(f.lines().lines), original = f.props();
+        await f.click('Bỏ dòng 1'); const oldDialog = f.confirmation(), queued = f.button('Xóa dòng').props.onClick;
+        const access = {...original.access, existingOnly: true}; if (unavailable !== 'adapter') access[unavailable] = false;
+        await f.render({access, ...(unavailable === 'adapter' ? {adapter: undefined} : {})});
+        assert.equal(oldDialog.isAllowed(), false);
+        await act(async () => {queued(); oldDialog.onConfirm();});
+        await f.render(original);
+        assert.equal(f.confirmation().intent, null); assert.equal(f.confirmation().open, false); assert.equal(oldDialog.isAllowed(), false);
+        await act(async () => {queued(); oldDialog.onConfirm();});
+        assert.deepEqual(f.lines().lines, before, 'an unmounted confirmation cannot resurrect a retired original target'); assert.deepEqual(f.calls, []);
+        await f.click('Bỏ dòng 1'); assert.equal(f.confirmation().open, true);
+        const currentIntent = f.confirmation().intent; await act(async () => queued());
+        assert.equal(f.confirmation().intent, currentIntent, 'an old dialog cannot cancel a fresh removal either'); assert.deepEqual(f.lines().lines, before);
+        await f.click('Xóa dòng'); assert.deepEqual(f.lines().lines, [], 'fresh generic confirmation remains usable after recovery'); assert.deepEqual(f.calls, []);
+      } finally {await f.close();}
+    });
+    await t.test('generic queued removal and review stay retired after presentation loss and restoration', async () => {
+      const f = await fixture();
+      try {
+        await act(async () => f.field('notes').props.onChange({target: {value: 'PRESENTATION CUSTODY'}}));
+        const before = structuredClone(f.lines().lines), adapter = f.props().adapter;
+        await f.click('Bỏ dòng 1'); const queued = f.button('Xóa dòng').props.onClick, review = f.form().props.onSubmit;
+        assert.equal(f.confirmation().open, true);
+        await f.render({presentationAllowed: false});
+        await act(async () => {queued(); review({preventDefault() {}});});
+        assert.deepEqual(f.lines().lines, before); assert.equal(f.confirmation().open, false); assert.equal(f.lines().readOnly, false);
+        await f.render({presentationAllowed: true});
+        await act(async () => {queued(); review({preventDefault() {}});});
+        assert.deepEqual(f.lines().lines, before); assert.equal(f.confirmation().open, false); assert.equal(f.lines().readOnly, false);
+        assert.equal(f.props().adapter, adapter); assert.equal(f.field('notes').props.value, 'PRESENTATION CUSTODY'); assert.deepEqual(f.calls, []);
+        await f.click('Bỏ dòng 1'); assert.equal(f.confirmation().open, true); await f.click('Xóa dòng');
+        assert.deepEqual(f.lines().lines, [], 'only a fresh generic confirmation removes the original row'); assert.deepEqual(f.calls, []);
+      } finally {await f.close();}
+    });
+    await t.test('existingOnly pending and unknown keep one frozen update intent and reconcile its original JSON', async () => {
+      const scopeKey = 'a'.repeat(64), raw = {stateToken: 'prs1.' + '1'.repeat(64), document: {purchaseRequestId: 'QA-EXISTING', branchId: 'QA-B', statusId: 1, isLocked: null,
+        header: {purchaseDate: '2026-10-06T13:14:15.003', purposeId: 1, personSuggest: 'SYNTHETIC', department: 'QA', purposeDescOrClient: '', price: '9999999999999999.99', notes: null, currencyId: 'VND', objectId: 'QA-OBJECT', rateExchange: 0.125},
+        lines: [{lineId: 'QA-L1', values: {itemId: 'QA-ITEM', quantity: '999999999999999999', unitPrice: '-2', totalPrice: null, budget: null, timeRequired: '', model: null}}]}};
+      const transported = [], executed = [], reconciled = []; let release;
+      const bridge = createPurchaseCommandAdapter(scopeKey, raw, async (scope, route, body) => {transported.push({scope, route, body}); if (route === 'save') await new Promise(resolve => {release = resolve;}); throw Error('Synthetic lost ACK');});
+      const adapter = {...bridge.adapter, execute: (intent, signal) => {executed.push(intent); return bridge.adapter.execute(intent, signal);}, reconcile: (intent, signal) => {reconciled.push(intent); return bridge.adapter.reconcile(intent, signal);}};
+      const f = await fixture({scopeKey, existingOnly: true, canAddLines: true, canReconcile: true}, {initial: commandPurchaseSnapshot(raw), adapter});
+      try {
+        const stale = f.lines(); await act(async () => f.field('department').props.onChange({target: {value: 'EDITED HEADER'}}));
+        await act(async () => f.field('lines.QA-L1.quantity').props.onChange({target: {value: '9007199254740993'}}));
+        await act(async () => f.form().props.onSubmit({preventDefault() {}}));
+        assert.equal(f.button('Gửi đề nghị').props.disabled, true, 'dirty Submit stays separate from Save');
+        await f.click('Quay lại chỉnh sửa'); assert.ok(f.field('department')); await act(async () => f.form().props.onSubmit({preventDefault() {}}));
+        const send = f.button('Lưu nháp trên ERP').props.onClick;
+        await act(async () => {send(); send();}); assert.equal(transported.length, 1); assert.equal(bridge.hasPending(), true);
+        await act(async () => {stale.onAdd(); stale.onRemove('QA-L1'); f.confirmation().onConfirm();});
+        assert.equal(f.lines().lines.length, 1); assert.equal(f.lines().lines[0].quantity, '9007199254740993'); assert.equal(f.confirmation().open, false);
+        await act(async () => release()); assert.equal(f.button('Lưu nháp trên ERP').props.disabled, true); assert.equal(bridge.hasPending(), true);
+        await act(async () => {stale.onAdd(); stale.onRemove('QA-L1'); send();}); assert.equal(transported.length, 1);
+        await f.click('Kiểm tra kết quả yêu cầu gốc'); assert.deepEqual(transported.map(call => call.route), ['save', 'save/lookup']); assert.equal(transported[1].body, transported[0].body);
+        assert.equal(executed.length, 1); assert.equal(reconciled[0], executed[0]); assert.ok(Object.isFrozen(executed[0])); assert.ok(Object.isFrozen(executed[0].values.lines[0]));
+        const dto = JSON.parse(transported[0].body); assert.equal(dto.idempotencyKey, executed[0].intentId); assert.equal(dto.header.price, raw.document.header.price); assert.equal(dto.header.purchaseDate, raw.document.header.purchaseDate); assert.equal(dto.header.notes, null);
+        assert.equal(dto.lineChanges.length, 1); assert.equal(dto.lineChanges[0].kind, 'Update'); assert.equal(dto.lineChanges[0].values.quantity, '9007199254740993'); assert.equal(dto.lineChanges[0].values.totalPrice, null); assert.equal(dto.lineChanges[0].values.budget, null);
+        assert.equal(bridge.hasPending(), true); assert.deepEqual(bridge.currentReadback(), raw);
+      } finally {release?.(); await f.close();}
+    });
+  } finally {globalThis.IS_REACT_ACT_ENVIRONMENT = priorAct;}
+});

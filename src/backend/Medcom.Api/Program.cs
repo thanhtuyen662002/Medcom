@@ -13,4 +13,10 @@ if (DatabaseConnectionProbe.IsRequested(args))
     return;
 }
 
+if (PurchaseRequestPilotStartup.IsRequested(args))
+{
+    await PurchaseRequestPilotStartup.Build(args).RunAsync();
+    return;
+}
+
 await ApiHost.Build(args).RunAsync();
