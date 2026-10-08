@@ -17,9 +17,10 @@ import path from 'node:path';
 const app = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const output = path.join(app, '.test-runtime', 'i21-inbound');
 await mkdir(output, {recursive: true});
-for (const name of ['inbound-request-api', 'inbound-request-command-adapter']) {
+for (const name of ['item-display', 'inbound-request-api', 'inbound-request-command-adapter']) {
   const source = (await readFile(path.join(app, 'lib/erp', `${name}.ts`), 'utf8'))
-    .replace('from "./inbound-request-api"', 'from "./inbound-request-api.mjs"');
+    .replace('from "./inbound-request-api"', 'from "./inbound-request-api.mjs"')
+    .replaceAll('from "./item-display"', 'from "./item-display.mjs"');
   // Transpile the ENTIRE production module, not extracted helper functions.
   await writeFile(path.join(output, `${name}.mjs`), stripTypeScriptTypes(source, {mode: 'transform'}));
 }

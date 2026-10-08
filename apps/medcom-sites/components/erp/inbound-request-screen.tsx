@@ -55,7 +55,7 @@ function createReadObservation() {
 }
 /** Eligibility only. The independent scoped READ must still authorize its data. */
 function commandReadUnavailable(value: unknown): boolean {
-  if (!record(value, ["scopeKey", "access", "data"]) || value.scopeKey !== null && !isInboundScope(value.scopeKey)
+  if (!(record(value, ["scopeKey", "access", "data"]) || record(value, ["scopeKey", "access", "data", "itemDisplayContext"]) && value.itemDisplayContext === null) || value.scopeKey !== null && !isInboundScope(value.scopeKey)
     || !record(value.access, ["canRead", "canSave", "canSend", "available", "maxCommandBytes"])
     || !record(value.data, ["outcome", "document"])) return false;
   const access = value.access;

@@ -104,7 +104,7 @@ test('I43 exact synthetic responses pass real clients and full draft validation;
   checked.push('purchase detail, full inbound bootstrap and scoped draft');
   model.readOnly=true;
   const unavailable=await api.read('QA-001',null,signal);
-  assert.deepEqual(unavailable,{scopeKey:null,access:{canRead:false,canSave:false,canSend:false,available:false,maxCommandBytes:1048576},data:{outcome:'Unavailable',document:null}});
+  assert.deepEqual(unavailable,{scopeKey:null,access:{canRead:false,canSave:false,canSend:false,available:false,maxCommandBytes:1048576},data:{outcome:'Unavailable',document:null},itemDisplayContext:null});
   assert.equal(observedView(unavailable.data,'QA-001'),null);
   for(const page of [1,2]){
    const fallback=await getDetail('inbound-requests','QA-001',page,signal,readScope);

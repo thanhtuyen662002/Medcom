@@ -38,6 +38,19 @@ namespace Medcom.Api.Tests;
 // with Legacy disabled; it never reads server settings. No SQL/DLL needed.
 public sealed class InboundDraftEndpointTests
 {
+    [Fact]
+    public async Task Read_envelope_serializes_nullable_metadata_without_adding_it_to_the_view_or_command()
+    {
+        await using var f=await Fixture.Start();var view=f.Writer.View;
+        f.Writer.Display=new("inbound-requests",view.DocumentId,view.Header.BranchId,view.StateEqualityToken,view.StatusId,null,null,null,
+            view.Details.Select(line=>new ItemDisplayLine(line.RowId!,line.ItemId,"","document",null,"","available")).ToArray());
+        using var response=await f.Get();using var json=await Json(response);var data=json.RootElement.GetProperty("data");
+        Assert.Equal("",data.GetProperty("itemDisplayContext").GetProperty("lines")[0].GetProperty("manufacturerItemCode").GetString());
+        Assert.False(data.GetProperty("document").TryGetProperty("itemDisplayContext",out _));
+        Assert.False(data.GetProperty("document").GetProperty("details")[0].TryGetProperty("manufacturerItemCode",out _));
+        Assert.Empty(f.Writer.Executed);Assert.Empty(f.Writer.Reconciled);
+    }
+
     private static readonly Guid Operation = Guid.Parse("11111111-1111-4111-8111-111111111111");
     private static readonly JsonSerializerOptions Wire = new(JsonSerializerDefaults.Web);
     private static InboundDraftHeader Header() => new(new DateTime(2026, 10, 1, 14, 22, 11, 3),
@@ -939,6 +952,7 @@ public sealed class InboundDraftEndpointTests
     }
     private sealed class FakeWriter : IInboundDraftCommandService
     {
+        public ItemDisplayContext? Display;
         public int Reads;
         public readonly List<InboundDraftCommand> Executed = [], Reconciled = [];
         public InboundDraftView View = new("DOC-A", 0, Header(), [Detail()], 2, new string('A', 64));
@@ -950,7 +964,7 @@ public sealed class InboundDraftEndpointTests
         {
             Reads++; var captured = View with { DocumentId = documentId };
             if (AfterRead is not null) await AfterRead(); token.ThrowIfCancellationRequested();
-            return new(InboundDraftOutcome.Observed, captured);
+            return new(InboundDraftOutcome.Observed, captured, Display);
         }
         public async Task<InboundDraftResult> ExecuteAsync(InboundDraftCommand request, CancellationToken token = default)
         {

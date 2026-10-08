@@ -15,6 +15,36 @@ namespace Medcom.Api.Tests;
 // Synthetic data only; no SQL client connection, Tools.dll, private settings or fixture setup.
 public sealed class InboundDraftCommandTests
 {
+    [Theory]
+    [InlineData(null)] [InlineData("")] [InlineData("persisted")]
+    public async Task Read_metadata_is_separate_from_physical_token_and_uses_stored_code(string? stored)
+    {
+        var model=new InboundModel();var service=model.Service();
+        model.Tables[1].Columns.Add("ItemCode",typeof(string));
+        model.Tables[1].Rows[0]["ItemCode"]=stored ?? (object)DBNull.Value;
+        var original=await service.ReadAsync("DOC-IN-1");
+        model.Display.MasterQualified=true;model.Display.InboundQualified=true;
+        model.Display.Items.Add(("ITEM-1","master changed","Name","base",true));
+        model.Display.Stored.Add(("DOC-IN-1","ROW-1","ITEM-1",stored));
+        var observed=await service.ReadAsync("DOC-IN-1");Assert.Equal(InboundDraftOutcome.Observed,observed.Outcome);
+        Assert.Equal(original.Document!.StateEqualityToken,observed.Document!.StateEqualityToken);
+        Assert.Equal(original.Document.Details.ToArray(),observed.Document.Details.ToArray());
+        Assert.Equal(observed.Document.StateEqualityToken,observed.ItemDisplayContext!.StateToken);
+        Assert.Equal(stored,observed.ItemDisplayContext.Lines[0].ManufacturerItemCode);
+        Assert.Equal("document",observed.ItemDisplayContext.Lines[0].ManufacturerCodeSource);
+        Assert.Equal(0,model.FullDuringTransaction);Assert.Equal(0,model.CommitAcks);Assert.Equal(0,model.BusinessWrites);
+        Assert.Empty(model.Journal.Rows.Cast<DataRow>());
+    }
+    [Fact]
+    public async Task Retirement_during_display_read_suppresses_entire_observed_result()
+    {
+        var model=new InboundModel();model.Display.MasterQualified=true;
+        model.Display.AfterRows=()=>model.ActiveIdentity=InboundModel.Identity with{CompanyId="retired-company"};
+        var result=await model.Service().ReadAsync("DOC-IN-1");
+        Assert.Equal(InboundDraftOutcome.Denied,result.Outcome);Assert.Null(result.Document);Assert.Null(result.ItemDisplayContext);
+        Assert.Equal(0,model.FullDuringTransaction);Assert.Equal(0,model.BusinessWrites);
+    }
+
     [Fact]
     public async Task Save_commits_exact_upserts_and_audit_receipt_preserving_omitted_cost_and_readonly_rows()
     {
@@ -474,6 +504,7 @@ internal sealed class InboundModel:IInboundCommandAuthority
     internal static readonly AuthoritativeIdentity Identity=new("sample-user","synthetic-tenant","synthetic-company","Synthetic","Sample",1,[],"synthetic-stamp",["BR-A"]);
     internal DataTable[] Tables=InitialTables();internal DataTable Journal=JournalTable();
     internal AuthoritativeIdentity ActiveIdentity=Identity;
+    internal readonly ItemDisplayRecordingSource Display=new();
     internal bool SqlEqualChildren;
     internal readonly InboundTargetModel Target = new();
     internal bool TransactionActive;
@@ -607,7 +638,9 @@ internal sealed class InboundCommand(InboundConnection owner):DbCommand
         ("CompanyId","@company"),("Actor","@actor"),("OperationId","@operation")}.All(p=>Equals(r[p.Item1],P(p.Item2))));
     protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)
     {
-        Assert.Same(owner,Tx.Connection);var tag=Tag;
+        Assert.Same(owner,Tx.Connection);
+        if(ItemDisplayRecordingSource.Matches(CommandText))return owner.Model.Display.Read(this);
+        var tag=Tag;
         owner.Model.Event(tag=="snapshot" ? Tx.Business?"snapshot-after":"snapshot-before" : tag);
         if(tag=="snapshot" && Tx.Business)owner.Model.ReadbackMutation?.Invoke(Tx.Tables);
         if(tag is "user" or "grants" or "branches" or "native-user" or "native-restricted" or "catalog-shape" or "catalog")return owner.Model.SourceAuthority!.Read(this,tag);
