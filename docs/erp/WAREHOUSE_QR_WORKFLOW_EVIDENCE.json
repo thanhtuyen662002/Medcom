@@ -1,0 +1,8146 @@
+{
+  "schemaVersion": 1,
+  "contractId": "medcom.warehouse-qr.source.v1",
+  "status": "STATIC_SOURCE_CONTRACT_ONLY",
+  "reviewDisposition": "PRIVATE_HANDOFF_AWAITING_ROOT_REVIEW",
+  "createdAtUtc": "2026-10-08",
+  "scope": {
+    "authorizedWork": "Read-only source extraction and sanitized technical contract preparation.",
+    "implementationBoundary": "A bounded offline parser may be prepared separately. This contract does not enable a UI route, API endpoint, database call, command writer, camera permission, print action, deployment or production acceptance.",
+    "sourceExecuted": false,
+    "databaseConnected": false,
+    "runtimeEquivalenceVerified": false
+  },
+  "sources": {
+    "repository": "https://github.com/thanhtuyen662002/Medcom",
+    "repositoryPin": "bba926f951332ffb8547850af2aa13e66da35685",
+    "sourceSet": "owner-attachment-20261002",
+    "baselineReference": "https://github.com/thanhtuyen662002/Medcom/blob/bba926f951332ffb8547850af2aa13e66da35685/inventories/source/20261002/source-set.json",
+    "archives": {
+      "ERP_Medcom2026.zip": {
+        "bytes": 162176322,
+        "sha256": "d5fe49f8e58de89fc0b9972a116a6c8f673ab9f9b326c626708d0b5d01fc5783",
+        "members": 1425
+      },
+      "MedData-Data.zip": {
+        "bytes": 134249929,
+        "sha256": "6a74eb02dc747e9c6ab679f69ca515783a8724ad767f6702fcebd28f195b1144"
+      }
+    },
+    "sqlMember": {
+      "name": "MedData-Data.sql",
+      "bytes": 1212595716,
+      "sha256": "61a8744c7a9a007b13ef37fbda26ea8c78af11fcc469963a528eba9469174096",
+      "crc32": "16a9a7e6",
+      "fullZipReadCrc": "PASS",
+      "fullMemberSizeAndSha256": "PASS"
+    },
+    "procedure": {
+      "name": "dbo.CF_QRcodeStp",
+      "sourceLine": 838817,
+      "endLine": 839267,
+      "lines": 451,
+      "normalizedUtf8Sha256": "0efd3ecaf3ce4d73f5172b923beca28ac3e51992a73e4788b4ecf0347c14ffdf",
+      "maskedDefinitionSha256": "f22a4e6b4c52145d474c8c04d375447e52aca6e6002f8982229397b00e7812de"
+    },
+    "hashNormalization": "SQL decoded from UTF-16 BOM, CRLF mapped to LF by TextIOWrapper, UTF-8 without BOM; complete statement/declaration including final LF, excluding GO. These are metadata-only fingerprints; SQL bodies are omitted.",
+    "evidenceLevel": "VERIFIED_STATIC_BYTES_AND_BINDINGS; engine documentation is identified separately; no live SQL execution"
+  },
+  "uiBinding": {
+    "group": [
+      {
+        "menuId": "07",
+        "caption": "Qu\u1ea3n l\u00fd kho",
+        "sourceLine": 319981
+      },
+      {
+        "menuId": "07020",
+        "parent": "07",
+        "caption": "Qu\u00e9t QR-Code",
+        "menuType": "1",
+        "form": null,
+        "sourceLine": 320000
+      }
+    ],
+    "workflows": [
+      {
+        "menuId": "0702001",
+        "parent": "07020",
+        "caption": "Xu\u1ea5t kho",
+        "form": "IV_Output_QRCodeFrm",
+        "formType": "EDIT",
+        "menuSourceLine": 320001,
+        "registrySourceLine": 309918,
+        "target": "IV_OUTPUT",
+        "slots": {
+          "T0": {
+            "table": "dbo.IV_OutputTbl",
+            "key": "DocumentID"
+          },
+          "T1": {
+            "table": "dbo.IV_OutputQRCodeTbl",
+            "key": "UserAutoID"
+          },
+          "T2": {
+            "table": "dbo.IV_OutputDetailTbl",
+            "key": "UserAutoID"
+          }
+        },
+        "addBindingSourceLine": 304150,
+        "deleteBindingSourceLine": 301377,
+        "layout": {
+          "member": "ERP_Medcom2026/Layout/Medcom/IV_Output_QRCodeFrm.dat",
+          "bytes": 17551,
+          "sha256": "c242cb999f9f7d664551a042e17b8b1f15fc8f0d983c7d9de88d82247b0f7efa"
+        }
+      },
+      {
+        "menuId": "0702010",
+        "parent": "07020",
+        "caption": "Xu\u1ea5t b\u00e1n h\u00e0ng",
+        "form": "AR_Invoice_QRCodeFrm",
+        "formType": "EDIT",
+        "menuSourceLine": 320002,
+        "registrySourceLine": 309706,
+        "target": "AR_INVOICE",
+        "slots": {
+          "T0": {
+            "table": "dbo.AR_InvoiceTbl",
+            "key": "DocumentID"
+          },
+          "T1": {
+            "table": "dbo.AR_InvoiceQRCodeTbl",
+            "key": "UserAutoID"
+          },
+          "T2": {
+            "table": "dbo.AR_InvoiceDetailTbl",
+            "key": "UserAutoID"
+          }
+        },
+        "addBindingSourceLine": 301341,
+        "deleteBindingSourceLine": 301373,
+        "layout": {
+          "member": "ERP_Medcom2026/Layout/Medcom/AR_Invoice_QRCodeFrm.dat",
+          "bytes": 35865,
+          "sha256": "6bfa25bfe5cb45e028ca9d89a6efdbd808de486ed46751fc880bc8ed24102a51"
+        }
+      }
+    ],
+    "controls": [
+      {
+        "id": "BarcodeInputCtl",
+        "caption": "Barcode xu\u1ea5t",
+        "action": "ADD"
+      },
+      {
+        "id": "BarcodeInputCtl_1",
+        "caption": "Barcode x\u00f3a",
+        "action": "DELETE"
+      }
+    ],
+    "sharedControlMetadata": {
+      "F2": "DocumentID",
+      "C2": "SaveContinue",
+      "Inx": "2",
+      "RL": "1",
+      "meaningBoundary": "Literal values and bindings are verified. Callback order, transaction ownership of SaveContinue, Inx/RL consumer semantics and reload behavior remain UNKNOWN."
+    },
+    "menuAuthority": "All four source menu rows have isDisable=0. This is not proof of runtime visibility, role/action permission or branch/storehouse authority.",
+    "expectedPlacement": "Dedicated child workflows inside the verified warehouse QR group, each bound to an existing selected document; no QR-to-search toolbar action. Route names and capability wiring require the route owner review."
+  },
+  "parameters": [
+    {
+      "name": "Barcode",
+      "sqlType": "varchar(250)",
+      "declaredDefault": "",
+      "explicitNullAfterNormalization": "",
+      "omittedBehavior": "Declared default empty string, then empty-barcode rejection",
+      "sizeUnit": "250 encoded bytes; code page UNKNOWN",
+      "hasDeclaredDefault": true
+    },
+    {
+      "name": "DocumentID",
+      "sqlType": "varchar(50)",
+      "declaredDefault": null,
+      "hasDeclaredDefault": false,
+      "explicitNullAfterNormalization": "",
+      "omittedBehavior": "Required SQL procedure argument; no source-defined default",
+      "sizeUnit": "50 encoded bytes; code page UNKNOWN"
+    },
+    {
+      "name": "Target",
+      "sqlType": "nvarchar(100)",
+      "declaredDefault": null,
+      "hasDeclaredDefault": false,
+      "explicitNullAfterNormalization": "",
+      "allowedNormalizedValues": [
+        "AR_INVOICE",
+        "IV_OUTPUT"
+      ],
+      "omittedBehavior": "Required SQL procedure argument; no source-defined default"
+    },
+    {
+      "name": "Action",
+      "sqlType": "nvarchar(50)",
+      "declaredDefault": null,
+      "hasDeclaredDefault": false,
+      "explicitNullAfterNormalization": "",
+      "allowedNormalizedValues": [
+        "ADD",
+        "DELETE"
+      ],
+      "omittedBehavior": "Required SQL procedure argument; no source-defined default"
+    }
+  ],
+  "normalization": {
+    "evidence": {
+      "member": "MedData-Data.sql",
+      "procedure": "dbo.CF_QRcodeStp",
+      "sourceLines": [
+        838818,
+        838854
+      ],
+      "procedureRelativeLines": [
+        2,
+        38
+      ]
+    },
+    "sequence": [
+      "The SQL engine binds arguments to their declared varchar/nvarchar types before the procedure body. This file does not qualify transport conversion, truncation or code-page parity.",
+      "Barcode NULL becomes empty. Remove every U+000D CR occurrence and then every U+000A LF occurrence, including internal occurrences; do not replace them with spaces.",
+      "Trim only U+0020 SPACE from both ends of the barcode. Do not collapse internal spaces or normalize Unicode.",
+      "DocumentID NULL becomes empty, then trim only U+0020 from both ends. CR/LF removal applies only to Barcode, not DocumentID.",
+      "Target and Action NULL become empty; trim only U+0020 at both ends, then apply SQL UPPER. CR/LF removal does not apply to these parameters.",
+      "Reject empty Barcode first, then empty DocumentID, then a Target outside the two source values, then an Action outside ADD/DELETE."
+    ],
+    "trimSemantics": {
+      "sourceFunction": "TRIM without a characters argument",
+      "equivalentDefaultSqlBehavior": "LTRIM(RTRIM(value))",
+      "trimmedCodePoints": [
+        "U+0020"
+      ],
+      "preservedByTrim": [
+        "U+0009 TAB",
+        "U+000B VT",
+        "U+000C FF",
+        "U+0085 NEL",
+        "U+00A0 NBSP",
+        "U+FEFF BOM",
+        "other Unicode whitespace"
+      ],
+      "doNotUse": "JavaScript String.trim(), .NET parameterless String.Trim() or Unicode whitespace regex as a source-equivalent operation.",
+      "documentationRef": "sql-trim"
+    },
+    "sqlComparisonBoundary": "UPPER, CHARINDEX, string equality and membership are evaluated under SQL collation. Ordinal ASCII behavior is a bounded implementation profile, not proof of arbitrary Unicode/collation equivalence.",
+    "retainedBarcode": "After global CR/LF removal and whole-string U+0020 trim, retain the barcode spelling and internal spaces. Do not reconstruct it from trimmed fields, uppercase it, normalize its Unicode, or replace its GUID text in the stored QRCode candidate."
+  },
+  "grammar": {
+    "classification": {
+      "evidence": {
+        "member": "MedData-Data.sql",
+        "procedure": "dbo.CF_QRcodeStp",
+        "sourceLines": [
+          838856,
+          838875
+        ],
+        "procedureRelativeLines": [
+          40,
+          59
+        ]
+      },
+      "sourceRule": "First five characters of SQL-UPPER(normalized Barcode) compare equal to PKG1; -> package branch; otherwise ordinary branch.",
+      "asciiPrefixRule": "ASCII PKG1; is case-insensitive because the source uppercases before comparison. pkg1;, PkG1; and PKG1; are package candidates.",
+      "collationLimit": "Non-ASCII, width/accent equivalence and other collation effects are unqualified. Do not implement broad Unicode case-folding or compatibility normalization."
+    },
+    "ordinary": {
+      "evidence": {
+        "member": "MedData-Data.sql",
+        "procedure": "dbo.CF_QRcodeStp",
+        "sourceLines": [
+          838899,
+          838938
+        ],
+        "procedureRelativeLines": [
+          83,
+          122
+        ]
+      },
+      "delimiter": "ASCII semicolon U+003B in the bounded profile; source uses SQL CHARINDEX",
+      "delimiterCount": 2,
+      "fieldOrder": [
+        "ItemID",
+        "ItemCode",
+        "Lot"
+      ],
+      "fields": [
+        {
+          "name": "ItemID",
+          "normalization": "U+0020 trim only",
+          "requiredNonempty": true,
+          "variableType": "nvarchar(50)"
+        },
+        {
+          "name": "ItemCode",
+          "normalization": "U+0020 trim only",
+          "requiredNonempty": false,
+          "variableType": "nvarchar(50)"
+        },
+        {
+          "name": "Lot",
+          "normalization": "U+0020 trim only",
+          "requiredNonempty": true,
+          "variableType": "nvarchar(50)"
+        }
+      ],
+      "quantity": "1",
+      "quantityType": "decimal(38,10)",
+      "QRPackageID": null,
+      "QuyCach": null,
+      "noAdditionalFormats": [
+        "No URL extraction",
+        "No JSON payload",
+        "No GS1 parser",
+        "No two-part ItemID;Lot fallback",
+        "No serial/location segment"
+      ],
+      "componentLengthWarning": "The source assigns substrings to nvarchar(50) variables before its nonempty checks; it does not explicitly reject oversize components. A safe Web parser must report over-width input as outside the qualified profile rather than simulate silent truncation."
+    },
+    "package": {
+      "evidence": {
+        "member": "MedData-Data.sql",
+        "procedure": "dbo.CF_QRcodeStp",
+        "sourceLines": [
+          838863,
+          838896
+        ],
+        "procedureRelativeLines": [
+          47,
+          80
+        ]
+      },
+      "normalizedSqlLen": 41,
+      "lengthSemantics": "Source uses SQL LEN, which excludes trailing U+0020. Whole-barcode U+0020 trimming has already occurred. LEN versus UTF-16/Unicode scalar counts for non-ASCII remains unqualified.",
+      "guidSlice": "SQL SUBSTRING at one-based position 6, length 36",
+      "conversion": "TRY_CONVERT to uniqueidentifier; NULL conversion result is rejected.",
+      "canonicalGuidProfile": "8-4-4-4-12 hexadecimal digits, ASCII hyphens; hexadecimal letter case is accepted; no UUID version or RFC variant-bit restriction.",
+      "canonicalGuidRegex": "^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$",
+      "zeroGuid": {
+        "syntaxOutcome": "Valid canonical GUID candidate; the source has no all-zero prohibition.",
+        "example": "PKG1;00000000-0000-0000-0000-000000000000",
+        "businessOutcome": "Needs CF_QRPackageTbl lookup. Reject as not found/inactive only if that lookup says so; no lookup was executed."
+      },
+      "conversionLimit": "The canonical GUID subset is documented. No claim is made that a host UUID parser accepts exactly every SQL TRY_CONVERT form. The 41-length gate and 36-character slice must be applied before conversion; do not rely on SQL GUID truncation to accept an appended suffix. Braced, compact, URN and other host-parser formats are not part of this qualified profile.",
+      "lookup": {
+        "table": "dbo.CF_QRPackageTbl",
+        "key": "QRPackageID uniqueidentifier",
+        "mappedFields": {
+          "ItemID": "ItemID",
+          "ItemCode": "ItemCode",
+          "Lot": "Lot",
+          "QuyCach": "QuyCach",
+          "ScanQuantity": "BaseQuantity"
+        },
+        "addActiveRule": "IsActive=1",
+        "deleteActiveRule": "Inactive package may resolve; row must still exist",
+        "noClientInference": "Item/lot/quantity/packaging cannot be extracted from the GUID or accepted from client overrides. A disconnected parser returns an unresolved package candidate."
+      },
+      "packageIdentity": "Use the converted GUID for package identity. Preserve normalized Barcode text separately."
+    }
+  },
+  "storageSchemas": {
+    "dbo.CF_QRPackageTbl": {
+      "evidence": {
+        "sourceLines": [
+          25607,
+          25631
+        ],
+        "decodedDeclarationSha256": "4ac9e17e4706227654a8e80ca76b8827934cb0a5002ba106aa9d503db97381e9",
+        "maskedDefinitionSha256": "4ac9e17e4706227654a8e80ca76b8827934cb0a5002ba106aa9d503db97381e9",
+        "explicitCollationTokens": []
+      },
+      "columns": [
+        {
+          "name": "QRPackageID",
+          "type": "uniqueidentifier",
+          "typeArguments": "",
+          "nullable": false,
+          "identity": false
+        },
+        {
+          "name": "SourceTable",
+          "type": "nvarchar",
+          "typeArguments": "(128)",
+          "nullable": false,
+          "identity": false
+        },
+        {
+          "name": "SourceDetailID",
+          "type": "nvarchar",
+          "typeArguments": "(100)",
+          "nullable": false,
+          "identity": false
+        },
+        {
+          "name": "SourceDocumentID",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": false,
+          "identity": false
+        },
+        {
+          "name": "PackageNo",
+          "type": "int",
+          "typeArguments": "",
+          "nullable": false,
+          "identity": false
+        },
+        {
+          "name": "PackageCount",
+          "type": "int",
+          "typeArguments": "",
+          "nullable": false,
+          "identity": false
+        },
+        {
+          "name": "ItemID",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": false,
+          "identity": false
+        },
+        {
+          "name": "ItemCode",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": true,
+          "identity": false
+        },
+        {
+          "name": "Lot",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": false,
+          "identity": false
+        },
+        {
+          "name": "ExpireDate",
+          "type": "datetime",
+          "typeArguments": "",
+          "nullable": true,
+          "identity": false
+        },
+        {
+          "name": "QuyCach",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": true,
+          "identity": false
+        },
+        {
+          "name": "BaseUnit",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": true,
+          "identity": false
+        },
+        {
+          "name": "Operation",
+          "type": "nchar",
+          "typeArguments": "(3)",
+          "nullable": true,
+          "identity": false
+        },
+        {
+          "name": "UnitFactor",
+          "type": "decimal",
+          "typeArguments": "(38, 10)",
+          "nullable": false,
+          "identity": false
+        },
+        {
+          "name": "BaseQuantity",
+          "type": "decimal",
+          "typeArguments": "(38, 10)",
+          "nullable": false,
+          "identity": false
+        },
+        {
+          "name": "IsActive",
+          "type": "bit",
+          "typeArguments": "",
+          "nullable": false,
+          "identity": false
+        },
+        {
+          "name": "DateCreate",
+          "type": "datetime2",
+          "typeArguments": "(0)",
+          "nullable": false,
+          "identity": false
+        },
+        {
+          "name": "DateUpdate",
+          "type": "datetime2",
+          "typeArguments": "(0)",
+          "nullable": true,
+          "identity": false
+        },
+        {
+          "name": "PrintType",
+          "type": "varchar",
+          "typeArguments": "(10)",
+          "nullable": true,
+          "identity": false
+        }
+      ]
+    },
+    "dbo.IV_OutputQRCodeTbl": {
+      "evidence": {
+        "sourceLines": [
+          28948,
+          28962
+        ],
+        "decodedDeclarationSha256": "80c1d886830e544643186685f5d9b26a90ef0b41c72d329ce640238722050a6b",
+        "maskedDefinitionSha256": "80c1d886830e544643186685f5d9b26a90ef0b41c72d329ce640238722050a6b",
+        "explicitCollationTokens": []
+      },
+      "columns": [
+        {
+          "name": "UserAutoID",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": false,
+          "identity": false
+        },
+        {
+          "name": "DocumentID",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": false,
+          "identity": false
+        },
+        {
+          "name": "QRCode",
+          "type": "nvarchar",
+          "typeArguments": "(200)",
+          "nullable": false,
+          "identity": false
+        },
+        {
+          "name": "ItemID",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": false,
+          "identity": false
+        },
+        {
+          "name": "ItemCode",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": true,
+          "identity": false
+        },
+        {
+          "name": "Lot",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": false,
+          "identity": false
+        },
+        {
+          "name": "Quantity",
+          "type": "decimal",
+          "typeArguments": "(38, 10)",
+          "nullable": true,
+          "identity": false
+        },
+        {
+          "name": "QRPackageID",
+          "type": "nvarchar",
+          "typeArguments": "(200)",
+          "nullable": true,
+          "identity": false
+        },
+        {
+          "name": "QuyCach",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": true,
+          "identity": false
+        }
+      ]
+    },
+    "dbo.AR_InvoiceQRCodeTbl": {
+      "evidence": {
+        "sourceLines": [
+          23820,
+          23834
+        ],
+        "decodedDeclarationSha256": "2f63f68f8f5a708b8bfa5ce41da45732a4cbbf1ed78637e442118ed565c0bd09",
+        "maskedDefinitionSha256": "2f63f68f8f5a708b8bfa5ce41da45732a4cbbf1ed78637e442118ed565c0bd09",
+        "explicitCollationTokens": []
+      },
+      "columns": [
+        {
+          "name": "UserAutoID",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": false,
+          "identity": false
+        },
+        {
+          "name": "DocumentID",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": false,
+          "identity": false
+        },
+        {
+          "name": "QRCode",
+          "type": "nvarchar",
+          "typeArguments": "(200)",
+          "nullable": false,
+          "identity": false
+        },
+        {
+          "name": "ItemID",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": false,
+          "identity": false
+        },
+        {
+          "name": "ItemCode",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": true,
+          "identity": false
+        },
+        {
+          "name": "Lot",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": false,
+          "identity": false
+        },
+        {
+          "name": "Quantity",
+          "type": "decimal",
+          "typeArguments": "(38, 10)",
+          "nullable": true,
+          "identity": false
+        },
+        {
+          "name": "QRPackageID",
+          "type": "nvarchar",
+          "typeArguments": "(200)",
+          "nullable": true,
+          "identity": false
+        },
+        {
+          "name": "QuyCach",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": true,
+          "identity": false
+        }
+      ]
+    }
+  },
+  "widthAndAmbiguityBoundary": {
+    "sourceEvidence": {
+      "member": "MedData-Data.sql",
+      "procedure": "dbo.CF_QRcodeStp",
+      "sourceLines": [
+        838818,
+        838821
+      ],
+      "procedureRelativeLines": [
+        2,
+        5
+      ]
+    },
+    "facts": [
+      "Barcode parameter varchar(250) is a byte limit, not a universal Unicode character limit.",
+      "DocumentID parameter varchar(50) is a byte limit.",
+      "Ordinary ItemID/ItemCode/Lot variables and stored item fields are nvarchar(50), measured as UTF-16 byte pairs.",
+      "Stored QRCode is nvarchar(200), smaller than the procedure Barcode parameter.",
+      "Stored QRPackageID in the two QR row tables is nvarchar(200), while the package lookup key is uniqueidentifier.",
+      "Quantity uses decimal(38,10).",
+      "No explicit COLLATE appears in the three inspected table declarations; this does not establish effective database/column collation."
+    ],
+    "unknowns": [
+      "Effective database collation/code page and driver parameter conversion",
+      "Non-ASCII round-trip into varchar; silent lossy conversion or truncation",
+      "Case/accent/width and trailing-space equality for DocumentID, ItemID, Lot and QRCode",
+      "Consumer-layer normalization before SQL",
+      "Behavior of every noncanonical GUID textual form"
+    ],
+    "safeDisconnectedProfile": {
+      "classification": "PROPOSED_GUARDRAIL_NOT_LEGACY_SEMANTICS",
+      "profileId": "ascii-canonical-no-truncation-v1",
+      "rules": [
+        "Accept only ASCII printable characters plus CR/LF for barcode input; CR/LF are removed by the source rule. Other controls and non-ASCII return unsupported/unqualified, never silently trim or transliterate.",
+        "Apply U+0020 trimming explicitly. Keep the original normalized barcode independently of trimmed ordinary components.",
+        "Reject over-width components (>50 UTF-16 code units) and normalized barcode (>200 UTF-16 code units), plus raw argument width >250 ASCII bytes; do not truncate.",
+        "If accepting a document argument in a disconnected helper, preserve source normalization and reject >50 ASCII bytes; document existence and authority remain unresolved.",
+        "Package parser accepts canonical 36-character GUID only, including all-zero and arbitrary version bits; returns needsLookup=true without claiming existence or quantity.",
+        "Ordinary parser may return quantity 1 as a syntax-derived candidate, never inventory availability or command success.",
+        "Do not choose an action or target from QR payload. They belong to the server-owned workflow and explicit user intent."
+      ],
+      "compatibilityNotice": "These extra input guards narrow accepted input for safety. Report them as unsupported/outside-profile validation, not as a proven legacy rejection. Root must approve compatibility changes before a live writer."
+    }
+  },
+  "businessAndMutationSemantics": {
+    "evidence": {
+      "member": "MedData-Data.sql",
+      "procedure": "dbo.CF_QRcodeStp",
+      "sourceLines": [
+        838928,
+        839266
+      ],
+      "procedureRelativeLines": [
+        112,
+        450
+      ]
+    },
+    "preconditions": [
+      {
+        "condition": "ItemID and Lot nonempty, and ScanQuantity > 0",
+        "evidence": {
+          "member": "MedData-Data.sql",
+          "procedure": "dbo.CF_QRcodeStp",
+          "sourceLines": [
+            838928,
+            838944
+          ],
+          "procedureRelativeLines": [
+            112,
+            128
+          ]
+        }
+      },
+      {
+        "condition": "Existing parent document selected by fixed Target and DocumentID",
+        "evidence": {
+          "member": "MedData-Data.sql",
+          "procedure": "dbo.CF_QRcodeStp",
+          "sourceLines": [
+            838946,
+            838962
+          ],
+          "procedureRelativeLines": [
+            130,
+            146
+          ]
+        }
+      },
+      {
+        "condition": "ADD requires item+lot existence in SY_BalanceItemTbl",
+        "evidence": {
+          "member": "MedData-Data.sql",
+          "procedure": "dbo.CF_QRcodeStp",
+          "sourceLines": [
+            838964,
+            838970
+          ],
+          "procedureRelativeLines": [
+            148,
+            154
+          ]
+        }
+      },
+      {
+        "condition": "ADD requires positive SUM(TRY_CONVERT(decimal(38,10), detail.Quantity)) for document+ItemID+Lot",
+        "evidence": {
+          "member": "MedData-Data.sql",
+          "procedure": "dbo.CF_QRcodeStp",
+          "sourceLines": [
+            838972,
+            839024
+          ],
+          "procedureRelativeLines": [
+            156,
+            208
+          ]
+        }
+      },
+      {
+        "condition": "ADD package duplication check is scoped to its target QR table and DocumentID+QRPackageID, not global across documents/targets",
+        "evidence": {
+          "member": "MedData-Data.sql",
+          "procedure": "dbo.CF_QRcodeStp",
+          "sourceLines": [
+            838988,
+            839024
+          ],
+          "procedureRelativeLines": [
+            172,
+            208
+          ]
+        }
+      },
+      {
+        "condition": "ScannedQuantity + ScanQuantity must not exceed RequiredQuantity + 0.0001",
+        "evidence": {
+          "member": "MedData-Data.sql",
+          "procedure": "dbo.CF_QRcodeStp",
+          "sourceLines": [
+            839026,
+            839034
+          ],
+          "procedureRelativeLines": [
+            210,
+            218
+          ]
+        }
+      }
+    ],
+    "transaction": {
+      "evidence": {
+        "member": "MedData-Data.sql",
+        "procedure": "dbo.CF_QRcodeStp",
+        "sourceLines": [
+          839036,
+          839134
+        ],
+        "procedureRelativeLines": [
+          220,
+          318
+        ]
+      },
+      "outerTransactionAbsent": "Start and commit own transaction",
+      "outerTransactionPresent": "Use savepoint CF_QRcodeStp_Save, not an independent commit",
+      "locking": "UPDLOCK/HOLDLOCK on parent document and, for package, package row; reread quantities/package duplication after locking",
+      "sourceXactAbort": "OFF",
+      "catchBehavior": "Rollback own transaction; otherwise rollback savepoint if committable, otherwise rollback transaction. Return MsgType=1.",
+      "limits": "Static control flow only. Trigger effects, isolation interactions, host save ordering, rollback/timeout and concurrency acceptance are NOT_RUN."
+    },
+    "add": {
+      "evidence": {
+        "member": "MedData-Data.sql",
+        "procedure": "dbo.CF_QRcodeStp",
+        "sourceLines": [
+          839136,
+          839200
+        ],
+        "procedureRelativeLines": [
+          320,
+          384
+        ]
+      },
+      "writes": [
+        "Insert one QR row into target-specific QR table with new UserAutoID, selected DocumentID, normalized Barcode, resolved/parsed fields, quantity and optional package/packaging fields",
+        "Set parent isScanQRCode=1"
+      ],
+      "ordinaryRepeat": "Same ordinary QR may be added repeatedly as separate quantity-1 rows until quantity guard rejects it.",
+      "packageRepeat": "Same package GUID in the same target document is rejected."
+    },
+    "delete": {
+      "evidence": {
+        "member": "MedData-Data.sql",
+        "procedure": "dbo.CF_QRcodeStp",
+        "sourceLines": [
+          839148,
+          839241
+        ],
+        "procedureRelativeLines": [
+          332,
+          425
+        ]
+      },
+      "package": "Delete matching DocumentID+QRPackageID rows after existence check; requires package lookup to have resolved even if inactive.",
+      "ordinary": "Delete TOP(1) matching DocumentID+QRCode row after existence check. Equality is SQL collation-sensitive; no ORDER BY selects a specific physical row.",
+      "flag": "Set parent isScanQRCode=1 if any QR row remains, otherwise 0.",
+      "notFound": "Return MsgType=1. If this procedure owns a committable transaction, it commits that transaction before returning the not-found result."
+    },
+    "directEffectsBoundary": "Direct procedure writes only QR tables and parent isScanQRCode. It reads document detail and SY_BalanceItemTbl; it does not directly post stock, mutate document detail quantities, or parse/store a serial/location field. Triggers and SaveContinue can still have other effects and remain unqualified.",
+    "notCheckedInsideProcedure": [
+      "User identity/role",
+      "BranchID",
+      "StoreHouseID",
+      "isLock",
+      "Document status transition authorization",
+      "ItemCode correspondence to CF_ItemTbl"
+    ],
+    "quantityCaveat": "Required/scanned totals are grouped by document+ItemID+Lot, with no StoreHouseID dimension. Do not infer per-bin/location/serial accounting."
+  },
+  "knownSqlOutputs": {
+    "shape": {
+      "MsgType": "SQL integer literal 0 or 1",
+      "Msg": "Unicode message text; may include document/item/lot, quantity values or ERROR_MESSAGE"
+    },
+    "success": {
+      "MsgType": 0,
+      "ADD": "Message reports addition and ScanQuantity as text",
+      "DELETE": "Message reports deletion"
+    },
+    "businessRejection": {
+      "MsgType": 1,
+      "categories": [
+        "Empty barcode",
+        "Empty document id",
+        "Unsupported target",
+        "Unsupported action",
+        "Invalid package length",
+        "GUID conversion null",
+        "Package missing/inactive",
+        "Missing first or second separator",
+        "More than two separators",
+        "Empty item or lot",
+        "Nonpositive package quantity",
+        "Document missing",
+        "Item/lot missing from balance",
+        "Item/lot absent from positive document detail quantity",
+        "Duplicate package in document",
+        "Scanned total would exceed required total",
+        "QR/package absent from selected document"
+      ]
+    },
+    "caughtFailure": {
+      "MsgType": 1,
+      "messageIncludesSqlErrorText": true
+    },
+    "limitations": [
+      "No typed HTTP status, stable machine reason code, operation receipt, inserted row id or authoritative post-write snapshot is returned by this procedure.",
+      "An outer transaction may still be uncommitted after a success message. MsgType=0 alone does not prove durable commit of the entire host operation.",
+      "Uncaught provider/binding failures can occur outside these result-set branches.",
+      "Do not expose raw ERROR_MESSAGE or document-sensitive text through a new public API without reviewed redaction."
+    ]
+  },
+  "idempotency": {
+    "qrTextIsOperationKey": false,
+    "reason": "Ordinary repeat scans are legitimate separate increments; package duplicates are a document business guard, not an operation receipt.",
+    "requirements": [
+      "A separately qualified writer must bind an independent operation key to one explicit scan intent and its selected document/target/action.",
+      "Preserve original operation identity across timeouts/navigation and reconcile uncertain acknowledgement without replay.",
+      "Do not deduplicate all matching QR strings globally, or treat package duplicate rejection as proof that this client operation committed."
+    ]
+  },
+  "printMismatch": {
+    "status": "VERIFIED_STATIC_INCOMPATIBILITY",
+    "configEvidenceLines": [
+      299319,
+      302882,
+      303043,
+      303888
+    ],
+    "configuredForm": "IV_Output_QRCodeFrm",
+    "configuredControl": "PrintButtonCtl",
+    "configuredProcedure": "dbo.AR_PurchaseQRCodeReportStp",
+    "procedureSourceLines": [
+      835875,
+      835892
+    ],
+    "observedReadTable": "dbo.AP_PurchaseDetailTbl",
+    "observedPayload": "ItemID;Lot",
+    "conflict": "Two-part payload does not satisfy current ordinary three-part parser. Procedure/table belong to purchase detail while form is warehouse output.",
+    "disposition": "Print remains disabled/unqualified. Do not silently replace with similarly named IV_StockOutputQRCodeReportStp."
+  },
+  "unknowns": [
+    {
+      "topic": "Control runtime",
+      "inspect": "Build-matching Tools2022/ControlsUser/BarcodeInputCtl.vb and FormControler/PropertyUserControlX callers",
+      "missing": "Placeholder expansion, event order, SaveContinue side effects, error handling, debounce and reload behavior"
+    },
+    {
+      "topic": "Generic EDIT dispatch",
+      "inspect": "Build-matching ERP MainFrm.MenuClick, Tools.App.GetFormFromSQL, generic form controller",
+      "missing": "Inherited hooks, permissions, transaction ownership and dynamic form construction"
+    },
+    {
+      "topic": "Configuration precedence",
+      "inspect": "Build-matching SQL/DAT consumers and current deployed source hashes",
+      "missing": "SQL versus DAT precedence, overrides/caches and runtime equivalence"
+    },
+    {
+      "topic": "Write admission",
+      "inspect": "Full host callback/trigger closure and isolated authorized command fixtures",
+      "missing": "Branch/storehouse/action/lock policy, complete effects, concurrency, idempotent operation custody and durable readback"
+    },
+    {
+      "topic": "Serial/location",
+      "inspect": "No mapping in this procedure; require independently bound source if later requested",
+      "missing": "No authority to substitute FA part barcode workflows or infer generic inventory behavior"
+    },
+    {
+      "topic": "Duplicate/collation identity",
+      "inspect": "Current qualified database/column collation and bounded read identity contract",
+      "missing": "Case/accent/width equivalence, ambiguous identities and data-specific uniqueness; do not inspect customer rows for this task"
+    }
+  ],
+  "syntheticTestRequirements": [
+    {
+      "id": "normalize-space-only",
+      "expect": "U+0020 is trimmed. TAB/NBSP/BOM are preserved by the source normalization helper; bounded profile may separately report unsupported, not silently strip."
+    },
+    {
+      "id": "normalize-crlf-anywhere",
+      "input": "  A\r\n;B;L  ",
+      "expectNormalizedBarcode": "A;B;L"
+    },
+    {
+      "id": "preserve-normalized-text",
+      "input": " A ; B ; L ",
+      "expectNormalizedBarcode": "A ; B ; L",
+      "expectFields": [
+        "A",
+        "B",
+        "L"
+      ]
+    },
+    {
+      "id": "ordinary-empty-item-code",
+      "input": "A;;L",
+      "expect": "Ordinary syntax candidate; empty ItemCode is allowed by source."
+    },
+    {
+      "id": "ordinary-bad-separators",
+      "cases": [
+        "A;L",
+        "A;B;L;X",
+        ";B;L",
+        "A;B;"
+      ],
+      "expect": "Reject respective separator/item/lot rule, not fallback search."
+    },
+    {
+      "id": "package-case",
+      "cases": [
+        "PKG1;",
+        "pkg1;",
+        "PkG1;"
+      ],
+      "expect": "With the same canonical GUID suffix, all are package candidates in ASCII profile; retain original normalized Barcode casing."
+    },
+    {
+      "id": "package-zero-guid",
+      "input": "PKG1;00000000-0000-0000-0000-000000000000",
+      "expect": "Unresolved package candidate, not invalid syntax."
+    },
+    {
+      "id": "guid-no-version-assumption",
+      "input": "PKG1;FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF",
+      "expect": "Canonical hexadecimal syntax candidate; no UUID version/variant-bit restriction inferred."
+    },
+    {
+      "id": "guid-format-boundary",
+      "cases": [
+        "braced GUID",
+        "compact GUID",
+        "URN GUID",
+        "canonical GUID plus suffix",
+        "bad hex",
+        "wrong hyphen positions"
+      ],
+      "expect": "Reject/outside canonical profile before lookup; no permissive host parser bypass."
+    },
+    {
+      "id": "parameter-null-defaults",
+      "expect": "Barcode omitted/NULL -> empty rejection; DocumentID/Target/Action have no declared default; explicit NULL becomes empty, never default action/target."
+    },
+    {
+      "id": "width-boundary",
+      "expect": "Test 50/51 component code units, 200/201 normalized QR code units, 250/251 raw ASCII barcode bytes and 50/51 document bytes. Unsupported must not be truncated."
+    },
+    {
+      "id": "quantity-and-identity",
+      "expect": "Synthetic contract fixtures cover decimal(38,10), tolerance 0.0001, repeat ordinary scan vs duplicate package and target/document scoping. No claim of executed SQL parity."
+    },
+    {
+      "id": "no-side-effects",
+      "expect": "Parser invokes no DB/network/storage/command, opens no camera, creates no route, does not alter list search, and never claims document/package existence or mutation success."
+    },
+    {
+      "id": "future-command-gates",
+      "expect": "Separate authorized execution tests needed for denial/cross-scope/lock, concurrent scans, rollback/savepoints, lost ACK, no replay, flag readback and host trigger effects."
+    }
+  ],
+  "engineDocumentation": [
+    {
+      "id": "sql-trim",
+      "url": "https://learn.microsoft.com/en-us/sql/t-sql/functions/trim-transact-sql?view=sql-server-ver17",
+      "usedFor": "Default removal of CHAR(32) at both ends and equivalence to LTRIM/RTRIM."
+    },
+    {
+      "id": "sql-guid",
+      "url": "https://learn.microsoft.com/en-us/sql/t-sql/data-types/uniqueidentifier-transact-sql?view=sql-server-ver17",
+      "usedFor": "16-byte GUID, canonical hex 8-4-4-4-12 string conversion and overlong conversion truncation caution."
+    },
+    {
+      "id": "sql-try-convert",
+      "url": "https://learn.microsoft.com/en-us/sql/t-sql/functions/try-convert-transact-sql?view=sql-server-ver17",
+      "usedFor": "Successful conversion returns a value; failed permitted conversion returns NULL."
+    },
+    {
+      "id": "sql-len",
+      "url": "https://learn.microsoft.com/en-us/sql/t-sql/functions/len-transact-sql?view=sql-server-ver17",
+      "usedFor": "Trailing spaces are excluded; Unicode count depends on supplementary-character collation."
+    },
+    {
+      "id": "sql-varchar",
+      "url": "https://learn.microsoft.com/en-us/sql/t-sql/data-types/char-and-varchar-transact-sql?view=sql-server-ver17",
+      "usedFor": "varchar width is encoded bytes and effective collation controls code page; conversion may be lossy."
+    }
+  ],
+  "evidenceRecords": [
+    {
+      "evidenceId": "sql-line-298350",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        298350,
+        298350
+      ],
+      "decodedStatementSha256": "e1da9e09430063313fc5b3901ab5ad0acb1c50f43388cbb7c9bca77fe1afade3",
+      "technicalMetadata": {
+        "FID": "IV_Output_QRCodeFrm",
+        "KeyID": "LYS1",
+        "SubID": "BarcodeInputCtl",
+        "SubValue": "RL",
+        "value": "1"
+      }
+    },
+    {
+      "evidenceId": "sql-line-299319",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        299319,
+        299319
+      ],
+      "decodedStatementSha256": "e37878a576e7513cbb257626a55569d1f0fa0b7f3bac12e6ebb25e6117670cca",
+      "technicalMetadata": {
+        "FID": "IV_Output_QRCodeFrm",
+        "KeyID": "LYS1",
+        "SubID": "PrintButtonCtl",
+        "SubValue": "C5",
+        "value": "AR_PurchaseQRCodeReport"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301308",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301308,
+        301308
+      ],
+      "decodedStatementSha256": "2361c945f6299dd4d8819f61d3f401030059e48a322d563a9cf219d5bded4958",
+      "technicalMetadata": {
+        "FID": "IV_Output_QRCodeFrm",
+        "KeyID": "T0",
+        "SubID": "TN",
+        "SubValue": "",
+        "value": "IV_OutputTbl"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301309",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301309,
+        301309
+      ],
+      "decodedStatementSha256": "7449b3def23c081b75d9040c9a8f78b15cff09f0c9ef5cffa48d58577808abff",
+      "technicalMetadata": {
+        "FID": "IV_Output_QRCodeFrm",
+        "KeyID": "T0",
+        "SubID": "FTX",
+        "SubValue": "",
+        "binding": {
+          "branchFilter": "document BranchID matches BranchID placeholder OR placeholder empty",
+          "runtimeAuthority": "UNKNOWN"
+        }
+      }
+    },
+    {
+      "evidenceId": "sql-line-301310",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301310,
+        301310
+      ],
+      "decodedStatementSha256": "5e79c569c9f8789a74d4c6620506cec60a0ce4255704e1c1d8b165ec1306226a",
+      "technicalMetadata": {
+        "FID": "IV_Output_QRCodeFrm",
+        "KeyID": "T0",
+        "SubID": "PK",
+        "SubValue": "",
+        "value": "DocumentID"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301315",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301315,
+        301315
+      ],
+      "decodedStatementSha256": "e20bdbe3a7ba57078a6f88f48ab1b0a40485497e7dbd22d2bf4718aaf53cdf8a",
+      "technicalMetadata": {
+        "FID": "IV_Output_QRCodeFrm",
+        "KeyID": "T1",
+        "SubID": "TN",
+        "SubValue": "",
+        "value": "IV_OutputQRCodeTbl"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301316",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301316,
+        301316
+      ],
+      "decodedStatementSha256": "5468d311742a7209446750bc01156787130bea69fc9163f302a42f0b99e4c7f8",
+      "technicalMetadata": {
+        "FID": "IV_Output_QRCodeFrm",
+        "KeyID": "T1",
+        "SubID": "PKU",
+        "SubValue": "",
+        "value": "UserAutoID"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301317",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301317,
+        301317
+      ],
+      "decodedStatementSha256": "721af2c47606ad7bb2534f5102c78e8f04f564c0fe81faa17998e4c66cb2c443",
+      "technicalMetadata": {
+        "FID": "IV_Output_QRCodeFrm",
+        "KeyID": "T1",
+        "SubID": "PK",
+        "SubValue": "",
+        "value": "UserAutoID"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301318",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301318,
+        301318
+      ],
+      "decodedStatementSha256": "8cd77044184f562cfe759c75e824e8b9e7174a9baef4bb897e7e7e9825b75e3c",
+      "technicalMetadata": {
+        "FID": "IV_Output_QRCodeFrm",
+        "KeyID": "T2",
+        "SubID": "PK",
+        "SubValue": "",
+        "value": "UserAutoID"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301319",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301319,
+        301319
+      ],
+      "decodedStatementSha256": "6aa1673fb36c6ae9450e603d94416d41b8933917b5ff29d6e06c5b5628393bc8",
+      "technicalMetadata": {
+        "FID": "IV_Output_QRCodeFrm",
+        "KeyID": "T2",
+        "SubID": "TN",
+        "SubValue": "",
+        "value": "IV_OutputDetailTbl"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301327",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301327,
+        301327
+      ],
+      "decodedStatementSha256": "17d5bab9068f4a23d810684d265f63e2a19e919bdc5021bf91bde785179831c5",
+      "technicalMetadata": {
+        "FID": "IV_Output_QRCodeFrm",
+        "KeyID": "T2",
+        "SubID": "DCP",
+        "SubValue": "",
+        "value": "Chi ti\u1ebft phi\u1ebfu xu\u1ea5t"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301333",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301333,
+        301333
+      ],
+      "decodedStatementSha256": "e1079741fe194b851f7fe5df0e2ac90c0501cf95e2e13ae205a29b368e02f087",
+      "technicalMetadata": {
+        "FID": "AR_Invoice_QRCodeFrm",
+        "KeyID": "T0",
+        "SubID": "PK",
+        "SubValue": "",
+        "value": "DocumentID"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301334",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301334,
+        301334
+      ],
+      "decodedStatementSha256": "698cd69da2fb1905043997c946363d96b451a0d34c14368c3623e6f3e62f4114",
+      "technicalMetadata": {
+        "FID": "AR_Invoice_QRCodeFrm",
+        "KeyID": "T0",
+        "SubID": "TN",
+        "SubValue": "",
+        "value": "AR_InvoiceTbl"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301335",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301335,
+        301335
+      ],
+      "decodedStatementSha256": "fc510ff62f8dd1186211b3c04dcef2d4743488a2595ee3d1a7d80a309bf21e4a",
+      "technicalMetadata": {
+        "FID": "AR_Invoice_QRCodeFrm",
+        "KeyID": "T1",
+        "SubID": "PK",
+        "SubValue": "",
+        "value": "UserAutoID"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301336",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301336,
+        301336
+      ],
+      "decodedStatementSha256": "3e319790db7ab4b869dcfc5b883d0c53e129d5c4aa2e4cbc90b28ca193e1746b",
+      "technicalMetadata": {
+        "FID": "AR_Invoice_QRCodeFrm",
+        "KeyID": "T1",
+        "SubID": "TN",
+        "SubValue": "",
+        "value": "AR_InvoiceQRCodeTbl"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301338",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301338,
+        301338
+      ],
+      "decodedStatementSha256": "f2201bc519a6f0b345c9b6c3ddf777e4bed5201a1dcf2d0404679abfcc935baf",
+      "technicalMetadata": {
+        "FID": "AR_Invoice_QRCodeFrm",
+        "KeyID": "LYS1",
+        "SubID": "BarcodeInputCtl",
+        "SubValue": "RL",
+        "value": "1"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301339",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301339,
+        301339
+      ],
+      "decodedStatementSha256": "313845205c9cdf229c9de6f5ff877021068d297d682d02bd989586dcbc7b9600",
+      "technicalMetadata": {
+        "FID": "AR_Invoice_QRCodeFrm",
+        "KeyID": "LYS1",
+        "SubID": "BarcodeInputCtl",
+        "SubValue": "F2",
+        "value": "DocumentID"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301340",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301340,
+        301340
+      ],
+      "decodedStatementSha256": "1cff5df2265dfd93dd10cdd2971384f9eb80aa85fc9fd3e71574a532574a2872",
+      "technicalMetadata": {
+        "FID": "AR_Invoice_QRCodeFrm",
+        "KeyID": "LYS1",
+        "SubID": "BarcodeInputCtl",
+        "SubValue": "C2",
+        "value": "SaveContinue"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301341",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301341,
+        301341
+      ],
+      "decodedStatementSha256": "9adba905c2d7e15c31b8dcdbf1cf445e59d1d3648301cf64f62fdfa045231ee1",
+      "technicalMetadata": {
+        "FID": "AR_Invoice_QRCodeFrm",
+        "KeyID": "LYS1",
+        "SubID": "BarcodeInputCtl",
+        "SubValue": "F1",
+        "binding": {
+          "procedure": "dbo.CF_QRcodeStp",
+          "parameterSources": [
+            "barcode-placeholder-0",
+            "document-id-placeholder-1"
+          ],
+          "target": "AR_INVOICE",
+          "action": "ADD"
+        }
+      }
+    },
+    {
+      "evidenceId": "sql-line-301342",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301342,
+        301342
+      ],
+      "decodedStatementSha256": "f57dc3da221d13ee9df3c52494f8b6058f3d9956d3ac552b723bda56857369f1",
+      "technicalMetadata": {
+        "FID": "AR_Invoice_QRCodeFrm",
+        "KeyID": "LYS1",
+        "SubID": "BarcodeInputCtl",
+        "SubValue": "Inx",
+        "value": "2"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301343",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301343,
+        301343
+      ],
+      "decodedStatementSha256": "2a54f53f9c9e3168aeaefa0e02b236232c26e70b5c4739f2da61e48ec2268832",
+      "technicalMetadata": {
+        "FID": "AR_Invoice_QRCodeFrm",
+        "KeyID": "LYT1",
+        "SubID": "BarcodeInputCtl",
+        "SubValue": "024",
+        "value": "22;5;1;;;;;Barcode xu\u1ea5t;;;;;;;2;;;;;0;0"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301352",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301352,
+        301352
+      ],
+      "decodedStatementSha256": "1f3a479fdeab492afe4752d945c739a262c77394c0b4d4aab17f161668b5ffeb",
+      "technicalMetadata": {
+        "FID": "AR_Invoice_QRCodeFrm",
+        "KeyID": "T2",
+        "SubID": "PK",
+        "SubValue": "",
+        "value": "UserAutoID"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301353",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301353,
+        301353
+      ],
+      "decodedStatementSha256": "c7a26c82ea0475ca42fdac7ebaf94b95f08dab505567fd047a55e67db8c888a5",
+      "technicalMetadata": {
+        "FID": "AR_Invoice_QRCodeFrm",
+        "KeyID": "T2",
+        "SubID": "TN",
+        "SubValue": "",
+        "value": "AR_InvoiceDetailTbl"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301360",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301360,
+        301360
+      ],
+      "decodedStatementSha256": "fada451a303dd76d383a260036caf0dd7a9e54e07a04a7463b6693bbba2eac20",
+      "technicalMetadata": {
+        "FID": "AR_Invoice_QRCodeFrm",
+        "KeyID": "T2",
+        "SubID": "DCP",
+        "SubValue": "",
+        "value": "Chi ti\u1ebft phi\u1ebfu xu\u1ea5t"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301361",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301361,
+        301361
+      ],
+      "decodedStatementSha256": "75ad540e41bb1cfad5861bee5e13a60fd83df54f0e850ed1409a1974cef18c45",
+      "technicalMetadata": {
+        "FID": "AR_Invoice_QRCodeFrm",
+        "KeyID": "T1",
+        "SubID": "DCP",
+        "SubValue": "",
+        "value": "QR Code"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301367",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301367,
+        301367
+      ],
+      "decodedStatementSha256": "6769051a45c61adcadf2c7b7afb22d9f72f226e1ca5b3e9a2b276cb8ded605bc",
+      "technicalMetadata": {
+        "FID": "IV_Output_QRCodeFrm",
+        "KeyID": "T1",
+        "SubID": "DCP",
+        "SubValue": "",
+        "value": "QR Code"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301368",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301368,
+        301368
+      ],
+      "decodedStatementSha256": "e90c5688f061b7d19c25d6ea26e750a8e77750e5975c5defd1f267cf91d23cd9",
+      "technicalMetadata": {
+        "FID": "AR_Invoice_QRCodeFrm",
+        "KeyID": "T1",
+        "SubID": "SUM",
+        "SubValue": "",
+        "value": "Quantity"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301369",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301369,
+        301369
+      ],
+      "decodedStatementSha256": "d5a61e5bc4703845e72f2f11a0280c3fa8f6354bb27d1031f183bbed2b7cd262",
+      "technicalMetadata": {
+        "FID": "IV_Output_QRCodeFrm",
+        "KeyID": "T1",
+        "SubID": "SUM",
+        "SubValue": "",
+        "value": "Quantity"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301370",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301370,
+        301370
+      ],
+      "decodedStatementSha256": "10714c32d90a8482fd1acdae603efb128ecb489b2484396d15d91cecc251f82d",
+      "technicalMetadata": {
+        "FID": "AR_Invoice_QRCodeFrm",
+        "KeyID": "LYS1",
+        "SubID": "BarcodeInputCtl_1",
+        "SubValue": "RL",
+        "value": "1"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301371",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301371,
+        301371
+      ],
+      "decodedStatementSha256": "b92599a5af852a2633c034700052c1474f5666f432a690f02c76f36207fb0d38",
+      "technicalMetadata": {
+        "FID": "AR_Invoice_QRCodeFrm",
+        "KeyID": "LYS1",
+        "SubID": "BarcodeInputCtl_1",
+        "SubValue": "F2",
+        "value": "DocumentID"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301372",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301372,
+        301372
+      ],
+      "decodedStatementSha256": "747380f13f15f5b33e739bfb08ebc1b7a5d06f330e633f6da9da008079854d1c",
+      "technicalMetadata": {
+        "FID": "AR_Invoice_QRCodeFrm",
+        "KeyID": "LYS1",
+        "SubID": "BarcodeInputCtl_1",
+        "SubValue": "C2",
+        "value": "SaveContinue"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301373",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301373,
+        301373
+      ],
+      "decodedStatementSha256": "b609fdd0d0b5456be6ed2235b004bfe6caa90cfa2f95a4d3c413ba6ab34b17d5",
+      "technicalMetadata": {
+        "FID": "AR_Invoice_QRCodeFrm",
+        "KeyID": "LYS1",
+        "SubID": "BarcodeInputCtl_1",
+        "SubValue": "F1",
+        "binding": {
+          "procedure": "dbo.CF_QRcodeStp",
+          "parameterSources": [
+            "barcode-placeholder-0",
+            "document-id-placeholder-1"
+          ],
+          "target": "AR_INVOICE",
+          "action": "DELETE"
+        }
+      }
+    },
+    {
+      "evidenceId": "sql-line-301374",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301374,
+        301374
+      ],
+      "decodedStatementSha256": "db636bb38960c941154d1e9f797dcc5f8842cb55a11b7f8b6d631692f129ccf5",
+      "technicalMetadata": {
+        "FID": "AR_Invoice_QRCodeFrm",
+        "KeyID": "LYS1",
+        "SubID": "BarcodeInputCtl_1",
+        "SubValue": "Inx",
+        "value": "2"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301375",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301375,
+        301375
+      ],
+      "decodedStatementSha256": "0011aaf08ac7896121b27a9d22fab76a29ef4f3b30c091ef83831b2efc185b8e",
+      "technicalMetadata": {
+        "FID": "AR_Invoice_QRCodeFrm",
+        "KeyID": "LYT1",
+        "SubID": "BarcodeInputCtl_1",
+        "SubValue": "025",
+        "value": "22;5;1;;;;;Barcode x\u00f3a;;;;;;;2;;;;;0;0"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301376",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301376,
+        301376
+      ],
+      "decodedStatementSha256": "4295f7b67e0ad1d84e0aee998f7f5b2bae6b7528b73f10353b266af4e3171ca7",
+      "technicalMetadata": {
+        "FID": "IV_Output_QRCodeFrm",
+        "KeyID": "LYS1",
+        "SubID": "BarcodeInputCtl_1",
+        "SubValue": "C2",
+        "value": "SaveContinue"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301377",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301377,
+        301377
+      ],
+      "decodedStatementSha256": "4940d918cf018a6f808176d76b9b95bbb126d796cd010f86901e199ee37f7059",
+      "technicalMetadata": {
+        "FID": "IV_Output_QRCodeFrm",
+        "KeyID": "LYS1",
+        "SubID": "BarcodeInputCtl_1",
+        "SubValue": "F1",
+        "binding": {
+          "procedure": "dbo.CF_QRcodeStp",
+          "parameterSources": [
+            "barcode-placeholder-0",
+            "document-id-placeholder-1"
+          ],
+          "target": "IV_OUTPUT",
+          "action": "DELETE"
+        }
+      }
+    },
+    {
+      "evidenceId": "sql-line-301378",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301378,
+        301378
+      ],
+      "decodedStatementSha256": "7b1645fb75c219cec642be7028846b58a25151200552b3ad8425732466a7662c",
+      "technicalMetadata": {
+        "FID": "IV_Output_QRCodeFrm",
+        "KeyID": "LYS1",
+        "SubID": "BarcodeInputCtl_1",
+        "SubValue": "F2",
+        "value": "DocumentID"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301379",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301379,
+        301379
+      ],
+      "decodedStatementSha256": "d19d5caa4dc374def52ab5692ea5bca433a15d35225d0441dce6292576c116f6",
+      "technicalMetadata": {
+        "FID": "IV_Output_QRCodeFrm",
+        "KeyID": "LYS1",
+        "SubID": "BarcodeInputCtl_1",
+        "SubValue": "Inx",
+        "value": "2"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301380",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301380,
+        301380
+      ],
+      "decodedStatementSha256": "faec097f236d68165ca44fe7a9c22cb885e8b558cceb8be8b919aea25e3fae2c",
+      "technicalMetadata": {
+        "FID": "IV_Output_QRCodeFrm",
+        "KeyID": "LYS1",
+        "SubID": "BarcodeInputCtl_1",
+        "SubValue": "RL",
+        "value": "1"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301381",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301381,
+        301381
+      ],
+      "decodedStatementSha256": "5119d9a6980e056606a93b50aa8fa0507892b37467de2c209e1341a5b9a46a2a",
+      "technicalMetadata": {
+        "FID": "IV_Output_QRCodeFrm",
+        "KeyID": "LYT1",
+        "SubID": "BarcodeInputCtl_1",
+        "SubValue": "018",
+        "value": "22;5;1;;;;;Barcode x\u00f3a;;;;;;;2;;;;;0;0"
+      }
+    },
+    {
+      "evidenceId": "sql-line-301654",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        301654,
+        301654
+      ],
+      "decodedStatementSha256": "a231bbc6f77460b8352c16235a97bd0af890d58f115d27136f3b5269e9928cad",
+      "technicalMetadata": {
+        "FID": "IV_Output_QRCodeFrm",
+        "KeyID": "LYS1",
+        "SubID": "BarcodeInputCtl",
+        "SubValue": "F2",
+        "value": "DocumentID"
+      }
+    },
+    {
+      "evidenceId": "sql-line-302882",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        302882,
+        302882
+      ],
+      "decodedStatementSha256": "808060e14923536a15eafc37c2aaf41964f1464464372ac619dbb0bee486b010",
+      "technicalMetadata": {
+        "FID": "IV_Output_QRCodeFrm",
+        "KeyID": "LYS1",
+        "SubID": "PrintButtonCtl",
+        "SubValue": "C4",
+        "binding": {
+          "procedure": "dbo.AR_PurchaseQRCodeReportStp",
+          "parameterSources": [
+            "document-id-placeholder-0"
+          ]
+        }
+      }
+    },
+    {
+      "evidenceId": "sql-line-303043",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        303043,
+        303043
+      ],
+      "decodedStatementSha256": "bc77bad528230f4db24b24539c8091739faab068a14dbdf6a593550f607914eb",
+      "technicalMetadata": {
+        "FID": "IV_Output_QRCodeFrm",
+        "KeyID": "LYS1",
+        "SubID": "PrintButtonCtl",
+        "SubValue": "P1",
+        "value": "DocumentID"
+      }
+    },
+    {
+      "evidenceId": "sql-line-303452",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        303452,
+        303452
+      ],
+      "decodedStatementSha256": "49f63ee50543363cc1b69ae9b3b42ba80e82493c47a7e6d5477776639fb249e5",
+      "technicalMetadata": {
+        "FID": "IV_Output_QRCodeFrm",
+        "KeyID": "LYS1",
+        "SubID": "BarcodeInputCtl",
+        "SubValue": "C2",
+        "value": "SaveContinue"
+      }
+    },
+    {
+      "evidenceId": "sql-line-303888",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        303888,
+        303888
+      ],
+      "decodedStatementSha256": "4ab6cc262c6cec8d3b282d44ab0a6599028c62ecbc5ec821345ab63476701f6d",
+      "technicalMetadata": {
+        "FID": "IV_Output_QRCodeFrm",
+        "KeyID": "LYS1",
+        "SubID": "PrintButtonCtl",
+        "SubValue": "BT",
+        "value": "In m\u00e3 QR"
+      }
+    },
+    {
+      "evidenceId": "sql-line-304127",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        304127,
+        304127
+      ],
+      "decodedStatementSha256": "79e728e2b137d172a75df9f1d843a246957503891cbd4dbacae150533e53bbbe",
+      "technicalMetadata": {
+        "FID": "IV_Output_QRCodeFrm",
+        "KeyID": "LYT1",
+        "SubID": "BarcodeInputCtl",
+        "SubValue": "017",
+        "value": "22;5;1;;;;;Barcode xu\u1ea5t;;;;;;;2;;;;;0;0"
+      }
+    },
+    {
+      "evidenceId": "sql-line-304150",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        304150,
+        304150
+      ],
+      "decodedStatementSha256": "bfb338287a3168bc2ccd919dd13331f2c49d40ba0869d145bd18ba690a4f2c72",
+      "technicalMetadata": {
+        "FID": "IV_Output_QRCodeFrm",
+        "KeyID": "LYS1",
+        "SubID": "BarcodeInputCtl",
+        "SubValue": "F1",
+        "binding": {
+          "procedure": "dbo.CF_QRcodeStp",
+          "parameterSources": [
+            "barcode-placeholder-0",
+            "document-id-placeholder-1"
+          ],
+          "target": "IV_OUTPUT",
+          "action": "ADD"
+        }
+      }
+    },
+    {
+      "evidenceId": "sql-line-304270",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        304270,
+        304270
+      ],
+      "decodedStatementSha256": "0cdb56171264bda7e0dc9726ba5694783a3de3bc28e2e84705928fd151c5b075",
+      "technicalMetadata": {
+        "FID": "IV_Output_QRCodeFrm",
+        "KeyID": "LYT1",
+        "SubID": "PrintButtonCtl",
+        "SubValue": "004",
+        "value": "22;3;1;;1;;;;;;;;;;;;;;;0;0"
+      }
+    },
+    {
+      "evidenceId": "sql-line-305429",
+      "table": "SY_FrmCfg",
+      "sourceLines": [
+        305429,
+        305429
+      ],
+      "decodedStatementSha256": "4da1895096e9090f0afb72b8cd5033b98abfb304f50b3a6fb307d44700606ec0",
+      "technicalMetadata": {
+        "FID": "IV_Output_QRCodeFrm",
+        "KeyID": "LYS1",
+        "SubID": "BarcodeInputCtl",
+        "SubValue": "Inx",
+        "value": "2"
+      }
+    },
+    {
+      "evidenceId": "sql-line-309706",
+      "table": "SY_FrmLstTbl",
+      "sourceLines": [
+        309706,
+        309706
+      ],
+      "decodedStatementSha256": "ecf689ea5d7692b5ae3968eb718b4512352144c1ca4e67a2dda3e8e40f5d465e",
+      "technicalMetadata": {
+        "FormID": "AR_Invoice_QRCodeFrm",
+        "FormType": "EDIT",
+        "CaptionVN": "Xu\u1ea5t b\u00e1n h\u00e0ng"
+      }
+    },
+    {
+      "evidenceId": "sql-line-309918",
+      "table": "SY_FrmLstTbl",
+      "sourceLines": [
+        309918,
+        309918
+      ],
+      "decodedStatementSha256": "a27ec4da527accfb76add93450c58b7b65c458e657b252276c78c3513fd17d57",
+      "technicalMetadata": {
+        "FormID": "IV_Output_QRCodeFrm",
+        "FormType": "EDIT",
+        "CaptionVN": "Xu\u1ea5t kho"
+      }
+    },
+    {
+      "evidenceId": "sql-line-319981",
+      "table": "SY_Menu",
+      "sourceLines": [
+        319981,
+        319981
+      ],
+      "decodedStatementSha256": "2790c5bfc691f74a146f2a4b3b6e841768c7fff10ca2c2eb6f187ed328fee7d2",
+      "technicalMetadata": {
+        "MenuID": "07",
+        "Parent": null,
+        "VN": "Qu\u1ea3n l\u00fd kho",
+        "MenuType": "1",
+        "FormName": null,
+        "Para": "",
+        "isDisable": "0",
+        "isNotCheckPermission": null,
+        "ShowDialog": null,
+        "valueEncoding": "SQL NULL is JSON null; numeric menu flags/types retain their source textual digits."
+      }
+    },
+    {
+      "evidenceId": "sql-line-320000",
+      "table": "SY_Menu",
+      "sourceLines": [
+        320000,
+        320000
+      ],
+      "decodedStatementSha256": "b7b87b7606cf7c710e7b7d0df784d7be57cc0f1efc9e8388ff34d549b20b9f6a",
+      "technicalMetadata": {
+        "MenuID": "07020",
+        "Parent": "07",
+        "VN": "Qu\u00e9t QR-Code",
+        "MenuType": "1",
+        "FormName": "",
+        "Para": null,
+        "isDisable": "0",
+        "isNotCheckPermission": null,
+        "ShowDialog": null,
+        "valueEncoding": "SQL NULL is JSON null; numeric menu flags/types retain their source textual digits."
+      }
+    },
+    {
+      "evidenceId": "sql-line-320001",
+      "table": "SY_Menu",
+      "sourceLines": [
+        320001,
+        320001
+      ],
+      "decodedStatementSha256": "b1267bd7a0dd5c2686baa47f82260f9628e0c77b1e93d53429dab80efc8375ca",
+      "technicalMetadata": {
+        "MenuID": "0702001",
+        "Parent": "07020",
+        "VN": "Xu\u1ea5t kho",
+        "MenuType": "2",
+        "FormName": "IV_Output_QRCodeFrm",
+        "Para": null,
+        "isDisable": "0",
+        "isNotCheckPermission": null,
+        "ShowDialog": "0",
+        "valueEncoding": "SQL NULL is JSON null; numeric menu flags/types retain their source textual digits."
+      }
+    },
+    {
+      "evidenceId": "sql-line-320002",
+      "table": "SY_Menu",
+      "sourceLines": [
+        320002,
+        320002
+      ],
+      "decodedStatementSha256": "87c29c705136ffff7fd9fd8c0e814fe111f82c345b00e20461868fef115e70ec",
+      "technicalMetadata": {
+        "MenuID": "0702010",
+        "Parent": "07020",
+        "VN": "Xu\u1ea5t b\u00e1n h\u00e0ng",
+        "MenuType": "2",
+        "FormName": "AR_Invoice_QRCodeFrm",
+        "Para": null,
+        "isDisable": "0",
+        "isNotCheckPermission": null,
+        "ShowDialog": null,
+        "valueEncoding": "SQL NULL is JSON null; numeric menu flags/types retain their source textual digits."
+      }
+    }
+  ],
+  "privacyReview": {
+    "contents": "Sanitized technical metadata, hashes, source positions, static behavioral summary and synthetic test strings only.",
+    "excluded": [
+      "Procedure bodies",
+      "SQL INSERT statement bodies",
+      "Customer or transaction rows",
+      "Credentials/connection strings",
+      "Archive binaries",
+      "Private filesystem and Library locators"
+    ],
+    "publication": "Root review required; no publication performed."
+  },
+  "implementation": {
+    "slice": "I52",
+    "sourceContractSha256": "272242b7147e76afa9e88315b7a64ffbaedee4e2e05821af8c0e5943a1257b6d",
+    "base": "bba926f951332ffb8547850af2aa13e66da35685",
+    "admissionControl": "b9eb819aea5c37a2359aadb5d1819c5de93ec896",
+    "markerCreatedOrChanged": false,
+    "profile": "PROPOSED_GUARDRAIL_NOT_LEGACY_SEMANTICS",
+    "syntaxProjection": "Ordinal ASCII separators/prefix; lossless UTF-16 projection outside transport profile is diagnostic only, never exact SQL acceptance. Noncanonical package text is unqualified.",
+    "executionCapability": false,
+    "fixtureEncoding": "UTF-16 code units keep unpaired surrogates exact across runtimes; null input is explicit. Hand-authored synthetic expected outputs.",
+    "parityFixtures": [
+      {
+        "id": "plain",
+        "inputUtf16Units": [
+          65,
+          59,
+          66,
+          59,
+          76
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            65,
+            59,
+            66,
+            59,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              65
+            ],
+            "itemCodeUtf16Units": [
+              66
+            ],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": []
+      },
+      {
+        "id": "empty-code",
+        "inputUtf16Units": [
+          65,
+          59,
+          59,
+          76
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            65,
+            59,
+            59,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              65
+            ],
+            "itemCodeUtf16Units": [],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": []
+      },
+      {
+        "id": "space-code",
+        "inputUtf16Units": [
+          32,
+          65,
+          32,
+          59,
+          32,
+          32,
+          32,
+          59,
+          32,
+          76,
+          32
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            65,
+            32,
+            59,
+            32,
+            32,
+            32,
+            59,
+            32,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              65
+            ],
+            "itemCodeUtf16Units": [],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": []
+      },
+      {
+        "id": "preserve-spelling",
+        "inputUtf16Units": [
+          32,
+          65,
+          32,
+          59,
+          32,
+          66,
+          32,
+          59,
+          32,
+          76,
+          32
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            65,
+            32,
+            59,
+            32,
+            66,
+            32,
+            59,
+            32,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              65
+            ],
+            "itemCodeUtf16Units": [
+              66
+            ],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": []
+      },
+      {
+        "id": "crlf-anywhere",
+        "inputUtf16Units": [
+          13,
+          32,
+          65,
+          13,
+          10,
+          59,
+          66,
+          10,
+          59,
+          76,
+          13,
+          32,
+          10
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            65,
+            59,
+            66,
+            59,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              65
+            ],
+            "itemCodeUtf16Units": [
+              66
+            ],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": []
+      },
+      {
+        "id": "internal-spaces",
+        "inputUtf16Units": [
+          65,
+          32,
+          88,
+          59,
+          66,
+          32,
+          89,
+          59,
+          76,
+          32,
+          90
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            65,
+            32,
+            88,
+            59,
+            66,
+            32,
+            89,
+            59,
+            76,
+            32,
+            90
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              65,
+              32,
+              88
+            ],
+            "itemCodeUtf16Units": [
+              66,
+              32,
+              89
+            ],
+            "lotUtf16Units": [
+              76,
+              32,
+              90
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": []
+      },
+      {
+        "id": "null",
+        "inputUtf16Units": null,
+        "expected": {
+          "status": "invalid-syntax",
+          "reason": "empty-barcode",
+          "normalizedUtf16Units": [],
+          "candidate": null,
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "syntax-outside-profile"
+        ]
+      },
+      {
+        "id": "empty",
+        "inputUtf16Units": [],
+        "expected": {
+          "status": "invalid-syntax",
+          "reason": "empty-barcode",
+          "normalizedUtf16Units": [],
+          "candidate": null,
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "syntax-outside-profile"
+        ]
+      },
+      {
+        "id": "spaces-crlf",
+        "inputUtf16Units": [
+          32,
+          13,
+          10,
+          32
+        ],
+        "expected": {
+          "status": "invalid-syntax",
+          "reason": "empty-barcode",
+          "normalizedUtf16Units": [],
+          "candidate": null,
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "syntax-outside-profile"
+        ]
+      },
+      {
+        "id": "zero-delimiter",
+        "inputUtf16Units": [
+          65
+        ],
+        "expected": {
+          "status": "invalid-syntax",
+          "reason": "delimiter-count",
+          "normalizedUtf16Units": [
+            65
+          ],
+          "candidate": null,
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "syntax-outside-profile"
+        ]
+      },
+      {
+        "id": "one-delimiter",
+        "inputUtf16Units": [
+          65,
+          59,
+          76
+        ],
+        "expected": {
+          "status": "invalid-syntax",
+          "reason": "delimiter-count",
+          "normalizedUtf16Units": [
+            65,
+            59,
+            76
+          ],
+          "candidate": null,
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "syntax-outside-profile"
+        ]
+      },
+      {
+        "id": "extra-delimiter",
+        "inputUtf16Units": [
+          65,
+          59,
+          66,
+          59,
+          76,
+          59,
+          88
+        ],
+        "expected": {
+          "status": "invalid-syntax",
+          "reason": "delimiter-count",
+          "normalizedUtf16Units": [
+            65,
+            59,
+            66,
+            59,
+            76,
+            59,
+            88
+          ],
+          "candidate": null,
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "syntax-outside-profile"
+        ]
+      },
+      {
+        "id": "only-delimiters",
+        "inputUtf16Units": [
+          59,
+          59
+        ],
+        "expected": {
+          "status": "invalid-syntax",
+          "reason": "empty-item-id",
+          "normalizedUtf16Units": [
+            59,
+            59
+          ],
+          "candidate": null,
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "syntax-outside-profile"
+        ]
+      },
+      {
+        "id": "missing-item",
+        "inputUtf16Units": [
+          32,
+          59,
+          66,
+          59,
+          76
+        ],
+        "expected": {
+          "status": "invalid-syntax",
+          "reason": "empty-item-id",
+          "normalizedUtf16Units": [
+            59,
+            66,
+            59,
+            76
+          ],
+          "candidate": null,
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "syntax-outside-profile"
+        ]
+      },
+      {
+        "id": "missing-lot",
+        "inputUtf16Units": [
+          65,
+          59,
+          66,
+          59,
+          32
+        ],
+        "expected": {
+          "status": "invalid-syntax",
+          "reason": "empty-lot",
+          "normalizedUtf16Units": [
+            65,
+            59,
+            66,
+            59
+          ],
+          "candidate": null,
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "syntax-outside-profile"
+        ]
+      },
+      {
+        "id": "tab",
+        "inputUtf16Units": [
+          9,
+          59,
+          59,
+          76
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            9,
+            59,
+            59,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              9
+            ],
+            "itemCodeUtf16Units": [],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "barcode-outside-ascii"
+        ]
+      },
+      {
+        "id": "nbsp",
+        "inputUtf16Units": [
+          160,
+          59,
+          59,
+          76
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            160,
+            59,
+            59,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              160
+            ],
+            "itemCodeUtf16Units": [],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "barcode-outside-ascii"
+        ]
+      },
+      {
+        "id": "bom",
+        "inputUtf16Units": [
+          65279,
+          59,
+          59,
+          76
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            65279,
+            59,
+            59,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              65279
+            ],
+            "itemCodeUtf16Units": [],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "barcode-outside-ascii"
+        ]
+      },
+      {
+        "id": "vt",
+        "inputUtf16Units": [
+          11,
+          59,
+          59,
+          76
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            11,
+            59,
+            59,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              11
+            ],
+            "itemCodeUtf16Units": [],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "barcode-outside-ascii"
+        ]
+      },
+      {
+        "id": "ff",
+        "inputUtf16Units": [
+          12,
+          59,
+          59,
+          76
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            12,
+            59,
+            59,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              12
+            ],
+            "itemCodeUtf16Units": [],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "barcode-outside-ascii"
+        ]
+      },
+      {
+        "id": "nel",
+        "inputUtf16Units": [
+          133,
+          59,
+          59,
+          76
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            133,
+            59,
+            59,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              133
+            ],
+            "itemCodeUtf16Units": [],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "barcode-outside-ascii"
+        ]
+      },
+      {
+        "id": "nul",
+        "inputUtf16Units": [
+          0,
+          59,
+          59,
+          76
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            0,
+            59,
+            59,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              0
+            ],
+            "itemCodeUtf16Units": [],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "barcode-outside-ascii"
+        ]
+      },
+      {
+        "id": "del",
+        "inputUtf16Units": [
+          127,
+          59,
+          59,
+          76
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            127,
+            59,
+            59,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              127
+            ],
+            "itemCodeUtf16Units": [],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "barcode-outside-ascii"
+        ]
+      },
+      {
+        "id": "accent",
+        "inputUtf16Units": [
+          233,
+          59,
+          59,
+          76
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            233,
+            59,
+            59,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              233
+            ],
+            "itemCodeUtf16Units": [],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "barcode-outside-ascii"
+        ]
+      },
+      {
+        "id": "fullwidth",
+        "inputUtf16Units": [
+          65328,
+          65323,
+          65319,
+          65297,
+          59,
+          59,
+          76
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            65328,
+            65323,
+            65319,
+            65297,
+            59,
+            59,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              65328,
+              65323,
+              65319,
+              65297
+            ],
+            "itemCodeUtf16Units": [],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "barcode-outside-ascii"
+        ]
+      },
+      {
+        "id": "emoji",
+        "inputUtf16Units": [
+          55357,
+          56832,
+          59,
+          59,
+          76
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            55357,
+            56832,
+            59,
+            59,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              55357,
+              56832
+            ],
+            "itemCodeUtf16Units": [],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "barcode-outside-ascii"
+        ]
+      },
+      {
+        "id": "high-surrogate",
+        "inputUtf16Units": [
+          55296,
+          59,
+          59,
+          76
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            55296,
+            59,
+            59,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              55296
+            ],
+            "itemCodeUtf16Units": [],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "barcode-outside-ascii"
+        ]
+      },
+      {
+        "id": "low-surrogate",
+        "inputUtf16Units": [
+          56320,
+          59,
+          59,
+          76
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            56320,
+            59,
+            59,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              56320
+            ],
+            "itemCodeUtf16Units": [],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "barcode-outside-ascii"
+        ]
+      },
+      {
+        "id": "tabs-not-empty",
+        "inputUtf16Units": [
+          9,
+          59,
+          59,
+          9
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            9,
+            59,
+            59,
+            9
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              9
+            ],
+            "itemCodeUtf16Units": [],
+            "lotUtf16Units": [
+              9
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "barcode-outside-ascii"
+        ]
+      },
+      {
+        "id": "no-unicode-normalization",
+        "inputUtf16Units": [
+          101,
+          769,
+          59,
+          59,
+          76
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            101,
+            769,
+            59,
+            59,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              101,
+              769
+            ],
+            "itemCodeUtf16Units": [],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "barcode-outside-ascii"
+        ]
+      },
+      {
+        "id": "ascii-case-is-not-identity",
+        "inputUtf16Units": [
+          97,
+          59,
+          98,
+          59,
+          108
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            97,
+            59,
+            98,
+            59,
+            108
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              97
+            ],
+            "itemCodeUtf16Units": [
+              98
+            ],
+            "lotUtf16Units": [
+              108
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": []
+      },
+      {
+        "id": "all-components-50",
+        "inputUtf16Units": [
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          59,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          59,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            59,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            59,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65
+            ],
+            "itemCodeUtf16Units": [
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66
+            ],
+            "lotUtf16Units": [
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": []
+      },
+      {
+        "id": "item-id-51",
+        "inputUtf16Units": [
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          59,
+          66,
+          59,
+          76
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            65,
+            59,
+            66,
+            59,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65,
+              65
+            ],
+            "itemCodeUtf16Units": [
+              66
+            ],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "item-id-over-50"
+        ]
+      },
+      {
+        "id": "item-code-51",
+        "inputUtf16Units": [
+          65,
+          59,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          66,
+          59,
+          76
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            65,
+            59,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            66,
+            59,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              65
+            ],
+            "itemCodeUtf16Units": [
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66,
+              66
+            ],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "item-code-over-50"
+        ]
+      },
+      {
+        "id": "lot-51",
+        "inputUtf16Units": [
+          65,
+          59,
+          66,
+          59,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            65,
+            59,
+            66,
+            59,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              65
+            ],
+            "itemCodeUtf16Units": [
+              66
+            ],
+            "lotUtf16Units": [
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76,
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "lot-over-50"
+        ]
+      },
+      {
+        "id": "utf16-50",
+        "inputUtf16Units": [
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          59,
+          59,
+          76
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            59,
+            59,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832
+            ],
+            "itemCodeUtf16Units": [],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "barcode-outside-ascii"
+        ]
+      },
+      {
+        "id": "utf16-52",
+        "inputUtf16Units": [
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          55357,
+          56832,
+          59,
+          59,
+          76
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            55357,
+            56832,
+            59,
+            59,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832,
+              55357,
+              56832
+            ],
+            "itemCodeUtf16Units": [],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "barcode-outside-ascii",
+          "item-id-over-50"
+        ]
+      },
+      {
+        "id": "normalized-200",
+        "inputUtf16Units": [
+          65,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          59,
+          59,
+          76
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            65,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            59,
+            59,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              65
+            ],
+            "itemCodeUtf16Units": [],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": []
+      },
+      {
+        "id": "normalized-201",
+        "inputUtf16Units": [
+          65,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          59,
+          59,
+          76
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            65,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32,
+            59,
+            59,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              65
+            ],
+            "itemCodeUtf16Units": [],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "normalized-barcode-over-200"
+        ]
+      },
+      {
+        "id": "raw-250",
+        "inputUtf16Units": [
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          65,
+          59,
+          59,
+          76
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            65,
+            59,
+            59,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              65
+            ],
+            "itemCodeUtf16Units": [],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": []
+      },
+      {
+        "id": "raw-251",
+        "inputUtf16Units": [
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          65,
+          59,
+          59,
+          76
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            65,
+            59,
+            59,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              65
+            ],
+            "itemCodeUtf16Units": [],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "raw-barcode-over-250"
+        ]
+      },
+      {
+        "id": "raw-crlf-counted",
+        "inputUtf16Units": [
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          65,
+          59,
+          59,
+          76
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            65,
+            59,
+            59,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              65
+            ],
+            "itemCodeUtf16Units": [],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "raw-barcode-over-250"
+        ]
+      },
+      {
+        "id": "prefix-PKG1;",
+        "inputUtf16Units": [
+          80,
+          75,
+          71,
+          49,
+          59,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          45,
+          56,
+          57,
+          65,
+          66,
+          45,
+          67,
+          68,
+          69,
+          70,
+          45,
+          48,
+          49,
+          50,
+          51,
+          45,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            80,
+            75,
+            71,
+            49,
+            59,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            45,
+            56,
+            57,
+            65,
+            66,
+            45,
+            67,
+            68,
+            69,
+            70,
+            45,
+            48,
+            49,
+            50,
+            51,
+            45,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            65,
+            66,
+            67,
+            68,
+            69,
+            70
+          ],
+          "candidate": {
+            "kind": "package",
+            "packageId": "01234567-89ab-cdef-0123-456789abcdef",
+            "needsLookup": true
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": []
+      },
+      {
+        "id": "prefix-pkg1;",
+        "inputUtf16Units": [
+          112,
+          107,
+          103,
+          49,
+          59,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          45,
+          56,
+          57,
+          65,
+          66,
+          45,
+          67,
+          68,
+          69,
+          70,
+          45,
+          48,
+          49,
+          50,
+          51,
+          45,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            112,
+            107,
+            103,
+            49,
+            59,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            45,
+            56,
+            57,
+            65,
+            66,
+            45,
+            67,
+            68,
+            69,
+            70,
+            45,
+            48,
+            49,
+            50,
+            51,
+            45,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            65,
+            66,
+            67,
+            68,
+            69,
+            70
+          ],
+          "candidate": {
+            "kind": "package",
+            "packageId": "01234567-89ab-cdef-0123-456789abcdef",
+            "needsLookup": true
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": []
+      },
+      {
+        "id": "prefix-PkG1;",
+        "inputUtf16Units": [
+          80,
+          107,
+          71,
+          49,
+          59,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          45,
+          56,
+          57,
+          65,
+          66,
+          45,
+          67,
+          68,
+          69,
+          70,
+          45,
+          48,
+          49,
+          50,
+          51,
+          45,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            80,
+            107,
+            71,
+            49,
+            59,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            45,
+            56,
+            57,
+            65,
+            66,
+            45,
+            67,
+            68,
+            69,
+            70,
+            45,
+            48,
+            49,
+            50,
+            51,
+            45,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            65,
+            66,
+            67,
+            68,
+            69,
+            70
+          ],
+          "candidate": {
+            "kind": "package",
+            "packageId": "01234567-89ab-cdef-0123-456789abcdef",
+            "needsLookup": true
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": []
+      },
+      {
+        "id": "zero",
+        "inputUtf16Units": [
+          80,
+          75,
+          71,
+          49,
+          59,
+          48,
+          48,
+          48,
+          48,
+          48,
+          48,
+          48,
+          48,
+          45,
+          48,
+          48,
+          48,
+          48,
+          45,
+          48,
+          48,
+          48,
+          48,
+          45,
+          48,
+          48,
+          48,
+          48,
+          45,
+          48,
+          48,
+          48,
+          48,
+          48,
+          48,
+          48,
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            80,
+            75,
+            71,
+            49,
+            59,
+            48,
+            48,
+            48,
+            48,
+            48,
+            48,
+            48,
+            48,
+            45,
+            48,
+            48,
+            48,
+            48,
+            45,
+            48,
+            48,
+            48,
+            48,
+            45,
+            48,
+            48,
+            48,
+            48,
+            45,
+            48,
+            48,
+            48,
+            48,
+            48,
+            48,
+            48,
+            48,
+            48,
+            48,
+            48,
+            48
+          ],
+          "candidate": {
+            "kind": "package",
+            "packageId": "00000000-0000-0000-0000-000000000000",
+            "needsLookup": true
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": []
+      },
+      {
+        "id": "arbitrary-bits",
+        "inputUtf16Units": [
+          80,
+          75,
+          71,
+          49,
+          59,
+          70,
+          70,
+          70,
+          70,
+          70,
+          70,
+          70,
+          70,
+          45,
+          70,
+          70,
+          70,
+          70,
+          45,
+          70,
+          70,
+          70,
+          70,
+          45,
+          70,
+          70,
+          70,
+          70,
+          45,
+          70,
+          70,
+          70,
+          70,
+          70,
+          70,
+          70,
+          70,
+          70,
+          70,
+          70,
+          70
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            80,
+            75,
+            71,
+            49,
+            59,
+            70,
+            70,
+            70,
+            70,
+            70,
+            70,
+            70,
+            70,
+            45,
+            70,
+            70,
+            70,
+            70,
+            45,
+            70,
+            70,
+            70,
+            70,
+            45,
+            70,
+            70,
+            70,
+            70,
+            45,
+            70,
+            70,
+            70,
+            70,
+            70,
+            70,
+            70,
+            70,
+            70,
+            70,
+            70,
+            70
+          ],
+          "candidate": {
+            "kind": "package",
+            "packageId": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+            "needsLookup": true
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": []
+      },
+      {
+        "id": "package-crlf-spaces",
+        "inputUtf16Units": [
+          32,
+          112,
+          75,
+          103,
+          49,
+          59,
+          48,
+          49,
+          50,
+          51,
+          52,
+          13,
+          10,
+          53,
+          54,
+          55,
+          45,
+          56,
+          57,
+          65,
+          66,
+          45,
+          67,
+          68,
+          69,
+          70,
+          45,
+          48,
+          49,
+          50,
+          51,
+          45,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70,
+          32
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            112,
+            75,
+            103,
+            49,
+            59,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            45,
+            56,
+            57,
+            65,
+            66,
+            45,
+            67,
+            68,
+            69,
+            70,
+            45,
+            48,
+            49,
+            50,
+            51,
+            45,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            65,
+            66,
+            67,
+            68,
+            69,
+            70
+          ],
+          "candidate": {
+            "kind": "package",
+            "packageId": "01234567-89ab-cdef-0123-456789abcdef",
+            "needsLookup": true
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": []
+      },
+      {
+        "id": "guid-empty",
+        "inputUtf16Units": [
+          80,
+          75,
+          71,
+          49,
+          59
+        ],
+        "expected": {
+          "status": "unqualified",
+          "reason": "package-length-outside-canonical-profile",
+          "normalizedUtf16Units": [
+            80,
+            75,
+            71,
+            49,
+            59
+          ],
+          "candidate": null,
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "syntax-outside-profile"
+        ]
+      },
+      {
+        "id": "guid-braced",
+        "inputUtf16Units": [
+          80,
+          75,
+          71,
+          49,
+          59,
+          123,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          45,
+          56,
+          57,
+          65,
+          66,
+          45,
+          67,
+          68,
+          69,
+          70,
+          45,
+          48,
+          49,
+          50,
+          51,
+          45,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70,
+          125
+        ],
+        "expected": {
+          "status": "unqualified",
+          "reason": "package-length-outside-canonical-profile",
+          "normalizedUtf16Units": [
+            80,
+            75,
+            71,
+            49,
+            59,
+            123,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            45,
+            56,
+            57,
+            65,
+            66,
+            45,
+            67,
+            68,
+            69,
+            70,
+            45,
+            48,
+            49,
+            50,
+            51,
+            45,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            65,
+            66,
+            67,
+            68,
+            69,
+            70,
+            125
+          ],
+          "candidate": null,
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "syntax-outside-profile"
+        ]
+      },
+      {
+        "id": "guid-compact",
+        "inputUtf16Units": [
+          80,
+          75,
+          71,
+          49,
+          59,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70
+        ],
+        "expected": {
+          "status": "unqualified",
+          "reason": "package-length-outside-canonical-profile",
+          "normalizedUtf16Units": [
+            80,
+            75,
+            71,
+            49,
+            59,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            65,
+            66,
+            67,
+            68,
+            69,
+            70,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            65,
+            66,
+            67,
+            68,
+            69,
+            70
+          ],
+          "candidate": null,
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "syntax-outside-profile"
+        ]
+      },
+      {
+        "id": "guid-urn",
+        "inputUtf16Units": [
+          80,
+          75,
+          71,
+          49,
+          59,
+          117,
+          114,
+          110,
+          58,
+          117,
+          117,
+          105,
+          100,
+          58,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          45,
+          56,
+          57,
+          65,
+          66,
+          45,
+          67,
+          68,
+          69,
+          70,
+          45,
+          48,
+          49,
+          50,
+          51,
+          45,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70
+        ],
+        "expected": {
+          "status": "unqualified",
+          "reason": "package-length-outside-canonical-profile",
+          "normalizedUtf16Units": [
+            80,
+            75,
+            71,
+            49,
+            59,
+            117,
+            114,
+            110,
+            58,
+            117,
+            117,
+            105,
+            100,
+            58,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            45,
+            56,
+            57,
+            65,
+            66,
+            45,
+            67,
+            68,
+            69,
+            70,
+            45,
+            48,
+            49,
+            50,
+            51,
+            45,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            65,
+            66,
+            67,
+            68,
+            69,
+            70
+          ],
+          "candidate": null,
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "syntax-outside-profile"
+        ]
+      },
+      {
+        "id": "guid-suffix",
+        "inputUtf16Units": [
+          80,
+          75,
+          71,
+          49,
+          59,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          45,
+          56,
+          57,
+          65,
+          66,
+          45,
+          67,
+          68,
+          69,
+          70,
+          45,
+          48,
+          49,
+          50,
+          51,
+          45,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70,
+          88
+        ],
+        "expected": {
+          "status": "unqualified",
+          "reason": "package-length-outside-canonical-profile",
+          "normalizedUtf16Units": [
+            80,
+            75,
+            71,
+            49,
+            59,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            45,
+            56,
+            57,
+            65,
+            66,
+            45,
+            67,
+            68,
+            69,
+            70,
+            45,
+            48,
+            49,
+            50,
+            51,
+            45,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            65,
+            66,
+            67,
+            68,
+            69,
+            70,
+            88
+          ],
+          "candidate": null,
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "syntax-outside-profile"
+        ]
+      },
+      {
+        "id": "guid-extra-separator",
+        "inputUtf16Units": [
+          80,
+          75,
+          71,
+          49,
+          59,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          45,
+          56,
+          57,
+          65,
+          66,
+          45,
+          67,
+          68,
+          69,
+          70,
+          45,
+          48,
+          49,
+          50,
+          51,
+          45,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70,
+          59,
+          88
+        ],
+        "expected": {
+          "status": "unqualified",
+          "reason": "package-length-outside-canonical-profile",
+          "normalizedUtf16Units": [
+            80,
+            75,
+            71,
+            49,
+            59,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            45,
+            56,
+            57,
+            65,
+            66,
+            45,
+            67,
+            68,
+            69,
+            70,
+            45,
+            48,
+            49,
+            50,
+            51,
+            45,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            65,
+            66,
+            67,
+            68,
+            69,
+            70,
+            59,
+            88
+          ],
+          "candidate": null,
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "syntax-outside-profile"
+        ]
+      },
+      {
+        "id": "guid-bad-hex",
+        "inputUtf16Units": [
+          80,
+          75,
+          71,
+          49,
+          59,
+          90,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          45,
+          56,
+          57,
+          65,
+          66,
+          45,
+          67,
+          68,
+          69,
+          70,
+          45,
+          48,
+          49,
+          50,
+          51,
+          45,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70
+        ],
+        "expected": {
+          "status": "unqualified",
+          "reason": "guid-outside-canonical-profile",
+          "normalizedUtf16Units": [
+            80,
+            75,
+            71,
+            49,
+            59,
+            90,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            45,
+            56,
+            57,
+            65,
+            66,
+            45,
+            67,
+            68,
+            69,
+            70,
+            45,
+            48,
+            49,
+            50,
+            51,
+            45,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            65,
+            66,
+            67,
+            68,
+            69,
+            70
+          ],
+          "candidate": null,
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "syntax-outside-profile"
+        ]
+      },
+      {
+        "id": "guid-bad-hyphen",
+        "inputUtf16Units": [
+          80,
+          75,
+          71,
+          49,
+          59,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          95,
+          56,
+          57,
+          65,
+          66,
+          45,
+          67,
+          68,
+          69,
+          70,
+          45,
+          48,
+          49,
+          50,
+          51,
+          45,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70
+        ],
+        "expected": {
+          "status": "unqualified",
+          "reason": "guid-outside-canonical-profile",
+          "normalizedUtf16Units": [
+            80,
+            75,
+            71,
+            49,
+            59,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            95,
+            56,
+            57,
+            65,
+            66,
+            45,
+            67,
+            68,
+            69,
+            70,
+            45,
+            48,
+            49,
+            50,
+            51,
+            45,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            65,
+            66,
+            67,
+            68,
+            69,
+            70
+          ],
+          "candidate": null,
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "syntax-outside-profile"
+        ]
+      },
+      {
+        "id": "guid-guid-tab",
+        "inputUtf16Units": [
+          80,
+          75,
+          71,
+          49,
+          59,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          45,
+          56,
+          57,
+          65,
+          66,
+          45,
+          67,
+          68,
+          69,
+          70,
+          45,
+          48,
+          49,
+          50,
+          51,
+          45,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          65,
+          66,
+          67,
+          68,
+          69,
+          9
+        ],
+        "expected": {
+          "status": "unqualified",
+          "reason": "guid-outside-canonical-profile",
+          "normalizedUtf16Units": [
+            80,
+            75,
+            71,
+            49,
+            59,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            45,
+            56,
+            57,
+            65,
+            66,
+            45,
+            67,
+            68,
+            69,
+            70,
+            45,
+            48,
+            49,
+            50,
+            51,
+            45,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            65,
+            66,
+            67,
+            68,
+            69,
+            9
+          ],
+          "candidate": null,
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "barcode-outside-ascii",
+          "syntax-outside-profile"
+        ]
+      },
+      {
+        "id": "prefix-not-package",
+        "inputUtf16Units": [
+          80,
+          75,
+          71,
+          50,
+          59,
+          59,
+          76
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            80,
+            75,
+            71,
+            50,
+            59,
+            59,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              80,
+              75,
+              71,
+              50
+            ],
+            "itemCodeUtf16Units": [],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": []
+      },
+      {
+        "id": "url-no-fallback",
+        "inputUtf16Units": [
+          104,
+          116,
+          116,
+          112,
+          115,
+          58,
+          47,
+          47,
+          101,
+          120,
+          97,
+          109,
+          112,
+          108,
+          101,
+          46,
+          105,
+          110,
+          118,
+          97,
+          108,
+          105,
+          100,
+          47,
+          120
+        ],
+        "expected": {
+          "status": "invalid-syntax",
+          "reason": "delimiter-count",
+          "normalizedUtf16Units": [
+            104,
+            116,
+            116,
+            112,
+            115,
+            58,
+            47,
+            47,
+            101,
+            120,
+            97,
+            109,
+            112,
+            108,
+            101,
+            46,
+            105,
+            110,
+            118,
+            97,
+            108,
+            105,
+            100,
+            47,
+            120
+          ],
+          "candidate": null,
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": [
+          "syntax-outside-profile"
+        ]
+      },
+      {
+        "id": "target-text-is-item",
+        "inputUtf16Units": [
+          73,
+          86,
+          95,
+          79,
+          85,
+          84,
+          80,
+          85,
+          84,
+          59,
+          68,
+          69,
+          76,
+          69,
+          84,
+          69,
+          59,
+          76
+        ],
+        "expected": {
+          "status": "candidate",
+          "reason": null,
+          "normalizedUtf16Units": [
+            73,
+            86,
+            95,
+            79,
+            85,
+            84,
+            80,
+            85,
+            84,
+            59,
+            68,
+            69,
+            76,
+            69,
+            84,
+            69,
+            59,
+            76
+          ],
+          "candidate": {
+            "kind": "ordinary",
+            "itemIdUtf16Units": [
+              73,
+              86,
+              95,
+              79,
+              85,
+              84,
+              80,
+              85,
+              84
+            ],
+            "itemCodeUtf16Units": [
+              68,
+              69,
+              76,
+              69,
+              84,
+              69
+            ],
+            "lotUtf16Units": [
+              76
+            ],
+            "unitQuantity": 1
+          },
+          "runtimeEquivalence": "UNKNOWN"
+        },
+        "profileIssues": []
+      }
+    ],
+    "documentFixtures": [
+      {
+        "id": "null",
+        "inputUtf16Units": null,
+        "normalizedUtf16Units": [],
+        "profileIssues": [
+          "empty-document-id"
+        ]
+      },
+      {
+        "id": "empty-spaces",
+        "inputUtf16Units": [
+          32,
+          32
+        ],
+        "normalizedUtf16Units": [],
+        "profileIssues": [
+          "empty-document-id"
+        ]
+      },
+      {
+        "id": "spaces",
+        "inputUtf16Units": [
+          32,
+          65,
+          32
+        ],
+        "normalizedUtf16Units": [
+          65
+        ],
+        "profileIssues": []
+      },
+      {
+        "id": "crlf",
+        "inputUtf16Units": [
+          32,
+          65,
+          13,
+          10,
+          32
+        ],
+        "normalizedUtf16Units": [
+          65,
+          13,
+          10
+        ],
+        "profileIssues": [
+          "document-outside-ascii"
+        ]
+      },
+      {
+        "id": "space-before-final-lf",
+        "inputUtf16Units": [
+          32,
+          65,
+          32,
+          10
+        ],
+        "normalizedUtf16Units": [
+          65,
+          32,
+          10
+        ],
+        "profileIssues": [
+          "document-outside-ascii"
+        ]
+      },
+      {
+        "id": "tab",
+        "inputUtf16Units": [
+          9
+        ],
+        "normalizedUtf16Units": [
+          9
+        ],
+        "profileIssues": [
+          "document-outside-ascii"
+        ]
+      },
+      {
+        "id": "nbsp",
+        "inputUtf16Units": [
+          160
+        ],
+        "normalizedUtf16Units": [
+          160
+        ],
+        "profileIssues": [
+          "document-outside-ascii"
+        ]
+      },
+      {
+        "id": "50",
+        "inputUtf16Units": [
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65
+        ],
+        "normalizedUtf16Units": [
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65
+        ],
+        "profileIssues": []
+      },
+      {
+        "id": "51",
+        "inputUtf16Units": [
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65
+        ],
+        "normalizedUtf16Units": [
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65
+        ],
+        "profileIssues": [
+          "raw-document-over-50"
+        ]
+      },
+      {
+        "id": "raw-padding-51",
+        "inputUtf16Units": [
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          32,
+          65
+        ],
+        "normalizedUtf16Units": [
+          65
+        ],
+        "profileIssues": [
+          "raw-document-over-50"
+        ]
+      }
+    ]
+  }
+}
