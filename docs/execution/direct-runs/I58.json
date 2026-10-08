@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I58",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "6a611c60-5762-47eb-84aa-db3823a74975",
+  "base_sha": "43acecad934f074464426a292d33180a0c131243",
+  "work_branch": "codex/g45-purchase-pilot-startup-i58-20261009",
+  "claim_branch": "medcom-claims/g45/direct/I58",
+  "scope": [
+    "src/backend/Medcom.Api/Program.cs",
+    "src/backend/Medcom.Api/PurchaseRequestPilotStartup.cs",
+    "src/backend/Medcom.Infrastructure/PurchaseRequests/PurchaseRequestPilotConnectionFactory.cs",
+    "tests/backend/Medcom.Api.Tests/PurchaseRequestPilotStartupTests.cs",
+    "tests/backend/Medcom.Api.Tests/PurchaseRequestPilotHttpTests.cs",
+    "apps/medcom-sites/components/erp/mobile-request.tsx",
+    "apps/medcom-sites/components/erp/mobile-request-lines.tsx",
+    "apps/medcom-sites/lib/erp/purchase-request-command-adapter.ts",
+    "apps/medcom-sites/tests/mobile-request.test.mjs",
+    "apps/medcom-sites/tests/purchase-request-integration.test.mjs",
+    "docs/deploy/PURCHASE_PILOT_OPERATOR.md",
+    "docs/execution/direct-runs/I58.json"
+  ],
+  "purpose": "Prepare one explicit server-owned existing-document pilot startup and matching non-structural FE profile using accepted I57; leave default startup and actual deployment write-unavailable.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "runtime_activation_authorized": false,
+  "constraints": [
+    "Root is sole publisher. Marker admission is not implementation. Only listed paths may change. No actual DB/DLL execution, private settings/credentials, deployment, account access changes or live pilot activation.",
+    "Normal Program startup remains unchanged. One explicit operator-selected pilot startup uses existing ApiHost.Build configure seam and existing private configuration loader, ordinary ERP authentication and read-only composition. Missing or malformed permit fails closed; no new HTTP activation route or production acceptance claim.",
+    "Strict server-owned permit pins exact target, binding, tenant/company, actor, branch, one existing document, approval reference and bounded UTC interval. No wildcard, inferred identity, partial widening override or HTTP-supplied permit. No real permit included in source/tests.",
+    "Reuse accepted I57 typed factory/registration and current local session inspector. RuntimeAccepted remains false. No I57 writer/session/SQL/journal/receipt changes, no schema/allocator/Create/Add/Remove activation.",
+    "Reuse existing SQL connection/TLS policy through Infrastructure only. No SQL dependency in Api, no weakened TLS/ingress/CSRF/cookie/auth checks or duplicated connection string policy. Helper creates fresh closed connections; startup must not probe/write target.",
+    "FE existingOnly profile prohibits structural line removal in both visible controls and stale retained callbacks. Adapter rejects missing/additional/duplicate/substituted original line IDs before transport; no silent row restoration, no altered precision or hidden values. Other editor profiles and inbound behavior remain unchanged.",
+    "Preserve original DTO/key/JSON custody, no retry or new intent after unknown outcome. Save and Submit remain separate; fresh authoritative readback required. Lost browser memory custody blocks further experiment; no invented durable recovery.",
+    "Test strict startup/default-off/malformed inputs and full existing HTTP composition through recording providers only. Test real components and adapters for no Remove and no transport on invalid rows, preserving pending/unknown guards and original tests. Exact pinned build/tests and root independent review/hosted CI required before merge.",
+    "No dependencies/projects/workflows or general activation framework. Operator document states exact authorization/login/target verification prerequisites and stop procedure. Live read authorization does not constitute activation of this pilot."
+  ],
+  "created_at": "2026-10-08T22:50:00Z"
+}
