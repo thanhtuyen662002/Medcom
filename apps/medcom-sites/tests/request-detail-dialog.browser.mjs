@@ -510,6 +510,30 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
    }
    assert.equal(await notes().inputValue(),'R1 LAYER RETAINED');assert.equal(await notes().isEnabled(),true);assert.equal(await notes().evaluate((node,original)=>node===original,retainedNotes),!(touchTarget.review&&kind==='purchase'),'Inbound and neutral touches retain the input; purchase review recreates only its field view');
    assert.deepEqual(await snapshot(),before);assert.equal(model.calls.length,beforeCalls);assert.equal(await page.evaluate(()=>window.i43.navCalls.length),1);assert.equal(await page.getByRole('dialog').evaluate(node=>node.contains(document.activeElement)),true);
+   // Every native activation must preserve edit mode, custody and focus.
+   const dialog=page.getByRole('dialog'),reviewReturns=[];
+   const review=()=>dialog.getByRole('button',{name:'Rà soát phiếu',exact:true}),back=()=>dialog.getByRole('button',{name:'Quay lại chỉnh sửa',exact:true});
+   const form=await dialog.locator('form').elementHandle();assert.ok(form);
+   await form.evaluate(form=>{form.__i43Submits=[];form.addEventListener('submit',event=>form.__i43Submits.push({label:event.submitter?.textContent?.trim(),owner:event.submitter?.form===form}));});
+   const submits=()=>form.evaluate(form=>form.__i43Submits);
+   for(const activation of ['click','Enter','Space']){
+    const activate=async locator=>{if(activation==='click')await locator.click();else{await locator.focus();await page.keyboard.press(activation);}};
+    const action=await review().elementHandle();assert.ok(action);assert.equal(await review().getAttribute('type'),'submit');
+    assert.equal(await review().evaluate((node,form)=>node.form===form,form),true,'Review still owns the original form');
+    const submitCount=(await submits()).length;
+    await activate(review());await back().waitFor();await paint();
+    assert.deepEqual((await submits()).slice(submitCount),[{label:'Rà soát phiếu',owner:true}],'Only explicit Review submits for validation');
+    assert.equal(await back().evaluate((node,original)=>node===original,action),true);assert.equal(await back().getAttribute('type'),'button');
+    if(kind==='purchase')assert.equal(await dialog.getByRole('region',{name:'Rà soát thông tin phiếu',exact:true}).locator('label[for$="-notes"] + strong').textContent(),'R1 LAYER RETAINED');
+    else{assert.equal(await notes().inputValue(),'R1 LAYER RETAINED');assert.equal(await notes().isDisabled(),true);}
+    await activate(back());await notes().waitFor();await paint();
+    assert.equal((await submits()).length,submitCount+1,'Back must cancel its native default after the live button changes to submit');
+    assert.equal(await back().count(),0);assert.equal(await notes().isEnabled(),true);assert.equal(await notes().inputValue(),'R1 LAYER RETAINED');
+    assert.equal(await review().evaluate((node,original)=>node===original,action),true,'Retain the focused action DOM node');
+    assert.equal(await review().evaluate(node=>node===document.activeElement),true);assert.equal(await form.evaluate(node=>node.isConnected),true);
+    assert.deepEqual(await snapshot(),before);assert.equal(model.calls.length,beforeCalls);assert.equal(model.calls.filter(call=>call.method==='POST').length,0,'Review/Back never dispatch Save or Submit');
+    reviewReturns.push({activation,submits:(await submits()).length,retainedActionNode:true,retainedFocus:true,zeroExtraHttp:true});
+   }
    await captureViewport('r1-'+kind+'-mobile-dialog-viewport.png',{width:390,height:844});
    await attempt('x');const guard=page.getByRole('alertdialog');await guard.waitFor();
    assert.equal(await guard.evaluate(node=>node.contains(document.activeElement)),true);
@@ -528,7 +552,7 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
    location=await point();assert.equal(await page.evaluate(({x,y})=>!!document.elementFromPoint(x,y)?.closest('.mobile-bottom-nav'),location),true);
    await page.touchscreen.tap(location.x,location.y);assert.equal(await page.evaluate(()=>window.i43.navCalls.length),2,'accepted dismissal exposes the unchanged navigation again');
    assert.equal(model.calls.filter(call=>call.method==='POST').length,0);
-   results.push({case:'R1-mobile-stacking',kind,result:'PASS',layers,touchTarget,guardLayers,lifetime:before,navCalls:await page.evaluate(()=>window.i43.navCalls)});
+   results.push({case:'R1-mobile-stacking',kind,result:'PASS',layers,touchTarget,reviewReturns,guardLayers,lifetime:before,navCalls:await page.evaluate(()=>window.i43.navCalls)});
   });
   for(const kind of ['purchase','inbound'])for(const width of [1280,390])await run(kind+' '+width+' retained dirty dialog and guarded dismissal matrix',async()=>{
    const scenarioViewport={width,height:844},dismissalPaths=width===390?['x','visible','escape']:['x','visible','escape','backdrop'],dismissalViewports=[];let coveredBackdropPoint=null;await start(kind,scenarioViewport.width,scenarioViewport.height);

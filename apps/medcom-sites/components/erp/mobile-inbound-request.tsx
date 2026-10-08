@@ -284,7 +284,8 @@ function InboundEditor({documentId,statusPresentation,access,adapter,onConfirmed
       {state.reviewed&&<div><p>Rà soát: {dirty?"có thay đổi cần lưu riêng":"không có thay đổi chưa lưu"}.</p><p>Dòng sẽ xóa: {currentView.details.map((row,index)=>({row,ordinal:index+1})).filter(({row})=>!state.details.some(next=>next.rowId===row.rowId)).map(({row,ordinal})=>`Dòng ${ordinal}${row.itemId?` · ${row.itemId}`:""}`).join(", ")||"không"}</p></div>}
       <RecordActionBar className={requestStyles.actionBar} presentationAllowed={presentationAllowed&&access.canRead&&access.available&&bindingCurrent}>
         {!state.reviewed?<RequestButton variant="default" type="submit" form={formId} disabled={!ready}>Rà soát phiếu</RequestButton>:<>
-          <RequestButton type="button" disabled={!ready} onClick={()=>{if(isPresentationCurrent())setState(previous=>({...previous,reviewed:false}));}}>Quay lại chỉnh sửa</RequestButton>
+          {/* Back reuses the review submitter's DOM node; cancel activation before its type changes. */}
+          <RequestButton type="button" disabled={!ready} onClick={event=>{event.preventDefault();if(isPresentationCurrent())setState(previous=>({...previous,reviewed:false}));}}>Quay lại chỉnh sửa</RequestButton>
           <RequestButton type="button" disabled={!ready||!access.canSave||!dirty} onClick={()=>void dispatch("Save")}>Lưu thay đổi</RequestButton>
           <RequestButton variant="default" type="button" disabled={!ready||!access.canSend||dirty||!!state.errors.note||!canSend(currentView)} onClick={()=>void dispatch("SendToWarehouse")}>Gửi yêu cầu nhập kho</RequestButton>
         </>}

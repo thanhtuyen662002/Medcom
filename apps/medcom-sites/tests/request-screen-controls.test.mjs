@@ -141,6 +141,32 @@ async function host(kind,options={}){
  await render({});return{model,calls,denied,held,registrations,root:()=>renderer.root,props:()=>props,nav:()=>navigation,guard:()=>guard,button,click,open,edit,field,editor,refreshRows,submit,render,flush,close};
 }
 for(const kind of ['purchase','inbound']){
+ test(`${kind}: Back cancels the post-click submit default while retaining the actual editor and action node`,async()=>{
+  const f=await host(kind);try{
+   await f.open('DOC-A');await f.edit('RETAINED REVIEW RETURN');
+   const editor=f.editor(),adapter=editor.props.adapter,form=editor.findByType('form'),calls=f.calls.length;
+   const dirty=f.registrations.findLast(r=>r.value?.canDiscard);assert.ok(dirty);
+   for(let round=0;round<3;round++){
+    const review=f.button('Rà soát phiếu');assert.equal(review.props.type,'submit');assert.equal(review.props.form,form.props.id);
+    await f.submit();const back=f.button('Quay lại chỉnh sửa');assert.ok(back);assert.equal(back.props.type,'button');
+    // Actual React reconciliation runs the real handler. Model only the native
+    // activation default, which observes the live target AFTER that handler.
+    // The browser matrix separately supplies real mouse/Enter/Space activation.
+    const click=new Event('click',{bubbles:true,cancelable:true});
+    await act(async()=>back.props.onClick(click));await f.flush();
+    assert.strictEqual(f.button('Rà soát phiếu'),back,'the focused action node stays mounted');
+    assert.equal(back.props.type,'submit');assert.equal(back.props.form,form.props.id);
+    let defaultSubmits=0;
+    if(!click.defaultPrevented&&back.props.type==='submit'&&back.props.form===form.props.id){defaultSubmits++;await f.submit();}
+    assert.equal(defaultSubmits,0,'Back must not natively resubmit after React turns its node into the review submitter');
+    assert.equal(click.defaultPrevented,true);assert.equal(f.field().props.value,'RETAINED REVIEW RETURN');
+    for(let node=f.field();node;node=node.parent)if(node===f.field()||node.type==='fieldset')assert.ok(!node.props.disabled);
+    assert.strictEqual(f.editor(),editor);assert.strictEqual(f.editor().props.adapter,adapter);assert.strictEqual(editor.findByType('form'),form);
+    assert.equal(f.nav().selectedId,'DOC-A');assert.equal(f.calls.length,calls);assert.ok(f.calls.every(call=>call.method==='GET'));
+    assert.equal(f.guard().isBlocked(),true);assert.strictEqual(f.registrations.findLast(r=>r.key===dirty.key).value,dirty.value);
+   }
+  }finally{await f.close();}
+ });
  test(`${kind}: actual provider rejects removed target before discard, preserves exact dirty registration, and manual revert clears it`,async()=>{
   const f=await host(kind);try{
    await f.open('DOC-A');await f.edit('UNSAVED ORIGINAL');const editor=f.editor(),adapter=editor.props.adapter;
