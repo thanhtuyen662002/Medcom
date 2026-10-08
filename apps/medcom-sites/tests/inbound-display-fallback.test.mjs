@@ -6,7 +6,7 @@ import path from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {build} from 'esbuild';
 
-const host=await readFile('components/erp/inbound-request-screen.tsx','utf8');
+const host=(await readFile('components/erp/inbound-request-screen.tsx','utf8')).replaceAll('\r\n','\n');
 const start=host.indexOf('function commandReadUnavailable('),end=host.indexOf('\nconst defaultList',start);
 assert.ok(start>=0&&end>start,'Complete production helper must be available');
 const helper=host.slice(start,end);
