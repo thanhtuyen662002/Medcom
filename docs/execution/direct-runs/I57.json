@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I57",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "fdc71290-517e-4228-8ebb-f1f3b6a448fc",
+  "base_sha": "ef20fa7e1268f0b2d2b903de29ee9da879d5567b",
+  "work_branch": "codex/g45-purchase-pilot-core-i57-20261008",
+  "claim_branch": "medcom-claims/g45/direct/I57",
+  "scope": [
+    "src/backend/Medcom.Infrastructure/PurchaseRequests/PurchaseRequestPilotAuthorization.cs",
+    "src/backend/Medcom.Infrastructure/PurchaseRequests/PurchaseRequestCommandFactory.cs",
+    "src/backend/Medcom.Infrastructure/PurchaseRequests/SqlPurchaseRequestCommandAuthorityReader.cs",
+    "src/backend/Medcom.Infrastructure/PurchaseRequests/SqlPurchaseRequestCommands.cs",
+    "src/backend/Medcom.Api/PurchaseRequestCommandRegistration.cs",
+    "src/backend/Medcom.Api/SqlPurchaseRequestCommandAccess.cs",
+    "tests/backend/Medcom.Api.Tests/PurchaseRequestPilotAuthorizationTests.cs",
+    "tests/backend/Medcom.Api.Tests/PurchaseRequestPilotHttpTests.cs",
+    "docs/execution/checkpoints/I57_PURCHASE_PILOT_CORE.md",
+    "docs/execution/direct-runs/I57.json"
+  ],
+  "purpose": "Prepare the bounded owner-authorized existing-draft purchase pilot core and prove real ApiHost HTTPS-to-factory-to-writer composition with recording connections, without activating any runtime writer or changing production acceptance semantics.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "runtime_activation_authorized": false,
+  "constraints": [
+    "Admission proposal only until root publishes the immutable marker. Root is sole GitHub publisher; workers prepare bounded local files and tests only.",
+    "Backend-only phase 1. No frontend/I50 paths, ApiHost.cs, Program.cs, I56 paths, contracts, SQL text/schema, configuration, new executable, project/lockfile/solution, deployment, packaging or workflow changes.",
+    "Use the existing ApiHost.Build configure seam only in synthetic Kestrel tests. Normal production startup and its unavailable command defaults remain unchanged. No new HTTP route, CLI switch, configuration binding or Enabled=true writer switch.",
+    "Introduce one narrow server-owned typed pilot authorization, distinct from PurchaseRequestCommandRuntimeAcceptance. Pin exact target server/database, database binding, tenant/company, actor, branch, existing document and bounded write validity plus authorization reference. No wildcard targets or identity supplied by HTTP.",
+    "Existing production constructors, RuntimeAccepted meaning and dormant production registration remain fail closed without actual external runtime acceptance. Pilot creation must use an explicitly named typed factory/registration path, never fake production acceptance or set runtimeQualified=true from a pilot/config/source result.",
+    "If the existing writer requires an internal pilot admission overload, keep its production runtimeQualified gate unchanged and represent the alternate basis as the typed owner-authorized experiment. Validate it for each invocation and applicable existing session/transaction checkpoint; do not introduce a reusable generic bypass boolean.",
+    "Allow only one pinned existing unlocked StatusID=1 document: header edits, explicitly identified existing-line Update changes and separate Submit. Deny Create, Add and Remove before journal reservation/business dispatch; no AP_Order conversion or identifier allocation.",
+    "Reuse the real writer, fixed SQL plans, fresh closed per-operation connections, exact target/binding, native Run+Update, actor/group credential stamp, branch/document scope, session high-water fence, serializable owned transactions, concurrency tokens and SQL-shape guards. No weakened production or pilot checks.",
+    "Preserve original canonical intent, journal reservation/custody, receipt validation and cleanup. Original-intent lookup is read-only and never redispatches, including Absent/Pending/Unknown. Submit lock/status must not invalidate its own receipt access. Write expiry blocks new writes without rewriting or replacing retained original intents.",
+    "Real HTTPS/Kestrel recording proof must traverse ApiHost authentication/CSRF/origin/scope endpoints, LocalWebSessions, actual registration/factory/authority reader and SqlPurchaseRequestCommands. Synthetic identity and DbConnection only; no command/access doubles or synthetic production acceptance on the pilot path.",
+    "Test Save/readback/separate Submit/post-Submit lookup, forbidden operations, wrong target/binding/actor/branch/document, native-grant combinations, expiry, revocation, monotone/regressed authority versions, transaction/cleanup faults, lost ACK, duplicate/concurrent intent and unchanged production defaults. Assert no allocator, Create/Add/Delete or lookup writes.",
+    "Live-hash-matched LYS1/CommandButtonCtl C4 supports StatusID=2 and isLock=1 by PurchaseRequestID. Retain the stricter Web unlocked StatusID=1 gate. SaveContinue/Reload setting values do not establish consumer roles/order, host enforcement or runtime transaction parity. CommandButtonCtl_1 conversion remains excluded.",
+    "Historical owner installation and control-row verification establish that the two purchase control tables and expected binding were installed; the source artifact UNAPPLIED label is not current-target evidence. Fresh exact-build/target verification remains separate.",
+    "No real DB access or writes, Tools execution, credential/private configuration reads, journal installation, account creation, deployment, public activation or new runtime approval in preparation or CI. Live owner-authorized pilot activation, actor login and frontend Remove restriction are later separately admitted gates.",
+    "Record observed local build/test results and limitations honestly. Offline recording success and metadata/source parity never confer target runtime or production acceptance."
+  ],
+  "evidence": {
+    "submit_control": "SY_FrmCfg / AP_PurposeRequestListFrm / LYS1 / CommandButtonCtl",
+    "submit_c4_utf16le_sha256": "EB074027ABDA63FF4A68E6936C0C4E870035A4589F5C927AE806AB437ABECC64",
+    "submit_source_lines": [
+      299451,
+      299453
+    ],
+    "technical_parity_artifact_sha256": "588ffe764b55d915759f7ed2c96925705d63708a216d4610b6808d7100aae1ef",
+    "scope_of_evidence": "Exact setting bytes and bounded Submit assignments; not callback interpretation/order or runtime acceptance."
+  },
+  "created_at": "2026-10-08T19:29:08Z"
+}
