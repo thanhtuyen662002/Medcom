@@ -15,9 +15,13 @@ internal static class WorkspaceReadScope
         { "medcom-workspace-session-v1", session.Token });
     internal static string Read(ResolvedSession session) => Digest(new object[]
     {
-        "medcom-workspace-read-v1", session.Token, session.Identity.PrincipalId,
+        "medcom-workspace-read-v2", session.Token, session.Identity.PrincipalId,
         session.Identity.TenantId, session.Identity.CompanyId,
-        Canonical(session.Identity.Capabilities), Canonical(session.Identity.BranchIds ?? [])
+        Canonical(session.Identity.Capabilities), Canonical(session.Identity.BranchIds ?? []),
+        // Selection can change with equal grants; retire read evidence without revoking them.
+        session.Identity.BranchSelection is { } selection
+            ? new object?[] { selection.Mode, selection.AssignedBranchId, selection.FilterLocked }
+            : new object?[] { "unavailable" }
     });
     internal static void Stamp(HttpContext context, ResolvedSession session)
     {
