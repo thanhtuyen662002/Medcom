@@ -107,6 +107,51 @@ function purchaseDocumentIdentity(page, baselineControl) {
     .locator(purchaseIdentitySelector).filter({hasText: /^I29-PR-P2-00$/});
 }
 
+async function assertRetiredPurchaseControls(panel, calls) {
+  // I50 terminal denial retires presentation controls. Selected-document and
+  // original-command custody remain separately owned and require fresh reads.
+  assert.equal(await panel.getByLabel('Tìm mã đề nghị', {exact: true}).inputValue(), '', 'terminal denial retires the draft search');
+  assert.equal(await panel.getByRole('combobox', {name: 'Chi nhánh', exact: true}).inputValue(), '', 'terminal denial retires the branch');
+  assert.match(await panel.getByRole('navigation', {name: 'Phân trang đề nghị', exact: true}).innerText(), /Trang 1\b/, 'terminal denial resets the list page');
+  const lists = calls.filter(call => call.path === '/api/purchase-requests');
+  const details = calls.filter(call => call.path === '/api/purchase-requests/detail');
+  assert.ok(lists.length > 0, 'healthy recovery must dispatch a fresh list');
+  assert.ok(details.length > 0, 'the retained selection must receive a fresh detail');
+  for (const call of lists) {
+    assert.equal(call.method, 'GET');
+    assert.deepEqual(call.query, {page: '1', pageSize: '20', search: '', branchId: ''}, 'applied search, branch and page retire on the actual request too');
+  }
+  for (const call of details) {
+    assert.equal(call.method, 'GET');
+    assert.deepEqual(call.query, {documentId: 'I29-PR-P2-00'}, 'control retirement cannot substitute the selected document');
+  }
+}
+
+test('I50 packaged denial recovery requires retired controls and fresh default-criteria reads', async () => {
+  const fixture = ({search = '', branch = '', page = 'Trang 1 / 2'} = {}) => ({
+    getByLabel(name, options) {assert.equal(name, 'Tìm mã đề nghị'); assert.deepEqual(options, {exact: true}); return {inputValue: async () => search};},
+    getByRole(role, options) {
+      assert.deepEqual(options, {name: role === 'combobox' ? 'Chi nhánh' : 'Phân trang đề nghị', exact: true});
+      assert.ok(['combobox', 'navigation'].includes(role));
+      return role === 'combobox' ? {inputValue: async () => branch} : {innerText: async () => page};
+    },
+  });
+  const calls = [
+    {path: '/api/purchase-requests', method: 'GET', query: {page: '1', pageSize: '20', search: '', branchId: ''}},
+    {path: '/api/purchase-requests/detail', method: 'GET', query: {documentId: 'I29-PR-P2-00'}},
+  ];
+  await assertRetiredPurchaseControls(fixture(), calls);
+  for (const controls of [{search: 'UNSUBMITTED DRAFT'}, {branch: 'BR-A'}, {page: 'Trang 2 / 2'}, {page: 'Trang 10 / 20'}]) {
+    await assert.rejects(assertRetiredPurchaseControls(fixture(controls), calls), {code: 'ERR_ASSERTION'});
+  }
+  for (const query of [{search: 'APPLIED'}, {branchId: 'BR-A'}, {page: '2'}, {pageSize: '50'}]) {
+    await assert.rejects(assertRetiredPurchaseControls(fixture(), [{...calls[0], query: {...calls[0].query, ...query}}, calls[1]]), {code: 'ERR_ASSERTION'});
+  }
+  for (const invalid of [[], calls.slice(0, 1), calls.slice(1), [{...calls[0], method: 'POST'}, calls[1]], [calls[0], {...calls[1], query: {documentId: 'OTHER'}}]]) {
+    await assert.rejects(assertRetiredPurchaseControls(fixture(), invalid), {code: 'ERR_ASSERTION'});
+  }
+});
+
 // This named check renders the real production gate without starting a browser,
 // relay or server. The complete hosted invocation still runs the built TLS case.
 test('I28 login-first fixture contract matches the production auth gate', async () => {
@@ -937,10 +982,14 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
         const explicit = difference(await counts(), retryBefore);
         for (const count of Object.values(explicit)) assert.ok(count <= 2, 'one explicit denied recovery must remain bounded');
         const quiet = await counts(); await delay(500); assert.deepEqual(await counts(), quiet);
-        await control({failures: {}}); const successBefore = await counts(); await recovery.click(); await freshPurchaseDetail();
+        await control({failures: {}}); const successBefore = await counts(), recoveryCallIndex = (await snapshot()).calls.length;
+        const recoveredDetail = await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200,
+          async () => {await recovery.click(); await freshPurchaseDetail();});
+        await assertPurchaseGrant(recoveredDetail, true);
         const recovered = difference(await counts(), successBefore);
         for (const count of Object.values(recovered)) assert.ok(count <= 2, 'one explicit healthy recovery must remain bounded');
-        await purchaseControls(); lifecycleEvidence.requests.push({kind, initial, periodic, explicit, recovered});
+        await assertRetiredPurchaseControls(purchasePanel(), (await snapshot()).calls.slice(recoveryCallIndex));
+        lifecycleEvidence.requests.push({kind, initial, periodic, explicit, recovered});
       });
     }
     for (const [kind, route] of [['purchase-bootstrap', '/api/purchase-requests/workspace'], ['purchase-list', '/api/purchase-requests'], ['purchase-detail', '/api/purchase-requests/detail']]) {
