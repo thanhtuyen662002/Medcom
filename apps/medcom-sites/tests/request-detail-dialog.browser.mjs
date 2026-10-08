@@ -482,7 +482,7 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
    const point=async()=>{const box=await navButton.boundingBox();assert.ok(box);return {x:box.x+box.width/2,y:box.y+box.height/2};};
    let location=await point();await page.touchscreen.tap(location.x,location.y);
    assert.equal(await page.evaluate(()=>window.i43.navCalls.length),1,'real navigation handler responds before detail opens');
-   await open(kind);await notes().fill('R1 LAYER RETAINED');const before=await snapshot();location=await point();
+   await open(kind);await notes().fill('R1 LAYER RETAINED');await page.waitForLoadState('networkidle');const before=await snapshot(),beforeCalls=model.calls.length,retainedNotes=await notes().elementHandle();location=await point();
    const layers=await page.evaluate(({x,y})=>{
     const surface=document.querySelector('[data-request-detail-surface]'),nav=document.querySelector('.mobile-bottom-nav'),ancestors=[];
     for(let node=surface.parentElement;node&&node!==document.documentElement;node=node.parentElement){const css=getComputedStyle(node);ancestors.push({tag:node.tagName,slot:node.dataset.slot??null,z:css.zIndex,transform:css.transform,filter:css.filter,perspective:css.perspective,opacity:css.opacity,isolation:css.isolation,contain:css.contain});}
@@ -490,7 +490,26 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
    },location);
    assert.equal(layers.surface,45);assert.equal(layers.nav,40);assert.equal(layers.later,true);assert.equal(layers.hit,true,'detail owns actual nav-button coordinates');
    for(const ancestor of layers.ancestors){assert.equal(ancestor.z,'auto');assert.equal(ancestor.transform,'none');assert.equal(ancestor.filter,'none');assert.equal(ancestor.perspective,'none');assert.equal(ancestor.opacity,'1');assert.equal(ancestor.isolation,'auto');assert.equal(ancestor.contain,'none');}
-   await page.touchscreen.tap(location.x,location.y);assert.equal(await page.evaluate(()=>window.i43.navCalls.length),1);assert.deepEqual(await snapshot(),before);assert.equal(await notes().inputValue(),'R1 LAYER RETAINED');
+   // Keep the real navigation center. The shared footer can put its form-owned
+   // review action at this point; review intentionally replaces purchase inputs.
+   // Never tap a Save/Send/Delete (or another interactive control) by accident.
+   const touchTarget=await page.getByRole('dialog').getByRole('button',{name:'Rà soát phiếu',exact:true}).evaluate((review,{x,y})=>{
+    const hit=document.elementFromPoint(x,y),control=hit?.closest('button,input,select,textarea,a[href],summary,[role="button"],[role="link"],[contenteditable="true"],[tabindex]:not([tabindex="-1"])');
+    return {review:control===review,neutral:!control&&!!hit?.closest('.request-detail-dialog'),tag:hit?.tagName??null,action:control?.textContent?.trim()??null,formOwned:!!review.form&&review.form.closest('.request-detail-dialog')===review.closest('.request-detail-dialog'),footer:!!review.closest('.record-dialog-actions')};
+   },location);
+   assert.equal(touchTarget.formOwned,true);assert.equal(touchTarget.footer,true);assert.ok(touchTarget.review||touchTarget.neutral,'Only the exact non-writing review action or a noninteractive detail point is safe: '+JSON.stringify(touchTarget));
+   await page.touchscreen.tap(location.x,location.y);await paint();assert.equal(await page.evaluate(()=>window.i43.navCalls.length),1);assert.deepEqual(await snapshot(),before);assert.equal(model.calls.filter(call=>call.method==='POST').length,0);
+   if(touchTarget.review){
+    const back=page.getByRole('dialog').getByRole('button',{name:'Quay lại chỉnh sửa',exact:true});await back.waitFor();
+    if(kind==='purchase'){
+     assert.equal(await notes().count(),0);assert.equal(await retainedNotes.evaluate(node=>node.isConnected),false,'Purchase review intentionally replaces the input, not the editor');
+     assert.equal(await page.getByRole('dialog').getByRole('region',{name:'Rà soát thông tin phiếu',exact:true}).locator('label[for$="-notes"] + strong').textContent(),'R1 LAYER RETAINED');
+    }else{assert.equal(await notes().inputValue(),'R1 LAYER RETAINED');assert.equal(await notes().isDisabled(),true);assert.equal(await notes().evaluate((node,original)=>node===original,retainedNotes),true);}
+    assert.deepEqual(await snapshot(),before);assert.equal(model.calls.length,beforeCalls,'Review is local presentation, not a read or command');
+    await back.click();await notes().waitFor();
+   }
+   assert.equal(await notes().inputValue(),'R1 LAYER RETAINED');assert.equal(await notes().isEnabled(),true);assert.equal(await notes().evaluate((node,original)=>node===original,retainedNotes),!(touchTarget.review&&kind==='purchase'),'Inbound and neutral touches retain the input; purchase review recreates only its field view');
+   assert.deepEqual(await snapshot(),before);assert.equal(model.calls.length,beforeCalls);assert.equal(await page.evaluate(()=>window.i43.navCalls.length),1);assert.equal(await page.getByRole('dialog').evaluate(node=>node.contains(document.activeElement)),true);
    await captureViewport('r1-'+kind+'-mobile-dialog-viewport.png',{width:390,height:844});
    await attempt('x');const guard=page.getByRole('alertdialog');await guard.waitFor();
    assert.equal(await guard.evaluate(node=>node.contains(document.activeElement)),true);
@@ -509,7 +528,7 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
    location=await point();assert.equal(await page.evaluate(({x,y})=>!!document.elementFromPoint(x,y)?.closest('.mobile-bottom-nav'),location),true);
    await page.touchscreen.tap(location.x,location.y);assert.equal(await page.evaluate(()=>window.i43.navCalls.length),2,'accepted dismissal exposes the unchanged navigation again');
    assert.equal(model.calls.filter(call=>call.method==='POST').length,0);
-   results.push({case:'R1-mobile-stacking',kind,result:'PASS',layers,guardLayers,lifetime:before,navCalls:await page.evaluate(()=>window.i43.navCalls)});
+   results.push({case:'R1-mobile-stacking',kind,result:'PASS',layers,touchTarget,guardLayers,lifetime:before,navCalls:await page.evaluate(()=>window.i43.navCalls)});
   });
   for(const kind of ['purchase','inbound'])for(const width of [1280,390])await run(kind+' '+width+' retained dirty dialog and guarded dismissal matrix',async()=>{
    const scenarioViewport={width,height:844},dismissalPaths=width===390?['x','visible','escape']:['x','visible','escape','backdrop'],dismissalViewports=[];let coveredBackdropPoint=null;await start(kind,scenarioViewport.width,scenarioViewport.height);
