@@ -72,8 +72,8 @@ strings.
 
 Kiểm tra cố định 161 cột trên 10 bảng purchase/inbound, gồm đủ 17 cột journal inbound,
 PK năm phần, BIN2, CreatedAtUtc, key/FK, check/default, trigger/RLS và thiết lập durability.
-Chỉ đọc catalog; ngoại lệ duy nhất là tối đa hai hàng control để so binding, không xuất
-GUID. SqlClient sử dụng chuỗi kết nối riêng hiện có trên máy để mở kết nối đã được
+Chỉ đọc catalog và tối đa hai hàng mỗi bảng control purchase/inbound; không xuất
+GUID hoặc giá trị tenant/company. SqlClient sử dụng chuỗi kết nối riêng hiện có trên máy để mở kết nối đã được
 cho phép. Công cụ không hiển thị/xuất thông tin xác thực hoặc trích xuất chúng cho
 mục đích khác. Không đọc chứng từ/dữ liệu khách hàng hoặc Tools.dll; không tạo web
 session, chạy writer, DML/DDL, reservation, allocator hoặc COMMIT.
@@ -94,3 +94,48 @@ mốc tin cậy. Kiểm thử recording/config/package không chứng minh SQL t
 
 Chi tiết kỹ thuật và kết quả chuẩn bị: checkpoint I34 trong repository. CI giữ nguyên
 các gate cũ và chạy bộ test inspector riêng; không ghi đè biên nhận test backend.
+
+
+## Quan sát prerequisite inbound I46
+
+Giữ nguyên các mục purchase, định dạng JSON, mã trạng thái và tùy chọn hiện có.
+Các mục `inbound.environment.*` mới tách riêng online, writable, delayed durability,
+non-system database, implicit transactions, metadata principal và database trigger,
+theo `InboundDraftSql.TargetEnvironmentText`. Đây là quan sát tại thời điểm SELECT;
+không phải bảo đảm trạng thái không thay đổi sau đó. Không đổi hay nâng quyền để đạt PASS.
+
+`inbound.marker.*` kiểm tra riêng đề xuất `dbo.WebInboundRequestCommandBindingV1`:
+- `presence`: `INBOUND_MARKER_MISSING` chỉ khi có đủ quyền nhìn metadata và không thấy
+  đúng tên bảng/schema. Metadata bị ẩn hoặc không đủ bằng chứng là BLOCKED với mã
+  `UNKNOWN_METADATA_VISIBILITY`, không được kết luận bảng không tồn tại.
+- `columns`, `key`, `table_features`, `definition`: năm cột, PK SingletonId, các đặc tính
+  bảng/cột/index/trigger/RLS và check identity theo nguồn I46. Chỉ đọc hàng marker sau
+  khi các kiểm tra metadata này đều PASS. SQL definition được giữ nội bộ, không xuất.
+- `rows`: phân biệt không có hàng (`INBOUND_MARKER_ROW_MISSING`), hai hàng trở lên trong
+  phép đọc tối đa hai (`INBOUND_MARKER_ROWS_AMBIGUOUS`) và hàng sai cấu trúc
+  (`INBOUND_MARKER_ROW_CORRUPT`). PASS chỉ quan sát một singleton/schema v1, binding
+  không rỗng và tenant/company đúng cấu trúc; không xuất giá trị nào trong các hàng.
+
+`ExpectedBindingId` vẫn chỉ dành cho purchase. Công cụ không nhận hay suy ra expected
+inbound binding/tenant/company: `inbound.identity_equality` luôn BLOCKED vì equality
+với định danh đã được chủ hệ thống chấp thuận vẫn UNKNOWN. Marker copy từ clone/restore
+không chứng minh đúng physical target hoặc connection custody.
+
+Schema marker vẫn là **đề xuất chưa áp dụng** trong
+`schemas/backend/inbound-request-command-binding-v1.sql`. Báo thiếu bảng/hàng không
+phải đề nghị tự cài, seed hay tạo GUID; đó là quyết định riêng của chủ hệ thống.
+Công cụ không thực hiện hoặc phê duyệt các thao tác đó.
+
+Phần bổ sung này kiểm tra năm cột marker bên cạnh 161 cột/10 bảng cũ, không tuyên bố
+đã thực hiện toàn bộ I46. Các điều kiện transaction count/state/Serializable và
+`inbound.full_target_qualification` vẫn NOT_RUN; không mở transaction để làm chúng
+PASS. Native constraint/default semantics, physical-target custody, runtime acceptance
+và release vẫn chưa được chứng minh. PASS riêng environment/marker không cấp quyền
+chạy inbound command. Gặp lỗi/provider/cancel, trả mã cố định, không đưa exception,
+SQL body, cấu hình hay dữ liệu thật vào JSON.
+
+Nguồn đối chiếu: `src/backend/Medcom.Infrastructure/Inbound/InboundDraftSql.cs`,
+`InboundDraftTargetQualification.cs`, `InboundDraftSessionFence.cs` và
+`src/backend/Medcom.Application/Inbound/InboundDraftCommandService.cs`.
+`tools/inspect/verify_inspect.py` giữ kiểm tra parity nguồn và packaging synthetic;
+recording tests không xác nhận biên dịch SQL Server hay hành vi trên target thật.

@@ -30,7 +30,7 @@ def verify_sources():
     assert lock == {k: v for k, v in origin.items() if v['type'] != 'Project'}
     code = (project.parent / 'InspectionSql.cs').read_text(encoding='utf-8')
     plans = dict(re.findall(r'public const string (\w+) = """\n(.*?)\n        """;', code, re.S))
-    assert set(plans) == {'Environment', 'Columns', 'Keys', 'Safety', 'PurchaseForeignKey', 'Definitions', 'Defaults', 'Binding', 'ServerTriggers'}
+    assert set(plans) == {'Environment', 'Columns', 'Keys', 'Safety', 'PurchaseForeignKey', 'Definitions', 'Defaults', 'Binding', 'ServerTriggers', 'InboundEnvironment', 'InboundMarker', 'InboundMarkerDefinition', 'InboundBindingRows'}
     catalogs = {'databases','columns','types','schemas','tables','indexes','index_columns','triggers','security_predicates','security_policies','foreign_keys','foreign_key_columns','check_constraints','default_constraints','server_triggers','server_trigger_events'}
     forbidden = r'\b(?:INSERT|UPDATE|DELETE|MERGE|CREATE|ALTER|DROP|TRUNCATE|EXEC|EXECUTE|COMMIT|ROLLBACK|BEGIN|INTO|WAITFOR|DBCC|BACKUP|RESTORE|GRANT|REVOKE|DENY|OPENROWSET|OPENQUERY|UPDLOCK|HOLDLOCK)\b'
     for name, sql in plans.items():
@@ -41,7 +41,7 @@ def verify_sources():
         assert tokens.count(';') == 1 and tokens.rstrip().endswith(';'), name
         assert set(re.findall(r'\bsys\.(\w+)', sql)) <= catalogs, name
         direct = re.findall(r'\b(?:FROM|JOIN)\s+dbo\.(\w+)', sql, re.I)
-        assert direct == (['MedcomPurchaseRequestCommandSchema'] if name == 'Binding' else []), (name, direct)
+        assert direct == ({'Binding': ['MedcomPurchaseRequestCommandSchema'], 'InboundBindingRows': ['WebInboundRequestCommandBindingV1']}.get(name, [])), (name, direct)
     assert 'TOP(2)' in plans['Binding'] and '@binding' in plans['Binding']
     assert 'UPDLOCK' not in code and 'HOLDLOCK' not in code
     # Purchase tuples must remain exactly aligned with the current source probe.
@@ -83,6 +83,7 @@ def verify_sources():
         if typ=='datetime2': assert entry[3:7]==('8',entry[4],'27','7')
     assert "('WebInboundRequestCommandJournalV1','OperationId',5)" in plans['Keys']
     assert "('WebInboundRequestCommandJournalV1','CreatedAtUtc')" in plans['Defaults']
+    verify_inbound_sources(plans)
     marker=json.loads((ROOT/'docs/execution/direct-runs/I34.json').read_text(encoding='utf-8'))
     assert len(marker['scope'])==17 and all((ROOT/p).is_file() for p in marker['scope'])
     for workflow in ('.github/workflows/backend.yml','.github/workflows/ci-policy.yml'):
@@ -90,7 +91,73 @@ def verify_sources():
         assert 'dotnet restore tests/backend/Medcom.TargetInspect.Tests/Medcom.TargetInspect.Tests.csproj --locked-mode' in text
         assert '--results-directory artifacts/target-inspector-test-results' in text
         assert 'python tools/inspect/verify_inspect.py' in text
-    print('PASS: fixed read-only plans, 161 source-aligned columns, policy links, locked provider, exact scope and CI separation')
+    print('PASS: fixed read-only plans, 161 existing columns plus 5 I46 marker columns, I46 source parity, policy links, locked provider, exact scope and CI separation')
+
+def verify_inbound_sources(plans):
+    """Keep the added observations tied to I46; this is source parity, not SQL execution."""
+    qualification = (ROOT / 'src/backend/Medcom.Infrastructure/Inbound/InboundDraftTargetQualification.cs').read_text(encoding='utf-8')
+    source_sql = (ROOT / 'src/backend/Medcom.Infrastructure/Inbound/InboundDraftSql.cs').read_text(encoding='utf-8')
+    source_plans = dict(re.findall(r'internal const string (\w+) = """\n(.*?)\n        """;', source_sql, re.S))
+    schema = (ROOT / 'schemas/backend/inbound-request-command-binding-v1.sql').read_text(encoding='utf-8')
+    expected = re.findall(r'new\("WebInboundRequestCommandBindingV1","([^"]+)","([^"]+)",(-?\d+),(\d+),(\d+),(\d+),"([^"]*)"\)', qualification)
+    observed = re.findall(r"\('([^']+)','([^']+)',(-?\d+),(\d+),(\d+),(\d+),'([^']*)'\)", plans['InboundMarker'])
+    assert len(expected) == len(observed) == 5 and set(expected) == set(observed)
+    declared = re.findall(r'^    (\w+) (\w+)(?:\((\d+)\))?(?: COLLATE (\w+))? (NOT NULL|NULL)', schema, re.M)
+    assert len(declared) == 5 and {x[0] for x in declared} == {x[0] for x in expected}
+    for name, typ, size, collation, nullable in declared:
+        entry = next(x for x in observed if x[0] == name)
+        assert entry[1] == typ and entry[3] == ('0' if nullable == 'NOT NULL' else '1')
+        assert entry[6] == (collation or '')
+        if typ == 'nvarchar': assert int(entry[2]) == int(size) * 2
+    assert 'UNAPPLIED DESIGN' in schema and 'No bootstrap row or accepted binding is supplied.' in schema
+    assert 'PRIMARY KEY (SingletonId)' in schema
+    for predicate in ('D.state=0', 'D.is_read_only=0', 'D.delayed_durability=0', 'DB_ID()>4',
+                      '(@@OPTIONS & 2)=0', "USER_ID()=1 OR IS_SRVROLEMEMBER('sysadmin')=1",
+                      'NOT EXISTS(SELECT 1 FROM sys.triggers WHERE parent_class=0)'):
+        assert predicate in source_plans['TargetEnvironmentText'] and predicate in plans['InboundEnvironment'], predicate
+    for predicate in ('@@TRANCOUNT=1', 'XACT_STATE()=1', 'transaction_isolation_level=4'):
+        assert predicate in source_plans['TargetEnvironmentText'] and predicate not in plans['InboundEnvironment']
+    # I46 rejects even disabled triggers/security predicates and unsupported table/index features.
+    for predicate in ('T.is_ms_shipped=0', 'T.is_memory_optimized=0', 'T.durability=0', 'T.temporal_type=0',
+                      'T.is_filetable=0', 'NOT EXISTS(SELECT 1 FROM sys.triggers WHERE parent_id=T.object_id)',
+                      'NOT EXISTS(SELECT 1 FROM sys.security_predicates WHERE target_object_id=T.object_id)',
+                      'rule_object_id<>0', '(is_disabled=1 OR is_hypothetical=1)',
+                      'parent_object_id=T.object_id OR referenced_object_id=T.object_id',
+                      'is_unique=1 AND is_primary_key=0'):
+        assert predicate in source_plans['TargetTablesText'] and predicate in plans['InboundMarker'], predicate
+    for flag in ('is_identity', 'is_computed', 'generated_always_type', 'is_hidden', 'is_sparse', 'is_column_set', 'is_filestream'):
+        assert f'C.{flag}=0' in source_plans['TargetColumnsText'] and f'C.{flag}<>0' in plans['InboundMarker'], flag
+    for predicate in ('I.is_unique=1', 'I.is_disabled=0', 'I.has_filter=0', 'I.is_hypothetical=0',
+                      'I.ignore_dup_key=0', 'I.type IN (1,2)', 'K.is_descending_key=0', 'K.is_included_column=0'):
+        assert predicate in source_plans['TargetKeysText'] and predicate in plans['InboundMarker'], predicate
+    assert '["CK_WebInboundBinding_Identity"] = "(SingletonId=1 AND SchemaVersion=1)"' in qualification
+    runner = (ROOT / 'tools/inspect/Medcom.TargetInspect/InspectionRunner.cs').read_text(encoding='utf-8')
+    assert 'NormalizeDefinition("(SingletonId=1 AND SchemaVersion=1)")' in runner
+    assert 'CHECK (SingletonId=1 AND SchemaVersion=1)' in schema
+    for flag in ('is_disabled', 'is_not_trusted', 'is_not_for_replication'):
+        assert f'C.{flag}' in source_plans['TargetDefinitionsText'] and f'C.{flag}' in plans['InboundMarkerDefinition']
+    projection = 'SELECT TOP(2) SingletonId,SchemaVersion,DatabaseBindingId,TenantId,CompanyId'
+    assert projection in source_plans['TargetBindingText'] and projection in plans['InboundBindingRows']
+    assert 'WHERE' not in plans['InboundBindingRows'] and 'HOLDLOCK' not in plans['InboundBindingRows']
+    assert 'expectedWidth: 5, rowLimit: 2' in runner
+    assert 'row[0] is byte singleton && singleton == 1 && row[1] is int version && version == 1' in runner
+    assert 'row[2] is Guid binding && binding != Guid.Empty' in runner
+    # Marker value checks reproduce the existing boundary's Identifier/Text subset, not ERP semantics.
+    fence = (ROOT / 'src/backend/Medcom.Infrastructure/Inbound/InboundDraftSessionFence.cs').read_text(encoding='utf-8')
+    text_validation = (ROOT / 'src/backend/Medcom.Application/Inbound/InboundDraftCommandService.cs').read_text(encoding='utf-8')
+    assert 'Identifier(TenantId, 100)' in (ROOT / 'src/backend/Medcom.Infrastructure/Inbound/InboundDraftCommandFactory.cs').read_text(encoding='utf-8')
+    assert '!string.IsNullOrWhiteSpace(value)' in fence and '!value.Any(char.IsControl)' in fence
+    assert 'value.Length > width' in text_validation and 'char.IsHighSurrogate' in text_validation and 'char.IsLowSurrogate' in text_validation
+    for term in ('string.IsNullOrWhiteSpace(value)', 'value.Length > 100', 'value.Any(char.IsControl)', 'char.IsHighSurrogate', 'char.IsLowSurrogate'):
+        assert term in runner
+    report = (ROOT / 'tools/inspect/Medcom.TargetInspect/InspectionReport.cs').read_text(encoding='utf-8')
+    assert 'public enum InspectionStatus { PASS, FAIL, BLOCKED, NOT_RUN }' in report
+    assert 'public bool ReleaseStillBlocked => true;' in report
+    assert 'InspectionStatus.BLOCKED, "INBOUND_IDENTITY_EQUALITY_UNPROVED"' in report
+    assert 'InspectionStatus.NOT_RUN, "I46_FULL_QUALIFICATION_NOT_PERFORMED"' in report
+    for term in ('transaction_count', 'transaction_state', 'serializable_isolation'): assert term in report
+    assert 'InboundBindingRows' not in (ROOT / 'tools/inspect/Medcom.TargetInspect/Program.cs').read_text(encoding='utf-8')
+
 
 class PackageTests(unittest.TestCase):
     def setUp(self):
