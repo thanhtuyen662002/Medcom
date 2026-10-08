@@ -260,7 +260,7 @@ test('I50 compiled mobile cells override customizable desktop clipping without c
  // Compilation/cascade admission only; the unchanged native range geometry
  // assertion below still proves that every identifier character is readable.
 });
-test('I30 compiled application presentation at 320,390,1440',{timeout:240000},async t=>{
+test('I30 compiled application presentation at 320,360,390,1440',{timeout:240000},async t=>{
  const require=createRequire(import.meta.url),tools=process.env.MEDCOM_BROWSER_TOOLCHAIN;
  let chromium;
  try{({chromium}=(tools?createRequire(path.join(path.resolve(tools),'package.json')):require)('playwright-core'));}
@@ -269,7 +269,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
  assert.ok(existsSync(executable),'Installed Chromium/Edge is required.');
  const {script,logo,css,cssSource,cssModules,createRequestNotifications}=await compilePresentation();
  const html='<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/app.css"><div id="root"></div><script src="/app.js"></script></html>';
- let model,serial=0,browser,context,page,origin,completed=false,fatal=null,clockPaused=false;const expectedCases=38;const errors=[],results=[],failures=[],captures=[],calls=[],transportEvidence=[],readonlyEvidence=[],commandGeometryEvidence=[],sharedGridEvidence=[],stickyToolbarEvidence=[],portalPresentationEvidence=[];
+ let model,serial=0,browser,context,page,origin,completed=false,fatal=null,clockPaused=false;const expectedCases=39;const errors=[],results=[],failures=[],captures=[],calls=[],transportEvidence=[],readonlyEvidence=[],commandGeometryEvidence=[],sharedGridEvidence=[],stickyToolbarEvidence=[],portalPresentationEvidence=[];
  const reset=(patch={})=>{model={serial:++serial,writable:false,empty:false,status:200,holdList:false,waiters:[],listResponses:0,listResponseHeaders:null,holdDetail:false,detailWaiters:[],detailStatus:200,draftEnvelope:null,draftNetwork:false,draftNetworkFailures:0,draftMalformed:false,draftResponses:0,afterWriteDraftEnvelope:null,holdProjection:false,projectionWaiters:[],projectionStatus:200,projectionKind:null,projectionResponses:0,unknown:false,workspaceReads:0,workspaceResponses:0,workspacePending:0,workspaceVersions:[],advanceAuthority:false,deniedLists:0,workspaceStatus:200,purchase:structuredClone(purchase),inbound:structuredClone(inbound),purchaseVersion:1,inboundVersion:1,effects:0,originals:new Map(),receipts:new Map(),writes:[],reconciles:[],control:{closed:[],bff:[]},holdCommands:false,commandWaiters:[],commandResponses:0,rejected:false,conflict:false,malformed:false,...patch};calls.length=0;};
  const workspace=()=>({session:{displayName:'SYNTHETIC USER',tenantId:'QA-T',companyId:'QA-C',companyName:'SYNTHETIC',authorityVersion:model.advanceAuthority?model.workspaceReads:1,idleExpiresAt:new Date(Date.now()+3600000).toISOString(),absoluteExpiresAt:new Date(Date.now()+7200000).toISOString(),capabilities:model.workspaceCapabilities??['purchase-requests.read','inbound-requests.read','purchase-orders.read']},branchIds:['QA-BRANCH'],navigation:['purchase-requests','inbound-requests','purchase-orders'].map(id=>({id,label:id,href:'/?screen='+id}))});
  const send=(res,status,data,headers={})=>{if(res.destroyed)return;res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store',...headers});res.end(JSON.stringify(data));};
@@ -1252,7 +1252,7 @@ for(const width of [320,390,1440])for(const screen of ['purchase-requests','inbo
  }catch(error){fatal=String(error);throw error;}finally{
   let teardownError;try{await cleanup();}catch(error){teardownError=error;errors.push(String(error));}
   t.signal.removeEventListener('abort',abortCleanup);
-  const evidence={node:process.version,css:{sourceSha256:sha(cssSource),compiledSha256:sha(css),bytes:Buffer.byteLength(css),modules:cssModules},viewportWidths:[320,390,1440],hierarchy:'Actual Workspace and production request components',backend:'Synthetic HTTP host plus separately labelled trusted-adapter component contract; no ERP/SQL acceptance',status:completed&&!t.signal.aborted&&!fatal&&!failures.length&&!errors.length&&results.length===expectedCases?'passed':'failed',expectedCases,completedCases:results.length,fatal,results,failures,captures,transportEvidence,readonlyEvidence,commandGeometryEvidence,sharedGridEvidence,stickyToolbarEvidence,portalPresentationEvidence,errors};
+  const evidence={node:process.version,css:{sourceSha256:sha(cssSource),compiledSha256:sha(css),bytes:Buffer.byteLength(css),modules:cssModules},viewportWidths:[320,360,390,1440],hierarchy:'Actual Workspace and production request components',backend:'Synthetic HTTP host plus separately labelled trusted-adapter component contract; no ERP/SQL acceptance',status:completed&&!t.signal.aborted&&!fatal&&!failures.length&&!errors.length&&results.length===expectedCases?'passed':'failed',expectedCases,completedCases:results.length,fatal,results,failures,captures,transportEvidence,readonlyEvidence,commandGeometryEvidence,sharedGridEvidence,stickyToolbarEvidence,portalPresentationEvidence,errors};
   await writeFile(path.join(output,'browser-result.json'),JSON.stringify(evidence,null,2));
   if(teardownError)throw teardownError;
  }
