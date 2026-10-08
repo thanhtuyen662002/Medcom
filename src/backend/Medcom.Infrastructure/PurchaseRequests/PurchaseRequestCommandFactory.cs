@@ -35,6 +35,8 @@ public sealed class PurchaseRequestCommandFactory
     private readonly LegacyCompany company;
     private readonly Func<DbConnection> connections;
     private readonly PurchaseRequestCommandRuntimeAcceptance? acceptance;
+    private readonly PurchaseRequestPilotAuthorization? pilot;
+    private readonly TimeProvider clock = TimeProvider.System;
     private readonly ConditionalWeakTable<DbConnection, object> issued = new();
 
     public PurchaseRequestCommandFactory(Guid databaseBindingId, LegacyCompany company,
@@ -51,7 +53,48 @@ public sealed class PurchaseRequestCommandFactory
         this.acceptance = acceptance;
     }
 
+    // A pilot is a separately authorized experiment, never a production attestation.
+    public static PurchaseRequestCommandFactory ForOwnerAuthorizedPilot(
+        PurchaseRequestPilotAuthorization authorization, LegacyCompany company,
+        Func<SqlConnection> connections, TimeProvider? clock = null) =>
+        new(authorization, company, Adapt(connections), clock ?? TimeProvider.System);
+
+    // Only the test assembly can substitute the recording provider for this path.
+    internal static PurchaseRequestCommandFactory ForOwnerAuthorizedPilot(
+        PurchaseRequestPilotAuthorization authorization, LegacyCompany company,
+        Func<DbConnection> connections, TimeProvider? clock = null) =>
+        new(authorization, company, connections, clock ?? TimeProvider.System);
+
+    private PurchaseRequestCommandFactory(PurchaseRequestPilotAuthorization authorization,
+        LegacyCompany company, Func<DbConnection> connections, TimeProvider clock)
+        : this((authorization ?? throw new ArgumentNullException(nameof(authorization))).DatabaseBindingId,
+            company, connections)
+    {
+        if (!authorization.Covers(binding, company)) throw new ArgumentException("Purchase pilot company mismatch.");
+        pilot = authorization;
+        this.clock = clock;
+    }
+
     public bool RuntimeAccepted => acceptance?.Covers(binding, company) == true;
+    public bool IsOwnerAuthorizedPilot => pilot?.Covers(binding, company) == true;
+    public bool PilotWriteAllowed => IsOwnerAuthorizedPilot && pilot!.CanWrite(clock.GetUtcNow());
+
+    public SqlPurchaseRequestCommandAuthorityReader CreatePilotAuthorityReader(
+        Func<CancellationToken, Task<AuthoritativeIdentity?>> resolveLiveSession,
+        Func<CancellationToken, Task<AuthoritativeIdentity?>>? inspectLocalSession = null) =>
+        new(binding, company, FreshConnection, resolveLiveSession, null, inspectLocalSession,
+            pilot, clock);
+
+    public IPurchaseRequestCommands CreatePilotCommands(
+        Func<CancellationToken, Task<AuthoritativeIdentity?>> resolveLiveSession,
+        Func<CancellationToken, Task<AuthoritativeIdentity?>>? inspectLocalSession = null)
+    {
+        ArgumentNullException.ThrowIfNull(resolveLiveSession);
+        if (!IsOwnerAuthorizedPilot || inspectLocalSession is null) return new ExistingDocumentCommands(null);
+        return new ExistingDocumentCommands(new SqlPurchaseRequestCommands(binding, company,
+            FreshConnection, resolveLiveSession, new NoIdentifierAllocation(), pilot!, clock,
+            inspectLocalSession));
+    }
 
     // The inspector is an explicit server-composition contract: local session state only,
     // no SQL, activity refresh or full revalidation. An omitted inspector fails closed;

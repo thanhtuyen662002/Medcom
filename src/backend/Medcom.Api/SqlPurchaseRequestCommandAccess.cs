@@ -18,13 +18,13 @@ public sealed class SqlPurchaseRequestCommandAccess : IPurchaseRequestCommandAcc
     public async Task<PurchaseRequestCommandAccessState> ResolveAsync(ResolvedSession session,
         string documentId, string branchId, CancellationToken token)
     {
-        if (!request.RuntimeAccepted) return UnavailablePurchaseRequestCommandAccess.State;
+        if (!request.CompositionAdmitted) return UnavailablePurchaseRequestCommandAccess.State;
         try
         {
             var outcome = await request.ReadAccess(session, documentId, branchId, token);
             return outcome switch
             {
-                PurchaseRequestCommandAuthorityOutcome.Admitted => new(true, true, true, false, "native_update_admitted"),
+                PurchaseRequestCommandAuthorityOutcome.Admitted => new(request.MayWrite, request.MayWrite, true, false, "native_update_admitted"),
                 PurchaseRequestCommandAuthorityOutcome.Denied => new(false, false, false, false, "native_edit_denied"),
                 PurchaseRequestCommandAuthorityOutcome.Cancelled => new(false, false, false, false, "command_access_cancelled"),
                 _ => UnavailablePurchaseRequestCommandAccess.State
