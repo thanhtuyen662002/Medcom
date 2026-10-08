@@ -234,6 +234,32 @@ async function compilePresentation(){
  return compiledPresentation;
 }
 test('I30 actual Workspace presentation fixture compiles with Tailwind and CSS modules',async()=>{await compilePresentation();});
+test('I50 compiled mobile cells override customizable desktop clipping without changing desktop density',async()=>{
+ const require=createRequire(import.meta.url),postcss=require('postcss'),{css}=await compilePresentation(),root=postcss.parse(css),rules=[];
+ root.walkRules(rule=>rules.push(rule));
+ const exact=selector=>rules.filter(rule=>rule.selectors.includes(selector));
+ const desktop=exact('.erp-grid[data-customizable=true] .shared-grid-table td');
+ const mobile=exact('.erp-grid[data-customizable=true] .request-list-table td');
+ assert.equal(desktop.length,1);assert.equal(mobile.length,1,'Mobile must match the customizable desktop selector specificity');
+ const [d]=desktop,[m]=mobile;
+ assert.equal(d.parent.type,'root');assert.equal(m.parent.type,'atrule');assert.equal(m.parent.name,'media');assert.match(m.parent.params,/^\(max-width:\s*767px\)$/);assert.equal(m.parent.parent.type,'root');
+ // These exact selectors each contain two classes, one attribute and one tag.
+ // Equal unlayered specificity makes the later mobile declarations win.
+ assert.ok(rules.indexOf(m)>rules.indexOf(d));
+ const declaration=(rule,name)=>{const matches=rule.nodes.filter(node=>node.type==='decl'&&node.prop===name);assert.equal(matches.length,1,name);return matches[0];};
+ for(const [name,desktopValue,mobileValue] of [['white-space','nowrap','normal'],['overflow','hidden','visible']]){
+  assert.equal(declaration(d,name).value,desktopValue);assert.equal(declaration(d,name).important,undefined);assert.equal(declaration(m,name).value,mobileValue);
+ }
+ assert.deepEqual(m.nodes.filter(node=>node.type==='decl').map(node=>node.prop).sort(),['overflow','white-space'],'The higher-specificity repair must not override hidden mobile cell display');
+ const base=exact('.erp-grid .request-list-table td'),hidden=exact('.erp-grid .request-list-table .grid-select-cell');assert.equal(base.length,1);assert.equal(hidden.length,1);
+ assert.strictEqual(base[0].parent,m.parent);assert.strictEqual(hidden[0].parent,m.parent);assert.deepEqual(base[0].selectors,['.erp-grid .request-list-table td']);assert.ok(hidden[0].selectors.includes('.erp-grid .request-list-table .grid-spacer'));
+ // Hidden selection/spacer cells retain (0,3,0), above the unchanged base
+ // display:block rule's (0,2,1); the narrow repair has no display declaration.
+ assert.equal(declaration(base[0],'display').value,'block');assert.equal(declaration(hidden[0],'display').value,'none');
+ assert.equal(declaration(d,'height').value,'var(--grid-row-height)');assert.equal(declaration(base[0],'height').value,'auto');assert.equal(declaration(base[0],'height').important,true);assert.equal(declaration(base[0],'overflow-wrap').value,'anywhere');
+ // Compilation/cascade admission only; the unchanged native range geometry
+ // assertion below still proves that every identifier character is readable.
+});
 test('I30 compiled application presentation at 320,390,1440',{timeout:240000},async t=>{
  const require=createRequire(import.meta.url),tools=process.env.MEDCOM_BROWSER_TOOLCHAIN;
  let chromium;
@@ -413,6 +439,29 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
   const layout=[...document.querySelectorAll('[data-slot=sidebar-wrapper],[data-slot=sidebar-gap],[data-slot=sidebar-container],[data-slot=sidebar-inset],.topbar,.topbar-context,.topbar-actions,.global-search,.user-button,.workspace-content,.request-list-toolbar,.desktop-grid-viewport,.request-list-table,.request-list-pagination,.mobile-bottom-nav')].slice(0,24).map(describe);
   return {viewport,documentSize,mobileMedia:matchMedia('(max-width: 767px)').matches,fits:documentSize.scrollWidth<=viewport.width,offenderCount:candidates.length,offenders,animations,globalSearch,layout,activeElement:document.activeElement instanceof Element?identity(document.activeElement):null};
  });}
+ // Test-only observation of the locked React renderer's own row key. IDs stay
+ // internal: do not add DOM attributes or expose them to users to satisfy tests.
+ async function retainedLineIdentity(rows,lines,indexed=false){
+  assert.deepEqual(await rows.evaluateAll(elements=>elements.map(element=>{
+   const names=Object.keys(element).filter(name=>name.startsWith('__reactFiber$'));
+   if(names.length!==1||typeof element[names[0]]?.key!=='string')throw Error('Exactly one own keyed React row fiber is required');
+   return element[names[0]].key;
+  })),lines.map((line,index)=>indexed?`${index}:${line.lineId}`:line.lineId),'Every source line keeps its exact internal identity and order');
+ }
+ async function hiddenLineIdentities(container,lines){
+  const ids=lines.map(line=>line.lineId);
+  const leaks=await container.evaluate((element,ids)=>({text:ids.filter(id=>element.textContent.includes(id)),markup:ids.filter(id=>element.outerHTML.includes(id))}),ids);
+  assert.deepEqual(leaks,{text:[],markup:[]},'Internal line IDs must not become rendered text or DOM/accessibility attributes');
+ }
+ const sourceValue=value=>value===null?'NULL':value===''?'""':String(value);
+ const purchaseLineValues=document=>document.lines.map((line,index)=>[index+1,line.values.itemId,line.values.budget,line.values.timeRequired,line.values.quantity,line.values.unitPrice,line.values.totalPrice,line.values.model].map(sourceValue));
+ const readonlyLineValues=detail=>detail.inboundRequestLines.map((line,index)=>[(detail.page-1)*detail.pageSize+index+1,line.itemId,line.setQuantityByDocument,line.barrelQuantityByDocument,line.setQuantityByReal,line.barrelQuantityByReal].map(sourceValue));
+ async function exactReadonlyLines(panel,detail){
+  const rows=panel.locator('article');assert.equal(await rows.count(),detail.inboundRequestLines.length);
+  assert.deepEqual(await rows.evaluateAll(elements=>elements.map(row=>[...row.querySelectorAll('dt')].map(value=>value.textContent))),detail.inboundRequestLines.map(()=>['STT','Mã hàng','Số bộ theo chứng từ','Số thùng theo chứng từ','Số bộ thực tế','Số thùng thực tế']));
+  assert.deepEqual(await rows.evaluateAll(elements=>elements.map(row=>[...row.querySelectorAll('dd')].map(value=>value.textContent))),readonlyLineValues(detail),'Every business value and page-adjusted STT is exact and in source order');
+  await retainedLineIdentity(rows,detail.inboundRequestLines,true);await hiddenLineIdentities(panel,readonlyLines);
+ }
  async function expandFullReadback(){const region=page.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true});await region.waitFor();const disclosure=region.locator('details');if(!await disclosure.evaluate(el=>el.open))await disclosure.locator('summary').click();return region;}
  const open=screen=>screen==='purchase-requests'?page.getByRole('button',{name:'Mở đề nghị '+model.purchase.purchaseRequestId,exact:true}):page.getByRole('button',{name:new RegExp('^Mở phiếu '+model.inbound.documentId+' ')});
  async function run(name,fn){await t.test(name,async()=>{try{await fn();results.push(name);}catch(error){failures.push(name);throw error;}});}
@@ -571,6 +620,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
      assert.equal(await search.inputValue(),'QA','Opening and closing preserves the applied filter draft');
     }
     if(width<768){
+     assert.equal(await table.locator('.grid-select-cell:visible,.grid-spacer:visible').count(),0,'Mobile hides selection and virtual spacer cells after customizable wrapping changes');
      assert.equal(await table.locator('.column-resizer[tabindex]:not([tabindex="-1"])').count(),0,'Mobile never retains a hidden keyboard-focusable column resizer');
      assert.equal(await list.getByRole('button',{name:'Tùy chỉnh bảng',exact:true}).isVisible(),false,'Mobile tools omit customization');
      assert.equal(await page.getByRole('dialog',{name:'Tùy chỉnh bảng',exact:true}).count(),0);
@@ -614,7 +664,8 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
    assert.equal(calls.filter(call=>call.method==='POST').length,0);
    const pageRequests=calls.filter(call=>call.route==='/api/documents/purchase-orders').map(call=>({page:call.page,branchId:call.branchId}));
    await start(1440,'purchase-orders',{orderPages:[Array.from({length:50},(_,index)=>orderRow(index+1))]});
-   const virtualGrid=page.getByRole('grid',{name:'Đặt mua hàng',exact:true});await virtualGrid.locator('[data-cell="0:0"]').waitFor();await paint();
+   // start() closes the prior page; all locators here must belong to this one.
+   const virtualGrid=page.getByRole('grid',{name:'Đặt mua hàng',exact:true}),virtualPanel=page.locator('.document-panel');await virtualGrid.locator('[data-cell="0:0"]').waitFor();await paint();
    assert.equal(await page.locator('.document-panel .desktop-grid-viewport').getAttribute('data-virtualized'),'true');assert.ok(await virtualGrid.locator('tbody tr[data-grid-row]').count()<50,'Desktop keeps bounded row virtualization');
    const virtualRowGeometry=[];
    async function rowHeight(compact,estimate){
@@ -622,7 +673,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
     const geometry=await root.evaluate(el=>({estimate:parseFloat(el.querySelector('.desktop-grid-viewport').style.getPropertyValue('--grid-row-height')),rows:[...el.querySelectorAll('tbody tr[data-grid-row]')].map(row=>({id:row.getAttribute('data-grid-row'),height:row.getBoundingClientRect().height})),spacers:[...el.querySelectorAll('tbody tr.grid-spacer > td')].map(cell=>parseFloat(cell.style.height)||0),bodyHeight:el.querySelector('tbody').getBoundingClientRect().height,headerHeight:el.querySelector('thead').getBoundingClientRect().height,scrollHeight:el.querySelector('.desktop-grid-viewport').scrollHeight}));
     assert.equal(geometry.estimate,estimate);assert.ok(geometry.rows.length>0);for(const row of geometry.rows)assert.equal(row.height,estimate,'Actual virtualized row height must exactly match its estimate: '+JSON.stringify({compact,...row}));assert.equal(geometry.spacers.reduce((sum,height)=>sum+height,0)+geometry.rows.length*estimate,50*estimate,'Density changes invalidate cached virtual spacer estimates');assert.equal(geometry.bodyHeight,50*estimate,'Rendered data rows and spacers cover exactly the virtual body');assert.equal(geometry.scrollHeight,geometry.headerHeight+50*estimate,'Scroll extent follows the current density, not cached prior heights');virtualRowGeometry.push({compact,...geometry});
    }
-   await rowHeight(false,65);await panel.getByRole('button',{name:'Tùy chỉnh bảng',exact:true}).click();await page.getByRole('dialog',{name:'Tùy chỉnh bảng',exact:true}).getByLabel('Bảng dữ liệu gọn',{exact:true}).check();await page.keyboard.press('Escape');await rowHeight(true,45);
+   await rowHeight(false,65);await virtualPanel.getByRole('button',{name:'Tùy chỉnh bảng',exact:true}).click();await page.getByRole('dialog',{name:'Tùy chỉnh bảng',exact:true}).getByLabel('Bảng dữ liệu gọn',{exact:true}).check();await page.keyboard.press('Escape');await rowHeight(true,45);
    await virtualGrid.locator('[data-cell="0:0"]').focus();await page.keyboard.press('Control+End');await eventually(()=>virtualGrid.locator('[data-cell="49:4"]').evaluate(el=>el===document.activeElement));assert.equal(await virtualGrid.locator('[data-grid-row="QA-ORDER-050"]').count(),1,'Keyboard reaches the final virtualized row');
    for(const mobileWidth of [320,390]){await page.setViewportSize({width:mobileWidth,height:900});await eventually(async()=>await virtualGrid.locator('tbody tr[data-grid-row]').count()===50);assert.equal(await virtualGrid.locator('[data-grid-row="QA-ORDER-050"]').count(),1);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'All fifty mobile rows remain page-contained');}
    sharedGridEvidence.push({kind:'orders-keyboard-selection',keyboardNavigation:true,selectionCounts:[3,12,3],pageScopeReset:true,detailActivations:2,serverPages:pageRequests,sameScopeRowShrink:{from:12,to:3,roving:'2:4'},virtualizedKeyboardLastRow:49,virtualRowGeometry,mobileRows:50,writeRequests:0});
@@ -821,11 +872,14 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
   });
   await run('disclosure exposes every one of 101 and 500 source rows with exact values',async()=>{
    for(const [width,count] of [[320,101],[390,500]]){
-    const document=structuredClone(purchase);document.lines=Array.from({length:count},(_,index)=>({...structuredClone(purchase.lines[0]),lineId:'QA-LINE-'+String(index+1).padStart(3,'0')}));
+    const document=structuredClone(purchase);document.lines=Array.from({length:count},(_,index)=>({...structuredClone(purchase.lines[0]),lineId:'QA-LINE-'+String(index+1).padStart(3,'0'),values:{...structuredClone(purchase.lines[0].values),itemId:purchase.lines[0].values.itemId+'-'+String(index+1).padStart(3,'0')}}));
     await start(width,'purchase-requests',{purchase:document});await open('purchase-requests').click();const region=page.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true});await region.waitFor();
     assert.equal(await region.locator('details').evaluate(el=>el.open),false);assert.equal(await region.locator('table').isVisible(),false);assert.equal(await region.locator('tbody tr').count(),count,'Disclosure does not drop hidden rows');
     await expandFullReadback();const table=region.getByRole('table',{name:'Toàn bộ dòng đề nghị',exact:true});assert.equal(await table.getByRole('columnheader').count(),8);assert.equal(await table.locator('tbody tr').count(),count);assert.equal(await table.getByRole('cell').count(),8*count);
-    assert.match(await region.innerText(),/2026-10-01T14:22:11.003/);assert.match(await region.innerText(),/NULL/);const last=table.locator('tbody tr').last();assert.match(await last.innerText(),new RegExp('QA-LINE-'+String(count).padStart(3,'0')));assert.match(await last.innerText(),/999999999999999999/);assert.match(await last.innerText(),/""/);
+    assert.deepEqual(await table.getByRole('columnheader').allTextContents(),['STT','Mã mặt hàng','Ngân sách','Thời gian yêu cầu','Số lượng','Đơn giá','Thành tiền','Model']);
+    assert.deepEqual(await table.locator('tbody tr').evaluateAll(rows=>rows.map(row=>[...row.querySelectorAll('td')].map(cell=>cell.lastElementChild.textContent))),purchaseLineValues(document),'All eight cells of every source row remain exact and ordered');
+    await retainedLineIdentity(table.locator('tbody tr'),document.lines);await hiddenLineIdentities(region,document.lines);
+    assert.match(await region.innerText(),/2026-10-01T14:22:11.003/);assert.match(await region.innerText(),/NULL/);const last=table.locator('tbody tr').last();assert.equal(await last.getByRole('cell').first().locator('span').last().textContent(),String(count));assert.match(await last.innerText(),/999999999999999999/);assert.match(await last.innerText(),/""/);
     await layout(width,'purchase-requests');await last.scrollIntoViewIfNeeded();await capture(`purchase-full-${count}-last-row-${width}`,{viewport:true,keepFocus:true});assert.equal(calls.filter(v=>v.method==='POST').length,0);
    }
   });
@@ -908,7 +962,7 @@ for(const width of [320,390,1440])for(const screen of ['purchase-requests','inbo
    assert.equal(await panel.locator('time').getAttribute('datetime'),expected.document.documentDate);assert.equal(await panel.locator('time').innerText(),'01/10/2026');
    assert.equal(await panel.getByRole('heading',{name:expected.document.documentId,exact:true}).count(),1);assert.equal(await panel.getByText('Chưa có trạng thái',{exact:true}).count(),1);
    assert.equal(await panel.locator('header dd').last().textContent(),'NULL');
-   assert.deepEqual(await panel.locator('article').evaluateAll(rows=>rows.map(row=>[...row.querySelectorAll('dd')].map(value=>value.textContent))),expected.inboundRequestLines.map(line=>[line.lineId,line.itemId,line.setQuantityByDocument,line.barrelQuantityByDocument,line.setQuantityByReal,line.barrelQuantityByReal].map(value=>value??'NULL')));
+   await exactReadonlyLines(panel,expected);
    assert.equal(await panel.locator('input,textarea,select,form,[contenteditable=true]').count(),0,'The projection has no editable form or keyboard input');
    assert.equal(await panel.getByRole('button',{name:'Dòng trước',exact:true}).isEnabled(),number>1);assert.equal(await panel.getByRole('button',{name:'Dòng tiếp',exact:true}).isEnabled(),expected.hasMore);
    assert.equal(calls.filter(call=>call.method==='POST').length,0);
@@ -927,7 +981,7 @@ for(const width of [320,390,1440])for(const screen of ['purchase-requests','inbo
     await unchangedDetailFocus('inbound-requests',initialFocus,'Command Unavailable alone never adds deferred Open focus');
     assert.equal(await page.evaluate(()=>document.activeElement?.matches('input,textarea,select,[contenteditable=true]')),false);assert.equal(await page.getByText(readonlyLines[0].itemId,{exact:true}).count(),0);
     releaseProjection();await exactReadonlyPage(1);await focusedDetail('inbound-requests');await layout(width,'inbound-requests');await capture(`inbound-readonly-${shape}-open-${width}`,{viewport:true,keepFocus:true});
-    const first=readonlyPanel().locator('article').first();await first.scrollIntoViewIfNeeded();assert.equal(await first.locator('dd').evaluateAll(elements=>elements.every(element=>{const range=document.createRange();range.selectNodeContents(element);return [...range.getClientRects()].every(rect=>rect.left>=0&&rect.right<=innerWidth)&&element.scrollWidth<=Math.ceil(element.clientWidth);})),true,'Long READ line IDs, item IDs and exact decimals remain fully contained');await capture(`inbound-readonly-${shape}-long-values-${width}`,{viewport:true,keepFocus:true});
+    const first=readonlyPanel().locator('article').first();await first.scrollIntoViewIfNeeded();assert.equal(await first.locator('dd').evaluateAll(elements=>elements.every(element=>{const range=document.createRange();range.selectNodeContents(element);return [...range.getClientRects()].every(rect=>rect.left>=0&&rect.right<=innerWidth)&&element.scrollWidth<=Math.ceil(element.clientWidth);})),true,'READ row ordinals, long item IDs and exact decimals remain fully contained');await capture(`inbound-readonly-${shape}-long-values-${width}`,{viewport:true,keepFocus:true});
     await readonlyPanel().getByRole('button',{name:'Dòng tiếp',exact:true}).click();await exactReadonlyPage(2);await layout(width,'inbound-requests');await readonlyPanel().locator('article').first().scrollIntoViewIfNeeded();await capture(`inbound-readonly-${shape}-page2-${width}`,{viewport:true,keepFocus:true});
     assert.equal(await readonlyPanel().getByText(readonlyLines[0].itemId,{exact:true}).count(),0,'Paging does not retain previous-page values');
     assert.equal((await draftCalls()).length,1,'Paging cannot bootstrap draft rights or retry a draft command');
@@ -946,7 +1000,7 @@ for(const width of [320,390,1440])for(const screen of ['purchase-requests','inbo
      },continuity);
      assert.equal(state.samePanel,true,'Healthy same-READ-scope observation keeps the exact panel node');assert.equal(state.sameButtons,true,'Healthy refresh keeps both page2 paging button nodes');assert.equal(state.sameRows,true,'Healthy refresh keeps every existing list-row node');assert.equal(state.rowCount,50);
      assert.ok(state.detailScrollDelta<=1&&state.scrollDelta<=1&&state.horizontalDelta<=1&&state.articleDelta<=1,'Healthy refresh cannot jump the page or move its visible content: '+JSON.stringify(state));
-     assert.deepEqual(await readonlyPanel().locator('article').evaluateAll(rows=>rows.map(row=>[...row.querySelectorAll('dd')].map(value=>value.textContent))),readonlyProjection(document.documentId,2).inboundRequestLines.map(line=>[line.lineId,line.itemId,line.setQuantityByDocument,line.barrelQuantityByDocument,line.setQuantityByReal,line.barrelQuantityByReal].map(value=>value??'NULL')));
+     await exactReadonlyLines(readonlyPanel(),readonlyProjection(document.documentId,2));
      assert.equal(await readonlyPanel().getByRole('button',{name:'Dòng trước',exact:true}).isEnabled(),!fenced);assert.equal(await readonlyPanel().getByRole('button',{name:'Dòng tiếp',exact:true}).isEnabled(),false);
      assert.equal(await open('inbound-requests').getAttribute('aria-pressed'),'true');assert.equal(await filter.inputValue(),'UNAPPLIED READONLY FILTER');await unchangedDetailFocus('inbound-requests',healthyFocus);assert.equal(await healthyControl.evaluate(element=>element===document.activeElement),true);assert.equal(calls.filter(call=>call.method==='POST').length,0);
     }

@@ -8,6 +8,13 @@ await build({entryPoints:['lib/erp/list-view-state.ts','components/erp/list-view
 const require=createRequire(import.meta.url),{createListViewStore,cleanListControls,emptyListControls}=require('../.test-runtime/i50/lib/erp/list-view-state.cjs');
 const React=require('react'),{act,create}=require('react-test-renderer'),{ListViewProvider,useListControls}=require('../.test-runtime/i50/components/erp/list-view-state.cjs');
 globalThis.IS_REACT_ACT_ENVIRONMENT=true;
+function captureGlobals(names){return new Map(names.map(name=>[name,Object.getOwnPropertyDescriptor(globalThis,name)]));}
+function restoreGlobals(saved){for(const [name,descriptor]of saved)if(descriptor)Object.defineProperty(globalThis,name,descriptor);else delete globalThis[name];}
+async function setupFixture(setup,close){
+ let ready=false;
+ try{const fixture=await setup();ready=true;return fixture;}
+ finally{if(!ready)await close();}
+}
 test('only three bounded control slots; projected copies reject rows/selections/proofs and non-finite offsets',()=>{
  const store=createListViewStore();store.admit('auth-A/read-A');const ticket=store.getEpoch();
  const polluted={...emptyListControls,draftSearch:'x'.repeat(1000),page:9000,top:Infinity,left:-1,windowTop:NaN,rows:[{secret:'sentinel'}],selectedId:'DOC',receipt:'ACK',modalOpen:true,proof:{}};
@@ -31,16 +38,19 @@ test('purchase fresh bootstrap validates binding and branch before returning any
  store.retire();assert.equal(store.qualifyPurchase(epoch,'purchase-A',['MB']),null);
 });
 async function hookHost(screen,store){
- const originalWindow=globalThis.window,originalRaf=globalThis.requestAnimationFrame,originalCaf=globalThis.cancelAnimationFrame;
+ const saved=captureGlobals(['window','requestAnimationFrame','cancelAnimationFrame']);
  const listeners=new Map(),frames=new Map();let sequence=0,api,renderer;const calls=[];
  const element={scrollTop:0,scrollLeft:0,classList:{contains:name=>name==='desktop-grid-viewport'}};
  globalThis.window={scrollY:0,scrollTo:value=>calls.push(value),addEventListener:(name,fn)=>listeners.set(name,fn),removeEventListener:name=>listeners.delete(name)};
  globalThis.requestAnimationFrame=fn=>{frames.set(++sequence,fn);return sequence;};globalThis.cancelAnimationFrame=id=>frames.delete(id);
  function Probe(){api=useListControls(screen);return null;}
  const mount=()=>act(async()=>{renderer=create(React.createElement(ListViewProvider,{store},React.createElement(Probe)));});
- const unmount=()=>act(async()=>{renderer.unmount();});
+ const unmount=()=>act(async()=>{renderer?.unmount();});
+ const close=async()=>{try{await unmount();}finally{frames.clear();listeners.clear();restoreGlobals(saved);}};
+ return setupFixture(async()=>{
  await mount();
- return {get api(){return api;},element,calls,mount,unmount,frameCount:()=>frames.size,flush:()=>act(async()=>{for(const fn of [...frames.values()])fn();frames.clear();}),emit:async(name,event={})=>act(async()=>listeners.get(name)?.(event)),close:async()=>{await unmount();globalThis.window=originalWindow;globalThis.requestAnimationFrame=originalRaf;globalThis.cancelAnimationFrame=originalCaf;}};
+ return {get api(){return api;},element,calls,mount,unmount,frameCount:()=>frames.size,flush:()=>act(async()=>{for(const fn of [...frames.values()])fn();frames.clear();}),emit:async(name,event={})=>act(async()=>listeners.get(name)?.(event)),close};
+ },close);
 }
 test('real hook defers purchase restoration, preserves draft/applied separation through actual unmount and cancels newer input',async()=>{
  const store=createListViewStore();store.admit('A');const ticket=store.getEpoch();store.qualifyPurchase(ticket,'P',['MB']);store.save('purchase-requests',ticket,{...emptyListControls,draftSearch:'draft',appliedSearch:'applied',page:3,top:100});
@@ -64,8 +74,13 @@ test('real hook scroll restore cannot outlive a user scroll, new filter, epoch c
 
 // Real Documents, list-control hook, React Query and scope-validating API client.
 // Only visual leaf components are replaced; this is not a native-browser test.
+const documentVisualLeafResolver=args=>/(?:^|[\\/])documents\.tsx$/.test(args.importer)?{path:args.path,namespace:'document-visual-leaves'}:undefined;
+test('Documents visual-leaf resolver matches POSIX and Windows importer paths only',()=>{
+ for(const importer of ['/repo/components/erp/documents.tsx','C:\\repo\\components\\erp\\documents.tsx'])for(const name of ['grid','feedback','request-list-shell','request-presentation'])assert.deepEqual(documentVisualLeafResolver({importer,path:`./${name}`}),{path:`./${name}`,namespace:'document-visual-leaves'});
+ for(const importer of ['/repo/components/erp/other-documents.tsx','C:\\repo\\components\\erp\\other-documents.tsx'])assert.equal(documentVisualLeafResolver({importer,path:'./feedback'}),undefined);
+});
 await build({stdin:{contents:`export {Documents} from './components/erp/documents';export {ListViewProvider} from './components/erp/list-view-state';`,resolveDir:process.cwd(),loader:'tsx'},outfile:'.test-runtime/i50/documents.cjs',bundle:true,platform:'node',format:'cjs',packages:'external',alias:{'@':process.cwd()},jsx:'automatic',logLevel:'warning',plugins:[{name:'document-visual-leaves',setup(build){
- build.onResolve({filter:/^\.\/(grid|feedback|request-list-shell|request-presentation)$/},args=>args.importer.endsWith('/documents.tsx')?{path:args.path,namespace:'document-visual-leaves'}:undefined);
+ build.onResolve({filter:/^\.\/(grid|feedback|request-list-shell|request-presentation)$/},documentVisualLeafResolver);
  build.onLoad({filter:/.*/,namespace:'document-visual-leaves'},()=>({contents:`import React from 'react';const leaf=name=>props=>React.createElement(name,props,props.children);export const ErpGrid=leaf('test-grid'),Freshness=leaf('test-freshness'),RequestListComposition=leaf('test-composition'),RequestListPanel=leaf('test-panel'),RequestListContent=leaf('test-content'),RequestListHeader=leaf('test-header'),RequestListToolbar=leaf('test-toolbar'),RequestSearch=leaf('test-search'),RequestBranch=leaf('test-branch'),RequestPagination=leaf('test-pagination'),RequestButton=leaf('test-button'),RequestEmpty=leaf('test-empty'),RequestError=leaf('test-error'),RequestLoading=leaf('test-loading'),RequestStatus=leaf('test-status'),RequestDocumentIdentity=leaf('test-identity');`,loader:'js',resolveDir:process.cwd()}));
 }}]});
 const {Documents,ListViewProvider:DocumentListViewProvider}=require('../.test-runtime/i50/documents.cjs');
@@ -74,7 +89,7 @@ const scopeA={sessionScope:'a'.repeat(64),readScope:'b'.repeat(64)};
 const documentWorkspace=(scope=scopeA)=>({...scope,session:{capabilities:['purchase-orders.read','inbound-requests.read']},branchIds:['BR-A','BR-B'],navigation:[{id:'purchase-orders'},{id:'inbound-requests'}]});
 const documentRow={documentId:'SYNTHETIC-DOC',documentDate:'2026-10-06',branchId:'BR-A',statusId:1,isLocked:false};
 async function documentsHost(){
- const saved={window:globalThis.window,fetch:globalThis.fetch};
+ const saved=captureGlobals(['window','fetch']);
  globalThis.window={scrollY:0,addEventListener(){},removeEventListener(){},scrollTo(){}};
  const store=createListViewStore();store.admit('A');
  const client=new QueryClient({defaultOptions:{queries:{retry:false,gcTime:0}}});
@@ -90,6 +105,11 @@ async function documentsHost(){
  const render=()=>React.createElement(QueryClientProvider,{client},React.createElement(DocumentListViewProvider,{store},React.createElement(Documents,{...props,onDenied:error=>denials.push(error),renderDetail:(selected,close,read)=>React.createElement(DetailCustody,{key:read.documentId,selected,close,read})})));
  const settle=async(check)=>{for(let attempt=0;attempt<50;attempt++){await act(async()=>{await new Promise(resolve=>setTimeout(resolve,0));});if(check())return;}assert.fail('document query did not settle');};
  const grid=()=>renderer.root.findByType('test-grid').props;
+ const close=async()=>{
+  try{await act(async()=>renderer?.unmount());}
+  finally{try{client.clear();await act(async()=>pending.splice(0).forEach(resolve=>resolve()));}finally{restoreGlobals(saved);}}
+ };
+ return setupFixture(async()=>{
  await act(async()=>{renderer=create(render());});await settle(()=>grid().rows.length===1);
  return {get detail(){return detail;},get props(){return props;},calls,denials,grid,
   control:type=>renderer.root.findByType(type).props,
@@ -97,8 +117,9 @@ async function documentsHost(){
   select:async()=>{await act(async()=>grid().onOpen(grid().rows[0]));await act(async()=>detail.setPage(2));assert.equal(detail.read.documentId,documentRow.documentId);},
   hold:()=>{hold=true;},release:async()=>{hold=false;await act(async()=>pending.splice(0).forEach(resolve=>resolve()));},releaseAt:async index=>{await act(async()=>pending.splice(index,1).forEach(resolve=>resolve()));},
   status:value=>{status=value;},rows:value=>{rows=value;},settle,
-  close:async()=>{await act(async()=>renderer.unmount());client.clear();pending.splice(0).forEach(resolve=>resolve());Object.assign(globalThis,saved);}
+  close
  };
+ },close);
 }
 test('actual Documents keeps mounted selection custody through null workspace but waits for fresh same-scope rows',async()=>{
  const f=await documentsHost();try{
@@ -158,7 +179,7 @@ const {Workspace:DenialWorkspace}=require('../.test-runtime/i50/workspace-denial
 function denialEventBus(){const listeners=new Map();return{addEventListener(type,fn){const items=listeners.get(type)??[];items.push(fn);listeners.set(type,items);},removeEventListener(type,fn){listeners.set(type,(listeners.get(type)??[]).filter(item=>item!==fn));},emit(type){for(const fn of [...listeners.get(type)??[]])fn({});}};}
 async function rootDenialHost(){
  const names=['HTMLElement','window','location','history','localStorage','document','requestAnimationFrame','cancelAnimationFrame','fetch'];
- const saved=new Map(names.map(name=>[name,Object.getOwnPropertyDescriptor(globalThis,name)]));
+ const saved=captureGlobals(names);
  const location=new URL('https://synthetic.test/?screen=purchase-orders');
  Object.assign(globalThis,{HTMLElement:class {},window:{...denialEventBus(),location,scrollY:0,scrollTo(){}},location,history:{state:null,scrollRestoration:'auto',replaceState(state){this.state=state;},pushState(){},go(){}},localStorage:{getItem(){return null;},setItem(){}},document:{...denialEventBus(),visibilityState:'visible',activeElement:null,documentElement:{classList:{toggle(){}},dataset:{}}},requestAnimationFrame:()=>1,cancelAnimationFrame(){}});
  let renderer,failure=null,holdList=false;const workspaceWaiters=[],listWaiters=[],calls=[];
@@ -178,6 +199,12 @@ async function rootDenialHost(){
  const recheckCount=()=>calls.filter(route=>route.endsWith('/workspace')).length;
  const refresh=()=>act(async()=>{renderer.root.findAllByType('RequestButton').find(node=>node.props.children?.some?.(child=>child==='Làm mới')).props.onClick();});
  const search=value=>act(async()=>control('RequestSearch').onChange(value));
+ const close=async()=>{
+  failure=null;holdList=false;
+  try{await act(async()=>renderer?.unmount());}
+  finally{try{await act(async()=>{workspaceWaiters.splice(0).forEach(resolve=>resolve());listWaiters.splice(0).forEach(item=>item.resolve());});}finally{restoreGlobals(saved);}}
+ };
+ return setupFixture(async()=>{
  await act(async()=>{renderer=create(React.createElement(DenialWorkspace));});await settle(()=>control('ErpGrid').rows.length===1);
  return {control,recheckCount,refresh,search,tick,settle,listWaiters,
   failure:value=>{failure=value;},holdList:value=>{holdList=value;},
@@ -185,8 +212,9 @@ async function rootDenialHost(){
   visibility:value=>act(async()=>{document.visibilityState=value;document.emit('visibilitychange');}),
   releaseList:()=>act(async()=>listWaiters.splice(0).forEach(item=>item.resolve())),
   recover:async()=>{failure=null;await act(async()=>workspaceWaiters.splice(0).forEach(resolve=>resolve()));await act(async()=>window.emit('focus'));await settle(()=>control('ErpGrid').rows.length===1);},
-  close:async()=>{failure=null;holdList=false;await act(async()=>renderer.unmount());workspaceWaiters.splice(0).forEach(resolve=>resolve());listWaiters.splice(0).forEach(item=>item.resolve());for(const [name,descriptor]of saved)if(descriptor)Object.defineProperty(globalThis,name,descriptor);else delete globalThis[name];}
+  close
  };
+ },close);
 }
 for(const failure of [403,'scope'])for(const retained of [false,true])test(`actual Workspace ${failure} denial retires ${retained?'retained':'default'} controls once, fences stale replies and handles a later current denial`,async()=>{
  const f=await rootDenialHost();try{

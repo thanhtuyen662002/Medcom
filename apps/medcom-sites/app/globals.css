@@ -871,6 +871,8 @@ body {font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;l
  .request-list-table tr {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:16px 14px;border:0;border-bottom:1px solid var(--border);border-radius:0;min-width:0;width:100%;text-align:left}
  .request-list-table tr:last-child {border-bottom:0}
  .erp-grid .request-list-table td {display:block;position:static!important;width:auto!important;min-width:0!important;max-width:none!important;height:auto!important;padding:0;border:0;font-size:14px;overflow-wrap:anywhere;overflow:visible;white-space:normal}
+ /* Match desktop clipping specificity without changing hidden mobile cells. */
+ .erp-grid[data-customizable=true] .request-list-table td {overflow:visible;white-space:normal}
  .request-list-table td::before {content:attr(data-label);display:block;margin-bottom:4px;font-size:12px;color:var(--muted-foreground)}
  .request-list-table .grid-identity-cell,.request-list-table .request-list-open {grid-column:1/-1}
  .request-list-table .grid-identity-cell::before,.request-list-table .request-list-open::before {display:none}
