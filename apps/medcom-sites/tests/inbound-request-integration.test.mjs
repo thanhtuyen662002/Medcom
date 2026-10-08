@@ -17,9 +17,10 @@ import path from 'node:path';
 const app = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const output = path.join(app, '.test-runtime', 'i21-inbound');
 await mkdir(output, {recursive: true});
-for (const name of ['inbound-request-api', 'inbound-request-command-adapter']) {
+for (const name of ['item-display', 'inbound-request-api', 'inbound-request-command-adapter']) {
   const source = (await readFile(path.join(app, 'lib/erp', `${name}.ts`), 'utf8'))
-    .replace('from "./inbound-request-api"', 'from "./inbound-request-api.mjs"');
+    .replace('from "./inbound-request-api"', 'from "./inbound-request-api.mjs"')
+    .replaceAll('from "./item-display"', 'from "./item-display.mjs"');
   // Transpile the ENTIRE production module, not extracted helper functions.
   await writeFile(path.join(output, `${name}.mjs`), stripTypeScriptTypes(source, {mode: 'transform'}));
 }
@@ -497,8 +498,9 @@ test('I40 synthetic React host list lifecycle and stale-denial integration', asy
       const f=await host();try{
         const form=f.root().findByType('form');
         assert.equal(form.props['aria-label'],'Lọc phiếu nhập hàng');
-        const submit=form.findAllByType('button').find(n=>n.props.type==='submit');
-        assert.ok(submit);assert.equal(submit.props['aria-label'],'Tìm kiếm');assert.equal(submit.props.children,'Tìm kiếm');
+        assert.equal(typeof form.props.onSubmit,'function','Compact search retains actual form submission');
+        const search=form.findAllByType('input').find(n=>n.props['aria-label']==='Tìm phiếu nhập hàng');assert.ok(search);assert.equal(typeof search.props.onChange,'function');
+        assert.equal(form.findAllByType('button').filter(n=>n.props.type==='submit').length,0,'Enter submits without a fifth toolbar control');
         const pager=f.root().findAllByType('nav').find(n=>n.props['aria-label']==='Trang danh sách phiếu');
         assert.ok(pager);
         const previous=pager.findAllByType('button').find(n=>n.props['aria-label']==='Trang trước');
@@ -812,6 +814,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
     // Open in an already active modal uses the production typed navigation
     // adapter; physical pointer events remain blocked by the backdrop.
     const open=async id=>{if(await page.locator('.request-detail-dialog:visible').count())await page.evaluate(id=>window.qaNavigation.requestOpen(id),id);else await page.getByRole('button',{name:new RegExp('^Mở phiếu '+id+' ')}).click();};
+    const submitSearch=async()=>{const form=page.locator('form[aria-label="Lọc phiếu nhập hàng"]');if(await page.locator('.request-detail-dialog:visible').count())await form.evaluate(element=>element.requestSubmit());else await field('Tìm phiếu nhập hàng').press('Enter');};
     const activateBackground=async locator=>{if(await page.locator('.request-detail-dialog:visible').count())await locator.evaluate(element=>element.click());else await locator.click();};
     const ready = () => page.waitForFunction(() => document.getElementById('inbound-header-orderNumber') && !document.getElementById('inbound-header-orderNumber').matches(':disabled') && document.querySelector('[data-testid=inbound-request-host]')?.getAttribute('data-readback-pending') !== 'true');
     const reset=async(patch={})=>{await page.evaluate(patch=>window.qa.reset(patch),patch);if(patch.searchDraft)await field('Tìm phiếu nhập hàng').fill(patch.searchDraft);if(patch.branchDraft)await field('Lọc chi nhánh').selectOption(patch.branchDraft);await open('DOC-A');await ready();};
@@ -827,8 +830,15 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await button('Tiếp tục làm việc').click(); assert.equal(await page.evaluate(() => window.qaLeft), false);
     };
     const run = async (name, fn) => {await t.test(name, async () => {try {await fn(); results.push({name, result: 'PASS'});} catch (e) {results.push({name, result: 'FAIL'}); throw e;}});};
-    const dialog=()=>page.getByRole('dialog',{name:'Phiếu nhập hàng đã chọn',exact:true});
-    const modalClose=()=>dialog().getByRole('button',{name:'Đóng hộp thoại',exact:true});
+    const dialog=async(documentId='DOC-A')=>{
+      const number=page.getByTestId('inbound-request-host').locator('.request-detail-header .record-document-number');
+      const presented=await number.count()?await number.textContent():null;
+      if(presented!==null)assert.equal(presented,documentId,'Shared dialog identifies the currently expected business document');
+      // A withheld identity during initial GET/verification keeps the exact
+      // generic caption; it must still be counted by masking/visibility checks.
+      return page.getByRole('dialog',{name:'Phiếu nhập hàng đã chọn'+(presented===null?'':' '+documentId),exact:true});
+    };
+    const modalClose=async()=>(await dialog()).getByRole('button',{name:'Đóng hộp thoại',exact:true});
     const focusedDialog=async()=>{await page.waitForFunction(()=>{const dialog=document.querySelector('.request-detail-dialog');return !!dialog&&dialog.contains(document.activeElement)&&!document.activeElement.matches('input,textarea,select,[contenteditable=true]');});};
     const rowFocus = id => page.getByRole('button', {name:new RegExp('^Mở phiếu '+id+' ')});
     const focused = async locator => {await page.waitForFunction(element=>document.activeElement===element,await locator.elementHandle());};
@@ -837,14 +847,14 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       const calls = window.requestDetailFocusCalls.filter(call => call.label === 'Phiếu nhập hàng đã chọn');
       return {frame: calls.filter(call => call.kind === 'frame').length, region: calls.filter(call => call.kind === 'region').length};
     });
-    const focusBaseline = async () => {await dialog().waitFor(); await focusPaint(); return detailFocusCalls();};
+    const focusBaseline = async () => {await (await dialog()).waitFor(); await focusPaint(); return detailFocusCalls();};
     const noDetailFocus = async (baseline, message = 'read completion cannot dispatch an extra frame or former-region focus') => {
       await focusPaint(); assert.deepEqual(await detailFocusCalls(), baseline, message);
     };
     const oneDetailFocus = async (baseline, message = 'explicit same-document Open focuses its bounded frame exactly once') => {
       await page.waitForFunction(before => window.requestDetailFocusCalls.filter(call => call.label === 'Phiếu nhập hàng đã chọn' && call.kind === 'frame').length > before.frame, baseline);
       await focusPaint(); assert.deepEqual(await detailFocusCalls(), {frame: baseline.frame + 1, region: baseline.region}, message);
-      assert.equal(await dialog().evaluate(element => document.activeElement === element), true);
+      assert.equal(await (await dialog()).evaluate(element => document.activeElement === element), true);
     };
 
     const readMarkers = {sessionScope:'e'.repeat(64),readScope:'f'.repeat(64)};
@@ -859,17 +869,17 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await page.evaluate(() => window.qa.rerender()); await focusPaint();
       assert.equal((await calls()).list.length, initial, 'Open/Close and equivalent workspace object do not fetch');
       assert.equal(await page.getByTestId('inbound-editor').count(), 1);
-      await dialog().getByRole('button', {name: 'Xác minh lại quyền nhập hàng', exact: true}).click(); await ready(); await focusPaint();
+      await (await dialog()).getByRole('button', {name: 'Xác minh lại quyền nhập hàng', exact: true}).click(); await ready(); await focusPaint();
       assert.equal((await calls()).list.length, initial + 1, 'explicit verification refresh');
       await button('Đóng phiếu nhập hàng').click();await field('Tìm phiếu nhập hàng').fill('I40 FILTER');
-      await activateBackground(button('Tìm kiếm')); await focusPaint();
+      await submitSearch(); await focusPaint();
       assert.equal((await calls()).list.length, initial + 2);
       assert.equal((await calls()).list.at(-1).search, 'I40 FILTER');
       await activateBackground(button('Trang sau')); await focusPaint();
       assert.equal((await calls()).list.length, initial + 3);
       assert.equal((await calls()).list.at(-1).page, 2);
       await field('Lọc chi nhánh').selectOption('BR-A');
-      await activateBackground(button('Tìm kiếm')); await focusPaint();
+      await submitSearch(); await focusPaint();
       assert.equal((await calls()).list.length, initial + 4);
       assert.equal((await calls()).list.at(-1).branch, 'BR-A');
       assert.equal((await calls()).list.at(-1).page, 1);
@@ -987,10 +997,10 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await resetReadonly({held:{detail:true},detailFailure:'network',detailLabel:'FAILED A'});await page.waitForFunction(()=>window.qa.held('detail')===1);
       const failedFocus=await focusBaseline();await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('failed');await noDetailFocus(failedFocus);
       await page.evaluate(()=>{window.qa.hold('detail');window.qa.detail({detailFailure:null,detailLabel:'RECOVERED A'});});
-      await modalClose().focus();const retryFocus=await focusBaseline();
+      await (await modalClose()).focus();const retryFocus=await focusBaseline();
       await readonly().getByRole('button',{name:'Thử lại',exact:true}).evaluate(element=>element.click());await page.waitForFunction(()=>window.qa.held('detail')===1);
       await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');await noDetailFocus(retryFocus,'retry has no new Open focus ticket');
-      assert.equal(await modalClose().evaluate(element=>document.activeElement===element),true);assert.match(await readonly().innerText(),/RECOVERED A/);
+      assert.equal(await (await modalClose()).evaluate(element=>document.activeElement===element),true);assert.match(await readonly().innerText(),/RECOVERED A/);
       await page.evaluate(()=>window.qa.detail({detailLabel:'CURRENT B'}));await open('DOC-B');await readonlyPhase('ready');await focusedDialog();assert.match(await readonly().innerText(),/CURRENT B/);
       await page.evaluate(()=>{window.qa.hold('detail');window.qa.detail({detailLabel:'FRESH A'});});await open('DOC-A');await page.waitForFunction(()=>window.qa.held('detail')===1);await readonlyPhase('pending');
       assert.doesNotMatch(await readonly().innerText(),/RECOVERED A|CURRENT B|FAILED A/);await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');await focusedDialog();
@@ -1030,7 +1040,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       const readonlyPagingDisabled=async()=>{assert.equal(await readonly().getByRole('button',{name:'Dòng trước',exact:true}).isDisabled(),true);assert.equal(await readonly().getByRole('button',{name:'Dòng tiếp',exact:true}).isDisabled(),true);};
       for(const refresh of ['workspace','authority','api']){
         await page.evaluate(patch=>window.qa.reset(patch),{readMarkers,draftReply:unavailable(),detailLastPage:2,detailLabel:'ORIGINAL PAGE 1'});
-        await filter.fill('KEEP APPLIED FILTER');await branch.selectOption('BR-A');await activateBackground(button('Tìm kiếm'));await filter.fill('KEEP UNAPPLIED FILTER');await open('DOC-A');await readonlyPhase('ready');
+        await filter.fill('KEEP APPLIED FILTER');await branch.selectOption('BR-A');await submitSearch();await filter.fill('KEEP UNAPPLIED FILTER');await open('DOC-A');await readonlyPhase('ready');
         await page.evaluate(()=>window.qa.detail({detailLabel:'ORIGINAL PAGE 2'}));await readonly().getByRole('button',{name:'Dòng tiếp',exact:true}).click();await readonlyPhase('ready');
         assert.match(await readonly().innerText(),/ORIGINAL PAGE 2/);assert.match(await readonly().getByRole('navigation',{name:'Trang dòng hàng chỉ đọc',exact:true}).innerText(),/Trang 2/);assert.equal((await calls()).detail.at(-1).page,2);
         const before=(await calls()).detail.length;
@@ -1145,7 +1155,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await reset({searchDraft:'UNAPPLIED FOCUS FILTER'});await focusedDialog();await field('Số đơn').fill('DIRTY CLOSE VALUE');await button('Đóng phiếu nhập hàng').click();await page.getByRole('alertdialog').waitFor();assert.equal(await page.evaluate(()=>window.qaLeft),false);await button('Bỏ thay đổi và rời màn hình').click();await focused(rowFocus('DOC-A'));assert.equal(await field('Tìm phiếu nhập hàng').inputValue(),'UNAPPLIED FOCUS FILTER');assert.equal(await page.getByTestId('inbound-editor').count(),0);assert.equal((await calls()).post.length,0);
     });
     await run('I33 held Open read respects later modal-control focus and authority revalidation never creates a new focus ticket',async()=>{
-      await page.evaluate(()=>window.qa.reset({held:{read:true}}));await open('DOC-A');await page.waitForFunction(()=>window.qa.held('read')>0);await modalClose().focus();const laterControlFocus=await focusBaseline();await page.evaluate(()=>window.qa.release('read'));await ready();await noDetailFocus(laterControlFocus);assert.equal(await modalClose().evaluate(element=>document.activeElement===element),true);
+      await page.evaluate(()=>window.qa.reset({held:{read:true}}));await open('DOC-A');await page.waitForFunction(()=>window.qa.held('read')>0);await (await modalClose()).focus();const laterControlFocus=await focusBaseline();await page.evaluate(()=>window.qa.release('read'));await ready();await noDetailFocus(laterControlFocus);assert.equal(await (await modalClose()).evaluate(element=>document.activeElement===element),true);
       await page.evaluate(()=>window.qa.reset({held:{read:true}}));await open('DOC-A');await page.waitForFunction(()=>window.qa.held('read')>0);
       // Baseline after legitimate modal entry; no later user input retires the
       // read's focus intent. Authority loss/recovery must add no native calls.
@@ -1155,12 +1165,12 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
     });
     await run('I33 failed Open is retired; explicit retry can recover data without delayed focus theft',async()=>{
       await page.evaluate(()=>window.qa.reset({held:{read:true},readFailure:true}));await open('DOC-A');await page.waitForFunction(()=>window.qa.held('read')>0);
-      const failedFocus=await focusBaseline();await page.evaluate(()=>window.qa.release('read'));await dialog().getByText('Chưa xác minh được quyền nhập hàng. Ý định đang giữ không bị bỏ; thử xác minh lại trong đúng phiên.',{exact:true}).waitFor();await noDetailFocus(failedFocus);
-      await page.evaluate(()=>window.qa.healthy());await dialog().getByRole('button', {name: 'Xác minh lại quyền nhập hàng', exact: true}).click();await ready();await noDetailFocus(failedFocus);
+      const failedFocus=await focusBaseline();await page.evaluate(()=>window.qa.release('read'));await (await dialog()).getByText('Chưa xác minh được quyền nhập hàng. Ý định đang giữ không bị bỏ; thử xác minh lại trong đúng phiên.',{exact:true}).waitFor();await noDetailFocus(failedFocus);
+      await page.evaluate(()=>window.qa.healthy());await (await dialog()).getByRole('button', {name: 'Xác minh lại quyền nhập hàng', exact: true}).click();await ready();await noDetailFocus(failedFocus);
       assert.equal(await field('Số đơn').inputValue(),'FULL ERP A');const before=(await calls()).read.length,sameOpenFocus=await focusBaseline();await open('DOC-A');await oneDetailFocus(sameOpenFocus);assert.equal((await calls()).read.length,before);assert.equal((await calls()).post.length,0);
     });
     await run('I33 same-document Open waits for new bound full read after bootstrap, not an old readiness event',async()=>{
-      await reset();await focusedDialog();await modalClose().focus();await page.evaluate(()=>{window.qa.hold('read');window.qa.rights({});});await page.waitForFunction(()=>window.qa.held('read')>0);const before=(await calls()).read.length;
+      await reset();await focusedDialog();await (await modalClose()).focus();await page.evaluate(()=>{window.qa.hold('read');window.qa.rights({});});await page.waitForFunction(()=>window.qa.held('read')>0);const before=(await calls()).read.length;
       await page.evaluate(()=>window.qa.releaseOne('read'));await page.waitForFunction(before=>window.qa.calls().read.length>before&&window.qa.held('read')>0,before);const bootstrapFocus=await focusBaseline();await open('DOC-A');await noDetailFocus(bootstrapFocus,'bootstrap is not current I18 presentation proof');
       await page.evaluate(()=>window.qa.release('read'));await ready();await oneDetailFocus(bootstrapFocus,'only the newly bound child read completes same-document Open');assert.equal(await field('Số đơn').inputValue(),'FULL ERP A');
       await page.evaluate(()=>window.qa.hold('read'));await button('Đọc lại ERP').click();await page.waitForFunction(()=>window.qa.held('read')>0);const rereadFocus=await focusBaseline();await open('DOC-A');await noDetailFocus(rereadFocus,'an old ready event cannot satisfy explicit child reread');
@@ -1170,7 +1180,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await page.setViewportSize({width, height: 844}); await reset(); assert.equal(await field('Số đơn').inputValue(), 'FULL ERP A');
       assert.equal(await page.evaluate(w => document.documentElement.scrollWidth <= w, width), true);
       await field('Số đơn').fill('UNSAVED');
-      for (const action of [() => open('DOC-B'), () => activateBackground(button('Tìm kiếm')), () => activateBackground(button('Trang sau')),
+      for (const action of [() => open('DOC-B'), () => submitSearch(), () => activateBackground(button('Trang sau')),
         () => button('Đóng phiếu nhập hàng').click(), () => button('Quay lại danh sách').click(), () => page.evaluate(() => history.back())]) {
         await blocked(action, true); assert.equal(await field('Số đơn').inputValue(), 'UNSAVED');
       }
@@ -1221,7 +1231,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await page.evaluate(() => window.qa.hold('post'));
       await page.getByRole('button', {name: action === 'Save' ? 'Lưu thay đổi' : 'Gửi yêu cầu nhập kho', exact: true}).evaluate(b => {b.click(); b.click();});
       await page.waitForFunction(() => window.qa.held('post') > 0); assert.equal((await calls()).post.length, 1);
-      for (const nav of [() => open('DOC-B'), () => activateBackground(button('Tìm kiếm')), () => activateBackground(button('Trang sau')), () => button('Đóng phiếu nhập hàng').click(), () => page.evaluate(() => history.back())]) await blocked(nav);
+      for (const nav of [() => open('DOC-B'), () => submitSearch(), () => activateBackground(button('Trang sau')), () => button('Đóng phiếu nhập hàng').click(), () => page.evaluate(() => history.back())]) await blocked(nav);
       await page.evaluate(() => window.qa.release('post')); await unknown();
       await page.evaluate(() => window.qa.hold('reconcile')); await button('Kiểm tra yêu cầu gốc').click();
       await page.waitForFunction(() => window.qa.held('reconcile') > 0); await blocked(() => button('Quay lại danh sách').click());
@@ -1238,7 +1248,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
     await run('workspace temporarily null hides data but same-scope restoration reconciles original', async () => {
       await reset({mode: 'lost'}); await field('Số đơn').fill('RETAIN'); await save(); await unknown();
       await page.evaluate(()=>window.qa.workspace(false));await page.waitForFunction(()=>!document.querySelector('#inbound-header-orderNumber'));
-      assert.equal(await dialog().count(),0);await blocked(()=>page.evaluate(()=>window.qaNavigation.requestClose()));
+      assert.equal(await (await dialog()).count(),0);await blocked(()=>page.evaluate(()=>window.qaNavigation.requestClose()));
       await page.evaluate(() => window.qa.workspace(true)); await unknown(); await button('Kiểm tra yêu cầu gốc').click(); await confirmed();
       const c = await calls(); assert.equal(c.post.length, 1); assert.equal(c.reconcile[0], c.post[0]);
     });
@@ -1276,7 +1286,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await page.evaluate(status=>window.qa.failList(status),status);await page.waitForFunction(()=>!document.getElementById('inbound-header-orderNumber'));
       assert.deepEqual(await page.evaluate(()=>window.qaDenied),[]);await blocked(()=>button('Đóng phiếu nhập hàng').click());
       await page.evaluate(()=>{window.qa.release('post');window.qa.listHealthy();window.qa.hold('read');});
-      await dialog().getByRole('button', {name: 'Xác minh lại quyền nhập hàng', exact: true}).click();await page.waitForFunction(()=>window.qa.held('read')>0);
+      await (await dialog()).getByRole('button', {name: 'Xác minh lại quyền nhập hàng', exact: true}).click();await page.waitForFunction(()=>window.qa.held('read')>0);
       assert.equal(await field('Số đơn').count(),0);await page.evaluate(()=>window.qa.release('read'));await unknown();
       await button('Kiểm tra yêu cầu gốc').click();await confirmed();const c=await calls();assert.equal(c.post.length,1);assert.equal(c.reconcile[0],original);
     });
@@ -1311,7 +1321,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await reset({mode});await field('Số đơn').fill('COMMITTED A');await save();await confirmed();
       await page.waitForFunction(()=>document.querySelector('[data-testid=inbound-editor]')?.getAttribute('data-phase')==='readFailed');
       const receipt=await page.getByTestId('inbound-host-receipt').innerText();
-      for(const nav of [()=>open('DOC-B'),()=>activateBackground(button('Tìm kiếm')),()=>activateBackground(button('Trang sau')),
+      for(const nav of [()=>open('DOC-B'),()=>submitSearch(),()=>activateBackground(button('Trang sau')),
         ()=>button('Đóng phiếu nhập hàng').click(),()=>button('Quay lại danh sách').click(),()=>page.evaluate(()=>history.back())]) await blocked(nav);
       assert.equal(await page.getByTestId('inbound-editor').getAttribute('data-document-id'),'DOC-A');
       assert.equal((await calls()).read.includes('DOC-B'),false);assert.equal(await page.getByTestId('inbound-host-receipt').innerText(),receipt);
@@ -1353,7 +1363,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       const receipt=await page.getByTestId('inbound-host-receipt').innerText();
       await page.evaluate(()=>{window.qa.readFailure(true);window.qa.rights({});});
       await page.waitForFunction(()=>!document.getElementById('inbound-header-orderNumber'));assert.equal(await page.locator('[data-testid=inbound-host-receipt],[data-testid=confirmed-receipt]').count(),0);
-      await page.evaluate(()=>window.qa.healthy());await dialog().getByRole('button', {name: 'Xác minh lại quyền nhập hàng', exact: true}).click();await ready();
+      await page.evaluate(()=>window.qa.healthy());await (await dialog()).getByRole('button', {name: 'Xác minh lại quyền nhập hàng', exact: true}).click();await ready();
       assert.equal(await page.getByTestId('inbound-host-receipt').innerText(),receipt);const c=await calls();assert.equal(c.post.length,1);assert.equal(c.reconcile.length,0);
     });
     await run('accepted discard permits selection/filter/close callbacks, not a no-op navigation fixture', async () => {
@@ -1672,7 +1682,14 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
     page = await newPage();
     const button = name => page.getByRole('button', {name, exact: true}), field = name => page.getByLabel(name, {exact: true});
     const host = () => page.getByTestId('inbound-request-host');
-    const dialog = () => page.getByRole('dialog', {name: 'Phiếu nhập hàng đã chọn', exact: true});
+    const dialog=async(documentId='DOC-A')=>{
+      const number=page.getByTestId('inbound-request-host').locator('.request-detail-header .record-document-number');
+      const presented=await number.count()?await number.textContent():null;
+      if(presented!==null)assert.equal(presented,documentId,'Shared dialog identifies the currently expected business document');
+      // A withheld identity during initial GET/verification keeps the exact
+      // generic caption; it must still be counted by masking/visibility checks.
+      return page.getByRole('dialog',{name:'Phiếu nhập hàng đã chọn'+(presented===null?'':' '+documentId),exact:true});
+    };
     const ready = () => page.waitForFunction(() => {const field = document.getElementById('inbound-header-orderNumber'); return field && !field.disabled && document.querySelector('[data-testid=inbound-request-host]')?.getAttribute('data-readback-pending') !== 'true';});
     const open = async (id = 'DOC-A') => {await page.getByRole('button', {name: new RegExp('^Mở phiếu ' + id + ' ')}).click(); await ready();};
     const paint = () => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
@@ -1828,7 +1845,7 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
     });
     for (const kind of ['list', 'read', 'command']) await run(`current ${kind} 401 retires once and later 503 cannot revive that login`, async () => {
       await start(); state[kind === 'command' ? 'commandStatus' : kind + 'Status'] = 401;
-      if (kind === 'command') await save(); else if (kind === 'read') await dialog().getByRole('button', {name: 'Xác minh lại quyền nhập hàng', exact: true}).click(); else await backgroundActivate(button('Tìm kiếm'));
+      if (kind === 'command') await save(); else if (kind === 'read') await (await dialog()).getByRole('button', {name: 'Xác minh lại quyền nhập hàng', exact: true}).click(); else await page.locator('form[aria-label="Lọc phiếu nhập hàng"]').evaluate(form=>form.requestSubmit());
       await page.getByRole('heading',{name:'Phiên làm việc đã kết thúc',exact:true}).waitFor(); await paint(); assert.equal(await field('Số đơn').count(), 0); assert.equal(await button('Xác minh lại phiên nhập hàng').count(), 0);
       state.failure = 503; await page.evaluate(() => window.dispatchEvent(new Event('focus'))); await paint(); assert.equal(await button('Xác minh lại phiên nhập hàng').count(), 0);
     });

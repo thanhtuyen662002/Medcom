@@ -22,6 +22,22 @@ namespace Medcom.Api.Tests;
 
 public sealed class PurchaseRequestEndpointTests
 {
+    [Fact]
+    public async Task Authorized_endpoint_serializes_display_outside_the_unchanged_aggregate()
+    {
+        await using var fixture=await PurchaseHttpFixture.Start();fixture.Source.Seed();
+        fixture.Source.Display.MasterQualified=true;fixture.Source.Display.Items.Add(("QA-ITEM","NSX","Bộ thử nghiệm","ĐVT",true));
+        await fixture.Login();
+        var result=await fixture.Json("/api/purchase-requests/detail?documentId=QA-DOC");var data=result.GetProperty("data");
+        var display=data.GetProperty("itemDisplayContext");var document=data.GetProperty("document");
+        Assert.Equal(document.GetProperty("purchaseRequestId").GetString(),display.GetProperty("documentId").GetString());
+        Assert.Equal(data.GetProperty("stateToken").GetString(),display.GetProperty("stateToken").GetString());
+        Assert.Equal("NSX",display.GetProperty("lines")[0].GetProperty("manufacturerItemCode").GetString());
+        Assert.False(document.TryGetProperty("itemDisplayContext",out _));
+        Assert.False(document.GetProperty("lines")[0].GetProperty("values").TryGetProperty("manufacturerItemCode",out _));
+        Assert.Equal(0,fixture.Source.Commits);
+    }
+
     [Theory]
     [InlineData("/health/live", 200)]
     [InlineData("/health/ready", 503)]

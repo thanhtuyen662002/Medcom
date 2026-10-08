@@ -8,6 +8,8 @@ import {Checkbox} from "@/components/ui/checkbox";
 import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription} from "@/components/ui/dialog";
 import {Table, TableHeader, TableHead, TableBody, TableRow, TableCell} from "@/components/ui/table";
 import {defaultView, restoreView, moveColumn, scopedSelection, type GridColumn, type GridView} from "@/lib/erp/presentation";
+import {ListCustomizationSlot} from "./request-list-shell";
+import {protectedPresentationProps} from "./workspace-auth-gate";
 import {RequestButton, RequestInput} from "./request-presentation";
 
 const features = tableFeatures({columnOrderingFeature, columnVisibilityFeature, columnSizingFeature});
@@ -19,11 +21,16 @@ export type GridProps<T extends RowData> = {
   onOpen:(row:T)=>void; schemaVersion:string; scopeKey:string; compact:boolean; label:string;
   rowAction?:(row:T)=>GridRowAction;
   /** Presentation capabilities only. Document selection and authority stay with the caller. */
-  selectable?:boolean; customizable?:boolean; virtualize?:boolean;
+  selectable?:boolean; customizable?:boolean; virtualize?:boolean; presentationAllowed?:boolean; isPresentationAllowed?:()=>boolean; setCompact?:(value:boolean)=>void;
 };
 
 /** One responsive row/action tree. No querying, business actions or synthetic totals. */
-export function ErpGrid<T extends RowData>({rows, columns, rowId, renderCell, mobileCard, onOpen, schemaVersion, scopeKey, compact, label, rowAction, selectable=true, customizable=true, virtualize=true}:GridProps<T>) {
+export function ErpGrid<T extends RowData>({rows, columns, rowId, renderCell, mobileCard, onOpen, schemaVersion, scopeKey, compact, label, rowAction, selectable=true, customizable=true, virtualize=true, presentationAllowed=true, isPresentationAllowed, setCompact}:GridProps<T>) {
+  const authority=useRef({presentationAllowed,isPresentationAllowed});
+  useLayoutEffect(()=>{authority.current={presentationAllowed,isPresentationAllowed};if(!presentationAllowed)setSettings(false);},[presentationAllowed,isPresentationAllowed]);
+  const currentAuthority=()=>authority.current.presentationAllowed&&(authority.current.isPresentationAllowed?.()??true);
+  const [localCompact,setLocalCompact]=useState(compact);
+  const density=setCompact?compact:localCompact;
   const [view,setView] = useState(()=>defaultView(columns,schemaVersion));
   const [views,setViews] = useState<GridView[]>([]);
   const [viewName,setViewName] = useState("");
@@ -40,6 +47,7 @@ export function ErpGrid<T extends RowData>({rows, columns, rowId, renderCell, mo
   useEffect(()=>{setView(old=>{const restored=restoreView(old,columns,schemaVersion);setRecovery(restored.retired);return restored.view;});},[columns,schemaVersion]);
   useEffect(()=>{
     if(!customizable&&!virtualize&&!mobileCard)return;
+    if(typeof window==="undefined"||typeof window.matchMedia!=="function")return;
     const media=window.matchMedia("(max-width: 767px)");
     const update=()=>setMobile(media.matches);
     update();media.addEventListener("change",update);
@@ -66,7 +74,7 @@ export function ErpGrid<T extends RowData>({rows, columns, rowId, renderCell, mo
   const selectionWidth=selectable?44:0;
   const actionWidth=rowAction?132:0;
   const pinWidth=pinned.reduce((sum,c)=>sum+c.getSize(),selectionWidth);
-  const rowHeight=compact?45:65;
+  const rowHeight=density?45:65;
   const virtualRows=useVirtualizer({count:rows.length,getScrollElement:()=>viewport.current,estimateSize:()=>rowHeight,overscan:6,enabled:virtualize&&customizable&&!mobile});
   const virtualColumns=useVirtualizer({horizontal:true,scrollMargin:pinWidth,count:unpinned.length,getScrollElement:()=>viewport.current,estimateSize:i=>unpinned[i]?.getSize()??160,overscan:2,enabled:virtualize&&customizable&&!mobile});
   const wide=virtualize&&customizable&&!mobile&&unpinned.length>12;
@@ -155,8 +163,8 @@ export function ErpGrid<T extends RowData>({rows, columns, rowId, renderCell, mo
     </TableCell>;
   }
 
-  return <div className="erp-grid" data-customizable={customizable} data-selectable={selectable} data-compact={compact} data-mobile-card={mobileCard?"custom":"cells"}>
-    {customizable&&<div className="grid-view-bar"><div><strong>{view.name}</strong><span>{selected.length?`${selected.length} dòng được chọn trên trang này`:`Enter: chi tiết · Phím mũi tên: di chuyển${selectable?" · Space: chọn":""}`}</span></div><RequestButton onClick={()=>setSettings(true)}><SlidersHorizontal size={15}/>Tùy chỉnh bảng</RequestButton></div>}
+  return <div className="erp-grid" data-customizable={customizable} data-selectable={selectable} data-compact={density} data-mobile-card={mobileCard?"custom":"cells"}>
+    {customizable&&<ListCustomizationSlot><RequestButton type="button" className="grid-customization-button" disabled={!presentationAllowed} onClick={()=>{if(currentAuthority())setSettings(true);}}><SlidersHorizontal size={15}/><span>Tùy chỉnh bảng</span></RequestButton></ListCustomizationSlot>}
     {recovery.length>0&&<p className="grid-recovery" role="status">Đã bỏ {recovery.length} cột không còn trong cấu hình. Các cột hợp lệ vẫn được giữ.</p>}
     {selected.length>0&&<div className="grid-selection" role="status"><span>Đã chọn {selected.length}/{rows.length} dòng của trang đang mở</span><RequestButton variant="ghost" onClick={()=>setSelection([])}><X size={14}/>Bỏ chọn</RequestButton></div>}
     <div className="desktop-grid-viewport" ref={viewport} data-virtualized={rowsVirtualized} style={{"--grid-row-height":`${rowHeight}px`,...(!mobile&&customizable?{height:Math.min(480,44+rows.length*rowHeight)}:{})} as CSSProperties}>
@@ -190,7 +198,8 @@ export function ErpGrid<T extends RowData>({rows, columns, rowId, renderCell, mo
         </TableBody>
       </Table>
     </div>
-    {customizable&&<Dialog open={settings} onOpenChange={setSettings}><DialogContent className="grid-settings-modal"><DialogHeader><DialogTitle>Tùy chỉnh bảng</DialogTitle><DialogDescription>Cột và bố cục cá nhân. Các chế độ xem được giữ trong phiên đang mở; dữ liệu và quyền truy cập do ERP xác nhận.</DialogDescription></DialogHeader>
+    {customizable&&<Dialog open={settings&&presentationAllowed&&!mobile} onOpenChange={open=>{if(!open||currentAuthority())setSettings(open);}}><DialogContent {...protectedPresentationProps(presentationAllowed)} className="grid-settings-modal" onCloseAutoFocus={event=>{if(!currentAuthority())event.preventDefault();}}><DialogHeader><DialogTitle>Tùy chỉnh bảng</DialogTitle><DialogDescription>Cột và bố cục cá nhân. Các chế độ xem được giữ trong phiên đang mở; dữ liệu và quyền truy cập do ERP xác nhận.</DialogDescription></DialogHeader>
+      <label className="grid-density-choice"><input type="checkbox" checked={density} disabled={!presentationAllowed} onChange={event=>{if(currentAuthority()){if(setCompact)setCompact(event.target.checked);else setLocalCompact(event.target.checked);}}}/>Bảng dữ liệu gọn</label>
       <div className="saved-view-list"><RequestButton variant={view.id==="default"?"secondary":"outline"} onClick={()=>setView(defaultView(columns,schemaVersion))}>Mặc định</RequestButton>{views.map(v=><div key={v.id}><RequestButton variant={view.id===v.id?"secondary":"outline"} onClick={()=>{const restored=restoreView(v,columns,schemaVersion);setView(restored.view);setRecovery(restored.retired);}}>{v.name}</RequestButton><RequestButton variant="ghost" aria-label={`Xóa chế độ xem ${v.name}`} onClick={()=>{setViews(old=>old.filter(x=>x.id!==v.id));if(view.id===v.id)setView(defaultView(columns,schemaVersion));}}><X size={13}/></RequestButton></div>)}</div>
       <div className="column-settings-list">{view.order.map((id,index)=>{const column=columns.find(x=>x.id===id);if(!column)return null;return <div className="column-setting" key={id}>
         <Checkbox checked={!view.hidden.includes(id)} disabled={column.required} aria-label={`Hiển thị ${column.label}`} onCheckedChange={value=>setView(old=>({...old,hidden:value===true?old.hidden.filter(x=>x!==id):[...old.hidden,id]}))}/><span>{column.label}</span>

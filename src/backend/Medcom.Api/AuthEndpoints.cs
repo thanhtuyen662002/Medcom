@@ -87,7 +87,8 @@ public static class AuthEndpoints
             if (session.Identity.Capabilities.Contains("inbound-requests.read", StringComparer.Ordinal))
                 navigation.Add(new("inbound-requests", "Yêu cầu nhập kho", "/workspace/?screen=inbound-requests"));
             WorkspaceReadScope.Stamp(context, session);
-            return Results.Ok(new WorkspaceView(session.View, navigation, session.Identity.BranchIds ?? []));
+            return Results.Ok(new WorkspaceView(session.View, navigation, session.Identity.BranchIds ?? [],
+                session.Identity.BranchSelection));
         });
     }
 

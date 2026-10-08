@@ -1,13 +1,15 @@
 "use client";
+import {RecordActionBar} from "./record-dialog";
+import {RecordDeleteConfirmation} from "./record-delete-confirmation";
 import {useRequestNotifications} from "./request-notifications";
-import {RequestButton,RequestInput,RequestTextarea,RequestNotice,RequestStatus,requestMessage,requestStyles} from "./request-presentation";
-import {useEffect,useLayoutEffect,useRef,useState,type CSSProperties} from "react";
+import {RequestLoading,RequestButton,RequestInput,RequestTextarea,RequestNotice,RequestStatus,requestMessage,requestStyles} from "./request-presentation";
+import {useEffect,useLayoutEffect,useRef,useState,useId,type CSSProperties} from "react";
 import {useDirtyGuard} from "./navigation-guard";
 import {accessAvailable,buildCommand,canSend,commandBytes,commandResult,draftErrors,lineKey,observedView,outcomeMessage,sameDraft,sameSnapshot,snapshotAcknowledges,
   type InboundDraftAccess,type InboundDraftAdapter,type InboundDraftCommand,type InboundDraftDetailUpsert,type InboundDraftHeader,type InboundDraftReceipt,type InboundDraftView} from "@/lib/erp/inbound-draft";
 
 export type InboundPresentedRead={documentId:string;scopeKey:string;state:"pending"|"ready"|"failed"};
-export type MobileInboundRequestProps={documentId:string|null;statusPresentation?:{documentId:string;id:number|null;name?:string|null};access:InboundDraftAccess;adapter?:InboundDraftAdapter;onConfirmed?:(receipt:InboundDraftReceipt)=>void;onPresentedRead?:(event:InboundPresentedRead)=>void};
+export type MobileInboundRequestProps={documentId:string|null;presentationAllowed?:boolean;statusPresentation?:{documentId:string;id:number|null;name?:string|null};access:InboundDraftAccess;adapter?:InboundDraftAdapter;onConfirmed?:(receipt:InboundDraftReceipt)=>void;onPresentedRead?:(event:InboundPresentedRead)=>void};
 type Phase="empty"|"loading"|"editing"|"checking"|"pending"|"unknown"|"reconciling"|"failed"|"conflict"|"confirmed"|"readFailed";
 type Binding={documentId:string|null;rights:string;adapter:InboundDraftAdapter|undefined};
 type State={view:InboundDraftView|null;viewBinding:Binding|null;header:InboundDraftHeader|null;details:InboundDraftDetailUpsert[];phase:Phase;
@@ -21,8 +23,18 @@ const unknownMessage=outcomeMessage.OutcomeUnknown;
 /** Injected fixed workflow only. The host must guard document selection/navigation.
  * Keep this component mounted for unresolved custody; key ONLY by login scope. */
 export function MobileInboundRequest(props:MobileInboundRequestProps){return <InboundEditor key={JSON.stringify([props.access.scopeKey])} {...props}/>;}
-function InboundEditor({documentId,statusPresentation,access,adapter,onConfirmed,onPresentedRead}:MobileInboundRequestProps){
+function InboundEditor({documentId,statusPresentation,access,adapter,onConfirmed,onPresentedRead,presentationAllowed=true}:MobileInboundRequestProps){
+  const formId=useId();
   const notify=useRequestNotifications(access.scopeKey,access.canRead&&access.available);
+  const [deleteTarget,setDeleteTarget]=useState<{key:string;binding:Binding;identity:string}|null>(null);
+  const [presentationVersion,setPresentationVersion]=useState({allowed:presentationAllowed,revision:0});
+  if(presentationVersion.allowed!==presentationAllowed)setPresentationVersion({allowed:presentationAllowed,revision:presentationVersion.revision+1});
+  const currentPresentation=useRef({allowed:presentationAllowed,revision:presentationVersion.revision});
+  useLayoutEffect(()=>{currentPresentation.current={allowed:presentationAllowed,revision:presentationVersion.revision};},[presentationAllowed,presentationVersion.revision]);
+  const [previousPresentation,setPreviousPresentation]=useState(presentationAllowed);
+  if(previousPresentation!==presentationAllowed){setPreviousPresentation(presentationAllowed);if(!presentationAllowed)setDeleteTarget(null);}
+  function isPresentationCurrent(){return currentPresentation.current.allowed&&currentPresentation.current.revision===presentationVersion.revision;}
+  const deletionAuthority=useRef({editable:false,binding:null as Binding|null});
   const [state,setState]=useState<State>(empty),[note,setNote]=useState<string|null>(null),[page,setPage]=useState(1);
   const rights=JSON.stringify([access.scopeKey,access.canRead,access.canSave,access.canSend,access.available,access.maxCommandBytes]);
   const [binding,setBinding]=useState<Binding>({documentId,rights,adapter});
@@ -129,23 +141,24 @@ function InboundEditor({documentId,statusPresentation,access,adapter,onConfirmed
   const sendNoteDirty=note!==null;
   const inputDirty=dirty||sendNoteDirty;
   const ready=bound&&service&&!unresolved&&!state.awaitingSnapshot&&state.phase==="editing"&&!!currentView&&[0,1].includes(currentView.statusId);
-  const editable=ready&&access.canSave&&!state.reviewed;
+  const editable=presentationAllowed&&ready&&access.canSave&&!state.reviewed;
+  useLayoutEffect(()=>{deletionAuthority.current={editable,binding};});
   // A dialog opened during preflight must not retain a discard permission after
   // the read advances to execute. Cancel this read explicitly before discarding;
   // once a command exists only the original non-discardable custody path applies.
   useDirtyGuard(unresolved||state.retainEdits||sendNoteDirty||dirty&&["editing","failed","conflict"].includes(state.phase),!unresolved&&state.phase!=="checking");
   function currentBinding(){return bindingCurrent&&live.current.binding===binding;}
-  function patchHeader(field:keyof InboundDraftHeader,value:string|null){if(editable&&!lock.current&&currentBinding()&&field!=="documentDate"&&field!=="branchId")setState(previous=>({...previous,header:previous.header?{...previous.header,[field]:value}:null,reviewed:false,errors:{}}));}
-  function patchDetail(key:string,field:keyof InboundDraftDetailUpsert,value:string|null){if(editable&&!lock.current&&currentBinding()&&field!=="rowId"&&field!=="clientLineId")setState(previous=>({...previous,details:previous.details.map(row=>lineKey(row)===key?{...row,[field]:value}:row),reviewed:false,errors:{}}));}
-  function removeDetail(key:string){if(editable&&!lock.current&&currentBinding())setState(previous=>({...previous,details:previous.details.filter(line=>lineKey(line)!==key),reviewed:false,errors:{}}));}
+  function patchHeader(field:keyof InboundDraftHeader,value:string|null){if(isPresentationCurrent()&&editable&&!lock.current&&currentBinding()&&field!=="documentDate"&&field!=="branchId")setState(previous=>({...previous,header:previous.header?{...previous.header,[field]:value}:null,reviewed:false,errors:{}}));}
+  function patchDetail(key:string,field:keyof InboundDraftDetailUpsert,value:string|null){if(isPresentationCurrent()&&editable&&!lock.current&&currentBinding()&&field!=="rowId"&&field!=="clientLineId")setState(previous=>({...previous,details:previous.details.map(row=>lineKey(row)===key?{...row,[field]:value}:row),reviewed:false,errors:{}}));}
+  function removeDetail(key:string){if(isPresentationCurrent()&&editable&&!lock.current&&currentBinding())setState(previous=>({...previous,details:previous.details.filter(line=>lineKey(line)!==key),reviewed:false,errors:{}}));}
   function addDetail(){
-    if(!editable||lock.current||!currentBinding()||state.details.length>=500)return;
+    if(!isPresentationCurrent()||!editable||lock.current||!currentBinding()||state.details.length>=500)return;
     const id=crypto.randomUUID();
     setState(previous=>({...previous,details:[...previous.details,{rowId:null,clientLineId:id,itemId:"",lotNumberByDocument:null,setQuantityByDocument:null,barrelQuantityByDocument:null,expireDateByDocument:null,unitPrice:null}],reviewed:false,errors:{}}));
     setPage(Math.floor(state.details.length/25)+1);
   }
   function review(){
-    if(lock.current||!ready||!currentBinding()||!currentView||!state.header)return;
+    if(!isPresentationCurrent()||lock.current||!ready||!currentBinding()||!currentView||!state.header)return;
     // A bad Send-only note must not prevent a separate Save (Save emits note:null).
     const draft=draftErrors(currentView,state.header,state.details,null),noteError=draftErrors(currentView,state.header,state.details,note).note;
     const errors=noteError?{...draft,note:noteError}:draft;
@@ -158,7 +171,7 @@ function InboundEditor({documentId,statusPresentation,access,adapter,onConfirmed
     }
   }
   function reload(){
-    if(lock.current||unresolved||busy||!currentBinding())return;
+    if(!isPresentationCurrent()||lock.current||unresolved||busy||!currentBinding())return;
     if((inputDirty||state.retainEdits)&&["editing","failed","conflict","readFailed"].includes(state.phase)&&!state.awaitingSnapshot
       &&!window.confirm("Đọc lại ERP sẽ bỏ các thay đổi đang giữ trên màn hình. Tiếp tục?"))return;
     lock.current=true;
@@ -176,7 +189,7 @@ function InboundEditor({documentId,statusPresentation,access,adapter,onConfirmed
   }
   function stillCurrent(token:number,controller:AbortController){return generation.current===token&&!controller.signal.aborted&&currentBinding();}
   async function dispatch(action:"Save"|"SendToWarehouse"){
-    if(lock.current||!ready||!currentBinding()||!state.reviewed||!currentView||!state.header||!adapter
+    if(!isPresentationCurrent()||lock.current||!ready||!currentBinding()||!state.reviewed||!currentView||!state.header||!adapter
       ||(action==="Save"?!access.canSave||!dirty:!access.canSend||dirty||!!state.errors.note||!canSend(currentView)))return;
     const originalView=currentView,header=state.header,details=state.details,transport=adapter;
     const controller=new AbortController(),token=++generation.current;lock.current=true;
@@ -219,6 +232,7 @@ function InboundEditor({documentId,statusPresentation,access,adapter,onConfirmed
     try{void Promise.resolve(live.current.onConfirmed?.(evidence)).catch(()=>undefined);}catch{}
   }
   async function reconcile(){
+    if(!isPresentationCurrent())return;
     if(lock.current||!currentBinding()||!state.original||state.originalStatus===null||!adapter||!access.canRead||!service||state.phase!=="unknown")return;
     const original=state.original,statusBefore=state.originalStatus,transport=adapter,controller=new AbortController(),token=++generation.current;
     lock.current=true;active.current={controller,kind:"reconcile"};setState(previous=>({...previous,phase:"reconciling",message:"Đang kiểm tra yêu cầu gốc; không gửi lại."}));
@@ -245,39 +259,43 @@ function InboundEditor({documentId,statusPresentation,access,adapter,onConfirmed
     {!unresolved&&<RequestButton type="button" disabled={busy} onClick={reload}>Đọc lại ERP</RequestButton>}
     {state.awaitingSnapshot&&<p role="alert">Đang đọc lại phiếu đã được ERP xác nhận: {state.awaitingSnapshot.documentId}. Chưa thể chỉnh sửa hoặc gửi tiếp. Không gửi lại thao tác đã xác nhận.</p>}
     {!bound&&unresolved&&<p>Chờ kết quả yêu cầu gốc trước khi mở chứng từ đã chọn.</p>}
-    {currentView&&state.header&&<form ref={form} onSubmit={event=>{event.preventDefault();review();}} className={requestStyles.stack}>
+    {state.phase==="loading"&&!unresolved&&!state.awaitingSnapshot&&<RequestLoading form label="Đang đọc phiếu từ ERP…"/>}
+    {currentView&&state.header&&<form id={formId} ref={form} onSubmit={event=>{event.preventDefault();review();}} className={requestStyles.stack}>
       <header className={requestStyles.section}><div className={requestStyles.cardHeading}><strong>{currentView.documentId}</strong><RequestStatus value={currentView.statusId} statusName={statusPresentation?.documentId===currentView.documentId&&statusPresentation.id===currentView.statusId?statusPresentation.name:undefined}/></div><p className={requestStyles.muted}>{state.details.length} dòng đầy đủ</p></header>
       {!access.canSave&&!access.canSend&&<RequestNotice>Phiếu hiện chỉ được xem theo quyền của bạn.</RequestNotice>}
       <p className={requestStyles.muted}>{currentView.costRowCount} dòng chi phí được giữ nguyên, chỉ đọc.</p>
-      <p className={requestStyles.muted}>Ngày chứng từ và chi nhánh được giữ nguyên. Gửi yêu cầu chưa làm thay đổi tồn kho.</p>
       <fieldset disabled={!editable} className={requestStyles.fields}><legend className={requestStyles.title}>Thông tin chứng từ</legend>
         {headerFields.map(([field,label,nullable,multiline])=><ExactField key={field} label={label} id={`inbound-header-${field}`} value={state.header![field]} nullable={nullable} multiline={multiline} disabled={field==="branchId"||field==="documentDate"} error={state.errors[`header.${field}`]} onChange={value=>patchHeader(field,value)}/>)}
       </fieldset>
       <section aria-label="Dòng yêu cầu nhập kho" style={{display:"grid",gap:12,minWidth:0}}>
-        {state.details.slice((shownPage-1)*25,shownPage*25).map(row=>{
+        {state.details.slice((shownPage-1)*25,shownPage*25).map((row,index)=>{
+          const ordinal=(shownPage-1)*25+index+1;
           const key=lineKey(row),domKey=encodeURIComponent(key);
-          return <fieldset key={key} disabled={!editable} className={requestStyles.line} style={{minWidth:0}}><legend className="max-w-full px-1 text-sm font-semibold" style={{maxWidth:"100%",overflowWrap:"anywhere"}}>{row.rowId??"Dòng mới"}</legend>
+          return <fieldset key={key} disabled={!editable} className={requestStyles.line} style={{minWidth:0}}><legend className="max-w-full px-1 text-sm font-semibold" style={{maxWidth:"100%",overflowWrap:"anywhere"}}>Dòng {ordinal}{row.itemId?` · ${row.itemId}`:""}</legend>
             <div className="grid min-w-0 gap-4 sm:grid-cols-2">{detailFields.map(([field,label,nullable,multiline])=><ExactField key={field} label={label} id={`inbound-detail-${domKey}-${field}`} value={row[field]} nullable={nullable} multiline={multiline} error={state.errors[`detail.${key}.${field}`]} onChange={value=>patchDetail(key,field,value)}/>)}</div>
-            <RequestButton type="button" style={{maxWidth:"100%",whiteSpace:"normal",overflowWrap:"anywhere"}} onClick={()=>removeDetail(key)}>Xóa dòng {row.rowId??"mới"}</RequestButton>
+            <RequestButton type="button" style={{maxWidth:"100%",whiteSpace:"normal",overflowWrap:"anywhere"}} onClick={()=>{if(isPresentationCurrent()&&editable&&!lock.current)setDeleteTarget({key,binding,identity:`Dòng ${ordinal}${row.itemId?` · ${row.itemId}`:""}`});}}>Xóa dòng {ordinal}</RequestButton>
           </fieldset>;
         })}
         {state.errors.details&&<p role="alert">{state.errors.details}</p>}
         <nav aria-label="Trang dòng hàng" style={{display:"flex",gap:8,flexWrap:"wrap"}}><RequestButton type="button" disabled={shownPage===1||busy||unresolved} onClick={()=>setPage(shownPage-1)}>Dòng trước</RequestButton><span>Trang {shownPage}/{pageCount}; giữ đủ {state.details.length} dòng</span><RequestButton type="button" disabled={shownPage===pageCount||busy||unresolved} onClick={()=>setPage(shownPage+1)}>Dòng tiếp</RequestButton></nav>
         <RequestButton type="button" disabled={!editable||state.details.length>=500} onClick={addDetail}>Thêm dòng</RequestButton>
       </section>
-      <ExactField id="inbound-note" label="Ghi chú gửi kho" nullable multiline value={note} disabled={!ready||state.reviewed||!access.canSend} error={state.errors.note} onChange={value=>{if(!lock.current&&currentBinding()&&ready&&!state.reviewed&&access.canSend)setNote(value);}}/>
-      {state.reviewed&&<div><p>Rà soát: {dirty?"có thay đổi cần lưu riêng":"không có thay đổi chưa lưu"}.</p><p>Dòng sẽ xóa: {currentView.details.filter(row=>!state.details.some(next=>next.rowId===row.rowId)).map(row=>row.rowId).join(", ")||"không"}</p></div>}
-      <div className={requestStyles.actionBar}>
-        {!state.reviewed?<RequestButton variant="default" type="submit" disabled={!ready}>Rà soát phiếu</RequestButton>:<>
-          <RequestButton type="button" disabled={!ready} onClick={()=>setState(previous=>({...previous,reviewed:false}))}>Quay lại chỉnh sửa</RequestButton>
+      <ExactField id="inbound-note" label="Ghi chú gửi kho" nullable multiline value={note} disabled={!ready||state.reviewed||!access.canSend} error={state.errors.note} onChange={value=>{if(isPresentationCurrent()&&!lock.current&&currentBinding()&&ready&&!state.reviewed&&access.canSend)setNote(value);}}/>
+      {state.reviewed&&<div><p>Rà soát: {dirty?"có thay đổi cần lưu riêng":"không có thay đổi chưa lưu"}.</p><p>Dòng sẽ xóa: {currentView.details.map((row,index)=>({row,ordinal:index+1})).filter(({row})=>!state.details.some(next=>next.rowId===row.rowId)).map(({row,ordinal})=>`Dòng ${ordinal}${row.itemId?` · ${row.itemId}`:""}`).join(", ")||"không"}</p></div>}
+      <RecordActionBar className={requestStyles.actionBar} presentationAllowed={presentationAllowed&&access.canRead&&access.available&&bindingCurrent}>
+        {!state.reviewed?<RequestButton variant="default" type="submit" form={formId} disabled={!ready}>Rà soát phiếu</RequestButton>:<>
+          <RequestButton type="button" disabled={!ready} onClick={()=>{if(isPresentationCurrent())setState(previous=>({...previous,reviewed:false}));}}>Quay lại chỉnh sửa</RequestButton>
           <RequestButton type="button" disabled={!ready||!access.canSave||!dirty} onClick={()=>void dispatch("Save")}>Lưu thay đổi</RequestButton>
           <RequestButton variant="default" type="button" disabled={!ready||!access.canSend||dirty||!!state.errors.note||!canSend(currentView)} onClick={()=>void dispatch("SendToWarehouse")}>Gửi yêu cầu nhập kho</RequestButton>
         </>}
-      </div>
+      </RecordActionBar>
       {currentView.statusId!==0&&currentView.statusId!==1&&<p>Trạng thái hiện tại chỉ đọc; không có thao tác tiếp theo được cấp.</p>}
       {!dirty&&[0,1].includes(currentView.statusId)&&!canSend(currentView)&&<p>Cần có ít nhất một dòng; lô, số lượng bộ, số lượng thùng và ngày giờ hết hạn cần có giá trị trước khi gửi. ERP kiểm tra điều kiện trước khi nhận yêu cầu.</p>}
       {dirty&&<p>Lưu và đọc lại thay đổi trước khi gửi. Gửi chỉ chuyển yêu cầu sang trạng thái 2; không phải nhập tồn kho.</p>}
     </form>}
+    <RecordDeleteConfirmation intent={deleteTarget} open={deleteTarget!==null&&deleteTarget.binding===binding&&editable} identity={deleteTarget?.identity??"Dòng hàng"} presentationAllowed={presentationAllowed&&access.canRead&&access.available&&bindingCurrent}
+      isAllowed={()=>isPresentationCurrent()&&deletionAuthority.current.editable&&deleteTarget?.binding===deletionAuthority.current.binding}
+      onCancel={()=>setDeleteTarget(null)} onConfirm={()=>{if(isPresentationCurrent()&&deleteTarget&&deletionAuthority.current.editable&&deleteTarget.binding===deletionAuthority.current.binding){removeDetail(deleteTarget.key);setDeleteTarget(null);}}}/>
   </section>;
 }
 const headerFields:[keyof InboundDraftHeader,string,boolean,boolean?][]=[

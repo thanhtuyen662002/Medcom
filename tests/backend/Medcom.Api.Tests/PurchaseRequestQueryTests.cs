@@ -17,6 +17,31 @@ namespace Medcom.Api.Tests;
 public sealed class PurchaseRequestQueryTests
 {
     [Theory]
+    [InlineData(20)] [InlineData(21)] [InlineData(50)] [InlineData(51)] [InlineData(100)] [InlineData(101)] [InlineData(500)]
+    public async Task Display_enrichment_executes_in_actual_read_without_changing_count_precision_or_token(int count)
+    {
+        var source=new PurchaseQuerySource();source.Seed(count);source.Display.MasterQualified=true;
+        source.Display.Items.Add(("QA-ITEM","NSX","Bộ thử nghiệm","ĐVT",true));
+        var first=(await source.Service().OpenAsync("QA-DOC")).Value!;
+        Assert.Equal(count,first.Document.Lines.Count);Assert.Equal(count,first.ItemDisplayContext!.Lines.Count);
+        Assert.All(first.Document.Lines,line=>Assert.Equal("999999999999999999",line.Values.Quantity));
+        Assert.Equal(first.Document.Lines.Select(line=>line.LineId),first.ItemDisplayContext.Lines.Select(line=>line.LineId));
+        Assert.Equal(first.StateToken,first.ItemDisplayContext.StateToken);
+        source.Display.Items.Clear();source.Display.Items.Add(("QA-ITEM","changed",null,"",false));
+        var second=(await source.Service().OpenAsync("QA-DOC")).Value!;
+        Assert.Equal(first.StateToken,second.StateToken);Assert.Equal(first.Document,second.Document with{Lines=first.Document.Lines});
+        Assert.Equal("changed",second.ItemDisplayContext!.Lines[0].ManufacturerItemCode);
+        Assert.Equal(0,source.Commits);Assert.Equal(2,source.Rollbacks);
+    }
+    [Fact]
+    public async Task Session_retired_during_enrichment_cannot_publish_metadata_or_document()
+    {
+        var source=new PurchaseQuerySource();source.Seed();source.Display.MasterQualified=true;
+        source.Display.AfterRows=()=>source.Identity=null;
+        var result=await source.Service().OpenAsync("QA-DOC");Assert.Equal(PurchaseRequestQueryOutcome.Denied,result.Outcome);Assert.Null(result.Value);
+    }
+
+    [Theory]
     [InlineData("Đã duyệt", 1L, "Đã duyệt")]
     [InlineData("Nháp", 2L, null)]
     [InlineData(null, 0L, null)]
@@ -504,6 +529,7 @@ internal sealed class PurchaseQuerySource
     public readonly List<(string Sql,Dictionary<string,object?> Parameters)> Commands=[];
     public int Opens,Commits,Rollbacks,ConnectionDisposals,TransactionDisposals,CommandDisposals,ReaderDisposals;
     public Action? AfterData, AfterLookupData, AfterCleanup;
+    public readonly ItemDisplayRecordingSource Display=new();
     public bool LookupShapeOk, BindingMissing, BindingDuplicate, LookupIgnorePaging;
     public string? FailedLookupShape, BadLookupProjection, BadLookupShape;
     public readonly Dictionary<string, object?> BindingOverrides = new(StringComparer.Ordinal);
@@ -519,6 +545,7 @@ internal sealed class PurchaseQuerySource
     {
         var parameters=command.Parameters.Cast<DbParameter>().ToDictionary(p=>p.ParameterName,p=>p.Value==DBNull.Value?null:p.Value,StringComparer.Ordinal);
         Commands.Add((command.CommandText,parameters));
+        if(ItemDisplayRecordingSource.Matches(command.CommandText))return Display.Read(command);
         if(command.CommandText==SqlLegacyBranchScope.NativeUserText)
         {
             if (NativeUnavailable) throw new InvalidOperationException("Synthetic native lookup unavailable.");

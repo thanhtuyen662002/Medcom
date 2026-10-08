@@ -15,6 +15,7 @@ const widths=values=>assert.deepEqual(values.map(value=>value.width).sort((a,b)=
 const emptyErrors=value=>assert.deepEqual(value.errors,[],'Browser evidence must have no errors');
 const nonempty=value=>assert.ok(typeof value==='string'&&value.length>0);
 const gates=[
+ {name:"record-dialog-i50",file:"record-dialog.browser.mjs",evidence:".test-runtime/i50-record-browser/evidence.json",validate(value){assert.equal(value.status,"PASS");emptyErrors(value);assert.deepEqual(value.results.map(result=>result.width),[390,1280]);assert.ok(value.results.every(result=>result.status==="PASS"));}},
  {name:'workspace-auth-gate',file:'workspace-auth-gate.browser.mjs',evidence:'.test-runtime/i44-browser/result.json',validate(value){
   assert.equal(value.status,'PASS');widths(value.evidence);value.evidence.forEach(emptyErrors);
  }},

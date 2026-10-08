@@ -2,10 +2,10 @@
 import {RequestButton,RequestNotice,RequestEmpty,RequestLoading,RequestStatus,RequestError,requestDate,requestStyles} from "./request-presentation";
 import {RequestDetailDialog,useRequestDetailNavigation,useDetailPresentationProof,type RegisterRequestDetailNavigation} from "./request-detail-dialog";
 import {documentStatusLabel} from "@/lib/erp/document-status";
-import {RequestQrSearch} from "./request-qr-search";
+import {useListControls} from "./list-view-state";
 import {PurchaseReferenceDetails} from "./purchase-reference-details";
 import {purchaseReferenceIdentity,type PurchaseReferenceContext} from "@/lib/erp/purchase-reference-context";
-import {RequestListHeader,RequestSearch,RequestBranch,RequestListTable,RequestListToolbar,RequestPagination} from "./request-list-shell";
+import {RequestListComposition,RequestListPanel,RequestListContent,RequestListHeader,RequestSearch,RequestBranch,RequestListTable,RequestListToolbar,RequestPagination} from "./request-list-shell";
 import {useCallback,useEffect,useLayoutEffect,useRef,useState,type FormEvent} from "react";
 import {MobileRequest,type MobileRequestAccess,type PurchaseRequestSnapshot} from "./mobile-request";
 import {useNavigationGuard,type NavigationGuardValidationPhase} from "./navigation-guard";
@@ -26,7 +26,7 @@ type Selection={id:string|null;version:number};
 type DetailState={authority:ReadAuthority;selection:Selection;detail?:PurchaseReadback;error?:unknown;refresh:number};
 type RetainedEditor={scopeKey:string;raw:PurchaseReadback;snapshot:PurchaseRequestSnapshot;bridge:ReturnType<typeof createPurchaseCommandAdapter>;
  observation:WorkspaceData|null;revision:number;receiptId?:string;grant:PurchaseReadback["commandAccess"]};
-export type PurchaseRequestScreenProps={presentationAllowed?:boolean;registerDetailNavigation?:RegisterRequestDetailNavigation;workspace:WorkspaceData|null;verifying?:boolean;loginBoundary:number;sessionEnded:boolean;onVerifyWorkspace:()=>Promise<void>;onDenied:(error:unknown)=>void;onLogin:()=>void};
+export type PurchaseRequestScreenProps={compact?:boolean;setCompact?:(value:boolean)=>void;presentationAllowed?:boolean;registerDetailNavigation?:RegisterRequestDetailNavigation;workspace:WorkspaceData|null;verifying?:boolean;loginBoundary:number;sessionEnded:boolean;onVerifyWorkspace:()=>Promise<void>;onDenied:(error:unknown)=>void;onLogin:()=>void};
 export function PurchaseRequestScreen(props:PurchaseRequestScreenProps){
  // A completed login rotates this boundary even while the shell has no workspace.
  return <PurchaseRequestSession key={props.loginBoundary} {...props}/>;
@@ -59,8 +59,11 @@ function PurchaseRequestSession(props:PurchaseRequestScreenProps){
   <PurchaseRequestReader key={boundary} {...props} boundary={boundary} sessionUnverified={sessionUnverified}/>
  </>;
 }
-function PurchaseRequestReader({workspace,boundary,sessionUnverified,sessionEnded,onDenied,onLogin,verifying=false,presentationAllowed=true,registerDetailNavigation}:PurchaseRequestScreenProps&{boundary:string;sessionUnverified:boolean}){
- const [searchInput,setSearchInput]=useState(""),[search,setSearch]=useState(""),[branch,setBranch]=useState(""),[page,setPage]=useState(1),[refresh,setRefresh]=useState(0);
+function PurchaseRequestReader({workspace,boundary,sessionUnverified,sessionEnded,onDenied,onLogin,verifying=false,presentationAllowed=true,registerDetailNavigation,compact=false,setCompact}:PurchaseRequestScreenProps&{boundary:string;sessionUnverified:boolean}){
+ const {value:controlValue,field:controlField,set:setControls,qualifyPurchase,attachRoot,captureScroll,restoreScroll,setActive}=useListControls("purchase-requests");
+ const {draftSearch:searchInput,appliedSearch:search,appliedBranch:branch,page}=controlValue;
+ const setSearchInput=controlField("draftSearch"),setSearch=controlField("appliedSearch"),setBranch=useCallback((next:string)=>setControls(previous=>({...previous,draftBranch:next,appliedBranch:next})),[setControls]),setPage=controlField("page");
+ const [refresh,setRefresh]=useState(0);
  const [selection,setSelection]=useState<Selection>({id:null,version:0}),selected=selection.id;
  const selectionRef=useRef(selection);
  const setSelected=useCallback((id:string|null)=>{
@@ -108,7 +111,7 @@ function PurchaseRequestReader({workspace,boundary,sessionUnverified,sessionEnde
    setSearchInput("");setSearch("");setBranch("");setPage(1);setSelected(null);setKnownScope(null);serverScope.current=null;setVerifiedWorkspace(null);setVerifiedDetailWorkspace(null);
   }
   setState({key,refresh,observation:workspace,error,loading:false});onDenied(error);
- },[key,refresh,workspace,onDenied,retain,setSelected]);
+ },[key,refresh,workspace,onDenied,retain,setSelected,setSearchInput,setSearch,setBranch,setPage]);
  useEffect(()=>{
   const current=++generation.current,controller=new AbortController();
   if(!allowed)return ()=>controller.abort();
@@ -117,6 +120,7 @@ function PurchaseRequestReader({workspace,boundary,sessionUnverified,sessionEnde
    if(controller.signal.aborted||current!==generation.current)return;
    const changedScope=serverScope.current!==null&&serverScope.current!==bootstrap.scopeKey;serverScope.current=bootstrap.scopeKey;setKnownScope(bootstrap.scopeKey);
    if(changedScope){editorRef.current?.bridge.retire();retain(null);work.current={dirty:false,unresolved:false};setReadAuthority(null);setVerifiedDetailWorkspace(null);setSearchInput("");setSearch("");setBranch("");setPage(1);setSelected(null);setRefresh(value=>value+1);return;}
+   if(qualifyPurchase(bootstrap.scopeKey,bootstrap.data.branchIds))return;
    const retained=editorRef.current;
    if(retained&&selectionRef.current.id===retained.raw.document.purchaseRequestId&&!bootstrap.data.branchIds.includes(retained.raw.document.branchId)){
     // Definitive current branch denial masks both reads, preserving command custody.
@@ -136,7 +140,7 @@ function PurchaseRequestReader({workspace,boundary,sessionUnverified,sessionEnde
    failRead(error);
   });
   return ()=>controller.abort();
- },[key,refresh,allowed,safeBranch,page,search,workspace,observationVersion,retain,failRead,setSelected]);
+ },[key,refresh,allowed,safeBranch,page,search,workspace,observationVersion,retain,failRead,setSelected,qualifyPurchase,setSearchInput,setSearch,setBranch,setPage]);
  const active=allowed&&state.key===key&&(!!state.error||state.scopeKey===knownScope)&&(state.observation===workspace||verifiedWorkspace===workspace&&sameReadAuthority(state.observation,workspace))?state:null;
  const busy=!active||active.loading||active.observation!==workspace||active.refresh!==refresh;
  const currentAuthority=allowed&&readAuthority?.key===key&&readAuthority.refresh===refresh&&readAuthority.observation===workspace&&readAuthority.observationVersion===observationVersion&&readAuthority.scopeKey===knownScope?readAuthority:null;
@@ -266,34 +270,33 @@ function PurchaseRequestReader({workspace,boundary,sessionUnverified,sessionEnde
   const status=failure==="authentication"?401:failure==="authority"?403:409;
   current.onDenied(new ApiError(status,status===409?"read_scope_changed":status===401?"authentication_required":"purchase_reference_denied"));
  },[]);
- return <section hidden={!presentationAllowed} inert={!presentationAllowed} aria-label="Danh sách đề nghị mua hàng" className={requestStyles.stack}>
-  {!workspace?sessionUnverified?<RequestNotice>Đang xác minh phiên ERP để mở lại danh sách và phiếu đã chọn.</RequestNotice>:<RequestEmpty title="Danh sách đề nghị mua hàng"><span className="mb-4 block">Đăng nhập ERP để đọc đề nghị mua hàng.</span><RequestButton onClick={onLogin}>Đăng nhập ERP</RequestButton></RequestEmpty>:!allowed?<RequestNotice>Bạn không có quyền đọc đề nghị mua hàng trong phạm vi hiện tại.</RequestNotice>:verifiedWorkspace!==workspace?<section aria-label="Đang xác minh phạm vi mua hàng">
+ useLayoutEffect(()=>{setActive(presentationAllowed&&allowed&&verifiedWorkspace===workspace&&!verifying);restoreScroll(presentationAllowed&&verifiedWorkspace===workspace&&!busy&&!!active?.list);});
+ return <section ref={attachRoot} onScrollCapture={event=>{if(event.target instanceof HTMLElement)captureScroll(event.target);}} hidden={!presentationAllowed} inert={!presentationAllowed} aria-label="Danh sách đề nghị mua hàng" className={requestStyles.stack}>
+  {!workspace?sessionUnverified?<RequestLoading label="Đang xác minh phiên ERP để mở lại danh sách và phiếu đã chọn."/>:<RequestEmpty title="Danh sách đề nghị mua hàng"><span className="mb-4 block">Đăng nhập ERP để đọc đề nghị mua hàng.</span><RequestButton onClick={onLogin}>Đăng nhập ERP</RequestButton></RequestEmpty>:!allowed?<RequestNotice>Bạn không có quyền đọc đề nghị mua hàng trong phạm vi hiện tại.</RequestNotice>:verifiedWorkspace!==workspace?<section aria-label="Đang xác minh phạm vi mua hàng">
    {active?.error?<RequestError error={active.error}/>:<RequestLoading label="Đang xác minh phạm vi và quyền ERP…"/>}
    {!!active?.error&&<RequestButton type="button" onClick={()=>{cancelFocus();setRefresh(value=>value+1);}}>Xác minh lại phạm vi ERP</RequestButton>}
-  </section>:<div className={requestStyles.panel}>
+  </section>:<RequestListComposition><RequestListPanel>
    <RequestListHeader title="Danh sách đề nghị" listRef={registerFocusList}><div className="request-list-qualification"><span id="purchase-write-qualification">Chỉ mở các phiếu hiện có.</span><RequestButton disabled className="request-unavailable" aria-describedby="purchase-write-qualification">Tạo đề nghị</RequestButton></div></RequestListHeader>
    <RequestListToolbar onSubmit={find}>
     <RequestSearch label="Tìm mã đề nghị" placeholder="Tìm mã đề nghị…" value={searchInput} onChange={setSearchInput}/>
-    <RequestQrSearch scopeKey={qrScopeKey} disabled={!allowed||busy||verifying||verifiedWorkspace!==workspace||!!active?.error} presentationAllowed={presentationAllowed} onConfirmedSearchText={setSearchInput}/>
     <RequestBranch label="Chi nhánh" value={safeBranch} disabled={busy} branches={active?.bootstrap?.branchIds??[]} onChange={id=>move(()=>{cancelFocus();setBranch(id);setPage(1);setSelected(null);editorRef.current?.bridge.retire();retain(null);})}/>
-    <RequestButton type="submit" variant="secondary" disabled={busy}>Tìm kiếm</RequestButton>
     <RequestButton className="request-list-refresh" type="button" disabled={busy} onClick={()=>move(()=>{cancelFocus();setRefresh(value=>value+1);})}>Làm mới</RequestButton>
    </RequestListToolbar>
-   {busy&&!active?.list?<RequestLoading label="Đang đọc ERP…"/>:active?.error?<RequestError error={active.error}/>:<>
-    <RequestListTable label="Danh sách đề nghị" columns={[{id:"id",label:"Mã đề nghị"},{id:"date",label:"Ngày đề nghị"},{id:"branch",label:"Chi nhánh"},{id:"person",label:"Người đề nghị"},{id:"department",label:"Phòng ban"},{id:"status",label:"Trạng thái"}]} rows={(active?.list?.rows??[]).map(row=>({id:row.documentId,cells:[row.documentId,requestDate(row.purchaseDate),row.branchId,row.personSuggest||"Chưa có thông tin",row.department||"Chưa có thông tin",<RequestStatus key="status" value={row.statusId} statusName={row.statusName}/>],action:"Mở đề nghị",actionLabel:`Mở đề nghị ${row.documentId}`,selected:selected===row.documentId,onOpen:()=>open(row.documentId),buttonRef:element=>registerFocusRow(row.documentId,element)}))}/>
+   <RequestListContent>{busy&&!active?.list?<RequestLoading label="Đang đọc ERP…"/>:active?.error?<RequestError error={active.error}/>:<>
+    <RequestListTable compact={compact} setCompact={setCompact} presentationAllowed={presentationAllowed&&allowed&&!busy&&!verifying&&verifiedWorkspace===workspace&&!active?.error} isPresentationAllowed={()=>openAuthority.current!==null} label="Danh sách đề nghị" columns={[{id:"id",label:"Mã đề nghị"},{id:"date",label:"Ngày đề nghị"},{id:"branch",label:"Chi nhánh"},{id:"person",label:"Người đề nghị"},{id:"department",label:"Phòng ban"},{id:"status",label:"Trạng thái"}]} rows={(active?.list?.rows??[]).map(row=>({id:row.documentId,cells:[row.documentId,requestDate(row.purchaseDate),row.branchId,row.personSuggest||"Chưa có thông tin",row.department||"Chưa có thông tin",<RequestStatus key="status" value={row.statusId} statusName={row.statusName}/>],action:"Mở đề nghị",actionLabel:`Mở đề nghị ${row.documentId}`,selected:selected===row.documentId,onOpen:()=>open(row.documentId),buttonRef:element=>registerFocusRow(row.documentId,element)}))}/>
     {active?.list?.rows.length===0&&<RequestEmpty title="Không có đề nghị phù hợp">Thử điều chỉnh mã đề nghị hoặc chi nhánh.</RequestEmpty>}
     <RequestPagination label="Phân trang đề nghị" page={page} previousDisabled={page===1} nextDisabled={!active?.list?.hasMore||page>=1000} onPrevious={()=>move(()=>{cancelFocus();setPage(value=>value-1);setSelected(null);editorRef.current?.bridge.retire();retain(null);})} onNext={()=>move(()=>{cancelFocus();setPage(value=>value+1);setSelected(null);editorRef.current?.bridge.retire();retain(null);})}/>
    </>}
-  </div>}
+  </RequestListContent></RequestListPanel></RequestListComposition>}
   {/* Outside the busy/error/selection fragment. Never key by token or discard an unknown intent. */}
-  <RequestDetailDialog open={selected!==null} presentationAllowed={presentationAllowed&&workspace!==null} title="Phiếu mua hàng hiện có" closeLabel="Đóng đề nghị" onRequestClose={close}>
-   {detailBusy&&!canRead&&<RequestLoading label="Đang đọc phiếu từ ERP…"/>}
+  <RequestDetailDialog open={selected!==null} presentationAllowed={presentationAllowed&&workspace!==null} title="Phiếu mua hàng hiện có" documentNumber={canRead&&presentationReady?selected:null} closeLabel="Đóng đề nghị" onRequestClose={close}>
+   {detailBusy&&!canRead&&<RequestLoading form label="Đang đọc phiếu từ ERP…"/>}
    {!!activeDetail?.error&&<RequestError error={activeDetail.error}/>}
    {!!active?.error&&<RequestError error={active.error}/>}
    {(!canRead||!presentationReady)&&<RequestNotice>Dữ liệu phiếu tạm ẩn trong khi xác minh. Yêu cầu gốc vẫn được giữ.</RequestNotice>}
    {!canRead&&<RequestButton type="button" onClick={()=>setRefresh(value=>value+1)}>Xác minh lại phiếu</RequestButton>}
   {editor&&<section ref={registerFocusDetail} aria-label="Phiếu mua hàng hiện có" tabIndex={-1} className="scroll-mt-24 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" hidden={!canRead||!presentationReady}><div className={requestStyles.stack}>
-   <MobileRequest statusPresentation={{documentId:editor.raw.document.purchaseRequestId,id:editor.raw.document.statusId,name:editor.raw.statusName}} initial={editor.snapshot} access={access} adapter={editor.bridge.adapter} readRevision={editor.revision} onConfirmed={onConfirmed} onWorkStateChange={onWorkStateChange}/>
+   <MobileRequest presentationAllowed={presentationAllowed&&canRead&&presentationReady} statusPresentation={{documentId:editor.raw.document.purchaseRequestId,id:editor.raw.document.statusId,name:editor.raw.statusName}} initial={editor.snapshot} access={access} adapter={editor.bridge.adapter} readRevision={editor.revision} onConfirmed={onConfirmed} onWorkStateChange={onWorkStateChange}/>
    {canRead&&<>{editor.receiptId&&<p role="status">ERP đã xác nhận yêu cầu {editor.receiptId}. Receipt vẫn được giữ khi đọc lại thất bại.</p>}
     <FullPurchaseReadback readback={editor.raw}/>
     <PurchaseReferenceDetails {...referenceInput} documentRateExchange={editor.raw.document.header.rateExchange} onContextChange={onReferenceContext}/></>}
@@ -303,7 +306,7 @@ function PurchaseRequestReader({workspace,boundary,sessionUnverified,sessionEnde
 }
 
 function value(value:string|number|boolean|null){return value===null?"NULL":typeof value==="boolean"?String(value):value===""?"\"\"":String(value);}
-const lineLabels=["Mã dòng","Mã mặt hàng","Ngân sách","Thời gian yêu cầu","Số lượng","Đơn giá","Thành tiền","Model"];
+const lineLabels=["STT","Mã mặt hàng","Ngân sách","Thời gian yêu cầu","Số lượng","Đơn giá","Thành tiền","Model"];
 function FullPurchaseReadback({readback}:{readback:PurchaseReadback}){
  const document=readback.document;
  const labels:Record<string,string>={purchaseRequestId:"Mã đề nghị",branchId:"Chi nhánh",statusId:"Mã trạng thái ERP",statusName:"Trạng thái",isLocked:"Khóa phiếu",purchaseDate:"Ngày giờ đề nghị trên ERP",purposeId:"Mã mục đích",personSuggest:"Người đề nghị",department:"Phòng ban",purposeDescOrClient:"Diễn giải mục đích / khách hàng",price:"Giá trị đề nghị",notes:"Ghi chú",currencyId:"Tiền tệ",objectId:"Mã đối tượng",rateExchange:"Tỷ giá"};
@@ -311,7 +314,7 @@ function FullPurchaseReadback({readback}:{readback:PurchaseReadback}){
   <dl className={requestStyles.values}>{Object.entries({purchaseRequestId:document.purchaseRequestId,branchId:document.branchId,statusId:document.statusId,statusName:documentStatusLabel(document.statusId,readback.statusName),isLocked:document.isLocked,...document.header}).map(([field,data])=><div key={field}><dt>{labels[field]}</dt><dd style={{whiteSpace:"pre-wrap",overflowWrap:"anywhere"}}>{value(data)}</dd></div>)}</dl>
   <p>{document.lines.length} dòng hàng</p>
   <div className="min-w-0 md:overflow-x-auto"><table role="table" aria-label="Toàn bộ dòng đề nghị" className="block w-full text-sm md:table"><thead role="rowgroup" className="sr-only md:not-sr-only md:table-header-group"><tr role="row">{lineLabels.map(field=><th role="columnheader" key={field} scope="col" className="border-b border-border bg-muted/40 p-3 text-left font-medium text-muted-foreground">{field}</th>)}</tr></thead>
-   <tbody role="rowgroup" className="grid gap-3 md:table-row-group">{document.lines.map(line=><tr role="row" key={line.lineId} className="grid grid-cols-2 gap-3 rounded-lg border border-border p-3 md:table-row md:border-0 md:p-0">{[line.lineId,line.values.itemId,line.values.budget,line.values.timeRequired,line.values.quantity,line.values.unitPrice,line.values.totalPrice,line.values.model].map((data,index)=><td role="cell" key={index} className="min-w-0 whitespace-pre-wrap [overflow-wrap:anywhere] md:border-b md:border-border md:p-3"><span aria-hidden="true" className="mb-1 block text-xs text-muted-foreground md:hidden">{lineLabels[index]}</span><span>{value(data)}</span></td>)}</tr>)}</tbody>
+   <tbody role="rowgroup" className="grid gap-3 md:table-row-group">{document.lines.map((line,ordinal)=><tr role="row" key={line.lineId} className="grid grid-cols-2 gap-3 rounded-lg border border-border p-3 md:table-row md:border-0 md:p-0">{[ordinal+1,line.values.itemId,line.values.budget,line.values.timeRequired,line.values.quantity,line.values.unitPrice,line.values.totalPrice,line.values.model].map((data,index)=><td role="cell" key={index} className="min-w-0 whitespace-pre-wrap [overflow-wrap:anywhere] md:border-b md:border-border md:p-3"><span aria-hidden="true" className="mb-1 block text-xs text-muted-foreground md:hidden">{lineLabels[index]}</span><span>{value(data)}</span></td>)}</tr>)}</tbody>
   </table></div>
  </div></details></section>;
 }

@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I55",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "794ed71c-93e7-4d62-a147-18ed22a2c185",
+  "base_sha": "f528a717e7617e05a3d393f984983aeee42463a9",
+  "work_branch": "codex/g45-railway-runtime-setup-i55-20261008",
+  "claim_branch": "medcom-claims/g45/direct/I55",
+  "scope": [
+    "src/backend/Medcom.Api/Program.cs",
+    "src/backend/Medcom.Api/DatabaseConnectionProbe.cs",
+    "tests/backend/Medcom.Api.Tests/DatabaseConnectionProbeTests.cs",
+    "docs/deploy/RAILWAY_DATABASE_PROBE.md",
+    "src/backend/Medcom.Api/ApiHost.cs",
+    "src/backend/Medcom.Api/SecureIngress.cs",
+    "tests/backend/Medcom.Api.Tests/SecureIngressTests.cs",
+    "docs/deploy/RAILWAY_SECURE_INGRESS.md",
+    "docs/execution/direct-runs/I55.json"
+  ],
+  "purpose": "Add isolated one-shot database connectivity probe and default-off explicit secure-ingress mode for owner-authorized Railway testing",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "constraints": [
+    "Admission only; implementation NOT_RUN.",
+    "Root sole publisher; local workers do not publish.",
+    "Probe opens a policy-validated connection and SELECT 1 only; sanitized output, no host startup or credential output.",
+    "Reuse current scoped SQL TLS policy unchanged; do not enable certificate exceptions.",
+    "Ingress mode default off; no forwarded-header trust or environment auto-detection; preserve host, Origin, CSRF, cookies and authorization.",
+    "No real SQL, private configuration or Tools.dll in source, images or CI.",
+    "Owner approved Railway ingress activation only after code and tests pass; activation remains a separate verified step.",
+    "ERP login, private DLL provisioning, native permissions and business writes remain unaccepted."
+  ],
+  "created_at": "2026-10-08T14:36:00Z"
+}

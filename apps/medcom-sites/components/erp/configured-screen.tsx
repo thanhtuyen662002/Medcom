@@ -1,7 +1,7 @@
 "use client";
 import {useCallback,useEffect,useLayoutEffect,useMemo,useRef,useState} from "react";
 import {useQuery,useQueryClient} from "@tanstack/react-query";
-import {Skeleton} from "@/components/ui/skeleton";
+import {RequestLoading} from "./request-presentation";
 import {canDispatchDocumentEdit,DocumentEditor} from "./document-editor";
 import {ErrorPanel} from "./feedback";
 import {RequestDetailDialog,useDetailPresentationProof} from "./request-detail-dialog";
@@ -50,7 +50,7 @@ function ConfiguredScreen({screen,documentId,workspace,presentationAllowed,isPre
  useEffect(()=>{if(query.error)onDenied(query.error);},[query.error,onDenied]);
  return <>
   {allowed&&query.error&&<ErrorPanel error={query.error} retry={()=>void query.refetch()}/>}
-  {!shown&&<Skeleton className="h-60" aria-label="Đang xác minh chứng từ"/>}
+  {!shown&&<RequestLoading form label="Đang xác minh chứng từ"/>}
   <div hidden={!shown} inert={!shown} aria-hidden={!shown}>{admitted&&extension&&<DocumentEditor snapshot={admitted.snapshot} currentDefinition={currentDefinition} adapter={guardedAdapter!} lookupAdapter={extension.lookup} onConfirmed={()=>{if(canRead())void query.refetch();void client.invalidateQueries({queryKey:["erp-documents"]});}} onDenied={onDenied}/>}</div>
  </>;
 }

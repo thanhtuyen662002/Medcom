@@ -104,7 +104,7 @@ test('I43 exact synthetic responses pass real clients and full draft validation;
   checked.push('purchase detail, full inbound bootstrap and scoped draft');
   model.readOnly=true;
   const unavailable=await api.read('QA-001',null,signal);
-  assert.deepEqual(unavailable,{scopeKey:null,access:{canRead:false,canSave:false,canSend:false,available:false,maxCommandBytes:1048576},data:{outcome:'Unavailable',document:null}});
+  assert.deepEqual(unavailable,{scopeKey:null,access:{canRead:false,canSave:false,canSend:false,available:false,maxCommandBytes:1048576},data:{outcome:'Unavailable',document:null},itemDisplayContext:null});
   assert.equal(observedView(unavailable.data,'QA-001'),null);
   for(const page of [1,2]){
    const fallback=await getDetail('inbound-requests','QA-001',page,signal,readScope);
@@ -411,7 +411,7 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
   page.on('response',response=>{const url=new URL(response.url());if(url.pathname.startsWith('/api/erp/'))bounded(scenario.responses,{path:url.pathname,status:response.status()});});
   page.on('requestfailed',request=>bounded(scenario.networkFailures,{path:new URL(request.url()).pathname,error:request.failure()?.errorText}));
   currentScenario.stage='load-fixture';await page.goto(origin+'/?kind='+kind);
-  currentScenario.stage='authorized-list';const list=page.getByRole('table',{name:kind==='purchase'?'Danh sách đề nghị':'Phiếu nhập hàng',exact:true});await list.waitFor();
+  currentScenario.stage='authorized-list';const list=page.getByRole('grid',{name:kind==='purchase'?'Danh sách đề nghị':'Phiếu nhập hàng',exact:true});await list.waitFor();
   currentScenario.stage='exact-open-actions';await list.getByRole('button',{name:kind==='purchase'?'Mở đề nghị QA-001':/^Mở phiếu QA-001 ·/,exact:kind==='purchase'}).waitFor();
   await list.getByRole('button',{name:kind==='purchase'?'Mở đề nghị QA-018':/^Mở phiếu QA-018 ·/,exact:kind==='purchase'}).waitFor();
   assert.deepEqual(await list.locator('[data-grid-row]').evaluateAll(rows=>rows.map(row=>row.getAttribute('data-grid-row'))),dialogList(kind,1).rows.map(row=>row.documentId),'All 18 authorized source rows must be present before dialog tests');
@@ -462,7 +462,7 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
    assert.equal(model.calls.length,beforeCalls,'Opening a pure command modal must not manufacture a new authority observation');
    const retainedSurface=page.locator('[data-request-detail-surface]'),accessibility=await retainedSurface.evaluate(retainedDetailAccessibility);
    assert.ok(accessibility.controlCount>0,'Original retained controls must remain mounted');assert.equal(accessibility.exposedControlCount,0,'Every retained detail control is excluded from accessibility: '+JSON.stringify(accessibility));
-   for(const role of ['button','textbox','combobox','checkbox','spinbutton','link','heading','table'])assert.equal(await retainedSurface.getByRole(role).count(),0,'Higher modal hides underlying accessible '+role+' roles');
+   for(const role of ['button','textbox','combobox','checkbox','spinbutton','link','heading','table','grid'])assert.equal(await retainedSurface.getByRole(role).count(),0,'Higher modal hides underlying accessible '+role+' roles');
    if(kind==='purchase'){assert.ok(accessibility.liveCount>0,'Actual purchase live statuses remain mounted');assert.equal(accessibility.exposedLiveCount,accessibility.liveCount,'Radix intentionally preserves live status announcements and their ancestors');}
    await page.keyboard.press('Escape');await command.waitFor({state:'hidden'});await paint();assert.equal(await page.getByRole('alertdialog').count(),0);assert.deepEqual(await snapshot(),before);assert.equal(await notes().inputValue(),'R1 COMMAND DIRTY');
    for(const control of [retainedNotes,retainedClose])assert.equal(await control.evaluate(node=>node.isConnected&&!node.closest('[aria-hidden="true"],[hidden],[inert]')),true,'Escape restores the same retained control nodes to accessibility');assert.equal(model.calls.length,beforeCalls,'Closing the higher modal does not reread or replace retained data');
@@ -509,7 +509,7 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
   for(const kind of ['purchase','inbound'])for(const width of [1280,390])await run(kind+' '+width+' retained dirty dialog and guarded dismissal matrix',async()=>{
    const scenarioViewport={width,height:844},dismissalPaths=width===390?['x','visible','escape']:['x','visible','escape','backdrop'],dismissalViewports=[];let coveredBackdropPoint=null;await start(kind,scenarioViewport.width,scenarioViewport.height);
    await page.getByLabel(kind==='purchase'?'Tìm mã đề nghị':'Tìm phiếu nhập hàng',{exact:true}).fill('QA');
-   await page.getByRole('button',{name:'Tìm kiếm',exact:true}).click();await paint();
+   await page.getByLabel(kind==='purchase'?'Tìm mã đề nghị':'Tìm phiếu nhập hàng',{exact:true}).press('Enter');await paint();
    await page.getByRole('navigation',{name:kind==='purchase'?'Phân trang đề nghị':'Trang danh sách phiếu'}).getByRole('button',{name:'Trang sau',exact:true}).click();await paint();
    const scroller=page.getByTestId('list-scroll');await scroller.evaluate(e=>e.scrollTop=250);
    const scroll=await scroller.evaluate(e=>e.scrollTop);await open(kind);await notes().fill('I43 DIRTY RETAINED');

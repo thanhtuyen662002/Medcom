@@ -5,6 +5,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using Medcom.Api;
 using Medcom.Application;
+using Medcom.Contracts;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
@@ -17,6 +18,49 @@ namespace Medcom.Api.Tests;
 
 public sealed class AuthenticationHttpTests
 {
+    [Fact]
+    public async Task Workspace_branch_metadata_changes_read_scope_with_equal_grants_without_rejecting_supplemental_queries()
+    {
+        var documents = new ScopeDocuments();
+        await using var server = await SecureTestServer.Start(documentReader: documents);
+        server.Authority.Identity = server.Authority.Identity with { Capabilities = ["platform.status", "purchase-orders.read"],
+            BranchIds = ["A", "B"], BranchSelection = new("all", null, false) };
+        using var login = await server.Post("/api/auth/login", new { username = "synthetic-user", password = "synthetic-password" }, await server.Csrf());
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+        async Task<(string Session, string Read)> Workspace(BranchSelection? expected)
+        {
+            using var response = await server.Client.GetAsync("/api/workspace");
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var body = await response.Content.ReadFromJsonAsync<WorkspaceView>();
+            Assert.NotNull(body); Assert.Equal(expected, body.BranchSelection);
+            Assert.Equal(new[] { "A", "B" }, body.BranchIds);
+            return (response.Headers.GetValues("X-Medcom-Session-Scope").Single(),
+                response.Headers.GetValues("X-Medcom-Read-Scope").Single());
+        }
+        var all = await Workspace(new("all", null, false));
+        server.Authority.Identity = server.Authority.Identity with { AuthorityVersion = 2, BranchSelection = new("assigned", "A", true) };
+        var assigned = await Workspace(new("assigned", "A", true));
+        Assert.Equal(all.Session, assigned.Session); Assert.NotEqual(all.Read, assigned.Read);
+        using (var supplemental = await server.Client.GetAsync("/api/documents/purchase-orders?branchId=B"))
+        {
+            Assert.Equal(HttpStatusCode.OK, supplemental.StatusCode);
+            Assert.Equal(assigned.Read, supplemental.Headers.GetValues("X-Medcom-Read-Scope").Single());
+        }
+        Assert.Equal("B", documents.LastBranchQuery);
+        Assert.Contains("B", documents.LastIdentity!.BranchIds!);
+        using (var detail = await server.Client.GetAsync("/api/documents/purchase-orders/detail?documentId=TEST"))
+            Assert.Equal(HttpStatusCode.OK, detail.StatusCode);
+        server.Authority.Identity = server.Authority.Identity with { AuthorityVersion = 3, BranchSelection = new("assigned", "B", true) };
+        var reassigned = await Workspace(new("assigned", "B", true));
+        Assert.Equal(all.Session, reassigned.Session); Assert.NotEqual(assigned.Read, reassigned.Read);
+        server.Authority.Identity = server.Authority.Identity with { AuthorityVersion = 4, BranchSelection = null };
+        var unavailable = await Workspace(null);
+        Assert.Equal(all.Session, unavailable.Session); Assert.NotEqual(reassigned.Read, unavailable.Read);
+        server.Authority.Identity = server.Authority.Identity with { AuthorityVersion = 5, BranchSelection = new("all", null, false) };
+        Assert.Equal(all, await Workspace(new("all", null, false)));
+        Assert.Equal(2, documents.Calls);
+    }
+
     [Fact]
     public async Task RealLoginSessionLogoutAndReplayAreServerAuthoritative()
     {
@@ -94,10 +138,19 @@ public sealed class AuthenticationHttpTests
     private sealed class ScopeDocuments : IDocumentReader
     {
         private static readonly Medcom.Contracts.DocumentSummary Row = new("TEST", "2026-10-06", "A", 1, false);
-        public Task<DocumentResult> ReadAsync(AuthoritativeIdentity identity, DocumentKind kind, DocumentQuery query, CancellationToken token) =>
-            Task.FromResult(new DocumentResult(DocumentOutcome.Success, new([Row], query.Page, query.PageSize, false)));
-        public Task<DocumentDetailResult> ReadDetailAsync(AuthoritativeIdentity identity, DocumentKind kind, DocumentDetailQuery query, CancellationToken token) =>
-            Task.FromResult(new DocumentDetailResult(DocumentOutcome.Success, new(Row, [], [], query.Page, query.PageSize, false)));
+        public int Calls;
+        public string? LastBranchQuery;
+        public AuthoritativeIdentity? LastIdentity;
+        public Task<DocumentResult> ReadAsync(AuthoritativeIdentity identity, DocumentKind kind, DocumentQuery query, CancellationToken token)
+        {
+            Calls++; LastBranchQuery = query.BranchId; LastIdentity = identity;
+            return Task.FromResult(new DocumentResult(DocumentOutcome.Success, new([Row], query.Page, query.PageSize, false)));
+        }
+        public Task<DocumentDetailResult> ReadDetailAsync(AuthoritativeIdentity identity, DocumentKind kind, DocumentDetailQuery query, CancellationToken token)
+        {
+            Calls++; LastIdentity = identity;
+            return Task.FromResult(new DocumentDetailResult(DocumentOutcome.Success, new(Row, [], [], query.Page, query.PageSize, false)));
+        }
     }
 
     [Fact]

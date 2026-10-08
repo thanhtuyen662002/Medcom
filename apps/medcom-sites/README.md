@@ -23,7 +23,7 @@ purchase actions stay disabled from the parent authority request through the
 fresh document/grant response. Periodic data and command-grant checks continue. The
 selection is reconciled with the refreshed page; a document no longer present
 closes. Observation-version increments, expiry renewal and set ordering do not
-reset these controls. This does not add cross-screen or reload persistence.
+reset these controls. I50 additionally restores bounded list controls across real screen unmounts; it does not add reload persistence.
 
 Workspace and generic document responses carry two response-only correlation
 headers: `X-Medcom-Session-Scope` and `X-Medcom-Read-Scope`. The API creates opaque,
@@ -49,3 +49,52 @@ covers desktop/mobile outages, version/expiry refresh, scope/session replacement
 errors, selected-document removal and abort-ignoring late responses. Use the
 existing locked toolchain; the test fails rather than installing or skipping
 missing prerequisites. This browser fixture is not real ERP/SQL acceptance.
+
+
+## I50 shared presentation and list memory
+
+Purchase requests, purchase orders and inbound requests import the same
+`RequestListComposition`, `RequestListHeader`/`ScreenHeader`, `RequestListToolbar`,
+`RequestListTable`/`ErpGrid`, `RequestLoading`/`ListLoading`, empty/error states and
+notification bridge. Search submits on Enter. Desktop customization includes
+density; mobile exposes search, branch and refresh. Customization portals remain
+subject to current authority. Requests remain non-selectable and all Open
+callbacks retain their original current-read guards. Branch locking requires an
+explicit assigned source ID; absence of branch metadata grants nothing.
+
+Workspace owns one `ListViewProvider` with a three-screen `createListViewStore`.
+Only draft/applied search and branch, page and bounded numeric scroll offsets
+survive screen unmount. Selected documents, business rows, proofs, pending writes,
+receipts and modal/editor state never enter that store. Verified session/scope
+changes and terminal retirement clear it, including A→B→A. Temporary verification
+loss preserves inert controls. Purchase restoration waits for fresh bootstrap
+scope and permitted branch IDs; newer user input or scrolling cancels restoration.
+Existing draft-versus-applied behavior and guarded history are retained.
+
+The top-level Hướng dẫn tab is the single instructional surface.
+`RecordDialog` (compatibility export `RequestDetailDialog`) retains the proven
+responsive, authority-masked dialog tree and focus/stacking foundation.
+`RecordActionBar` places existing actions in its footer with explicit form owners;
+`RecordDeleteConfirmation` presents existing local line removal callbacks without
+adding business writes or permissions. Internal row keys/command targets stay
+intact while visible row identity uses ordinals and ItemID. QR search entry points
+are removed; standalone scanner code remains separate from warehouse workflows.
+
+`list-view-state.test.mjs` and `request-screen-controls.test.mjs` exercise actual
+hooks and screen unmounts; `shared-screen-ui.test.mjs` emits synthetic production
+component SSR and compiled CSS. `record-dialog.browser.mjs` is a required native
+browser gate for desktop/mobile geometry, retained authority masking, nested
+confirmation and guarded dirty close. SSR/DOM models do not establish native
+browser acceptance. No preview fixture is imported by production code.
+
+I50 R1 gives all three lists an explicit overflow-visible `RequestListPanel`;
+`RequestListContent` clips their inner content. Generic panel and dialog clipping
+remain intact. Editor hosts pass current presentation eligibility to their
+confirmation portals and action footer; presentation loss retires only the local
+removal target, while retaining the draft and original operation custody.
+Order details bind retained scroll to the shared dialog's actual body element.
+Configured sheets, report loading and initial/detail GETs consume the same form
+or list skeleton. Inbound Apply retires the prior list read even when filter
+values are unchanged; its local apply revision is never retained in view memory.
+Native sticky and portal assertions are included in the presentation browser
+fixture; execution requires Root's installed browser runtime.

@@ -104,7 +104,7 @@ test('actual mobile component interactions and adversarial async states in insta
     });
     await t.test('line cards add/remove within the supplied limit and perform actual remote lookup', async () => {
       await reset(); await page.getByRole('button', {name: 'Thêm dòng hàng'}).click(); assert.equal(await page.getByRole('article').count(), 2); assert.ok(await page.getByRole('button', {name: 'Thêm dòng hàng'}).isDisabled());
-      await page.getByRole('button', {name: 'Bỏ dòng 2'}).click(); assert.equal(await page.getByRole('article').count(), 1);
+      await page.getByRole('button', {name: 'Bỏ dòng 2'}).click(); assert.equal(await page.getByRole('article').count(), 2, 'Line is retained until confirmation'); await page.getByRole('alertdialog').getByRole('button', {name: 'Xóa dòng', exact: true}).click(); assert.equal(await page.getByRole('article').count(), 1);
       await page.getByRole('button', {name: 'Mặt hàng dòng 1', exact: true}).click(); await page.getByRole('option', {name: /Mặt hàng tổng hợp 2/}).click();
       assert.match(await page.locator('body').innerText(), /Mặt hàng tổng hợp 2/); assert.equal((await calls()).lookups.at(-1).id, 'qa-item');
     });

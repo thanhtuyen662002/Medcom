@@ -184,7 +184,11 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
                 }
             }
             var document = PurchaseRequestCommandRules.Normalize(head with { Lines = lines });
-            return new(document, PurchaseRequestCommandRules.EqualityToken(document), StatusName: statusName);
+            var stateToken = PurchaseRequestCommandRules.EqualityToken(document);
+            var display = await ItemDisplayContextReader.ReadAsync(tx, "purchase-requests", document.PurchaseRequestId,
+                document.BranchId, stateToken, document.StatusId, document.IsLocked, null, null,
+                document.Lines.Select(line => (line.LineId, line.Values.ItemId)).ToArray(), ct);
+            return new(document, stateToken, StatusName: statusName, ItemDisplayContext: display);
         }, token);
     }
 

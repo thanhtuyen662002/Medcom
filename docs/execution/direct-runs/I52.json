@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I52",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "91f2db85-ff89-42bf-aadb-e3bfe7dfe313",
+  "base_sha": "bba926f951332ffb8547850af2aa13e66da35685",
+  "work_branch": "codex/g45-warehouse-qr-contract-i52-20261008",
+  "claim_branch": "medcom-claims/g45/direct/I52",
+  "scope": [
+    "src/backend/Medcom.Contracts/WarehouseQrContracts.cs",
+    "src/backend/Medcom.Application/WarehouseQr/WarehouseQrParser.cs",
+    "tests/backend/Medcom.Api.Tests/WarehouseQrParserTests.cs",
+    "apps/medcom-sites/lib/erp/warehouse-qr.ts",
+    "apps/medcom-sites/tests/warehouse-qr.test.mjs",
+    "docs/erp/WAREHOUSE_QR_WORKFLOW_EVIDENCE.json",
+    "docs/backend/WAREHOUSE_QR_WORKFLOW.md",
+    "docs/execution/direct-runs/I52.json"
+  ],
+  "purpose": "Implement verified warehouse QR parsing contracts",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "constraints": [
+    "Admission only; implementation NOT_RUN.",
+    "Root sole publisher; Work returns local candidate only.",
+    "Pure disconnected parsing and typed candidate contracts, no SQL/database/HTTP routes or mutation execution.",
+    "Preserve exact known source normalization, field distinctions and explicit Unicode/code-page unknowns; any narrower profile is labeled separately.",
+    "Barcode text is not operation identity; no auto-replay, fake receipt, package quantity inference or source print-binding substitution.",
+    "No UI host, navigation, runtime, private data, dependencies, CI workflow or test-runner edits."
+  ],
+  "created_at": "2026-10-08T03:55:45.785Z"
+}

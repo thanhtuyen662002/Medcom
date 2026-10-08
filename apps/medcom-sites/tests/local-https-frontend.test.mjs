@@ -78,9 +78,9 @@ function workspaceRecoveryButton(page) {
 const purchaseIdentitySelector = 'form[aria-label="Đề nghị mua hàng trên điện thoại"] > header > p > strong';
 function purchaseDocumentIdentity(page, baselineControl) {
   // The exact historical control used a document heading. Current request
-  // dialogs have a generic title; their protected form owns the actual ID.
+  // dialogs include the document number in the shared title; the protected form also owns the exact ID.
   if (baselineControl) return page.getByRole('heading', {name: 'I29-PR-P2-00', exact: true});
-  return page.getByRole('dialog', {name: 'Phiếu mua hàng hiện có', exact: true})
+  return page.getByRole('dialog', {name: 'Phiếu mua hàng hiện có I29-PR-P2-00', exact: true})
     .getByRole('region', {name: 'Phiếu mua hàng hiện có', exact: true})
     .locator(purchaseIdentitySelector).filter({hasText: /^I29-PR-P2-00$/});
 }
@@ -153,7 +153,7 @@ test('I29 purchase identity fixture matches the production editor and generic di
   const page = {getByRole(role, options) {
     calls.push(role);
     if (role === 'heading') {assert.deepEqual(options, {name: 'I29-PR-P2-00', exact: true}); return legacyHeading;}
-    assert.equal(role, 'dialog'); assert.deepEqual(options, {name: 'Phiếu mua hàng hiện có', exact: true});
+    assert.equal(role, 'dialog'); assert.deepEqual(options, {name: 'Phiếu mua hàng hiện có I29-PR-P2-00', exact: true});
     return {getByRole(region, regionOptions) {assert.equal(region, 'region'); assert.deepEqual(regionOptions, {name: 'Phiếu mua hàng hiện có', exact: true});
       return {locator(selector) {assert.equal(selector, purchaseIdentitySelector); return {filter({hasText}) {
       assert.equal(hasText.test('I29-PR-P2-00'), true);
@@ -362,8 +362,8 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
     const purchaseIdentity = () => purchaseDocumentIdentity(page, baselineControl);
     const purchaseRow = () => page.getByRole('button', {name: 'Mở đề nghị I29-PR-P2-00', exact: true});
     const freshOrderDetail = async () => {
-      await page.getByRole('heading', {name: 'I29-PO-P2-00', exact: true}).waitFor();
-      await page.locator('.detail-sheet .desktop-detail-lines').getByText('I29-ITEM-P2-0', {exact: true}).waitFor();
+      await page.getByRole('heading', {name: 'Đơn đặt hàng mua I29-PO-P2-00', exact: true}).waitFor();
+      await page.locator('.request-detail-dialog .request-detail-body .desktop-detail-lines').getByText('I29-ITEM-P2-0', {exact: true}).waitFor();
     };
     const freshPurchaseDetail = async () => {
       await purchaseEditor().waitFor();
@@ -387,7 +387,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await page.goto(ready.publicOrigin + '/?screen=purchase-orders');
       await page.getByRole('button', {name: 'I29-PO-P1-00', exact: true}).waitFor();
       await page.getByLabel('Tìm mã chứng từ', {exact: true}).fill('APPLIED');
-      await page.getByRole('button', {name: 'Tìm kiếm', exact: true}).click();
+      await page.getByLabel('Tìm mã chứng từ', {exact: true}).press('Enter');
       await page.locator('.document-panel').getByRole('combobox', {name: 'Chi nhánh', exact: true}).selectOption('BR-A');
       await page.getByRole('navigation', {name: 'Phân trang chứng từ', exact: true}).getByRole('button', {name: 'Trang sau', exact: true}).click();
       await page.getByRole('button', {name: 'I29-PO-P2-00', exact: true}).waitFor();
@@ -396,7 +396,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await page.getByRole('button', {name: 'Trang dòng hàng tiếp theo', exact: true}).click();
       await freshOrderDetail();
       await page.locator('.desktop-grid-viewport').evaluate(element => {element.scrollTop = 220; element.scrollLeft = 80;});
-      await page.locator('.detail-sheet').evaluate(element => {element.scrollTop = 140;});
+      await page.locator('.request-detail-dialog .request-detail-body').evaluate(element => {element.scrollTop = 140;});
       await paint();
     };
     const preparePurchase = async () => {
@@ -404,7 +404,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
         sessionScope: 'a'.repeat(64), readScope: 'b'.repeat(64), purchaseScope: 'c'.repeat(64), branchIds: ['BR-A', 'BR-B']});
       await page.goto(ready.publicOrigin + '/?screen=purchase-requests');
       await purchasePanel().getByLabel('Tìm mã đề nghị', {exact: true}).fill('APPLIED');
-      await purchasePanel().getByRole('button', {name: 'Tìm kiếm', exact: true}).click();
+      await purchasePanel().getByLabel('Tìm mã đề nghị', {exact: true}).press('Enter');
       await purchasePanel().getByRole('combobox', {name: 'Chi nhánh', exact: true}).selectOption('BR-A');
       await purchasePanel().getByRole('button', {name: 'Trang sau', exact: true}).click();
       await purchaseRow().waitFor();
@@ -441,7 +441,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
           && (kind === 'pending' ? editorForm?.textContent.includes('SYNTHETIC PENDING NOTE') || editorForm?.querySelector('textarea[name="notes"]')?.value === 'SYNTHETIC PENDING NOTE'
             : visible('[aria-label="Phiếu mua hàng hiện có"] textarea[name="notes"]') && editorForm?.querySelector('textarea[name="notes"]') === noteInput);
         const present = kind === 'orders'
-          ? visible('.document-link') && visible('.detail-sheet .desktop-detail-lines') && document.querySelector('.detail-sheet')?.textContent.includes('I29-ITEM-P2-0')
+          ? visible('.document-link') && visible('.request-detail-dialog .request-detail-body .desktop-detail-lines') && document.querySelector('.request-detail-dialog .request-detail-body')?.textContent.includes('I29-ITEM-P2-0')
           : visible(purchaseListRow) && visible('[aria-label="Phiếu mua hàng hiện có"]') && stableEditor && document.querySelector('[aria-label="Phiếu mua hàng hiện có"]')?.textContent.includes('SYNTHETIC-PURCHASE-ITEM');
         if (!present) window.i29MissingFrames++;
       };
@@ -473,7 +473,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
     };
     const assertOrderMasked = async () => {
       assert.equal(await page.locator('.document-link:visible').count(), 0);
-      assert.equal(await page.locator('.detail-sheet .desktop-detail-lines:visible').count(), 0);
+      assert.equal(await page.locator('.request-detail-dialog .request-detail-body .desktop-detail-lines:visible').count(), 0);
     };
     const assertPurchaseMasked = async () => {
       assert.equal(await purchasePanel().getByRole('button', {name: /^Mở đề nghị I29-/}).count(), 0);
@@ -549,7 +549,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
     await run('I29 built 60s background observation refresh preserves order list, detail, filters, pages and scroll', async () => {
       await prepareOrders(); await orderControls();
       const scroll = await page.locator('.desktop-grid-viewport').evaluate(e => ({top: e.scrollTop, left: e.scrollLeft}));
-      const detailScroll = await page.locator('.detail-sheet').evaluate(e => e.scrollTop);
+      const detailScroll = await page.locator('.request-detail-dialog .request-detail-body').evaluate(e => e.scrollTop);
       assert.ok(scroll.top > 0 && scroll.left > 0 && detailScroll > 0, 'fixture must exercise genuine scroll offsets');
       const before = await snapshot(); await watchStableData('orders');
       await control({holds: ['workspace', 'orders-list', 'orders-detail']});
@@ -563,7 +563,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await waitFor(async () => !(await snapshot()).waiting.some(entry => entry.value > 0), 'background order refresh released');
       await freshOrderDetail(); await paint(); await orderControls(); await stopStableData('order read');
       assert.deepEqual(await page.locator('.desktop-grid-viewport').evaluate(e => ({top: e.scrollTop, left: e.scrollLeft})), scroll);
-      assert.equal(await page.locator('.detail-sheet').evaluate(e => e.scrollTop), detailScroll);
+      assert.equal(await page.locator('.request-detail-dialog .request-detail-body').evaluate(e => e.scrollTop), detailScroll);
       const after = await snapshot();
       for (const route of ['/api/workspace', '/api/documents/purchase-orders', '/api/documents/purchase-orders/detail']) {
         const calls = after.calls.filter(call => call.path === route).length - before.calls.filter(call => call.path === route).length;
@@ -579,7 +579,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
         await activate(other, 'visible'); await held('workspace'); await assertOrderMasked();
         await control({holds: ['orders-list', 'orders-detail']}); await held('orders-list'); await assertOrderMasked();
         await control({holds: ['orders-detail']}); await held('orders-detail');
-        assert.equal(await page.locator('.detail-sheet .desktop-detail-lines:visible').count(), 0);
+        assert.equal(await page.locator('.request-detail-dialog .request-detail-body .desktop-detail-lines:visible').count(), 0);
         await control({holds: []}); await freshOrderDetail(); await orderControls();
       } finally {await control({holds: []}); await other.close();}
     });
@@ -916,14 +916,14 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await prepareOrders(); await control({readScope: 'd'.repeat(64), branchIds: ['BR-B']});
       await page.clock.fastForward(60001);
       await waitFor(async () => await page.getByLabel('Tìm mã chứng từ', {exact: true}).inputValue() === '', 'order scope replacement');
-      assert.equal(await page.getByRole('heading', {name: 'I29-PO-P2-00', exact: true}).count(), 0);
+      assert.equal(await page.getByRole('heading', {name: 'Đơn đặt hàng mua I29-PO-P2-00', exact: true}).count(), 0);
       assert.match(await page.getByRole('navigation', {name: 'Phân trang chứng từ', exact: true}).innerText(), /Trang 1/);
       await preparePurchase(); await control({purchaseScope: 'e'.repeat(64), readScope: 'f'.repeat(64), branchIds: ['BR-B']});
       await page.clock.fastForward(60001);
       await waitFor(async () => await purchasePanel().getByLabel('Tìm mã đề nghị', {exact: true}).inputValue() === '', 'purchase scope replacement');
       assert.equal(await purchaseEditor().isVisible(), false);
       assert.equal(await purchaseIdentity().isVisible(), false);
-      assert.equal(await page.getByRole('dialog', {name: 'Phiếu mua hàng hiện có', exact: true}).count(), 0, 'scope retirement must close the selected purchase dialog');
+      assert.equal(await page.getByRole('dialog', {name: 'Phiếu mua hàng hiện có I29-PR-P2-00', exact: true}).or(page.getByRole('dialog', {name: 'Phiếu mua hàng hiện có', exact: true})).count(), 0, 'scope retirement must close the selected purchase dialog');
       assert.match(await purchasePanel().getByRole('navigation', {name: 'Phân trang đề nghị', exact: true}).innerText(), /Trang 1/);
     });
     await run('I29 built same-display-name session marker replacement retires purchase selection and filters', async () => {
@@ -932,7 +932,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await waitFor(async () => await purchasePanel().getByLabel('Tìm mã đề nghị', {exact: true}).inputValue() === '', 'session marker replacement');
       assert.equal(await purchaseEditor().isVisible(), false);
       assert.equal(await purchaseIdentity().isVisible(), false);
-      assert.equal(await page.getByRole('dialog', {name: 'Phiếu mua hàng hiện có', exact: true}).count(), 0, 'session retirement must close the selected purchase dialog');
+      assert.equal(await page.getByRole('dialog', {name: 'Phiếu mua hàng hiện có I29-PR-P2-00', exact: true}).or(page.getByRole('dialog', {name: 'Phiếu mua hàng hiện có', exact: true})).count(), 0, 'session retirement must close the selected purchase dialog');
     });
     await run('I29 built expiry fences selected purchase data until explicit login', async () => {
       await preparePurchase(); await control({expired: true}); await page.clock.fastForward(60001);
