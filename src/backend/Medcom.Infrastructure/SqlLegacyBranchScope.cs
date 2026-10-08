@@ -1,6 +1,7 @@
 using System.Data;
 using System.Data.Common;
 using Medcom.Application.PurchaseRequests;
+using Medcom.Contracts;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Medcom.Api.Tests")]
 
@@ -81,7 +82,13 @@ internal static class SqlLegacyBranchScope
         return result.Order(StringComparer.Ordinal).ToArray();
     }
 
+    internal sealed record Resolution(string[] BranchIds, BranchSelection? BranchSelection);
+
+    // Existing detail/lookup/command callers consume exactly the same grants as before.
     internal static async Task<string[]> ReadAsync(DbTransaction transaction, LegacyUser expected, CancellationToken token)
+        => (await ResolveAsync(transaction, expected, token)).BranchIds;
+
+    internal static async Task<Resolution> ResolveAsync(DbTransaction transaction, LegacyUser expected, CancellationToken token)
     {
         if (transaction.IsolationLevel != IsolationLevel.Serializable || expected.Disabled || !expected.GroupEnabled
             || string.IsNullOrEmpty(expected.StoredHash)) throw new InvalidOperationException("Invalid scope authority.");
@@ -113,7 +120,10 @@ internal static class SqlLegacyBranchScope
                 values.Add(reader.IsDBNull(0) ? null : reader.GetString(0));
             }
             await RequireEnd(reader, token);
-            return Validate(values, false);
+            var branches = Validate(values, false);
+            // A missing native literal in derived data cannot establish selection semantics.
+            return new(branches, branches.Contains(native!, StringComparer.Ordinal)
+                ? new BranchSelection("assigned", native, true) : null);
         }
         await using (var command = Command(transaction, CatalogShapeText))
         await using (var reader = await command.ExecuteReaderAsync(token))
@@ -135,7 +145,8 @@ internal static class SqlLegacyBranchScope
                 values.Add(reader.GetString(0));
             }
             await RequireEnd(reader, token);
-            return Validate(values, true);
+            var branches = Validate(values, true);
+            return new(branches, branches.Length > 0 ? new BranchSelection("all", null, false) : null);
         }
     }
 

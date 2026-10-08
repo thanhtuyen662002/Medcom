@@ -1,12 +1,14 @@
 using System.Security.Cryptography;
 using System.Text;
 using Medcom.Application;
+using Medcom.Contracts;
 
 namespace Medcom.Infrastructure;
 
 // Private adapter data. Never use this record as an API response or log field.
 public sealed record LegacyUser(string Username, string DisplayName, string StoredHash,
-    bool Disabled, string? GroupId, bool GroupEnabled, IReadOnlyList<string>? Capabilities = null, IReadOnlyList<string>? BranchIds = null);
+    bool Disabled, string? GroupId, bool GroupEnabled, IReadOnlyList<string>? Capabilities = null,
+    IReadOnlyList<string>? BranchIds = null, BranchSelection? BranchSelection = null);
 public interface ILegacyUserStore
 {
     Task<LegacyUser?> FindAsync(string username, CancellationToken cancellationToken);
@@ -62,5 +64,6 @@ public sealed class LegacyIdentityAuthority(ILegacyUserStore users, ILegacyPassw
     internal static string Stamp(LegacyUser user) => Convert.ToHexString(SHA256.HashData(
         Encoding.UTF8.GetBytes(user.Username + "\0" + user.StoredHash + "\0" + user.GroupId)));
     private AuthoritativeIdentity Identity(LegacyUser user, long version) => new(user.Username, company.TenantId,
-        company.CompanyId, company.CompanyName, user.DisplayName, version, ["platform.status", .. user.Capabilities ?? []], Stamp(user), user.BranchIds);
+        company.CompanyId, company.CompanyName, user.DisplayName, version, ["platform.status", .. user.Capabilities ?? []],
+        Stamp(user), user.BranchIds, user.BranchSelection);
 }
