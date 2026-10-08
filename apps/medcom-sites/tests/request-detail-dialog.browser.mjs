@@ -337,20 +337,20 @@ test('I43 R1 production layout effect yields focus and Escape to higher modal ow
  const file=ts.createSourceFile('request-detail-dialog.tsx',source,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX);let effect;
  const visit=node=>{if(ts.isCallExpression(node)&&node.expression.getText(file)==='useLayoutEffect'&&node.arguments[0]?.getText(file).includes('const element = content.current'))effect=node.arguments[0].getText(file);ts.forEachChild(node,visit);};visit(file);assert.ok(effect);
  const code=ts.transpileModule('('+effect+')',{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
- const listeners=new Map(),observers=[];let closed=0;
+ const listeners=new Map(),observers=[],focusCalls=[];let closed=0;
  const document={hidden:false,activeElement:null,addEventListener(name,handler){const set=listeners.get(name)??new Set();set.add(handler);listeners.set(name,set);},removeEventListener(name,handler){listeners.get(name)?.delete(handler);}};
  const emit=(name,event)=>{for(const handler of [...(listeners.get(name)??[])])handler(event);};
  class Element{
-  constructor(name,parent=null,role=null,z='auto'){this.name=name;this.parentElement=parent;this.role=role;this.css={display:'block',visibility:'visible',opacity:'1',zIndex:z};this.style={overflow:''};this.isConnected=true;this.hidden=false;this.inert=false;this.ariaHidden=false;this.tabIndex=0;}
+  constructor(name,parent=null,role=null,z='auto'){this.name=name;this.parentElement=parent;this.role=role;this.css={display:'block',visibility:'visible',opacity:'1',zIndex:z};this.style={overflow:''};this.isConnected=true;this.hidden=false;this.inert=false;this.ariaHidden=false;this.tabIndex=0;this.disabled=false;}
   contains(node){for(let n=node;n;n=n.parentElement)if(n===this)return true;return false;}
   closest(selector){if(selector.includes('[hidden]')&&this.hidden||selector.includes('[inert]')&&this.inert||selector.includes('[aria-hidden="true"]')&&this.ariaHidden)return this;return this.parentElement?.closest(selector)??null;}
   getClientRects(){return this.isConnected&&!this.closest('[hidden]')?[{}]:[];}
-  matches(selector){return selector===':disabled'?false:false;}
+  matches(selector){return selector===':disabled'&&this.disabled;}
   getAttribute(name){return name==='role'?this.role:null;}
   querySelectorAll(){return this===detail?[detailInput]:[];}
   querySelector(){return null;}
   addEventListener(){} removeEventListener(){}
-  focus(){document.activeElement=this;emit('focusin',{target:this});}
+  focus(){focusCalls.push(this);document.activeElement=this;emit('focusin',{target:this});}
  }
  const body=new Element('body'),surface=new Element('surface',body,null,'45'),detail=new Element('detail',surface,'dialog'),detailInput=new Element('detail-input',detail);
  const command=new Element('command',body,'dialog','50'),commandInput=new Element('command-input',command),alert=new Element('guard',body,'alertdialog','80'),alertInput=new Element('guard-cancel',alert),outside=new Element('outside',body);
@@ -373,11 +373,16 @@ test('I43 R1 production layout effect yields focus and Escape to higher modal ow
    surface.ariaHidden=false;surface.css.visibility='visible';surface.css.opacity='1';surface.css.display='block';document.hidden=false;mutation();assert.strictEqual(document.activeElement,detailInput);
   }
   alert.hidden=false;alertInput.focus();assert.strictEqual(document.activeElement,alertInput);assert.equal(escape().prevented,false);assert.equal(closed,0);alert.hidden=true;outside.focus();mutation();assert.strictEqual(document.activeElement,detailInput);
+  detailInput.focus();const beforeDisabled=focusCalls.length;detailInput.disabled=true;mutation();
+  assert.strictEqual(document.activeElement,detail,'Disabling the active reread control transfers ownership to the bounded frame immediately');
+  assert.equal(focusCalls.length,beforeDisabled+1);
+  detailInput.disabled=false;mutation();assert.strictEqual(document.activeElement,detail);assert.equal(focusCalls.length,beforeDisabled+1,'Re-enabling the old control cannot steal focus from a newer pending Open');
+  detailInput.focus();mutation();assert.strictEqual(document.activeElement,detailInput,'A later explicit control focus remains valid');
   assert.equal(escape().prevented,true);assert.equal(closed,1,'foreground detail retains its guarded Escape handler');
-  for(const attribute of ['aria-hidden','style','class','hidden','inert'])assert.ok(observers[0].options.attributeFilter.includes(attribute));
+  for(const attribute of ['aria-hidden','style','class','hidden','inert','disabled'])assert.ok(observers[0].options.attributeFilter.includes(attribute));
  }finally{cleanup();}
  surface.hidden=true;outside.focus();surface.hidden=false;mutation();assert.strictEqual(document.activeElement,outside,'a queued observer cannot resume retired permission/selection ownership');escape();assert.equal(closed,1);
- await writeFile(path.join(output,'r1-focus-dom-model.json'),JSON.stringify({result:'PASS',executed:'exact production layout-effect callback compiled by TypeScript',dom:'explicit doubles',realBrowser:false,cases:['visible higher dialog','aria-hidden transition','hidden and lower dialog ignored','visibility/opacity/display/document-hidden','AlertDialog control','foreground Escape','cleanup prevents stale observer focus']},null,2));
+ await writeFile(path.join(output,'r1-focus-dom-model.json'),JSON.stringify({result:'PASS',executed:'exact production layout-effect callback compiled by TypeScript',dom:'explicit doubles',realBrowser:false,cases:['visible higher dialog','aria-hidden transition','hidden and lower dialog ignored','visibility/opacity/display/document-hidden','AlertDialog control','disabled active control retirement','re-enabled control cannot restore obsolete focus','foreground Escape','cleanup prevents stale observer focus']},null,2));
 });
 test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
  const {script,css}=await compile();

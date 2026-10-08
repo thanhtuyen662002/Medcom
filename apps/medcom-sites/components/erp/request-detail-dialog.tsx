@@ -111,8 +111,10 @@ export function RequestDetailDialog({open, presentationAllowed = true, title, cl
     document.addEventListener("focusin", contain);
     // The root AlertDialog has no local Trigger. Its closing portal may remove
     // the focused Cancel button without a focusin event on this surface.
-    const observer = new MutationObserver(() => { if (!element.contains(document.activeElement)) focus(); });
-    observer.observe(document.body, {childList: true, subtree: true, attributes: true, attributeFilter: ["hidden", "inert", "aria-hidden", "role", "style", "class", "data-state"]});
+    // Retire a focused control when a reread disables it; re-enabling it later
+    // must not restore obsolete focus over a newer explicit Open ticket.
+    const observer = new MutationObserver(() => { const current = document.activeElement; if (!element.contains(current) || current instanceof HTMLElement && current.matches(':disabled')) focus(); });
+    observer.observe(document.body, {childList: true, subtree: true, attributes: true, attributeFilter: ["hidden", "inert", "aria-hidden", "role", "style", "class", "data-state", "disabled"]});
     return () => {
       active = false;
       observer.disconnect();
