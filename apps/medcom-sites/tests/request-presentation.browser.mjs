@@ -422,6 +422,37 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
   assert.ok(checks.length);assert.ok(checks.every(v=>v.height>=43.5),'Request touch targets must be at least 44px: '+JSON.stringify(checks));
   if(width<768)assert.ok(checks.filter(v=>['INPUT','TEXTAREA','SELECT'].includes(v.tag)).every(v=>v.font>=16),'Mobile input/textarea fonts must be 16px');
  }
+ // I59 measures usable native text space, not just the outer control rectangle.
+ // Canvas uses the control's computed font; no test-only presentation overrides.
+ async function toolbarContentGeometry(toolbar,width,screen){
+  const measured=await toolbar.evaluate(element=>{
+   const rect=node=>{const box=node.getBoundingClientRect();return {left:box.left,right:box.right,top:box.top,bottom:box.bottom,width:box.width,height:box.height};};
+   const visible=node=>{if(!node)return false;const box=rect(node),style=getComputedStyle(node);return box.width>0&&box.height>0&&style.display!=='none'&&style.visibility==='visible'&&Number(style.opacity)>0;};
+   const content=node=>{const box=rect(node),style=getComputedStyle(node),left=box.left+parseFloat(style.borderLeftWidth)+parseFloat(style.paddingLeft),right=box.right-parseFloat(style.borderRightWidth)-parseFloat(style.paddingRight),canvas=document.createElement('canvas'),context=canvas.getContext('2d');context.font=`${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;const text=node.tagName==='SELECT'?node.selectedOptions[0]?.textContent??'':node.value;return {...box,contentLeft:left,contentRight:right,contentWidth:right-left,text,textWidth:context.measureText(text).width,font:parseFloat(style.fontSize),disabled:node.disabled};};
+   const input=element.querySelector('.request-list-search input'),select=element.querySelector('.request-list-branch select'),refresh=element.querySelector('.request-list-refresh'),chevron=element.querySelector('.request-list-branch > svg:last-child'),searchIcon=element.querySelector('.request-list-search > svg'),badge=element.querySelector('.request-list-search > kbd'),refreshIcon=refresh.querySelector('svg');
+   const pointUncovered=node=>{const box=rect(node),hit=document.elementFromPoint(box.left+box.width/2,box.top+box.height/2);return hit===node||node.contains(hit);};
+   return {search:content(input),branch:content(select),refresh:{...rect(refresh),label:refresh.getAttribute('aria-label'),iconVisible:visible(refreshIcon),textVisible:visible(refresh.querySelector('.request-list-refresh-label')),uncovered:pointUncovered(refresh)},searchIcon:{...rect(searchIcon),visible:visible(searchIcon)},chevron:{...rect(chevron),visible:visible(chevron)},badgeVisible:visible(badge),badge:badge?rect(badge):null,searchUncovered:pointUncovered(input),branchUncovered:pointUncovered(select)};
+  });
+  const diagnostic=JSON.stringify({screen,width,...measured});
+  for(const control of [measured.search,measured.branch,measured.refresh])assert.ok(control.height>=43.5&&control.width>=43.5,'Toolbar targets remain at least 44px in both dimensions: '+diagnostic);
+  assert.equal(measured.refresh.label,'Làm mới');assert.equal(measured.refresh.iconVisible,true,'Every list uses the same visible refresh icon: '+diagnostic);
+  assert.ok(measured.searchUncovered&&measured.branchUncovered&&measured.refresh.uncovered,'Toolbar input, branch and refresh remain reachable: '+diagnostic);
+  assert.equal(measured.chevron.visible,true,'Native branch selection has a visible dropdown affordance: '+diagnostic);
+  assert.ok(measured.branch.contentRight<=measured.chevron.left&&measured.chevron.right<=measured.branch.right,'Branch text cannot collide with the chevron: '+diagnostic);
+  assert.ok(measured.searchIcon.visible&&measured.searchIcon.right<=measured.search.contentLeft,'Search icon cannot collide with typed text: '+diagnostic);
+  if(width<768){
+   assert.ok(measured.search.contentWidth>=120&&measured.search.contentWidth>=measured.search.textWidth+2,'Mobile typed search has readable content space: '+diagnostic);
+   assert.ok(measured.branch.contentWidth>=measured.branch.textWidth+2,'The selected source branch is fully readable on mobile: '+diagnostic);
+   assert.equal(measured.badgeVisible,false,'Desktop shortcut badge is hidden on mobile');assert.equal(measured.refresh.textVisible,false,'Mobile refresh stays compact without losing its accessible name');
+   assert.ok(measured.search.bottom<=measured.branch.top&&Math.abs(measured.branch.top-measured.refresh.top)<=1,'Shared mobile controls use two compact aligned rows: '+diagnostic);
+  }else{
+   assert.equal(measured.refresh.textVisible,true,'Desktop keeps the refresh text');
+   assert.equal(measured.badgeVisible,screen==='purchase-orders','Only Orders retains its visible desktop shortcut badge');
+   if(screen==='purchase-orders')assert.ok(measured.search.contentRight<=measured.badge.left&&measured.badge.right<=measured.search.right,'Desktop shortcut remains outside the search text content area: '+diagnostic);
+   else assert.equal(measured.badge,null,'Requests and Inbound do not invent a desktop shortcut badge');
+  }
+  return measured;
+ }
  async function capture(name,{viewport=false,keepFocus=false}={}){if(!keepFocus)await page.evaluate(()=>{if(document.activeElement instanceof HTMLElement)document.activeElement.blur();window.scrollTo(0,0);});await paint();const file=name+'.png';await page.screenshot({path:path.join(output,file),fullPage:!viewport});const bytes=await readFile(path.join(output,file));captures.push({file,sha256:sha(bytes),fullPage:!viewport,keepsFocus:keepFocus});}
  // Read-only, bounded diagnostics. Preserve the original two-frame fit sample:
  // screenshots and later samples cannot turn a failing measurement into a pass.
@@ -490,16 +521,30 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
     const form=screen==='purchase-requests'?page.locator('form[aria-label="Đề nghị mua hàng trên điện thoại"]'):page.getByTestId('inbound-editor');await form.waitFor();
     const note=form.locator(screen==='purchase-requests'?'textarea[name="notes"]':'textarea#inbound-header-notes');await note.fill('SYNTHETIC PRESENTATION CUSTODY');const editor=await note.elementHandle();
     const lines=()=>form.locator(screen==='purchase-requests'?'article':'fieldset.request-line');const count=await lines().count();assert.ok(count>0);
-    await form.getByRole('button',{name:screen==='purchase-requests'?'Bỏ dòng 1':'Xóa dòng 1',exact:true}).click();const confirmation=page.getByRole('alertdialog');await confirmation.waitFor();
-    assert.equal(await confirmation.evaluate(element=>element.closest('[data-testid="inbound-request-host"],[aria-label="Danh sách đề nghị mua hàng"]')===null),true,'Radix confirmation is a real body portal');
-    await confirmation.getByRole('button',{name:'Xóa dòng',exact:true}).evaluate(element=>{const key=Object.keys(element).find(key=>key.startsWith('__reactProps$'));if(!key||typeof element[key].onClick!=='function')throw Error('Actual React confirmation handler required');window.i50QueuedConfirm=element[key].onClick;});
+    if(screen==='purchase-requests'){
+     assert.equal(await form.getByRole('button',{name:/^Bỏ dòng /}).count(),0,'ExistingOnly has no Remove affordance');assert.equal(await form.getByRole('button',{name:'Thêm dòng hàng',exact:true}).isDisabled(),true);
+     // Capture the production line callbacks even though this fixed profile has
+     // no removal control or dialog. No synthetic no-op may stand in for them.
+     await lines().first().evaluate(element=>{
+      const key=Object.keys(element).find(key=>key.startsWith('__reactFiber$'));let owner=key?element[key]:null;
+      while(owner&&!(Array.isArray(owner.memoizedProps?.lines)&&typeof owner.memoizedProps.onRemove==='function'&&typeof owner.memoizedProps.onAdd==='function'))owner=owner.return;
+      if(!owner||!owner.memoizedProps.lines[0]?.localKey)throw Error('Actual purchase line callbacks required');
+      const {onRemove,onAdd,lines}=owner.memoizedProps;window.i50QueuedConfirm=()=>{onRemove(lines[0].localKey);onAdd();};
+     });
+     await page.evaluate(()=>window.i50QueuedConfirm());await paint();assert.equal(await lines().count(),count);assert.equal(await page.getByRole('alertdialog').count(),0,'Fixed profile cannot open a removal portal');
+    }else{
+     await form.getByRole('button',{name:'Xóa dòng 1',exact:true}).click();const confirmation=page.getByRole('alertdialog');await confirmation.waitFor();
+     assert.equal(await confirmation.evaluate(element=>element.closest('[data-testid="inbound-request-host"],[aria-label="Danh sách đề nghị mua hàng"]')===null),true,'Radix confirmation is a real body portal');
+     await confirmation.getByRole('button',{name:'Xóa dòng',exact:true}).evaluate(element=>{const key=Object.keys(element).find(key=>key.startsWith('__reactProps$'));if(!key||typeof element[key].onClick!=='function')throw Error('Actual React confirmation handler required');window.i50QueuedConfirm=element[key].onClick;});
+    }
     const ownerForm=screen==='purchase-requests'?form:form.locator('form');await ownerForm.evaluate(element=>{const key=Object.keys(element).find(key=>key.startsWith('__reactProps$'));if(!key||typeof element[key].onSubmit!=='function')throw Error('Actual portaled footer form owner required');window.i50QueuedReview=element[key].onSubmit;});
     await page.evaluate(()=>window.i50Presentation(false));await paint();assert.equal(await page.getByRole('alertdialog').count(),0);assert.equal(await page.locator('.record-dialog-actions .request-action-bar:visible').count(),0);
     await page.evaluate(()=>(()=>{window.i50QueuedConfirm({preventDefault(){},stopPropagation(){}});window.i50QueuedReview({preventDefault(){}});})());await paint();assert.equal(await lines().count(),count);assert.equal(await editor.evaluate(element=>element.isConnected),true);
     await page.evaluate(()=>window.i50Presentation(true));await note.waitFor();await eventually(()=>note.isEnabled());await paint();await page.evaluate(()=>(()=>{window.i50QueuedConfirm({preventDefault(){},stopPropagation(){}});window.i50QueuedReview({preventDefault(){}});})());await paint();
     assert.equal(await lines().count(),count);assert.equal(await page.getByRole('alertdialog').count(),0,'Restore does not revive the old confirmation');assert.equal(await note.inputValue(),'SYNTHETIC PRESENTATION CUSTODY');assert.equal(await page.getByRole('button',{name:'Quay lại chỉnh sửa',exact:true}).count(),0,'Old footer/form action cannot revive review on restore');
     assert.equal(await page.locator('.record-dialog-actions .request-action-bar:visible').count(),1);assert.ok(calls.every(call=>call.method==='GET'));
-    portalPresentationEvidence.push({screen,nativePortal:'PASS',maskedConfirmation:'hidden',maskedFooter:'hidden',queuedAction:'rejected during loss and after restore',lineCount:count,requests:'GET only'});
+    if(screen==='purchase-requests'){assert.equal(await form.getByRole('button',{name:/^Bỏ dòng /}).count(),0);assert.equal(await form.getByRole('button',{name:'Thêm dòng hàng',exact:true}).isDisabled(),true);}
+    portalPresentationEvidence.push({screen,nativePortal:screen==='purchase-requests'?'absent by existingOnly profile':'PASS',maskedConfirmation:'hidden',maskedFooter:'hidden',queuedAction:'rejected during loss and after restore',lineCount:count,requests:'GET only'});
    }
   });
   for(const width of [320,390,1440])for(const screen of ['purchase-requests','inbound-requests']){
@@ -570,7 +615,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
    assert.equal(await page.getByText('Trạng thái chưa xác định (mã 999)',{exact:true}).locator('visible=true').count(),1);
    await capture(`i36-orders-${width}`,{viewport:true});
   });
-  for(const width of [320,390,1440])await run(`I42 shared list surface and native controls ${width}`,async()=>{
+  for(const width of [320,360,390,1440])await run(`I42 shared list surface and native controls ${width}`,async()=>{
    for(const screen of ['purchase-requests','inbound-requests','purchase-orders']){
     await start(width,screen);
     const orders=screen==='purchase-orders',list=orders?page.locator('.document-panel'):host(screen);
@@ -596,6 +641,12 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
     await toolbar.locator('input').press('Enter');
     await eventually(()=>calls.some(call=>call.route===route&&call.search==='QA'&&call.branchId==='QA-BRANCH'&&call.page==='1'));
     await action.waitFor();await paint();
+    // Exercise a useful-length draft without applying a different query, then
+    // restore the existing QA filter before continuing the original scenarios.
+    await search.fill('QA-SEARCH-001');await paint();
+    const toolbarGeometry=await toolbarContentGeometry(toolbar,width,screen);
+    await capture(`i59-${screen}-toolbar-${width}`,{viewport:true});
+    await search.fill('QA');await paint();
     // Count every DOM node, including hidden nodes, and retain its identity through
     // both responsive modes. A visually hidden duplicate can steal the row ref.
     const actionSelector=orders?'button[aria-label="Mở chứng từ QA-ORDER-001"]':screen==='purchase-requests'?'button[aria-label="Mở đề nghị QA-PURCHASE-001"]':'button[aria-label^="Mở phiếu QA-INBOUND-001 "]';
@@ -626,7 +677,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
      assert.equal(await page.getByRole('dialog',{name:'Tùy chỉnh bảng',exact:true}).count(),0);
     }
     assert.equal(calls.filter(call=>call.method==='POST').length,0);
-    sharedGridEvidence.push({kind:'shared-list',screen,width,sharedTables:await table.count(),liveOpenActions:await list.locator(actionSelector).count(),nativeBranch:true,responsiveNodeIdentity:true,controlGeometry});
+    sharedGridEvidence.push({kind:'shared-list',screen,width,sharedTables:await table.count(),liveOpenActions:await list.locator(actionSelector).count(),nativeBranch:true,responsiveNodeIdentity:true,controlGeometry,toolbarGeometry});
     await capture(`i42-${screen}-shared-${width}`,{viewport:true});
    }
   });

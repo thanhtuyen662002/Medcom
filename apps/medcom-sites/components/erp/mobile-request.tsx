@@ -40,7 +40,7 @@ export type MobileRequestAccess = {
   canSaveDraft: boolean;
   canSubmit: boolean;
   available: boolean;
-  /** I20 fixed existing-document profile; missing flags do not activate it. */
+  /** Fixed existing-document profile: header/line updates only, never Add/Remove. */
   existingOnly?: boolean;
   canAddLines?: boolean;
   canReconcile?: boolean;
@@ -313,6 +313,16 @@ function RequestEditor({initial, statusPresentation, access, adapter, onConfirme
     finally {if (generation.current === token) lock.current = false;}
   }
   const [deleteLine,setDeleteLine]=useState<{key:string;baseline:PurchaseRequestSnapshot;identity:string}|null>(null);
+  // Retire an already-open generic removal when the fixed profile is selected.
+  if(deleteLine&&access.existingOnly)setDeleteLine(null);
+  function lineStructureAllowed(){return !access.existingOnly&&!currentAccess.current.existingOnly;}
+  // The confirmation can unmount behind a read/service mask. Its retained handler
+  // must still consult the parent-owned current intent and document after recovery.
+  const currentRemoval=useRef({intent:deleteLine,baseline,editable});
+  useLayoutEffect(()=>{currentRemoval.current={intent:deleteLine,baseline,editable};},[deleteLine,baseline,editable]);
+  function removalAllowed(){return lineStructureAllowed()&&isPresentationCurrent()&&editable&&!lock.current
+    &&currentRemoval.current.editable&&currentRemoval.current.intent===deleteLine&&currentRemoval.current.baseline===baseline
+    &&currentAdapter.current===adapter&&currentAccess.current.canRead&&!currentAccess.current.verifying&&deleteLine?.baseline===baseline;}
   const [previousPresentation,setPreviousPresentation]=useState(presentationAllowed);
   if(previousPresentation!==presentationAllowed){setPreviousPresentation(presentationAllowed);if(!presentationAllowed)setDeleteLine(null);}
   const stateLabel = pending ? (phase === "pending" ? "Đang gửi yêu cầu…" : "Đang kiểm tra kết quả…") : uncertain ? "Chưa xác nhận kết quả" : phase === "conflict" ? "Phiếu đã thay đổi trên ERP" : phase === "rejected" ? "Yêu cầu bị từ chối; nội dung chưa được lưu" : dirty ? "Có nội dung chưa lưu" : baseline.confirmation === "submitted" ? "ERP đã xác nhận gửi phiếu" : baseline.confirmation === "draft" ? "Nháp đã được ERP xác nhận" : baseline.documentId ? "Phiếu hiện có trên ERP" : "Phiếu mới chưa lưu";
@@ -351,13 +361,13 @@ function RequestEditor({initial, statusPresentation, access, adapter, onConfirme
       {errors.objectId && <p role="alert">{errors.objectId}</p>}
       </div>
     </section>
-    <MobileRequestLines lines={values.lines} disabled={!editable} canAdd={access.canAddLines!==false && values.lines.length < access.maxLines} lockItem={access.existingOnly===true} readOnly={review} errors={errors} lookupAdapter={adapter.lookup} itemLookupId={access.itemLookupId} onChange={(key, patch) => change({lines: values.lines.map(line => line.localKey === key ? {...line, ...patch, localKey: line.localKey, lineId: line.lineId} : line)})} onAdd={() => {if (access.canAddLines!==false && values.lines.length < access.maxLines) change({lines: [...values.lines, {localKey: crypto.randomUUID(), lineId: null, itemId: "", quantity: "", unitPrice: "", budget: "", timeRequired: "", model: ""}]});}} onRemove={key=>{if(!isPresentationCurrent()||!editable||lock.current)return;const ordinal=values.lines.findIndex(line=>line.localKey===key);if(ordinal>=0)setDeleteLine({key,baseline,identity:`Dòng ${ordinal+1} · ${values.lines[ordinal].itemId}`});}}/>
+    <MobileRequestLines lines={values.lines} disabled={!editable} canAdd={!access.existingOnly && access.canAddLines!==false && values.lines.length < access.maxLines} canRemove={!access.existingOnly} lockItem={access.existingOnly===true} readOnly={review} errors={errors} lookupAdapter={adapter.lookup} itemLookupId={access.itemLookupId} onChange={(key, patch) => change({lines: values.lines.map(line => line.localKey === key ? {...line, ...patch, localKey: line.localKey, lineId: line.lineId} : line)})} onAdd={() => {if (lineStructureAllowed() && access.canAddLines!==false && currentAccess.current.canAddLines!==false && values.lines.length < access.maxLines) change({lines: [...values.lines, {localKey: crypto.randomUUID(), lineId: null, itemId: "", quantity: "", unitPrice: "", budget: "", timeRequired: "", model: ""}]});}} onRemove={key=>{if(!lineStructureAllowed()||!isPresentationCurrent()||!editable||lock.current)return;const ordinal=values.lines.findIndex(line=>line.localKey===key);if(ordinal>=0)setDeleteLine({key,baseline,identity:`Dòng ${ordinal+1} · ${values.lines[ordinal].itemId}`});}}/>
     <RecordActionBar className={requestStyles.actionBar} presentationAllowed={presentationAllowed&&access.canRead&&!access.verifying}>
       {/* Back reuses the review submitter's DOM node; cancel activation before its type changes. */}
       {review ? <><RequestButton type="button" disabled={!editable} onClick={event => {event.preventDefault();if(isPresentationCurrent())setReview(false);}}>Quay lại chỉnh sửa</RequestButton><RequestButton type="button" disabled={!editable || !access.canSaveDraft || !dirty && !!baseline.documentId} onClick={() => {if(isPresentationCurrent())void send("saveDraft");}}>Lưu nháp trên ERP</RequestButton><RequestButton variant="default" type="button" disabled={access.existingOnly ? !canSubmitExisting : !editable || !access.canSubmit} onClick={() => {if(isPresentationCurrent())void send("submit");}}>Gửi đề nghị</RequestButton></> : <RequestButton variant="default" type="submit" form={`${prefix}-form`} disabled={!editable&&!canSubmitExisting} onClick={()=>{if(isPresentationCurrent()&&canSubmitExisting&&!editable)setReview(true);}}>Rà soát phiếu</RequestButton>}
     </RecordActionBar>
-    <RecordDeleteConfirmation intent={deleteLine} open={deleteLine!==null&&deleteLine.baseline===baseline&&editable} identity={deleteLine?.identity??"Dòng hàng"} presentationAllowed={presentationAllowed&&access.canRead&&!access.verifying}
-      isAllowed={()=>isPresentationCurrent()&&editable&&!lock.current&&currentAdapter.current===adapter&&currentAccess.current.canRead&&!currentAccess.current.verifying&&deleteLine?.baseline===baseline}
-      onCancel={()=>setDeleteLine(null)} onConfirm={()=>{if(isPresentationCurrent()&&deleteLine&&deleteLine.baseline===baseline){change({lines:values.lines.filter(line=>line.localKey!==deleteLine.key)});setDeleteLine(null);}}}/>
+    <RecordDeleteConfirmation intent={deleteLine} open={!access.existingOnly&&deleteLine!==null&&deleteLine.baseline===baseline&&editable} identity={deleteLine?.identity??"Dòng hàng"} presentationAllowed={presentationAllowed&&access.canRead&&!access.verifying}
+      isAllowed={removalAllowed}
+      onCancel={()=>{if(currentRemoval.current.intent===deleteLine)setDeleteLine(null);}} onConfirm={()=>{if(removalAllowed()&&deleteLine){change({lines:values.lines.filter(line=>line.localKey!==deleteLine.key)});setDeleteLine(null);}}}/>
   </form>;
 }

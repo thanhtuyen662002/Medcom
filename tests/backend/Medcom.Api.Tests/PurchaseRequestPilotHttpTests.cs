@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Hosting;
 using Xunit;
 
 namespace Medcom.Api.Tests;
@@ -149,7 +150,7 @@ public sealed class PurchaseRequestPilotHttpTests
     [InlineData("binding")]
     public async Task Wrong_owner_target_or_database_binding_never_reaches_document_or_business_SQL(string mismatch)
     {
-        await using var host = await PilotHost.Start(permitServer: mismatch == "server" ? "OtherSynthetic" : "Synthetic",
+        await using var host = await PilotHost.Start(startupPath: false, permitServer: mismatch == "server" ? "OtherSynthetic" : "Synthetic",
             permitDatabase: mismatch == "database" ? "OtherSynthetic" : "Synthetic",
             permitBinding: mismatch == "binding" ? new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") : PurchaseFixtures.Binding);
         await host.Login();
@@ -481,7 +482,7 @@ public sealed class PurchaseRequestPilotHttpTests
         };
         internal readonly PilotAuthority Authority = new();
         internal readonly PurchaseClock Clock = new();
-        internal PurchaseRequestCommandFactory Factory { get; }
+        internal PurchaseRequestCommandFactory Factory { get; private set; }
         internal HttpClient Client { get; private set; } = null!;
         internal IWebSessions Sessions => app.Services.GetRequiredService<IWebSessions>();
         internal PurchaseRequestAggregate Document => Model.Documents[PurchaseFixtures.DocumentId];
@@ -489,7 +490,7 @@ public sealed class PurchaseRequestPilotHttpTests
         private string? csrfToken, scope;
 
         private PilotHost(X509Certificate2 certificate, string configPath, bool registerPilot, bool dormantRegistration,
-            string permitActor, string permitServer, string permitDatabase, Guid permitBinding)
+            string permitActor, string permitServer, string permitDatabase, Guid permitBinding, bool startupPath)
         {
             this.certificate = certificate;
             this.configPath = configPath;
@@ -499,9 +500,20 @@ public sealed class PurchaseRequestPilotHttpTests
                 PurchaseFixtures.DocumentId, "I57-offline-recording-only", Clock.Now.AddMinutes(-1), Clock.Now.AddMinutes(3));
             Factory = PurchaseRequestCommandFactory.ForOwnerAuthorizedPilot(authorization, PurchaseFixtures.Company,
                 (Func<DbConnection>)(() => new PurchaseRecordingConnection(Model, Model.Connections++)), Clock);
-            app = ApiHost.Build(["--environment", "Production", "--Legacy:Enabled", "false", "--Medcom:PrivateConfigPath", configPath,
-                "--Session:IdleMinutes", "5", "--Session:AbsoluteMinutes", "10"], builder =>
+            var settings = PurchaseRequestPilotStartupTests.SyntheticSettings(Clock.Now);
+            settings[PurchaseRequestPilotStartupTests.Key("ActorId")] = permitActor;
+            settings[PurchaseRequestPilotStartupTests.Key("Server")] = permitServer;
+            settings[PurchaseRequestPilotStartupTests.Key("Database")] = permitDatabase;
+            settings[PurchaseRequestPilotStartupTests.Key("DatabaseBindingId")] = permitBinding.ToString("D");
+            File.WriteAllText(configPath, JsonSerializer.Serialize(settings));
+            var useStartup = startupPath && registerPilot;
+            string[] args = ["--environment", "Production", "--Legacy:Enabled", useStartup ? "true" : "false",
+                "--Medcom:PrivateConfigPath", configPath, "--Session:IdleMinutes", "5", "--Session:AbsoluteMinutes", "10"];
+            void ConfigureRecording(WebApplicationBuilder builder)
             {
+                // Never start the ordinary live dependency monitor in an offline test.
+                foreach (var service in builder.Services.Where(service => service.ServiceType == typeof(IHostedService)
+                    && service.ImplementationType == typeof(LegacyHealthMonitor)).ToArray()) builder.Services.Remove(service);
                 builder.Logging.ClearProviders();
                 builder.WebHost.ConfigureKestrel(options => options.Listen(IPAddress.Loopback, 0, listen => listen.UseHttps(certificate)));
                 builder.Services.AddSingleton<IIdentityAuthority>(Authority);
@@ -524,9 +536,16 @@ public sealed class PurchaseRequestPilotHttpTests
                     }, async cancellation => (await sessions.ResolveAsync(token, false, cancellation))?.Identity,
                         async cancellation => (await sessions.InspectAsync(token, cancellation))?.Identity);
                 });
-                if (registerPilot) builder.Services.AddOwnerAuthorizedPurchaseRequestPilotCommands(Factory);
+                if (registerPilot && !useStartup) builder.Services.AddOwnerAuthorizedPurchaseRequestPilotCommands(Factory);
                 else if (dormantRegistration) builder.Services.AddDormantPurchaseRequestCommands(Factory);
-            });
+            }
+            app = useStartup
+                ? PurchaseRequestPilotStartup.BuildForRecording([PurchaseRequestPilotStartup.Switch, .. args], ConfigureRecording,
+                    (permit, company) => Factory = PurchaseRequestCommandFactory.ForOwnerAuthorizedPilot(permit, company,
+                        (Func<DbConnection>)(() => new PurchaseRecordingConnection(Model, Model.Connections++)), Clock))
+                : ApiHost.Build(args, ConfigureRecording);
+            Assert.Equal(0, Model.Connections);
+            Assert.Empty(Model.Commands);
             app.Use(async (context, next) =>
             {
                 if (context.Items[AuthEndpoints.ResolvedKey] is ResolvedSession current) SessionToken = current.Token;
@@ -535,7 +554,8 @@ public sealed class PurchaseRequestPilotHttpTests
         }
 
         internal static async Task<PilotHost> Start(bool registerPilot = true, bool dormantRegistration = false,
-            string permitActor = PurchaseFixtures.Actor, string permitServer = "Synthetic", string permitDatabase = "Synthetic", Guid? permitBinding = null)
+            string permitActor = PurchaseFixtures.Actor, string permitServer = "Synthetic", string permitDatabase = "Synthetic", Guid? permitBinding = null,
+            bool startupPath = true)
         {
             using var key = RSA.Create(2048);
             var request = new CertificateRequest("CN=localhost", key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
@@ -547,7 +567,7 @@ public sealed class PurchaseRequestPilotHttpTests
             var path = Path.Combine(Path.GetTempPath(), "medcom-i57-synthetic-" + Guid.NewGuid().ToString("N") + ".json");
             await File.WriteAllTextAsync(path, "{}");
             var host = new PilotHost(certificate, path, registerPilot, dormantRegistration, permitActor,
-                permitServer, permitDatabase, permitBinding ?? PurchaseFixtures.Binding);
+                permitServer, permitDatabase, permitBinding ?? PurchaseFixtures.Binding, startupPath);
             await host.app.StartAsync();
             var address = host.app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single();
             host.Client = new HttpClient(new HttpClientHandler

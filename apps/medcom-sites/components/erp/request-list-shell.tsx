@@ -3,7 +3,7 @@
 import {createContext,useContext,useState,type ComponentProps, type ReactNode, type Ref} from "react";
 import {ScreenHeader} from "./screen-shell";
 import {createPortal} from "react-dom";
-import {Building2, ChevronDown, Search} from "lucide-react";
+import {Building2, ChevronDown, RefreshCw, Search} from "lucide-react";
 import {RequestButton, RequestInput, RequestSelect, RequestDocumentIdentity, requestStyles} from "./request-presentation";
 import {ErpGrid} from "./grid";
 import {cn} from "@/lib/utils";
@@ -27,6 +27,10 @@ export function ListCustomizationSlot({children}:{children:ReactNode}){const tar
 
 export function RequestSearch({label,placeholder,value,onChange,inputRef,maxLength=100,shortcut}:{label:string;placeholder:string;value:string;onChange:(value:string)=>void;inputRef?:Ref<HTMLInputElement>;maxLength?:number;shortcut?:ReactNode}) {
   return <label className="request-list-search"><span className="sr-only">{label}</span><Search size={16} aria-hidden="true"/><RequestInput ref={inputRef} aria-label={label} placeholder={placeholder} value={value} maxLength={maxLength} onChange={event=>onChange(event.target.value)}/>{shortcut&&<kbd>{shortcut}</kbd>}</label>;
+}
+/** Keep caller-owned refresh/authority behavior while sharing the visual action. */
+export function RequestRefresh({className,refreshing=false,...props}:Omit<ComponentProps<typeof RequestButton>,"children"|"type"|"aria-label">&{refreshing?:boolean}) {
+  return <RequestButton {...props} type="button" aria-label="Làm mới" className={cn("request-list-refresh",className)}><RefreshCw size={16} aria-hidden="true" className={refreshing?"spin":undefined}/><span className="request-list-refresh-label">Làm mới</span></RequestButton>;
 }
 export function RequestBranch({label,value,branches,disabled,onChange,allValue="",assignedBranchId}:{label:string;value:string;branches:string[];disabled?:boolean;onChange:(value:string)=>void;allValue?:string;assignedBranchId?:string|null}) {
   return <label className="request-list-branch"><span className="sr-only">{label}</span><Building2 size={15} aria-hidden="true"/><RequestSelect aria-label={label} value={assignedBranchId??value} disabled={disabled||assignedBranchId!=null} onChange={event=>onChange(event.target.value)}>{assignedBranchId==null&&<option value={allValue}>Tất cả</option>}{branches.map(id=><option key={id} value={id}>{id}</option>)}</RequestSelect><ChevronDown size={14} aria-hidden="true"/></label>;

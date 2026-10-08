@@ -6,7 +6,7 @@ export type PurchaseCommandTransport=(scopeKey:string,route:PurchaseCommandRoute
 type Aggregate=PurchaseReadback["document"];
 type LineValues=Aggregate["lines"][number]["values"];
 export type ExistingPurchaseSave={idempotencyKey:string;branchId:string;purchaseRequestId:string;expectedStateToken:string;
- header:Aggregate["header"];lineChanges:{kind:"Update"|"Remove";lineId:string;clientLineKey:null;values:LineValues|null}[]};
+ header:Aggregate["header"];lineChanges:{kind:"Update";lineId:string;clientLineKey:null;values:LineValues}[]};
 export type ExistingPurchaseSubmit={idempotencyKey:string;branchId:string;purchaseRequestId:string;expectedStateToken:string};
 export type FrozenPurchaseCommand={action:PurchaseRequestIntent["action"];dto:ExistingPurchaseSave|ExistingPurchaseSubmit;
  json:string;desired:Aggregate;signature:string};
@@ -69,7 +69,9 @@ export function freezePurchaseCommand(raw:PurchaseReadback,intent:PurchaseReques
   const header=copy(source.header);header.personSuggest=text(v.personSuggest,500);header.department=text(v.department,100);
   header.notes=nullableText(header.notes,v.notes,65536);header.purposeDescOrClient=nullableText(header.purposeDescOrClient,v.purposeDescOrClient,65536);
   const remaining=new Map(source.lines.map(line=>[line.lineId,line]));const changes:ExistingPurchaseSave["lineChanges"]=[],lines:Aggregate["lines"]=[];
-  if(v.lines.length>500)throw new Error("Line limit");
+  // This existing-document profile permits only updates to the complete original
+  // line set. Never silently restore omitted rows or serialize structural edits.
+  if(v.lines.length!==source.lines.length)throw new Error("Original line set required");
   for(const line of v.lines){
    const original=line.lineId?remaining.get(line.lineId):undefined;
    if(!original||line.localKey!==line.lineId||line.itemId!==original.values.itemId)throw new Error("Add, duplicate or item substitution unavailable");
@@ -81,7 +83,7 @@ export function freezePurchaseCommand(raw:PurchaseReadback,intent:PurchaseReques
    lines.push({lineId:original.lineId,values});
    if(!equal(values,original.values))changes.push({kind:"Update",lineId:original.lineId,clientLineKey:null,values});
   }
-  for(const line of remaining.values())changes.push({kind:"Remove",lineId:line.lineId,clientLineKey:null,values:null});
+  if(remaining.size)throw new Error("Original line set required");
   desired.header=header;desired.lines=lines.sort((a,b)=>a.lineId<b.lineId?-1:a.lineId>b.lineId?1:0);
   command={...dto,header,lineChanges:changes};
  }
