@@ -9,7 +9,8 @@ public sealed record PurchaseRequestListRow(string DocumentId, string? PurchaseD
 public sealed record PurchaseRequestListPage(IReadOnlyList<PurchaseRequestListRow> Rows,
     int Page, int PageSize, bool HasMore);
 public sealed record PurchaseRequestReadback(PurchaseRequestAggregate Document, string StateToken,
-    PurchaseRequestCommandAccessState? CommandAccess = null, string? StatusName = null);
+    PurchaseRequestCommandAccessState? CommandAccess = null, string? StatusName = null,
+    ItemDisplayContext? ItemDisplayContext = null);
 // Fixed existing-document bridge. No Create/Add capability is exposed.
 public sealed record PurchaseRequestCommandAccessState(bool CanSave, bool CanSubmit, bool CanLookup,
     bool CanAddLines, string Reason);

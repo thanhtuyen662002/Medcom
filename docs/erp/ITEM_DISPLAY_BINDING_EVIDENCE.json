@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "task": "I51",
+  "baseline": {
+    "revision": "bba926f951332ffb8547850af2aa13e66da35685",
+    "tree": "54f798e9dc6e8e58f7a52e4ead0e92d6e9952d37"
+  },
+  "evidenceAuthority": "Root Mika supplied independently verified mappings; this worker verified sanitized repository inventories, not the private ERP/SQL archives.",
+  "sqlMemberSha256": "61a8744c7a9a007b13ef37fbda26ea8c78af11fcc469963a528eba9469174096",
+  "formReferences": [
+    {
+      "form": "AP_OrderFrm",
+      "tier": "T1",
+      "lines": [
+        296426,
+        296430
+      ]
+    },
+    {
+      "form": "AP_PurposeRequestListFrm",
+      "tier": "T1",
+      "lines": [
+        299368,
+        299371
+      ]
+    },
+    {
+      "form": "IV_InboundRequestFrm",
+      "tier": "T1",
+      "lines": [
+        299811,
+        299814
+      ]
+    }
+  ],
+  "fields": [
+    {
+      "label": "Mã hàng",
+      "source": "document line ItemID",
+      "captionLine": 291573
+    },
+    {
+      "label": "Mã hàng NSX",
+      "purchaseSource": "CF_ItemTbl.ItemCode (current read-only enhancement; purchase lines store no ItemCode)",
+      "inboundSource": "IV_InboundRequestDetailsTbl.ItemCode (persisted NULL/empty preserved; no master fallback)",
+      "captionLine": 294783
+    },
+    {
+      "label": "Tên hàng / dịch vụ",
+      "source": "CF_ItemTbl.ItemName",
+      "captionLine": 291574
+    },
+    {
+      "label": "ĐVT",
+      "source": "CF_ItemTbl.Unit (base display unit)",
+      "captionLine": 291438
+    }
+  ],
+  "schemaEvidence": [
+    {
+      "inventory": "inventories/source/20261002/table-02.json",
+      "table": "CF_ItemTbl",
+      "sourceLine": 10823,
+      "columnCount": 39,
+      "requiredColumns": {
+        "ItemID": "nvarchar(50) NOT NULL",
+        "ItemCode": "nvarchar(100) NULL",
+        "ItemName": "nvarchar(max) NULL",
+        "Unit": "nvarchar(50) NULL"
+      }
+    },
+    {
+      "inventory": "inventories/source/20261002/table-02.json",
+      "table": "IV_InboundRequestDetailsTbl",
+      "sourceLine": 11005,
+      "columnCount": 25,
+      "requiredColumns": {
+        "UserAutoID": "varchar(50) NOT NULL",
+        "DocumentID": "varchar(50) NOT NULL",
+        "ItemID": "varchar(50) NOT NULL",
+        "ItemCode": "nvarchar(50) NULL"
+      }
+    }
+  ],
+  "exclusions": [
+    "HangSX (Hãng sản xuất, caption line 292222)",
+    "Model",
+    "OldItemID",
+    "ItemName2",
+    "Unit2 and UnitFactor (alternate-unit data, never base-unit replacements)"
+  ],
+  "dropdownEvidence": {
+    "configurationLine": 308130,
+    "procedure": "IV_GetItemByContractIDStp",
+    "branchLines": [
+      857091,
+      857115
+    ],
+    "meaning": "both branches return I.ItemCode; dropdown filtering is not historical document read filtering; no procedure is called"
+  },
+  "qualification": {
+    "schema": "fixed required types, lengths, nullability, column count and noncomputed/nonidentity built-in columns",
+    "cardinality": "native SQL-equal COUNT_BIG per reference; metadata requires exactly one exact identity; duplicate/alias data never fans out or arbitrarily selects",
+    "historicalItems": "read CF_ItemTbl directly without enabled/disabled filtering; no vItem dropdown filtering",
+    "limits": {
+      "lines": 500,
+      "nameUtf16Units": 65536,
+      "metadataWorstCaseJsonBytes": 262144,
+      "commandTimeoutSeconds": 5,
+      "queries": "at most two schema SELECTs plus one bounded VALUES projection, parameterized under the existing authorized serializable transaction"
+    },
+    "unavailable": "explicit per-line states, preserving original read lines and order; oversized supplement is wholly unavailable without truncation",
+    "sourceReferenceKeys": "Original authorized ItemID strings are never normalized or restricted by enrichment. Empty, over-50 UTF-16-unit, NUL or malformed-surrogate reference keys yield all-null unavailable metadata; mixed projections bind those keys as SQL NULL without changing ordinals or cardinality guards.",
+    "originalRowBinding": "Original authorized rows with empty, malformed/NUL/surrogate/over-50-unit LineId or duplicate exact LineIds preserve every base row and receive null optional context before reference lookup. These malformed/duplicate cases are synthetic robustness coverage, not claims of production occurrences. Paged absent/null context bypasses supplement synthesis/revalidation. Supplied contexts retain strict schema and exact document/branch/page/identity/count binding checks; unsafe or duplicate original row bindings cannot carry supplied context. R1 ItemID unknown metadata behavior is retained for qualified original row bindings."
+  },
+  "integration": {
+    "ui": "standalone ItemIdentity only; Root I50 wires current authorized read binding and selection/scope custody",
+    "marker": "Root-owned docs/execution/direct-runs/I51.json absent from clean source and unchanged",
+    "testRunner": "Root must register item-display-context.test.mjs and accommodate the item-display import in its transpile-only runtime",
+    "inboundFrontend": "Backend serializes data.itemDisplayContext; the strict frontend decoder validates it then exposes itemDisplayContext beside data in InboundReadEnvelope. data stays the original two-field result for unchanged I18 observedView/command adapter.",
+    "olderPagedResponses": "Absent/null metadata remains absent/null to preserve the older paged wire shape; shared bindItemDisplayContext/itemDisplayFor classifies it as unavailable. Purchase/inbound draft decoders emit explicit unknown lines."
+  },
+  "runtime": "NOT_RUN: no database, private settings, raw SQL, procedure calls, DML, schema deployment or production activation",
+  "revisionReview": {
+    "revision": "R1",
+    "reason": "Root independently reproduced historical empty ItemID rejection in both paged kinds with absent/null metadata. Supplied unavailable metadata and ordinary controls are also covered.",
+    "scope": "Only item enrichment reader, shared decoder, read tests and this sanitized evidence revised. Original read DTOs, ItemID bytes, authority/session fences, count guards and command bodies unchanged.",
+    "frontendRegression": "Complete pinned production baseline contracts module versus complete revised decoder, both paged kinds, empty/ordinary ItemID and absent/null/supplied unavailable metadata; actual getDetail transport exercised.",
+    "backendRegression": "Synthetic connections execute production ItemDisplayContextReader and SqlDocumentReader for both kinds; .NET execution remains NOT_RUN unless SDK becomes available."
+  },
+  "revisionReviewR2": {
+    "revision": "R2",
+    "guidance": "Root consolidated same-family original-row-binding fallback; no broad data or command/editor relaxation.",
+    "frontendRegression": "32 complete baseline/revised paged fixtures (both kinds, absent/null, unsafe/duplicate identities plus ordinary Unicode control); supplied context rejection and ordinary supplied-context controls. R1 ItemID assertions retained.",
+    "backendRegression": "Actual enrichment and paged readers through offline synthetic connections; nullable optional result for original unsafe/duplicate row bindings before lookup; .NET execution NOT_RUN if absent.",
+    "assertionAmendment": "One R1 synthetic duplicate ORIGINAL line-key expectation changes from thrown enrichment exception to null optional context, as expressly required by Root consolidated fallback. Supplied duplicate contexts and all SQL shape/count failures still reject."
+  }
+}

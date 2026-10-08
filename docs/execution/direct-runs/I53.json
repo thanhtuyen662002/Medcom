@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I53",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "9f03ba25-ec57-41cb-85f3-7be7b43049f1",
+  "base_sha": "bba926f951332ffb8547850af2aa13e66da35685",
+  "work_branch": "codex/g45-branch-selection-metadata-i53-20261008",
+  "claim_branch": "medcom-claims/g45/direct/I53",
+  "scope": [
+    "src/backend/Medcom.Application/Authentication.cs",
+    "src/backend/Medcom.Contracts/Authentication.cs",
+    "src/backend/Medcom.Infrastructure/SqlLegacyBranchScope.cs",
+    "src/backend/Medcom.Infrastructure/SqlLegacyUserStore.cs",
+    "src/backend/Medcom.Infrastructure/LegacyIdentityAuthority.cs",
+    "src/backend/Medcom.Api/AuthEndpoints.cs",
+    "src/backend/Medcom.Api/WorkspaceReadScope.cs",
+    "tests/backend/Medcom.Api.Tests/BranchSelectionMetadataTests.cs",
+    "tests/backend/Medcom.Api.Tests/SqlLegacyBranchScopeTests.cs",
+    "tests/backend/Medcom.Api.Tests/AuthenticationHttpTests.cs",
+    "apps/medcom-sites/lib/erp/branch-selection.ts",
+    "apps/medcom-sites/tests/branch-selection.test.mjs",
+    "docs/backend/BRANCH_SELECTION_METADATA.md",
+    "docs/execution/direct-runs/I53.json"
+  ],
+  "purpose": "Expose authoritative branch-selection metadata",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "constraints": [
+    "Admission only; implementation NOT_RUN.",
+    "Root sole GitHub publisher; Work returns local candidate only.",
+    "Derive UI branch-selection metadata from successful native-user resolution; never infer all from missing derived data.",
+    "Preserve existing BranchIds and native supplemental grants; no new API query rejection or detail/command grant change.",
+    "Include changed selection semantics in read-scope invalidation; preserve session and command behavior.",
+    "No private config, owner SQL/DLL, schema, runtime activation, dependencies or workflows.",
+    "UI host and shared contracts.ts integration remain root-owned to avoid overlap with I50/I51."
+  ],
+  "created_at": "2026-10-08T04:04:17.629Z"
+}

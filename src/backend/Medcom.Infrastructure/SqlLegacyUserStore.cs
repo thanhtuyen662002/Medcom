@@ -98,8 +98,9 @@ public sealed class SqlLegacyUserStore : ILegacyUserStore
         if (await PurchaseRequests.SqlPurchaseRequestQueries.HasNativeReadGrantAsync(connection, user, cancellationToken))
             capabilities.Add("purchase-requests.read");
         await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
-        var branches = await SqlLegacyBranchScope.ReadAsync(transaction, user, cancellationToken);
+        var scope = await SqlLegacyBranchScope.ResolveAsync(transaction, user, cancellationToken);
         await transaction.RollbackAsync(cancellationToken);
-        return user with { Capabilities=capabilities.AsReadOnly(), BranchIds=branches };
+        return user with { Capabilities=capabilities.AsReadOnly(), BranchIds=scope.BranchIds,
+            BranchSelection=scope.BranchSelection };
     }
 }

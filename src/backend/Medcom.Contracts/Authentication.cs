@@ -8,4 +8,9 @@ public sealed record SessionView(string DisplayName, string TenantId, string Com
 
 public sealed record NavigationItem(string Id, string Label, string Href);
 
-public sealed record WorkspaceView(SessionView Session, IReadOnlyList<NavigationItem> Navigation, IReadOnlyList<string> BranchIds);
+// Presentation semantics from successful native resolution, never a branch grant.
+// Null means unavailable (including older identities without metadata).
+public sealed record BranchSelection(string Mode, string? AssignedBranchId, bool FilterLocked);
+
+public sealed record WorkspaceView(SessionView Session, IReadOnlyList<NavigationItem> Navigation,
+    IReadOnlyList<string> BranchIds, BranchSelection? BranchSelection = null);

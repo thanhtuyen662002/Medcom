@@ -1,3 +1,4 @@
+import {bindItemDisplayContext,type ItemDisplayContext} from "./item-display";
 import type {InboundDraftAccess, InboundDraftReadResult, InboundDraftResult} from "./inbound-draft";
 
 // Browser paths deliberately pass through the EXISTING same-origin BFF. Mika
@@ -14,6 +15,7 @@ export type InboundReadEnvelope = {
   scopeKey: string | null;
   access: Omit<InboundDraftAccess, "scopeKey">;
   data: InboundDraftReadResult;
+  itemDisplayContext: ItemDisplayContext | null;
 };
 export type InboundCommandEnvelope = {scopeKey: string | null; data: InboundDraftResult};
 export type InboundPostRoute = "save" | "send" | "reconcile";
@@ -106,18 +108,34 @@ function readEnvelope(value: unknown): InboundReadEnvelope {
     || (access.maxCommandBytes as number) > inboundBodyLimit
     || (access.canSave || access.canSend) && !access.canRead
     || (access.canRead || access.canSave || access.canSend) && (!access.available || value.scopeKey === null)
-    || !record(value.data, ["outcome", "document"]) || !outcome(value.data.outcome)) return invalid();
+    || !(record(value.data, ["outcome", "document"]) || record(value.data, ["outcome", "document", "itemDisplayContext"]))
+    || !outcome(value.data.outcome)) return invalid();
+  let display: ItemDisplayContext | null = null;
   if (value.data.outcome === "Observed") {
     const document = value.data.document;
     if (!access.canRead || !record(document, ["documentId", "statusId", "header", "details", "costRowCount", "stateEqualityToken", "costEditingSupported"])
       || !isInboundId(document.documentId) || !Number.isInteger(document.statusId)
       || typeof document.stateEqualityToken !== "string" || !/^[A-F0-9]{64}$/.test(document.stateEqualityToken)
       || !Array.isArray(document.details) || document.details.length > 500) return invalid();
+    // Validate the supplemental relation without changing the exact editable view.
+    if (!record(document.header, ["documentDate", "orderNumber", "invoiceNo", "departurePoint", "destinationPoint", "orderTypeId", "branchId", "objectId", "currencyId", "rateExchange", "notes"])
+      || typeof document.header.branchId !== "string"
+      || document.details.some(line=>!line || typeof line!=="object" || Array.isArray(line)
+        || !isInboundId(line.rowId) || !isInboundId(line.itemId))) return invalid();
+    try {
+      display=bindItemDisplayContext(value.data.itemDisplayContext,
+        {kind:"inbound-requests",documentId:document.documentId,branchId:document.header.branchId,
+          stateToken:document.stateEqualityToken,statusId:document.statusId as number,isLocked:null,page:null,pageSize:null},
+        document.details.map(line=>({lineId:line.rowId as string,itemId:line.itemId as string})));
+    } catch { return invalid(); }
     // No projection/transformation. I18 observedView remains the single complete
     // document schema gate before editing; it rejects missing/extra row/header
     // fields, numeric decimals, invalid SQL times and non-server row identities.
-  } else if (value.data.document !== null) return invalid();
-  return value as unknown as InboundReadEnvelope;
+  } else if (value.data.document !== null || value.data.itemDisplayContext != null) return invalid();
+  // Keep I18's exact two-field read result compatible. The supplement is a
+  // sibling on the decoded read envelope, never passed into its strict editor gate.
+  return {scopeKey:value.scopeKey as string|null,access:value.access as InboundReadEnvelope["access"],
+    data:{outcome:value.data.outcome,document:value.data.document} as InboundDraftReadResult,itemDisplayContext:display};
 }
 function commandEnvelope(value: unknown): InboundCommandEnvelope {
   if (!record(value, ["scopeKey", "data"]) || value.scopeKey !== null && !isInboundScope(value.scopeKey)
