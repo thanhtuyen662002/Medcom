@@ -1,0 +1,45 @@
+# Nothing enters the build context unless allowed below. Backend source rules
+# include future classes and nested directories without admitting other files.
+**
+!Dockerfile
+!.dockerignore
+!global.json
+!Directory.Build.props
+!Directory.Build.targets
+!NuGet.config
+!src/backend/**/*.cs
+!src/backend/**/*.csproj
+!src/backend/**/packages.lock.json
+!src/backend/Medcom.Api/appsettings.json
+
+# Treat allowlisted suffixes as files, never as directory trees.
+**/*.cs/**
+**/*.csproj/**
+**/*.json/**
+**/*.props/**
+**/*.targets/**
+**/*.config/**
+Dockerfile/**
+.dockerignore/**
+
+# These exclusions always win, including below an allowed source directory.
+**/bin
+**/obj
+**/.git
+**/.env
+**/.env.*
+**/appsettings.*.json
+**/*[Pp]rivate*
+**/*[Ss]ecret*
+**/*[Cc]redential*
+**/*.[Dd][Ll][Ll]
+**/*.[Ee][Xx][Ee]
+**/*.[Zz][Ii][Pp]
+**/*.[Ss][Qq][Ll]
+**/*.bak
+**/*.mdf
+**/*.ldf
+**/*.pfx
+**/*.p12
+**/*.pem
+**/*.key
