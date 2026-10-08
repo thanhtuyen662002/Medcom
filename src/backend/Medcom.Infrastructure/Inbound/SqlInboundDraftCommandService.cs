@@ -316,9 +316,13 @@ public sealed class SqlInboundDraftCommandService : IInboundDraftCommandService
             var branch=await Scope(tx,documentId,grants!,token);
             var snapshot=await Snapshot.Read(tx,documentId,token);
             Require(snapshot is not null,InboundDraftOutcome.NotFound);
+            var view=snapshot!.View;
+            var display=await ItemDisplayContextReader.ReadAsync(tx,"inbound-requests",view.DocumentId,
+                view.Header.BranchId,view.StateEqualityToken,view.StatusId,null,null,null,
+                view.Details.Select(line=>(line.RowId!,line.ItemId)).ToArray(),token);
             await Live(tx,sessionFence,InboundDraftAction.Save,branch,token);
             token.ThrowIfCancellationRequested();
-            result=new(InboundDraftOutcome.Observed,snapshot!.View);
+            result=new(InboundDraftOutcome.Observed,view,display);
         }
         catch(Stop stop){result=new(stop.Outcome);}
         catch(Exception e) when(e is not OutOfMemoryException){result=new(InboundDraftOutcome.Unavailable);}

@@ -54,4 +54,5 @@ public sealed record InboundDraftResult(InboundDraftOutcome Outcome,
 public sealed record InboundDraftView(string DocumentId, int StatusId, InboundDraftHeader Header,
     IReadOnlyList<InboundDraftDetailUpsert> Details, int CostRowCount,
     string StateEqualityToken, bool CostEditingSupported = false);
-public sealed record InboundDraftReadResult(InboundDraftOutcome Outcome, InboundDraftView? Document = null);
+public sealed record InboundDraftReadResult(InboundDraftOutcome Outcome, InboundDraftView? Document = null,
+    Medcom.Contracts.ItemDisplayContext? ItemDisplayContext = null);

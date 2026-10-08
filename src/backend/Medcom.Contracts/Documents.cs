@@ -11,4 +11,4 @@ public sealed record InboundRequestLine(string LineId, string ItemId,
     string? SetQuantityByReal, string? BarrelQuantityByReal);
 public sealed record DocumentDetailPage(DocumentSummary Document,
     IReadOnlyList<PurchaseOrderLine> PurchaseOrderLines, IReadOnlyList<InboundRequestLine> InboundRequestLines,
-    int Page, int PageSize, bool HasMore);
+    int Page, int PageSize, bool HasMore, ItemDisplayContext? ItemDisplayContext = null);

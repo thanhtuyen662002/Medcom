@@ -13,33 +13,54 @@
 !src/backend/Medcom.Api/appsettings.json
 
 # Treat allowlisted suffixes as files, never as directory trees.
-**/*.cs/**
-**/*.csproj/**
-**/*.json/**
-**/*.props/**
-**/*.targets/**
-**/*.config/**
+**/*.[Cc][Ss]/**
+**/*.[Cc][Ss][Pp][Rr][Oo][Jj]/**
+**/*.[Jj][Ss][Oo][Nn]/**
+**/*.[Pp][Rr][Oo][Pp][Ss]/**
+**/*.[Tt][Aa][Rr][Gg][Ee][Tt][Ss]/**
+**/*.[Cc][Oo][Nn][Ff][Ii][Gg]/**
 Dockerfile/**
 .dockerignore/**
 
-# These exclusions always win, including below an allowed source directory.
-**/bin
-**/obj
-**/.git
-**/.env
-**/.env.*
-**/appsettings.*.json
-**/*[Pp]rivate*
-**/*[Ss]ecret*
-**/*[Cc]redential*
+# Deny each forbidden name AND its descendants, including mixed casing.
+# Parent-only matches are not enough: source exceptions can reopen children.
+**/[Bb][Ii][Nn]
+**/[Bb][Ii][Nn]/**
+**/[Oo][Bb][Jj]
+**/[Oo][Bb][Jj]/**
+**/.[Gg][Ii][Tt]
+**/.[Gg][Ii][Tt]/**
+**/.[Ee][Nn][Vv]
+**/.[Ee][Nn][Vv]/**
+**/.[Ee][Nn][Vv].*
+**/.[Ee][Nn][Vv].*/**
+**/[Aa][Pp][Pp][Ss][Ee][Tt][Tt][Ii][Nn][Gg][Ss].*.[Jj][Ss][Oo][Nn]
+**/[Aa][Pp][Pp][Ss][Ee][Tt][Tt][Ii][Nn][Gg][Ss].*.[Jj][Ss][Oo][Nn]/**
+**/*[Pp][Rr][Ii][Vv][Aa][Tt][Ee]*
+**/*[Pp][Rr][Ii][Vv][Aa][Tt][Ee]*/**
+**/*[Ss][Ee][Cc][Rr][Ee][Tt]*
+**/*[Ss][Ee][Cc][Rr][Ee][Tt]*/**
+**/*[Cc][Rr][Ee][Dd][Ee][Nn][Tt][Ii][Aa][Ll]*
+**/*[Cc][Rr][Ee][Dd][Ee][Nn][Tt][Ii][Aa][Ll]*/**
 **/*.[Dd][Ll][Ll]
+**/*.[Dd][Ll][Ll]/**
 **/*.[Ee][Xx][Ee]
+**/*.[Ee][Xx][Ee]/**
 **/*.[Zz][Ii][Pp]
+**/*.[Zz][Ii][Pp]/**
 **/*.[Ss][Qq][Ll]
-**/*.bak
-**/*.mdf
-**/*.ldf
-**/*.pfx
-**/*.p12
-**/*.pem
-**/*.key
+**/*.[Ss][Qq][Ll]/**
+**/*.[Bb][Aa][Kk]
+**/*.[Bb][Aa][Kk]/**
+**/*.[Mm][Dd][Ff]
+**/*.[Mm][Dd][Ff]/**
+**/*.[Ll][Dd][Ff]
+**/*.[Ll][Dd][Ff]/**
+**/*.[Pp][Ff][Xx]
+**/*.[Pp][Ff][Xx]/**
+**/*.[Pp]12
+**/*.[Pp]12/**
+**/*.[Pp][Ee][Mm]
+**/*.[Pp][Ee][Mm]/**
+**/*.[Kk][Ee][Yy]
+**/*.[Kk][Ee][Yy]/**

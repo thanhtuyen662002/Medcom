@@ -25,6 +25,34 @@ WORKER = 'src/backend/Medcom.LegacyPasswordWorker/Medcom.LegacyPasswordWorker.cs
 IMAGE = os.environ.get('MEDCOM_CONTAINER_IMAGE')
 PUBLIC_ROOT = {'global.json', 'Directory.Build.props', 'Directory.Build.targets', 'NuGet.config'}
 
+# Each forbidden family has source-shaped descendants in the real context test.
+# Both the matching parent and all descendants must have final deny rules.
+FORBIDDEN_CONTEXT_FAMILIES = {
+    '**/[Bb][Ii][Nn]': ('bin', 'BiN'),
+    '**/[Oo][Bb][Jj]': ('obj', 'ObJ'),
+    '**/.[Gg][Ii][Tt]': ('.git', '.GiT'),
+    '**/.[Ee][Nn][Vv]': ('.env', '.EnV'),
+    '**/.[Ee][Nn][Vv].*': ('.env.staging', '.EnV.local'),
+    '**/[Aa][Pp][Pp][Ss][Ee][Tt][Tt][Ii][Nn][Gg][Ss].*.[Jj][Ss][Oo][Nn]':
+        ('appsettings.Production.json', 'AppSettings.Staging.JsOn'),
+    '**/*[Pp][Rr][Ii][Vv][Aa][Tt][Ee]*': ('Private', 'private-data', 'PRIVATE', 'pRiVaTe-data'),
+    '**/*[Ss][Ee][Cc][Rr][Ee][Tt]*': ('Secrets', 'secret-cache', 'SECRET', 'SeCrEt-cache'),
+    '**/*[Cc][Rr][Ee][Dd][Ee][Nn][Tt][Ii][Aa][Ll]*':
+        ('Credentials', 'credential-cache', 'CREDENTIAL', 'CrEdEnTiAl-cache'),
+    '**/*.[Dd][Ll][Ll]': ('Tools.dll', 'Tools.DLL', 'payload.DlL'),
+    '**/*.[Ee][Xx][Ee]': ('Program.exe', 'Program.EXE'),
+    '**/*.[Zz][Ii][Pp]': ('ERP.zip', 'ERP.ZIP'),
+    '**/*.[Ss][Qq][Ll]': ('Data.sql', 'Data.SQL'),
+    '**/*.[Bb][Aa][Kk]': ('database.bak', 'database.BaK'),
+    '**/*.[Mm][Dd][Ff]': ('database.mdf', 'database.MdF'),
+    '**/*.[Ll][Dd][Ff]': ('database.ldf', 'database.LdF'),
+    '**/*.[Pp][Ff][Xx]': ('certificate.pfx', 'certificate.PfX'),
+    '**/*.[Pp]12': ('certificate.p12', 'certificate.P12'),
+    '**/*.[Pp][Ee][Mm]': ('certificate.pem', 'certificate.PeM'),
+    '**/*.[Kk][Ee][Yy]': ('server.key', 'server.KeY'),
+}
+FILE_ONLY_CONTEXT_SUFFIXES = ('cs', 'csproj', 'json', 'props', 'targets', 'config')
+
 
 def instructions():
     joined = re.sub(r'\\\n\s*', ' ', DOCKERFILE)
@@ -79,11 +107,13 @@ class ContainerContractTests(unittest.TestCase):
         self.assertEqual(rules[0], '**')
         self.assertEqual({rule for rule in rules if rule.startswith('!')}, expected)
         final_exclusion = max(i for i, rule in enumerate(rules) if rule.startswith('!'))
-        for rule in ('**/bin', '**/obj', '**/.git', '**/.env', '**/.env.*',
-                     '**/appsettings.*.json', '**/*.cs/**', '**/*.csproj/**', '**/*.json/**',
-                     '**/*[Pp]rivate*', '**/*[Ss]ecret*',
-                     '**/*[Cc]redential*', '**/*.[Dd][Ll][Ll]', '**/*.[Zz][Ii][Pp]',
-                     '**/*.[Ss][Qq][Ll]', '**/*.pfx', '**/*.key'):
+        forbidden_rules = set(FORBIDDEN_CONTEXT_FAMILIES)
+        forbidden_rules |= {rule + '/**' for rule in FORBIDDEN_CONTEXT_FAMILIES}
+        file_only_rules = {'**/*.' + ''.join(f'[{c.upper()}{c}]' for c in suffix) + '/**'
+                           for suffix in FILE_ONLY_CONTEXT_SUFFIXES}
+        file_only_rules |= {'Dockerfile/**', '.dockerignore/**'}
+        self.assertEqual(set(rules[final_exclusion + 1:]), forbidden_rules | file_only_rules)
+        for rule in forbidden_rules | file_only_rules:
             self.assertGreater(rules.index(rule), final_exclusion)
 
     def test_runtime_stays_unprivileged_and_unconfigured(self):
@@ -210,6 +240,9 @@ class DockerSmokeTests(unittest.TestCase):
             'src/backend/Medcom.Api/appsettings.Production.json',
             'src/backend/Medcom.Api/Private/Hidden.cs',
             'src/backend/Medcom.Api/Secrets.cs',
+            'src/backend/Medcom.Api/pRiVaTeSettings.cs',
+            'src/backend/Medcom.Api/SeCrEtSettings.cs',
+            'src/backend/Medcom.Api/CrEdEnTiAlStore.cs',
             'src/backend/Medcom.Api/LooksLikeSource.cs/unexpected.json',
             'src/backend/Medcom.Api/LooksLikeProject.csproj/unexpected.txt',
             'src/backend/Medcom.Api/Nested/packages.lock.json/unexpected.txt',
@@ -217,6 +250,18 @@ class DockerSmokeTests(unittest.TestCase):
             'src/backend/Medcom.Api/Tools.dll', 'src/backend/Medcom.Api/ERP.ZIP',
             'src/backend/Medcom.Api/data.sql', 'src/backend/Medcom.Api/data.bak',
             'src/backend/Medcom.Api/certificate.pfx', 'src/backend/Medcom.Api/private.key'}
+        # Every forbidden parent must also deny otherwise-admissible source,
+        # project and lockfile children, both directly and several levels down.
+        # These remain synthetic; no private source or credentials are supplied.
+        forbidden_directories = {directory for examples in FORBIDDEN_CONTEXT_FAMILIES.values()
+                                 for directory in examples}
+        forbidden_directories |= {f'LooksLikeFile.{variant}' for suffix in FILE_ONLY_CONTEXT_SUFFIXES
+                                  for variant in (suffix, suffix.upper())}
+        for directory in forbidden_directories:
+            for depth in ('', 'Nested/More/'):
+                for leaf in ('Hidden.cs', 'Hidden.csproj', 'packages.lock.json'):
+                    denied.add(f'src/backend/Medcom.Application/NewFeature/{directory}/{depth}{leaf}')
+        denied.add('Dockerfile/Hidden.cs')
         tag = 'medcom-context-test:' + uuid.uuid4().hex
         with tempfile.TemporaryDirectory() as folder:
             context = Path(folder)
