@@ -158,7 +158,9 @@ public static class ApiHost
             options.FallbackPolicy = new AuthorizationPolicyBuilder()
                 .RequireAuthenticatedUser().Build());
         configure?.Invoke(builder);
+        var allRequestsSecure = SecureIngress.ReadConfiguration(builder.Configuration);
         var app = builder.Build();
+        app.UseSecureIngress(allRequestsSecure);
         var contentSecurityPolicy = WebSecurity.ContentSecurityPolicy(app.Environment.WebRootPath);
         app.Use(async (context, next) =>
         {
@@ -248,3 +250,4 @@ public static class ApiHost
                 ["correlationId"] = context.TraceIdentifier
             }).ExecuteAsync(context);
 }
+
