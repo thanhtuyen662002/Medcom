@@ -7,6 +7,7 @@ namespace Medcom.Infrastructure;
 
 public sealed class SqlDocumentReader : IDocumentReader
 {
+    private readonly SqlLegacyUserStore? database;
     private readonly LegacyCompany company;
     private readonly Func<DbConnection> factory;
     private readonly Func<string,CancellationToken,Task<LegacyUser?>> find;
@@ -15,9 +16,9 @@ public sealed class SqlDocumentReader : IDocumentReader
     {
         this.company=company;
         // The production route keeps the existing certificate/database checks.
-        var database=new SqlLegacyUserStore(connectionString,allowLoopbackTestCertificate,enablePilots:true,
+        database=new SqlLegacyUserStore(connectionString,allowLoopbackTestCertificate,enablePilots:true,
             developmentTestTlsTarget:developmentTestTlsTarget);
-        factory=()=>database.CreateConnection();find=database.FindAsync;
+        factory=database.CreateConnection;find=database.FindAsync;
     }
     // Trusted recording seam; no runtime registration or alternate authority policy.
     internal SqlDocumentReader(LegacyCompany company,Func<DbConnection> factory,

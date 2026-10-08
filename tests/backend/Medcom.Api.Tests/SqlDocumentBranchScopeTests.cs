@@ -110,12 +110,25 @@ public sealed class SqlDocumentBranchScopeTests
     [InlineData(DocumentKind.InboundRequests,"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")]
     [InlineData(DocumentKind.PurchaseOrders,"SAME")] [InlineData(DocumentKind.InboundRequests,"SAME")]
     [InlineData(DocumentKind.PurchaseOrders,"ROW0")] [InlineData(DocumentKind.InboundRequests,"ROW0")]
-    [InlineData(DocumentKind.PurchaseOrders,"\ud800")] [InlineData(DocumentKind.InboundRequests,"\ud800")]
-    [InlineData(DocumentKind.PurchaseOrders,"\udfff")] [InlineData(DocumentKind.InboundRequests,"\udfff")]
+    [InlineData(DocumentKind.PurchaseOrders,"unpaired-high")] [InlineData(DocumentKind.InboundRequests,"unpaired-high")]
+    [InlineData(DocumentKind.PurchaseOrders,"unpaired-low")] [InlineData(DocumentKind.InboundRequests,"unpaired-low")]
     [InlineData(DocumentKind.PurchaseOrders,"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")]
     [InlineData(DocumentKind.InboundRequests,"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")]
-    public async Task Actual_paged_reader_preserves_original_unsafe_or_duplicate_row_bindings_and_ordinary_controls(DocumentKind kind,string lineId)
+    public async Task Actual_paged_reader_preserves_original_unsafe_or_duplicate_row_bindings_and_ordinary_controls(DocumentKind kind,string lineIdCase)
     {
+        // Attribute strings cross metadata/xUnit transport; construct lone UTF-16 units here.
+        var lineId=lineIdCase switch
+        {
+            "unpaired-high" => new string((char)0xD800,1),
+            "unpaired-low" => new string((char)0xDFFF,1),
+            _ => lineIdCase
+        };
+        if(lineIdCase is "unpaired-high" or "unpaired-low")
+        {
+            Assert.Equal(1,lineId.Length);
+            Assert.Equal(lineIdCase=="unpaired-high"?0xD800:0xDFFF,(int)lineId[0]);
+            Assert.True(char.IsSurrogate(lineId[0]));
+        }
         const int size=20,count=2;
         var display=new ItemDisplayRecordingSource{MasterQualified=true,InboundQualified=true};
         display.Items.Add(("ITEM","current","Historical disabled item","base unit",true));
