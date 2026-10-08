@@ -309,9 +309,9 @@ test('I40 synthetic React host list lifecycle and stale-denial integration', asy
       });
       build.onResolve({filter:/^\.\/(mobile-inbound-request|inbound-request-readonly|request-selection-focus|navigation-guard)$/}, args=>({path:args.path,namespace:'i40-double'}));
       build.onLoad({filter:/.*/,namespace:'i40-double'}, args=>({loader:'js',contents:args.path.endsWith('mobile-inbound-request')
-        ? `import React from 'react'; export const MobileInboundRequest=props=>React.createElement('div',{'data-testid':'i40-editor-double','data-document':props.documentId});`
+        ? `import React from 'react'; export const MobileInboundRequest=props=>{const key=React.useRef(Symbol('i40-editor-dirty'));const dirty=globalThis.i43InboundGuard?.dirty===true;React.useLayoutEffect(()=>{const state=globalThis.i43InboundGuard;if(dirty)state.blockers.set(key.current,{canDiscard:true,message:'Synthetic child has unsaved edits'});else state.blockers.delete(key.current);return()=>state.blockers.delete(key.current);},[dirty]);return React.createElement('div',{'data-testid':'i40-editor-double','data-document':props.documentId});};`
         : args.path.endsWith('inbound-request-readonly') ? `export const InboundRequestReadOnly=()=>null;`
-        : args.path.endsWith('navigation-guard') ? `const request=action=>action(),register=()=>{}; export const useNavigationGuard=()=>({request,register});export const useDirtyGuard=()=>{};`
+        : args.path.endsWith('navigation-guard') ? `const request=(action,validate)=>{const state=globalThis.i43InboundGuard;if(validate&&!validate('request'))return;if(state?.queue)state.pending={action,validate};else if(!validate||validate('accept'))action();},register=(key,value)=>{const state=globalThis.i43InboundGuard;if(state){if(value)state.blockers.set(key,value);else state.blockers.delete(key);}},isBlocked=()=>!!globalThis.i43InboundGuard?.queue||!!globalThis.i43InboundGuard?.blockers.size; export const useNavigationGuard=()=>({request,register,isBlocked});export const useDirtyGuard=()=>{};`
         : `const noop=()=>{},focus={open:noop,close:noop,cancel:noop,row:noop,detail:null,list:null};export const useRequestSelectionFocus=()=>focus;`}));
     }}]});
   await t.test('React external imports use portable file URLs and the exact locked React instance', async () => {
@@ -336,7 +336,8 @@ test('I40 synthetic React host list lifecycle and stale-denial integration', asy
   const workspace = () => ({session:{tenantId:'T',companyId:'C',authorityVersion:1,capabilities:['inbound-requests.read']},
     branchIds:['BR-A'],sessionScope:'e'.repeat(64),readScope:'f'.repeat(64),navigation:[]});
   const listData=page=>({rows:['DOC-A','DOC-B'].map(documentId=>({documentId,documentDate:'2026-10-01',branchId:'BR-A',statusId:0,isLocked:false})),page,pageSize:50,hasMore:page===1});
-  async function host(){
+  async function host(options = {}){
+    const guard=globalThis.i43InboundGuard={queue:false,dirty:false,pending:null,blockers:new Map()};
     const calls=[],denied=[],held=[]; let hold=false,failure=null,renderer,nextRows=null;
     const list=async(page,search,branch,signal,scope)=>{
       const captured=failure,data=listData(page);
@@ -346,8 +347,8 @@ test('I40 synthetic React host list lifecycle and stale-denial integration', asy
       if(captured!==null)throw new HostApiError(captured,'synthetic_i40_denied');
       return data;
     };
-    const api={read:async documentId=>({scopeKey:'a'.repeat(64),access:{...access},data:{outcome:'Observed',document:{...structuredClone(source),documentId}}}),
-      command:async()=>assert.fail('I40 read tests must never send commands')};
+    const api={read: options.read ?? (async documentId=>({scopeKey:'a'.repeat(64),access:{...access},data:{outcome:'Observed',document:{...structuredClone(source),documentId}}})),
+      command: options.command ?? (async()=>assert.fail('I40 read tests must never send commands'))};
     let props={loginKey:'i40-login-1',workspace:workspace(),historyOwner:'workspace',list,api,onDenied:e=>denied.push(e.status)};
     const flush=async()=>act(async()=>{await new Promise(resolve=>setImmediate(resolve));});
     const render=async patch=>{props={...props,...patch};await act(async()=>{if(renderer)renderer.update(React.createElement(InboundRequestScreen,props));else renderer=create(React.createElement(InboundRequestScreen,props));});await flush();};
@@ -357,11 +358,141 @@ test('I40 synthetic React host list lifecycle and stale-denial integration', asy
     const open=async id=>{await act(async()=>openHandler(id)());await flush();};
     const refresh=async()=>render({list:(...args)=>list(...args)});
     await render({});
-    return {calls,denied,held,render,flush,click,open,openHandler,refresh,props:()=>props,root:()=>renderer.root,
+    return {guard,accept:async()=>{const pending=guard.pending;assert.ok(pending);guard.pending=null;guard.queue=false;if(pending.validate&&!pending.validate('accept')){await flush();return;}guard.blockers.clear();await act(async()=>pending.action());await flush();},calls,denied,held,render,flush,click,open,openHandler,refresh,props:()=>props,root:()=>renderer.root,
       rows:value=>nextRows=value,fail:value=>failure=value,hold:()=>hold=true,release:async()=>{hold=false;await act(async()=>held.splice(0).forEach(resolve=>resolve()));await flush();},
       close:async()=>{await act(async()=>renderer.unmount());await flush();}};
   }
   try {
+    await t.test('I43 recovered inbound presentation survives custody phase changes without replacing the authorized read proof', async () => {
+      const commands = [], receipt = {operationId: op, documentId: 'DOC-A', statusId: 0,
+        stateEqualityToken: 'C'.repeat(64), auditId: audit, committedAtUtc: '2026-10-06T00:00:00Z'};
+      const f = await host({command: async (route, body, scope) => {
+        commands.push({route, body, scope});
+        return {scopeKey: scope, data: {outcome: route === 'reconcile' ? 'Replayed' : 'OutcomeUnknown', receipt: route === 'reconcile' ? receipt : null, code: null}};
+      }});
+      try {
+        await f.open('DOC-A');
+        const editor = () => f.root().find(node => typeof node.type === 'function' && node.props.adapter && node.props.onConfirmed);
+        const region = () => f.root().findByProps({role: 'region', 'aria-label': 'Phiếu nhập hàng đã chọn'});
+        const original = command(), adapter = editor().props.adapter, originalEditor = editor();
+        await act(async () => adapter.execute(original, signal())); await f.flush();
+        await f.render({workspace: null, presentationAllowed: false});
+        assert.equal(region().props.hidden, true, 'lost authority hides the retained original');
+        await f.render({workspace: workspace(), presentationAllowed: true});
+        assert.equal(region().props.hidden, false, 'fresh authorized full read restores the original recovery UI');
+        const recoveredAccess = editor().props.access;
+        let result;
+        await act(async () => {result = await adapter.reconcile(original, signal());}); await f.flush();
+        assert.deepEqual(editor().props.access, recoveredAccess, 'reconciliation has not changed any read authority value');
+        assert.strictEqual(editor(), originalEditor); assert.strictEqual(editor().props.adapter, adapter);
+        assert.equal(region().props.hidden, false, 'custody-only access object replacement must not hide freshly authorized recovery UI');
+        await act(async () => editor().props.onConfirmed(result.receipt)); await f.flush();
+        assert.equal(region().props.hidden, false, 'matching receipt remains presented after acknowledgement');
+        assert.equal(f.root().findAllByProps({'data-testid': 'inbound-host-receipt'}).length, 1);
+        assert.equal(f.root().findByProps({'data-testid': 'inbound-request-host'}).props['data-readback-pending'], true,
+          'presentation does not release the independent matching-snapshot navigation barrier');
+        assert.deepEqual(commands.map(call => call.route), ['save', 'reconcile']);
+        assert.equal(commands[0].body, JSON.stringify(original)); assert.equal(commands[1].body, commands[0].body);
+        assert.equal(commands[1].scope, commands[0].scope);
+      } finally {await f.close();}
+    });
+    for (const changedGrant of [{canRead: false}, {canSave: false}, {canSend: false}, {available: false}, {maxCommandBytes: 524288}])
+      await t.test(`I43 recovered inbound proof rejects changed ${Object.keys(changedGrant)[0]} grant until fresh host validation`, async () => {
+        let grant = {...access};
+        const f = await host({read: async documentId => ({scopeKey: 'a'.repeat(64), access: {...grant},
+          data: {outcome: 'Observed', document: {...structuredClone(source), documentId}}})});
+        try {
+          await f.open('DOC-A'); await f.render({workspace: null, presentationAllowed: false});
+          await f.render({workspace: workspace(), presentationAllowed: true});
+          const region = () => f.root().findByProps({role: 'region', 'aria-label': 'Phiếu nhập hàng đã chọn'});
+          const editor = () => f.root().find(node => typeof node.type === 'function' && node.props.adapter && node.props.onConfirmed);
+          assert.equal(region().props.hidden, false);
+          grant = {...access, ...changedGrant};
+          await act(async () => editor().props.adapter.read('DOC-A', signal())); await f.flush();
+          assert.equal(region().props.hidden, true, 'an old equal-scope proof cannot authorize a changed grant');
+          grant = {...access};
+          if (changedGrant.canRead !== false && changedGrant.available !== false) {
+            await act(async () => editor().props.adapter.read('DOC-A', signal())); await f.flush();
+            assert.equal(region().props.hidden, true, 'equal-valued access cannot revive a retired host presentation proof');
+          }
+          await f.click('Xác minh lại quyền nhập hàng');
+          assert.equal(region().props.hidden, false, 'a new successful host read can establish a new presentation proof');
+        } finally {await f.close();}
+      });
+    for (const boundary of ['presentation', 'workspace', 'read-scope', 'authority', 'api'])
+      await t.test(`I43 recovered inbound proof waits for a fresh current read after ${boundary} replacement`, async () => {
+        let hold = false; const waiting = [];
+        const read = async documentId => {if (hold) await new Promise(resolve => waiting.push(resolve));
+          return {scopeKey: 'a'.repeat(64), access: {...access}, data: {outcome: 'Observed', document: {...structuredClone(source), documentId}}};};
+        const f = await host({read});
+        try {
+          await f.open('DOC-A'); await f.render({workspace: null, presentationAllowed: false});
+          await f.render({workspace: workspace(), presentationAllowed: true});
+          const region = () => f.root().findByProps({role: 'region', 'aria-label': 'Phiếu nhập hàng đã chọn'});
+          assert.equal(region().props.hidden, false); hold = true;
+          if (boundary === 'presentation') {await f.render({presentationAllowed: false}); await f.render({presentationAllowed: true});}
+          if (boundary === 'workspace') {await f.render({workspace: null}); await f.render({workspace: workspace()});}
+          if (boundary === 'read-scope') await f.render({workspace: {...workspace(), readScope: 'd'.repeat(64)}});
+          if (boundary === 'authority') await f.render({workspace: {...workspace(), session: {...workspace().session, authorityVersion: 2}}});
+          if (boundary === 'api') await f.render({api: {...f.props().api}});
+          assert.ok(waiting.length > 0, 'a fresh read was requested');
+          assert.equal(region().props.hidden, true, 'retained proof is masked until the current read resolves');
+          await act(async () => {hold = false; waiting.splice(0).forEach(resolve => resolve());}); await f.flush();
+          assert.equal(region().props.hidden, false);
+        } finally {hold = false; waiting.splice(0).forEach(resolve => resolve()); await f.close();}
+      });
+    for(const change of ['removed-row','scope','presentation','workspace-null'])await t.test('I43 R1 queued inbound Open rechecks current '+change+' at discard acceptance',async()=>{
+      const f=await host();let navigation;try{
+        await f.render({registerDetailNavigation:value=>navigation=value});await f.open('DOC-A');
+        const editor=()=>f.root().find(n=>typeof n.type==='function'&&n.props.adapter&&n.props.onConfirmed),instance=editor(),adapter=instance.props.adapter;
+        f.guard.dirty=true;await f.render({});const dirtyBlockers=[...f.guard.blockers.entries()];assert.equal(dirtyBlockers.length,1,'Actual editor-double effect registers its dirty blocker');f.guard.queue=true;await act(async()=>navigation.requestOpen('DOC-B'));assert.ok(f.guard.pending);
+        if(change==='removed-row'){f.rows(['DOC-A']);await f.refresh();}
+        if(change==='scope')await f.render({workspace:{...f.props().workspace,readScope:'d'.repeat(64)}});
+        if(change==='presentation')await f.render({presentationAllowed:false});
+        if(change==='workspace-null')await f.render({workspace:null});
+        const before=f.calls.length;await f.accept();assert.equal(navigation.selectedId,'DOC-A');assert.strictEqual(editor(),instance);assert.strictEqual(editor().props.adapter,adapter);assert.equal(f.calls.length,before);assert.deepEqual([...f.guard.blockers.entries()],dirtyBlockers,'Rejected target retains the exact original dirty registration before any discard');
+      }finally{await f.close();}
+    });
+    await t.test('I43 R1 queued inbound Open still accepts a current same-scope target',async()=>{
+      const f=await host();let navigation;try{await f.render({registerDetailNavigation:value=>navigation=value});await f.open('DOC-A');f.guard.queue=true;await act(async()=>navigation.requestOpen('DOC-B'));await f.render({workspace:structuredClone(f.props().workspace)});await f.accept();assert.equal(navigation.selectedId,'DOC-B');}finally{await f.close();}
+    });
+    await t.test('I43 typed fixture adapter uses existing selection/guard operations without a new list request or editor retirement',async()=>{
+      const f=await host();let navigation;try{
+        await f.render({registerDetailNavigation:value=>navigation=value});
+        const editor=f.root().findAll(n=>n.props['data-testid']==='i40-editor-double')[0];
+        await act(async()=>navigation.requestOpen('DOC-A'));await f.flush();assert.equal(navigation.selectedId,'DOC-A');
+        await f.render({presentationAllowed:false});assert.strictEqual(f.root().findAll(n=>n.props['data-testid']==='i40-editor-double')[0],editor);
+        await act(async()=>navigation.requestOpen('DOC-B'));await f.flush();assert.equal(navigation.selectedId,'DOC-A');
+        await f.render({presentationAllowed:true});
+        await act(async()=>navigation.requestOpen('NOT-IN-CURRENT-LIST'));await f.flush();assert.equal(navigation.selectedId,'DOC-A');
+        await act(async()=>navigation.requestClose());await f.flush();assert.equal(navigation.selectedId,null);
+        assert.strictEqual(f.root().findAll(n=>n.props['data-testid']==='i40-editor-double')[0],editor);
+        assert.equal(f.calls.length,2,'only explicit restoration revalidates the existing host');
+      }finally{await f.close();assert.equal(navigation,null);}
+    });
+    for(const phase of ['pending','unknown'])await t.test('I43 '+phase+' original can recover after presentation restoration using a fresh host read',async()=>{
+      const f=await host();let releaseWrite,releaseRead,holdRead=false;const sends=[];try{
+        const base=f.props().api;
+        const api={read:async(...args)=>{if(holdRead)await new Promise(resolve=>releaseRead=resolve);return base.read(...args);},command:async(route,body,scope,signal,beforeSend)=>{
+          beforeSend();sends.push({route,body,scope});if(phase==='pending'&&route!=='reconcile')await new Promise(resolve=>releaseWrite=resolve);
+          return {scopeKey:scope,data:{outcome:'OutcomeUnknown',receipt:null,code:null}};
+        }};
+        await f.render({api});await f.open('DOC-A');
+        const editor=()=>f.root().find(n=>typeof n.type==='function'&&n.props.adapter&&n.props.onConfirmed);
+        const instance=editor(),adapter=instance.props.adapter,original=command();let pending;
+        await act(async()=>{pending=adapter.execute(original,signal());if(phase==='unknown')await pending;});await f.flush();
+        await f.render({presentationAllowed:false});assert.strictEqual(editor(),instance);
+        holdRead=true;await f.render({presentationAllowed:true});
+        const region=()=>f.root().find(n=>n.type==='div'&&n.props.role==='region'&&n.props['aria-label']==='Phiếu nhập hàng đã chọn');
+        assert.equal(region().props.hidden,true);assert.ok(releaseRead);
+        holdRead=false;await act(async()=>releaseRead());await f.flush();assert.equal(region().props.hidden,false,'current full host read admits original recovery UI without claiming receipt readback');
+        assert.strictEqual(editor(),instance);assert.strictEqual(editor().props.adapter,adapter);assert.equal(sends.length,1);
+        await f.click('Đóng phiếu nhập hàng');assert.equal(editor().props.documentId,'DOC-A');
+        if(releaseWrite){await act(async()=>releaseWrite());await f.flush();}assert.equal((await pending).outcome,'OutcomeUnknown');
+        await act(async()=>assert.equal((await adapter.reconcile(original,signal())).outcome,'OutcomeUnknown'));
+        assert.equal(sends.length,2);assert.equal(sends[1].body,sends[0].body);assert.equal(sends[1].scope,sends[0].scope);assert.equal(sends[1].route,'reconcile');
+      }finally{holdRead=false;releaseRead?.();releaseWrite?.();await f.close();}
+    });
     await t.test('shared inbound controls preserve accessible actions with consistent visible captions',async()=>{
       const f=await host();try{
         const form=f.root().findByType('form');
@@ -540,7 +671,7 @@ test('I40 synthetic React host list lifecycle and stale-denial integration', asy
 // ACTUAL host + unchanged I18 + unchanged navigation provider. This fixture's
 // HTTP layer is a browser fetch double, NOT an ASP.NET/BFF integration proof.
 const fixture = `
-import React,{useLayoutEffect,useMemo,useRef,useState} from 'react';import {createRoot} from 'react-dom/client';
+import React,{useCallback,useLayoutEffect,useMemo,useRef,useState} from 'react';import {createRoot} from 'react-dom/client';
 import {InboundRequestScreen} from './components/erp/inbound-request-screen';
 import {InboundRequestReadOnly} from './components/erp/inbound-request-readonly';
 import {NavigationGuardProvider} from './components/erp/navigation-guard';
@@ -553,7 +684,7 @@ function model(){return {scope:'a'.repeat(64),access:{...rights},mode:'Committed
 // Requests intentionally ignore cancellation so stale-success/denial fencing is exercised.
 const originalFetch=globalThis.fetch.bind(globalThis);
 globalThis.fetch=(url,init)=>{const pathname=new URL(typeof url==='string'?url:url.url,location.href).pathname;if(pathname==='/api/erp/api/documents/inbound-requests/detail')return window.qaDetailFetch(url,init);if(pathname==='/api/erp/api/documents/inbound-requests')return window.qaListFetch(url,init);return originalFetch(url,init);};
-function App(){const m=useRef(model()),count=useRef(0);const [config,setConfig]=useState({loginKey:'login-0',version:1,available:true,listRevision:0,apiRevision:0,callbackRevision:0});
+function App(){const registerNavigation=useCallback(value=>{window.qaNavigation=value;},[]);const m=useRef(model()),count=useRef(0);const [config,setConfig]=useState({loginKey:'login-0',version:1,available:true,listRevision:0,apiRevision:0,callbackRevision:0});
  const wait=async(model,kind)=>{if(model.held[kind])await new Promise(r=>(model.waits[kind]??=[]).push(r));};
  // Child layout effects have committed, while this parent's authority refresh
  // deliberately releases the retired HTTP failure before passive cleanup.
@@ -596,26 +727,63 @@ function App(){const m=useRef(model()),count=useRef(0);const [config,setConfig]=
  // Explicit intrinsic-child mode: no composed host, draft bridge or navigation
  // provider. The reset key changes only between cases, never on direct props.
  if(m.current.directReadonly)return <InboundRequestReadOnly key={config.loginKey} {...m.current.directProps} branchIds={['BR-A']} scope={m.current.readMarkers} initialPage={1} onPageChange={()=>{}} onPresented={()=>{}} onDenied={error=>(window.qaDenied??=[]).push(error.status)}/>;
- return <NavigationGuardProvider><InboundRequestScreen loginKey={config.loginKey} workspace={workspace} api={api} {...(m.current.useDefaultList?{}:{list})} onDenied={error=>(window.qaDenied??=[]).push(error.status)} onClose={()=>{window.qaLeft=true;window.qaCallback=config.callbackRevision;}} onBack={()=>{window.qaLeft=true;window.qaCallback=config.callbackRevision;}}/></NavigationGuardProvider>;
+ return <NavigationGuardProvider><InboundRequestScreen registerDetailNavigation={registerNavigation} loginKey={config.loginKey} workspace={workspace} api={api} {...(m.current.useDefaultList?{}:{list})} onDenied={error=>(window.qaDenied??=[]).push(error.status)} onClose={()=>{window.qaLeft=true;window.qaCallback=config.callbackRevision;}} onBack={()=>{window.qaLeft=true;window.qaCallback=config.callbackRevision;}}/></NavigationGuardProvider>;
 }
 createRoot(document.getElementById('root')).render(<App/>);`;
 
+// Count native calls, including a repeated focus on an already-active target.
+// Observation must never swallow focus, change its receiver/options, or replace
+// browser behavior; both the bounded frame and former body target are recorded.
+function installInboundFocusObserver() {
+  const nativeFocus = HTMLElement.prototype.focus;
+  window.requestDetailFocusCalls = [];
+  HTMLElement.prototype.focus = function (...args) {
+    if (this instanceof HTMLElement) {
+      const frame = this.matches('.request-detail-dialog[role="dialog"]');
+      const region = this.matches('[role="region"][aria-label="Phiếu nhập hàng đã chọn"]');
+      if (frame || region) window.requestDetailFocusCalls.push({kind: frame ? 'frame' : 'region',
+        label: frame ? this.querySelector('.request-detail-header h2')?.textContent : this.getAttribute('aria-label')});
+    }
+    return Reflect.apply(nativeFocus, this, args);
+  };
+}
+
+test('Node focus observer delegates exact receiver/options, return values and native failures', () => {
+  const invocations = [], result = {}, failure = Error('native failure'), window = {};
+  class Element {
+    constructor(kind) {this.kind = kind;}
+    matches(selector) {return this.kind === 'frame' ? selector.startsWith('.request-detail-dialog') : this.kind === 'region' && selector.startsWith('[role="region"]');}
+    querySelector() {return {textContent: 'Phiếu nhập hàng đã chọn'};}
+    getAttribute() {return 'Phiếu nhập hàng đã chọn';}
+    focus(...args) {invocations.push({receiver: this, args}); if (this.kind === 'throws') throw failure; return result;}
+  }
+  new Function('HTMLElement', 'window', `(${installInboundFocusObserver.toString()})()`)(Element, window);
+  const options = Object.freeze({get preventScroll() {throw Error('observer must not inspect options');}});
+  const frame = new Element('frame'), region = new Element('region'), other = new Element('other');
+  assert.strictEqual(frame.focus(options), result); frame.focus(options); region.focus(); other.focus(undefined);
+  assert.strictEqual(invocations[0].receiver, frame); assert.strictEqual(invocations[0].args[0], options);
+  assert.deepEqual(invocations[2].args, []); assert.deepEqual(invocations[3].args, [undefined]);
+  assert.deepEqual(window.requestDetailFocusCalls.map(call => call.kind), ['frame', 'frame', 'region']);
+  assert.throws(() => new Element('throws').focus(options), error => error === failure);
+});
+
 test('React host mobile 320/360/390: ACTUAL React gate (separate from Node double)', {timeout: 240000}, async t => {
   const require = createRequire(import.meta.url); let build, chromium;
-  const required = process.env.I21_REACT_REQUIRED === '1';
   try {
     ({build} = require('esbuild')); require.resolve('react'); require.resolve('react-dom');
     const tools = process.env.MEDCOM_BROWSER_TOOLCHAIN;
     ({chromium} = (tools ? createRequire(path.join(path.resolve(tools), 'package.json')) : require)('playwright-core'));
   } catch (error) {
     const message = `existing React/esbuild/browser toolchain unavailable (${error.code ?? 'module'}). No install attempted.`;
-    if (required) throw new Error(`I21_REACT_REQUIRED=1: ${message}`);
-    t.skip(`NOT_RUN: ${message}`); return;
+    throw new Error(`Required I21 browser gate NOT_RUN: ${message}`);
   }
-  const bundle = await build({stdin: {contents: fixture, resolveDir: app, loader: 'tsx'}, bundle: true, platform: 'browser', format: 'iife', write: false,
+  const bundle = await build({stdin: {contents: fixture, resolveDir: app, loader: 'tsx'}, outfile:path.join(output,'i21-fixture.js'), bundle: true, platform: 'browser', format: 'iife', write: false,
     alias: {'@': app}, jsx: 'automatic', define: {'process.env.NODE_ENV': '"development"'}, logLevel: 'warning'});
-  const server = createServer((req, res) => {res.setHeader('content-type', req.url === '/fixture.js' ? 'application/javascript' : 'text/html');
-    res.end(req.url === '/fixture.js' ? bundle.outputFiles[0].contents : '<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;font:16px system-ui}*{box-sizing:border-box}[role=alertdialog]{position:fixed;left:3%;top:3%;width:94%;z-index:51;background:white;padding:16px}[data-slot=alert-dialog-overlay]{position:fixed;inset:0;background:#0004;z-index:50}</style><div id="root"></div><script src="/fixture.js"></script>');});
+  const postcss=require('postcss'),tailwind=require('@tailwindcss/postcss');
+  const javascript=bundle.outputFiles.find(file=>file.path.endsWith('.js'));assert.ok(javascript?.contents.length);
+  const css=(await postcss([tailwind({base:app})]).process(await readFile(path.join(app,'app/globals.css'),'utf8'),{from:path.join(app,'app/globals.css')})).css+'\n'+bundle.outputFiles.filter(file=>file.path.endsWith('.css')).map(file=>file.text).join('\n');
+  assert.ok(!css.includes('@import "tailwindcss"'));
+  const server=createServer((req,res)=>{res.setHeader('content-type',req.url==='/fixture.js'?'application/javascript':req.url==='/fixture.css'?'text/css':'text/html');res.end(req.url==='/fixture.js'?javascript.contents:req.url==='/fixture.css'?css:'<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/fixture.css"><div id="root"></div><script src="/fixture.js"></script></html>');});
   server.listen(0, '127.0.0.1'); await once(server, 'listening');
   let browser, context; const errors = [], external = [], results = [];
   // node:test marks a timed-out async test failed but does not unwind its
@@ -638,11 +806,15 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
     const page = await context.newPage(); page.on('pageerror', e => errors.push(e.message));
     const origin = `http://127.0.0.1:${server.address().port}`;
     await page.route('**/*', r => {if (r.request().url().startsWith(origin + '/')) return r.continue(); external.push(r.request().url()); return r.abort();});
+    await page.addInitScript(installInboundFocusObserver);
     await page.goto(origin);
     const button = name => page.getByRole('button', {name, exact: true}), field = name => page.getByLabel(name, {exact: true});
-    const open = id => page.getByRole('button', {name: new RegExp('^Mở phiếu ' + id + ' ')}).click();
+    // Open in an already active modal uses the production typed navigation
+    // adapter; physical pointer events remain blocked by the backdrop.
+    const open=async id=>{if(await page.locator('.request-detail-dialog:visible').count())await page.evaluate(id=>window.qaNavigation.requestOpen(id),id);else await page.getByRole('button',{name:new RegExp('^Mở phiếu '+id+' ')}).click();};
+    const activateBackground=async locator=>{if(await page.locator('.request-detail-dialog:visible').count())await locator.evaluate(element=>element.click());else await locator.click();};
     const ready = () => page.waitForFunction(() => document.getElementById('inbound-header-orderNumber') && !document.getElementById('inbound-header-orderNumber').matches(':disabled') && document.querySelector('[data-testid=inbound-request-host]')?.getAttribute('data-readback-pending') !== 'true');
-    const reset = async (patch = {}) => {await page.evaluate(patch => window.qa.reset(patch), patch); await open('DOC-A'); await ready();};
+    const reset=async(patch={})=>{await page.evaluate(patch=>window.qa.reset(patch),patch);if(patch.searchDraft)await field('Tìm phiếu nhập hàng').fill(patch.searchDraft);if(patch.branchDraft)await field('Lọc chi nhánh').selectOption(patch.branchDraft);await open('DOC-A');await ready();};
     const review = () => button('Rà soát phiếu').click();
     const save = async () => {await review(); await button('Lưu thay đổi').click();};
     const unknown = () => page.waitForFunction(() => document.querySelector('[data-testid=inbound-editor]')?.getAttribute('data-phase') === 'unknown');
@@ -655,10 +827,26 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await button('Tiếp tục làm việc').click(); assert.equal(await page.evaluate(() => window.qaLeft), false);
     };
     const run = async (name, fn) => {await t.test(name, async () => {try {await fn(); results.push({name, result: 'PASS'});} catch (e) {results.push({name, result: 'FAIL'}); throw e;}});};
-    const detailFocus = () => page.getByRole('region', {name:'Phiếu nhập hàng đã chọn', exact:true});
+    const dialog=()=>page.getByRole('dialog',{name:'Phiếu nhập hàng đã chọn',exact:true});
+    const modalClose=()=>dialog().getByRole('button',{name:'Đóng hộp thoại',exact:true});
+    const focusedDialog=async()=>{await page.waitForFunction(()=>{const dialog=document.querySelector('.request-detail-dialog');return !!dialog&&dialog.contains(document.activeElement)&&!document.activeElement.matches('input,textarea,select,[contenteditable=true]');});};
     const rowFocus = id => page.getByRole('button', {name:new RegExp('^Mở phiếu '+id+' ')});
     const focused = async locator => {await page.waitForFunction(element=>document.activeElement===element,await locator.elementHandle());};
     const focusPaint = () => page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    const detailFocusCalls = () => page.evaluate(() => {
+      const calls = window.requestDetailFocusCalls.filter(call => call.label === 'Phiếu nhập hàng đã chọn');
+      return {frame: calls.filter(call => call.kind === 'frame').length, region: calls.filter(call => call.kind === 'region').length};
+    });
+    const focusBaseline = async () => {await dialog().waitFor(); await focusPaint(); return detailFocusCalls();};
+    const noDetailFocus = async (baseline, message = 'read completion cannot dispatch an extra frame or former-region focus') => {
+      await focusPaint(); assert.deepEqual(await detailFocusCalls(), baseline, message);
+    };
+    const oneDetailFocus = async (baseline, message = 'explicit same-document Open focuses its bounded frame exactly once') => {
+      await page.waitForFunction(before => window.requestDetailFocusCalls.filter(call => call.label === 'Phiếu nhập hàng đã chọn' && call.kind === 'frame').length > before.frame, baseline);
+      await focusPaint(); assert.deepEqual(await detailFocusCalls(), {frame: baseline.frame + 1, region: baseline.region}, message);
+      assert.equal(await dialog().evaluate(element => document.activeElement === element), true);
+    };
+
     const readMarkers = {sessionScope:'e'.repeat(64),readScope:'f'.repeat(64)};
     await run('I40 Open/Close and unchanged parent observations reuse the authorized list; refresh/filter/page/branch/authority fetch', async () => {
       await reset({readMarkers});
@@ -671,17 +859,17 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await page.evaluate(() => window.qa.rerender()); await focusPaint();
       assert.equal((await calls()).list.length, initial, 'Open/Close and equivalent workspace object do not fetch');
       assert.equal(await page.getByTestId('inbound-editor').count(), 1);
-      await button('Xác minh lại quyền nhập hàng').click(); await ready(); await focusPaint();
+      await dialog().getByRole('button', {name: 'Xác minh lại quyền nhập hàng', exact: true}).click(); await ready(); await focusPaint();
       assert.equal((await calls()).list.length, initial + 1, 'explicit verification refresh');
-      await field('Tìm phiếu nhập hàng').fill('I40 FILTER');
-      await button('Tìm kiếm').click(); await focusPaint();
+      await button('Đóng phiếu nhập hàng').click();await field('Tìm phiếu nhập hàng').fill('I40 FILTER');
+      await activateBackground(button('Tìm kiếm')); await focusPaint();
       assert.equal((await calls()).list.length, initial + 2);
       assert.equal((await calls()).list.at(-1).search, 'I40 FILTER');
-      await button('Trang sau').click(); await focusPaint();
+      await activateBackground(button('Trang sau')); await focusPaint();
       assert.equal((await calls()).list.length, initial + 3);
       assert.equal((await calls()).list.at(-1).page, 2);
       await field('Lọc chi nhánh').selectOption('BR-A');
-      await button('Tìm kiếm').click(); await focusPaint();
+      await activateBackground(button('Tìm kiếm')); await focusPaint();
       assert.equal((await calls()).list.length, initial + 4);
       assert.equal((await calls()).list.at(-1).branch, 'BR-A');
       assert.equal((await calls()).list.at(-1).page, 1);
@@ -734,12 +922,12 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
     const waitUnavailable = () => page.waitForFunction(()=>window.qa.calls().readReplies.at(-1)?.data.outcome==='Unavailable'&&!document.getElementById('inbound-header-orderNumber'));
     const noProjection = async () => {await focusPaint();assert.equal(await readonly().count(),0);assert.equal((await calls()).detail.length,0);};
     for (const commandScope of [null,'c'.repeat(64)]) await run(`I33 exact Closed+Unavailable (${commandScope===null?'null':'valid hex'} command scope) opens an independently scoped READ projection`,async()=>{
-      await resetReadonly({draftReply:unavailable(commandScope)});await readonlyPhase('ready');await focused(detailFocus());
+      await resetReadonly({draftReply:unavailable(commandScope)});await readonlyPhase('ready');await focusedDialog();
       const c=await calls();assert.deepEqual(c.readReplies[0],unavailable(commandScope));assert.equal(c.read.length,1);
       assert.deepEqual(c.detail,[{path:'/api/erp/api/documents/inbound-requests/detail',query:'?documentId=DOC-A&page=1&pageSize=50',documentId:'DOC-A',page:1,method:'GET',credentials:'same-origin',cache:'no-store',redirect:'error',headers:{},body:null}]);
       assert.match(await readonly().innerText(),/READ ONLY PROJECTION/);assert.match(await readonly().innerText(),/1234567890123456789012345678\.1234/);
       assert.equal(await field('Số đơn').count(),0);assert.equal(await readonly().locator('input,textarea,select').count(),0);assert.equal(c.post.length,0);assert.equal(c.reconcile.length,0);
-      const count=c.detail.length;await open('DOC-A');await focused(detailFocus());assert.equal((await calls()).detail.length,count,'same-selection Open must reuse current read proof');
+      const count=c.detail.length,sameOpenFocus=await focusBaseline();await open('DOC-A');await oneDetailFocus(sameOpenFocus);assert.equal((await calls()).detail.length,count,'same-selection Open must reuse current read proof');
     });
     await run('I33 command scope cannot substitute for the independently verified detail READ response scope',async()=>{
       await resetReadonly({draftReply:unavailable('c'.repeat(64)),detailResponseMarkers:{sessionScope:readMarkers.sessionScope,readScope:'c'.repeat(64)}});
@@ -760,7 +948,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
     });
     await run('I33 authority layout commit fences captured readonly 401/403 before parent releases the old response',async()=>{
       for(const status of [401,403]){
-        await resetReadonly({held:{detail:true},detailFailure:status,detailLabel:'RETIRED LAYOUT RESPONSE'});await page.waitForFunction(()=>window.qa.held('detail')===1);await readonly().evaluate(element=>window.qaBoundaryPanel=element);
+        await resetReadonly({held:{detail:true},detailFailure:status,detailLabel:'RETIRED LAYOUT RESPONSE'});await page.waitForFunction(()=>window.qa.held('detail')===1);await readonly().evaluate(element=>window.qaBoundaryPanel=element);const authorityFocus=await focusBaseline();
         await page.evaluate(()=>{window.qa.hold('read');window.qa.detail({releaseDetailOnAuthorityCommit:true,detailFailure:null,detailLabel:'CURRENT LAYOUT RESPONSE'});window.qa.rights({});});
         await page.waitForFunction(()=>window.qa.calls().layoutDetailReleases.length===1&&window.qa.calls().detailCompleted.length===1&&window.qa.held('read')>0);await focusPaint();
         assert.deepEqual((await calls()).layoutDetailReleases,[{authorityVersion:2,panelPresent:true,phase:'pending',abortedAtRelease:true}],'retired generation is already fenced in child layout, before parent layout releases HTTP failure');
@@ -768,7 +956,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
         assert.deepEqual(await page.evaluate(()=>window.qaDenied),[]);assert.equal(await page.evaluate(()=>window.qaBoundaryPanel.isConnected&&window.qaBoundaryPanel===document.querySelector('[data-testid=inbound-request-readonly]')),true);assert.equal(await readonly().getAttribute('data-phase'),'pending');
         assert.equal(await rowFocus('DOC-A').getAttribute('aria-pressed'),'true');assert.equal((await calls()).detail.length,1);assert.doesNotMatch(await page.getByTestId('inbound-request-host').innerText(),/Đã kết thúc phiên|Chưa xác minh được quyền xem phiếu/);
         await page.evaluate(()=>window.qa.release('read'));await page.waitForFunction(()=>window.qa.held('detail')===1&&window.qa.calls().detail.length===2);assert.equal(await page.evaluate(()=>window.qaBoundaryPanel===document.querySelector('[data-testid=inbound-request-readonly]')),true);
-        await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');await focusPaint();assert.match(await readonly().innerText(),/CURRENT LAYOUT RESPONSE/);assert.equal(await detailFocus().evaluate(element=>document.activeElement===element),false);
+        await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');await focusPaint();assert.match(await readonly().innerText(),/CURRENT LAYOUT RESPONSE/);await noDetailFocus(authorityFocus);
         assert.equal(await page.evaluate(()=>window.qaBoundaryPanel===document.querySelector('[data-testid=inbound-request-readonly]')),true);assert.deepEqual(await page.evaluate(()=>window.qaDenied),[]);assert.equal((await calls()).post.length,0);assert.equal((await calls()).reconcile.length,0);
       }
     });
@@ -796,25 +984,28 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await waitUnavailable();await noProjection();assert.equal(await rowFocus('DOC-A').count(),0);assert.equal((await calls()).post.length,0);
     });
     await run('I33 failed readonly Open retires focus; retry and later A→B→A never revive the failed projection',async()=>{
-      await resetReadonly({detailFailure:'network',detailLabel:'FAILED A'});await readonlyPhase('failed');await focusPaint();
-      assert.equal(await detailFocus().evaluate(element=>document.activeElement===element),false);
-      await page.evaluate(()=>window.qa.detail({detailFailure:null,detailLabel:'RECOVERED A'}));await readonly().getByRole('button',{name:'Thử lại',exact:true}).click();await readonlyPhase('ready');await focusPaint();
-      assert.match(await readonly().innerText(),/RECOVERED A/);assert.equal(await detailFocus().evaluate(element=>document.activeElement===element),false,'retry has no new Open focus ticket');
-      await page.evaluate(()=>window.qa.detail({detailLabel:'CURRENT B'}));await open('DOC-B');await readonlyPhase('ready');await focused(detailFocus());assert.match(await readonly().innerText(),/CURRENT B/);
+      await resetReadonly({held:{detail:true},detailFailure:'network',detailLabel:'FAILED A'});await page.waitForFunction(()=>window.qa.held('detail')===1);
+      const failedFocus=await focusBaseline();await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('failed');await noDetailFocus(failedFocus);
+      await page.evaluate(()=>{window.qa.hold('detail');window.qa.detail({detailFailure:null,detailLabel:'RECOVERED A'});});
+      await modalClose().focus();const retryFocus=await focusBaseline();
+      await readonly().getByRole('button',{name:'Thử lại',exact:true}).evaluate(element=>element.click());await page.waitForFunction(()=>window.qa.held('detail')===1);
+      await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');await noDetailFocus(retryFocus,'retry has no new Open focus ticket');
+      assert.equal(await modalClose().evaluate(element=>document.activeElement===element),true);assert.match(await readonly().innerText(),/RECOVERED A/);
+      await page.evaluate(()=>window.qa.detail({detailLabel:'CURRENT B'}));await open('DOC-B');await readonlyPhase('ready');await focusedDialog();assert.match(await readonly().innerText(),/CURRENT B/);
       await page.evaluate(()=>{window.qa.hold('detail');window.qa.detail({detailLabel:'FRESH A'});});await open('DOC-A');await page.waitForFunction(()=>window.qa.held('detail')===1);await readonlyPhase('pending');
-      assert.doesNotMatch(await readonly().innerText(),/RECOVERED A|CURRENT B|FAILED A/);await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');await focused(detailFocus());
+      assert.doesNotMatch(await readonly().innerText(),/RECOVERED A|CURRENT B|FAILED A/);await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');await focusedDialog();
       assert.match(await readonly().innerText(),/FRESH A/);assert.equal((await calls()).detail.length,4);assert.equal((await calls()).post.length,0);
     });
     await run('I33 held A→B→A detail success and denial cannot restore a retired projection or consume current focus',async()=>{
       for(const retiredFailure of [null,401]){
         await resetReadonly({held:{detail:true},detailLabel:'RETIRED A',detailFailure:retiredFailure});await page.waitForFunction(()=>window.qa.held('detail')===1);
         await page.evaluate(()=>window.qa.detail({detailLabel:'RETIRED B',detailFailure:null}));await open('DOC-B');await page.waitForFunction(()=>window.qa.held('detail')===2);
-        await page.evaluate(()=>window.qa.detail({detailLabel:'CURRENT A'}));await open('DOC-A');await page.waitForFunction(()=>window.qa.held('detail')===3);await readonlyPhase('pending');
+        await page.evaluate(()=>window.qa.detail({detailLabel:'CURRENT A'}));await open('DOC-A');await page.waitForFunction(()=>window.qa.held('detail')===3);await readonlyPhase('pending');const staleFocus=await focusBaseline();
         await page.evaluate(()=>{window.qa.releaseOne('detail');window.qa.releaseOne('detail');});await page.waitForFunction(()=>window.qa.calls().detailCompleted.length===2);await focusPaint();
         assert.equal(await readonly().getAttribute('data-phase'),'pending');assert.doesNotMatch(await readonly().innerText(),/RETIRED A|RETIRED B/);
-        assert.equal(await detailFocus().evaluate(element=>document.activeElement===element),false);assert.deepEqual(await page.evaluate(()=>window.qaDenied),[]);
+        await noDetailFocus(staleFocus);assert.deepEqual(await page.evaluate(()=>window.qaDenied),[]);
         assert.ok((await calls()).detailCompleted.every(result=>result.aborted),'double resolves retired responses despite cancellation');
-        await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');await focused(detailFocus());assert.match(await readonly().innerText(),/CURRENT A/);
+        await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');await oneDetailFocus(staleFocus,'only the current A read completes its explicit Open focus');assert.match(await readonly().innerText(),/CURRENT A/);
         assert.deepEqual((await calls()).detail.map(call=>call.documentId),['DOC-A','DOC-B','DOC-A']);assert.equal((await calls()).post.length,0);
       }
     });
@@ -825,10 +1016,10 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
         if(generation==='workspace'){await page.evaluate(()=>window.qa.workspace(false));await page.waitForFunction(()=>!document.querySelector('[data-testid=inbound-request-readonly]'));await page.evaluate(()=>window.qa.workspace(true));}
         else if(generation==='api')await page.evaluate(()=>window.qa.swapApi());
         else await page.evaluate(({generation,markers})=>window.qa.markers({...markers,[generation==='session-scope'?'sessionScope':'readScope']:'d'.repeat(64)}),{generation,markers:readMarkers});
-        await page.waitForFunction(()=>window.qa.held('detail')===2);await readonlyPhase('pending');await page.evaluate(()=>window.qa.releaseOne('detail'));await page.waitForFunction(()=>window.qa.calls().detailCompleted.length===1);await focusPaint();
+        await page.waitForFunction(()=>window.qa.held('detail')===2);await readonlyPhase('pending');const recoveredFocus=await focusBaseline();await page.evaluate(()=>window.qa.releaseOne('detail'));await page.waitForFunction(()=>window.qa.calls().detailCompleted.length===1);await focusPaint();
         assert.equal(await readonly().getAttribute('data-phase'),'pending');assert.doesNotMatch(await readonly().innerText(),/RETIRED GENERATION/);assert.deepEqual(await page.evaluate(()=>window.qaDenied),[]);
         await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');await focusPaint();assert.match(await readonly().innerText(),/CURRENT GENERATION/);
-        assert.equal(await detailFocus().evaluate(element=>document.activeElement===element),false,'authority/API/scope recovery cannot re-arm old Open focus');assert.equal((await calls()).detail.length,2);assert.equal((await calls()).post.length,0);
+        await noDetailFocus(recoveredFocus,'authority/API/scope recovery cannot re-arm old Open focus');assert.equal((await calls()).detail.length,2);assert.equal((await calls()).post.length,0);
       }
     });
     await run('I33 healthy authority refresh preserves readonly page-2 DOM; real workspace/API/scope boundaries require fresh masked reads',async()=>{
@@ -839,19 +1030,19 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       const readonlyPagingDisabled=async()=>{assert.equal(await readonly().getByRole('button',{name:'Dòng trước',exact:true}).isDisabled(),true);assert.equal(await readonly().getByRole('button',{name:'Dòng tiếp',exact:true}).isDisabled(),true);};
       for(const refresh of ['workspace','authority','api']){
         await page.evaluate(patch=>window.qa.reset(patch),{readMarkers,draftReply:unavailable(),detailLastPage:2,detailLabel:'ORIGINAL PAGE 1'});
-        await filter.fill('KEEP APPLIED FILTER');await branch.selectOption('BR-A');await button('Tìm kiếm').click();await open('DOC-A');await readonlyPhase('ready');
+        await filter.fill('KEEP APPLIED FILTER');await branch.selectOption('BR-A');await activateBackground(button('Tìm kiếm'));await filter.fill('KEEP UNAPPLIED FILTER');await open('DOC-A');await readonlyPhase('ready');
         await page.evaluate(()=>window.qa.detail({detailLabel:'ORIGINAL PAGE 2'}));await readonly().getByRole('button',{name:'Dòng tiếp',exact:true}).click();await readonlyPhase('ready');
         assert.match(await readonly().innerText(),/ORIGINAL PAGE 2/);assert.match(await readonly().getByRole('navigation',{name:'Trang dòng hàng chỉ đọc',exact:true}).innerText(),/Trang 2/);assert.equal((await calls()).detail.at(-1).page,2);
-        await filter.fill('KEEP UNAPPLIED FILTER');const before=(await calls()).detail.length;
+        const before=(await calls()).detail.length;
         await readonly().evaluate(element=>window.qaContinuityPanel=element);await rowFocus('DOC-A').evaluate(element=>window.qaContinuityRow=element);await readonly().getByText('ORIGINAL PAGE 2',{exact:true}).evaluate(element=>window.qaContinuityValue=element);
         await page.evaluate(refresh=>{window.qa.hold('read');window.qa.hold('detail');if(refresh==='authority')window.qa.hold('list');window.qa.detail({detailLabel:'FRESH PAGE 2'});},refresh);
         if(refresh==='workspace'){await page.evaluate(()=>window.qa.workspace(false));await page.waitForFunction(()=>!document.querySelector('[data-testid=inbound-request-readonly]'));assert.doesNotMatch(await page.getByTestId('inbound-request-host').innerText(),/ORIGINAL PAGE 2/);await page.evaluate(()=>window.qa.workspace(true));}
         else if(refresh==='authority')await page.evaluate(()=>window.qa.rights({}));
         else await page.evaluate(()=>window.qa.swapApi());
-        await page.waitForFunction(()=>window.qa.held('read')>0);await focusPaint();assert.equal((await calls()).detail.length,before,'no detail request before new typed Unavailable');
+        await page.waitForFunction(()=>window.qa.held('read')>0);const refreshFocus=await focusBaseline();assert.equal((await calls()).detail.length,before,'no detail request before new typed Unavailable');
         if(refresh==='authority'){
           await readonlyPhase('pending');await page.waitForFunction(()=>window.qa.held('list')>0);await sameReadonlyDom();await readonlyPagingDisabled();assert.match(await readonly().innerText(),/ORIGINAL PAGE 2/);assert.doesNotMatch(await readonly().innerText(),/FRESH PAGE 2/);
-          assert.equal(await filter.inputValue(),'KEEP UNAPPLIED FILTER');assert.equal(await branch.inputValue(),'BR-A');assert.equal(await rowFocus('DOC-A').getAttribute('aria-pressed'),'true');assert.equal(await detailFocus().evaluate(element=>document.activeElement===element),false);
+          assert.equal(await filter.inputValue(),'KEEP UNAPPLIED FILTER');assert.equal(await branch.inputValue(),'BR-A');assert.equal(await rowFocus('DOC-A').getAttribute('aria-pressed'),'true');await noDetailFocus(refreshFocus);
         }else{assert.equal(await readonly().count(),0);assert.doesNotMatch(await page.getByTestId('inbound-request-host').innerText(),/ORIGINAL PAGE 2/);}
         await page.evaluate(()=>window.qa.release('read'));await page.waitForFunction(()=>window.qa.held('detail')===1);await readonlyPhase('pending');
         assert.equal((await calls()).detail.at(-1).documentId,'DOC-A');assert.equal((await calls()).detail.at(-1).page,2,'current page survives same READ identity');
@@ -860,7 +1051,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
         assert.equal(await filter.inputValue(),'KEEP UNAPPLIED FILTER');assert.equal(await branch.inputValue(),'BR-A');assert.equal(await rowFocus('DOC-A').getAttribute('aria-pressed'),'true');
         await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');await focusPaint();assert.match(await readonly().innerText(),/FRESH PAGE 2/);assert.doesNotMatch(await readonly().innerText(),/ORIGINAL PAGE 2/);
         if(refresh==='authority'){await sameReadonlyDom();assert.equal(await page.evaluate(()=>window.qaContinuityValue.textContent),'FRESH PAGE 2');assert.equal(await readonly().getByRole('button',{name:'Dòng trước',exact:true}).isDisabled(),false);await page.evaluate(()=>window.qa.release('list'));await focusPaint();await sameReadonlyDom();}
-        assert.match(await readonly().getByRole('navigation',{name:'Trang dòng hàng chỉ đọc',exact:true}).innerText(),/Trang 2/);assert.equal(await detailFocus().evaluate(element=>document.activeElement===element),false);
+        assert.match(await readonly().getByRole('navigation',{name:'Trang dòng hàng chỉ đọc',exact:true}).innerText(),/Trang 2/);await noDetailFocus(refreshFocus);
         assert.equal(await filter.inputValue(),'KEEP UNAPPLIED FILTER');assert.equal(await branch.inputValue(),'BR-A');assert.equal((await calls()).list.at(-1).search,'KEEP APPLIED FILTER');assert.equal((await calls()).list.at(-1).branch,'BR-A');
         assert.equal((await calls()).detail.length,before+1);assert.equal((await calls()).post.length,0);assert.equal((await calls()).reconcile.length,0);
       }
@@ -868,13 +1059,14 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await open('DOC-A');await readonlyPhase('ready');assert.equal((await calls()).detail.at(-1).documentId,'DOC-A');assert.equal((await calls()).detail.at(-1).page,1,'returning to A is a new selection, not cached page-2 proof');
       await page.evaluate(()=>window.qa.detail({detailLabel:'RETIRED SCOPE PAGE 2'}));await readonly().getByRole('button',{name:'Dòng tiếp',exact:true}).click();await readonlyPhase('ready');assert.equal((await calls()).detail.at(-1).page,2);
       await page.evaluate(markers=>{window.qa.hold('read');window.qa.hold('detail');window.qa.detail({detailLabel:'NEW SCOPE PAGE 1'});window.qa.markers(markers);},{...readMarkers,readScope:'d'.repeat(64)});
-      await page.waitForFunction(()=>window.qa.held('read')>0);assert.equal(await readonly().count(),0);assert.doesNotMatch(await page.getByTestId('inbound-request-host').innerText(),/RETIRED SCOPE PAGE 2/);
+      await page.waitForFunction(()=>window.qa.held('read')>0);const scopeFocus=await focusBaseline();assert.equal(await readonly().count(),0);assert.doesNotMatch(await page.getByTestId('inbound-request-host').innerText(),/RETIRED SCOPE PAGE 2/);
       await page.evaluate(()=>window.qa.release('read'));await page.waitForFunction(()=>window.qa.held('detail')===1);await readonlyPhase('pending');assert.equal((await calls()).detail.at(-1).page,1);assert.doesNotMatch(await readonly().innerText(),/RETIRED SCOPE PAGE 2|NEW SCOPE PAGE 1/);
-      await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');await focusPaint();assert.match(await readonly().innerText(),/NEW SCOPE PAGE 1/);assert.equal(await detailFocus().evaluate(element=>document.activeElement===element),false);assert.equal((await calls()).post.length,0);assert.equal((await calls()).reconcile.length,0);
+      await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('ready');await focusPaint();assert.match(await readonly().innerText(),/NEW SCOPE PAGE 1/);await noDetailFocus(scopeFocus);assert.equal((await calls()).post.length,0);assert.equal((await calls()).reconcile.length,0);
     });
     await run('I33 scoped detail pageSize 25 is rejected even when one returned row fits its bound',async()=>{
-      await resetReadonly({detailPageSize:25,detailLabel:'WRONG PAGE SIZE'});await readonlyPhase('failed');await focusPaint();assert.doesNotMatch(await readonly().innerText(),/WRONG PAGE SIZE/);
-      assert.equal(await detailFocus().evaluate(element=>document.activeElement===element),false);assert.equal((await calls()).detail.length,1);assert.equal((await calls()).post.length,0);assert.equal((await calls()).reconcile.length,0);
+      await resetReadonly({held:{detail:true},detailPageSize:25,detailLabel:'WRONG PAGE SIZE'});await page.waitForFunction(()=>window.qa.held('detail')===1);
+      const rejectedFocus=await focusBaseline();await page.evaluate(()=>window.qa.release('detail'));await readonlyPhase('failed');await noDetailFocus(rejectedFocus);assert.doesNotMatch(await readonly().innerText(),/WRONG PAGE SIZE/);
+      assert.equal((await calls()).detail.length,1);assert.equal((await calls()).post.length,0);assert.equal((await calls()).reconcile.length,0);
     });
     await run('I33 dirty original editor stays mounted and guarded through temporary readonly fallback, then restores exact full edits',async()=>{
       await reset({readMarkers});await field('Số đơn').fill('  ORIGINAL EDIT\nKEEP  ');await field('Ghi chú').fill('NOTE\nKEEP');
@@ -945,35 +1137,40 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       }
     });
     await run('I33 accepted full read focuses detail; same-document focus preserves dirty guard and values',async()=>{
-      await reset();await focused(detailFocus());await field('Số đơn').fill('FOCUS DIRTY A');const before=await calls();await open('DOC-A');await focused(detailFocus());assert.equal(await field('Số đơn').inputValue(),'FOCUS DIRTY A');assert.equal((await calls()).read.length,before.read.length);
+      await reset();await focusedDialog();await field('Số đơn').fill('FOCUS DIRTY A');const before=await calls(),sameOpenFocus=await focusBaseline();await open('DOC-A');await oneDetailFocus(sameOpenFocus);assert.equal(await field('Số đơn').inputValue(),'FOCUS DIRTY A');assert.equal((await calls()).read.length,before.read.length);
       await blocked(()=>button('Đóng phiếu nhập hàng').click(),true);assert.equal(await field('Số đơn').inputValue(),'FOCUS DIRTY A');assert.equal(await page.getByTestId('inbound-editor').getAttribute('data-document-id'),'DOC-A');
-      await open('DOC-B');await page.getByRole('alertdialog').waitFor();await button('Bỏ thay đổi và rời màn hình').click();await ready();await focused(detailFocus());assert.equal(await field('Số đơn').inputValue(),'FULL ERP B');assert.equal((await calls()).post.length,0);
+      await open('DOC-B');await page.getByRole('alertdialog').waitFor();await button('Bỏ thay đổi và rời màn hình').click();await ready();await focusedDialog();assert.equal(await field('Số đơn').inputValue(),'FULL ERP B');assert.equal((await calls()).post.length,0);
     });
     await run('I33 approved Close returns focus to the current originating row without changing list controls',async()=>{
-      await reset();await focused(detailFocus());await field('Tìm phiếu nhập hàng').fill('UNAPPLIED FOCUS FILTER');await field('Số đơn').fill('DIRTY CLOSE VALUE');await button('Đóng phiếu nhập hàng').click();await page.getByRole('alertdialog').waitFor();assert.equal(await page.evaluate(()=>window.qaLeft),false);await button('Bỏ thay đổi và rời màn hình').click();await focused(rowFocus('DOC-A'));assert.equal(await field('Tìm phiếu nhập hàng').inputValue(),'UNAPPLIED FOCUS FILTER');assert.equal(await page.getByTestId('inbound-editor').count(),0);assert.equal((await calls()).post.length,0);
+      await reset({searchDraft:'UNAPPLIED FOCUS FILTER'});await focusedDialog();await field('Số đơn').fill('DIRTY CLOSE VALUE');await button('Đóng phiếu nhập hàng').click();await page.getByRole('alertdialog').waitFor();assert.equal(await page.evaluate(()=>window.qaLeft),false);await button('Bỏ thay đổi và rời màn hình').click();await focused(rowFocus('DOC-A'));assert.equal(await field('Tìm phiếu nhập hàng').inputValue(),'UNAPPLIED FOCUS FILTER');assert.equal(await page.getByTestId('inbound-editor').count(),0);assert.equal((await calls()).post.length,0);
     });
-    await run('I33 held Open read respects later input focus and authority revalidation never creates a new focus ticket',async()=>{
-      await page.evaluate(()=>window.qa.reset({held:{read:true}}));await open('DOC-A');await page.waitForFunction(()=>window.qa.held('read')>0);await field('Tìm phiếu nhập hàng').fill('KEEP THIS FOCUS');await page.evaluate(()=>window.qa.release('read'));await ready();await focusPaint();assert.equal(await field('Tìm phiếu nhập hàng').evaluate(element=>document.activeElement===element),true);
+    await run('I33 held Open read respects later modal-control focus and authority revalidation never creates a new focus ticket',async()=>{
+      await page.evaluate(()=>window.qa.reset({held:{read:true}}));await open('DOC-A');await page.waitForFunction(()=>window.qa.held('read')>0);await modalClose().focus();const laterControlFocus=await focusBaseline();await page.evaluate(()=>window.qa.release('read'));await ready();await noDetailFocus(laterControlFocus);assert.equal(await modalClose().evaluate(element=>document.activeElement===element),true);
       await page.evaluate(()=>window.qa.reset({held:{read:true}}));await open('DOC-A');await page.waitForFunction(()=>window.qa.held('read')>0);
-      // No intervening pointer/key/focus input cancels this live Open ticket: authority alone must retire it.
-      await page.evaluate(()=>{window.qa.rights({canRead:false,canSave:false,canSend:false});window.qa.release('read');});await page.waitForFunction(()=>!document.getElementById('inbound-header-orderNumber'));await focusPaint();assert.equal(await detailFocus().evaluate(element=>document.activeElement===element),false);
-      await page.evaluate(()=>window.qa.rights({}));await ready();await focusPaint();assert.equal(await detailFocus().evaluate(element=>document.activeElement===element),false);assert.equal((await calls()).post.length,0);
+      // Baseline after legitimate modal entry; no later user input retires the
+      // read's focus intent. Authority loss/recovery must add no native calls.
+      const deniedFocus=await focusBaseline();
+      await page.evaluate(()=>{window.qa.rights({canRead:false,canSave:false,canSend:false});window.qa.release('read');});await page.waitForFunction(()=>!document.getElementById('inbound-header-orderNumber'));await noDetailFocus(deniedFocus);
+      await page.evaluate(()=>window.qa.rights({}));await ready();await noDetailFocus(deniedFocus);assert.equal((await calls()).post.length,0);
     });
     await run('I33 failed Open is retired; explicit retry can recover data without delayed focus theft',async()=>{
-      await page.evaluate(()=>window.qa.reset({readFailure:true}));await open('DOC-A');await page.getByText('Chưa xác minh được quyền nhập hàng. Ý định đang giữ không bị bỏ; thử xác minh lại trong đúng phiên.',{exact:true}).waitFor();await page.evaluate(()=>window.qa.healthy());await button('Xác minh lại quyền nhập hàng').click();await ready();await focusPaint();assert.equal(await detailFocus().evaluate(element=>document.activeElement===element),false);assert.equal(await field('Số đơn').inputValue(),'FULL ERP A');const before=(await calls()).read.length;await open('DOC-A');await focused(detailFocus());assert.equal((await calls()).read.length,before);assert.equal((await calls()).post.length,0);
+      await page.evaluate(()=>window.qa.reset({held:{read:true},readFailure:true}));await open('DOC-A');await page.waitForFunction(()=>window.qa.held('read')>0);
+      const failedFocus=await focusBaseline();await page.evaluate(()=>window.qa.release('read'));await dialog().getByText('Chưa xác minh được quyền nhập hàng. Ý định đang giữ không bị bỏ; thử xác minh lại trong đúng phiên.',{exact:true}).waitFor();await noDetailFocus(failedFocus);
+      await page.evaluate(()=>window.qa.healthy());await dialog().getByRole('button', {name: 'Xác minh lại quyền nhập hàng', exact: true}).click();await ready();await noDetailFocus(failedFocus);
+      assert.equal(await field('Số đơn').inputValue(),'FULL ERP A');const before=(await calls()).read.length,sameOpenFocus=await focusBaseline();await open('DOC-A');await oneDetailFocus(sameOpenFocus);assert.equal((await calls()).read.length,before);assert.equal((await calls()).post.length,0);
     });
     await run('I33 same-document Open waits for new bound full read after bootstrap, not an old readiness event',async()=>{
-      await reset();await focused(detailFocus());await field('Tìm phiếu nhập hàng').focus();await page.evaluate(()=>{window.qa.hold('read');window.qa.rights({});});await page.waitForFunction(()=>window.qa.held('read')>0);const before=(await calls()).read.length;
-      await page.evaluate(()=>window.qa.releaseOne('read'));await page.waitForFunction(before=>window.qa.calls().read.length>before&&window.qa.held('read')>0,before);await open('DOC-A');await focusPaint();assert.equal(await detailFocus().evaluate(element=>document.activeElement===element),false,'bootstrap is not current I18 presentation proof');
-      await page.evaluate(()=>window.qa.release('read'));await ready();await focused(detailFocus());assert.equal(await field('Số đơn').inputValue(),'FULL ERP A');
-      await page.evaluate(()=>window.qa.hold('read'));await button('Đọc lại ERP').click();await page.waitForFunction(()=>window.qa.held('read')>0);await open('DOC-A');await focusPaint();assert.equal(await detailFocus().evaluate(element=>document.activeElement===element),false,'an old ready event cannot satisfy explicit child reread');
-      await page.evaluate(()=>window.qa.release('read'));await ready();await focused(detailFocus());assert.equal((await calls()).post.length,0);
+      await reset();await focusedDialog();await modalClose().focus();await page.evaluate(()=>{window.qa.hold('read');window.qa.rights({});});await page.waitForFunction(()=>window.qa.held('read')>0);const before=(await calls()).read.length;
+      await page.evaluate(()=>window.qa.releaseOne('read'));await page.waitForFunction(before=>window.qa.calls().read.length>before&&window.qa.held('read')>0,before);const bootstrapFocus=await focusBaseline();await open('DOC-A');await noDetailFocus(bootstrapFocus,'bootstrap is not current I18 presentation proof');
+      await page.evaluate(()=>window.qa.release('read'));await ready();await oneDetailFocus(bootstrapFocus,'only the newly bound child read completes same-document Open');assert.equal(await field('Số đơn').inputValue(),'FULL ERP A');
+      await page.evaluate(()=>window.qa.hold('read'));await button('Đọc lại ERP').click();await page.waitForFunction(()=>window.qa.held('read')>0);const rereadFocus=await focusBaseline();await open('DOC-A');await noDetailFocus(rereadFocus,'an old ready event cannot satisfy explicit child reread');
+      await page.evaluate(()=>window.qa.release('read'));await ready();await oneDetailFocus(rereadFocus,'only the explicit child reread completes same-document Open');assert.equal((await calls()).post.length,0);
     });
     for (const width of [320, 360, 390]) await run(`${width}px real host uses full read; dirty selection/filter/page/close/Back show dialog`, async () => {
       await page.setViewportSize({width, height: 844}); await reset(); assert.equal(await field('Số đơn').inputValue(), 'FULL ERP A');
       assert.equal(await page.evaluate(w => document.documentElement.scrollWidth <= w, width), true);
       await field('Số đơn').fill('UNSAVED');
-      for (const action of [() => open('DOC-B'), () => button('Tìm kiếm').click(), () => button('Trang sau').click(),
+      for (const action of [() => open('DOC-B'), () => activateBackground(button('Tìm kiếm')), () => activateBackground(button('Trang sau')),
         () => button('Đóng phiếu nhập hàng').click(), () => button('Quay lại danh sách').click(), () => page.evaluate(() => history.back())]) {
         await blocked(action, true); assert.equal(await field('Số đơn').inputValue(), 'UNSAVED');
       }
@@ -1000,7 +1197,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await button('Đóng phiếu nhập hàng').click(); await page.getByRole('alertdialog').waitFor({state:'visible'});
       await page.evaluate(() => {window.qa.hold('post'); [...document.querySelectorAll('button')].find(b=>b.textContent==='Lưu thay đổi').click();});
       await page.waitForFunction(() => window.qa.held('post') > 0);
-      await button('Bỏ thay đổi và rời màn hình').click(); assert.equal(await page.evaluate(() => window.qaLeft), false);
+      assert.equal(await button('Bỏ thay đổi và rời màn hình').count(),0,'Pending custody removes the obsolete discard action');assert.equal(await page.evaluate(()=>window.qaLeft),false);await page.getByRole('alertdialog').waitFor();await button('Tiếp tục làm việc').click();
       await blocked(() => button('Đóng phiếu nhập hàng').click());
       await page.evaluate(() => window.qa.release('post')); await unknown();
       await button('Kiểm tra yêu cầu gốc').click(); await confirmed();
@@ -1024,7 +1221,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await page.evaluate(() => window.qa.hold('post'));
       await page.getByRole('button', {name: action === 'Save' ? 'Lưu thay đổi' : 'Gửi yêu cầu nhập kho', exact: true}).evaluate(b => {b.click(); b.click();});
       await page.waitForFunction(() => window.qa.held('post') > 0); assert.equal((await calls()).post.length, 1);
-      for (const nav of [() => open('DOC-B'), () => button('Tìm kiếm').click(), () => button('Trang sau').click(), () => button('Đóng phiếu nhập hàng').click(), () => page.evaluate(() => history.back())]) await blocked(nav);
+      for (const nav of [() => open('DOC-B'), () => activateBackground(button('Tìm kiếm')), () => activateBackground(button('Trang sau')), () => button('Đóng phiếu nhập hàng').click(), () => page.evaluate(() => history.back())]) await blocked(nav);
       await page.evaluate(() => window.qa.release('post')); await unknown();
       await page.evaluate(() => window.qa.hold('reconcile')); await button('Kiểm tra yêu cầu gốc').click();
       await page.waitForFunction(() => window.qa.held('reconcile') > 0); await blocked(() => button('Quay lại danh sách').click());
@@ -1040,8 +1237,8 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       });
     await run('workspace temporarily null hides data but same-scope restoration reconciles original', async () => {
       await reset({mode: 'lost'}); await field('Số đơn').fill('RETAIN'); await save(); await unknown();
-      await page.evaluate(() => window.qa.workspace(false)); await page.waitForFunction(() => !document.querySelector('#inbound-header-orderNumber'));
-      await blocked(() => button('Đóng phiếu nhập hàng').click());
+      await page.evaluate(()=>window.qa.workspace(false));await page.waitForFunction(()=>!document.querySelector('#inbound-header-orderNumber'));
+      assert.equal(await dialog().count(),0);await blocked(()=>page.evaluate(()=>window.qaNavigation.requestClose()));
       await page.evaluate(() => window.qa.workspace(true)); await unknown(); await button('Kiểm tra yêu cầu gốc').click(); await confirmed();
       const c = await calls(); assert.equal(c.post.length, 1); assert.equal(c.reconcile[0], c.post[0]);
     });
@@ -1052,9 +1249,9 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await page.evaluate(() => window.qa.rights({})); await ready(); assert.equal(await field('Ghi chú gửi kho').inputValue(), 'RIGHTS NOTE');
     });
     for (const state of ['pending','confirmed']) await run(`current list 401 hides ${state} draft/filter/selection/receipt and cannot reopen same login`, async () => {
-      await reset(); await field('Tìm phiếu nhập hàng').fill('PRIVATE FILTER');
+      await reset({searchDraft:'PRIVATE FILTER',branchDraft:'BR-A'});
       const branchFilter=page.getByRole('form',{name:'Lọc phiếu nhập hàng',exact:true}).getByRole('combobox');
-      assert.equal(await branchFilter.count(),1);await branchFilter.selectOption('BR-A');
+      assert.equal(await branchFilter.count(),1);
       assert.equal(await branchFilter.inputValue(),'BR-A');assert.equal(await field('Tìm phiếu nhập hàng').inputValue(),'PRIVATE FILTER');
       await field('Số đơn').fill('SESSION PRIVATE');
       if(state==='pending') await page.evaluate(() => window.qa.hold('post'));
@@ -1079,12 +1276,12 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await page.evaluate(status=>window.qa.failList(status),status);await page.waitForFunction(()=>!document.getElementById('inbound-header-orderNumber'));
       assert.deepEqual(await page.evaluate(()=>window.qaDenied),[]);await blocked(()=>button('Đóng phiếu nhập hàng').click());
       await page.evaluate(()=>{window.qa.release('post');window.qa.listHealthy();window.qa.hold('read');});
-      await button('Xác minh lại quyền nhập hàng').click();await page.waitForFunction(()=>window.qa.held('read')>0);
+      await dialog().getByRole('button', {name: 'Xác minh lại quyền nhập hàng', exact: true}).click();await page.waitForFunction(()=>window.qa.held('read')>0);
       assert.equal(await field('Số đơn').count(),0);await page.evaluate(()=>window.qa.release('read'));await unknown();
       await button('Kiểm tra yêu cầu gốc').click();await confirmed();const c=await calls();assert.equal(c.post.length,1);assert.equal(c.reconcile[0],original);
     });
     for(const status of [503,'network']) await run(`list ${status} is temporary and does not retire pending command or filters`,async()=>{
-      await reset();await field('Tìm phiếu nhập hàng').fill('RETAIN FILTER');await field('Số đơn').fill('RETAIN COMMAND');
+      await reset({searchDraft:'RETAIN FILTER'});await field('Số đơn').fill('RETAIN COMMAND');
       await page.evaluate(()=>window.qa.hold('post'));await save();await page.waitForFunction(()=>window.qa.held('post')>0);
       await page.evaluate(status=>window.qa.failList(status),status);await page.getByText('Chưa tải được danh sách.',{exact:true}).waitFor();
       assert.equal(await field('Tìm phiếu nhập hàng').inputValue(),'RETAIN FILTER');assert.equal(await page.getByTestId('inbound-editor').getAttribute('data-phase'),'pending');
@@ -1114,7 +1311,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await reset({mode});await field('Số đơn').fill('COMMITTED A');await save();await confirmed();
       await page.waitForFunction(()=>document.querySelector('[data-testid=inbound-editor]')?.getAttribute('data-phase')==='readFailed');
       const receipt=await page.getByTestId('inbound-host-receipt').innerText();
-      for(const nav of [()=>open('DOC-B'),()=>button('Tìm kiếm').click(),()=>button('Trang sau').click(),
+      for(const nav of [()=>open('DOC-B'),()=>activateBackground(button('Tìm kiếm')),()=>activateBackground(button('Trang sau')),
         ()=>button('Đóng phiếu nhập hàng').click(),()=>button('Quay lại danh sách').click(),()=>page.evaluate(()=>history.back())]) await blocked(nav);
       assert.equal(await page.getByTestId('inbound-editor').getAttribute('data-document-id'),'DOC-A');
       assert.equal((await calls()).read.includes('DOC-B'),false);assert.equal(await page.getByTestId('inbound-host-receipt').innerText(),receipt);
@@ -1156,7 +1353,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       const receipt=await page.getByTestId('inbound-host-receipt').innerText();
       await page.evaluate(()=>{window.qa.readFailure(true);window.qa.rights({});});
       await page.waitForFunction(()=>!document.getElementById('inbound-header-orderNumber'));assert.equal(await page.locator('[data-testid=inbound-host-receipt],[data-testid=confirmed-receipt]').count(),0);
-      await page.evaluate(()=>window.qa.healthy());await button('Xác minh lại quyền nhập hàng').click();await ready();
+      await page.evaluate(()=>window.qa.healthy());await dialog().getByRole('button', {name: 'Xác minh lại quyền nhập hàng', exact: true}).click();await ready();
       assert.equal(await page.getByTestId('inbound-host-receipt').innerText(),receipt);const c=await calls();assert.equal(c.post.length,1);assert.equal(c.reconcile.length,0);
     });
     await run('accepted discard permits selection/filter/close callbacks, not a no-op navigation fixture', async () => {
@@ -1310,19 +1507,18 @@ test('I24 Node bridge notifies only current read/command 401; other failures ret
 // backend DOUBLE. The frontend hop is real loopback HTTPS with an ephemeral
 // pinned test certificate. Production BFF sees actual on-wire browser headers;
 // no Playwright fulfillment/provenance fabrication. No ASP.NET/SQL acceptance.
-test('I24 actual Workspace and BFF preserve mobile custody, retirement and history position', {timeout: 240000}, async t => {
-  const require = createRequire(import.meta.url); let build, chromium;
-  try {
-    ({build} = require('esbuild')); require.resolve('react'); require.resolve('react-dom');
-    const tools = process.env.MEDCOM_BROWSER_TOOLCHAIN;
-    ({chromium} = (tools ? createRequire(path.join(path.resolve(tools), 'package.json')) : require)('playwright-core'));
-  } catch {throw Error('I24 Workspace React gate NOT_RUN: installed pinned React/esbuild/browser toolchain unavailable. No install or skip.');}
+let compiledWorkspaceFixture;
+async function compileWorkspaceFixture(){
+ if(compiledWorkspaceFixture)return compiledWorkspaceFixture;
+ compiledWorkspaceFixture=(async()=>{
+  const require=createRequire(import.meta.url),{build}=require('esbuild'),postcss=require('postcss'),tailwind=require('@tailwindcss/postcss');
   const entry = `import React from 'react';import{createRoot}from'react-dom/client';import Workspace from './components/erp/workspace';
-    const native=window.fetch.bind(window);window.i24IO={execute:[],fetch:[],pushes:0};
+    const native=window.fetch.bind(window);window.i24IO={execute:[],fetch:[],pushes:0,historyStages:[]};window.i24Tools={};
+    Object.defineProperty(document,'modelContext',{configurable:true,value:{registerTool:(tool,{signal})=>{window.i24Tools[tool.name]=tool;signal.addEventListener('abort',()=>{if(window.i24Tools[tool.name]===tool)delete window.i24Tools[tool.name];});}}});
     const push=history.pushState.bind(history);history.pushState=(...args)=>{window.i24IO.pushes++;return push(...args);};
     window.fetch=(url,init)=>{if(String(url).includes('/inbound-requests/draft/')&&init?.method==='POST')window.i24IO.fetch.push({url:String(url),body:init.body});return native(url,init);};
     createRoot(document.getElementById('root')).render(<Workspace/>);`;
-  const built = await build({absWorkingDir: app, stdin: {contents: entry, resolveDir: app, loader: 'tsx'}, bundle: true, write: false,
+  const built = await build({absWorkingDir: app, stdin: {contents: entry, resolveDir: app, loader: 'tsx'}, outfile: path.join(output,'i24.js'), bundle: true, write: false,
     platform: 'browser', format: 'iife', alias: {'@': app}, jsx: 'automatic', define: {'process.env.NODE_ENV': '"production"', 'process.env': '{}'}, logLevel: 'warning',
     plugins: [{name: 'i24-execute-observer', setup(build) {
       build.onResolve({filter: /inbound-request-command-adapter$/}, () => ({path: 'observer', namespace: 'i24-observer'}));
@@ -1334,10 +1530,25 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
       build.onResolve({filter: /^next\/image$/}, () => ({path: 'image', namespace: 'i24-image'}));
       build.onLoad({filter: /.*/, namespace: 'i24-image'}, () => ({resolveDir: app, loader: 'jsx', contents: "import React from 'react';export default function Image({src,alt,width,height}){return <img src={src} alt={alt} width={width} height={height}/>;}"}));
     }}]});
-  // Preserve esbuild's exact script bytes at the real HTTPS response boundary.
-  const script = Buffer.from(built.outputFiles[0].contents);
-  const css = await readFile(path.join(app, 'app/globals.css'), 'utf8');
-  const html = '<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>' + css + '\nbody{margin:0;font:16px system-ui}img{max-width:100%;height:auto}[role=alertdialog],[role=dialog]{position:fixed;inset:3%;z-index:99;background:white;padding:16px;overflow:auto}[data-slot=alert-dialog-overlay]{position:fixed;inset:0;z-index:98;background:#0004}</style><div id="root"></div><script src="/i24.js"></script></html>';
+  // Preserve emitted JavaScript and real application/module CSS at HTTPS.
+  const javascript=built.outputFiles.find(file=>file.path.endsWith('.js'));
+  const modules=built.outputFiles.filter(file=>file.path.endsWith('.css'));
+  assert.ok(javascript?.contents.length);assert.ok(modules.length>0&&modules.every(file=>file.contents.length>0));
+  const script=Buffer.from(javascript.contents);
+  const applicationCss=(await postcss([tailwind({base:app})]).process(await readFile(path.join(app,'app/globals.css'),'utf8'),{from:path.join(app,'app/globals.css')})).css;
+  assert.ok(!applicationCss.includes('@import "tailwindcss"'));
+  const css=applicationCss+'\n'+modules.map(file=>file.text).join('\n');assert.match(css,/min-height:\s*100dvh/);
+  return {script,css,logo:await readFile(path.join(app,'public/medcom-logo.png'))};
+ })();
+ return compiledWorkspaceFixture;
+}
+test('I24 actual Workspace HTTPS fixture compiles with Tailwind and auth CSS modules',async()=>{await compileWorkspaceFixture();});
+test('I24 actual Workspace and BFF preserve mobile custody, retirement and history position', {timeout: 240000}, async t => {
+  const require=createRequire(import.meta.url),tools=process.env.MEDCOM_BROWSER_TOOLCHAIN;let chromium;
+  try{({chromium}=(tools?createRequire(path.join(path.resolve(tools),'package.json')):require)('playwright-core'));}
+  catch{throw Error('I24 Workspace React gate NOT_RUN: installed pinned browser toolchain unavailable. No install or skip.');}
+  const {script,css,logo}=await compileWorkspaceFixture();
+  const html='<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/i24.css"><div id="root"></div><script src="/i24.js"></script></html>';
   let state, serial = 0; const calls = [], errors = [], external = [], results = [], models = new Set();
   const resetState = (patch = {}) => {
     const now = Date.now(); state = {scope: (++serial).toString(16).padStart(64, '0'), failure: null, readStatus: null, listStatus: null, commandStatus: null,
@@ -1418,6 +1629,8 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
       const send = (status, headers, body) => {if (response.destroyed) {routes.aborted++; return;} response.writeHead(status, headers); response.end(body); routes.fulfilled++;};
       try {
         if (url.pathname === '/i24.js') return send(200, {'Content-Type': 'text/javascript'}, script);
+        if (url.pathname === '/i24.css') return send(200, {'Content-Type': 'text/css'}, css);
+        if (url.pathname === '/medcom-logo.png') return send(200, {'Content-Type': 'image/png'}, logo);
         if (!url.pathname.startsWith('/api/erp/')) return send(200, {'Content-Type': 'text/html'}, html);
         const requestHeaders = new Headers();
         for (let index = 0; index < request.rawHeaders.length; index += 2) requestHeaders.append(request.rawHeaders[index], request.rawHeaders[index + 1]);
@@ -1459,16 +1672,23 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
     page = await newPage();
     const button = name => page.getByRole('button', {name, exact: true}), field = name => page.getByLabel(name, {exact: true});
     const host = () => page.getByTestId('inbound-request-host');
+    const dialog = () => page.getByRole('dialog', {name: 'Phiếu nhập hàng đã chọn', exact: true});
     const ready = () => page.waitForFunction(() => {const field = document.getElementById('inbound-header-orderNumber'); return field && !field.disabled && document.querySelector('[data-testid=inbound-request-host]')?.getAttribute('data-readback-pending') !== 'true';});
     const open = async (id = 'DOC-A') => {await page.getByRole('button', {name: new RegExp('^Mở phiếu ' + id + ' ')}).click(); await ready();};
     const paint = () => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-    const go = async screen => {await page.keyboard.press('Control+k'); const label = screen === 'settings' ? 'Thiết lập' : screen === 'home' ? 'Không gian làm việc' : 'Yêu cầu nhập kho'; await page.getByRole('option', {name: label, exact: true}).click();};
+    // The production root navigation tool remains a guarded entry point even
+    // when the modal intentionally suppresses the command palette.
+    const go = screen => page.evaluate(screen=>window.i24Tools.navigate_medcom_screen.execute({screen}),screen);
+    const historyPosition=()=>page.evaluate(()=>({index:history.state.medcomWorkspace.index,href:location.href,pushes:window.i24IO.pushes,length:history.length}));
+    const atHistoryIndex=index=>page.waitForFunction(index=>history.state?.medcomWorkspace?.index===index,index);
+    const historyStage=async phase=>{const position=await historyPosition();await page.evaluate(value=>window.i24IO.historyStages.push(value),{phase,...position});return position;};
+    const backgroundActivate=locator=>locator.evaluate(element=>element.click());
     const start = async (patch = {}) => {
       // Each case starts in a fresh page, not a navigation attempt out of the
       // previous case's deliberately dirty/unknown document. Actual guard and
       // Back/Forward assertions within each case still use the same live page.
       const viewport = page.viewportSize(); await page.close(); page = await newPage(viewport); resetState(patch);
-      try {await page.goto(siteOrigin + '/?screen=home'); await page.getByRole('button', {name: 'Yêu cầu nhập kho', exact: true}).last().waitFor(); await go('inbound-requests'); await open();}
+      try {await page.goto(siteOrigin + '/?screen=home');await page.getByRole('button',{name:'Yêu cầu nhập kho',exact:true}).last().waitFor();await paint();await historyStage('home');await go('inbound-requests');await field('Tìm phiếu nhập hàng').waitFor();await paint();await historyStage('inbound-list');if(patch.filterDraft)await field('Tìm phiếu nhập hàng').fill(patch.filterDraft);await open();await paint();await historyStage('inbound-detail');}
       catch (error) {
         let timer;
         const dom = await Promise.race([page.evaluate(() => ({readyState: document.readyState, url: location.href, hostCount: document.querySelectorAll('[data-testid=inbound-request-host]').length, text: document.body?.innerText.slice(0, 500)})),
@@ -1484,11 +1704,47 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
     const guard = async (action, discard = false, accept = false) => {await action(); const dialog = page.getByRole('alertdialog'); await dialog.waitFor(); assert.equal(await dialog.getByRole('button', {name: 'Bỏ thay đổi và rời màn hình', exact: true}).count(), discard ? 1 : 0); await dialog.getByRole('button', {name: accept ? 'Bỏ thay đổi và rời màn hình' : 'Tiếp tục làm việc', exact: true}).click(); await dialog.waitFor({state: 'hidden'}); if (!accept && await page.getByRole('dialog', {name: 'Tìm màn hình', exact: true}).count()) await page.keyboard.press('Escape'); await paint();};
     const refresh = async failure => {state.failure = failure; const response = page.waitForResponse(r => new URL(r.url()).pathname === '/api/erp/api/workspace'); await page.evaluate(() => window.dispatchEvent(new Event('focus'))); await response; await paint();};
     const settled = () => page.waitForFunction(() => document.querySelector('[data-testid=inbound-request-host]')?.getAttribute('data-readback-pending') === 'false');
-    const recover = async () => {state.failure = null; await button('Xác minh lại phiên nhập hàng').click(); await field('Tìm phiếu nhập hàng').waitFor(); await page.waitForFunction(() => [...document.querySelectorAll('button')].some(b => b.textContent === 'Kiểm tra yêu cầu gốc' && !b.disabled) || document.querySelector('[data-testid=confirmed-receipt]'));};
+    const recover = async () => {state.failure = null; await button('Thử lại').click(); await field('Tìm phiếu nhập hàng').waitFor(); await page.waitForFunction(() => [...document.querySelectorAll('button')].some(b => b.textContent === 'Kiểm tra yêu cầu gốc' && !b.disabled) || document.querySelector('[data-testid=confirmed-receipt]'));};
     const single = async () => {const io = await page.evaluate(() => window.i24IO), writers = calls.filter(c => /\/(save|send-to-warehouse)$/.test(c.path)); assert.equal(io.execute.length, 1); assert.equal(io.fetch.filter(c => /\/(save|send-to-warehouse)$/.test(c.url)).length, 1); assert.equal(writers.length, 1); assert.equal(state.effects, 1); for (const c of calls.filter(c => /\/(save|send-to-warehouse|reconcile)$/.test(c.path))) {assert.equal(c.body, io.execute[0].body); assert.equal(c.scope, state.scope);} for (const c of io.fetch) assert.equal(c.body, io.execute[0].body);};
+    const failurePath = path.join(output, 'i24-browser-failure.json');
+    await rm(failurePath, {force: true});
+    const diagnoseFailure = async (name, error) => {
+      let timer;
+      const dom = await Promise.race([page.evaluate(() => {
+        const inspect = selector => [...document.querySelectorAll(selector)].slice(0, 3).map(node => {
+          const ancestors = [];
+          for (let current = node; current && ancestors.length < 10; current = current.parentElement) {
+            const css = getComputedStyle(current);
+            ancestors.push({tag: current.tagName, role: current.getAttribute('role'), testId: current.getAttribute('data-testid'),
+              hidden: current.hasAttribute('hidden'), inert: current.hasAttribute('inert'), ariaHidden: current.getAttribute('aria-hidden'),
+              display: css.display, visibility: css.visibility, opacity: css.opacity, rectangles: current.getClientRects().length});
+          }
+          return {phase: node.getAttribute('data-phase'), readbackPending: node.getAttribute('data-readback-pending'), ancestors};
+        });
+        return {visibility: document.visibilityState, host: inspect('[data-testid=inbound-request-host]'),
+          detail: inspect('[role=region][aria-label="Phiếu nhập hàng đã chọn"]'), editor: inspect('[data-testid=inbound-editor]'),
+          receipt: inspect('[data-testid=confirmed-receipt]'), dialog: inspect('.request-detail-dialog'),
+          active: {tag: document.activeElement?.tagName, role: document.activeElement?.getAttribute('role')},
+          commandCounts: {execute: window.i24IO.execute.length, fetch: window.i24IO.fetch.length}};
+      }), new Promise(resolve => {timer = setTimeout(() => resolve({diagnostic: 'DOM inspection timed out'}), 1500);})])
+        .catch(problem => ({diagnostic: String(problem).slice(0, 500)})).finally(() => clearTimeout(timer));
+      // Only bounded synthetic fixture state. Never include request bodies,
+      // credentials, headers, storage, or arbitrary DOM/HTML in CI artifacts.
+      const diagnostic = {name, error: String(error).slice(0, 2000), dom,
+        fixture: {failure: state.failure, effects: state.effects, originalCount: state.originals.size, receiptCount: state.receipts.size},
+        backendCalls: calls.slice(-20).map(({path, method}) => ({path, method})),
+        bffResponses: bffResponses.slice(-20).map(({path, method, status, code}) => ({path, method, status, code})),
+        routes: {started: routes.started, fulfilled: routes.fulfilled, aborted: routes.aborted, pending: routes.pending.size}};
+      await writeFile(failurePath, JSON.stringify(diagnostic, null, 2));
+      console.error('I24 failure diagnostics: ' + JSON.stringify(diagnostic));
+    };
     const run = async (name, fn) => {
       let failure;
-      await t.test(name, async () => {try {await fn(); results.push(name);} catch (error) {failure = error; throw error;} finally {releaseAll();}});
+      await t.test(name, async () => {try {await fn(); results.push(name);} catch (error) {
+        failure = error;
+        try {await diagnoseFailure(name, error);} catch (diagnosticError) {console.error('I24 diagnostic capture failed: ' + String(diagnosticError));}
+        throw error;
+      } finally {releaseAll();}});
       // Stop a broken fixture at its first preserved failure instead of letting
       // later cases cascade on invalid setup. Every case still runs on success.
       if (failure) throw failure;
@@ -1496,12 +1752,12 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
     for (const width of [320, 360, 390]) await run(`${width}px actual Workspace mounts one full draft host without a child sentinel`, async () => {
       await page.setViewportSize({width, height: 844}); await start(); assert.equal(await host().count(), 1); assert.equal(await field('Số đơn').inputValue(), 'FULL ERP A');
       assert.equal(await host().evaluate(el => el.scrollWidth <= el.clientWidth), true); assert.equal(await page.evaluate(() => history.state.medcomInboundHost ?? null), null);
-      assert.equal(calls.some(call => call.path.endsWith('/detail')), false); assert.equal(await page.evaluate(() => window.i24IO.pushes), 1);
+      assert.equal(calls.some(call=>call.path.endsWith('/detail')),false);const stages=await page.evaluate(()=>window.i24IO.historyStages);assert.deepEqual(stages.map(stage=>stage.phase),['home','inbound-list','inbound-detail']);assert.equal(stages[1].index,stages[0].index+1);assert.equal(stages[2].index,stages[1].index+1);assert.equal(stages[1].pushes,stages[0].pushes+1);assert.equal(stages[2].pushes,stages[1].pushes+1);assert.equal(new URL(stages[1].href).searchParams.get('screen'),'inbound-requests');assert.equal(stages[2].href,stages[1].href,'Detail intent is private memory, not a document ID URL');assert.equal(await page.evaluate(()=>window.i24IO.pushes),stages[2].pushes,'No duplicate child/root detail push');
     });
     for (const action of ['Save', 'SendToWarehouse']) await run(`pending ${action}, parent 503, repeated recovery failure and lost ACK retain original through BFF`, async () => {
-      await start({mode: 'lost', held: {post: true}}); await field('Tìm phiếu nhập hàng').fill('RETAIN FILTER'); await save(action);
-      await eventually(() => state.waiters.post?.length > 0); await refresh(503); assert.equal(await host().count(), 1); assert.equal(await field('Số đơn').count(), 0);
-      for (let i = 0; i < 2; i++) {const failed = page.waitForResponse(r => new URL(r.url()).pathname === '/api/erp/api/workspace'); await button('Xác minh lại phiên nhập hàng').click(); await failed; await paint();}
+      await start({mode:'lost',held:{post:true},filterDraft:'RETAIN FILTER'});await save(action);
+      await eventually(() => state.waiters.post?.length > 0); await refresh(503); assert.equal(await host().count(), 1); assert.equal(await field('Số đơn').isVisible(), false);
+      for (let i = 0; i < 2; i++) {const failed = page.waitForResponse(r => new URL(r.url()).pathname === '/api/erp/api/workspace'); await button('Thử lại').click(); await failed; await paint();}
       release('post'); await paint(); await recover(); await unknown(); assert.equal(await field('Tìm phiếu nhập hàng').inputValue(), 'RETAIN FILTER');
       await guard(() => go('home')); await button('Kiểm tra yêu cầu gốc').click(); await confirmed(); await settled(); await single();
       await refresh('network'); assert.equal(await host().count(), 1); assert.equal(await page.getByTestId('inbound-host-receipt').count(), 0); await recover(); await confirmed(); await single();
@@ -1509,66 +1765,93 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
     await run('pending receipt readback and a command started after a discard dialog cannot unmount Workspace host', async () => {
       await start({held: {post: true}}); await field('Số đơn').fill('OLD DIALOG'); await button('Rà soát phiếu').click(); await go('home'); await page.getByRole('alertdialog').waitFor();
       await page.evaluate(() => [...document.querySelectorAll('button')].find(b => b.textContent === 'Lưu thay đổi').click()); await eventually(() => state.waiters.post?.length > 0);
-      await button('Bỏ thay đổi và rời màn hình').click(); assert.equal(await host().count(), 1); await page.getByRole('alertdialog').waitFor({state: 'hidden'});
-      await page.keyboard.press('Escape'); await guard(() => go('home')); state.held.read = true; release('post'); await confirmed(); await eventually(() => state.waiters.read?.length > 0);
+      assert.equal(await button('Bỏ thay đổi và rời màn hình').count(),0,'Pending custody removes the obsolete discard action');assert.equal(await host().count(),1);await page.getByRole('alertdialog').waitFor();await button('Tiếp tục làm việc').click();await page.getByRole('alertdialog').waitFor({state:'hidden'});
+       await guard(() => go('home')); state.held.read = true; release('post'); await confirmed(); await eventually(() => state.waiters.read?.length > 0);
       await guard(() => go('settings')); assert.equal(await host().getAttribute('data-readback-pending'), 'true'); release('read'); await ready(); await single();
     });
-    await run('owned Back and Forward cancel/approve preserve index, URL, forward stack and one callback', async () => {
-      await start(); await go('settings'); await page.evaluate(() => history.back()); await host().waitFor(); await open(); await field('Số đơn').fill('HISTORY DIRTY');
-      const original = await page.evaluate(() => ({index: history.state.medcomWorkspace.index, href: location.href, pushes: window.i24IO.pushes, length: history.length}));
-      for (const direction of ['back', 'forward', 'back']) {await guard(() => page.evaluate(direction => history[direction](), direction), true); assert.deepEqual(await page.evaluate(() => ({index: history.state.medcomWorkspace.index, href: location.href, pushes: window.i24IO.pushes, length: history.length})), original);}
-      await guard(() => page.evaluate(() => history.back()), true, true); await host().waitFor({state: 'detached'}); assert.equal(await page.evaluate(() => history.state.medcomWorkspace.index), 0);
-      await page.evaluate(() => history.forward()); await host().waitFor(); await open(); await field('Số đơn').fill('FORWARD DIRTY'); await guard(() => page.evaluate(() => history.forward()), true, true);
-      await host().waitFor({state: 'detached'}); assert.equal(await page.evaluate(() => history.state.medcomWorkspace.index), 2); assert.equal(await page.evaluate(() => window.i24IO.pushes), original.pushes);
+    await run('owned Back and Forward cancel/approve preserve screen/detail index, forward stack and one callback',async()=>{
+      await start();const detailA=await historyPosition(),list=(await page.evaluate(()=>window.i24IO.historyStages)).find(stage=>stage.phase==='inbound-list');
+      await backgroundActivate(page.getByRole('button',{name:/^Mở phiếu DOC-B /}));await ready();await paint();const detailB=await historyPosition();
+      assert.equal(detailB.index,detailA.index+1);assert.equal(detailB.pushes,detailA.pushes+1);assert.equal(detailB.href,detailA.href);assert.equal(await page.getByTestId('inbound-editor').getAttribute('data-document-id'),'DOC-B');
+      await page.evaluate(()=>history.back());await atHistoryIndex(detailA.index);await ready();await paint();assert.equal((await historyPosition()).index,detailA.index);assert.equal(await page.getByTestId('inbound-editor').getAttribute('data-document-id'),'DOC-A');await field('Số đơn').fill('HISTORY DIRTY');
+      const original=await historyPosition();
+      for(const direction of ['back','forward','back']){await guard(()=>page.evaluate(direction=>history[direction](),direction),true);assert.deepEqual(await historyPosition(),original);}
+      await guard(()=>page.evaluate(()=>history.back()),true,true);await page.locator('.request-detail-dialog:visible').waitFor({state:'hidden'});assert.equal(await host().count(),1,'Accepted detail Back preserves the owning host');
+      await atHistoryIndex(list.index);assert.equal((await historyPosition()).index,list.index);assert.equal((await historyPosition()).pushes,original.pushes);
+      await page.evaluate(()=>history.forward());await atHistoryIndex(detailA.index);await ready();await paint();assert.equal((await historyPosition()).index,detailA.index);await field('Số đơn').fill('FORWARD DIRTY');
+      await guard(()=>page.evaluate(()=>history.forward()),true,true);await atHistoryIndex(detailB.index);await ready();await paint();assert.equal(await host().count(),1);assert.equal(await page.getByTestId('inbound-editor').getAttribute('data-document-id'),'DOC-B');assert.equal((await historyPosition()).index,detailB.index);assert.equal((await historyPosition()).pushes,original.pushes);
+      assert.equal((await historyPosition()).length,original.length,'Back/Forward approval preserves the original forward stack');
+      await button('Đóng phiếu nhập hàng').click();await page.locator('.request-detail-dialog:visible').waitFor({state:'hidden'});await atHistoryIndex(list.index);await paint();assert.equal((await historyPosition()).index,list.index);assert.equal((await historyPosition()).pushes,original.pushes,'Explicit Close returns to the list without a duplicate push');
+      await go('settings');await host().waitFor({state:'detached'});await paint();const screen=await historyPosition();assert.equal(screen.index,list.index+1);assert.equal(screen.pushes,original.pushes+1,'Only the accepted screen transition adds one new entry');assert.equal(new URL(screen.href).searchParams.get('screen'),'settings');
     });
     for (const queued of [false, true]) await run(`command starting during approved history traversal blocks the actual ${queued ? 'queued route' : 'Back'} commit`, async () => {
       await start({mode: 'lost', held: {post: true}}); await field('Số đơn').fill('TRAVERSAL RACE'); await button('Rà soát phiếu').click();
       const position = await page.evaluate(() => ({href: location.href, index: history.state.medcomWorkspace.index}));
-      await page.evaluate(() => history.back()); await page.getByRole('alertdialog').waitFor();
-      await page.evaluate(() => {const original = history.go.bind(history); history.go = delta => {window.i24ReleaseTraversal = () => {history.go = original; original(delta);};};});
+      const target = await page.evaluate(() => window.i24IO.historyStages.find(stage => stage.phase === 'home'));
+      assert.equal(new URL(target.href).searchParams.get('screen'), 'home');
+      const backToScreen = target.index - position.index;
+      assert.ok(backToScreen < -1, 'the prior list entry is separate from the earlier screen entry');
+      // Single Back now accepts a detail Close before mirroring its history
+      // index (covered above). This race concerns the asynchronous SCREEN
+      // commit that could unmount a command started after discard approval.
+      await page.evaluate(delta => history.go(delta), backToScreen); await page.getByRole('alertdialog').waitFor();
+      await page.evaluate(() => {const original = history.go.bind(history); history.go = delta => {
+        window.i24HeldTraversalDelta = delta;
+        window.i24ReleaseTraversal = () => {history.go = original; original(delta);};
+      };});
       await button('Bỏ thay đổi và rời màn hình').click();
+      await page.waitForFunction(() => typeof window.i24ReleaseTraversal === 'function');
+      assert.equal(await page.evaluate(() => window.i24HeldTraversalDelta), backToScreen);
+      assert.equal(await page.getByTestId('inbound-editor').getAttribute('data-document-id'), 'DOC-A');
+      assert.equal(await field('Số đơn').inputValue(), 'TRAVERSAL RACE', 'screen approval keeps the editor until its actual history commit');
       if (queued) await go('settings');
-      await page.evaluate(() => [...document.querySelectorAll('button')].find(b => b.textContent === 'Lưu thay đổi').click()); await eventually(() => state.waiters.post?.length > 0);
+      // Dispatch the exact retained control while a closing guard portal may
+      // still aria-hide its background. No stale handler or replacement draft.
+      const retainedSave = page.getByTestId('inbound-editor').getByRole('button', {name: 'Lưu thay đổi', exact: true, includeHidden: true});
+      assert.equal(await retainedSave.count(), 1); assert.equal(await retainedSave.isEnabled(), true);
+      await retainedSave.evaluate(element => element.click()); await eventually(() => state.waiters.post?.length > 0);
       await page.evaluate(() => window.i24ReleaseTraversal()); await page.getByRole('alertdialog').waitFor(); await paint();
       assert.equal(await button('Bỏ thay đổi và rời màn hình').count(), 0); assert.equal(await host().count(), 1);
       assert.deepEqual(await page.evaluate(() => ({href: location.href, index: history.state.medcomWorkspace.index})), position);
-      await button('Tiếp tục làm việc').click(); if (queued) await page.keyboard.press('Escape'); release('post'); await unknown();
+      await button('Tiếp tục làm việc').click(); release('post'); await unknown();
       await button('Kiểm tra yêu cầu gốc').click(); await confirmed(); await settled(); await single();
     });
-    await run('sidebar, command palette, mobile Home and local Close preserve dirty and unknown custody', async () => {
+    await run('root navigation, suppressed command palette, mobile/sidebar handlers and local Close preserve custody', async () => {
       await start({mode: 'lost'}); await field('Số đơn').fill('DIRTY');
-      await guard(() => button('Đóng phiếu nhập hàng').click(), true); await guard(() => go('settings'), true);
-      const mobileHome = () => page.getByRole('navigation', {name: 'Điều hướng nhanh trên điện thoại'}).getByRole('button', {name: 'Không gian làm việc', exact: true}).click();
-      await guard(mobileHome, true); await button('Mở menu đầy đủ').click();
+      await guard(()=>button('Đóng phiếu nhập hàng').click(),true);await page.keyboard.press('Control+k');assert.equal(await page.getByRole('dialog',{name:'Tìm màn hình',exact:true}).count(),0,'Selected modal suppresses the global shortcut');await guard(()=>go('settings'),true);
+      // Programmatic background activations test actual guard handlers; the
+      // modal backdrop deliberately prevents equivalent pointer access.
+      const mobileHome=()=>backgroundActivate(page.getByRole('navigation',{name:'Điều hướng nhanh trên điện thoại'}).getByRole('button',{name:'Không gian làm việc',exact:true}));
+      await guard(mobileHome,true);await backgroundActivate(button('Mở menu đầy đủ'));
       await guard(() => page.locator('[data-mobile=true]').getByRole('button', {name: 'Tổng quan', exact: true}).click(), true); await button('Đóng menu').click();
       await save(); await unknown(); await guard(mobileHome); await guard(() => button('Quay lại danh sách').click());
     });
     for (const kind of ['list', 'read', 'command']) await run(`current ${kind} 401 retires once and later 503 cannot revive that login`, async () => {
       await start(); state[kind === 'command' ? 'commandStatus' : kind + 'Status'] = 401;
-      if (kind === 'command') await save(); else if (kind === 'read') await button('Xác minh lại quyền nhập hàng').click(); else await button('Tìm kiếm').click();
-      await button('Đăng nhập ERP').first().waitFor(); await paint(); assert.equal(await field('Số đơn').count(), 0); assert.equal(await button('Xác minh lại phiên nhập hàng').count(), 0);
+      if (kind === 'command') await save(); else if (kind === 'read') await dialog().getByRole('button', {name: 'Xác minh lại quyền nhập hàng', exact: true}).click(); else await backgroundActivate(button('Tìm kiếm'));
+      await page.getByRole('heading',{name:'Phiên làm việc đã kết thúc',exact:true}).waitFor(); await paint(); assert.equal(await field('Số đơn').count(), 0); assert.equal(await button('Xác minh lại phiên nhập hàng').count(), 0);
       state.failure = 503; await page.evaluate(() => window.dispatchEvent(new Event('focus'))); await paint(); assert.equal(await button('Xác minh lại phiên nhập hàng').count(), 0);
     });
     for (const expiry of ['idleExpiresAt', 'absoluteExpiresAt']) await run(`retained ${expiry} retires an unverified pending login without polling`, async () => {
       await start({held: {post: true}}); await save(); await eventually(() => state.waiters.post?.length > 0);
       state.lifetime[expiry] = new Date(Date.now() + 700).toISOString(); await refresh(null); await refresh(503);
-      await page.getByText('Phiên làm việc đã hết hạn. Đăng nhập ERP để tiếp tục.', {exact: true}).waitFor(); release('post'); await paint();
+      await page.getByRole('heading',{name:'Phiên làm việc đã kết thúc',exact:true}).waitFor(); release('post'); await paint();
       assert.equal(await page.getByTestId('confirmed-receipt').count(), 0); assert.equal(await button('Xác minh lại phiên nhập hàng').count(), 0);
     });
     await run('failed logout retains a clean receipt and successful logout retires it', async () => {
       await start(); await save(); await confirmed(); await settled(); state.logoutStatus = 503;
-      const signOut = async () => {const account = page.locator('.topbar .user-button'); assert.equal(await account.count(), 1); await account.click(); await page.getByRole('menuitem', {name: 'Đăng xuất ERP', exact: true}).click();};
-      await signOut(); await button('Xác minh lại phiên nhập hàng').waitFor(); assert.equal(await host().count(), 1); await recover(); await confirmed(); await settled(); await single();
+      const signOut = async () => {const account = page.locator('.topbar .user-button'); assert.equal(await account.count(), 1); await account.dispatchEvent('pointerdown',{button:0,ctrlKey:false,pointerType:'mouse'});await page.getByRole('menuitem',{name:'Đăng xuất ERP',exact:true}).evaluate(element=>element.click());};
+      await signOut(); await page.getByRole('heading',{name:'Chưa thể xác minh phiên làm việc',exact:true}).waitFor(); assert.equal(await host().count(), 1); await recover(); await confirmed(); await settled(); await single();
       state.logoutStatus = 204; await signOut(); await host().waitFor({state: 'detached'}); assert.equal(await button('Xác minh lại phiên nhập hàng').count(), 0);
     });
     await run('successful login rotates before a delayed workspace read; old deadline and late command 401 cannot retire it', async () => {
       await start({commandStatus: 401, held: {post: true}}); await save(); await eventually(() => state.waiters.post?.length > 0);
       state.lifetime.idleExpiresAt = new Date(Date.now() + 2500).toISOString(); await refresh(null); await refresh(503); const old = state;
-      await button('Đăng nhập ERP').first().click(); const dialog = page.getByRole('dialog', {name: 'Đăng nhập ERP', exact: true});
+      await refresh(401); const dialog = page.getByRole('form', {name: 'Đăng nhập ERP', exact: true});await dialog.waitFor();
       await dialog.getByLabel('Tên đăng nhập', {exact: true}).fill('synthetic-i24'); await dialog.getByLabel('Mật khẩu', {exact: true}).fill('synthetic-test-only');
       resetState({held: {workspace: true}}); await dialog.getByRole('button', {name: 'Đăng nhập', exact: true}).click(); await eventually(() => state.waiters.workspace?.length > 0);
       release('post', old); await new Promise(resolve => setTimeout(resolve, 2700)); await paint();
-      assert.equal(await page.getByText('Phiên làm việc đã hết hạn. Đăng nhập ERP để tiếp tục.', {exact: true}).count(), 0);
+      assert.equal(await page.getByRole('heading',{name:'Phiên làm việc đã kết thúc',exact:true}).count(), 0);
       release('workspace'); await field('Tìm phiếu nhập hàng').waitFor(); await open(); assert.equal(await field('Số đơn').inputValue(), 'FULL ERP A');
       assert.equal(await page.getByTestId('confirmed-receipt').count(), 0); assert.equal(calls.filter(call => /\/(save|send-to-warehouse|reconcile)$/.test(call.path)).length, 0);
     });

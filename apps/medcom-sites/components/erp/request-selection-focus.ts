@@ -13,7 +13,7 @@ type SelectionFocusOptions = {
   listReady: boolean;
   listFailed: boolean;
 };
-type Origin = {owner: unknown; listKey: string; documentId: string};
+type Origin = {owner: unknown; listKey: string; documentId: string; scroll?: {element: Element; top: number; left: number}[]};
 type Ticket = Origin & {
   kind: "open" | "close";
   selectionAtArm: string | null;
@@ -76,15 +76,28 @@ export function useRequestSelectionFocus(options: SelectionFocusOptions) {
           schedule(); return; // Let the guard's final focus restoration finish.
         }
         const row = rows.current.get(ticket.documentId) ?? null;
-        const target = ticket.kind === "open" ? detailTarget.current
+        let target = ticket.kind === "open" ? detailTarget.current
           : ticket.restoreRow && visible(row) ? row : listTarget.current;
         if (!visible(target) || target.matches('input,textarea,select,[contenteditable="true"]')) {
           cancel(); return;
         }
+        // Keep the read-proved region's visibility fence above. A retained
+        // modal can surround an unavailable/hidden region, so its frame alone
+        // cannot prove readiness. Once ready, focus that region's own bounded,
+        // named dialog instead of a potentially thousands-of-pixels-tall body.
+        if (ticket.kind === "open") {
+          const dialog = target.closest<HTMLElement>('.request-detail-dialog[role="dialog"]');
+          if (dialog) {
+            if (!visible(dialog)) { cancel(); return; }
+            target = dialog;
+          }
+        }
         // Consume before dispatching focus events. Later commits cannot repeat it.
         pending.current = null;
         target.focus({preventScroll: true});
-        if (document.activeElement === target) target.scrollIntoView({block: ticket.kind === "open" ? "start" : "center", behavior: "auto"});
+        if (ticket.kind === "close") for (const position of ticket.scroll ?? []) {
+          if (position.element.isConnected) { position.element.scrollTop = position.top; position.element.scrollLeft = position.left; }
+        }
       });
     }
     function arm(kind: Ticket["kind"], source: Origin, restoreRow = true) {
@@ -101,7 +114,10 @@ export function useRequestSelectionFocus(options: SelectionFocusOptions) {
       open(documentId: string) {
         const current = live.current;
         if (current.owner === null) { cancel(); return; }
-        const source = {owner: current.owner, listKey: current.listKey, documentId};
+        const scroll: NonNullable<Origin["scroll"]> = [];
+        let element: Element | null = rows.current.get(documentId) ?? listTarget.current;
+        while (element) { scroll.push({element, top: element.scrollTop, left: element.scrollLeft}); element = element.parentElement; }
+        const source = {owner: current.owner, listKey: current.listKey, documentId, scroll};
         origin.current = source;
         arm("open", source);
       },

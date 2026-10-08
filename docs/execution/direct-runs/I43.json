@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I43",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "3a3e6c37-65bf-4725-8ecd-2a025ade996a",
+  "base_sha": "c291634482d41b8925445b132b7775cc22000ffd",
+  "work_branch": "codex/g45-request-detail-dialogs-i43-20261007",
+  "claim_branch": "medcom-claims/g45/direct/I43",
+  "scope": [
+    "apps/medcom-sites/components/erp/purchase-request-screen.tsx",
+    "apps/medcom-sites/components/erp/inbound-request-screen.tsx",
+    "apps/medcom-sites/components/erp/request-selection-focus.ts",
+    "apps/medcom-sites/tests/purchase-request-integration.test.mjs",
+    "apps/medcom-sites/tests/inbound-request-integration.test.mjs",
+    "apps/medcom-sites/components/erp/request-detail-dialog.tsx",
+    "apps/medcom-sites/components/erp/request-detail-dialog.module.css",
+    "apps/medcom-sites/tests/request-detail-dialog.browser.mjs",
+    "docs/execution/direct-runs/I43.json"
+  ],
+  "purpose": "Open request detail dialogs",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "constraints": [
+    "Root is sole GitHub integrator/publisher. External Work implementation is isolated and has no GitHub mutation authority.",
+    "Admission only; implementation and actual tests are NOT_RUN at this commit.",
+    "No private data, credentials, owner SQL/DLL/config access, runtime activation or deployment.",
+    "Preserve current safety, original-intent custody and all existing tests. No dependency/lock/CI edits.",
+    "Use exact verified c291 source; shared composition, history, host and test registration remain root-owned."
+  ],
+  "created_at": "2026-10-07T09:17:08.140375+00:00"
+}

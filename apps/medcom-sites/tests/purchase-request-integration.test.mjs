@@ -17,6 +17,18 @@ const api=await import(pathToFileURL(path.join(output,'api.mjs')).href);
 const {proxyErpRequest}=await import('../.test-runtime/erp-tests/proxy.js');
 const {routeAllowed}=await import('../.test-runtime/erp-tests/proxy-policy.js');
 const scope='a'.repeat(64);
+// Test-only native observer; fresh pages start with zero and each scenario
+// compares a captured baseline so legitimate modal opening is never miscounted.
+function installPurchaseDetailFocusObserver(){
+ window.purchaseDetailFocuses=0;const native=HTMLElement.prototype.focus;
+ HTMLElement.prototype.focus=function(...args){if(this.matches('.request-detail-dialog[role="dialog"],[aria-label="Phiếu mua hàng hiện có"]'))window.purchaseDetailFocuses++;return Reflect.apply(native,this,args);};
+}
+test('purchase focus observer counts repeated target calls while preserving native receiver and options',()=>{
+ const calls=[],token={},error=Error('synthetic-focus-error');class HTMLElement{constructor(target){this.target=target;}matches(){return this.target;}focus(...args){calls.push({receiver:this,args});if(args[0]?.fail)throw error;return token;}}
+ const window={};runInNewContext(`(${installPurchaseDetailFocusObserver.toString()})();`,{window,HTMLElement,Reflect});
+ const target=new HTMLElement(true),other=new HTMLElement(false),options={preventScroll:true};assert.strictEqual(target.focus(options),token);assert.strictEqual(target.focus(options),token);assert.strictEqual(other.focus(options),token);
+ assert.equal(window.purchaseDetailFocuses,2);assert.deepEqual(calls.map(call=>call.receiver),[target,target,other]);assert.ok(calls.every(call=>call.args.length===1&&call.args[0]===options));assert.throws(()=>other.focus({fail:true}),caught=>caught===error);assert.equal(window.purchaseDetailFocuses,2);
+});
 function document(id='QA-000',branch='QA-A',count=1){return {purchaseRequestId:id,branchId:branch,statusId:1,isLocked:null,
  header:{purchaseDate:'2026-10-06T13:14:15.000',purposeId:1,personSuggest:'SYNTHETIC REQUESTER',department:'SYNTHETIC DEPARTMENT',purposeDescOrClient:null,price:'15.25',notes:null,currencyId:'VND',objectId:'QA-OBJECT',rateExchange:1.25},
  lines:Array.from({length:count},(_,index)=>({lineId:`QA-L${String(index+1).padStart(3,'0')}`,values:{itemId:'QA-ITEM',budget:null,timeRequired:'synthetic wall clock',quantity:'999999999999999999',unitPrice:'2',totalPrice:'7',model:null}}))};}
@@ -122,11 +134,11 @@ test('I33 purchase Open/Close only arm after accepted movement; same-document fo
  function fixture(){
   const calls=[];let guarded,pending=false;
   const bridge={hasPending:()=>pending,retire:()=>calls.push('retire'),currentReadback:()=>readback()};
-  const context={selected:'QA-000',selectionRef:{current:{id:'QA-000',version:1}},canRead:true,busy:false,verifying:false,freshRequired:false,work:{current:{dirty:true,unresolved:false}},editorRef:{current:{bridge,raw:readback()}},
+  const context={openAuthority:{current:{scope:'same-session',rows:new Set(['QA-000','QA-001'])}},presentationAllowed:true,active:{list:{rows:[{documentId:'QA-000'},{documentId:'QA-001'}]}},verifiedWorkspace:null,workspace:null,selected:'QA-000',selectionRef:{current:{id:'QA-000',version:1}},canRead:true,busy:false,verifying:false,freshRequired:false,work:{current:{dirty:true,unresolved:false}},editorRef:{current:{bridge,raw:readback()}},
    focusOpen:id=>calls.push(['open',id]),focusClose:()=>calls.push('close'),cancelFocus:()=>calls.push('cancel'),
-   guardNavigation:action=>{guarded=action;},setSelected:id=>{calls.push(['selected',id]);context.selected=id;context.selectionRef.current={id,version:context.selectionRef.current.version+1};},retain:value=>{calls.push(['retain',value]);context.editorRef.current=value;context.editor=value;},
+   guardNavigation:(action,validate)=>{if(!validate||validate('request'))guarded={action,validate};},setSelected:id=>{calls.push(['selected',id]);context.selected=id;context.selectionRef.current={id,version:context.selectionRef.current.version+1};},retain:value=>{calls.push(['retain',value]);context.editorRef.current=value;context.editor=value;},
    searchInput:'SYNTHETIC FILTER',setSearch:value=>calls.push(['search',value]),setPage:value=>calls.push(['page',value]),setRefresh:()=>calls.push('refresh')};
-  return{...runInNewContext(code,context),context,calls,pending:value=>{pending=value;},accept:()=>{assert.ok(guarded);const action=guarded;guarded=null;action();},cancel:()=>{guarded=null;},guarded:()=>!!guarded};
+  return{...runInNewContext(code,context),context,calls,pending:value=>{pending=value;},accept:()=>{assert.ok(guarded);const queued=guarded;guarded=null;if(!queued.validate||queued.validate('accept'))queued.action();},cancel:()=>{guarded=null;},guarded:()=>!!guarded};
  }
  await t.test('cancelled Open and Close leave selection, editor and focus untouched',()=>{
   const f=fixture();f.open('QA-001');assert.equal(f.guarded(),true);assert.deepEqual(f.calls,[]);f.cancel();assert.equal(f.context.selected,'QA-000');assert.equal(f.context.work.current.dirty,true);
@@ -141,7 +153,11 @@ test('I33 purchase Open/Close only arm after accepted movement; same-document fo
   f.close();assert.equal(f.guarded(),true);assert.equal(f.calls.length,1,'the next real navigation must still wait for its dirty guard');
  });
  for(const mode of ['pending','unresolved'])await t.test(`${mode} custody blocks repeated and different Open and Close`,()=>{
-  for(const action of [f=>f.open('QA-000'),f=>f.open('QA-001'),f=>f.close()]){const f=fixture();if(mode==='pending')f.pending(true);else f.context.work.current.unresolved=true;action(f);f.accept();assert.deepEqual(f.calls,[]);assert.equal(f.context.work.current.dirty,true);}
+  for(const action of [f=>f.open('QA-000'),f=>f.open('QA-001'),f=>f.close()]){const f=fixture();if(mode==='pending')f.pending(true);else f.context.work.current.unresolved=true;action(f);assert.equal(f.guarded(),true,'valid pending navigation retains its nondiscardable warning');f.accept();assert.deepEqual(f.calls,[]);assert.equal(f.context.work.current.dirty,true);}
+ });
+ for(const mode of ['pending','unresolved'])await t.test('I43 later '+mode+' invalidates earlier discard acceptance',()=>{
+  const f=fixture();f.close();if(mode==='pending')f.pending(true);else f.context.work.current.unresolved=true;
+  f.accept();assert.deepEqual(f.calls,[]);assert.equal(f.context.selected,'QA-000');assert.ok(f.context.editorRef.current);
  });
  await t.test('refresh/revalidation/ACK cancel rather than arm; filter cancellation waits for acceptance',()=>{
   let f=fixture();f.revalidate();assert.deepEqual(f.calls,['cancel']);f.calls.length=0;f.confirmed({documentId:'QA-000'},'synthetic-receipt');assert.equal(f.context.editorRef.current.receiptId,'synthetic-receipt');f.receipt();assert.equal(f.calls.at(-1),'cancel');assert.equal(f.calls.some(value=>Array.isArray(value)&&value[0]==='open'),false);
@@ -159,9 +175,9 @@ test('production session continuations cannot mutate a retired account',async()=
  const file=ts.createSourceFile('workspace.tsx',source,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX),bodies=[];
  const visit=node=>{if(ts.isFunctionDeclaration(node)&&['extend','performSignOut'].includes(node.name?.text))bodies.push(node.getText(file));ts.forEachChild(node,visit);};visit(file);assert.equal(bodies.length,2);
  function fixture(){
-  let resolveContinue,rejectContinue,resolveLogout,generation=0;const calls=[];
+  let resolveContinue,rejectContinue,resolveLogout,generation=0;const calls=[];let auth={signOutPending:false,proofLifecycleKey:'current'};
   const continuation=new Promise((resolve,reject)=>{resolveContinue=resolve;rejectContinue=reject;}),logout=new Promise(resolve=>{resolveLogout=resolve;});
-  const context={mounted:{current:true},signOutPending:{current:false},authorityFence:{current:{begin:()=>++generation,isCurrent:value=>value===generation,invalidate:()=>{generation++;}}},
+  const context={presentationAllowed:true,presentationCurrent:()=>context.presentationAllowed,publishAuth:update=>{auth=update(auth);calls.push(['auth',auth]);},mounted:{current:true},signOutPending:{current:false},authorityFence:{current:{begin:()=>++generation,isCurrent:value=>value===generation,invalidate:()=>{generation++;}}},
    continueSession:()=>continuation,logout:()=>logout,getWorkspace:async()=>{calls.push('read');return{};},loadWorkspace:async()=>{calls.push('read');},
    setWorkspace:value=>calls.push(['workspace',value]),setSessionError:value=>calls.push(['error',value]),setSessionBusy:()=>{},setAuthorityChecking:()=>{},onDenied:()=>calls.push('denied'),
    queryClient:{clear(){}},ApiError:api.ApiError??class extends Error{},errorMessage:error=>String(error),toast:{success:()=>calls.push('success'),error:()=>calls.push('error')}};
@@ -172,6 +188,8 @@ test('production session continuations cannot mutate a retired account',async()=
  f=fixture();pending=f.extend();f.context.authorityFence.current.invalidate();f.calls.length=0;f.rejectContinue(Object.assign(new Error('expired'),{status:401}));await pending;assert.deepEqual(f.calls,[]);
  f=fixture();pending=f.performSignOut();f.context.authorityFence.current.invalidate();f.calls.length=0;f.resolveLogout();await pending;assert.deepEqual(f.calls,[]);
  f=fixture();pending=f.performSignOut();f.context.mounted.current=false;f.calls.length=0;f.resolveLogout();await pending;assert.deepEqual(f.calls,[]);
+ for(const action of ['extend','performSignOut']){f=fixture();f.context.presentationAllowed=false;await f[action]();assert.deepEqual(f.calls,[],'concealed presentation must not start '+action);}
+ f=fixture();pending=f.performSignOut();assert.deepEqual(structuredClone(f.calls[0]),['auth',{signOutPending:true,proofLifecycleKey:null}]);f.resolveLogout();await pending;assert.ok(f.calls.includes('success'));
 });
 
 test('Workspace deadline source callbacks fence a completed login while its new read is delayed',async t=>{
@@ -181,7 +199,7 @@ test('Workspace deadline source callbacks fence a completed login while its new 
  const visit=node=>{
   if(ts.isCallExpression(node)&&node.expression.getText(file)==='useEffect'&&node.arguments[0]?.getText(file).includes('const limit=knownSessionLimit.current'))deadline=node.arguments[0].getText(file);
   if(ts.isVariableDeclaration(node)&&node.name.getText(file)==='loadWorkspace')load=node.initializer.arguments[0].getText(file);
-  if(ts.isJsxAttribute(node)&&node.name.getText(file)==='onSuccess'&&node.initializer?.expression?.getText(file).includes('setLoginBoundary'))success=node.initializer.expression.getText(file);
+  if(ts.isVariableDeclaration(node)&&node.name.getText(file)==='onLoginSuccess')success=node.initializer.getText(file);
   ts.forEachChild(node,visit);
  };visit(file);assert.ok(deadline&&success&&load,'deadline, login and load must come from production source');
  const code=ts.transpileModule(`const loadWorkspace=${load};({deadline:${deadline},success:${success}});`,{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
@@ -190,13 +208,17 @@ test('Workspace deadline source callbacks fence a completed login while its new 
   const initial={session:{idleExpiresAt:new Date(expiry==='idle'?limit:far).toISOString(),absoluteExpiresAt:new Date(expiry==='absolute'?limit:far).toISOString()}};
   class Clock extends Date{static now(){return now;}}
   class SessionError extends Error{constructor(status,code){super(code);this.status=status;this.code=code;}}
-  const context={workspace:initial,sessionEnded:false,loginBoundary:1,sessionError:null,sessionBusy:false,knownSessionLimit:{current:null},mounted:{current:true},Date:Clock,ApiError:SessionError,
+  const context={authState:{lifecycleKey:'current'},currentAuth:{lifecycleKey:'current'},readAuth:()=>context.currentAuth,signOutPending:{current:false},suspendReads:()=>{},workspace:initial,sessionEnded:false,loginBoundary:1,sessionError:null,sessionBusy:false,knownSessionLimit:{current:null},mounted:{current:true},Date:Clock,ApiError:SessionError,
    authorityFence:{current:{begin:()=>++generation,isCurrent:value=>value===generation,invalidate:()=>{invalidated++;generation++;}}},queryClient:{clear(){}},
    getWorkspace:()=>{assert.equal(context.knownSessionLimit.current,null,'clear previous deadline synchronously before starting the new read');pendingRead=new Promise(resolve=>{releaseRead=resolve;});return pendingRead;},
    setWorkspace:value=>{context.workspace=value;},setSessionError:value=>{context.sessionError=value;},setSessionBusy:value=>{context.sessionBusy=value;},setAuthorityChecking:()=>{},setLoginBoundary:update=>{context.loginBoundary=update(context.loginBoundary);},
    setTimeout:(fn,ms)=>{timers.push({fn,ms});return timers.length;},clearTimeout:()=>{}};
   return{...runInNewContext(code,context),context,timers,initial,limit,invalidated:()=>invalidated,finishRead:async value=>{releaseRead(value);await pendingRead;await Promise.resolve();await Promise.resolve();}};
  }
+ for(const reason of ['lifecycle','sign-out'])await t.test(`login completion rejects a stale ${reason} owner`,()=>{
+  const f=fixture();f.deadline();if(reason==='lifecycle')f.context.currentAuth={lifecycleKey:'replacement'};else f.context.signOutPending.current=true;
+  f.success();assert.equal(f.context.workspace,f.initial);assert.equal(f.context.knownSessionLimit.current,f.limit);assert.equal(f.context.loginBoundary,1);assert.equal(f.invalidated(),0);assert.equal(f.context.sessionBusy,false);
+ });
  await t.test('queued prior deadline cannot cancel the new login read, before cleanup or after its new deadline is installed',async()=>{
   const f=fixture();f.deadline();const oldTimer=f.timers.at(-1);assert.equal(oldTimer.ms,100);
   f.context.workspace=null;f.deadline();assert.equal(f.context.knownSessionLimit.current,f.limit,'same-session outage retains the old deadline');
@@ -216,6 +238,112 @@ test('Workspace deadline source callbacks fence a completed login while its new 
   assert.equal(f.invalidated(),0);assert.equal(f.timers.at(-1).ms,0);f.timers.at(-1).fn();assert.equal(f.context.sessionError.status,401);
  });
 });
+
+// Compile-only coverage uses the same bundles/CSS bytes later served by the browser fixtures.
+// No listener, browser process, empty module shim or synthetic geometry is involved.
+let applicationCss;
+async function browserAssets(built){
+ const script=built.outputFiles.find(file=>file.path.endsWith('.js'));
+ const modules=built.outputFiles.filter(file=>file.path.endsWith('.css'));
+ assert.ok(script?.contents.length,'Browser JavaScript must be selected by its emitted extension');
+ assert.ok(modules.length&&modules.every(file=>file.contents.length),'Actual auth CSS modules must be emitted');
+ if(!applicationCss){const require=createRequire(import.meta.url),postcss=require('postcss'),tailwind=require('@tailwindcss/postcss');applicationCss=postcss([tailwind({base:app})]).process(await readFile(path.join(app,'app/globals.css'),'utf8'),{from:path.join(app,'app/globals.css')}).then(result=>result.css);}
+ const css=modules.map(file=>file.text).join('\n')+'\n'+await applicationCss;
+ assert.doesNotMatch(css,/@import\s+["']tailwindcss["']/,'Tailwind must be compiled before serving');
+ return {bundle:script.contents,css};
+}
+async function compileReadBrowser(){
+ const entry=`import React,{useState} from 'react';import{createRoot}from'react-dom/client';import Workspace from './components/erp/workspace';import{PurchaseRequestScreen}from'./components/erp/purchase-request-screen';import{NavigationGuardProvider}from'./components/erp/navigation-guard';import{getWorkspace}from'./lib/erp/api';
+ function App(){const[controlled,setControlled]=useState(false),[authority,setAuthority]=useState(null),[boundary,setBoundary]=useState(0),[ended,setEnded]=useState(false);window.qa={controlled:async()=>{setAuthority(await getWorkspace());setEnded(false);setControlled(true);},authority:async(retire=false)=>{const next=await getWorkspace();setAuthority(next);setEnded(false);if(retire)setBoundary(value=>value+1);}};
+ return controlled?<NavigationGuardProvider><PurchaseRequestScreen workspace={authority} loginBoundary={boundary} sessionEnded={ended} onVerifyWorkspace={async()=>{setAuthority(await getWorkspace());setEnded(false);}} onDenied={error=>{if(error.status===401){setAuthority(null);setEnded(true);}}} onLogin={()=>{}}/></NavigationGuardProvider>:<Workspace/>;}createRoot(document.getElementById('root')).render(<App/>);`;
+ // Next's image runtime needs its framework bundler. Only image rendering is shimmed;
+ // the workspace, controls, data adapters, BFF and HTTP requests are the production code.
+ const built=await build({absWorkingDir:app,stdin:{contents:entry,resolveDir:app,loader:'tsx'},outfile:path.join(output,'browser.js'),write:false,bundle:true,platform:'browser',format:'iife',alias:{'@':app},jsx:'automatic',define:{'process.env.NODE_ENV':'"production"','process.env':'{}'},logLevel:'warning',
+  plugins:[{name:'fixture-next-image',setup(build){build.onResolve({filter:/^next\/image$/},()=>({path:'fixture-next-image',namespace:'i17-fixture'}));build.onLoad({filter:/.*/,namespace:'i17-fixture'},()=>({contents:"import React from 'react';export default function Image({src,alt,width,height}){return React.createElement('img',{src,alt,width,height});}",resolveDir:app,loader:'jsx'}));}}]});
+  return browserAssets(built);
+}
+// Observe the synchronous native Retry click, without replacing its production
+// handler. Focus/online/poll requests must not consume a planned retry response.
+// eventPhase returns to NONE after dispatch, so no timer or sticky flag is needed.
+function installCustodyWorkspaceObserver(){
+ const nativeFetch=window.fetch.bind(window),io={events:[],requests:[]};let retryClick=null;
+ window.custodyWorkspaceIO=io;
+ window.addEventListener('click',event=>{
+  retryClick=event.target?.closest?.('button')?.textContent?.trim()==='Thử lại'?event:null;
+  if(retryClick)io.events.push({type:'retry-click',at:Date.now(),focused:document.hasFocus()});
+ },true);
+ window.addEventListener('pointerdown',event=>{if(event.target?.closest?.('button')?.textContent?.trim()==='Thử lại')io.events.push({type:'retry-pointerdown',at:Date.now(),focused:document.hasFocus()});},true);
+ for(const type of ['focus','online'])window.addEventListener(type,()=>io.events.push({type,at:Date.now()}));
+ document.addEventListener('visibilitychange',()=>io.events.push({type:'visibilitychange',visibility:document.visibilityState,at:Date.now()}));
+ window.fetch=(input,init)=>{
+  if(String(input).split('?')[0]!=='/api/erp/api/workspace'||(init?.method??'GET').toUpperCase()!=='GET')return nativeFetch(input,init);
+  const explicitRetry=!!retryClick&&retryClick.eventPhase!==0,headers=new Headers(init?.headers);
+  if(explicitRetry)headers.set('X-Synthetic-Workspace-Retry','1');
+  const request={explicitRetry,status:'pending',at:Date.now()};io.requests.push(request);
+  return nativeFetch(input,{...init,headers}).then(response=>{request.status=response.status;return response;},error=>{request.status='network';throw error;});
+ };
+}
+function custodyWorkspaceFailure(state,explicitRetry){
+ if(explicitRetry&&state.retryOutcome){state.failure=state.retryOutcome.failure;state.retryOutcome=null;}
+ return state.failure;
+}
+test('custody fixture recovery is consumed only by a dispatched Retry, never incidental focus',async()=>{
+ const listeners=new Map(),requests=[],response={status:200};
+ const window={addEventListener:(type,handler)=>listeners.set(type,handler),fetch:async(input,init)=>{requests.push({input,init});return response;}};
+ runInNewContext(`(${installCustodyWorkspaceObserver.toString()})();`,{window,document:{addEventListener(){},hasFocus:()=>true},Headers,Date});
+ const state={failure:503,retryOutcome:{failure:null}},signal=new AbortController().signal;
+ const read=()=>window.fetch('/api/erp/api/workspace',{signal,headers:{'X-Existing':'preserved'}});
+ await read();assert.equal(requests.at(-1).init.headers.has('X-Synthetic-Workspace-Retry'),false);
+ assert.equal(custodyWorkspaceFailure(state,false),503);assert.ok(state.retryOutcome);
+ const event={target:{closest:()=>({textContent:'Thử lại'})},eventPhase:1};listeners.get('click')(event);event.eventPhase=3;
+ assert.equal(await read(),response);assert.equal(requests.at(-1).init.headers.get('X-Synthetic-Workspace-Retry'),'1');
+ assert.equal(requests.at(-1).init.headers.get('X-Existing'),'preserved');assert.equal(requests.at(-1).init.signal,signal);
+ assert.equal(custodyWorkspaceFailure(state,true),null);assert.equal(state.retryOutcome,null);
+ const workspacePost={method:'POST',body:'unchanged',signal};await window.fetch('/api/erp/api/workspace',workspacePost);
+ assert.equal(requests.at(-1).init,workspacePost,'the active click observer only annotates Workspace GET');
+ event.eventPhase=0;state.failure='network';state.retryOutcome={failure:401};listeners.get('focus')();await read();
+ assert.equal(requests.at(-1).init.headers.has('X-Synthetic-Workspace-Retry'),false);
+ assert.equal(custodyWorkspaceFailure(state,false),'network');assert.equal(state.retryOutcome.failure,401);
+ const save={method:'POST',body:'original body',signal};await window.fetch('/api/erp/api/purchase-requests/save',save);
+ assert.equal(requests.at(-1).init,save,'observer does not change the command DTO, signal or dispatch');
+});
+async function compileCustodyBrowser(){
+ const entry=`import React from 'react';import{createRoot}from'react-dom/client';import Workspace from './components/erp/workspace';
+ (${installCustodyWorkspaceObserver.toString()})();
+ // Deliberately let an old HTTP save response finish even after the application's
+ // AbortSignal fires. The production adapter/editor must reject that late ACK.
+ // Lost ACK is an explicit transport seam: consume the entire synthetic HTTP
+ // response, then discard it. Do not destroy a pre-header socket and invite an
+ // unobserved browser HTTP retry. This does not simulate a SQL engine failure.
+ const nativeFetch=window.fetch.bind(window);window.custodyIO={aborted:0,replies:0,rejected:0,discarded:0,executes:[],fetches:[]};
+ window.fetch=(input,init)=>{
+  const path=String(input).split('?')[0];
+  if(path.startsWith('/api/erp/api/purchase-requests/')&&init?.method==='POST')window.custodyIO.fetches.push({path,body:init.body,idempotencyKey:JSON.parse(init.body).idempotencyKey});
+  if(path==='/api/erp/api/purchase-requests/save'&&init?.method==='POST'){
+   const {signal,...rest}=init;signal?.addEventListener('abort',()=>window.custodyIO.aborted++);
+   return nativeFetch(input,rest).then(async response=>{
+    window.custodyIO.replies++;
+    if(response.headers.get('X-Synthetic-Lost-Ack')==='discard-completed-response'){await response.arrayBuffer();window.custodyIO.discarded++;throw Error('Synthetic seam discarded a completed save response');}
+    return response;
+   },error=>{window.custodyIO.rejected++;throw error;});
+  }
+  return nativeFetch(input,init);
+ };
+ createRoot(document.getElementById('root')).render(<Workspace/>);`;
+ const built=await build({absWorkingDir:app,stdin:{contents:entry,resolveDir:app,loader:'tsx'},outfile:path.join(output,'custody.js'),bundle:true,write:false,platform:'browser',format:'iife',alias:{'@':app},jsx:'automatic',define:{'process.env.NODE_ENV':'"production"','process.env':'{}'},logLevel:'warning',
+  plugins:[{name:'custody-command-execute-observer',setup(build){
+   // Wrap only the exported entry point; the original adapter still runs unchanged.
+   build.onResolve({filter:/purchase-request-command-adapter$/},()=>({path:'command-observer',namespace:'custody-command-observer'}));
+   build.onLoad({filter:/.*/,namespace:'custody-command-observer'},()=>({contents:`
+    export * from ${JSON.stringify(path.join(app,'lib/erp/purchase-request-command-adapter.ts'))};
+    import {createPurchaseCommandAdapter as create} from ${JSON.stringify(path.join(app,'lib/erp/purchase-request-command-adapter.ts'))};
+    export function createPurchaseCommandAdapter(...args){const bridge=create(...args),execute=bridge.adapter.execute;
+     bridge.adapter.execute=(intent,signal)=>{window.custodyIO.executes.push({intentId:intent.intentId,action:intent.action});return execute(intent,signal);};return bridge;}
+   `,resolveDir:app,loader:'js'}));
+  }},{name:'custody-next-image-only',setup(build){build.onResolve({filter:/^next\/image$/},()=>({path:'image',namespace:'custody-image'}));build.onLoad({filter:/.*/,namespace:'custody-image'},()=>({contents:"import React from 'react';export default function Image({src,alt,width,height}){return React.createElement('img',{src,alt,width,height});}",resolveDir:app,loader:'jsx'}));}}]});
+ return browserAssets(built);
+}
+test('compile actual purchase Workspace browser fixtures with emitted CSS and real Tailwind',async()=>{for(const compile of [compileReadBrowser,compileCustodyBrowser]){const assets=await compile();assert.ok(assets.bundle.length);assert.match(assets.css,/min-height:\s*100dvh/);assert.match(Buffer.from(assets.bundle).toString(),/\.request-detail-dialog/);assert.match(assets.css,/@layer utilities/);}});
 
 test('real HTTP → BFF → existing workspace/browser purchase controls and authority fences',async t=>{
  const qaRoot=process.env.MEDCOM_BROWSER_TOOLCHAIN;let chromium;
@@ -255,14 +383,7 @@ test('real HTTP → BFF → existing workspace/browser purchase controls and aut
   if(url.pathname==='/api/purchase-requests/lookup')return send(response,200,envelope({available:false,reason:'source_binding_unqualified',items:[],page:1,hasMore:false}));
   send(response,404,{code:'endpoint_unavailable'});
  });backend.listen(0,'127.0.0.1');await once(backend,'listening');const backendAddress=`http://127.0.0.1:${backend.address().port}`;
- const entry=`import React,{useState} from 'react';import{createRoot}from'react-dom/client';import Workspace from './components/erp/workspace';import{PurchaseRequestScreen}from'./components/erp/purchase-request-screen';import{NavigationGuardProvider}from'./components/erp/navigation-guard';import{getWorkspace}from'./lib/erp/api';
- function App(){const[controlled,setControlled]=useState(false),[authority,setAuthority]=useState(null),[boundary,setBoundary]=useState(0),[ended,setEnded]=useState(false);window.qa={controlled:async()=>{setAuthority(await getWorkspace());setEnded(false);setControlled(true);},authority:async(retire=false)=>{const next=await getWorkspace();setAuthority(next);setEnded(false);if(retire)setBoundary(value=>value+1);}};
- return controlled?<NavigationGuardProvider><PurchaseRequestScreen workspace={authority} loginBoundary={boundary} sessionEnded={ended} onVerifyWorkspace={async()=>{setAuthority(await getWorkspace());setEnded(false);}} onDenied={error=>{if(error.status===401){setAuthority(null);setEnded(true);}}} onLogin={()=>{}}/></NavigationGuardProvider>:<Workspace/>;}createRoot(document.getElementById('root')).render(<App/>);`;
- // Next's image runtime needs its framework bundler. Only image rendering is shimmed;
- // the workspace, controls, data adapters, BFF and HTTP requests are the production code.
- await build({absWorkingDir:app,stdin:{contents:entry,resolveDir:app,loader:'tsx'},outfile:path.join(output,'browser.js'),bundle:true,platform:'browser',format:'iife',alias:{'@':app},jsx:'automatic',define:{'process.env.NODE_ENV':'"production"','process.env':'{}'},logLevel:'warning',
-  plugins:[{name:'fixture-next-image',setup(build){build.onResolve({filter:/^next\/image$/},()=>({path:'fixture-next-image',namespace:'i17-fixture'}));build.onLoad({filter:/.*/,namespace:'i17-fixture'},()=>({contents:"import React from 'react';export default function Image({src,alt,width,height}){return React.createElement('img',{src,alt,width,height});}",resolveDir:app,loader:'jsx'}));}}]});
- const bundle=await readFile(path.join(output,'browser.js'));let frontend;
+ const {bundle,css}=await compileReadBrowser();let frontend;
  frontend=createServer(async(request,response)=>{
   if(request.url.startsWith('/api/erp/')){
    const incoming=new URL(request.url,`http://localhost:${frontend.address().port}`);const headers=new Headers(request.headers);
@@ -271,9 +392,10 @@ test('real HTTP → BFF → existing workspace/browser purchase controls and aut
      const target=new URL(url);assert.equal(target.origin,'https://synthetic-backend.medcom.test');return fetch(`${backendAddress}${target.pathname}${target.search}`,init);
     });response.writeHead(result.status,Object.fromEntries(result.headers));return response.end(Buffer.from(await result.arrayBuffer()));
   }
+  if(request.url==='/browser.css'){response.writeHead(200,{'Content-Type':'text/css'});return response.end(css);}
   if(request.url==='/browser.js'){response.writeHead(200,{'Content-Type':'text/javascript'});return response.end(bundle);}
   if(request.url.startsWith('/_next/')||request.url.startsWith('/assets/')){response.writeHead(404);return response.end();}
-  response.writeHead(200,{'Content-Type':'text/html'});response.end('<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><body><div id="root"></div><script src="/browser.js"></script></body></html>');
+  response.writeHead(200,{'Content-Type':'text/html'});response.end('<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/browser.css"><body><div id="root"></div><script src="/browser.js"></script></body></html>');
  });frontend.listen(0,'127.0.0.1');await once(frontend,'listening');let browser,context,page;const errors=[];
  try{
   browser=await chromium.launch({executablePath:process.env.MEDCOM_EDGE_PATH||'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true,args:['--no-first-run','--disable-background-networking','--disable-component-update','--disable-default-apps','--no-default-browser-check']});
@@ -281,13 +403,20 @@ test('real HTTP → BFF → existing workspace/browser purchase controls and aut
   // Chromium permits secure cookies on localhost; no production cookie/TLS policy changes.
   await context.addCookies([{name:'__Host-Medcom.Session',value:'synthetic-i17',domain:'localhost',path:'/',secure:true,httpOnly:true,sameSite:'Strict'}]);
   await context.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());
-  page=await context.newPage();page.setDefaultTimeout(5000);page.on('pageerror',error=>errors.push(error.message));await page.goto(origin+'/?screen=purchase-requests');
-  const screen=page.getByRole('region',{name:'Danh sách đề nghị mua hàng',exact:true});
+  page=await context.newPage();await page.addInitScript(installPurchaseDetailFocusObserver);page.setDefaultTimeout(5000);page.on('pageerror',error=>errors.push(error.message));await page.goto(origin+'/?screen=purchase-requests');
+  const screen=page.locator('section[aria-label="Danh sách đề nghị mua hàng"]');
   await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).waitFor();
   await t.test('existing workspace navigation mounts the real screen and available read controls',async()=>{
    await page.getByRole('heading',{level:1,name:'Đề nghị mua hàng',exact:true}).waitFor();
-   assert.equal(await screen.getByRole('table',{name:'Danh sách đề nghị',exact:true}).locator('tbody tr').count(),20);assert.ok(await screen.getByRole('button',{name:'Tạo đề nghị',exact:true}).isDisabled());
-   assert.match(await screen.innerText(),/Chỉ mở các phiếu hiện có\./);assert.ok(calls.some(call=>call.path==='/api/purchase-requests'&&call.cookie.includes('synthetic-i17')));
+   assert.equal(await screen.getByRole('table',{name:'Danh sách đề nghị',exact:true}).locator('tbody tr').count(),20);
+   const create=screen.getByRole('button',{name:'Tạo đề nghị',exact:true}),qualification=screen.locator('#purchase-write-qualification');
+   assert.equal(await create.isVisible(),true);assert.equal(await create.isDisabled(),true);
+   assert.equal(await create.getAttribute('aria-describedby'),'purchase-write-qualification');
+   assert.equal(await qualification.textContent(),'Chỉ mở các phiếu hiện có.','mobile retains the disabled action’s accessible explanation');
+   await page.setViewportSize({width:1280,height:900});await qualification.waitFor({state:'visible'});
+   assert.equal(await qualification.innerText(),'Chỉ mở các phiếu hiện có.');assert.equal(await create.isDisabled(),true);
+   await page.setViewportSize({width:390,height:844});
+   assert.ok(calls.some(call=>call.path==='/api/purchase-requests'&&call.cookie.includes('synthetic-i17')));
   });
   await t.test('next/previous pages, branch selection and exact search all use actual BFF HTTP',async()=>{
    await screen.getByRole('button',{name:'Trang sau',exact:true}).click();await screen.getByText('Trang 2',{exact:true}).waitFor();assert.equal(await screen.getByRole('table',{name:'Danh sách đề nghị',exact:true}).locator('tbody tr').count(),7);
@@ -297,9 +426,9 @@ test('real HTTP → BFF → existing workspace/browser purchase controls and aut
    await screen.getByLabel('Tìm mã đề nghị',{exact:true}).fill('QA-003');await screen.getByRole('button',{name:'Tìm kiếm',exact:true}).click();await screen.getByRole('button',{name:'Mở đề nghị QA-003',exact:true}).waitFor();assert.equal(await screen.getByRole('table',{name:'Danh sách đề nghị',exact:true}).locator('tbody tr').count(),1);
    assert.ok(calls.some(call=>call.query.page==='2'));assert.ok(calls.some(call=>call.query.branchId==='QA-B'));assert.ok(calls.some(call=>call.query.search==='QA-003'));
   });
-  async function find(id){await screen.getByLabel('Tìm mã đề nghị',{exact:true}).fill(id);await screen.getByRole('button',{name:'Tìm kiếm',exact:true}).click();await screen.getByRole('button',{name:`Mở đề nghị ${id}`,exact:true}).waitFor();}
+  async function find(id){if(await screen.getByRole('dialog').count())await screen.getByRole('button',{name:'Đóng đề nghị',exact:true}).click();await screen.getByLabel('Tìm mã đề nghị',{exact:true}).fill(id);await screen.getByRole('button',{name:'Tìm kiếm',exact:true}).click();await screen.getByRole('button',{name:`Mở đề nghị ${id}`,exact:true}).waitFor();}
   async function expandFullReadback(){const detail=screen.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true});await detail.waitFor();const disclosure=detail.locator('details');if(!await disclosure.evaluate(el=>el.open))await disclosure.locator('summary').click();}
-  const focusRegion='[aria-label="Phiếu mua hàng hiện có"]';
+  const focusRegion='.request-detail-dialog[role="dialog"]';
   async function focused(selector){await page.waitForFunction(value=>document.activeElement?.matches(value),selector);}
   async function focusPaint(){await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));}
   await t.test('open/refresh/close preserve precise values and the full hidden header',async()=>{
@@ -308,7 +437,8 @@ test('real HTTP → BFF → existing workspace/browser purchase controls and aut
    await focused(focusRegion);assert.equal(await screen.getByRole('region',{name:'Phiếu mua hàng hiện có',exact:true}).getAttribute('tabindex'),'-1');
    assert.equal(count('/api/purchase-requests/workspace'),initialWorkspace);assert.equal(count('/api/purchase-requests'),initialList);
    await expandFullReadback();assert.match(await detail.innerText(),/2026-10-06T13:14:15.000/);assert.match(await detail.innerText(),/15.25/);assert.match(await detail.innerText(),/999999999999999999/);
-   const before=calls.filter(call=>call.path.endsWith('/detail')).length;const refreshed=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/erp/api/purchase-requests/detail');await screen.getByRole('button',{name:'Làm mới',exact:true}).click();await refreshed;await detail.waitFor();assert.ok(calls.filter(call=>call.path.endsWith('/detail')).length>before);
+   // Programmatic activation of the mounted background refresh handler, not pointer reachability through the modal.
+   const before=calls.filter(call=>call.path.endsWith('/detail')).length;const refreshed=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/erp/api/purchase-requests/detail');await screen.getByRole('button',{name:'Làm mới',exact:true}).evaluate(button=>button.click());await refreshed;await detail.waitFor();assert.ok(calls.filter(call=>call.path.endsWith('/detail')).length>before);
    const beforeCloseWorkspace=count('/api/purchase-requests/workspace'),beforeCloseList=count('/api/purchase-requests');
    await screen.getByRole('button',{name:'Đóng đề nghị',exact:true}).click();await screen.getByRole('button',{name:'Mở đề nghị QA-003',exact:true}).waitFor();assert.equal(await detail.count(),0);
    assert.equal(beforeCloseWorkspace,initialWorkspace+1);assert.equal(beforeCloseList,initialList+1);assert.equal(count('/api/purchase-requests/workspace'),beforeCloseWorkspace);assert.equal(count('/api/purchase-requests'),beforeCloseList);
@@ -323,7 +453,8 @@ test('real HTTP → BFF → existing workspace/browser purchase controls and aut
    const detail=screen.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true});await detail.waitFor();
    const index=records.findIndex(record=>record.purchaseRequestId==='QA-003'),[removed]=records.splice(index,1);
    try{
-    await screen.getByRole('button',{name:'Làm mới',exact:true}).click();await screen.getByRole('alert').waitFor();
+    // This deliberate programmatic background-handler challenge preserves selected-read refresh coverage.
+    await screen.getByRole('button',{name:'Làm mới',exact:true}).evaluate(button=>button.click());await screen.getByRole('alert').waitFor();
     assert.equal(await detail.count(),0);await screen.getByRole('button',{name:'Đóng đề nghị',exact:true}).click();await screen.getByText('Trang 1',{exact:true}).waitFor();
    }finally{records.splice(index,0,removed);}
    await find('QA-000');
@@ -337,30 +468,38 @@ test('real HTTP → BFF → existing workspace/browser purchase controls and aut
     assert.equal(await screen.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true}).count(),0);assert.equal(await screen.getByLabel('Tìm mã đề nghị',{exact:true}).inputValue(),'');
    }
   });
-  await t.test('I33 held Open waits for accepted detail; a later user interaction cancels focus',async()=>{
+  await t.test('I43 held Open focuses its modal immediately; late read cannot steal a newer modal-control focus',async()=>{
    await page.evaluate(()=>window.qa.controlled());await find('QA-000');
    state.hold=true;const started=new Promise(resolve=>{state.started=resolve;});await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).click();await started;
    assert.equal(await screen.getByRole('region',{name:'Phiếu mua hàng hiện có',exact:true}).count(),0);
-   const input=screen.getByLabel('Tìm mã đề nghị',{exact:true});await input.click();state.hold=false;state.release();
-   await screen.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true}).waitFor();await focusPaint();assert.equal(await input.evaluate(element=>element===document.activeElement),true);
+   await focused(focusRegion);const close=screen.getByRole('button',{name:'Đóng hộp thoại',exact:true});await close.focus();await page.keyboard.press('Tab');await page.keyboard.press('Shift+Tab');
+   assert.equal(await close.evaluate(element=>element===document.activeElement),true);state.hold=false;state.release();
+   await screen.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true}).waitFor();await focusPaint();assert.equal(await close.evaluate(element=>element===document.activeElement),true);
    await screen.getByRole('button',{name:'Đóng đề nghị',exact:true}).click();await focused('[aria-label="Mở đề nghị QA-000"]');
   });
   await t.test('I33 failed and superseded reads never create a deferred detail focus',async()=>{
-   await page.evaluate(()=>{window.purchaseDetailFocuses=0;document.addEventListener('focusin',event=>{if(event.target.matches?.('[aria-label="Phiếu mua hàng hiện có"]'))window.purchaseDetailFocuses++;});});
-   state.detailFailure=503;await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).click();await screen.getByRole('alert').waitFor();await focusPaint();assert.equal(await page.evaluate(()=>window.purchaseDetailFocuses),0);
-   state.detailFailure=null;await screen.getByRole('button',{name:'Làm mới',exact:true}).click();await screen.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true}).waitFor();await focusPaint();assert.equal(await page.evaluate(()=>window.purchaseDetailFocuses),0,'refresh cannot revive a failed Open ticket');
-   await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).click();await focused(focusRegion);assert.equal(await page.evaluate(()=>window.purchaseDetailFocuses),1,'a fresh explicit same-document Open may focus');
+   // Observe actual target.focus calls, including a repeated focus on the already
+   // active frame. Modal opening has its own legitimate initial focus baseline.
+   const frameFocusCount=()=>page.evaluate(()=>window.purchaseDetailFocuses);const beforeFailedOpen=await frameFocusCount();
+   state.detailFailure=503;await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).click();await screen.getByRole('alert').waitFor();await focused(focusRegion);await focusPaint();
+   const initialModalFocus=await frameFocusCount();assert.equal(initialModalFocus,beforeFailedOpen+1,'Failed Open still gives the named modal its one immediate focus');
+   state.detailFailure=null;state.hold=true;const retryStarted=new Promise(resolve=>{state.started=resolve;});await screen.getByRole('button',{name:'Xác minh lại phiếu',exact:true}).click();await retryStarted;
+   const laterControl=screen.getByRole('button',{name:'Đóng hộp thoại',exact:true});await laterControl.focus();const retryFocus=await frameFocusCount();
+   state.hold=false;state.release();await screen.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true}).waitFor();await focusPaint();assert.equal(await frameFocusCount(),retryFocus,'refresh cannot revive a failed Open ticket');assert.equal(await laterControl.evaluate(element=>element===document.activeElement),true,'refresh preserves the newer modal-control focus');
+   // Same-document Open is a programmatic mounted-handler challenge while the modal blocks the list.
+   const explicitFocus=await frameFocusCount();await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).evaluate(button=>button.click());await focused(focusRegion);assert.equal(await frameFocusCount(),explicitFocus+1,'an explicit same-document handler focuses its owned frame exactly once without a new read');
    await screen.getByRole('button',{name:'Đóng đề nghị',exact:true}).click();await focused('[aria-label="Mở đề nghị QA-000"]');
-   state.hold=true;const started=new Promise(resolve=>{state.started=resolve;});await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).click();await started;
+   const beforeHeldOpen=await frameFocusCount();state.hold=true;const started=new Promise(resolve=>{state.started=resolve;});await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).click();await started;await focused(focusRegion);await focusPaint();
+   const heldModalFocus=await frameFocusCount();assert.equal(heldModalFocus,beforeHeldOpen+1,'A second deliberate modal opening adds only its immediate focus');
    await screen.getByRole('button',{name:'Đóng đề nghị',exact:true}).click();await focused('[aria-label="Mở đề nghị QA-000"]');state.hold=false;state.release();await focusPaint();
-   assert.equal(await page.evaluate(()=>window.purchaseDetailFocuses),1);assert.equal(await screen.getByRole('region',{name:'Phiếu mua hàng hiện có',exact:true}).count(),0);
+   assert.equal(await frameFocusCount(),heldModalFocus,'A late closed read cannot restore focus to either the frame or obsolete region');assert.equal(await screen.getByRole('region',{name:'Phiếu mua hàng hiện có',exact:true}).count(),0);
   });
   await t.test('late result after a login boundary is discarded, and grant denial removes rows',async()=>{
    await page.evaluate(()=>window.qa.controlled());await find('QA-000');state.hold=true;const started=new Promise(resolve=>{state.started=resolve;});
    await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).click();await started;
    state.canRead=false;await page.evaluate(()=>window.qa.authority(true));state.hold=false;state.release();await page.getByText('Bạn không có quyền đọc đề nghị mua hàng trong phạm vi hiện tại.',{exact:true}).waitFor();
    await page.waitForTimeout(50);assert.equal(await page.getByRole('table',{name:'Toàn bộ dòng đề nghị',exact:true}).count(),0);assert.equal(await page.getByRole('table',{name:'Danh sách đề nghị',exact:true}).locator('tbody tr').count(),0);
-   assert.equal(await page.evaluate(()=>document.activeElement?.matches('[aria-label="Phiếu mua hàng hiện có"]')),false);
+   assert.equal(await page.evaluate(()=>document.activeElement?.matches('.request-detail-dialog[role="dialog"],[aria-label="Phiếu mua hàng hiện có"]')),false);
   });
   assert.deepEqual(errors,[]);assert.equal(calls.some(call=>call.method!=='GET'),false);await writeFile(path.join(output,'browser-evidence.json'),JSON.stringify({node:process.version,browser:browser.version(),viewport:[390,844],calls:calls.length,nonGetCalls:0,errors},null,2));
  }catch(error){await writeFile(path.join(output,'synthetic-failure.json'),JSON.stringify({errors,calls,body:await page?.locator('body').innerText().catch(()=>''),error:String(error)},null,2));throw error;}
@@ -484,7 +623,8 @@ test('I20 React mobile intent lifecycle / production component and adapter with 
  }createRoot(document.getElementById('root')).render(<NavigationGuardProvider><Harness/></NavigationGuardProvider>);`;
  await build({absWorkingDir:app,stdin:{contents:entry,resolveDir:app,loader:'tsx'},outfile:path.join(output,'i20-mobile-browser.js'),bundle:true,platform:'browser',format:'iife',alias:{'@':app},jsx:'automatic',define:{'process.env.NODE_ENV':'"production"','process.env':'{}'},logLevel:'warning'});
  const bundle=await readFile(path.join(output,'i20-mobile-browser.js'));
- const server=createServer((request,response)=>{if(request.url==='/browser.js'){response.writeHead(200,{'Content-Type':'text/javascript'});return response.end(bundle);}response.writeHead(200,{'Content-Type':'text/html'});response.end('<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><div id="root"></div><script src="/browser.js"></script></html>');});
+ const server=createServer((request,response)=>{if(request.url==='/browser.css'){response.writeHead(200,{'Content-Type':'text/css'});return response.end(css);}
+  if(request.url==='/browser.js'){response.writeHead(200,{'Content-Type':'text/javascript'});return response.end(bundle);}response.writeHead(200,{'Content-Type':'text/html'});response.end('<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><div id="root"></div><script src="/browser.js"></script></html>');});
  server.listen(0,'127.0.0.1');await once(server,'listening');let browser,context,page;const errors=[];
  try{
   browser=await chromium.launch({executablePath:process.env.MEDCOM_EDGE_PATH||'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true});
@@ -537,46 +677,14 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
  const qaRoot=process.env.MEDCOM_BROWSER_TOOLCHAIN;let chromium;
  try{({chromium}=(qaRoot?createRequire(path.join(path.resolve(qaRoot),'package.json')):createRequire(import.meta.url))('playwright-core'));}
  catch{throw Error('Required installed playwright-core unavailable for Workspace custody regression; NOT_RUN, no skip.');}
- const entry=`import React from 'react';import{createRoot}from'react-dom/client';import Workspace from './components/erp/workspace';
- // Deliberately let an old HTTP save response finish even after the application's
- // AbortSignal fires. The production adapter/editor must reject that late ACK.
- // Lost ACK is an explicit transport seam: consume the entire synthetic HTTP
- // response, then discard it. Do not destroy a pre-header socket and invite an
- // unobserved browser HTTP retry. This does not simulate a SQL engine failure.
- const nativeFetch=window.fetch.bind(window);window.custodyIO={aborted:0,replies:0,rejected:0,discarded:0,executes:[],fetches:[]};
- window.fetch=(input,init)=>{
-  const path=String(input).split('?')[0];
-  if(path.startsWith('/api/erp/api/purchase-requests/')&&init?.method==='POST')window.custodyIO.fetches.push({path,body:init.body,idempotencyKey:JSON.parse(init.body).idempotencyKey});
-  if(path==='/api/erp/api/purchase-requests/save'&&init?.method==='POST'){
-   const {signal,...rest}=init;signal?.addEventListener('abort',()=>window.custodyIO.aborted++);
-   return nativeFetch(input,rest).then(async response=>{
-    window.custodyIO.replies++;
-    if(response.headers.get('X-Synthetic-Lost-Ack')==='discard-completed-response'){await response.arrayBuffer();window.custodyIO.discarded++;throw Error('Synthetic seam discarded a completed save response');}
-    return response;
-   },error=>{window.custodyIO.rejected++;throw error;});
-  }
-  return nativeFetch(input,init);
- };
- createRoot(document.getElementById('root')).render(<Workspace/>);`;
- const built=await build({absWorkingDir:app,stdin:{contents:entry,resolveDir:app,loader:'tsx'},bundle:true,write:false,platform:'browser',format:'iife',alias:{'@':app},jsx:'automatic',define:{'process.env.NODE_ENV':'"production"','process.env':'{}'},logLevel:'warning',
-  plugins:[{name:'custody-command-execute-observer',setup(build){
-   // Wrap only the exported entry point; the original adapter still runs unchanged.
-   build.onResolve({filter:/purchase-request-command-adapter$/},()=>({path:'command-observer',namespace:'custody-command-observer'}));
-   build.onLoad({filter:/.*/,namespace:'custody-command-observer'},()=>({contents:`
-    export * from ${JSON.stringify(path.join(app,'lib/erp/purchase-request-command-adapter.ts'))};
-    import {createPurchaseCommandAdapter as create} from ${JSON.stringify(path.join(app,'lib/erp/purchase-request-command-adapter.ts'))};
-    export function createPurchaseCommandAdapter(...args){const bridge=create(...args),execute=bridge.adapter.execute;
-     bridge.adapter.execute=(intent,signal)=>{window.custodyIO.executes.push({intentId:intent.intentId,action:intent.action});return execute(intent,signal);};return bridge;}
-   `,resolveDir:app,loader:'js'}));
-  }},{name:'custody-next-image-only',setup(build){build.onResolve({filter:/^next\/image$/},()=>({path:'image',namespace:'custody-image'}));build.onLoad({filter:/.*/,namespace:'custody-image'},()=>({contents:"import React from 'react';export default function Image({src,alt,width,height}){return React.createElement('img',{src,alt,width,height});}",resolveDir:app,loader:'jsx'}));}}]});
- const bundle=built.outputFiles[0].contents;
+ const {bundle,css}=await compileCustodyBrowser();
  const lifetime={idleExpiresAt:new Date(Date.now()+3600000).toISOString(),absoluteExpiresAt:new Date(Date.now()+7200000).toISOString()};
  const access={canSave:true,canSubmit:true,canLookup:true,canAddLines:false,reason:'synthetic_only_NOT_runtime_qualified'};
  const calls=[],errors=[],dispatchEvidence=new Map();let state;
  function reset(mode){
-  state={failure:null,readerFailure:null,scope,displayName:'SYNTHETIC CUSTODY ACCOUNT A',lifetime:{...lifetime},canRead:true,
+  state={failure:null,retryOutcome:null,readerFailure:null,scope,sessionScope:'a'.repeat(64),displayName:'SYNTHETIC CUSTODY ACCOUNT A',lifetime:{...lifetime},canRead:true,
    saveMode:mode,record:document('QA-CUSTODY','QA-A',2),stateToken:'prs1.'+'1'.repeat(64),originalBody:null,receipt:null,
-   releaseSave:null,holdScope:false,scopeStarted:null,releaseScope:null,holdWorkspace:false,releaseWorkspace:null,effects:0};calls.length=0;
+   releaseSave:null,holdScope:false,scopeStarted:null,releaseScope:null,holdWorkspace:false,releaseWorkspace:null,holdLogin:false,releaseLogin:null,effects:0};calls.length=0;
  }
  function workspace(){return{session:{displayName:state.displayName,tenantId:'qa-tenant',companyId:'qa-company',companyName:'SYNTHETIC COMPANY',authorityVersion:1,...state.lifetime,capabilities:state.canRead?['purchase-requests.read']:[]},
   navigation:state.canRead?[{id:'purchase-requests',label:'Đề nghị mua hàng',href:'/workspace/?screen=purchase-requests'}]:[],branchIds:['QA-A']};}
@@ -584,20 +692,23 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
  const server=createServer(async(request,response)=>{
   try{
    const url=new URL(request.url,'http://localhost'),route=url.pathname;
+   if(route==='/custody.css'){response.writeHead(200,{'Content-Type':'text/css'});return response.end(css);}
    if(route==='/custody.js'){response.writeHead(200,{'Content-Type':'text/javascript'});return response.end(bundle);}
-   if(!route.startsWith('/api/erp/')){response.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});return response.end('<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;font:16px system-ui}button{min-height:44px}input,textarea,select{max-width:100%}[role=alertdialog]{position:fixed;inset:5%;z-index:99;background:white;padding:20px}</style><div id="root"></div><script src="/custody.js"></script></html>');}
+   if(!route.startsWith('/api/erp/')){response.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});return response.end('<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/custody.css"><div id="root"></div><script src="/custody.js"></script></html>');}
    const p=route.slice('/api/erp'.length),parts=[];for await(const part of request)parts.push(part);const body=Buffer.concat(parts).toString('utf8');
    calls.push({path:p,method:request.method,body,scope:request.headers['x-purchase-scope']??null,idempotencyKey:p.startsWith('/api/purchase-requests/')&&body?JSON.parse(body).idempotencyKey??null:null});
    if(p==='/health/ready')return json(response,503,{status:'unavailable',checks:[{component:'business_release',status:'not_configured'}]});
    if(p==='/health/live')return json(response,200,{status:'healthy'});
    if(p==='/api/auth/csrf')return json(response,200,{token:'synthetic-custody-csrf'});
-   if(p==='/api/auth/login'){assert.equal(request.method,'POST');return json(response,200,workspace().session);}
+   if(p==='/api/auth/login'){assert.equal(request.method,'POST');if(state.holdLogin)await new Promise(resolve=>{state.releaseLogin=resolve;});return json(response,200,workspace().session);}
    if(p==='/api/workspace'){
-    response.setHeader('X-Medcom-Session-Scope','a'.repeat(64));response.setHeader('X-Medcom-Read-Scope',state.scope);
+    const explicitRetry=request.method==='GET'&&request.headers['x-synthetic-workspace-retry']==='1',failure=custodyWorkspaceFailure(state,explicitRetry),answer=workspace();
+    Object.assign(calls.at(-1),{explicitRetry,outcome:failure??200});
+    response.setHeader('X-Medcom-Session-Scope',state.sessionScope);response.setHeader('X-Medcom-Read-Scope',state.scope);
     if(state.holdWorkspace)await new Promise(resolve=>{state.releaseWorkspace=resolve;});
-    if(state.failure==='network'){response.destroy();return;}
-    if(state.failure===503||state.failure===401)return json(response,state.failure,{code:state.failure===401?'authentication_required':'identity_unavailable'});
-    return json(response,200,workspace());
+    if(failure==='network'){response.destroy();return;}
+    if(failure===503||failure===401)return json(response,failure,{code:failure===401?'authentication_required':'identity_unavailable'});
+    return json(response,200,answer);
    }
    if(state.failure===401)return json(response,401,{code:'authentication_required'});
    const scoped=data=>({scopeKey:state.scope,data});
@@ -610,6 +721,7 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
     const d=state.record;return json(response,200,scoped({rows:[{documentId:d.purchaseRequestId,purchaseDate:d.header.purchaseDate,branchId:d.branchId,personSuggest:d.header.personSuggest,department:d.header.department,statusId:d.statusId,isLocked:d.isLocked}],page:Number(url.searchParams.get('page')||1),pageSize:20,hasMore:false}));
    }
    if(p==='/api/purchase-requests/detail')return json(response,200,scoped({document:state.record,stateToken:state.stateToken,commandAccess:access}));
+   if(p==='/api/purchase-requests/lookup')return json(response,200,scoped({available:false,reason:'source_binding_unqualified',items:[],page:1,hasMore:false}));
    if(p==='/api/purchase-requests/save'){
     assert.equal(request.method,'POST');assert.equal(request.headers['x-csrf-token'],'synthetic-custody-csrf');assert.equal(request.headers['x-purchase-scope'],state.scope);
     assert.equal(state.originalBody,null,'writer must be called at most once in this scenario');state.originalBody=body;
@@ -646,17 +758,18 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
  const paint=()=>page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
  let screen;
  async function begin(mode,{expiry,focusOnly=false}={}){
-  state?.releaseSave?.();state?.releaseScope?.();state?.releaseWorkspace?.();await context?.close();reset(mode);
+  state?.releaseSave?.();state?.releaseScope?.();state?.releaseWorkspace?.();state?.releaseLogin?.();await context?.close();reset(mode);
   const now=Date.now();if(expiry){const soon=new Date(now+30000).toISOString(),far=new Date(now+300000).toISOString();state.lifetime={idleExpiresAt:expiry==='idle'?soon:far,absoluteExpiresAt:expiry==='absolute'?soon:far};}
   context=await browser.newContext({viewport:{width:390,height:844}});
   await context.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());
-  page=await context.newPage();page.setDefaultTimeout(6000);page.on('pageerror',error=>errors.push(error.message));
+  page=await context.newPage();await page.addInitScript(installPurchaseDetailFocusObserver);page.setDefaultTimeout(6000);page.on('pageerror',error=>errors.push(error.message));
   if(expiry)await page.clock.install({time:new Date(now)});
-  await page.goto(origin+'/?screen=purchase-requests');screen=page.getByRole('region',{name:'Danh sách đề nghị mua hàng',exact:true});
+  await page.goto(origin+'/?screen=purchase-requests');screen=page.locator('section[aria-label="Danh sách đề nghị mua hàng"]');
   // Let both the initial and the real Workspace background authority read settle.
   await screen.getByRole('button',{name:'Mở đề nghị QA-CUSTODY',exact:true}).waitFor();
   await page.waitForLoadState('networkidle');await screen.getByLabel('Tìm mã đề nghị',{exact:true}).fill('FILTER-CUSTODY');await screen.getByRole('button',{name:'Mở đề nghị QA-CUSTODY',exact:true}).click();
   await screen.getByLabel('Ghi chú',{exact:true}).fill('SYNTHETIC ORIGINAL INTENT — giữ NULL/time/18 digits');
+  await page.evaluate(()=>{window.custodyNodes={host:document.querySelector('[aria-label="Danh sách đề nghị mua hàng"]'),editor:document.querySelector('[aria-label="Phiếu mua hàng hiện có"]')};});
   if(focusOnly)return;
   await screen.getByRole('button',{name:'Rà soát phiếu',exact:true}).click();
   const sent=page.waitForRequest(request=>new URL(request.url()).pathname==='/api/erp/api/purchase-requests/save');
@@ -672,46 +785,96 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
   assert.equal(await guard.getByRole('button',{name:'Bỏ thay đổi và rời màn hình',exact:true}).count(),0);
   await guard.getByRole('button',{name:'Tiếp tục làm việc',exact:true}).click();await guard.waitFor({state:'hidden'});
  }
+ async function assertProtectedConcealed(){
+  assert.equal(await screen.isVisible(),false,'same-session gate hides the retained purchase host');
+  assert.equal(await page.evaluate(()=>window.custodyNodes.host===document.querySelector('[aria-label="Danh sách đề nghị mua hàng"]')&&window.custodyNodes.editor===document.querySelector('[aria-label="Phiếu mua hàng hiện có"]')),true,'outage preserves the exact host/editor nodes');
+  assert.equal(await screen.locator('input:visible,textarea:visible,select:visible,table:visible,button:visible').count(),0);
+  assert.doesNotMatch(await page.locator('body').innerText(),/SYNTHETIC ORIGINAL INTENT|SYNTHETIC REQUESTER|QA-L001/);
+  assert.equal(await page.locator('.mobile-bottom-nav button:visible').count(),0);
+  for(let index=0;index<4;index++){await page.keyboard.press('Tab');assert.equal(await screen.evaluate(element=>element.contains(document.activeElement)),false,'hidden protected controls cannot receive keyboard focus');}
+ }
  async function guardExplicitOutageNavigation(){
-  await page.getByRole('region',{name:'Xác minh lại phiên mua hàng',exact:true}).waitFor();await paint();
-  assert.equal(new URL(page.url()).searchParams.get('screen'),'purchase-requests','a transient outage must keep the purchase screen');
-  assert.equal(await page.getByRole('alertdialog').count(),0,'outage alone must not attempt navigation');
-  await page.locator('.mobile-bottom-nav').getByRole('button',{name:'Không gian làm việc',exact:true}).click();
-  await continueGuard();
-  assert.equal(new URL(page.url()).searchParams.get('screen'),'purchase-requests','Continue retains the original pending screen');
+  await page.getByRole('heading',{name:'Chưa thể xác minh phiên làm việc',exact:true}).waitFor();await paint();
+  assert.equal(new URL(page.url()).searchParams.get('screen'),'purchase-requests','a transient outage keeps the intended route');
+  assert.equal(await page.getByRole('alertdialog').count(),0,'queued warning is concealed until proof returns');
+  await assertProtectedConcealed();await page.keyboard.press('Control+k');
+  assert.equal(await page.getByRole('dialog').count(),0,'the full gate suppresses command/detail dialogs');
+  // Programmatic challenge of the real mounted background navigation handler.
+  // The modal/gate prevents ordinary pointer access; this is not user reachability.
+  await page.locator('.mobile-bottom-nav').getByRole('button',{name:'Không gian làm việc',exact:true,includeHidden:true}).evaluate(button=>button.click());
+  assert.equal(new URL(page.url()).searchParams.get('screen'),'purchase-requests');
  }
  async function suspend(failure){
+  // Queue a real navigation choice while authority is still live. The selected
+  // detail blocks background pointer access, so activate its mounted handler explicitly.
+  await page.locator('.mobile-bottom-nav').getByRole('button',{name:'Không gian làm việc',exact:true}).evaluate(button=>button.click());
+  await page.getByRole('alertdialog').waitFor();
+  assert.equal(await page.getByRole('button',{name:'Bỏ thay đổi và rời màn hình',exact:true}).count(),0);
   state.failure=failure;
   const failed=failure==='network'?page.waitForEvent('requestfailed',request=>new URL(request.url()).pathname==='/api/erp/api/workspace'):
    page.waitForResponse(response=>new URL(response.url()).pathname==='/api/erp/api/workspace'&&response.status()===503);
-  // Do not inject PurchaseRequestScreen props: invoke Workspace's real focus listener.
   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await failed;
-  // Outage retains this screen. A real user navigation attempt must still
-  // raise the nondiscardable custody guard; Continue keeps the same intent.
   await guardExplicitOutageNavigation();
-  await page.getByRole('region',{name:'Xác minh lại phiên mua hàng',exact:true}).waitFor();await paint();
-  assert.equal(await screen.locator('input,textarea,select,table').count(),0);
-  assert.doesNotMatch(await screen.innerText(),/SYNTHETIC ORIGINAL INTENT|SYNTHETIC REQUESTER|QA-L001/);
-  assert.equal(new URL(page.url()).searchParams.get('screen'),'purchase-requests');
  }
  async function recoverSame(){
-  state.failure=null;state.holdScope=true;state.releaseScope=null;
-  const started=page.waitForRequest(request=>new URL(request.url()).pathname==='/api/erp/api/purchase-requests/workspace');
-  await page.getByRole('button',{name:'Xác minh lại phiên ERP',exact:true}).click();await started;
+  state.holdScope=true;state.releaseScope=null;
+  await retryWorkspace(null);
+  // The server-side hold below proves scoped-request arrival. Do not arm a
+  // second independent timeout before Retry: it can fail the subtest while
+  // retryWorkspace is still gathering the original failure's diagnostics.
   const deadline=Date.now()+5000;while(!state.releaseScope){assert.ok(Date.now()<deadline,'synthetic scope verification did not start');await new Promise(resolve=>setTimeout(resolve,1));}await paint();
-  assert.equal(await screen.locator('input,textarea,select,table').count(),0,'a workspace 200 alone must NOT expose the old scope');
+  assert.equal(state.retryOutcome,null,'the explicit retry must consume its planned recovery before scoped proof begins');
+  assert.equal(await screen.locator('input:visible,textarea:visible,select:visible,table:visible').count(),0,'a workspace 200 alone must NOT expose the old scope');
   assert.equal(lookups().length,0);await assertSingleWriter();
-  state.holdScope=false;state.releaseScope();await screen.getByRole('button',{name:'Kiểm tra kết quả yêu cầu gốc',exact:true}).waitFor();
+  state.holdScope=false;state.releaseScope();
+  // The exact warning queued before the outage must survive, then explicit Cancel
+  // keeps the route and original custody instead of silently executing navigation.
+  await continueGuard();await screen.getByRole('button',{name:'Kiểm tra kết quả yêu cầu gốc',exact:true}).waitFor();
+  assert.equal(new URL(page.url()).searchParams.get('screen'),'purchase-requests');
+  assert.equal(await page.evaluate(()=>window.custodyNodes.host===document.querySelector('[aria-label="Danh sách đề nghị mua hàng"]')&&window.custodyNodes.editor===document.querySelector('[aria-label="Phiếu mua hàng hiện có"]')),true,'same-session recovery retains exact host/editor identity');
   assert.equal(await screen.getByLabel('Tìm mã đề nghị',{exact:true}).inputValue(),'FILTER-CUSTODY','same-session parent recovery preserves local filter only after scope revalidation');
   assert.equal(await screen.getByText(/^ERP đã xác nhận yêu cầu /).count(),0,'late ACK must not resolve retained unknown');
+ }
+ async function retryWorkspace(failure){
+  // Tab coverage can return focus from browser chrome and trigger a real parent
+  // refresh. Keep the old outage until the actual click dispatches its request;
+  // clearing it before Playwright clicks can remove Retry via auto-recovery.
+  let stage='restore recovery focus';
+  try{
+   const retry=page.getByRole('button',{name:'Thử lại',exact:true});
+   // Tab coverage deliberately exercises the browser's focus boundary. Restore
+   // window/content focus while the old outage is still active; otherwise the
+   // pointer's focus event can replace Retry between pointerdown and click.
+   await page.bringToFront();await retry.waitFor();await retry.focus();
+   await page.waitForFunction(()=>document.hasFocus()&&window.custodyWorkspaceIO.requests.every(request=>request.status!=='pending')&&[...document.querySelectorAll('button')].some(button=>button.textContent?.trim()==='Thử lại'&&button.getClientRects().length>0));
+   await paint();await retry.focus();
+   await page.waitForFunction(()=>document.hasFocus()&&document.activeElement?.textContent?.trim()==='Thử lại'&&window.custodyWorkspaceIO.requests.every(request=>request.status!=='pending'));
+   assert.equal(state.retryOutcome,null,'the previous explicit retry must have been consumed');
+   state.retryOutcome={failure};
+   stage='dispatch explicit Workspace retry';
+   const dispatched=page.waitForRequest(request=>new URL(request.url()).pathname==='/api/erp/api/workspace'&&request.headers()['x-synthetic-workspace-retry']==='1');
+   const [,request]=await Promise.all([retry.click(),dispatched]);
+   stage='receive explicit Workspace retry';
+   const response=await request.response();assert.ok(response,'the exact Retry request must receive its planned HTTP response');
+   assert.equal(response.status(),failure??200);assert.equal(await response.finished(),null);
+  }
+  catch(error){
+   // Node subtest failures do not throw through the outer parent try/catch.
+   // Emit the actual stage evidence here so both hosted OS logs retain it.
+   const diagnostic={stage,error:String(error),retryOutcome:state.retryOutcome,calls:calls.filter(call=>call.path==='/api/workspace'),workspaceIO:await page.evaluate(()=>window.custodyWorkspaceIO).catch(()=>null),body:await page.locator('body').innerText().catch(()=>null)};
+   t.diagnostic(JSON.stringify(diagnostic));await writeFile(path.join(output,'i20-workspace-custody-failure.json'),JSON.stringify(diagnostic,null,2));
+   throw error;
+  }
  }
  try{
   browser=await chromium.launch({executablePath:process.env.MEDCOM_EDGE_PATH||'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true,args:['--no-first-run','--disable-background-networking','--disable-component-update','--disable-default-apps','--no-default-browser-check']});
   await t.test('I33 same-document focus keeps the dirty guard; Cancel stays and accepted Close returns to recreated Open',async()=>{
    await begin('hold',{focusOnly:true});
    const notes=screen.getByLabel('Ghi chú',{exact:true}),original=await notes.inputValue();
-   await screen.getByRole('button',{name:'Mở đề nghị QA-CUSTODY',exact:true}).click();
-   await page.waitForFunction(()=>document.activeElement?.matches('[aria-label="Phiếu mua hàng hiện có"]'));
+   // Programmatic same-document activation; the selected modal blocks the background list.
+   await page.keyboard.press('Control+k');assert.equal(await page.locator('.command-modal:visible').count(),0);
+   const beforeSameDocument=await page.evaluate(()=>window.purchaseDetailFocuses);await screen.getByRole('button',{name:'Mở đề nghị QA-CUSTODY',exact:true}).evaluate(button=>button.click());
+   await page.waitForFunction(()=>{const editor=document.querySelector('[aria-label="Phiếu mua hàng hiện có"]');return !!editor&&document.activeElement===editor.closest('.request-detail-dialog[role="dialog"]');});assert.equal(await page.evaluate(()=>window.purchaseDetailFocuses),beforeSameDocument+1,'Accepted same-document focus adds exactly one owned-frame call');
    assert.equal(await notes.inputValue(),original);assert.equal(await page.getByRole('alertdialog').count(),0);
    assert.equal(await page.evaluate(()=>{const event=new Event('beforeunload',{cancelable:true});window.dispatchEvent(event);return event.defaultPrevented;}),true,'same-document focus must preserve the real dirty guard');
    await screen.getByRole('button',{name:'Đóng đề nghị',exact:true}).click();await page.getByRole('alertdialog').waitFor();
@@ -733,10 +896,9 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
    assert.equal(JSON.parse(lookups()[0].body).expectedStateToken,'prs1.'+'1'.repeat(64),'do not rebuild from fresh detail token 2');await assertSingleWriter();
   });
   await t.test('repeated failed verification preserves custody; recovery still uses the original writer body',async()=>{
-   const original=await begin('lost');await suspend('network');state.failure=503;
-   const response=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/erp/api/workspace'&&response.status()===503);
-   await page.getByRole('button',{name:'Xác minh lại phiên ERP',exact:true}).click();await response;await guardExplicitOutageNavigation();await paint();
-   assert.equal(await screen.locator('input,textarea,select,table').count(),0);await assertSingleWriter();assert.equal(lookups().length,0);
+   const original=await begin('lost');await suspend('network');
+   await retryWorkspace(503);await guardExplicitOutageNavigation();await paint();
+   await assertProtectedConcealed();await assertSingleWriter();assert.equal(lookups().length,0);
    await recoverSame();await screen.getByRole('button',{name:'Kiểm tra kết quả yêu cầu gốc',exact:true}).click();await screen.getByText(/^ERP đã xác nhận yêu cầu /).waitFor();assert.equal(lookups()[0].body,original.body);await assertSingleWriter();
   });
   await t.test('repeated null and verified transitions retain one reader and exact original intent until lookup',async()=>{
@@ -747,30 +909,27 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
    await screen.getByRole('button',{name:'Kiểm tra kết quả yêu cầu gốc',exact:true}).click();await screen.getByText(/^ERP đã xác nhận yêu cầu /).waitFor();
    assert.equal(lookups().length,1);assert.equal(lookups()[0].body,original.body);assert.deepEqual(JSON.parse(lookups()[0].body),original.dto);await assertSingleWriter();
   });
-  for(const change of ['session-tuple','opaque-scope'])await t.test(`verified ${change} after null retires prior data and delayed ACK`,async()=>{
-   await begin('hold');await suspend(503);state.failure=null;state.scope='b'.repeat(64);state.displayName='SYNTHETIC ACCOUNT B';
-   if(change==='session-tuple')state.lifetime.absoluteExpiresAt=new Date(Date.now()+14400000).toISOString();
+  for(const change of ['server-session','opaque-scope'])await t.test(`verified ${change} after null retires prior data and delayed ACK`,async()=>{
+   await begin('hold');await suspend(503);state.scope='b'.repeat(64);state.displayName='SYNTHETIC ACCOUNT B';
+   if(change==='server-session')state.sessionScope='c'.repeat(64);
    state.record=document('QA-NEW-ACCOUNT','QA-A',1);state.record.header.personSuggest='SYNTHETIC NEW ACCOUNT ONLY';state.stateToken='prs1.'+'3'.repeat(64);
-   await page.getByRole('button',{name:'Xác minh lại phiên ERP',exact:true}).click();await screen.getByRole('button',{name:'Mở đề nghị QA-NEW-ACCOUNT',exact:true}).waitFor();
+   await retryWorkspace(null);await screen.getByRole('button',{name:'Mở đề nghị QA-NEW-ACCOUNT',exact:true}).waitFor();
    state.releaseSave();await page.waitForFunction(()=>window.custodyIO.replies===1);await paint();
    assert.equal(await screen.getByRole('button',{name:'Kiểm tra kết quả yêu cầu gốc',exact:true}).count(),0);assert.equal(await screen.getByText(/^ERP đã xác nhận yêu cầu /).count(),0);
    assert.doesNotMatch(await screen.innerText(),/SYNTHETIC ORIGINAL INTENT|SYNTHETIC REQUESTER|QA-CUSTODY/);await assertSingleWriter();assert.equal(lookups().length,0);
    await screen.getByRole('button',{name:'Mở đề nghị QA-NEW-ACCOUNT',exact:true}).click();await screen.getByLabel('Ghi chú',{exact:true}).waitFor();assert.equal(await screen.getByLabel('Ghi chú',{exact:true}).inputValue(),'');
   });
   await t.test('confirmed server logout (401), unlike 503, retires original intent before a delayed ACK',async()=>{
-   await begin('hold');await suspend(503);state.failure=401;
-   const ended=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/erp/api/workspace'&&response.status()===401);
-   await page.getByRole('button',{name:'Xác minh lại phiên ERP',exact:true}).click();await ended;await paint();
-   // A confirmed end removes the reader/guard. The real mobile Workspace then
-   // redirects its now-unauthorized purchase route to home; do not query a retired
-   // region as if it were still an authenticated or temporarily unverified screen.
-   await page.waitForURL(url=>url.searchParams.get('screen')==='home');
+   await begin('hold');await suspend(503);
+   await retryWorkspace(401);await paint();
+   // A confirmed end retires protected custody while preserving the intended return route.
+   await page.getByRole('heading',{name:'Phiên làm việc đã kết thúc',exact:true}).waitFor();
    async function assertRetired(){
-    assert.equal(new URL(page.url()).searchParams.get('screen'),'home');
-    const banner=page.locator('.connection-banner');
-    await banner.getByText('Đăng nhập để truy cập dữ liệu doanh nghiệp',{exact:true}).waitFor();
-    assert.equal(await banner.getByRole('button',{name:'Đăng nhập ERP',exact:true}).isVisible(),true);
-    assert.equal(await page.locator('[aria-label="Danh sách đề nghị mua hàng"],[aria-label="Phiếu mua hàng hiện có"],[aria-label="Xác minh lại phiên mua hàng"]').count(),0);
+    assert.equal(new URL(page.url()).searchParams.get('screen'),'purchase-requests');
+    await page.getByRole('heading',{name:'Phiên làm việc đã kết thúc',exact:true}).waitFor();
+    assert.equal(await page.getByLabel('Tên đăng nhập',{exact:true}).isVisible(),true);
+    assert.equal(await page.getByRole('button',{name:'Đăng nhập',exact:true}).isVisible(),true);
+    assert.equal(await page.locator('[aria-label="Danh sách đề nghị mua hàng"],[aria-label="Phiếu mua hàng hiện có"]').count(),0);
     assert.equal(await page.getByLabel('Tìm mã đề nghị',{exact:true}).count(),0);assert.equal(await page.getByLabel('Ghi chú',{exact:true}).count(),0);
     assert.equal(await page.getByRole('button',{name:'Kiểm tra kết quả yêu cầu gốc',exact:true}).count(),0);
     assert.doesNotMatch(await page.locator('body').textContent(),/SYNTHETIC ORIGINAL INTENT|SYNTHETIC REQUESTER|QA-CUSTODY|ERP đã xác nhận yêu cầu/);
@@ -786,9 +945,9 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
    const original=await begin('lost');await suspend(503);await recoverSame();
    state.canRead=false;
    const deniedRefresh=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/erp/api/workspace'&&response.status()===200);
-   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await deniedRefresh;await continueGuard();
-   await screen.getByText('Bạn không có quyền đọc đề nghị mua hàng trong phạm vi hiện tại.',{exact:true}).waitFor();
-   await paint();assert.equal(await screen.locator('input,textarea,select,table').count(),0);assert.equal(lookups().length,0);await assertSingleWriter();
+   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await deniedRefresh;await paint();
+   assert.equal(await screen.isVisible(),false,'rights loss conceals the retained unresolved host');
+   assert.equal(await screen.locator('input:visible,textarea:visible,select:visible,table:visible').count(),0);assert.equal(lookups().length,0);await assertSingleWriter();
    state.canRead=true;
    const allowedRefresh=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/erp/api/workspace'&&response.status()===200);
    await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await allowedRefresh;
@@ -800,7 +959,7 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
    await begin('hold',{expiry});const originalLifetime={...state.lifetime};await suspend(503);await recoverSame();
    assert.deepEqual(state.lifetime,originalLifetime,'the original idle/absolute tuple must remain unchanged through recovery');
    await page.clock.fastForward(30000);
-   await page.getByText('Phiên làm việc đã hết hạn. Đăng nhập ERP để tiếp tục.',{exact:true}).waitFor({timeout:5000});await paint();
+   await page.getByRole('heading',{name:'Phiên làm việc đã kết thúc',exact:true}).waitFor({timeout:5000});await paint();
    state.releaseSave();await page.waitForFunction(()=>window.custodyIO.replies===1);await paint();
    assert.equal(await page.getByLabel('Tìm mã đề nghị',{exact:true}).count(),0);assert.equal(await page.getByText('QA-CUSTODY',{exact:true}).count(),0);
    assert.equal(await page.getByRole('button',{name:'Kiểm tra kết quả yêu cầu gốc',exact:true}).count(),0);assert.equal(await page.getByRole('region',{name:'Phiếu mua hàng hiện có',exact:true}).count(),0);
@@ -808,20 +967,26 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
   });
   await t.test('completed login survives the previous deadline while the new Workspace read is delayed',async()=>{
    await begin('hold',{expiry:'idle'});const previousLimit=Date.parse(state.lifetime.idleExpiresAt);await suspend(503);
-   state.failure=null;state.holdWorkspace=true;state.scope='b'.repeat(64);state.displayName='SYNTHETIC NEW LOGIN';
+   // A transient outage is recovery only. Obtain current 401 retirement before a new login.
+   await retryWorkspace(401);await page.getByRole('heading',{name:'Phiên làm việc đã kết thúc',exact:true}).waitFor();
+   state.failure=null;state.holdWorkspace=true;state.holdLogin=true;state.scope='b'.repeat(64);state.displayName='SYNTHETIC NEW LOGIN';
    state.lifetime={idleExpiresAt:new Date(previousLimit+300000).toISOString(),absoluteExpiresAt:new Date(previousLimit+600000).toISOString()};
    state.record=document('QA-NEW-LOGIN','QA-A',1);state.stateToken='prs1.'+'3'.repeat(64);
-   await page.locator('.connection-banner').getByRole('button',{name:'Đăng nhập ERP',exact:true}).click();
-   const dialog=page.getByRole('dialog',{name:'Đăng nhập ERP',exact:true});await dialog.getByLabel('Tên đăng nhập',{exact:true}).fill('synthetic-login');await dialog.getByLabel('Mật khẩu',{exact:true}).fill('synthetic-password');
+   await page.getByLabel('Tên đăng nhập',{exact:true}).fill('synthetic-login');await page.getByLabel('Mật khẩu',{exact:true}).fill('synthetic-password');
+   const posted=page.waitForRequest(request=>new URL(request.url()).pathname==='/api/erp/api/auth/login');
+   await page.getByRole('button',{name:'Đăng nhập',exact:true}).click();await posted;
+   const loginDeadline=Date.now()+5000;while(!state.releaseLogin){assert.ok(Date.now()<loginDeadline,'held successful login POST did not start');await new Promise(resolve=>setTimeout(resolve,1));}
+   assert.equal(await screen.count(),0,'POST in flight cannot restore the retired editor');
    const started=page.waitForRequest(request=>new URL(request.url()).pathname==='/api/erp/api/workspace');
-   await dialog.getByRole('button',{name:'Đăng nhập',exact:true}).click();await started;await dialog.waitFor({state:'hidden'});
+   state.holdLogin=false;state.releaseLogin();await started;
+   await page.getByRole('heading',{name:'Đang xác minh phiên làm việc…',exact:true}).waitFor();
    const deadline=Date.now()+5000;while(!state.releaseWorkspace){assert.ok(Date.now()<deadline,'new login Workspace read did not start');await new Promise(resolve=>setTimeout(resolve,1));}
    await page.clock.fastForward(30000);await paint();
-   assert.equal(await page.getByText('Phiên làm việc đã hết hạn. Đăng nhập ERP để tiếp tục.',{exact:true}).count(),0,'old deadline must not expire a completed login');
+   assert.equal(await page.getByRole('heading',{name:'Phiên làm việc đã kết thúc',exact:true}).count(),0,'old deadline must not expire a completed login');
    assert.equal(await screen.getByRole('button',{name:'Mở đề nghị QA-NEW-LOGIN',exact:true}).count(),0,'new authority still waits for the held read');
    state.holdWorkspace=false;state.releaseWorkspace();await screen.getByRole('button',{name:'Mở đề nghị QA-NEW-LOGIN',exact:true}).waitFor();
    state.releaseSave();await page.waitForFunction(()=>window.custodyIO.replies===1);await paint();
-   assert.equal(await page.getByText('Phiên làm việc đã hết hạn. Đăng nhập ERP để tiếp tục.',{exact:true}).count(),0);
+   assert.equal(await page.getByRole('heading',{name:'Phiên làm việc đã kết thúc',exact:true}).count(),0);
    assert.equal(await screen.getByLabel('Tìm mã đề nghị',{exact:true}).inputValue(),'');assert.equal(await screen.getByRole('button',{name:'Kiểm tra kết quả yêu cầu gốc',exact:true}).count(),0);
    assert.doesNotMatch(await screen.innerText(),/SYNTHETIC ORIGINAL INTENT|QA-CUSTODY/);assert.equal(new URL(page.url()).searchParams.get('screen'),'purchase-requests');
    await assertSingleWriter();assert.equal(lookups().length,0);
@@ -830,15 +995,15 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
    await begin('hold');await suspend(503);await recoverSame();state.readerFailure=401;
    const reader401=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/erp/api/purchase-requests/workspace'&&response.status()===401);
    const parentRefresh=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/erp/api/workspace'&&response.status()===200);
-   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await parentRefresh;await reader401;await paint();
+   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await parentRefresh;await reader401;await page.getByRole('heading',{name:'Phiên làm việc đã kết thúc',exact:true}).waitFor();await paint();
    state.releaseSave();await page.waitForFunction(()=>window.custodyIO.replies===1);await paint();
    assert.equal(await page.getByLabel('Tìm mã đề nghị',{exact:true}).count(),0);assert.equal(await page.getByText('QA-CUSTODY',{exact:true}).count(),0);
    assert.equal(await page.getByRole('button',{name:'Kiểm tra kết quả yêu cầu gốc',exact:true}).count(),0);assert.equal(await page.getByRole('region',{name:'Phiếu mua hàng hiện có',exact:true}).count(),0);
    await assertSingleWriter();assert.equal(lookups().length,0);
   });
   assert.deepEqual(errors,[]);await writeFile(path.join(output,'i20-workspace-custody-evidence.json'),JSON.stringify({node:process.version,browser:browser.version(),viewport:[390,844],hierarchy:'actual Workspace → PurchaseRequestScreen → MobileRequest → command adapter',transport:'synthetic HTTP API; completed-response discard and save-only abort-ignoring seams; NOT ASP.NET/SQL',dispatchEvidence:[...dispatchEvidence.values()],errors},null,2));
- }catch(error){await writeFile(path.join(output,'i20-workspace-custody-failure.json'),JSON.stringify({error:String(error),errors,calls,io:await page?.evaluate(()=>window.custodyIO).catch(()=>null),body:await page?.locator('body').innerText().catch(()=>''),dispatchEvidence:[...dispatchEvidence.values()]},null,2));throw error;}
- finally{state?.releaseSave?.();state?.releaseScope?.();state?.releaseWorkspace?.();await context?.close();await browser?.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+ }catch(error){await writeFile(path.join(output,'i20-workspace-custody-failure.json'),JSON.stringify({error:String(error),errors,calls,retryOutcome:state?.retryOutcome,workspaceIO:await page?.evaluate(()=>window.custodyWorkspaceIO).catch(()=>null),io:await page?.evaluate(()=>window.custodyIO).catch(()=>null),body:await page?.locator('body').innerText().catch(()=>''),dispatchEvidence:[...dispatchEvidence.values()]},null,2));throw error;}
+ finally{state?.releaseSave?.();state?.releaseScope?.();state?.releaseWorkspace?.();state?.releaseLogin?.();await context?.close();await browser?.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
 });
 
 test('healthy verification blocks new actions without retiring a dispatched purchase intent',async()=>{
@@ -867,7 +1032,9 @@ test('healthy verification blocks new actions without retiring a dispatched purc
 });
 
 // I41 uses the production React screen, API parser and command adapter. Only
-// child editor rendering, navigation confirmation and focus are explicit doubles.
+// child editor rendering, dirty registration, navigation confirmation and focus are explicit doubles.
+// The guard double checks request admission and current acceptance separately before clearing blockers.
+// Catalog reference lookups are separately typed, never counted as document-list reads.
 // Synthetic fetches below are not browser, BFF, ASP.NET or SQL acceptance.
 test('I41 actual React purchase read lifecycles and retained command custody',async t=>{
  const require=createRequire(import.meta.url),React=require('react'),{create,act}=require('react-test-renderer');
@@ -880,8 +1047,8 @@ test('I41 actual React purchase read lifecycles and retained command custody',as
    build.onResolve({filter:/^react(?:\/.*)?$/},args=>({path:args.kind.startsWith('require-')?require.resolve(args.path):pathToFileURL(require.resolve(args.path)).href,external:true}));
    build.onResolve({filter:/^\.\/(mobile-request|navigation-guard|request-selection-focus)$/},args=>({path:args.path,namespace:'i41-double'}));
    build.onLoad({filter:/.*/,namespace:'i41-double'},args=>({loader:'js',contents:args.path.endsWith('mobile-request')
-    ? "import React from 'react';export const MobileRequest=props=>React.createElement('synthetic-mobile',props);"
-    :args.path.endsWith('navigation-guard')?"const request=action=>action();export const useNavigationGuard=()=>({request});"
+    ? "import React,{useEffect,useRef} from 'react';export const MobileRequest=props=>{const key=useRef(Symbol('synthetic-editor-dirty'));useEffect(()=>()=>globalThis.i43PurchaseGuard?.blockers.delete(key.current),[]);return React.createElement('synthetic-mobile',{...props,onWorkStateChange:state=>{const blockers=globalThis.i43PurchaseGuard.blockers;if(state.dirty||state.unresolved)blockers.set(key.current,{canDiscard:!state.unresolved});else blockers.delete(key.current);props.onWorkStateChange(state);}});};"
+    :args.path.endsWith('navigation-guard')?"const register=(key,value)=>{const state=globalThis.i43PurchaseGuard;if(state){if(value)state.blockers.set(key,value);else state.blockers.delete(key);}};const isBlocked=()=>!!globalThis.i43PurchaseGuard?.queue||!!globalThis.i43PurchaseGuard?.blockers.size;const request=(action,validate)=>{const state=globalThis.i43PurchaseGuard;if(validate&&!validate('request'))return;if(state?.queue||state?.blockers.size)state.pending={action,validate};else if(!validate||validate('accept'))action();};export const useNavigationGuard=()=>({request,register,isBlocked});"
     :"const noop=()=>{},focus={open:noop,close:noop,cancel:noop,row:noop,detail:null,list:null};export const useRequestSelectionFocus=()=>focus;"}));
   }}]});
  const {PurchaseRequestScreen}=await import(pathToFileURL(bundlePath).href);
@@ -890,19 +1057,21 @@ test('I41 actual React purchase read lifecycles and retained command custody',as
  const workspace=()=>({session:{displayName:'SYNTHETIC',tenantId:'T',companyId:'C',companyName:'SYNTHETIC',authorityVersion:1,absoluteExpiresAt:'2099-01-01T00:00:00Z',capabilities:['purchase-requests.read']},branchIds:['QA-A','QA-B'],sessionScope:'c'.repeat(64),readScope:'d'.repeat(64),navigation:[]});
  const commandAccess={canSave:true,canSubmit:true,canLookup:true,canAddLines:false,reason:'synthetic'};
  async function host(){
+  const guard=globalThis.i43PurchaseGuard={queue:false,pending:null,blockers:new Map()};
   const calls=[],denied=[],planned=[];let renderer,serverScope=scope,branches=['QA-A','QA-B'];
   const docs=[document('QA-000'),document('QA-001','QA-B')];
   const envelope=data=>({scopeKey:serverScope,data});
   let props={workspace:workspace(),loginBoundary:1,sessionEnded:false,onDenied:error=>denied.push(error.status),onLogin(){},onVerifyWorkspace:async()=>{}};
   global.fetch=async(url,init={})=>{
    const target=new URL(url,'https://synthetic.invalid'),p=target.pathname;
-   const kind=p.endsWith('/workspace')?'workspace':p.endsWith('/detail')?'detail':p.endsWith('/csrf')?'csrf':p.endsWith('/save/lookup')?'lookup':p.endsWith('/save')?'save':'list';
+   const kind=p.endsWith('/workspace')?'workspace':p.endsWith('/detail')?'detail':p.endsWith('/csrf')?'csrf':p.endsWith('/save/lookup')?'lookup':p.endsWith('/save')?'save':p.endsWith('/lookup')?'reference-lookup':'list';
    const call={kind,query:Object.fromEntries(target.searchParams),signal:init.signal,body:init.body};calls.push(call);
    const index=planned.findIndex(item=>item.kind===kind),plan=index<0?null:planned.splice(index,1)[0];
    let data;
    if(kind==='workspace')data=envelope({branchIds:branches,writeAvailable:false,writeReason:'numbering_journal_runtime_unqualified',lookups:[]});
    else if(kind==='list'){const page=Number(target.searchParams.get('page'));data=envelope({rows:docs.filter(d=>branches.includes(d.branchId)).map(d=>({documentId:d.purchaseRequestId,purchaseDate:d.header.purchaseDate,branchId:d.branchId,personSuggest:d.header.personSuggest,department:d.header.department,statusId:1,isLocked:null})),page,pageSize:20,hasMore:page===1});}
    else if(kind==='detail'){const doc=docs.find(d=>d.purchaseRequestId===target.searchParams.get('documentId'));assert.ok(doc);data=envelope({...readback(structuredClone(doc)),commandAccess});}
+   else if(kind==='reference-lookup')data=envelope({available:false,reason:'source_binding_unqualified',items:[],page:1,hasMore:false});
    else if(kind==='csrf')data={token:'synthetic-csrf'};
    else data=envelope({outcome:4,receipt:null});
    const answer=structuredClone(plan?.data??data);
@@ -924,7 +1093,7 @@ test('I41 actual React purchase read lifecycles and retained command custody',as
   const counts=()=>Object.fromEntries(['workspace','list','detail','save','lookup'].map(kind=>[kind,calls.filter(c=>c.kind===kind).length]));
   const search=async text=>{await act(async()=>renderer.root.findAllByType('input').find(n=>n.props.maxLength===100).props.onChange({target:{value:text}}));await act(async()=>renderer.root.findByType('form').props.onSubmit({preventDefault(){}}));await flush();};
   await render({});
-  return {calls,denied,planned,render,flush,click,open,rows,editor,shown,hold,fail,release,counts,search,button,props:()=>props,root:()=>renderer.root,docs,
+  return {guard,accept:async()=>{const queued=guard.pending;assert.ok(queued);guard.pending=null;guard.queue=false;if(queued.validate&&!queued.validate('accept'))return;if([...guard.blockers.values()].some(value=>!value.canDiscard)){guard.pending=queued;return;}guard.blockers.clear();await act(async()=>queued.action());await flush();},calls,denied,planned,render,flush,click,open,rows,editor,shown,hold,fail,release,counts,search,button,props:()=>props,root:()=>renderer.root,docs,
    scope:value=>serverScope=value,branches:value=>branches=value,close:async()=>{await act(async()=>renderer.unmount());await flush();}};
  }
  try{
@@ -940,6 +1109,37 @@ test('I41 actual React purchase read lifecycles and retained command custody',as
     assert.deepEqual(f.counts(),{workspace:1,list:1,detail:3,save:0,lookup:0});assert.ok(f.rows()[0]===row,'verified list row stays mounted');assert.equal(f.editor(),undefined);
     await f.open('QA-000');const current=f.editor();await f.open('QA-000');assert.ok(f.editor()===current,'same-document Open preserves the editor');assert.equal(f.counts().detail,4,'same-document Open is focus only');
    }finally{await f.close();}
+  });
+  for(const change of ['removed-row','scope','presentation','workspace-null','verifying'])await t.test('I43 R1 queued purchase Open rechecks current '+change+' before accepting discard',async()=>{
+   const f=await host();let navigation;try{
+    await f.render({registerDetailNavigation:value=>navigation=value});await f.open('QA-000');
+    const instance=f.editor(),adapter=instance.props.adapter;await act(async()=>instance.props.onWorkStateChange({dirty:true,unresolved:false}));
+    f.guard.queue=true;await act(async()=>navigation.requestOpen('QA-001'));assert.ok(f.guard.pending);
+    if(change==='removed-row'){f.docs.splice(1,1);await f.render({workspace:structuredClone(f.props().workspace)});}
+    if(change==='scope')await f.render({workspace:{...f.props().workspace,readScope:'e'.repeat(64)}});
+    if(change==='presentation')await f.render({presentationAllowed:false});
+    if(change==='workspace-null')await f.render({workspace:null});
+    if(change==='verifying')await f.render({verifying:true});
+    const before=f.counts();await f.accept();assert.equal(navigation.selectedId,'QA-000');assert.strictEqual(f.editor(),instance);assert.strictEqual(f.editor().props.adapter,adapter);assert.deepEqual(f.counts(),before);assert.ok(f.guard.blockers.size,'declined target cannot erase dirty protection');
+   }finally{await f.close();}
+  });
+  await t.test('I43 R1 queued purchase Open still accepts a current same-scope target once',async()=>{
+   const f=await host();let navigation;try{await f.render({registerDetailNavigation:value=>navigation=value});await f.open('QA-000');f.guard.queue=true;await act(async()=>navigation.requestOpen('QA-001'));await f.render({workspace:structuredClone(f.props().workspace)});await f.accept();assert.equal(navigation.selectedId,'QA-001');assert.equal(f.counts().save,0);}finally{await f.close();}
+  });
+  await t.test('I43 typed fixture adapter retains the editor and bridge while presentation is obscured, requiring fresh detail on return',async()=>{
+   const f=await host();let navigation;try{
+    await f.render({registerDetailNavigation:value=>navigation=value});
+    assert.equal(navigation.selectedId,null);
+    await act(async()=>navigation.requestOpen('QA-000'));await f.flush();
+    assert.equal(navigation.selectedId,'QA-000');const editor=f.editor(),adapter=editor.props.adapter,row=f.rows()[0];
+    const before=f.counts();await f.render({presentationAllowed:false});
+    assert.ok(f.editor()===editor);assert.strictEqual(f.editor().props.adapter,adapter);assert.ok(f.rows()[0]===row);
+    const held=f.hold('detail');await f.render({presentationAllowed:true});assert.equal(f.shown(),0);
+    await f.release(held);assert.equal(f.shown(),1);assert.ok(f.editor()===editor);assert.strictEqual(f.editor().props.adapter,adapter);
+    assert.equal(f.counts().list,before.list);assert.equal(f.counts().save,0);assert.equal(f.counts().lookup,0);
+    await act(async()=>navigation.requestOpen('NOT-IN-CURRENT-LIST'));await f.flush();assert.equal(navigation.selectedId,'QA-000');
+    await act(async()=>navigation.requestClose());await f.flush();assert.equal(navigation.selectedId,null);assert.ok(f.rows()[0]===row);
+   }finally{await f.close();assert.equal(navigation,null);}
   });
   await t.test('explicit refresh starts selected detail while its independent list is held',async()=>{
    const f=await host();try{
@@ -1069,6 +1269,40 @@ test('I41 actual React purchase read lifecycles and retained command custody',as
     assert.equal(f.counts().workspace,counts.workspace);assert.equal(f.counts().list,counts.list);assert.equal(f.counts().detail,counts.detail+1);
     assert.equal(f.editor().props.adapter,adapter);assert.equal(f.editor().props.initial.version,token);assert.equal(f.editor().props.initial.values.notes,intent.values.notes);
     assert.equal(f.root().findAll(n=>n.type==='p'&&String(n.props.children).includes('ERP đã xác nhận yêu cầu')).length,1);
+   }finally{await f.close();}
+  });
+  for(const phase of ['pending','unknown'])await t.test('I43 '+phase+' original survives equivalent-offset and deadline-only session observations',async()=>{
+   const f=await host();try{
+    await f.open('QA-000');const editor=f.editor(),adapter=editor.props.adapter,snapshot=editor.props.initial;
+    const intent={intentId:'12345678-abcd',action:'saveDraft',documentId:snapshot.documentId,expectedVersion:snapshot.version,values:structuredClone(snapshot.values)};
+    intent.values.notes='EXPIRY OBSERVATION ORIGINAL';const frozenIntent=JSON.stringify(intent);
+    const held=phase==='pending'?f.hold('save'):null;let pending;
+    await act(async()=>{pending=adapter.execute(intent,new AbortController().signal);if(!held)await pending;});await f.flush();
+    const original=f.calls.find(c=>c.kind==='save').body;
+    for(const absoluteExpiresAt of ['2099-01-01T07:00:00+07:00','2099-01-02T00:00:00Z']){
+     const workspace=structuredClone(f.props().workspace);workspace.session.absoluteExpiresAt=absoluteExpiresAt;workspace.session.idleExpiresAt='2099-01-01T01:00:00Z';workspace.session.authorityVersion++;
+     await f.render({workspace});assert.strictEqual(f.editor(),editor);assert.strictEqual(f.editor().props.adapter,adapter);assert.equal(f.counts().save,1);assert.equal(f.counts().lookup,0);
+     await f.click('Đóng đề nghị');assert.strictEqual(f.editor(),editor);
+    }
+    if(held)await f.release(held);assert.equal((await pending).kind,'unknown');
+    await act(async()=>assert.equal((await adapter.reconcile(intent,new AbortController().signal)).kind,'unknown'));
+    assert.equal(f.calls.find(c=>c.kind==='lookup').body,original);assert.equal(JSON.stringify(intent),frozenIntent);assert.equal(f.counts().save,1);assert.strictEqual(f.editor(),editor);
+   }finally{await f.close();}
+  });
+  for(const boundary of ['tenant','company','sessionScope','loginBoundary','sessionEnded'])await t.test('I43 real '+boundary+' retirement still fences a held original and late receipt',async()=>{
+   const f=await host();try{
+    await f.open('QA-000');const adapter=f.editor().props.adapter,snapshot=f.editor().props.initial;
+    const intent={intentId:'12345678-abcd',action:'saveDraft',documentId:snapshot.documentId,expectedVersion:snapshot.version,values:structuredClone(snapshot.values)};
+    const held=f.hold('save',null,{scopeKey:scope,data:{outcome:0,receipt:{actionId:'purchase-request.save-draft',idempotencyKey:intent.intentId,document:structuredClone(f.docs[0]),stateToken:'prs1.'+'2'.repeat(64),allocatedLines:[]}}});let pending;
+    await act(async()=>{pending=adapter.execute(intent,new AbortController().signal);});await f.flush();
+    const workspace=structuredClone(f.props().workspace),patch={workspace};
+    if(boundary==='tenant')workspace.session.tenantId='NEW-TENANT';
+    if(boundary==='company')workspace.session.companyId='NEW-COMPANY';
+    if(boundary==='sessionScope')workspace.sessionScope='e'.repeat(64);
+    if(boundary==='loginBoundary')patch.loginBoundary=2;
+    if(boundary==='sessionEnded'){patch.sessionEnded=true;patch.workspace=null;}
+    await f.render(patch);assert.equal(f.editor(),undefined);await f.release(held);assert.equal((await pending).kind,'unknown');
+    const calls=f.calls.length;assert.equal((await adapter.reconcile(intent,new AbortController().signal)).kind,'unknown');assert.equal(f.calls.length,calls);assert.equal(f.editor(),undefined);
    }finally{await f.close();}
   });
   await t.test('current detail 401 retires the original before a held command ACK',async()=>{
