@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I54",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "0a2c3fdf-43e0-4ac4-aa9b-e4f6259531b5",
+  "base_sha": "f277681868aacc5fe3c2b19261b395b49582f0b9",
+  "work_branch": "codex/g45-railway-container-build-i54-20261008",
+  "claim_branch": "medcom-claims/g45/direct/I54",
+  "scope": [
+    "Dockerfile",
+    ".dockerignore",
+    "docs/deploy/RAILWAY_STAGING.md",
+    "tests/deploy/test_railway_container.py",
+    ".github/workflows/railway-container.yml",
+    "docs/execution/direct-runs/I54.json"
+  ],
+  "purpose": "Prepare explicit Railway backend image build and source-free startup smoke",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "constraints": [
+    "Admission only; implementation NOT_RUN.",
+    "Root sole GitHub publisher; candidate author returns local files only.",
+    "Full repository build context with explicit API and separate password-worker publish.",
+    "Default Legacy and business commands remain unavailable; readiness503 remains.",
+    "No private configuration, credentials, Tools.dll, SQL or database access in images/tests.",
+    "No trust-all proxy, HTTPS/CSRF relaxation, account settings or Railway/Vercel deployment.",
+    "Source-free image build/health smoke is separate from real ERP login and production acceptance."
+  ],
+  "created_at": "2026-10-08T08:48:25.030977+00:00"
+}
