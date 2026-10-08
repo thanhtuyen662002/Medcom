@@ -290,6 +290,89 @@ public static class InspectionSql
           WHERE T.is_disabled=0 AND (E.type IS NULL OR E.type_desc IS NULL OR E.type_desc<>N'LOGON'))
           THEN 2 ELSE 0 END) OPTION(MAXDOP 1);
         """;
+    // I46 read-only observations. These are not the transaction-bound qualification plan.
+    // The first three I46 environment predicates require its owned transaction and are NOT_RUN here.
+    public const string InboundEnvironment = """
+        SELECT E.Name,CONVERT(int,E.Status) FROM sys.databases D
+        CROSS APPLY (VALUES
+          ('online',CASE WHEN D.state=0 THEN 0 ELSE 1 END),
+          ('writable',CASE WHEN D.is_read_only=0 THEN 0 ELSE 1 END),
+          ('delayed_durability_off',CASE WHEN D.delayed_durability=0 THEN 0 ELSE 1 END),
+          ('non_system_database',CASE WHEN DB_ID()>4 THEN 0 ELSE 1 END),
+          ('implicit_transactions_off',CASE WHEN (@@OPTIONS & 2)=0 THEN 0 ELSE 1 END),
+          ('metadata_principal',CASE WHEN USER_ID()=1 OR IS_SRVROLEMEMBER('sysadmin')=1 THEN 0 ELSE 2 END),
+          ('database_triggers',CASE WHEN USER_ID()=1 OR IS_SRVROLEMEMBER('sysadmin')=1
+            THEN CASE WHEN NOT EXISTS(SELECT 1 FROM sys.triggers WHERE parent_class=0) THEN 0 ELSE 1 END ELSE 2 END)
+        ) E(Name,Status) WHERE D.database_id=DB_ID() ORDER BY E.Name OPTION(MAXDOP 1);
+        """;
+    public const string InboundMarker = """
+        WITH Expected(Col,Typ,Len,Nullable,Prec,Scale,CollationName) AS (SELECT * FROM (VALUES
+          ('SingletonId','tinyint',1,0,3,0,''),
+          ('SchemaVersion','int',4,0,10,0,''),
+          ('DatabaseBindingId','uniqueidentifier',16,0,0,0,''),
+          ('TenantId','nvarchar',200,0,0,0,'Latin1_General_100_BIN2'),
+          ('CompanyId','nvarchar',200,0,0,0,'Latin1_General_100_BIN2')
+        ) E(Col,Typ,Len,Nullable,Prec,Scale,CollationName)), Marker AS (
+          SELECT T.* FROM sys.tables T JOIN sys.schemas S ON S.schema_id=T.schema_id
+          WHERE S.name=N'dbo' COLLATE Latin1_General_100_BIN2 AND DATALENGTH(S.name)=6
+            AND T.name=N'WebInboundRequestCommandBindingV1' COLLATE Latin1_General_100_BIN2
+            AND DATALENGTH(T.name)=DATALENGTH(N'WebInboundRequestCommandBindingV1')
+        ), Observations AS (
+          SELECT 'presence' AS Name,CASE WHEN EXISTS(SELECT 1 FROM Marker) THEN 0 ELSE 1 END AS Status
+          UNION ALL
+          SELECT 'columns',CASE WHEN EXISTS(SELECT 1 FROM Marker T
+            WHERE (SELECT COUNT(*) FROM sys.columns WHERE object_id=T.object_id)=5
+            AND NOT EXISTS(SELECT 1 FROM Expected E LEFT JOIN sys.columns C ON C.object_id=T.object_id
+              AND C.name=E.Col COLLATE Latin1_General_100_BIN2 AND DATALENGTH(C.name)=DATALENGTH(CONVERT(nvarchar(128),E.Col))
+              LEFT JOIN sys.types Y ON Y.user_type_id=C.user_type_id
+              WHERE C.column_id IS NULL OR Y.name IS NULL OR Y.name<>E.Typ OR Y.is_user_defined<>0
+                OR C.max_length<>E.Len OR C.is_nullable<>E.Nullable OR C.precision<>E.Prec OR C.scale<>E.Scale
+                OR C.is_identity<>0 OR C.is_computed<>0 OR C.generated_always_type<>0 OR C.is_hidden<>0 OR C.encryption_type IS NOT NULL
+                OR C.is_sparse<>0 OR C.is_column_set<>0 OR C.is_filestream<>0 OR C.default_object_id<>0
+                OR (E.CollationName<>'' AND (C.collation_name IS NULL OR C.collation_name<>E.CollationName)))) THEN 0 ELSE 1 END
+          UNION ALL
+          SELECT 'key',CASE WHEN EXISTS(SELECT 1 FROM Marker T JOIN sys.indexes I ON I.object_id=T.object_id
+            WHERE I.is_primary_key=1 AND I.is_unique=1 AND I.is_disabled=0 AND I.has_filter=0 AND I.is_hypothetical=0
+              AND I.ignore_dup_key=0 AND I.type IN (1,2)
+              AND (SELECT COUNT(*) FROM sys.index_columns K WHERE K.object_id=I.object_id AND K.index_id=I.index_id AND K.key_ordinal>0)=1
+              AND EXISTS(SELECT 1 FROM sys.index_columns K JOIN sys.columns C ON C.object_id=K.object_id AND C.column_id=K.column_id
+                WHERE K.object_id=I.object_id AND K.index_id=I.index_id AND K.key_ordinal=1 AND K.is_descending_key=0 AND K.is_included_column=0
+                  AND C.name=N'SingletonId' COLLATE Latin1_General_100_BIN2 AND DATALENGTH(C.name)=DATALENGTH(N'SingletonId'))) THEN 0 ELSE 1 END
+          UNION ALL
+          SELECT 'table_features',CASE WHEN EXISTS(SELECT 1 FROM Marker T WHERE T.is_ms_shipped=0
+            AND T.is_memory_optimized=0 AND T.durability=0 AND T.temporal_type=0 AND T.is_filetable=0
+            AND NOT EXISTS(SELECT 1 FROM sys.triggers WHERE parent_id=T.object_id)
+            AND NOT EXISTS(SELECT 1 FROM sys.security_predicates WHERE target_object_id=T.object_id)
+            AND NOT EXISTS(SELECT 1 FROM sys.columns WHERE object_id=T.object_id AND rule_object_id<>0)
+            AND NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=T.object_id AND (is_disabled=1 OR is_hypothetical=1))
+            AND NOT EXISTS(SELECT 1 FROM sys.foreign_keys WHERE parent_object_id=T.object_id OR referenced_object_id=T.object_id)
+            AND NOT EXISTS(SELECT 1 FROM sys.indexes WHERE object_id=T.object_id AND is_unique=1 AND is_primary_key=0)
+            AND (SELECT COUNT(*) FROM sys.check_constraints WHERE parent_object_id=T.object_id)=1
+            AND (SELECT COUNT(*) FROM sys.default_constraints WHERE parent_object_id=T.object_id)=0) THEN 0 ELSE 1 END
+        )
+        SELECT Name,CONVERT(int,CASE WHEN USER_ID()=1 OR IS_SRVROLEMEMBER('sysadmin')=1 THEN Status ELSE 2 END)
+        FROM Observations ORDER BY Name OPTION(MAXDOP 1);
+        """;
+    public const string InboundMarkerDefinition = """
+        SELECT LEFT(C.definition,16385),CONVERT(int,CASE
+          WHEN NOT (USER_ID()=1 OR COALESCE(IS_SRVROLEMEMBER('sysadmin'),0)=1) THEN 2
+          WHEN C.object_id IS NULL THEN 1 WHEN C.definition IS NULL THEN 2
+          WHEN C.is_disabled<>0 OR C.is_not_trusted<>0 OR C.is_not_for_replication<>0 THEN 1 ELSE 0 END)
+        FROM (VALUES(1)) E(Id) LEFT JOIN sys.schemas S ON S.name=N'dbo' COLLATE Latin1_General_100_BIN2 AND DATALENGTH(S.name)=6
+        LEFT JOIN sys.tables T ON T.schema_id=S.schema_id AND T.name=N'WebInboundRequestCommandBindingV1' COLLATE Latin1_General_100_BIN2
+          AND DATALENGTH(T.name)=DATALENGTH(N'WebInboundRequestCommandBindingV1')
+        LEFT JOIN sys.check_constraints C ON C.parent_object_id=T.object_id AND C.name=N'CK_WebInboundBinding_Identity' COLLATE Latin1_General_100_BIN2
+          AND DATALENGTH(C.name)=DATALENGTH(N'CK_WebInboundBinding_Identity') OPTION(MAXDOP 1);
+        """;
+    // Same bounded marker projection as I46, without its transaction lock hint.
+    // Never return these local values in InspectionReport or treat them as expected identity.
+    public const string InboundBindingRows = """
+        SELECT TOP(2) SingletonId,SchemaVersion,DatabaseBindingId,TenantId,CompanyId
+        FROM dbo.WebInboundRequestCommandBindingV1 OPTION(MAXDOP 1);
+        """;
+    public static readonly string[] InboundEnvironmentChecks =
+        ["online", "writable", "delayed_durability_off", "non_system_database", "implicit_transactions_off", "metadata_principal", "database_triggers"];
+    public static readonly string[] InboundMarkerChecks = ["presence", "columns", "key", "table_features"];
     public static readonly string[] Tables =
     [
         "MedcomPurchaseRequestCommandJournal",

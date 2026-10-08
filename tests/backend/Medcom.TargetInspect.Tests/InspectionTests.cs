@@ -31,7 +31,8 @@ public sealed class InspectionTests
         await InspectionRunner.RunAsync(connection, supplyBinding ? Binding : null, report, CancellationToken.None);
 
         var expected = CatalogPlan.Concat(supplyBinding ? [InspectionSql.Binding] : Array.Empty<string>())
-            .Append(InspectionSql.ServerTriggers).ToArray();
+            .Append(InspectionSql.ServerTriggers).Concat([InspectionSql.InboundEnvironment, InspectionSql.InboundMarker,
+                InspectionSql.InboundMarkerDefinition, InspectionSql.InboundBindingRows]).ToArray();
         Assert.Equal(expected, connection.Commands.Select(c => c.Text).ToArray());
         Assert.All(connection.Commands, command =>
         {
@@ -42,7 +43,7 @@ public sealed class InspectionTests
             var executable = Regex.Replace(command.Text, "'(?:''|[^'])*'", "''");
             Assert.DoesNotMatch(@"(?i)\b(BEGIN|COMMIT|ROLLBACK|INSERT|UPDATE|DELETE|MERGE|CREATE|ALTER|DROP|TRUNCATE|EXEC|EXECUTE|SET|GRANT|DENY|REVOKE|DBCC)\b", executable);
             Assert.DoesNotMatch(@"(?i)\b(UPDLOCK|XLOCK|TABLOCK|HOLDLOCK|READPAST)\b", executable);
-            if (command.Text != InspectionSql.Binding) Assert.DoesNotMatch(@"(?i)\b(?:FROM|JOIN)\s+dbo\.", executable);
+            if (command.Text != InspectionSql.Binding && command.Text != InspectionSql.InboundBindingRows) Assert.DoesNotMatch(@"(?i)\b(?:FROM|JOIN)\s+dbo\.", executable);
         });
         var database = Assert.Single(connection.Commands[0].Parameters);
         Assert.Equal("@database", database.Name);

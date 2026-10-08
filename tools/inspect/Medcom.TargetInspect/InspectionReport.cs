@@ -14,6 +14,11 @@ public sealed record InspectionCheck(string Check, InspectionStatus Status, stri
         "INPUT_OR_PACKAGE_REJECTED" => "Check the verified package and explicit private input paths against the README.",
         "CANCELLED_OR_TIMED_OUT" or "INSPECTION_QUERY_OR_PROVIDER_FAILED" => "Have the owner review the failed stage locally; do not share settings or exception text.",
         "OBSERVED_METADATA_MISMATCH" or "DURABILITY_SETTINGS_MISMATCH" or "TARGET_OR_TRANSACTION_MISMATCH" or "DISPOSAL_FAILED" => "Stop qualification and review this mismatch with the owner; no automatic repair is permitted.",
+        "UNKNOWN_METADATA_VISIBILITY" or "UNKNOWN_MARKER_DEFINITION" => "Observation is UNKNOWN; ask the owner to review metadata access without changing or elevating this principal.",
+        "INBOUND_MARKER_MISSING" or "INBOUND_MARKER_ROW_MISSING" => "The proposed inbound marker was not observed. Installation or seed assignment requires a separate owner decision; this tool never installs it.",
+        "INBOUND_MARKER_ROWS_AMBIGUOUS" or "INBOUND_MARKER_ROW_CORRUPT" or "I46_PREREQUISITE_MISMATCH" => "Stop inbound qualification and review this observation with the owner; do not repair or elevate access to force a pass.",
+        "INBOUND_IDENTITY_EQUALITY_UNPROVED" => "Expected inbound binding, tenant and company equality is UNKNOWN. The purchase binding option does not establish inbound identity.",
+        "I46_FULL_QUALIFICATION_NOT_PERFORMED" => "This is a read-only prerequisite subset, not I46 admission, physical-target custody or runtime acceptance.",
         "OUTSIDE_READONLY_INSPECT" => "Requires separate authorized runtime qualification.",
         _ => "No write or release permission is established."
     };
@@ -38,6 +43,14 @@ public sealed class InspectionReport
     }
     public void PrepareDatabaseChecks()
     {
+        foreach (var name in InspectionSql.InboundEnvironmentChecks)
+            Add("inbound.environment." + name, InspectionStatus.NOT_RUN, "PREREQUISITE_NOT_ESTABLISHED");
+        foreach (var name in InspectionSql.InboundMarkerChecks.Concat(["definition", "rows"]))
+            Add("inbound.marker." + name, InspectionStatus.NOT_RUN, "PREREQUISITE_NOT_ESTABLISHED");
+        Add("inbound.identity_equality", InspectionStatus.BLOCKED, "INBOUND_IDENTITY_EQUALITY_UNPROVED");
+        Add("inbound.full_target_qualification", InspectionStatus.NOT_RUN, "I46_FULL_QUALIFICATION_NOT_PERFORMED");
+        foreach (var name in new[] { "transaction_count", "transaction_state", "serializable_isolation" })
+            Add("inbound." + name, InspectionStatus.NOT_RUN, "OUTSIDE_READONLY_INSPECT");
         foreach (var stage in new[] { "connection", "target.environment", "database.durability_settings", "catalog.visibility",
             "purchase.foreign_key", "inbound.native_constraint_semantics", "purchase.additional_constraint_semantics",
             "database.binding", "server.trigger_events", "connection.cleanup" })
@@ -47,6 +60,11 @@ public sealed class InspectionReport
         foreach (var definition in InspectionRunner.ExpectedDefinitions.Keys) Add("check." + definition, InspectionStatus.NOT_RUN, "PREREQUISITE_NOT_ESTABLISHED");
         foreach (var name in new[] { "WebInboundRequestCommandJournalV1.CreatedAtUtc", "IV_InboundRequestLogTbl.UserAutoID", "IV_InboundRequestLogTbl.ThoiGian" })
             Add("default." + name, InspectionStatus.NOT_RUN, "PREREQUISITE_NOT_ESTABLISHED");
+    }
+    public void MarkInboundMetadataUnknown()
+    {
+        foreach (var name in InspectionSql.InboundMarkerChecks.Concat(["definition", "rows"]))
+            Add("inbound.marker." + name, InspectionStatus.BLOCKED, "UNKNOWN_METADATA_VISIBILITY");
     }
     public void AddUnexercised()
     {

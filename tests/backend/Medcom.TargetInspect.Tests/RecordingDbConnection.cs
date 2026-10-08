@@ -37,6 +37,11 @@ internal sealed class RecordingDbConnection : DbConnection
             ["IV_InboundRequestLogTbl.ThoiGian", "(getdate())", 0])]);
         Results.Add(InspectionSql.Binding, [Table(1, [0])]);
         Results.Add(InspectionSql.ServerTriggers, [Table(1, [0])]);
+        Results.Add(InspectionSql.InboundEnvironment, [Table(2, InspectionSql.InboundEnvironmentChecks.Select(name => new object[] { name, 0 }).ToArray())]);
+        Results.Add(InspectionSql.InboundMarker, [Table(2, InspectionSql.InboundMarkerChecks.Select(name => new object[] { name, 0 }).ToArray())]);
+        Results.Add(InspectionSql.InboundMarkerDefinition, [Table(2, ["(SingletonId=1 AND SchemaVersion=1)", 0])]);
+        Results.Add(InspectionSql.InboundBindingRows, [Table(5, [(byte)1, 1,
+            Guid.Parse("22222222-2222-2222-2222-222222222222"), "synthetic-inbound-tenant", "synthetic-inbound-company"])]);
     }
 
     public static DataTable Table(int width, params object[][] rows)

@@ -45,6 +45,9 @@ public static class InspectionRunner
             if (values[4] != 1)
             {
                 report.Add("catalog.visibility", InspectionStatus.BLOCKED, "COMPLETE_METADATA_VISIBILITY_UNPROVED");
+                report.MarkInboundMetadataUnknown();
+                report.Add("inbound.environment.metadata_principal", InspectionStatus.BLOCKED, "UNKNOWN_METADATA_VISIBILITY");
+                report.Add("inbound.environment.database_triggers", InspectionStatus.BLOCKED, "UNKNOWN_METADATA_VISIBILITY");
                 AddCatalogNotRun(report); return;
             }
             report.Add("catalog.visibility", InspectionStatus.PASS, "DATABASE_METADATA_VISIBLE");
@@ -100,6 +103,7 @@ public static class InspectionRunner
             stage = "server.trigger_events";
             if (values[5] != 1) report.Add(stage, InspectionStatus.BLOCKED, "SERVER_METADATA_VISIBILITY_UNPROVED");
             else AddStatus(report, stage, await ScalarStatus(connection, InspectionSql.ServerTriggers, cancellationToken));
+            await InspectInboundAsync(connection, report, cancellationToken);
         }
         catch (OperationCanceledException) { report.Add(stage, InspectionStatus.BLOCKED, "CANCELLED_OR_TIMED_OUT"); }
         catch (Exception) { report.Add(stage, InspectionStatus.BLOCKED, "INSPECTION_QUERY_OR_PROVIDER_FAILED"); }
@@ -109,6 +113,88 @@ public static class InspectionRunner
             catch (Exception) { report.Add("connection.cleanup", InspectionStatus.FAIL, "DISPOSAL_FAILED"); }
         }
     }
+
+    private static async Task InspectInboundAsync(DbConnection connection, InspectionReport report, CancellationToken token)
+    {
+        var stage = "inbound.environment";
+        try
+        {
+            var environment = await ReadAsync(connection, InspectionSql.InboundEnvironment, null, token, expectedWidth: 2);
+            ValidateNamedRows(environment, InspectionSql.InboundEnvironmentChecks, 2);
+            // Validate the complete result before replacing any prepared status.
+            foreach (var row in environment) RequireInboundStatus(row[1]);
+            foreach (var row in environment)
+                AddInboundStatus(report, stage + "." + (string)row[0], ReadInt(row[1]));
+            if (environment.Any(row => (string)row[0] == "metadata_principal" && ReadInt(row[1]) != 0))
+            {
+                report.MarkInboundMetadataUnknown();
+                return;
+            }
+            stage = "inbound.marker";
+            var metadata = await ReadAsync(connection, InspectionSql.InboundMarker, null, token, expectedWidth: 2);
+            ValidateNamedRows(metadata, InspectionSql.InboundMarkerChecks, 2);
+            foreach (var row in metadata) RequireInboundStatus(row[1]);
+            foreach (var row in metadata)
+            {
+                var id = (string)row[0]; var state = ReadInt(row[1]);
+                if (id == "presence" && state == 1)
+                    report.Add(stage + "." + id, InspectionStatus.FAIL, "INBOUND_MARKER_MISSING");
+                else AddInboundStatus(report, stage + "." + id, state);
+            }
+            if (metadata.Any(row => ReadInt(row[1]) != 0)) return;
+            stage = "inbound.marker.definition";
+            var definitions = await ReadAsync(connection, InspectionSql.InboundMarkerDefinition, null, token, expectedWidth: 2, rowLimit: 1);
+            if (definitions.Count != 1 || definitions[0].Length != 2) throw new InvalidOperationException();
+            var definitionState = RequireInboundStatus(definitions[0][1]);
+            if (definitionState != 0) { AddInboundStatus(report, stage, definitionState); return; }
+            if (definitions[0][0] is not string definition || definition.Length > 16384)
+            {
+                report.Add(stage, InspectionStatus.BLOCKED, "UNKNOWN_MARKER_DEFINITION"); return;
+            }
+            if (NormalizeDefinition(definition) != NormalizeDefinition("(SingletonId=1 AND SchemaVersion=1)"))
+            {
+                report.Add(stage, InspectionStatus.BLOCKED, "PREDICATE_EQUIVALENCE_UNPROVED"); return;
+            }
+            report.Add(stage, InspectionStatus.PASS, "EXACT_RECOGNIZED_PREDICATE");
+            stage = "inbound.marker.rows";
+            var rows = await ReadAsync(connection, InspectionSql.InboundBindingRows, null, token, expectedWidth: 5, rowLimit: 2);
+            // No WHERE filter: absence and a second row are distinct observations, not a first-row choice.
+            if (rows.Count > 2 || rows.Any(row => row.Length != 5)) throw new InvalidOperationException();
+            if (rows.Count == 0) report.Add(stage, InspectionStatus.FAIL, "INBOUND_MARKER_ROW_MISSING");
+            else if (rows.Count == 2) report.Add(stage, InspectionStatus.FAIL, "INBOUND_MARKER_ROWS_AMBIGUOUS");
+            else
+            {
+                var row = rows[0];
+                var valid = row[0] is byte singleton && singleton == 1 && row[1] is int version && version == 1
+                    && row[2] is Guid binding && binding != Guid.Empty
+                    && row[3] is string tenant && InboundIdentifier(tenant)
+                    && row[4] is string company && InboundIdentifier(company);
+                report.Add(stage, valid ? InspectionStatus.PASS : InspectionStatus.FAIL,
+                    valid ? "INBOUND_MARKER_ROW_SHAPE_OBSERVED" : "INBOUND_MARKER_ROW_CORRUPT");
+            }
+        }
+        catch (OperationCanceledException) { report.Add(stage, InspectionStatus.BLOCKED, "CANCELLED_OR_TIMED_OUT"); }
+        catch (Exception) { report.Add(stage, InspectionStatus.BLOCKED, "INSPECTION_QUERY_OR_PROVIDER_FAILED"); }
+    }
+
+    // I46's InboundDraftSessionFence.Identifier(value, 100) and InboundDraftValidation.Text.
+    // This checks structure only; no owner-approved identity is supplied to this inspector.
+    private static bool InboundIdentifier(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value.Length > 100 || value.Any(char.IsControl)) return false;
+        for (var i = 0; i < value.Length; i++)
+            if (char.IsSurrogate(value[i]) && (!char.IsHighSurrogate(value[i])
+                || ++i == value.Length || !char.IsLowSurrogate(value[i]))) return false;
+        return true;
+    }
+    private static int RequireInboundStatus(object value)
+    {
+        var status = ReadInt(value);
+        return status is >= 0 and <= 2 ? status : throw new InvalidOperationException();
+    }
+    private static void AddInboundStatus(InspectionReport report, string id, int value) => report.Add(id,
+        value switch { 0 => InspectionStatus.PASS, 1 => InspectionStatus.FAIL, 2 => InspectionStatus.BLOCKED, _ => throw new InvalidOperationException() },
+        value switch { 0 => "I46_READONLY_PREREQUISITE_OBSERVED", 1 => "I46_PREREQUISITE_MISMATCH", _ => "UNKNOWN_METADATA_VISIBILITY" });
 
     private static void AddCatalogNotRun(InspectionReport report)
     {
@@ -175,7 +261,7 @@ public static class InspectionRunner
         return ReadInt(rows[0][0]);
     }
     private static async Task<List<object[]>> ReadAsync(DbConnection connection, string text,
-        (string Name, DbType Type, object Value)? parameter, CancellationToken token)
+        (string Name, DbType Type, object Value)? parameter, CancellationToken token, int? expectedWidth = null, int rowLimit = 32)
     {
         token.ThrowIfCancellationRequested();
         await using var command = connection.CreateCommand();
@@ -187,10 +273,11 @@ public static class InspectionRunner
             command.Parameters.Add(item);
         }
         await using var reader = await command.ExecuteReaderAsync(token);
+        if (expectedWidth is { } width && reader.FieldCount != width) throw new InvalidOperationException();
         var rows = new List<object[]>();
         while (await reader.ReadAsync(token))
         {
-            if (rows.Count >= 32 || reader.FieldCount > 6) throw new InvalidOperationException();
+            if (rows.Count >= rowLimit || reader.FieldCount > 6) throw new InvalidOperationException();
             var values = new object[reader.FieldCount]; reader.GetValues(values); rows.Add(values);
         }
         if (await reader.NextResultAsync(token)) throw new InvalidOperationException();
