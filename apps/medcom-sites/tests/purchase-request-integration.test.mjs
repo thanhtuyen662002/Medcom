@@ -445,7 +445,16 @@ test('real HTTP → BFF → existing workspace/browser purchase controls and aut
    await focused('[aria-label="Mở đề nghị QA-003"]');
   });
   await t.test('101 lines and nullable source date have complete read-only fallback without truncation',async()=>{
-   await find('QA-LARGE');await screen.getByRole('button',{name:'Mở đề nghị QA-LARGE',exact:true}).click();await expandFullReadback();const table=screen.getByRole('table',{name:'Toàn bộ dòng đề nghị',exact:true});await table.waitFor();assert.equal(await table.locator('tbody tr').count(),101);const rows=table.locator('tbody tr');for(let index=0;index<101;index++){const cells=rows.nth(index).getByRole('cell');assert.equal(await cells.nth(0).innerText(),String(index+1));assert.equal(await cells.nth(1).innerText(),'QA-ITEM');assert.equal(await cells.nth(4).innerText(),'999999999999999999');}assert.equal(await table.getByText('QA-L101',{exact:true}).count(),0,'Opaque internal row IDs stay hidden');
+   await find('QA-LARGE');await screen.getByRole('button',{name:'Mở đề nghị QA-LARGE',exact:true}).click();await expandFullReadback();
+   const table=screen.getByRole('table',{name:'Toàn bộ dòng đề nghị',exact:true});await table.waitFor();const rows=table.locator('tbody tr');assert.equal(await rows.count(),101);
+   for(let index=0;index<101;index++){
+    const cells=rows.nth(index).getByRole('cell');assert.equal(await cells.count(),8);
+    // Mobile cards add aria-hidden field labels; assert each complete business value separately.
+    for(const [column,expected] of [[0,String(index+1)],[1,'QA-ITEM'],[4,'999999999999999999']]){
+     const value=cells.nth(column).locator(':scope > span:not([aria-hidden="true"])');assert.equal(await value.count(),1);assert.equal(await value.innerText(),expected);
+    }
+   }
+   assert.equal(await table.getByText('QA-L101',{exact:true}).count(),0,'Opaque internal row IDs stay hidden');
    await find('QA-NULL');await screen.getByRole('button',{name:'Mở đề nghị QA-NULL',exact:true}).click();await screen.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true}).waitFor();await expandFullReadback();assert.match(await screen.innerText(),/NULL/);
   });
   await t.test('refresh of a deleted selected document retains close/list recovery without stale detail',async()=>{
