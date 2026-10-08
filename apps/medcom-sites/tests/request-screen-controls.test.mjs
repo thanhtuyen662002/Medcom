@@ -31,7 +31,7 @@ function navigationGuardObserver(resolveSourcePath=sourcePath=>sourcePath){
  }};
 }
 const primitive={button:'Button',input:'Input',textarea:'Textarea',badge:'Badge',skeleton:'Skeleton',checkbox:'Checkbox'};
-await build({stdin:{contents:`export {PurchaseRequestScreen} from './components/erp/purchase-request-screen';export {InboundRequestScreen} from './components/erp/inbound-request-screen';export {MobileRequest} from './components/erp/mobile-request';export {MobileInboundRequest} from './components/erp/mobile-inbound-request';export {RequestQrSearch} from './components/erp/request-qr-search';export {QrScanner} from './components/erp/qr-scanner';export {PurchaseReferenceDetails} from './components/erp/purchase-reference-details';export {NavigationGuardProvider,useNavigationGuard} from './components/erp/navigation-guard';export {getDocuments} from './lib/erp/api';export {ListViewProvider} from './components/erp/list-view-state';export {createListViewStore} from './lib/erp/list-view-state';export {Documents} from './components/erp/documents';export {QueryClient,QueryClientProvider} from '@tanstack/react-query';`,resolveDir:app,loader:'tsx'},outfile:path.join(output,'fixture.cjs'),bundle:true,platform:'node',format:'cjs',packages:'external',jsx:'automatic',alias:{'@':app},logLevel:'warning',plugins:[navigationGuardObserver(),{name:'DOM-primitives',setup(builder){
+await build({stdin:{contents:`export {PurchaseRequestScreen} from './components/erp/purchase-request-screen';export {InboundRequestScreen} from './components/erp/inbound-request-screen';export {MobileRequest} from './components/erp/mobile-request';export {MobileRequestLines} from './components/erp/mobile-request-lines';export {MobileInboundRequest} from './components/erp/mobile-inbound-request';export {RequestQrSearch} from './components/erp/request-qr-search';export {QrScanner} from './components/erp/qr-scanner';export {PurchaseReferenceDetails} from './components/erp/purchase-reference-details';export {NavigationGuardProvider,useNavigationGuard} from './components/erp/navigation-guard';export {getDocuments} from './lib/erp/api';export {ListViewProvider} from './components/erp/list-view-state';export {createListViewStore} from './lib/erp/list-view-state';export {Documents} from './components/erp/documents';export {QueryClient,QueryClientProvider} from '@tanstack/react-query';`,resolveDir:app,loader:'tsx'},outfile:path.join(output,'fixture.cjs'),bundle:true,platform:'node',format:'cjs',packages:'external',jsx:'automatic',alias:{'@':app},logLevel:'warning',plugins:[navigationGuardObserver(),{name:'DOM-primitives',setup(builder){
  builder.onResolve({filter:/components\/ui\/(button|input|textarea|badge|skeleton|checkbox|empty|table|dialog|alert-dialog)$/},args=>({path:args.path.split('/').at(-1),namespace:'dom'}));
  builder.onLoad({filter:/.*/,namespace:'dom'},args=>{
   let code;
@@ -74,7 +74,7 @@ test('guard observer rejects a build that never loads the provider',async()=>{
 test('guard observer rejects a build that loads two provider copies',async()=>{
  await assert.rejects(buildGuardPathFixture(guardPathCases.map(([,sourcePath])=>sourcePath)).result,/real guard must be loaded exactly once for observation/);
 });
-const {PurchaseRequestScreen,InboundRequestScreen,MobileRequest,MobileInboundRequest,RequestQrSearch,QrScanner,PurchaseReferenceDetails,NavigationGuardProvider,useNavigationGuard,getDocuments,ListViewProvider,createListViewStore,Documents,QueryClient,QueryClientProvider}=require(path.join(output,'fixture.cjs'));
+const {PurchaseRequestScreen,InboundRequestScreen,MobileRequest,MobileRequestLines,MobileInboundRequest,RequestQrSearch,QrScanner,PurchaseReferenceDetails,NavigationGuardProvider,useNavigationGuard,getDocuments,ListViewProvider,createListViewStore,Documents,QueryClient,QueryClientProvider}=require(path.join(output,'fixture.cjs'));
 globalThis.IS_REACT_ACT_ENVIRONMENT=true;
 const scope='a'.repeat(64),sessionScope='b'.repeat(64),readScope='c'.repeat(64);
 const workspace=()=>({session:{displayName:'SYNTHETIC',tenantId:'T',companyId:'C',companyName:'SYNTHETIC',authorityVersion:1,absoluteExpiresAt:'2099-01-01T00:00:00Z',capabilities:['purchase-requests.read','inbound-requests.read']},branchIds:['BR-A'],sessionScope,readScope,navigation:[]});
@@ -320,12 +320,18 @@ test('purchase orders: actual Documents remount restores draft/applied/page cont
  }finally{await act(async()=>renderer?.unmount());globalThis.fetch=original.fetch;globalThis.window=original.window;}
 });
 
-for(const kind of ['purchase','inbound'])test(`${kind}: real editor retires queued delete confirmation on host presentation loss and restore`,async()=>{
+for(const kind of ['purchase','inbound'])test(`${kind}: ${kind==='purchase'?'existingOnly editor forbids retained structural actions across host presentation loss and restore':'real editor retires queued delete confirmation on host presentation loss and restore'}`,async()=>{
  const f=await host(kind);try{
   await f.open('DOC-A');await f.edit('PRESENTATION CUSTODY');const editor=f.editor(),adapter=editor.props.adapter;
   const count=()=>kind==='purchase'?f.editor().findAllByType('article').length:f.editor().findAllByType('legend').filter(n=>/^Dòng 1/.test(text(n))).length;
-  const before=count();assert.equal(before,1);await f.click(kind==='purchase'?'Bỏ dòng 1':'Xóa dòng 1');
-  const queued=f.button('Xóa dòng').props.onClick;const review=f.editor().findByType('form').props.onSubmit;await f.render({presentationAllowed:false});
+  const before=count();assert.equal(before,1);let queued,originalLines;
+  if(kind==='purchase'){
+   assert.equal(editor.props.access.existingOnly,true);assert.equal(f.button('Bỏ dòng 1'),undefined);assert.equal(f.button('Thêm dòng hàng').props.disabled,true);
+   const retained=editor.findByType(MobileRequestLines).props;originalLines=structuredClone(retained.lines);
+   queued=()=>{retained.onRemove(retained.lines[0].localKey);retained.onAdd();};
+   await act(async()=>queued());await f.flush();assert.equal(count(),before);assert.equal(f.root().findAllByProps({role:'alertdialog'}).length,0,'The fixed profile cannot open a removal dialog');
+  }else{await f.click('Xóa dòng 1');queued=f.button('Xóa dòng').props.onClick;}
+  const review=f.editor().findByType('form').props.onSubmit;await f.render({presentationAllowed:false});
   await act(async()=>{queued({preventDefault(){}});review({preventDefault(){}});});await f.flush();
   assert.equal(f.button('Quay lại chỉnh sửa'),undefined,'Masked footer/form cannot advance review');
   assert.equal(count(),before,'Queued confirmation must not mutate a presentation-masked draft');
@@ -335,7 +341,12 @@ for(const kind of ['purchase','inbound'])test(`${kind}: real editor retires queu
   assert.equal(f.button('Quay lại chỉnh sửa'),undefined,'Restoration cannot revive a queued old footer/form action');
   assert.equal(count(),before,'Restoration cannot revive the retired queued action');assert.equal(f.root().findAllByProps({role:'alertdialog'}).length,0);
   assert.strictEqual(f.editor(),editor);assert.strictEqual(f.editor().props.adapter,adapter);assert.equal(f.field().props.value,'PRESENTATION CUSTODY');assert.equal(f.guard().isBlocked(),true);
-  await f.click(kind==='purchase'?'Bỏ dòng 1':'Xóa dòng 1');await f.click('Xóa dòng');assert.equal(count(),0,'Only a fresh confirmation can remove the original line');
+  if(kind==='purchase'){
+   assert.equal(f.button('Bỏ dòng 1'),undefined);assert.equal(f.button('Thêm dòng hàng').props.disabled,true);
+   const current=f.editor().findByType(MobileRequestLines).props;await act(async()=>{current.onRemove(current.lines[0].localKey);current.onAdd();});await f.flush();
+   assert.equal(count(),before,'Fresh callbacks also cannot remove or add in the fixed profile');assert.deepEqual(f.editor().findByType(MobileRequestLines).props.lines,originalLines);
+   assert.equal(f.root().findAllByProps({role:'alertdialog'}).length,0);
+  }else{await f.click('Xóa dòng 1');await f.click('Xóa dòng');assert.equal(count(),0,'Only a fresh confirmation can remove the original line');}
   assert.ok(f.calls.every(c=>c.method==='GET'),'Local confirmation never implements a business write');
  }finally{await f.close();}
 });
