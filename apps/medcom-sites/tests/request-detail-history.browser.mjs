@@ -41,14 +41,15 @@ async function runRequiredHistoryCase(context,name,body,diagnose){
 // I18 intentionally unbinds its old form while retaining the original command.
 async function waitForHistoryOriginal(page,screen,documentId,originalValue,eventually){
  const isPurchase=screen==='purchase-requests';
- const dialog=page.getByRole('dialog',{name:isPurchase?'Phiếu mua hàng hiện có':'Phiếu nhập hàng đã chọn',exact:true});await dialog.waitFor();
+ const title=isPurchase?'Phiếu mua hàng hiện có':'Phiếu nhập hàng đã chọn';
+ const dialog=page.getByRole('dialog',{name:title+' '+documentId,exact:true}).or(page.getByRole('dialog',{name:title,exact:true}));await dialog.waitFor();
  const editor=isPurchase?dialog.getByRole('form',{name:'Đề nghị mua hàng trên điện thoại',exact:true}):dialog.locator('[data-testid="inbound-editor"][data-phase="unknown"]');await editor.waitFor();
  const reconcile=editor.getByRole('button',{name:isPurchase?'Kiểm tra kết quả yêu cầu gốc':'Kiểm tra yêu cầu gốc',exact:true});await reconcile.waitFor();await eventually(()=>reconcile.isEnabled());
  if(isPurchase){
   await editor.getByText('Chưa xác nhận kết quả',{exact:true}).waitFor();await editor.getByText(documentId,{exact:true}).waitFor();
   const review=editor.getByRole('region',{name:'Rà soát thông tin phiếu',exact:true});await review.waitFor();
   assert.equal(await review.locator('label[for$="-notes"] + strong').innerText(),originalValue);assert.equal(await editor.getByLabel('Ghi chú',{exact:true}).count(),0);
-  for(const name of ['Quay lại chỉnh sửa','Lưu nháp trên ERP','Gửi đề nghị'])assert.equal(await editor.getByRole('button',{name,exact:true}).isDisabled(),true);
+  for(const name of ['Quay lại chỉnh sửa','Lưu nháp trên ERP','Gửi đề nghị'])assert.equal(await dialog.getByRole('button',{name,exact:true}).isDisabled(),true);
  }else{
   assert.equal(await editor.getAttribute('data-document-id'),documentId);
   await editor.getByText(`Yêu cầu gốc: ${documentId}. Dữ liệu không được lưu bền trên thiết bị; tải lại hoặc đóng trang có thể mất khả năng kiểm tra.`,{exact:true}).waitFor();
@@ -61,7 +62,7 @@ async function waitForHistoryOriginal(page,screen,documentId,originalValue,event
 async function refreshHistoryRows(page,screen,expectedIds,eventually){
  const isPurchase=screen==='purchase-requests',listPath=isPurchase?'/api/erp/api/purchase-requests':'/api/erp/api/documents/inbound-requests';
  const response=page.waitForResponse(reply=>reply.request().method()==='GET'&&new URL(reply.url()).pathname===listPath);
- await page.getByRole('button',{name:isPurchase?'Làm mới':'Tìm kiếm',exact:true}).click();
+ await page.getByRole('button',{name:'Làm mới',exact:true}).click();
  const reply=await response;assert.equal(reply.status(),200);assert.equal(await reply.headerValue('x-medcom-session-scope'),session);assert.equal(await reply.headerValue('x-medcom-read-scope'),scope);
  const body=await reply.json(),data=isPurchase?body.data:body;if(isPurchase)assert.equal(body.scopeKey,scope);
  assert.equal(data.page,1);assert.equal(data.pageSize,isPurchase?20:50);assert.deepEqual(data.rows.map(row=>row.documentId),expectedIds);
@@ -116,7 +117,7 @@ test('history fixture branches pass real list/detail clients and failures stop s
    const listPath=isPurchase?'/api/erp/api/purchase-requests':'/api/erp/api/documents/inbound-requests',replyAt=(route,method='GET')=>({url:()=>`http://synthetic.invalid${route}`,request:()=>({method:()=>method})});
    const page={
     waitForResponse:predicate=>{assert.equal(predicate(replyAt(listPath)),true);assert.equal(predicate(replyAt('/api/erp/api/workspace')),false);assert.equal(predicate(replyAt(listPath,'POST')),false);return new Promise(resolve=>{waiting={predicate,resolve};});},
-    getByRole:(role,options)=>{assert.equal(role,'button');assert.deepEqual(options,{name:isPurchase?'Làm mới':'Tìm kiếm',exact:true});return {click:async()=>{assert.ok(waiting,'Arm the current list response before clicking');clicks++;const data=await list(kind);renderedIds=data.rows.map(row=>row.documentId);}};},
+    getByRole:(role,options)=>{assert.equal(role,'button');assert.deepEqual(options,{name:'Làm mới',exact:true});return {click:async()=>{assert.ok(waiting,'Arm the current list response before clicking');clicks++;const data=await list(kind);renderedIds=data.rows.map(row=>row.documentId);}};},
     getByText:(value,options)=>{assert.equal(value,isPurchase?'Không có đề nghị phù hợp':'Không có phiếu trong trang này.');assert.deepEqual(options,{exact:true});return {waitFor:async()=>assert.deepEqual(renderedIds,[])};},
     locator:selector=>{assert.equal(selector,`[data-shared-grid][aria-label="${isPurchase?'Danh sách đề nghị':'Phiếu nhập hàng'}"]`);return {waitFor:async()=>assert.ok(renderedIds.length),locator:rows=>{assert.equal(rows,'[data-grid-row]');return {evaluateAll:async evaluate=>evaluate(renderedIds.map(id=>({getAttribute:name=>{assert.equal(name,'data-grid-row');return id;}})))};}};},
    };
@@ -205,6 +206,7 @@ test('history original readiness follows real purchase review and unbound inboun
  const locator=nodes=>{
   const single=()=>{assert.equal(nodes.length,1,'Exact production locator must resolve one rendered node');return nodes[0];};
   return {
+   nodes,or:other=>locator([...new Set([...nodes,...other.nodes])]),
    waitFor:async()=>{single();},count:async()=>nodes.length,innerText:async()=>textOf(single()),getAttribute:async name=>single().props[name],isEnabled:async()=>!disabled(single()),isDisabled:async()=>disabled(single()),
    getByRole:(role,{name,exact})=>{assert.equal(exact,true);return locator(hostNodes(nodes,node=>{
     const actual=node.props.role??(node.type==='button'?'button':node.type==='form'&&node.props['aria-label']?'form':node.type==='section'&&node.props['aria-label']?'region':null);
@@ -422,7 +424,7 @@ test('composed request detail history, guarded traversal and original custody',{
     const target=isPurchase?documents[size].purchaseRequestId:documents[size].documentId;
     await start(width,screen,{paged:true,[isPurchase?'purchaseDocuments':'inboundDocuments']:documents});
     const search=page.getByLabel(isPurchase?'Tìm mã đề nghị':'Tìm phiếu nhập hàng',{exact:true});await search.fill('QA');
-    await page.getByLabel(isPurchase?'Chi nhánh':'Lọc chi nhánh',{exact:true}).selectOption('QA-BRANCH');await page.getByRole('button',{name:'Tìm kiếm',exact:true}).click();
+    await page.getByLabel(isPurchase?'Chi nhánh':'Lọc chi nhánh',{exact:true}).selectOption('QA-BRANCH');await search.press('Enter');
     const pager=page.getByRole('navigation',{name:isPurchase?'Phân trang đề nghị':'Trang danh sách phiếu',exact:true});
     await pager.getByRole('button',{name:'Trang sau',exact:true}).click();await pager.getByText('Trang 2',{exact:true}).waitFor();
     const opener=page.getByRole('button',{name:isPurchase?'Mở đề nghị '+target:new RegExp('^Mở phiếu '+target+' '),exact:isPurchase});await opener.waitFor();

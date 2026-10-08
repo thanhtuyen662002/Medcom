@@ -104,7 +104,20 @@ test('actual mobile component interactions and adversarial async states in insta
     });
     await t.test('line cards add/remove within the supplied limit and perform actual remote lookup', async () => {
       await reset(); await page.getByRole('button', {name: 'Thêm dòng hàng'}).click(); assert.equal(await page.getByRole('article').count(), 2); assert.ok(await page.getByRole('button', {name: 'Thêm dòng hàng'}).isDisabled());
-      await page.getByRole('button', {name: 'Bỏ dòng 2'}).click(); assert.equal(await page.getByRole('article').count(), 1);
+      await page.getByRole('article', {name: 'Dòng hàng 2', exact: true}).getByLabel('Số lượng *', {exact: true}).fill('2');
+      const lineValues = () => page.locator('article').evaluateAll(articles => articles.map(article => Array.from(article.querySelectorAll('input'), input => ({name: input.name, value: input.value}))));
+      const retainedValues = await lineValues();
+      const remove = page.getByRole('button', {name: 'Bỏ dòng 2', exact: true}), confirmation = page.getByRole('alertdialog');
+      await remove.click(); await confirmation.waitFor();
+      // Modal isolation hides the background from the accessibility tree, not from editor custody.
+      assert.equal(await page.getByRole('article', {includeHidden: true}).count(), 2, 'Line is retained until confirmation');
+      assert.deepEqual(await lineValues(), retainedValues); assert.equal((await calls()).execute.length, 0);
+      await confirmation.getByRole('button', {name: 'Giữ dòng', exact: true}).click(); await confirmation.waitFor({state: 'hidden'});
+      assert.equal(await page.getByRole('article').count(), 2, 'Cancel keeps both editable lines'); assert.deepEqual(await lineValues(), retainedValues);
+      await remove.click(); await confirmation.waitFor();
+      assert.equal(await page.getByRole('article', {includeHidden: true}).count(), 2); assert.deepEqual(await lineValues(), retainedValues);
+      await confirmation.getByRole('button', {name: 'Xóa dòng', exact: true}).click(); await confirmation.waitFor({state: 'hidden'});
+      assert.equal(await page.getByRole('article').count(), 1); assert.deepEqual(await lineValues(), [retainedValues[0]]); assert.equal((await calls()).execute.length, 0);
       await page.getByRole('button', {name: 'Mặt hàng dòng 1', exact: true}).click(); await page.getByRole('option', {name: /Mặt hàng tổng hợp 2/}).click();
       assert.match(await page.locator('body').innerText(), /Mặt hàng tổng hợp 2/); assert.equal((await calls()).lookups.at(-1).id, 'qa-item');
     });

@@ -337,20 +337,20 @@ test('I43 R1 production layout effect yields focus and Escape to higher modal ow
  const file=ts.createSourceFile('request-detail-dialog.tsx',source,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX);let effect;
  const visit=node=>{if(ts.isCallExpression(node)&&node.expression.getText(file)==='useLayoutEffect'&&node.arguments[0]?.getText(file).includes('const element = content.current'))effect=node.arguments[0].getText(file);ts.forEachChild(node,visit);};visit(file);assert.ok(effect);
  const code=ts.transpileModule('('+effect+')',{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
- const listeners=new Map(),observers=[];let closed=0;
+ const listeners=new Map(),observers=[],focusCalls=[];let closed=0;
  const document={hidden:false,activeElement:null,addEventListener(name,handler){const set=listeners.get(name)??new Set();set.add(handler);listeners.set(name,set);},removeEventListener(name,handler){listeners.get(name)?.delete(handler);}};
  const emit=(name,event)=>{for(const handler of [...(listeners.get(name)??[])])handler(event);};
  class Element{
-  constructor(name,parent=null,role=null,z='auto'){this.name=name;this.parentElement=parent;this.role=role;this.css={display:'block',visibility:'visible',opacity:'1',zIndex:z};this.style={overflow:''};this.isConnected=true;this.hidden=false;this.inert=false;this.ariaHidden=false;this.tabIndex=0;}
+  constructor(name,parent=null,role=null,z='auto'){this.name=name;this.parentElement=parent;this.role=role;this.css={display:'block',visibility:'visible',opacity:'1',zIndex:z};this.style={overflow:''};this.isConnected=true;this.hidden=false;this.inert=false;this.ariaHidden=false;this.tabIndex=0;this.disabled=false;}
   contains(node){for(let n=node;n;n=n.parentElement)if(n===this)return true;return false;}
   closest(selector){if(selector.includes('[hidden]')&&this.hidden||selector.includes('[inert]')&&this.inert||selector.includes('[aria-hidden="true"]')&&this.ariaHidden)return this;return this.parentElement?.closest(selector)??null;}
   getClientRects(){return this.isConnected&&!this.closest('[hidden]')?[{}]:[];}
-  matches(selector){return selector===':disabled'?false:false;}
+  matches(selector){return selector===':disabled'&&this.disabled;}
   getAttribute(name){return name==='role'?this.role:null;}
   querySelectorAll(){return this===detail?[detailInput]:[];}
   querySelector(){return null;}
   addEventListener(){} removeEventListener(){}
-  focus(){document.activeElement=this;emit('focusin',{target:this});}
+  focus(){focusCalls.push(this);document.activeElement=this;emit('focusin',{target:this});}
  }
  const body=new Element('body'),surface=new Element('surface',body,null,'45'),detail=new Element('detail',surface,'dialog'),detailInput=new Element('detail-input',detail);
  const command=new Element('command',body,'dialog','50'),commandInput=new Element('command-input',command),alert=new Element('guard',body,'alertdialog','80'),alertInput=new Element('guard-cancel',alert),outside=new Element('outside',body);
@@ -373,11 +373,16 @@ test('I43 R1 production layout effect yields focus and Escape to higher modal ow
    surface.ariaHidden=false;surface.css.visibility='visible';surface.css.opacity='1';surface.css.display='block';document.hidden=false;mutation();assert.strictEqual(document.activeElement,detailInput);
   }
   alert.hidden=false;alertInput.focus();assert.strictEqual(document.activeElement,alertInput);assert.equal(escape().prevented,false);assert.equal(closed,0);alert.hidden=true;outside.focus();mutation();assert.strictEqual(document.activeElement,detailInput);
+  detailInput.focus();const beforeDisabled=focusCalls.length;detailInput.disabled=true;mutation();
+  assert.strictEqual(document.activeElement,detail,'Disabling the active reread control transfers ownership to the bounded frame immediately');
+  assert.equal(focusCalls.length,beforeDisabled+1);
+  detailInput.disabled=false;mutation();assert.strictEqual(document.activeElement,detail);assert.equal(focusCalls.length,beforeDisabled+1,'Re-enabling the old control cannot steal focus from a newer pending Open');
+  detailInput.focus();mutation();assert.strictEqual(document.activeElement,detailInput,'A later explicit control focus remains valid');
   assert.equal(escape().prevented,true);assert.equal(closed,1,'foreground detail retains its guarded Escape handler');
-  for(const attribute of ['aria-hidden','style','class','hidden','inert'])assert.ok(observers[0].options.attributeFilter.includes(attribute));
+  for(const attribute of ['aria-hidden','style','class','hidden','inert','disabled'])assert.ok(observers[0].options.attributeFilter.includes(attribute));
  }finally{cleanup();}
  surface.hidden=true;outside.focus();surface.hidden=false;mutation();assert.strictEqual(document.activeElement,outside,'a queued observer cannot resume retired permission/selection ownership');escape();assert.equal(closed,1);
- await writeFile(path.join(output,'r1-focus-dom-model.json'),JSON.stringify({result:'PASS',executed:'exact production layout-effect callback compiled by TypeScript',dom:'explicit doubles',realBrowser:false,cases:['visible higher dialog','aria-hidden transition','hidden and lower dialog ignored','visibility/opacity/display/document-hidden','AlertDialog control','foreground Escape','cleanup prevents stale observer focus']},null,2));
+ await writeFile(path.join(output,'r1-focus-dom-model.json'),JSON.stringify({result:'PASS',executed:'exact production layout-effect callback compiled by TypeScript',dom:'explicit doubles',realBrowser:false,cases:['visible higher dialog','aria-hidden transition','hidden and lower dialog ignored','visibility/opacity/display/document-hidden','AlertDialog control','disabled active control retirement','re-enabled control cannot restore obsolete focus','foreground Escape','cleanup prevents stale observer focus']},null,2));
 });
 test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
  const {script,css}=await compile();
@@ -411,7 +416,7 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
   page.on('response',response=>{const url=new URL(response.url());if(url.pathname.startsWith('/api/erp/'))bounded(scenario.responses,{path:url.pathname,status:response.status()});});
   page.on('requestfailed',request=>bounded(scenario.networkFailures,{path:new URL(request.url()).pathname,error:request.failure()?.errorText}));
   currentScenario.stage='load-fixture';await page.goto(origin+'/?kind='+kind);
-  currentScenario.stage='authorized-list';const list=page.getByRole('table',{name:kind==='purchase'?'Danh sách đề nghị':'Phiếu nhập hàng',exact:true});await list.waitFor();
+  currentScenario.stage='authorized-list';const list=page.getByRole('grid',{name:kind==='purchase'?'Danh sách đề nghị':'Phiếu nhập hàng',exact:true});await list.waitFor();
   currentScenario.stage='exact-open-actions';await list.getByRole('button',{name:kind==='purchase'?'Mở đề nghị QA-001':/^Mở phiếu QA-001 ·/,exact:kind==='purchase'}).waitFor();
   await list.getByRole('button',{name:kind==='purchase'?'Mở đề nghị QA-018':/^Mở phiếu QA-018 ·/,exact:kind==='purchase'}).waitFor();
   assert.deepEqual(await list.locator('[data-grid-row]').evaluateAll(rows=>rows.map(row=>row.getAttribute('data-grid-row'))),dialogList(kind,1).rows.map(row=>row.documentId),'All 18 authorized source rows must be present before dialog tests');
@@ -462,7 +467,7 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
    assert.equal(model.calls.length,beforeCalls,'Opening a pure command modal must not manufacture a new authority observation');
    const retainedSurface=page.locator('[data-request-detail-surface]'),accessibility=await retainedSurface.evaluate(retainedDetailAccessibility);
    assert.ok(accessibility.controlCount>0,'Original retained controls must remain mounted');assert.equal(accessibility.exposedControlCount,0,'Every retained detail control is excluded from accessibility: '+JSON.stringify(accessibility));
-   for(const role of ['button','textbox','combobox','checkbox','spinbutton','link','heading','table'])assert.equal(await retainedSurface.getByRole(role).count(),0,'Higher modal hides underlying accessible '+role+' roles');
+   for(const role of ['button','textbox','combobox','checkbox','spinbutton','link','heading','table','grid'])assert.equal(await retainedSurface.getByRole(role).count(),0,'Higher modal hides underlying accessible '+role+' roles');
    if(kind==='purchase'){assert.ok(accessibility.liveCount>0,'Actual purchase live statuses remain mounted');assert.equal(accessibility.exposedLiveCount,accessibility.liveCount,'Radix intentionally preserves live status announcements and their ancestors');}
    await page.keyboard.press('Escape');await command.waitFor({state:'hidden'});await paint();assert.equal(await page.getByRole('alertdialog').count(),0);assert.deepEqual(await snapshot(),before);assert.equal(await notes().inputValue(),'R1 COMMAND DIRTY');
    for(const control of [retainedNotes,retainedClose])assert.equal(await control.evaluate(node=>node.isConnected&&!node.closest('[aria-hidden="true"],[hidden],[inert]')),true,'Escape restores the same retained control nodes to accessibility');assert.equal(model.calls.length,beforeCalls,'Closing the higher modal does not reread or replace retained data');
@@ -477,7 +482,7 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
    const point=async()=>{const box=await navButton.boundingBox();assert.ok(box);return {x:box.x+box.width/2,y:box.y+box.height/2};};
    let location=await point();await page.touchscreen.tap(location.x,location.y);
    assert.equal(await page.evaluate(()=>window.i43.navCalls.length),1,'real navigation handler responds before detail opens');
-   await open(kind);await notes().fill('R1 LAYER RETAINED');const before=await snapshot();location=await point();
+   await open(kind);await notes().fill('R1 LAYER RETAINED');await page.waitForLoadState('networkidle');const before=await snapshot(),beforeCalls=model.calls.length,retainedNotes=await notes().elementHandle();location=await point();
    const layers=await page.evaluate(({x,y})=>{
     const surface=document.querySelector('[data-request-detail-surface]'),nav=document.querySelector('.mobile-bottom-nav'),ancestors=[];
     for(let node=surface.parentElement;node&&node!==document.documentElement;node=node.parentElement){const css=getComputedStyle(node);ancestors.push({tag:node.tagName,slot:node.dataset.slot??null,z:css.zIndex,transform:css.transform,filter:css.filter,perspective:css.perspective,opacity:css.opacity,isolation:css.isolation,contain:css.contain});}
@@ -485,7 +490,50 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
    },location);
    assert.equal(layers.surface,45);assert.equal(layers.nav,40);assert.equal(layers.later,true);assert.equal(layers.hit,true,'detail owns actual nav-button coordinates');
    for(const ancestor of layers.ancestors){assert.equal(ancestor.z,'auto');assert.equal(ancestor.transform,'none');assert.equal(ancestor.filter,'none');assert.equal(ancestor.perspective,'none');assert.equal(ancestor.opacity,'1');assert.equal(ancestor.isolation,'auto');assert.equal(ancestor.contain,'none');}
-   await page.touchscreen.tap(location.x,location.y);assert.equal(await page.evaluate(()=>window.i43.navCalls.length),1);assert.deepEqual(await snapshot(),before);assert.equal(await notes().inputValue(),'R1 LAYER RETAINED');
+   // Keep the real navigation center. The shared footer can put its form-owned
+   // review action at this point; review intentionally replaces purchase inputs.
+   // Never tap a Save/Send/Delete (or another interactive control) by accident.
+   const touchTarget=await page.getByRole('dialog').getByRole('button',{name:'Rà soát phiếu',exact:true}).evaluate((review,{x,y})=>{
+    const hit=document.elementFromPoint(x,y),control=hit?.closest('button,input,select,textarea,a[href],summary,[role="button"],[role="link"],[contenteditable="true"],[tabindex]:not([tabindex="-1"])');
+    return {review:control===review,neutral:!control&&!!hit?.closest('.request-detail-dialog'),tag:hit?.tagName??null,action:control?.textContent?.trim()??null,formOwned:!!review.form&&review.form.closest('.request-detail-dialog')===review.closest('.request-detail-dialog'),footer:!!review.closest('.record-dialog-actions')};
+   },location);
+   assert.equal(touchTarget.formOwned,true);assert.equal(touchTarget.footer,true);assert.ok(touchTarget.review||touchTarget.neutral,'Only the exact non-writing review action or a noninteractive detail point is safe: '+JSON.stringify(touchTarget));
+   await page.touchscreen.tap(location.x,location.y);await paint();assert.equal(await page.evaluate(()=>window.i43.navCalls.length),1);assert.deepEqual(await snapshot(),before);assert.equal(model.calls.filter(call=>call.method==='POST').length,0);
+   if(touchTarget.review){
+    const back=page.getByRole('dialog').getByRole('button',{name:'Quay lại chỉnh sửa',exact:true});await back.waitFor();
+    if(kind==='purchase'){
+     assert.equal(await notes().count(),0);assert.equal(await retainedNotes.evaluate(node=>node.isConnected),false,'Purchase review intentionally replaces the input, not the editor');
+     assert.equal(await page.getByRole('dialog').getByRole('region',{name:'Rà soát thông tin phiếu',exact:true}).locator('label[for$="-notes"] + strong').textContent(),'R1 LAYER RETAINED');
+    }else{assert.equal(await notes().inputValue(),'R1 LAYER RETAINED');assert.equal(await notes().isDisabled(),true);assert.equal(await notes().evaluate((node,original)=>node===original,retainedNotes),true);}
+    assert.deepEqual(await snapshot(),before);assert.equal(model.calls.length,beforeCalls,'Review is local presentation, not a read or command');
+    await back.click();await notes().waitFor();
+   }
+   assert.equal(await notes().inputValue(),'R1 LAYER RETAINED');assert.equal(await notes().isEnabled(),true);assert.equal(await notes().evaluate((node,original)=>node===original,retainedNotes),!(touchTarget.review&&kind==='purchase'),'Inbound and neutral touches retain the input; purchase review recreates only its field view');
+   assert.deepEqual(await snapshot(),before);assert.equal(model.calls.length,beforeCalls);assert.equal(await page.evaluate(()=>window.i43.navCalls.length),1);assert.equal(await page.getByRole('dialog').evaluate(node=>node.contains(document.activeElement)),true);
+   // Every native activation must preserve edit mode, custody and focus.
+   const dialog=page.getByRole('dialog'),reviewReturns=[];
+   const review=()=>dialog.getByRole('button',{name:'Rà soát phiếu',exact:true}),back=()=>dialog.getByRole('button',{name:'Quay lại chỉnh sửa',exact:true});
+   const form=await dialog.locator('form').elementHandle();assert.ok(form);
+   await form.evaluate(form=>{form.__i43Submits=[];form.addEventListener('submit',event=>form.__i43Submits.push({label:event.submitter?.textContent?.trim(),owner:event.submitter?.form===form}));});
+   const submits=()=>form.evaluate(form=>form.__i43Submits);
+   for(const activation of ['click','Enter','Space']){
+    const activate=async locator=>{if(activation==='click')await locator.click();else{await locator.focus();await page.keyboard.press(activation);}};
+    const action=await review().elementHandle();assert.ok(action);assert.equal(await review().getAttribute('type'),'submit');
+    assert.equal(await review().evaluate((node,form)=>node.form===form,form),true,'Review still owns the original form');
+    const submitCount=(await submits()).length;
+    await activate(review());await back().waitFor();await paint();
+    assert.deepEqual((await submits()).slice(submitCount),[{label:'Rà soát phiếu',owner:true}],'Only explicit Review submits for validation');
+    assert.equal(await back().evaluate((node,original)=>node===original,action),true);assert.equal(await back().getAttribute('type'),'button');
+    if(kind==='purchase')assert.equal(await dialog.getByRole('region',{name:'Rà soát thông tin phiếu',exact:true}).locator('label[for$="-notes"] + strong').textContent(),'R1 LAYER RETAINED');
+    else{assert.equal(await notes().inputValue(),'R1 LAYER RETAINED');assert.equal(await notes().isDisabled(),true);}
+    await activate(back());await notes().waitFor();await paint();
+    assert.equal((await submits()).length,submitCount+1,'Back must cancel its native default after the live button changes to submit');
+    assert.equal(await back().count(),0);assert.equal(await notes().isEnabled(),true);assert.equal(await notes().inputValue(),'R1 LAYER RETAINED');
+    assert.equal(await review().evaluate((node,original)=>node===original,action),true,'Retain the focused action DOM node');
+    assert.equal(await review().evaluate(node=>node===document.activeElement),true);assert.equal(await form.evaluate(node=>node.isConnected),true);
+    assert.deepEqual(await snapshot(),before);assert.equal(model.calls.length,beforeCalls);assert.equal(model.calls.filter(call=>call.method==='POST').length,0,'Review/Back never dispatch Save or Submit');
+    reviewReturns.push({activation,submits:(await submits()).length,retainedActionNode:true,retainedFocus:true,zeroExtraHttp:true});
+   }
    await captureViewport('r1-'+kind+'-mobile-dialog-viewport.png',{width:390,height:844});
    await attempt('x');const guard=page.getByRole('alertdialog');await guard.waitFor();
    assert.equal(await guard.evaluate(node=>node.contains(document.activeElement)),true);
@@ -504,12 +552,12 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
    location=await point();assert.equal(await page.evaluate(({x,y})=>!!document.elementFromPoint(x,y)?.closest('.mobile-bottom-nav'),location),true);
    await page.touchscreen.tap(location.x,location.y);assert.equal(await page.evaluate(()=>window.i43.navCalls.length),2,'accepted dismissal exposes the unchanged navigation again');
    assert.equal(model.calls.filter(call=>call.method==='POST').length,0);
-   results.push({case:'R1-mobile-stacking',kind,result:'PASS',layers,guardLayers,lifetime:before,navCalls:await page.evaluate(()=>window.i43.navCalls)});
+   results.push({case:'R1-mobile-stacking',kind,result:'PASS',layers,touchTarget,reviewReturns,guardLayers,lifetime:before,navCalls:await page.evaluate(()=>window.i43.navCalls)});
   });
   for(const kind of ['purchase','inbound'])for(const width of [1280,390])await run(kind+' '+width+' retained dirty dialog and guarded dismissal matrix',async()=>{
    const scenarioViewport={width,height:844},dismissalPaths=width===390?['x','visible','escape']:['x','visible','escape','backdrop'],dismissalViewports=[];let coveredBackdropPoint=null;await start(kind,scenarioViewport.width,scenarioViewport.height);
    await page.getByLabel(kind==='purchase'?'Tìm mã đề nghị':'Tìm phiếu nhập hàng',{exact:true}).fill('QA');
-   await page.getByRole('button',{name:'Tìm kiếm',exact:true}).click();await paint();
+   await page.getByLabel(kind==='purchase'?'Tìm mã đề nghị':'Tìm phiếu nhập hàng',{exact:true}).press('Enter');await paint();
    await page.getByRole('navigation',{name:kind==='purchase'?'Phân trang đề nghị':'Trang danh sách phiếu'}).getByRole('button',{name:'Trang sau',exact:true}).click();await paint();
    const scroller=page.getByTestId('list-scroll');await scroller.evaluate(e=>e.scrollTop=250);
    const scroll=await scroller.evaluate(e=>e.scrollTop);await open(kind);await notes().fill('I43 DIRTY RETAINED');

@@ -12,3 +12,5 @@
 .card :focus-visible { outline: 3px solid var(--ring, #ad6200); outline-offset: 3px; }
 .card [role="alert"] { color: var(--destructive, #9c2424); }
 @media (max-width: 480px) { .gate { align-items: start; } .card { padding: 20px; } }
+
+.card:has(:global(.verification-skeleton)){width:min(880px,100%);max-width:880px}.card :global(.verification-skeleton){margin-top:16px}.gate:has(:global(.verification-skeleton)){align-items:start;padding-top:max(40px,env(safe-area-inset-top))}

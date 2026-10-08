@@ -75,15 +75,82 @@ function workspaceRecoveryButton(page) {
   return page.getByRole('region', {name: recoveryTitle, exact: true})
     .getByRole('button', {name: 'Thử lại', exact: true});
 }
+const purchaseDialogName = 'Phiếu mua hàng hiện có I29-PR-P2-00';
+function purchaseDialog(page) {
+  return page.getByRole('dialog', {name: purchaseDialogName, exact: true});
+}
+function purchaseFooterAction(page, name, includeHidden = false) {
+  // The editor portals commands into its owning dialog's direct footer. Real
+  // actions remain visible-only; hidden controls are admitted for inspection only.
+  return purchaseDialog(page).locator(':scope > footer.record-dialog-actions')
+    .getByRole('button', {name, exact: true, includeHidden});
+}
+async function assertPurchaseActionBlocked(page, name, hidden) {
+  const button = purchaseFooterAction(page, name, hidden);
+  await button.waitFor({state: 'attached'});
+  assert.equal(await button.count(), 1, 'exactly one retained command in the selected document footer');
+  assert.equal(await button.isEnabled(), false, name + ' waits for current verification');
+  assert.equal(await button.isVisible(), !hidden, name + ' obeys the current action presentation');
+  if (hidden) assert.deepEqual(await button.evaluate(element => ({
+    hidden: element.parentElement.hidden, inert: element.parentElement.inert,
+    ariaHidden: element.parentElement.getAttribute('aria-hidden'),
+  })), {hidden: true, inert: true, ariaHidden: 'true'}, 'unverified footer actions are hidden and inert as well as disabled');
+  return button;
+}
 const purchaseIdentitySelector = 'form[aria-label="Đề nghị mua hàng trên điện thoại"] > header > p > strong';
 function purchaseDocumentIdentity(page, baselineControl) {
   // The exact historical control used a document heading. Current request
-  // dialogs have a generic title; their protected form owns the actual ID.
+  // dialogs include the document number in the shared title; the protected form also owns the exact ID.
   if (baselineControl) return page.getByRole('heading', {name: 'I29-PR-P2-00', exact: true});
-  return page.getByRole('dialog', {name: 'Phiếu mua hàng hiện có', exact: true})
+  return purchaseDialog(page)
     .getByRole('region', {name: 'Phiếu mua hàng hiện có', exact: true})
     .locator(purchaseIdentitySelector).filter({hasText: /^I29-PR-P2-00$/});
 }
+
+async function assertRetiredPurchaseControls(panel, calls) {
+  // I50 terminal denial retires presentation controls. Selected-document and
+  // original-command custody remain separately owned and require fresh reads.
+  assert.equal(await panel.getByLabel('Tìm mã đề nghị', {exact: true}).inputValue(), '', 'terminal denial retires the draft search');
+  assert.equal(await panel.getByRole('combobox', {name: 'Chi nhánh', exact: true}).inputValue(), '', 'terminal denial retires the branch');
+  assert.match(await panel.getByRole('navigation', {name: 'Phân trang đề nghị', exact: true}).innerText(), /Trang 1\b/, 'terminal denial resets the list page');
+  const lists = calls.filter(call => call.path === '/api/purchase-requests');
+  const details = calls.filter(call => call.path === '/api/purchase-requests/detail');
+  assert.ok(lists.length > 0, 'healthy recovery must dispatch a fresh list');
+  assert.ok(details.length > 0, 'the retained selection must receive a fresh detail');
+  for (const call of lists) {
+    assert.equal(call.method, 'GET');
+    assert.deepEqual(call.query, {page: '1', pageSize: '20', search: '', branchId: ''}, 'applied search, branch and page retire on the actual request too');
+  }
+  for (const call of details) {
+    assert.equal(call.method, 'GET');
+    assert.deepEqual(call.query, {documentId: 'I29-PR-P2-00'}, 'control retirement cannot substitute the selected document');
+  }
+}
+
+test('I50 packaged denial recovery requires retired controls and fresh default-criteria reads', async () => {
+  const fixture = ({search = '', branch = '', page = 'Trang 1 / 2'} = {}) => ({
+    getByLabel(name, options) {assert.equal(name, 'Tìm mã đề nghị'); assert.deepEqual(options, {exact: true}); return {inputValue: async () => search};},
+    getByRole(role, options) {
+      assert.deepEqual(options, {name: role === 'combobox' ? 'Chi nhánh' : 'Phân trang đề nghị', exact: true});
+      assert.ok(['combobox', 'navigation'].includes(role));
+      return role === 'combobox' ? {inputValue: async () => branch} : {innerText: async () => page};
+    },
+  });
+  const calls = [
+    {path: '/api/purchase-requests', method: 'GET', query: {page: '1', pageSize: '20', search: '', branchId: ''}},
+    {path: '/api/purchase-requests/detail', method: 'GET', query: {documentId: 'I29-PR-P2-00'}},
+  ];
+  await assertRetiredPurchaseControls(fixture(), calls);
+  for (const controls of [{search: 'UNSUBMITTED DRAFT'}, {branch: 'BR-A'}, {page: 'Trang 2 / 2'}, {page: 'Trang 10 / 20'}]) {
+    await assert.rejects(assertRetiredPurchaseControls(fixture(controls), calls), {code: 'ERR_ASSERTION'});
+  }
+  for (const query of [{search: 'APPLIED'}, {branchId: 'BR-A'}, {page: '2'}, {pageSize: '50'}]) {
+    await assert.rejects(assertRetiredPurchaseControls(fixture(), [{...calls[0], query: {...calls[0].query, ...query}}, calls[1]]), {code: 'ERR_ASSERTION'});
+  }
+  for (const invalid of [[], calls.slice(0, 1), calls.slice(1), [{...calls[0], method: 'POST'}, calls[1]], [calls[0], {...calls[1], query: {documentId: 'OTHER'}}]]) {
+    await assert.rejects(assertRetiredPurchaseControls(fixture(), invalid), {code: 'ERR_ASSERTION'});
+  }
+});
 
 // This named check renders the real production gate without starting a browser,
 // relay or server. The complete hosted invocation still runs the built TLS case.
@@ -133,7 +200,7 @@ test('I28 login-first fixture contract matches the production auth gate', async 
   await assert.rejects(requireLoginGate(fixture({alertdialog: 1})), /protected confirmation dialogs/);
 });
 
-test('I29 purchase identity fixture matches the production editor and generic dialog title', async () => {
+test('I29 purchase identity fixture matches the production editor and document dialog title', async () => {
   const app = fileURLToPath(new URL('../', import.meta.url)), out = path.join(app, '.test-runtime/i29-purchase-identity-contract');
   await mkdir(out, {recursive: true});
   const [{build}, {default: React}, {renderToStaticMarkup}] = await Promise.all([import('esbuild'), import('react'), import('react-dom/server')]);
@@ -144,16 +211,16 @@ test('I29 purchase identity fixture matches the production editor and generic di
     values: {purchaseDate: '2026-10-07', personSuggest: 'SYNTHETIC', department: '', purposeId: '', purposeDescOrClient: '', notes: '', branchId: 'BR-A', currencyId: '', objectId: '', lines: []}};
   const access = {scopeKey: 'synthetic', canRead: true, canEdit: false, canSaveDraft: false, canSubmit: false, available: true, existingOnly: true,
     branches: [], currencies: [], purposes: [], maxNotesLength: 2000, maxPurposeLength: 2000, maxLines: 500, itemLookupId: 'synthetic-item', objectLookupId: 'synthetic-object'};
-  const html = renderToStaticMarkup(React.createElement(RequestDetailDialog, {open: true, title: 'Phiếu mua hàng hiện có', closeLabel: 'Đóng đề nghị', onRequestClose() {}},
+  const html = renderToStaticMarkup(React.createElement(RequestDetailDialog, {open: true, title: 'Phiếu mua hàng hiện có', documentNumber: initial.documentId, closeLabel: 'Đóng đề nghị', onRequestClose() {}},
     React.createElement(MobileRequest, {initial, access, adapter: {execute() {assert.fail('source render must not dispatch');}, reconcile() {assert.fail('source render must not reconcile');}}})));
-  assert.match(html, /<h2\b[^>]*>Phiếu mua hàng hiện có<\/h2>/);
+  assert.match(html, /<h2\b[^>]*>Phiếu mua hàng hiện có<span class="record-document-number">I29-PR-P2-00<\/span><\/h2>/);
   assert.match(html, /<form\b[^>]*aria-label="Đề nghị mua hàng trên điện thoại"[^>]*><header\b[^>]*>.*?<p>Mã phiếu: <strong>I29-PR-P2-00<\/strong><\/p>/s);
   assert.doesNotMatch(html, /<h[1-6]\b[^>]*>I29-PR-P2-00<\/h[1-6]>/);
   const identity = {}, legacyHeading = {}, calls = [];
   const page = {getByRole(role, options) {
     calls.push(role);
     if (role === 'heading') {assert.deepEqual(options, {name: 'I29-PR-P2-00', exact: true}); return legacyHeading;}
-    assert.equal(role, 'dialog'); assert.deepEqual(options, {name: 'Phiếu mua hàng hiện có', exact: true});
+    assert.equal(role, 'dialog'); assert.deepEqual(options, {name: 'Phiếu mua hàng hiện có I29-PR-P2-00', exact: true});
     return {getByRole(region, regionOptions) {assert.equal(region, 'region'); assert.deepEqual(regionOptions, {name: 'Phiếu mua hàng hiện có', exact: true});
       return {locator(selector) {assert.equal(selector, purchaseIdentitySelector); return {filter({hasText}) {
       assert.equal(hasText.test('I29-PR-P2-00'), true);
@@ -163,6 +230,30 @@ test('I29 purchase identity fixture matches the production editor and generic di
   }};
   assert.equal(purchaseDocumentIdentity(page, false), identity); assert.deepEqual(calls, ['dialog']);
   assert.equal(purchaseDocumentIdentity(page, true), legacyHeading); assert.deepEqual(calls, ['dialog', 'heading']);
+});
+
+test('I29 purchase footer locators reject duplicate, enabled or incompletely hidden retained actions', async () => {
+  function fixture({count = 1, enabled = false, visible = false, hidden = true, inert = true, ariaHidden = 'true'} = {}) {
+    const calls = [];
+    const button = {async waitFor(options) {assert.deepEqual(options, {state: 'attached'});}, async count() {return count;},
+      async isEnabled() {return enabled;}, async isVisible() {return visible;},
+      async evaluate(read) {return read({parentElement: {hidden, inert, getAttribute(name) {assert.equal(name, 'aria-hidden'); return ariaHidden;}}});}};
+    const page = {getByRole(role, options) {
+      assert.equal(role, 'dialog'); assert.deepEqual(options, {name: purchaseDialogName, exact: true}); calls.push('exact document dialog');
+      return {locator(selector) {assert.equal(selector, ':scope > footer.record-dialog-actions'); calls.push('owning footer');
+        return {getByRole(childRole, childOptions) {assert.equal(childRole, 'button'); assert.equal(childOptions.name, 'Rà soát phiếu');
+          assert.equal(childOptions.exact, true); calls.push(childOptions.includeHidden); return button;}};}};
+    }};
+    return {page, button, calls};
+  }
+  const live = fixture(); assert.equal(purchaseFooterAction(live.page, 'Rà soát phiếu'), live.button);
+  assert.deepEqual(live.calls, ['exact document dialog', 'owning footer', false], 'normal commands cannot match hidden controls');
+  const retained = fixture(); assert.equal(await assertPurchaseActionBlocked(retained.page, 'Rà soát phiếu', true), retained.button);
+  assert.deepEqual(retained.calls, ['exact document dialog', 'owning footer', true]);
+  await assertPurchaseActionBlocked(fixture({visible: true, hidden: false, inert: false, ariaHidden: 'false'}).page, 'Rà soát phiếu', false);
+  for (const invalid of [{count: 0}, {count: 2}, {enabled: true}, {visible: true}, {hidden: false}, {inert: false}, {ariaHidden: 'false'}]) {
+    await assert.rejects(assertPurchaseActionBlocked(fixture(invalid).page, 'Rà soát phiếu', true), {name: 'AssertionError'});
+  }
 });
 
 // Built modern app -> actual shipping TLS relay -> built BFF -> synthetic HTTPS
@@ -362,8 +453,8 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
     const purchaseIdentity = () => purchaseDocumentIdentity(page, baselineControl);
     const purchaseRow = () => page.getByRole('button', {name: 'Mở đề nghị I29-PR-P2-00', exact: true});
     const freshOrderDetail = async () => {
-      await page.getByRole('heading', {name: 'I29-PO-P2-00', exact: true}).waitFor();
-      await page.locator('.detail-sheet .desktop-detail-lines').getByText('I29-ITEM-P2-0', {exact: true}).waitFor();
+      await page.getByRole('heading', {name: 'Đơn đặt hàng mua I29-PO-P2-00', exact: true}).waitFor();
+      await page.locator('.request-detail-dialog .request-detail-body .desktop-detail-lines').getByText('I29-ITEM-P2-0', {exact: true}).waitFor();
     };
     const freshPurchaseDetail = async () => {
       await purchaseEditor().waitFor();
@@ -387,7 +478,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await page.goto(ready.publicOrigin + '/?screen=purchase-orders');
       await page.getByRole('button', {name: 'I29-PO-P1-00', exact: true}).waitFor();
       await page.getByLabel('Tìm mã chứng từ', {exact: true}).fill('APPLIED');
-      await page.getByRole('button', {name: 'Tìm kiếm', exact: true}).click();
+      await page.getByLabel('Tìm mã chứng từ', {exact: true}).press('Enter');
       await page.locator('.document-panel').getByRole('combobox', {name: 'Chi nhánh', exact: true}).selectOption('BR-A');
       await page.getByRole('navigation', {name: 'Phân trang chứng từ', exact: true}).getByRole('button', {name: 'Trang sau', exact: true}).click();
       await page.getByRole('button', {name: 'I29-PO-P2-00', exact: true}).waitFor();
@@ -396,7 +487,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await page.getByRole('button', {name: 'Trang dòng hàng tiếp theo', exact: true}).click();
       await freshOrderDetail();
       await page.locator('.desktop-grid-viewport').evaluate(element => {element.scrollTop = 220; element.scrollLeft = 80;});
-      await page.locator('.detail-sheet').evaluate(element => {element.scrollTop = 140;});
+      await page.locator('.request-detail-dialog .request-detail-body').evaluate(element => {element.scrollTop = 140;});
       await paint();
     };
     const preparePurchase = async () => {
@@ -404,7 +495,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
         sessionScope: 'a'.repeat(64), readScope: 'b'.repeat(64), purchaseScope: 'c'.repeat(64), branchIds: ['BR-A', 'BR-B']});
       await page.goto(ready.publicOrigin + '/?screen=purchase-requests');
       await purchasePanel().getByLabel('Tìm mã đề nghị', {exact: true}).fill('APPLIED');
-      await purchasePanel().getByRole('button', {name: 'Tìm kiếm', exact: true}).click();
+      await purchasePanel().getByLabel('Tìm mã đề nghị', {exact: true}).press('Enter');
       await purchasePanel().getByRole('combobox', {name: 'Chi nhánh', exact: true}).selectOption('BR-A');
       await purchasePanel().getByRole('button', {name: 'Trang sau', exact: true}).click();
       await purchaseRow().waitFor();
@@ -441,7 +532,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
           && (kind === 'pending' ? editorForm?.textContent.includes('SYNTHETIC PENDING NOTE') || editorForm?.querySelector('textarea[name="notes"]')?.value === 'SYNTHETIC PENDING NOTE'
             : visible('[aria-label="Phiếu mua hàng hiện có"] textarea[name="notes"]') && editorForm?.querySelector('textarea[name="notes"]') === noteInput);
         const present = kind === 'orders'
-          ? visible('.document-link') && visible('.detail-sheet .desktop-detail-lines') && document.querySelector('.detail-sheet')?.textContent.includes('I29-ITEM-P2-0')
+          ? visible('.document-link') && visible('.request-detail-dialog .request-detail-body .desktop-detail-lines') && document.querySelector('.request-detail-dialog .request-detail-body')?.textContent.includes('I29-ITEM-P2-0')
           : visible(purchaseListRow) && visible('[aria-label="Phiếu mua hàng hiện có"]') && stableEditor && document.querySelector('[aria-label="Phiếu mua hàng hiện có"]')?.textContent.includes('SYNTHETIC-PURCHASE-ITEM');
         if (!present) window.i29MissingFrames++;
       };
@@ -473,7 +564,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
     };
     const assertOrderMasked = async () => {
       assert.equal(await page.locator('.document-link:visible').count(), 0);
-      assert.equal(await page.locator('.detail-sheet .desktop-detail-lines:visible').count(), 0);
+      assert.equal(await page.locator('.request-detail-dialog .request-detail-body .desktop-detail-lines:visible').count(), 0);
     };
     const assertPurchaseMasked = async () => {
       assert.equal(await purchasePanel().getByRole('button', {name: /^Mở đề nghị I29-/}).count(), 0);
@@ -549,7 +640,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
     await run('I29 built 60s background observation refresh preserves order list, detail, filters, pages and scroll', async () => {
       await prepareOrders(); await orderControls();
       const scroll = await page.locator('.desktop-grid-viewport').evaluate(e => ({top: e.scrollTop, left: e.scrollLeft}));
-      const detailScroll = await page.locator('.detail-sheet').evaluate(e => e.scrollTop);
+      const detailScroll = await page.locator('.request-detail-dialog .request-detail-body').evaluate(e => e.scrollTop);
       assert.ok(scroll.top > 0 && scroll.left > 0 && detailScroll > 0, 'fixture must exercise genuine scroll offsets');
       const before = await snapshot(); await watchStableData('orders');
       await control({holds: ['workspace', 'orders-list', 'orders-detail']});
@@ -563,7 +654,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await waitFor(async () => !(await snapshot()).waiting.some(entry => entry.value > 0), 'background order refresh released');
       await freshOrderDetail(); await paint(); await orderControls(); await stopStableData('order read');
       assert.deepEqual(await page.locator('.desktop-grid-viewport').evaluate(e => ({top: e.scrollTop, left: e.scrollLeft})), scroll);
-      assert.equal(await page.locator('.detail-sheet').evaluate(e => e.scrollTop), detailScroll);
+      assert.equal(await page.locator('.request-detail-dialog .request-detail-body').evaluate(e => e.scrollTop), detailScroll);
       const after = await snapshot();
       for (const route of ['/api/workspace', '/api/documents/purchase-orders', '/api/documents/purchase-orders/detail']) {
         const calls = after.calls.filter(call => call.path === route).length - before.calls.filter(call => call.path === route).length;
@@ -579,7 +670,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
         await activate(other, 'visible'); await held('workspace'); await assertOrderMasked();
         await control({holds: ['orders-list', 'orders-detail']}); await held('orders-list'); await assertOrderMasked();
         await control({holds: ['orders-detail']}); await held('orders-detail');
-        assert.equal(await page.locator('.detail-sheet .desktop-detail-lines:visible').count(), 0);
+        assert.equal(await page.locator('.request-detail-dialog .request-detail-body .desktop-detail-lines:visible').count(), 0);
         await control({holds: []}); await freshOrderDetail(); await orderControls();
       } finally {await control({holds: []}); await other.close();}
     });
@@ -593,7 +684,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await control({commandAllowed: false, holds: ['workspace', 'purchase-bootstrap', 'purchase-list', 'purchase-detail']});
       await page.clock.fastForward(60001); await held('workspace'); await purchaseControls();
       assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).isEnabled(), false, 'held parent workspace verification blocks new edits immediately');
-      assert.equal(await purchaseEditor().getByRole('button', {name: 'Rà soát phiếu', exact: true}).isEnabled(), false);
+      await assertPurchaseActionBlocked(page, 'Rà soát phiếu', true);
       await control({holds: ['purchase-bootstrap', 'purchase-list', 'purchase-detail']}); await held('purchase-bootstrap'); await purchaseControls();
       await control({holds: ['purchase-list', 'purchase-detail']}); await held('purchase-list'); await held('purchase-detail'); await purchaseControls();
       assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).isEnabled(), false, 'new edits must wait for fresh command grants while existing values remain mounted');
@@ -631,26 +722,26 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await run(`I29 built held parent workspace check keeps the form visible and blocks a new ${action}`, async () => {
         await preparePurchase();
         if (action === 'save') await purchaseEditor().getByLabel('Ghi chú', {exact: true}).fill('UNSAVED VERIFICATION NOTE');
-        await purchaseEditor().getByRole('button', {name: 'Rà soát phiếu', exact: true}).click();
-        const button = purchaseEditor().getByRole('button', {name: action === 'save' ? 'Lưu nháp trên ERP' : 'Gửi đề nghị', exact: true});
+        await purchaseFooterAction(page, 'Rà soát phiếu').click();
+        const button = purchaseFooterAction(page, action === 'save' ? 'Lưu nháp trên ERP' : 'Gửi đề nghị');
         assert.equal(await button.isEnabled(), true);
         await page.evaluate(() => {window.i29ReviewForm = document.querySelector('form[aria-label="Đề nghị mua hàng trên điện thoại"]');});
         const before = (await snapshot()).calls.length; await control({holds: ['workspace']});
         await page.clock.fastForward(60001); await held('workspace'); await paint();
-        assert.equal(await button.isEnabled(), false, 'new command is blocked before the workspace response arrives');
+        const blockedButton = await assertPurchaseActionBlocked(page, action === 'save' ? 'Lưu nháp trên ERP' : 'Gửi đề nghị', true);
         assert.equal(await purchaseEditor().getByRole('form', {name: 'Đề nghị mua hàng trên điện thoại', exact: true}).isVisible(), true);
         assert.equal(await page.evaluate(() => window.i29ReviewForm === document.querySelector('form[aria-label="Đề nghị mua hàng trên điện thoại"]')), true);
-        await button.evaluate(button => button.click());
+        await blockedButton.evaluate(button => button.click());
         assert.equal((await snapshot()).calls.slice(before).filter(call => call.path === '/api/purchase-requests/save' || call.path === '/api/purchase-requests/submit').length, 0);
         const detailFinished = await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200,
           () => control({holds: []})); await detailFinished.finished();
         // A clean read revision may deliberately leave review mode; review the
         // newly read values before admitting a NEW Submit. Dirty Save retains it.
-        const review = purchaseEditor().getByRole('button', {name: 'Rà soát phiếu', exact: true});
+        const review = purchaseFooterAction(page, 'Rà soát phiếu');
         await waitFor(async () => await review.count() ? review.isEnabled() : button.isEnabled(), 'fresh grants verified');
         if (await review.count()) await review.click();
         await waitFor(() => button.isEnabled(), 'fresh reviewed grants allow the new command again');
-        await purchaseEditor().getByRole('button', {name: 'Quay lại chỉnh sửa', exact: true}).click();
+        await purchaseFooterAction(page, 'Quay lại chỉnh sửa').click();
         if (action === 'save') await purchaseEditor().getByLabel('Ghi chú', {exact: true}).fill('SYNTHETIC NOTES');
         await paint();
       });
@@ -659,8 +750,8 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await preparePurchase(); await control({commitOnAck, holds: ['purchase-save']});
       const before = await snapshot();
       await purchaseEditor().getByLabel('Ghi chú', {exact: true}).fill('SYNTHETIC PENDING NOTE');
-      await purchaseEditor().getByRole('button', {name: 'Rà soát phiếu', exact: true}).click();
-      await purchaseEditor().getByRole('button', {name: 'Lưu nháp trên ERP', exact: true}).evaluate(button => {button.click(); button.click();});
+      await purchaseFooterAction(page, 'Rà soát phiếu').click();
+      await purchaseFooterAction(page, 'Lưu nháp trên ERP').evaluate(button => {button.click(); button.click();});
       await held('purchase-save'); await purchaseEditor().getByText('Đang gửi yêu cầu…', {exact: true}).waitFor();
       const state = await snapshot();
       const writes = state.calls.slice(before.calls.length).filter(call => call.path === '/api/purchase-requests/save');
@@ -683,10 +774,9 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
         await form.getByText('SYNTHETIC PENDING NOTE', {exact: true}).waitFor();
       }
     };
-    const assertVerifiedActionsBlocked = async () => {
+    const assertVerifiedActionsBlocked = async hidden => {
       for (const name of ['Quay lại chỉnh sửa', 'Lưu nháp trên ERP', 'Gửi đề nghị']) {
-        const button = purchaseEditor().getByRole('button', {name, exact: true});
-        await button.waitFor(); assert.equal(await button.isEnabled(), false, name + ' waits for current verification');
+        const button = await assertPurchaseActionBlocked(page, name, hidden);
         await button.evaluate(element => element.click());
       }
       assert.equal(await purchaseEditor().locator('input:enabled, textarea:enabled, select:enabled').count(), 0);
@@ -728,7 +818,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
         () => control({holds: ['workspace']})); await ack.finished();
       await purchaseEditor().getByText('Nháp đã được ERP xác nhận', {exact: true}).waitFor();
       await assertPendingNoteVisible();
-      await assertVerifiedActionsBlocked();
+      await assertVerifiedActionsBlocked(true);
       await assertOriginalCustody(pending, 0);
       const detailFinished = await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200,
         () => control({holds: []})); await detailFinished.finished();
@@ -757,7 +847,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await held('purchase-detail'); await paint();
       await purchaseEditor().getByText('Nháp đã được ERP xác nhận', {exact: true}).waitFor();
       await assertPendingNoteVisible();
-      await assertVerifiedActionsBlocked();
+      await assertVerifiedActionsBlocked(true);
       assert.equal(await purchasePanel().getByRole('alert').count(), 0, 'superseded GET is not a fabricated outage');
       const freshDetail = await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200,
         () => control({holds: []})); assert.equal((await freshDetail.json()).data.stateToken, 'prs1.' + '2'.repeat(64));
@@ -840,7 +930,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await control({holds: ['purchase-save', 'purchase-list', 'purchase-detail']}); await held('purchase-list'); await held('purchase-detail'); await assertPurchaseMasked();
       const revokedDetail = await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200,
         async () => {await control({holds: []}); await freshPurchaseDetail();}); await assertPurchaseGrant(revokedDetail, false);
-      await purchaseEditor().getByText('Phiếu hiện chỉ được xem theo quyền của bạn.', {exact: true}).waitFor(); await assertVerifiedActionsBlocked(); await assertOriginalCustody(pending, 0);
+      await purchaseEditor().getByText('Phiếu hiện chỉ được xem theo quyền của bạn.', {exact: true}).waitFor(); await assertVerifiedActionsBlocked(false); await assertOriginalCustody(pending, 0);
       assert.equal(controls.purchaseScope, 'c'.repeat(64), 'production purchase scope does not rotate for read rights changes');
       assert.equal(await purchaseEditor().getByText('Nháp đã được ERP xác nhận', {exact: true}).count(), 0);
       await purchaseEditor().getByRole('button', {name: 'Kiểm tra kết quả yêu cầu gốc', exact: true}).click();
@@ -892,10 +982,14 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
         const explicit = difference(await counts(), retryBefore);
         for (const count of Object.values(explicit)) assert.ok(count <= 2, 'one explicit denied recovery must remain bounded');
         const quiet = await counts(); await delay(500); assert.deepEqual(await counts(), quiet);
-        await control({failures: {}}); const successBefore = await counts(); await recovery.click(); await freshPurchaseDetail();
+        await control({failures: {}}); const successBefore = await counts(), recoveryCallIndex = (await snapshot()).calls.length;
+        const recoveredDetail = await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200,
+          async () => {await recovery.click(); await freshPurchaseDetail();});
+        await assertPurchaseGrant(recoveredDetail, true);
         const recovered = difference(await counts(), successBefore);
         for (const count of Object.values(recovered)) assert.ok(count <= 2, 'one explicit healthy recovery must remain bounded');
-        await purchaseControls(); lifecycleEvidence.requests.push({kind, initial, periodic, explicit, recovered});
+        await assertRetiredPurchaseControls(purchasePanel(), (await snapshot()).calls.slice(recoveryCallIndex));
+        lifecycleEvidence.requests.push({kind, initial, periodic, explicit, recovered});
       });
     }
     for (const [kind, route] of [['purchase-bootstrap', '/api/purchase-requests/workspace'], ['purchase-list', '/api/purchase-requests'], ['purchase-detail', '/api/purchase-requests/detail']]) {
@@ -916,14 +1010,14 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await prepareOrders(); await control({readScope: 'd'.repeat(64), branchIds: ['BR-B']});
       await page.clock.fastForward(60001);
       await waitFor(async () => await page.getByLabel('Tìm mã chứng từ', {exact: true}).inputValue() === '', 'order scope replacement');
-      assert.equal(await page.getByRole('heading', {name: 'I29-PO-P2-00', exact: true}).count(), 0);
+      assert.equal(await page.getByRole('heading', {name: 'Đơn đặt hàng mua I29-PO-P2-00', exact: true}).count(), 0);
       assert.match(await page.getByRole('navigation', {name: 'Phân trang chứng từ', exact: true}).innerText(), /Trang 1/);
       await preparePurchase(); await control({purchaseScope: 'e'.repeat(64), readScope: 'f'.repeat(64), branchIds: ['BR-B']});
       await page.clock.fastForward(60001);
       await waitFor(async () => await purchasePanel().getByLabel('Tìm mã đề nghị', {exact: true}).inputValue() === '', 'purchase scope replacement');
       assert.equal(await purchaseEditor().isVisible(), false);
       assert.equal(await purchaseIdentity().isVisible(), false);
-      assert.equal(await page.getByRole('dialog', {name: 'Phiếu mua hàng hiện có', exact: true}).count(), 0, 'scope retirement must close the selected purchase dialog');
+      assert.equal(await page.getByRole('dialog', {name: 'Phiếu mua hàng hiện có I29-PR-P2-00', exact: true}).or(page.getByRole('dialog', {name: 'Phiếu mua hàng hiện có', exact: true})).count(), 0, 'scope retirement must close the selected purchase dialog');
       assert.match(await purchasePanel().getByRole('navigation', {name: 'Phân trang đề nghị', exact: true}).innerText(), /Trang 1/);
     });
     await run('I29 built same-display-name session marker replacement retires purchase selection and filters', async () => {
@@ -932,7 +1026,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await waitFor(async () => await purchasePanel().getByLabel('Tìm mã đề nghị', {exact: true}).inputValue() === '', 'session marker replacement');
       assert.equal(await purchaseEditor().isVisible(), false);
       assert.equal(await purchaseIdentity().isVisible(), false);
-      assert.equal(await page.getByRole('dialog', {name: 'Phiếu mua hàng hiện có', exact: true}).count(), 0, 'session retirement must close the selected purchase dialog');
+      assert.equal(await page.getByRole('dialog', {name: 'Phiếu mua hàng hiện có I29-PR-P2-00', exact: true}).or(page.getByRole('dialog', {name: 'Phiếu mua hàng hiện có', exact: true})).count(), 0, 'session retirement must close the selected purchase dialog');
     });
     await run('I29 built expiry fences selected purchase data until explicit login', async () => {
       await preparePurchase(); await control({expired: true}); await page.clock.fastForward(60001);

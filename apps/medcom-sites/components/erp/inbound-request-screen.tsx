@@ -1,7 +1,7 @@
 "use client";
 import {RequestDetailDialog,useRequestDetailNavigation,useDetailPresentationProof,type RegisterRequestDetailNavigation} from "./request-detail-dialog";
-import {RequestQrSearch} from "./request-qr-search";
-import {RequestListHeader,RequestSearch,RequestBranch,RequestListTable,RequestListToolbar,RequestPagination} from "./request-list-shell";
+import {useListControls} from "./list-view-state";
+import {RequestListComposition,RequestListPanel,RequestListContent,RequestListHeader,RequestSearch,RequestBranch,RequestListTable,RequestListToolbar,RequestPagination} from "./request-list-shell";
 import {RequestButton,RequestNotice,RequestEmpty,RequestLoading,RequestStatus,requestDate,requestStyles} from "./request-presentation";
 import {useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore} from "react";
 import {ApiError, getDocuments, type ReadScope} from "@/lib/erp/api";
@@ -16,6 +16,8 @@ import {workspaceReadViewScope} from "@/lib/erp/navigation";
 import {useDirtyGuard, useNavigationGuard, type NavigationGuardValidationPhase} from "./navigation-guard";
 
 export type InboundRequestScreenProps = {
+  compact?:boolean;
+  setCompact?:(value:boolean)=>void;
   presentationAllowed?: boolean;
   registerDetailNavigation?: RegisterRequestDetailNavigation;
   // A non-secret AUTH login incarnation supplied by the parent. Null means
@@ -84,7 +86,7 @@ function CustodyGuard({active, readbackPending}: {active: boolean; readbackPendi
 export function InboundRequestScreen(props: InboundRequestScreenProps) {
   return <RetainedInboundHost key={JSON.stringify([props.loginKey])} {...props}/>;
 }
-function RetainedInboundHost({presentationAllowed = true, registerDetailNavigation, loginKey, workspace, onClose, onBack, onDenied, historyOwner = "standalone", api: suppliedApi, list = defaultList}: InboundRequestScreenProps) {
+function RetainedInboundHost({compact=false,setCompact,presentationAllowed = true, registerDetailNavigation, loginKey, workspace, onClose, onBack, onDenied, historyOwner = "standalone", api: suppliedApi, list = defaultList}: InboundRequestScreenProps) {
   const defaultApi = useMemo(() => createInboundRequestApi(), []), rawApi = suppliedApi ?? defaultApi;
   const [readObservation] = useState(createReadObservation);
   const [unavailable, setUnavailable] = useState<{binding: ReadFallbackBinding} | null>(null);
@@ -167,12 +169,16 @@ function RetainedInboundHost({presentationAllowed = true, registerDetailNavigati
     }
   }, [bridge]);
   useLayoutEffect(() => { callbacks.current = {onClose, onBack, onDenied}; }, [onClose, onBack, onDenied]);
-  const [selected, setSelected] = useState<string | null>(null), [page, setPage] = useState(1);
+  const {value:controlValue,field:controlField,set:setControls,attachRoot,captureScroll,restoreScroll,setActive}=useListControls("inbound-requests");
+  const {draftSearch:search,draftBranch:branch,page}=controlValue;
+  const [filterRevision,setFilterRevision]=useState(0);
+  const filter=useMemo(()=>({search:controlValue.appliedSearch,branch:controlValue.appliedBranch}),[controlValue.appliedSearch,controlValue.appliedBranch]);
+  const setSearch=controlField("draftSearch"),setBranch=controlField("draftBranch"),setPage=controlField("page");
+  const setFilter=(next:{search:string;branch:string})=>{setControls(previous=>({...previous,appliedSearch:next.search,appliedBranch:next.branch}));setFilterRevision(value=>value+1);};
+  const [selected, setSelected] = useState<string | null>(null);
   const [selectionVersion, setSelectionVersion] = useState(0);
   const [readonlyPage, setReadonlyPage] = useState<{key: string; page: number} | null>(null);
   const [presented, setPresented] = useState<PresentedReadProof | null>(null), [focusFailure, setFocusFailure] = useState<string | null>(null);
-  const [search, setSearch] = useState(""), [branch, setBranch] = useState("");
-  const [filter, setFilter] = useState({search: "", branch: ""});
   const [retry, setRetry] = useState(0), [guardRevision, setGuardRevision] = useState(0), [notice, setNotice] = useState("");
   const [rows, setRows] = useState<{view: object | null; binding: string; data: DocumentPage | null; failed: boolean; readIdentity: string | null; viewKey: string}>({view: null, binding: "", data: null, failed: false, readIdentity: null, viewKey: ""});
   // Revalidation identity ONLY, not a login scope or an editor remount key.
@@ -192,7 +198,7 @@ function RetainedInboundHost({presentationAllowed = true, registerDetailNavigati
     workspace.session.companyId, [...workspace.session.capabilities].sort(), [...workspace.branchIds].sort()]) : null;
   const verifiedReadAuthority = context !== null && !!workspace?.session.capabilities.includes("inbound-requests.read")
     && isInboundScope(workspace.sessionScope) && isInboundScope(workspace.readScope);
-  const listBinding = JSON.stringify([context, readIdentity, filter, page, retry]), listViewKey = JSON.stringify([filter, page]);
+  const listBinding = JSON.stringify([context, readIdentity, filter, page, retry, filterRevision]), listViewKey = JSON.stringify([filter, page, filterRevision]);
   // Equal values after an intervening loss/scope/filter/page change are a new
   // presentation, not permission to revive an earlier positive snapshot. Keep
   // this identity across detail selection and healthy same-scope observations.
@@ -433,9 +439,8 @@ function RetainedInboundHost({presentationAllowed = true, registerDetailNavigati
   }, [loginKey, standaloneBack, historyOwner]);
   const statusRow=currentRows?.rows.find(row=>row.documentId===selected);
   const access: InboundDraftAccess = contextCurrent ? state.access : {...state.access, canRead: false, canSave: false, canSend: false, available: false};
-  const qrScopeKey = loginKey !== null && !sessionEnded && context !== null && readIdentity !== null
-    ? JSON.stringify([loginKey, readIdentity, state.access.scopeKey]) : null;
-  return <section hidden={!presentationAllowed} inert={!presentationAllowed} data-testid="inbound-request-host" data-readback-pending={readbackPending} aria-label="Phiếu đề nghị nhập hàng"
+  useLayoutEffect(()=>{setActive(presentationAllowed&&contextCurrent&&verifiedReadAuthority);restoreScroll(presentationAllowed&&contextCurrent&&!!currentRows);});
+  return <section ref={attachRoot} onScrollCapture={event=>{if(event.target instanceof HTMLElement)captureScroll(event.target);}} hidden={!presentationAllowed} inert={!presentationAllowed} data-testid="inbound-request-host" data-readback-pending={readbackPending} aria-label="Phiếu đề nghị nhập hàng"
     className={requestStyles.stack}>
     <CustodyGuard key={guardRevision} active={state.unresolved} readbackPending={readbackPending}/>
     {loginKey === null || sessionEnded ? <RequestNotice>Đã kết thúc phiên. Đăng nhập lại để tiếp tục.</RequestNotice>
@@ -447,29 +452,29 @@ function RetainedInboundHost({presentationAllowed = true, registerDetailNavigati
     {!sessionEnded && workspaceContext !== null && (selected !== null || authorityDenied) && <RequestButton type="button"
       onClick={() => { cancelFocus(); setDeniedContext(null); setRetry(value => value + 1); }}>
       Xác minh lại quyền nhập hàng</RequestButton>}
-    {listPresented && <div className={requestStyles.panel}>
+    {listPresented && <RequestListComposition><RequestListPanel>
       <RequestListHeader title="Danh sách phiếu nhập hàng"/>
       <RequestListToolbar aria-label="Lọc phiếu nhập hàng" onSubmit={event => {
         event.preventDefault(); navigate(() => { cancelFocus(); select(null); setFilter({search, branch}); setPage(1); });
       }}>
         <RequestSearch label="Tìm phiếu nhập hàng" placeholder="Tìm mã phiếu…" value={search} onChange={setSearch}/>
-        <RequestQrSearch scopeKey={qrScopeKey} disabled={!verifiedReadAuthority||!contextCurrent||!listAllowed||!currentRows} presentationAllowed={presentationAllowed} onConfirmedSearchText={setSearch}/>
         <RequestBranch label="Lọc chi nhánh" value={branch} branches={workspace?.branchIds??[]} onChange={setBranch}/>
-        <RequestButton type="submit" variant="secondary" aria-label="Tìm kiếm">Tìm kiếm</RequestButton>
+        <RequestButton className="request-list-refresh" type="button" disabled={!contextCurrent||!currentRows} onClick={()=>navigate(()=>{cancelFocus();setRetry(value=>value+1);})}>Làm mới</RequestButton>
       </RequestListToolbar>
-      <section aria-label="Danh sách phiếu nhập hàng" ref={focusList} tabIndex={-1} className="request-list-content scroll-mt-24">
+      <RequestListContent aria-label="Danh sách phiếu nhập hàng" ref={focusList} tabIndex={-1} className="scroll-mt-24">
         {!currentRows ? rows.view === listView && rows.binding === listBinding && rows.failed ? <RequestNotice warning>Chưa tải được danh sách.</RequestNotice> : <RequestLoading label="Đang tải danh sách."/>
           : currentRows.rows.length === 0 ? <RequestEmpty title="Không có phiếu trong trang này.">Thử điều chỉnh mã phiếu hoặc chi nhánh.</RequestEmpty>
-          : <RequestListTable label="Phiếu nhập hàng" columns={[{id:"id",label:"Mã phiếu"},{id:"date",label:"Ngày chứng từ"},{id:"branch",label:"Chi nhánh"},{id:"status",label:"Trạng thái"}]} rows={currentRows.rows.map(row=>({id:row.documentId,cells:[row.documentId,requestDate(row.documentDate),row.branchId,<RequestStatus key="status" value={row.statusId} statusName={row.statusName}/>],action:"Mở phiếu",actionLabel:`Mở phiếu ${row.documentId} · ${row.documentDate} · ${row.branchId} · trạng thái ${row.statusId ?? "NULL"}`,selected:selected===row.documentId,buttonRef:element=>focusRow(row.documentId,element),onOpen:() => requestOpen(row.documentId)}))}/>}
-      </section>
+          : <RequestListTable compact={compact} setCompact={setCompact} presentationAllowed={presentationAllowed&&verifiedReadAuthority&&contextCurrent&&!!currentRows} isPresentationAllowed={()=>openAuthority.current!==null} label="Phiếu nhập hàng" columns={[{id:"id",label:"Mã phiếu"},{id:"date",label:"Ngày chứng từ"},{id:"branch",label:"Chi nhánh"},{id:"status",label:"Trạng thái"}]} rows={currentRows.rows.map(row=>({id:row.documentId,cells:[row.documentId,requestDate(row.documentDate),row.branchId,<RequestStatus key="status" value={row.statusId} statusName={row.statusName}/>],action:"Mở phiếu",actionLabel:`Mở phiếu ${row.documentId} · ${row.documentDate} · ${row.branchId} · trạng thái ${row.statusId ?? "NULL"}`,selected:selected===row.documentId,buttonRef:element=>focusRow(row.documentId,element),onOpen:() => requestOpen(row.documentId)}))}/>}
+      </RequestListContent>
       <RequestPagination label="Trang danh sách phiếu" page={page} previousDisabled={page === 1} nextDisabled={!currentRows?.hasMore}
         onPrevious={() => navigate(() => { cancelFocus(); select(null); setPage(value => value - 1); })}
         onNext={() => navigate(() => { cancelFocus(); select(null); setPage(value => value + 1); })}/>
-    </div>}
+    </RequestListPanel></RequestListComposition>}
+    {!listPresented&&!sessionEnded&&<RequestLoading label="Đang xác minh phạm vi và quyền ERP…"/>}
     {/* Always mounted, even on close, permission change, list error or transient
         workspace=null. Only loginKey above retires this I18 instance. */}
     <RequestDetailDialog open={selected!==null||state.unresolved||readbackPending} presentationAllowed={presentationAllowed&&workspace!==null}
-      title="Phiếu nhập hàng đã chọn" closeLabel="Quay lại danh sách" onRequestClose={requestBack}>
+      title="Phiếu nhập hàng đã chọn" documentNumber={presentationReady&&contextCurrent?selected:null} closeLabel="Quay lại danh sách" onRequestClose={requestBack}>
     <RequestButton type="button" onClick={() => navigate(() => {
       if (selectedRef.current === null) return;
       selectedRef.current = null; focusClose(); select(null); callbacks.current.onClose?.();
@@ -478,7 +483,7 @@ function RetainedInboundHost({presentationAllowed = true, registerDetailNavigati
     {!contextCurrent && <RequestNotice>Dữ liệu tạm ẩn. Xác minh lại phiên ERP để tiếp tục.</RequestNotice>}
     {!sessionEnded && workspaceContext !== null && <RequestButton type="button" onClick={() => { cancelFocus(); setDeniedContext(null); setRetry(value => value + 1); }}>Xác minh lại quyền nhập hàng</RequestButton>}
     <div ref={focusDetail} tabIndex={-1} role="region" aria-label="Phiếu nhập hàng đã chọn" className="scroll-mt-24 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" hidden={!presentationReady||selected===null&&!state.unresolved&&!readbackPending}>
-      <div hidden={readonlyEligible}><MobileInboundRequest statusPresentation={statusRow?{documentId:statusRow.documentId,id:statusRow.statusId,name:statusRow.statusName}:undefined} documentId={selected} access={access} adapter={adapter} onConfirmed={acknowledge} onPresentedRead={onPresentedRead}/></div>
+      <div hidden={readonlyEligible}><MobileInboundRequest presentationAllowed={presentationAllowed&&workspace!==null&&contextCurrent&&presentationReady&&!readonlyEligible&&(selected!==null||state.unresolved||readbackPending)} statusPresentation={statusRow?{documentId:statusRow.documentId,id:statusRow.statusId,name:statusRow.statusName}:undefined} documentId={selected} access={access} adapter={adapter} onConfirmed={acknowledge} onPresentedRead={onPresentedRead}/></div>
       {readonlyEligible && selected !== null && readScope !== null && <InboundRequestReadOnly documentId={selected}
         branchIds={workspace?.branchIds ?? []} scope={readScope} initialPage={readonlyPageNumber} onPageChange={onReadonlyPageChange}
         verifying={readonlyVerifying} readRevision={unavailable}

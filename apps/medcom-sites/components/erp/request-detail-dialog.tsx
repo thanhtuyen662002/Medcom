@@ -1,7 +1,7 @@
 "use client";
 
-import {useId, useLayoutEffect, useRef, useState, type ReactNode} from "react";
-import {RequestButton} from "./request-presentation";
+import {useId,useLayoutEffect,useRef,useState,type ReactNode} from "react";
+import {RequestButton,RecordActionHost} from "./request-presentation";
 
 /** Root owns history. These operations request navigation; only a later selectedId
  * observation proves acceptance. Cancellation/pending custody leaves it unchanged. */
@@ -28,10 +28,11 @@ export function useRequestDetailNavigation(register: RegisterRequestDetailNaviga
  * forceMount on the generic DialogContent (which does not retain its Portal).
  * The root guard's body portal remains above this surface and owns focus while
  * its AlertDialog or a higher visible root dialog is present. No history listener or command operation lives here. */
-export function RequestDetailDialog({open, presentationAllowed = true, title, closeLabel, onRequestClose, children}: {
+export function RequestDetailDialog({open, presentationAllowed = true, title, closeLabel, onRequestClose, children, actions, documentNumber, mode="view", bodyRef, onBodyScroll}: {
   open: boolean; presentationAllowed?: boolean; title: string; closeLabel: string;
-  onRequestClose: () => void; children: ReactNode;
+  onRequestClose: () => void; children: ReactNode; actions?:ReactNode; documentNumber?:string|null; mode?:"view"|"create"|"edit"; bodyRef?:import("react").Ref<HTMLDivElement>; onBodyScroll?:import("react").UIEventHandler<HTMLDivElement>;
 }) {
+  const [actionHost,setActionHost]=useState<HTMLElement|null>(null);
   const titleId = useId(), content = useRef<HTMLDivElement>(null), close = useRef(onRequestClose);
   useLayoutEffect(() => { close.current = onRequestClose; });
   const shown = open && presentationAllowed;
@@ -110,8 +111,10 @@ export function RequestDetailDialog({open, presentationAllowed = true, title, cl
     document.addEventListener("focusin", contain);
     // The root AlertDialog has no local Trigger. Its closing portal may remove
     // the focused Cancel button without a focusin event on this surface.
-    const observer = new MutationObserver(() => { if (!element.contains(document.activeElement)) focus(); });
-    observer.observe(document.body, {childList: true, subtree: true, attributes: true, attributeFilter: ["hidden", "inert", "aria-hidden", "role", "style", "class", "data-state"]});
+    // Retire a focused control when a reread disables it; re-enabling it later
+    // must not restore obsolete focus over a newer explicit Open ticket.
+    const observer = new MutationObserver(() => { const current = document.activeElement; if (!element.contains(current) || current instanceof HTMLElement && current.matches(':disabled')) focus(); });
+    observer.observe(document.body, {childList: true, subtree: true, attributes: true, attributeFilter: ["hidden", "inert", "aria-hidden", "role", "style", "class", "data-state", "disabled"]});
     return () => {
       active = false;
       observer.disconnect();
@@ -134,16 +137,18 @@ export function RequestDetailDialog({open, presentationAllowed = true, title, cl
       @media(max-width:767px){.request-detail-surface:not([hidden]){padding:0}.request-detail-dialog{width:100%;height:100dvh;max-height:100dvh;border:0;border-radius:0}.request-detail-header{padding:calc(12px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) 12px calc(12px + env(safe-area-inset-left))}.request-detail-body{padding:12px calc(12px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left))}}
     `}</style>
     <div className="request-detail-backdrop" aria-hidden="true" onClick={() => close.current()}/>
-    <div ref={content} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="request-detail-dialog">
+    <div ref={content} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="request-detail-dialog" data-record-mode={mode}>
       <header className="request-detail-header">
         <RequestButton type="button" onClick={() => close.current()}>{closeLabel}</RequestButton>
-        <h2 id={titleId}>{title}</h2>
+        <h2 id={titleId}>{title}{documentNumber&&<span className="record-document-number">{documentNumber}</span>}</h2>
         <RequestButton type="button" aria-label="Đóng hộp thoại" onClick={() => close.current()}>×</RequestButton>
       </header>
-      <div className="request-detail-body">{children}</div>
+      <RecordActionHost.Provider value={actionHost}><div ref={bodyRef} onScroll={onBodyScroll} className="request-detail-body">{children}</div></RecordActionHost.Provider><footer className="record-dialog-actions" ref={setActionHost}>{actions}</footer>
     </div>
   </div>;
 }
+
+
 
 /** Obscuring presentation keeps custody, but an old read cannot reopen it.
  * The host supplies a committed ready-read object and requests a fresh GET. */

@@ -47,9 +47,9 @@ test('I42 actual shared components render one safe semantic surface without a br
  const exact='1234567890123456789012345678.0001',ref=createRef(),calls=[];
  const rows=[{id:'QA-SSR-001',cells:['<script>synthetic</script>',exact,h(RequestStatus,{value:null})],action:'Mở',actionLabel:'Mở QA-SSR-001',buttonRef:ref,onOpen:()=>calls.push('open-1')},{id:'QA-SSR-002',cells:['QA-SSR-002',null,h(RequestStatus,{value:999,statusName:'<img src=x onerror=synthetic>'})],action:'Mở',actionLabel:'Mở QA-SSR-002',buttonRef:createRef(),onOpen:()=>calls.push('open-2')}];
  const html=renderToStaticMarkup(h(RequestListTable,{label:'SSR request adapter',columns:[{id:'identity',label:'Mã kiểm thử'},{id:'amount',label:'Số lượng'},{id:'status',label:'Trạng thái'}],rows}));
- assert.equal((html.match(/<table\b/g)??[]).length,1);assert.match(html,/role="table"/);assert.match(html,/data-shared-grid="true"/);assert.equal((html.match(/data-grid-row=/g)??[]).length,2);
+ assert.equal((html.match(/<table\b/g)??[]).length,1);assert.match(html,/role="grid"/);assert.match(html,/data-shared-grid="true"/);assert.equal((html.match(/data-grid-row=/g)??[]).length,2);
  for(const row of rows)assert.equal((html.match(new RegExp('aria-label="'+row.actionLabel+'"','g'))??[]).length,1,'Each supplied request has one exact Open action');
- assert.doesNotMatch(html,/mobile-document-list|Tùy chỉnh bảng|role="checkbox"/);assert.match(html,/&lt;script&gt;synthetic&lt;\/script&gt;/);assert.match(html,/&lt;img src=x onerror=synthetic&gt;/);assert.doesNotMatch(html,/<script|<img/);assert.ok(html.includes(exact));assert.match(html,/Chưa có trạng thái/);assert.deepEqual(calls,[]);
+ assert.doesNotMatch(html,/mobile-document-list|role="checkbox"/);assert.match(html,/Tùy chỉnh bảng/);assert.match(html,/&lt;script&gt;synthetic&lt;\/script&gt;/);assert.match(html,/&lt;img src=x onerror=synthetic&gt;/);assert.doesNotMatch(html,/<script|<img/);assert.ok(html.includes(exact));assert.match(html,/Chưa có trạng thái/);assert.deepEqual(calls,[]);
  const controls=renderToStaticMarkup(h(RequestListToolbar,{onSubmit:()=>calls.push('submit')},h(RequestSearch,{label:'Tìm kiểm thử',placeholder:'Tìm…',value:'QA',onChange:()=>{},inputRef:createRef(),maxLength:50,shortcut:'Ctrl F'}),h(RequestBranch,{label:'Chi nhánh kiểm thử',value:'QA-BRANCH',branches:['QA-BRANCH'],onChange:()=>{}}),h(RequestSelect,{name:'native-contract',disabled:true,'aria-label':'Native contract',value:'one',onChange:()=>{},ref:createRef()},h('option',{value:'one'},'Một'))));
  assert.match(controls,/class="request-list-toolbar"/);assert.match(controls,/<input[^>]*aria-label="Tìm kiểm thử"[^>]*maxLength="50"/);assert.equal((controls.match(/<select\b/g)??[]).length,2);assert.match(controls,/<select[^>]*name="native-contract"[^>]*disabled=""/);assert.match(controls,/<option value="QA-BRANCH" selected="">QA-BRANCH<\/option>/);assert.doesNotMatch(controls,/role="combobox"|data-slot="select-trigger"/);
  const pager=renderToStaticMarkup(h(RequestPagination,{label:'Phân trang kiểm thử',page:2,previousDisabled:false,nextDisabled:true,onPrevious:()=>{},onNext:()=>{},previousLabel:'Trang trước',nextLabel:'Trang sau'}));assert.match(pager,/<nav[^>]*aria-label="Phân trang kiểm thử"/);assert.match(pager,/request-panel-footer/);assert.match(pager,/request-list-pagination/);assert.match(pager,/Trang 2/);assert.match(pager,/<button[^>]*aria-label="Trang sau"[^>]*disabled=""/);
@@ -133,26 +133,30 @@ function installDetailFocusObserver(){
  HTMLElement.prototype.focus=function(...args){
   const frame=this.matches('.request-detail-dialog[role="dialog"]');
   if(frame||this.matches('[aria-label="Phiếu mua hàng hiện có"],[role="region"][aria-label="Phiếu nhập hàng đã chọn"]')){
-   window.requestDetailFocusCalls.push({kind:frame?'frame':'region',label:frame?document.getElementById(this.getAttribute('aria-labelledby'))?.textContent:this.getAttribute('aria-label')});
+   const heading=frame?document.getElementById(this.getAttribute('aria-labelledby')):null;
+   // The title text and current record number occupy separate nodes in the shared heading.
+   window.requestDetailFocusCalls.push({kind:frame?'frame':'region',label:frame?heading?.firstChild?.textContent:this.getAttribute('aria-label'),documentNumber:frame?heading?.querySelector('.record-document-number')?.textContent??null:null});
   }
   return Reflect.apply(native,this,args);
  };
 }
 test('detail focus observer preserves native behavior and counts repeated frame calls separately from regions',()=>{
- const require=createRequire(import.meta.url),{runInNewContext}=require('node:vm'),nativeCalls=[],token={},error=Error('synthetic-native-error');
+ const require=createRequire(import.meta.url),{runInNewContext}=require('node:vm'),nativeCalls=[],token={},error=Error('synthetic-native-error'),headings=new Map();
  class HTMLElement{
-  constructor(frame,label){this.frame=frame;this.label=label;}
+  constructor(frame,label='Phiếu nhập hàng đã chọn',documentNumber=null){this.frame=frame;this.label=label;this.titleId='title-'+headings.size;headings.set(this.titleId,{textContent:label+(documentNumber??''),firstChild:{textContent:label},querySelector:()=>documentNumber===null?null:{textContent:documentNumber}});}
   matches(selector){return selector.startsWith('.request-detail-dialog')?this.frame:!this.frame&&this.label==='Phiếu nhập hàng đã chọn';}
-  getAttribute(name){return name==='aria-labelledby'?'title':this.label;}
+  getAttribute(name){return name==='aria-labelledby'?this.titleId:this.label;}
   focus(...args){nativeCalls.push({receiver:this,args});if(args[0]?.fail)throw error;return token;}
  }
- const window={},document={getElementById:()=>({textContent:'Phiếu nhập hàng đã chọn'})};
+ const window={},document={getElementById:id=>headings.get(id)};
  runInNewContext(`(${installDetailFocusObserver.toString()})();`,{window,document,HTMLElement,Reflect});
  const frame=new HTMLElement(true),region=new HTMLElement(false,'Phiếu nhập hàng đã chọn'),other=new HTMLElement(false,'other'),options={preventScroll:true};
  assert.strictEqual(frame.focus(options),token);assert.strictEqual(frame.focus(options),token);assert.strictEqual(region.focus(options),token);assert.strictEqual(other.focus(options),token);
  assert.deepEqual(nativeCalls.map(call=>call.receiver),[frame,frame,region,other]);assert.ok(nativeCalls.every(call=>call.args.length===1&&call.args[0]===options));
- assert.deepEqual(JSON.parse(JSON.stringify(window.requestDetailFocusCalls)),[{kind:'frame',label:'Phiếu nhập hàng đã chọn'},{kind:'frame',label:'Phiếu nhập hàng đã chọn'},{kind:'region',label:'Phiếu nhập hàng đã chọn'}]);
+ assert.deepEqual(JSON.parse(JSON.stringify(window.requestDetailFocusCalls)),[{kind:'frame',label:'Phiếu nhập hàng đã chọn',documentNumber:null},{kind:'frame',label:'Phiếu nhập hàng đã chọn',documentNumber:null},{kind:'region',label:'Phiếu nhập hàng đã chọn',documentNumber:null}]);
  assert.throws(()=>other.focus({fail:true}),caught=>caught===error);assert.equal(nativeCalls.length,5);assert.equal(window.requestDetailFocusCalls.length,3);
+ for(const label of ['Phiếu nhập hàng đã chọn','Phiếu mua hàng hiện có'])for(const documentNumber of [null,'DOC-A','DOC-B'])new HTMLElement(true,label,documentNumber).focus(options);
+ assert.deepEqual(JSON.parse(JSON.stringify(window.requestDetailFocusCalls.slice(-6))),['Phiếu nhập hàng đã chọn','Phiếu mua hàng hiện có'].flatMap(label=>[null,'DOC-A','DOC-B'].map(documentNumber=>({kind:'frame',label,documentNumber}))), 'Both exact dialog titles retain separate changing document identities');
 });
 
 let compiledPresentation;
@@ -168,7 +172,7 @@ async function compilePresentation(){
  const notificationFile=path.join(output,'notification-contract.mjs');
  await build({absWorkingDir:app,entryPoints:['components/erp/request-notifications.ts'],outfile:notificationFile,bundle:true,platform:'node',format:'esm',packages:'external',logLevel:'warning'});
  const {createRequestNotifications}=await import(pathToFileURL(notificationFile).href);
- const entry=`import React from 'react';import{createRoot}from'react-dom/client';import Workspace from './components/erp/workspace';import{RequestError}from'./components/erp/request-presentation';import{ApiError}from'./lib/erp/api';import{MobileInboundRequest}from'./components/erp/mobile-inbound-request';import{NavigationGuardProvider,useNavigationGuard}from'./components/erp/navigation-guard';import{Toaster}from'sonner';import{ServerQueryControls}from'./components/erp/query-controls';import{ErpGrid}from'./components/erp/grid';
+ const entry=`import React from 'react';import{createRoot}from'react-dom/client';import Workspace from './components/erp/workspace';import {PurchaseRequestScreen} from './components/erp/purchase-request-screen';import {InboundRequestScreen} from './components/erp/inbound-request-screen';import{RequestError}from'./components/erp/request-presentation';import{ApiError}from'./lib/erp/api';import{MobileInboundRequest}from'./components/erp/mobile-inbound-request';import{NavigationGuardProvider,useNavigationGuard}from'./components/erp/navigation-guard';import{Toaster}from'sonner';import{ServerQueryControls}from'./components/erp/query-controls';import{ErpGrid}from'./components/erp/grid';
  function installReadonlyClockDiagnostics(){
   if(!window.i33ObserveClock)return;
   const nativeSetInterval=window.setInterval,nativeClearInterval=window.clearInterval,active=new Map(),events=[];let serial=0,droppedEvents=0;
@@ -209,7 +213,11 @@ async function compilePresentation(){
  function QueryControlsComponentFixture(){const[value,setValue]=React.useState({filters:[],sort:[]});return <main data-testid='i42-query-fixture' className='workspace-content'><h1>ServerQueryControls component contract</h1><p>Isolated component with synthetic definitions. Not connected to Workspace or the ERP API.</p><ServerQueryControls fields={queryFields} sortFields={[{id:'date',label:'Ngày kiểm thử'},{id:'amount',label:'Số lượng kiểm thử'}]} groups={[{id:'branch',label:'Chi nhánh kiểm thử'}]} value={value} busy={false} onApply={next=>{window.i42QueryApplied.push(structuredClone(next));setValue(next);}}/></main>;}
  const wideColumns=[{id:'identity',label:'Identity',width:200,required:true},...Array.from({length:16},(_,index)=>({id:'c'+String(index+1).padStart(2,'0'),label:'Field '+String(index+1).padStart(2,'0'),width:160}))],wideRows=[{id:'QA-WIDE-001'},{id:'QA-WIDE-002'}];window.i42WideOpens=[];
  function WideGridComponentFixture(){return <main data-testid='i42-wide-grid-fixture' className='workspace-content'><h1>Wide ErpGrid component contract</h1><p>Isolated virtual-column fixture with synthetic rows. Not connected to Workspace or the ERP API.</p><section style={{width:880,maxWidth:'100%'}}><ErpGrid rows={wideRows} columns={wideColumns} rowId={row=>row.id} renderCell={(row,id)=>id==='identity'?row.id:row.id+' '+id} rowAction={row=>({label:'Open',accessibleLabel:'Open '+row.id})} onOpen={row=>window.i42WideOpens.push(row.id)} schemaVersion='wide-fixture-v1' scopeKey='wide-fixture' compact={false} label='Wide column component contract'/></section></main>;}
- createRoot(document.getElementById('root')).render(params.has('wide-grid-component')?<WideGridComponentFixture/>:params.has('query-component')?<QueryControlsComponentFixture/>:params.has('diagnostics')?<RequestError error={new ApiError(503,'PRIVATE_SQL_SENTINEL','PRIVATE_COOKIE_SENTINEL')}/>:['Rejected','Conflict'].includes(terminalOutcome)?<TerminalComponentFixture/>:<Workspace/>);`;
+ // I50 R1 synthetic host presentation loss retains genuine editor adapters/grants.
+ const hostWorkspace={session:{displayName:'SYNTHETIC',tenantId:'QA-T',companyId:'QA-C',companyName:'SYNTHETIC',authorityVersion:1,absoluteExpiresAt:'2099-01-01T00:00:00Z',capabilities:['purchase-requests.read','inbound-requests.read']},branchIds:['QA-BRANCH'],sessionScope:'${session}',readScope:'${scope}',navigation:[]};
+ const hostDenied=error=>{throw error;},hostVerify=async()=>{},hostLogin=()=>{};
+ function PresentationHostFixture(){const[allowed,setAllowed]=React.useState(true);window.i50Presentation=setAllowed;const kind=params.get('screen');return <NavigationGuardProvider authority={{lifecycleKey:'synthetic-presentation',presentationAllowed:allowed}}><main className='workspace-content'>{kind==='purchase-requests'?<PurchaseRequestScreen workspace={hostWorkspace} loginBoundary={1} sessionEnded={false} onVerifyWorkspace={hostVerify} onDenied={hostDenied} onLogin={hostLogin} presentationAllowed={allowed}/>:<InboundRequestScreen workspace={hostWorkspace} loginKey='synthetic-presentation' historyOwner='workspace' presentationAllowed={allowed} onDenied={hostDenied}/>}</main></NavigationGuardProvider>;}
+ createRoot(document.getElementById('root')).render(params.has('i50-presentation')?<PresentationHostFixture/>:params.has('wide-grid-component')?<WideGridComponentFixture/>:params.has('query-component')?<QueryControlsComponentFixture/>:params.has('diagnostics')?<RequestError error={new ApiError(503,'PRIVATE_SQL_SENTINEL','PRIVATE_COOKIE_SENTINEL')}/>:['Rejected','Conflict'].includes(terminalOutcome)?<TerminalComponentFixture/>:<Workspace/>);`;
  const built=await build({absWorkingDir:app,stdin:{contents:entry,resolveDir:app,loader:'tsx'},outfile:path.join(output,'app.js'),bundle:true,write:false,platform:'browser',format:'iife',alias:{'@':app},jsx:'automatic',define:{'process.env.NODE_ENV':'"production"','process.env':'{}'},logLevel:'warning',plugins:[{name:'next-image-only',setup(build){build.onResolve({filter:/^next\/image$/},()=>({path:'image',namespace:'i30-image'}));build.onLoad({filter:/.*/,namespace:'i30-image'},()=>({contents:"import React from 'react';export default function Image({src,alt,width,height}){return <img src={src} alt={alt} width={width} height={height}/>;}",resolveDir:app,loader:'jsx'}));}}]});
  const cssSource=await readFile(path.join(app,'app/globals.css'),'utf8');
  const applicationCss=(await postcss([tailwind({base:app})]).process(cssSource,{from:path.join(app,'app/globals.css')})).css;
@@ -226,6 +234,32 @@ async function compilePresentation(){
  return compiledPresentation;
 }
 test('I30 actual Workspace presentation fixture compiles with Tailwind and CSS modules',async()=>{await compilePresentation();});
+test('I50 compiled mobile cells override customizable desktop clipping without changing desktop density',async()=>{
+ const require=createRequire(import.meta.url),postcss=require('postcss'),{css}=await compilePresentation(),root=postcss.parse(css),rules=[];
+ root.walkRules(rule=>rules.push(rule));
+ const exact=selector=>rules.filter(rule=>rule.selectors.includes(selector));
+ const desktop=exact('.erp-grid[data-customizable=true] .shared-grid-table td');
+ const mobile=exact('.erp-grid[data-customizable=true] .request-list-table td');
+ assert.equal(desktop.length,1);assert.equal(mobile.length,1,'Mobile must match the customizable desktop selector specificity');
+ const [d]=desktop,[m]=mobile;
+ assert.equal(d.parent.type,'root');assert.equal(m.parent.type,'atrule');assert.equal(m.parent.name,'media');assert.match(m.parent.params,/^\(max-width:\s*767px\)$/);assert.equal(m.parent.parent.type,'root');
+ // These exact selectors each contain two classes, one attribute and one tag.
+ // Equal unlayered specificity makes the later mobile declarations win.
+ assert.ok(rules.indexOf(m)>rules.indexOf(d));
+ const declaration=(rule,name)=>{const matches=rule.nodes.filter(node=>node.type==='decl'&&node.prop===name);assert.equal(matches.length,1,name);return matches[0];};
+ for(const [name,desktopValue,mobileValue] of [['white-space','nowrap','normal'],['overflow','hidden','visible']]){
+  assert.equal(declaration(d,name).value,desktopValue);assert.equal(declaration(d,name).important,undefined);assert.equal(declaration(m,name).value,mobileValue);
+ }
+ assert.deepEqual(m.nodes.filter(node=>node.type==='decl').map(node=>node.prop).sort(),['overflow','white-space'],'The higher-specificity repair must not override hidden mobile cell display');
+ const base=exact('.erp-grid .request-list-table td'),hidden=exact('.erp-grid .request-list-table .grid-select-cell');assert.equal(base.length,1);assert.equal(hidden.length,1);
+ assert.strictEqual(base[0].parent,m.parent);assert.strictEqual(hidden[0].parent,m.parent);assert.deepEqual(base[0].selectors,['.erp-grid .request-list-table td']);assert.ok(hidden[0].selectors.includes('.erp-grid .request-list-table .grid-spacer'));
+ // Hidden selection/spacer cells retain (0,3,0), above the unchanged base
+ // display:block rule's (0,2,1); the narrow repair has no display declaration.
+ assert.equal(declaration(base[0],'display').value,'block');assert.equal(declaration(hidden[0],'display').value,'none');
+ assert.equal(declaration(d,'height').value,'var(--grid-row-height)');assert.equal(declaration(base[0],'height').value,'auto');assert.equal(declaration(base[0],'height').important,true);assert.equal(declaration(base[0],'overflow-wrap').value,'anywhere');
+ // Compilation/cascade admission only; the unchanged native range geometry
+ // assertion below still proves that every identifier character is readable.
+});
 test('I30 compiled application presentation at 320,390,1440',{timeout:240000},async t=>{
  const require=createRequire(import.meta.url),tools=process.env.MEDCOM_BROWSER_TOOLCHAIN;
  let chromium;
@@ -235,7 +269,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
  assert.ok(existsSync(executable),'Installed Chromium/Edge is required.');
  const {script,logo,css,cssSource,cssModules,createRequestNotifications}=await compilePresentation();
  const html='<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/app.css"><div id="root"></div><script src="/app.js"></script></html>';
- let model,serial=0,browser,context,page,origin,completed=false,fatal=null,clockPaused=false;const expectedCases=36;const errors=[],results=[],failures=[],captures=[],calls=[],transportEvidence=[],readonlyEvidence=[],commandGeometryEvidence=[],sharedGridEvidence=[];
+ let model,serial=0,browser,context,page,origin,completed=false,fatal=null,clockPaused=false;const expectedCases=38;const errors=[],results=[],failures=[],captures=[],calls=[],transportEvidence=[],readonlyEvidence=[],commandGeometryEvidence=[],sharedGridEvidence=[],stickyToolbarEvidence=[],portalPresentationEvidence=[];
  const reset=(patch={})=>{model={serial:++serial,writable:false,empty:false,status:200,holdList:false,waiters:[],listResponses:0,listResponseHeaders:null,holdDetail:false,detailWaiters:[],detailStatus:200,draftEnvelope:null,draftNetwork:false,draftNetworkFailures:0,draftMalformed:false,draftResponses:0,afterWriteDraftEnvelope:null,holdProjection:false,projectionWaiters:[],projectionStatus:200,projectionKind:null,projectionResponses:0,unknown:false,workspaceReads:0,workspaceResponses:0,workspacePending:0,workspaceVersions:[],advanceAuthority:false,deniedLists:0,workspaceStatus:200,purchase:structuredClone(purchase),inbound:structuredClone(inbound),purchaseVersion:1,inboundVersion:1,effects:0,originals:new Map(),receipts:new Map(),writes:[],reconciles:[],control:{closed:[],bff:[]},holdCommands:false,commandWaiters:[],commandResponses:0,rejected:false,conflict:false,malformed:false,...patch};calls.length=0;};
  const workspace=()=>({session:{displayName:'SYNTHETIC USER',tenantId:'QA-T',companyId:'QA-C',companyName:'SYNTHETIC',authorityVersion:model.advanceAuthority?model.workspaceReads:1,idleExpiresAt:new Date(Date.now()+3600000).toISOString(),absoluteExpiresAt:new Date(Date.now()+7200000).toISOString(),capabilities:model.workspaceCapabilities??['purchase-requests.read','inbound-requests.read','purchase-orders.read']},branchIds:['QA-BRANCH'],navigation:['purchase-requests','inbound-requests','purchase-orders'].map(id=>({id,label:id,href:'/?screen='+id}))});
  const send=(res,status,data,headers={})=>{if(res.destroyed)return;res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store',...headers});res.end(JSON.stringify(data));};
@@ -370,7 +404,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
  t.signal.addEventListener('abort',abortCleanup,{once:true});
  async function start(width,screen,patch={},query=''){clockPaused=false;release();await context?.close();reset(patch);context=await browser.newContext({viewport:{width,height:900},locale:'vi-VN',serviceWorkers:'block'});page=await context.newPage();await page.addInitScript(installDetailFocusObserver);if(patch.installClock||patch.observeWorkspace){const clockTime=new Date();if(patch.installClock)await page.clock.install({time:clockTime});await page.addInitScript(({clockOrigin,fakeClock})=>{window.i33ObserveClock=true;window.i33ClockOrigin=clockOrigin;window.i33FakeClock=fakeClock;},{clockOrigin:clockTime.getTime(),fakeClock:!!patch.installClock});}page.setDefaultTimeout(10000);page.on('pageerror',error=>errors.push(error.message));await page.route('**/*',route=>{const url=new URL(route.request().url());if(url.origin!==origin)return route.abort();if(model.draftNetwork&&url.pathname==='/api/erp/api/inbound-requests/draft'){model.draftNetworkFailures++;return route.abort('failed');}return route.continue();});await page.goto(origin+'/?screen='+screen+query);if(patch.installClock)await pauseScenarioClock();}
  const host=screen=>screen==='purchase-requests'?page.getByRole('region',{name:'Danh sách đề nghị mua hàng',exact:true}):page.getByTestId('inbound-request-host');
- const detailDialog=screen=>page.getByRole('dialog',{name:screen==='purchase-requests'?'Phiếu mua hàng hiện có':'Phiếu nhập hàng đã chọn',exact:true});
+ const detailDialog=screen=>page.getByRole('dialog',{name:screen==='purchase-requests'?/^Phiếu mua hàng hiện có/:/^Phiếu nhập hàng đã chọn/});
  // A modal legitimately blocks pointer access to background list/navigation.
  // Programmatic activation below challenges those existing guard entry points;
  // it is never presented as a user reaching through the dialog backdrop.
@@ -405,11 +439,69 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
   const layout=[...document.querySelectorAll('[data-slot=sidebar-wrapper],[data-slot=sidebar-gap],[data-slot=sidebar-container],[data-slot=sidebar-inset],.topbar,.topbar-context,.topbar-actions,.global-search,.user-button,.workspace-content,.request-list-toolbar,.desktop-grid-viewport,.request-list-table,.request-list-pagination,.mobile-bottom-nav')].slice(0,24).map(describe);
   return {viewport,documentSize,mobileMedia:matchMedia('(max-width: 767px)').matches,fits:documentSize.scrollWidth<=viewport.width,offenderCount:candidates.length,offenders,animations,globalSearch,layout,activeElement:document.activeElement instanceof Element?identity(document.activeElement):null};
  });}
+ // Test-only observation of the locked React renderer's own row key. IDs stay
+ // internal: do not add DOM attributes or expose them to users to satisfy tests.
+ async function retainedLineIdentity(rows,lines,indexed=false){
+  assert.deepEqual(await rows.evaluateAll(elements=>elements.map(element=>{
+   const names=Object.keys(element).filter(name=>name.startsWith('__reactFiber$'));
+   if(names.length!==1||typeof element[names[0]]?.key!=='string')throw Error('Exactly one own keyed React row fiber is required');
+   return element[names[0]].key;
+  })),lines.map((line,index)=>indexed?`${index}:${line.lineId}`:line.lineId),'Every source line keeps its exact internal identity and order');
+ }
+ async function hiddenLineIdentities(container,lines){
+  const ids=lines.map(line=>line.lineId);
+  const leaks=await container.evaluate((element,ids)=>({text:ids.filter(id=>element.textContent.includes(id)),markup:ids.filter(id=>element.outerHTML.includes(id))}),ids);
+  assert.deepEqual(leaks,{text:[],markup:[]},'Internal line IDs must not become rendered text or DOM/accessibility attributes');
+ }
+ const sourceValue=value=>value===null?'NULL':value===''?'""':String(value);
+ const purchaseLineValues=document=>document.lines.map((line,index)=>[index+1,line.values.itemId,line.values.budget,line.values.timeRequired,line.values.quantity,line.values.unitPrice,line.values.totalPrice,line.values.model].map(sourceValue));
+ const readonlyLineValues=detail=>detail.inboundRequestLines.map((line,index)=>[(detail.page-1)*detail.pageSize+index+1,line.itemId,line.setQuantityByDocument,line.barrelQuantityByDocument,line.setQuantityByReal,line.barrelQuantityByReal].map(sourceValue));
+ async function exactReadonlyLines(panel,detail){
+  const rows=panel.locator('article');assert.equal(await rows.count(),detail.inboundRequestLines.length);
+  assert.deepEqual(await rows.evaluateAll(elements=>elements.map(row=>[...row.querySelectorAll('dt')].map(value=>value.textContent))),detail.inboundRequestLines.map(()=>['STT','Mã hàng','Số bộ theo chứng từ','Số thùng theo chứng từ','Số bộ thực tế','Số thùng thực tế']));
+  assert.deepEqual(await rows.evaluateAll(elements=>elements.map(row=>[...row.querySelectorAll('dd')].map(value=>value.textContent))),readonlyLineValues(detail),'Every business value and page-adjusted STT is exact and in source order');
+  await retainedLineIdentity(rows,detail.inboundRequestLines,true);await hiddenLineIdentities(panel,readonlyLines);
+ }
  async function expandFullReadback(){const region=page.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true});await region.waitFor();const disclosure=region.locator('details');if(!await disclosure.evaluate(el=>el.open))await disclosure.locator('summary').click();return region;}
  const open=screen=>screen==='purchase-requests'?page.getByRole('button',{name:'Mở đề nghị '+model.purchase.purchaseRequestId,exact:true}):page.getByRole('button',{name:new RegExp('^Mở phiếu '+model.inbound.documentId+' ')});
  async function run(name,fn){await t.test(name,async()=>{try{await fn();results.push(name);}catch(error){failures.push(name);throw error;}});}
  try{
   browser=await chromium.launch({executablePath:executable,headless:true,chromiumSandbox:true});t.signal.throwIfAborted();
+  await run('I50 R1 native viewport sticky scroll across all three actual list hosts',async()=>{
+   for(const width of [390,1440])for(const screen of ['purchase-requests','purchase-orders','inbound-requests']){
+    const documents=Array.from({length:20},(_,index)=>({...structuredClone(purchase),purchaseRequestId:'QA-PURCHASE-'+String(index+1).padStart(3,'0')}));
+    const inbounds=Array.from({length:50},(_,index)=>({...structuredClone(inbound),documentId:'QA-INBOUND-'+String(index+1).padStart(3,'0')}));
+    await start(width,screen,{purchaseDocuments:documents,inboundDocuments:inbounds,orderPages:[Array.from({length:20},(_,index)=>orderRow(index+1))]});await page.setViewportSize({width,height:360});
+    const panel=page.locator('.request-list-panel:visible');await panel.locator('[data-grid-row]').first().waitFor();await paint();
+    const toolbar=panel.locator('.request-list-toolbar');const initial=await toolbar.evaluate(element=>{const box=element.getBoundingClientRect(),nav=document.querySelector('.topbar').getBoundingClientRect(),panel=element.closest('.request-list-panel'),style=getComputedStyle(panel);return {documentTop:box.top+scrollY,navBottom:nav.bottom,position:getComputedStyle(element).position,overflowX:style.overflowX,overflowY:style.overflowY,maxScroll:document.scrollingElement.scrollHeight-innerHeight};});
+    assert.equal(initial.position,'sticky');assert.equal(initial.overflowX,'visible');assert.equal(initial.overflowY,'visible');
+    const first=initial.documentTop-initial.navBottom+24,second=first+80;assert.ok(initial.maxScroll>=second,'Natural production list geometry must provide actual viewport scroll range: '+JSON.stringify(initial));
+    const measure=()=>toolbar.evaluate(element=>({scrollY,top:element.getBoundingClientRect().top,navBottom:document.querySelector('.topbar').getBoundingClientRect().bottom,panelTop:element.closest('.request-list-panel').getBoundingClientRect().top,gridScroll:element.closest('.request-list-panel').querySelector('.desktop-grid-viewport').scrollTop}));
+    await page.evaluate(y=>window.scrollTo(0,y),first);await paint();const a=await measure();await page.evaluate(y=>window.scrollTo(0,y),second);await paint();const b=await measure();
+    assert.ok(b.scrollY-a.scrollY>=79,'The real viewport scrolls, rather than a simulated DOM model');assert.ok(b.panelTop<a.panelTop-79);
+    for(const value of [a,b])assert.ok(Math.abs(value.top-value.navBottom)<=2,'Toolbar remains immediately below navigation: '+JSON.stringify(value));assert.equal(a.gridScroll,b.gridScroll,'Viewport test does not scroll the inner table instead');
+    assert.ok(calls.every(call=>call.method==='GET'));stickyToolbarEvidence.push({screen,width,nativeScroll:'PASS',initial,first:a,second:b});
+   }
+   assert.equal(stickyToolbarEvidence.length,6);
+  });
+  await run('I50 R1 native body portal and footer obey actual purchase/inbound host presentation loss',async()=>{
+   for(const screen of ['purchase-requests','inbound-requests']){
+    await start(390,screen,{writable:true},'&i50-presentation');await open(screen).click();
+    const form=screen==='purchase-requests'?page.locator('form[aria-label="Đề nghị mua hàng trên điện thoại"]'):page.getByTestId('inbound-editor');await form.waitFor();
+    const note=form.locator(screen==='purchase-requests'?'textarea[name="notes"]':'textarea#inbound-header-notes');await note.fill('SYNTHETIC PRESENTATION CUSTODY');const editor=await note.elementHandle();
+    const lines=()=>form.locator(screen==='purchase-requests'?'article':'fieldset.request-line');const count=await lines().count();assert.ok(count>0);
+    await form.getByRole('button',{name:screen==='purchase-requests'?'Bỏ dòng 1':'Xóa dòng 1',exact:true}).click();const confirmation=page.getByRole('alertdialog');await confirmation.waitFor();
+    assert.equal(await confirmation.evaluate(element=>element.closest('[data-testid="inbound-request-host"],[aria-label="Danh sách đề nghị mua hàng"]')===null),true,'Radix confirmation is a real body portal');
+    await confirmation.getByRole('button',{name:'Xóa dòng',exact:true}).evaluate(element=>{const key=Object.keys(element).find(key=>key.startsWith('__reactProps$'));if(!key||typeof element[key].onClick!=='function')throw Error('Actual React confirmation handler required');window.i50QueuedConfirm=element[key].onClick;});
+    const ownerForm=screen==='purchase-requests'?form:form.locator('form');await ownerForm.evaluate(element=>{const key=Object.keys(element).find(key=>key.startsWith('__reactProps$'));if(!key||typeof element[key].onSubmit!=='function')throw Error('Actual portaled footer form owner required');window.i50QueuedReview=element[key].onSubmit;});
+    await page.evaluate(()=>window.i50Presentation(false));await paint();assert.equal(await page.getByRole('alertdialog').count(),0);assert.equal(await page.locator('.record-dialog-actions .request-action-bar:visible').count(),0);
+    await page.evaluate(()=>(()=>{window.i50QueuedConfirm({preventDefault(){},stopPropagation(){}});window.i50QueuedReview({preventDefault(){}});})());await paint();assert.equal(await lines().count(),count);assert.equal(await editor.evaluate(element=>element.isConnected),true);
+    await page.evaluate(()=>window.i50Presentation(true));await note.waitFor();await eventually(()=>note.isEnabled());await paint();await page.evaluate(()=>(()=>{window.i50QueuedConfirm({preventDefault(){},stopPropagation(){}});window.i50QueuedReview({preventDefault(){}});})());await paint();
+    assert.equal(await lines().count(),count);assert.equal(await page.getByRole('alertdialog').count(),0,'Restore does not revive the old confirmation');assert.equal(await note.inputValue(),'SYNTHETIC PRESENTATION CUSTODY');assert.equal(await page.getByRole('button',{name:'Quay lại chỉnh sửa',exact:true}).count(),0,'Old footer/form action cannot revive review on restore');
+    assert.equal(await page.locator('.record-dialog-actions .request-action-bar:visible').count(),1);assert.ok(calls.every(call=>call.method==='GET'));
+    portalPresentationEvidence.push({screen,nativePortal:'PASS',maskedConfirmation:'hidden',maskedFooter:'hidden',queuedAction:'rejected during loss and after restore',lineCount:count,requests:'GET only'});
+   }
+  });
   for(const width of [320,390,1440])for(const screen of ['purchase-requests','inbound-requests']){
    await run(`${width} ${screen} list and authorized read-only detail`,async()=>{
     await start(width,screen);await open(screen).waitFor();if(screen==='inbound-requests')assert.equal(await page.getByText('Phiên hoặc quyền đọc hiện tại không khả dụng. Dữ liệu của phiên trước được ẩn.',{exact:true}).isVisible(),false);await layout(width,screen);assert.match(await host(screen).innerText(),/01\/10\/2026/);assert.equal(await host(screen).getByText('Trạng thái tổng hợp',{exact:true}).count(),1);await capture(`${screen}-list-${width}`);
@@ -430,8 +522,8 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
   }
   for(const width of [320,390,1440])await run(`I36 compact shell and command dialog ${width}`,async()=>{
    await start(width,'purchase-requests');await open('purchase-requests').waitFor();
-   const table=host('purchase-requests').getByRole('table',{name:'Danh sách đề nghị',exact:true});
-   assert.equal(await table.locator('tbody tr').count(),1);assert.equal(await table.getByRole('columnheader').count(),7);
+   const table=host('purchase-requests').getByRole('grid',{name:'Danh sách đề nghị',exact:true});
+   assert.equal(await table.locator('[data-grid-row]').count(),1);assert.equal(await table.getByRole('columnheader').count(),7);
    assert.equal(await table.getByRole('button',{name:'Mở đề nghị '+purchase.purchaseRequestId,exact:true}).count(),1,'One responsive row has one focus destination');
    const topbar=await page.locator('.topbar').evaluate(el=>({background:getComputedStyle(el).backgroundColor,card:getComputedStyle(document.querySelector('.request-list-header')).backgroundColor}));assert.equal(topbar.background,topbar.card,'Sticky shell must use an opaque card background');
    if(width<768){const nav=page.locator('.mobile-bottom-nav');const labels=await nav.locator('.mobile-nav-item > span:last-child').evaluateAll(els=>els.map(el=>({height:el.getBoundingClientRect().height,line:parseFloat(getComputedStyle(el).lineHeight),nowrap:getComputedStyle(el).whiteSpace})));assert.ok(labels.every(el=>el.nowrap==='nowrap'&&el.height<=el.line+1));await nav.getByRole('button',{name:'Tìm màn hình được cấp quyền',exact:true}).evaluate(el=>window.i36ExpectedOpener=el);await nav.getByRole('button',{name:'Tìm màn hình được cấp quyền',exact:true}).click();}
@@ -488,20 +580,20 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
     assert.equal(await table.count(),1,'Each list uses exactly one shared table');
     assert.equal(await table.locator('tbody tr[data-grid-row]').count(),1,'Mobile and desktop reuse the same semantic data row');
     assert.equal(await list.locator('.mobile-document-list').count(),0,'There is no duplicate hidden mobile renderer');
-    assert.equal(await table.evaluate(el=>el.getAttribute('role')??'table'),orders?'grid':'table','Request adapters retain native table semantics');
+    assert.equal(await table.evaluate(el=>el.getAttribute('role')??'table'),'grid','Shared customizable tables expose one keyboard surface');
     const toolbar=list.locator('form.request-list-toolbar'),pager=orders?list.locator('.request-list-pagination'):list.getByRole('navigation',{name:screen==='purchase-requests'?'Phân trang đề nghị':'Trang danh sách phiếu',exact:true});
     assert.equal(await toolbar.count(),1);assert.equal(await pager.count(),1);
     assert.equal(await pager.evaluate(el=>el.classList.contains('request-panel-footer')),true,'All list pagers share the request footer surface');
     assert.match(await pager.innerText(),/Trang 1/);assert.equal(await pager.getByRole('button',{name:/^Trang (trước|phiếu trước)$/}).isDisabled(),true);assert.equal(await pager.getByRole('button',{name:/^Trang (sau|tiếp theo|phiếu tiếp)$/}).isDisabled(),true);
     const branch=toolbar.getByLabel(screen==='inbound-requests'?'Lọc chi nhánh':'Chi nhánh',{exact:true});
     assert.equal(await branch.evaluate(el=>el.tagName),'SELECT','Every branch control uses the native select contract');
-    assert.deepEqual(await branch.locator('option').allTextContents(),['Tất cả chi nhánh được cấp quyền','QA-BRANCH']);
+    assert.deepEqual(await branch.locator('option').allTextContents(),['Tất cả','QA-BRANCH']);
     const controlGeometry=await toolbar.locator('button,input,select').evaluateAll(elements=>elements.filter(el=>el.getBoundingClientRect().width>0).map(el=>({tag:el.tagName,height:el.getBoundingClientRect().height,font:parseFloat(getComputedStyle(el).fontSize)})));
     assert.ok(controlGeometry.length>=3);assert.ok(controlGeometry.every(control=>control.height>=43.5),'Shared toolbar touch targets remain 44px: '+JSON.stringify(controlGeometry));
     if(width<768)assert.ok(controlGeometry.filter(control=>['INPUT','SELECT'].includes(control.tag)).every(control=>control.font>=16),'Mobile native input fonts remain 16px');
     const route=orders?'/api/documents/purchase-orders':screen==='purchase-requests'?'/api/purchase-requests':'/api/documents/inbound-requests';
     const search=toolbar.locator('input');await search.fill('QA');await branch.selectOption('QA-BRANCH');
-    await toolbar.getByRole('button',{name:'Tìm kiếm',exact:true}).click();
+    await toolbar.locator('input').press('Enter');
     await eventually(()=>calls.some(call=>call.route===route&&call.search==='QA'&&call.branchId==='QA-BRANCH'&&call.page==='1'));
     await action.waitFor();await paint();
     // Count every DOM node, including hidden nodes, and retain its identity through
@@ -527,13 +619,11 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
      await eventually(()=>action.evaluate(el=>el===document.activeElement));
      assert.equal(await search.inputValue(),'QA','Opening and closing preserves the applied filter draft');
     }
-    if(orders&&width<768){
+    if(width<768){
+     assert.equal(await table.locator('.grid-select-cell:visible,.grid-spacer:visible').count(),0,'Mobile hides selection and virtual spacer cells after customizable wrapping changes');
      assert.equal(await table.locator('.column-resizer[tabindex]:not([tabindex="-1"])').count(),0,'Mobile never retains a hidden keyboard-focusable column resizer');
-     await list.getByRole('button',{name:'Tùy chỉnh bảng',exact:true}).click();const settings=page.getByRole('dialog',{name:'Tùy chỉnh bảng',exact:true});await settings.waitFor();await paint();
-     const geometry=await settings.evaluate(el=>{const box=el.getBoundingClientRect();return {left:box.left,right:box.right,top:box.top,bottom:box.bottom,width:innerWidth,height:innerHeight};});
-     assert.ok(geometry.left>=0&&geometry.right<=geometry.width&&geometry.top>=0&&geometry.bottom<=geometry.height,'Orders settings stay inside the mobile viewport: '+JSON.stringify(geometry));
-     assert.ok((await settings.locator('input').evaluateAll(elements=>elements.map(el=>parseFloat(getComputedStyle(el).fontSize)))).every(font=>font>=16),'Mobile settings inputs retain native 16px text');
-     await page.keyboard.press('Escape');await settings.waitFor({state:'hidden'});
+     assert.equal(await list.getByRole('button',{name:'Tùy chỉnh bảng',exact:true}).isVisible(),false,'Mobile tools omit customization');
+     assert.equal(await page.getByRole('dialog',{name:'Tùy chỉnh bảng',exact:true}).count(),0);
     }
     assert.equal(calls.filter(call=>call.method==='POST').length,0);
     sharedGridEvidence.push({kind:'shared-list',screen,width,sharedTables:await table.count(),liveOpenActions:await list.locator(actionSelector).count(),nativeBranch:true,responsiveNodeIdentity:true,controlGeometry});
@@ -562,7 +652,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
    for(const source of ['cell','document-button']){
     const before=calls.filter(call=>call.route==='/api/documents/purchase-orders/detail').length;
     await (source==='cell'?cell(0,0):cell(0,0).getByRole('button',{name:'QA-ORDER-001',exact:true})).focus();await page.keyboard.press('Enter');
-    const detail=page.getByRole('dialog',{name:'QA-ORDER-001',exact:true});await detail.waitFor();await detail.getByText('QA-ORDER-ITEM-001',{exact:true}).locator('visible=true').waitFor();
+    const detail=page.getByRole('dialog',{name:'Đơn đặt hàng mua QA-ORDER-001',exact:true});await detail.waitFor();await detail.getByText('QA-ORDER-ITEM-001',{exact:true}).locator('visible=true').waitFor();
     assert.equal(calls.filter(call=>call.route==='/api/documents/purchase-orders/detail').length,before+1,'Exactly one detail GET per keyboard activation');
     await page.keyboard.press('Escape');await detail.waitFor({state:'hidden'});
    }
@@ -574,7 +664,8 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
    assert.equal(calls.filter(call=>call.method==='POST').length,0);
    const pageRequests=calls.filter(call=>call.route==='/api/documents/purchase-orders').map(call=>({page:call.page,branchId:call.branchId}));
    await start(1440,'purchase-orders',{orderPages:[Array.from({length:50},(_,index)=>orderRow(index+1))]});
-   const virtualGrid=page.getByRole('grid',{name:'Đặt mua hàng',exact:true});await virtualGrid.locator('[data-cell="0:0"]').waitFor();await paint();
+   // start() closes the prior page; all locators here must belong to this one.
+   const virtualGrid=page.getByRole('grid',{name:'Đặt mua hàng',exact:true}),virtualPanel=page.locator('.document-panel');await virtualGrid.locator('[data-cell="0:0"]').waitFor();await paint();
    assert.equal(await page.locator('.document-panel .desktop-grid-viewport').getAttribute('data-virtualized'),'true');assert.ok(await virtualGrid.locator('tbody tr[data-grid-row]').count()<50,'Desktop keeps bounded row virtualization');
    const virtualRowGeometry=[];
    async function rowHeight(compact,estimate){
@@ -582,7 +673,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
     const geometry=await root.evaluate(el=>({estimate:parseFloat(el.querySelector('.desktop-grid-viewport').style.getPropertyValue('--grid-row-height')),rows:[...el.querySelectorAll('tbody tr[data-grid-row]')].map(row=>({id:row.getAttribute('data-grid-row'),height:row.getBoundingClientRect().height})),spacers:[...el.querySelectorAll('tbody tr.grid-spacer > td')].map(cell=>parseFloat(cell.style.height)||0),bodyHeight:el.querySelector('tbody').getBoundingClientRect().height,headerHeight:el.querySelector('thead').getBoundingClientRect().height,scrollHeight:el.querySelector('.desktop-grid-viewport').scrollHeight}));
     assert.equal(geometry.estimate,estimate);assert.ok(geometry.rows.length>0);for(const row of geometry.rows)assert.equal(row.height,estimate,'Actual virtualized row height must exactly match its estimate: '+JSON.stringify({compact,...row}));assert.equal(geometry.spacers.reduce((sum,height)=>sum+height,0)+geometry.rows.length*estimate,50*estimate,'Density changes invalidate cached virtual spacer estimates');assert.equal(geometry.bodyHeight,50*estimate,'Rendered data rows and spacers cover exactly the virtual body');assert.equal(geometry.scrollHeight,geometry.headerHeight+50*estimate,'Scroll extent follows the current density, not cached prior heights');virtualRowGeometry.push({compact,...geometry});
    }
-   await rowHeight(false,65);await page.getByRole('button',{name:'Thu gọn dòng',exact:true}).click();await rowHeight(true,45);
+   await rowHeight(false,65);await virtualPanel.getByRole('button',{name:'Tùy chỉnh bảng',exact:true}).click();await page.getByRole('dialog',{name:'Tùy chỉnh bảng',exact:true}).getByLabel('Bảng dữ liệu gọn',{exact:true}).check();await page.keyboard.press('Escape');await rowHeight(true,45);
    await virtualGrid.locator('[data-cell="0:0"]').focus();await page.keyboard.press('Control+End');await eventually(()=>virtualGrid.locator('[data-cell="49:4"]').evaluate(el=>el===document.activeElement));assert.equal(await virtualGrid.locator('[data-grid-row="QA-ORDER-050"]').count(),1,'Keyboard reaches the final virtualized row');
    for(const mobileWidth of [320,390]){await page.setViewportSize({width:mobileWidth,height:900});await eventually(async()=>await virtualGrid.locator('tbody tr[data-grid-row]').count()===50);assert.equal(await virtualGrid.locator('[data-grid-row="QA-ORDER-050"]').count(),1);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'All fifty mobile rows remain page-contained');}
    sharedGridEvidence.push({kind:'orders-keyboard-selection',keyboardNavigation:true,selectionCounts:[3,12,3],pageScopeReset:true,detailActivations:2,serverPages:pageRequests,sameScopeRowShrink:{from:12,to:3,roving:'2:4'},virtualizedKeyboardLastRow:49,virtualRowGeometry,mobileRows:50,writeRequests:0});
@@ -781,11 +872,14 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
   });
   await run('disclosure exposes every one of 101 and 500 source rows with exact values',async()=>{
    for(const [width,count] of [[320,101],[390,500]]){
-    const document=structuredClone(purchase);document.lines=Array.from({length:count},(_,index)=>({...structuredClone(purchase.lines[0]),lineId:'QA-LINE-'+String(index+1).padStart(3,'0')}));
+    const document=structuredClone(purchase);document.lines=Array.from({length:count},(_,index)=>({...structuredClone(purchase.lines[0]),lineId:'QA-LINE-'+String(index+1).padStart(3,'0'),values:{...structuredClone(purchase.lines[0].values),itemId:purchase.lines[0].values.itemId+'-'+String(index+1).padStart(3,'0')}}));
     await start(width,'purchase-requests',{purchase:document});await open('purchase-requests').click();const region=page.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true});await region.waitFor();
     assert.equal(await region.locator('details').evaluate(el=>el.open),false);assert.equal(await region.locator('table').isVisible(),false);assert.equal(await region.locator('tbody tr').count(),count,'Disclosure does not drop hidden rows');
     await expandFullReadback();const table=region.getByRole('table',{name:'Toàn bộ dòng đề nghị',exact:true});assert.equal(await table.getByRole('columnheader').count(),8);assert.equal(await table.locator('tbody tr').count(),count);assert.equal(await table.getByRole('cell').count(),8*count);
-    assert.match(await region.innerText(),/2026-10-01T14:22:11.003/);assert.match(await region.innerText(),/NULL/);const last=table.locator('tbody tr').last();assert.match(await last.innerText(),new RegExp('QA-LINE-'+String(count).padStart(3,'0')));assert.match(await last.innerText(),/999999999999999999/);assert.match(await last.innerText(),/""/);
+    assert.deepEqual(await table.getByRole('columnheader').allTextContents(),['STT','Mã mặt hàng','Ngân sách','Thời gian yêu cầu','Số lượng','Đơn giá','Thành tiền','Model']);
+    assert.deepEqual(await table.locator('tbody tr').evaluateAll(rows=>rows.map(row=>[...row.querySelectorAll('td')].map(cell=>cell.lastElementChild.textContent))),purchaseLineValues(document),'All eight cells of every source row remain exact and ordered');
+    await retainedLineIdentity(table.locator('tbody tr'),document.lines);await hiddenLineIdentities(region,document.lines);
+    assert.match(await region.innerText(),/2026-10-01T14:22:11.003/);assert.match(await region.innerText(),/NULL/);const last=table.locator('tbody tr').last();assert.equal(await last.getByRole('cell').first().locator('span').last().textContent(),String(count));assert.match(await last.innerText(),/999999999999999999/);assert.match(await last.innerText(),/""/);
     await layout(width,'purchase-requests');await last.scrollIntoViewIfNeeded();await capture(`purchase-full-${count}-last-row-${width}`,{viewport:true,keepFocus:true});assert.equal(calls.filter(v=>v.method==='POST').length,0);
    }
   });
@@ -797,19 +891,23 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
    }
   });
   const fullLists=()=>({purchaseDocuments:Array.from({length:20},(_,index)=>({...structuredClone(purchase),purchaseRequestId:'QA-PURCHASE-'+String(index+1).padStart(3,'0')})),inboundDocuments:Array.from({length:50},(_,index)=>({...structuredClone(inbound),documentId:'QA-INBOUND-'+String(index+1).padStart(3,'0')}))});
-  const focusRegion=screen=>page.getByRole('region',{name:screen==='purchase-requests'?'Phiếu mua hàng hiện có':'Phiếu nhập hàng đã chọn',exact:true});
+  const focusRegion=screen=>page.getByRole('region',{name:screen==='purchase-requests'?/^Phiếu mua hàng hiện có/:/^Phiếu nhập hàng đã chọn/});
   const detailFocusCounts=screen=>page.evaluate(label=>{const calls=window.requestDetailFocusCalls.filter(call=>call.label===label);return {frame:calls.filter(call=>call.kind==='frame').length,region:calls.filter(call=>call.kind==='region').length};},screen==='purchase-requests'?'Phiếu mua hàng hiện có':'Phiếu nhập hàng đã chọn');
   const unchangedDetailFocus=async(screen,before,message)=>assert.deepEqual(await detailFocusCounts(screen),before,message??'Read completion cannot add frame or obsolete-region focus');
-  const oneExplicitDetailFocus=async(screen,before)=>{await eventually(async()=> (await detailFocusCounts(screen)).frame>before.frame);await focusedDetail(screen);assert.deepEqual(await detailFocusCounts(screen),{frame:before.frame+1,region:before.region},'Same-document Open calls its bounded frame once and never the obsolete region');};
+  const oneExplicitDetailFocus=async(screen,before,documentId)=>{
+   await eventually(async()=> (await detailFocusCounts(screen)).frame>before.frame);await focusedDetail(screen);assert.deepEqual(await detailFocusCounts(screen),{frame:before.frame+1,region:before.region},'Same-document Open calls its bounded frame once and never the obsolete region');
+   const focusedDocument=await page.evaluate(label=>window.requestDetailFocusCalls.filter(call=>call.label===label&&call.kind==='frame').at(-1)?.documentNumber,screen==='purchase-requests'?'Phiếu mua hàng hiện có':'Phiếu nhập hàng đã chọn');
+   assert.equal(focusedDocument,documentId,'The one admitted native focus belongs to the explicitly opened document');assert.equal(await detailDialog(screen).locator('.record-document-number').textContent(),documentId);
+  };
   const openRow=(screen,index)=>screen==='purchase-requests'?page.getByRole('button',{name:'Mở đề nghị QA-PURCHASE-'+String(index).padStart(3,'0'),exact:true}):page.getByRole('button',{name:new RegExp('^Mở phiếu QA-INBOUND-'+String(index).padStart(3,'0')+' ')});
   const closeSelection=screen=>page.getByRole('button',{name:screen==='purchase-requests'?'Đóng đề nghị':'Đóng phiếu nhập hàng',exact:true});
   async function focusedVisible(locator){await eventually(()=>locator.evaluate(element=>document.activeElement===element));await paint();const metrics=await locator.evaluate(element=>({top:element.getBoundingClientRect().top,header:document.querySelector('.topbar')?.getBoundingClientRect().bottom??0,height:innerHeight,tag:element.tagName}));assert.ok(metrics.top>=metrics.header-1&&metrics.top<metrics.height-90,JSON.stringify(metrics));assert.ok(!['INPUT','TEXTAREA','SELECT'].includes(metrics.tag));}
   await run('full20/50-row lists move explicit pointer and keyboard Open to detail and Close to origin',async()=>{
-   for(const width of [320,390,1440])for(const screen of ['purchase-requests','inbound-requests']){
+for(const width of [320,390,1440])for(const screen of ['purchase-requests','inbound-requests']){
     await start(width,screen,fullLists());await openRow(screen,1).waitFor();assert.equal(await host(screen).getByRole('button',{name:screen==='purchase-requests'?/^Mở đề nghị QA-PURCHASE-/:/^Mở phiếu QA-INBOUND-/}).count(),screen==='purchase-requests'?20:50);
     const filter=host(screen).locator('input').first();await filter.fill('UNAPPLIED FILTER DRAFT');
     await openRow(screen,1).click();await focusedDetail(screen);await capture(`${screen}-full-list-open-${width}`,{viewport:true,keepFocus:true});await layout(width,screen);await closeSelection(screen).click();await focusedVisible(openRow(screen,1));assert.equal(await filter.inputValue(),'UNAPPLIED FILTER DRAFT');
-    const middle=screen==='purchase-requests'?11:26;await openRow(screen,middle).focus();await page.keyboard.press('Enter');await focusedDetail(screen);await capture(`${screen}-full-list-keyboard-open-${width}`,{viewport:true,keepFocus:true});if(screen==='purchase-requests')await page.getByLabel('Ghi chú',{exact:true}).waitFor();else await page.getByLabel('Số đơn',{exact:true}).waitFor();await paint();const repeatFocus=await detailFocusCounts(screen);await backgroundActivate(openRow(screen,middle));await oneExplicitDetailFocus(screen,repeatFocus);await closeSelection(screen).focus();await page.keyboard.press('Enter');await focusedVisible(openRow(screen,middle));await capture(`${screen}-full-list-close-${width}`,{viewport:true,keepFocus:true});assert.equal(await filter.inputValue(),'UNAPPLIED FILTER DRAFT');assert.equal(calls.filter(call=>call.method==='POST').length,0);
+    const middle=screen==='purchase-requests'?11:26;await openRow(screen,middle).focus();await page.keyboard.press('Enter');await focusedDetail(screen);await capture(`${screen}-full-list-keyboard-open-${width}`,{viewport:true,keepFocus:true});if(screen==='purchase-requests')await page.getByLabel('Ghi chú',{exact:true}).waitFor();else await page.getByLabel('Số đơn',{exact:true}).waitFor();await paint();const repeatFocus=await detailFocusCounts(screen);await backgroundActivate(openRow(screen,middle));await oneExplicitDetailFocus(screen,repeatFocus,(screen==='purchase-requests'?'QA-PURCHASE-':'QA-INBOUND-')+String(middle).padStart(3,'0'));await closeSelection(screen).focus();await page.keyboard.press('Enter');await focusedVisible(openRow(screen,middle));await capture(`${screen}-full-list-close-${width}`,{viewport:true,keepFocus:true});assert.equal(await filter.inputValue(),'UNAPPLIED FILTER DRAFT');assert.equal(calls.filter(call=>call.method==='POST').length,0);
    }
   });
   await run('late or failed explicit reads never steal later modal-control or refresh focus',async()=>{
@@ -864,7 +962,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
    assert.equal(await panel.locator('time').getAttribute('datetime'),expected.document.documentDate);assert.equal(await panel.locator('time').innerText(),'01/10/2026');
    assert.equal(await panel.getByRole('heading',{name:expected.document.documentId,exact:true}).count(),1);assert.equal(await panel.getByText('Chưa có trạng thái',{exact:true}).count(),1);
    assert.equal(await panel.locator('header dd').last().textContent(),'NULL');
-   assert.deepEqual(await panel.locator('article').evaluateAll(rows=>rows.map(row=>[...row.querySelectorAll('dd')].map(value=>value.textContent))),expected.inboundRequestLines.map(line=>[line.lineId,line.itemId,line.setQuantityByDocument,line.barrelQuantityByDocument,line.setQuantityByReal,line.barrelQuantityByReal].map(value=>value??'NULL')));
+   await exactReadonlyLines(panel,expected);
    assert.equal(await panel.locator('input,textarea,select,form,[contenteditable=true]').count(),0,'The projection has no editable form or keyboard input');
    assert.equal(await panel.getByRole('button',{name:'Dòng trước',exact:true}).isEnabled(),number>1);assert.equal(await panel.getByRole('button',{name:'Dòng tiếp',exact:true}).isEnabled(),expected.hasMore);
    assert.equal(calls.filter(call=>call.method==='POST').length,0);
@@ -883,7 +981,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
     await unchangedDetailFocus('inbound-requests',initialFocus,'Command Unavailable alone never adds deferred Open focus');
     assert.equal(await page.evaluate(()=>document.activeElement?.matches('input,textarea,select,[contenteditable=true]')),false);assert.equal(await page.getByText(readonlyLines[0].itemId,{exact:true}).count(),0);
     releaseProjection();await exactReadonlyPage(1);await focusedDetail('inbound-requests');await layout(width,'inbound-requests');await capture(`inbound-readonly-${shape}-open-${width}`,{viewport:true,keepFocus:true});
-    const first=readonlyPanel().locator('article').first();await first.scrollIntoViewIfNeeded();assert.equal(await first.locator('dd').evaluateAll(elements=>elements.every(element=>{const range=document.createRange();range.selectNodeContents(element);return [...range.getClientRects()].every(rect=>rect.left>=0&&rect.right<=innerWidth)&&element.scrollWidth<=Math.ceil(element.clientWidth);})),true,'Long READ line IDs, item IDs and exact decimals remain fully contained');await capture(`inbound-readonly-${shape}-long-values-${width}`,{viewport:true,keepFocus:true});
+    const first=readonlyPanel().locator('article').first();await first.scrollIntoViewIfNeeded();assert.equal(await first.locator('dd').evaluateAll(elements=>elements.every(element=>{const range=document.createRange();range.selectNodeContents(element);return [...range.getClientRects()].every(rect=>rect.left>=0&&rect.right<=innerWidth)&&element.scrollWidth<=Math.ceil(element.clientWidth);})),true,'READ row ordinals, long item IDs and exact decimals remain fully contained');await capture(`inbound-readonly-${shape}-long-values-${width}`,{viewport:true,keepFocus:true});
     await readonlyPanel().getByRole('button',{name:'Dòng tiếp',exact:true}).click();await exactReadonlyPage(2);await layout(width,'inbound-requests');await readonlyPanel().locator('article').first().scrollIntoViewIfNeeded();await capture(`inbound-readonly-${shape}-page2-${width}`,{viewport:true,keepFocus:true});
     assert.equal(await readonlyPanel().getByText(readonlyLines[0].itemId,{exact:true}).count(),0,'Paging does not retain previous-page values');
     assert.equal((await draftCalls()).length,1,'Paging cannot bootstrap draft rights or retry a draft command');
@@ -902,7 +1000,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
      },continuity);
      assert.equal(state.samePanel,true,'Healthy same-READ-scope observation keeps the exact panel node');assert.equal(state.sameButtons,true,'Healthy refresh keeps both page2 paging button nodes');assert.equal(state.sameRows,true,'Healthy refresh keeps every existing list-row node');assert.equal(state.rowCount,50);
      assert.ok(state.detailScrollDelta<=1&&state.scrollDelta<=1&&state.horizontalDelta<=1&&state.articleDelta<=1,'Healthy refresh cannot jump the page or move its visible content: '+JSON.stringify(state));
-     assert.deepEqual(await readonlyPanel().locator('article').evaluateAll(rows=>rows.map(row=>[...row.querySelectorAll('dd')].map(value=>value.textContent))),readonlyProjection(document.documentId,2).inboundRequestLines.map(line=>[line.lineId,line.itemId,line.setQuantityByDocument,line.barrelQuantityByDocument,line.setQuantityByReal,line.barrelQuantityByReal].map(value=>value??'NULL')));
+     await exactReadonlyLines(readonlyPanel(),readonlyProjection(document.documentId,2));
      assert.equal(await readonlyPanel().getByRole('button',{name:'Dòng trước',exact:true}).isEnabled(),!fenced);assert.equal(await readonlyPanel().getByRole('button',{name:'Dòng tiếp',exact:true}).isEnabled(),false);
      assert.equal(await open('inbound-requests').getAttribute('aria-pressed'),'true');assert.equal(await filter.inputValue(),'UNAPPLIED READONLY FILTER');await unchangedDetailFocus('inbound-requests',healthyFocus);assert.equal(await healthyControl.evaluate(element=>element===document.activeElement),true);assert.equal(calls.filter(call=>call.method==='POST').length,0);
     }
@@ -938,7 +1036,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
     // The temporary authority gap correctly retires the old focus origin.
     // Re-activating the retained Open handler establishes today's origin without
     // another GET; the modal backdrop still prevents actual pointer access.
-    const repeatedReadonlyFocus=await detailFocusCounts('inbound-requests');await backgroundActivate(open('inbound-requests'));await oneExplicitDetailFocus('inbound-requests',repeatedReadonlyFocus);assert.equal(projectionCalls().length,5);
+    const repeatedReadonlyFocus=await detailFocusCounts('inbound-requests');await backgroundActivate(open('inbound-requests'));await oneExplicitDetailFocus('inbound-requests',repeatedReadonlyFocus,document.documentId);assert.equal(projectionCalls().length,5);
     await closeSelection('inbound-requests').click();await focusedVisible(open('inbound-requests'));assert.equal(await readonlyPanel().count(),0);assert.equal(await filter.inputValue(),'UNAPPLIED READONLY FILTER');
     await openRow('inbound-requests',26).focus();await page.keyboard.press('Enter');await readonlyReady();await focusedDetail('inbound-requests');await detailDialog('inbound-requests').getByRole('button',{name:'Đóng hộp thoại',exact:true}).focus();await roundedKeyboardFocus(detailDialog('inbound-requests').getByRole('button',{name:'Đóng hộp thoại',exact:true}));assert.equal(await readonlyPanel().getByRole('heading',{name:'QA-INBOUND-026',exact:true}).count(),1);
     await closeSelection('inbound-requests').focus();await page.keyboard.press('Enter');await focusedVisible(openRow('inbound-requests',26));await roundedKeyboardFocus(openRow('inbound-requests',26));assert.equal(await filter.inputValue(),'UNAPPLIED READONLY FILTER');assert.equal(calls.filter(call=>call.method==='POST').length,0);assert.deepEqual(await notices(),[]);
@@ -1086,7 +1184,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
     await eventually(()=>model.commandResponses===1);if(mode==='unknown')await page.waitForFunction(()=>document.querySelector('[data-testid=inbound-editor]')?.getAttribute('data-phase')==='unknown');else await page.waitForFunction(()=>document.querySelector('[data-testid=inbound-request-host]')?.getAttribute('data-readback-pending')==='true');
     const unavailableReads=model.draftResponses;await detailDialog('inbound-requests').getByRole('button',{name:'Xác minh lại quyền nhập hàng',exact:true}).click();await eventually(()=>model.draftResponses>unavailableReads);await settledReads();const bodies=await page.evaluate(()=>window.i30SaveDispatches);assert.equal(bodies.length,1);const originalBody=bodies[0],bodySha256=sha(originalBody);
     assert.equal(model.writes.length,1);assert.equal(model.writes[0].bodySha256,bodySha256);assert.equal(model.originals.get(model.writes[0].operationId),originalBody);assert.equal(model.effects,1);assert.equal(projectionCalls().length,0,'Custody blocks even an otherwise eligible independent projection');assert.equal(await readonlyPanel().count(),0);
-    const attempts=[()=>closeSelection('inbound-requests').click(),()=>backgroundActivate(openRow('inbound-requests',26)),()=>backgroundActivate(page.getByRole('button',{name:'Tìm kiếm',exact:true})),()=>backgroundActivate(page.getByRole('navigation',{name:'Điều hướng nhanh trên điện thoại',exact:true}).getByRole('button',{name:'Không gian làm việc',exact:true}))];
+    const attempts=[()=>closeSelection('inbound-requests').click(),()=>backgroundActivate(openRow('inbound-requests',26)),()=>page.locator('.request-list-toolbar').evaluate(form=>form.requestSubmit()),()=>backgroundActivate(page.getByRole('navigation',{name:'Điều hướng nhanh trên điện thoại',exact:true}).getByRole('button',{name:'Không gian làm việc',exact:true}))];
     for(const attempt of attempts){await attempt();await page.getByRole('alertdialog').waitFor();assert.equal(await page.getByRole('button',{name:'Bỏ thay đổi và rời màn hình',exact:true}).count(),0);assert.equal(new URL(page.url()).searchParams.get('screen'),'inbound-requests');assert.equal(await host('inbound-requests').locator('button[aria-label^="Mở phiếu QA-INBOUND-001 "]').getAttribute('aria-pressed'),'true');assert.equal(await host('inbound-requests').locator('button[aria-label^="Mở phiếu QA-INBOUND-026 "]').getAttribute('aria-pressed'),'false');assert.equal(projectionCalls().length,0);await page.getByRole('button',{name:'Tiếp tục làm việc',exact:true}).click();await page.getByRole('alertdialog').waitFor({state:'detached'});}
     assert.deepEqual(await page.evaluate(()=>window.i30SaveDispatches),[originalBody]);assert.equal(model.effects,1);assert.equal(model.writes.length,1);await capture(`inbound-readonly-custody-${mode}-${nullScope?'null-scope':'scoped'}-390`,{viewport:true,keepFocus:true});
     // Recover only through current full-draft rights and the original receipt.
@@ -1103,7 +1201,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
  }catch(error){fatal=String(error);throw error;}finally{
   let teardownError;try{await cleanup();}catch(error){teardownError=error;errors.push(String(error));}
   t.signal.removeEventListener('abort',abortCleanup);
-  const evidence={node:process.version,css:{sourceSha256:sha(cssSource),compiledSha256:sha(css),bytes:Buffer.byteLength(css),modules:cssModules},viewportWidths:[320,390,1440],hierarchy:'Actual Workspace and production request components',backend:'Synthetic HTTP host plus separately labelled trusted-adapter component contract; no ERP/SQL acceptance',status:completed&&!t.signal.aborted&&!fatal&&!failures.length&&!errors.length&&results.length===expectedCases?'passed':'failed',expectedCases,completedCases:results.length,fatal,results,failures,captures,transportEvidence,readonlyEvidence,commandGeometryEvidence,sharedGridEvidence,errors};
+  const evidence={node:process.version,css:{sourceSha256:sha(cssSource),compiledSha256:sha(css),bytes:Buffer.byteLength(css),modules:cssModules},viewportWidths:[320,390,1440],hierarchy:'Actual Workspace and production request components',backend:'Synthetic HTTP host plus separately labelled trusted-adapter component contract; no ERP/SQL acceptance',status:completed&&!t.signal.aborted&&!fatal&&!failures.length&&!errors.length&&results.length===expectedCases?'passed':'failed',expectedCases,completedCases:results.length,fatal,results,failures,captures,transportEvidence,readonlyEvidence,commandGeometryEvidence,sharedGridEvidence,stickyToolbarEvidence,portalPresentationEvidence,errors};
   await writeFile(path.join(output,'browser-result.json'),JSON.stringify(evidence,null,2));
   if(teardownError)throw teardownError;
  }

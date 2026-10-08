@@ -1,14 +1,13 @@
 "use client";
 import {useEffect,useState} from "react";
-import {Copy,RefreshCw,WifiOff,Clock3} from "lucide-react";
+import {RefreshCw,WifiOff,Clock3} from "lucide-react";
 import {Button} from "@/components/ui/button";
-import {ApiError,errorMessage} from "@/lib/erp/api";
+import {RequestError} from "./request-presentation";
 import {sessionRemaining} from "@/lib/erp/presentation";
 import type {Session} from "@/lib/erp/contracts";
 
 export function ErrorPanel({error,retry}:{error:unknown;retry?:()=>void}){
- const [copied,setCopied]=useState(false);const reference=error instanceof ApiError?error.correlationId:undefined;
- return <div className="erp-feedback" role="alert"><strong>{errorMessage(error)}</strong>{reference&&<div className="support-reference"><span>Mã hỗ trợ: <code>{reference}</code></span><Button variant="ghost" size="sm" onClick={async()=>{try{await navigator.clipboard.writeText(reference);setCopied(true);}catch{setCopied(false);}}}><Copy size={14}/>{copied?"Đã sao chép":"Sao chép"}</Button></div>}{retry&&<Button variant="outline" size="sm" onClick={retry}><RefreshCw size={14}/>Thử lại</Button>}</div>;
+ return <RequestError error={error} retry={retry} legacyReference/>;
 }
 export function Connectivity(){const [online,setOnline]=useState(true);useEffect(()=>{const update=()=>setOnline(navigator.onLine);update();window.addEventListener("online",update);window.addEventListener("offline",update);return()=>{window.removeEventListener("online",update);window.removeEventListener("offline",update);};},[]);return online?null:<div className="erp-feedback connectivity-warning" role="status"><WifiOff size={18}/><div><strong>Mất kết nối mạng</strong><p>Dữ liệu đang hiển thị có thể đã thay đổi. Kết nối và quyền truy cập sẽ được kiểm tra lại khi mạng phục hồi.</p></div></div>;}
 export function SessionWarning({session,extend}:{session:Session|null;extend:()=>Promise<void>}){

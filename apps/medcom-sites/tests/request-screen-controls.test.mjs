@@ -31,7 +31,7 @@ function navigationGuardObserver(resolveSourcePath=sourcePath=>sourcePath){
  }};
 }
 const primitive={button:'Button',input:'Input',textarea:'Textarea',badge:'Badge',skeleton:'Skeleton',checkbox:'Checkbox'};
-await build({stdin:{contents:`export {PurchaseRequestScreen} from './components/erp/purchase-request-screen';export {InboundRequestScreen} from './components/erp/inbound-request-screen';export {MobileRequest} from './components/erp/mobile-request';export {MobileInboundRequest} from './components/erp/mobile-inbound-request';export {RequestQrSearch} from './components/erp/request-qr-search';export {QrScanner} from './components/erp/qr-scanner';export {PurchaseReferenceDetails} from './components/erp/purchase-reference-details';export {NavigationGuardProvider,useNavigationGuard} from './components/erp/navigation-guard';export {getDocuments} from './lib/erp/api';`,resolveDir:app,loader:'tsx'},outfile:path.join(output,'fixture.cjs'),bundle:true,platform:'node',format:'cjs',packages:'external',jsx:'automatic',alias:{'@':app},logLevel:'warning',plugins:[navigationGuardObserver(),{name:'DOM-primitives',setup(builder){
+await build({stdin:{contents:`export {PurchaseRequestScreen} from './components/erp/purchase-request-screen';export {InboundRequestScreen} from './components/erp/inbound-request-screen';export {MobileRequest} from './components/erp/mobile-request';export {MobileInboundRequest} from './components/erp/mobile-inbound-request';export {RequestQrSearch} from './components/erp/request-qr-search';export {QrScanner} from './components/erp/qr-scanner';export {PurchaseReferenceDetails} from './components/erp/purchase-reference-details';export {NavigationGuardProvider,useNavigationGuard} from './components/erp/navigation-guard';export {getDocuments} from './lib/erp/api';export {ListViewProvider} from './components/erp/list-view-state';export {createListViewStore} from './lib/erp/list-view-state';export {Documents} from './components/erp/documents';export {QueryClient,QueryClientProvider} from '@tanstack/react-query';`,resolveDir:app,loader:'tsx'},outfile:path.join(output,'fixture.cjs'),bundle:true,platform:'node',format:'cjs',packages:'external',jsx:'automatic',alias:{'@':app},logLevel:'warning',plugins:[navigationGuardObserver(),{name:'DOM-primitives',setup(builder){
  builder.onResolve({filter:/components\/ui\/(button|input|textarea|badge|skeleton|checkbox|empty|table|dialog|alert-dialog)$/},args=>({path:args.path.split('/').at(-1),namespace:'dom'}));
  builder.onLoad({filter:/.*/,namespace:'dom'},args=>{
   let code;
@@ -74,7 +74,7 @@ test('guard observer rejects a build that never loads the provider',async()=>{
 test('guard observer rejects a build that loads two provider copies',async()=>{
  await assert.rejects(buildGuardPathFixture(guardPathCases.map(([,sourcePath])=>sourcePath)).result,/real guard must be loaded exactly once for observation/);
 });
-const {PurchaseRequestScreen,InboundRequestScreen,MobileRequest,MobileInboundRequest,RequestQrSearch,QrScanner,PurchaseReferenceDetails,NavigationGuardProvider,useNavigationGuard,getDocuments}=require(path.join(output,'fixture.cjs'));
+const {PurchaseRequestScreen,InboundRequestScreen,MobileRequest,MobileInboundRequest,RequestQrSearch,QrScanner,PurchaseReferenceDetails,NavigationGuardProvider,useNavigationGuard,getDocuments,ListViewProvider,createListViewStore,Documents,QueryClient,QueryClientProvider}=require(path.join(output,'fixture.cjs'));
 globalThis.IS_REACT_ACT_ENVIRONMENT=true;
 const scope='a'.repeat(64),sessionScope='b'.repeat(64),readScope='c'.repeat(64);
 const workspace=()=>({session:{displayName:'SYNTHETIC',tenantId:'T',companyId:'C',companyName:'SYNTHETIC',authorityVersion:1,absoluteExpiresAt:'2099-01-01T00:00:00Z',capabilities:['purchase-requests.read','inbound-requests.read']},branchIds:['BR-A'],sessionScope,readScope,navigation:[]});
@@ -124,7 +124,8 @@ async function host(kind,options={}){
  const register=value=>{navigation=value;};
  let props={workspace:workspace(),presentationAllowed:true,registerDetailNavigation:register,onDenied:error=>denied.push(error),...(kind==='purchase'?{loginBoundary:1,sessionEnded:false,onLogin(){},onVerifyWorkspace:async()=>{}}:{loginKey:'login-1',historyOwner:'workspace',list:(...args)=>getDocuments('inbound-requests',...args)})};
  function Probe(){guard=useNavigationGuard();return null;}
- const tree=()=>React.createElement(NavigationGuardProvider,{authority:{lifecycleKey:'login-1',presentationAllowed:props.presentationAllowed}},React.createElement(Probe),React.createElement(kind==='purchase'?PurchaseRequestScreen:InboundRequestScreen,props));
+ const screenTree=()=>React.createElement(NavigationGuardProvider,{authority:{lifecycleKey:'login-1',presentationAllowed:props.presentationAllowed}},React.createElement(Probe),React.createElement(kind==='purchase'?PurchaseRequestScreen:InboundRequestScreen,props));
+ const tree=()=>options.store?React.createElement(ListViewProvider,{store:options.store},screenTree()):screenTree();
  const flush=async()=>{for(let i=0;i<5;i++)await act(async()=>{await tick();});};
  const render=async patch=>{props={...props,...patch};await act(async()=>{if(renderer)renderer.update(tree());else renderer=create(tree());});await flush();};
  const buttons=()=>renderer.root.findAllByType('button');
@@ -140,6 +141,32 @@ async function host(kind,options={}){
  await render({});return{model,calls,denied,held,registrations,root:()=>renderer.root,props:()=>props,nav:()=>navigation,guard:()=>guard,button,click,open,edit,field,editor,refreshRows,submit,render,flush,close};
 }
 for(const kind of ['purchase','inbound']){
+ test(`${kind}: Back cancels the post-click submit default while retaining the actual editor and action node`,async()=>{
+  const f=await host(kind);try{
+   await f.open('DOC-A');await f.edit('RETAINED REVIEW RETURN');
+   const editor=f.editor(),adapter=editor.props.adapter,form=editor.findByType('form'),calls=f.calls.length;
+   const dirty=f.registrations.findLast(r=>r.value?.canDiscard);assert.ok(dirty);
+   for(let round=0;round<3;round++){
+    const review=f.button('Rà soát phiếu');assert.equal(review.props.type,'submit');assert.equal(review.props.form,form.props.id);
+    await f.submit();const back=f.button('Quay lại chỉnh sửa');assert.ok(back);assert.equal(back.props.type,'button');
+    // Actual React reconciliation runs the real handler. Model only the native
+    // activation default, which observes the live target AFTER that handler.
+    // The browser matrix separately supplies real mouse/Enter/Space activation.
+    const click=new Event('click',{bubbles:true,cancelable:true});
+    await act(async()=>back.props.onClick(click));await f.flush();
+    assert.strictEqual(f.button('Rà soát phiếu'),back,'the focused action node stays mounted');
+    assert.equal(back.props.type,'submit');assert.equal(back.props.form,form.props.id);
+    let defaultSubmits=0;
+    if(!click.defaultPrevented&&back.props.type==='submit'&&back.props.form===form.props.id){defaultSubmits++;await f.submit();}
+    assert.equal(defaultSubmits,0,'Back must not natively resubmit after React turns its node into the review submitter');
+    assert.equal(click.defaultPrevented,true);assert.equal(f.field().props.value,'RETAINED REVIEW RETURN');
+    for(let node=f.field();node;node=node.parent)if(node===f.field()||node.type==='fieldset')assert.ok(!node.props.disabled);
+    assert.strictEqual(f.editor(),editor);assert.strictEqual(f.editor().props.adapter,adapter);assert.strictEqual(editor.findByType('form'),form);
+    assert.equal(f.nav().selectedId,'DOC-A');assert.equal(f.calls.length,calls);assert.ok(f.calls.every(call=>call.method==='GET'));
+    assert.equal(f.guard().isBlocked(),true);assert.strictEqual(f.registrations.findLast(r=>r.key===dirty.key).value,dirty.value);
+   }
+  }finally{await f.close();}
+ });
  test(`${kind}: actual provider rejects removed target before discard, preserves exact dirty registration, and manual revert clears it`,async()=>{
   const f=await host(kind);try{
    await f.open('DOC-A');await f.edit('UNSAVED ORIGINAL');const editor=f.editor(),adapter=editor.props.adapter;
@@ -182,20 +209,16 @@ for(const kind of ['purchase','inbound']){
    assert.equal(f.nav().selectedId,'DOC-A');assert.ok(f.calls.length>before,'new selection incarnation receives a fresh read');await f.edit('NO-OP KEEPS DIRTY');const count=f.calls.length;await f.open('DOC-A');assert.equal(f.calls.length,count);assert.equal(f.guard().isBlocked(),true);assert.equal(f.root().findAllByProps({role:'alertdialog'}).length,0);
   }finally{await f.close();}
  });
- test(`${kind}: actual scanner confirmation changes only search input; cancellation and scope/presentation fences retire late deliveries`,async()=>{
+ test(`${kind}: request lists have no QR search entry and typing remains draft until explicitly applied`,async()=>{
   const f=await host(kind);try{
    const search=()=>f.root().findAllByType('input').find(n=>n.props['aria-label']===(kind==='purchase'?'Tìm mã đề nghị':'Tìm phiếu nhập hàng'));
-   const qr=()=>f.root().findByType(RequestQrSearch),scanner=()=>f.root().findByType(QrScanner);
-   const before=f.calls.length,scopeBefore=qr().props.scopeKey;assert.ok(scopeBefore.includes('login-1')||scopeBefore.includes('1'));
-   await f.click('Quét QR vào ô tìm kiếm');await f.click('Nhập mã thủ công');
-   const manual=f.root().findByProps({'data-scanner-dialog':true}).findByType('input');await act(async()=>manual.props.onChange({target:{value:' https://example.invalid/opaque '}}));
-   const confirm=scanner().props.onConfirm;await f.click('Dùng mã này');await act(async()=>confirm('duplicate'));await f.flush();
-   assert.equal(search().props.value,' https://example.invalid/opaque ');assert.equal(f.nav().selectedId,null);assert.equal(f.calls.length,before,'confirmation is not Search or transport');
-   await f.click('Quét QR vào ô tìm kiếm');const cancelled=scanner().props.onConfirm;await f.click('Hủy');await act(async()=>cancelled('late-cancelled'));assert.equal(f.calls.length,before);
-   await f.click('Quét QR vào ô tìm kiếm');const hidden=scanner().props.onConfirm;await f.render({presentationAllowed:false});await act(async()=>hidden('late-hidden'));await f.render({presentationAllowed:true});assert.equal(search().props.value,' https://example.invalid/opaque ');assert.equal(scanner().props.open,false);
-   await f.click('Quét QR vào ô tìm kiếm');const retired=scanner().props.onConfirm;
-   await f.render(kind==='purchase'?{loginBoundary:2}:{loginKey:'login-2'});await act(async()=>retired('late-login'));await f.flush();assert.notEqual(qr().props.scopeKey,scopeBefore);assert.equal(search().props.value,'');assert.equal(scanner().props.open,false);
-   assert.ok(f.calls.every(c=>c.method==='GET'));
+   const before=f.calls.length;
+   assert.equal(f.root().findAllByType(RequestQrSearch).length,0);assert.equal(f.root().findAllByType(QrScanner).length,0);
+   await act(async()=>search().props.onChange({target:{value:'QA-DRAFT'}}));await f.flush();
+   assert.equal(search().props.value,'QA-DRAFT');assert.equal(f.nav().selectedId,null);assert.equal(f.calls.length,before,'typing is not Search or transport');
+   await f.render({presentationAllowed:false});await f.render({presentationAllowed:true});assert.equal(search().props.value,'QA-DRAFT');
+   await f.render(kind==='purchase'?{loginBoundary:2}:{loginKey:'login-2'});await f.flush();assert.equal(search().props.value,'');
+   assert.equal(f.root().findAllByType(QrScanner).length,0);assert.ok(f.calls.every(c=>c.method==='GET'));
   }finally{await f.close();}
  });
  test(`${kind}: accept-phase validator observes newly dispatched custody before the dirty registration's layout update`,async()=>{
@@ -257,11 +280,62 @@ test('purchase: a later authentication failure is not shadowed by an already rep
  }finally{await f.close();}
 });
 
-test('purchase: verification disables and retires an open scanner without searching or losing dirty edits',async()=>{
+test('purchase: verification retains dirty edits without a QR search entry or implicit transport',async()=>{
  const f=await host('purchase');try{
-  await f.open('DOC-A');await f.edit('QR MUST NOT DISCARD');await f.click('Quét QR vào ô tìm kiếm');const stale=f.root().findByType(QrScanner).props.onConfirm;
-  const count=f.calls.length;await f.render({verifying:true});assert.equal(f.root().findByType(RequestQrSearch).props.disabled,true);assert.equal(f.root().findAllByType(QrScanner).length,0);
-  await act(async()=>stale('LATE VERIFY'));await f.flush();assert.equal(f.calls.length,count);assert.equal(f.field().props.value,'QR MUST NOT DISCARD');assert.equal(f.guard().isBlocked(),true);
-  await f.render({verifying:false});assert.equal(f.root().findByType(QrScanner).props.open,false);assert.equal(f.root().findAllByType('input').find(n=>n.props['aria-label']==='Tìm mã đề nghị').props.value,'');
+  await f.open('DOC-A');await f.edit('CUSTODY MUST NOT DISCARD');
+  const count=f.calls.length;await f.render({verifying:true});assert.equal(f.root().findAllByType(RequestQrSearch).length,0);assert.equal(f.root().findAllByType(QrScanner).length,0);
+  await f.flush();assert.equal(f.calls.length,count);assert.equal(f.field().props.value,'CUSTODY MUST NOT DISCARD');assert.equal(f.guard().isBlocked(),true);
+  await f.render({verifying:false});assert.equal(f.root().findAllByType(QrScanner).length,0);assert.equal(f.root().findAllByType('input').find(n=>n.props['aria-label']==='Tìm mã đề nghị').props.value,'');
+ }finally{await f.close();}
+});
+
+for(const kind of ['purchase','inbound'])test(`${kind}: actual unmount keeps only list controls; fresh mount rereads and does not restore selected/editor state`,async()=>{
+ const store=createListViewStore();store.admit('ROOT-A');let f=await host(kind,{store});
+ try{
+  const search=()=>f.root().findAllByType('input').find(node=>node.props['aria-label']===(kind==='purchase'?'Tìm mã đề nghị':'Tìm phiếu nhập hàng'));
+  const listForm=()=>f.root().findByType('form');
+  await act(async()=>search().props.onChange({target:{value:'QA-APPLIED'}}));await act(async()=>listForm().props.onSubmit({preventDefault(){}}));await f.flush();
+  await act(async()=>search().props.onChange({target:{value:'QA-DRAFT'}}));await f.open('DOC-A');assert.equal(f.nav().selectedId,'DOC-A');
+  await f.close();f=await host(kind,{store});assert.equal(f.nav().selectedId,null);assert.equal(search().props.value,'QA-DRAFT');
+  const listCalls=f.calls.filter(call=>call.path.endsWith(kind==='purchase'?'/purchase-requests':'/documents/inbound-requests'));assert.ok(listCalls.some(call=>call.q.search==='QA-APPLIED'),'fresh actual list uses applied filter after bootstrap');
+  assert.equal(f.root().findAllByType(kind==='purchase'?MobileRequest:MobileInboundRequest).filter(node=>kind==='purchase'||node.props.documentId!==null).length,0);
+  const saved=store.read(kind==='purchase'?'purchase-requests':'inbound-requests');assert.equal(saved.draftSearch,'QA-DRAFT');assert.equal(saved.appliedSearch,'QA-APPLIED');assert.equal(Object.hasOwn(saved,'selectedId'),false);
+  await act(async()=>{store.admit('ROOT-B');store.admit('ROOT-A');});await f.flush();assert.equal(search().props.value,'');
+ }finally{await f.close();}
+});
+
+test('purchase orders: actual Documents remount restores draft/applied/page controls, never selection, and changes branch immediately',async()=>{
+ const original={fetch:globalThis.fetch,window:globalThis.window},events=new EventTarget(),store=createListViewStore();store.admit('ROOT-ORDER-A');let renderer,detail,calls=[];
+ globalThis.window={addEventListener:events.addEventListener.bind(events),removeEventListener:events.removeEventListener.bind(events)};
+ const w=workspace();w.navigation.push({id:'purchase-orders',label:'Synthetic orders',group:'Synthetic',href:'ignored'});w.session.capabilities.push('purchase-orders.read');
+ globalThis.fetch=async(url)=>{const u=new URL(url,'https://synthetic.invalid');calls.push(Object.fromEntries(u.searchParams));return response({rows:[{documentId:'QA-ORDER',documentDate:'2026-10-01',branchId:'BR-A',statusId:1,isLocked:false}],page:Number(u.searchParams.get('page')),pageSize:50,hasMore:true});};
+ const tree=()=>React.createElement(ListViewProvider,{store},React.createElement(QueryClientProvider,{client:new QueryClient({defaultOptions:{queries:{retry:false,gcTime:0}}})},React.createElement(Documents,{kind:'purchase-orders',workspace:w,verified:true,generation:1,compact:false,setCompact(){},onLogin(){},onDenied(){},renderDetail:(selected)=>{detail=selected;return null;}})));
+ const flush=async()=>{for(let i=0;i<5;i++)await act(async()=>{await new Promise(resolve=>setTimeout(resolve,5));});};const mount=async()=>{await act(async()=>renderer=create(tree()));await flush();};
+ try{
+  await mount();const search=()=>renderer.root.findAllByType('input').find(node=>node.props['aria-label']==='Tìm mã chứng từ');
+  await act(async()=>search().props.onChange({target:{value:'QA-APPLIED'}}));await act(async()=>renderer.root.findByType('form').props.onSubmit({preventDefault(){}}));await flush();
+  await act(async()=>search().props.onChange({target:{value:'QA-DRAFT'}}));const branch=renderer.root.findByType('select');await act(async()=>branch.props.onChange({target:{value:'BR-A'}}));await flush();assert.equal(calls.at(-1).branchId,'BR-A');
+  const open=renderer.root.findAllByType('button').find(node=>node.props['aria-label']==='Mở chứng từ QA-ORDER');assert.ok(open,JSON.stringify({buttons:renderer.root.findAllByType('button').map(node=>({text:text(node),aria:node.props['aria-label']})),calls,detail}));await act(async()=>open.props.onClick());assert.equal(detail.documentId,'QA-ORDER');
+  await act(async()=>renderer.unmount());await mount();assert.equal(detail,null);assert.equal(search().props.value,'QA-DRAFT');assert.equal(calls.at(-1).search,'QA-APPLIED');assert.equal(calls.at(-1).branchId,'BR-A');
+ }finally{await act(async()=>renderer?.unmount());globalThis.fetch=original.fetch;globalThis.window=original.window;}
+});
+
+for(const kind of ['purchase','inbound'])test(`${kind}: real editor retires queued delete confirmation on host presentation loss and restore`,async()=>{
+ const f=await host(kind);try{
+  await f.open('DOC-A');await f.edit('PRESENTATION CUSTODY');const editor=f.editor(),adapter=editor.props.adapter;
+  const count=()=>kind==='purchase'?f.editor().findAllByType('article').length:f.editor().findAllByType('legend').filter(n=>/^Dòng 1/.test(text(n))).length;
+  const before=count();assert.equal(before,1);await f.click(kind==='purchase'?'Bỏ dòng 1':'Xóa dòng 1');
+  const queued=f.button('Xóa dòng').props.onClick;const review=f.editor().findByType('form').props.onSubmit;await f.render({presentationAllowed:false});
+  await act(async()=>{queued({preventDefault(){}});review({preventDefault(){}});});await f.flush();
+  assert.equal(f.button('Quay lại chỉnh sửa'),undefined,'Masked footer/form cannot advance review');
+  assert.equal(count(),before,'Queued confirmation must not mutate a presentation-masked draft');
+  assert.equal(f.root().findAllByProps({role:'alertdialog'}).length,0,'Body confirmation is hidden when the host is masked');
+  const footers=f.root().findAll(n=>n.type==='div'&&n.props.className?.split(' ').includes('request-action-bar'));assert.equal(footers.length,1);assert.ok(footers.every(n=>n.props.hidden&&n.props.inert),'Portaled footer mirrors current host eligibility');
+  await f.render({presentationAllowed:true});await act(async()=>{queued({preventDefault(){}});review({preventDefault(){}});});await f.flush();
+  assert.equal(f.button('Quay lại chỉnh sửa'),undefined,'Restoration cannot revive a queued old footer/form action');
+  assert.equal(count(),before,'Restoration cannot revive the retired queued action');assert.equal(f.root().findAllByProps({role:'alertdialog'}).length,0);
+  assert.strictEqual(f.editor(),editor);assert.strictEqual(f.editor().props.adapter,adapter);assert.equal(f.field().props.value,'PRESENTATION CUSTODY');assert.equal(f.guard().isBlocked(),true);
+  await f.click(kind==='purchase'?'Bỏ dòng 1':'Xóa dòng 1');await f.click('Xóa dòng');assert.equal(count(),0,'Only a fresh confirmation can remove the original line');
+  assert.ok(f.calls.every(c=>c.method==='GET'),'Local confirmation never implements a business write');
  }finally{await f.close();}
 });

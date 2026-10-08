@@ -1,13 +1,13 @@
 "use client";
 
-import {useState, type ComponentProps, type ReactNode} from "react";
+import {createContext,useState, type ComponentProps, type ReactNode} from "react";
 import {AlertCircle, Copy, FileText, ShieldCheck} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Textarea} from "@/components/ui/textarea";
 import {Badge} from "@/components/ui/badge";
 import {Empty, EmptyDescription, EmptyHeader, EmptyTitle} from "@/components/ui/empty";
-import {Skeleton} from "@/components/ui/skeleton";
+import {ListLoading} from "./list-loading";
 import {ApiError, errorMessage} from "@/lib/erp/api";
 import {documentStatusLabel} from "@/lib/erp/document-status";
 import {cn} from "@/lib/utils";
@@ -57,8 +57,8 @@ export function RequestNotice({children,title,role="status",warning=false}:{chil
 export function RequestEmpty({title,children}:{title:string;children:ReactNode}){
   return <Empty className="min-h-52 px-4 py-8"><EmptyHeader><FileText aria-hidden="true" className="mx-auto mb-2 size-7 text-muted-foreground"/><EmptyTitle>{title}</EmptyTitle><EmptyDescription>{children}</EmptyDescription></EmptyHeader></Empty>;
 }
-export function RequestLoading({label="Đang tải chứng từ…"}:{label?:string}){
-  return <div role="status" aria-label={label} className="grid min-w-0 gap-3 p-4 sm:p-5"><span className="text-sm text-muted-foreground">{label}</span>{[1,2,3].map(i=><Skeleton key={i} className="h-24 w-full rounded-lg"/>)}</div>;
+export function RequestLoading({label="Đang tải chứng từ…",form=false}:{label?:string;form?:boolean}){
+  return <ListLoading label={label} form={form}/>;
 }
 export function RequestDocumentIdentity({children}:{children:ReactNode}){
   return <span className="request-document-id"><FileText size={16} aria-hidden="true"/><strong>{children}</strong></span>;
@@ -73,12 +73,12 @@ export function requestDate(value:string|null|undefined){
   return match?`${match[3]}/${match[2]}/${match[1]}`:"Chưa xác định";
 }
 const supportCodes=new Set(["authentication_required","backend_not_configured","frontend_not_configured","backend_unavailable","identity_unavailable","invalid_api_response","invalid_read_scope","read_scope_changed","request_failed"]);
-export function RequestError({error,retry}:{error:unknown;retry?:()=>void}){
+export function RequestError({error,retry,legacyReference=false}:{error:unknown;retry?:()=>void;legacyReference?:boolean}){
   const [copied,setCopied]=useState(false);
   const api=error instanceof ApiError?error:null;
   const status=api&&Number.isInteger(api.status)&&api.status>=100&&api.status<=599?api.status:null;
   const code=api&&supportCodes.has(api.code)?api.code:"unknown_code";
-  const reference=api?.correlationId&&/^[a-f0-9]{32}$/i.test(api.correlationId)?api.correlationId:null;
+  const reference=api?.correlationId&&(legacyReference||/^[a-f0-9]{32}$/i.test(api.correlationId))?api.correlationId:null;
   return <RequestNotice role="alert" warning title={errorMessage(error)}>
     {retry&&<RequestButton onClick={retry}>Thử lại</RequestButton>}
     <details className="text-xs text-muted-foreground"><summary className="flex min-h-11 cursor-pointer items-center">Thông tin hỗ trợ</summary><dl className="grid gap-1">{status!==null&&<div><dt className="inline">Mã trạng thái xử lý: </dt><dd className="inline">{status}</dd></div>}<div><dt className="inline">Mã: </dt><dd className="inline">{code}</dd></div>{reference&&<div><dt className="inline">Mã hỗ trợ: </dt><dd className="inline break-all">{reference}<RequestButton type="button" variant="ghost" aria-label="Sao chép mã hỗ trợ" onClick={async()=>{try{await navigator.clipboard.writeText(reference);setCopied(true);}catch{setCopied(false);}}}><Copy size={14}/>{copied?"Đã sao chép":"Sao chép"}</RequestButton></dd></div>}</dl></details>
@@ -92,3 +92,6 @@ const requestPhaseCopy:Record<string,string>={
   "ERP đã xác nhận thao tác. Đã đọc lại snapshot khớp xác nhận và ID dòng thật.":"ERP đã xác nhận thao tác. Phiếu đã được cập nhật.",
 };
 export function requestMessage(message:string){return requestPhaseCopy[message]??message;}
+
+/** Shared footer host; carries no record data or command state. */
+export const RecordActionHost=createContext<HTMLElement|null>(null);

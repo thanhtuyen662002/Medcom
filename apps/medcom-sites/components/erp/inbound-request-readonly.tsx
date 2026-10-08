@@ -131,7 +131,7 @@ export function InboundRequestReadOnly({documentId, branchIds, scope, initialPag
       <p>Chỉ hiển thị thông tin chứng từ và trang dòng hàng do dịch vụ đọc cung cấp. Không bao gồm toàn bộ dữ liệu phiếu nháp hoặc các dòng chi phí.</p>
     </RequestNotice>
     <p role="status" className={`${requestStyles.muted} min-h-6`}>{phase === "pending" ? "Đang cập nhật bản chỉ đọc…" : detail ? "Bản chỉ đọc đã được cập nhật." : "Chưa tải được bản chỉ đọc."}</p>
-    {phase === "pending" && !detail && <RequestLoading label="Đang tải bản chỉ đọc…"/>}
+    {phase === "pending" && !detail && <RequestLoading form label="Đang tải bản chỉ đọc…"/>}
     {currentResult?.phase === "failed" && <RequestError error={currentResult.error}
       retry={verifying || denied(currentResult.error) ? undefined : retryRead}/>}
     {detail && <>
@@ -154,7 +154,7 @@ export function InboundRequestReadOnly({documentId, branchIds, scope, initialPag
           : detail.inboundRequestLines.map((line, index) => <article key={`${index}:${line.lineId}`} className={requestStyles.line}>
             <h4 className="text-sm font-semibold">Dòng {(detail.page - 1) * detail.pageSize + index + 1}</h4>
             <dl className={cn(requestStyles.values, "grid-cols-1 sm:grid-cols-2")}>
-              <div><dt>Mã dòng</dt><dd className="whitespace-pre-wrap">{line.lineId}</dd></div>
+              <div><dt>STT</dt><dd>{(page-1)*50+index+1}</dd></div>
               <div><dt>Mã hàng</dt><dd className="whitespace-pre-wrap">{line.itemId}</dd></div>
               {quantities.map(([field, label]) => <div key={field}><dt>{label}</dt><dd className="whitespace-pre-wrap tabular-nums">{line[field] ?? "NULL"}</dd></div>)}
             </dl>
