@@ -1,7 +1,7 @@
 "use client";
 import {RequestDetailDialog,useRequestDetailNavigation,useDetailPresentationProof,type RegisterRequestDetailNavigation} from "./request-detail-dialog";
 import {useListControls} from "./list-view-state";
-import {RequestListComposition,RequestListPanel,RequestListContent,RequestListHeader,RequestSearch,RequestBranch,RequestListTable,RequestListToolbar,RequestPagination} from "./request-list-shell";
+import {RequestListComposition,RequestListPanel,RequestListContent,RequestListHeader,RequestSearch,RequestBranch,RequestRefresh,RequestListTable,RequestListToolbar,RequestPagination} from "./request-list-shell";
 import {RequestButton,RequestNotice,RequestEmpty,RequestLoading,RequestStatus,requestDate,requestStyles} from "./request-presentation";
 import {useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore} from "react";
 import {ApiError, getDocuments, type ReadScope} from "@/lib/erp/api";
@@ -459,7 +459,7 @@ function RetainedInboundHost({compact=false,setCompact,presentationAllowed = tru
       }}>
         <RequestSearch label="Tìm phiếu nhập hàng" placeholder="Tìm mã phiếu…" value={search} onChange={setSearch}/>
         <RequestBranch label="Lọc chi nhánh" value={branch} branches={workspace?.branchIds??[]} onChange={setBranch}/>
-        <RequestButton className="request-list-refresh" type="button" disabled={!contextCurrent||!currentRows} onClick={()=>navigate(()=>{cancelFocus();setRetry(value=>value+1);})}>Làm mới</RequestButton>
+        <RequestRefresh disabled={!contextCurrent||!currentRows} onClick={()=>navigate(()=>{cancelFocus();setRetry(value=>value+1);})}/>
       </RequestListToolbar>
       <RequestListContent aria-label="Danh sách phiếu nhập hàng" ref={focusList} tabIndex={-1} className="scroll-mt-24">
         {!currentRows ? rows.view === listView && rows.binding === listBinding && rows.failed ? <RequestNotice warning>Chưa tải được danh sách.</RequestNotice> : <RequestLoading label="Đang tải danh sách."/>

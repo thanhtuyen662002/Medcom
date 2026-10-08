@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I59",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "2e54f145-5b69-4396-baae-bc2cb75ac574",
+  "base_sha": "43acecad934f074464426a292d33180a0c131243",
+  "work_branch": "codex/g45-mobile-toolbar-fit-i59-20261009",
+  "claim_branch": "medcom-claims/g45/direct/I59",
+  "scope": [
+    "apps/medcom-sites/app/globals.css",
+    "apps/medcom-sites/components/erp/request-list-shell.tsx",
+    "apps/medcom-sites/components/erp/documents.tsx",
+    "apps/medcom-sites/components/erp/purchase-request-screen.tsx",
+    "apps/medcom-sites/components/erp/inbound-request-screen.tsx",
+    "apps/medcom-sites/tests/shared-screen-ui.test.mjs",
+    "apps/medcom-sites/tests/request-presentation.browser.mjs",
+    "docs/execution/checkpoints/I59_MOBILE_TOOLBAR_FIT.md",
+    "docs/execution/direct-runs/I59.json"
+  ],
+  "purpose": "Repair verified 320px shared toolbar search collision and mobile branch padding/affordance clipping using one shared refresh control, preserving all querying and authority behavior.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "runtime_activation_authorized": false,
+  "constraints": [
+    "Root is sole publisher. Marker remains immutable. No backend/API/SQL/configuration/dependency/workflow or runtime activation changes.",
+    "Inspect actual accepted CI screenshots before editing. Keep source-backed search and branch values unchanged; do not invent ERP branch aliases.",
+    "Use existing shared toolbar primitives. A shared refresh control may give all three screens the same icon and accessible label, with compact mobile text treatment; preserve exact existing click/disabled/guard handlers.",
+    "At 320/360/390px, typed search remains legible, shortcut badge cannot overlap it, and branch selection has readable text and a clear dropdown affordance. Preserve assigned-branch locking, native selection/keyboard behavior, all option values and accessible names.",
+    "Keep sticky positioning, modal layering, selection/custody/query lifecycle and desktop grid customization unchanged. Minimum mobile touch targets44px. Avoid unrelated redesign or screen-specific CSS forks.",
+    "Test compiled CSS specificity and actual shared components. Strengthen native geometry/visibility assertions for search text, branch content/chevron and refresh at mobile sizes, while preserving existing native tests. No timeout increases, skipped gates or browser security bypass.",
+    "No local browser retry under known socket restriction. Return honest source/renderer evidence and require exact-head hosted native CI plus screenshot review before acceptance."
+  ],
+  "evidence": {
+    "run_id": 37852764854,
+    "windows_presentation_artifact": 11582759580,
+    "linux_presentation_artifact": 11582882420,
+    "windows_built_https_artifact": 11583179642,
+    "observed": "320px Orders input has colliding search icon and shortcut badge; mobile branch84px retains higher-specificity desktop padding leaving a one-letter fragment; dropdown chevron is hidden."
+  },
+  "created_at": "2026-10-08T23:03:00Z"
+}

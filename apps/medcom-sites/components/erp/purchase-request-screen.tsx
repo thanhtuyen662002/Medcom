@@ -5,7 +5,7 @@ import {documentStatusLabel} from "@/lib/erp/document-status";
 import {useListControls} from "./list-view-state";
 import {PurchaseReferenceDetails} from "./purchase-reference-details";
 import {purchaseReferenceIdentity,type PurchaseReferenceContext} from "@/lib/erp/purchase-reference-context";
-import {RequestListComposition,RequestListPanel,RequestListContent,RequestListHeader,RequestSearch,RequestBranch,RequestListTable,RequestListToolbar,RequestPagination} from "./request-list-shell";
+import {RequestListComposition,RequestListPanel,RequestListContent,RequestListHeader,RequestSearch,RequestBranch,RequestRefresh,RequestListTable,RequestListToolbar,RequestPagination} from "./request-list-shell";
 import {useCallback,useEffect,useLayoutEffect,useRef,useState,type FormEvent} from "react";
 import {MobileRequest,type MobileRequestAccess,type PurchaseRequestSnapshot} from "./mobile-request";
 import {useNavigationGuard,type NavigationGuardValidationPhase} from "./navigation-guard";
@@ -280,7 +280,7 @@ function PurchaseRequestReader({workspace,boundary,sessionUnverified,sessionEnde
    <RequestListToolbar onSubmit={find}>
     <RequestSearch label="Tìm mã đề nghị" placeholder="Tìm mã đề nghị…" value={searchInput} onChange={setSearchInput}/>
     <RequestBranch label="Chi nhánh" value={safeBranch} disabled={busy} branches={active?.bootstrap?.branchIds??[]} onChange={id=>move(()=>{cancelFocus();setBranch(id);setPage(1);setSelected(null);editorRef.current?.bridge.retire();retain(null);})}/>
-    <RequestButton className="request-list-refresh" type="button" disabled={busy} onClick={()=>move(()=>{cancelFocus();setRefresh(value=>value+1);})}>Làm mới</RequestButton>
+    <RequestRefresh disabled={busy} onClick={()=>move(()=>{cancelFocus();setRefresh(value=>value+1);})}/>
    </RequestListToolbar>
    <RequestListContent>{busy&&!active?.list?<RequestLoading label="Đang đọc ERP…"/>:active?.error?<RequestError error={active.error}/>:<>
     <RequestListTable compact={compact} setCompact={setCompact} presentationAllowed={presentationAllowed&&allowed&&!busy&&!verifying&&verifiedWorkspace===workspace&&!active?.error} isPresentationAllowed={()=>openAuthority.current!==null} label="Danh sách đề nghị" columns={[{id:"id",label:"Mã đề nghị"},{id:"date",label:"Ngày đề nghị"},{id:"branch",label:"Chi nhánh"},{id:"person",label:"Người đề nghị"},{id:"department",label:"Phòng ban"},{id:"status",label:"Trạng thái"}]} rows={(active?.list?.rows??[]).map(row=>({id:row.documentId,cells:[row.documentId,requestDate(row.purchaseDate),row.branchId,row.personSuggest||"Chưa có thông tin",row.department||"Chưa có thông tin",<RequestStatus key="status" value={row.statusId} statusName={row.statusName}/>],action:"Mở đề nghị",actionLabel:`Mở đề nghị ${row.documentId}`,selected:selected===row.documentId,onOpen:()=>open(row.documentId),buttonRef:element=>registerFocusRow(row.documentId,element)}))}/>

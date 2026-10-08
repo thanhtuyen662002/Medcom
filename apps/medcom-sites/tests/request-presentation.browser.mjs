@@ -260,7 +260,7 @@ test('I50 compiled mobile cells override customizable desktop clipping without c
  // Compilation/cascade admission only; the unchanged native range geometry
  // assertion below still proves that every identifier character is readable.
 });
-test('I30 compiled application presentation at 320,390,1440',{timeout:240000},async t=>{
+test('I30 compiled application presentation at 320,360,390,1440',{timeout:240000},async t=>{
  const require=createRequire(import.meta.url),tools=process.env.MEDCOM_BROWSER_TOOLCHAIN;
  let chromium;
  try{({chromium}=(tools?createRequire(path.join(path.resolve(tools),'package.json')):require)('playwright-core'));}
@@ -269,7 +269,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
  assert.ok(existsSync(executable),'Installed Chromium/Edge is required.');
  const {script,logo,css,cssSource,cssModules,createRequestNotifications}=await compilePresentation();
  const html='<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/app.css"><div id="root"></div><script src="/app.js"></script></html>';
- let model,serial=0,browser,context,page,origin,completed=false,fatal=null,clockPaused=false;const expectedCases=38;const errors=[],results=[],failures=[],captures=[],calls=[],transportEvidence=[],readonlyEvidence=[],commandGeometryEvidence=[],sharedGridEvidence=[],stickyToolbarEvidence=[],portalPresentationEvidence=[];
+ let model,serial=0,browser,context,page,origin,completed=false,fatal=null,clockPaused=false;const expectedCases=39;const errors=[],results=[],failures=[],captures=[],calls=[],transportEvidence=[],readonlyEvidence=[],commandGeometryEvidence=[],sharedGridEvidence=[],stickyToolbarEvidence=[],portalPresentationEvidence=[];
  const reset=(patch={})=>{model={serial:++serial,writable:false,empty:false,status:200,holdList:false,waiters:[],listResponses:0,listResponseHeaders:null,holdDetail:false,detailWaiters:[],detailStatus:200,draftEnvelope:null,draftNetwork:false,draftNetworkFailures:0,draftMalformed:false,draftResponses:0,afterWriteDraftEnvelope:null,holdProjection:false,projectionWaiters:[],projectionStatus:200,projectionKind:null,projectionResponses:0,unknown:false,workspaceReads:0,workspaceResponses:0,workspacePending:0,workspaceVersions:[],advanceAuthority:false,deniedLists:0,workspaceStatus:200,purchase:structuredClone(purchase),inbound:structuredClone(inbound),purchaseVersion:1,inboundVersion:1,effects:0,originals:new Map(),receipts:new Map(),writes:[],reconciles:[],control:{closed:[],bff:[]},holdCommands:false,commandWaiters:[],commandResponses:0,rejected:false,conflict:false,malformed:false,...patch};calls.length=0;};
  const workspace=()=>({session:{displayName:'SYNTHETIC USER',tenantId:'QA-T',companyId:'QA-C',companyName:'SYNTHETIC',authorityVersion:model.advanceAuthority?model.workspaceReads:1,idleExpiresAt:new Date(Date.now()+3600000).toISOString(),absoluteExpiresAt:new Date(Date.now()+7200000).toISOString(),capabilities:model.workspaceCapabilities??['purchase-requests.read','inbound-requests.read','purchase-orders.read']},branchIds:['QA-BRANCH'],navigation:['purchase-requests','inbound-requests','purchase-orders'].map(id=>({id,label:id,href:'/?screen='+id}))});
  const send=(res,status,data,headers={})=>{if(res.destroyed)return;res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store',...headers});res.end(JSON.stringify(data));};
@@ -421,6 +421,37 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
   const checks=await host(screen).locator('button:visible,input:not([type=checkbox]):visible,textarea:visible,select:visible,summary:visible').evaluateAll(elements=>elements.map(el=>({tag:el.tagName,name:el.getAttribute('aria-label')??el.textContent?.trim().slice(0,100)??'',height:el.getBoundingClientRect().height,font:parseFloat(getComputedStyle(el).fontSize)})));
   assert.ok(checks.length);assert.ok(checks.every(v=>v.height>=43.5),'Request touch targets must be at least 44px: '+JSON.stringify(checks));
   if(width<768)assert.ok(checks.filter(v=>['INPUT','TEXTAREA','SELECT'].includes(v.tag)).every(v=>v.font>=16),'Mobile input/textarea fonts must be 16px');
+ }
+ // I59 measures usable native text space, not just the outer control rectangle.
+ // Canvas uses the control's computed font; no test-only presentation overrides.
+ async function toolbarContentGeometry(toolbar,width,screen){
+  const measured=await toolbar.evaluate(element=>{
+   const rect=node=>{const box=node.getBoundingClientRect();return {left:box.left,right:box.right,top:box.top,bottom:box.bottom,width:box.width,height:box.height};};
+   const visible=node=>{if(!node)return false;const box=rect(node),style=getComputedStyle(node);return box.width>0&&box.height>0&&style.display!=='none'&&style.visibility==='visible'&&Number(style.opacity)>0;};
+   const content=node=>{const box=rect(node),style=getComputedStyle(node),left=box.left+parseFloat(style.borderLeftWidth)+parseFloat(style.paddingLeft),right=box.right-parseFloat(style.borderRightWidth)-parseFloat(style.paddingRight),canvas=document.createElement('canvas'),context=canvas.getContext('2d');context.font=`${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;const text=node.tagName==='SELECT'?node.selectedOptions[0]?.textContent??'':node.value;return {...box,contentLeft:left,contentRight:right,contentWidth:right-left,text,textWidth:context.measureText(text).width,font:parseFloat(style.fontSize),disabled:node.disabled};};
+   const input=element.querySelector('.request-list-search input'),select=element.querySelector('.request-list-branch select'),refresh=element.querySelector('.request-list-refresh'),chevron=element.querySelector('.request-list-branch > svg:last-child'),searchIcon=element.querySelector('.request-list-search > svg'),badge=element.querySelector('.request-list-search > kbd'),refreshIcon=refresh.querySelector('svg');
+   const pointUncovered=node=>{const box=rect(node),hit=document.elementFromPoint(box.left+box.width/2,box.top+box.height/2);return hit===node||node.contains(hit);};
+   return {search:content(input),branch:content(select),refresh:{...rect(refresh),label:refresh.getAttribute('aria-label'),iconVisible:visible(refreshIcon),textVisible:visible(refresh.querySelector('.request-list-refresh-label')),uncovered:pointUncovered(refresh)},searchIcon:{...rect(searchIcon),visible:visible(searchIcon)},chevron:{...rect(chevron),visible:visible(chevron)},badgeVisible:visible(badge),badge:badge?rect(badge):null,searchUncovered:pointUncovered(input),branchUncovered:pointUncovered(select)};
+  });
+  const diagnostic=JSON.stringify({screen,width,...measured});
+  for(const control of [measured.search,measured.branch,measured.refresh])assert.ok(control.height>=43.5&&control.width>=43.5,'Toolbar targets remain at least 44px in both dimensions: '+diagnostic);
+  assert.equal(measured.refresh.label,'Làm mới');assert.equal(measured.refresh.iconVisible,true,'Every list uses the same visible refresh icon: '+diagnostic);
+  assert.ok(measured.searchUncovered&&measured.branchUncovered&&measured.refresh.uncovered,'Toolbar input, branch and refresh remain reachable: '+diagnostic);
+  assert.equal(measured.chevron.visible,true,'Native branch selection has a visible dropdown affordance: '+diagnostic);
+  assert.ok(measured.branch.contentRight<=measured.chevron.left&&measured.chevron.right<=measured.branch.right,'Branch text cannot collide with the chevron: '+diagnostic);
+  assert.ok(measured.searchIcon.visible&&measured.searchIcon.right<=measured.search.contentLeft,'Search icon cannot collide with typed text: '+diagnostic);
+  if(width<768){
+   assert.ok(measured.search.contentWidth>=120&&measured.search.contentWidth>=measured.search.textWidth+2,'Mobile typed search has readable content space: '+diagnostic);
+   assert.ok(measured.branch.contentWidth>=measured.branch.textWidth+2,'The selected source branch is fully readable on mobile: '+diagnostic);
+   assert.equal(measured.badgeVisible,false,'Desktop shortcut badge is hidden on mobile');assert.equal(measured.refresh.textVisible,false,'Mobile refresh stays compact without losing its accessible name');
+   assert.ok(measured.search.bottom<=measured.branch.top&&Math.abs(measured.branch.top-measured.refresh.top)<=1,'Shared mobile controls use two compact aligned rows: '+diagnostic);
+  }else{
+   assert.equal(measured.refresh.textVisible,true,'Desktop keeps the refresh text');
+   assert.equal(measured.badgeVisible,screen==='purchase-orders','Only Orders retains its visible desktop shortcut badge');
+   if(screen==='purchase-orders')assert.ok(measured.search.contentRight<=measured.badge.left&&measured.badge.right<=measured.search.right,'Desktop shortcut remains outside the search text content area: '+diagnostic);
+   else assert.equal(measured.badge,null,'Requests and Inbound do not invent a desktop shortcut badge');
+  }
+  return measured;
  }
  async function capture(name,{viewport=false,keepFocus=false}={}){if(!keepFocus)await page.evaluate(()=>{if(document.activeElement instanceof HTMLElement)document.activeElement.blur();window.scrollTo(0,0);});await paint();const file=name+'.png';await page.screenshot({path:path.join(output,file),fullPage:!viewport});const bytes=await readFile(path.join(output,file));captures.push({file,sha256:sha(bytes),fullPage:!viewport,keepsFocus:keepFocus});}
  // Read-only, bounded diagnostics. Preserve the original two-frame fit sample:
@@ -584,7 +615,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
    assert.equal(await page.getByText('Trạng thái chưa xác định (mã 999)',{exact:true}).locator('visible=true').count(),1);
    await capture(`i36-orders-${width}`,{viewport:true});
   });
-  for(const width of [320,390,1440])await run(`I42 shared list surface and native controls ${width}`,async()=>{
+  for(const width of [320,360,390,1440])await run(`I42 shared list surface and native controls ${width}`,async()=>{
    for(const screen of ['purchase-requests','inbound-requests','purchase-orders']){
     await start(width,screen);
     const orders=screen==='purchase-orders',list=orders?page.locator('.document-panel'):host(screen);
@@ -610,6 +641,12 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
     await toolbar.locator('input').press('Enter');
     await eventually(()=>calls.some(call=>call.route===route&&call.search==='QA'&&call.branchId==='QA-BRANCH'&&call.page==='1'));
     await action.waitFor();await paint();
+    // Exercise a useful-length draft without applying a different query, then
+    // restore the existing QA filter before continuing the original scenarios.
+    await search.fill('QA-SEARCH-001');await paint();
+    const toolbarGeometry=await toolbarContentGeometry(toolbar,width,screen);
+    await capture(`i59-${screen}-toolbar-${width}`,{viewport:true});
+    await search.fill('QA');await paint();
     // Count every DOM node, including hidden nodes, and retain its identity through
     // both responsive modes. A visually hidden duplicate can steal the row ref.
     const actionSelector=orders?'button[aria-label="Mở chứng từ QA-ORDER-001"]':screen==='purchase-requests'?'button[aria-label="Mở đề nghị QA-PURCHASE-001"]':'button[aria-label^="Mở phiếu QA-INBOUND-001 "]';
@@ -640,7 +677,7 @@ test('I30 compiled application presentation at 320,390,1440',{timeout:240000},as
      assert.equal(await page.getByRole('dialog',{name:'Tùy chỉnh bảng',exact:true}).count(),0);
     }
     assert.equal(calls.filter(call=>call.method==='POST').length,0);
-    sharedGridEvidence.push({kind:'shared-list',screen,width,sharedTables:await table.count(),liveOpenActions:await list.locator(actionSelector).count(),nativeBranch:true,responsiveNodeIdentity:true,controlGeometry});
+    sharedGridEvidence.push({kind:'shared-list',screen,width,sharedTables:await table.count(),liveOpenActions:await list.locator(actionSelector).count(),nativeBranch:true,responsiveNodeIdentity:true,controlGeometry,toolbarGeometry});
     await capture(`i42-${screen}-shared-${width}`,{viewport:true});
    }
   });
@@ -1215,7 +1252,7 @@ for(const width of [320,390,1440])for(const screen of ['purchase-requests','inbo
  }catch(error){fatal=String(error);throw error;}finally{
   let teardownError;try{await cleanup();}catch(error){teardownError=error;errors.push(String(error));}
   t.signal.removeEventListener('abort',abortCleanup);
-  const evidence={node:process.version,css:{sourceSha256:sha(cssSource),compiledSha256:sha(css),bytes:Buffer.byteLength(css),modules:cssModules},viewportWidths:[320,390,1440],hierarchy:'Actual Workspace and production request components',backend:'Synthetic HTTP host plus separately labelled trusted-adapter component contract; no ERP/SQL acceptance',status:completed&&!t.signal.aborted&&!fatal&&!failures.length&&!errors.length&&results.length===expectedCases?'passed':'failed',expectedCases,completedCases:results.length,fatal,results,failures,captures,transportEvidence,readonlyEvidence,commandGeometryEvidence,sharedGridEvidence,stickyToolbarEvidence,portalPresentationEvidence,errors};
+  const evidence={node:process.version,css:{sourceSha256:sha(cssSource),compiledSha256:sha(css),bytes:Buffer.byteLength(css),modules:cssModules},viewportWidths:[320,360,390,1440],hierarchy:'Actual Workspace and production request components',backend:'Synthetic HTTP host plus separately labelled trusted-adapter component contract; no ERP/SQL acceptance',status:completed&&!t.signal.aborted&&!fatal&&!failures.length&&!errors.length&&results.length===expectedCases?'passed':'failed',expectedCases,completedCases:results.length,fatal,results,failures,captures,transportEvidence,readonlyEvidence,commandGeometryEvidence,sharedGridEvidence,stickyToolbarEvidence,portalPresentationEvidence,errors};
   await writeFile(path.join(output,'browser-result.json'),JSON.stringify(evidence,null,2));
   if(teardownError)throw teardownError;
  }

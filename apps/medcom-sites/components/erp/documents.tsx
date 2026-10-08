@@ -1,11 +1,11 @@
 "use client";
 import {useEffect,useLayoutEffect,useRef,useState,type FormEvent} from "react";
 import {useQuery} from "@tanstack/react-query";
-import {LockKeyhole,RefreshCw} from "lucide-react";
+import {LockKeyhole} from "lucide-react";
 import {useListControls} from "./list-view-state";
 import {ErpGrid} from "./grid";
 import {Freshness} from "./feedback";
-import {RequestListComposition,RequestListPanel,RequestListContent,RequestListHeader,RequestListToolbar,RequestSearch,RequestBranch,RequestPagination} from "./request-list-shell";
+import {RequestListComposition,RequestListPanel,RequestListContent,RequestListHeader,RequestListToolbar,RequestSearch,RequestBranch,RequestRefresh,RequestPagination} from "./request-list-shell";
 import {RequestButton,RequestEmpty,RequestError,RequestLoading,RequestStatus,RequestDocumentIdentity} from "./request-presentation";
 import {ApiError,getDocuments,type ReadScope} from "@/lib/erp/api";
 import {authorizedScreenIds} from "@/lib/erp/navigation";
@@ -47,7 +47,7 @@ export function Documents({kind,workspace,verified,generation,compact,setCompact
  <RequestListToolbar className="table-toolbar" onSubmit={submit}>
   <RequestSearch inputRef={searchRef} value={search} maxLength={50} onChange={setSearch} placeholder="Tìm mã chứng từ…" label="Tìm mã chứng từ" shortcut="⌘ F"/>
   <RequestBranch label="Chi nhánh" value={branch} allValue="" branches={workspace?.branchIds??[]} onChange={v=>{setBranch(v);setPage(1);}}/>
-  <div className="toolbar-end"><RequestButton type="button" disabled={query.isFetching||!allowed} onClick={()=>void query.refetch()}><RefreshCw size={16} className={query.isFetching?"spin":""}/>Làm mới</RequestButton></div>
+  <div className="toolbar-end"><RequestRefresh refreshing={query.isFetching} disabled={query.isFetching||!allowed} onClick={()=>void query.refetch()}/></div>
  </RequestListToolbar>
  <RequestListContent>{query.error&&<RequestError error={query.error} retry={allowed?()=>void query.refetch():undefined}/>}
  {<div ref={viewport} hidden={!data} onScrollCapture={event=>{if(data&&event.target instanceof HTMLElement&&event.target.classList.contains("desktop-grid-viewport"))scroll.current={top:event.target.scrollTop,left:event.target.scrollLeft};}}><ErpGrid rows={data?.rows??[]} columns={columns} rowId={row=>row.documentId} renderCell={renderCell}
