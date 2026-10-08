@@ -20,12 +20,30 @@ public static class PurchaseRequestCommandRegistration
     public static IServiceCollection AddDormantPurchaseRequestCommands(this IServiceCollection services,
         PurchaseRequestCommandFactory? factory = null,
         Func<IWebSessions, string, CancellationToken, Task<ResolvedSession?>>? inspectLocalSession = null)
+        => Register(services, factory, inspectLocalSession, PurchaseRequestCommandComposition.Production);
+
+    // Explicit server-composition path for a bounded owner-approved experiment.
+    // ApiHost/Program never call it. A pilot is not production runtime acceptance.
+    public static IServiceCollection AddOwnerAuthorizedPurchaseRequestPilotCommands(this IServiceCollection services,
+        PurchaseRequestCommandFactory factory,
+        Func<IWebSessions, string, CancellationToken, Task<ResolvedSession?>>? inspectLocalSession = null)
+    {
+        ArgumentNullException.ThrowIfNull(factory);
+        if (!factory.IsOwnerAuthorizedPilot || factory.RuntimeAccepted)
+            throw new ArgumentException("A distinct owner-authorized purchase pilot factory is required.");
+        return Register(services, factory, inspectLocalSession, PurchaseRequestCommandComposition.OwnerAuthorizedPilot);
+    }
+
+    private static IServiceCollection Register(IServiceCollection services, PurchaseRequestCommandFactory? factory,
+        Func<IWebSessions, string, CancellationToken, Task<ResolvedSession?>>? inspectLocalSession,
+        PurchaseRequestCommandComposition composition)
     {
         ArgumentNullException.ThrowIfNull(services);
         services.AddHttpContextAccessor();
         services.AddScoped<PurchaseRequestCommandRequestScope>(provider =>
         {
-            if (factory?.RuntimeAccepted != true)
+            if (composition == PurchaseRequestCommandComposition.Production
+                ? factory?.RuntimeAccepted != true : factory?.IsOwnerAuthorizedPilot != true)
                 return new PurchaseRequestCommandRequestScope(null, null, null, CancellationToken.None);
             var context = provider.GetRequiredService<IHttpContextAccessor>().HttpContext;
             ResolvedSession? anchor = null;
@@ -38,7 +56,7 @@ public static class PurchaseRequestCommandRegistration
                 if (claims.Length == 1 && claims[0].Value == server.Token) anchor = server;
             }
             return new PurchaseRequestCommandRequestScope(factory, provider.GetService<IWebSessions>(),
-                anchor, context?.RequestAborted ?? CancellationToken.None, inspectLocalSession);
+                anchor, context?.RequestAborted ?? CancellationToken.None, inspectLocalSession, composition);
         });
         services.AddScoped<IPurchaseRequestCommandAccess>(provider =>
             new SqlPurchaseRequestCommandAccess(provider.GetRequiredService<PurchaseRequestCommandRequestScope>()));
@@ -48,23 +66,31 @@ public static class PurchaseRequestCommandRegistration
     }
 }
 
+internal enum PurchaseRequestCommandComposition { Production, OwnerAuthorizedPilot }
+
 // One frozen server token/anchor per DI request scope. Identity snapshots are NOT
 // authorization caches; every reader/writer/lookup fence calls IWebSessions again.
 internal sealed class PurchaseRequestCommandRequestScope
 {
     private readonly PurchaseRequestCommandFactory? factory;
+    private readonly PurchaseRequestCommandComposition composition;
     private readonly IWebSessions? sessions;
     private readonly ResolvedSession? anchor;
     private readonly Func<string, CancellationToken, Task<ResolvedSession?>>? inspect;
     private readonly CancellationToken requestAborted;
     public IPurchaseRequestCommands Commands { get; }
-    internal bool RuntimeAccepted => factory?.RuntimeAccepted == true;
+    internal bool CompositionAdmitted => composition == PurchaseRequestCommandComposition.Production
+        ? factory?.RuntimeAccepted == true : factory?.IsOwnerAuthorizedPilot == true;
+    internal bool MayWrite => CompositionAdmitted && (composition == PurchaseRequestCommandComposition.Production
+        || factory!.PilotWriteAllowed);
 
     internal PurchaseRequestCommandRequestScope(PurchaseRequestCommandFactory? factory, IWebSessions? sessions,
         ResolvedSession? serverSession, CancellationToken requestAborted,
-        Func<IWebSessions, string, CancellationToken, Task<ResolvedSession?>>? inspectLocalSession = null)
+        Func<IWebSessions, string, CancellationToken, Task<ResolvedSession?>>? inspectLocalSession = null,
+        PurchaseRequestCommandComposition composition = PurchaseRequestCommandComposition.Production)
     {
         this.factory = factory;
+        this.composition = composition;
         this.sessions = sessions;
         this.requestAborted = requestAborted;
         // IWebSessions.InspectAsync has a full-resolution fallback. Only the sealed
@@ -86,7 +112,7 @@ internal sealed class PurchaseRequestCommandRequestScope
     internal async Task<PurchaseRequestCommandAuthorityOutcome> ReadAccess(ResolvedSession supplied,
         string documentId, string branchId, CancellationToken token)
     {
-        if (!RuntimeAccepted) return PurchaseRequestCommandAuthorityOutcome.Unavailable;
+        if (!CompositionAdmitted) return PurchaseRequestCommandAuthorityOutcome.Unavailable;
         if (anchor is null || supplied is null || supplied.Token != anchor.Token)
             return PurchaseRequestCommandAuthorityOutcome.Denied;
         if (inspect is null) return PurchaseRequestCommandAuthorityOutcome.Unavailable;
@@ -94,9 +120,10 @@ internal sealed class PurchaseRequestCommandRequestScope
         if (sessionFence is null || !sessionFence.TryAccept(supplied.Identity, out _))
             return PurchaseRequestCommandAuthorityOutcome.Denied;
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, requestAborted);
-        return await factory!.CreateAuthorityReader(t => ResolveLive(sessionFence, t),
-                t => ResolveLive(sessionFence, t, localOnly: true))
-            .ReadAsync(documentId, branchId, linked.Token);
+        var reader = composition == PurchaseRequestCommandComposition.Production
+            ? factory!.CreateAuthorityReader(t => ResolveLive(sessionFence, t), t => ResolveLive(sessionFence, t, localOnly: true))
+            : factory!.CreatePilotAuthorityReader(t => ResolveLive(sessionFence, t), t => ResolveLive(sessionFence, t, localOnly: true));
+        return await reader.ReadAsync(documentId, branchId, linked.Token);
     }
 
     private PurchaseRequestSessionFence? NewInvocationFence()
@@ -110,16 +137,18 @@ internal sealed class PurchaseRequestCommandRequestScope
     {
         if (factory is null) return new UnavailablePurchaseRequestCommands();
         var sessionFence = NewInvocationFence();
-        return factory.CreateCommands(sessionFence is null
-            ? _ => Task.FromResult<AuthoritativeIdentity?>(null)
-            : t => ResolveLive(sessionFence, t), inspect is null ? null
+        Func<CancellationToken, Task<AuthoritativeIdentity?>> resolve = sessionFence is null
+            ? _ => Task.FromResult<AuthoritativeIdentity?>(null) : t => ResolveLive(sessionFence, t);
+        Func<CancellationToken, Task<AuthoritativeIdentity?>>? local = inspect is null ? null
             : t => sessionFence is null ? Task.FromResult<AuthoritativeIdentity?>(null)
-                : ResolveLive(sessionFence, t, localOnly: true));
+                : ResolveLive(sessionFence, t, localOnly: true);
+        return composition == PurchaseRequestCommandComposition.Production
+            ? factory.CreateCommands(resolve, local) : factory.CreatePilotCommands(resolve, local);
     }
 
     private async Task<AuthoritativeIdentity?> ResolveLive(PurchaseRequestSessionFence sessionFence, CancellationToken token, bool localOnly = false)
     {
-        if (!RuntimeAccepted || anchor is null || sessions is null) return null;
+        if (!CompositionAdmitted || anchor is null || sessions is null) return null;
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, requestAborted);
         linked.Token.ThrowIfCancellationRequested();
         var live = await (localOnly ? inspect!(anchor.Token, linked.Token)
