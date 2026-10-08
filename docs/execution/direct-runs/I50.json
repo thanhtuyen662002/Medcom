@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I50",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "08c2bea8-431f-4127-8922-26eb3d4307c0",
+  "base_sha": "bba926f951332ffb8547850af2aa13e66da35685",
+  "work_branch": "codex/g45-list-view-continuity-i50-20261008",
+  "claim_branch": "medcom-claims/g45/direct/I50",
+  "scope": [
+    "apps/medcom-sites/components/erp/workspace.tsx",
+    "apps/medcom-sites/components/erp/request-list-shell.tsx",
+    "apps/medcom-sites/components/erp/grid.tsx",
+    "apps/medcom-sites/components/erp/purchase-request-screen.tsx",
+    "apps/medcom-sites/components/erp/inbound-request-screen.tsx",
+    "apps/medcom-sites/components/erp/documents.tsx",
+    "apps/medcom-sites/components/erp/list-view-state.tsx",
+    "apps/medcom-sites/lib/erp/list-view-state.ts",
+    "apps/medcom-sites/tests/list-view-state.test.mjs",
+    "apps/medcom-sites/tests/workspace-retention.browser.mjs",
+    "apps/medcom-sites/tests/request-presentation.browser.mjs",
+    "apps/medcom-sites/tests/request-detail-history.browser.mjs",
+    "apps/medcom-sites/scripts/test-erp.mjs",
+    "apps/medcom-sites/README.md",
+    "docs/execution/direct-runs/I50.json"
+  ],
+  "purpose": "Preserve scoped list controls and unify grid options",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "constraints": [
+    "Root is sole GitHub publisher; implementation uses an isolated workspace, never the running preview.",
+    "Admission only; implementation and tests NOT_RUN at this commit.",
+    "Only bounded in-memory presentation state for three named screens; no rows, document IDs, authority proofs, editor/command/receipt custody, browser storage or URL persistence.",
+    "Preserve guarded unmount/history and original intent; retire view state on verified session/read-scope replacement and terminal denial.",
+    "Unify grid density/customization through existing components with protected portal gating; preserve query semantics and action authorization.",
+    "No backend, API, SQL, private settings, runtime activation, dependencies or workflow changes."
+  ],
+  "created_at": "2026-10-08T03:10:08.103966+00:00"
+}
