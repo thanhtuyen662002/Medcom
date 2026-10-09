@@ -203,8 +203,8 @@ html .verification-skeleton { border-radius: 16px; background: var(--card); }
   html .request-list-pagination { padding: 12px; gap: 8px; }
   html .request-list-page-meta { flex-basis: 100%; }
   html .request-list-pagination .request-list-page-controls { flex: 0 0 auto; width: auto; gap: 2px; }
-  html .request-list-page-controls .request-button { padding-inline: 8px; font-size: .8125rem; gap: 4px; }
-  html .request-list-current-page { min-width: 64px; padding-inline: 6px; font-size: .8125rem; }
+  html .request-list-page-controls .request-button { padding-inline: 6px; font-size: .8125rem; gap: 4px; white-space: nowrap; }
+  html .request-list-current-page { min-width: 56px; padding-inline: 6px; font-size: .8125rem; }
   html .workspace-footer { padding: 16px; }
   html .module-card { padding: 20px; }
   html .panel-heading { padding: 18px 16px; }
