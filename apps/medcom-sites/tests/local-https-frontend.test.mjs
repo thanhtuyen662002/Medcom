@@ -371,7 +371,9 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
         const card = page.locator('.mobile-document-card').filter({hasText: 'I28-PO-001'});
         await card.waitFor(); assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
         await page.screenshot({path: path.join(output, `workspace-${width}.png`), fullPage: true});
-        await card.click(); await page.getByRole('dialog').locator('.record-lines-table').getByText('SYNTHETIC-ITEM', {exact: true}).waitFor();
+        // The exact historical negative control keeps its original renderer;
+        // current builds must use the single shared source table.
+        await card.click(); await page.getByRole('dialog').locator(baselineControl ? '.mobile-detail-lines' : '.record-lines-table').getByText('SYNTHETIC-ITEM', {exact: true}).waitFor();
         await page.keyboard.press('Escape');
       }
     });
