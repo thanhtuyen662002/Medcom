@@ -107,6 +107,7 @@ html .request-list-toolbar .request-button { white-space: nowrap; }
 html .request-list-toolbar .request-select { border-color: var(--input); }
 html .erp-grid .request-list-table th { font-size: .875rem; font-weight: 500; background: var(--secondary); color: var(--muted-foreground); padding: 11px 18px; }
 html .erp-grid .request-list-table td { font-size: .875rem; padding-inline: 18px; border-bottom-color: color-mix(in srgb, var(--border) 72%, var(--card)); }
+html .column-resizer { z-index: 7; }
 html .column-resizer::after { background: color-mix(in srgb, var(--border) 70%, transparent); width: 1px; }
 html .request-document-id { gap: 10px; }
 html .request-document-id svg { color: var(--primary); }
