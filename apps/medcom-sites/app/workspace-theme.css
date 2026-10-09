@@ -74,7 +74,7 @@ html :is(.erp-sidebar, [data-slot="sidebar"][data-mobile="true"]) [data-slot="si
 html :is(.erp-sidebar, [data-slot="sidebar"][data-mobile="true"]) [data-slot="sidebar-menu-button"][data-active="true"] { background: var(--sidebar-accent); color: var(--sidebar-accent-foreground); font-weight: 600; box-shadow: 0 1px 2px #00000003; }
 html .nav-active-mark { display: none; }
 html .sidebar-bottom { padding: 18px 12px 14px; font-size: .75rem; line-height: 1.5; }
-html .topbar { height: var(--medcom-topbar-height); padding-inline: 30px; background: color-mix(in srgb, var(--card) 88%, transparent); backdrop-filter: blur(20px); border-color: var(--border); }
+html .topbar { height: var(--medcom-topbar-height); padding-inline: 30px; background: var(--card); backdrop-filter: none; border-color: var(--border); }
 html .topbar-context { gap: 12px; font-size: .875rem; }
 html .topbar-context strong { font-weight: 600; }
 html .global-search { height: 40px; width: 260px; background: var(--secondary); border-color: transparent; border-radius: 10px; }
@@ -105,7 +105,7 @@ html .request-list-search .request-input { background: var(--background); border
 html .request-list-branch { flex: 0 1 168px; min-width: 120px; }
 html .request-list-toolbar .request-button { white-space: nowrap; }
 html .request-list-toolbar .request-select { border-color: var(--input); }
-html .erp-grid .request-list-table th { font-size: .875rem; font-weight: 500; background: var(--secondary); color: var(--muted-foreground); padding: 12px 18px; }
+html .erp-grid .request-list-table th { font-size: .875rem; font-weight: 500; background: var(--secondary); color: var(--muted-foreground); padding: 11px 18px; }
 html .erp-grid .request-list-table td { font-size: .875rem; padding-inline: 18px; border-bottom-color: color-mix(in srgb, var(--border) 72%, var(--card)); }
 html .column-resizer::after { background: color-mix(in srgb, var(--border) 70%, transparent); width: 1px; }
 html .request-document-id { gap: 10px; }
@@ -115,7 +115,7 @@ html .erp-grid .request-list-table .request-status { font-size: .75rem; padding:
 /* The action is always the last real column; any flexible filler precedes it.
    Opaque row surfaces preserve contrast while other columns scroll beneath. */
 html .erp-grid .request-list-table .request-list-action-heading,
-html .erp-grid .request-list-table .request-list-open { position: sticky; right: 0; width: 156px; min-width: 156px; max-width: 156px; padding-inline: 12px; box-shadow: -1px 0 0 var(--border), -8px 0 14px -12px #00000030; }
+html .erp-grid .request-list-table .request-list-open { position: sticky; right: var(--grid-scrollbar-width, 0px); width: 156px; min-width: 156px; max-width: 156px; padding-inline: 12px; box-shadow: -1px 0 0 var(--border), -8px 0 14px -12px #00000030; }
 html .erp-grid .request-list-table .request-list-action-heading { z-index: 6; text-align: center; }
 html .erp-grid .request-list-table .request-list-open { z-index: 4; background: var(--card); }
 html .erp-grid .request-list-table tr[data-selected="true"] .request-list-open,
@@ -181,6 +181,7 @@ html .verification-skeleton { border-radius: 16px; background: var(--card); }
 }
 @media (max-width: 767px) {
   html:root { --medcom-topbar-height: 60px; }
+  html [data-slot="input"], html [data-slot="textarea"], html [data-slot="select-trigger"], html .request-select { font-size: 1rem; }
   html .topbar { height: 60px; padding-inline: 16px; }
   html .workspace-content { padding: 24px 16px 28px; }
   html .page-heading { gap: 14px; margin-bottom: 22px; }
