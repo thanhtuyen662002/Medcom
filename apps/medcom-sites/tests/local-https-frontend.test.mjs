@@ -173,7 +173,7 @@ test('I28 login-first fixture contract matches the production auth gate', async 
   const labelledBy = recoveryHtml.match(/<section\b[^>]*aria-labelledby="([^"]+)"/)?.[1];
   assert.ok(labelledBy, 'the root recovery region must have an accessible heading label');
   assert.ok(recoveryHtml.includes(`<h1 id="${labelledBy}">${recoveryTitle}</h1>`));
-  assert.match(recoveryHtml, /<button type="button">Thử lại<\/button>/);
+  assert.match(recoveryHtml, /<button\b[^>]*type="button"[^>]*>Thử lại<\/button>/);
   assert.match(recoveryHtml, /<div\b[^>]*hidden=""[^>]*inert=""[^>]*aria-hidden="true"[^>]*style="display:none"><div>RETAINED SYNTHETIC INTENT<\/div><\/div>/);
   assert.doesNotMatch(recoveryHtml, /<form\b|Xác minh lại phiên ERP/);
   const retry = {}, recoveryCalls = [];
