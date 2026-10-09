@@ -5,12 +5,14 @@ namespace Medcom.Contracts;
 public sealed record PurchaseRequestListQuery(int Page = 1, int PageSize = 20,
     string? Search = null, string? BranchId = null);
 public sealed record PurchaseRequestListRow(string DocumentId, string? PurchaseDate, string BranchId,
-    string PersonSuggest, string Department, int StatusId, bool? IsLocked, string? StatusName = null);
+    string PersonSuggest, string Department, int StatusId, bool? IsLocked, string? StatusName = null,
+    [property:JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] PurchaseRequestHeaderFields? Fields = null);
 public sealed record PurchaseRequestListPage(IReadOnlyList<PurchaseRequestListRow> Rows,
     int Page, int PageSize, bool HasMore);
 public sealed record PurchaseRequestReadback(PurchaseRequestAggregate Document, string StateToken,
     PurchaseRequestCommandAccessState? CommandAccess = null, string? StatusName = null,
-    ItemDisplayContext? ItemDisplayContext = null);
+    ItemDisplayContext? ItemDisplayContext = null,
+    [property:JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] PurchaseRequestSourceFields? SourceFields = null);
 // Fixed existing-document bridge. No Create/Add capability is exposed.
 public sealed record PurchaseRequestCommandAccessState(bool CanSave, bool CanSubmit, bool CanLookup,
     bool CanAddLines, string Reason);

@@ -23,37 +23,10 @@ public static class PurchaseRequestEndpoints
             return Response(context, result with { Value = result.Value with
                 { WriteAvailable = false, WriteReason = PurchaseRequestQueryRules.WriteReason } });
         });
-        app.MapGet("/api/purchase-requests", async (HttpContext context, IPurchaseRequestQueries queries) =>
-        {
-            if (!CanRead(context)) return Denied();
-            if (!Fields(context, "page", "pageSize", "search", "branchId")
-                || !Number(context, "page", 1, out var page) || !Number(context, "pageSize", 20, out var size)) return Invalid();
-            var query = new PurchaseRequestListQuery(page, size, context.Request.Query["search"], context.Request.Query["branchId"]);
-            if (!PurchaseRequestQueryRules.List(query)) return Invalid();
-            if (!string.IsNullOrEmpty(query.BranchId)
-                && AuthEndpoints.Current(context).Identity.BranchIds?.Contains(query.BranchId, StringComparer.Ordinal) != true) return Denied();
-            return Response(context, await queries.ListAsync(query, context.RequestAborted));
-        });
-        app.MapGet("/api/purchase-requests/detail", async (HttpContext context, IPurchaseRequestQueries queries, IPurchaseRequestCommandAccess access, IWebSessions sessions) =>
-        {
-            if (!CanRead(context)) return Denied();
-            if (!Fields(context, "documentId") || !PurchaseRequestCommandRules.Identifier(context.Request.Query["documentId"], 50)) return Invalid();
-            var result = await queries.OpenAsync(context.Request.Query["documentId"].ToString(), context.RequestAborted);
-            if (result.Outcome != PurchaseRequestQueryOutcome.Success || result.Value is null) return Response(context, result);
-            var original = AuthEndpoints.Current(context);
-            var live = await Live(context, sessions, original, result.Value.Document.BranchId,
-                inspectOnly: queries is Medcom.Infrastructure.PurchaseRequests.SqlPurchaseRequestQueries);
-            if (live is null) return Denied();
-            PurchaseRequestCommandAccessState grant;
-            try { grant = await access.ResolveAsync(live, result.Value.Document.PurchaseRequestId, result.Value.Document.BranchId, context.RequestAborted); }
-            catch (Exception) when (!context.RequestAborted.IsCancellationRequested)
-            { grant = UnavailablePurchaseRequestCommandAccess.State; }
-            if (await Live(context, sessions, live, result.Value.Document.BranchId) is null) return Denied();
-            if (grant.CanAddLines) grant = UnavailablePurchaseRequestCommandAccess.State;
-            if (result.Value.Document.StatusId != 1 || result.Value.Document.IsLocked is true)
-                grant = grant with { CanSave = false, CanSubmit = false };
-            return Response(context, result with { Value = result.Value with { CommandAccess = grant } });
-        });
+        MapList(app,"/api/purchase-requests",false);
+        MapList(app,"/api/v2/purchase-requests",true);
+        MapDetail(app,"/api/purchase-requests/detail",false);
+        MapDetail(app,"/api/v2/purchase-requests/detail",true);
         app.MapGet("/api/purchase-requests/lookup", async (HttpContext context, IPurchaseRequestQueries queries) =>
         {
             if (!CanRead(context)) return Denied();
@@ -71,6 +44,50 @@ public static class PurchaseRequestEndpoints
         app.MapPost("/api/purchase-requests/submit/lookup", (HttpContext context, IPurchaseRequestCommands commands,
             IPurchaseRequestCommandAccess access, IWebSessions sessions) => Command(context, commands, access, sessions, false, true));
     }
+
+    private static void MapList(WebApplication app,string path,bool fullFields) =>
+        app.MapGet(path, async (HttpContext context, IPurchaseRequestQueries queries) =>
+        {
+            if (!CanRead(context)) return Denied();
+            if (!Fields(context, "page", "pageSize", "search", "branchId")
+                || !Number(context, "page", 1, out var page) || !Number(context, "pageSize", 20, out var size)) return Invalid();
+            var query = new PurchaseRequestListQuery(page, size, context.Request.Query["search"], context.Request.Query["branchId"]);
+            if (!PurchaseRequestQueryRules.List(query)) return Invalid();
+            if (!string.IsNullOrEmpty(query.BranchId)
+                && AuthEndpoints.Current(context).Identity.BranchIds?.Contains(query.BranchId, StringComparer.Ordinal) != true) return Denied();
+            var result=await queries.ListAsync(query,context.RequestAborted);
+            if(result.Value is {} value)
+            {
+                if(fullFields && value.Rows.Any(row=>row.Fields is null))
+                    return Results.Problem(statusCode:503,title:"Data is temporarily unavailable.");
+                if(!fullFields)result=result with {Value=value with {Rows=value.Rows.Select(row=>row with {Fields=null}).ToArray()}};
+            }
+            return Response(context,result);
+        });
+
+    private static void MapDetail(WebApplication app,string path,bool fullFields) =>
+        app.MapGet(path, async (HttpContext context, IPurchaseRequestQueries queries, IPurchaseRequestCommandAccess access, IWebSessions sessions) =>
+        {
+            if (!CanRead(context)) return Denied();
+            if (!Fields(context, "documentId") || !PurchaseRequestCommandRules.Identifier(context.Request.Query["documentId"], 50)) return Invalid();
+            var result = await queries.OpenAsync(context.Request.Query["documentId"].ToString(), context.RequestAborted);
+            if (result.Outcome != PurchaseRequestQueryOutcome.Success || result.Value is null) return Response(context, result);
+            if(fullFields && result.Value.SourceFields is null)
+                return Results.Problem(statusCode:503,title:"Data is temporarily unavailable.");
+            var original = AuthEndpoints.Current(context);
+            var live = await Live(context, sessions, original, result.Value.Document.BranchId,
+                inspectOnly: queries is Medcom.Infrastructure.PurchaseRequests.SqlPurchaseRequestQueries);
+            if (live is null) return Denied();
+            PurchaseRequestCommandAccessState grant;
+            try { grant = await access.ResolveAsync(live, result.Value.Document.PurchaseRequestId, result.Value.Document.BranchId, context.RequestAborted); }
+            catch (Exception) when (!context.RequestAborted.IsCancellationRequested)
+            { grant = UnavailablePurchaseRequestCommandAccess.State; }
+            if (await Live(context, sessions, live, result.Value.Document.BranchId) is null) return Denied();
+            if (grant.CanAddLines) grant = UnavailablePurchaseRequestCommandAccess.State;
+            if (result.Value.Document.StatusId != 1 || result.Value.Document.IsLocked is true)
+                grant = grant with { CanSave = false, CanSubmit = false };
+            return Response(context, result with { Value = result.Value with { CommandAccess = grant,SourceFields=fullFields?result.Value.SourceFields:null } });
+        });
 
 
     private const int CommandBodyLimit = 1_048_576;
