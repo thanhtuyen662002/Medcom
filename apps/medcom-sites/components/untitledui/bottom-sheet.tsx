@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 export interface UntitledBottomSheetProps {
@@ -20,8 +21,14 @@ export function UntitledBottomSheet({
   subtitle,
   children,
   footer,
-  maxHeight = "max-h-[88vh]",
+  maxHeight = "max-h-[85vh]",
 }: UntitledBottomSheetProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
@@ -33,39 +40,39 @@ export function UntitledBottomSheet({
     };
   }, [open]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end">
-      {/* Backdrop */}
+  const content = (
+    <div className="fixed inset-0 z-50 flex flex-col justify-end md:justify-center md:items-center overflow-hidden">
+      {/* Backdrop covering full viewport */}
       <div
-        className="fixed inset-0 bg-neutral-950/60 backdrop-blur-xs transition-opacity duration-200"
+        className="fixed inset-0 bg-neutral-950/65 backdrop-blur-sm transition-opacity duration-200"
         onClick={onClose}
         aria-hidden="true"
       />
 
-      {/* Sheet Content Container */}
+      {/* Sheet / Modal Container (Bottom on mobile, Centered on desktop) */}
       <div
-        className={`relative z-10 w-full max-w-lg mx-auto bg-white dark:bg-neutral-900 rounded-t-3xl border-t border-x border-neutral-200/80 dark:border-neutral-800 shadow-2xl overflow-hidden flex flex-col ${maxHeight} animate-uui-slide-up`}
+        className={`relative z-10 w-full max-w-lg md:max-w-2xl bg-white dark:bg-neutral-900 rounded-t-3xl md:rounded-3xl border-t border-x md:border border-neutral-200/90 dark:border-neutral-800 shadow-2xl overflow-hidden flex flex-col ${maxHeight} animate-uui-slide-up md:my-auto`}
         role="dialog"
         aria-modal="true"
       >
-        {/* Drag Pill Handle */}
-        <div className="pt-3 pb-1 flex justify-center cursor-grab active:cursor-grabbing">
-          <div className="w-10 h-1.2 rounded-full bg-neutral-300 dark:bg-neutral-700" />
+        {/* Mobile Drag Pill Handle */}
+        <div className="pt-2.5 pb-1 flex justify-center md:hidden cursor-grab">
+          <div className="w-10 h-1.5 rounded-full bg-neutral-300 dark:bg-neutral-700" />
         </div>
 
         {/* Header */}
         {(title || subtitle) && (
-          <div className="px-5 py-3 border-b border-neutral-100 dark:border-neutral-800 flex items-start justify-between gap-3">
-            <div className="min-w-0">
+          <div className="px-5 py-3.5 border-b border-neutral-100 dark:border-neutral-800 flex items-start justify-between gap-3 bg-neutral-50/50 dark:bg-neutral-900/50">
+            <div className="min-w-0 flex-1">
               {title && (
-                <h3 className="text-base font-bold text-neutral-900 dark:text-white truncate">
+                <h3 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-white truncate">
                   {title}
                 </h3>
               )}
               {subtitle && (
-                <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+                <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400 truncate">
                   {subtitle}
                 </p>
               )}
@@ -95,4 +102,6 @@ export function UntitledBottomSheet({
       </div>
     </div>
   );
+
+  return createPortal(content, document.body);
 }
