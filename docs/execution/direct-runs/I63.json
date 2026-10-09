@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I63",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "I63-20261009-item-display-aggregate-binding",
+  "base_sha": "884be183160d0ea1e5c2a8d8ce5e20431dd55d6f",
+  "work_branch": "codex/g45-item-display-sql-i63-20261009",
+  "claim_branch": "medcom-claims/g45/direct/I63",
+  "scope": [
+    "src/backend/Medcom.Infrastructure/ItemDisplayContextReader.cs",
+    "tests/backend/Medcom.Api.Tests/ItemDisplayContextTests.cs",
+    "docs/execution/checkpoints/I63_ITEM_CONTEXT_AGGREGATES.md",
+    "docs/execution/direct-runs/I63.json"
+  ],
+  "purpose": "Repair SQL Server correlated aggregate binding violations in the shared read-only item display projection.",
+  "production_accepted": false,
+  "runtime_activation_authorized": false,
+  "constraints": [
+    "Root sole publisher; marker immutable, independent review and exact-head CI required.",
+    "Move identical per-row validity CASE expressions into local derived projections before COUNT/MAX. Preserve every native equality filter, exact-byte/length/NULL check, cardinality gate, parameter, lock hint and output contract.",
+    "Do not invent or weaken item mapping or business validation. No authentication, write activation, schema/data mutations or runtime settings changes.",
+    "Prove original/fixed generated SQL structural regression, preserve existing semantic fixture tests. Offline parse/recording evidence is not actual SQL engine compilation.",
+    "No private rows, SQL export, credentials or screenshots in public commits. Actual runtime verification remains separately observed."
+  ]
+}
