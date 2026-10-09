@@ -9,7 +9,7 @@ export function ItemIdentity({context,binding,line}: {context?:ItemDisplayContex
  return <dl aria-label="Thông tin mặt hàng" className="item-identity">
   {fields.map(([label,value],index)=><div key={label} className={`item-identity-field item-identity-field-${index}`}>
    <dt>{label}</dt>
-   <dd>{itemDisplayValue(value)}</dd>
+   <dd className={value==null?"item-identity-unavailable":undefined}>{itemDisplayValue(value)}</dd>
   </div>)}
  </dl>;
 }

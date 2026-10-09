@@ -471,13 +471,20 @@ test('I30 compiled application presentation at 320,360,390,1440',{timeout:240000
   const layout=[...document.querySelectorAll('[data-slot=sidebar-wrapper],[data-slot=sidebar-gap],[data-slot=sidebar-container],[data-slot=sidebar-inset],.topbar,.topbar-context,.topbar-actions,.global-search,.user-button,.workspace-content,.request-list-toolbar,.desktop-grid-viewport,.request-list-table,.request-list-pagination,.mobile-bottom-nav')].slice(0,24).map(describe);
   return {viewport,documentSize,mobileMedia:matchMedia('(max-width: 767px)').matches,fits:documentSize.scrollWidth<=viewport.width,offenderCount:candidates.length,offenders,animations,globalSearch,layout,activeElement:document.activeElement instanceof Element?identity(document.activeElement):null};
  });}
- // Test-only observation of the locked React renderer's own row key. IDs stay
+ // Test-only observation of the locked renderer's keyed row owner. IDs stay
  // internal: do not add DOM attributes or expose them to users to satisfy tests.
  async function retainedLineIdentity(rows,lines,indexed=false){
   assert.deepEqual(await rows.evaluateAll(elements=>elements.map(element=>{
    const names=Object.keys(element).filter(name=>name.startsWith('__reactFiber$'));
-   if(names.length!==1||typeof element[names[0]]?.key!=='string')throw Error('Exactly one own keyed React row fiber is required');
-   return element[names[0]].key;
+   if(names.length!==1)throw Error('Exactly one own React row fiber is required');
+   let fiber=element[names[0]];
+   // shadcn TableRow owns the key above its host <tr>. Walk only this row's
+   // composite chain; never borrow a key from a parent DOM node or sibling.
+   for(let depth=0;fiber&&depth<8;depth++,fiber=fiber.return){
+    if(fiber.stateNode?.nodeType===1&&fiber.stateNode!==element)break;
+    if(typeof fiber.key==='string')return fiber.key;
+   }
+   throw Error('The source row must have its own keyed owner');
   })),lines.map((line,index)=>indexed?`${index}:${line.lineId}`:line.lineId),'Every source line keeps its exact internal identity and order');
  }
  async function hiddenLineIdentities(container,lines){
@@ -514,7 +521,7 @@ test('I30 compiled application presentation at 320,360,390,1440',{timeout:240000
     assert.deepEqual(await table.locator('tbody tr > td').allTextContents(),['1','Mã hàngQA-ORDER-ITEM-001Mã hàng NSXChưa có thông tinTên hàng / dịch vụChưa có thông tinĐVTChưa có thông tin','999999999999999999.0001','—']);
     const fit=await dialog.evaluate(element=>{const body=element.querySelector('.request-detail-body');return {viewport:innerWidth,left:element.getBoundingClientRect().left,right:element.getBoundingClientRect().right,body:body.clientWidth,content:body.scrollWidth};});
     assert.ok(fit.left>=0&&fit.right<=fit.viewport&&fit.content<=fit.body+1,'The same source rows fit desktop and mobile without page overflow: '+JSON.stringify(fit));
-    await capture('untitled-order-detail-'+width,{viewport:true});await dialog.getByRole('button',{name:'Đóng chứng từ',exact:true}).click();await dialog.waitFor({state:'hidden'});assert.equal(await opener.evaluate(element=>element===document.activeElement),true);
+    await capture('untitled-order-detail-'+width,{viewport:true});await dialog.getByRole('button',{name:'Đóng chứng từ',exact:true}).click();await dialog.waitFor({state:'hidden'});await eventually(()=>page.evaluate(()=>document.activeElement?.closest('[data-grid-row]')?.getAttribute('data-grid-row')==='QA-ORDER-001'));
    }
   });
   await run('I50 R1 native viewport sticky scroll across all three actual list hosts',async()=>{
@@ -760,7 +767,7 @@ test('I30 compiled application presentation at 320,360,390,1440',{timeout:240000
    async function rowHeight(compact,estimate){
     const root=page.locator('.document-panel .erp-grid');await eventually(async()=>await root.getAttribute('data-compact')===String(compact));await paint();
     const geometry=await root.evaluate(el=>({estimate:parseFloat(el.querySelector('.desktop-grid-viewport').style.getPropertyValue('--grid-row-height')),rows:[...el.querySelectorAll('tbody tr[data-grid-row]')].map(row=>({id:row.getAttribute('data-grid-row'),height:row.getBoundingClientRect().height})),spacers:[...el.querySelectorAll('tbody tr.grid-spacer > td')].map(cell=>parseFloat(cell.style.height)||0),bodyHeight:el.querySelector('tbody').getBoundingClientRect().height,headerHeight:el.querySelector('thead').getBoundingClientRect().height,scrollHeight:el.querySelector('.desktop-grid-viewport').scrollHeight}));
-    assert.equal(geometry.estimate,estimate);assert.ok(geometry.rows.length>0);for(const row of geometry.rows)assert.equal(row.height,estimate,'Actual virtualized row height must exactly match its estimate: '+JSON.stringify({compact,...row}));assert.equal(geometry.spacers.reduce((sum,height)=>sum+height,0)+geometry.rows.length*estimate,50*estimate,'Density changes invalidate cached virtual spacer estimates');assert.equal(geometry.bodyHeight,50*estimate,'Rendered data rows and spacers cover exactly the virtual body');assert.equal(geometry.scrollHeight,geometry.headerHeight+50*estimate,'Scroll extent follows the current density, not cached prior heights');virtualRowGeometry.push({compact,...geometry});
+    assert.equal(geometry.estimate,estimate);assert.ok(geometry.rows.length>0);for(const row of geometry.rows)assert.equal(row.height,estimate,'Actual virtualized row height must exactly match its estimate: '+JSON.stringify({compact,...row}));assert.equal(geometry.spacers.reduce((sum,height)=>sum+height,0)+geometry.rows.length*estimate,50*estimate,'Density changes invalidate cached virtual spacer estimates');assert.equal(geometry.bodyHeight,50*estimate,'Rendered data rows and spacers cover exactly the virtual body');assert.equal(geometry.scrollHeight,Math.round(geometry.headerHeight+50*estimate),'Scroll extent follows the current density, not cached prior heights');virtualRowGeometry.push({compact,...geometry});
    }
    await rowHeight(false,65);await virtualPanel.getByRole('button',{name:'Tùy chỉnh bảng',exact:true}).click();await page.getByRole('dialog',{name:'Tùy chỉnh bảng',exact:true}).getByLabel('Bảng dữ liệu gọn',{exact:true}).check();await page.keyboard.press('Escape');await rowHeight(true,45);
    await virtualGrid.locator('[data-cell="0:0"]').focus();await page.keyboard.press('Control+End');await eventually(()=>virtualGrid.locator('[data-cell="49:4"]').evaluate(el=>el===document.activeElement));assert.equal(await virtualGrid.locator('[data-grid-row="QA-ORDER-050"]').count(),1,'Keyboard reaches the final virtualized row');
