@@ -133,11 +133,12 @@ public static class ApiHost
                         StatusCodes.Status403Forbidden, "forbidden", "Access denied."),
                     OnValidatePrincipal = async context =>
                     {
-                        // These exact public GETs expose only fixed/cached health data.
+                        // These exact public GETs expose only fixed health or cached
+                        // technical contract data.
                         // Treat even a supplied cookie as anonymous, not as authority;
                         // never refresh, resolve, or revoke its server session here.
                         if (HttpMethods.IsGet(context.Request.Method)
-                            && context.Request.Path.Value is "/health/live" or "/health/ready")
+                            && context.Request.Path.Value is "/health/live" or "/health/ready" or ApiContractCatalog.Path)
                         {
                             context.RejectPrincipal();
                             context.ShouldRenew = false;
@@ -235,6 +236,7 @@ public static class ApiHost
             : Results.Problem(statusCode: 403, title: "Access denied."));
         AuthEndpoints.Map(app);
         DocumentEndpoints.Map(app);
+        ApiContractCatalog.Map(app);
         PurchaseRequestEndpoints.Map(app);
         app.MapInboundDraftFacade();
         return app;

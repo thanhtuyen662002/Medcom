@@ -1,0 +1,12 @@
+{
+  "id": "I68",
+  "base": "b9a5c61b3f9e819f8a28442d48e5e21566cb5c9a",
+  "ownerDirection": "2026-10-10 Asia/Saigon: complete ERP backend, merge main and deploy for FE integration",
+  "scope": "Executable OpenAPI 3.1 contract for every currently registered HTTP operation; exact source DTO schemas, versioned field mapping, real wire/security/availability tests; private safe read-only integration verifier and deployed API handoff. I67 merge/deploy receipt.",
+  "limits": [
+    "No separately-owned frontend mutations",
+    "No SQL/schema or business writes; no invented runtime acceptance, actor credentials, field permission or unqualified selector/command activation",
+    "No private raw source, settings, credentials or real ERP rows published"
+  ],
+  "status": "ADMISSION_ONLY"
+}

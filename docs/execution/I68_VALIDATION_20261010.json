@@ -1,0 +1,68 @@
+{
+  "run": "I68",
+  "base": "b9a5c61b3f9e819f8a28442d48e5e21566cb5c9a",
+  "admission_head": "f195273c983b5b314302cfab042f430256bdcde7",
+  "files": {
+    "src/backend/Medcom.Api/ApiHost.cs": "7ddf8c73aa176e39c1d5e5704101dff11b134851777064e9df7b06b52e93c015",
+    "src/backend/Medcom.Api/ApiContractCatalog.cs": "429bb3eb33742c9b52faf7bee72ce9438ace8c3a33a2f1bf22dee7a0bea4dff8",
+    "src/backend/Medcom.Api/Program.cs": "cb022d55bd78b86d843bb6cdb4b97e9355a7777e9c2ecefff726ae6a77344a70",
+    "tests/backend/Medcom.Api.Tests/ApiContractCatalogTests.cs": "ec14238853525124c9e286108709b178e034d40c88181da12f44b1520fb8d51f",
+    "tests/deploy/test_backend_api_contract.py": "5569ccb93e42e6662541c418fa19496ff3404ba8f7e7e388b70b7df27014109f",
+    "tests/deploy/test_railway_container.py": "15ec28190da8771e746bd548d9c9413080d42d2674bb9163dc03e7327d494e01",
+    "tools/deploy/verify_backend_api.py": "bc0628bc543bddffd43a0fcb2ca2cb64e13fba12b19924f94951847878dbb1b1",
+    "docs/backend/medcom-openapi.json": "871bd945b09ae0cdb9431f9816f2100337ec20f50155f5c3c90b30dbafbd83a7"
+  },
+  "local_tests": {
+    "I68-complete-final.trx": {
+      "sha256": "5323238bb2c5c0c66b5877675e267ffa5f558b05dfa6979d3ffebd3e68c2748a",
+      "counters": {
+        "total": "3078",
+        "executed": "3078",
+        "passed": "3078",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    }
+  },
+  "contract_validation": {
+    "openapi": "3.1.1",
+    "operations": 33,
+    "schemas": 98,
+    "official_meta_schema": "https://spec.openapis.org/oas/3.1/schema/2022-10-07",
+    "official_meta_schema_sha256": "da01ba28852cac0de53893797cb8d1942bc3b05084f526dcc216717dec314ed0"
+  },
+  "other_checks": {
+    "architecture": "PASS",
+    "ci_policy": "PASS",
+    "policy_guard_regressions": {
+      "passed": 97
+    },
+    "deploy_verifier_and_static_regressions": {
+      "total": 19,
+      "passed": 15,
+      "native_docker_skipped": 4
+    },
+    "project_state_yaml": "PASS",
+    "whitespace": "PASS",
+    "public_patch_review": "PASS"
+  },
+  "notes": [
+    "3078-case final source-free API/application run includes all 11 contract/security/wire regressions and the checked-in artifact parity test.",
+    "Official OpenAPI 3.1 meta-schema and all 98 component JSON Schemas validated independently.",
+    "Native Docker smoke is NOT_RUN locally; unchanged hosted container workflow runs the four real Docker cases.",
+    "Hosted exact-head/base CI is required after publication; admission-only checks do not cover implementation.",
+    "I67 merged as b9a5c61 and Railway deployment db529fb9-dbdf-4064-93e7-ae2ed2bda189 reached SUCCESS.",
+    "No business writes or actual authenticated ERP read/command acceptance observed; goal #45 remains OPEN."
+  ]
+}

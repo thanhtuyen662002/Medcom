@@ -1,8 +1,10 @@
 # Medcom backend
 
-## Current source boundary — 9 October 2026
+## Current source boundary — 10 October 2026
 
-The current API registers 25 method/path pairs, including purchase Save/Submit and original-intent lookup plus the inbound draft facade. Their default command/access providers remain unavailable; registered POST routes do not establish write admission or production readiness. Explicit legacy configuration may enable the authorized typed reads. The shared Next frontend uses a same-origin BFF and backend availability/scope contracts.
+The current API registers 33 method/path pairs, including six complete v2 document reads, authenticated field metadata, a public OpenAPI contract, purchase Save/Submit/original lookup and the inbound draft facade. Default command/access providers remain unavailable; registered POST routes do not establish write admission or production readiness. Explicit legacy configuration may enable authorized typed reads. The shared Next frontend uses a same-origin BFF and backend availability/scope contracts.
+
+The compiled backend serves `/api/contracts/openapi.json` and exports the same technical contract with `dotnet Medcom.Api.dll --print-api-contract`, without starting the host or loading private settings. [The integration handoff](../../docs/backend/FE_INTEGRATION_20261010.md) links the exact 33-operation/98-schema artifact, deployment observations, FE/BFF adoption steps and the bounded read-only HTTPS verifier. Full ERP implementation and real target business acceptance remain open.
 
 See [the current HTTP boundary](../../docs/backend/CURRENT_HTTP_BOUNDARY_20261009.md) for the full route inventory, body bounds, scope/CSRF/receipt rules and handover gaps. That source review supersedes the historical endpoint inventory and absent-write-route statements below; no private SQL/DLL runtime or business write is newly accepted.
 

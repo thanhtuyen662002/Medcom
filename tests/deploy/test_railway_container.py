@@ -225,6 +225,20 @@ class DockerSmokeTests(unittest.TestCase):
         self.assertEqual(self.request(container, 9123, '/health/live')[0], 200)
         self.assertEqual(self.request(container, 9123, '/health/ready')[0], 503)
 
+    def test_public_http_contract_and_isolated_export_match_reviewed_source_without_private_configuration(self):
+        container = self.start_container()
+        status, body = self.request(container, 8080, '/api/contracts/openapi.json')
+        self.assertEqual(status, 200)
+        expected = json.loads((ROOT / 'docs/backend/medcom-openapi.json').read_text())
+        self.assertEqual(json.loads(body), expected)
+        exported = docker('exec', '--env', 'Legacy__Enabled=true',
+                          '--env', 'Medcom__PrivateConfigPath=/unreadable/private-fixture.json',
+                          container, 'dotnet', '/app/Medcom.Api.dll', '--print-api-contract', timeout=15).stdout
+        self.assertEqual(json.loads(exported), expected)
+        self.assertEqual(sum(len(item) for item in expected['paths'].values()), 33)
+        self.assertEqual(expected['x-medcom-business-release'], 'not-admitted')
+        self.assertEqual(self.request(container, 8080, '/api/workspace')[0], 401)
+
     def test_real_docker_context_accepts_future_source_and_rejects_private_neighbors(self):
         allowed = PUBLIC_ROOT | {
             'src/backend/Medcom.Api/appsettings.json',

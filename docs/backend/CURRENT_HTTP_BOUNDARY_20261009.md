@@ -4,12 +4,13 @@ This source review reconciles the owner-supplied backend handover with the front
 
 ## Registered routes
 
-`src/backend/Medcom.Api/ApiHost.cs` originally mapped the 25 method/path pairs below through `AuthEndpoints.cs`, `DocumentEndpoints.cs`, `PurchaseRequestEndpoints.cs` and `InboundDraftEndpoints.cs`. I67 adds seven read-only mappings, for **32 method/path pairs**. A registered path is not a grant or an available operation.
+`src/backend/Medcom.Api/ApiHost.cs` originally mapped 25 method/path pairs through `AuthEndpoints.cs`, `DocumentEndpoints.cs`, `PurchaseRequestEndpoints.cs` and `InboundDraftEndpoints.cs`. I67 adds seven reads and I68 adds the public technical OpenAPI contract, for **33 method/path pairs**. Registration is not availability. See [medcom-openapi.json](medcom-openapi.json) and [the 10 October handoff](FE_INTEGRATION_20261010.md).
 
 | Method | Path | Source behavior / admission |
 | --- | --- | --- |
 | GET | `/health/live` | Process liveness, anonymous. |
 | GET | `/health/ready` | Deliberate 503; dependency observations do not admit production. |
+| GET | `/api/contracts/openapi.json` | Anonymous technical contract; no settings, grants, identity/SQL resolution or business data. |
 | GET | `/api/platform/metadata` | Current session and `platform.status` capability. |
 | GET | `/api/auth/csrf` | Secure anti-CSRF cookie and request token. |
 | POST | `/api/auth/login` | HTTPS, CSRF, bounded login admission; default identity unavailable. |
