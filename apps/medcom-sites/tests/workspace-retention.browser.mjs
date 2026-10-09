@@ -1,3 +1,4 @@
+import {serveLocalFont} from './local-font-assets.mjs';
 // Actual composed Workspace + production API client in an installed browser.
 // The HTTP backend and session cookies are synthetic. This is not ASP.NET/SQL
 // acceptance. Deterministic visibility events supplement real tab activation
@@ -48,7 +49,7 @@ test('I29 actual Workspace retains same-session read controls and fences retired
  async function wait(kind){if(held.has(kind))await new Promise(resolve=>{const queue=waiters.get(kind)??[];queue.push(resolve);waiters.set(kind,queue);});}
  function release(kind){held.delete(kind);(waiters.get(kind)??[]).splice(0).forEach(done=>done());}
  function send(res,status,data,headers={}){if(res.destroyed)return;res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store',...headers});res.end(status===204?undefined:JSON.stringify(data));}
- const server=createServer(async(req,res)=>{
+ const server=createServer(async(req,res)=>{if(serveLocalFont(req,res))return;
   try{
    const url=new URL(req.url,origin??'http://localhost');
    if(url.pathname==='/fixture.js'){res.setHeader('Content-Type','text/javascript');return res.end(built.outputFiles.find(file=>file.path.endsWith('.js')).contents);}
@@ -79,9 +80,9 @@ test('I29 actual Workspace retains same-session read controls and fences retired
  const prepare=async(width=1280)=>{await start(width);const input=page.getByLabel('Tìm mã chứng từ',{exact:true});await input.fill('APPLIED');await input.press('Enter');await page.locator('.document-panel').getByRole('combobox',{name:'Chi nhánh',exact:true}).selectOption('BR-A');await page.getByRole('navigation',{name:'Phân trang chứng từ',exact:true}).getByRole('button',{name:'Trang sau',exact:true}).click();await eventually(()=>calls.some(c=>c.route==='/api/documents/purchase-orders'&&c.query.page==='2'&&c.query.search==='APPLIED'&&c.query.branchId==='BR-A'));await input.fill('UNSUBMITTED DRAFT');await paint();
   if(width>=768){await page.locator('.desktop-grid-viewport').evaluate(element=>{element.scrollTop=220;element.scrollLeft=80;});await paint();await page.getByRole('button',{name:'A-P2-00',exact:true}).click();}
   else await page.locator('.mobile-document-card').filter({hasText:'A-P2-00'}).click();
-  await page.getByRole('button',{name:'Trang dòng hàng tiếp theo',exact:true}).click();await page.locator('.request-detail-dialog .request-detail-body :is(.desktop-detail-lines,.mobile-detail-lines):visible').getByText('A-ITEM-P2-0',{exact:true}).waitFor();await page.locator('.request-detail-dialog .request-detail-body').evaluate(element=>{element.scrollTop=140;});if(width>=768)await page.locator('.desktop-grid-viewport').evaluate(element=>{element.scrollTop=220;element.scrollLeft=80;});await paint();
+  await page.getByRole('button',{name:'Trang dòng hàng tiếp theo',exact:true}).click();await page.locator('.request-detail-dialog .request-detail-body .record-lines-table:visible').getByText('A-ITEM-P2-0',{exact:true}).waitFor();await page.locator('.request-detail-dialog .request-detail-body').evaluate(element=>{element.scrollTop=140;});if(width>=768)await page.locator('.desktop-grid-viewport').evaluate(element=>{element.scrollTop=220;element.scrollLeft=80;});await paint();
  };
- const freshDetail=async()=>{await page.getByRole('heading',{name:'Đơn đặt hàng mua A-P2-00',exact:true}).waitFor();await page.locator('.request-detail-dialog .request-detail-body :is(.desktop-detail-lines,.mobile-detail-lines):visible').getByText('A-ITEM-P2-0',{exact:true}).waitFor();await paint();};
+ const freshDetail=async()=>{await page.getByRole('heading',{name:'Đơn đặt hàng mua A-P2-00',exact:true}).waitFor();await page.locator('.request-detail-dialog .request-detail-body .record-lines-table:visible').getByText('A-ITEM-P2-0',{exact:true}).waitFor();await paint();};
  const hiddenData=async()=>{assert.equal(await page.locator('.document-link').count(),0);assert.equal(await page.getByText('A-ITEM-P2-0',{exact:true}).count(),0);assert.equal(await page.getByRole('heading',{name:'Đơn đặt hàng mua A-P2-00',exact:true}).count(),0);};
  // Read retained background DOM while the open modal intentionally aria-hides it.
  // Interaction helpers still require visible accessible controls; values/pages remain exact.

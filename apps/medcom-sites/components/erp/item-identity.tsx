@@ -6,10 +6,10 @@ export function ItemIdentity({context,binding,line}: {context?:ItemDisplayContex
  const display=itemDisplayFor(context,binding,line);
  const fields=[["Mã hàng",line.itemId],["Mã hàng NSX",display.manufacturerItemCode],
   ["Tên hàng / dịch vụ",display.itemName],["ĐVT",display.unit]] as const;
- return <dl aria-label="Thông tin mặt hàng" className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
-  {fields.map(([label,value])=><div key={label} className="min-w-0 rounded-md border p-2">
-   <dt className="text-xs text-muted-foreground">{label}</dt>
-   <dd className="whitespace-pre-wrap break-words text-sm [overflow-wrap:anywhere]">{itemDisplayValue(value)}</dd>
+ return <dl aria-label="Thông tin mặt hàng" className="item-identity">
+  {fields.map(([label,value],index)=><div key={label} className={`item-identity-field item-identity-field-${index}`}>
+   <dt>{label}</dt>
+   <dd className={value==null?"item-identity-unavailable":undefined}>{itemDisplayValue(value)}</dd>
   </div>)}
  </dl>;
 }

@@ -1,3 +1,4 @@
+import {serveLocalFont} from './local-font-assets.mjs';
 // I43: actual request screens, editors, bridge and NavigationGuardProvider.
 // Synthetic HTTP/session data only. No replacement editor or guard logic.
 import {test} from 'node:test';
@@ -427,7 +428,7 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
  let model,browser,context,page,origin,currentScenario,firstFailure=null,fatal=null;const expectedCases=13,results=[],errors=[],waiters=[],viewportEvidence=[];
  const reset=()=>{model={calls:[],detailStatus:200,holdDetail:false,holdCommand:false,unknown:false,readOnly:false,receipts:new Map(),purchase:structuredClone(purchase),inbound:structuredClone(inbound)};};
  const send=(res,{status,data,headers})=>{if(!res.destroyed){res.writeHead(status,headers);res.end(JSON.stringify(data));}};
- const server=createServer(async(req,res)=>{try{
+ const server=createServer(async(req,res)=>{if(serveLocalFont(req,res))return;try{
   const u=new URL(req.url,origin??'http://localhost'),route=u.pathname;
   if(route==='/fixture.js'){res.setHeader('Content-Type','text/javascript');return res.end(script);}
   if(route==='/fixture.css'){res.setHeader('Content-Type','text/css');return res.end(css);}

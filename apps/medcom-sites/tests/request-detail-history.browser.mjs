@@ -1,3 +1,4 @@
+import {serveLocalFont} from './local-font-assets.mjs';
 // Actual composed Workspace detail-history regression, production clients and
 // NavigationGuardProvider. Synthetic HTTP only; not ERP/SQL acceptance.
 import {test} from 'node:test';
@@ -81,7 +82,7 @@ test('history fixture branches pass real list/detail clients and failures stop s
  }ts.forEachChild(node,visit);};const browserTest=ast.statements.find(node=>ts.isExpressionStatement(node)&&ts.isCallExpression(node.expression)&&node.expression.arguments[0]?.text==='composed request detail history, guarded traversal and original custody');assert.ok(browserTest);visit(browserTest.expression.arguments.at(-1));assert.equal(Object.keys(declarations).length,5);assert.ok(handler);
  // Execute the exact current HTTP handler, reset and release bytes with request/response
  // doubles. No local server/browser, copied envelopes or replacement decoders.
- const harness=runInNewContext('let model;const calls=[],errors=[],origin="http://synthetic.invalid";const '+Object.values(declarations).join(';const ')+';const handler='+handler+';({reset,release,releaseAll,handler,calls,errors,getModel:()=>model})',{purchase,inbound,historyCurrency,orderRow,readonlyProjection,scope,session,sha,structuredClone,URL,Buffer,Date,assert});
+ const harness=runInNewContext('let model;const calls=[],errors=[],origin="http://synthetic.invalid";const '+Object.values(declarations).join(';const ')+';const handler='+handler+';({reset,release,releaseAll,handler,calls,errors,getModel:()=>model})',{serveLocalFont,purchase,inbound,historyCurrency,orderRow,readonlyProjection,scope,session,sha,structuredClone,URL,Buffer,Date,assert});
  const native=globalThis.fetch,calls=[],checked=[],readScope={sessionScope:session,readScope:scope},signal=new AbortController().signal;let changeReply=reply=>reply,observeReply=()=>{};
  globalThis.fetch=async(url,init={})=>{
   const req={url:String(url),method:init.method??'GET',async *[Symbol.asyncIterator](){if(init.body)yield Buffer.from(init.body);}};
@@ -308,7 +309,7 @@ test('composed request detail history, guarded traversal and original custody',{
  const send=(res,status,data,headers={})=>{if(res.destroyed)return;res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store',...headers});res.end(status===204?undefined:JSON.stringify(data));};
  const release=kind=>{model['hold'+kind]=false;(model[kind==='Commands'?'commandWaiters':kind[0].toLowerCase()+kind.slice(1)+'Waiters']??[]).splice(0).forEach(resolve=>resolve());};
  const releaseAll=()=>{for(const kind of ['Workspace','Login','Commands','Detail','Projection'])release(kind);model.holdList=false;model.waiters.splice(0).forEach(resolve=>resolve());model.commandWaiters.splice(0).forEach(resolve=>resolve());};
- const server=createServer(async(req,res)=>{const m=model;try{
+ const server=createServer(async(req,res)=>{if(serveLocalFont(req,res))return;const m=model;try{
   const url=new URL(req.url,origin??'http://localhost');
   if(url.pathname==='/app.js'){res.setHeader('Content-Type','text/javascript');return res.end(script);}
   if(url.pathname==='/app.css'){res.setHeader('Content-Type','text/css');return res.end(css);}

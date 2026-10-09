@@ -1,3 +1,4 @@
+import {serveLocalFont} from './local-font-assets.mjs';
 // Actual Workspace and production request components with compiled application
 // Tailwind CSS. API data is entirely synthetic; this is not SQL/server acceptance.
 import {test} from 'node:test';
@@ -269,12 +270,12 @@ test('I30 compiled application presentation at 320,360,390,1440',{timeout:240000
  assert.ok(existsSync(executable),'Installed Chromium/Edge is required.');
  const {script,logo,css,cssSource,cssModules,createRequestNotifications}=await compilePresentation();
  const html='<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/app.css"><div id="root"></div><script src="/app.js"></script></html>';
- let model,serial=0,browser,context,page,origin,completed=false,fatal=null,clockPaused=false;const expectedCases=39;const errors=[],results=[],failures=[],captures=[],calls=[],transportEvidence=[],readonlyEvidence=[],commandGeometryEvidence=[],sharedGridEvidence=[],stickyToolbarEvidence=[],portalPresentationEvidence=[];
+ let model,serial=0,browser,context,page,origin,completed=false,fatal=null,clockPaused=false;const expectedCases=40;const errors=[],results=[],failures=[],captures=[],calls=[],transportEvidence=[],readonlyEvidence=[],commandGeometryEvidence=[],sharedGridEvidence=[],stickyToolbarEvidence=[],portalPresentationEvidence=[];
  const reset=(patch={})=>{model={serial:++serial,writable:false,empty:false,status:200,holdList:false,waiters:[],listResponses:0,listResponseHeaders:null,holdDetail:false,detailWaiters:[],detailStatus:200,draftEnvelope:null,draftNetwork:false,draftNetworkFailures:0,draftMalformed:false,draftResponses:0,afterWriteDraftEnvelope:null,holdProjection:false,projectionWaiters:[],projectionStatus:200,projectionKind:null,projectionResponses:0,unknown:false,workspaceReads:0,workspaceResponses:0,workspacePending:0,workspaceVersions:[],advanceAuthority:false,deniedLists:0,workspaceStatus:200,purchase:structuredClone(purchase),inbound:structuredClone(inbound),purchaseVersion:1,inboundVersion:1,effects:0,originals:new Map(),receipts:new Map(),writes:[],reconciles:[],control:{closed:[],bff:[]},holdCommands:false,commandWaiters:[],commandResponses:0,rejected:false,conflict:false,malformed:false,...patch};calls.length=0;};
  const workspace=()=>({session:{displayName:'SYNTHETIC USER',tenantId:'QA-T',companyId:'QA-C',companyName:'SYNTHETIC',authorityVersion:model.advanceAuthority?model.workspaceReads:1,idleExpiresAt:new Date(Date.now()+3600000).toISOString(),absoluteExpiresAt:new Date(Date.now()+7200000).toISOString(),capabilities:model.workspaceCapabilities??['purchase-requests.read','inbound-requests.read','purchase-orders.read']},branchIds:['QA-BRANCH'],navigation:['purchase-requests','inbound-requests','purchase-orders'].map(id=>({id,label:id,href:'/?screen='+id}))});
  const send=(res,status,data,headers={})=>{if(res.destroyed)return;res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store',...headers});res.end(JSON.stringify(data));};
  const readHeaders={'X-Medcom-Session-Scope':session,'X-Medcom-Read-Scope':scope};
- const server=createServer(async(req,res)=>{
+ const server=createServer(async(req,res)=>{if(serveLocalFont(req,res))return;
   const m=model;try{
    const url=new URL(req.url,origin??'http://localhost');
    if(url.pathname==='/app.js'){res.setHeader('Content-Type','text/javascript');return res.end(script);}
@@ -453,7 +454,7 @@ test('I30 compiled application presentation at 320,360,390,1440',{timeout:240000
   }
   return measured;
  }
- async function capture(name,{viewport=false,keepFocus=false}={}){if(!keepFocus)await page.evaluate(()=>{if(document.activeElement instanceof HTMLElement)document.activeElement.blur();window.scrollTo(0,0);});await paint();const file=name+'.png';await page.screenshot({path:path.join(output,file),fullPage:!viewport});const bytes=await readFile(path.join(output,file));captures.push({file,sha256:sha(bytes),fullPage:!viewport,keepsFocus:keepFocus});}
+ async function capture(name,{viewport=false,keepFocus=false}={}){await page.evaluate(()=>document.fonts.ready);if(!keepFocus)await page.evaluate(()=>{if(document.activeElement instanceof HTMLElement)document.activeElement.blur();window.scrollTo(0,0);});await paint();const file=name+'.png';await page.screenshot({path:path.join(output,file),fullPage:!viewport});const bytes=await readFile(path.join(output,file));captures.push({file,sha256:sha(bytes),fullPage:!viewport,keepsFocus:keepFocus});}
  // Read-only, bounded diagnostics. Preserve the original two-frame fit sample:
  // screenshots and later samples cannot turn a failing measurement into a pass.
  async function resizeGeometry(){return page.evaluate(()=>{
@@ -470,13 +471,20 @@ test('I30 compiled application presentation at 320,360,390,1440',{timeout:240000
   const layout=[...document.querySelectorAll('[data-slot=sidebar-wrapper],[data-slot=sidebar-gap],[data-slot=sidebar-container],[data-slot=sidebar-inset],.topbar,.topbar-context,.topbar-actions,.global-search,.user-button,.workspace-content,.request-list-toolbar,.desktop-grid-viewport,.request-list-table,.request-list-pagination,.mobile-bottom-nav')].slice(0,24).map(describe);
   return {viewport,documentSize,mobileMedia:matchMedia('(max-width: 767px)').matches,fits:documentSize.scrollWidth<=viewport.width,offenderCount:candidates.length,offenders,animations,globalSearch,layout,activeElement:document.activeElement instanceof Element?identity(document.activeElement):null};
  });}
- // Test-only observation of the locked React renderer's own row key. IDs stay
+ // Test-only observation of the locked renderer's keyed row owner. IDs stay
  // internal: do not add DOM attributes or expose them to users to satisfy tests.
  async function retainedLineIdentity(rows,lines,indexed=false){
   assert.deepEqual(await rows.evaluateAll(elements=>elements.map(element=>{
    const names=Object.keys(element).filter(name=>name.startsWith('__reactFiber$'));
-   if(names.length!==1||typeof element[names[0]]?.key!=='string')throw Error('Exactly one own keyed React row fiber is required');
-   return element[names[0]].key;
+   if(names.length!==1)throw Error('Exactly one own React row fiber is required');
+   let fiber=element[names[0]];
+   // shadcn TableRow owns the key above its host <tr>. Walk only this row's
+   // composite chain; never borrow a key from a parent DOM node or sibling.
+   for(let depth=0;fiber&&depth<8;depth++,fiber=fiber.return){
+    if(fiber.stateNode?.nodeType===1&&fiber.stateNode!==element)break;
+    if(typeof fiber.key==='string')return fiber.key;
+   }
+   throw Error('The source row must have its own keyed owner');
   })),lines.map((line,index)=>indexed?`${index}:${line.lineId}`:line.lineId),'Every source line keeps its exact internal identity and order');
  }
  async function hiddenLineIdentities(container,lines){
@@ -493,13 +501,10 @@ test('I30 compiled application presentation at 320,360,390,1440',{timeout:240000
   assert.deepEqual(await groups.evaluateAll(elements=>elements.map(group=>[...group.querySelectorAll(':scope > div > dd')].map(value=>value.textContent))),lines.map(line=>[line.itemId,'Chưa có thông tin','Chưa có thông tin','Chưa có thông tin']),'Exact source ItemID and all three unavailable metadata fields remain separate');
  }
  async function exactReadonlyLines(panel,detail){
-  const rows=panel.locator('article');assert.equal(await rows.count(),detail.inboundRequestLines.length);
-  assert.deepEqual(await rows.evaluateAll(elements=>elements.map(row=>({identity:row.querySelectorAll(':scope > dl[aria-label="Thông tin mặt hàng"]').length,quantities:row.querySelectorAll(':scope > dl:not([aria-label="Thông tin mặt hàng"])').length}))),detail.inboundRequestLines.map(()=>({identity:1,quantities:1})),'Each source row owns exactly one item group and one quantitative group; adjacent rows cannot borrow groups');
-  await exactItemIdentityGroups(rows.locator(':scope > dl[aria-label="Thông tin mặt hàng"]'),detail.inboundRequestLines);
-  const quantities=rows.locator(':scope > dl:not([aria-label="Thông tin mặt hàng"])');assert.equal(await quantities.count(),detail.inboundRequestLines.length);
-  assert.deepEqual(await quantities.evaluateAll(elements=>elements.map(group=>[...group.querySelectorAll(':scope > div > dt')].map(value=>value.textContent))),detail.inboundRequestLines.map(()=>['STT','Số bộ theo chứng từ','Số thùng theo chứng từ','Số bộ thực tế','Số thùng thực tế']));
-  const expectedQuantities=readonlyLineValues(detail);
-  assert.deepEqual(await rows.evaluateAll(elements=>elements.map(row=>[...row.querySelectorAll(':scope > dl > div > dd')].map(value=>value.textContent))),detail.inboundRequestLines.map((line,index)=>[line.itemId,'Chưa có thông tin','Chưa có thông tin','Chưa có thông tin',...expectedQuantities[index]]),'Each source row retains its exact ItemID, metadata, page-adjusted STT and four raw quantities/NULL values in order');
+  const table=panel.getByRole('table',{name:'Dòng yêu cầu nhập kho chỉ đọc',exact:true});
+  const rows=table.locator('tbody tr');assert.equal(await rows.count(),detail.inboundRequestLines.length);
+  await exactItemIdentityGroups(rows.locator('td.record-line-identity > dl[aria-label="Thông tin mặt hàng"]'),detail.inboundRequestLines);
+  assert.deepEqual(await rows.evaluateAll(elements=>elements.map(row=>[...row.querySelectorAll(':scope > td')].map((cell,index)=>index===1?[...cell.querySelectorAll('dl > div > dd')].map(value=>value.textContent):cell.textContent))),detail.inboundRequestLines.map((line,index)=>[String((detail.page-1)*detail.pageSize+index+1),[line.itemId,'Chưa có thông tin','Chưa có thông tin','Chưa có thông tin'],...readonlyLineValues(detail)[index].slice(1)]),'Each source row retains its exact identity, page-adjusted STT and four raw quantities/NULL values at every viewport');
   await retainedLineIdentity(rows,detail.inboundRequestLines,true);await hiddenLineIdentities(panel,readonlyLines);
  }
  async function expandFullReadback(){const region=page.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true});await region.waitFor();const disclosure=region.locator('details');if(!await disclosure.evaluate(el=>el.open))await disclosure.locator('summary').click();return region;}
@@ -507,6 +512,18 @@ test('I30 compiled application presentation at 320,360,390,1440',{timeout:240000
  async function run(name,fn){await t.test(name,async()=>{try{await fn();results.push(name);}catch(error){failures.push(name);throw error;}});}
  try{
   browser=await chromium.launch({executablePath:executable,headless:true,chromiumSandbox:true});t.signal.throwIfAborted();
+  await run('read-only order detail uses one responsive source table and returns focus on close',async()=>{
+   for(const width of [320,390,1440]){
+    await start(width,'purchase-orders',{orderPages:[Array.from({length:6},(_,index)=>orderRow(index+1))]});await page.getByText('QA-ORDER-001',{exact:true}).locator('visible=true').first().waitFor();await capture('untitled-orders-'+width,{viewport:width<768});const opener=page.getByRole('button',{name:'Mở chứng từ QA-ORDER-001',exact:true});await opener.click();
+    const dialog=page.getByRole('dialog',{name:'Đơn đặt hàng mua QA-ORDER-001',exact:true});await dialog.waitFor();
+    const table=dialog.getByRole('table',{name:'Dòng hàng',exact:true});await table.getByText('QA-ORDER-ITEM-001',{exact:true}).waitFor();await paint();
+    assert.equal(await table.count(),1);assert.equal(await table.locator('tbody tr').count(),1);assert.equal(await dialog.getByRole('textbox').count(),0,'Read-only values are text, not disabled inputs');
+    assert.deepEqual(await table.locator('tbody tr > td').allTextContents(),['1','Mã hàngQA-ORDER-ITEM-001Mã hàng NSXChưa có thông tinTên hàng / dịch vụChưa có thông tinĐVTChưa có thông tin','999999999999999999.0001','—']);
+    const fit=await dialog.evaluate(element=>{const body=element.querySelector('.request-detail-body');return {viewport:innerWidth,left:element.getBoundingClientRect().left,right:element.getBoundingClientRect().right,body:body.clientWidth,content:body.scrollWidth};});
+    assert.ok(fit.left>=0&&fit.right<=fit.viewport&&fit.content<=fit.body+1,'The same source rows fit desktop and mobile without page overflow: '+JSON.stringify(fit));
+    await capture('untitled-order-detail-'+width,{viewport:true});await dialog.getByRole('button',{name:'Đóng chứng từ',exact:true}).click();await dialog.waitFor({state:'hidden'});await eventually(()=>page.evaluate(()=>document.activeElement?.closest('[data-grid-row]')?.getAttribute('data-grid-row')==='QA-ORDER-001'));
+   }
+  });
   await run('I50 R1 native viewport sticky scroll across all three actual list hosts',async()=>{
    for(const width of [390,1440])for(const screen of ['purchase-requests','purchase-orders','inbound-requests']){
     const documents=Array.from({length:20},(_,index)=>({...structuredClone(purchase),purchaseRequestId:'QA-PURCHASE-'+String(index+1).padStart(3,'0')}));
@@ -750,7 +767,7 @@ test('I30 compiled application presentation at 320,360,390,1440',{timeout:240000
    async function rowHeight(compact,estimate){
     const root=page.locator('.document-panel .erp-grid');await eventually(async()=>await root.getAttribute('data-compact')===String(compact));await paint();
     const geometry=await root.evaluate(el=>({estimate:parseFloat(el.querySelector('.desktop-grid-viewport').style.getPropertyValue('--grid-row-height')),rows:[...el.querySelectorAll('tbody tr[data-grid-row]')].map(row=>({id:row.getAttribute('data-grid-row'),height:row.getBoundingClientRect().height})),spacers:[...el.querySelectorAll('tbody tr.grid-spacer > td')].map(cell=>parseFloat(cell.style.height)||0),bodyHeight:el.querySelector('tbody').getBoundingClientRect().height,headerHeight:el.querySelector('thead').getBoundingClientRect().height,scrollHeight:el.querySelector('.desktop-grid-viewport').scrollHeight}));
-    assert.equal(geometry.estimate,estimate);assert.ok(geometry.rows.length>0);for(const row of geometry.rows)assert.equal(row.height,estimate,'Actual virtualized row height must exactly match its estimate: '+JSON.stringify({compact,...row}));assert.equal(geometry.spacers.reduce((sum,height)=>sum+height,0)+geometry.rows.length*estimate,50*estimate,'Density changes invalidate cached virtual spacer estimates');assert.equal(geometry.bodyHeight,50*estimate,'Rendered data rows and spacers cover exactly the virtual body');assert.equal(geometry.scrollHeight,geometry.headerHeight+50*estimate,'Scroll extent follows the current density, not cached prior heights');virtualRowGeometry.push({compact,...geometry});
+    assert.equal(geometry.estimate,estimate);assert.ok(geometry.rows.length>0);for(const row of geometry.rows)assert.equal(row.height,estimate,'Actual virtualized row height must exactly match its estimate: '+JSON.stringify({compact,...row}));assert.equal(geometry.spacers.reduce((sum,height)=>sum+height,0)+geometry.rows.length*estimate,50*estimate,'Density changes invalidate cached virtual spacer estimates');assert.equal(geometry.bodyHeight,50*estimate,'Rendered data rows and spacers cover exactly the virtual body');assert.equal(geometry.scrollHeight,Math.round(geometry.headerHeight+50*estimate),'Scroll extent follows the current density, not cached prior heights');virtualRowGeometry.push({compact,...geometry});
    }
    await rowHeight(false,65);await virtualPanel.getByRole('button',{name:'Tùy chỉnh bảng',exact:true}).click();await page.getByRole('dialog',{name:'Tùy chỉnh bảng',exact:true}).getByLabel('Bảng dữ liệu gọn',{exact:true}).check();await page.keyboard.press('Escape');await rowHeight(true,45);
    await virtualGrid.locator('[data-cell="0:0"]').focus();await page.keyboard.press('Control+End');await eventually(()=>virtualGrid.locator('[data-cell="49:4"]').evaluate(el=>el===document.activeElement));assert.equal(await virtualGrid.locator('[data-grid-row="QA-ORDER-050"]').count(),1,'Keyboard reaches the final virtualized row');
@@ -1017,7 +1034,7 @@ for(const width of [320,390,1440])for(const screen of ['purchase-requests','inbo
   const projectionCalls=()=>calls.filter(call=>call.route===projectionRoute);
   const draftCalls=()=>page.evaluate(()=>window.i33ReadDispatches.filter(event=>event.path==='/api/erp/api/inbound-requests/draft'));
   async function settledReads(){await page.waitForFunction(()=>window.i33ReadDispatches.length>0&&window.i33ReadDispatches.every(event=>event.settled));await paint();}
-  async function readonlyReady(number){await page.waitForFunction(number=>{const panel=document.querySelector('[data-testid=inbound-request-readonly]');return panel?.getAttribute('data-phase')==='ready'&&(number===undefined||panel.querySelector('article h4')?.textContent==='Dòng '+((number-1)*50+1));},number);}
+  async function readonlyReady(number){await page.waitForFunction(number=>{const panel=document.querySelector('[data-testid=inbound-request-readonly]');return panel?.getAttribute('data-phase')==='ready'&&(number===undefined||panel.querySelector('.record-lines-table tbody tr > td')?.textContent===String((number-1)*50+1));},number);}
   async function noReadonlyValues(){assert.equal(await page.getByText(readonlyLines[0].itemId,{exact:true}).count(),0);assert.equal(await page.getByText(readonlyLines[50].itemId,{exact:true}).count(),0);assert.equal(await page.getByLabel('Số đơn',{exact:true}).count(),0);assert.equal(calls.filter(call=>call.method==='POST').length,0);}
   function releaseDraft(){model.holdDetail=false;model.detailWaiters.splice(0).forEach(resolve=>resolve());}
   function releaseProjection(){model.holdProjection=false;model.projectionWaiters.splice(0).forEach(resolve=>resolve());}
@@ -1078,8 +1095,8 @@ for(const width of [320,390,1440])for(const screen of ['purchase-requests','inbo
     await unchangedDetailFocus('inbound-requests',initialFocus,'Command Unavailable alone never adds deferred Open focus');
     assert.equal(await page.evaluate(()=>document.activeElement?.matches('input,textarea,select,[contenteditable=true]')),false);assert.equal(await page.getByText(readonlyLines[0].itemId,{exact:true}).count(),0);
     releaseProjection();await exactReadonlyPage(1);await focusedDetail('inbound-requests');await layout(width,'inbound-requests');await capture(`inbound-readonly-${shape}-open-${width}`,{viewport:true,keepFocus:true});
-    const first=readonlyPanel().locator('article').first();await first.scrollIntoViewIfNeeded();assert.equal(await first.locator('dd').evaluateAll(elements=>elements.every(element=>{const range=document.createRange();range.selectNodeContents(element);return [...range.getClientRects()].every(rect=>rect.left>=0&&rect.right<=innerWidth)&&element.scrollWidth<=Math.ceil(element.clientWidth);})),true,'READ row ordinals, long item IDs and exact decimals remain fully contained');await capture(`inbound-readonly-${shape}-long-values-${width}`,{viewport:true,keepFocus:true});
-    await readonlyPanel().getByRole('button',{name:'Dòng tiếp',exact:true}).click();await exactReadonlyPage(2);await layout(width,'inbound-requests');await readonlyPanel().locator('article').first().scrollIntoViewIfNeeded();await capture(`inbound-readonly-${shape}-page2-${width}`,{viewport:true,keepFocus:true});
+    const first=readonlyPanel().locator('.record-lines-table tbody tr').first();await first.scrollIntoViewIfNeeded();assert.equal(await first.locator('dd, td.record-line-quantity').evaluateAll(elements=>elements.every(element=>{const range=document.createRange();range.selectNodeContents(element);return [...range.getClientRects()].every(rect=>rect.left>=0&&rect.right<=innerWidth)&&element.scrollWidth<=Math.ceil(element.clientWidth);})),true,'READ row ordinals, long item IDs and exact decimals remain fully contained');await capture(`inbound-readonly-${shape}-long-values-${width}`,{viewport:true,keepFocus:true});
+    await readonlyPanel().getByRole('button',{name:'Dòng tiếp',exact:true}).click();await exactReadonlyPage(2);await layout(width,'inbound-requests');await readonlyPanel().locator('.record-lines-table tbody tr').first().scrollIntoViewIfNeeded();await capture(`inbound-readonly-${shape}-page2-${width}`,{viewport:true,keepFocus:true});
     assert.equal(await readonlyPanel().getByText(readonlyLines[0].itemId,{exact:true}).count(),0,'Paging does not retain previous-page values');
     assert.equal((await draftCalls()).length,1,'Paging cannot bootstrap draft rights or retry a draft command');
     // A healthy VISIBLE refresh advances observation authority, but retains
@@ -1088,15 +1105,15 @@ for(const width of [320,390,1440])for(const screen of ['purchase-requests','inbo
     const healthyControl=detailDialog('inbound-requests').getByTitle('Đóng hộp thoại',{exact:true});await healthyControl.focus();const healthyFocus=await detailFocusCounts('inbound-requests');
     const continuity=await page.evaluateHandle(()=>{
      const panel=document.querySelector('[data-testid=inbound-request-readonly]'),buttons=[...panel.querySelectorAll('nav button')],rows=[...document.querySelectorAll('[data-testid=inbound-request-host] button[aria-label^="Mở phiếu "]')];
-     return {panel,buttons,rows,scrollY,scrollX,detailScroll:panel.closest('.request-detail-body').scrollTop,articleTop:panel.querySelector('article').getBoundingClientRect().top};
+     return {panel,buttons,rows,scrollY,scrollX,detailScroll:panel.closest('.request-detail-body').scrollTop,rowTop:panel.querySelector('.record-lines-table tbody tr').getBoundingClientRect().top};
     });
     async function stableHealthyRead(fenced){
      await paint();const state=await page.evaluate(previous=>{
       const panel=document.querySelector('[data-testid=inbound-request-readonly]'),buttons=[...panel.querySelectorAll('nav button')],rows=[...document.querySelectorAll('[data-testid=inbound-request-host] button[aria-label^="Mở phiếu "]')];
-      return {samePanel:panel===previous.panel,sameButtons:buttons.length===previous.buttons.length&&buttons.every((button,index)=>button===previous.buttons[index]),sameRows:rows.length===previous.rows.length&&rows.every((row,index)=>row===previous.rows[index]),rowCount:rows.length,detailScrollDelta:Math.abs(panel.closest('.request-detail-body').scrollTop-previous.detailScroll),scrollDelta:Math.abs(scrollY-previous.scrollY),horizontalDelta:Math.abs(scrollX-previous.scrollX),articleDelta:Math.abs(panel.querySelector('article').getBoundingClientRect().top-previous.articleTop)};
+      return {samePanel:panel===previous.panel,sameButtons:buttons.length===previous.buttons.length&&buttons.every((button,index)=>button===previous.buttons[index]),sameRows:rows.length===previous.rows.length&&rows.every((row,index)=>row===previous.rows[index]),rowCount:rows.length,detailScrollDelta:Math.abs(panel.closest('.request-detail-body').scrollTop-previous.detailScroll),scrollDelta:Math.abs(scrollY-previous.scrollY),horizontalDelta:Math.abs(scrollX-previous.scrollX),rowDelta:Math.abs(panel.querySelector('.record-lines-table tbody tr').getBoundingClientRect().top-previous.rowTop)};
      },continuity);
      assert.equal(state.samePanel,true,'Healthy same-READ-scope observation keeps the exact panel node');assert.equal(state.sameButtons,true,'Healthy refresh keeps both page2 paging button nodes');assert.equal(state.sameRows,true,'Healthy refresh keeps every existing list-row node');assert.equal(state.rowCount,50);
-     assert.ok(state.detailScrollDelta<=1&&state.scrollDelta<=1&&state.horizontalDelta<=1&&state.articleDelta<=1,'Healthy refresh cannot jump the page or move its visible content: '+JSON.stringify(state));
+     assert.ok(state.detailScrollDelta<=1&&state.scrollDelta<=1&&state.horizontalDelta<=1&&state.rowDelta<=1,'Healthy refresh cannot jump the page or move its visible content: '+JSON.stringify(state));
      await exactReadonlyLines(readonlyPanel(),readonlyProjection(document.documentId,2));
      assert.equal(await readonlyPanel().getByRole('button',{name:'Dòng trước',exact:true}).isEnabled(),!fenced);assert.equal(await readonlyPanel().getByRole('button',{name:'Dòng tiếp',exact:true}).isEnabled(),false);
      assert.equal(await open('inbound-requests').getAttribute('aria-pressed'),'true');assert.equal(await filter.inputValue(),'UNAPPLIED READONLY FILTER');await unchangedDetailFocus('inbound-requests',healthyFocus);assert.equal(await healthyControl.evaluate(element=>element===document.activeElement),true);assert.equal(calls.filter(call=>call.method==='POST').length,0);
@@ -1127,7 +1144,7 @@ for(const width of [320,390,1440])for(const screen of ['purchase-requests','inbo
     assert.equal(await open('inbound-requests').getAttribute('aria-pressed'),'true');assert.equal(await filter.inputValue(),'UNAPPLIED READONLY FILTER');await unchangedDetailFocus('inbound-requests',resumedFocus);
     releaseProjection();await exactReadonlyPage(2);await paint();await unchangedDetailFocus('inbound-requests',resumedFocus,'Workspace revalidation cannot add deferred frame focus on the restored page');
     assert.equal(await open('inbound-requests').getAttribute('aria-pressed'),'true');assert.equal(await filter.inputValue(),'UNAPPLIED READONLY FILTER');assert.equal(calls.filter(call=>call.method==='POST').length,0);await recordReadonlyClockSnapshot('positive-hidden','fresh-projection','after',{width,shape},hiddenBaseline);assert.deepEqual({count:model.workspaceReads,history:model.workspaceVersions},{count:hiddenBaseline.count+1,history:[...hiddenBaseline.history,hiddenBaseline.count+1]},'Both healthy and temporarily unverified observations advance authority while retaining READ markers');
-    await readonlyPanel().locator('article').first().scrollIntoViewIfNeeded();await capture('inbound-readonly-'+shape+'-page2-revalidated-'+width,{viewport:true,keepFocus:true});
+    await readonlyPanel().locator('.record-lines-table tbody tr').first().scrollIntoViewIfNeeded();await capture('inbound-readonly-'+shape+'-page2-revalidated-'+width,{viewport:true,keepFocus:true});
     await readonlyPanel().getByRole('button',{name:'Dòng trước',exact:true}).click();await exactReadonlyPage(1);
     assert.deepEqual(projectionCalls().map(call=>[call.method,call.documentId,call.page,call.pageSize]),[1,2,2,2,1].map(number=>['GET',document.documentId,String(number),'50']));assert.equal((await draftCalls()).length,3,'Only the explicit Workspace observation cycle revalidates draft eligibility');
     // The temporary authority gap correctly retires the old focus origin.
@@ -1173,7 +1190,7 @@ for(const width of [320,390,1440])for(const screen of ['purchase-requests','inbo
      assert.equal(readonlyProjection(inbound.documentId,2).inboundRequestLines.length,1,'The invalid pageSize fixture is below25 rows, so row-count overflow cannot explain rejection');
      assert.equal(projectionCalls().at(-1).page,'2');assert.equal(projectionCalls().at(-1).pageSize,'50');assert.equal(await readonlyPanel().getAttribute('data-phase'),'failed','A response pageSize25 cannot satisfy the requested page2/pageSize50 identity');
     }
-    await noReadonlyValues();assert.equal(projectionCalls().length,wrongPageSize?2:1,name+' has no automatic retry');assert.equal(await readonlyPanel().locator('article').count(),0,name+' never renders projection rows');
+    await noReadonlyValues();assert.equal(projectionCalls().length,wrongPageSize?2:1,name+' has no automatic retry');assert.equal(await readonlyPanel().locator('.record-lines-table tbody tr').count(),0,name+' never renders projection rows');
     assert.equal(await page.evaluate(()=>[...document.querySelectorAll('[aria-label="Phiếu nhập hàng đã chọn"]')].some(element=>document.activeElement===element)),false,name+' cannot complete pending Open focus');
     readonlyEvidence.push({kind:'projection-fail-closed',scenario:name,projectionRequests:projectionCalls(),writeRequests:0});
    }

@@ -1,3 +1,4 @@
+import {serveLocalFont,localFontPaths} from './local-font-assets.mjs';
 // Disposable Edge/Chromium interaction harness, using existing esbuild, React
 // and Tailwind dependencies. Never invokes real getUserMedia or grants camera
 // permissions. Run from apps/medcom-sites: node tests/qr-scanner.browser.mjs
@@ -73,6 +74,7 @@ const html = `<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="v
 const requests = [];
 const server = http.createServer((request, response) => {
   requests.push(request.url);
+  if(serveLocalFont(request,response))return;
   response.setHeader('Cache-Control', 'no-store');
   response.setHeader('Permissions-Policy', 'camera=(self), microphone=(), geolocation=()');
   response.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'");
@@ -245,7 +247,7 @@ try {
     await cdp('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
     await waitFor(`!document.querySelector('[role="dialog"]')`); await waitFor(`document.activeElement?.id==='launch'`);
   });
-  assert.deepEqual(errors, []); assert.ok(requests.every(url => ['/', '/fixture.js', '/fixture.css', '/favicon.ico'].includes(url)));
+  assert.deepEqual(errors, []); assert.ok(requests.every(url => ['/', '/fixture.js', '/fixture.css', '/favicon.ico',...localFontPaths].includes(url)));
   console.log(JSON.stringify({ passed: results.length, failed: 0, realCameraActivated: false, realDeviceAcceptance: false,
     browser: (await cdp('Browser.getVersion')).product, node: process.version }));
 } finally {

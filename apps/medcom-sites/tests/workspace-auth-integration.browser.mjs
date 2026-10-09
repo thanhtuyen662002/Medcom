@@ -1,3 +1,4 @@
+import {serveLocalFont} from './local-font-assets.mjs';
 // Actual composed Workspace, production clients, retained request editors and
 // NavigationGuardProvider. Synthetic HTTP only; not ERP/SQL acceptance.
 import {test} from 'node:test';
@@ -62,7 +63,7 @@ test('composed auth admission, portal fencing and same-intent custody',{timeout:
  const send=(res,status,data,headers={})=>{if(res.destroyed)return;res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store',...headers});res.end(status===204?undefined:JSON.stringify(data));};
  const release=kind=>{model['hold'+kind]=false;(model[kind[0].toLowerCase()+kind.slice(1)+'Waiters']??[]).splice(0).forEach(resolve=>resolve());};
  const releaseAll=()=>{for(const kind of ['Workspace','Login','Commands','Detail','Projection'])release(kind);model.holdList=false;model.waiters.splice(0).forEach(resolve=>resolve());model.commandWaiters.splice(0).forEach(resolve=>resolve());};
- const server=createServer(async(req,res)=>{const m=model;try{
+ const server=createServer(async(req,res)=>{if(serveLocalFont(req,res))return;const m=model;try{
   const url=new URL(req.url,origin??'http://localhost');
   if(url.pathname==='/app.js'){res.setHeader('Content-Type','text/javascript');return res.end(script);}
   if(url.pathname==='/app.css'){res.setHeader('Content-Type','text/css');return res.end(css);}
