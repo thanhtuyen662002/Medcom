@@ -129,7 +129,7 @@ export function RequestDetailDialog({open, presentationAllowed = true, title, cl
     <style>{`
       .request-detail-surface:not([hidden]){position:fixed;inset:0;z-index:45;display:grid;place-items:center;padding:24px;isolation:isolate}
       .request-detail-backdrop{position:absolute;inset:0;background:rgb(0 0 0 / .48)}
-      .request-detail-dialog{position:relative;display:flex;flex-direction:column;width:min(1120px,100%);max-width:100%;height:min(860px,calc(100dvh - 48px));min-height:0;overflow:hidden;background:var(--background,#fff);color:var(--foreground,#111);border:1px solid var(--border,#ccc);border-radius:16px;box-shadow:0 20px 60px #0005;outline:none}
+      .request-detail-dialog{position:relative;display:flex;flex-direction:column;width:min(1120px,100%);max-width:100%;height:auto;max-height:min(860px,calc(100dvh - 48px));min-height:0;overflow:hidden;background:var(--background,#fff);color:var(--foreground,#111);border:1px solid var(--border,#ccc);border-radius:16px;box-shadow:0 20px 60px #0005;outline:none}
       .request-detail-header{display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:16px;border-bottom:1px solid var(--border,#ccc);flex-shrink:0}
       .request-detail-header h2{flex:1;min-width:0;overflow-wrap:anywhere;font-weight:600}
       .request-detail-body{overflow:auto;overscroll-behavior:contain;min-height:0;min-width:0;padding:16px;overflow-wrap:anywhere}
@@ -139,9 +139,11 @@ export function RequestDetailDialog({open, presentationAllowed = true, title, cl
     <div className="request-detail-backdrop" aria-hidden="true" onClick={() => close.current()}/>
     <div ref={content} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="request-detail-dialog" data-record-mode={mode}>
       <header className="request-detail-header">
-        <RequestButton type="button" onClick={() => close.current()}>{closeLabel}</RequestButton>
         <h2 id={titleId}>{title}{documentNumber&&<span className="record-document-number">{documentNumber}</span>}</h2>
-        <RequestButton type="button" aria-label="Đóng hộp thoại" onClick={() => close.current()}>×</RequestButton>
+        <div className="record-dialog-header-actions">
+          <RequestButton type="button" onClick={() => close.current()}>{closeLabel}</RequestButton>
+          <RequestButton type="button" className="record-dialog-close" aria-label="Đóng hộp thoại" onClick={() => close.current()}>×</RequestButton>
+        </div>
       </header>
       <RecordActionHost.Provider value={actionHost}><div ref={bodyRef} onScroll={onBodyScroll} className="request-detail-body">{children}</div></RecordActionHost.Provider><footer className="record-dialog-actions" ref={setActionHost}>{actions}</footer>
     </div>

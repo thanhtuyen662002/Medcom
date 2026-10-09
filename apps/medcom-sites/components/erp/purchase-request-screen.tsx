@@ -1,5 +1,6 @@
 "use client";
 import {RequestButton,RequestNotice,RequestEmpty,RequestLoading,RequestStatus,RequestError,requestDate,requestStyles} from "./request-presentation";
+import {RecordDetailToolbar} from "./record-dialog";
 import {RequestDetailDialog,useRequestDetailNavigation,useDetailPresentationProof,type RegisterRequestDetailNavigation} from "./request-detail-dialog";
 import {documentStatusLabel} from "@/lib/erp/document-status";
 import {useListControls} from "./list-view-state";
@@ -283,7 +284,7 @@ function PurchaseRequestReader({workspace,boundary,sessionUnverified,sessionEnde
     <RequestRefresh disabled={busy} onClick={()=>move(()=>{cancelFocus();setRefresh(value=>value+1);})}/>
    </RequestListToolbar>
    <RequestListContent>{busy&&!active?.list?<RequestLoading label="Đang đọc ERP…"/>:active?.error?<RequestError error={active.error}/>:<>
-    <RequestListTable compact={compact} setCompact={setCompact} presentationAllowed={presentationAllowed&&allowed&&!busy&&!verifying&&verifiedWorkspace===workspace&&!active?.error} isPresentationAllowed={()=>openAuthority.current!==null} label="Danh sách đề nghị" columns={[{id:"id",label:"Mã đề nghị"},{id:"date",label:"Ngày đề nghị"},{id:"branch",label:"Chi nhánh"},{id:"person",label:"Người đề nghị"},{id:"department",label:"Phòng ban"},{id:"status",label:"Trạng thái"}]} rows={(active?.list?.rows??[]).map(row=>({id:row.documentId,cells:[row.documentId,requestDate(row.purchaseDate),row.branchId,row.personSuggest||"Chưa có thông tin",row.department||"Chưa có thông tin",<RequestStatus key="status" value={row.statusId} statusName={row.statusName}/>],action:"Mở đề nghị",actionLabel:`Mở đề nghị ${row.documentId}`,selected:selected===row.documentId,onOpen:()=>open(row.documentId),buttonRef:element=>registerFocusRow(row.documentId,element)}))}/>
+    <RequestListTable customizationScopeKey={allowed&&verifiedWorkspace===workspace&&knownScope&&active?.list&&!active.error?key+":"+knownScope:null} compact={compact} setCompact={setCompact} presentationAllowed={presentationAllowed&&allowed&&!busy&&!verifying&&verifiedWorkspace===workspace&&!active?.error} isPresentationAllowed={()=>openAuthority.current!==null} label="Danh sách đề nghị" columns={[{id:"id",label:"Mã đề nghị"},{id:"date",label:"Ngày đề nghị"},{id:"branch",label:"Chi nhánh"},{id:"person",label:"Người đề nghị"},{id:"department",label:"Phòng ban"},{id:"status",label:"Trạng thái"}]} rows={(active?.list?.rows??[]).map(row=>({id:row.documentId,cells:[row.documentId,requestDate(row.purchaseDate),row.branchId,row.personSuggest||"Chưa có thông tin",row.department||"Chưa có thông tin",<RequestStatus key="status" value={row.statusId} statusName={row.statusName}/>],action:"Mở đề nghị",actionLabel:`Mở đề nghị ${row.documentId}`,selected:selected===row.documentId,onOpen:()=>open(row.documentId),buttonRef:element=>registerFocusRow(row.documentId,element)}))}/>
     {active?.list?.rows.length===0&&<RequestEmpty title="Không có đề nghị phù hợp">Thử điều chỉnh mã đề nghị hoặc chi nhánh.</RequestEmpty>}
     <RequestPagination label="Phân trang đề nghị" page={page} previousDisabled={page===1} nextDisabled={!active?.list?.hasMore||page>=1000} onPrevious={()=>move(()=>{cancelFocus();setPage(value=>value-1);setSelected(null);editorRef.current?.bridge.retire();retain(null);})} onNext={()=>move(()=>{cancelFocus();setPage(value=>value+1);setSelected(null);editorRef.current?.bridge.retire();retain(null);})}/>
    </>}
@@ -294,7 +295,7 @@ function PurchaseRequestReader({workspace,boundary,sessionUnverified,sessionEnde
    {!!activeDetail?.error&&<RequestError error={activeDetail.error}/>}
    {!!active?.error&&<RequestError error={active.error}/>}
    {(!canRead||!presentationReady)&&<RequestNotice>Dữ liệu phiếu tạm ẩn trong khi xác minh. Yêu cầu gốc vẫn được giữ.</RequestNotice>}
-   {!canRead&&<RequestButton type="button" onClick={()=>setRefresh(value=>value+1)}>Xác minh lại phiếu</RequestButton>}
+   {!canRead&&<RecordDetailToolbar><RequestButton type="button" onClick={()=>setRefresh(value=>value+1)}>Xác minh lại phiếu</RequestButton></RecordDetailToolbar>}
   {editor&&<section ref={registerFocusDetail} aria-label="Phiếu mua hàng hiện có" tabIndex={-1} className="scroll-mt-24 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" hidden={!canRead||!presentationReady}><div className={requestStyles.stack}>
    <MobileRequest presentationAllowed={presentationAllowed&&canRead&&presentationReady} statusPresentation={{documentId:editor.raw.document.purchaseRequestId,id:editor.raw.document.statusId,name:editor.raw.statusName}} initial={editor.snapshot} access={access} adapter={editor.bridge.adapter} readRevision={editor.revision} onConfirmed={onConfirmed} onWorkStateChange={onWorkStateChange}/>
    {canRead&&<>{editor.receiptId&&<p role="status">ERP đã xác nhận yêu cầu {editor.receiptId}. Receipt vẫn được giữ khi đọc lại thất bại.</p>}

@@ -72,7 +72,7 @@ export function requestDate(value:string|null|undefined){
   const match=/^(\d{4})-(\d{2})-(\d{2})(?:T|$)/.exec(value);
   return match?`${match[3]}/${match[2]}/${match[1]}`:"Chưa xác định";
 }
-const supportCodes=new Set(["authentication_required","backend_not_configured","frontend_not_configured","backend_unavailable","identity_unavailable","invalid_api_response","invalid_read_scope","read_scope_changed","request_failed"]);
+const supportCodes=new Set(["authentication_required","backend_not_configured","frontend_not_configured","backend_unavailable","identity_unavailable","invalid_api_response","invalid_read_scope","read_scope_changed","request_failed","purchase_read_unavailable"]);
 export function RequestError({error,retry,legacyReference=false}:{error:unknown;retry?:()=>void;legacyReference?:boolean}){
   const [copied,setCopied]=useState(false);
   const api=error instanceof ApiError?error:null;

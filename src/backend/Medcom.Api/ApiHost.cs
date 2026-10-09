@@ -14,6 +14,13 @@ public static class ApiHost
 {
     public const string CorrelationHeader = "X-Correlation-ID";
 
+    internal static void LogPurchaseReadUnavailable(ILogger logger, HttpContext context,
+        PurchaseRequestReadDiagnostic diagnostic) => logger.LogWarning(
+        new EventId(1002, "PurchaseReadUnavailable"),
+        "Purchase read unavailable; correlation {CorrelationId}; operation {Operation}; stage {Stage}; reason {Reason}; exception kind {ExceptionKind}; provider number {ProviderErrorNumber}; elapsed ms {ElapsedMilliseconds}",
+        context.TraceIdentifier, diagnostic.Operation, diagnostic.Stage, diagnostic.Reason,
+        diagnostic.ExceptionKind, diagnostic.ProviderErrorNumber, diagnostic.ElapsedMilliseconds);
+
     public static WebApplication Build(string[] args, Action<WebApplicationBuilder>? configure = null, string? webRoot = null)
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
@@ -70,7 +77,9 @@ public static class ApiHost
                 return new SqlPurchaseRequestQueries(provider.GetRequiredService<SqlLegacyUserStore>(),
                     provider.GetRequiredService<LegacyCompany>(), async cancellation =>
                         (await sessions.ResolveAsync(token, false, cancellation))?.Identity,
-                    async cancellation => (await sessions.InspectAsync(token, cancellation))?.Identity);
+                    async cancellation => (await sessions.InspectAsync(token, cancellation))?.Identity,
+                    diagnostic => LogPurchaseReadUnavailable(provider.GetRequiredService<ILogger<SqlPurchaseRequestQueries>>(),
+                        context, diagnostic));
             });
         }
         else

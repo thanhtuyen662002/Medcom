@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I62",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "I62-20261009-table-customization-custody",
+  "base_sha": "884be183160d0ea1e5c2a8d8ce5e20431dd55d6f",
+  "work_branch": "codex/g45-table-customization-i62-20261009",
+  "claim_branch": "medcom-claims/g45/direct/I62",
+  "scope": [
+    "apps/medcom-sites/components/erp/grid.tsx",
+    "apps/medcom-sites/components/erp/request-list-shell.tsx",
+    "apps/medcom-sites/components/erp/inbound-request-screen.tsx",
+    "apps/medcom-sites/components/erp/purchase-request-screen.tsx",
+    "apps/medcom-sites/tests/request-screen-controls.test.mjs",
+    "docs/execution/checkpoints/I62_TABLE_CUSTOMIZATION_CUSTODY.md",
+    "docs/execution/direct-runs/I62.json"
+  ],
+  "purpose": "Preserve table-customization open intent across healthy same-session background revalidation while retaining current presentation authorization and terminal retirement.",
+  "production_accepted": false,
+  "runtime_activation_authorized": false,
+  "constraints": [
+    "Root sole publisher; immutable marker and exact-head review/CI.",
+    "Retain only customization open intent across same verified list/session scope. Presentation remains hidden/inert and operations blocked until currently authorized.",
+    "Retire on explicit dismissal, terminal denial, scope/account/login boundary, loss of owning retained list or host remount. Generic grid default behavior unchanged.",
+    "Do not cache authority, weaken current guards, change API/SQL/authentication or business writes. Preserve all existing behavior tests.",
+    "Two request-screen edits limited to table scope props; coordinate I61 presentation wrappers without overwriting."
+  ]
+}
