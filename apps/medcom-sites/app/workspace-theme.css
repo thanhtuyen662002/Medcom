@@ -208,7 +208,7 @@ html .verification-skeleton { border-radius: 16px; background: var(--card); }
   html .workspace-footer { padding: 16px; }
   html .module-card { padding: 20px; }
   html .panel-heading { padding: 18px 16px; }
-  html .request-detail-dialog { border-radius: 16px; }
+  html .request-detail-dialog { border-radius: 0; }
   html .request-detail-dialog .request-detail-header { padding: 18px 16px 16px; }
   html .request-detail-body { padding: 16px; gap: 14px; }
   html .record-section, html .request-section, html .request-fields { padding: 16px; }
