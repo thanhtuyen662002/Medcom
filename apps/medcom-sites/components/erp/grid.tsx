@@ -3,7 +3,7 @@
 import {useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type KeyboardEvent, type Ref} from "react";
 import {useTable, tableFeatures, columnOrderingFeature, columnVisibilityFeature, columnSizingFeature, type ColumnDef, type RowData} from "@tanstack/react-table";
 import {useVirtualizer} from "@tanstack/react-virtual";
-import {ArrowUp, ArrowDown, Pin, SlidersHorizontal, Save, RotateCcw, X} from "lucide-react";
+import {ArrowUp, ArrowDown, Eye, Pin, SlidersHorizontal, Save, RotateCcw, X} from "lucide-react";
 import {Checkbox} from "@/components/ui/checkbox";
 import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription} from "@/components/ui/dialog";
 import {Table, TableHeader, TableHead, TableBody, TableRow, TableCell} from "@/components/ui/table";
@@ -80,7 +80,7 @@ export function ErpGrid<T extends RowData>({rows, columns, rowId, renderCell, mo
   const unpinned=customizable&&!mobile?ordered.filter(c=>!view.pinned.includes(c.id)):ordered;
   const orderedColumns=[...pinned,...unpinned];
   const selectionWidth=selectable?44:0;
-  const actionWidth=rowAction?132:0;
+  const actionWidth=rowAction?156:0;
   const pinWidth=pinned.reduce((sum,c)=>sum+c.getSize(),selectionWidth);
   const rowHeight=density?45:65;
   const virtualRows=useVirtualizer({count:rows.length,getScrollElement:()=>viewport.current,estimateSize:()=>rowHeight,overscan:6,enabled:virtualize&&customizable&&!mobile});
@@ -189,8 +189,8 @@ export function ErpGrid<T extends RowData>({rows, columns, rowId, renderCell, mo
           {padLeft>0&&<TableHead aria-hidden className="grid-spacer" style={{width:padLeft,padding:0}}/>}
           {renderedColumns.filter(c=>!pinned.includes(c)).map(c=>header(c.id))}
           {padRight>0&&<TableHead aria-hidden className="grid-spacer" style={{width:padRight,padding:0}}/>}
-          {rowAction&&<TableHead scope="col" role="columnheader" aria-colindex={orderedColumns.length+1+(selectable?1:0)} className="request-list-action-heading" style={customizable&&!mobile?{width:actionWidth,minWidth:actionWidth,maxWidth:actionWidth}:undefined}><span className="sr-only">Thao tác</span></TableHead>}
           {fillWidth>0&&<TableHead aria-hidden className="grid-spacer" style={{width:fillWidth,minWidth:fillWidth,padding:0}}/>}
+          {rowAction&&<TableHead scope="col" role="columnheader" aria-colindex={orderedColumns.length+1+(selectable?1:0)} className="request-list-action-heading" style={customizable&&!mobile?{width:actionWidth,minWidth:actionWidth,maxWidth:actionWidth}:undefined}>Thao tác</TableHead>}
         </TableRow></TableHeader>
         <TableBody role="rowgroup">
           {renderedRows[0]?.start>0&&<TableRow aria-hidden className="grid-spacer"><TableCell colSpan={colSpan} style={{height:renderedRows[0].start,padding:0}}/></TableRow>}
@@ -204,8 +204,8 @@ export function ErpGrid<T extends RowData>({rows, columns, rowId, renderCell, mo
               {padLeft>0&&<TableCell aria-hidden className="grid-spacer" style={{width:padLeft,padding:0}}/>}
               {renderedColumns.filter(c=>!pinned.includes(c)).map(c=>cell(row,v.index,c.id))}
               {padRight>0&&<TableCell aria-hidden className="grid-spacer" style={{width:padRight,padding:0}}/>}
-              {action&&<TableCell role={interactive?"gridcell":"cell"} aria-colindex={orderedColumns.length+1+(selectable?1:0)} className="request-list-open"><RequestButton ref={action.buttonRef} type="button" aria-label={action.accessibleLabel} aria-pressed={action.selected} onClick={()=>onOpen(row)} className="scroll-mt-24">{action.label}</RequestButton></TableCell>}
               {fillWidth>0&&<TableCell aria-hidden className="grid-spacer" style={{width:fillWidth,minWidth:fillWidth,padding:0}}/>}
+              {action&&<TableCell role={interactive?"gridcell":"cell"} aria-colindex={orderedColumns.length+1+(selectable?1:0)} className="request-list-open"><div className="request-row-actions"><RequestButton ref={action.buttonRef} type="button" aria-label={action.accessibleLabel} aria-pressed={action.selected} onClick={()=>onOpen(row)} className="scroll-mt-24"><Eye size={15} aria-hidden="true"/>{action.label}</RequestButton></div></TableCell>}
             </TableRow>;
           })}
           {rowsVirtualized&&renderedRows.length>0&&<TableRow aria-hidden className="grid-spacer"><TableCell colSpan={colSpan} style={{height:Math.max(0,virtualRows.getTotalSize()-(renderedRows.at(-1)?.end??0)),padding:0}}/></TableRow>}

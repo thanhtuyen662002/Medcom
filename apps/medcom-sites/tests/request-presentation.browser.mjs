@@ -650,6 +650,13 @@ test('I30 compiled application presentation at 320,360,390,1440',{timeout:240000
     const toolbar=list.locator('form.request-list-toolbar'),pager=orders?list.locator('.request-list-pagination'):list.getByRole('navigation',{name:screen==='purchase-requests'?'Phân trang đề nghị':'Trang danh sách phiếu',exact:true});
     assert.equal(await toolbar.count(),1);assert.equal(await pager.count(),1);
     assert.equal(await pager.evaluate(el=>el.classList.contains('request-panel-footer')),true,'All list pagers share the request footer surface');
+    const pagerGeometry=await pager.evaluate(el=>{
+     const controls=el.querySelector('.request-list-page-controls'),current=el.querySelector('[aria-current="page"]');
+     return {footerRight:el.getBoundingClientRect().right,controlsRight:controls.getBoundingClientRect().right,width:controls.getBoundingClientRect().width,current:current?.textContent,shadcn:el.getAttribute('data-slot'),list:controls.tagName};
+    });
+    assert.equal(pagerGeometry.shadcn,'pagination');assert.equal(pagerGeometry.list,'UL');assert.equal(pagerGeometry.current,'Trang 1');
+    assert.ok(pagerGeometry.footerRight-pagerGeometry.controlsRight<=24,'Pagination stays together in the right corner');
+    assert.ok(pagerGeometry.width<=340,'Previous, current and Next never spread across the footer');
     assert.match(await pager.innerText(),/Trang 1/);assert.equal(await pager.getByRole('button',{name:/^Trang (trước|phiếu trước)$/}).isDisabled(),true);assert.equal(await pager.getByRole('button',{name:/^Trang (sau|tiếp theo|phiếu tiếp)$/}).isDisabled(),true);
     const branch=toolbar.getByLabel(screen==='inbound-requests'?'Lọc chi nhánh':'Chi nhánh',{exact:true});
     assert.equal(await branch.evaluate(el=>el.tagName),'SELECT','Every branch control uses the native select contract');
@@ -833,7 +840,13 @@ test('I30 compiled application presentation at 320,360,390,1440',{timeout:240000
      rows:[...el.querySelectorAll('tbody tr[data-grid-row]')].map(row=>({id:row.getAttribute('data-grid-row'),cells:[...row.querySelectorAll('[role=gridcell]')].map(cell=>({label:cell.getAttribute('data-label'),action:cell.classList.contains('request-list-open'),index:Number(cell.getAttribute('aria-colindex'))}))}))
     }));
     assert.equal(data.count,order.length+2,'Selection, logical data columns and Open action all count toward aria-colcount');
-    const expectedWidth=44+132+order.reduce((sum,label)=>sum+widths[label],0);assert.equal(data.width,expectedWidth);assert.equal(await viewport.evaluate(el=>el.scrollWidth),expectedWidth,'Horizontal scroll extent uses the current widths and visible columns');
+    const expectedWidth=44+156+order.reduce((sum,label)=>sum+widths[label],0);assert.equal(data.width,expectedWidth);assert.equal(await viewport.evaluate(el=>el.scrollWidth),expectedWidth,'Horizontal scroll extent uses the current widths and visible columns');
+    const actions=await viewport.evaluate(el=>{
+     const right=el.getBoundingClientRect().left+el.clientLeft+el.clientWidth;
+     return [...el.querySelectorAll('.request-list-action-heading,.request-list-open')].map(cell=>({right:cell.getBoundingClientRect().right,position:getComputedStyle(cell).position,last:cell===cell.parentElement.lastElementChild})).map(cell=>({...cell,viewportRight:right}));
+    });
+    assert.equal(actions.length,3,'One fixed header and one action cell per row');
+    for(const cell of actions){assert.equal(cell.position,'sticky');assert.equal(cell.last,true,'Filler cannot follow the action column');assert.ok(Math.abs(cell.right-cell.viewportRight)<=1,'Actions remain at the right edge at both ends of horizontal scrolling: '+JSON.stringify(cell));}
     assert.equal(data.headers[0].index,1);assert.equal(data.headers.at(-1).index,order.length+2);
     const dataHeaders=data.headers.filter(header=>order.includes(header.label));assert.ok(dataHeaders.length>0&&dataHeaders.length<order.length,'The fixture actually virtualizes its greater-than-twelve unpinned columns');
     for(const header of dataHeaders){

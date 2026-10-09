@@ -1,0 +1,15 @@
+# Workspace visual refresh — 9 October 2026
+
+Owner direction: refresh the existing Railway frontend in `apps/medcom-sites`, fix the trailing table action group and place pagination together in one corner. The baseline is main `ce95e1750b3df8ef46a4682f5f78f94450bf2829`, tree `96625779a9d1e6f14ab57acdaa472924e7a775ff`.
+
+The shared grid now puts flexible filler **before** the final action column. Its heading and cells stay fixed at the right edge of the grid viewport; opaque hover/selection surfaces protect text when data scrolls underneath. Mobile keeps the original single responsive row/action tree. Open handlers, row refs, logical column positions, customization and data scopes remain caller-owned.
+
+The shared pager uses the structural shadcn pagination primitives with native buttons. Previous, current page and Next form one right-aligned group at every supported viewport. Unknown totals remain unknown: the pager displays the current page and respects the existing server `hasMore`, bounds and disabled states.
+
+`app/workspace-theme.css` contains the shared visual layer: silver neutral surfaces, native system typography, consistent control geometry, restrained blue accents, soft borders/corners, light/dark and existing palette choices. It covers the sidebar, top bar, lists, home, settings, guides, records, dialogs, loading and feedback. A saved palette is respected; new preferences default to blue. The auth surface reuses the existing shadcn Button/Input components without changing lifecycle or credential handling.
+
+The owner-supplied backend handover was read on 9 October. It is consistent with this refresh's presentation-only scope: existing reads may work when authorized; write availability still comes from the backend. This change does not enable purchase Save/Submit, inbound writes, Add/Create, Delete, transfer, report or QR business commands. The existing list adapter currently supplies Open only; it must not show invented Update/Delete permissions.
+
+Local validation: production build and TypeScript pass; lint reports zero errors and the existing TanStack Virtual compiler-compatibility warning. 101 targeted UI/domain/state tests pass without skips. The first aggregate attempt exposed an optional pagination-link dependency in DOM doubles; structural pagination was factored into `components/ui/pagination-layout.tsx`, preserving the public pagination exports and existing assertions. Local native browser execution could not start Chromium's sandbox in this execution environment and is **NOT_RUN**. Required hosted CI and its actual browser receipts must be checked on the exact candidate/base before integration; local compilation and DOM doubles are not browser, ERP, SQL or production acceptance.
+
+Browser regressions in `tests/request-presentation.browser.mjs` preserve all existing cases and assert the compact right-corner pager, the 156px action width, last-column placement, and right-edge retention at both ends of horizontal scrolling after resize/reorder/pin changes. Test fixtures contain synthetic data only.
