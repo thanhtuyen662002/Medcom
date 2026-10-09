@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I60",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "I60-20261009-purchase-read-diagnostics",
+  "base_sha": "884be183160d0ea1e5c2a8d8ce5e20431dd55d6f",
+  "work_branch": "codex/g45-purchase-read-diagnostics-i60-20261009",
+  "claim_branch": "medcom-claims/g45/direct/I60",
+  "scope": [
+    "src/backend/Medcom.Infrastructure/PurchaseRequests/SqlPurchaseRequestQueries.cs",
+    "src/backend/Medcom.Api/ApiHost.cs",
+    "tests/backend/Medcom.Api.Tests/PurchaseRequestQueryTests.cs",
+    "tests/backend/Medcom.Api.Tests/PurchaseRequestEndpointTests.cs",
+    "apps/medcom-sites/components/erp/request-presentation.tsx",
+    "apps/medcom-sites/tests/shared-screen-ui.test.mjs",
+    "docs/execution/checkpoints/I60_PURCHASE_READ_DIAGNOSTICS.md",
+    "docs/execution/direct-runs/I60.json"
+  ],
+  "purpose": "Diagnose reproduced authenticated full purchase-detail 503 without weakening read validation, and expose the existing safe support code in the UI.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "runtime_activation_authorized": false,
+  "constraints": [
+    "Root is sole publisher; preserve immutable admission marker and exact-head CI.",
+    "Emit only bounded read operation/stage/reason, allowlisted exception category, SQL error number and duration through existing server logging. Never log SQL, parameters, rows, document IDs, credentials, connection strings, raw exception text/objects or private paths.",
+    "Retain existing read-only SQL, authority, schema and data validation, masking, cleanup, cancellation and 503 behavior. No command activation or business writes.",
+    "No new diagnostic HTTP route. Logging failures must not change read results.",
+    "Use synthetic regression fixtures including secret-bearing failures; verify diagnostics stay sanitized and private business data never enters the public repository."
+  ]
+}

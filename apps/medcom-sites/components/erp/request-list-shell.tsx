@@ -44,10 +44,10 @@ export function RequestPagination({label,page,previousDisabled,nextDisabled,onPr
 export type RequestListColumn = {id:string;label:string};
 export type RequestListRow = {id:string;cells:ReactNode[];action:string;actionLabel:string;selected?:boolean;onOpen:()=>void;buttonRef:Ref<HTMLButtonElement>};
 /** Compatibility adapter: the shared grid owns the only table/row/action DOM. */
-export function RequestListTable({label,columns,rows,presentationAllowed=true,isPresentationAllowed,compact=false,setCompact}:{label:string;columns:RequestListColumn[];rows:RequestListRow[];presentationAllowed?:boolean;isPresentationAllowed?:()=>boolean;compact?:boolean;setCompact?:(value:boolean)=>void}) {
+export function RequestListTable({label,columns,rows,presentationAllowed=true,isPresentationAllowed,customizationScopeKey,compact=false,setCompact}:{label:string;columns:RequestListColumn[];rows:RequestListRow[];presentationAllowed?:boolean;isPresentationAllowed?:()=>boolean;customizationScopeKey?:string|null;compact?:boolean;setCompact?:(value:boolean)=>void}) {
   return <ErpGrid rows={rows} columns={columns.map((column,index)=>({...column,width:index===0?200:160,required:index===0}))} rowId={row=>row.id}
     renderCell={(row,id)=>{const index=columns.findIndex(column=>column.id===id);return index===0?<RequestDocumentIdentity>{row.cells[index]}</RequestDocumentIdentity>:row.cells[index];}}
     rowAction={row=>({label:row.action,accessibleLabel:row.actionLabel,selected:row.selected,buttonRef:row.buttonRef})}
-    onOpen={row=>row.onOpen()} schemaVersion={columns.map(column=>column.id).join("|")} scopeKey={label} compact={compact} setCompact={setCompact} label={label} presentationAllowed={presentationAllowed} isPresentationAllowed={isPresentationAllowed}
+    onOpen={row=>row.onOpen()} schemaVersion={columns.map(column=>column.id).join("|")} scopeKey={label} compact={compact} setCompact={setCompact} label={label} presentationAllowed={presentationAllowed} isPresentationAllowed={isPresentationAllowed} customizationScopeKey={customizationScopeKey}
     selectable={false} customizable={true} virtualize={false}/>;
 }

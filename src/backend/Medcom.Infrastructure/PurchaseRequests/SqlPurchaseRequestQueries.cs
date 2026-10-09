@@ -1,11 +1,28 @@
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics;
 using System.Globalization;
 using Medcom.Application;
 using Medcom.Application.PurchaseRequests;
 using Medcom.Contracts;
+using Microsoft.Data.SqlClient;
 
 namespace Medcom.Infrastructure.PurchaseRequests;
+
+// Server-only telemetry: finite labels and numbers, never exception text, SQL,
+// parameters, document identities, authority data or business values.
+public enum PurchaseRequestReadOperation { Workspace, List, Detail, Lookup }
+public enum PurchaseRequestReadStage
+{
+    Inspect, OpenConnection, BeginTransaction, Credential, Grant, Branches, Schema,
+    WorkspacePurposes, WorkspaceCurrencies, List, Head, Lines, Normalize, StateToken,
+    ItemDisplay, Lookup, InspectBeforeCleanup, Cleanup, ResolveAfterCleanup
+}
+public enum PurchaseRequestReadFailure { AmbientTransaction, ConnectionNotClosed, SchemaUnqualified, Exception }
+public enum PurchaseRequestReadException { None, Sql, Database, Timeout, InvalidOperation, Argument, Overflow, Other }
+public sealed record PurchaseRequestReadDiagnostic(PurchaseRequestReadOperation Operation,
+    PurchaseRequestReadStage Stage, PurchaseRequestReadFailure Reason,
+    PurchaseRequestReadException ExceptionKind, int? ProviderErrorNumber, long ElapsedMilliseconds);
 
 // Executes only fixed SELECT shapes. No command journal, allocator, procedure or mutation path.
 public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
@@ -14,21 +31,25 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
     private readonly Func<DbConnection> factory;
     private readonly Func<CancellationToken, Task<AuthoritativeIdentity?>> live;
     private readonly Func<CancellationToken, Task<AuthoritativeIdentity?>> inspect;
+    private readonly Action<PurchaseRequestReadDiagnostic>? diagnose;
 
     public SqlPurchaseRequestQueries(SqlLegacyUserStore database, LegacyCompany company,
         Func<CancellationToken, Task<AuthoritativeIdentity?>> resolveLiveSession,
-        Func<CancellationToken, Task<AuthoritativeIdentity?>>? inspectCurrentSession = null)
-        : this(company, () => database.CreateConnection(), resolveLiveSession, inspectCurrentSession) { }
+        Func<CancellationToken, Task<AuthoritativeIdentity?>>? inspectCurrentSession = null,
+        Action<PurchaseRequestReadDiagnostic>? diagnose = null)
+        : this(company, () => database.CreateConnection(), resolveLiveSession, inspectCurrentSession, diagnose) { }
 
     // Recording connections exercise this same SQL orchestration offline.
     public SqlPurchaseRequestQueries(LegacyCompany company, Func<DbConnection> connectionFactory,
         Func<CancellationToken, Task<AuthoritativeIdentity?>> resolveLiveSession,
-        Func<CancellationToken, Task<AuthoritativeIdentity?>>? inspectCurrentSession = null)
+        Func<CancellationToken, Task<AuthoritativeIdentity?>>? inspectCurrentSession = null,
+        Action<PurchaseRequestReadDiagnostic>? diagnose = null)
     {
         this.company = company ?? throw new ArgumentNullException(nameof(company));
         factory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
         live = resolveLiveSession ?? throw new ArgumentNullException(nameof(resolveLiveSession));
         inspect = inspectCurrentSession ?? live; // Existing/custom callers stay conservative.
+        this.diagnose = diagnose;
     }
 
     public static readonly string CredentialText = ReadOnly(PurchaseRequestSql.CredentialText);
@@ -105,9 +126,11 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
     }
 
     public Task<PurchaseRequestQueryResult<PurchaseRequestWorkspace>> WorkspaceAsync(CancellationToken token = default)
-        => Run<PurchaseRequestWorkspace>(async (tx, branches, ct) =>
+        => Run<PurchaseRequestWorkspace>(PurchaseRequestReadOperation.Workspace, async (tx, branches, observation, ct) =>
         {
+            observation.Stage = PurchaseRequestReadStage.WorkspacePurposes;
             var purposes = await PurchaseRequestLookupSql.QualifyAsync(tx, "purposes", ct);
+            observation.Stage = PurchaseRequestReadStage.WorkspaceCurrencies;
             var currencies = await PurchaseRequestLookupSql.QualifyAsync(tx, "currencies", ct);
             return new(branches, false, PurchaseRequestQueryRules.WriteReason, [
                 new("branches", true, null, "Native explicit branch scope; validated CF_BranchTbl only for native blank BranchID"),
@@ -120,8 +143,9 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
     public Task<PurchaseRequestQueryResult<PurchaseRequestListPage>> ListAsync(PurchaseRequestListQuery query, CancellationToken token = default)
     {
         if (!PurchaseRequestQueryRules.List(query)) return Invalid<PurchaseRequestListPage>();
-        return Run<PurchaseRequestListPage>(async (tx, branches, ct) =>
+        return Run<PurchaseRequestListPage>(PurchaseRequestReadOperation.List, async (tx, branches, observation, ct) =>
         {
+            observation.Stage = PurchaseRequestReadStage.List;
             if (!string.IsNullOrEmpty(query.BranchId))
             {
                 if (!branches.Contains(query.BranchId, StringComparer.Ordinal)) throw new QueryDenied();
@@ -152,8 +176,9 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
     public Task<PurchaseRequestQueryResult<PurchaseRequestReadback>> OpenAsync(string documentId, CancellationToken token = default)
     {
         if (!PurchaseRequestCommandRules.Identifier(documentId, 50)) return Invalid<PurchaseRequestReadback>();
-        return Run<PurchaseRequestReadback>(async (tx, branches, ct) =>
+        return Run<PurchaseRequestReadback>(PurchaseRequestReadOperation.Detail, async (tx, branches, observation, ct) =>
         {
+            observation.Stage = PurchaseRequestReadStage.Head;
             PurchaseRequestAggregate head;
             string? statusName;
             await using (var command = PurchaseRequestSql.Command(tx, HeadText))
@@ -171,6 +196,7 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
                 if (await reader.ReadAsync(ct)) throw new QueryNotFound();
             }
             var lines = new List<PurchaseRequestPersistedLine>();
+            observation.Stage = PurchaseRequestReadStage.Lines;
             await using (var command = PurchaseRequestSql.Command(tx, DetailsText))
             {
                 PurchaseRequestSql.Document(command, documentId);
@@ -183,8 +209,11 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
                         Decimal(reader, 4, "0")!, Decimal(reader, 5, "0")!, Decimal(reader, 6, "0"), Text(reader, 7))));
                 }
             }
+            observation.Stage = PurchaseRequestReadStage.Normalize;
             var document = PurchaseRequestCommandRules.Normalize(head with { Lines = lines });
+            observation.Stage = PurchaseRequestReadStage.StateToken;
             var stateToken = PurchaseRequestCommandRules.EqualityToken(document);
+            observation.Stage = PurchaseRequestReadStage.ItemDisplay;
             var display = await ItemDisplayContextReader.ReadAsync(tx, "purchase-requests", document.PurchaseRequestId,
                 document.BranchId, stateToken, document.StatusId, document.IsLocked, null, null,
                 document.Lines.Select(line => (line.LineId, line.Values.ItemId)).ToArray(), ct);
@@ -195,8 +224,9 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
     public Task<PurchaseRequestQueryResult<PurchaseRequestLookupPage>> LookupAsync(string kind, string? search, int page, CancellationToken token = default)
     {
         if (!PurchaseRequestQueryRules.Lookup(kind, search, page)) return Invalid<PurchaseRequestLookupPage>();
-        return Run<PurchaseRequestLookupPage>(async (tx, branches, ct) =>
+        return Run<PurchaseRequestLookupPage>(PurchaseRequestReadOperation.Lookup, async (tx, branches, observation, ct) =>
         {
+            observation.Stage = PurchaseRequestReadStage.Lookup;
             if (kind is "purposes" or "currencies") return await PurchaseRequestLookupSql.ReadAsync(tx, kind, search, page, ct);
             if (kind != "branches") return new(false, "source_binding_unqualified", [], page, false);
             var matches = branches.Where(branch => branch.Contains(search ?? "", StringComparison.OrdinalIgnoreCase)).ToArray();
@@ -206,48 +236,88 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
         }, token);
     }
 
-    private async Task<PurchaseRequestQueryResult<T>> Run<T>(Func<DbTransaction, string[], CancellationToken, Task<T>> read, CancellationToken token)
+    private async Task<PurchaseRequestQueryResult<T>> Run<T>(PurchaseRequestReadOperation operation,
+        Func<DbTransaction, string[], ReadObservation, CancellationToken, Task<T>> read, CancellationToken token)
     {
+        // Per-call state: a shared reader cannot cross-label concurrent requests.
+        var observation = new ReadObservation();
+        PurchaseRequestQueryResult<T> Unavailable(PurchaseRequestReadFailure reason, Exception? exception = null)
+        {
+            try
+            {
+                diagnose?.Invoke(new(operation, observation.Stage, reason, ExceptionKind(exception),
+                    exception is SqlException sql ? sql.Number : null,
+                    (long)Stopwatch.GetElapsedTime(observation.Started).TotalMilliseconds));
+            }
+            catch (Exception) { /* Diagnostic sinks must never affect read behavior. */ }
+            return new(PurchaseRequestQueryOutcome.Unavailable);
+        }
         try
         {
             token.ThrowIfCancellationRequested();
             var identity = await inspect(token);
             if (!Eligible(identity)) return new(PurchaseRequestQueryOutcome.Denied);
-            if (System.Transactions.Transaction.Current is not null) return new(PurchaseRequestQueryOutcome.Unavailable);
+            if (System.Transactions.Transaction.Current is not null) return Unavailable(PurchaseRequestReadFailure.AmbientTransaction);
             string[] branches;
             T value;
+            observation.Stage = PurchaseRequestReadStage.OpenConnection;
             await using (var connection = factory())
             {
-                if (connection.State != ConnectionState.Closed) return new(PurchaseRequestQueryOutcome.Unavailable);
+                if (connection.State != ConnectionState.Closed) return Unavailable(PurchaseRequestReadFailure.ConnectionNotClosed);
                 await connection.OpenAsync(token);
+                observation.Stage = PurchaseRequestReadStage.BeginTransaction;
                 await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.Serializable, token);
+                observation.Stage = PurchaseRequestReadStage.Credential;
                 var user = await Credential(transaction, identity!, token);
+                observation.Stage = PurchaseRequestReadStage.Grant;
                 if (user is null || !await Grant(transaction, user, token)) return new(PurchaseRequestQueryOutcome.Denied);
+                observation.Stage = PurchaseRequestReadStage.Branches;
                 branches = (await SqlLegacyBranchScope.ReadAsync(transaction, user, token))
                     .Intersect(identity!.BranchIds!, StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
                 if (branches.Length == 0) return new(PurchaseRequestQueryOutcome.Denied);
+                observation.Stage = PurchaseRequestReadStage.Schema;
                 await using (var shape = PurchaseRequestSql.Command(transaction, ShapeText))
                 {
                     await using var reader = await shape.ExecuteReaderAsync(token);
                     if (!await reader.ReadAsync(token) || reader.IsDBNull(0) || reader.GetInt32(0) != 1 || await reader.ReadAsync(token))
-                        return new(PurchaseRequestQueryOutcome.Unavailable);
+                        return Unavailable(PurchaseRequestReadFailure.SchemaUnqualified);
                 }
-                value = await read(transaction, branches, token);
+                value = await read(transaction, branches, observation, token);
                 // Native credential/grant/branch checks above protect this transaction.
                 // Check local logout/expiry here; full SQL revalidation follows cleanup.
+                observation.Stage = PurchaseRequestReadStage.InspectBeforeCleanup;
                 if (!SameReadScope(await inspect(token), identity!, branches)) return new(PurchaseRequestQueryOutcome.Denied);
+                observation.Stage = PurchaseRequestReadStage.Cleanup;
                 await transaction.RollbackAsync(token); // Read-only: release locks without any durable writes.
             }
             // Cleanup can await and race logout too. Publish only after all SQL resources are released.
             token.ThrowIfCancellationRequested();
+            observation.Stage = PurchaseRequestReadStage.ResolveAfterCleanup;
             if (!SameReadScope(await live(token), identity!, branches)) return new(PurchaseRequestQueryOutcome.Denied);
             token.ThrowIfCancellationRequested();
             return new(PurchaseRequestQueryOutcome.Success, value);
         }
         catch (QueryDenied) { return new(PurchaseRequestQueryOutcome.Denied); }
         catch (QueryNotFound) { return new(PurchaseRequestQueryOutcome.NotFound); }
-        catch (Exception) when (!token.IsCancellationRequested) { return new(PurchaseRequestQueryOutcome.Unavailable); }
+        catch (Exception exception) when (!token.IsCancellationRequested)
+        { return Unavailable(PurchaseRequestReadFailure.Exception, exception); }
     }
+    private sealed class ReadObservation
+    {
+        public long Started { get; } = Stopwatch.GetTimestamp();
+        public PurchaseRequestReadStage Stage { get; set; } = PurchaseRequestReadStage.Inspect;
+    }
+    private static PurchaseRequestReadException ExceptionKind(Exception? exception) => exception switch
+    {
+        null => PurchaseRequestReadException.None,
+        SqlException => PurchaseRequestReadException.Sql,
+        DbException => PurchaseRequestReadException.Database,
+        TimeoutException => PurchaseRequestReadException.Timeout,
+        InvalidOperationException => PurchaseRequestReadException.InvalidOperation,
+        ArgumentException => PurchaseRequestReadException.Argument,
+        OverflowException => PurchaseRequestReadException.Overflow,
+        _ => PurchaseRequestReadException.Other
+    };
     private bool SameReadScope(AuthoritativeIdentity? current, AuthoritativeIdentity original, string[] branches)
         => Eligible(current) && current!.PrincipalId == original.PrincipalId && current.CredentialStamp == original.CredentialStamp
             && branches.All(branch => current.BranchIds!.Contains(branch, StringComparer.Ordinal));

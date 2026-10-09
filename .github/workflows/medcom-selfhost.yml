@@ -198,6 +198,7 @@ jobs:
             apps/medcom-sites/.test-runtime/i48-browser/lifetime-call-count.json
             apps/medcom-sites/.test-runtime/workspace-auth-integration/browser-result.json
             apps/medcom-sites/.test-runtime/request-detail-history/evidence.json
+            apps/medcom-sites/.test-runtime/i50-record-browser/evidence.json
           if-no-files-found: error
       - name: Upload synthetic inbound recovery diagnostics
         if: failure()
@@ -226,6 +227,7 @@ jobs:
             apps/medcom-sites/.test-runtime/i48-browser/*.png
             apps/medcom-sites/.test-runtime/workspace-auth-integration/*.png
             apps/medcom-sites/.test-runtime/request-detail-history/*.png
+            apps/medcom-sites/.test-runtime/i50-record-browser/*.png
           if-no-files-found: warn
       - name: Test standalone package guards
         working-directory: apps/medcom-sites
