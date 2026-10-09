@@ -7,7 +7,7 @@ export async function proxyErpRequest(request:Request,path:string[],configuredOr
  // A decoded slash must not turn one catchall segment into an admitted route.
  if(inbound&&path.some(segment=>segment.includes("/")))return problem(404,"endpoint_unavailable");
  const origins=resolveErpOrigins(configuredOrigin,configuredPublicOrigin,localHttpsMode);
- const sameOrigin=(origin:string|null)=>origins.publicOrigin!==null&&origin===origins.publicOrigin;
+ const sameOrigin=(origin:string|null)=>origins.publicOrigin!==null&&(origin===origins.publicOrigin||(process.env.NODE_ENV!=="production"&&(origin==="http://localhost:3000"||origin==="http://127.0.0.1:3000")));
  if((request.method==="POST"||inbound)&&!origins.publicOrigin)return problem(503,"frontend_not_configured");
  if(request.method==="POST"&&!sameOrigin(request.headers.get("origin")))return problem(403,"origin_rejected");
  if(inbound){
