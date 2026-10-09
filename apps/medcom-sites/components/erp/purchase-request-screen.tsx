@@ -1,5 +1,5 @@
 "use client";
-import {ItemIdentity} from "./item-identity";
+import {RecordLinesTable} from "./record-lines-table";
 import {purchaseItemDisplayBinding} from "@/lib/erp/item-display";
 import {RequestButton,RequestNotice,RequestEmpty,RequestLoading,RequestStatus,RequestError,requestDate,requestStyles} from "./request-presentation";
 import {RecordDetailToolbar,RecordSection} from "./record-dialog";
@@ -311,15 +311,20 @@ function PurchaseRequestReader({workspace,boundary,sessionUnverified,sessionEnde
 }
 
 function value(value:string|number|boolean|null){return value===null?"NULL":typeof value==="boolean"?String(value):value===""?"\"\"":String(value);}
-const lineLabels=["STT","Mặt hàng","Ngân sách","Thời gian yêu cầu","Số lượng","Đơn giá","Thành tiền","Model"];
 function FullPurchaseReadback({readback}:{readback:PurchaseReadback}){
  const document=readback.document;
  const labels:Record<string,string>={purchaseRequestId:"Mã đề nghị",branchId:"Chi nhánh",statusId:"Mã trạng thái ERP",statusName:"Trạng thái",isLocked:"Khóa phiếu",purchaseDate:"Ngày giờ đề nghị trên ERP",purposeId:"Mã mục đích",personSuggest:"Người đề nghị",department:"Phòng ban",purposeDescOrClient:"Diễn giải mục đích / khách hàng",price:"Giá trị đề nghị",notes:"Ghi chú",currencyId:"Tiền tệ",objectId:"Mã đối tượng",rateExchange:"Tỷ giá"};
  return <section aria-label="Dữ liệu ERP đầy đủ"><details className={`${requestStyles.section} request-full-readback`}><summary className={requestStyles.title}>Toàn bộ thông tin trên ERP <span>{document.lines.length} dòng hàng</span></summary><div className="request-full-readback-content">
   <dl className={requestStyles.values}>{Object.entries({purchaseRequestId:document.purchaseRequestId,branchId:document.branchId,statusId:document.statusId,statusName:documentStatusLabel(document.statusId,readback.statusName),isLocked:document.isLocked,...document.header}).map(([field,data])=><div key={field}><dt>{labels[field]}</dt><dd style={{whiteSpace:"pre-wrap",overflowWrap:"anywhere"}}>{value(data)}</dd></div>)}</dl>
   <p>{document.lines.length} dòng hàng</p>
-  <div className="min-w-0 md:overflow-x-auto"><table role="table" aria-label="Toàn bộ dòng đề nghị" className="block w-full text-sm md:table"><thead role="rowgroup" className="sr-only md:not-sr-only md:table-header-group"><tr role="row">{lineLabels.map(field=><th role="columnheader" key={field} scope="col" className="border-b border-border bg-muted/40 p-3 text-left font-medium text-muted-foreground">{field}</th>)}</tr></thead>
-   <tbody role="rowgroup" className="grid gap-3 md:table-row-group">{document.lines.map((line,ordinal)=><tr role="row" key={line.lineId} className="grid grid-cols-2 gap-3 rounded-lg border border-border p-3 md:table-row md:border-0 md:p-0">{[ordinal+1,line.values.itemId,line.values.budget,line.values.timeRequired,line.values.quantity,line.values.unitPrice,line.values.totalPrice,line.values.model].map((data,index)=><td role="cell" key={index} className="min-w-0 whitespace-pre-wrap [overflow-wrap:anywhere] md:border-b md:border-border md:p-3"><span aria-hidden="true" className="mb-1 block text-xs text-muted-foreground md:hidden">{lineLabels[index]}</span>{index===1?<ItemIdentity binding={purchaseItemDisplayBinding(readback)} context={readback.itemDisplayContext} line={{lineId:line.lineId,itemId:line.values.itemId}}/>:<span>{value(data)}</span>}</td>)}</tr>)}</tbody>
-  </table></div>
+  <RecordLinesTable label="Toàn bộ dòng đề nghị" lines={document.lines.map(line=>({...line,itemId:line.values.itemId}))} binding={purchaseItemDisplayBinding(readback)} context={readback.itemDisplayContext} columns={[
+   {label:"Ngân sách",value:line=>value(line.values.budget),numeric:false},
+   {label:"Thời gian yêu cầu",value:line=>value(line.values.timeRequired),numeric:false},
+   {label:"Số lượng",value:line=>value(line.values.quantity)},
+   {label:"Đơn giá",value:line=>value(line.values.unitPrice)},
+   {label:"Thành tiền",value:line=>value(line.values.totalPrice)},
+   {label:"Model",value:line=>value(line.values.model),numeric:false},
+  ]}/>
+
  </div></details></section>;
 }

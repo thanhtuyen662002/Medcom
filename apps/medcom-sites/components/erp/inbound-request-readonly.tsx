@@ -1,6 +1,6 @@
 "use client";
 import {RecordSection,RecordDetailStatus} from "./record-dialog";
-import {ItemIdentity} from "./item-identity";
+import {RecordLinesTable} from "./record-lines-table";
 import {pagedItemDisplayBinding} from "@/lib/erp/item-display";
 
 import {useEffect, useLayoutEffect, useMemo, useRef, useState} from "react";
@@ -152,14 +152,8 @@ export function InboundRequestReadOnly({documentId, presentationAllowed=true, br
         <p className={requestStyles.muted}>{detail.inboundRequestLines.length} dòng trên trang {detail.page}. Số lượng được giữ nguyên từ ERP; NULL là chưa có giá trị.</p>
         {detail.inboundRequestLines.length === 0
           ? <RequestEmpty title="Trang này không có dòng hàng">Dịch vụ đọc không trả về dòng hàng cho trang này.</RequestEmpty>
-          : detail.inboundRequestLines.map((line, index) => <article key={`${index}:${line.lineId}`} className={requestStyles.line}>
-            <h4 className="text-sm font-semibold">Dòng {(detail.page - 1) * detail.pageSize + index + 1}</h4>
-            <ItemIdentity binding={pagedItemDisplayBinding("inbound-requests",detail)} context={detail.itemDisplayContext} line={line}/>
-            <dl className={cn(requestStyles.values, "grid-cols-1 sm:grid-cols-2")}>
-              <div><dt>STT</dt><dd>{(page-1)*50+index+1}</dd></div>
-              {quantities.map(([field, label]) => <div key={field}><dt>{label}</dt><dd className="whitespace-pre-wrap tabular-nums">{line[field] ?? "NULL"}</dd></div>)}
-            </dl>
-          </article>)}
+          : <RecordLinesTable indexedKey lines={detail.inboundRequestLines} binding={pagedItemDisplayBinding("inbound-requests",detail)} context={detail.itemDisplayContext} offset={(detail.page-1)*detail.pageSize} label="Dòng yêu cầu nhập kho chỉ đọc" columns={quantities.map(([field,label])=>({label,value:(line:DocumentDetail["inboundRequestLines"][number])=>line[field]}))}/>}
+
         <nav aria-label="Trang dòng hàng chỉ đọc" className={requestStyles.footer}>
           <span>Trang {detail.page}{detail.hasMore ? " · Còn dòng ở trang sau" : " · Trang cuối"}</span>
           <div className={requestStyles.actions}>

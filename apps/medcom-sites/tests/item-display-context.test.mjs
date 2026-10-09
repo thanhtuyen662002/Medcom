@@ -231,7 +231,7 @@ test('standalone component renders labelled exact fields, unknowns and mobile gr
  const b=binding(),line=lines(1)[0],context=display(b,[line],{manufacturerItemCode:'<script>synthetic</script>',itemName:null,unit:''});
  const html=renderToStaticMarkup(React.createElement(p.ItemIdentity,{binding:b,line,context}));
  for(const label of ['Mã hàng','Mã hàng NSX','Tên hàng / dịch vụ','ĐVT'])assert.ok(html.includes(label));
- assert.ok(html.includes('Chưa có thông tin'));assert.ok(html.includes('Trống'));assert.ok(html.includes('&lt;script&gt;'));assert.ok(html.includes('grid-cols-1'));assert.ok(html.includes('sm:grid-cols-2'));
+ assert.ok(html.includes('Chưa có thông tin'));assert.ok(html.includes('Trống'));assert.ok(html.includes('&lt;script&gt;'));assert.equal((html.match(/<dd/g)||[]).length,4);
  assert.ok(!html.includes(line.lineId));assert.ok(!html.includes('UserAutoID'));assert.equal((html.match(/<dt/g)||[]).length,4);
  const stale=renderToStaticMarkup(React.createElement(p.ItemIdentity,{binding:{...b,documentId:'OTHER'},line,context}));assert.ok(!stale.includes('synthetic'));
 });
@@ -374,11 +374,11 @@ test('I65 real workspace detail renders desktop/mobile identity groups and masks
   const client=new ui.QueryClient({defaultOptions:{queries:{retry:false,gcTime:0}}});
   const props={presentationAllowed:true,kind:'purchase-orders',selected:current.document,close(){},onDenied(){},read:{active:true,documentId:'DOC',scope:i65ReadScope,generation:1}};
   const node=value=>React.createElement(ui.QueryClientProvider,{client},React.createElement(ui.DetailContent,value));
-  const view=await mount(node(props));await act(async()=>{await new Promise(resolve=>setTimeout(resolve,20));});i65AssertGroups(view,2);
+  const view=await mount(node(props));await act(async()=>{await new Promise(resolve=>setTimeout(resolve,20));});i65AssertGroups(view,1);
   assert.ok(i65Text(view.toJSON()).includes('999999999999999999999999.1234'));assert.ok(!i65Text(view.toJSON()).includes('SYNTHETIC-LINE'));
   await act(async()=>view.update(node({...props,presentationAllowed:false})));assert.ok(!i65VisibleText(view.toJSON()).includes('NSX'));
   await act(async()=>view.update(node({...props,read:{...props.read,active:false}})));assert.ok(!i65VisibleText(view.toJSON()).includes('NSX'));
-  current=i65Paged('inbound-requests');await act(async()=>view.update(node({...props,kind:'inbound-requests',read:{...props.read,generation:2}})));await act(async()=>{await new Promise(resolve=>setTimeout(resolve,20));});i65AssertGroups(view,2);
+  current=i65Paged('inbound-requests');await act(async()=>view.update(node({...props,kind:'inbound-requests',read:{...props.read,generation:2}})));await act(async()=>{await new Promise(resolve=>setTimeout(resolve,20));});i65AssertGroups(view,1);
   client.clear();
  });}finally{globalThis.fetch=previous;}
 });

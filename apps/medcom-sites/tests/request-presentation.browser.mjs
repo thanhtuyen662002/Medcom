@@ -269,7 +269,7 @@ test('I30 compiled application presentation at 320,360,390,1440',{timeout:240000
  assert.ok(existsSync(executable),'Installed Chromium/Edge is required.');
  const {script,logo,css,cssSource,cssModules,createRequestNotifications}=await compilePresentation();
  const html='<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/app.css"><div id="root"></div><script src="/app.js"></script></html>';
- let model,serial=0,browser,context,page,origin,completed=false,fatal=null,clockPaused=false;const expectedCases=39;const errors=[],results=[],failures=[],captures=[],calls=[],transportEvidence=[],readonlyEvidence=[],commandGeometryEvidence=[],sharedGridEvidence=[],stickyToolbarEvidence=[],portalPresentationEvidence=[];
+ let model,serial=0,browser,context,page,origin,completed=false,fatal=null,clockPaused=false;const expectedCases=40;const errors=[],results=[],failures=[],captures=[],calls=[],transportEvidence=[],readonlyEvidence=[],commandGeometryEvidence=[],sharedGridEvidence=[],stickyToolbarEvidence=[],portalPresentationEvidence=[];
  const reset=(patch={})=>{model={serial:++serial,writable:false,empty:false,status:200,holdList:false,waiters:[],listResponses:0,listResponseHeaders:null,holdDetail:false,detailWaiters:[],detailStatus:200,draftEnvelope:null,draftNetwork:false,draftNetworkFailures:0,draftMalformed:false,draftResponses:0,afterWriteDraftEnvelope:null,holdProjection:false,projectionWaiters:[],projectionStatus:200,projectionKind:null,projectionResponses:0,unknown:false,workspaceReads:0,workspaceResponses:0,workspacePending:0,workspaceVersions:[],advanceAuthority:false,deniedLists:0,workspaceStatus:200,purchase:structuredClone(purchase),inbound:structuredClone(inbound),purchaseVersion:1,inboundVersion:1,effects:0,originals:new Map(),receipts:new Map(),writes:[],reconciles:[],control:{closed:[],bff:[]},holdCommands:false,commandWaiters:[],commandResponses:0,rejected:false,conflict:false,malformed:false,...patch};calls.length=0;};
  const workspace=()=>({session:{displayName:'SYNTHETIC USER',tenantId:'QA-T',companyId:'QA-C',companyName:'SYNTHETIC',authorityVersion:model.advanceAuthority?model.workspaceReads:1,idleExpiresAt:new Date(Date.now()+3600000).toISOString(),absoluteExpiresAt:new Date(Date.now()+7200000).toISOString(),capabilities:model.workspaceCapabilities??['purchase-requests.read','inbound-requests.read','purchase-orders.read']},branchIds:['QA-BRANCH'],navigation:['purchase-requests','inbound-requests','purchase-orders'].map(id=>({id,label:id,href:'/?screen='+id}))});
  const send=(res,status,data,headers={})=>{if(res.destroyed)return;res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store',...headers});res.end(JSON.stringify(data));};
@@ -279,6 +279,7 @@ test('I30 compiled application presentation at 320,360,390,1440',{timeout:240000
    const url=new URL(req.url,origin??'http://localhost');
    if(url.pathname==='/app.js'){res.setHeader('Content-Type','text/javascript');return res.end(script);}
    if(url.pathname==='/app.css'){res.setHeader('Content-Type','text/css');return res.end(css);}
+   if(/^\/fonts\/inter\/inter-(latin|latin-ext|vietnamese)-(400|500|600)-normal\.woff2$/.test(url.pathname)){res.setHeader('Content-Type','font/woff2');return res.end(await readFile(path.join(process.cwd(),'public',url.pathname)));}
    if(url.pathname==='/medcom-logo.png'){res.setHeader('Content-Type','image/png');return res.end(logo);}
    if(['/i30/network-control/closed','/i30/network-control/bff'].includes(url.pathname)){
     const parts=[];for await(const part of req)parts.push(part);const digest=sha(Buffer.concat(parts));const kind=url.pathname.endsWith('/closed')?'closed':'bff';m.control[kind].push(digest);
@@ -453,7 +454,7 @@ test('I30 compiled application presentation at 320,360,390,1440',{timeout:240000
   }
   return measured;
  }
- async function capture(name,{viewport=false,keepFocus=false}={}){if(!keepFocus)await page.evaluate(()=>{if(document.activeElement instanceof HTMLElement)document.activeElement.blur();window.scrollTo(0,0);});await paint();const file=name+'.png';await page.screenshot({path:path.join(output,file),fullPage:!viewport});const bytes=await readFile(path.join(output,file));captures.push({file,sha256:sha(bytes),fullPage:!viewport,keepsFocus:keepFocus});}
+ async function capture(name,{viewport=false,keepFocus=false}={}){await page.evaluate(()=>document.fonts.ready);if(!keepFocus)await page.evaluate(()=>{if(document.activeElement instanceof HTMLElement)document.activeElement.blur();window.scrollTo(0,0);});await paint();const file=name+'.png';await page.screenshot({path:path.join(output,file),fullPage:!viewport});const bytes=await readFile(path.join(output,file));captures.push({file,sha256:sha(bytes),fullPage:!viewport,keepsFocus:keepFocus});}
  // Read-only, bounded diagnostics. Preserve the original two-frame fit sample:
  // screenshots and later samples cannot turn a failing measurement into a pass.
  async function resizeGeometry(){return page.evaluate(()=>{
@@ -493,13 +494,10 @@ test('I30 compiled application presentation at 320,360,390,1440',{timeout:240000
   assert.deepEqual(await groups.evaluateAll(elements=>elements.map(group=>[...group.querySelectorAll(':scope > div > dd')].map(value=>value.textContent))),lines.map(line=>[line.itemId,'Chưa có thông tin','Chưa có thông tin','Chưa có thông tin']),'Exact source ItemID and all three unavailable metadata fields remain separate');
  }
  async function exactReadonlyLines(panel,detail){
-  const rows=panel.locator('article');assert.equal(await rows.count(),detail.inboundRequestLines.length);
-  assert.deepEqual(await rows.evaluateAll(elements=>elements.map(row=>({identity:row.querySelectorAll(':scope > dl[aria-label="Thông tin mặt hàng"]').length,quantities:row.querySelectorAll(':scope > dl:not([aria-label="Thông tin mặt hàng"])').length}))),detail.inboundRequestLines.map(()=>({identity:1,quantities:1})),'Each source row owns exactly one item group and one quantitative group; adjacent rows cannot borrow groups');
-  await exactItemIdentityGroups(rows.locator(':scope > dl[aria-label="Thông tin mặt hàng"]'),detail.inboundRequestLines);
-  const quantities=rows.locator(':scope > dl:not([aria-label="Thông tin mặt hàng"])');assert.equal(await quantities.count(),detail.inboundRequestLines.length);
-  assert.deepEqual(await quantities.evaluateAll(elements=>elements.map(group=>[...group.querySelectorAll(':scope > div > dt')].map(value=>value.textContent))),detail.inboundRequestLines.map(()=>['STT','Số bộ theo chứng từ','Số thùng theo chứng từ','Số bộ thực tế','Số thùng thực tế']));
-  const expectedQuantities=readonlyLineValues(detail);
-  assert.deepEqual(await rows.evaluateAll(elements=>elements.map(row=>[...row.querySelectorAll(':scope > dl > div > dd')].map(value=>value.textContent))),detail.inboundRequestLines.map((line,index)=>[line.itemId,'Chưa có thông tin','Chưa có thông tin','Chưa có thông tin',...expectedQuantities[index]]),'Each source row retains its exact ItemID, metadata, page-adjusted STT and four raw quantities/NULL values in order');
+  const table=panel.getByRole('table',{name:'Dòng yêu cầu nhập kho chỉ đọc',exact:true});
+  const rows=table.locator('tbody tr');assert.equal(await rows.count(),detail.inboundRequestLines.length);
+  await exactItemIdentityGroups(rows.locator('td.record-line-identity > dl[aria-label="Thông tin mặt hàng"]'),detail.inboundRequestLines);
+  assert.deepEqual(await rows.evaluateAll(elements=>elements.map(row=>[...row.querySelectorAll(':scope > td')].map((cell,index)=>index===1?[...cell.querySelectorAll('dl > div > dd')].map(value=>value.textContent):cell.textContent))),detail.inboundRequestLines.map((line,index)=>[String((detail.page-1)*detail.pageSize+index+1),[line.itemId,'Chưa có thông tin','Chưa có thông tin','Chưa có thông tin'],...readonlyLineValues(detail)[index].slice(1)]),'Each source row retains its exact identity, page-adjusted STT and four raw quantities/NULL values at every viewport');
   await retainedLineIdentity(rows,detail.inboundRequestLines,true);await hiddenLineIdentities(panel,readonlyLines);
  }
  async function expandFullReadback(){const region=page.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true});await region.waitFor();const disclosure=region.locator('details');if(!await disclosure.evaluate(el=>el.open))await disclosure.locator('summary').click();return region;}
@@ -507,6 +505,18 @@ test('I30 compiled application presentation at 320,360,390,1440',{timeout:240000
  async function run(name,fn){await t.test(name,async()=>{try{await fn();results.push(name);}catch(error){failures.push(name);throw error;}});}
  try{
   browser=await chromium.launch({executablePath:executable,headless:true,chromiumSandbox:true});t.signal.throwIfAborted();
+  await run('read-only order detail uses one responsive source table and returns focus on close',async()=>{
+   for(const width of [320,390,1440]){
+    await start(width,'purchase-orders');const opener=page.getByRole('button',{name:'Mở chứng từ QA-ORDER-001',exact:true});await opener.click();
+    const dialog=page.getByRole('dialog',{name:'Đơn đặt hàng mua QA-ORDER-001',exact:true});await dialog.waitFor();
+    const table=dialog.getByRole('table',{name:'Dòng hàng',exact:true});await table.getByText('QA-ORDER-ITEM-001',{exact:true}).waitFor();await paint();
+    assert.equal(await table.count(),1);assert.equal(await table.locator('tbody tr').count(),1);assert.equal(await dialog.getByRole('textbox').count(),0,'Read-only values are text, not disabled inputs');
+    assert.deepEqual(await table.locator('tbody tr > td').allTextContents(),['1','Mã hàngQA-ORDER-ITEM-001Mã hàng NSXChưa có thông tinTên hàng / dịch vụChưa có thông tinĐVTChưa có thông tin','999999999999999999.0001','—']);
+    const fit=await dialog.evaluate(element=>{const body=element.querySelector('.request-detail-body');return {viewport:innerWidth,left:element.getBoundingClientRect().left,right:element.getBoundingClientRect().right,body:body.clientWidth,content:body.scrollWidth};});
+    assert.ok(fit.left>=0&&fit.right<=fit.viewport&&fit.content<=fit.body+1,'The same source rows fit desktop and mobile without page overflow: '+JSON.stringify(fit));
+    await capture('untitled-order-detail-'+width,{viewport:true});await dialog.getByRole('button',{name:'Đóng chứng từ',exact:true}).click();await dialog.waitFor({state:'hidden'});assert.equal(await opener.evaluate(element=>element===document.activeElement),true);
+   }
+  });
   await run('I50 R1 native viewport sticky scroll across all three actual list hosts',async()=>{
    for(const width of [390,1440])for(const screen of ['purchase-requests','purchase-orders','inbound-requests']){
     const documents=Array.from({length:20},(_,index)=>({...structuredClone(purchase),purchaseRequestId:'QA-PURCHASE-'+String(index+1).padStart(3,'0')}));
@@ -1017,7 +1027,7 @@ for(const width of [320,390,1440])for(const screen of ['purchase-requests','inbo
   const projectionCalls=()=>calls.filter(call=>call.route===projectionRoute);
   const draftCalls=()=>page.evaluate(()=>window.i33ReadDispatches.filter(event=>event.path==='/api/erp/api/inbound-requests/draft'));
   async function settledReads(){await page.waitForFunction(()=>window.i33ReadDispatches.length>0&&window.i33ReadDispatches.every(event=>event.settled));await paint();}
-  async function readonlyReady(number){await page.waitForFunction(number=>{const panel=document.querySelector('[data-testid=inbound-request-readonly]');return panel?.getAttribute('data-phase')==='ready'&&(number===undefined||panel.querySelector('article h4')?.textContent==='Dòng '+((number-1)*50+1));},number);}
+  async function readonlyReady(number){await page.waitForFunction(number=>{const panel=document.querySelector('[data-testid=inbound-request-readonly]');return panel?.getAttribute('data-phase')==='ready'&&(number===undefined||panel.querySelector('.record-lines-table tbody tr > td')?.textContent===String((number-1)*50+1));},number);}
   async function noReadonlyValues(){assert.equal(await page.getByText(readonlyLines[0].itemId,{exact:true}).count(),0);assert.equal(await page.getByText(readonlyLines[50].itemId,{exact:true}).count(),0);assert.equal(await page.getByLabel('Số đơn',{exact:true}).count(),0);assert.equal(calls.filter(call=>call.method==='POST').length,0);}
   function releaseDraft(){model.holdDetail=false;model.detailWaiters.splice(0).forEach(resolve=>resolve());}
   function releaseProjection(){model.holdProjection=false;model.projectionWaiters.splice(0).forEach(resolve=>resolve());}
@@ -1078,8 +1088,8 @@ for(const width of [320,390,1440])for(const screen of ['purchase-requests','inbo
     await unchangedDetailFocus('inbound-requests',initialFocus,'Command Unavailable alone never adds deferred Open focus');
     assert.equal(await page.evaluate(()=>document.activeElement?.matches('input,textarea,select,[contenteditable=true]')),false);assert.equal(await page.getByText(readonlyLines[0].itemId,{exact:true}).count(),0);
     releaseProjection();await exactReadonlyPage(1);await focusedDetail('inbound-requests');await layout(width,'inbound-requests');await capture(`inbound-readonly-${shape}-open-${width}`,{viewport:true,keepFocus:true});
-    const first=readonlyPanel().locator('article').first();await first.scrollIntoViewIfNeeded();assert.equal(await first.locator('dd').evaluateAll(elements=>elements.every(element=>{const range=document.createRange();range.selectNodeContents(element);return [...range.getClientRects()].every(rect=>rect.left>=0&&rect.right<=innerWidth)&&element.scrollWidth<=Math.ceil(element.clientWidth);})),true,'READ row ordinals, long item IDs and exact decimals remain fully contained');await capture(`inbound-readonly-${shape}-long-values-${width}`,{viewport:true,keepFocus:true});
-    await readonlyPanel().getByRole('button',{name:'Dòng tiếp',exact:true}).click();await exactReadonlyPage(2);await layout(width,'inbound-requests');await readonlyPanel().locator('article').first().scrollIntoViewIfNeeded();await capture(`inbound-readonly-${shape}-page2-${width}`,{viewport:true,keepFocus:true});
+    const first=readonlyPanel().locator('.record-lines-table tbody tr').first();await first.scrollIntoViewIfNeeded();assert.equal(await first.locator('dd, td.record-line-quantity').evaluateAll(elements=>elements.every(element=>{const range=document.createRange();range.selectNodeContents(element);return [...range.getClientRects()].every(rect=>rect.left>=0&&rect.right<=innerWidth)&&element.scrollWidth<=Math.ceil(element.clientWidth);})),true,'READ row ordinals, long item IDs and exact decimals remain fully contained');await capture(`inbound-readonly-${shape}-long-values-${width}`,{viewport:true,keepFocus:true});
+    await readonlyPanel().getByRole('button',{name:'Dòng tiếp',exact:true}).click();await exactReadonlyPage(2);await layout(width,'inbound-requests');await readonlyPanel().locator('.record-lines-table tbody tr').first().scrollIntoViewIfNeeded();await capture(`inbound-readonly-${shape}-page2-${width}`,{viewport:true,keepFocus:true});
     assert.equal(await readonlyPanel().getByText(readonlyLines[0].itemId,{exact:true}).count(),0,'Paging does not retain previous-page values');
     assert.equal((await draftCalls()).length,1,'Paging cannot bootstrap draft rights or retry a draft command');
     // A healthy VISIBLE refresh advances observation authority, but retains
@@ -1127,7 +1137,7 @@ for(const width of [320,390,1440])for(const screen of ['purchase-requests','inbo
     assert.equal(await open('inbound-requests').getAttribute('aria-pressed'),'true');assert.equal(await filter.inputValue(),'UNAPPLIED READONLY FILTER');await unchangedDetailFocus('inbound-requests',resumedFocus);
     releaseProjection();await exactReadonlyPage(2);await paint();await unchangedDetailFocus('inbound-requests',resumedFocus,'Workspace revalidation cannot add deferred frame focus on the restored page');
     assert.equal(await open('inbound-requests').getAttribute('aria-pressed'),'true');assert.equal(await filter.inputValue(),'UNAPPLIED READONLY FILTER');assert.equal(calls.filter(call=>call.method==='POST').length,0);await recordReadonlyClockSnapshot('positive-hidden','fresh-projection','after',{width,shape},hiddenBaseline);assert.deepEqual({count:model.workspaceReads,history:model.workspaceVersions},{count:hiddenBaseline.count+1,history:[...hiddenBaseline.history,hiddenBaseline.count+1]},'Both healthy and temporarily unverified observations advance authority while retaining READ markers');
-    await readonlyPanel().locator('article').first().scrollIntoViewIfNeeded();await capture('inbound-readonly-'+shape+'-page2-revalidated-'+width,{viewport:true,keepFocus:true});
+    await readonlyPanel().locator('.record-lines-table tbody tr').first().scrollIntoViewIfNeeded();await capture('inbound-readonly-'+shape+'-page2-revalidated-'+width,{viewport:true,keepFocus:true});
     await readonlyPanel().getByRole('button',{name:'Dòng trước',exact:true}).click();await exactReadonlyPage(1);
     assert.deepEqual(projectionCalls().map(call=>[call.method,call.documentId,call.page,call.pageSize]),[1,2,2,2,1].map(number=>['GET',document.documentId,String(number),'50']));assert.equal((await draftCalls()).length,3,'Only the explicit Workspace observation cycle revalidates draft eligibility');
     // The temporary authority gap correctly retires the old focus origin.
@@ -1173,7 +1183,7 @@ for(const width of [320,390,1440])for(const screen of ['purchase-requests','inbo
      assert.equal(readonlyProjection(inbound.documentId,2).inboundRequestLines.length,1,'The invalid pageSize fixture is below25 rows, so row-count overflow cannot explain rejection');
      assert.equal(projectionCalls().at(-1).page,'2');assert.equal(projectionCalls().at(-1).pageSize,'50');assert.equal(await readonlyPanel().getAttribute('data-phase'),'failed','A response pageSize25 cannot satisfy the requested page2/pageSize50 identity');
     }
-    await noReadonlyValues();assert.equal(projectionCalls().length,wrongPageSize?2:1,name+' has no automatic retry');assert.equal(await readonlyPanel().locator('article').count(),0,name+' never renders projection rows');
+    await noReadonlyValues();assert.equal(projectionCalls().length,wrongPageSize?2:1,name+' has no automatic retry');assert.equal(await readonlyPanel().locator('.record-lines-table tbody tr').count(),0,name+' never renders projection rows');
     assert.equal(await page.evaluate(()=>[...document.querySelectorAll('[aria-label="Phiếu nhập hàng đã chọn"]')].some(element=>document.activeElement===element)),false,name+' cannot complete pending Open focus');
     readonlyEvidence.push({kind:'projection-fail-closed',scenario:name,projectionRequests:projectionCalls(),writeRequests:0});
    }

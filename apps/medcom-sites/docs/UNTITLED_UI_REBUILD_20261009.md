@@ -7,3 +7,12 @@ Visual direction: white working surfaces, Inter typography, consistent gray bord
 Scope: frontend shell, lists, details, forms, login, home, settings, guides, responsive presentation and necessary verification. Keep existing API contracts, permission/session/branch checks, dirty and unresolved-command custody, history/focus/scroll ownership, exact source values and unknown totals. Trailing row actions remain pinned at the right; pagination stays together on the right. No backend/configuration/SQL mutation or invented action availability.
 
 This isolated branch and Draft PR represent the interactive writer's bounded UI lease. Final changes require local quality review, exact-head/base hosted CI, browser presentation evidence and successful deployment. The purchased Untitled UI Pro source is not included; layouts are implemented against public design references with installed components.
+
+## Candidate implementation
+
+- White navigation and working surfaces, Inter 400/500/600 self-hosted with Vietnamese glyphs and SIL license; shared spacing, hierarchy, borders and shadcn controls.
+- Flat record sections and labelled read-only values. One responsive shadcn line table is reused by purchase orders, inbound read-only fallback and full purchase readback; it retains exact item context, source quantities, internal row keys and NULL/empty presentation.
+- Existing list actions stay pinned at the final right column; one grouped shadcn pager stays on the right. Preserved selection, column customization, keyboard navigation, authority masks, retained editors and request custody.
+- Added a native order-detail check across 320/390/1440 px and source-value/one-surface assertions. Updated previous responsive-renderer assertions to the single shared table. Existing application workflows and business endpoints are unchanged.
+
+Local typecheck passes. Local lint has zero errors and the existing TanStack virtualizer compiler warning. The 40 selected display/fallback/shared-UI contract tests pass. The root container cannot launch sandboxed Chromium; required native browser acceptance is supplied by exact-source Linux/Windows CI, without disabling the sandbox or weakening functional assertions. Deployment and visual acceptance remain pending for this candidate.

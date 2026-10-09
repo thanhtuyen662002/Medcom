@@ -7,32 +7,32 @@
   display: grid;
   align-items: center;
   justify-items: center;
-  background: var(--background, #f5f5f7);
-  color: var(--foreground, #1d1d1f);
+  background: var(--background, #fff);
+  color: var(--foreground, #101828);
   overflow-wrap: anywhere;
 }
-.card { box-sizing: border-box; width: 100%; max-width: 440px; padding: 36px; border: 1px solid var(--border, #dedee5); border-radius: 24px; background: var(--card, #fff); box-shadow: 0 4px 12px #25273d04, 0 24px 64px #25273d08; }
-.mark { display: grid; place-items: center; width: 56px; height: 56px; margin-bottom: 24px; background: var(--accent, #eaf2ff); color: var(--primary, #0066df); border-radius: 16px; }
-.card .brand { color: var(--muted-foreground, #62626b); font-size: .75rem; letter-spacing: .1em; font-weight: 600; }
-.card h1 { font-size: 1.75rem; font-weight: 650; letter-spacing: -.04em; line-height: 1.25; margin: 10px 0 14px; }
-.card p { line-height: 1.65; color: var(--muted-foreground, #62626b); font-size: .875rem; }
+.card { box-sizing: border-box; width: 100%; max-width: 400px; padding: 24px; border: 0; border-radius: 0; background: var(--card, #fff); box-shadow: none; }
+.mark { display: grid; place-items: center; width: 56px; height: 56px; margin-bottom: 24px; background: var(--accent, #eaf2ff); color: var(--primary, #175cd3); border-radius: 8px; }
+.card .brand { color: var(--muted-foreground, #667085); font-size: .75rem; letter-spacing: .1em; font-weight: 600; }
+.card h1 { font-size: 1.75rem; font-weight: 600; letter-spacing: -.02em; line-height: 1.25; margin: 10px 0 12px; }
+.card p { line-height: 1.65; color: var(--muted-foreground, #667085); font-size: .875rem; }
 .form { display: grid; gap: 10px; min-width: 0; }
 .form > p:first-child { margin-bottom: 12px; }
-.form label { font-size: .875rem; font-weight: 550; margin-top: 6px; }
-.form input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 48px; padding: 12px 14px; border-radius: 12px; font: inherit; font-size: 1rem; background: var(--background, #f5f5f7); color: var(--foreground, #1d1d1f); }
+.form label { font-size: .875rem; font-weight: 500; margin-top: 6px; }
+.form input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 48px; padding: 12px 14px; border-radius: 8px; font: inherit; font-size: 1rem; background: var(--background, #fff); color: var(--foreground, #101828); }
 .password { position: relative; min-width: 0; }
 .password input { padding-right: 54px; }
-.password .visibility { position: absolute; top: 2px; right: 2px; width: 44px; height: 44px; min-width: 44px; color: var(--muted-foreground, #62626b); background: transparent; border-radius: 10px; }
-.form .submit, .card .retry { min-height: 48px; border-radius: 12px; font-size: .9375rem; font-weight: 600; margin-top: 12px; }
+.password .visibility { position: absolute; top: 2px; right: 2px; width: 44px; height: 44px; min-width: 44px; color: var(--muted-foreground, #667085); background: transparent; border-radius: 10px; }
+.form .submit, .card .retry { min-height: 48px; border-radius: 8px; font-size: .9375rem; font-weight: 600; margin-top: 12px; }
 .card .retry { width: 100%; }
 .form .footnote { font-size: .75rem; line-height: 1.6; text-align: center; margin-top: 10px; }
-.card :focus-visible { outline: 2px solid var(--ring, #0066df); outline-offset: 3px; }
+.card :focus-visible { outline: 2px solid var(--ring, #175cd3); outline-offset: 3px; }
 .card [role="alert"] { color: var(--destructive, #b42318); }
 .card:has(:global(.verification-skeleton)) { width: min(880px, 100%); max-width: 880px; }
 .card :global(.verification-skeleton) { margin-top: 20px; }
 .gate:has(:global(.verification-skeleton)) { align-items: start; padding-top: max(40px, env(safe-area-inset-top)); }
 @media (max-width: 480px) {
   .gate { align-items: start; padding-top: max(32px, env(safe-area-inset-top)); }
-  .card { padding: 28px 24px; border-radius: 20px; }
+  .card { padding: 16px 4px; }
   .card h1 { font-size: 1.625rem; }
 }

@@ -371,7 +371,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
         const card = page.locator('.mobile-document-card').filter({hasText: 'I28-PO-001'});
         await card.waitFor(); assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
         await page.screenshot({path: path.join(output, `workspace-${width}.png`), fullPage: true});
-        await card.click(); await page.getByRole('dialog').locator('.mobile-detail-lines').getByText('SYNTHETIC-ITEM', {exact: true}).waitFor();
+        await card.click(); await page.getByRole('dialog').locator('.record-lines-table').getByText('SYNTHETIC-ITEM', {exact: true}).waitFor();
         await page.keyboard.press('Escape');
       }
     });
@@ -453,7 +453,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
     const purchaseRow = () => page.getByRole('button', {name: 'Mở đề nghị I29-PR-P2-00', exact: true});
     const freshOrderDetail = async () => {
       await page.getByRole('heading', {name: 'Đơn đặt hàng mua I29-PO-P2-00', exact: true}).waitFor();
-      await page.locator('.request-detail-dialog .request-detail-body .desktop-detail-lines').getByText('I29-ITEM-P2-0', {exact: true}).waitFor();
+      await page.locator('.request-detail-dialog .request-detail-body .record-lines-table').getByText('I29-ITEM-P2-0', {exact: true}).waitFor();
     };
     const freshPurchaseDetail = async () => {
       await purchaseEditor().waitFor();
@@ -531,7 +531,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
           && (kind === 'pending' ? editorForm?.textContent.includes('SYNTHETIC PENDING NOTE') || editorForm?.querySelector('textarea[name="notes"]')?.value === 'SYNTHETIC PENDING NOTE'
             : visible('[aria-label="Phiếu mua hàng hiện có"] textarea[name="notes"]') && editorForm?.querySelector('textarea[name="notes"]') === noteInput);
         const present = kind === 'orders'
-          ? visible('.document-link') && visible('.request-detail-dialog .request-detail-body .desktop-detail-lines') && document.querySelector('.request-detail-dialog .request-detail-body')?.textContent.includes('I29-ITEM-P2-0')
+          ? visible('.document-link') && visible('.request-detail-dialog .request-detail-body .record-lines-table') && document.querySelector('.request-detail-dialog .request-detail-body')?.textContent.includes('I29-ITEM-P2-0')
           : visible(purchaseListRow) && visible('[aria-label="Phiếu mua hàng hiện có"]') && stableEditor && document.querySelector('[aria-label="Phiếu mua hàng hiện có"]')?.textContent.includes('SYNTHETIC-PURCHASE-ITEM');
         if (!present) window.i29MissingFrames++;
       };
@@ -563,7 +563,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
     };
     const assertOrderMasked = async () => {
       assert.equal(await page.locator('.document-link:visible').count(), 0);
-      assert.equal(await page.locator('.request-detail-dialog .request-detail-body .desktop-detail-lines:visible').count(), 0);
+      assert.equal(await page.locator('.request-detail-dialog .request-detail-body .record-lines-table:visible').count(), 0);
     };
     const assertPurchaseMasked = async () => {
       assert.equal(await purchasePanel().getByRole('button', {name: /^Mở đề nghị I29-/}).count(), 0);
@@ -669,7 +669,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
         await activate(other, 'visible'); await held('workspace'); await assertOrderMasked();
         await control({holds: ['orders-list', 'orders-detail']}); await held('orders-list'); await assertOrderMasked();
         await control({holds: ['orders-detail']}); await held('orders-detail');
-        assert.equal(await page.locator('.request-detail-dialog .request-detail-body .desktop-detail-lines:visible').count(), 0);
+        assert.equal(await page.locator('.request-detail-dialog .request-detail-body .record-lines-table:visible').count(), 0);
         await control({holds: []}); await freshOrderDetail(); await orderControls();
       } finally {await control({holds: []}); await other.close();}
     });
