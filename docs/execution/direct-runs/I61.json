@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I61",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "I61-20261009-header-detail-layout",
+  "base_sha": "884be183160d0ea1e5c2a8d8ce5e20431dd55d6f",
+  "work_branch": "codex/g45-header-detail-layout-i61-20261009",
+  "claim_branch": "medcom-claims/g45/direct/I61",
+  "scope": [
+    "apps/medcom-sites/app/globals.css",
+    "apps/medcom-sites/components/erp/workspace.tsx",
+    "apps/medcom-sites/components/erp/workspace-search.tsx",
+    "apps/medcom-sites/components/erp/record-dialog.tsx",
+    "apps/medcom-sites/components/erp/request-detail-dialog.tsx",
+    "apps/medcom-sites/components/erp/inbound-request-screen.tsx",
+    "apps/medcom-sites/components/erp/purchase-request-screen.tsx",
+    "apps/medcom-sites/tests/shared-screen-ui.test.mjs",
+    "apps/medcom-sites/tests/request-presentation.browser.mjs",
+    "apps/medcom-sites/tests/record-dialog.browser.mjs",
+    "docs/execution/checkpoints/I61_HEADER_DETAIL_LAYOUT.md",
+    "docs/execution/direct-runs/I61.json"
+  ],
+  "purpose": "Repair actual header shortcut overflow/platform label and crowded detail-dialog actions with shared components.",
+  "production_accepted": false,
+  "runtime_activation_authorized": false,
+  "constraints": [
+    "Root sole publisher; immutable marker, independent review and exact-head native browser CI required.",
+    "Inspect actual owner-session screenshots privately; never commit business rows/screenshots or credentials.",
+    "Compact shared header search and platform-appropriate shortcut label. Keep actual shortcut behavior and search authorization.",
+    "Shared detail action layout must preserve every existing guarded callback, history, focus, pending/unknown intent and receipt handling.",
+    "No data/authority/query/command behavior changes, dependencies, SQL, config or write activation.",
+    "Coordinate shared-screen-ui.test.mjs with I60 safe-code test; root composes disjoint changes."
+  ]
+}

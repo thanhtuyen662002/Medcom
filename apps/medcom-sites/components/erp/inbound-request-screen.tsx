@@ -1,4 +1,5 @@
 "use client";
+import {RecordDetailToolbar} from "./record-dialog";
 import {RequestDetailDialog,useRequestDetailNavigation,useDetailPresentationProof,type RegisterRequestDetailNavigation} from "./request-detail-dialog";
 import {useListControls} from "./list-view-state";
 import {RequestListComposition,RequestListPanel,RequestListContent,RequestListHeader,RequestSearch,RequestBranch,RequestRefresh,RequestListTable,RequestListToolbar,RequestPagination} from "./request-list-shell";
@@ -464,7 +465,7 @@ function RetainedInboundHost({compact=false,setCompact,presentationAllowed = tru
       <RequestListContent aria-label="Danh sách phiếu nhập hàng" ref={focusList} tabIndex={-1} className="scroll-mt-24">
         {!currentRows ? rows.view === listView && rows.binding === listBinding && rows.failed ? <RequestNotice warning>Chưa tải được danh sách.</RequestNotice> : <RequestLoading label="Đang tải danh sách."/>
           : currentRows.rows.length === 0 ? <RequestEmpty title="Không có phiếu trong trang này.">Thử điều chỉnh mã phiếu hoặc chi nhánh.</RequestEmpty>
-          : <RequestListTable compact={compact} setCompact={setCompact} presentationAllowed={presentationAllowed&&verifiedReadAuthority&&contextCurrent&&!!currentRows} isPresentationAllowed={()=>openAuthority.current!==null} label="Phiếu nhập hàng" columns={[{id:"id",label:"Mã phiếu"},{id:"date",label:"Ngày chứng từ"},{id:"branch",label:"Chi nhánh"},{id:"status",label:"Trạng thái"}]} rows={currentRows.rows.map(row=>({id:row.documentId,cells:[row.documentId,requestDate(row.documentDate),row.branchId,<RequestStatus key="status" value={row.statusId} statusName={row.statusName}/>],action:"Mở phiếu",actionLabel:`Mở phiếu ${row.documentId} · ${row.documentDate} · ${row.branchId} · trạng thái ${row.statusId ?? "NULL"}`,selected:selected===row.documentId,buttonRef:element=>focusRow(row.documentId,element),onOpen:() => requestOpen(row.documentId)}))}/>}
+          : <RequestListTable customizationScopeKey={verifiedReadAuthority?JSON.stringify([loginKey,readIdentity,listViewKey]):null} compact={compact} setCompact={setCompact} presentationAllowed={presentationAllowed&&verifiedReadAuthority&&contextCurrent&&!!currentRows} isPresentationAllowed={()=>openAuthority.current!==null} label="Phiếu nhập hàng" columns={[{id:"id",label:"Mã phiếu"},{id:"date",label:"Ngày chứng từ"},{id:"branch",label:"Chi nhánh"},{id:"status",label:"Trạng thái"}]} rows={currentRows.rows.map(row=>({id:row.documentId,cells:[row.documentId,requestDate(row.documentDate),row.branchId,<RequestStatus key="status" value={row.statusId} statusName={row.statusName}/>],action:"Mở phiếu",actionLabel:`Mở phiếu ${row.documentId} · ${row.documentDate} · ${row.branchId} · trạng thái ${row.statusId ?? "NULL"}`,selected:selected===row.documentId,buttonRef:element=>focusRow(row.documentId,element),onOpen:() => requestOpen(row.documentId)}))}/>}
       </RequestListContent>
       <RequestPagination label="Trang danh sách phiếu" page={page} previousDisabled={page === 1} nextDisabled={!currentRows?.hasMore}
         onPrevious={() => navigate(() => { cancelFocus(); select(null); setPage(value => value - 1); })}
@@ -475,13 +476,13 @@ function RetainedInboundHost({compact=false,setCompact,presentationAllowed = tru
         workspace=null. Only loginKey above retires this I18 instance. */}
     <RequestDetailDialog open={selected!==null||state.unresolved||readbackPending} presentationAllowed={presentationAllowed&&workspace!==null}
       title="Phiếu nhập hàng đã chọn" documentNumber={presentationReady&&contextCurrent?selected:null} closeLabel="Quay lại danh sách" onRequestClose={requestBack}>
-    <RequestButton type="button" onClick={() => navigate(() => {
+    <RecordDetailToolbar><RequestButton type="button" onClick={() => navigate(() => {
       if (selectedRef.current === null) return;
       selectedRef.current = null; focusClose(); select(null); callbacks.current.onClose?.();
     })}>Đóng phiếu nhập hàng</RequestButton>
+    {!sessionEnded && workspaceContext !== null && <RequestButton type="button" onClick={() => { cancelFocus(); setDeniedContext(null); setRetry(value => value + 1); }}>Xác minh lại quyền nhập hàng</RequestButton>}</RecordDetailToolbar>
     {notice && <RequestNotice warning>{notice}</RequestNotice>}
     {!contextCurrent && <RequestNotice>Dữ liệu tạm ẩn. Xác minh lại phiên ERP để tiếp tục.</RequestNotice>}
-    {!sessionEnded && workspaceContext !== null && <RequestButton type="button" onClick={() => { cancelFocus(); setDeniedContext(null); setRetry(value => value + 1); }}>Xác minh lại quyền nhập hàng</RequestButton>}
     <div ref={focusDetail} tabIndex={-1} role="region" aria-label="Phiếu nhập hàng đã chọn" className="scroll-mt-24 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" hidden={!presentationReady||selected===null&&!state.unresolved&&!readbackPending}>
       <div hidden={readonlyEligible}><MobileInboundRequest presentationAllowed={presentationAllowed&&workspace!==null&&contextCurrent&&presentationReady&&!readonlyEligible&&(selected!==null||state.unresolved||readbackPending)} statusPresentation={statusRow?{documentId:statusRow.documentId,id:statusRow.statusId,name:statusRow.statusName}:undefined} documentId={selected} access={access} adapter={adapter} onConfirmed={acknowledge} onPresentedRead={onPresentedRead}/></div>
       {readonlyEligible && selected !== null && readScope !== null && <InboundRequestReadOnly documentId={selected}

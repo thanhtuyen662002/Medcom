@@ -17,6 +17,138 @@ namespace Medcom.Api.Tests;
 public sealed class PurchaseRequestQueryTests
 {
     [Theory]
+    [InlineData(PurchaseRequestReadStage.Credential)]
+    [InlineData(PurchaseRequestReadStage.Grant)]
+    [InlineData(PurchaseRequestReadStage.Schema)]
+    [InlineData(PurchaseRequestReadStage.Head)]
+    [InlineData(PurchaseRequestReadStage.Lines)]
+    [InlineData(PurchaseRequestReadStage.ItemDisplay)]
+    public async Task Read_diagnostics_identify_fixed_stage_without_exception_or_source_values(PurchaseRequestReadStage stage)
+    {
+        var source = new PurchaseQuerySource(); source.Seed();
+        source.FailureSql = stage switch {
+            PurchaseRequestReadStage.Credential => SqlPurchaseRequestQueries.CredentialText,
+            PurchaseRequestReadStage.Grant => SqlPurchaseRequestQueries.GrantsText,
+            PurchaseRequestReadStage.Schema => SqlPurchaseRequestQueries.ShapeText,
+            PurchaseRequestReadStage.Head => SqlPurchaseRequestQueries.HeadText,
+            PurchaseRequestReadStage.Lines => SqlPurchaseRequestQueries.DetailsText,
+            _ => ItemDisplayContextReader.MasterShapeText };
+        source.FailureException = new InvalidOperationException("SELECT PRIVATE_SQL_SENTINEL; password=PRIVATE_SECRET_SENTINEL");
+        source.FailureException.Data["private"] = "PRIVATE_DATA_SENTINEL";
+        var events = new List<PurchaseRequestReadDiagnostic>();
+        var result = await source.Service(events.Add).OpenAsync("QA-DOC");
+        Assert.Equal(PurchaseRequestQueryOutcome.Unavailable, result.Outcome); Assert.Null(result.Value);
+        var diagnostic = Assert.Single(events);
+        Assert.Equal(PurchaseRequestReadOperation.Detail, diagnostic.Operation);
+        Assert.Equal(stage, diagnostic.Stage); Assert.Equal(PurchaseRequestReadFailure.Exception, diagnostic.Reason);
+        Assert.Equal(PurchaseRequestReadException.InvalidOperation, diagnostic.ExceptionKind);
+        Assert.Null(diagnostic.ProviderErrorNumber); Assert.True(diagnostic.ElapsedMilliseconds >= 0);
+        var safe = System.Text.Json.JsonSerializer.Serialize(diagnostic);
+        Assert.DoesNotContain("PRIVATE_", safe); Assert.DoesNotContain("QA-DOC", safe); Assert.DoesNotContain("qa-user", safe);
+        Assert.All(typeof(PurchaseRequestReadDiagnostic).GetProperties(), property =>
+            Assert.True(property.PropertyType.IsEnum || property.PropertyType == typeof(int?) || property.PropertyType == typeof(long)));
+        Assert.Equal(0, source.Commits); Assert.Equal(1, source.ConnectionDisposals); Assert.Equal(1, source.TransactionDisposals);
+    }
+
+    [Fact]
+    public async Task Schema_return_without_exception_is_diagnosed_without_reading_document_or_command_tables()
+    {
+        var source = new PurchaseQuerySource { ShapeOk = false }; source.Seed();
+        var events = new List<PurchaseRequestReadDiagnostic>();
+        var result = await source.Service(events.Add).OpenAsync("QA-DOC");
+        Assert.Equal(PurchaseRequestQueryOutcome.Unavailable, result.Outcome); Assert.Null(result.Value);
+        var diagnostic = Assert.Single(events);
+        Assert.Equal(PurchaseRequestReadStage.Schema, diagnostic.Stage);
+        Assert.Equal(PurchaseRequestReadFailure.SchemaUnqualified, diagnostic.Reason);
+        Assert.Equal(PurchaseRequestReadException.None, diagnostic.ExceptionKind); Assert.Null(diagnostic.ProviderErrorNumber);
+        Assert.DoesNotContain(source.Commands, command => command.Sql == SqlPurchaseRequestQueries.HeadText);
+        Assert.DoesNotContain(source.Commands, command => command.Sql.Contains("CommandJournal", StringComparison.Ordinal));
+        Assert.Equal(1, source.ConnectionDisposals); Assert.Equal(1, source.TransactionDisposals); Assert.Equal(0, source.Commits);
+    }
+
+    [Fact]
+    public async Task Normalize_failure_is_separate_from_default_off_commands_and_preserves_fail_closed_result()
+    {
+        var source = new PurchaseQuerySource(); source.Seed();
+        source.Documents[0] = source.Documents[0] with { Header = source.Documents[0].Header with { ObjectId = "" } };
+        var events = new List<PurchaseRequestReadDiagnostic>();
+        Assert.Equal(PurchaseRequestQueryOutcome.Success, (await source.Service(events.Add).ListAsync(new())).Outcome);
+        var result = await source.Service(events.Add).OpenAsync("QA-DOC");
+        Assert.Equal(PurchaseRequestQueryOutcome.Unavailable, result.Outcome); Assert.Null(result.Value);
+        var diagnostic = Assert.Single(events);
+        Assert.Equal(PurchaseRequestReadStage.Normalize, diagnostic.Stage);
+        Assert.Equal(PurchaseRequestReadException.Argument, diagnostic.ExceptionKind); Assert.Equal(0, source.Commits);
+    }
+
+    [Theory]
+    [InlineData(false)] [InlineData(true)]
+    public async Task Diagnostics_cannot_turn_failures_into_success_or_break_successful_reads(bool failing)
+    {
+        var source = new PurchaseQuerySource { ShapeOk = !failing }; source.Seed(); var calls = 0;
+        var result = await source.Service(_ => { calls++; throw new InvalidOperationException("PRIVATE_LOGGER_SENTINEL"); }).OpenAsync("QA-DOC");
+        Assert.Equal(failing ? PurchaseRequestQueryOutcome.Unavailable : PurchaseRequestQueryOutcome.Success, result.Outcome);
+        Assert.Equal(failing ? 1 : 0, calls); Assert.Equal(0, source.Commits);
+        Assert.Equal(1, source.ConnectionDisposals); Assert.Equal(1, source.TransactionDisposals);
+    }
+
+    [Fact]
+    public async Task Cancellation_denial_and_not_found_are_not_reported_as_read_failures()
+    {
+        var events = new List<PurchaseRequestReadDiagnostic>();
+        var denied = new PurchaseQuerySource { CanRun = false }; denied.Seed();
+        Assert.Equal(PurchaseRequestQueryOutcome.Denied, (await denied.Service(events.Add).OpenAsync("QA-DOC")).Outcome);
+        var missing = new PurchaseQuerySource();
+        Assert.Equal(PurchaseRequestQueryOutcome.NotFound, (await missing.Service(events.Add).OpenAsync("QA-MISSING")).Outcome);
+        var cancelled = new PurchaseQuerySource(); cancelled.Seed(); using var cancellation = new CancellationTokenSource();
+        cancelled.AfterData = cancellation.Cancel;
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => cancelled.Service(events.Add).OpenAsync("QA-DOC", cancellation.Token));
+        Assert.Empty(events); Assert.Equal(1, cancelled.ConnectionDisposals); Assert.Equal(1, cancelled.TransactionDisposals);
+    }
+
+    [Theory]
+    [InlineData(false)] [InlineData(true)]
+    public async Task Cleanup_and_post_cleanup_revalidation_have_distinct_failure_stages(bool afterCleanup)
+    {
+        var source = new PurchaseQuerySource(); source.Seed(); var events = new List<PurchaseRequestReadDiagnostic>();
+        if (!afterCleanup) source.AfterCleanup = () => throw new TimeoutException("PRIVATE_CLEANUP_SENTINEL");
+        var service = new SqlPurchaseRequestQueries(PurchaseQuerySource.Company, () => new QueryConnection(source),
+            _ => afterCleanup ? throw new TimeoutException("PRIVATE_AUTHORITY_SENTINEL") : Task.FromResult(source.Identity),
+            _ => Task.FromResult(source.Identity), events.Add);
+        var result = await service.OpenAsync("QA-DOC");
+        Assert.Equal(PurchaseRequestQueryOutcome.Unavailable, result.Outcome); Assert.Null(result.Value);
+        var diagnostic = Assert.Single(events);
+        Assert.Equal(afterCleanup ? PurchaseRequestReadStage.ResolveAfterCleanup : PurchaseRequestReadStage.Cleanup, diagnostic.Stage);
+        Assert.Equal(PurchaseRequestReadException.Timeout, diagnostic.ExceptionKind);
+        Assert.Equal(1, source.Rollbacks); Assert.Equal(0, source.Commits);
+    }
+
+    [Fact]
+    public async Task Sql_provider_number_is_numeric_only_and_never_serializes_provider_messages()
+    {
+        // Construct a pinned-provider error offline; no connection or private target is used.
+        const System.Reflection.BindingFlags hidden = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+        var constructor = typeof(Microsoft.Data.SqlClient.SqlError).GetConstructors(hidden)
+            .First(value => value.GetParameters().Any(parameter => parameter.Name == "infoNumber"));
+        var arguments = constructor.GetParameters().Select(parameter => parameter.Name == "infoNumber" ? (object)245
+            : parameter.ParameterType == typeof(string) ? "PRIVATE_PROVIDER_SENTINEL"
+            : parameter.ParameterType.IsValueType ? Activator.CreateInstance(parameter.ParameterType) : null).ToArray();
+        var error = constructor.Invoke(arguments);
+        var collection = (Microsoft.Data.SqlClient.SqlErrorCollection)Activator.CreateInstance(typeof(Microsoft.Data.SqlClient.SqlErrorCollection), true)!;
+        typeof(Microsoft.Data.SqlClient.SqlErrorCollection).GetMethod("Add", hidden)!.Invoke(collection, [error]);
+        var factory = typeof(Microsoft.Data.SqlClient.SqlException).GetMethods(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)
+            .First(method => method.Name == "CreateException" && method.GetParameters().Length == 2
+                && method.GetParameters()[0].ParameterType == typeof(Microsoft.Data.SqlClient.SqlErrorCollection));
+        var exception = (Microsoft.Data.SqlClient.SqlException)factory.Invoke(null, [collection, "test-version"])!;
+        Assert.Equal(245, exception.Number); Assert.Contains("PRIVATE_PROVIDER_SENTINEL", exception.Message);
+        var source = new PurchaseQuerySource { FailureSql = SqlPurchaseRequestQueries.HeadText, FailureException = exception }; source.Seed();
+        var events = new List<PurchaseRequestReadDiagnostic>();
+        Assert.Equal(PurchaseRequestQueryOutcome.Unavailable, (await source.Service(events.Add).OpenAsync("QA-DOC")).Outcome);
+        var diagnostic = Assert.Single(events);
+        Assert.Equal(PurchaseRequestReadException.Sql, diagnostic.ExceptionKind); Assert.Equal(245, diagnostic.ProviderErrorNumber);
+        Assert.DoesNotContain("PRIVATE_", System.Text.Json.JsonSerializer.Serialize(diagnostic));
+    }
+
+    [Theory]
     [InlineData(20)] [InlineData(21)] [InlineData(50)] [InlineData(51)] [InlineData(100)] [InlineData(101)] [InlineData(500)]
     public async Task Display_enrichment_executes_in_actual_read_without_changing_count_precision_or_token(int count)
     {
@@ -529,6 +661,8 @@ internal sealed class PurchaseQuerySource
     public readonly List<(string Sql,Dictionary<string,object?> Parameters)> Commands=[];
     public int Opens,Commits,Rollbacks,ConnectionDisposals,TransactionDisposals,CommandDisposals,ReaderDisposals;
     public Action? AfterData, AfterLookupData, AfterCleanup;
+    public string? FailureSql;
+    public Exception? FailureException;
     public readonly ItemDisplayRecordingSource Display=new();
     public bool LookupShapeOk, BindingMissing, BindingDuplicate, LookupIgnorePaging;
     public string? FailedLookupShape, BadLookupProjection, BadLookupShape;
@@ -537,7 +671,7 @@ internal sealed class PurchaseQuerySource
     public readonly List<(string Id, string? Name, double? Rate)> Currencies = [];
     public static AuthoritativeIdentity NewIdentity()=>new("qa-user",Company.TenantId,Company.CompanyId,Company.CompanyName,"Synthetic user",1,
         ["platform.status","purchase-requests.read"],Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes("qa-user\0synthetic-stored-value\0qa-group"))),["QA-A","QA-B"]);
-    public SqlPurchaseRequestQueries Service()=>new(Company,()=>new QueryConnection(this),_=>Task.FromResult(Identity),_=>Task.FromResult(Identity));
+    public SqlPurchaseRequestQueries Service(Action<PurchaseRequestReadDiagnostic>? diagnose = null)=>new(Company,()=>new QueryConnection(this),_=>Task.FromResult(Identity),_=>Task.FromResult(Identity),diagnose);
     public void Seed(int count=1)=>Documents.Add(new("QA-DOC","QA-A",new("2026-10-06T13:14:15.000",1,"Synthetic requester","Synthetic department",null,"15.25",null,"VND","QA-OBJECT",1.25),1,null,
         Enumerable.Range(1,count).Select(i=>new PurchaseRequestPersistedLine($"QA-L{i:000}",new("QA-ITEM",null,"synthetic time","999999999999999999","2","7",null))).ToArray()));
     private static string Fold(string input)=>new string(input.TrimEnd().Normalize(NormalizationForm.FormD).Where(c=>CharUnicodeInfo.GetUnicodeCategory(c)!=UnicodeCategory.NonSpacingMark).ToArray()).ToUpperInvariant();
@@ -545,6 +679,7 @@ internal sealed class PurchaseQuerySource
     {
         var parameters=command.Parameters.Cast<DbParameter>().ToDictionary(p=>p.ParameterName,p=>p.Value==DBNull.Value?null:p.Value,StringComparer.Ordinal);
         Commands.Add((command.CommandText,parameters));
+        if (command.CommandText == FailureSql && FailureException is not null) throw FailureException;
         if(ItemDisplayRecordingSource.Matches(command.CommandText))return Display.Read(command);
         if(command.CommandText==SqlLegacyBranchScope.NativeUserText)
         {

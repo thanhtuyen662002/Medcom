@@ -3,6 +3,7 @@ using System.Data.Common;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
+using System.Text.RegularExpressions;
 using Medcom.Contracts;
 using Medcom.Infrastructure;
 using Xunit;
@@ -12,6 +13,49 @@ namespace Medcom.Api.Tests;
 // Offline execution of the production enrichment reader. SQL Server behavior remains a runtime gate.
 public sealed class ItemDisplayContextTests
 {
+    [Theory]
+    [InlineData(true,false,1)] [InlineData(false,true,1)] [InlineData(true,true,1)]
+    [InlineData(true,false,500)] [InlineData(false,true,500)] [InlineData(true,true,500)]
+    public void Production_projection_never_aggregates_an_outer_line_reference(bool master,bool stored,int count)
+    {
+        var sql=ItemDisplayContextReader.ProjectionText(count,master,stored);
+        Assert.DoesNotContain(AggregateArguments(sql),argument=>Regex.IsMatch(argument,@"\bL\s*\.",RegexOptions.IgnoreCase));
+        Assert.Contains("ORDER BY L.Ordinal",sql);
+        Assert.Equal(master,sql.Contains("FROM dbo.CF_ItemTbl I WITH (HOLDLOCK) WHERE I.ItemID=L.ItemId",StringComparison.Ordinal));
+        Assert.Equal(stored,sql.Contains("WHERE C.DocumentID=@document AND C.UserAutoID=L.LineId",StringComparison.Ordinal));
+    }
+    [Fact]
+    public void Aggregate_guard_detects_both_original_8124_shapes_but_allows_where_correlation()
+    {
+        const string originalMaster="MAX(CASE WHEN DATALENGTH(I.ItemName)>131072 OR DATALENGTH(I.ItemID)<>DATALENGTH(L.ItemId) OR CONVERT(varbinary(max),I.ItemID)<>CONVERT(varbinary(max),L.ItemId) THEN 1 ELSE 0 END)";
+        const string originalStored="MAX(CASE WHEN DATALENGTH(CONVERT(nvarchar(max),C.DocumentID))<>DATALENGTH(CONVERT(nvarchar(max),@document)) OR CONVERT(varbinary(max),CONVERT(nvarchar(max),C.DocumentID))<>CONVERT(varbinary(max),CONVERT(nvarchar(max),@document)) OR DATALENGTH(CONVERT(nvarchar(max),C.UserAutoID))<>DATALENGTH(L.LineId) OR CONVERT(varbinary(max),CONVERT(nvarchar(max),C.UserAutoID))<>CONVERT(varbinary(max),L.LineId) OR DATALENGTH(CONVERT(nvarchar(max),C.ItemID))<>DATALENGTH(L.ItemId) OR CONVERT(varbinary(max),CONVERT(nvarchar(max),C.ItemID))<>CONVERT(varbinary(max),L.ItemId) THEN 1 ELSE 0 END)";
+        // The rewrite retains both complete per-row CASE expressions byte-for-byte
+        // apart from formatting; only their position relative to MAX has changed.
+        var production=Regex.Replace(ItemDisplayContextReader.ProjectionText(1,true,true),@"\s+"," ");
+        Assert.Contains(originalMaster[4..^1],production);
+        Assert.Contains(originalStored[4..^1],production);
+        Assert.Contains(AggregateArguments(originalMaster),argument=>argument.Contains("L.ItemId",StringComparison.Ordinal));
+        Assert.Contains(AggregateArguments(originalStored),argument=>argument.Contains("L.LineId",StringComparison.Ordinal));
+        Assert.DoesNotContain(AggregateArguments("SELECT COUNT_BIG(*),MAX(R.InvalidMaster) FROM Rows R WHERE R.ItemId=L.ItemId"),
+            argument=>argument.Contains("L.",StringComparison.Ordinal));
+    }
+    // A bounded structural guard for these fixed generated SQL shapes, not a SQL Server compiler.
+    // Balanced parentheses include nested DATALENGTH/CONVERT arguments in the inspected aggregate.
+    private static IEnumerable<string> AggregateArguments(string sql)
+    {
+        foreach(Match match in Regex.Matches(sql,@"\b(?:COUNT_BIG|COUNT|MAX|MIN|SUM|AVG)\s*\(",RegexOptions.IgnoreCase))
+        {
+            var start=match.Index+match.Length;var end=start;var depth=1;
+            for(;end<sql.Length && depth>0;end++)
+            {
+                if(sql[end]=='(')depth++;
+                else if(sql[end]==')')depth--;
+            }
+            Assert.Equal(0,depth);
+            yield return sql[start..(end-1)];
+        }
+    }
+
     private static async Task<ItemDisplayContext> Read(ItemDisplayRecordingSource source,string kind="purchase-requests",int count=1)
     {
         await using var connection=new DisplayConnection(source.Read);await connection.OpenAsync();
