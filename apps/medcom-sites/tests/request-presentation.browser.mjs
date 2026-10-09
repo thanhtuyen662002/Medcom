@@ -760,6 +760,10 @@ test('I30 compiled application presentation at 320,360,390,1440',{timeout:240000
   await run('I42 Orders resize, pin, reorder, hide and session-only saved views',async()=>{
    await start(1440,'purchase-orders');const panel=page.locator('.document-panel'),grid=page.getByRole('grid',{name:'Đặt mua hàng',exact:true});
    await grid.locator('[data-cell="0:0"]').waitFor();
+   await paint();
+   const selectionGeometry=await grid.locator('.grid-select-cell [data-slot="checkbox"]').evaluateAll(controls=>controls.map(control=>{const cell=control.closest('.grid-select-cell'),css=getComputedStyle(cell);return {width:control.getBoundingClientRect().width,available:cell.clientWidth-parseFloat(css.paddingLeft)-parseFloat(css.paddingRight)};}));
+   assert.ok(selectionGeometry.length>=2,'The fixture includes header and row selection controls');
+   for(const control of selectionGeometry)assert.ok(control.width<=control.available+1,'Selection checkboxes fit the cell content without clipping: '+JSON.stringify(control));
    const headers=()=>grid.getByRole('columnheader').allTextContents();
    const header=label=>grid.getByRole('columnheader').filter({hasText:label});
    const widthOf=label=>header(label).evaluate(el=>el.getBoundingClientRect().width);
