@@ -31,7 +31,7 @@ function navigationGuardObserver(resolveSourcePath=sourcePath=>sourcePath){
  }};
 }
 const primitive={button:'Button',input:'Input',textarea:'Textarea',badge:'Badge',skeleton:'Skeleton',checkbox:'Checkbox'};
-await build({stdin:{contents:`export {PurchaseRequestScreen} from './components/erp/purchase-request-screen';export {InboundRequestScreen} from './components/erp/inbound-request-screen';export {MobileRequest} from './components/erp/mobile-request';export {MobileRequestLines} from './components/erp/mobile-request-lines';export {MobileInboundRequest} from './components/erp/mobile-inbound-request';export {RequestQrSearch} from './components/erp/request-qr-search';export {QrScanner} from './components/erp/qr-scanner';export {PurchaseReferenceDetails} from './components/erp/purchase-reference-details';export {NavigationGuardProvider,useNavigationGuard} from './components/erp/navigation-guard';export {getDocuments} from './lib/erp/api';export {ListViewProvider} from './components/erp/list-view-state';export {createListViewStore} from './lib/erp/list-view-state';export {Documents} from './components/erp/documents';export {QueryClient,QueryClientProvider} from '@tanstack/react-query';`,resolveDir:app,loader:'tsx'},outfile:path.join(output,'fixture.cjs'),bundle:true,platform:'node',format:'cjs',packages:'external',jsx:'automatic',alias:{'@':app},logLevel:'warning',plugins:[navigationGuardObserver(),{name:'DOM-primitives',setup(builder){
+await build({stdin:{contents:`export {ErpGrid} from './components/erp/grid';export {Dialog} from './components/ui/dialog';export {PurchaseRequestScreen} from './components/erp/purchase-request-screen';export {InboundRequestScreen} from './components/erp/inbound-request-screen';export {MobileRequest} from './components/erp/mobile-request';export {MobileRequestLines} from './components/erp/mobile-request-lines';export {MobileInboundRequest} from './components/erp/mobile-inbound-request';export {RequestQrSearch} from './components/erp/request-qr-search';export {QrScanner} from './components/erp/qr-scanner';export {PurchaseReferenceDetails} from './components/erp/purchase-reference-details';export {NavigationGuardProvider,useNavigationGuard} from './components/erp/navigation-guard';export {getDocuments} from './lib/erp/api';export {ListViewProvider} from './components/erp/list-view-state';export {createListViewStore} from './lib/erp/list-view-state';export {Documents} from './components/erp/documents';export {QueryClient,QueryClientProvider} from '@tanstack/react-query';`,resolveDir:app,loader:'tsx'},outfile:path.join(output,'fixture.cjs'),bundle:true,platform:'node',format:'cjs',packages:'external',jsx:'automatic',alias:{'@':app},logLevel:'warning',plugins:[navigationGuardObserver(),{name:'DOM-primitives',setup(builder){
  builder.onResolve({filter:/components\/ui\/(button|input|textarea|badge|skeleton|checkbox|empty|table|dialog|alert-dialog)$/},args=>({path:args.path.split('/').at(-1),namespace:'dom'}));
  builder.onLoad({filter:/.*/,namespace:'dom'},args=>{
   let code;
@@ -74,7 +74,7 @@ test('guard observer rejects a build that never loads the provider',async()=>{
 test('guard observer rejects a build that loads two provider copies',async()=>{
  await assert.rejects(buildGuardPathFixture(guardPathCases.map(([,sourcePath])=>sourcePath)).result,/real guard must be loaded exactly once for observation/);
 });
-const {PurchaseRequestScreen,InboundRequestScreen,MobileRequest,MobileRequestLines,MobileInboundRequest,RequestQrSearch,QrScanner,PurchaseReferenceDetails,NavigationGuardProvider,useNavigationGuard,getDocuments,ListViewProvider,createListViewStore,Documents,QueryClient,QueryClientProvider}=require(path.join(output,'fixture.cjs'));
+const {ErpGrid,Dialog,PurchaseRequestScreen,InboundRequestScreen,MobileRequest,MobileRequestLines,MobileInboundRequest,RequestQrSearch,QrScanner,PurchaseReferenceDetails,NavigationGuardProvider,useNavigationGuard,getDocuments,ListViewProvider,createListViewStore,Documents,QueryClient,QueryClientProvider}=require(path.join(output,'fixture.cjs'));
 globalThis.IS_REACT_ACT_ENVIRONMENT=true;
 const scope='a'.repeat(64),sessionScope='b'.repeat(64),readScope='c'.repeat(64);
 const workspace=()=>({session:{displayName:'SYNTHETIC',tenantId:'T',companyId:'C',companyName:'SYNTHETIC',authorityVersion:1,absoluteExpiresAt:'2099-01-01T00:00:00Z',capabilities:['purchase-requests.read','inbound-requests.read']},branchIds:['BR-A'],sessionScope,readScope,navigation:[]});
@@ -96,6 +96,7 @@ async function host(kind,options={}){
   const u=new URL(url,'https://synthetic.invalid'),p=u.pathname,q=Object.fromEntries(u.searchParams),call={path:p,q,method:init.method??'GET',body:init.body,signal:init.signal};calls.push(call);
   if(p.endsWith('/auth/csrf'))return response({token:'synthetic-csrf'});
   if(p.endsWith('/purchase-requests/workspace'))return response({scopeKey:scope,data:{branchIds:['BR-A'],writeAvailable:false,writeReason:'numbering_journal_runtime_unqualified',lookups:[]}});
+  if(p.endsWith('/purchase-requests')&&model.listStatus)return response({code:'synthetic-list-denied'},model.listStatus);
   if(p.endsWith('/purchase-requests'))return response({scopeKey:scope,data:{rows:model.ids.map(id=>{const d=purchase(id);return{documentId:id,purchaseDate:d.header.purchaseDate,branchId:d.branchId,personSuggest:d.header.personSuggest,department:d.header.department,statusId:d.statusId,isLocked:d.isLocked};}),page:+q.page,pageSize:20,hasMore:false}});
   if(p.endsWith('/purchase-requests/detail'))return response({scopeKey:scope,data:{document:purchase(q.documentId),stateToken:'prs1.'+'d'.repeat(64),commandAccess:{canSave:true,canSubmit:true,canLookup:true,canAddLines:false,reason:'synthetic'}}});
   if(p.endsWith('/purchase-requests/lookup')){
@@ -104,6 +105,7 @@ async function host(kind,options={}){
    if(status)return response({code:'private-source-diagnostic'},status);
    return response({scopeKey:scope,data:{available:true,reason:null,items:q.kind==='purposes'?[{id:'7',label:null}]:[{id:'USD',label:'USD',currencyName:'SYNTHETIC CURRENCY',rateExchange:-2.5}],page:+q.page,hasMore:false}});
   }
+  if(p.endsWith('/documents/inbound-requests')&&model.listStatus)return response({code:'synthetic-list-denied'},model.listStatus);
   if(p.endsWith('/documents/inbound-requests'))return response({rows:model.ids.map(documentId=>({documentId,documentDate:'2026-10-01',branchId:'BR-A',statusId:0,isLocked:false})),page:+q.page,pageSize:50,hasMore:false});
   if(p.endsWith('/inbound-requests/draft')){
    if(model.readbackFailure)return response({},503);
@@ -349,4 +351,96 @@ for(const kind of ['purchase','inbound'])test(`${kind}: ${kind==='purchase'?'exi
   }else{await f.click('Xóa dòng 1');await f.click('Xóa dòng');assert.equal(count(),0,'Only a fresh confirmation can remove the original line');}
   assert.ok(f.calls.every(c=>c.method==='GET'),'Local confirmation never implements a business write');
  }finally{await f.close();}
+});
+
+
+// I62: real readers, shared list adapter and ErpGrid own the state. Only DOM
+// primitives/transport are doubles; the existing browser gates cover Radix.
+for(const kind of ['purchase','inbound']){
+ test(`${kind}: customization intent survives same-scope workspace observations while its portal stays masked`,async()=>{
+  const f=await host(kind);
+  const grid=()=>f.root().findByType(ErpGrid);
+  const settings=()=>grid().findAll(n=>n.type==='section'&&n.props.role==='dialog'&&text(n).includes('Tùy chỉnh bảng'));
+  const control=label=>grid().findAllByType('input').find(n=>n.props['aria-label']===label);
+  try{
+   const original=grid();await f.click('Tùy chỉnh bảng');assert.equal(settings().length,1);
+   await act(async()=>control('Hiển thị Chi nhánh').props.onCheckedChange(false));
+   await act(async()=>control('Tên chế độ xem').props.onChange({target:{value:'SYNTHETIC UNSAVED VIEW'}}));
+   for(const advance of [false,true,true]){
+    const observed=structuredClone(f.props().workspace);if(advance)observed.session.authorityVersion++;
+    await f.render({workspace:observed});
+    assert.strictEqual(grid(),original,'Same-scope refresh must retain the actual shared grid');
+    assert.equal(settings().length,1,'Background observation must not dismiss customization');
+    assert.equal(control('Hiển thị Chi nhánh').props.checked,false,'Current personal column choices survive');
+    assert.equal(control('Tên chế độ xem').props.value,'SYNTHETIC UNSAVED VIEW','Unsubmitted view name stays memory-only');
+   }
+   const count=f.calls.length,queuedOpen=f.button('Tùy chỉnh bảng').props.onClick;
+   await f.render({presentationAllowed:false});assert.strictEqual(grid(),original);assert.equal(grid().props.presentationAllowed,false);
+   assert.equal(settings().length,0,'No dialog controls are rendered while presentation is masked');
+   assert.equal(f.root().findAllByType('input').filter(n=>n.props['aria-label']==='Tên chế độ xem').length,0);
+   await act(async()=>queuedOpen());await f.flush();assert.equal(settings().length,0,'A queued opener cannot bypass the current mask');
+   assert.equal(f.calls.length,count,'Presentation suspension issues no transport');
+   await f.render({presentationAllowed:true});assert.equal(settings().length,1);assert.strictEqual(grid(),original);
+   assert.equal(control('Hiển thị Chi nhánh').props.checked,false);assert.equal(control('Tên chế độ xem').props.value,'SYNTHETIC UNSAVED VIEW');
+   await act(async()=>grid().findByType(Dialog).props.onOpenChange(false));assert.equal(settings().length,0);
+   const next=structuredClone(f.props().workspace);next.session.authorityVersion++;
+   await f.render({workspace:next});assert.equal(settings().length,0,'Explicit dismissal retires the open intent');
+   assert.ok(f.calls.every(call=>call.method==='GET'));
+  }finally{await f.close();}
+ });
+ for(const status of [401,403,409])test(`${kind}: current list ${status} retires customization before a fresh observation`,async()=>{
+  const f=await host(kind);try{
+   await f.click('Tùy chỉnh bảng');const original=f.root().findByType(ErpGrid);
+   f.model.listStatus=status;await f.refreshRows();
+   assert.equal(f.root().findAllByType(ErpGrid).length,0,'A current negative result tears down the list customization owner');
+   assert.equal(f.root().findAll(n=>n.type==='section'&&n.props.role==='dialog'&&text(n).includes('Tùy chỉnh bảng')).length,0);
+   f.model.listStatus=null;const observed=structuredClone(f.props().workspace);observed.session.authorityVersion++;
+   await f.render({...(status===401?(kind==='inbound'?{loginKey:'login-after-denial'}:{loginBoundary:2}):{}),workspace:observed});
+   const current=f.root().findByType(ErpGrid);assert.notStrictEqual(current,original);
+   assert.equal(current.findAll(n=>n.type==='section'&&n.props.role==='dialog').length,0,'Fresh admission never resurrects denied customization');
+   assert.ok(f.calls.every(call=>call.method==='GET'));
+  }finally{await f.close();}
+ });
+ for(const boundary of ['read-scope','rights','workspace-null','logout'])test(`${kind}: customization is retired on ${boundary} boundaries`,async()=>{
+  const f=await host(kind);try{
+   await f.click('Tùy chỉnh bảng');const original=f.root().findByType(ErpGrid),saved=structuredClone(f.props().workspace);
+   if(boundary==='read-scope')await f.render({workspace:{...saved,readScope:'e'.repeat(64)}});
+   else if(boundary==='rights')await f.render({workspace:{...saved,session:{...saved.session,capabilities:[]}}});
+   else if(boundary==='workspace-null')await f.render({workspace:null});
+   else await f.render(kind==='inbound'?{loginKey:null,workspace:null}:{sessionEnded:true,workspace:null});
+   assert.equal(f.root().findAll(n=>n.type==='section'&&n.props.role==='dialog'&&text(n).includes('Tùy chỉnh bảng')).length,0);
+   saved.session.authorityVersion++;
+   await f.render({workspace:saved,...(boundary==='logout'?(kind==='inbound'?{loginKey:'login-restored'}:{sessionEnded:false,loginBoundary:2}):{})});
+   const current=f.root().findByType(ErpGrid);assert.notStrictEqual(current,original);
+   assert.equal(current.findAll(n=>n.type==='section'&&n.props.role==='dialog').length,0);
+   assert.ok(f.calls.every(call=>call.method==='GET'));
+  }finally{await f.close();}
+ });
+}
+
+
+test('customization owner changes and explicit retirement cannot resurrect the old open intent on the same grid',async()=>{
+ let renderer;
+ const props={rows:[{id:'SYNTHETIC'}],columns:[{id:'id',label:'Identity',width:200,required:true}],rowId:row=>row.id,renderCell:row=>row.id,onOpen(){},schemaVersion:'synthetic-v1',scopeKey:'list',compact:false,label:'Synthetic grid',virtualize:false,selectable:false};
+ let current={...props,presentationAllowed:true,customizationScopeKey:'owner-A'};
+ const render=async patch=>{current={...current,...patch};await act(async()=>{if(renderer)renderer.update(React.createElement(ErpGrid,current));else renderer=create(React.createElement(ErpGrid,current));});};
+ const dialog=()=>renderer.root.findByType(Dialog),visible=()=>dialog().props.open;
+ const open=()=>act(async()=>renderer.root.findAllByType('button').find(node=>text(node)==='Tùy chỉnh bảng').props.onClick());
+ try{
+  await render({});const original=renderer.root.findByType(ErpGrid);
+  for(const retirement of ['owner-B',null]){
+   await open();assert.equal(visible(),true);await render({presentationAllowed:false});assert.equal(visible(),false);
+   await render({customizationScopeKey:retirement});await render({customizationScopeKey:'owner-A'});
+   await render({presentationAllowed:true});assert.equal(visible(),false,'A committed different/null owner retires the earlier open intent');
+   assert.strictEqual(renderer.root.findByType(ErpGrid),original,'Retirement must work even without unmounting the grid');
+  }
+  await open();const oldOpen=renderer.root.findAllByType('button').find(node=>text(node)==='Tùy chỉnh bảng').props.onClick,oldClose=dialog().props.onOpenChange;
+  await render({customizationScopeKey:'owner-B'});assert.equal(visible(),false);
+  await act(async()=>oldOpen());assert.equal(visible(),false,'A captured A opener cannot write its intent under B');
+  await render({customizationScopeKey:'owner-A'});assert.equal(visible(),false,'Returning to equal A does not resurrect stale intent');
+  await act(async()=>oldOpen());assert.equal(visible(),false,'The earlier A callback remains retired after A→B→A');
+  await open();assert.equal(visible(),true);await act(async()=>oldClose(false));assert.equal(visible(),true,'A retired dialog cannot dismiss the newer owner');
+  await render({customizationScopeKey:undefined});await open();assert.equal(visible(),true);
+  await render({presentationAllowed:false});await render({presentationAllowed:true});assert.equal(visible(),false,'Generic grids keep the prior close-on-suspend default');
+ }finally{if(renderer)await act(async()=>renderer.unmount());}
 });
