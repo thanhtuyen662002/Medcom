@@ -95,3 +95,8 @@ export function requestMessage(message:string){return requestPhaseCopy[message]?
 
 /** Shared footer host; carries no record data or command state. */
 export const RecordActionHost=createContext<HTMLElement|null>(null);
+
+/** Presentation-only header hosts. Hidden children must retain their own gates. */
+export const RecordSecondaryHost=createContext<HTMLElement|null>(null);
+export const RecordStatusHost=createContext<HTMLElement|null>(null);
+export const RecordDetailContext=createContext(false);

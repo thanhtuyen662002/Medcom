@@ -1,5 +1,5 @@
 "use client";
-import {RecordActionBar} from "./record-dialog";
+import {RecordActionBar,RecordSection,RecordFieldset,RecordDetailHeading,RecordDetailStatus,RecordDetailToolbar} from "./record-dialog";
 import {RecordDeleteConfirmation} from "./record-delete-confirmation";
 import {useRequestNotifications} from "./request-notifications";
 import {RequestLoading,RequestButton,RequestInput,RequestTextarea,RequestNotice,RequestStatus,requestMessage,requestStyles} from "./request-presentation";
@@ -252,22 +252,22 @@ function InboundEditor({documentId,statusPresentation,access,adapter,onConfirmed
   const pageCount=Math.max(1,Math.ceil(state.details.length/25)),shownPage=Math.min(page,pageCount);
   const receipt=state.receipt?.documentId===documentId||state.awaitingSnapshot?state.receipt:null;
   return <section data-testid="inbound-editor" data-document-id={documentId??""} data-phase={state.phase} aria-busy={busy} aria-label="Yêu cầu nhập kho trên điện thoại" className={requestStyles.editor} style={{width:"100%",minWidth:0,boxSizing:"border-box",overflowWrap:"anywhere"}}>
-    <h2 className={requestStyles.title}>Yêu cầu nhập kho</h2><p className={requestStyles.muted} role="status">{requestMessage(state.message)||"Đang chờ đọc ERP."}</p>
+    <RecordDetailHeading title="Yêu cầu nhập kho" documentNumber={currentView?.documentId}><p role="status">{requestMessage(state.message)||"Đang chờ đọc ERP."}</p></RecordDetailHeading>
     {state.phase==="checking"&&!unresolved&&<RequestButton type="button" onClick={cancelSendCheck}>Hủy kiểm tra trước khi gửi</RequestButton>}
     {receipt&&<p data-testid="confirmed-receipt">ERP đã xác nhận {state.receiptAction==="Save"?"Lưu":"Gửi"} phiếu {receipt.documentId}, trạng thái {receipt.statusId}. Mã thao tác: {receipt.operationId}. Mã xác nhận: {receipt.auditId}. Thời điểm UTC: {receipt.committedAtUtc}</p>}
     {unresolved&&<div><p>Yêu cầu gốc: {state.original?.documentId}. Dữ liệu không được lưu bền trên thiết bị; tải lại hoặc đóng trang có thể mất khả năng kiểm tra.</p><RequestButton type="button" disabled={state.phase!=="unknown"} onClick={()=>void reconcile()}>Kiểm tra yêu cầu gốc</RequestButton></div>}
-    {!unresolved&&<RequestButton type="button" disabled={busy} onClick={reload}>Đọc lại ERP</RequestButton>}
+    {!unresolved&&<RecordDetailToolbar presentationAllowed={presentationAllowed&&access.canRead&&access.available&&bindingCurrent}><RequestButton type="button" disabled={busy} onClick={reload}>Đọc lại ERP</RequestButton></RecordDetailToolbar>}
     {state.awaitingSnapshot&&<p role="alert">Đang đọc lại phiếu đã được ERP xác nhận: {state.awaitingSnapshot.documentId}. Chưa thể chỉnh sửa hoặc gửi tiếp. Không gửi lại thao tác đã xác nhận.</p>}
     {!bound&&unresolved&&<p>Chờ kết quả yêu cầu gốc trước khi mở chứng từ đã chọn.</p>}
-    {state.phase==="loading"&&!unresolved&&!state.awaitingSnapshot&&<RequestLoading form label="Đang đọc phiếu từ ERP…"/>}
+    {(!currentView||!state.header)&&<><RecordSection title="Thông tin chung">{state.phase==="loading"&&!unresolved&&!state.awaitingSnapshot&&<RequestLoading form label="Đang đọc phiếu từ ERP…"/>}<p className={requestStyles.muted}>Thông tin sẽ hiển thị khi phiếu được xác minh.</p></RecordSection><RecordSection title="Dòng hàng"><p className={requestStyles.muted}>Chưa có bản đọc hiện tại để hiển thị dòng hàng.</p></RecordSection><RecordSection title="Ghi chú"><p className={requestStyles.muted}>Ghi chú sẽ hiển thị cùng bản đọc được xác minh.</p></RecordSection></>}
     {currentView&&state.header&&<form id={formId} ref={form} onSubmit={event=>{event.preventDefault();review();}} className={requestStyles.stack}>
-      <header className={requestStyles.section}><div className={requestStyles.cardHeading}><strong>{currentView.documentId}</strong><RequestStatus value={currentView.statusId} statusName={statusPresentation?.documentId===currentView.documentId&&statusPresentation.id===currentView.statusId?statusPresentation.name:undefined}/></div><p className={requestStyles.muted}>{state.details.length} dòng đầy đủ</p></header>
+      <RecordDetailStatus presentationAllowed={presentationAllowed&&access.canRead&&access.available&&bindingCurrent}><RequestStatus value={currentView.statusId} statusName={statusPresentation?.documentId===currentView.documentId&&statusPresentation.id===currentView.statusId?statusPresentation.name:undefined}/></RecordDetailStatus>
       {!access.canSave&&!access.canSend&&<RequestNotice>Phiếu hiện chỉ được xem theo quyền của bạn.</RequestNotice>}
       <p className={requestStyles.muted}>{currentView.costRowCount} dòng chi phí được giữ nguyên, chỉ đọc.</p>
-      <fieldset disabled={!editable} className={requestStyles.fields}><legend className={requestStyles.title}>Thông tin chứng từ</legend>
-        {headerFields.map(([field,label,nullable,multiline])=><ExactField key={field} label={label} id={`inbound-header-${field}`} value={state.header![field]} nullable={nullable} multiline={multiline} disabled={field==="branchId"||field==="documentDate"} error={state.errors[`header.${field}`]} onChange={value=>patchHeader(field,value)}/>)}
-      </fieldset>
-      <section aria-label="Dòng yêu cầu nhập kho" style={{display:"grid",gap:12,minWidth:0}}>
+      <RecordFieldset disabled={!editable} title="Thông tin chung">
+        {headerFields.filter(([field])=>field!=="notes").map(([field,label,nullable,multiline])=><ExactField key={field} label={label} id={`inbound-header-${field}`} value={state.header![field]} nullable={nullable} multiline={multiline} disabled={field==="branchId"||field==="documentDate"} error={state.errors[`header.${field}`]} onChange={value=>patchHeader(field,value)}/>)}
+      </RecordFieldset>
+      <RecordSection title="Dòng hàng" aria-label="Dòng yêu cầu nhập kho" description={`${state.details.length} dòng đầy đủ`}>
         {state.details.slice((shownPage-1)*25,shownPage*25).map((row,index)=>{
           const ordinal=(shownPage-1)*25+index+1;
           const key=lineKey(row),domKey=encodeURIComponent(key);
@@ -279,8 +279,9 @@ function InboundEditor({documentId,statusPresentation,access,adapter,onConfirmed
         {state.errors.details&&<p role="alert">{state.errors.details}</p>}
         <nav aria-label="Trang dòng hàng" style={{display:"flex",gap:8,flexWrap:"wrap"}}><RequestButton type="button" disabled={shownPage===1||busy||unresolved} onClick={()=>setPage(shownPage-1)}>Dòng trước</RequestButton><span>Trang {shownPage}/{pageCount}; giữ đủ {state.details.length} dòng</span><RequestButton type="button" disabled={shownPage===pageCount||busy||unresolved} onClick={()=>setPage(shownPage+1)}>Dòng tiếp</RequestButton></nav>
         <RequestButton type="button" disabled={!editable||state.details.length>=500} onClick={addDetail}>Thêm dòng</RequestButton>
-      </section>
-      <ExactField id="inbound-note" label="Ghi chú gửi kho" nullable multiline value={note} disabled={!ready||state.reviewed||!access.canSend} error={state.errors.note} onChange={value=>{if(isPresentationCurrent()&&!lock.current&&currentBinding()&&ready&&!state.reviewed&&access.canSend)setNote(value);}}/>
+      </RecordSection>
+      <RecordSection title="Ghi chú"><fieldset disabled={!editable}><ExactField label="Ghi chú" id="inbound-header-notes" value={state.header.notes} nullable multiline error={state.errors["header.notes"]} onChange={value=>patchHeader("notes",value)}/></fieldset>
+      <ExactField id="inbound-note" label="Ghi chú gửi kho" nullable multiline value={note} disabled={!ready||state.reviewed||!access.canSend} error={state.errors.note} onChange={value=>{if(isPresentationCurrent()&&!lock.current&&currentBinding()&&ready&&!state.reviewed&&access.canSend)setNote(value);}}/></RecordSection>
       {state.reviewed&&<div><p>Rà soát: {dirty?"có thay đổi cần lưu riêng":"không có thay đổi chưa lưu"}.</p><p>Dòng sẽ xóa: {currentView.details.map((row,index)=>({row,ordinal:index+1})).filter(({row})=>!state.details.some(next=>next.rowId===row.rowId)).map(({row,ordinal})=>`Dòng ${ordinal}${row.itemId?` · ${row.itemId}`:""}`).join(", ")||"không"}</p></div>}
       <RecordActionBar className={requestStyles.actionBar} presentationAllowed={presentationAllowed&&access.canRead&&access.available&&bindingCurrent}>
         {!state.reviewed?<RequestButton variant="default" type="submit" form={formId} disabled={!ready}>Rà soát phiếu</RequestButton>:<>

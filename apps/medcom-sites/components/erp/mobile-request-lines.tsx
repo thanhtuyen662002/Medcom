@@ -1,9 +1,12 @@
 "use client";
+import {RecordSection} from "./record-dialog";
 import {RequestButton,RequestInput,RequestEmpty,requestStyles} from "./request-presentation";
 
 import {useId} from "react";
 import {RemoteLookup} from "./lookup";
 import type {LookupAdapter} from "@/lib/erp/presentation";
+import type {ItemDisplayPresentation} from "@/lib/erp/item-display";
+import {ItemIdentity} from "./item-identity";
 
 /** Local keys identify input/errors only. They are never ERP numbering. */
 export type PurchaseRequestLine = {
@@ -29,13 +32,15 @@ export function isRequestInteger(value: string) {
   return /^-?\d+$/.test(value) && value.replace(/^-/, "").replace(/^0+/, "").length <= 18;
 }
 
-export function MobileRequestLines({lines, disabled, canAdd = true, canRemove = true, lockItem = false, readOnly = false, errors, lookupAdapter, itemLookupId, onChange, onAdd, onRemove}: {
+export function MobileRequestLines({lines, disabled, canAdd = true, canRemove = true, lockItem = false, readOnly = false, itemDisplay, presentationAllowed = true, errors, lookupAdapter, itemLookupId, onChange, onAdd, onRemove}: {
   lines: readonly PurchaseRequestLine[];
   disabled: boolean;
   canAdd?: boolean;
   canRemove?: boolean;
   lockItem?: boolean;
   readOnly?: boolean;
+  itemDisplay?: ItemDisplayPresentation;
+  presentationAllowed?: boolean;
   errors: Record<string, string>;
   lookupAdapter: LookupAdapter;
   itemLookupId: string;
@@ -44,13 +49,13 @@ export function MobileRequestLines({lines, disabled, canAdd = true, canRemove = 
   onRemove: (key: string) => void;
 }) {
   const prefix = useId();
-  return <section aria-labelledby={`${prefix}-title`} style={{display: "grid", gap: 16, minWidth: 0}}>
-    <h2 className={requestStyles.title} id={`${prefix}-title`}>Hàng đề nghị ({lines.length})</h2>
+  return <RecordSection title="Dòng hàng" aria-label={`Hàng đề nghị (${lines.length})`} description={`${lines.length} dòng hàng`}>
     {errors.lines && <p role="alert">{errors.lines}</p>}
     {!lines.length && <RequestEmpty title="Chưa có dòng hàng">Các dòng hàng sẽ hiển thị tại đây.</RequestEmpty>}
     {lines.map((line, index) => <article className={requestStyles.line} key={line.localKey} aria-label={`Dòng hàng ${index + 1}`} >
       <h3 className={requestStyles.title}>Dòng {index + 1}</h3>
-      {readOnly || lockItem ? <p><strong>{line.itemLabel || line.itemId || "Chưa chọn hàng"}</strong></p> : <RemoteLookup id={itemLookupId} label={`Mặt hàng dòng ${index + 1}`} value={line.itemId ? {id: line.itemId, label: line.itemLabel || line.itemId} : null} adapter={lookupAdapter} disabled={disabled} error={errors[`lines.${line.localKey}.itemId`]} onChange={item => onChange(line.localKey, {itemId: item?.id ?? "", itemLabel: item?.label})}/>}
+      {itemDisplay&&presentationAllowed&&<ItemIdentity {...itemDisplay} line={{lineId:line.lineId??"",itemId:line.itemId}}/>}
+      {readOnly || lockItem ? !itemDisplay&&<p><strong>{line.itemLabel || line.itemId || "Chưa chọn hàng"}</strong></p> : <RemoteLookup id={itemLookupId} label={`Mặt hàng dòng ${index + 1}`} value={line.itemId ? {id: line.itemId, label: line.itemLabel || line.itemId} : null} adapter={lookupAdapter} disabled={disabled} error={errors[`lines.${line.localKey}.itemId`]} onChange={item => onChange(line.localKey, {itemId: item?.id ?? "", itemLabel: item?.label})}/>}
       {errors[`lines.${line.localKey}.itemId`] && <p role="alert">{errors[`lines.${line.localKey}.itemId`]}</p>}
       <div className="grid min-w-0 gap-4 sm:grid-cols-2">{([
         ["quantity", "Số lượng", 40], ["unitPrice", "Đơn giá", 40], ["budget", "Ngân sách", 40],
@@ -67,5 +72,5 @@ export function MobileRequestLines({lines, disabled, canAdd = true, canRemove = 
       {!readOnly && canRemove && <RequestButton type="button" disabled={disabled} onClick={() => onRemove(line.localKey)}>Bỏ dòng {index + 1}</RequestButton>}
     </article>)}
     {!readOnly && <RequestButton type="button" disabled={disabled || !canAdd} onClick={onAdd}>Thêm dòng hàng</RequestButton>}
-  </section>;
+  </RecordSection>;
 }

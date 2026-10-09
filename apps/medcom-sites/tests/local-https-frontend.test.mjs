@@ -97,14 +97,12 @@ async function assertPurchaseActionBlocked(page, name, hidden) {
   })), {hidden: true, inert: true, ariaHidden: 'true'}, 'unverified footer actions are hidden and inert as well as disabled');
   return button;
 }
-const purchaseIdentitySelector = 'form[aria-label="Đề nghị mua hàng trên điện thoại"] > header > p > strong';
+const purchaseIdentitySelector = ':scope > header.request-detail-header .record-dialog-identity > h2 > .record-document-number';
 function purchaseDocumentIdentity(page, baselineControl) {
   // The exact historical control used a document heading. Current request
-  // dialogs include the document number in the shared title; the protected form also owns the exact ID.
+  // dialogs own the exact document identity in the shared header, once.
   if (baselineControl) return page.getByRole('heading', {name: 'I29-PR-P2-00', exact: true});
-  return purchaseDialog(page)
-    .getByRole('region', {name: 'Phiếu mua hàng hiện có', exact: true})
-    .locator(purchaseIdentitySelector).filter({hasText: /^I29-PR-P2-00$/});
+  return purchaseDialog(page).locator(purchaseIdentitySelector).filter({hasText: /^I29-PR-P2-00$/});
 }
 
 async function assertRetiredPurchaseControls(panel, calls) {
@@ -214,19 +212,20 @@ test('I29 purchase identity fixture matches the production editor and document d
   const html = renderToStaticMarkup(React.createElement(RequestDetailDialog, {open: true, title: 'Phiếu mua hàng hiện có', documentNumber: initial.documentId, closeLabel: 'Đóng đề nghị', onRequestClose() {}},
     React.createElement(MobileRequest, {initial, access, adapter: {execute() {assert.fail('source render must not dispatch');}, reconcile() {assert.fail('source render must not reconcile');}}})));
   assert.match(html, /<h2\b[^>]*>Phiếu mua hàng hiện có<span class="record-document-number">I29-PR-P2-00<\/span><\/h2>/);
-  assert.match(html, /<form\b[^>]*aria-label="Đề nghị mua hàng trên điện thoại"[^>]*><header\b[^>]*>.*?<p>Mã phiếu: <strong>I29-PR-P2-00<\/strong><\/p>/s);
+  assert.match(html, /<form\b[^>]*aria-label="Đề nghị mua hàng trên điện thoại"[^>]*>/);
+  assert.equal((html.match(/class="record-document-number">I29-PR-P2-00<\/span>/g)??[]).length,1,'The selected document has one exact identity in its owning dialog header');
+  assert.doesNotMatch(html, /<p>Mã phiếu: <strong>I29-PR-P2-00<\/strong><\/p>/);
   assert.doesNotMatch(html, /<h[1-6]\b[^>]*>I29-PR-P2-00<\/h[1-6]>/);
   const identity = {}, legacyHeading = {}, calls = [];
   const page = {getByRole(role, options) {
     calls.push(role);
     if (role === 'heading') {assert.deepEqual(options, {name: 'I29-PR-P2-00', exact: true}); return legacyHeading;}
     assert.equal(role, 'dialog'); assert.deepEqual(options, {name: 'Phiếu mua hàng hiện có I29-PR-P2-00', exact: true});
-    return {getByRole(region, regionOptions) {assert.equal(region, 'region'); assert.deepEqual(regionOptions, {name: 'Phiếu mua hàng hiện có', exact: true});
-      return {locator(selector) {assert.equal(selector, purchaseIdentitySelector); return {filter({hasText}) {
+    return {locator(selector) {assert.equal(selector, purchaseIdentitySelector); return {filter({hasText}) {
       assert.equal(hasText.test('I29-PR-P2-00'), true);
       for (const wrong of ['OTHER', 'I29-PR-P2-001', 'prefix I29-PR-P2-00']) assert.equal(hasText.test(wrong), false);
       return identity;
-    }};}};}};
+    }};}};
   }};
   assert.equal(purchaseDocumentIdentity(page, false), identity); assert.deepEqual(calls, ['dialog']);
   assert.equal(purchaseDocumentIdentity(page, true), legacyHeading); assert.deepEqual(calls, ['dialog', 'heading']);

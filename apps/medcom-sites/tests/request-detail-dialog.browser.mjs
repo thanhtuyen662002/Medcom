@@ -454,12 +454,12 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
   viewportEvidence.push({file,kind:currentScenario.kind,stage:currentScenario.stage,role,fullPage:false,scale:'css',viewport,observedSurfaceBox:box,imagePixels});
   await writeFile(path.join(output,'viewport-evidence.json'),JSON.stringify(viewportEvidence,null,2));
  };
- const attempt=async path=>{if(path==='escape')await page.keyboard.press('Escape');else if(path==='backdrop')await page.locator('.request-detail-backdrop').click({position:{x:2,y:2}});else await page.getByRole('dialog').getByRole('button',{name:path==='x'?'Đóng hộp thoại':/^(Đóng đề nghị|Quay lại danh sách)$/}).click();};
+ const attempt=async path=>{if(path==='escape')await page.keyboard.press('Escape');else if(path==='backdrop')await page.locator('.request-detail-backdrop').click({position:{x:2,y:2}});else await page.getByRole('dialog').getByTitle('Đóng hộp thoại',{exact:true}).click();};
  try{
   browser=await chromium.launch({executablePath:executable,headless:true,chromiumSandbox:true});
   for(const kind of ['purchase','inbound'])await run('I43 R1 '+kind+' higher Radix command modal owns focus and Escape above dirty detail',async()=>{
    await start(kind,390);await open(kind);await notes().fill('R1 COMMAND DIRTY');await page.waitForLoadState('networkidle');const before=await snapshot(),beforeCalls=model.calls.length;
-   const retainedNotes=await notes().elementHandle(),retainedClose=await page.getByRole('button',{name:'Đóng hộp thoại',exact:true}).elementHandle();
+   const retainedNotes=await notes().elementHandle(),retainedClose=await page.getByTitle('Đóng hộp thoại',{exact:true}).elementHandle();
    await page.keyboard.press('Control+k');const command=page.getByRole('dialog',{name:'R1 command modal'});await command.waitFor();
    const input=page.getByRole('textbox',{name:'R1 command input'});await input.focus();await input.fill('COMMAND RETAINS FOCUS');await paint();
    assert.equal(await input.evaluate(node=>node===document.activeElement),true);assert.equal(await input.evaluate(node=>!!node.closest('[aria-hidden="true"],[hidden],[inert]')),false,'The higher command input remains accessibility-exposed');
@@ -619,13 +619,13 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
   });
   for(const kind of ['purchase','inbound'])await run(kind+' loading and failed detail remain guarded and closable',async()=>{
    await start(kind,390);model.holdDetail=true;await page.evaluate(()=>window.i43.navigation.requestOpen('QA-001'));await page.getByRole('dialog').waitFor();
-   await page.getByRole('dialog').getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});release();
-   model.detailStatus=404;await page.evaluate(()=>window.i43.navigation.requestOpen('QA-001'));await page.getByRole('dialog').waitFor();await page.getByRole('dialog').getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});
+   await page.getByRole('dialog').getByTitle('Đóng hộp thoại',{exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});release();
+   model.detailStatus=404;await page.evaluate(()=>window.i43.navigation.requestOpen('QA-001'));await page.getByRole('dialog').waitFor();await page.getByRole('dialog').getByTitle('Đóng hộp thoại',{exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});
    assert.equal(model.calls.filter(c=>c.method==='POST').length,0);results.push({kind,result:'PASS',case:'loading/404'});
   });
   await run('inbound independent read-only fallback remains in the same dialog',async()=>{
    await start('inbound',390);model.readOnly=true;await page.evaluate(()=>window.i43.navigation.requestOpen('QA-001'));await page.getByTestId('inbound-request-readonly').waitFor();await geometry();
-   await page.getByRole('dialog').getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});
+   await page.getByRole('dialog').getByTitle('Đóng hộp thoại',{exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});
    assert.equal(model.calls.filter(c=>c.method==='POST').length,0);results.push({result:'PASS',case:'readonly'});
   });
   assert.deepEqual(errors,[]);assert.equal(results.length,expectedCases,'Every required dialog case must complete');

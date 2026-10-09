@@ -450,9 +450,12 @@ test('real HTTP → BFF → existing workspace/browser purchase controls and aut
    for(let index=0;index<101;index++){
     const cells=rows.nth(index).getByRole('cell');assert.equal(await cells.count(),8);
     // Mobile cards add aria-hidden field labels; assert each complete business value separately.
-    for(const [column,expected] of [[0,String(index+1)],[1,'QA-ITEM'],[4,'999999999999999999']]){
+    for(const [column,expected] of [[0,String(index+1)],[4,'999999999999999999']]){
      const value=cells.nth(column).locator(':scope > span:not([aria-hidden="true"])');assert.equal(await value.count(),1);assert.equal(await value.innerText(),expected);
     }
+    const identity=cells.nth(1).locator(':scope > dl[aria-label="Thông tin mặt hàng"]');assert.equal(await identity.count(),1);
+    assert.deepEqual(await identity.locator(':scope > div > dt').allTextContents(),['Mã hàng','Mã hàng NSX','Tên hàng / dịch vụ','ĐVT']);
+    assert.deepEqual(await identity.locator(':scope > div > dd').allTextContents(),[records.find(record=>record.purchaseRequestId==='QA-LARGE').lines[index].values.itemId,'Chưa có thông tin','Chưa có thông tin','Chưa có thông tin']);
    }
    assert.equal(await table.getByText('QA-L101',{exact:true}).count(),0,'Opaque internal row IDs stay hidden');
    await find('QA-NULL');await screen.getByRole('button',{name:'Mở đề nghị QA-NULL',exact:true}).click();await screen.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true}).waitFor();await expandFullReadback();assert.match(await screen.innerText(),/NULL/);
@@ -481,7 +484,7 @@ test('real HTTP → BFF → existing workspace/browser purchase controls and aut
    await page.evaluate(()=>window.qa.controlled());await find('QA-000');
    state.hold=true;const started=new Promise(resolve=>{state.started=resolve;});await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).click();await started;
    assert.equal(await screen.getByRole('region',{name:'Phiếu mua hàng hiện có',exact:true}).count(),0);
-   await focused(focusRegion);const close=screen.getByRole('button',{name:'Đóng hộp thoại',exact:true});await close.focus();await page.keyboard.press('Tab');await page.keyboard.press('Shift+Tab');
+   await focused(focusRegion);const close=screen.getByTitle('Đóng hộp thoại',{exact:true});await close.focus();await page.keyboard.press('Tab');await page.keyboard.press('Shift+Tab');
    assert.equal(await close.evaluate(element=>element===document.activeElement),true);state.hold=false;state.release();
    await screen.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true}).waitFor();await focusPaint();assert.equal(await close.evaluate(element=>element===document.activeElement),true);
    await screen.getByRole('button',{name:'Đóng đề nghị',exact:true}).click();await focused('[aria-label="Mở đề nghị QA-000"]');
@@ -493,7 +496,7 @@ test('real HTTP → BFF → existing workspace/browser purchase controls and aut
    state.detailFailure=503;await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).click();await screen.getByRole('alert').waitFor();await focused(focusRegion);await focusPaint();
    const initialModalFocus=await frameFocusCount();assert.equal(initialModalFocus,beforeFailedOpen+1,'Failed Open still gives the named modal its one immediate focus');
    state.detailFailure=null;state.hold=true;const retryStarted=new Promise(resolve=>{state.started=resolve;});await screen.getByRole('button',{name:'Xác minh lại phiếu',exact:true}).click();await retryStarted;
-   const laterControl=screen.getByRole('button',{name:'Đóng hộp thoại',exact:true});await laterControl.focus();const retryFocus=await frameFocusCount();
+   const laterControl=screen.getByTitle('Đóng hộp thoại',{exact:true});await laterControl.focus();const retryFocus=await frameFocusCount();
    state.hold=false;state.release();await screen.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true}).waitFor();await focusPaint();assert.equal(await frameFocusCount(),retryFocus,'refresh cannot revive a failed Open ticket');assert.equal(await laterControl.evaluate(element=>element===document.activeElement),true,'refresh preserves the newer modal-control focus');
    // Same-document Open is a programmatic mounted-handler challenge while the modal blocks the list.
    const explicitFocus=await frameFocusCount();await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).evaluate(button=>button.click());await focused(focusRegion);assert.equal(await frameFocusCount(),explicitFocus+1,'an explicit same-document handler focuses its owned frame exactly once without a new read');

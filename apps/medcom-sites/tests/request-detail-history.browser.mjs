@@ -42,13 +42,13 @@ async function runRequiredHistoryCase(context,name,body,diagnose){
 async function waitForHistoryOriginal(page,screen,documentId,originalValue,eventually){
  const isPurchase=screen==='purchase-requests';
  const title=isPurchase?'Phiếu mua hàng hiện có':'Phiếu nhập hàng đã chọn';
- const dialog=page.getByRole('dialog',{name:title+' '+documentId,exact:true}).or(page.getByRole('dialog',{name:title,exact:true}));await dialog.waitFor();
+ const dialog=page.getByRole('dialog',{name:title+' '+documentId,exact:true});await dialog.waitFor();
  const editor=isPurchase?dialog.getByRole('form',{name:'Đề nghị mua hàng trên điện thoại',exact:true}):dialog.locator('[data-testid="inbound-editor"][data-phase="unknown"]');await editor.waitFor();
  const reconcile=editor.getByRole('button',{name:isPurchase?'Kiểm tra kết quả yêu cầu gốc':'Kiểm tra yêu cầu gốc',exact:true});await reconcile.waitFor();await eventually(()=>reconcile.isEnabled());
  if(isPurchase){
-  await editor.getByText('Chưa xác nhận kết quả',{exact:true}).waitFor();await editor.getByText(documentId,{exact:true}).waitFor();
+  await editor.getByText('Chưa xác nhận kết quả',{exact:true}).waitFor();
   const review=editor.getByRole('region',{name:'Rà soát thông tin phiếu',exact:true});await review.waitFor();
-  assert.equal(await review.locator('label[for$="-notes"] + strong').innerText(),originalValue);assert.equal(await editor.getByLabel('Ghi chú',{exact:true}).count(),0);
+  assert.equal(await editor.locator('label[for$="-notes"] + strong').innerText(),originalValue);assert.equal(await editor.getByLabel('Ghi chú',{exact:true}).count(),0);
   for(const name of ['Quay lại chỉnh sửa','Lưu nháp trên ERP','Gửi đề nghị'])assert.equal(await dialog.getByRole('button',{name,exact:true}).isDisabled(),true);
  }else{
   assert.equal(await editor.getAttribute('data-document-id'),documentId);
@@ -203,6 +203,7 @@ test('history original readiness follows real purchase review and unbound inboun
  const textOf=node=>typeof node==='string'?node:node.children.map(textOf).join('');
  const hostNodes=(roots,predicate)=>[...new Set(roots.flatMap(root=>root.findAll(node=>typeof node.type==='string'&&predicate(node))))];
  const disabled=node=>!!node.props.disabled||!!node.parent&&(node.parent.type==='fieldset'&&!!node.parent.props.disabled||disabled(node.parent));
+ // Model the shared title's separate text and block document-number segments.
  const locator=nodes=>{
   const single=()=>{assert.equal(nodes.length,1,'Exact production locator must resolve one rendered node');return nodes[0];};
   return {
@@ -210,7 +211,7 @@ test('history original readiness follows real purchase review and unbound inboun
    waitFor:async()=>{single();},count:async()=>nodes.length,innerText:async()=>textOf(single()),getAttribute:async name=>single().props[name],isEnabled:async()=>!disabled(single()),isDisabled:async()=>disabled(single()),
    getByRole:(role,{name,exact})=>{assert.equal(exact,true);return locator(hostNodes(nodes,node=>{
     const actual=node.props.role??(node.type==='button'?'button':node.type==='form'&&node.props['aria-label']?'form':node.type==='section'&&node.props['aria-label']?'region':null);
-    const label=node.props['aria-label']??(node.props['aria-labelledby']?hostNodes([renderer.root],item=>item.props.id===node.props['aria-labelledby']).map(textOf).join(' '):textOf(node));return actual===role&&label===name;
+    const label=node.props['aria-label']??(node.props['aria-labelledby']?hostNodes([renderer.root],item=>item.props.id===node.props['aria-labelledby']).map(item=>item.children.map(textOf).join(' ')).join(' '):textOf(node));return actual===role&&label===name;
    }));},
    getByText:(value,{exact})=>{assert.equal(exact,true);return locator(hostNodes(nodes,node=>textOf(node)===value&&!node.children.some(child=>typeof child!=='string'&&textOf(child)===value)));},
    getByLabel:(value,{exact})=>{assert.equal(exact,true);const ids=hostNodes(nodes,node=>node.type==='label'&&textOf(node)===value).map(node=>node.props.htmlFor);return locator(hostNodes(nodes,node=>['input','textarea','select'].includes(node.type)&&ids.includes(node.props.id)));},
@@ -232,7 +233,7 @@ test('history original readiness follows real purchase review and unbound inboun
    const adapter={lookup:async()=>({items:[],hasMore:false}),read:async()=>({outcome:'Observed',document:structuredClone(inbound)}),execute:original=>{executed.push(original);return new Promise(resolve=>{release=()=>resolve(unknown(original));});},reconcile:async original=>{reconciled.push(original);return unknown(original);}};
    const access=isPurchase?{scopeKey:scope,authorityKey:'original',canRead:true,canEdit:true,canSaveDraft:true,canSubmit:true,canReconcile:true,available:true,existingOnly:true,canAddLines:false,branches:[{id:'QA-BRANCH',label:'QA-BRANCH'}],currencies:[historyCurrency],purposes:[{id:'1',label:'Synthetic purpose'}],maxNotesLength:65536,maxPurposeLength:65536,maxLines:500,itemLookupId:'items',objectLookupId:'objects'}:{scopeKey:scope,canRead:true,canSave:true,canSend:true,available:true,maxCommandBytes:1048576};
    const props=isPurchase?{adapter,access,initial:commandPurchaseSnapshot({document:structuredClone(purchase),stateToken:'prs1.'+'1'.repeat(64),commandAccess:{canSave:true,canSubmit:true,canLookup:true,canAddLines:false,reason:'available'}})}:{adapter,access,documentId};
-   const render=next=>React.createElement(RequestDetailDialog,{open:true,title:isPurchase?'Phiếu mua hàng hiện có':'Phiếu nhập hàng đã chọn',closeLabel:'Close',onRequestClose:()=>{}},React.createElement(isPurchase?MobileRequest:MobileInboundRequest,next));
+   const render=next=>React.createElement(RequestDetailDialog,{open:true,title:isPurchase?'Phiếu mua hàng hiện có':'Phiếu nhập hàng đã chọn',documentNumber:documentId,closeLabel:'Close',onRequestClose:()=>{}},React.createElement(isPurchase?MobileRequest:MobileInboundRequest,next));
    await act(async()=>{renderer=create(render(props));});
    const input=hostNodes([renderer.root],node=>node.type==='textarea'&&(isPurchase?node.props.name==='notes':node.props.id==='inbound-header-orderNumber'));assert.equal(input.length,1);
    await assert.rejects(()=>waitForHistoryOriginal(page,screen,documentId,originalValue,settled));
@@ -442,7 +443,7 @@ test('composed request detail history, guarded traversal and original custody',{
     assert.deepEqual(await opener.evaluate(element=>{const result=[];for(let node=element.parentElement;node;node=node.parentElement)result.push({top:node.scrollTop,left:node.scrollLeft});return result;}),offsets);
     await forward();await field(screen).waitFor();await eventually(async()=>await selected()===target);await atIndex(1);
     await page.keyboard.press('Escape');await eventually(async()=>await selected()===null);await atIndex(0);await forward();await field(screen).waitFor();await atIndex(1);
-    await page.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();await eventually(async()=>await selected()===null);await atIndex(0);await forward();await field(screen).waitFor();await atIndex(1);await go(screen);await eventually(async()=>await selected()===null);await atIndex(0);
+    await page.getByTitle('Đóng hộp thoại',{exact:true}).click();await eventually(async()=>await selected()===null);await atIndex(0);await forward();await field(screen).waitFor();await atIndex(1);await go(screen);await eventually(async()=>await selected()===null);await atIndex(0);
     await page.keyboard.press('Control+k');await page.getByRole('dialog',{name:'Tìm màn hình',exact:true}).waitFor();await page.keyboard.press('Escape');
     assert.equal(model.writes.length,0);assert.ok(calls.some(call=>call.query.includes('page=2')&&call.query.includes('QA')));await privacy();
    });

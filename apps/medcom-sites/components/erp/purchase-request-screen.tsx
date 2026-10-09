@@ -1,6 +1,8 @@
 "use client";
+import {ItemIdentity} from "./item-identity";
+import {purchaseItemDisplayBinding} from "@/lib/erp/item-display";
 import {RequestButton,RequestNotice,RequestEmpty,RequestLoading,RequestStatus,RequestError,requestDate,requestStyles} from "./request-presentation";
-import {RecordDetailToolbar} from "./record-dialog";
+import {RecordDetailToolbar,RecordSection} from "./record-dialog";
 import {RequestDetailDialog,useRequestDetailNavigation,useDetailPresentationProof,type RegisterRequestDetailNavigation} from "./request-detail-dialog";
 import {documentStatusLabel} from "@/lib/erp/document-status";
 import {useListControls} from "./list-view-state";
@@ -291,13 +293,15 @@ function PurchaseRequestReader({workspace,boundary,sessionUnverified,sessionEnde
   </RequestListContent></RequestListPanel></RequestListComposition>}
   {/* Outside the busy/error/selection fragment. Never key by token or discard an unknown intent. */}
   <RequestDetailDialog open={selected!==null} presentationAllowed={presentationAllowed&&workspace!==null} title="Phiếu mua hàng hiện có" documentNumber={canRead&&presentationReady?selected:null} closeLabel="Đóng đề nghị" onRequestClose={close}>
+   {(!canRead||!presentationReady)&&<><RecordSection title="Thông tin chung">
    {detailBusy&&!canRead&&<RequestLoading form label="Đang đọc phiếu từ ERP…"/>}
    {!!activeDetail?.error&&<RequestError error={activeDetail.error}/>}
    {!!active?.error&&<RequestError error={active.error}/>}
    {(!canRead||!presentationReady)&&<RequestNotice>Dữ liệu phiếu tạm ẩn trong khi xác minh. Yêu cầu gốc vẫn được giữ.</RequestNotice>}
    {!canRead&&<RecordDetailToolbar><RequestButton type="button" onClick={()=>setRefresh(value=>value+1)}>Xác minh lại phiếu</RequestButton></RecordDetailToolbar>}
+   </RecordSection><RecordSection title="Dòng hàng"><p className={requestStyles.muted}>Dòng hàng sẽ hiển thị khi phiếu được xác minh.</p></RecordSection><RecordSection title="Ghi chú"><p className={requestStyles.muted}>Ghi chú sẽ hiển thị khi phiếu được xác minh.</p></RecordSection></>}
   {editor&&<section ref={registerFocusDetail} aria-label="Phiếu mua hàng hiện có" tabIndex={-1} className="scroll-mt-24 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" hidden={!canRead||!presentationReady}><div className={requestStyles.stack}>
-   <MobileRequest presentationAllowed={presentationAllowed&&canRead&&presentationReady} statusPresentation={{documentId:editor.raw.document.purchaseRequestId,id:editor.raw.document.statusId,name:editor.raw.statusName}} initial={editor.snapshot} access={access} adapter={editor.bridge.adapter} readRevision={editor.revision} onConfirmed={onConfirmed} onWorkStateChange={onWorkStateChange}/>
+   <MobileRequest itemDisplay={{scopeKey:editor.scopeKey,binding:purchaseItemDisplayBinding(editor.raw),context:editor.raw.itemDisplayContext}} presentationAllowed={presentationAllowed&&canRead&&presentationReady} statusPresentation={{documentId:editor.raw.document.purchaseRequestId,id:editor.raw.document.statusId,name:editor.raw.statusName}} initial={editor.snapshot} access={access} adapter={editor.bridge.adapter} readRevision={editor.revision} onConfirmed={onConfirmed} onWorkStateChange={onWorkStateChange}/>
    {canRead&&<>{editor.receiptId&&<p role="status">ERP đã xác nhận yêu cầu {editor.receiptId}. Receipt vẫn được giữ khi đọc lại thất bại.</p>}
     <FullPurchaseReadback readback={editor.raw}/>
     <PurchaseReferenceDetails {...referenceInput} documentRateExchange={editor.raw.document.header.rateExchange} onContextChange={onReferenceContext}/></>}
@@ -307,7 +311,7 @@ function PurchaseRequestReader({workspace,boundary,sessionUnverified,sessionEnde
 }
 
 function value(value:string|number|boolean|null){return value===null?"NULL":typeof value==="boolean"?String(value):value===""?"\"\"":String(value);}
-const lineLabels=["STT","Mã mặt hàng","Ngân sách","Thời gian yêu cầu","Số lượng","Đơn giá","Thành tiền","Model"];
+const lineLabels=["STT","Mặt hàng","Ngân sách","Thời gian yêu cầu","Số lượng","Đơn giá","Thành tiền","Model"];
 function FullPurchaseReadback({readback}:{readback:PurchaseReadback}){
  const document=readback.document;
  const labels:Record<string,string>={purchaseRequestId:"Mã đề nghị",branchId:"Chi nhánh",statusId:"Mã trạng thái ERP",statusName:"Trạng thái",isLocked:"Khóa phiếu",purchaseDate:"Ngày giờ đề nghị trên ERP",purposeId:"Mã mục đích",personSuggest:"Người đề nghị",department:"Phòng ban",purposeDescOrClient:"Diễn giải mục đích / khách hàng",price:"Giá trị đề nghị",notes:"Ghi chú",currencyId:"Tiền tệ",objectId:"Mã đối tượng",rateExchange:"Tỷ giá"};
@@ -315,7 +319,7 @@ function FullPurchaseReadback({readback}:{readback:PurchaseReadback}){
   <dl className={requestStyles.values}>{Object.entries({purchaseRequestId:document.purchaseRequestId,branchId:document.branchId,statusId:document.statusId,statusName:documentStatusLabel(document.statusId,readback.statusName),isLocked:document.isLocked,...document.header}).map(([field,data])=><div key={field}><dt>{labels[field]}</dt><dd style={{whiteSpace:"pre-wrap",overflowWrap:"anywhere"}}>{value(data)}</dd></div>)}</dl>
   <p>{document.lines.length} dòng hàng</p>
   <div className="min-w-0 md:overflow-x-auto"><table role="table" aria-label="Toàn bộ dòng đề nghị" className="block w-full text-sm md:table"><thead role="rowgroup" className="sr-only md:not-sr-only md:table-header-group"><tr role="row">{lineLabels.map(field=><th role="columnheader" key={field} scope="col" className="border-b border-border bg-muted/40 p-3 text-left font-medium text-muted-foreground">{field}</th>)}</tr></thead>
-   <tbody role="rowgroup" className="grid gap-3 md:table-row-group">{document.lines.map((line,ordinal)=><tr role="row" key={line.lineId} className="grid grid-cols-2 gap-3 rounded-lg border border-border p-3 md:table-row md:border-0 md:p-0">{[ordinal+1,line.values.itemId,line.values.budget,line.values.timeRequired,line.values.quantity,line.values.unitPrice,line.values.totalPrice,line.values.model].map((data,index)=><td role="cell" key={index} className="min-w-0 whitespace-pre-wrap [overflow-wrap:anywhere] md:border-b md:border-border md:p-3"><span aria-hidden="true" className="mb-1 block text-xs text-muted-foreground md:hidden">{lineLabels[index]}</span><span>{value(data)}</span></td>)}</tr>)}</tbody>
+   <tbody role="rowgroup" className="grid gap-3 md:table-row-group">{document.lines.map((line,ordinal)=><tr role="row" key={line.lineId} className="grid grid-cols-2 gap-3 rounded-lg border border-border p-3 md:table-row md:border-0 md:p-0">{[ordinal+1,line.values.itemId,line.values.budget,line.values.timeRequired,line.values.quantity,line.values.unitPrice,line.values.totalPrice,line.values.model].map((data,index)=><td role="cell" key={index} className="min-w-0 whitespace-pre-wrap [overflow-wrap:anywhere] md:border-b md:border-border md:p-3"><span aria-hidden="true" className="mb-1 block text-xs text-muted-foreground md:hidden">{lineLabels[index]}</span>{index===1?<ItemIdentity binding={purchaseItemDisplayBinding(readback)} context={readback.itemDisplayContext} line={{lineId:line.lineId,itemId:line.values.itemId}}/>:<span>{value(data)}</span>}</td>)}</tr>)}</tbody>
   </table></div>
  </div></details></section>;
 }
