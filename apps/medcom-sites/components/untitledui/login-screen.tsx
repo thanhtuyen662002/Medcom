@@ -92,15 +92,16 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" aria-label="Đăng nhập ERP">
             {/* Username Input */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                Tên đăng nhập / Mã nhân viên
+              <label htmlFor="login-username" className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                Tên đăng nhập
               </label>
               <div className="relative">
                 <User className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
                 <input
+                  id="login-username"
                   type="text"
                   required
                   value={username}
@@ -113,12 +114,13 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
 
             {/* Password Input */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+              <label htmlFor="login-password" className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                 Mật khẩu
               </label>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
                 <input
+                  id="login-password"
                   type={showPassword ? "text" : "password"}
                   required
                   value={password}
@@ -190,7 +192,7 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                 loading={isLoading}
                 iconTrailing={<ArrowRight className="size-4" />}
               >
-                Đăng nhập vào Hệ thống
+                Đăng nhập
               </UntitledButton>
             </div>
           </form>
