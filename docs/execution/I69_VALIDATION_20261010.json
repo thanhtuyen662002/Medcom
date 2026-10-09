@@ -31,7 +31,8 @@
     "tests/backend/Medcom.Api.Tests/DocumentFullFieldTests.cs": "483f7a0592965fcb1c1cb382fe6d665f8525bd22bab213b96a675c9b645f1bcc",
     "tests/backend/Medcom.Api.Tests/DocumentSelectionTests.cs": "f3de9ad3fdd59a104a5cb37249e920bcf674730ef18ceb68916ceedb71a7e4d7",
     "tests/deploy/test_backend_api_contract.py": "6cf7b5d20b50f72dd6e176791d1ac1a9084c22d1241a3fab73ede1b55ccfd3e8",
-    "tools/deploy/verify_backend_api.py": "4a65620574d01e223721405fac6184211f78b0d19949c104b06c8b0e1e9b4f8f"
+    "tools/deploy/verify_backend_api.py": "4a65620574d01e223721405fac6184211f78b0d19949c104b06c8b0e1e9b4f8f",
+    "tests/deploy/test_railway_container.py": "f15a7953b86cf98e1c501c901f8ce14ec4aeceaccfc2fc27c16f8f8bc7dbb681"
   },
   "source_verification": {
     "identity": "owner-attachment-20261002",
@@ -128,5 +129,12 @@
     "production_acceptance"
   ],
   "hosted_implementation_ci": "PENDING_after_publication_not_admission_checks",
-  "full_backend_goal_45": "OPEN"
+  "full_backend_goal_45": "OPEN",
+  "ci_repair": {
+    "run": 38006388572,
+    "head": "91822cb0f20be6a4acd8654be5350ab90fe633d5",
+    "failure": "Native Docker retained an obsolete 33-operation assertion after new query-contract registration.",
+    "repair": "Expect all 34 registered operations and verify new route and all nine v2 list parameters; retain source/live/export parity and isolation assertions.",
+    "hosted_recheck": "PENDING_new_exact_head"
+  }
 }
