@@ -23,6 +23,69 @@ namespace Medcom.Api.Tests;
 public sealed class PurchaseRequestEndpointTests
 {
     [Fact]
+    public async Task Full_read_failure_stays_503_before_command_gating_with_only_sanitized_server_diagnostics()
+    {
+        var logs = new PurchaseReadLog(); var commandAccess = new ObservedCommandAccess();
+        await using var fixture = await PurchaseHttpFixture.Start(services =>
+            services.AddSingleton<IPurchaseRequestCommandAccess>(commandAccess),
+            observeDiagnostic: (diagnostic, context) => ApiHost.LogPurchaseReadUnavailable(logs, context, diagnostic));
+        fixture.Source.Seed();
+        fixture.Source.FailureSql = SqlPurchaseRequestQueries.HeadText;
+        fixture.Source.FailureException = new InvalidOperationException("SELECT PRIVATE_SQL_SENTINEL; password=PRIVATE_SECRET_SENTINEL");
+        await fixture.Login();
+        using var response = await fixture.Client.GetAsync("/api/purchase-requests/detail?documentId=QA-DOC");
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        Assert.True(response.Headers.CacheControl?.NoStore);
+        var body = await response.Content.ReadAsStringAsync();
+        using var problem = JsonDocument.Parse(body);
+        Assert.Equal("purchase_read_unavailable", problem.RootElement.GetProperty("code").GetString());
+        Assert.DoesNotContain("PRIVATE_", body); Assert.DoesNotContain("QA-DOC", body);
+        Assert.False(problem.RootElement.TryGetProperty("data", out _));
+        Assert.False(problem.RootElement.TryGetProperty("stage", out _));
+        Assert.Equal(0, commandAccess.Calls);
+        var entry = Assert.Single(logs.Entries);
+        Assert.Equal(1002, entry.Event.Id); Assert.Equal("PurchaseReadUnavailable", entry.Event.Name);
+        Assert.Null(entry.Exception); Assert.Equal(LogLevel.Warning, entry.Level);
+        Assert.Contains(response.Headers.GetValues(ApiHost.CorrelationHeader).Single(), entry.Message);
+        Assert.Contains("operation Detail; stage Head; reason Exception; exception kind InvalidOperation", entry.Message);
+        Assert.DoesNotContain("PRIVATE_", entry.Message); Assert.DoesNotContain("QA-DOC", entry.Message);
+        Assert.DoesNotContain("qa-user", entry.Message); Assert.DoesNotContain("Synthetic requester", entry.Message);
+        Assert.Equal(0, fixture.Source.Commits); Assert.Equal(1, fixture.Source.ConnectionDisposals);
+        // The failed read does not retire the session or poison independent list reads.
+        using var list = await fixture.Client.GetAsync("/api/purchase-requests");
+        Assert.Equal(HttpStatusCode.OK, list.StatusCode); Assert.Single(logs.Entries);
+    }
+
+    [Fact]
+    public async Task Default_off_command_access_does_not_fail_or_log_a_successful_full_read()
+    {
+        var events = new List<PurchaseRequestReadDiagnostic>();
+        await using var fixture = await PurchaseHttpFixture.Start(observeDiagnostic: (diagnostic, _) => events.Add(diagnostic));
+        fixture.Source.Seed(); await fixture.Login();
+        var body = await fixture.Json("/api/purchase-requests/detail?documentId=QA-DOC");
+        var data = body.GetProperty("data");
+        Assert.Equal("QA-DOC", data.GetProperty("document").GetProperty("purchaseRequestId").GetString());
+        var access = data.GetProperty("commandAccess");
+        Assert.False(access.GetProperty("canSave").GetBoolean()); Assert.False(access.GetProperty("canSubmit").GetBoolean());
+        Assert.Empty(events); Assert.Equal(0, fixture.Source.Commits);
+    }
+
+    private sealed class ObservedCommandAccess : IPurchaseRequestCommandAccess
+    {
+        public int Calls;
+        public Task<PurchaseRequestCommandAccessState> ResolveAsync(ResolvedSession session, string documentId, string branchId, CancellationToken token)
+        { Calls++; return Task.FromResult(UnavailablePurchaseRequestCommandAccess.State); }
+    }
+    private sealed class PurchaseReadLog : ILogger
+    {
+        public readonly List<(LogLevel Level, EventId Event, Exception? Exception, string Message)> Entries = [];
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public bool IsEnabled(LogLevel level) => true;
+        public void Log<TState>(LogLevel level, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+            => Entries.Add((level, eventId, exception, formatter(state, exception)));
+    }
+
+    [Fact]
     public async Task Authorized_endpoint_serializes_display_outside_the_unchanged_aggregate()
     {
         await using var fixture=await PurchaseHttpFixture.Start();fixture.Source.Seed();
@@ -311,7 +374,8 @@ public sealed class PurchaseRequestEndpointTests
 internal sealed class PurchaseHttpFixture(WebApplication app,HttpClient client,X509Certificate2 certificate,string configPath,PurchaseQuerySource source,PurchaseHttpAuthority authority,PurchaseClock clock):IAsyncDisposable
 {
     public HttpClient Client=>client;public PurchaseQuerySource Source=>source;public PurchaseHttpAuthority Authority=>authority;public PurchaseClock Clock=>clock;
-    public static async Task<PurchaseHttpFixture> Start(Action<IServiceCollection>? commandServices = null, Action<HttpContext>? observeRequest = null)
+    public static async Task<PurchaseHttpFixture> Start(Action<IServiceCollection>? commandServices = null, Action<HttpContext>? observeRequest = null,
+        Action<PurchaseRequestReadDiagnostic, HttpContext>? observeDiagnostic = null)
     {
         // Only a generated fixture certificate and an empty synthetic configuration file.
         using var key=RSA.Create(2048);var request=new CertificateRequest("CN=localhost",key,HashAlgorithmName.SHA256,RSASignaturePadding.Pkcs1);
@@ -327,7 +391,8 @@ internal sealed class PurchaseHttpFixture(WebApplication app,HttpClient client,X
                 var context=provider.GetRequiredService<IHttpContextAccessor>().HttpContext!;var token=AuthEndpoints.Current(context).Token;
                 var sessions=provider.GetRequiredService<IWebSessions>();
                 return new SqlPurchaseRequestQueries(PurchaseQuerySource.Company,()=>new QueryConnection(source),async cancellation=>(await sessions.ResolveAsync(token,false,cancellation))?.Identity,
-                    async cancellation=>(await sessions.InspectAsync(token,cancellation))?.Identity);
+                    async cancellation=>(await sessions.InspectAsync(token,cancellation))?.Identity,
+                    diagnostic => observeDiagnostic?.Invoke(diagnostic, context));
             });
             commandServices?.Invoke(builder.Services);
         });
