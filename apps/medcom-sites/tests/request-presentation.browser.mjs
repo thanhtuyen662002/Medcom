@@ -1,3 +1,4 @@
+import {serveLocalFont} from './local-font-assets.mjs';
 // Actual Workspace and production request components with compiled application
 // Tailwind CSS. API data is entirely synthetic; this is not SQL/server acceptance.
 import {test} from 'node:test';
@@ -274,12 +275,11 @@ test('I30 compiled application presentation at 320,360,390,1440',{timeout:240000
  const workspace=()=>({session:{displayName:'SYNTHETIC USER',tenantId:'QA-T',companyId:'QA-C',companyName:'SYNTHETIC',authorityVersion:model.advanceAuthority?model.workspaceReads:1,idleExpiresAt:new Date(Date.now()+3600000).toISOString(),absoluteExpiresAt:new Date(Date.now()+7200000).toISOString(),capabilities:model.workspaceCapabilities??['purchase-requests.read','inbound-requests.read','purchase-orders.read']},branchIds:['QA-BRANCH'],navigation:['purchase-requests','inbound-requests','purchase-orders'].map(id=>({id,label:id,href:'/?screen='+id}))});
  const send=(res,status,data,headers={})=>{if(res.destroyed)return;res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store',...headers});res.end(JSON.stringify(data));};
  const readHeaders={'X-Medcom-Session-Scope':session,'X-Medcom-Read-Scope':scope};
- const server=createServer(async(req,res)=>{
+ const server=createServer(async(req,res)=>{if(serveLocalFont(req,res))return;
   const m=model;try{
    const url=new URL(req.url,origin??'http://localhost');
    if(url.pathname==='/app.js'){res.setHeader('Content-Type','text/javascript');return res.end(script);}
    if(url.pathname==='/app.css'){res.setHeader('Content-Type','text/css');return res.end(css);}
-   if(/^\/fonts\/inter\/inter-(latin|latin-ext|vietnamese)-(400|500|600)-normal\.woff2$/.test(url.pathname)){res.setHeader('Content-Type','font/woff2');return res.end(await readFile(path.join(process.cwd(),'public',url.pathname)));}
    if(url.pathname==='/medcom-logo.png'){res.setHeader('Content-Type','image/png');return res.end(logo);}
    if(['/i30/network-control/closed','/i30/network-control/bff'].includes(url.pathname)){
     const parts=[];for await(const part of req)parts.push(part);const digest=sha(Buffer.concat(parts));const kind=url.pathname.endsWith('/closed')?'closed':'bff';m.control[kind].push(digest);
@@ -507,7 +507,7 @@ test('I30 compiled application presentation at 320,360,390,1440',{timeout:240000
   browser=await chromium.launch({executablePath:executable,headless:true,chromiumSandbox:true});t.signal.throwIfAborted();
   await run('read-only order detail uses one responsive source table and returns focus on close',async()=>{
    for(const width of [320,390,1440]){
-    await start(width,'purchase-orders');const opener=page.getByRole('button',{name:'Mở chứng từ QA-ORDER-001',exact:true});await opener.click();
+    await start(width,'purchase-orders',{orderPages:[Array.from({length:6},(_,index)=>orderRow(index+1))]});await page.getByText('QA-ORDER-001',{exact:true}).locator('visible=true').first().waitFor();await capture('untitled-orders-'+width,{viewport:width<768});const opener=page.getByRole('button',{name:'Mở chứng từ QA-ORDER-001',exact:true});await opener.click();
     const dialog=page.getByRole('dialog',{name:'Đơn đặt hàng mua QA-ORDER-001',exact:true});await dialog.waitFor();
     const table=dialog.getByRole('table',{name:'Dòng hàng',exact:true});await table.getByText('QA-ORDER-ITEM-001',{exact:true}).waitFor();await paint();
     assert.equal(await table.count(),1);assert.equal(await table.locator('tbody tr').count(),1);assert.equal(await dialog.getByRole('textbox').count(),0,'Read-only values are text, not disabled inputs');

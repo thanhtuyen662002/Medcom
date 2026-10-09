@@ -1,3 +1,4 @@
+import {serveLocalFont} from './local-font-assets.mjs';
 // Actual composed Workspace + production API client in an installed browser.
 // The HTTP backend and session cookies are synthetic. This is not ASP.NET/SQL
 // acceptance. Deterministic visibility events supplement real tab activation
@@ -48,7 +49,7 @@ test('I29 actual Workspace retains same-session read controls and fences retired
  async function wait(kind){if(held.has(kind))await new Promise(resolve=>{const queue=waiters.get(kind)??[];queue.push(resolve);waiters.set(kind,queue);});}
  function release(kind){held.delete(kind);(waiters.get(kind)??[]).splice(0).forEach(done=>done());}
  function send(res,status,data,headers={}){if(res.destroyed)return;res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store',...headers});res.end(status===204?undefined:JSON.stringify(data));}
- const server=createServer(async(req,res)=>{
+ const server=createServer(async(req,res)=>{if(serveLocalFont(req,res))return;
   try{
    const url=new URL(req.url,origin??'http://localhost');
    if(url.pathname==='/fixture.js'){res.setHeader('Content-Type','text/javascript');return res.end(built.outputFiles.find(file=>file.path.endsWith('.js')).contents);}

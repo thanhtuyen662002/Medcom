@@ -1,3 +1,4 @@
+import {serveLocalFont} from './local-font-assets.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
@@ -635,7 +636,7 @@ test('I20 React mobile intent lifecycle / production component and adapter with 
  }createRoot(document.getElementById('root')).render(<NavigationGuardProvider><Harness/></NavigationGuardProvider>);`;
  await build({absWorkingDir:app,stdin:{contents:entry,resolveDir:app,loader:'tsx'},outfile:path.join(output,'i20-mobile-browser.js'),bundle:true,platform:'browser',format:'iife',alias:{'@':app},jsx:'automatic',define:{'process.env.NODE_ENV':'"production"','process.env':'{}'},logLevel:'warning'});
  const bundle=await readFile(path.join(output,'i20-mobile-browser.js'));
- const server=createServer((request,response)=>{if(request.url==='/browser.css'){response.writeHead(200,{'Content-Type':'text/css'});return response.end(css);}
+ const server=createServer((request,response)=>{if(serveLocalFont(request,response))return;if(request.url==='/browser.css'){response.writeHead(200,{'Content-Type':'text/css'});return response.end(css);}
   if(request.url==='/browser.js'){response.writeHead(200,{'Content-Type':'text/javascript'});return response.end(bundle);}response.writeHead(200,{'Content-Type':'text/html'});response.end('<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><div id="root"></div><script src="/browser.js"></script></html>');});
  server.listen(0,'127.0.0.1');await once(server,'listening');let browser,context,page;const errors=[];
  try{

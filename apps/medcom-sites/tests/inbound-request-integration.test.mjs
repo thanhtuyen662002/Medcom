@@ -1,3 +1,4 @@
+import {serveLocalFont} from './local-font-assets.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {stripTypeScriptTypes, createRequire} from 'node:module';
@@ -795,7 +796,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
   const javascript=bundle.outputFiles.find(file=>file.path.endsWith('.js'));assert.ok(javascript?.contents.length);
   const css=(await postcss([tailwind({base:app})]).process(await readFile(path.join(app,'app/globals.css'),'utf8'),{from:path.join(app,'app/globals.css')})).css+'\n'+bundle.outputFiles.filter(file=>file.path.endsWith('.css')).map(file=>file.text).join('\n');
   assert.ok(!css.includes('@import "tailwindcss"'));
-  const server=createServer((req,res)=>{res.setHeader('content-type',req.url==='/fixture.js'?'application/javascript':req.url==='/fixture.css'?'text/css':'text/html');res.end(req.url==='/fixture.js'?javascript.contents:req.url==='/fixture.css'?css:'<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/fixture.css"><div id="root"></div><script src="/fixture.js"></script></html>');});
+  const server=createServer((req,res)=>{if(serveLocalFont(req,res))return;res.setHeader('content-type',req.url==='/fixture.js'?'application/javascript':req.url==='/fixture.css'?'text/css':'text/html');res.end(req.url==='/fixture.js'?javascript.contents:req.url==='/fixture.css'?css:'<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/fixture.css"><div id="root"></div><script src="/fixture.js"></script></html>');});
   server.listen(0, '127.0.0.1'); await once(server, 'listening');
   let browser, context; const errors = [], external = [], results = [];
   // node:test marks a timed-out async test failed but does not unwind its

@@ -16,3 +16,5 @@ This isolated branch and Draft PR represent the interactive writer's bounded UI 
 - Added a native order-detail check across 320/390/1440 px and source-value/one-surface assertions. Updated previous responsive-renderer assertions to the single shared table. Existing application workflows and business endpoints are unchanged.
 
 Local typecheck passes. Local lint has zero errors and the existing TanStack virtualizer compiler warning. The 40 selected display/fallback/shared-UI contract tests pass. The root container cannot launch sandboxed Chromium; required native browser acceptance is supplied by exact-source Linux/Windows CI, without disabling the sandbox or weakening functional assertions. Deployment and visual acceptance remain pending for this candidate.
+
+Browser fixtures serve the same nine explicitly named, tracked Inter WOFF2 assets as production. QR network assertions include only those exact static font URLs; arbitrary font paths and all other requests retain the original rejection behavior. This fixes the first candidate's QR guard failure without changing product logic or disabling any test.

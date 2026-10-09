@@ -1,3 +1,4 @@
+import {serveLocalFont} from './local-font-assets.mjs';
 // Synthetic native-browser acceptance for shared retained surface and footer.
 import {test} from 'node:test';import assert from 'node:assert/strict';import {createRequire} from 'node:module';import {createServer} from 'node:http';import {once} from 'node:events';import {mkdir,readFile,writeFile} from 'node:fs/promises';import {existsSync} from 'node:fs';import path from 'node:path';
 const require=createRequire(import.meta.url),{build}=require('esbuild');
@@ -13,7 +14,7 @@ await writeFile(output+'/compiled-fixture.js',script);
 test('native record desktop/mobile footer, authority masking, nested modal and dirty close',async()=>{
  const executable=process.env.MEDCOM_EDGE_PATH??'/usr/bin/chromium';assert.ok(existsSync(executable),'Native Chromium/Edge required; compilation is not browser acceptance');
  const browserTools=process.env.MEDCOM_BROWSER_TOOLCHAIN;const {chromium}=(browserTools?createRequire(path.join(path.resolve(browserTools),'package.json')):require)('playwright-core');
- const server=createServer((req,res)=>{if(req.url==='/fixture.js'){res.setHeader('content-type','text/javascript');res.end(script);}else{res.setHeader('content-type','text/html');res.end('<!doctype html><html lang="vi"><meta name="viewport" content="width=device-width,initial-scale=1"><style>'+css+'</style><body><div id="root"></div><script src="/fixture.js"></script></body></html>');}});server.listen(0,'127.0.0.1');await once(server,'listening');let browser;const results=[],errors=[];
+ const server=createServer((req,res)=>{if(serveLocalFont(req,res))return;if(req.url==='/fixture.js'){res.setHeader('content-type','text/javascript');res.end(script);}else{res.setHeader('content-type','text/html');res.end('<!doctype html><html lang="vi"><meta name="viewport" content="width=device-width,initial-scale=1"><style>'+css+'</style><body><div id="root"></div><script src="/fixture.js"></script></body></html>');}});server.listen(0,'127.0.0.1');await once(server,'listening');let browser;const results=[],errors=[];
  try{
   browser=await chromium.launch({executablePath:executable,headless:true,chromiumSandbox:true});
   for(const width of [390,1280]){const page=await browser.newPage({viewport:{width,height:850}});page.on('pageerror',error=>errors.push(String(error)));await page.goto('http://127.0.0.1:'+server.address().port);const dialog=page.getByRole('dialog',{name:'Synthetic record QA-001',exact:true});await dialog.waitFor();

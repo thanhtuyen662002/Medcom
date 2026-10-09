@@ -1,3 +1,4 @@
+import {serveLocalFont,localFontPaths} from './local-font-assets.mjs';
 // Disposable Edge/Chromium interaction harness, using existing esbuild, React
 // and Tailwind dependencies. Tests the actual request QR wrapper in a form. Never invokes real getUserMedia or grants camera
 // permissions. Run from apps/medcom-sites: node tests/request-qr-search.browser.mjs
@@ -76,6 +77,7 @@ const html = `<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="v
 const requests = [];
 const server = http.createServer((request, response) => {
   requests.push(request.url);
+  if(serveLocalFont(request,response))return;
   response.setHeader('Cache-Control', 'no-store');
   response.setHeader('Permissions-Policy', 'camera=(self), microphone=(), geolocation=()');
   response.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'");
@@ -238,7 +240,7 @@ try {
   assert.equal(await evaluate('window.qrFixture.submits'),0);
   assert.deepEqual(await evaluate(`({branch:window.qrFixture.branch,filter:window.qrFixture.filter,page:window.qrFixture.page,selection:window.qrFixture.selection,commands:window.qrFixture.commands,navigations:window.qrFixture.navigations})`),{branch:0,filter:0,page:1,selection:null,commands:0,navigations:0});
   await click('Ordinary Search');assert.equal(await evaluate('window.qrFixture.submits'),1);
-  assert.deepEqual(errors,[]);assert.ok(requests.every(url=>['/','/fixture.js','/fixture.css','/favicon.ico'].includes(url)));
+  assert.deepEqual(errors,[]);assert.ok(requests.every(url=>['/','/fixture.js','/fixture.css','/favicon.ico',...localFontPaths].includes(url)));
   const receipt={passed:results.length,failed:0,confirms:await evaluate('window.qrFixture.confirms'),cameraCalls:await evaluate('window.qrFixture.calls.length'),stops:await evaluate('window.qrFixture.stops'),requests,browser:(await cdp('Browser.getVersion')).product,node:process.version,physicalCameraAcceptance:'NOT_RUN'};
   console.log(JSON.stringify(receipt));
   if(process.env.REQUEST_QR_TEST_EVIDENCE_DIRECTORY)await writeFile(path.join(path.resolve(process.env.REQUEST_QR_TEST_EVIDENCE_DIRECTORY),'browser-receipt.json'),JSON.stringify(receipt,null,2));
