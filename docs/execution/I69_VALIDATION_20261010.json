@@ -32,7 +32,8 @@
     "tests/backend/Medcom.Api.Tests/DocumentSelectionTests.cs": "f3de9ad3fdd59a104a5cb37249e920bcf674730ef18ceb68916ceedb71a7e4d7",
     "tests/deploy/test_backend_api_contract.py": "6cf7b5d20b50f72dd6e176791d1ac1a9084c22d1241a3fab73ede1b55ccfd3e8",
     "tools/deploy/verify_backend_api.py": "4a65620574d01e223721405fac6184211f78b0d19949c104b06c8b0e1e9b4f8f",
-    "tests/deploy/test_railway_container.py": "f15a7953b86cf98e1c501c901f8ce14ec4aeceaccfc2fc27c16f8f8bc7dbb681"
+    "tests/deploy/test_railway_container.py": "f15a7953b86cf98e1c501c901f8ce14ec4aeceaccfc2fc27c16f8f8bc7dbb681",
+    "tools/backend/run_preparation_checks.py": "c644d69dc073c3174f5a5eaf6525e6bcb4a6575b8efe4cee06651273e9b4384f"
   },
   "source_verification": {
     "identity": "owner-attachment-20261002",
@@ -95,12 +96,20 @@
     "source_scanner_tests": 48,
     "policy_guard_tests": 97,
     "api_verifier_tests": 8,
-    "preparation_reference_suites": "RUNNING_after_Windows_interpreter_repair",
-    "yaml_and_whitespace": "PASS"
+    "preparation_reference_suites": "RUNNING_complete_rerun_after_explicit_interpreter_and_UTF8_launcher_repair",
+    "yaml_and_whitespace": "PASS",
+    "local_deploy_suite": {
+      "total": 20,
+      "passed": 15,
+      "native_Docker_not_run": 5
+    }
   },
   "contract": {
     "operations": 34,
-    "schemas": 99
+    "schemas": 99,
+    "official_meta_schema": "https://spec.openapis.org/oas/3.1/schema/2022-10-07",
+    "official_meta_schema_sha256": "da01ba28852cac0de53893797cb8d1942bc3b05084f526dcc216717dec314ed0",
+    "official_and_99_component_validation": "PASS_jsonschema_4.25.1_ephemeral_validation_runtime"
   },
   "public_deployed_preflight": {
     "operations": 33,
@@ -135,6 +144,11 @@
     "head": "91822cb0f20be6a4acd8654be5350ab90fe633d5",
     "failure": "Native Docker retained an obsolete 33-operation assertion after new query-contract registration.",
     "repair": "Expect all 34 registered operations and verify new route and all nine v2 list parameters; retain source/live/export parity and isolation assertions.",
-    "hosted_recheck": "PENDING_new_exact_head"
+    "hosted_recheck": "PASS_container_run_38006557505_on_562fc6244cfb231ef691ebfc342c3d126834eeeb;final_head_still_requires_its_own_checks"
+  },
+  "local_reference_repair": {
+    "failure": "Default Windows cp1252 could not decode UTF-8 Vietnamese preparation JSON; no fixture content/assertion changes.",
+    "repair": "Run reference children with process-only PYTHONUTF8=1; keep all cases and explicit interpreter fixes.",
+    "result": "Complete_23_suite_rerun_RUNNING;final_receipt_on_PR125"
   }
 }

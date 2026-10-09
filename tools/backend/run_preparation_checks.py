@@ -14,7 +14,7 @@ if len(files) < 23:
 for path in files:
     print(f'Running {path.relative_to(root)}', flush=True)
     result = subprocess.run([sys.executable, str(path)], cwd=root,
-        env={**os.environ, 'PYTHONDONTWRITEBYTECODE': '1'})
+        env={**os.environ, 'PYTHONDONTWRITEBYTECODE': '1', 'PYTHONUTF8': '1'})
     if result.returncode:
         raise SystemExit(result.returncode)
 print(f'PASS: {len(files)} reference suites; product/runtime claims remain separate')
