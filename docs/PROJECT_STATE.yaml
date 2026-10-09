@@ -1,3 +1,26 @@
+owner_backend_integration_20261010:
+  instruction: complete_backend_merge_main_and_deploy_for_separate_frontend_integration
+  timezone: Asia/Saigon
+  canonical_goal: 45
+  current_increment: I68_executable_current_http_contract_and_safe_integration_verifier
+  pr: 123
+  base: b9a5c61b3f9e819f8a28442d48e5e21566cb5c9a
+  I67_merged_pr: 122
+  I67_merge_head: b9a5c61b3f9e819f8a28442d48e5e21566cb5c9a
+  I67_railway_deployment: db529fb9-dbdf-4064-93e7-ae2ed2bda189
+  I67_railway_status: SUCCESS_observed_20261009T171833Z
+  I68_http_operations: 33
+  I68_openapi_schemas: 98
+  frontend_handoff: docs/backend/FE_INTEGRATION_20261010.md
+  contract: docs/backend/medcom-openapi.json
+  final_head_hosted_ci: pending_readback_after_publication
+  authenticated_target_reads: NOT_RUN_real_ERP_credentials_not_supplied
+  business_release: NOT_ACCEPTED
+  full_backend_goal: OPEN_remaining_modules_actions_reports_and_target_acceptance
+  frontend_custody: separate_owner_no_frontend_mutations
+  schedules: remain_off
+  historical_state_below: preserved_checkpoints_not_current_deployment_state
+
 owner_backend_continuation_20261009:
   instruction: continue_backend_complete_apis_and_return_all_fields
   current_increment: I67_complete_source_backed_document_read_fields

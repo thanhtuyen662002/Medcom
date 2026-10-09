@@ -1,0 +1,338 @@
+using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
+using Medcom.Contracts;
+using Medcom.Contracts.Inbound;
+
+namespace Medcom.Api;
+
+// Public technical contracts only: no service resolution, SQL, settings, identity,
+// credentials, grants or deployment attestation. Registration is not availability.
+internal static class ApiContractCatalog
+{
+    internal const string Path = "/api/contracts/openapi.json";
+    private static readonly string Document = Build().ToJsonString();
+    internal static string Json => Document;
+
+    internal static void Map(WebApplication app) => app.MapGet(Path,
+        () => Results.Text(Document, "application/json", System.Text.Encoding.UTF8)).AllowAnonymous();
+
+    internal static JsonObject Build()
+    {
+        var schemas = new Schemas();
+        var paths = new JsonObject();
+        schemas.Values["ProblemDetails"] = new JsonObject
+        {
+            ["type"] = "object", ["additionalProperties"] = true,
+            ["properties"] = new JsonObject
+            {
+                ["type"] = new JsonObject { ["type"] = "string" }, ["title"] = new JsonObject { ["type"] = "string" },
+                ["status"] = new JsonObject { ["type"] = "integer" }, ["detail"] = new JsonObject { ["type"] = "string" },
+                ["instance"] = new JsonObject { ["type"] = "string" }, ["code"] = new JsonObject { ["type"] = "string" },
+                ["correlationId"] = new JsonObject { ["type"] = "string" }
+            },
+            ["required"] = new JsonArray()
+        };
+        JsonObject Shape(Type type) => schemas.Shape(type);
+        JsonObject Object(params (string Name, JsonObject Schema)[] properties) => new()
+        {
+            ["type"] = "object", ["additionalProperties"] = false,
+            ["properties"] = new JsonObject(properties.Select(p => KeyValuePair.Create<string, JsonNode?>(p.Name, p.Schema))),
+            ["required"] = Array(properties.Select(p => p.Name))
+        };
+        JsonObject Parameter(string name, string location, JsonObject schema, bool required = false) => new()
+        { ["name"] = name, ["in"] = location, ["required"] = required, ["schema"] = schema };
+        JsonObject String(int? limit = null) => limit is {} n ? new() { ["type"] = "string", ["maxLength"] = n } : new() { ["type"] = "string" };
+        JsonObject Number(int maximum, int fallback) => new()
+        { ["type"] = "integer", ["minimum"] = 1, ["maximum"] = maximum, ["default"] = fallback };
+        void Add(string method, string path, string id, JsonObject? response,
+            string admission, string? capability = null, bool anonymous = false,
+            Type? request = null, JsonArray? parameters = null, int success = 200)
+        {
+            var security = new JsonObject();
+            if (!anonymous) security["SessionCookie"] = new JsonArray();
+            if (method == "post")
+            {
+                security["CsrfToken"] = new JsonArray();
+                security["CsrfCookie"] = new JsonArray();
+            }
+            var responses = new JsonObject
+            {
+                [success.ToString(System.Globalization.CultureInfo.InvariantCulture)] = response is null
+                    ? new JsonObject { ["description"] = success == 204 ? "No content." : "OpenAPI document." }
+                    : new JsonObject { ["description"] = success == 503 ? "Business release is not admitted; inspect dependency observations." : "Typed response. Inspect access and outcome; HTTP 200 does not imply a committed write.",
+                        ["content"] = new JsonObject { ["application/json"] = new JsonObject { ["schema"] = response } } },
+                ["default"] = new JsonObject { ["description"] = "Non-success HTTP status. Do not infer an available operation or committed effect. Infrastructure errors may use another shape.",
+                    ["content"] = new JsonObject { ["application/problem+json"] = new JsonObject { ["schema"] = Schemas.Ref("ProblemDetails") } } }
+            };
+            var operation = new JsonObject
+            {
+                ["operationId"] = id, ["responses"] = responses,
+                ["security"] = security.Count == 0 ? new JsonArray() : new JsonArray(security),
+                ["x-medcom-admission"] = admission,
+                ["description"] = "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative."
+            };
+            var responseHeaders = new JsonObject
+            {
+                ["X-Correlation-ID"] = new JsonObject { ["description"] = "Server-generated request correlation, never client authority.", ["schema"] = String() }
+            };
+            if (method == "get" && (path == "/api/workspace" || path.StartsWith("/api/documents/", StringComparison.Ordinal)
+                || path.StartsWith("/api/v2/", StringComparison.Ordinal) || path.StartsWith("/api/purchase-requests", StringComparison.Ordinal)))
+                foreach (var header in new[] { "X-Medcom-Session-Scope", "X-Medcom-Read-Scope" })
+                    responseHeaders[header] = new JsonObject { ["description"] = "Opaque current scope of a successful authorized read; invalidate stale data when it changes.", ["schema"] = String() };
+            responses[success.ToString(System.Globalization.CultureInfo.InvariantCulture)]!["headers"] = responseHeaders;
+            if (capability is not null) operation["x-medcom-capability"] = capability;
+            if (parameters is not null) operation["parameters"] = parameters;
+            if (request is not null) operation["requestBody"] = new JsonObject
+            {
+                ["required"] = true,
+                ["content"] = new JsonObject { ["application/json"] = new JsonObject { ["schema"] = Shape(request) } }
+            };
+            if (paths[path] is not JsonObject item) paths[path] = item = new();
+            item[method] = operation;
+        }
+        Add("get", "/health/live", "healthLive", Object(("status", new() { ["type"] = "string", ["const"] = "healthy" })), "process-only", anonymous: true);
+        Add("get", "/health/ready", "healthReady", Shape(typeof(PlatformHealth)), "business-release-not-admitted", anonymous: true, success: 503);
+        Add("get", Path, "openApiContract", null, "static-contract", anonymous: true);
+        Add("get", "/api/platform/metadata", "platformMetadata", Object(("contractVersion", new() { ["type"] = "integer", ["const"] = 1 }),
+            ("status", new() { ["type"] = "string", ["enum"] = Array(["foundation_only", "read_only_adapter"]) })), "identity-observation", "platform.status");
+        Add("get", "/api/auth/csrf", "authCsrf", Object(("token", new() { ["type"] = Array(["string", "null"]) })), "antiforgery-bootstrap", anonymous: true);
+        Add("post", "/api/auth/login", "authLogin", Shape(typeof(SessionView)), "legacy-identity-provider-required", anonymous: true, request: typeof(LoginRequest));
+        Add("get", "/api/auth/session", "authSession", Shape(typeof(SessionView)), "authenticated-session");
+        Add("post", "/api/auth/session/continue", "authContinue", Shape(typeof(SessionView)), "authenticated-explicit-activity");
+        Add("post", "/api/auth/logout", "authLogout", null, "authenticated-session", success: 204);
+        Add("get", "/api/workspace", "workspace", Shape(typeof(WorkspaceView)), "authenticated-scoped-navigation");
+        Add("get", "/api/documents/field-contract", "documentFieldContract", Shape(typeof(DocumentFieldContract)), "module-read-capability-required",
+            parameters: new JsonArray(Parameter("kind", "query", new() { ["type"] = "string", ["enum"] = Array(["purchase-orders", "inbound-requests", "purchase-requests"]) }, true)));
+        foreach (var (kind, header, line, headerName, lineName, maxId) in new[]
+        {
+            ("purchase-orders", typeof(PurchaseOrderHeaderFields), typeof(PurchaseOrderLineFields), "purchaseOrderHeader", "purchaseOrderLines", 30),
+            ("inbound-requests", typeof(InboundRequestHeaderFields), typeof(InboundRequestLineFields), "inboundRequestHeader", "inboundRequestLines", 50)
+        })
+        foreach (var v2 in new[] { false, true })
+        {
+            var suffix = kind.Replace("-", "", StringComparison.Ordinal) + (v2 ? "V2" : "Legacy");
+            var summary = schemas.Variant(typeof(DocumentSummary), suffix + "Summary", ["purchaseOrderHeader", "inboundRequestHeader"]);
+            if (v2) schemas.Required(summary, headerName, Shape(header));
+            var page = schemas.Variant(typeof(DocumentPage), suffix + "Page");
+            schemas.Property(page, "rows", new() { ["type"] = "array", ["items"] = Schemas.Ref(summary) });
+            var detail = schemas.Variant(typeof(DocumentDetailPage), suffix + "Detail");
+            schemas.Property(detail, "document", Schemas.Ref(summary));
+            foreach (var (property, type) in new[] { ("purchaseOrderLines", typeof(PurchaseOrderLine)), ("inboundRequestLines", typeof(InboundRequestLine)) })
+            {
+                var lineSchema = schemas.Variant(type, suffix + property, ["fields"]);
+                if (v2 && property == lineName) schemas.Required(lineSchema, "fields", Shape(line));
+                var collection = new JsonObject { ["type"] = "array", ["items"] = Schemas.Ref(lineSchema) };
+                if (property != lineName) collection["maxItems"] = 0;
+                schemas.Property(detail, property, collection);
+            }
+            var path = (v2 ? "/api/v2/documents/" : "/api/documents/") + kind;
+            Add("get", path, suffix + "List", Schemas.Ref(page), "qualified-read-provider-required", kind + ".read",
+                parameters: new JsonArray(Parameter("page", "query", Number(1000, 1)), Parameter("pageSize", "query", Number(100, 50)),
+                    Parameter("search", "query", String(100)), Parameter("branchId", "query", String(50))));
+            Add("get", path + "/detail", suffix + "Detail", Schemas.Ref(detail), "qualified-read-provider-required", kind + ".read",
+                parameters: new JsonArray(Parameter("documentId", "query", String(maxId), true), Parameter("page", "query", Number(1000, 1)), Parameter("pageSize", "query", Number(100, 50))));
+        }
+        foreach (var v2 in new[] { false, true })
+        {
+            var suffix = v2 ? "V2" : "Legacy";
+            var row = schemas.Variant(typeof(PurchaseRequestListRow), "PurchaseRequestRow" + suffix, ["fields"]);
+            if (v2) schemas.Required(row, "fields", Shape(typeof(PurchaseRequestHeaderFields)));
+            var page = schemas.Variant(typeof(PurchaseRequestListPage), "PurchaseRequestPage" + suffix);
+            schemas.Property(page, "rows", new() { ["type"] = "array", ["items"] = Schemas.Ref(row) });
+            var list = schemas.Variant(typeof(PurchaseRequestScopedResponse<PurchaseRequestListPage>), "PurchaseRequestList" + suffix);
+            schemas.Property(list, "data", Schemas.Ref(page));
+            var read = schemas.Variant(typeof(PurchaseRequestReadback), "PurchaseRequestRead" + suffix, ["sourceFields"]);
+            if (v2) schemas.Required(read, "sourceFields", Shape(typeof(PurchaseRequestSourceFields)));
+            var detail = schemas.Variant(typeof(PurchaseRequestScopedResponse<PurchaseRequestReadback>), "PurchaseRequestDetail" + suffix);
+            schemas.Property(detail, "data", Schemas.Ref(read));
+            var path = v2 ? "/api/v2/purchase-requests" : "/api/purchase-requests";
+            Add("get", path, "purchaseRequestList" + suffix, Schemas.Ref(list), "qualified-read-provider-required", "purchase-requests.read",
+                parameters: new JsonArray(Parameter("page", "query", Number(1000, 1)), Parameter("pageSize", "query", Number(50, 20)),
+                    Parameter("search", "query", String(100)), Parameter("branchId", "query", String(50))));
+            Add("get", path + "/detail", "purchaseRequestDetail" + suffix, Schemas.Ref(detail), "qualified-read-provider-required", "purchase-requests.read",
+                parameters: new JsonArray(Parameter("documentId", "query", String(50), true)));
+        }
+        Add("get", "/api/purchase-requests/workspace", "purchaseRequestWorkspace", Shape(typeof(PurchaseRequestScopedResponse<PurchaseRequestWorkspace>)),
+            "writeAvailable-forced-false", "purchase-requests.read");
+        Add("get", "/api/purchase-requests/lookup", "purchaseRequestLookup", Shape(typeof(PurchaseRequestScopedResponse<PurchaseRequestLookupPage>)),
+            "branches-purposes-currencies-qualified-individually;items-objects-unqualified", "purchase-requests.read",
+            parameters: new JsonArray(Parameter("kind", "query", new() { ["type"] = "string", ["enum"] = Array(["branches", "purposes", "currencies", "items", "objects"]) }, true),
+                Parameter("page", "query", Number(1000, 1)), Parameter("search", "query", String(100))));
+        foreach (var save in new[] { true, false })
+        foreach (var lookup in new[] { false, true })
+        {
+            var action = save ? "save" : "submit";
+            var path = "/api/purchase-requests/" + action + (lookup ? "/lookup" : "");
+            Add("post", path, "purchaseRequest" + action + (lookup ? "Lookup" : "Command"),
+                lookup ? Shape(typeof(PurchaseRequestScopedResponse<PurchaseRequestLookupResult>)) : Shape(typeof(PurchaseRequestScopedResponse<PurchaseRequestCommandResult>)),
+                "default-provider-unavailable;target-runtime-acceptance-required", request: save ? typeof(SavePurchaseRequestDraft) : typeof(SubmitPurchaseRequest),
+                parameters: new JsonArray(Parameter("Origin", "header", String(), true), Parameter("X-Purchase-Scope", "header", String(), true)));
+        }
+        Add("get", "/api/inbound-requests/draft", "inboundDraftRead", Shape(typeof(InboundDraftWorkspace)), "default-provider-unavailable;target-runtime-acceptance-required",
+            parameters: new JsonArray(Parameter("documentId", "query", String(50), true), Parameter("X-Inbound-Scope", "header", String()),
+                Parameter("Origin", "header", String()), Parameter("Sec-Fetch-Site", "header", new() { ["type"] = "string", ["const"] = "same-origin" })));
+        foreach (var action in new[] { "save", "send-to-warehouse", "reconcile" })
+            Add("post", "/api/inbound-requests/draft/" + action, "inboundDraft" + action.Replace("-", "", StringComparison.Ordinal),
+                Shape(typeof(InboundDraftCommandResponse)), "default-provider-unavailable;target-runtime-acceptance-required", request: typeof(InboundDraftCommand),
+                parameters: new JsonArray(Parameter("Origin", "header", String(), true), Parameter("X-Inbound-Scope", "header", String(), true)));
+
+        // The manual inbound parser admits optional DTO defaults, decimal strings
+        // only, two existing-document actions, and no non-empty cost changes.
+        schemas.SetRequired<InboundDraftCommand>(["operationId", "action", "documentId", "expectedStateEqualityToken", "header"]);
+        schemas.SetRequired<InboundDraftHeader>(["documentDate", "orderNumber", "invoiceNo", "departurePoint", "destinationPoint", "orderTypeId", "branchId"]);
+        schemas.SetRequired<InboundDraftDetailUpsert>(["itemId"]);
+        schemas.Property(nameof(InboundDraftCommand), "action", new() { ["type"] = "string", ["enum"] = Array(["Save", "SendToWarehouse"]) });
+        schemas.Property(nameof(InboundDraftCommand), "costChanges", new() { ["type"] = Array(["array", "null"]), ["items"] = Shape(typeof(InboundDraftCostInput)), ["maxItems"] = 0 });
+        schemas.Property(nameof(PurchaseRequestLineChange), "kind", new() { ["type"] = "string", ["enum"] = Array(["Update", "Remove"]) });
+        schemas.Property(nameof(SavePurchaseRequestDraft), "lineChanges", new() { ["type"] = "array", ["items"] = Shape(typeof(PurchaseRequestLineChange)), ["maxItems"] = 500 });
+        foreach (var type in new[] { typeof(SavePurchaseRequestDraft), typeof(SubmitPurchaseRequest) })
+            schemas.Property(type.Name, "expectedStateToken", new() { ["type"] = "string", ["pattern"] = "^prs1\\.[0-9A-Fa-f]{64}$" });
+        schemas.Property(nameof(InboundDraftCommand), "documentId", new() { ["type"] = "string", ["minLength"] = 1, ["maxLength"] = 50 });
+        schemas.Property(nameof(InboundDraftCommand), "expectedStateEqualityToken", new() { ["type"] = "string", ["pattern"] = "^[0-9A-F]{64}$" });
+        var savePayload = schemas.Variant(typeof(InboundDraftCommand), "InboundDraftSavePayload");
+        var sendPayload = schemas.Variant(typeof(InboundDraftCommand), "InboundDraftSendPayload");
+        schemas.Property(savePayload, "action", new() { ["type"] = "string", ["const"] = "Save" });
+        schemas.Property(savePayload, "header", Shape(typeof(InboundDraftHeader)));
+        schemas.Property(savePayload, "note", new() { ["type"] = "null" });
+        schemas.Property(sendPayload, "action", new() { ["type"] = "string", ["const"] = "SendToWarehouse" });
+        schemas.Property(sendPayload, "header", new() { ["type"] = "null" });
+        foreach (var (property, item) in new[] { ("detailUpserts", Shape(typeof(InboundDraftDetailUpsert))), ("removedDetailIds", String()) })
+        {
+            schemas.Property(savePayload, property, new() { ["type"] = Array(["array", "null"]), ["items"] = item.DeepClone(), ["maxItems"] = 500 });
+            schemas.Property(sendPayload, property, new() { ["type"] = Array(["array", "null"]), ["items"] = item.DeepClone(), ["maxItems"] = 0 });
+        }
+        paths["/api/inbound-requests/draft/save"]!["post"]!["requestBody"]!["content"]!["application/json"]!["schema"] = Schemas.Ref(savePayload);
+        paths["/api/inbound-requests/draft/send-to-warehouse"]!["post"]!["requestBody"]!["content"]!["application/json"]!["schema"] = Schemas.Ref(sendPayload);
+        paths["/api/inbound-requests/draft/reconcile"]!["post"]!["requestBody"]!["content"]!["application/json"]!["schema"] = new JsonObject { ["oneOf"] = new JsonArray(Schemas.Ref(savePayload), Schemas.Ref(sendPayload)) };
+        foreach (var (kind, head, line) in new[] {
+            ("purchase-orders", typeof(PurchaseOrderHeaderFields), typeof(PurchaseOrderLineFields)),
+            ("inbound-requests", typeof(InboundRequestHeaderFields), typeof(InboundRequestLineFields)),
+            ("purchase-requests", typeof(PurchaseRequestHeaderFields), typeof(PurchaseRequestLineFields)) })
+        {
+            var fields = DocumentFieldCatalog.Get(kind) ?? throw new InvalidOperationException("Missing document field contract.");
+            schemas.SourceMetadata(head, fields.Header);
+            schemas.SourceMetadata(line, fields.Lines);
+        }
+        return new()
+        {
+            ["openapi"] = "3.1.1", ["info"] = new JsonObject { ["title"] = "Medcom backend HTTP contract", ["version"] = "2.0.0",
+                ["description"] = "All registered HTTP boundaries; full ERP business delivery is incomplete. Six v2 reads return all 116 qualified source columns. A route/schema never enables commands or proves target SQL/business acceptance." },
+            ["servers"] = new JsonArray(new JsonObject { ["url"] = "/", ["description"] = "This backend origin. FE uses its separately configured same-origin BFF." }),
+            ["paths"] = paths,
+            ["components"] = new JsonObject
+            {
+                ["schemas"] = schemas.Values,
+                ["securitySchemes"] = new JsonObject
+                {
+                    ["SessionCookie"] = new JsonObject { ["type"] = "apiKey", ["in"] = "cookie", ["name"] = "__Host-Medcom.Session" },
+                    ["CsrfCookie"] = new JsonObject { ["type"] = "apiKey", ["in"] = "cookie", ["name"] = "__Host-Medcom.Csrf" },
+                    ["CsrfToken"] = new JsonObject { ["type"] = "apiKey", ["in"] = "header", ["name"] = "X-CSRF-TOKEN" }
+                }
+            },
+            ["x-medcom-business-release"] = "not-admitted",
+            ["x-medcom-command-rules"] = "HTTPS, authenticated live session, CSRF cookie plus token, exact same backend Origin, current scope header and original immutable DTO; decoded body <=1048576 bytes. Purchase: every DTO property required including nulls; Add rejected; numeric outcomes. Inbound: Save/SendToWarehouse only, decimal strings, SQL wall-clock dates, no cost edits; string outcomes. Pending/Absent/Unavailable/OutcomeUnknown never authorize redispatch.",
+            ["x-medcom-read-scope"] = "Use X-Medcom-Session-Scope and X-Medcom-Read-Scope; purchase {scopeKey,data} envelopes. Invalidate state on identity/authority/branch/scope changes. Follow hasMore for paged detail lines."
+        };
+    }
+
+    private static JsonArray Array(IEnumerable<string> values) => new(values.Select(x => (JsonNode?)JsonValue.Create(x)).ToArray());
+
+    private sealed class Schemas
+    {
+        internal JsonObject Values { get; } = new();
+        private readonly NullabilityInfoContext nullability = new();
+        internal static JsonObject Ref(string name) => new() { ["$ref"] = "#/components/schemas/" + name };
+        private static string Name(Type type) => type.IsGenericType
+            ? type.Name.Split('`')[0] + "_" + string.Join("_", type.GetGenericArguments().Select(Name)) : type.Name;
+        internal JsonObject Shape(Type type, bool nullable = false, bool decimalString = false)
+        {
+            if (Nullable.GetUnderlyingType(type) is {} value) { type = value; nullable = true; }
+            JsonObject schema;
+            if (type == typeof(string) || type == typeof(Guid) || type == typeof(DateTime) || type == typeof(DateTimeOffset) || decimalString)
+            {
+                schema = new() { ["type"] = "string" };
+                if (type == typeof(Guid)) schema["format"] = "uuid";
+                if (type == typeof(DateTimeOffset)) schema["format"] = "date-time";
+                if (type == typeof(DateTime)) schema["description"] = "SQL wall-clock datetime for document fields; receipt CommittedAtUtc is UTC. No inferred timezone conversion.";
+                if (decimalString) schema["pattern"] = @"^-?[0-9]+(?:\.[0-9]+)?$";
+            }
+            else if (type == typeof(bool)) schema = new() { ["type"] = "boolean" };
+            else if (type == typeof(int) || type == typeof(long)) schema = new() { ["type"] = "integer", ["format"] = type == typeof(int) ? "int32" : "int64" };
+            else if (type == typeof(double) || type == typeof(float) || type == typeof(decimal)) schema = new() { ["type"] = "number" };
+            else if (type.IsEnum)
+            {
+                var strings = type.GetCustomAttribute<JsonConverterAttribute>()?.ConverterType?.Name.StartsWith("JsonStringEnumConverter", StringComparison.Ordinal) == true;
+                var name = Name(type);
+                if (!Values.ContainsKey(name)) Values[name] = new JsonObject { ["type"] = strings ? "string" : "integer",
+                    ["enum"] = new JsonArray(Enum.GetValues(type).Cast<object>().Select(v => strings ? (JsonNode?)JsonValue.Create(v.ToString()) : JsonValue.Create(Convert.ToInt32(v, System.Globalization.CultureInfo.InvariantCulture))).ToArray()) };
+                schema = Ref(name);
+            }
+            else if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IReadOnlyList<>)) schema = new() { ["type"] = "array", ["items"] = Shape(type.GetGenericArguments()[0]) };
+            else
+            {
+                if (type.Assembly != typeof(LoginRequest).Assembly) throw new InvalidOperationException("Undeclared HTTP contract type.");
+                var name = Name(type);
+                if (!Values.ContainsKey(name))
+                {
+                    var properties = new JsonObject(); var required = new List<string>();
+                    Values[name] = new JsonObject { ["type"] = "object", ["additionalProperties"] = false, ["properties"] = properties };
+                    foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+                    {
+                        var ignore = property.GetCustomAttribute<JsonIgnoreAttribute>();
+                        if (ignore?.Condition == JsonIgnoreCondition.Always) continue;
+                        var field = property.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name ?? JsonNamingPolicy.CamelCase.ConvertName(property.Name);
+                        properties[field] = Shape(property.PropertyType, nullability.Create(property).ReadState == NullabilityState.Nullable,
+                            ((property.GetCustomAttribute<JsonNumberHandlingAttribute>()?.Handling ?? JsonNumberHandling.Strict) & JsonNumberHandling.WriteAsString) != 0);
+                        if (ignore?.Condition is not (JsonIgnoreCondition.WhenWritingNull or JsonIgnoreCondition.WhenWritingDefault)) required.Add(field);
+                    }
+                    Values[name]!["required"] = Array(required);
+                }
+                schema = Ref(name);
+            }
+            return nullable ? new() { ["anyOf"] = new JsonArray(schema, new JsonObject { ["type"] = "null" }) } : schema;
+        }
+        internal string Variant(Type type, string name, string[]? remove = null)
+        {
+            _ = Shape(type); Values[name] = Values[Name(type)]!.DeepClone();
+            foreach (var field in remove ?? [])
+            {
+                ((JsonObject)Values[name]!["properties"]!).Remove(field);
+                Values[name]!["required"] = Array(((JsonArray)Values[name]!["required"]!).Select(n => n!.GetValue<string>()).Where(n => n != field));
+            }
+            return name;
+        }
+        internal void Property(string name, string field, JsonObject schema) => Values[name]!["properties"]![field] = schema;
+        internal void Required(string name, string field, JsonObject schema)
+        {
+            Property(name, field, schema);
+            var required = (JsonArray)Values[name]!["required"]!;
+            if (!required.Any(n => n!.GetValue<string>() == field)) required.Add(field);
+        }
+        internal void SetRequired<T>(string[] fields) => Values[Name(typeof(T))]!["required"] = Array(fields);
+        internal void SourceMetadata(Type type, DocumentFieldTable table)
+        {
+            _ = Shape(type);
+            var owner = (JsonObject)Values[Name(type)]!;
+            owner["x-medcom-source-table"] = table.Table;
+            foreach (var field in table.Fields)
+            {
+                var name = field.JsonPath.Split('.')[^1];
+                var property = (JsonObject)owner["properties"]![name]!;
+                property["x-medcom-sql-type"] = field.SqlType;
+                property["x-medcom-source-column"] = field.Column;
+                property["x-medcom-json-path"] = field.JsonPath;
+                property["x-medcom-list-json-path"] = field.ListJsonPath;
+                property["x-medcom-sql-nullable"] = field.Nullable;
+                if (field.Format is not null)
+                {
+                    property["description"] = field.Format;
+                    var primitive = property["anyOf"] is JsonArray alternatives ? alternatives[0]! : property;
+                    if (field.Format == "decimal-string") primitive["pattern"] = @"^-?[0-9]+(?:\.[0-9]+)?$";
+                    if (field.Format == "sql-datetime-without-timezone") primitive["pattern"] = @"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}$";
+                }
+            }
+        }
+    }
+}
