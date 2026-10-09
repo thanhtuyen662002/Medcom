@@ -351,7 +351,7 @@ export interface LoginResult {
     role: string;
     branchId: string;
     companyName: string;
-  };
+  } | null;
   error?: string;
 }
 
@@ -379,7 +379,7 @@ export class ErpClientService {
     branchId: string = "CN01"
   ): Promise<LoginResult> {
     if (!username.trim() || !password) {
-      return { success: false, user: null as any, error: "Vui lòng nhập tên đăng nhập và mật khẩu." };
+      return { success: false, user: null, error: "Vui lòng nhập tên đăng nhập và mật khẩu." };
     }
 
     try {
@@ -406,12 +406,12 @@ export class ErpClientService {
           companyName: session.companyName,
         },
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
       // If server explicitly rejected credentials, do not create fake session
       if (err instanceof ApiError && (err.code === "invalid_credentials" || err.status === 401)) {
         return {
           success: false,
-          user: null as any,
+          user: null,
           error: "Tên đăng nhập hoặc mật khẩu không chính xác trên hệ thống ERP Medcom.",
         };
       }
