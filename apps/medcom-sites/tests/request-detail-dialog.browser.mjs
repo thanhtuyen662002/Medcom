@@ -406,7 +406,7 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
  reset();server.listen(0,'127.0.0.1');await once(server,'listening');origin='http://127.0.0.1:'+server.address().port;
  const release=()=>{model.holdDetail=false;model.holdCommand=false;waiters.splice(0).forEach(done=>done());};
  const paint=()=>page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
- const notes=()=>page.getByRole('dialog').getByLabel('Ghi chú',{exact:true});
+ const notes=()=>page.getByRole('dialog').getByRole('textbox',{name:'Ghi chú',exact:true,includeHidden:true});
  const snapshot=()=>page.evaluate(()=>({life:window.i43.life,adapters:window.i43.adapters.length,selected:window.i43.navigation?.selectedId}));
  const open=async kind=>{await page.getByRole('button',{name:kind==='purchase'?'Mở đề nghị QA-001':/^Mở phiếu QA-001 ·/}).click();await notes().waitFor();};
  const start=async(kind,width,height=844,hasTouch=false)=>{

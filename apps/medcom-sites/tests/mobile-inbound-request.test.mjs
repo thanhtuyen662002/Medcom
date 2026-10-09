@@ -169,7 +169,7 @@ test('actual React mobile workflow and adversarial async custody', {timeout:2400
   context=await browser.newContext({viewport:{width:390,height:844},locale:'vi-VN',isMobile:true,hasTouch:true,serviceWorkers:'block'});page=await context.newPage();page.setDefaultTimeout(10000);page.on('pageerror',error=>errors.push(error.message));
   await context.route('**/*',route=>{if(new URL(route.request().url()).origin===origin)return route.continue();external.push(route.request().url());return route.abort();});
   await page.goto(origin);
-  const field=(name)=>page.getByLabel(name,{exact:true});
+  const field=(name)=>name==='Ghi chú'?page.getByRole('textbox',{name,exact:true,includeHidden:true}):page.getByLabel(name,{exact:true});
   const ready=async()=>{await page.waitForFunction(()=>{const input=document.getElementById('inbound-header-orderNumber');return window.qa.calls().read.length>0&&input&&document.querySelector('[data-testid=inbound-editor]')?.getAttribute('data-phase')==='editing';});};
   const reset=async(patch={})=>{await page.evaluate(patch=>window.qa.reset(patch),patch);await ready();};
   const calls=()=>page.evaluate(()=>window.qa.calls());

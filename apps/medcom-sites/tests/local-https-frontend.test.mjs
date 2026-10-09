@@ -675,25 +675,25 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
     });
     await run('I29 built 60s purchase refresh retains list, selection and controls while renewing command grants', async () => {
       await preparePurchase(); await purchaseControls();
-      assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).isEnabled(), true);
-      await purchaseEditor().getByLabel('Ghi chú', {exact: true}).fill('UNSAVED SYNTHETIC NOTE');
+      assert.equal(await purchaseEditor().getByRole('textbox', {name: 'Ghi chú', exact: true, includeHidden: true}).isEnabled(), true);
+      await purchaseEditor().getByRole('textbox', {name: 'Ghi chú', exact: true, includeHidden: true}).fill('UNSAVED SYNTHETIC NOTE');
       await page.evaluate(() => window.scrollTo(0, 420));
       const scroll = await page.evaluate(() => scrollY); assert.ok(scroll > 0);
       const before = await counts(); await watchStableData('purchase');
       await control({commandAllowed: false, holds: ['workspace', 'purchase-bootstrap', 'purchase-list', 'purchase-detail']});
       await page.clock.fastForward(60001); await held('workspace'); await purchaseControls();
-      assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).isEnabled(), false, 'held parent workspace verification blocks new edits immediately');
+      assert.equal(await purchaseEditor().getByRole('textbox', {name: 'Ghi chú', exact: true, includeHidden: true}).isEnabled(), false, 'held parent workspace verification blocks new edits immediately');
       await assertPurchaseActionBlocked(page, 'Rà soát phiếu', true);
       await control({holds: ['purchase-bootstrap', 'purchase-list', 'purchase-detail']}); await held('purchase-bootstrap'); await purchaseControls();
       await control({holds: ['purchase-list', 'purchase-detail']}); await held('purchase-list'); await held('purchase-detail'); await purchaseControls();
-      assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).isEnabled(), false, 'new edits must wait for fresh command grants while existing values remain mounted');
+      assert.equal(await purchaseEditor().getByRole('textbox', {name: 'Ghi chú', exact: true, includeHidden: true}).isEnabled(), false, 'new edits must wait for fresh command grants while existing values remain mounted');
       const detailFinished = await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200,
         () => control({holds: []})); await detailFinished.finished();
       await assertPurchaseGrant(detailFinished, false);
       await purchaseEditor().getByText('Phiếu hiện chỉ được xem theo quyền của bạn.', {exact: true}).waitFor(); await paint();
       await stopStableData('purchase read'); await purchaseControls();
-      assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).isEnabled(), false, 'fresh command denial must replace the old grant');
-      assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).inputValue(), 'UNSAVED SYNTHETIC NOTE', 'background grants must not overwrite an unsaved draft');
+      assert.equal(await purchaseEditor().getByRole('textbox', {name: 'Ghi chú', exact: true, includeHidden: true}).isEnabled(), false, 'fresh command denial must replace the old grant');
+      assert.equal(await purchaseEditor().getByRole('textbox', {name: 'Ghi chú', exact: true, includeHidden: true}).inputValue(), 'UNSAVED SYNTHETIC NOTE', 'background grants must not overwrite an unsaved draft');
       assert.equal(await page.evaluate(() => scrollY), scroll);
       const delta = difference(await counts(), before);
       for (const route of routes) assert.ok(delta[route] >= 1 && delta[route] <= 2, `${route}: unchanged-scope background read must refresh once, without a loop`);
@@ -701,9 +701,9 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       const restoredDetail = await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200,
         async () => {await control({commandAllowed: true}); await page.clock.fastForward(60001);});
       await assertPurchaseGrant(restoredDetail, true);
-      await waitFor(() => purchaseEditor().getByLabel('Ghi chú', {exact: true}).isEnabled(), 'restored command grant');
-      assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).inputValue(), 'UNSAVED SYNTHETIC NOTE');
-      await purchaseEditor().getByLabel('Ghi chú', {exact: true}).fill('SYNTHETIC NOTES');
+      await waitFor(() => purchaseEditor().getByRole('textbox', {name: 'Ghi chú', exact: true, includeHidden: true}).isEnabled(), 'restored command grant');
+      assert.equal(await purchaseEditor().getByRole('textbox', {name: 'Ghi chú', exact: true, includeHidden: true}).inputValue(), 'UNSAVED SYNTHETIC NOTE');
+      await purchaseEditor().getByRole('textbox', {name: 'Ghi chú', exact: true, includeHidden: true}).fill('SYNTHETIC NOTES');
       await paint();
     });
     await run('I29 built real tab return masks purchase editor until fresh authority and scoped data complete', async () => {
@@ -720,7 +720,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
     for (const action of ['save', 'submit']) {
       await run(`I29 built held parent workspace check keeps the form visible and blocks a new ${action}`, async () => {
         await preparePurchase();
-        if (action === 'save') await purchaseEditor().getByLabel('Ghi chú', {exact: true}).fill('UNSAVED VERIFICATION NOTE');
+        if (action === 'save') await purchaseEditor().getByRole('textbox', {name: 'Ghi chú', exact: true, includeHidden: true}).fill('UNSAVED VERIFICATION NOTE');
         await purchaseFooterAction(page, 'Rà soát phiếu').click();
         const button = purchaseFooterAction(page, action === 'save' ? 'Lưu nháp trên ERP' : 'Gửi đề nghị');
         assert.equal(await button.isEnabled(), true);
@@ -741,14 +741,14 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
         if (await review.count()) await review.click();
         await waitFor(() => button.isEnabled(), 'fresh reviewed grants allow the new command again');
         await purchaseFooterAction(page, 'Quay lại chỉnh sửa').click();
-        if (action === 'save') await purchaseEditor().getByLabel('Ghi chú', {exact: true}).fill('SYNTHETIC NOTES');
+        if (action === 'save') await purchaseEditor().getByRole('textbox', {name: 'Ghi chú', exact: true, includeHidden: true}).fill('SYNTHETIC NOTES');
         await paint();
       });
     }
     const beginPendingSave = async (commitOnAck = false) => {
       await preparePurchase(); await control({commitOnAck, holds: ['purchase-save']});
       const before = await snapshot();
-      await purchaseEditor().getByLabel('Ghi chú', {exact: true}).fill('SYNTHETIC PENDING NOTE');
+      await purchaseEditor().getByRole('textbox', {name: 'Ghi chú', exact: true, includeHidden: true}).fill('SYNTHETIC PENDING NOTE');
       await purchaseFooterAction(page, 'Rà soát phiếu').click();
       await purchaseFooterAction(page, 'Lưu nháp trên ERP').evaluate(button => {button.click(); button.click();});
       await held('purchase-save'); await purchaseEditor().getByText('Đang gửi yêu cầu…', {exact: true}).waitFor();
@@ -765,7 +765,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       // actual visible note in either legitimate form state, not a textarea
       // that is intentionally absent from the review screen.
       const form = purchaseEditor().locator('form[aria-label="Đề nghị mua hàng trên điện thoại"]');
-      const input = form.getByLabel('Ghi chú', {exact: true});
+      const input = form.getByRole('textbox', {name: 'Ghi chú', exact: true, includeHidden: true});
       if (await input.count()) {
         assert.equal(await input.isVisible(), true);
         assert.equal(await input.inputValue(), 'SYNTHETIC PENDING NOTE');
@@ -821,7 +821,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       await assertOriginalCustody(pending, 0);
       const detailFinished = await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200,
         () => control({holds: []})); await detailFinished.finished();
-      await waitFor(() => purchaseEditor().getByLabel('Ghi chú', {exact: true}).isEnabled(), 'post-ACK parent and grant verification'); await paint();
+      await waitFor(() => purchaseEditor().getByRole('textbox', {name: 'Ghi chú', exact: true, includeHidden: true}).isEnabled(), 'post-ACK parent and grant verification'); await paint();
       await stopStableData('ACK during parent verification'); await assertOriginalCustody(pending, 0);
       lifecycleEvidence.requests.push({kind: 'ack-during-parent-verification', writes: 1, effects: 1, lookups: 0, originalBodyHash: pending.original.sha256});
     });
@@ -850,7 +850,7 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
       assert.equal(await purchasePanel().getByRole('alert').count(), 0, 'superseded GET is not a fabricated outage');
       const freshDetail = await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp/api/purchase-requests/detail' && response.status() === 200,
         () => control({holds: []})); assert.equal((await freshDetail.json()).data.stateToken, 'prs1.' + '2'.repeat(64));
-      await waitFor(() => purchaseEditor().getByLabel('Ghi chú', {exact: true}).isEnabled(), 'post-ACK grant verified'); await paint();
+      await waitFor(() => purchaseEditor().getByRole('textbox', {name: 'Ghi chú', exact: true, includeHidden: true}).isEnabled(), 'post-ACK grant verified'); await paint();
       await stopStableData('ACK before old GET'); await assertOriginalCustody(pending, 0);
       await assertPendingNoteVisible();
       const delta = difference(await counts(), before);
@@ -994,15 +994,15 @@ test('I28 built mobile Workspace authenticates through actual local HTTPS relay 
     for (const [kind, route] of [['purchase-bootstrap', '/api/purchase-requests/workspace'], ['purchase-list', '/api/purchase-requests'], ['purchase-detail', '/api/purchase-requests/detail']]) {
       await run(`I29 built background 503 at ${kind} masks stale purchase data and recovers on fresh reads`, async () => {
         await preparePurchase();
-        await purchaseEditor().getByLabel('Ghi chú', {exact: true}).fill('UNSAVED AFTER 503');
+        await purchaseEditor().getByRole('textbox', {name: 'Ghi chú', exact: true, includeHidden: true}).fill('UNSAVED AFTER 503');
         await control({failures: {[kind]: 503}});
         await responseDuring(page, response => new URL(response.url()).pathname === '/api/erp' + route && response.status() === 503,
           () => page.clock.fastForward(60001)); await paint();
         await waitFor(async () => !await purchaseEditor().isVisible(), 'background failure masks purchase editor');
         assert.equal(await purchasePanel().getByRole('button', {name: /^Mở đề nghị I29-/}).count(), kind === 'purchase-detail' ? 20 : 0, 'a successful current list may remain when only its selected detail fails');
         await control({failures: {}}); await page.clock.fastForward(60001); await freshPurchaseDetail(); await purchaseControls();
-        assert.equal(await purchaseEditor().getByLabel('Ghi chú', {exact: true}).inputValue(), 'UNSAVED AFTER 503');
-        await purchaseEditor().getByLabel('Ghi chú', {exact: true}).fill('SYNTHETIC NOTES'); await paint();
+        assert.equal(await purchaseEditor().getByRole('textbox', {name: 'Ghi chú', exact: true, includeHidden: true}).inputValue(), 'UNSAVED AFTER 503');
+        await purchaseEditor().getByRole('textbox', {name: 'Ghi chú', exact: true, includeHidden: true}).fill('SYNTHETIC NOTES'); await paint();
       });
     }
     await run('I29 built changed read and purchase scopes clear old controls and selection', async () => {

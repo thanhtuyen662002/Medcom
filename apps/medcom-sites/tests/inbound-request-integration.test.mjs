@@ -818,7 +818,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
     await page.route('**/*', r => {if (r.request().url().startsWith(origin + '/')) return r.continue(); external.push(r.request().url()); return r.abort();});
     await page.addInitScript(installInboundFocusObserver);
     await page.goto(origin);
-    const button = name => page.getByRole('button', {name, exact: true}), field = name => page.getByLabel(name, {exact: true});
+    const button = name => page.getByRole('button', {name, exact: true}), field = name => name==='Ghi chú'?page.getByRole('textbox', {name, exact: true, includeHidden: true}):page.getByLabel(name, {exact: true});
     // Open in an already active modal uses the production typed navigation
     // adapter; physical pointer events remain blocked by the backdrop.
     const open=async id=>{if(await page.locator('.request-detail-dialog:visible').count())await page.evaluate(id=>window.qaNavigation.requestOpen(id),id);else await page.getByRole('button',{name:new RegExp('^Mở phiếu '+id+' ')}).click();};
@@ -1691,7 +1691,7 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
       return next;
     };
     page = await newPage();
-    const button = name => page.getByRole('button', {name, exact: true}), field = name => page.getByLabel(name, {exact: true});
+    const button = name => page.getByRole('button', {name, exact: true}), field = name => name==='Ghi chú'?page.getByRole('textbox', {name, exact: true, includeHidden: true}):page.getByLabel(name, {exact: true});
     const host = () => page.getByTestId('inbound-request-host');
     const dialog=async(documentId='DOC-A')=>{
       const number=page.getByTestId('inbound-request-host').locator('.request-detail-header .record-document-number');
