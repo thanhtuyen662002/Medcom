@@ -486,11 +486,20 @@ test('I30 compiled application presentation at 320,360,390,1440',{timeout:240000
  }
  const sourceValue=value=>value===null?'NULL':value===''?'""':String(value);
  const purchaseLineValues=document=>document.lines.map((line,index)=>[index+1,line.values.itemId,line.values.budget,line.values.timeRequired,line.values.quantity,line.values.unitPrice,line.values.totalPrice,line.values.model].map(sourceValue));
- const readonlyLineValues=detail=>detail.inboundRequestLines.map((line,index)=>[(detail.page-1)*detail.pageSize+index+1,line.itemId,line.setQuantityByDocument,line.barrelQuantityByDocument,line.setQuantityByReal,line.barrelQuantityByReal].map(sourceValue));
+ const readonlyLineValues=detail=>detail.inboundRequestLines.map((line,index)=>[(detail.page-1)*detail.pageSize+index+1,line.setQuantityByDocument,line.barrelQuantityByDocument,line.setQuantityByReal,line.barrelQuantityByReal].map(sourceValue));
+ async function exactItemIdentityGroups(groups,lines){
+  assert.equal(await groups.count(),lines.length,'Every source row retains exactly one item identity group');
+  assert.deepEqual(await groups.evaluateAll(elements=>elements.map(group=>[...group.querySelectorAll(':scope > div > dt')].map(value=>value.textContent))),lines.map(()=>['Mã hàng','Mã hàng NSX','Tên hàng / dịch vụ','ĐVT']));
+  assert.deepEqual(await groups.evaluateAll(elements=>elements.map(group=>[...group.querySelectorAll(':scope > div > dd')].map(value=>value.textContent))),lines.map(line=>[line.itemId,'Chưa có thông tin','Chưa có thông tin','Chưa có thông tin']),'Exact source ItemID and all three unavailable metadata fields remain separate');
+ }
  async function exactReadonlyLines(panel,detail){
   const rows=panel.locator('article');assert.equal(await rows.count(),detail.inboundRequestLines.length);
-  assert.deepEqual(await rows.evaluateAll(elements=>elements.map(row=>[...row.querySelectorAll('dt')].map(value=>value.textContent))),detail.inboundRequestLines.map(()=>['STT','Mã hàng','Số bộ theo chứng từ','Số thùng theo chứng từ','Số bộ thực tế','Số thùng thực tế']));
-  assert.deepEqual(await rows.evaluateAll(elements=>elements.map(row=>[...row.querySelectorAll('dd')].map(value=>value.textContent))),readonlyLineValues(detail),'Every business value and page-adjusted STT is exact and in source order');
+  assert.deepEqual(await rows.evaluateAll(elements=>elements.map(row=>({identity:row.querySelectorAll(':scope > dl[aria-label="Thông tin mặt hàng"]').length,quantities:row.querySelectorAll(':scope > dl:not([aria-label="Thông tin mặt hàng"])').length}))),detail.inboundRequestLines.map(()=>({identity:1,quantities:1})),'Each source row owns exactly one item group and one quantitative group; adjacent rows cannot borrow groups');
+  await exactItemIdentityGroups(rows.locator(':scope > dl[aria-label="Thông tin mặt hàng"]'),detail.inboundRequestLines);
+  const quantities=rows.locator(':scope > dl:not([aria-label="Thông tin mặt hàng"])');assert.equal(await quantities.count(),detail.inboundRequestLines.length);
+  assert.deepEqual(await quantities.evaluateAll(elements=>elements.map(group=>[...group.querySelectorAll(':scope > div > dt')].map(value=>value.textContent))),detail.inboundRequestLines.map(()=>['STT','Số bộ theo chứng từ','Số thùng theo chứng từ','Số bộ thực tế','Số thùng thực tế']));
+  const expectedQuantities=readonlyLineValues(detail);
+  assert.deepEqual(await rows.evaluateAll(elements=>elements.map(row=>[...row.querySelectorAll(':scope > dl > div > dd')].map(value=>value.textContent))),detail.inboundRequestLines.map((line,index)=>[line.itemId,'Chưa có thông tin','Chưa có thông tin','Chưa có thông tin',...expectedQuantities[index]]),'Each source row retains its exact ItemID, metadata, page-adjusted STT and four raw quantities/NULL values in order');
   await retainedLineIdentity(rows,detail.inboundRequestLines,true);await hiddenLineIdentities(panel,readonlyLines);
  }
  async function expandFullReadback(){const region=page.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true});await region.waitFor();const disclosure=region.locator('details');if(!await disclosure.evaluate(el=>el.open))await disclosure.locator('summary').click();return region;}
@@ -939,8 +948,9 @@ test('I30 compiled application presentation at 320,360,390,1440',{timeout:240000
     await start(width,'purchase-requests',{purchase:document});await open('purchase-requests').click();const region=page.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true});await region.waitFor();
     assert.equal(await region.locator('details').evaluate(el=>el.open),false);assert.equal(await region.locator('table').isVisible(),false);assert.equal(await region.locator('tbody tr').count(),count,'Disclosure does not drop hidden rows');
     await expandFullReadback();const table=region.getByRole('table',{name:'Toàn bộ dòng đề nghị',exact:true});assert.equal(await table.getByRole('columnheader').count(),8);assert.equal(await table.locator('tbody tr').count(),count);assert.equal(await table.getByRole('cell').count(),8*count);
-    assert.deepEqual(await table.getByRole('columnheader').allTextContents(),['STT','Mã mặt hàng','Ngân sách','Thời gian yêu cầu','Số lượng','Đơn giá','Thành tiền','Model']);
-    assert.deepEqual(await table.locator('tbody tr').evaluateAll(rows=>rows.map(row=>[...row.querySelectorAll('td')].map(cell=>cell.lastElementChild.textContent))),purchaseLineValues(document),'All eight cells of every source row remain exact and ordered');
+    assert.deepEqual(await table.getByRole('columnheader').allTextContents(),['STT','Mặt hàng','Ngân sách','Thời gian yêu cầu','Số lượng','Đơn giá','Thành tiền','Model']);
+    await exactItemIdentityGroups(table.locator('tbody tr > td:nth-child(2) > dl[aria-label="Thông tin mặt hàng"]'),document.lines.map(line=>line.values));
+    assert.deepEqual(await table.locator('tbody tr').evaluateAll(rows=>rows.map(row=>[...row.querySelectorAll('td')].map((cell,index)=>index===1?cell.querySelector(':scope > dl[aria-label="Thông tin mặt hàng"] > div > dd').textContent:cell.lastElementChild.textContent))),purchaseLineValues(document),'All eight cells, including the exact source ItemID, remain exact and ordered');
     await retainedLineIdentity(table.locator('tbody tr'),document.lines);await hiddenLineIdentities(region,document.lines);
     assert.match(await region.innerText(),/2026-10-01T14:22:11.003/);assert.match(await region.innerText(),/NULL/);const last=table.locator('tbody tr').last();assert.equal(await last.getByRole('cell').first().locator('span').last().textContent(),String(count));assert.match(await last.innerText(),/999999999999999999/);assert.match(await last.innerText(),/""/);
     await layout(width,'purchase-requests');await last.scrollIntoViewIfNeeded();await capture(`purchase-full-${count}-last-row-${width}`,{viewport:true,keepFocus:true});assert.equal(calls.filter(v=>v.method==='POST').length,0);
@@ -1023,8 +1033,13 @@ for(const width of [320,390,1440])for(const screen of ['purchase-requests','inbo
    await readonlyReady(number);const panel=readonlyPanel(),expected=readonlyProjection(model.inbound.documentId,number);
    assert.equal(await panel.getAttribute('aria-label'),'Phiếu nhập hàng chỉ đọc');
    assert.equal(await panel.locator('time').getAttribute('datetime'),expected.document.documentDate);assert.equal(await panel.locator('time').innerText(),'01/10/2026');
-   assert.equal(await panel.getByRole('heading',{name:expected.document.documentId,exact:true}).count(),1);assert.equal(await panel.getByText('Chưa có trạng thái',{exact:true}).count(),1);
-   assert.equal(await panel.locator('header dd').last().textContent(),'NULL');
+   const dialog=page.getByRole('dialog',{name:'Phiếu nhập hàng đã chọn '+expected.document.documentId,exact:true});assert.equal(await dialog.count(),1);
+   const header=dialog.locator(':scope > header.request-detail-header');assert.equal(await header.count(),1);
+   const identity=header.locator('.record-dialog-identity > h2 > .record-document-number');assert.equal(await identity.count(),1);assert.equal(await identity.textContent(),expected.document.documentId);assert.equal(await identity.isVisible(),true);
+   const status=header.locator('.record-dialog-status .request-status');assert.equal(await status.count(),1);assert.equal(await status.innerText(),'Chưa có trạng thái');assert.equal(await status.isVisible(),true);
+   const general=panel.getByRole('region',{name:'Thông tin chung',exact:true});assert.equal(await general.count(),1);
+   assert.deepEqual(await general.locator(':scope > dl > div > dt').allTextContents(),['Ngày chứng từ','Chi nhánh','Khóa chứng từ']);
+   assert.deepEqual(await general.locator(':scope > dl > div > dd').allTextContents(),['01/10/2026',expected.document.branchId,'NULL']);
    await exactReadonlyLines(panel,expected);
    assert.equal(await panel.locator('input,textarea,select,form,[contenteditable=true]').count(),0,'The projection has no editable form or keyboard input');
    assert.equal(await panel.getByRole('button',{name:'Dòng trước',exact:true}).isEnabled(),number>1);assert.equal(await panel.getByRole('button',{name:'Dòng tiếp',exact:true}).isEnabled(),expected.hasMore);
