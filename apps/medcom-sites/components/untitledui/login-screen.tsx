@@ -18,7 +18,7 @@ import { UntitledBadge } from "./badge";
 import { REAL_BRANCHES, erpClient, type LoginResult } from "@/lib/erp/erp-client";
 
 export interface LoginScreenProps {
-  onLoginSuccess: (user: LoginResult["user"]) => void;
+  onLoginSuccess: (user: NonNullable<LoginResult["user"]>) => void;
 }
 
 export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
@@ -42,7 +42,7 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
       } else {
         setErrorMessage(result.error || "Tên đăng nhập hoặc mật khẩu không chính xác.");
       }
-    } catch (err: any) {
+    } catch {
       setErrorMessage("Không thể kết nối máy chủ xác thực ERP. Vui lòng kiểm tra lại mạng.");
     } finally {
       setIsLoading(false);

@@ -60,7 +60,7 @@ export function MedcomApp() {
     setIsAuthLoaded(true);
   }, []);
 
-  const handleLoginSuccess = (user: LoginResult["user"]) => {
+  const handleLoginSuccess = (user: NonNullable<LoginResult["user"]>) => {
     setCurrentUser(user);
     if (user.branchId) {
       setCurrentBranch(user.branchId);
