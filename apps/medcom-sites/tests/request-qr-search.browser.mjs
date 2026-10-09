@@ -9,7 +9,7 @@ import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
-import { spawn } from 'node:child_process';
+import { createRequire } from 'node:module';
 import { once } from 'node:events';
 import { setTimeout as delay } from 'node:timers/promises';
 import { build } from 'esbuild';
@@ -87,16 +87,17 @@ const server = http.createServer((request, response) => {
 server.listen(0, '127.0.0.1'); await once(server, 'listening');
 const base = `http://127.0.0.1:${server.address().port}`;
 const profile = await mkdtemp(path.join(tmpdir(), 'medcom-qr-synthetic-'));
-let child, socket, closed = false;
+let context, instance, pageSession, browserSession, closed = false, failure;
 const errors = [], results = [];
-let counter = 0; const pending = new Map();
 async function cdp(method, params = {}) {
-  const id = ++counter;
-  const result = new Promise((resolve, reject) => {
-    const timer = setTimeout(() => { pending.delete(id); reject(new Error('CDP timeout')); }, 10000);
-    pending.set(id, { resolve: value => { clearTimeout(timer); resolve(value); }, reject: error => { clearTimeout(timer); reject(error); } });
-  });
-  socket.send(JSON.stringify({ id, method, params })); return result;
+  const session = method.startsWith('Browser.') ? browserSession : pageSession;
+  assert.ok(session, 'The owned browser session must be ready');
+  let timer;
+  try {
+    return await Promise.race([session.send(method, params), new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error('CDP timeout: ' + method)), 10000);
+    })]);
+  } finally { clearTimeout(timer); }
 }
 async function evaluate(expression) {
   const result = await cdp('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true });
@@ -143,25 +144,16 @@ async function screenshot(name) {
 }
 async function check(name, action) { await action(); results.push(name); console.log('PASS: ' + name); }
 try {
-  child = spawn(browser, ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--no-first-run', '--disable-extensions',
-    '--disable-background-networking', '--disable-component-update', '--disable-default-apps', 'about:blank'], { windowsHide: true, stdio: 'ignore' });
-  child.on('error', () => { closed = true; }); child.on('exit', () => { closed = true; });
-  let port; const deadline = Date.now() + 15000;
-  while (Date.now() < deadline) {
-    if (closed) throw new Error('Disposable browser exited before debugging was ready');
-    try { port = Number((await readFile(path.join(profile, 'DevToolsActivePort'), 'utf8')).split('\n')[0]); if (port) break; } catch { /* Starting. */ }
-    await delay(50);
-  }
-  if (!port) throw new Error('Disposable browser debugging was unavailable');
-  const pages = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
-  socket = new WebSocket(pages.find(page => page.type === 'page').webSocketDebuggerUrl);
-  await new Promise((resolve, reject) => { socket.onopen = resolve; socket.onerror = reject; });
-  socket.onclose = () => { for (const waiter of pending.values()) waiter.reject(new Error('CDP closed')); pending.clear(); };
-  socket.onmessage = event => {
-    const message = JSON.parse(event.data);
-    if (message.id) { const waiter = pending.get(message.id); pending.delete(message.id); if (message.error) waiter?.reject(new Error('CDP failed')); else waiter?.resolve(message.result); }
-    if (message.method === 'Runtime.exceptionThrown') errors.push('uncaught exception');
-  };
+  // The pinned toolchain owns process launch, the debugging pipe and exit.
+  // Every existing assertion still uses the same native CDP input/events.
+  const require = createRequire(import.meta.url), toolchain = process.env.MEDCOM_BROWSER_TOOLCHAIN;
+  const {chromium} = (toolchain ? createRequire(path.join(path.resolve(toolchain), 'package.json')) : require)('playwright-core');
+  context = await chromium.launchPersistentContext(profile, {executablePath: browser, headless: true, chromiumSandbox: true,
+    args: ['--no-first-run', '--disable-extensions', '--disable-background-networking', '--disable-component-update', '--disable-default-apps']});
+  instance = context.browser(); assert.ok(instance, 'Native browser ownership is required');
+  const page = context.pages()[0] ?? await context.newPage();
+  pageSession = await context.newCDPSession(page); browserSession = await instance.newBrowserCDPSession();
+  pageSession.on('Runtime.exceptionThrown', () => errors.push('uncaught exception'));
   await cdp('Runtime.enable'); await cdp('Page.enable');
   await cdp('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
   await cdp('Page.bringToFront');
@@ -245,12 +237,16 @@ try {
   console.log(JSON.stringify(receipt));
   if(process.env.REQUEST_QR_TEST_EVIDENCE_DIRECTORY)await writeFile(path.join(path.resolve(process.env.REQUEST_QR_TEST_EVIDENCE_DIRECTORY),'browser-receipt.json'),JSON.stringify(receipt,null,2));
 
-} finally {
-  if (socket?.readyState === WebSocket.OPEN) { try { await cdp('Browser.close'); } catch { /* Confirm teardown below. */ } socket.close(); }
-  if (child && !closed) { child.kill(); for (let i = 0; i < 30 && !closed; i++) await delay(100); }
+} catch (error) { failure = error; throw error; }
+finally {
+  let teardownError;
+  try { if (instance) { await instance.close(); closed = !instance.isConnected(); }
+    else if (context) { await context.close(); closed = true; }
+  } catch (error) { teardownError = error; }
   await new Promise(resolve => server.close(resolve));
   const resolved = path.resolve(profile), parent = path.resolve(tmpdir());
   if (!resolved.startsWith(parent + path.sep) || !path.basename(resolved).startsWith('medcom-qr-synthetic-')) throw new Error('Unsafe disposable-profile cleanup target');
   if (closed) await rm(resolved, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
-  else throw new Error('Disposable browser teardown not confirmed');
+  else if (context) teardownError ??= new Error('Disposable browser teardown not confirmed');
+  if (teardownError) throw failure ? new AggregateError([failure, teardownError], 'QR test and teardown failed') : teardownError;
 }
