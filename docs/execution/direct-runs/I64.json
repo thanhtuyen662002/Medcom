@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I64",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "I64-20261009-readonly-pilot-preflight",
+  "base_sha": "884be183160d0ea1e5c2a8d8ce5e20431dd55d6f",
+  "work_branch": "codex/g45-pilot-preflight-i64-20261009",
+  "claim_branch": "medcom-claims/g45/direct/I64",
+  "scope": [
+    "src/backend/Medcom.Api/Program.cs",
+    "src/backend/Medcom.Api/PurchaseRequestPilotPreflight.cs",
+    "tests/backend/Medcom.Api.Tests/PurchaseRequestPilotPreflightTests.cs",
+    "docs/execution/checkpoints/I64_PURCHASE_PILOT_PREFLIGHT.md",
+    "docs/execution/direct-runs/I64.json"
+  ],
+  "purpose": "Add an explicitly invoked fixed read-only preflight for installed purchase binding and one normal account/existing test target without reading credential fields.",
+  "production_accepted": false,
+  "runtime_activation_authorized": false,
+  "constraints": [
+    "Root sole publisher; immutable marker and exact-head review/CI.",
+    "Explicit bounded CLI actor/document/branch arguments only; unknown/duplicate/invalid inputs fail before connection. No arbitrary SQL, target override, HTTP route, hosted service or default startup query.",
+    "Reuse existing ServerConfiguration SQL/TLS target policy without reading or changing secrets. Fixed SELECTs only: installed control row, unique canonical normal account enabled/group flags without Password/hash/name/stamp, exact document/branch/status/lock metadata, and existing fixed shape qualification where needed.",
+    "No vendor DLL, password verifier, fabricated identity/session, command admission, writer/allocator/journal content, DML/DDL/procedures/COMMIT. Serializable read resources release with rollback/cleanup.",
+    "Output only technical bounded JSON; raw exceptions/SQL/connection strings/business rows prohibited. RuntimeAccepted remains false; observations are not login or write authorization.",
+    "All tests use synthetic data. Actual runtime execution is separate from code admission and must remain within owner-authorized read-only scope."
+  ]
+}
