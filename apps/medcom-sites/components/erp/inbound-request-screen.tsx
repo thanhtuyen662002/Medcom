@@ -1,4 +1,5 @@
 "use client";
+import {RecordDetailToolbar} from "./record-dialog";
 import {RequestDetailDialog,useRequestDetailNavigation,useDetailPresentationProof,type RegisterRequestDetailNavigation} from "./request-detail-dialog";
 import {useListControls} from "./list-view-state";
 import {RequestListComposition,RequestListPanel,RequestListContent,RequestListHeader,RequestSearch,RequestBranch,RequestRefresh,RequestListTable,RequestListToolbar,RequestPagination} from "./request-list-shell";
@@ -475,13 +476,13 @@ function RetainedInboundHost({compact=false,setCompact,presentationAllowed = tru
         workspace=null. Only loginKey above retires this I18 instance. */}
     <RequestDetailDialog open={selected!==null||state.unresolved||readbackPending} presentationAllowed={presentationAllowed&&workspace!==null}
       title="Phiếu nhập hàng đã chọn" documentNumber={presentationReady&&contextCurrent?selected:null} closeLabel="Quay lại danh sách" onRequestClose={requestBack}>
-    <RequestButton type="button" onClick={() => navigate(() => {
+    <RecordDetailToolbar><RequestButton type="button" onClick={() => navigate(() => {
       if (selectedRef.current === null) return;
       selectedRef.current = null; focusClose(); select(null); callbacks.current.onClose?.();
     })}>Đóng phiếu nhập hàng</RequestButton>
+    {!sessionEnded && workspaceContext !== null && <RequestButton type="button" onClick={() => { cancelFocus(); setDeniedContext(null); setRetry(value => value + 1); }}>Xác minh lại quyền nhập hàng</RequestButton>}</RecordDetailToolbar>
     {notice && <RequestNotice warning>{notice}</RequestNotice>}
     {!contextCurrent && <RequestNotice>Dữ liệu tạm ẩn. Xác minh lại phiên ERP để tiếp tục.</RequestNotice>}
-    {!sessionEnded && workspaceContext !== null && <RequestButton type="button" onClick={() => { cancelFocus(); setDeniedContext(null); setRetry(value => value + 1); }}>Xác minh lại quyền nhập hàng</RequestButton>}
     <div ref={focusDetail} tabIndex={-1} role="region" aria-label="Phiếu nhập hàng đã chọn" className="scroll-mt-24 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" hidden={!presentationReady||selected===null&&!state.unresolved&&!readbackPending}>
       <div hidden={readonlyEligible}><MobileInboundRequest presentationAllowed={presentationAllowed&&workspace!==null&&contextCurrent&&presentationReady&&!readonlyEligible&&(selected!==null||state.unresolved||readbackPending)} statusPresentation={statusRow?{documentId:statusRow.documentId,id:statusRow.statusId,name:statusRow.statusName}:undefined} documentId={selected} access={access} adapter={adapter} onConfirmed={acknowledge} onPresentedRead={onPresentedRead}/></div>
       {readonlyEligible && selected !== null && readScope !== null && <InboundRequestReadOnly documentId={selected}

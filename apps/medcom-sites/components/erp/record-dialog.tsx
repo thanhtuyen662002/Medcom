@@ -10,5 +10,10 @@ export function RecordActionBar({children,className,presentationAllowed=true}:{c
  return host?createPortal(actions,host):actions;
 }
 
+/** Read/recovery actions stay inline and separate from the guarded write footer. */
+export function RecordDetailToolbar({children}:{children:ReactNode}){
+ return <div className="record-detail-toolbar" role="group" aria-label="Thao tác phiếu">{children}</div>;
+}
+
 /** Shared name for the proven retained request-detail foundation. */
 export {RequestDetailDialog as RecordDialog} from "./request-detail-dialog";
