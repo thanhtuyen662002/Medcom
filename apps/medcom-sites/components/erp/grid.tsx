@@ -3,7 +3,7 @@
 import {useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type KeyboardEvent, type Ref} from "react";
 import {useTable, tableFeatures, columnOrderingFeature, columnVisibilityFeature, columnSizingFeature, type ColumnDef, type RowData} from "@tanstack/react-table";
 import {useVirtualizer} from "@tanstack/react-virtual";
-import {ArrowUp, ArrowDown, Pin, SlidersHorizontal, Save, RotateCcw, X} from "lucide-react";
+import {ArrowUp, ArrowDown, Eye, Pin, SlidersHorizontal, Save, RotateCcw, X} from "lucide-react";
 import {Checkbox} from "@/components/ui/checkbox";
 import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription} from "@/components/ui/dialog";
 import {Table, TableHeader, TableHead, TableBody, TableRow, TableCell} from "@/components/ui/table";
@@ -62,11 +62,13 @@ export function ErpGrid<T extends RowData>({rows, columns, rowId, renderCell, mo
     return()=>media.removeEventListener("change",update);
   },[customizable,virtualize,mobileCard]);
   const [viewportWidth,setViewportWidth] = useState(0);
+  const [viewportGutter,setViewportGutter] = useState(0);
   useEffect(()=>{
     if(!customizable)return;
     const element=viewport.current;if(!element)return;
-    const observer=new ResizeObserver(()=>setViewportWidth(element.clientWidth));
-    observer.observe(element);setViewportWidth(element.clientWidth);
+    const measure=()=>{setViewportWidth(element.clientWidth);setViewportGutter(Math.max(0,element.offsetWidth-element.clientWidth));};
+    const observer=new ResizeObserver(measure);
+    observer.observe(element);measure();
     return()=>observer.disconnect();
   },[customizable]);
 
@@ -80,7 +82,7 @@ export function ErpGrid<T extends RowData>({rows, columns, rowId, renderCell, mo
   const unpinned=customizable&&!mobile?ordered.filter(c=>!view.pinned.includes(c.id)):ordered;
   const orderedColumns=[...pinned,...unpinned];
   const selectionWidth=selectable?44:0;
-  const actionWidth=rowAction?132:0;
+  const actionWidth=rowAction?156:0;
   const pinWidth=pinned.reduce((sum,c)=>sum+c.getSize(),selectionWidth);
   const rowHeight=density?45:65;
   const virtualRows=useVirtualizer({count:rows.length,getScrollElement:()=>viewport.current,estimateSize:()=>rowHeight,overscan:6,enabled:virtualize&&customizable&&!mobile});
@@ -158,7 +160,8 @@ export function ErpGrid<T extends RowData>({rows, columns, rowId, renderCell, mo
     const column=orderedColumns.find(c=>c.id===id)!;
     const definition=columns.find(c=>c.id===id)!;
     return <TableHead key={id} scope="col" role="columnheader" aria-colindex={orderedColumns.findIndex(c=>c.id===id)+1+(selectable?1:0)} style={style(id)}><span>{definition.label}</span>{customizable&&!mobile&&!view.pinned.includes(id)&&<div className="column-resizer" role="separator" aria-orientation="vertical" aria-label={`Độ rộng ${definition.label}`} tabIndex={0}
-      onKeyDown={event=>{if(["ArrowLeft","ArrowRight"].includes(event.key)){event.preventDefault();setView(old=>({...old,widths:{...old.widths,[id]:Math.max(96,Math.min(600,column.getSize()+(event.key==="ArrowRight"?16:-16)))}}));}}}
+      onFocus={event=>revealResizeHandle(event.currentTarget)}
+      onKeyDown={event=>{if(["ArrowLeft","ArrowRight"].includes(event.key)){event.preventDefault();const element=event.currentTarget;setView(old=>({...old,widths:{...old.widths,[id]:Math.max(96,Math.min(600,column.getSize()+(event.key==="ArrowRight"?16:-16)))}}));requestAnimationFrame(()=>revealResizeHandle(element));}}}
       onPointerDown={event=>{
         event.preventDefault();const start=event.clientX,width=column.getSize(),element=event.currentTarget;
         element.setPointerCapture(event.pointerId);
@@ -166,6 +169,12 @@ export function ErpGrid<T extends RowData>({rows, columns, rowId, renderCell, mo
         const end=()=>{element.removeEventListener("pointermove",move);element.removeEventListener("pointerup",end);element.removeEventListener("pointercancel",end);};
         element.addEventListener("pointermove",move);element.addEventListener("pointerup",end);element.addEventListener("pointercancel",end);
       }}/>}</TableHead>;
+  }
+  function revealResizeHandle(element:HTMLElement) {
+    const owner=viewport.current;if(!owner||!rowAction)return;
+    const edge=owner.getBoundingClientRect().left+owner.clientLeft+owner.clientWidth-actionWidth;
+    const overlap=element.getBoundingClientRect().right-edge;
+    if(overlap>0)owner.scrollLeft+=overlap;
   }
   function cell(row:T,r:number,id:string) {
     const index=orderedColumns.findIndex(c=>c.id===id),definition=columns.find(c=>c.id===id)!;
@@ -181,7 +190,7 @@ export function ErpGrid<T extends RowData>({rows, columns, rowId, renderCell, mo
     {customizable&&<ListCustomizationSlot><RequestButton type="button" className="grid-customization-button" disabled={!presentationAllowed} onClick={()=>changeSettings(true)}><SlidersHorizontal size={15}/><span>Tùy chỉnh bảng</span></RequestButton></ListCustomizationSlot>}
     {recovery.length>0&&<p className="grid-recovery" role="status">Đã bỏ {recovery.length} cột không còn trong cấu hình. Các cột hợp lệ vẫn được giữ.</p>}
     {selected.length>0&&<div className="grid-selection" role="status"><span>Đã chọn {selected.length}/{rows.length} dòng của trang đang mở</span><RequestButton variant="ghost" onClick={()=>setSelection([])}><X size={14}/>Bỏ chọn</RequestButton></div>}
-    <div className="desktop-grid-viewport" ref={viewport} data-virtualized={rowsVirtualized} style={{"--grid-row-height":`${rowHeight}px`,...(!mobile&&customizable?{height:Math.min(480,44+rows.length*rowHeight)}:{})} as CSSProperties}>
+    <div className="desktop-grid-viewport" ref={viewport} data-virtualized={rowsVirtualized} style={{"--grid-row-height":`${rowHeight}px`,"--grid-scrollbar-width":`${viewportGutter}px`,...(!mobile&&customizable?{height:Math.min(480,44+rows.length*rowHeight),scrollPaddingRight:actionWidth}:{})} as CSSProperties}>
       <Table ref={grid} role={interactive?"grid":"table"} aria-label={label} aria-rowcount={rows.length+1} aria-colcount={orderedColumns.length+(selectable?1:0)+(rowAction?1:0)} data-shared-grid="true" className="request-list-table shared-grid-table" style={!mobile&&customizable?{width:totalWidth+fillWidth}:undefined}>
         <TableHeader role="rowgroup"><TableRow role="row">
           {selectable&&<TableHead role="columnheader" scope="col" aria-colindex={1} className="grid-select-cell"><Checkbox aria-label="Chọn tất cả dòng trên trang này" checked={rows.length>0&&selected.length===rows.length?true:selected.length?"indeterminate":false} disabled={!rows.length} onCheckedChange={value=>setSelection(value===true?ids:[])}/></TableHead>}
@@ -189,8 +198,8 @@ export function ErpGrid<T extends RowData>({rows, columns, rowId, renderCell, mo
           {padLeft>0&&<TableHead aria-hidden className="grid-spacer" style={{width:padLeft,padding:0}}/>}
           {renderedColumns.filter(c=>!pinned.includes(c)).map(c=>header(c.id))}
           {padRight>0&&<TableHead aria-hidden className="grid-spacer" style={{width:padRight,padding:0}}/>}
-          {rowAction&&<TableHead scope="col" role="columnheader" aria-colindex={orderedColumns.length+1+(selectable?1:0)} className="request-list-action-heading" style={customizable&&!mobile?{width:actionWidth,minWidth:actionWidth,maxWidth:actionWidth}:undefined}><span className="sr-only">Thao tác</span></TableHead>}
           {fillWidth>0&&<TableHead aria-hidden className="grid-spacer" style={{width:fillWidth,minWidth:fillWidth,padding:0}}/>}
+          {rowAction&&<TableHead scope="col" role="columnheader" aria-colindex={orderedColumns.length+1+(selectable?1:0)} className="request-list-action-heading" style={customizable&&!mobile?{width:actionWidth,minWidth:actionWidth,maxWidth:actionWidth}:undefined}>Thao tác</TableHead>}
         </TableRow></TableHeader>
         <TableBody role="rowgroup">
           {renderedRows[0]?.start>0&&<TableRow aria-hidden className="grid-spacer"><TableCell colSpan={colSpan} style={{height:renderedRows[0].start,padding:0}}/></TableRow>}
@@ -204,8 +213,8 @@ export function ErpGrid<T extends RowData>({rows, columns, rowId, renderCell, mo
               {padLeft>0&&<TableCell aria-hidden className="grid-spacer" style={{width:padLeft,padding:0}}/>}
               {renderedColumns.filter(c=>!pinned.includes(c)).map(c=>cell(row,v.index,c.id))}
               {padRight>0&&<TableCell aria-hidden className="grid-spacer" style={{width:padRight,padding:0}}/>}
-              {action&&<TableCell role={interactive?"gridcell":"cell"} aria-colindex={orderedColumns.length+1+(selectable?1:0)} className="request-list-open"><RequestButton ref={action.buttonRef} type="button" aria-label={action.accessibleLabel} aria-pressed={action.selected} onClick={()=>onOpen(row)} className="scroll-mt-24">{action.label}</RequestButton></TableCell>}
               {fillWidth>0&&<TableCell aria-hidden className="grid-spacer" style={{width:fillWidth,minWidth:fillWidth,padding:0}}/>}
+              {action&&<TableCell role={interactive?"gridcell":"cell"} aria-colindex={orderedColumns.length+1+(selectable?1:0)} className="request-list-open"><div className="request-row-actions"><RequestButton ref={action.buttonRef} type="button" aria-label={action.accessibleLabel} aria-pressed={action.selected} onClick={()=>onOpen(row)} className="scroll-mt-24"><Eye size={15} aria-hidden="true"/>{action.label}</RequestButton></div></TableCell>}
             </TableRow>;
           })}
           {rowsVirtualized&&renderedRows.length>0&&<TableRow aria-hidden className="grid-spacer"><TableCell colSpan={colSpan} style={{height:Math.max(0,virtualRows.getTotalSize()-(renderedRows.at(-1)?.end??0)),padding:0}}/></TableRow>}

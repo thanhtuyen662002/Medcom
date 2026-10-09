@@ -42,7 +42,7 @@ import type {WorkspaceData,DocumentKind,DocumentRow} from "@/lib/erp/contracts";
 const icons:Record<ScreenId,typeof FileText>={home:LayoutDashboard,"purchase-orders":ShoppingBag,"purchase-requests":FileText,"purchase-approval":CheckCircle2,"inbound-requests":Package,transfers:ArrowLeftRight,sales:FileText,accounting:BookOpen,reports:Rows3,settings:SlidersHorizontal};
 const paletteOptions = [
  {id:"monochrome",name:"Đen & trắng",swatch:"#171717"},
- {id:"blue",name:"Xanh dương",swatch:"#1d4ed8"},
+ {id:"blue",name:"Xanh dương",swatch:"#0066df"},
  {id:"violet",name:"Tím",swatch:"#6d28d9"},
  {id:"teal",name:"Xanh ngọc",swatch:"#0f766e"},
  {id:"rose",name:"Hồng",swatch:"#be185d"},
@@ -50,7 +50,7 @@ const paletteOptions = [
 ] as const;
 type PaletteId = typeof paletteOptions[number]["id"];
 type InitialPreferences = {ready:boolean;screen:ScreenId;compact:boolean;dark:boolean;palette:PaletteId;favorites:ScreenId[]};
-const defaultPreferences:InitialPreferences={ready:false,screen:"purchase-orders",compact:false,dark:false,palette:"monochrome",favorites:[]};
+const defaultPreferences:InitialPreferences={ready:false,screen:"purchase-orders",compact:false,dark:false,palette:"blue",favorites:[]};
 const noPreferenceSubscription=()=>()=>{};
 const serverPreferences=()=>defaultPreferences;
 function createPreferenceSnapshot(){let snapshot:InitialPreferences|undefined;return ()=>{if(snapshot)return snapshot;const initial=new URLSearchParams(window.location.search).get("screen");snapshot={...defaultPreferences,ready:true,screen:isScreen(initial)?initial:"purchase-orders"};try{const pref=JSON.parse(localStorage.getItem("medcom.preferences.v1")??"{}");snapshot.compact=pref?.compact===true;snapshot.dark=pref?.dark===true;if(paletteOptions.some(p=>p.id===pref?.palette))snapshot.palette=pref.palette;if(Array.isArray(pref?.favorites))snapshot.favorites=pref.favorites.filter((id:unknown):id is ScreenId=>typeof id==="string"&&isScreen(id));}catch{}return snapshot;};}

@@ -1,5 +1,7 @@
 "use client";
 import {useId, useLayoutEffect, useRef, type ReactNode} from "react";
+import {ShieldCheck} from "lucide-react";
+import {Button} from "@/components/ui/button";
 import type {WorkspaceAuthState} from "@/lib/erp/workspace-auth-state";
 import {ListLoading} from "./list-loading";
 import {WorkspaceLogin, type WorkspaceLoginProps} from "./workspace-login";
@@ -38,12 +40,13 @@ export function WorkspaceAuthGate({state, onRetry, login, children}: WorkspaceAu
   return <>
     {!allowed && <section ref={gate} tabIndex={-1} className={styles.gate} aria-labelledby={title}>
       <div className={styles.card}>
+        <div className={styles.mark}><ShieldCheck size={26} aria-hidden="true"/></div>
         <p className={styles.brand}>MEDCOM · ERP</p>
         <h1 id={title}>{phase === "expired" ? "Phiên làm việc đã kết thúc" : phase === "anonymous" ? "Đăng nhập ERP" : phase === "recovery" ? "Chưa thể xác minh phiên làm việc" : "Đang xác minh phiên làm việc…"}</h1>
         {(phase === "anonymous" || phase === "expired") ? <WorkspaceLogin {...login} active lifecycleKey={key}/> : <>
           <p role="status">{phase === "recovery" ? "Kết nối tạm thời không khả dụng. Dữ liệu được ẩn cho đến khi quyền truy cập được xác minh lại." : "Vui lòng chờ hệ thống xác nhận phiên và quyền truy cập."}</p>
           {phase !== "recovery"&&<ListLoading label="Đang xác minh phiên và quyền ERP…"/>}
-          {phase === "recovery" && <button type="button" onClick={onRetry}>Thử lại</button>}
+          {phase === "recovery" && <Button className={styles.retry} type="button" onClick={onRetry}>Thử lại</Button>}
         </>}
       </div>
     </section>}

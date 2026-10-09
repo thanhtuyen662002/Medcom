@@ -3,7 +3,8 @@
 import {createContext,useContext,useState,type ComponentProps, type ReactNode, type Ref} from "react";
 import {ScreenHeader} from "./screen-shell";
 import {createPortal} from "react-dom";
-import {Building2, ChevronDown, RefreshCw, Search} from "lucide-react";
+import {Building2, ChevronDown, ChevronLeft, ChevronRight, RefreshCw, Search} from "lucide-react";
+import {Pagination,PaginationContent,PaginationItem} from "@/components/ui/pagination-layout";
 import {RequestButton, RequestInput, RequestSelect, RequestDocumentIdentity, requestStyles} from "./request-presentation";
 import {ErpGrid} from "./grid";
 import {cn} from "@/lib/utils";
@@ -36,10 +37,10 @@ export function RequestBranch({label,value,branches,disabled,onChange,allValue="
   return <label className="request-list-branch"><span className="sr-only">{label}</span><Building2 size={15} aria-hidden="true"/><RequestSelect aria-label={label} value={assignedBranchId??value} disabled={disabled||assignedBranchId!=null} onChange={event=>onChange(event.target.value)}>{assignedBranchId==null&&<option value={allValue}>Tất cả</option>}{branches.map(id=><option key={id} value={id}>{id}</option>)}</RequestSelect><ChevronDown size={14} aria-hidden="true"/></label>;
 }
 export function RequestPagination({label,page,previousDisabled,nextDisabled,onPrevious,onNext,previousLabel="Trang trước",nextLabel="Trang sau",previousText="Trang trước",nextText="Trang sau",children}:{label:string;page:number;previousDisabled:boolean;nextDisabled:boolean;onPrevious:()=>void;onNext:()=>void;previousLabel?:string;nextLabel?:string;previousText?:string;nextText?:string;children?:ReactNode}) {
-  return <nav aria-label={label} className={cn(requestStyles.footer,"request-list-pagination")}>
+  return <Pagination aria-label={label} className={cn(requestStyles.footer,"request-list-pagination")}>
     {children&&<div className="request-list-page-meta">{children}</div>}
-    <div className="request-list-page-controls"><RequestButton type="button" aria-label={previousLabel.includes(previousText)?previousLabel:`${previousText} — ${previousLabel}`} disabled={previousDisabled} onClick={onPrevious}>{previousText}</RequestButton><span>Trang {page}</span><RequestButton type="button" aria-label={nextLabel.includes(nextText)?nextLabel:`${nextText} — ${nextLabel}`} disabled={nextDisabled} onClick={onNext}>{nextText}</RequestButton></div>
-  </nav>;
+    <PaginationContent className="request-list-page-controls"><PaginationItem><RequestButton type="button" aria-label={previousLabel.includes(previousText)?previousLabel:`${previousText} — ${previousLabel}`} disabled={previousDisabled} onClick={onPrevious}><ChevronLeft size={16} aria-hidden="true"/><span>{previousText}</span></RequestButton></PaginationItem><PaginationItem><span className="request-list-current-page" aria-current="page">Trang {page}</span></PaginationItem><PaginationItem><RequestButton type="button" aria-label={nextLabel.includes(nextText)?nextLabel:`${nextText} — ${nextLabel}`} disabled={nextDisabled} onClick={onNext}><span>{nextText}</span><ChevronRight size={16} aria-hidden="true"/></RequestButton></PaginationItem></PaginationContent>
+  </Pagination>;
 }
 export type RequestListColumn = {id:string;label:string};
 export type RequestListRow = {id:string;cells:ReactNode[];action:string;actionLabel:string;selected?:boolean;onOpen:()=>void;buttonRef:Ref<HTMLButtonElement>};

@@ -1,5 +1,8 @@
 "use client";
 import {useId, useLayoutEffect, useRef, useState, type FormEvent} from "react";
+import {Eye,EyeOff} from "lucide-react";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
 import {login} from "@/lib/erp/api";
 import styles from "./workspace-auth-gate.module.css";
 
@@ -48,16 +51,16 @@ function LoginForm({configured, onSuccess, authenticate = login}: WorkspaceLogin
   return <form className={styles.form} onSubmit={submit} aria-label="Đăng nhập ERP" aria-busy={status === "busy"}>
     <p>Sử dụng tài khoản Medcom để truy cập nghiệp vụ được cấp quyền.</p>
     <label htmlFor={`${id}-username`}>Tên đăng nhập</label>
-    <input id={`${id}-username`} autoComplete="username" required maxLength={100} value={username} onChange={e => setUsername(e.target.value)} disabled={busy || !configured}/>
+    <Input id={`${id}-username`} autoComplete="username" required maxLength={100} value={username} onChange={e => setUsername(e.target.value)} disabled={busy || !configured}/>
     <label htmlFor={`${id}-password`}>Mật khẩu</label>
     <div className={styles.password}>
-      <input id={`${id}-password`} type={visible ? "text" : "password"} autoComplete="current-password" required maxLength={256} value={password} onChange={e => setPassword(e.target.value)} disabled={busy || !configured}/>
-      <button type="button" aria-label={visible ? "Ẩn mật khẩu" : "Hiện mật khẩu"} aria-pressed={visible} disabled={busy || !configured} onClick={() => setVisible(v => !v)}>{visible ? "Ẩn" : "Hiện"}</button>
+      <Input id={`${id}-password`} type={visible ? "text" : "password"} autoComplete="current-password" required maxLength={256} value={password} onChange={e => setPassword(e.target.value)} disabled={busy || !configured}/>
+      <Button className={styles.visibility} variant="ghost" size="icon" type="button" aria-label={visible ? "Ẩn mật khẩu" : "Hiện mật khẩu"} aria-pressed={visible} disabled={busy || !configured} onClick={() => setVisible(v => !v)}>{visible ? <EyeOff size={18} aria-hidden="true"/> : <Eye size={18} aria-hidden="true"/>}</Button>
     </div>
     {!configured && <p role="alert">Chưa có kết nối ERP. Vui lòng liên hệ quản trị viên.</p>}
     {status === "failed" && <p ref={feedback} tabIndex={-1} role="alert">Không thể đăng nhập. Kiểm tra thông tin hoặc thử lại sau.</p>}
     {status === "succeeded" && <p ref={feedback} tabIndex={-1} role="status">Đang chờ xác minh quyền làm việc…</p>}
-    <button type="submit" disabled={busy || !configured}>{status === "busy" ? "Đang xác thực…" : status === "succeeded" ? "Đang xác minh…" : "Đăng nhập"}</button>
-    <p>Quyền và phiên làm việc do hệ thống ERP xác nhận.</p>
+    <Button className={styles.submit} type="submit" disabled={busy || !configured}>{status === "busy" ? "Đang xác thực…" : status === "succeeded" ? "Đang xác minh…" : "Đăng nhập"}</Button>
+    <p className={styles.footnote}>Quyền và phiên làm việc do hệ thống ERP xác nhận.</p>
   </form>;
 }

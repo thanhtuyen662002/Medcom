@@ -7,35 +7,7 @@ import {
 
 import { cn } from "@/lib/utils"
 import { buttonVariants, type Button } from "@/components/ui/button"
-
-function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
-  return (
-    <nav
-      role="navigation"
-      aria-label="pagination"
-      data-slot="pagination"
-      className={cn("mx-auto flex w-full justify-center", className)}
-      {...props}
-    />
-  )
-}
-
-function PaginationContent({
-  className,
-  ...props
-}: React.ComponentProps<"ul">) {
-  return (
-    <ul
-      data-slot="pagination-content"
-      className={cn("flex flex-row items-center gap-1", className)}
-      {...props}
-    />
-  )
-}
-
-function PaginationItem({ ...props }: React.ComponentProps<"li">) {
-  return <li data-slot="pagination-item" {...props} />
-}
+import { Pagination, PaginationContent, PaginationItem } from "@/components/ui/pagination-layout"
 
 type PaginationLinkProps = {
   isActive?: boolean

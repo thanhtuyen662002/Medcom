@@ -1,5 +1,15 @@
 # Medcom self-hosted frontend — backend integration handoff
 
+## Current source reconciliation — 9 October 2026
+
+The owner supplied a new backend handover while requesting the Apple-style frontend refresh. [The current HTTP boundary](../../../docs/backend/CURRENT_HTTP_BOUNDARY_20261009.md) records all 25 registered method/path pairs at backend baseline `ce95e1750b3df8ef46a4682f5f78f94450bf2829`, including purchase Save/Submit/original-intent lookup and the default-unavailable inbound draft facade. The current BFF allows these reviewed paths. Command POST payloads have a 1 MiB bound; other POST payloads retain 16 KiB. This supersedes the earlier route/body-bound inventory below.
+
+According to the handover, login and authorized reads work on Railway; this source review does not independently accept real ERP/SQL writes. Keep `writeAvailable`, `commandAccess`, CSRF, current scopes and exact original-intent/receipt semantics. No Create/Delete, transfer, report/export or QR business command is enabled by the visual refresh. The previous purchase pilot activation was cancelled and is not renewed by the FE/BE continuation request.
+
+The following 4 October checkpoint is retained for provenance. Its statements about unavailable live access and the smaller route inventory describe that earlier checkpoint, not the current deployment or source.
+
+## Historical checkpoint — 4 October 2026
+
 Owner direction (2026-10-04): frontend and backend run on the owner-operated server. The redesigned frontend is preserved; historical src/frontend is not substituted. Existing scheduled jobs stay paused. The filename is retained for provenance, not Sites deployment.
 
 ## Observed baseline
@@ -10,7 +20,7 @@ Sources: src/frontend/lib/{contracts,api}.ts; src/backend/Medcom.Api/{ApiHost,Au
 
 ## Hosting and connection
 
-Native Next Node standalone runs behind the dedicated IIS frontend reverse proxy. The .NET API runs in its own IIS in-process site/pool with true HTTPS. Configure server-only MEDCOM_API_ORIGIN as a validated HTTPS DNS origin and MEDCOM_PUBLIC_ORIGIN as the public frontend HTTPS origin. Private operator DNS resolution may direct the API name to the local IIS binding; its certificate must match and be trusted by Node. No TLS bypass, browser-configurable destination or SQL connection exists in the frontend. Keep private configuration, Tools.dll and customer data at the backend outside releases. See ../../../../docs/deployment/SELF_HOSTED_IIS.md.
+Native Next Node standalone runs behind the dedicated IIS frontend reverse proxy. The .NET API runs in its own IIS in-process site/pool with true HTTPS. Configure server-only MEDCOM_API_ORIGIN as a validated HTTPS DNS origin and MEDCOM_PUBLIC_ORIGIN as the public frontend HTTPS origin. Private operator DNS resolution may direct the API name to the local IIS binding; its certificate must match and be trusted by Node. No TLS bypass, browser-configurable destination or SQL connection exists in the frontend. Keep private configuration, Tools.dll and customer data at the backend outside releases. See [the IIS deployment guide](../../../docs/deployment/SELF_HOSTED_IIS.md).
 
 Browser calls /api/erp/<backend path> on the same frontend origin. The server forwards only allowlisted API routes, rejecting redirects. No browser-configurable target/open proxy exists. Forwarded cookies are restricted to __Host-Medcom.Session (including ASP.NET chunks) and __Host-Medcom.Csrf. ChatGPT cookies and identity headers never reach ERP. Only secure HttpOnly cookies with Path=/ and no Domain are relayed. Verify this behavior against the live production backend during acceptance.
 

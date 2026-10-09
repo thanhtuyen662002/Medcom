@@ -505,7 +505,9 @@ test('I40 synthetic React host list lifecycle and stale-denial integration', asy
         assert.ok(pager);
         const previous=pager.findAllByType('button').find(n=>n.props['aria-label']==='Trang trước');
         const next=pager.findAllByType('button').find(n=>n.props['aria-label']==='Trang sau');
-        assert.ok(previous);assert.ok(next);assert.equal(previous.props.children,'Trang trước');assert.equal(next.props.children,'Trang sau');
+        assert.ok(previous);assert.ok(next);
+        assert.equal(previous.findByType('span').props.children,'Trang trước');assert.equal(next.findByType('span').props.children,'Trang sau');
+        assert.equal(previous.findByType('svg').props['aria-hidden'],'true');assert.equal(next.findByType('svg').props['aria-hidden'],'true');
         assert.equal(previous.props.disabled,true);assert.equal(next.props.disabled,false);
         await f.click('Trang sau');assert.equal(f.calls.at(-1).page,2);
       }finally{await f.close();}
