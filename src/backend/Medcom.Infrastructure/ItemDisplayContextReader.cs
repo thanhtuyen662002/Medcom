@@ -128,28 +128,35 @@ internal static class ItemDisplayContextReader
             : "CAST(0 AS bigint) AS MasterRows,CAST(NULL AS nvarchar(max)) AS ItemName,CAST(NULL AS nvarchar(50)) AS Unit,CAST(NULL AS nvarchar(100)) AS MasterCode,0 AS InvalidMaster";
         var storedProjection = stored ? "S.StoredRows,S.StoredCode,S.InvalidStored"
             : "CAST(0 AS bigint) AS StoredRows,CAST(NULL AS nvarchar(50)) AS StoredCode,0 AS InvalidStored";
+        // SQL Server rejects an aggregate argument that mixes local columns and an
+        // outer reference (8124). Qualify each source row first, then aggregate only
+        // that derived row's local columns; the exact identity predicates are unchanged.
         var masterApply = master ? """
             OUTER APPLY (SELECT COUNT_BIG(*) AS MasterRows,
-              CASE WHEN COUNT_BIG(*)=1 THEN MAX(CASE WHEN DATALENGTH(I.ItemName)<=131072 THEN I.ItemName END) END AS ItemName,
-              CASE WHEN COUNT_BIG(*)=1 THEN MAX(I.Unit) END AS Unit,
-              CASE WHEN COUNT_BIG(*)=1 THEN MAX(I.ItemCode) END AS MasterCode,
-              COALESCE(MAX(CASE WHEN DATALENGTH(I.ItemName)>131072
-                OR DATALENGTH(I.ItemID)<>DATALENGTH(L.ItemId)
-                OR CONVERT(varbinary(max),I.ItemID)<>CONVERT(varbinary(max),L.ItemId) THEN 1 ELSE 0 END),0) AS InvalidMaster
-              FROM dbo.CF_ItemTbl I WITH (HOLDLOCK) WHERE I.ItemID=L.ItemId) M
+              CASE WHEN COUNT_BIG(*)=1 THEN MAX(CASE WHEN DATALENGTH(R.ItemName)<=131072 THEN R.ItemName END) END AS ItemName,
+              CASE WHEN COUNT_BIG(*)=1 THEN MAX(R.Unit) END AS Unit,
+              CASE WHEN COUNT_BIG(*)=1 THEN MAX(R.ItemCode) END AS MasterCode,
+              COALESCE(MAX(R.InvalidMaster),0) AS InvalidMaster
+              FROM (SELECT I.ItemName,I.Unit,I.ItemCode,
+                CASE WHEN DATALENGTH(I.ItemName)>131072
+                  OR DATALENGTH(I.ItemID)<>DATALENGTH(L.ItemId)
+                  OR CONVERT(varbinary(max),I.ItemID)<>CONVERT(varbinary(max),L.ItemId) THEN 1 ELSE 0 END AS InvalidMaster
+                FROM dbo.CF_ItemTbl I WITH (HOLDLOCK) WHERE I.ItemID=L.ItemId) R) M
             """ : "";
         var storedApply = stored ? """
             OUTER APPLY (SELECT COUNT_BIG(*) AS StoredRows,
-              CASE WHEN COUNT_BIG(*)=1 THEN MAX(C.ItemCode) END AS StoredCode,
-              COALESCE(MAX(CASE WHEN DATALENGTH(CONVERT(nvarchar(max),C.DocumentID))<>DATALENGTH(CONVERT(nvarchar(max),@document))
-                OR CONVERT(varbinary(max),CONVERT(nvarchar(max),C.DocumentID))<>CONVERT(varbinary(max),CONVERT(nvarchar(max),@document))
-                OR DATALENGTH(CONVERT(nvarchar(max),C.UserAutoID))<>DATALENGTH(L.LineId)
-                OR CONVERT(varbinary(max),CONVERT(nvarchar(max),C.UserAutoID))<>CONVERT(varbinary(max),L.LineId)
-                OR DATALENGTH(CONVERT(nvarchar(max),C.ItemID))<>DATALENGTH(L.ItemId)
-                OR CONVERT(varbinary(max),CONVERT(nvarchar(max),C.ItemID))<>CONVERT(varbinary(max),L.ItemId)
-                THEN 1 ELSE 0 END),0) AS InvalidStored
-              FROM dbo.IV_InboundRequestDetailsTbl C WITH (HOLDLOCK)
-              WHERE C.DocumentID=@document AND C.UserAutoID=L.LineId) S
+              CASE WHEN COUNT_BIG(*)=1 THEN MAX(R.ItemCode) END AS StoredCode,
+              COALESCE(MAX(R.InvalidStored),0) AS InvalidStored
+              FROM (SELECT C.ItemCode,
+                CASE WHEN DATALENGTH(CONVERT(nvarchar(max),C.DocumentID))<>DATALENGTH(CONVERT(nvarchar(max),@document))
+                  OR CONVERT(varbinary(max),CONVERT(nvarchar(max),C.DocumentID))<>CONVERT(varbinary(max),CONVERT(nvarchar(max),@document))
+                  OR DATALENGTH(CONVERT(nvarchar(max),C.UserAutoID))<>DATALENGTH(L.LineId)
+                  OR CONVERT(varbinary(max),CONVERT(nvarchar(max),C.UserAutoID))<>CONVERT(varbinary(max),L.LineId)
+                  OR DATALENGTH(CONVERT(nvarchar(max),C.ItemID))<>DATALENGTH(L.ItemId)
+                  OR CONVERT(varbinary(max),CONVERT(nvarchar(max),C.ItemID))<>CONVERT(varbinary(max),L.ItemId)
+                  THEN 1 ELSE 0 END AS InvalidStored
+                FROM dbo.IV_InboundRequestDetailsTbl C WITH (HOLDLOCK)
+                WHERE C.DocumentID=@document AND C.UserAutoID=L.LineId) R) S
             """ : "";
         return $"SELECT /* item-display:rows */ L.Ordinal,{masterProjection},{storedProjection} FROM (VALUES {values}) L(Ordinal,LineId,ItemId) {masterApply} {storedApply} ORDER BY L.Ordinal;";
     }
