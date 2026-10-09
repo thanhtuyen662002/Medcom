@@ -444,3 +444,21 @@ test('customization owner changes and explicit retirement cannot resurrect the o
   await render({presentationAllowed:false});await render({presentationAllowed:true});assert.equal(visible(),false,'Generic grids keep the prior close-on-suspend default');
  }finally{if(renderer)await act(async()=>renderer.unmount());}
 });
+
+for(const kind of ['purchase','inbound'])test(`I66 ${kind}: single X preserves dirty edits and invokes only canonical close once`,async()=>{
+ const f=await host(kind);let backs=0,legacyCloses=0;try{
+  if(kind==='inbound')await f.render({onBack:()=>backs++,onClose:()=>legacyCloses++});
+  await f.open('DOC-A');const label=kind==='purchase'?'Đóng đề nghị':'Quay lại danh sách';
+  const closes=()=>f.root().findAllByType('button').filter(node=>node.props.title==='Đóng hộp thoại');
+  assert.equal(closes().length,1);assert.equal(closes()[0].props['aria-label'],label);assert.equal(text(closes()[0]),'×');
+  assert.equal(f.button('Đóng phiếu nhập hàng'),undefined,'No independent legacy close command remains');
+  const form=f.editor().findByType('form');const sections=form.findAll(node=>node.type==='section'&&node.props.className?.split(' ').includes('record-section'));
+  assert.ok(sections.length>=2);const note=f.field();assert.ok(note);let group=note;while(group&&group.type!=='section')group=group.parent;
+  assert.equal(group.findByType('h3').children.join(''),'Ghi chú');assert.ok(form.findAllByType('textarea').includes(note),'Notes retains its original form owner');
+  await f.edit('RETAIN UNDER X');const original=f.editor(),adapter=original.props.adapter,calls=f.calls.length;
+  await f.click(label);assert.equal(f.nav().selectedId,'DOC-A');assert.equal(f.guard().isBlocked(),true);assert.equal(backs,0);assert.equal(legacyCloses,0);
+  await f.click('Tiếp tục làm việc');assert.strictEqual(f.editor(),original);assert.strictEqual(f.editor().props.adapter,adapter);assert.equal(f.field().props.value,'RETAIN UNDER X');
+  await f.click(label);await f.click('Bỏ thay đổi và rời màn hình');assert.equal(f.nav().selectedId,null);assert.equal(f.calls.length,calls);assert.equal(backs,kind==='inbound'?1:0);assert.equal(legacyCloses,0);
+  await f.click(label);assert.equal(backs,kind==='inbound'?1:0,'Repeated stale X cannot dispatch a second callback');assert.ok(f.calls.every(call=>call.method==='GET'));
+ }finally{await f.close();}
+});

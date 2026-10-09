@@ -1,7 +1,7 @@
 "use client";
 
 import {useId,useLayoutEffect,useRef,useState,type ReactNode} from "react";
-import {RequestButton,RecordActionHost} from "./request-presentation";
+import {RequestButton,RecordActionHost,RecordSecondaryHost,RecordStatusHost,RecordDetailContext} from "./request-presentation";
 
 /** Root owns history. These operations request navigation; only a later selectedId
  * observation proves acceptance. Cancellation/pending custody leaves it unchanged. */
@@ -33,6 +33,8 @@ export function RequestDetailDialog({open, presentationAllowed = true, title, cl
   onRequestClose: () => void; children: ReactNode; actions?:ReactNode; documentNumber?:string|null; mode?:"view"|"create"|"edit"; bodyRef?:import("react").Ref<HTMLDivElement>; onBodyScroll?:import("react").UIEventHandler<HTMLDivElement>;
 }) {
   const [actionHost,setActionHost]=useState<HTMLElement|null>(null);
+  const [secondaryHost,setSecondaryHost]=useState<HTMLElement|null>(null),[statusHost,setStatusHost]=useState<HTMLElement|null>(null);
+  // Kept for source compatibility; all dismissal presentation uses the single X.
   const titleId = useId(), content = useRef<HTMLDivElement>(null), close = useRef(onRequestClose);
   useLayoutEffect(() => { close.current = onRequestClose; });
   const shown = open && presentationAllowed;
@@ -139,13 +141,13 @@ export function RequestDetailDialog({open, presentationAllowed = true, title, cl
     <div className="request-detail-backdrop" aria-hidden="true" onClick={() => close.current()}/>
     <div ref={content} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="request-detail-dialog" data-record-mode={mode}>
       <header className="request-detail-header">
-        <h2 id={titleId}>{title}{documentNumber&&<span className="record-document-number">{documentNumber}</span>}</h2>
+        <div className="record-dialog-identity"><h2 id={titleId}>{title}{documentNumber&&<span className="record-document-number">{documentNumber}</span>}</h2><div className="record-dialog-status" ref={setStatusHost}/></div>
         <div className="record-dialog-header-actions">
-          <RequestButton type="button" onClick={() => close.current()}>{closeLabel}</RequestButton>
-          <RequestButton type="button" className="record-dialog-close" aria-label="Đóng hộp thoại" onClick={() => close.current()}>×</RequestButton>
+          <RequestButton type="button" className="record-dialog-close" aria-label={closeLabel} title="Đóng hộp thoại" onClick={() => close.current()}>×</RequestButton>
         </div>
+        <div className="record-dialog-secondary-actions" role="group" aria-label="Thao tác phiếu" ref={setSecondaryHost}/>
       </header>
-      <RecordActionHost.Provider value={actionHost}><div ref={bodyRef} onScroll={onBodyScroll} className="request-detail-body">{children}</div></RecordActionHost.Provider><footer className="record-dialog-actions" ref={setActionHost}>{actions}</footer>
+      <RecordDetailContext.Provider value={true}><RecordStatusHost.Provider value={statusHost}><RecordSecondaryHost.Provider value={secondaryHost}><RecordActionHost.Provider value={actionHost}><div ref={bodyRef} onScroll={onBodyScroll} className="request-detail-body">{children}</div></RecordActionHost.Provider></RecordSecondaryHost.Provider></RecordStatusHost.Provider></RecordDetailContext.Provider><footer className="record-dialog-actions" ref={setActionHost}>{actions}</footer>
     </div>
   </div>;
 }

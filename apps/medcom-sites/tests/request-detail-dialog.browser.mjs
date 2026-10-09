@@ -44,6 +44,40 @@ async function waitForGuardDismissal(page){
  await page.locator('[data-slot="alert-dialog-overlay"]').waitFor({state:'detached'});
  await page.waitForFunction(()=>getComputedStyle(document.body).pointerEvents!=='none');
 }
+// Review state and Notes now live in sibling shared sections. Require both
+// inside the current document dialog; neither a matching stale note elsewhere
+// nor a hidden retained input can stand in for the reviewed value.
+async function assertPurchaseReviewNotes(page,documentId,value){
+ const dialog=page.getByRole('dialog',{name:'Phiếu mua hàng hiện có '+documentId,exact:true});await dialog.waitFor();assert.equal(await dialog.count(),1);
+ const review=dialog.getByRole('region',{name:'Rà soát thông tin phiếu',exact:true});await review.waitFor();assert.equal(await review.count(),1);
+ const notes=dialog.getByRole('region',{name:'Ghi chú',exact:true});await notes.waitFor();assert.equal(await notes.count(),1);
+ const reviewed=notes.locator('label[for$="-notes"] + strong');assert.equal(await reviewed.count(),1);assert.equal(await reviewed.textContent(),value);
+ assert.equal(await dialog.getByRole('textbox',{name:'Ghi chú',exact:true,includeHidden:true}).count(),0);
+}
+test('I66 review Notes readiness requires current document, review state and the separate shared section',async()=>{
+ // Locator transport only. Actual shared components and native focus/form
+ // transitions are exercised by the compiled fixture and required browser gate.
+ const fixture=(patch={})=>{
+  const state={documentId:'QA-001',dialogCount:1,reviewCount:1,notesCount:1,valueCount:1,value:'R1 LAYER RETAINED',textboxes:0,...patch},calls=[];
+  const surface=(count,extra={})=>({count:async()=>count,waitFor:async()=>assert.equal(count,1,'Exactly one current visible surface is required'),...extra});
+  const page={getByRole:(role,options)=>{
+   assert.equal(role,'dialog');assert.deepEqual(options,{name:'Phiếu mua hàng hiện có QA-001',exact:true});calls.push('current dialog');
+   return surface(state.documentId==='QA-001'?state.dialogCount:0,{getByRole:(role,options)=>{
+    calls.push(options.name);
+    if(role==='textbox'){assert.deepEqual(options,{name:'Ghi chú',exact:true,includeHidden:true});return surface(state.textboxes);}
+    assert.equal(role,'region');assert.equal(options.exact,true);
+    if(options.name==='Rà soát thông tin phiếu')return surface(state.reviewCount);
+    assert.equal(options.name,'Ghi chú');return surface(state.notesCount,{locator:selector=>{
+     assert.equal(selector,'label[for$="-notes"] + strong');return surface(state.valueCount,{textContent:async()=>state.value});
+    }});
+   }});
+  }};return {page,calls};
+ };
+ const current=fixture();await assertPurchaseReviewNotes(current.page,'QA-001','R1 LAYER RETAINED');
+ assert.deepEqual(current.calls,['current dialog','Rà soát thông tin phiếu','Ghi chú','Ghi chú']);
+ for(const patch of [{documentId:'QA-STALE'},{dialogCount:2},{reviewCount:0},{reviewCount:2},{notesCount:0},{notesCount:2},{valueCount:0},{valueCount:2},{value:'STALE NOTES'},{textboxes:1}])
+  await assert.rejects(()=>assertPurchaseReviewNotes(fixture(patch).page,'QA-001','R1 LAYER RETAINED'),undefined,JSON.stringify(patch));
+});
 // Reuse the exact response bytes/metadata in the browser and decoder checks.
 // The inbound transport requires no-store even for bootstrap and CSRF replies.
 function dialogJson(status,data,headers={}){
@@ -406,7 +440,7 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
  reset();server.listen(0,'127.0.0.1');await once(server,'listening');origin='http://127.0.0.1:'+server.address().port;
  const release=()=>{model.holdDetail=false;model.holdCommand=false;waiters.splice(0).forEach(done=>done());};
  const paint=()=>page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
- const notes=()=>page.getByRole('dialog').getByLabel('Ghi chú',{exact:true});
+ const notes=()=>page.getByRole('dialog').getByRole('textbox',{name:'Ghi chú',exact:true,includeHidden:true});
  const snapshot=()=>page.evaluate(()=>({life:window.i43.life,adapters:window.i43.adapters.length,selected:window.i43.navigation?.selectedId}));
  const open=async kind=>{await page.getByRole('button',{name:kind==='purchase'?'Mở đề nghị QA-001':/^Mở phiếu QA-001 ·/}).click();await notes().waitFor();};
  const start=async(kind,width,height=844,hasTouch=false)=>{
@@ -454,12 +488,12 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
   viewportEvidence.push({file,kind:currentScenario.kind,stage:currentScenario.stage,role,fullPage:false,scale:'css',viewport,observedSurfaceBox:box,imagePixels});
   await writeFile(path.join(output,'viewport-evidence.json'),JSON.stringify(viewportEvidence,null,2));
  };
- const attempt=async path=>{if(path==='escape')await page.keyboard.press('Escape');else if(path==='backdrop')await page.locator('.request-detail-backdrop').click({position:{x:2,y:2}});else await page.getByRole('dialog').getByRole('button',{name:path==='x'?'Đóng hộp thoại':/^(Đóng đề nghị|Quay lại danh sách)$/}).click();};
+ const attempt=async path=>{if(path==='escape')await page.keyboard.press('Escape');else if(path==='backdrop')await page.locator('.request-detail-backdrop').click({position:{x:2,y:2}});else await page.getByRole('dialog').getByTitle('Đóng hộp thoại',{exact:true}).click();};
  try{
   browser=await chromium.launch({executablePath:executable,headless:true,chromiumSandbox:true});
   for(const kind of ['purchase','inbound'])await run('I43 R1 '+kind+' higher Radix command modal owns focus and Escape above dirty detail',async()=>{
    await start(kind,390);await open(kind);await notes().fill('R1 COMMAND DIRTY');await page.waitForLoadState('networkidle');const before=await snapshot(),beforeCalls=model.calls.length;
-   const retainedNotes=await notes().elementHandle(),retainedClose=await page.getByRole('button',{name:'Đóng hộp thoại',exact:true}).elementHandle();
+   const retainedNotes=await notes().elementHandle(),retainedClose=await page.getByTitle('Đóng hộp thoại',{exact:true}).elementHandle();
    await page.keyboard.press('Control+k');const command=page.getByRole('dialog',{name:'R1 command modal'});await command.waitFor();
    const input=page.getByRole('textbox',{name:'R1 command input'});await input.focus();await input.fill('COMMAND RETAINS FOCUS');await paint();
    assert.equal(await input.evaluate(node=>node===document.activeElement),true);assert.equal(await input.evaluate(node=>!!node.closest('[aria-hidden="true"],[hidden],[inert]')),false,'The higher command input remains accessibility-exposed');
@@ -503,7 +537,7 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
     const back=page.getByRole('dialog').getByRole('button',{name:'Quay lại chỉnh sửa',exact:true});await back.waitFor();
     if(kind==='purchase'){
      assert.equal(await notes().count(),0);assert.equal(await retainedNotes.evaluate(node=>node.isConnected),false,'Purchase review intentionally replaces the input, not the editor');
-     assert.equal(await page.getByRole('dialog').getByRole('region',{name:'Rà soát thông tin phiếu',exact:true}).locator('label[for$="-notes"] + strong').textContent(),'R1 LAYER RETAINED');
+     await assertPurchaseReviewNotes(page,purchase.purchaseRequestId,'R1 LAYER RETAINED');
     }else{assert.equal(await notes().inputValue(),'R1 LAYER RETAINED');assert.equal(await notes().isDisabled(),true);assert.equal(await notes().evaluate((node,original)=>node===original,retainedNotes),true);}
     assert.deepEqual(await snapshot(),before);assert.equal(model.calls.length,beforeCalls,'Review is local presentation, not a read or command');
     await back.click();await notes().waitFor();
@@ -524,7 +558,7 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
     await activate(review());await back().waitFor();await paint();
     assert.deepEqual((await submits()).slice(submitCount),[{label:'Rà soát phiếu',owner:true}],'Only explicit Review submits for validation');
     assert.equal(await back().evaluate((node,original)=>node===original,action),true);assert.equal(await back().getAttribute('type'),'button');
-    if(kind==='purchase')assert.equal(await dialog.getByRole('region',{name:'Rà soát thông tin phiếu',exact:true}).locator('label[for$="-notes"] + strong').textContent(),'R1 LAYER RETAINED');
+    if(kind==='purchase')await assertPurchaseReviewNotes(page,purchase.purchaseRequestId,'R1 LAYER RETAINED');
     else{assert.equal(await notes().inputValue(),'R1 LAYER RETAINED');assert.equal(await notes().isDisabled(),true);}
     await activate(back());await notes().waitFor();await paint();
     assert.equal((await submits()).length,submitCount+1,'Back must cancel its native default after the live button changes to submit');
@@ -619,13 +653,13 @@ test('I43 actual dialog browser matrix',{timeout:240000},async t=>{
   });
   for(const kind of ['purchase','inbound'])await run(kind+' loading and failed detail remain guarded and closable',async()=>{
    await start(kind,390);model.holdDetail=true;await page.evaluate(()=>window.i43.navigation.requestOpen('QA-001'));await page.getByRole('dialog').waitFor();
-   await page.getByRole('dialog').getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});release();
-   model.detailStatus=404;await page.evaluate(()=>window.i43.navigation.requestOpen('QA-001'));await page.getByRole('dialog').waitFor();await page.getByRole('dialog').getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});
+   await page.getByRole('dialog').getByTitle('Đóng hộp thoại',{exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});release();
+   model.detailStatus=404;await page.evaluate(()=>window.i43.navigation.requestOpen('QA-001'));await page.getByRole('dialog').waitFor();await page.getByRole('dialog').getByTitle('Đóng hộp thoại',{exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});
    assert.equal(model.calls.filter(c=>c.method==='POST').length,0);results.push({kind,result:'PASS',case:'loading/404'});
   });
   await run('inbound independent read-only fallback remains in the same dialog',async()=>{
    await start('inbound',390);model.readOnly=true;await page.evaluate(()=>window.i43.navigation.requestOpen('QA-001'));await page.getByTestId('inbound-request-readonly').waitFor();await geometry();
-   await page.getByRole('dialog').getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});
+   await page.getByRole('dialog').getByTitle('Đóng hộp thoại',{exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});
    assert.equal(model.calls.filter(c=>c.method==='POST').length,0);results.push({result:'PASS',case:'readonly'});
   });
   assert.deepEqual(errors,[]);assert.equal(results.length,expectedCases,'Every required dialog case must complete');

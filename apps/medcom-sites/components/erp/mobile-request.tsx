@@ -1,5 +1,5 @@
 "use client";
-import {RecordActionBar} from "./record-dialog";
+import {RecordActionBar,RecordSection,RecordDetailHeading,RecordDetailStatus} from "./record-dialog";
 import {RecordDeleteConfirmation} from "./record-delete-confirmation";
 import {documentStatusLabel} from "@/lib/erp/document-status";
 import {useRequestNotifications} from "./request-notifications";
@@ -10,6 +10,7 @@ import {RemoteLookup} from "./lookup";
 import {useDirtyGuard} from "./navigation-guard";
 import {MobileRequestLines, isRequestInteger, requestInputStyle, type PurchaseRequestLine} from "./mobile-request-lines";
 import type {LookupAdapter} from "@/lib/erp/presentation";
+import type {ItemDisplayPresentation} from "@/lib/erp/item-display";
 
 export type PurchaseRequestDraft = {
   purchaseDate: string;
@@ -81,6 +82,7 @@ export type MobileRequestProps = {
   initial: PurchaseRequestSnapshot;
   presentationAllowed?: boolean;
   statusPresentation?: {documentId:string;id:number|null;name?:string|null};
+  itemDisplay?: ItemDisplayPresentation & {scopeKey:string};
   access: MobileRequestAccess;
   adapter?: MobileRequestAdapter;
   onConfirmed?: (snapshot: PurchaseRequestSnapshot, receiptId: string) => void;
@@ -162,7 +164,7 @@ export function MobileRequest(props: MobileRequestProps) {
 
 const emptySnapshot = (): PurchaseRequestSnapshot => ({documentId: null, version: null, confirmation: null, status: null, values: {purchaseDate: "", personSuggest: "", department: "", purposeId: "", purposeDescOrClient: "", notes: "", branchId: "", currencyId: "", objectId: "", lines: []}});
 
-function RequestEditor({initial, statusPresentation, access, adapter, onConfirmed, readRevision=0, onWorkStateChange, presentationAllowed=true}: MobileRequestProps) {
+function RequestEditor({initial, statusPresentation, itemDisplay, access, adapter, onConfirmed, readRevision=0, onWorkStateChange, presentationAllowed=true}: MobileRequestProps) {
   const prefix = useId();
   const notify=useRequestNotifications(access.scopeKey,access.canRead&&access.available);
   // Invalid input is never rendered as a synthetic fallback. This only permits
@@ -183,6 +185,7 @@ function RequestEditor({initial, statusPresentation, access, adapter, onConfirme
   const currentAdapter = useRef(adapter);
   const [dispatchAdapter,setDispatchAdapter]=useState<MobileRequestAdapter|null>(null);
   const [observedReadRevision,setObservedReadRevision]=useState(readRevision);
+  const [displayNeedsFreshRead,setDisplayNeedsFreshRead]=useState(false);
   const queuedDocument = useRef<PurchaseRequestSnapshot | null>(null);
   const [hasUnresolvedIntent, setHasUnresolvedIntent] = useState(false);
   const [observedDocumentId, setObservedDocumentId] = useState(initial?.documentId);
@@ -210,7 +213,7 @@ function RequestEditor({initial, statusPresentation, access, adapter, onConfirme
   function loadDocument(snapshot: PurchaseRequestSnapshot) {
     setBaseline(snapshot); setValues(copy(snapshot.values)); setReview(false);
     setPhase("editing"); setErrors({}); setResult(null); setMessage("");
-    setDocumentSwitchBlocked(false);
+    setDocumentSwitchBlocked(false); setDisplayNeedsFreshRead(false);
   }
   // A changed selected identity resets before paint. During pending/unknown,
   // hide previous input and queue the new selection without losing its intent.
@@ -224,6 +227,14 @@ function RequestEditor({initial, statusPresentation, access, adapter, onConfirme
     if(!hasUnresolvedIntent&&isSnapshot(initial))loadDocument(initial);
   }
   const dirty = JSON.stringify(values) !== JSON.stringify(baseline.values);
+  // The form may retain an older baseline while a new read/receipt arrives.
+  // Match that baseline before passing optional display data to the shared
+  // exact line/item qualifier. Metadata never enters values or dirty state.
+  const lineDisplay = itemDisplay ? {binding:itemDisplay.binding,context:
+    !displayNeedsFreshRead&&itemDisplay.scopeKey===access.scopeKey&&itemDisplay.binding.kind==="purchase-requests"
+    &&itemDisplay.binding.documentId===baseline.documentId&&itemDisplay.binding.stateToken===baseline.version
+    &&itemDisplay.binding.branchId===values.branchId&&String(itemDisplay.binding.statusId)===baseline.status?.id
+    ?itemDisplay.context:null} : undefined;
   const pending = phase === "pending" || phase === "reconciling";
   const uncertain = phase === "unknown" || phase === "reconciling";
   const serviceAvailable = !!adapter && access.available && validAccess(access) && isSnapshot(initial);
@@ -278,6 +289,9 @@ function RequestEditor({initial, statusPresentation, access, adapter, onConfirme
       return;
     }
     if (next.kind === "confirmed") {
+      // Even a canonical no-op Save may retain the same token. A receipt is
+      // not a fresh metadata read; only an adopted read/document clears this.
+      setDisplayNeedsFreshRead(true);
       setDocumentSwitchBlocked(false); if (confirmedSelection) setReview(false);
       setBaseline(next.snapshot); setValues(copy(next.snapshot.values)); setPhase("confirmed"); setErrors({}); setMessage(""); originalIntent.current = null;
       try {onConfirmed?.(next.snapshot, next.receiptId);} catch {setMessage("ERP đã xác nhận; chưa cập nhật được màn hình liên quan.");}
@@ -328,13 +342,14 @@ function RequestEditor({initial, statusPresentation, access, adapter, onConfirme
   const stateLabel = pending ? (phase === "pending" ? "Đang gửi yêu cầu…" : "Đang kiểm tra kết quả…") : uncertain ? "Chưa xác nhận kết quả" : phase === "conflict" ? "Phiếu đã thay đổi trên ERP" : phase === "rejected" ? "Yêu cầu bị từ chối; nội dung chưa được lưu" : dirty ? "Có nội dung chưa lưu" : baseline.confirmation === "submitted" ? "ERP đã xác nhận gửi phiếu" : baseline.confirmation === "draft" ? "Nháp đã được ERP xác nhận" : baseline.documentId ? "Phiếu hiện có trên ERP" : "Phiếu mới chưa lưu";
   const headerFields = [
     ["purchaseDate", "Ngày đề nghị", "date", 10], ["personSuggest", "Người đề nghị", "text", 500], ["department", "Phòng ban", "text", 100],
-    ["purposeDescOrClient", "Mục đích / khách hàng", "textarea", access.maxPurposeLength], ["notes", "Ghi chú", "textarea", access.maxNotesLength],
+    ["purposeDescOrClient", "Mục đích / khách hàng", "textarea", access.maxPurposeLength],
   ] as const;
   if (!access.canRead) return <section role="status"><h2>Đề nghị mua hàng</h2><p>Đăng nhập bằng tài khoản được cấp quyền để mở phiếu.</p></section>;
   if (!serviceAvailable || !adapter) return <section role="status"><h2>Đề nghị mua hàng</h2><p>Dịch vụ tạo và gửi đề nghị mua hàng chưa khả dụng.</p>{hasUnresolvedIntent && <p>Yêu cầu gốc vẫn cần được kiểm tra trước khi gửi yêu cầu khác.</p>}</section>;
   if (documentSwitchBlocked) return <section aria-label="Chờ xác nhận phiếu trước" style={{padding: 16, display: "grid", gap: 12}}><h1>Đề nghị mua hàng</h1><p role="status">{pending ? "Đang chờ kết quả phiếu trước…" : "Phiếu trước chưa được xác nhận. Kiểm tra yêu cầu gốc trước khi mở phiếu khác."}</p>{phase === "unknown" && <RequestButton type="button" disabled={access.verifying || access.canReconcile===false || dispatchAdapter!==adapter} onClick={() => {if(isPresentationCurrent())void reconcile();}}>Kiểm tra kết quả yêu cầu gốc</RequestButton>}</section>;
   return <form id={`${prefix}-form`} ref={form} onSubmit={event => {event.preventDefault(); if (!review && editable) inspect();}} aria-label="Đề nghị mua hàng trên điện thoại" className={requestStyles.editor}>
-    <header className={requestStyles.section}><h2 className={requestStyles.title}>Đề nghị mua hàng</h2><p role="status" aria-live="polite">{stateLabel}</p>{baseline.documentId && <p>Mã phiếu: <strong>{baseline.documentId}</strong></p>}{baseline.status && <p className={requestStyles.muted}>{statusPresentation&&baseline.documentId===statusPresentation.documentId&&baseline.status.id===String(statusPresentation.id)?documentStatusLabel(statusPresentation.id,statusPresentation.name):/^\d+$/.test(baseline.status.id)?documentStatusLabel(Number(baseline.status.id)):baseline.status.id==="null"?documentStatusLabel(null):baseline.status.label}</p>}</header>
+    <RecordDetailHeading title="Đề nghị mua hàng" documentNumber={baseline.documentId}><p role="status" aria-live="polite">{stateLabel}</p></RecordDetailHeading>
+    <RecordDetailStatus presentationAllowed={presentationAllowed&&access.canRead&&!access.verifying}>{baseline.status && <p className={requestStyles.muted}>{statusPresentation&&baseline.documentId===statusPresentation.documentId&&baseline.status.id===String(statusPresentation.id)?documentStatusLabel(statusPresentation.id,statusPresentation.name):/^\d+$/.test(baseline.status.id)?documentStatusLabel(Number(baseline.status.id)):baseline.status.id==="null"?documentStatusLabel(null):baseline.status.label}</p>}</RecordDetailStatus>
     {!access.canEdit&&!access.canSubmit && <RequestNotice>Phiếu hiện chỉ được xem theo quyền của bạn.</RequestNotice>}
     {access.existingOnly&&access.canEdit&&<p className={requestStyles.muted} role="status">Ngày đề nghị, chi nhánh và danh mục được giữ nguyên. Chỉ các trường được cấp quyền mới có thể chỉnh sửa.</p>}
     {access.requiresFreshRead&&<p role="status">Cần đọc lại phiếu trước khi chỉnh sửa tiếp. Nếu ERP đã xác nhận, không gửi lại thao tác.</p>}
@@ -344,8 +359,7 @@ function RequestEditor({initial, statusPresentation, access, adapter, onConfirme
       {phase === "unknown" && <RequestButton type="button" disabled={access.verifying || access.canReconcile===false || dispatchAdapter!==adapter} onClick={() => {if(isPresentationCurrent())void reconcile();}}>Kiểm tra kết quả yêu cầu gốc</RequestButton>}
       {result.kind === "conflict" && <><p>Nội dung đang nhập vẫn được giữ. Bản ERP: {result.current.documentId}; trạng thái: {result.current.status?.label ?? "Chưa được dịch vụ cung cấp"}.</p><RequestButton type="button" onClick={() => {if (lock.current) return; setBaseline(result.current); setValues(copy(result.current.values)); setPhase("editing"); setResult(null); setReview(false); setErrors({}); originalIntent.current = null;}}>Tải bản ERP và bỏ nội dung đang nhập</RequestButton></>}
     </section>}
-    <section aria-label={review ? "Rà soát thông tin phiếu" : "Thông tin phiếu"} className={requestStyles.section}>
-      <h2 className={requestStyles.title}>{review ? "Rà soát phiếu trước khi gửi" : "Thông tin phiếu"}</h2>
+    <RecordSection title="Thông tin chung" aria-label={review ? "Rà soát thông tin phiếu" : "Thông tin phiếu"} description={review?"Rà soát phiếu trước khi gửi":undefined}>
       <div className="grid min-w-0 gap-5 sm:grid-cols-2">
       {headerFields.map(([field, label, type, max]) => {
         const id = `${prefix}-${field}`; const error = errors[field];
@@ -360,8 +374,11 @@ function RequestEditor({initial, statusPresentation, access, adapter, onConfirme
       {review || access.existingOnly ? <p>Đối tượng: <strong>{values.objectLabel || values.objectId || "—"}</strong></p> : <RemoteLookup id={access.objectLookupId} label="Đối tượng" value={values.objectId ? {id: values.objectId, label: values.objectLabel || values.objectId} : null} disabled={!editable} error={errors.objectId} adapter={adapter.lookup} onChange={item => change({objectId: item?.id ?? "", objectLabel: item?.label})}/>}
       {errors.objectId && <p role="alert">{errors.objectId}</p>}
       </div>
-    </section>
-    <MobileRequestLines lines={values.lines} disabled={!editable} canAdd={!access.existingOnly && access.canAddLines!==false && values.lines.length < access.maxLines} canRemove={!access.existingOnly} lockItem={access.existingOnly===true} readOnly={review} errors={errors} lookupAdapter={adapter.lookup} itemLookupId={access.itemLookupId} onChange={(key, patch) => change({lines: values.lines.map(line => line.localKey === key ? {...line, ...patch, localKey: line.localKey, lineId: line.lineId} : line)})} onAdd={() => {if (lineStructureAllowed() && access.canAddLines!==false && currentAccess.current.canAddLines!==false && values.lines.length < access.maxLines) change({lines: [...values.lines, {localKey: crypto.randomUUID(), lineId: null, itemId: "", quantity: "", unitPrice: "", budget: "", timeRequired: "", model: ""}]});}} onRemove={key=>{if(!lineStructureAllowed()||!isPresentationCurrent()||!editable||lock.current)return;const ordinal=values.lines.findIndex(line=>line.localKey===key);if(ordinal>=0)setDeleteLine({key,baseline,identity:`Dòng ${ordinal+1} · ${values.lines[ordinal].itemId}`});}}/>
+    </RecordSection>
+    <MobileRequestLines lines={values.lines} itemDisplay={lineDisplay} presentationAllowed={presentationAllowed&&access.canRead} disabled={!editable} canAdd={!access.existingOnly && access.canAddLines!==false && values.lines.length < access.maxLines} canRemove={!access.existingOnly} lockItem={access.existingOnly===true} readOnly={review} errors={errors} lookupAdapter={adapter.lookup} itemLookupId={access.itemLookupId} onChange={(key, patch) => change({lines: values.lines.map(line => line.localKey === key ? {...line, ...patch, localKey: line.localKey, lineId: line.lineId} : line)})} onAdd={() => {if (lineStructureAllowed() && access.canAddLines!==false && currentAccess.current.canAddLines!==false && values.lines.length < access.maxLines) change({lines: [...values.lines, {localKey: crypto.randomUUID(), lineId: null, itemId: "", quantity: "", unitPrice: "", budget: "", timeRequired: "", model: ""}]});}} onRemove={key=>{if(!lineStructureAllowed()||!isPresentationCurrent()||!editable||lock.current)return;const ordinal=values.lines.findIndex(line=>line.localKey===key);if(ordinal>=0)setDeleteLine({key,baseline,identity:`Dòng ${ordinal+1} · ${values.lines[ordinal].itemId}`});}}/>
+    <RecordSection title="Ghi chú"><div className={requestStyles.field}><label htmlFor={`${prefix}-notes`}>Ghi chú</label>
+      {review?<strong className="record-detail-notes">{values.notes||"—"}</strong>:<RequestTextarea id={`${prefix}-notes`} name="notes" rows={3} value={values.notes} maxLength={access.maxNotesLength} disabled={!editable} aria-invalid={!!errors.notes} aria-describedby={errors.notes?`${prefix}-notes-error`:undefined} style={requestInputStyle} onChange={event=>change({notes:event.target.value})}/>}
+      {errors.notes&&<p id={`${prefix}-notes-error`} role="alert">{errors.notes}</p>}</div></RecordSection>
     <RecordActionBar className={requestStyles.actionBar} presentationAllowed={presentationAllowed&&access.canRead&&!access.verifying}>
       {/* Back reuses the review submitter's DOM node; cancel activation before its type changes. */}
       {review ? <><RequestButton type="button" disabled={!editable} onClick={event => {event.preventDefault();if(isPresentationCurrent())setReview(false);}}>Quay lại chỉnh sửa</RequestButton><RequestButton type="button" disabled={!editable || !access.canSaveDraft || !dirty && !!baseline.documentId} onClick={() => {if(isPresentationCurrent())void send("saveDraft");}}>Lưu nháp trên ERP</RequestButton><RequestButton variant="default" type="button" disabled={access.existingOnly ? !canSubmitExisting : !editable || !access.canSubmit} onClick={() => {if(isPresentationCurrent())void send("submit");}}>Gửi đề nghị</RequestButton></> : <RequestButton variant="default" type="submit" form={`${prefix}-form`} disabled={!editable&&!canSubmitExisting} onClick={()=>{if(isPresentationCurrent()&&canSubmitExisting&&!editable)setReview(true);}}>Rà soát phiếu</RequestButton>}

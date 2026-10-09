@@ -450,9 +450,12 @@ test('real HTTP → BFF → existing workspace/browser purchase controls and aut
    for(let index=0;index<101;index++){
     const cells=rows.nth(index).getByRole('cell');assert.equal(await cells.count(),8);
     // Mobile cards add aria-hidden field labels; assert each complete business value separately.
-    for(const [column,expected] of [[0,String(index+1)],[1,'QA-ITEM'],[4,'999999999999999999']]){
+    for(const [column,expected] of [[0,String(index+1)],[4,'999999999999999999']]){
      const value=cells.nth(column).locator(':scope > span:not([aria-hidden="true"])');assert.equal(await value.count(),1);assert.equal(await value.innerText(),expected);
     }
+    const identity=cells.nth(1).locator(':scope > dl[aria-label="Thông tin mặt hàng"]');assert.equal(await identity.count(),1);
+    assert.deepEqual(await identity.locator(':scope > div > dt').allTextContents(),['Mã hàng','Mã hàng NSX','Tên hàng / dịch vụ','ĐVT']);
+    assert.deepEqual(await identity.locator(':scope > div > dd').allTextContents(),[records.find(record=>record.purchaseRequestId==='QA-LARGE').lines[index].values.itemId,'Chưa có thông tin','Chưa có thông tin','Chưa có thông tin']);
    }
    assert.equal(await table.getByText('QA-L101',{exact:true}).count(),0,'Opaque internal row IDs stay hidden');
    await find('QA-NULL');await screen.getByRole('button',{name:'Mở đề nghị QA-NULL',exact:true}).click();await screen.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true}).waitFor();await expandFullReadback();assert.match(await screen.innerText(),/NULL/);
@@ -481,7 +484,7 @@ test('real HTTP → BFF → existing workspace/browser purchase controls and aut
    await page.evaluate(()=>window.qa.controlled());await find('QA-000');
    state.hold=true;const started=new Promise(resolve=>{state.started=resolve;});await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).click();await started;
    assert.equal(await screen.getByRole('region',{name:'Phiếu mua hàng hiện có',exact:true}).count(),0);
-   await focused(focusRegion);const close=screen.getByRole('button',{name:'Đóng hộp thoại',exact:true});await close.focus();await page.keyboard.press('Tab');await page.keyboard.press('Shift+Tab');
+   await focused(focusRegion);const close=screen.getByTitle('Đóng hộp thoại',{exact:true});await close.focus();await page.keyboard.press('Tab');await page.keyboard.press('Shift+Tab');
    assert.equal(await close.evaluate(element=>element===document.activeElement),true);state.hold=false;state.release();
    await screen.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true}).waitFor();await focusPaint();assert.equal(await close.evaluate(element=>element===document.activeElement),true);
    await screen.getByRole('button',{name:'Đóng đề nghị',exact:true}).click();await focused('[aria-label="Mở đề nghị QA-000"]');
@@ -493,7 +496,7 @@ test('real HTTP → BFF → existing workspace/browser purchase controls and aut
    state.detailFailure=503;await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).click();await screen.getByRole('alert').waitFor();await focused(focusRegion);await focusPaint();
    const initialModalFocus=await frameFocusCount();assert.equal(initialModalFocus,beforeFailedOpen+1,'Failed Open still gives the named modal its one immediate focus');
    state.detailFailure=null;state.hold=true;const retryStarted=new Promise(resolve=>{state.started=resolve;});await screen.getByRole('button',{name:'Xác minh lại phiếu',exact:true}).click();await retryStarted;
-   const laterControl=screen.getByRole('button',{name:'Đóng hộp thoại',exact:true});await laterControl.focus();const retryFocus=await frameFocusCount();
+   const laterControl=screen.getByTitle('Đóng hộp thoại',{exact:true});await laterControl.focus();const retryFocus=await frameFocusCount();
    state.hold=false;state.release();await screen.getByRole('region',{name:'Dữ liệu ERP đầy đủ',exact:true}).waitFor();await focusPaint();assert.equal(await frameFocusCount(),retryFocus,'refresh cannot revive a failed Open ticket');assert.equal(await laterControl.evaluate(element=>element===document.activeElement),true,'refresh preserves the newer modal-control focus');
    // Same-document Open is a programmatic mounted-handler challenge while the modal blocks the list.
    const explicitFocus=await frameFocusCount();await screen.getByRole('button',{name:'Mở đề nghị QA-000',exact:true}).evaluate(button=>button.click());await focused(focusRegion);assert.equal(await frameFocusCount(),explicitFocus+1,'an explicit same-document handler focuses its owned frame exactly once without a new read');
@@ -640,7 +643,7 @@ test('I20 React mobile intent lifecycle / production component and adapter with 
   context=await browser.newContext({viewport:{width:390,height:844}});page=await context.newPage();page.setDefaultTimeout(5000);page.on('pageerror',e=>errors.push(e.message));
   const origin=`http://localhost:${server.address().port}`;await context.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());
   async function reset(){await page.goto(origin);await page.getByRole('form',{name:'Đề nghị mua hàng trên điện thoại'}).waitFor();}
-  async function edited(mode='commit'){await reset();await page.evaluate(m=>window.qa.mode=m,mode);await page.getByLabel('Ghi chú',{exact:true}).fill('MOBILE EDIT');await page.getByRole('button',{name:'Rà soát phiếu',exact:true}).click();}
+  async function edited(mode='commit'){await reset();await page.evaluate(m=>window.qa.mode=m,mode);await page.getByRole('textbox',{name:'Ghi chú',exact:true,includeHidden:true}).fill('MOBILE EDIT');await page.getByRole('button',{name:'Rà soát phiếu',exact:true}).click();}
   async function save(){await page.getByRole('button',{name:'Lưu nháp trên ERP',exact:true}).click();}
   await t.test('dirty Submit disabled, separate Save then Submit uses receipt token and no Add',async()=>{
    await edited();assert.ok(await page.getByRole('button',{name:'Gửi đề nghị',exact:true}).isDisabled());await save();await page.getByText('Nháp đã được ERP xác nhận',{exact:true}).waitFor();
@@ -660,7 +663,7 @@ test('I20 React mobile intent lifecycle / production component and adapter with 
   });
   await t.test('confirmed receipt remains after refresh error; edits require successful fresh read',async()=>{
    await edited();await save();await page.getByText('Nháp đã được ERP xác nhận',{exact:true}).waitFor();const id=await page.getByTestId('receipt').innerText();await page.evaluate(()=>window.qa.refreshFailure());await page.getByText('Synthetic refresh failed',{exact:true}).waitFor();assert.equal(await page.getByTestId('receipt').innerText(),id);
-   assert.ok(await page.getByRole('button',{name:'Quay lại chỉnh sửa',exact:true}).isDisabled());await page.evaluate(()=>window.qa.readAgain());await page.getByLabel('Ghi chú',{exact:true}).waitFor();assert.equal(await page.getByLabel('Ghi chú',{exact:true}).inputValue(),'MOBILE EDIT');assert.ok(await page.getByLabel('Ghi chú',{exact:true}).isEnabled());
+   assert.ok(await page.getByRole('button',{name:'Quay lại chỉnh sửa',exact:true}).isDisabled());await page.evaluate(()=>window.qa.readAgain());await page.getByRole('textbox',{name:'Ghi chú',exact:true,includeHidden:true}).waitFor();assert.equal(await page.getByRole('textbox',{name:'Ghi chú',exact:true,includeHidden:true}).inputValue(),'MOBILE EDIT');assert.ok(await page.getByRole('textbox',{name:'Ghi chú',exact:true,includeHidden:true}).isEnabled());
    assert.ok(await page.getByRole('button',{name:'Thêm dòng hàng',exact:true}).isDisabled());assert.ok(await page.getByLabel('Ngày đề nghị',{exact:true}).isDisabled());assert.equal(await page.getByRole('combobox',{name:'Chi nhánh'}).count(),0);
   });
   await t.test('authority revocation discards late ACK but retains original for authorized lookup',async()=>{
@@ -670,10 +673,10 @@ test('I20 React mobile intent lifecycle / production component and adapter with 
    await edited('hold');await save();await page.waitForFunction(()=>typeof window.qa.release==='function');await page.evaluate(()=>window.qa.swapAdapter());await page.getByText('Chưa xác nhận kết quả',{exact:true}).waitFor();await page.evaluate(()=>window.qa.release());assert.ok(await page.getByRole('button',{name:'Kiểm tra kết quả yêu cầu gốc',exact:true}).isDisabled());assert.equal(await page.evaluate(()=>window.qa.calls.length),1);
   });
   await t.test('external document switch queues selection without moving old receipt to the new document',async()=>{
-   await edited('lost');await save();await page.getByText('Chưa xác nhận kết quả',{exact:true}).waitFor();await page.evaluate(()=>window.qa.selectOther());await page.getByRole('region',{name:'Chờ xác nhận phiếu trước',exact:true}).waitFor();await page.evaluate(()=>window.qa.outcome=0);await page.getByRole('button',{name:'Kiểm tra kết quả yêu cầu gốc',exact:true}).click();await page.getByText('QA-OTHER',{exact:true}).waitFor();assert.equal(await page.getByLabel('Ghi chú',{exact:true}).inputValue(),'OTHER DOCUMENT');
+   await edited('lost');await save();await page.getByText('Chưa xác nhận kết quả',{exact:true}).waitFor();await page.evaluate(()=>window.qa.selectOther());await page.getByRole('region',{name:'Chờ xác nhận phiếu trước',exact:true}).waitFor();await page.evaluate(()=>window.qa.outcome=0);await page.getByRole('button',{name:'Kiểm tra kết quả yêu cầu gốc',exact:true}).click();await page.getByText('QA-OTHER',{exact:true}).waitFor();assert.equal(await page.getByRole('textbox',{name:'Ghi chú',exact:true,includeHidden:true}).inputValue(),'OTHER DOCUMENT');
   });
   await t.test('true session boundary retires old in-flight receipt',async()=>{
-   await edited('hold');await save();await page.waitForFunction(()=>typeof window.qa.release==='function');await page.evaluate(()=>window.qa.newSession());await page.getByLabel('Ghi chú',{exact:true}).waitFor();assert.equal(await page.getByLabel('Ghi chú',{exact:true}).inputValue(),'NEW ACCOUNT');await page.evaluate(()=>window.qa.release());assert.equal(await page.getByLabel('Ghi chú',{exact:true}).inputValue(),'NEW ACCOUNT');assert.equal(await page.getByTestId('receipt').innerText(),'');
+   await edited('hold');await save();await page.waitForFunction(()=>typeof window.qa.release==='function');await page.evaluate(()=>window.qa.newSession());await page.getByRole('textbox',{name:'Ghi chú',exact:true,includeHidden:true}).waitFor();assert.equal(await page.getByRole('textbox',{name:'Ghi chú',exact:true,includeHidden:true}).inputValue(),'NEW ACCOUNT');await page.evaluate(()=>window.qa.release());assert.equal(await page.getByRole('textbox',{name:'Ghi chú',exact:true,includeHidden:true}).inputValue(),'NEW ACCOUNT');assert.equal(await page.getByTestId('receipt').innerText(),'');
   });
   assert.deepEqual(errors,[]);await writeFile(path.join(output,'i20-react-evidence.json'),JSON.stringify({node:process.version,browser:browser.version(),viewport:[390,844],transport:'explicit Node-free browser double; NOT ASP.NET/SQL',errors},null,2));
  }finally{await context?.close();await browser?.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
@@ -777,7 +780,7 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
   // Let both the initial and the real Workspace background authority read settle.
   await screen.getByRole('button',{name:'Mở đề nghị QA-CUSTODY',exact:true}).waitFor();
   await page.waitForLoadState('networkidle');await screen.getByLabel('Tìm mã đề nghị',{exact:true}).fill('FILTER-CUSTODY');await screen.getByRole('button',{name:'Mở đề nghị QA-CUSTODY',exact:true}).click();
-  await screen.getByLabel('Ghi chú',{exact:true}).fill('SYNTHETIC ORIGINAL INTENT — giữ NULL/time/18 digits');
+  await screen.getByRole('textbox',{name:'Ghi chú',exact:true,includeHidden:true}).fill('SYNTHETIC ORIGINAL INTENT — giữ NULL/time/18 digits');
   await page.evaluate(()=>{window.custodyNodes={host:document.querySelector('[aria-label="Danh sách đề nghị mua hàng"]'),editor:document.querySelector('[aria-label="Phiếu mua hàng hiện có"]')};});
   if(focusOnly)return;
   await screen.getByRole('button',{name:'Rà soát phiếu',exact:true}).click();
@@ -879,7 +882,7 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
   browser=await chromium.launch({executablePath:process.env.MEDCOM_EDGE_PATH||'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true,args:['--no-first-run','--disable-background-networking','--disable-component-update','--disable-default-apps','--no-default-browser-check']});
   await t.test('I33 same-document focus keeps the dirty guard; Cancel stays and accepted Close returns to recreated Open',async()=>{
    await begin('hold',{focusOnly:true});
-   const notes=screen.getByLabel('Ghi chú',{exact:true}),original=await notes.inputValue();
+   const notes=screen.getByRole('textbox',{name:'Ghi chú',exact:true,includeHidden:true}),original=await notes.inputValue();
    // Programmatic same-document activation; the selected modal blocks the background list.
    await page.keyboard.press('Control+k');assert.equal(await page.locator('.command-modal:visible').count(),0);
    const beforeSameDocument=await page.evaluate(()=>window.purchaseDetailFocuses);await screen.getByRole('button',{name:'Mở đề nghị QA-CUSTODY',exact:true}).evaluate(button=>button.click());
@@ -926,7 +929,7 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
    state.releaseSave();await page.waitForFunction(()=>window.custodyIO.replies===1);await paint();
    assert.equal(await screen.getByRole('button',{name:'Kiểm tra kết quả yêu cầu gốc',exact:true}).count(),0);assert.equal(await screen.getByText(/^ERP đã xác nhận yêu cầu /).count(),0);
    assert.doesNotMatch(await screen.innerText(),/SYNTHETIC ORIGINAL INTENT|SYNTHETIC REQUESTER|QA-CUSTODY/);await assertSingleWriter();assert.equal(lookups().length,0);
-   await screen.getByRole('button',{name:'Mở đề nghị QA-NEW-ACCOUNT',exact:true}).click();await screen.getByLabel('Ghi chú',{exact:true}).waitFor();assert.equal(await screen.getByLabel('Ghi chú',{exact:true}).inputValue(),'');
+   await screen.getByRole('button',{name:'Mở đề nghị QA-NEW-ACCOUNT',exact:true}).click();await screen.getByRole('textbox',{name:'Ghi chú',exact:true,includeHidden:true}).waitFor();assert.equal(await screen.getByRole('textbox',{name:'Ghi chú',exact:true,includeHidden:true}).inputValue(),'');
   });
   await t.test('confirmed server logout (401), unlike 503, retires original intent before a delayed ACK',async()=>{
    await begin('hold');await suspend(503);
@@ -939,7 +942,7 @@ test('I20 Workspace custody across unverified authority / actual React mobile hi
     assert.equal(await page.getByLabel('Tên đăng nhập',{exact:true}).isVisible(),true);
     assert.equal(await page.getByRole('button',{name:'Đăng nhập',exact:true}).isVisible(),true);
     assert.equal(await page.locator('[aria-label="Danh sách đề nghị mua hàng"],[aria-label="Phiếu mua hàng hiện có"]').count(),0);
-    assert.equal(await page.getByLabel('Tìm mã đề nghị',{exact:true}).count(),0);assert.equal(await page.getByLabel('Ghi chú',{exact:true}).count(),0);
+    assert.equal(await page.getByLabel('Tìm mã đề nghị',{exact:true}).count(),0);assert.equal(await page.getByRole('textbox',{name:'Ghi chú',exact:true,includeHidden:true}).count(),0);
     assert.equal(await page.getByRole('button',{name:'Kiểm tra kết quả yêu cầu gốc',exact:true}).count(),0);
     assert.doesNotMatch(await page.locator('body').textContent(),/SYNTHETIC ORIGINAL INTENT|SYNTHETIC REQUESTER|QA-CUSTODY|ERP đã xác nhận yêu cầu/);
     assert.equal(await page.getByRole('alertdialog').count(),0);

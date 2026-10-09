@@ -450,7 +450,7 @@ function RetainedInboundHost({compact=false,setCompact,presentationAllowed = tru
     {notice && !sessionEnded && <RequestNotice warning>{notice}</RequestNotice>}
     {presentationReady && state.receipt && state.receipt.documentId === selected && contextCurrent && !state.needsRefresh && state.access.scopeKey !== null && state.access.canRead && state.access.available && <p data-testid="inbound-host-receipt">ERP đã xác nhận phiếu {state.receipt.documentId}.
       Mã thao tác {state.receipt.operationId}; xác nhận {state.receipt.auditId}. Lỗi tải lại không có nghĩa là lưu thất bại.</p>}
-    {!sessionEnded && workspaceContext !== null && (selected !== null || authorityDenied) && <RequestButton type="button"
+    {!sessionEnded && workspaceContext !== null && selected === null && authorityDenied && <RequestButton type="button"
       onClick={() => { cancelFocus(); setDeniedContext(null); setRetry(value => value + 1); }}>
       Xác minh lại quyền nhập hàng</RequestButton>}
     {listPresented && <RequestListComposition><RequestListPanel>
@@ -476,16 +476,13 @@ function RetainedInboundHost({compact=false,setCompact,presentationAllowed = tru
         workspace=null. Only loginKey above retires this I18 instance. */}
     <RequestDetailDialog open={selected!==null||state.unresolved||readbackPending} presentationAllowed={presentationAllowed&&workspace!==null}
       title="Phiếu nhập hàng đã chọn" documentNumber={presentationReady&&contextCurrent?selected:null} closeLabel="Quay lại danh sách" onRequestClose={requestBack}>
-    <RecordDetailToolbar><RequestButton type="button" onClick={() => navigate(() => {
-      if (selectedRef.current === null) return;
-      selectedRef.current = null; focusClose(); select(null); callbacks.current.onClose?.();
-    })}>Đóng phiếu nhập hàng</RequestButton>
+    <RecordDetailToolbar>
     {!sessionEnded && workspaceContext !== null && <RequestButton type="button" onClick={() => { cancelFocus(); setDeniedContext(null); setRetry(value => value + 1); }}>Xác minh lại quyền nhập hàng</RequestButton>}</RecordDetailToolbar>
     {notice && <RequestNotice warning>{notice}</RequestNotice>}
     {!contextCurrent && <RequestNotice>Dữ liệu tạm ẩn. Xác minh lại phiên ERP để tiếp tục.</RequestNotice>}
     <div ref={focusDetail} tabIndex={-1} role="region" aria-label="Phiếu nhập hàng đã chọn" className="scroll-mt-24 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" hidden={!presentationReady||selected===null&&!state.unresolved&&!readbackPending}>
       <div hidden={readonlyEligible}><MobileInboundRequest presentationAllowed={presentationAllowed&&workspace!==null&&contextCurrent&&presentationReady&&!readonlyEligible&&(selected!==null||state.unresolved||readbackPending)} statusPresentation={statusRow?{documentId:statusRow.documentId,id:statusRow.statusId,name:statusRow.statusName}:undefined} documentId={selected} access={access} adapter={adapter} onConfirmed={acknowledge} onPresentedRead={onPresentedRead}/></div>
-      {readonlyEligible && selected !== null && readScope !== null && <InboundRequestReadOnly documentId={selected}
+      {readonlyEligible && selected !== null && readScope !== null && <InboundRequestReadOnly presentationAllowed={presentationAllowed&&workspace!==null&&presentationReady} documentId={selected}
         branchIds={workspace?.branchIds ?? []} scope={readScope} initialPage={readonlyPageNumber} onPageChange={onReadonlyPageChange}
         verifying={readonlyVerifying} readRevision={unavailable}
         onDenied={onReadonlyDenied} onPresented={onReadonlyPresented}/>}

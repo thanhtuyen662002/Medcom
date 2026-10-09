@@ -1,4 +1,7 @@
 "use client";
+import {RecordSection,RecordDetailStatus} from "./record-dialog";
+import {ItemIdentity} from "./item-identity";
+import {pagedItemDisplayBinding} from "@/lib/erp/item-display";
 
 import {useEffect, useLayoutEffect, useMemo, useRef, useState} from "react";
 import {ApiError, getDetail, type ReadScope} from "@/lib/erp/api";
@@ -8,6 +11,7 @@ import {RequestButton, RequestEmpty, RequestError, RequestLoading, RequestNotice
 
 export type InboundRequestReadOnlyProps = {
   documentId: string;
+  presentationAllowed?: boolean;
   branchIds: readonly string[];
   scope: ReadScope;
   // Non-authoritative control retained by the host while the panel is masked.
@@ -33,7 +37,7 @@ const denied = (error: unknown): error is ApiError => error instanceof ApiError 
 
 /** Command Unavailable is only eligibility. This separate GET must prove READ
  * scope and validate its projection; it is never a complete draft snapshot. */
-export function InboundRequestReadOnly({documentId, branchIds, scope, initialPage, verifying, readRevision, onPageChange, onDenied, onPresented}: InboundRequestReadOnlyProps) {
+export function InboundRequestReadOnly({documentId, presentationAllowed=true, branchIds, scope, initialPage, verifying, readRevision, onPageChange, onDenied, onPresented}: InboundRequestReadOnlyProps) {
   const {sessionScope, readScope} = scope;
   const branches = JSON.stringify([...new Set(branchIds)].sort());
   const selection = JSON.stringify([documentId, sessionScope, readScope, branches]);
@@ -126,7 +130,7 @@ export function InboundRequestReadOnly({documentId, branchIds, scope, initialPag
   const detail = currentResult?.phase === "ready" ? currentResult.detail : currentResult?.phase === "failed" ? null : retainedDetail;
   return <section data-testid="inbound-request-readonly" data-phase={phase} aria-label="Phiếu nhập hàng chỉ đọc"
     aria-busy={phase === "pending"} className={requestStyles.editor}>
-    <h2 className={requestStyles.title}>Yêu cầu nhập kho</h2>
+    <RecordSection title="Thông tin chung">
     <RequestNotice title="Chế độ chỉ đọc">
       <p>Chỉ hiển thị thông tin chứng từ và trang dòng hàng do dịch vụ đọc cung cấp. Không bao gồm toàn bộ dữ liệu phiếu nháp hoặc các dòng chi phí.</p>
     </RequestNotice>
@@ -135,27 +139,24 @@ export function InboundRequestReadOnly({documentId, branchIds, scope, initialPag
     {currentResult?.phase === "failed" && <RequestError error={currentResult.error}
       retry={verifying || denied(currentResult.error) ? undefined : retryRead}/>}
     {detail && <>
-      <header className={requestStyles.section}>
-        <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
-          <h3 className="min-w-0 whitespace-pre-wrap text-base font-semibold [overflow-wrap:anywhere]">{detail.document.documentId}</h3>
-          <RequestStatus value={detail.document.statusId} statusName={detail.document.statusName}/>
-        </div>
+      <RecordDetailStatus presentationAllowed={presentationAllowed}><RequestStatus value={detail.document.statusId} statusName={detail.document.statusName}/></RecordDetailStatus>
         <dl className={cn(requestStyles.values, "grid-cols-1 sm:grid-cols-2")}>
           <div><dt>Ngày chứng từ</dt><dd><time dateTime={detail.document.documentDate}>{requestDate(detail.document.documentDate)}</time></dd></div>
           <div><dt>Chi nhánh</dt><dd className="whitespace-pre-wrap">{detail.document.branchId}</dd></div>
           <div><dt>Khóa chứng từ</dt><dd>{detail.document.isLocked === null ? "NULL" : detail.document.isLocked ? "Đã khóa" : "Không khóa"}</dd></div>
         </dl>
-      </header>
-      <section aria-label="Dòng yêu cầu nhập kho chỉ đọc" className={requestStyles.stack}>
-        <h3 className={requestStyles.title}>Dòng hàng</h3>
+    </>}
+    </RecordSection>
+    <RecordSection title="Dòng hàng" aria-label="Dòng yêu cầu nhập kho chỉ đọc">
+      {detail ? <>
         <p className={requestStyles.muted}>{detail.inboundRequestLines.length} dòng trên trang {detail.page}. Số lượng được giữ nguyên từ ERP; NULL là chưa có giá trị.</p>
         {detail.inboundRequestLines.length === 0
           ? <RequestEmpty title="Trang này không có dòng hàng">Dịch vụ đọc không trả về dòng hàng cho trang này.</RequestEmpty>
           : detail.inboundRequestLines.map((line, index) => <article key={`${index}:${line.lineId}`} className={requestStyles.line}>
             <h4 className="text-sm font-semibold">Dòng {(detail.page - 1) * detail.pageSize + index + 1}</h4>
+            <ItemIdentity binding={pagedItemDisplayBinding("inbound-requests",detail)} context={detail.itemDisplayContext} line={line}/>
             <dl className={cn(requestStyles.values, "grid-cols-1 sm:grid-cols-2")}>
               <div><dt>STT</dt><dd>{(page-1)*50+index+1}</dd></div>
-              <div><dt>Mã hàng</dt><dd className="whitespace-pre-wrap">{line.itemId}</dd></div>
               {quantities.map(([field, label]) => <div key={field}><dt>{label}</dt><dd className="whitespace-pre-wrap tabular-nums">{line[field] ?? "NULL"}</dd></div>)}
             </dl>
           </article>)}
@@ -167,7 +168,8 @@ export function InboundRequestReadOnly({documentId, branchIds, scope, initialPag
           </div>
           {page >= 1000 && detail.hasMore && <p className={requestStyles.muted}>Đã tới giới hạn 1.000 trang của dịch vụ; vẫn còn dòng chưa được hiển thị.</p>}
         </nav>
-      </section>
-    </>}
+      </>:<p className={requestStyles.muted}>Dòng hàng sẽ hiển thị khi bản đọc được xác minh.</p>}
+    </RecordSection>
+    <RecordSection title="Ghi chú"><p className={requestStyles.muted}>Dịch vụ đọc chưa cung cấp ghi chú cho phiếu này.</p></RecordSection>
   </section>;
 }

@@ -488,7 +488,7 @@ test('I40 synthetic React host list lifecycle and stale-denial integration', asy
         assert.equal(region().props.hidden,true);assert.ok(releaseRead);
         holdRead=false;await act(async()=>releaseRead());await f.flush();assert.equal(region().props.hidden,false,'current full host read admits original recovery UI without claiming receipt readback');
         assert.strictEqual(editor(),instance);assert.strictEqual(editor().props.adapter,adapter);assert.equal(sends.length,1);
-        await f.click('Đóng phiếu nhập hàng');assert.equal(editor().props.documentId,'DOC-A');
+        await f.click('Quay lại danh sách');assert.equal(editor().props.documentId,'DOC-A');
         if(releaseWrite){await act(async()=>releaseWrite());await f.flush();}assert.equal((await pending).outcome,'OutcomeUnknown');
         await act(async()=>assert.equal((await adapter.reconcile(original,signal())).outcome,'OutcomeUnknown'));
         assert.equal(sends.length,2);assert.equal(sends[1].body,sends[0].body);assert.equal(sends[1].scope,sends[0].scope);assert.equal(sends[1].route,'reconcile');
@@ -513,7 +513,7 @@ test('I40 synthetic React host list lifecycle and stale-denial integration', asy
     await t.test('Open/Close, A→B→A and equivalent workspace keep one list request; all list boundaries fetch',async()=>{
       const f=await host();try{
         assert.equal(f.calls.length,1);
-        await f.open('DOC-A');await f.open('DOC-B');await f.open('DOC-A');await f.click('Đóng phiếu nhập hàng');
+        await f.open('DOC-A');await f.open('DOC-B');await f.open('DOC-A');await f.click('Quay lại danh sách');
         await f.render({workspace:structuredClone(f.props().workspace)});
         assert.equal(f.calls.length,1);
         assert.equal(f.root().findAll(n=>n.props['data-testid']==='i40-editor-double').length,1);
@@ -576,10 +576,10 @@ test('I40 synthetic React host list lifecycle and stale-denial integration', asy
           assert.equal(f.held.length,1);const before=f.calls.length,oldSignal=f.calls.at(-1).signal;
           f.fail(null);
           if(boundary==='open')await f.open('DOC-B');
-          else if(boundary==='close')await f.click('Đóng phiếu nhập hàng');
+          else if(boundary==='close')await f.click('Quay lại danh sách');
           else if(boundary==='aba'){await f.open('DOC-B');await f.open('DOC-A');}
           else if(boundary==='batched-aba'){
-            await f.click('Đóng phiếu nhập hàng');
+            await f.click('Quay lại danh sách');
             const b=f.openHandler('DOC-B'),a=f.openHandler('DOC-A');
             await act(async()=>{a();b();a();});await f.flush();
           }else if(boundary==='authority')await f.render({workspace:{...f.props().workspace,session:{...f.props().workspace.session,authorityVersion:2}}});
@@ -641,7 +641,7 @@ test('I40 synthetic React host list lifecycle and stale-denial integration', asy
           f.fail(status);await f.refresh();
           // Navigation double immediately admits the callback. The production
           // host's independent custody check must still refuse selection/Close.
-          await f.click('Đóng phiếu nhập hàng');
+          await f.click('Quay lại danh sách');
           assert.equal(editor().props.documentId,'DOC-A');assert.equal(editor().props.adapter,adapter);
           await act(async()=>releaseWrite());assert.equal((await pending).outcome,'OutcomeUnknown');await f.flush();
           assert.equal(JSON.stringify(original),body);assert.equal(sends.length,1);
@@ -652,7 +652,7 @@ test('I40 synthetic React host list lifecycle and stale-denial integration', asy
             await act(async()=>{assert.equal((await adapter.reconcile(original,signal())).outcome,'OutcomeUnknown');});
             assert.equal(sends.length,2);assert.equal(sends[1].route,'reconcile');assert.equal(sends[1].body,body);
             assert.equal(sends[1].scope,sends[0].scope);
-            await f.click('Đóng phiếu nhập hàng');assert.equal(editor().props.documentId,'DOC-A','unknown original still blocks Close');
+            await f.click('Quay lại danh sách');assert.equal(editor().props.documentId,'DOC-A','unknown original still blocks Close');
           }else assert.deepEqual(f.denied,[401]);
         }finally{await f.close();}
       });
@@ -663,7 +663,7 @@ test('I40 synthetic React host list lifecycle and stale-denial integration', asy
       }finally{await f.close();}
     });
     await t.test('late authorized list success survives Open/Close without a replacement fetch',async()=>{
-      const f=await host();try{f.hold();await f.refresh();const count=f.calls.length;await f.open('DOC-A');await f.click('Đóng phiếu nhập hàng');
+      const f=await host();try{f.hold();await f.refresh();const count=f.calls.length;await f.open('DOC-A');await f.click('Quay lại danh sách');
         await f.release();assert.equal(f.calls.length,count);assert.equal(f.root().findAllByType('table').length,1);
       }finally{await f.close();}
     });
@@ -818,7 +818,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
     await page.route('**/*', r => {if (r.request().url().startsWith(origin + '/')) return r.continue(); external.push(r.request().url()); return r.abort();});
     await page.addInitScript(installInboundFocusObserver);
     await page.goto(origin);
-    const button = name => page.getByRole('button', {name, exact: true}), field = name => page.getByLabel(name, {exact: true});
+    const button = name => page.getByRole('button', {name, exact: true}), field = name => name==='Ghi chú'?page.getByRole('textbox', {name, exact: true, includeHidden: true}):page.getByLabel(name, {exact: true});
     // Open in an already active modal uses the production typed navigation
     // adapter; physical pointer events remain blocked by the backdrop.
     const open=async id=>{if(await page.locator('.request-detail-dialog:visible').count())await page.evaluate(id=>window.qaNavigation.requestOpen(id),id);else await page.getByRole('button',{name:new RegExp('^Mở phiếu '+id+' ')}).click();};
@@ -846,7 +846,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       // generic caption; it must still be counted by masking/visibility checks.
       return page.getByRole('dialog',{name:'Phiếu nhập hàng đã chọn'+(presented===null?'':' '+documentId),exact:true});
     };
-    const modalClose=async()=>(await dialog()).getByRole('button',{name:'Đóng hộp thoại',exact:true});
+    const modalClose=async()=>(await dialog()).getByTitle('Đóng hộp thoại',{exact:true});
     const focusedDialog=async()=>{await page.waitForFunction(()=>{const dialog=document.querySelector('.request-detail-dialog');return !!dialog&&dialog.contains(document.activeElement)&&!document.activeElement.matches('input,textarea,select,[contenteditable=true]');});};
     const rowFocus = id => page.getByRole('button', {name:new RegExp('^Mở phiếu '+id+' ')});
     const focused = async locator => {await page.waitForFunction(element=>document.activeElement===element,await locator.elementHandle());};
@@ -872,7 +872,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await reset({readMarkers});
       const initial = (await calls()).list.length;
       assert.equal(initial, 1, 'initial authorized list fetches once');
-      await button('Đóng phiếu nhập hàng').click(); await focusPaint();
+      await button('Quay lại danh sách').click(); await focusPaint();
       assert.equal((await calls()).list.length, initial);
       await open('DOC-B'); await ready();
       await open('DOC-A'); await ready();
@@ -881,7 +881,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       assert.equal(await page.getByTestId('inbound-editor').count(), 1);
       await (await dialog()).getByRole('button', {name: 'Xác minh lại quyền nhập hàng', exact: true}).click(); await ready(); await focusPaint();
       assert.equal((await calls()).list.length, initial + 1, 'explicit verification refresh');
-      await button('Đóng phiếu nhập hàng').click();await field('Tìm phiếu nhập hàng').fill('I40 FILTER');
+      await button('Quay lại danh sách').click();await field('Tìm phiếu nhập hàng').fill('I40 FILTER');
       await submitSearch(); await focusPaint();
       assert.equal((await calls()).list.length, initial + 2);
       assert.equal((await calls()).list.at(-1).search, 'I40 FILTER');
@@ -909,7 +909,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
         if (newer === 'selection' || newer === 'aba') {
           await open('DOC-B'); await ready();
           if (newer === 'aba') {await open('DOC-A'); await ready();}
-        } else if (newer === 'close') await button('Đóng phiếu nhập hàng').click();
+        } else if (newer === 'close') await button('Quay lại danh sách').click();
         else if (newer === 'authority') {await page.evaluate(() => window.qa.rights({})); await ready();}
         else if (newer === 'api') {await page.evaluate(() => window.qa.swapApi()); await ready();}
         else if (newer === 'scope') {
@@ -1095,13 +1095,13 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await page.evaluate(reply=>{window.qa.draftReply(reply);window.qa.rights({});},unavailable());await readonlyPhase('ready');
       assert.equal(await page.evaluate(()=>window.qaEditorWrapper.isConnected&&window.qaEditorWrapper===document.querySelector('[aria-label="Phiếu nhập hàng đã chọn"]').firstElementChild&&window.qaEditorWrapper.hidden),true);
       assert.match(await readonly().innerText(),/READ ONLY PROJECTION/);assert.equal(await field('Số đơn').count(),0);
-      await blocked(()=>button('Đóng phiếu nhập hàng').click(),true);await blocked(()=>open('DOC-B'),true);assert.deepEqual((await calls()).detail.map(call=>call.documentId),['DOC-A']);
+      await blocked(()=>button('Quay lại danh sách').click(),true);await blocked(()=>open('DOC-B'),true);assert.deepEqual((await calls()).detail.map(call=>call.documentId),['DOC-A']);
       await page.evaluate(()=>{window.qa.draftReply(null);window.qa.rights({});});await ready();assert.equal(await readonly().count(),0);
       assert.equal(await page.evaluate(()=>window.qaEditorWrapper.isConnected&&window.qaEditorWrapper===document.querySelector('[data-testid=inbound-editor]').parentElement&&!window.qaEditorWrapper.hidden),true);
       assert.equal(await field('Số đơn').inputValue(),'  ORIGINAL EDIT\nKEEP  ');assert.equal(await field('Ghi chú').inputValue(),'NOTE\nKEEP');assert.equal(await field('Ghi chú gửi kho').inputValue(),'SEND NOTE');
       const quantities=page.getByLabel('Số lượng bộ theo chứng từ',{exact:true});assert.equal(await quantities.count(),2);assert.equal(await quantities.first().inputValue(),'1234500');assert.equal(await quantities.nth(1).inputValue(),source.details[1].setQuantityByDocument);
       assert.equal(await field('Ngày giờ chứng từ').inputValue(),source.header.documentDate);assert.equal(await field('Tỷ giá').inputValue(),source.header.rateExchange);assert.equal(await page.getByLabel('Ngày giờ hết hạn theo chứng từ',{exact:true}).first().inputValue(),source.details[0].expireDateByDocument);
-      assert.doesNotMatch(await page.getByTestId('inbound-editor').innerText(),/READ ONLY PROJECTION|PROJECTION-DOC-A/);await blocked(()=>button('Đóng phiếu nhập hàng').click(),true);assert.equal((await calls()).post.length,0);assert.equal((await calls()).reconcile.length,0);
+      assert.doesNotMatch(await page.getByTestId('inbound-editor').innerText(),/READ ONLY PROJECTION|PROJECTION-DOC-A/);await blocked(()=>button('Quay lại danh sách').click(),true);assert.equal((await calls()).post.length,0);assert.equal((await calls()).reconcile.length,0);
       await page.evaluate(()=>window.qa.mode('lost'));await save();await unknown();const original=(await calls()).post[0],dto=JSON.parse(original);
       assert.equal(dto.header.orderNumber,'  ORIGINAL EDIT\nKEEP  ');assert.equal(dto.header.notes,'NOTE\nKEEP');assert.equal(dto.expectedStateEqualityToken,source.stateEqualityToken);
       assert.deepEqual(dto.detailUpserts,[{...source.details[0],setQuantityByDocument:'1234500'}]);assert.deepEqual(dto.removedDetailIds,[]);assert.doesNotMatch(original,/READ ONLY PROJECTION|PROJECTION-DOC-A/);
@@ -1111,7 +1111,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await reset({readMarkers,mode:'lost'});await field('Số đơn').fill('EXACT ORIGINAL\nKEEP');await save();await unknown();const original=(await calls()).post[0],originalKey=JSON.parse(original).operationId;
       await page.evaluate(()=>{window.qaEditorWrapper=document.querySelector('[data-testid=inbound-editor]').parentElement;});
       await page.evaluate(reply=>{window.qa.draftReply(reply);window.qa.rights({});},unavailable());await waitUnavailable();await noProjection();
-      assert.equal(await page.evaluate(()=>window.qaEditorWrapper.isConnected),true);await blocked(()=>button('Đóng phiếu nhập hàng').click());await blocked(()=>open('DOC-B'));
+      assert.equal(await page.evaluate(()=>window.qaEditorWrapper.isConnected),true);await blocked(()=>button('Quay lại danh sách').click());await blocked(()=>open('DOC-B'));
       assert.equal((await calls()).post.length,1);assert.equal((await calls()).reconcile.length,0);
       await page.evaluate(()=>{window.qa.draftReply(null);window.qa.rights({});});await unknown();await button('Kiểm tra yêu cầu gốc').click();await confirmed();await ready();
       const c=await calls();assert.deepEqual(c.post,[original]);assert.deepEqual(c.reconcile,[original]);assert.equal(JSON.parse(c.reconcile[0]).operationId,originalKey);assert.equal(c.detail.length,0);
@@ -1122,7 +1122,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       const original=(await calls()).post[0];await page.evaluate(()=>{window.qaEditorWrapper=document.querySelector('[data-testid=inbound-editor]').parentElement;});
       await page.evaluate(reply=>{window.qa.healthy();window.qa.draftReply(reply);window.qa.rights({});},unavailable());await waitUnavailable();await noProjection();
       assert.equal(await page.getByTestId('inbound-request-host').getAttribute('data-readback-pending'),'true');assert.equal(await page.evaluate(()=>window.qaEditorWrapper.isConnected),true);
-      await blocked(()=>open('DOC-B'));await blocked(()=>button('Đóng phiếu nhập hàng').click());assert.equal((await calls()).read.includes('DOC-B'),false);assert.equal(await button('Kiểm tra yêu cầu gốc').count(),0);
+      await blocked(()=>open('DOC-B'));await blocked(()=>button('Quay lại danh sách').click());assert.equal((await calls()).read.includes('DOC-B'),false);assert.equal(await button('Kiểm tra yêu cầu gốc').count(),0);
       await page.evaluate(()=>{window.qa.draftReply(null);window.qa.rights({});});await ready();assert.equal(await readonly().count(),0);assert.equal(await field('Số đơn').inputValue(),'CONFIRMED ORIGINAL');
       const c=await calls();assert.deepEqual(c.post,[original]);assert.deepEqual(c.reconcile,[]);assert.equal(c.detail.length,0);assert.equal(await page.getByTestId('inbound-request-host').getAttribute('data-readback-pending'),'false');
       assert.equal(await page.evaluate(()=>window.qaEditorWrapper===document.querySelector('[data-testid=inbound-editor]').parentElement),true);
@@ -1158,11 +1158,11 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
     });
     await run('I33 accepted full read focuses detail; same-document focus preserves dirty guard and values',async()=>{
       await reset();await focusedDialog();await field('Số đơn').fill('FOCUS DIRTY A');const before=await calls(),sameOpenFocus=await focusBaseline();await open('DOC-A');await oneDetailFocus(sameOpenFocus);assert.equal(await field('Số đơn').inputValue(),'FOCUS DIRTY A');assert.equal((await calls()).read.length,before.read.length);
-      await blocked(()=>button('Đóng phiếu nhập hàng').click(),true);assert.equal(await field('Số đơn').inputValue(),'FOCUS DIRTY A');assert.equal(await page.getByTestId('inbound-editor').getAttribute('data-document-id'),'DOC-A');
+      await blocked(()=>button('Quay lại danh sách').click(),true);assert.equal(await field('Số đơn').inputValue(),'FOCUS DIRTY A');assert.equal(await page.getByTestId('inbound-editor').getAttribute('data-document-id'),'DOC-A');
       await open('DOC-B');await page.getByRole('alertdialog').waitFor();await button('Bỏ thay đổi và rời màn hình').click();await ready();await focusedDialog();assert.equal(await field('Số đơn').inputValue(),'FULL ERP B');assert.equal((await calls()).post.length,0);
     });
     await run('I33 approved Close returns focus to the current originating row without changing list controls',async()=>{
-      await reset({searchDraft:'UNAPPLIED FOCUS FILTER'});await focusedDialog();await field('Số đơn').fill('DIRTY CLOSE VALUE');await button('Đóng phiếu nhập hàng').click();await page.getByRole('alertdialog').waitFor();assert.equal(await page.evaluate(()=>window.qaLeft),false);await button('Bỏ thay đổi và rời màn hình').click();await focused(rowFocus('DOC-A'));assert.equal(await field('Tìm phiếu nhập hàng').inputValue(),'UNAPPLIED FOCUS FILTER');assert.equal(await page.getByTestId('inbound-editor').count(),0);assert.equal((await calls()).post.length,0);
+      await reset({searchDraft:'UNAPPLIED FOCUS FILTER'});await focusedDialog();await field('Số đơn').fill('DIRTY CLOSE VALUE');await button('Quay lại danh sách').click();await page.getByRole('alertdialog').waitFor();assert.equal(await page.evaluate(()=>window.qaLeft),false);await button('Bỏ thay đổi và rời màn hình').click();await focused(rowFocus('DOC-A'));assert.equal(await field('Tìm phiếu nhập hàng').inputValue(),'UNAPPLIED FOCUS FILTER');assert.equal(await page.getByTestId('inbound-editor').count(),0);assert.equal((await calls()).post.length,0);
     });
     await run('I33 held Open read respects later modal-control focus and authority revalidation never creates a new focus ticket',async()=>{
       await page.evaluate(()=>window.qa.reset({held:{read:true}}));await open('DOC-A');await page.waitForFunction(()=>window.qa.held('read')>0);await (await modalClose()).focus();const laterControlFocus=await focusBaseline();await page.evaluate(()=>window.qa.release('read'));await ready();await noDetailFocus(laterControlFocus);assert.equal(await (await modalClose()).evaluate(element=>document.activeElement===element),true);
@@ -1191,21 +1191,22 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       assert.equal(await page.evaluate(w => document.documentElement.scrollWidth <= w, width), true);
       await field('Số đơn').fill('UNSAVED');
       for (const action of [() => open('DOC-B'), () => submitSearch(), () => activateBackground(button('Trang sau')),
-        () => button('Đóng phiếu nhập hàng').click(), () => button('Quay lại danh sách').click(), () => page.evaluate(() => history.back())]) {
+        () => button('Quay lại danh sách').click(), () => page.keyboard.press('Escape'), () => page.evaluate(() => history.back())]) {
         await blocked(action, true); assert.equal(await field('Số đơn').inputValue(), 'UNSAVED');
       }
     });
     await run('guard dialogs and parent callback rerenders do not append history; deferred callbacks use latest commit', async () => {
-      for (const nav of ['Quay lại danh sách', 'Đóng phiếu nhập hàng']) {
+      for (const nav of ['close', 'escape']) {
+        const dismiss=()=>nav==='close'?button('Quay lại danh sách').click():page.keyboard.press('Escape');
         await reset(); await field('Số đơn').fill('HISTORY DIRTY');
         const initial = await page.evaluate(() => ({length:history.length,pushes:window.qaPushes}));
         for (let index=1;index<=3;index++) {
-          await blocked(() => button(nav).click(), true);
+          await blocked(dismiss, true);
           await page.evaluate(() => window.qa.rerender());
           await page.waitForFunction(index => window.qa.callbackRevision() === index, index);
           assert.deepEqual(await page.evaluate(() => ({length:history.length,pushes:window.qaPushes})), initial);
         }
-        await button(nav).click(); await page.getByRole('alertdialog').waitFor({state:'visible'});
+        await dismiss(); await page.getByRole('alertdialog').waitFor({state:'visible'});
         await page.evaluate(() => window.qa.rerender()); await page.waitForFunction(() => window.qa.callbackRevision() === 4);
         await button('Bỏ thay đổi và rời màn hình').click(); await page.waitForFunction(() => window.qaLeft);
         assert.equal(await page.evaluate(() => window.qaCallback), 4);
@@ -1214,11 +1215,11 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
     });
     await run('old discard dialog cannot release a command that became pending', async () => {
       await reset({mode:'lost'}); await field('Số đơn').fill('PENDING AFTER DIALOG'); await review();
-      await button('Đóng phiếu nhập hàng').click(); await page.getByRole('alertdialog').waitFor({state:'visible'});
+      await button('Quay lại danh sách').click(); await page.getByRole('alertdialog').waitFor({state:'visible'});
       await page.evaluate(() => {window.qa.hold('post'); [...document.querySelectorAll('button')].find(b=>b.textContent==='Lưu thay đổi').click();});
       await page.waitForFunction(() => window.qa.held('post') > 0);
       assert.equal(await button('Bỏ thay đổi và rời màn hình').count(),0,'Pending custody removes the obsolete discard action');assert.equal(await page.evaluate(()=>window.qaLeft),false);await page.getByRole('alertdialog').waitFor();await button('Tiếp tục làm việc').click();
-      await blocked(() => button('Đóng phiếu nhập hàng').click());
+      await blocked(() => button('Quay lại danh sách').click());
       await page.evaluate(() => window.qa.release('post')); await unknown();
       await button('Kiểm tra yêu cầu gốc').click(); await confirmed();
       const c=await calls(); assert.equal(c.post.length,1); assert.equal(c.reconcile[0],c.post[0]);
@@ -1227,7 +1228,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       for (const note of ['', 'KEEP SEND NOTE']) {
         await reset(); await field('Ghi chú gửi kho NULL').uncheck(); await field('Ghi chú gửi kho').fill(note);
         await page.evaluate(() => {window.qa.hold('read'); window.qa.rights({canSend: true});});
-        await page.waitForFunction(() => window.qa.held('read') > 0); await blocked(() => button('Đóng phiếu nhập hàng').click(), true);
+        await page.waitForFunction(() => window.qa.held('read') > 0); await blocked(() => button('Quay lại danh sách').click(), true);
         await page.evaluate(() => window.qa.release('read')); await ready(); assert.equal(await field('Ghi chú gửi kho').inputValue(), note);
         await review(); await page.evaluate(() => window.qa.hold('read')); await button('Gửi yêu cầu nhập kho').click();
         await page.waitForFunction(() => document.querySelector('[data-testid=inbound-editor]')?.getAttribute('data-phase') === 'checking');
@@ -1241,7 +1242,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await page.evaluate(() => window.qa.hold('post'));
       await page.getByRole('button', {name: action === 'Save' ? 'Lưu thay đổi' : 'Gửi yêu cầu nhập kho', exact: true}).evaluate(b => {b.click(); b.click();});
       await page.waitForFunction(() => window.qa.held('post') > 0); assert.equal((await calls()).post.length, 1);
-      for (const nav of [() => open('DOC-B'), () => submitSearch(), () => activateBackground(button('Trang sau')), () => button('Đóng phiếu nhập hàng').click(), () => page.evaluate(() => history.back())]) await blocked(nav);
+      for (const nav of [() => open('DOC-B'), () => submitSearch(), () => activateBackground(button('Trang sau')), () => button('Quay lại danh sách').click(), () => page.evaluate(() => history.back())]) await blocked(nav);
       await page.evaluate(() => window.qa.release('post')); await unknown();
       await page.evaluate(() => window.qa.hold('reconcile')); await button('Kiểm tra yêu cầu gốc').click();
       await page.waitForFunction(() => window.qa.held('reconcile') > 0); await blocked(() => button('Quay lại danh sách').click());
@@ -1251,7 +1252,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await run(`real I18 in host reconciles ${outcome} without replacement execute`, async () => {
         await reset({mode: 'lost', outcome}); await field('Số đơn').fill('ORIGINAL'); await save(); await unknown();
         await button('Kiểm tra yêu cầu gốc').click();
-        if (['Committed','Replayed'].includes(outcome)) await confirmed(); else {await unknown(); await blocked(() => button('Đóng phiếu nhập hàng').click());
+        if (['Committed','Replayed'].includes(outcome)) await confirmed(); else {await unknown(); await blocked(() => button('Quay lại danh sách').click());
           await page.evaluate(() => window.qa.outcome('Replayed')); await button('Kiểm tra yêu cầu gốc').click(); await confirmed();}
         const c = await calls(); assert.equal(c.post.length, 1); assert.ok(c.reconcile.every(body => body === c.post[0]));
       });
@@ -1265,7 +1266,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
     await run('permission loss hides data; restore preserves pending intent and Send-only note', async () => {
       await reset(); await field('Ghi chú gửi kho NULL').uncheck(); await field('Ghi chú gửi kho').fill('RIGHTS NOTE');
       await page.evaluate(() => window.qa.rights({canRead:false,canSave:false,canSend:false}));
-      await page.waitForFunction(() => !document.getElementById('inbound-header-orderNumber')); await blocked(() => button('Đóng phiếu nhập hàng').click(), true);
+      await page.waitForFunction(() => !document.getElementById('inbound-header-orderNumber')); await blocked(() => button('Quay lại danh sách').click(), true);
       await page.evaluate(() => window.qa.rights({})); await ready(); assert.equal(await field('Ghi chú gửi kho').inputValue(), 'RIGHTS NOTE');
     });
     for (const state of ['pending','confirmed']) await run(`current list 401 hides ${state} draft/filter/selection/receipt and cannot reopen same login`, async () => {
@@ -1294,7 +1295,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await reset();await field('Số đơn').fill('ORIGINAL '+status);await page.evaluate(()=>window.qa.hold('post'));await save();
       await page.waitForFunction(()=>window.qa.held('post')>0);const original=(await calls()).post[0];
       await page.evaluate(status=>window.qa.failList(status),status);await page.waitForFunction(()=>!document.getElementById('inbound-header-orderNumber'));
-      assert.deepEqual(await page.evaluate(()=>window.qaDenied),[]);await blocked(()=>button('Đóng phiếu nhập hàng').click());
+      assert.deepEqual(await page.evaluate(()=>window.qaDenied),[]);await blocked(()=>button('Quay lại danh sách').click());
       await page.evaluate(()=>{window.qa.release('post');window.qa.listHealthy();window.qa.hold('read');});
       await (await dialog()).getByRole('button', {name: 'Xác minh lại quyền nhập hàng', exact: true}).click();await page.waitForFunction(()=>window.qa.held('read')>0);
       assert.equal(await field('Số đơn').count(),0);await page.evaluate(()=>window.qa.release('read'));await unknown();
@@ -1305,7 +1306,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await page.evaluate(()=>window.qa.hold('post'));await save();await page.waitForFunction(()=>window.qa.held('post')>0);
       await page.evaluate(status=>window.qa.failList(status),status);await page.getByText('Chưa tải được danh sách.',{exact:true}).waitFor();
       assert.equal(await field('Tìm phiếu nhập hàng').inputValue(),'RETAIN FILTER');assert.equal(await page.getByTestId('inbound-editor').getAttribute('data-phase'),'pending');
-      assert.deepEqual(await page.evaluate(()=>window.qaDenied),[]);await blocked(()=>button('Đóng phiếu nhập hàng').click());
+      assert.deepEqual(await page.evaluate(()=>window.qaDenied),[]);await blocked(()=>button('Quay lại danh sách').click());
       await page.evaluate(()=>window.qa.release('post'));await confirmed();assert.equal((await calls()).post.length,1);
     });
     for(const newer of ['authority','api','login']) await run(`stale list 401 cannot end newer ${newer} context even if cancellation is ignored`,async()=>{
@@ -1332,7 +1333,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await page.waitForFunction(()=>document.querySelector('[data-testid=inbound-editor]')?.getAttribute('data-phase')==='readFailed');
       const receipt=await page.getByTestId('inbound-host-receipt').innerText();
       for(const nav of [()=>open('DOC-B'),()=>submitSearch(),()=>activateBackground(button('Trang sau')),
-        ()=>button('Đóng phiếu nhập hàng').click(),()=>button('Quay lại danh sách').click(),()=>page.evaluate(()=>history.back())]) await blocked(nav);
+        ()=>button('Quay lại danh sách').click(),()=>page.keyboard.press('Escape'),()=>page.evaluate(()=>history.back())]) await blocked(nav);
       assert.equal(await page.getByTestId('inbound-editor').getAttribute('data-document-id'),'DOC-A');
       assert.equal((await calls()).read.includes('DOC-B'),false);assert.equal(await page.getByTestId('inbound-host-receipt').innerText(),receipt);
       assert.equal(await button('Kiểm tra yêu cầu gốc').count(),0);
@@ -1352,7 +1353,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
       await blocked(()=>open('DOC-B'));assert.equal((await calls()).read.includes('DOC-B'),false);
       await page.evaluate(()=>{window.qa.release('read');window.qa.rights({canRead:false,canSave:false,canSend:false});});
       await page.waitForFunction(()=>!document.getElementById('inbound-header-orderNumber'));
-      await blocked(()=>button('Đóng phiếu nhập hàng').click());assert.equal(await page.locator('[data-testid=inbound-host-receipt],[data-testid=confirmed-receipt]').count(),0);
+      await blocked(()=>button('Quay lại danh sách').click());assert.equal(await page.locator('[data-testid=inbound-host-receipt],[data-testid=confirmed-receipt]').count(),0);
       await page.evaluate(()=>window.qa.rights({}));await ready();await open('DOC-B');await ready();
       assert.equal(await field('Số đơn').inputValue(),'FULL ERP B');assert.equal(await page.locator('[data-testid=inbound-host-receipt],[data-testid=confirmed-receipt]').count(),0);
       const c=await calls();assert.equal(c.post.length,1);assert.equal(c.reconcile.length,0);
@@ -1379,7 +1380,7 @@ test('React host mobile 320/360/390: ACTUAL React gate (separate from Node doubl
     await run('accepted discard permits selection/filter/close callbacks, not a no-op navigation fixture', async () => {
       await reset(); await field('Số đơn').fill('DISCARD'); await open('DOC-B'); await page.getByRole('alertdialog').waitFor({state:'visible'});
       await button('Bỏ thay đổi và rời màn hình').click(); await ready(); assert.equal(await field('Số đơn').inputValue(), 'FULL ERP B');
-      await button('Đóng phiếu nhập hàng').click(); await page.waitForFunction(() => window.qaLeft === true);
+      await button('Quay lại danh sách').click(); await page.waitForFunction(() => window.qaLeft === true);
     });
     await run('A→B→A while old read ignores abort cannot apply old read or drop current selection', async () => {
       await reset(); await page.evaluate(() => window.qa.hold('read')); await open('DOC-B');
@@ -1690,7 +1691,7 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
       return next;
     };
     page = await newPage();
-    const button = name => page.getByRole('button', {name, exact: true}), field = name => page.getByLabel(name, {exact: true});
+    const button = name => page.getByRole('button', {name, exact: true}), field = name => name==='Ghi chú'?page.getByRole('textbox', {name, exact: true, includeHidden: true}):page.getByLabel(name, {exact: true});
     const host = () => page.getByTestId('inbound-request-host');
     const dialog=async(documentId='DOC-A')=>{
       const number=page.getByTestId('inbound-request-host').locator('.request-detail-header .record-document-number');
@@ -1808,7 +1809,7 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
       await page.evaluate(()=>history.forward());await atHistoryIndex(detailA.index);await ready();await paint();assert.equal((await historyPosition()).index,detailA.index);await field('Số đơn').fill('FORWARD DIRTY');
       await guard(()=>page.evaluate(()=>history.forward()),true,true);await atHistoryIndex(detailB.index);await ready();await paint();assert.equal(await host().count(),1);assert.equal(await page.getByTestId('inbound-editor').getAttribute('data-document-id'),'DOC-B');assert.equal((await historyPosition()).index,detailB.index);assert.equal((await historyPosition()).pushes,original.pushes);
       assert.equal((await historyPosition()).length,original.length,'Back/Forward approval preserves the original forward stack');
-      await button('Đóng phiếu nhập hàng').click();await page.locator('.request-detail-dialog:visible').waitFor({state:'hidden'});await atHistoryIndex(list.index);await paint();assert.equal((await historyPosition()).index,list.index);assert.equal((await historyPosition()).pushes,original.pushes,'Explicit Close returns to the list without a duplicate push');
+      await button('Quay lại danh sách').click();await page.locator('.request-detail-dialog:visible').waitFor({state:'hidden'});await atHistoryIndex(list.index);await paint();assert.equal((await historyPosition()).index,list.index);assert.equal((await historyPosition()).pushes,original.pushes,'Explicit Close returns to the list without a duplicate push');
       await go('settings');await host().waitFor({state:'detached'});await paint();const screen=await historyPosition();assert.equal(screen.index,list.index+1);assert.equal(screen.pushes,original.pushes+1,'Only the accepted screen transition adds one new entry');assert.equal(new URL(screen.href).searchParams.get('screen'),'settings');
     });
     for (const queued of [false, true]) await run(`command starting during approved history traversal blocks the actual ${queued ? 'queued route' : 'Back'} commit`, async () => {
@@ -1848,7 +1849,7 @@ test('I24 actual Workspace and BFF preserve mobile custody, retirement and histo
     });
     await run('root navigation, suppressed command palette, mobile/sidebar handlers and local Close preserve custody', async () => {
       await start({mode: 'lost'}); await field('Số đơn').fill('DIRTY');
-      await guard(()=>button('Đóng phiếu nhập hàng').click(),true);await page.keyboard.press('Control+k');assert.equal(await page.getByRole('dialog',{name:'Tìm màn hình',exact:true}).count(),0,'Selected modal suppresses the global shortcut');await guard(()=>go('settings'),true);
+      await guard(()=>button('Quay lại danh sách').click(),true);await page.keyboard.press('Control+k');assert.equal(await page.getByRole('dialog',{name:'Tìm màn hình',exact:true}).count(),0,'Selected modal suppresses the global shortcut');await guard(()=>go('settings'),true);
       // Programmatic background activations test actual guard handlers; the
       // modal backdrop deliberately prevents equivalent pointer access.
       const mobileHome=()=>backgroundActivate(page.getByRole('navigation',{name:'Điều hướng nhanh trên điện thoại'}).getByRole('button',{name:'Không gian làm việc',exact:true}));

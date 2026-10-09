@@ -42,13 +42,13 @@ async function runRequiredHistoryCase(context,name,body,diagnose){
 async function waitForHistoryOriginal(page,screen,documentId,originalValue,eventually){
  const isPurchase=screen==='purchase-requests';
  const title=isPurchase?'Phiếu mua hàng hiện có':'Phiếu nhập hàng đã chọn';
- const dialog=page.getByRole('dialog',{name:title+' '+documentId,exact:true}).or(page.getByRole('dialog',{name:title,exact:true}));await dialog.waitFor();
+ const dialog=page.getByRole('dialog',{name:title+' '+documentId,exact:true});await dialog.waitFor();
  const editor=isPurchase?dialog.getByRole('form',{name:'Đề nghị mua hàng trên điện thoại',exact:true}):dialog.locator('[data-testid="inbound-editor"][data-phase="unknown"]');await editor.waitFor();
  const reconcile=editor.getByRole('button',{name:isPurchase?'Kiểm tra kết quả yêu cầu gốc':'Kiểm tra yêu cầu gốc',exact:true});await reconcile.waitFor();await eventually(()=>reconcile.isEnabled());
  if(isPurchase){
-  await editor.getByText('Chưa xác nhận kết quả',{exact:true}).waitFor();await editor.getByText(documentId,{exact:true}).waitFor();
+  await editor.getByText('Chưa xác nhận kết quả',{exact:true}).waitFor();
   const review=editor.getByRole('region',{name:'Rà soát thông tin phiếu',exact:true});await review.waitFor();
-  assert.equal(await review.locator('label[for$="-notes"] + strong').innerText(),originalValue);assert.equal(await editor.getByLabel('Ghi chú',{exact:true}).count(),0);
+  assert.equal(await editor.locator('label[for$="-notes"] + strong').innerText(),originalValue);assert.equal(await editor.getByRole('textbox',{name:'Ghi chú',exact:true,includeHidden:true}).count(),0);
   for(const name of ['Quay lại chỉnh sửa','Lưu nháp trên ERP','Gửi đề nghị'])assert.equal(await dialog.getByRole('button',{name,exact:true}).isDisabled(),true);
  }else{
   assert.equal(await editor.getAttribute('data-document-id'),documentId);
@@ -203,14 +203,17 @@ test('history original readiness follows real purchase review and unbound inboun
  const textOf=node=>typeof node==='string'?node:node.children.map(textOf).join('');
  const hostNodes=(roots,predicate)=>[...new Set(roots.flatMap(root=>root.findAll(node=>typeof node.type==='string'&&predicate(node))))];
  const disabled=node=>!!node.props.disabled||!!node.parent&&(node.parent.type==='fieldset'&&!!node.parent.props.disabled||disabled(node.parent));
+ const hidden=node=>!!node&&(!!node.props.hidden||!!node.props.inert||node.props['aria-hidden']==='true'||node.props.style?.display==='none'||hidden(node.parent));
+ // Model the shared title's separate text and block document-number segments.
  const locator=nodes=>{
   const single=()=>{assert.equal(nodes.length,1,'Exact production locator must resolve one rendered node');return nodes[0];};
   return {
    nodes,or:other=>locator([...new Set([...nodes,...other.nodes])]),
    waitFor:async()=>{single();},count:async()=>nodes.length,innerText:async()=>textOf(single()),getAttribute:async name=>single().props[name],isEnabled:async()=>!disabled(single()),isDisabled:async()=>disabled(single()),
-   getByRole:(role,{name,exact})=>{assert.equal(exact,true);return locator(hostNodes(nodes,node=>{
-    const actual=node.props.role??(node.type==='button'?'button':node.type==='form'&&node.props['aria-label']?'form':node.type==='section'&&node.props['aria-label']?'region':null);
-    const label=node.props['aria-label']??(node.props['aria-labelledby']?hostNodes([renderer.root],item=>item.props.id===node.props['aria-labelledby']).map(textOf).join(' '):textOf(node));return actual===role&&label===name;
+   getByRole:(role,{name,exact,includeHidden=false})=>{assert.equal(exact,true);return locator(hostNodes(nodes,node=>{
+    if(!includeHidden&&hidden(node))return false;
+    const actual=node.props.role??(node.type==='button'?'button':node.type==='textarea'?'textbox':node.type==='form'&&node.props['aria-label']?'form':node.type==='section'&&(node.props['aria-label']||node.props['aria-labelledby'])?'region':null);
+    const label=node.props['aria-label']??(node.props['aria-labelledby']?hostNodes([renderer.root],item=>item.props.id===node.props['aria-labelledby']).map(item=>item.children.map(textOf).join(' ')).join(' '):actual==='textbox'?hostNodes([renderer.root],item=>item.type==='label'&&item.props.htmlFor===node.props.id).map(textOf).join(' '):textOf(node));return actual===role&&label===name;
    }));},
    getByText:(value,{exact})=>{assert.equal(exact,true);return locator(hostNodes(nodes,node=>textOf(node)===value&&!node.children.some(child=>typeof child!=='string'&&textOf(child)===value)));},
    getByLabel:(value,{exact})=>{assert.equal(exact,true);const ids=hostNodes(nodes,node=>node.type==='label'&&textOf(node)===value).map(node=>node.props.htmlFor);return locator(hostNodes(nodes,node=>['input','textarea','select'].includes(node.type)&&ids.includes(node.props.id)));},
@@ -232,8 +235,16 @@ test('history original readiness follows real purchase review and unbound inboun
    const adapter={lookup:async()=>({items:[],hasMore:false}),read:async()=>({outcome:'Observed',document:structuredClone(inbound)}),execute:original=>{executed.push(original);return new Promise(resolve=>{release=()=>resolve(unknown(original));});},reconcile:async original=>{reconciled.push(original);return unknown(original);}};
    const access=isPurchase?{scopeKey:scope,authorityKey:'original',canRead:true,canEdit:true,canSaveDraft:true,canSubmit:true,canReconcile:true,available:true,existingOnly:true,canAddLines:false,branches:[{id:'QA-BRANCH',label:'QA-BRANCH'}],currencies:[historyCurrency],purposes:[{id:'1',label:'Synthetic purpose'}],maxNotesLength:65536,maxPurposeLength:65536,maxLines:500,itemLookupId:'items',objectLookupId:'objects'}:{scopeKey:scope,canRead:true,canSave:true,canSend:true,available:true,maxCommandBytes:1048576};
    const props=isPurchase?{adapter,access,initial:commandPurchaseSnapshot({document:structuredClone(purchase),stateToken:'prs1.'+'1'.repeat(64),commandAccess:{canSave:true,canSubmit:true,canLookup:true,canAddLines:false,reason:'available'}})}:{adapter,access,documentId};
-   const render=next=>React.createElement(RequestDetailDialog,{open:true,title:isPurchase?'Phiếu mua hàng hiện có':'Phiếu nhập hàng đã chọn',closeLabel:'Close',onRequestClose:()=>{}},React.createElement(isPurchase?MobileRequest:MobileInboundRequest,next));
+   const render=(next,presentationAllowed=true)=>React.createElement(RequestDetailDialog,{open:true,presentationAllowed,title:isPurchase?'Phiếu mua hàng hiện có':'Phiếu nhập hàng đã chọn',documentNumber:documentId,closeLabel:'Close',onRequestClose:()=>{}},React.createElement(isPurchase?MobileRequest:MobileInboundRequest,next));
    await act(async()=>{renderer=create(render(props));});
+   assert.equal(await page.getByRole('region',{name:'Ghi chú',exact:true}).count(),1,'Notes keeps its independently named section');
+   assert.equal(await page.getByRole('textbox',{name:isPurchase?'Ghi chú':'Số đơn',exact:true,includeHidden:true}).count(),1,'Exact textbox lookup admits only the editable control');
+   const retainedNotes=page.getByRole('textbox',{name:'Ghi chú',exact:true,includeHidden:true}),retainedNoteValue=await retainedNotes.getAttribute('value');
+   await act(async()=>renderer.update(render(props,false)));
+   assert.equal(await page.getByRole('textbox',{name:'Ghi chú',exact:true}).count(),0,'Masked notes leave the accessibility tree');
+   assert.equal(await page.getByRole('textbox',{name:'Ghi chú',exact:true,includeHidden:true}).count(),1,'A hidden retained note cannot satisfy the zero-textbox absence assertion');
+   assert.equal(await page.getByRole('textbox',{name:'Ghi chú',exact:true,includeHidden:true}).getAttribute('value'),retainedNoteValue,'Exact hidden textbox remains inspectable without changing its value');
+   await act(async()=>renderer.update(render(props)));
    const input=hostNodes([renderer.root],node=>node.type==='textarea'&&(isPurchase?node.props.name==='notes':node.props.id==='inbound-header-orderNumber'));assert.equal(input.length,1);
    await assert.rejects(()=>waitForHistoryOriginal(page,screen,documentId,originalValue,settled));
    await act(async()=>input[0].props.onChange({target:{value:originalValue}}));
@@ -242,7 +253,7 @@ test('history original readiness follows real purchase review and unbound inboun
    await act(async()=>renderer.update(render({...props,access:{...access,canRead:false,available:false}})));await act(async()=>release());
    await act(async()=>renderer.update(render(props)));
    await waitForHistoryOriginal(page,screen,documentId,originalValue,settled);
-   await assert.rejects(()=>page.getByLabel(isPurchase?'Ghi chú':'Số đơn',{exact:true}).waitFor(),/Exact production locator/,'The old editable-field readiness fails in both actual recovery phases');
+   await assert.rejects(()=>page.getByRole('textbox',{name:isPurchase?'Ghi chú':'Số đơn',exact:true,includeHidden:true}).waitFor(),/Exact production locator/,'Editable-control readiness fails in both actual recovery phases');
    await assert.rejects(()=>waitForHistoryOriginal(page,screen,'QA-WRONG-DOCUMENT',originalValue,settled));
    if(isPurchase)await assert.rejects(()=>waitForHistoryOriginal(page,screen,documentId,'WRONG ORIGINAL VALUE',settled));
    await act(async()=>button(isPurchase?'Kiểm tra kết quả yêu cầu gốc':'Kiểm tra yêu cầu gốc').props.onClick());
@@ -382,7 +393,7 @@ test('composed request detail history, guarded traversal and original custody',{
  const recovery=()=>page.getByRole('heading',{name:'Chưa thể xác minh phiên làm việc',exact:true});
  const refresh=async()=>{const response=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/erp/api/workspace');await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await response;await paint();};
  const gateOnly=async()=>{await paint();assert.equal(await page.locator('.topbar:visible,.erp-sidebar:visible,.workspace-content:visible,.mobile-bottom-nav:visible').count(),0);assert.equal(await page.getByRole('dialog').count(),0);assert.equal(await page.getByRole('alertdialog').count(),0);assert.equal(await page.getByRole('menu').count(),0);assert.equal(await page.locator('[data-sonner-toast]:visible').count(),0);assert.equal(await page.evaluate(()=>!!document.activeElement?.closest('section[tabindex="-1"]')),true);};
- const field=screen=>page.getByLabel(screen==='purchase-requests'?'Ghi chú':'Số đơn',{exact:true});
+ const field=screen=>screen==='purchase-requests'?page.getByRole('textbox',{name:'Ghi chú',exact:true,includeHidden:true}):page.getByLabel('Số đơn',{exact:true});
  const open=screen=>page.getByRole('button',{name:screen==='purchase-requests'?'Mở đề nghị '+purchase.purchaseRequestId:new RegExp('^Mở phiếu '+inbound.documentId+' '),exact:screen==='purchase-requests'}).click();
  const save=async screen=>{await field(screen).fill('EXACT ORIGINAL AUTH CUSTODY');await page.getByRole('button',{name:'Rà soát phiếu',exact:true}).click();await page.getByRole('button',{name:screen==='purchase-requests'?'Lưu nháp trên ERP':'Lưu thay đổi',exact:true}).click();};
  const life=screen=>page.evaluate(name=>({life:window.authFixture.life[name],adapters:window.authFixture.adapters[name]}),screen==='purchase-requests'?'RequestEditor':'InboundEditor');
@@ -442,7 +453,7 @@ test('composed request detail history, guarded traversal and original custody',{
     assert.deepEqual(await opener.evaluate(element=>{const result=[];for(let node=element.parentElement;node;node=node.parentElement)result.push({top:node.scrollTop,left:node.scrollLeft});return result;}),offsets);
     await forward();await field(screen).waitFor();await eventually(async()=>await selected()===target);await atIndex(1);
     await page.keyboard.press('Escape');await eventually(async()=>await selected()===null);await atIndex(0);await forward();await field(screen).waitFor();await atIndex(1);
-    await page.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();await eventually(async()=>await selected()===null);await atIndex(0);await forward();await field(screen).waitFor();await atIndex(1);await go(screen);await eventually(async()=>await selected()===null);await atIndex(0);
+    await page.getByTitle('Đóng hộp thoại',{exact:true}).click();await eventually(async()=>await selected()===null);await atIndex(0);await forward();await field(screen).waitFor();await atIndex(1);await go(screen);await eventually(async()=>await selected()===null);await atIndex(0);
     await page.keyboard.press('Control+k');await page.getByRole('dialog',{name:'Tìm màn hình',exact:true}).waitFor();await page.keyboard.press('Escape');
     assert.equal(model.writes.length,0);assert.ok(calls.some(call=>call.query.includes('page=2')&&call.query.includes('QA')));await privacy();
    });

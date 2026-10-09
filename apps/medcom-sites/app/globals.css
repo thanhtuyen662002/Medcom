@@ -961,3 +961,29 @@ body:has(.workspace-auth-layout > section[tabindex="-1"]) :is([data-slot="dialog
  .record-detail-toolbar>.request-button{flex:1 1 180px}
  .record-dialog-actions .request-action-bar>.request-button{flex:1 1 140px}
 }
+
+/* I66: one document identity, one dismiss action, shared detail groups. */
+.request-detail-dialog .request-detail-header{display:grid;grid-template-columns:minmax(0,1fr) 44px;align-items:start;gap:12px}
+.record-dialog-identity{min-width:0;display:grid;gap:8px}
+.request-detail-dialog .request-detail-header h2{margin:0;line-height:1.4}
+.record-dialog-header-actions{order:initial;width:auto;grid-column:2;grid-row:1;align-self:start}
+.record-dialog-header-actions>.record-dialog-close{flex:0 0 44px}
+.record-dialog-secondary-actions{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;min-width:0}
+.record-dialog-secondary-actions:empty,.record-dialog-secondary-actions:not(:has(>:not([hidden]))),.record-dialog-status:empty,.record-dialog-status:not(:has(>:not([hidden]))),.record-detail-state:empty{display:none}
+.record-detail-toolbar{padding:0;border:0;gap:8px;display:flex;flex-wrap:wrap;min-width:0}
+.record-detail-toolbar[hidden],.record-detail-status[hidden]{display:none!important}
+.record-dialog-status,.record-detail-status{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-width:0}
+.record-detail-state{display:grid;gap:8px;font-size:14px;line-height:1.5;color:var(--muted-foreground)}
+.record-section{display:grid;gap:16px;min-width:0;border:1px solid var(--border);border-radius:12px;padding:20px;background:var(--card)}
+.record-section-heading{display:grid;gap:4px;min-width:0}.record-section-heading h3,.record-fieldset>legend{font-size:15px;font-weight:650;line-height:1.5}
+.record-fieldset>legend{padding:0 6px;margin-left:-6px}.record-field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.record-section .request-line{box-shadow:none;border-radius:8px;background:var(--background)}
+.record-section .request-values{margin:0}.record-section>fieldset{min-width:0}.record-detail-notes{white-space:pre-wrap;overflow-wrap:anywhere}
+.request-detail-body .request-editor,.request-detail-body .detail-body{width:100%;max-width:none;margin:0;padding:0;display:grid;gap:16px}
+@media(max-width:767px){
+ .request-detail-dialog .request-detail-header{gap:8px}
+ .record-dialog-header-actions{width:auto}.record-dialog-header-actions>.request-button:first-child{flex:0 0 44px}
+ .record-detail-toolbar>.request-button{flex:0 1 auto}
+ .record-section{padding:16px;gap:12px}.record-field-grid{grid-template-columns:minmax(0,1fr)}
+ .record-dialog-secondary-actions>.record-detail-toolbar{flex:1 1 auto}.record-dialog-secondary-actions .request-button{flex:1 1 160px}
+}
