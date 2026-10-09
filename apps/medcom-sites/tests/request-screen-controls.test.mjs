@@ -307,8 +307,12 @@ for(const kind of ['purchase','inbound'])test(`${kind}: actual unmount keeps onl
 });
 
 test('purchase orders: actual Documents remount restores draft/applied/page controls, never selection, and changes branch immediately',async()=>{
- const original={fetch:globalThis.fetch,window:globalThis.window},events=new EventTarget(),store=createListViewStore();store.admit('ROOT-ORDER-A');let renderer,detail,calls=[];
+ const original=new Map(['fetch','window','document','HTMLElement','requestAnimationFrame','cancelAnimationFrame'].map(name=>[name,Object.getOwnPropertyDescriptor(globalThis,name)])),events=new EventTarget(),store=createListViewStore();store.admit('ROOT-ORDER-A');let renderer,detail,calls=[];
  globalThis.window={addEventListener:events.addEventListener.bind(events),removeEventListener:events.removeEventListener.bind(events)};
+ // Explicit DOM/event doubles support the real focus owner. Native focus is
+ // verified in the composed browser suite; this test checks retained controls.
+ globalThis.document={hidden:false,activeElement:null,querySelector:()=>null,addEventListener:events.addEventListener.bind(events),removeEventListener:events.removeEventListener.bind(events)};
+ globalThis.HTMLElement=class {};globalThis.requestAnimationFrame=()=>1;globalThis.cancelAnimationFrame=()=>{};
  const w=workspace();w.navigation.push({id:'purchase-orders',label:'Synthetic orders',group:'Synthetic',href:'ignored'});w.session.capabilities.push('purchase-orders.read');
  globalThis.fetch=async(url)=>{const u=new URL(url,'https://synthetic.invalid');calls.push(Object.fromEntries(u.searchParams));return response({rows:[{documentId:'QA-ORDER',documentDate:'2026-10-01',branchId:'BR-A',statusId:1,isLocked:false}],page:Number(u.searchParams.get('page')),pageSize:50,hasMore:true});};
  const tree=()=>React.createElement(ListViewProvider,{store},React.createElement(QueryClientProvider,{client:new QueryClient({defaultOptions:{queries:{retry:false,gcTime:0}}})},React.createElement(Documents,{kind:'purchase-orders',workspace:w,verified:true,generation:1,compact:false,setCompact(){},onLogin(){},onDenied(){},renderDetail:(selected)=>{detail=selected;return null;}})));
@@ -319,7 +323,7 @@ test('purchase orders: actual Documents remount restores draft/applied/page cont
   await act(async()=>search().props.onChange({target:{value:'QA-DRAFT'}}));const branch=renderer.root.findByType('select');await act(async()=>branch.props.onChange({target:{value:'BR-A'}}));await flush();assert.equal(calls.at(-1).branchId,'BR-A');
   const open=renderer.root.findAllByType('button').find(node=>node.props['aria-label']==='Mở chứng từ QA-ORDER');assert.ok(open,JSON.stringify({buttons:renderer.root.findAllByType('button').map(node=>({text:text(node),aria:node.props['aria-label']})),calls,detail}));await act(async()=>open.props.onClick());assert.equal(detail.documentId,'QA-ORDER');
   await act(async()=>renderer.unmount());await mount();assert.equal(detail,null);assert.equal(search().props.value,'QA-DRAFT');assert.equal(calls.at(-1).search,'QA-APPLIED');assert.equal(calls.at(-1).branchId,'BR-A');
- }finally{await act(async()=>renderer?.unmount());globalThis.fetch=original.fetch;globalThis.window=original.window;}
+ }finally{await act(async()=>renderer?.unmount());for(const [name,descriptor]of original)if(descriptor)Object.defineProperty(globalThis,name,descriptor);else delete globalThis[name];}
 });
 
 for(const kind of ['purchase','inbound'])test(`${kind}: ${kind==='purchase'?'existingOnly editor forbids retained structural actions across host presentation loss and restore':'real editor retires queued delete confirmation on host presentation loss and restore'}`,async()=>{
