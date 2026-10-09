@@ -120,13 +120,27 @@ def at_path(value, path):
 
 def verify_module(client, kind):
     path, headers, lines = MODULES[kind]
+    status, selection = client.request("/api/documents/query-contract?" + urllib.parse.urlencode({"kind": kind}))
+    date_column, id_column = ("PurchaseDate", "PurchaseRequestID") if kind == "purchase-requests" else ("DocumentDate", "DocumentID")
+    expected_selection = {"version": 2, "kind": kind, "listPath": path, "maximumPage": 1000,
+                          "maximumPageSize": 50 if kind == "purchase-requests" else 100,
+                          "dateColumn": date_column, "identifierColumn": id_column,
+                          "sortFields": ["documentDate", "documentId", "statusId"],
+                          "defaultSortBy": "documentDate", "defaultSortDirection": "desc",
+                          "minimumDate": "1753-01-01", "maximumDate": "9999-12-31", "dateFormat": "yyyy-MM-dd",
+                          "dateToInclusive": True, "nullableDatesIncludedWithoutBounds": kind == "purchase-requests",
+                          "statusColumn": "StatusID"}
+    if (status != 200 or not isinstance(selection, dict) or set(selection) != set(expected_selection)
+            or any(type(selection[name]) is not type(value) or selection[name] != value
+                   for name, value in expected_selection.items())):
+        raise Failure("query_contract_mismatch")
     status, contract = client.request("/api/documents/field-contract?" + urllib.parse.urlencode({"kind": kind}))
     if status != 200 or not isinstance(contract, dict) or contract.get("contractVersion") != 2 or contract.get("kind") != kind:
         raise Failure("field_contract_unavailable")
     hf, lf = contract["header"]["fields"], contract["lines"]["fields"]
     if len(hf) != headers or len(lf) != lines:
         raise Failure("field_count_mismatch")
-    status, page = client.request(path + "?page=1&pageSize=1")
+    status, page = client.request(path + "?page=1&pageSize=1&sortBy=documentId&sortDirection=asc")
     if status != 200:
         raise Failure("list_unavailable")
     data = page["data"] if kind == "purchase-requests" else page
@@ -134,7 +148,8 @@ def verify_module(client, kind):
     if not isinstance(rows, list) or len(rows) > 1:
         raise Failure("list_paging_invalid")
     result = {"status": "PASS", "header_fields": headers, "line_fields": lines,
-              "header_samples": len(rows), "line_samples": 0, "business_writes": 0}
+              "header_samples": len(rows), "line_samples": 0, "business_writes": 0,
+              "query_contract_verified": True, "server_order_requested": "documentId_asc"}
     if not rows:
         result["observation"] = "authorized_list_empty;field_contract_verified;row_values_not_observed"
         return result
@@ -173,7 +188,7 @@ def run(client, username=None, password=None):
     if status != 200 or api.get("openapi") != "3.1.1":
         raise Failure("openapi_unavailable")
     operations = sum(len(item) for item in api["paths"].values())
-    if operations != 33 or api.get("x-medcom-business-release") != "not-admitted":
+    if operations != 34 or api.get("x-medcom-business-release") != "not-admitted":
         raise Failure("http_boundary_mismatch")
     report["http_operations"] = operations
     if not username and not password:

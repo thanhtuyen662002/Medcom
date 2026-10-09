@@ -1,3 +1,27 @@
+owner_backend_query_integration_20261010:
+  instruction: continue_backend_api_for_separate_frontend_integration
+  timezone: Asia/Saigon
+  canonical_goal: 45
+  current_increment: I69_typed_v2_document_selection_and_scoped_query_metadata
+  pr: 125
+  base: 0be72ba70e4d8b7ba231eedfa8b4a4c200069a8b
+  I68_merged_pr: 123
+  I68_merge_head: 03eb0c402314b58405b3d87d551d0cdf997a9576
+  http_operations: 34
+  openapi_schemas: 99
+  delivered_list_modules: [purchase_orders, inbound_requests, purchase_requests]
+  query_parameters: [dateFrom, dateTo, statusId, sortBy, sortDirection]
+  frontend_handoff: docs/backend/DOCUMENT_QUERY_INTEGRATION_20261010.md
+  windows_source_catalog_integrity: exact_LF_checkout_attributes_no_metadata_change
+  frontend_custody: separate_owner_changes_preserved_BE_moved_to_managed_worktree
+  hosted_implementation_ci: pending_publication_readback
+  actual_sql_engine_filter_acceptance: NOT_RUN_no_authorized_test_SQL_environment
+  actual_authenticated_target_reads: NOT_RUN_real_ERP_test_credentials_not_supplied
+  business_release: NOT_ACCEPTED
+  full_backend_goal: OPEN_remaining_modules_actions_reports_and_target_acceptance
+  schedules: remain_off_no_administration
+  historical_state_below: preserved_checkpoints_not_current_acceptance
+
 owner_backend_integration_20261010:
   instruction: complete_backend_merge_main_and_deploy_for_separate_frontend_integration
   timezone: Asia/Saigon

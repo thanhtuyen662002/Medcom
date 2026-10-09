@@ -276,6 +276,8 @@ internal sealed class FullReadSource
     internal double? FloatValue{get;set;}
     internal bool DateWithoutFraction{get;set;}
     internal int DocumentReads;
+    internal string? LastDocumentSql;
+    internal Dictionary<string,object?> LastDocumentParameters=[];
     internal FullReadSource(DocumentKind kind)
     {
         this.kind=kind;Identity=PurchaseQuerySource.NewIdentity() with {Capabilities=user.Capabilities!};
@@ -292,6 +294,8 @@ internal sealed class FullReadSource
         if(c.CommandText==SqlLegacyBranchScope.RestrictedText)
         {var t=InboundModel.Table(("BranchID",typeof(string)));t.Rows.Add("QA-A");t.Rows.Add("QA-B");return t.CreateDataReader();}
         DocumentReads++;
+        LastDocumentSql=c.CommandText;
+        LastDocumentParameters=c.Parameters.Cast<DbParameter>().ToDictionary(p=>p.ParameterName,p=>p.Value,StringComparer.Ordinal);
         foreach(var verb in new[]{"UPDATE ","INSERT ","DELETE ","EXEC "})
             Assert.DoesNotContain(verb,c.CommandText,StringComparison.OrdinalIgnoreCase);
         var detail=c.CommandText.Contains("OUTER APPLY",StringComparison.Ordinal);

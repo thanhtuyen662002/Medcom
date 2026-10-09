@@ -3,7 +3,8 @@ using System.Text.Json.Serialization;
 namespace Medcom.Contracts;
 
 public sealed record PurchaseRequestListQuery(int Page = 1, int PageSize = 20,
-    string? Search = null, string? BranchId = null);
+    string? Search = null, string? BranchId = null, string? DateFrom = null, string? DateTo = null,
+    int? StatusId = null, string? SortBy = null, string? SortDirection = null);
 public sealed record PurchaseRequestListRow(string DocumentId, string? PurchaseDate, string BranchId,
     string PersonSuggest, string Department, int StatusId, bool? IsLocked, string? StatusName = null,
     [property:JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] PurchaseRequestHeaderFields? Fields = null);

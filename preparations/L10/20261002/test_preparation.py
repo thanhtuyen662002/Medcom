@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-import json,pathlib,shutil,subprocess,tempfile
+import json,pathlib,shutil,subprocess,tempfile,sys
 HERE=pathlib.Path(__file__).resolve().parent; VALIDATOR=HERE/'validate_preparation.py'; JSONS=sorted(HERE.glob('*.json'))
-def run(p): return subprocess.run([str(VALIDATOR),str(p)],capture_output=True,text=True)
+def run(p): return subprocess.run([sys.executable,str(VALIDATOR),str(p)],capture_output=True,text=True)
 def neg(name,fn):
  with tempfile.TemporaryDirectory() as td:
   d=pathlib.Path(td)

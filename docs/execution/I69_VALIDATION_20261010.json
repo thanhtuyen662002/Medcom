@@ -1,0 +1,132 @@
+{
+  "run": "I69",
+  "base": "0be72ba70e4d8b7ba231eedfa8b4a4c200069a8b",
+  "admission_head": "63716bd7c5e3d504d1c6d522b0ba25319a5cea25",
+  "pr": 125,
+  "committed_file_sha256": {
+    ".gitattributes": "de3785e9a2a3169f305730347174204e3cae5875e369d22b616043523d342635",
+    "docs/PROJECT_STATE.yaml": "57e5404636ff47390f1bd1b8478e5c937d048480e203644aafde85ff1623c77c",
+    "docs/backend/DOCUMENT_QUERY_INTEGRATION_20261010.md": "60f6b4709e679a478f2722571a4445b4ac947cda0fc738a972a58a61e18b9e60",
+    "docs/backend/FE_INTEGRATION_20261010.md": "66a51cc4134f697e85debe4880a64fa94e9db6546b9e7dd84f28561b0f25b6b2",
+    "docs/backend/medcom-openapi.json": "665cb5ddba19ad2fb08a145167d40841abe69663875ed3a956b75ed219f76512",
+    "docs/goals/BACKEND_PRODUCTION_GOAL.md": "708d3a7614a0f6d16f9cbdc9497a889f536a7b8afe29cd396d048024aac0aac5",
+    "preparations/L02/20261002/test_preparation.py": "962a96143cb23c968f9745ce7ec97eee926a57bc46fdb7535c3eb0a87b54192f",
+    "preparations/L03/20261002/test_preparation.py": "b58f8254efb11f0cc34b1ea68858bf330586a31f9d76514500a5d71efeed0f59",
+    "preparations/L09/20261002/test_preparation.py": "5a6c40600141c455f73fc0944fdbf768724667d751e0aebed3d7009a0e41c9f5",
+    "preparations/L10/20261002/test_preparation.py": "084d311809d72056b55ed629bd8290b0a86669cabd1a63cc7f9e1aa4c6c96a7d",
+    "src/backend/Medcom.Api/ApiContractCatalog.cs": "5685fcb5e9fa81c862c56e011a8b572c9348bf7953ade153e7b384428928df15",
+    "src/backend/Medcom.Api/DocumentEndpoints.cs": "3c7b45e2f88e31b16fcfc4696446fb880d6a328beb9426bbdc48363782da49cc",
+    "src/backend/Medcom.Api/DocumentListBinding.cs": "c5401b72427e3d2d729a03d5c2c56890fd4b9d5fb83ad06aa2f2fe2151946fa3",
+    "src/backend/Medcom.Api/PurchaseRequestEndpoints.cs": "7e0e6766d0bdaccfbc9048164a7176f64e64b09a64f70f88d983b80e41ed71e6",
+    "src/backend/Medcom.Application/DocumentSelectionRules.cs": "a5483c96ba8f8c583c61dd5d9a0619ab96ecc2d34b210dbdc0b49c380225472f",
+    "src/backend/Medcom.Application/Documents.cs": "3bac55e49bc2fe03937562de380216458d914704f9cfcbc2a37410ac36417059",
+    "src/backend/Medcom.Application/PurchaseRequests/PurchaseRequestQueries.cs": "04df8d62750d0e6dfd91ca0d3f6ea61bba2809242bd9197675539980fc1fb0e1",
+    "src/backend/Medcom.Contracts/DocumentQueryContract.cs": "9830c7ca54f32c2ccfbc2513114d448862fc64a37b924a39499f3daba8374684",
+    "src/backend/Medcom.Contracts/PurchaseRequestWorkspace.cs": "581d08c46cb6069693554c792b1b2646d3bbbb840ffeee24add5a1a74b535954",
+    "src/backend/Medcom.Infrastructure/DocumentSelectionSql.cs": "ba777f9f0d94befaf0b3ffccef4023c32b75fa101309fe5e4c300c6f438f763f",
+    "src/backend/Medcom.Infrastructure/PurchaseRequests/SqlPurchaseRequestQueries.cs": "b1d2df684440a96132e637e5c669a44b025ac8165408b85812f6dfe7a443f51f",
+    "src/backend/Medcom.Infrastructure/SqlDocumentReader.cs": "e29a2ddaabdf8a45318339a0d8c5b41a4e365c10de4e8bf1782e774e708fb447",
+    "src/backend/README.md": "e659e3cfb3c65a0f5a34ff665f8fd216d2137d0a5b4b6b9059510ed9bd3c7f4d",
+    "tests/backend/Medcom.Api.Tests/ApiContractCatalogTests.cs": "bd76cc102c70873b944cf25112a7f6bc584a519b195944a7f2425d38ee49f8b3",
+    "tests/backend/Medcom.Api.Tests/DocumentFullFieldTests.cs": "483f7a0592965fcb1c1cb382fe6d665f8525bd22bab213b96a675c9b645f1bcc",
+    "tests/backend/Medcom.Api.Tests/DocumentSelectionTests.cs": "f3de9ad3fdd59a104a5cb37249e920bcf674730ef18ceb68916ceedb71a7e4d7",
+    "tests/deploy/test_backend_api_contract.py": "6cf7b5d20b50f72dd6e176791d1ac1a9084c22d1241a3fab73ede1b55ccfd3e8",
+    "tools/deploy/verify_backend_api.py": "4a65620574d01e223721405fac6184211f78b0d19949c104b06c8b0e1e9b4f8f"
+  },
+  "source_verification": {
+    "identity": "owner-attachment-20261002",
+    "ERP_Medcom2026.zip": "d5fe49f8e58de89fc0b9972a116a6c8f673ab9f9b326c626708d0b5d01fc5783",
+    "MedData-Data.zip": "6a74eb02dc747e9c6ab679f69ca515783a8724ad767f6702fcebd28f195b1144",
+    "sql_member_bytes": 1212595716,
+    "sql_member_crc32": "16a9a7e6",
+    "sql_member_sha256": "61a8744c7a9a007b13ef37fbda26ea8c78af11fcc469963a528eba9469174096",
+    "historical_archives": "NOT_REOPENED;absent_at_local_Downloads_locator;no_equivalence_claim"
+  },
+  "local_checks": {
+    "locked_restore": "PASS",
+    "release_build": "PASS_0_warnings_0_errors",
+    "backend_trx": {
+      "I69-query-focused.trx": {
+        "sha256": "1ca2041da76a91f2d2d417d64b173f7384e9194bbcd6974a415b25e653bd44b6",
+        "counters": {
+          "total": "34",
+          "executed": "34",
+          "passed": "34",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        }
+      },
+      "I69-full-backend.trx": {
+        "sha256": "07b45dc00a66a5b56a0caaa5f95a14dbce534f031bf19a74fb869150d26a1ed7",
+        "counters": {
+          "total": "3112",
+          "executed": "3112",
+          "passed": "3112",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        }
+      }
+    },
+    "architecture": "PASS",
+    "catalog": "PASS_1527_objects_33_exact_checksum_members",
+    "source_scanner_tests": 48,
+    "policy_guard_tests": 97,
+    "api_verifier_tests": 8,
+    "preparation_reference_suites": "RUNNING_after_Windows_interpreter_repair",
+    "yaml_and_whitespace": "PASS"
+  },
+  "contract": {
+    "operations": 34,
+    "schemas": 99
+  },
+  "public_deployed_preflight": {
+    "operations": 33,
+    "query_metadata_registered": false,
+    "business_release": "not-admitted",
+    "deployment_operation": "NOT_RUN"
+  },
+  "local_quality_review": [
+    "fixed_source_identifiers_and_parameter_values_only",
+    "current_credential_menu_group_branch_enforcement_preserved",
+    "inclusive_final_day_and_maximum_datetime_without_overflow",
+    "nullable_purchase_dates_excluded_for_any_date_bound",
+    "legacy_query_projection_default_order_compatibility",
+    "duplicate_unknown_and_injection_inputs_rejected_before_provider",
+    "offset_pagination_is_not_cross_request_snapshot",
+    "BE_custody_handoff_17_files_to_managed_worktree_preserves_other_FE_changes",
+    "LF_catalog_attributes_preserve_all_existing_manifest_bytes",
+    "explicit_python_interpreter_for_four_existing_Windows_reference_runners",
+    "public_patch_contains_no_private_sources_settings_credentials_or_ERP_rows"
+  ],
+  "not_run": [
+    "actual_SQL_engine_date_status_order_result_and_index_load_acceptance",
+    "authenticated_deployed_ERP_reads_without_test_credentials",
+    "FE_BFF_adoption",
+    "business_writes",
+    "production_acceptance"
+  ],
+  "hosted_implementation_ci": "PENDING_after_publication_not_admission_checks",
+  "full_backend_goal_45": "OPEN"
+}

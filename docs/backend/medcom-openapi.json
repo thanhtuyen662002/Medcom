@@ -539,6 +539,75 @@
         ]
       }
     },
+    "/api/documents/query-contract": {
+      "get": {
+        "operationId": "documentQueryContract",
+        "responses": {
+          "200": {
+            "description": "Typed response. Inspect access and outcome; HTTP 200 does not imply a committed write.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentQueryContract"
+                }
+              }
+            },
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Server-generated request correlation, never client authority.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Medcom-Session-Scope": {
+                "description": "Opaque current scope of a successful authorized read; invalidate stale data when it changes.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Medcom-Read-Scope": {
+                "description": "Opaque current scope of a successful authorized read; invalidate stale data when it changes.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Non-success HTTP status. Do not infer an available operation or committed effect. Infrastructure errors may use another shape.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "x-medcom-admission": "module-read-capability-required",
+        "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "purchase-orders",
+                "inbound-requests",
+                "purchase-requests"
+              ]
+            }
+          }
+        ]
+      }
+    },
     "/api/documents/purchase-orders": {
       "get": {
         "operationId": "purchaseordersLegacyList",
@@ -816,6 +885,67 @@
             "schema": {
               "type": "string",
               "maxLength": 50
+            }
+          },
+          {
+            "name": "dateFrom",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+              "description": "SQL datetime calendar date, 1753-01-01 through 9999-12-31; no timezone conversion. dateFrom <= dateTo. dateTo includes its entire day."
+            }
+          },
+          {
+            "name": "dateTo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+              "description": "SQL datetime calendar date, 1753-01-01 through 9999-12-31; no timezone conversion. dateFrom <= dateTo. dateTo includes its entire day."
+            }
+          },
+          {
+            "name": "statusId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": -2147483648,
+              "maximum": 2147483647,
+              "description": "Exact source StatusID. A filter never authorizes a state change."
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "documentDate",
+                "documentId",
+                "statusId"
+              ],
+              "default": "documentDate"
+            }
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "desc",
+              "description": "Document ID uses binary byte ordering and breaks date/status ties ascending; SQL nulls sort first ascending and last descending. Offset pages are not a cross-request snapshot."
             }
           }
         ]
@@ -1187,6 +1317,67 @@
               "type": "string",
               "maxLength": 50
             }
+          },
+          {
+            "name": "dateFrom",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+              "description": "SQL datetime calendar date, 1753-01-01 through 9999-12-31; no timezone conversion. dateFrom <= dateTo. dateTo includes its entire day."
+            }
+          },
+          {
+            "name": "dateTo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+              "description": "SQL datetime calendar date, 1753-01-01 through 9999-12-31; no timezone conversion. dateFrom <= dateTo. dateTo includes its entire day."
+            }
+          },
+          {
+            "name": "statusId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": -2147483648,
+              "maximum": 2147483647,
+              "description": "Exact source StatusID. A filter never authorizes a state change."
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "documentDate",
+                "documentId",
+                "statusId"
+              ],
+              "default": "documentDate"
+            }
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "desc",
+              "description": "Document ID uses binary byte ordering and breaks date/status ties ascending; SQL nulls sort first ascending and last descending. Offset pages are not a cross-request snapshot."
+            }
           }
         ]
       }
@@ -1534,6 +1725,67 @@
             "schema": {
               "type": "string",
               "maxLength": 50
+            }
+          },
+          {
+            "name": "dateFrom",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+              "description": "SQL datetime calendar date, 1753-01-01 through 9999-12-31; no timezone conversion. dateFrom <= dateTo. dateTo includes its entire day."
+            }
+          },
+          {
+            "name": "dateTo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+              "description": "SQL datetime calendar date, 1753-01-01 through 9999-12-31; no timezone conversion. dateFrom <= dateTo. dateTo includes its entire day."
+            }
+          },
+          {
+            "name": "statusId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": -2147483648,
+              "maximum": 2147483647,
+              "description": "Exact source StatusID. A filter never authorizes a state change."
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "documentDate",
+                "documentId",
+                "statusId"
+              ],
+              "default": "documentDate"
+            }
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "desc",
+              "description": "Document ID uses binary byte ordering and breaks date/status ties ascending; SQL nulls sort first ascending and last descending. Offset pages are not a cross-request snapshot."
             }
           }
         ]
@@ -2645,6 +2897,84 @@
           "jsonType",
           "format",
           "listJsonPath"
+        ]
+      },
+      "DocumentQueryContract": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "listPath": {
+            "type": "string"
+          },
+          "maximumPage": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maximumPageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "dateColumn": {
+            "type": "string"
+          },
+          "identifierColumn": {
+            "type": "string"
+          },
+          "sortFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "defaultSortBy": {
+            "type": "string"
+          },
+          "defaultSortDirection": {
+            "type": "string"
+          },
+          "minimumDate": {
+            "type": "string"
+          },
+          "maximumDate": {
+            "type": "string"
+          },
+          "dateFormat": {
+            "type": "string"
+          },
+          "dateToInclusive": {
+            "type": "boolean"
+          },
+          "nullableDatesIncludedWithoutBounds": {
+            "type": "boolean"
+          },
+          "statusColumn": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "kind",
+          "listPath",
+          "maximumPage",
+          "maximumPageSize",
+          "dateColumn",
+          "identifierColumn",
+          "sortFields",
+          "defaultSortBy",
+          "defaultSortDirection",
+          "minimumDate",
+          "maximumDate",
+          "dateFormat",
+          "dateToInclusive",
+          "nullableDatesIncludedWithoutBounds",
+          "statusColumn"
         ]
       },
       "DocumentSummary": {

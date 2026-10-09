@@ -21,7 +21,8 @@ public static class PurchaseRequestQueryRules
     public static readonly string[] LookupKinds = ["branches", "items", "objects", "purposes", "currencies"];
     public static bool List(PurchaseRequestListQuery? query) => query is not null
         && query.Page is >= 1 and <= 1000 && query.PageSize is >= 1 and <= 50
-        && Search(query.Search) && (string.IsNullOrEmpty(query.BranchId) || PurchaseRequestCommandRules.Identifier(query.BranchId, 50));
+        && Search(query.Search) && (string.IsNullOrEmpty(query.BranchId) || PurchaseRequestCommandRules.Identifier(query.BranchId, 50))
+        && DocumentSelectionRules.Valid(query.DateFrom, query.DateTo, query.SortBy, query.SortDirection);
     public static bool Search(string? value) => value is null || value.Length <= 100 && !value.Any(char.IsControl);
     public static bool Lookup(string kind, string? search, int page) => LookupKinds.Contains(kind, StringComparer.Ordinal)
         && Search(search) && page is >= 1 and <= 1000;

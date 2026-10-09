@@ -5,6 +5,17 @@ public static class DocumentEndpoints
 {
     public static void Map(WebApplication app)
     {
+        app.MapGet("/api/documents/query-contract", (HttpContext context,string? kind) =>
+        {
+            if(context.Request.Query.Keys.Any(key=>key!="kind") || context.Request.Query["kind"].Count!=1
+                || kind is null || DocumentListBinding.Contract(kind) is not {} contract)
+                return Results.Problem(statusCode:400,title:"Invalid query.");
+            var session=AuthEndpoints.Current(context);
+            if(!session.Identity.Capabilities.Contains(kind+".read",StringComparer.Ordinal))
+                return Results.Problem(statusCode:403,title:"Access denied.");
+            WorkspaceReadScope.Stamp(context,session);
+            return Results.Ok(contract);
+        });
         app.MapGet("/api/documents/field-contract", (HttpContext context,string? kind) =>
         {
             if(context.Request.Query.Keys.Any(key=>key!="kind") || context.Request.Query["kind"].Count!=1)
@@ -39,12 +50,15 @@ public static class DocumentEndpoints
             var session = AuthEndpoints.Current(context);
             if (!session.Identity.Capabilities.Contains(capability, StringComparer.Ordinal))
                 return Results.Problem(statusCode:403,title:"Access denied.");
-            if (context.Request.Query.Keys.Any(key => key is not ("page" or "pageSize" or "search" or "branchId")))
+            if (!DocumentListBinding.TryRead(context,fullFields,out var selection)
+                || page is < 1 or > 1000 || pageSize is < 1 or > 100
+                || search?.Length>100 || branchId?.Length>50)
                 return Results.Problem(statusCode:400,title:"Invalid query.");
             using var timeout=CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted);
             timeout.CancelAfter(TimeSpan.FromSeconds(8));
             DocumentResult result;
-            try { result=await reader.ReadAsync(session.Identity,kind,new(page??1,pageSize??50,search,branchId),timeout.Token); }
+            try { result=await reader.ReadAsync(session.Identity,kind,new(page??1,pageSize??50,search,branchId,
+                selection.DateFrom,selection.DateTo,selection.StatusId,selection.SortBy,selection.SortDirection),timeout.Token); }
             catch(OperationCanceledException) when(!context.RequestAborted.IsCancellationRequested)
             { return Results.Problem(statusCode:503,title:"Data is temporarily unavailable."); }
             if (result.Outcome == DocumentOutcome.Success && result.Page is not null

@@ -49,9 +49,10 @@ public static class PurchaseRequestEndpoints
         app.MapGet(path, async (HttpContext context, IPurchaseRequestQueries queries) =>
         {
             if (!CanRead(context)) return Denied();
-            if (!Fields(context, "page", "pageSize", "search", "branchId")
+            if (!DocumentListBinding.TryRead(context,fullFields,out var selection)
                 || !Number(context, "page", 1, out var page) || !Number(context, "pageSize", 20, out var size)) return Invalid();
-            var query = new PurchaseRequestListQuery(page, size, context.Request.Query["search"], context.Request.Query["branchId"]);
+            var query = new PurchaseRequestListQuery(page, size, context.Request.Query["search"], context.Request.Query["branchId"],
+                selection.DateFrom,selection.DateTo,selection.StatusId,selection.SortBy,selection.SortDirection);
             if (!PurchaseRequestQueryRules.List(query)) return Invalid();
             if (!string.IsNullOrEmpty(query.BranchId)
                 && AuthEndpoints.Current(context).Identity.BranchIds?.Contains(query.BranchId, StringComparer.Ordinal) != true) return Denied();
