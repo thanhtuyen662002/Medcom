@@ -1,3 +1,25 @@
+owner_backend_continuation_20261009:
+  instruction: continue_backend_complete_apis_and_return_all_fields
+  current_increment: I67_complete_source_backed_document_read_fields
+  pr: 122
+  implementation_base: 3304766ab9d63329622b5bf18b6f1d6171405a94
+  read_contract_version: 2
+  delivered_read_modules: [purchase_orders, inbound_requests, purchase_requests]
+  source_tables: 6
+  source_columns: 116
+  new_http_routes: 7
+  full_field_reads: six_versioned_list_detail_routes_under_api_v2
+  unversioned_reads: original_strict_consumer_wire_shape_preserved
+  evidence: docs/backend/FULL_DOCUMENT_FIELDS_20261009.md
+  validation: docs/execution/I67_VALIDATION_20261009.md
+  consumer_contract: docs/backend/document-field-contract.json
+  frontend_custody: separate_owner_no_frontend_source_mutations
+  schedules: remain_off
+  target_sql_runtime: NOT_RUN_in_this_increment
+  business_write_activation: NOT_AUTHORIZED_BY_THIS_INCREMENT
+  deployment: NOT_RUN
+  full_backend_goal: remains_open_in_issue_45
+
 owner_backend_direction_20261004:
   canonical_goal: "https://github.com/thanhtuyen662002/Medcom/issues/45"
   codex_goal: active_backend_api_sql_fe_handoff

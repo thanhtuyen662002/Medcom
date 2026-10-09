@@ -6,6 +6,8 @@ The current API registers 25 method/path pairs, including purchase Save/Submit a
 
 See [the current HTTP boundary](../../docs/backend/CURRENT_HTTP_BOUNDARY_20261009.md) for the full route inventory, body bounds, scope/CSRF/receipt rules and handover gaps. That source review supersedes the historical endpoint inventory and absent-write-route statements below; no private SQL/DLL runtime or business write is newly accepted.
 
+Read contract version 2 adds six complete document list/detail routes under `/api/v2` and an authenticated `/api/documents/field-contract?kind=…` catalog. These expose all 116 source columns of the three wired header/line modules while unversioned routes retain the original strict-consumer shape. See [full document fields](../../docs/backend/FULL_DOCUMENT_FIELDS_20261009.md) and [the exact JSON field mapping](../../docs/backend/document-field-contract.json). FE/BFF version 2 adoption and real SQL target validation remain separate.
+
 ## Historical foundation checkpoint — 2 October 2026
 
 The runnable .NET 10 backend contains API, Application, Contracts and Infrastructure projects, Web session authority, CSRF-protected login/logout/continue routes and server-filtered workspace navigation. The default ERP identity adapter is unavailable: legacy authentication, business adapters and database access remain disabled pending their own evidence and acceptance. A working session implementation is not proof of ERP login or production readiness.

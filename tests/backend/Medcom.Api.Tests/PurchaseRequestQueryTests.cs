@@ -760,8 +760,10 @@ internal sealed class PurchaseQuerySource
                     command.CommandText.Contains("AS IdentityAlias",StringComparison.Ordinal)
                         &&(command.CommandText.Contains("SELECT COUNT_BIG(*)",StringComparison.Ordinal)
                             ? Documents.Count(a=>Fold(a.PurchaseRequestId)==Fold(d.PurchaseRequestId))>1
-                            : Documents.Any(a=>Fold(a.PurchaseRequestId)==Fold(d.PurchaseRequestId)&&a.PurchaseRequestId!=d.PurchaseRequestId))?1:0,StatusName??(object)DBNull.Value,StatusRows});
-            var reader=Rows(10,result);AfterData?.Invoke();return reader;
+                            : Documents.Any(a=>Fold(a.PurchaseRequestId)==Fold(d.PurchaseRequestId)&&a.PurchaseRequestId!=d.PurchaseRequestId))?1:0,StatusName??(object)DBNull.Value,StatusRows,
+                    d.Header.PurposeId??(object)DBNull.Value,d.Header.PurposeDescOrClient??(object)DBNull.Value,Number(d.Header.Price),
+                    d.Header.Notes??(object)DBNull.Value,d.Header.CurrencyId,d.Header.ObjectId,d.Header.RateExchange});
+            var reader=Rows(17,result);AfterData?.Invoke();return reader;
         }
         if(command.CommandText.Contains("FROM dbo.AP_PurchaseRequestTbl",StringComparison.Ordinal))
         {

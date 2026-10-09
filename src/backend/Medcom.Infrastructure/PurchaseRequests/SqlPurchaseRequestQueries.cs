@@ -116,7 +116,8 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
         return $$"""
             SELECT D.PurchaseRequestID,D.PurchaseDate,D.BranchID,D.PersonSuggest,D.Department,D.StatusID,D.isLock,
               CONVERT(int,CASE WHEN (SELECT COUNT_BIG(*) FROM dbo.AP_PurchaseRequestTbl A WITH (HOLDLOCK)
-                WHERE A.PurchaseRequestID=D.PurchaseRequestID)>1 THEN 1 ELSE 0 END) AS IdentityAlias,S.StatusName,S.StatusRows
+                WHERE A.PurchaseRequestID=D.PurchaseRequestID)>1 THEN 1 ELSE 0 END) AS IdentityAlias,S.StatusName,S.StatusRows,
+              D.PurposeID,D.PurposeDescOrClient,D.Price,D.Notes,D.CurrencyID,D.ObjectID,D.RateExchange
             FROM dbo.AP_PurchaseRequestTbl D WITH (HOLDLOCK)
             {{DocumentStatusSql.PurchaseRequests}}
             WHERE ({{scope}}) AND (@search='' OR D.PurchaseRequestID LIKE @search ESCAPE '~')
@@ -167,7 +168,11 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
                     || !PurchaseRequestCommandRules.Identifier(reader.GetString(0), 50) || !seen.Add(reader.GetString(0))
                     || rows.Count > query.PageSize) throw new InvalidOperationException("Invalid source projection.");
                 rows.Add(new(reader.GetString(0), Date(reader, 1), reader.GetString(2), reader.GetString(3), reader.GetString(4),
-                    reader.GetInt32(5), reader.IsDBNull(6) ? null : reader.GetBoolean(6), DocumentStatusSql.ReadName(reader, 8, 50)));
+                    reader.GetInt32(5), reader.IsDBNull(6) ? null : reader.GetBoolean(6), DocumentStatusSql.ReadName(reader, 8, 50),
+                    new(reader.GetString(0),Date(reader,1),reader.IsDBNull(10)?null:reader.GetInt32(10),
+                        reader.GetString(3),reader.GetString(4),Text(reader,11),Decimal(reader,12,"0.00"),Text(reader,13),
+                        reader.GetInt32(5),reader.IsDBNull(6)?null:reader.GetBoolean(6),reader.GetString(14),reader.GetString(15),
+                        Finite(reader.GetDouble(16)),reader.GetString(2))));
             }
             return new(rows.Take(query.PageSize).ToArray(), query.Page, query.PageSize, rows.Count > query.PageSize);
         }, token);
@@ -180,6 +185,7 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
         {
             observation.Stage = PurchaseRequestReadStage.Head;
             PurchaseRequestAggregate head;
+            PurchaseRequestHeaderFields sourceHeader;
             string? statusName;
             await using (var command = PurchaseRequestSql.Command(tx, HeadText))
             {
@@ -193,9 +199,13 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
                     reader.GetString(10), reader.GetString(11), reader.GetDouble(12));
                 statusName = DocumentStatusSql.ReadName(reader, 14, 50);
                 head = new(documentId, reader.GetString(13), header, reader.GetInt32(8), reader.IsDBNull(9) ? null : reader.GetBoolean(9), []);
+                sourceHeader=new(head.PurchaseRequestId,header.PurchaseDate,header.PurposeId,header.PersonSuggest,
+                    header.Department,header.PurposeDescOrClient,header.Price,header.Notes,head.StatusId,head.IsLocked,
+                    header.CurrencyId,header.ObjectId,Finite(header.RateExchange),head.BranchId);
                 if (await reader.ReadAsync(ct)) throw new QueryNotFound();
             }
             var lines = new List<PurchaseRequestPersistedLine>();
+            var sourceLines = new List<PurchaseRequestLineFields>();
             observation.Stage = PurchaseRequestReadStage.Lines;
             await using (var command = PurchaseRequestSql.Command(tx, DetailsText))
             {
@@ -207,6 +217,9 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
                         || reader.GetString(8) != documentId || reader.GetInt32(9) != 0) throw new InvalidOperationException("Invalid source relation.");
                     lines.Add(new(reader.GetString(0), new(reader.GetString(1), Decimal(reader, 2, "0"), Text(reader, 3),
                         Decimal(reader, 4, "0")!, Decimal(reader, 5, "0")!, Decimal(reader, 6, "0"), Text(reader, 7))));
+                    var line=lines[^1];var values=line.Values;
+                    sourceLines.Add(new(line.LineId,values.ItemId,values.Budget,values.TimeRequired,values.Quantity,
+                        values.UnitPrice,values.TotalPrice,values.Model,reader.GetString(8)));
                 }
             }
             observation.Stage = PurchaseRequestReadStage.Normalize;
@@ -217,7 +230,8 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
             var display = await ItemDisplayContextReader.ReadAsync(tx, "purchase-requests", document.PurchaseRequestId,
                 document.BranchId, stateToken, document.StatusId, document.IsLocked, null, null,
                 document.Lines.Select(line => (line.LineId, line.Values.ItemId)).ToArray(), ct);
-            return new(document, stateToken, StatusName: statusName, ItemDisplayContext: display);
+            return new(document, stateToken, StatusName: statusName, ItemDisplayContext: display,
+                SourceFields:new(sourceHeader,sourceLines.OrderBy(line=>line.UserAutoId,StringComparer.Ordinal).ToArray()));
         }, token);
     }
 
@@ -362,6 +376,7 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
     }
     private static string ReadOnly(string sql) => sql.Replace("UPDLOCK,HOLDLOCK", "HOLDLOCK", StringComparison.Ordinal);
     private static string? Text(DbDataReader reader, int index) => reader.IsDBNull(index) ? null : reader.GetString(index);
+    private static double Finite(double value) => double.IsFinite(value)?value:throw new InvalidOperationException("Invalid source number.");
     private static string? Decimal(DbDataReader reader, int index, string format) => reader.IsDBNull(index) ? null
         : PurchaseRequestCommandRules.Decimal(reader.GetDecimal(index).ToString(CultureInfo.InvariantCulture), format == "0.00" ? (byte)2 : (byte)0);
     private static string? Date(DbDataReader reader, int index)

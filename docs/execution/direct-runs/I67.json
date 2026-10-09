@@ -1,0 +1,12 @@
+{
+  "id": "I67",
+  "base": "3304766ab9d63329622b5bf18b6f1d6171405a94",
+  "ownerDirection": "2026-10-09: continue BE, complete APIs and return all fields",
+  "scope": "Source-backed full header/line reads and API field contract for purchase orders, inbound requests and purchase requests; preserve existing HTTP/auth/branch/paging/command boundaries.",
+  "limits": [
+    "No frontend edits",
+    "No SQL target connection or mutation, credential changes, deployment or business-write activation",
+    "No private raw source or business rows published"
+  ],
+  "status": "ADMISSION_ONLY"
+}

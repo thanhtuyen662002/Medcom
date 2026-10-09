@@ -7,9 +7,9 @@ Canonical acceptance and execution policy: [PRODUCTION_ERP_GOAL.md](PRODUCTION_E
 | Source/request scope | inventories/source/20261002/source-set.json; existing issue graph #12-42 | Reconcile every live requested backend action/report/configuration/permission; total UNKNOWN |
 | SQL Server private configuration | Api/ServerConfiguration.cs; ServerConfigurationTests.cs; tools/deploy/Configure-MedcomServer.ps1; docs/backend/SERVER_CONFIGURATION.md; published c4e66d6 in Draft #53 | Package setup assets; successful authorized connection and deployed service identity validation |
 | Authentication/session/scope | ApiHost and legacy adapters in Draft #53 | Full source-compatible runtime, durable multi-instance session behavior and authority acceptance |
-| SQL-backed reads | Existing scoped read pilots in Draft chain | All required source queries, pagination/filter/report/export and target SQL acceptance |
+| SQL-backed reads | I67 / Draft #122: six versioned reads cover all 116 source header/line columns in purchase orders, inbound requests and purchase requests; original strict-consumer wire shape preserved | Remaining ERP modules/source queries, filter/report/export and real target SQL acceptance |
 | Transfer commands | Application/Transfers; Infrastructure/Transfers; TRANSFER_COMMAND_CONTRACT_20261003.md | Concrete gateway, trusted reread/locks, source detail save, transaction journal/audit/idempotency and HTTP wiring; writes remain gated |
-| FE API handoff | Shared read contracts exist | Full versioned OpenAPI/typed command/error/session/report contracts, sanitized examples and consumer contract evidence |
+| FE API handoff | I67: typed full-field DTOs, authenticated field catalog and docs/backend/document-field-contract.json; actual HTTPS old/new response regressions | FE/BFF version 2 adoption; full ERP OpenAPI, remaining command/error/session/report contracts and consumer/runtime acceptance |
 | Packaging and operations | tools/deploy/package.py; package_integrity.py | Include setup UI/guide, prove final package integrity; target install/HTTPS/monitoring/load/backup/restore/rollback |
 | Main integration | Draft #53; CI on 285c3af green | New head checks, live gate receipts and main merge |
 | Staging SQL | Private D:\Config configuration is non-template | Connectivity and representative business/effects/audit tests not yet verified |

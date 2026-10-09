@@ -1,0 +1,1092 @@
+{
+  "contractVersion": 2,
+  "sourceSet": "owner-attachment-20261002",
+  "kinds": {
+    "purchase-orders": {
+      "header": {
+        "table": "AP_OrderTbl",
+        "sourceLine": 11248,
+        "fields": [
+          {
+            "column": "DocumentID",
+            "jsonPath": "document.purchaseOrderHeader.documentId",
+            "sqlType": "varchar(30)",
+            "listJsonPath": "rows[].purchaseOrderHeader.documentId",
+            "nullable": false,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "DocumentDate",
+            "jsonPath": "document.purchaseOrderHeader.documentDate",
+            "sqlType": "datetime",
+            "listJsonPath": "rows[].purchaseOrderHeader.documentDate",
+            "nullable": false,
+            "jsonType": "string",
+            "format": "sql-datetime-without-timezone"
+          },
+          {
+            "column": "ObjectID",
+            "jsonPath": "document.purchaseOrderHeader.objectId",
+            "sqlType": "varchar(100)",
+            "listJsonPath": "rows[].purchaseOrderHeader.objectId",
+            "nullable": false,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "Memo",
+            "jsonPath": "document.purchaseOrderHeader.memo",
+            "sqlType": "nvarchar(200)",
+            "listJsonPath": "rows[].purchaseOrderHeader.memo",
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "Notes",
+            "jsonPath": "document.purchaseOrderHeader.notes",
+            "sqlType": "nvarchar(200)",
+            "listJsonPath": "rows[].purchaseOrderHeader.notes",
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "DeliverDate",
+            "jsonPath": "document.purchaseOrderHeader.deliverDate",
+            "sqlType": "datetime",
+            "listJsonPath": "rows[].purchaseOrderHeader.deliverDate",
+            "nullable": true,
+            "jsonType": "string",
+            "format": "sql-datetime-without-timezone"
+          },
+          {
+            "column": "CurrencyID",
+            "jsonPath": "document.purchaseOrderHeader.currencyId",
+            "sqlType": "varchar(3)",
+            "listJsonPath": "rows[].purchaseOrderHeader.currencyId",
+            "nullable": false,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "RateExchange",
+            "jsonPath": "document.purchaseOrderHeader.rateExchange",
+            "sqlType": "float",
+            "listJsonPath": "rows[].purchaseOrderHeader.rateExchange",
+            "nullable": false,
+            "jsonType": "number",
+            "format": null
+          },
+          {
+            "column": "BaseTotal",
+            "jsonPath": "document.purchaseOrderHeader.baseTotal",
+            "sqlType": "decimal(28, 0)",
+            "listJsonPath": "rows[].purchaseOrderHeader.baseTotal",
+            "nullable": true,
+            "jsonType": "string",
+            "format": "decimal-string"
+          },
+          {
+            "column": "SearchField",
+            "jsonPath": "document.purchaseOrderHeader.searchField",
+            "sqlType": "nvarchar(2000)",
+            "listJsonPath": "rows[].purchaseOrderHeader.searchField",
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "isLock",
+            "jsonPath": "document.purchaseOrderHeader.isLock",
+            "sqlType": "bit",
+            "listJsonPath": "rows[].purchaseOrderHeader.isLock",
+            "nullable": false,
+            "jsonType": "boolean",
+            "format": null
+          },
+          {
+            "column": "UserCreate",
+            "jsonPath": "document.purchaseOrderHeader.userCreate",
+            "sqlType": "varchar(50)",
+            "listJsonPath": "rows[].purchaseOrderHeader.userCreate",
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "UserUpdate",
+            "jsonPath": "document.purchaseOrderHeader.userUpdate",
+            "sqlType": "varchar(50)",
+            "listJsonPath": "rows[].purchaseOrderHeader.userUpdate",
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "DateUpdate",
+            "jsonPath": "document.purchaseOrderHeader.dateUpdate",
+            "sqlType": "datetime",
+            "listJsonPath": "rows[].purchaseOrderHeader.dateUpdate",
+            "nullable": true,
+            "jsonType": "string",
+            "format": "sql-datetime-without-timezone"
+          },
+          {
+            "column": "DateCreate",
+            "jsonPath": "document.purchaseOrderHeader.dateCreate",
+            "sqlType": "datetime",
+            "listJsonPath": "rows[].purchaseOrderHeader.dateCreate",
+            "nullable": true,
+            "jsonType": "string",
+            "format": "sql-datetime-without-timezone"
+          },
+          {
+            "column": "LinkID",
+            "jsonPath": "document.purchaseOrderHeader.linkId",
+            "sqlType": "varchar(50)",
+            "listJsonPath": "rows[].purchaseOrderHeader.linkId",
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "ContractID",
+            "jsonPath": "document.purchaseOrderHeader.contractId",
+            "sqlType": "nvarchar(100)",
+            "listJsonPath": "rows[].purchaseOrderHeader.contractId",
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "StatusID",
+            "jsonPath": "document.purchaseOrderHeader.statusId",
+            "sqlType": "int",
+            "listJsonPath": "rows[].purchaseOrderHeader.statusId",
+            "nullable": true,
+            "jsonType": "integer",
+            "format": null
+          },
+          {
+            "column": "BranchID",
+            "jsonPath": "document.purchaseOrderHeader.branchId",
+            "sqlType": "varchar(50)",
+            "listJsonPath": "rows[].purchaseOrderHeader.branchId",
+            "nullable": false,
+            "jsonType": "string",
+            "format": null
+          }
+        ]
+      },
+      "lines": {
+        "table": "AP_OrderDetailTbl",
+        "sourceLine": 11437,
+        "fields": [
+          {
+            "column": "UserAutoID",
+            "jsonPath": "purchaseOrderLines[].fields.userAutoId",
+            "sqlType": "varchar(40)",
+            "listJsonPath": null,
+            "nullable": false,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "DocumentID",
+            "jsonPath": "purchaseOrderLines[].fields.documentId",
+            "sqlType": "varchar(30)",
+            "listJsonPath": null,
+            "nullable": false,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "ItemID",
+            "jsonPath": "purchaseOrderLines[].fields.itemId",
+            "sqlType": "nvarchar(50)",
+            "listJsonPath": null,
+            "nullable": false,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "Quantity",
+            "jsonPath": "purchaseOrderLines[].fields.quantity",
+            "sqlType": "decimal(28, 2)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": "decimal-string"
+          },
+          {
+            "column": "UnitPrice",
+            "jsonPath": "purchaseOrderLines[].fields.unitPrice",
+            "sqlType": "decimal(28, 4)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": "decimal-string"
+          },
+          {
+            "column": "SourceAmount",
+            "jsonPath": "purchaseOrderLines[].fields.sourceAmount",
+            "sqlType": "decimal(18, 2)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": "decimal-string"
+          },
+          {
+            "column": "Amount",
+            "jsonPath": "purchaseOrderLines[].fields.amount",
+            "sqlType": "decimal(28, 0)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": "decimal-string"
+          },
+          {
+            "column": "Notes",
+            "jsonPath": "purchaseOrderLines[].fields.notes",
+            "sqlType": "nvarchar(100)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "Quantity2",
+            "jsonPath": "purchaseOrderLines[].fields.quantity2",
+            "sqlType": "decimal(28, 4)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": "decimal-string"
+          },
+          {
+            "column": "Property",
+            "jsonPath": "purchaseOrderLines[].fields.property",
+            "sqlType": "nvarchar(50)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "Property2",
+            "jsonPath": "purchaseOrderLines[].fields.property2",
+            "sqlType": "nvarchar(50)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "ParentID",
+            "jsonPath": "purchaseOrderLines[].fields.parentId",
+            "sqlType": "varchar(50)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          }
+        ]
+      }
+    },
+    "inbound-requests": {
+      "header": {
+        "table": "IV_InboundRequestTbl",
+        "sourceLine": 11370,
+        "fields": [
+          {
+            "column": "DocumentID",
+            "jsonPath": "document.inboundRequestHeader.documentId",
+            "sqlType": "varchar(50)",
+            "listJsonPath": "rows[].inboundRequestHeader.documentId",
+            "nullable": false,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "DocumentDate",
+            "jsonPath": "document.inboundRequestHeader.documentDate",
+            "sqlType": "datetime",
+            "listJsonPath": "rows[].inboundRequestHeader.documentDate",
+            "nullable": false,
+            "jsonType": "string",
+            "format": "sql-datetime-without-timezone"
+          },
+          {
+            "column": "OrderNumber",
+            "jsonPath": "document.inboundRequestHeader.orderNumber",
+            "sqlType": "nvarchar(50)",
+            "listJsonPath": "rows[].inboundRequestHeader.orderNumber",
+            "nullable": false,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "BranchID",
+            "jsonPath": "document.inboundRequestHeader.branchId",
+            "sqlType": "varchar(50)",
+            "listJsonPath": "rows[].inboundRequestHeader.branchId",
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "InvoiceNo",
+            "jsonPath": "document.inboundRequestHeader.invoiceNo",
+            "sqlType": "nvarchar(50)",
+            "listJsonPath": "rows[].inboundRequestHeader.invoiceNo",
+            "nullable": false,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "DeclarationNumber",
+            "jsonPath": "document.inboundRequestHeader.declarationNumber",
+            "sqlType": "varchar(50)",
+            "listJsonPath": "rows[].inboundRequestHeader.declarationNumber",
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "DeparturePoint",
+            "jsonPath": "document.inboundRequestHeader.departurePoint",
+            "sqlType": "nvarchar(100)",
+            "listJsonPath": "rows[].inboundRequestHeader.departurePoint",
+            "nullable": false,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "DestinationPoint",
+            "jsonPath": "document.inboundRequestHeader.destinationPoint",
+            "sqlType": "nvarchar(100)",
+            "listJsonPath": "rows[].inboundRequestHeader.destinationPoint",
+            "nullable": false,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "IsRain",
+            "jsonPath": "document.inboundRequestHeader.isRain",
+            "sqlType": "bit",
+            "listJsonPath": "rows[].inboundRequestHeader.isRain",
+            "nullable": true,
+            "jsonType": "boolean",
+            "format": null
+          },
+          {
+            "column": "OrderTypeID",
+            "jsonPath": "document.inboundRequestHeader.orderTypeId",
+            "sqlType": "nvarchar(50)",
+            "listJsonPath": "rows[].inboundRequestHeader.orderTypeId",
+            "nullable": false,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "ObjectID",
+            "jsonPath": "document.inboundRequestHeader.objectId",
+            "sqlType": "varchar(50)",
+            "listJsonPath": "rows[].inboundRequestHeader.objectId",
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "TotalPalletQuantityByDocument",
+            "jsonPath": "document.inboundRequestHeader.totalPalletQuantityByDocument",
+            "sqlType": "decimal(18, 0)",
+            "listJsonPath": "rows[].inboundRequestHeader.totalPalletQuantityByDocument",
+            "nullable": true,
+            "jsonType": "string",
+            "format": "decimal-string"
+          },
+          {
+            "column": "TotalBarrelQuantityByDocument",
+            "jsonPath": "document.inboundRequestHeader.totalBarrelQuantityByDocument",
+            "sqlType": "decimal(18, 0)",
+            "listJsonPath": "rows[].inboundRequestHeader.totalBarrelQuantityByDocument",
+            "nullable": true,
+            "jsonType": "string",
+            "format": "decimal-string"
+          },
+          {
+            "column": "TotalPalletQuantityByReal",
+            "jsonPath": "document.inboundRequestHeader.totalPalletQuantityByReal",
+            "sqlType": "decimal(18, 0)",
+            "listJsonPath": "rows[].inboundRequestHeader.totalPalletQuantityByReal",
+            "nullable": true,
+            "jsonType": "string",
+            "format": "decimal-string"
+          },
+          {
+            "column": "TotalBarrelQuantityByReal",
+            "jsonPath": "document.inboundRequestHeader.totalBarrelQuantityByReal",
+            "sqlType": "decimal(18, 0)",
+            "listJsonPath": "rows[].inboundRequestHeader.totalBarrelQuantityByReal",
+            "nullable": true,
+            "jsonType": "string",
+            "format": "decimal-string"
+          },
+          {
+            "column": "ExcessPackageQuantity",
+            "jsonPath": "document.inboundRequestHeader.excessPackageQuantity",
+            "sqlType": "decimal(18, 0)",
+            "listJsonPath": "rows[].inboundRequestHeader.excessPackageQuantity",
+            "nullable": true,
+            "jsonType": "string",
+            "format": "decimal-string"
+          },
+          {
+            "column": "LackOfPackageQuantity",
+            "jsonPath": "document.inboundRequestHeader.lackOfPackageQuantity",
+            "sqlType": "decimal(18, 0)",
+            "listJsonPath": "rows[].inboundRequestHeader.lackOfPackageQuantity",
+            "nullable": true,
+            "jsonType": "string",
+            "format": "decimal-string"
+          },
+          {
+            "column": "DamagedPackageQuantity",
+            "jsonPath": "document.inboundRequestHeader.damagedPackageQuantity",
+            "sqlType": "decimal(18, 0)",
+            "listJsonPath": "rows[].inboundRequestHeader.damagedPackageQuantity",
+            "nullable": true,
+            "jsonType": "string",
+            "format": "decimal-string"
+          },
+          {
+            "column": "PackageTypeID",
+            "jsonPath": "document.inboundRequestHeader.packageTypeId",
+            "sqlType": "nvarchar(50)",
+            "listJsonPath": "rows[].inboundRequestHeader.packageTypeId",
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "IsDamageOutsidePackage",
+            "jsonPath": "document.inboundRequestHeader.isDamageOutsidePackage",
+            "sqlType": "bit",
+            "listJsonPath": "rows[].inboundRequestHeader.isDamageOutsidePackage",
+            "nullable": true,
+            "jsonType": "boolean",
+            "format": null
+          },
+          {
+            "column": "DamageDescription",
+            "jsonPath": "document.inboundRequestHeader.damageDescription",
+            "sqlType": "nvarchar(500)",
+            "listJsonPath": "rows[].inboundRequestHeader.damageDescription",
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "DamageInsideStatusID",
+            "jsonPath": "document.inboundRequestHeader.damageInsideStatusId",
+            "sqlType": "nvarchar(50)",
+            "listJsonPath": "rows[].inboundRequestHeader.damageInsideStatusId",
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "LocationDamageDetectedID",
+            "jsonPath": "document.inboundRequestHeader.locationDamageDetectedId",
+            "sqlType": "nvarchar(50)",
+            "listJsonPath": "rows[].inboundRequestHeader.locationDamageDetectedId",
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "LocationDamageDescription",
+            "jsonPath": "document.inboundRequestHeader.locationDamageDescription",
+            "sqlType": "nvarchar(500)",
+            "listJsonPath": "rows[].inboundRequestHeader.locationDamageDescription",
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "ResultDesciption",
+            "jsonPath": "document.inboundRequestHeader.resultDesciption",
+            "sqlType": "nvarchar(max)",
+            "listJsonPath": "rows[].inboundRequestHeader.resultDesciption",
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "TotalQuantityInboundResult",
+            "jsonPath": "document.inboundRequestHeader.totalQuantityInboundResult",
+            "sqlType": "decimal(18, 0)",
+            "listJsonPath": "rows[].inboundRequestHeader.totalQuantityInboundResult",
+            "nullable": true,
+            "jsonType": "string",
+            "format": "decimal-string"
+          },
+          {
+            "column": "GoodAwaitingInboundResult",
+            "jsonPath": "document.inboundRequestHeader.goodAwaitingInboundResult",
+            "sqlType": "decimal(18, 0)",
+            "listJsonPath": "rows[].inboundRequestHeader.goodAwaitingInboundResult",
+            "nullable": true,
+            "jsonType": "string",
+            "format": "decimal-string"
+          },
+          {
+            "column": "ResultNote",
+            "jsonPath": "document.inboundRequestHeader.resultNote",
+            "sqlType": "nvarchar(500)",
+            "listJsonPath": "rows[].inboundRequestHeader.resultNote",
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "DatetimeRecorded",
+            "jsonPath": "document.inboundRequestHeader.datetimeRecorded",
+            "sqlType": "datetime",
+            "listJsonPath": "rows[].inboundRequestHeader.datetimeRecorded",
+            "nullable": true,
+            "jsonType": "string",
+            "format": "sql-datetime-without-timezone"
+          },
+          {
+            "column": "StatusID",
+            "jsonPath": "document.inboundRequestHeader.statusId",
+            "sqlType": "int",
+            "listJsonPath": "rows[].inboundRequestHeader.statusId",
+            "nullable": false,
+            "jsonType": "integer",
+            "format": null
+          },
+          {
+            "column": "CurrencyID",
+            "jsonPath": "document.inboundRequestHeader.currencyId",
+            "sqlType": "varchar(3)",
+            "listJsonPath": "rows[].inboundRequestHeader.currencyId",
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "RateExchange",
+            "jsonPath": "document.inboundRequestHeader.rateExchange",
+            "sqlType": "decimal(28, 10)",
+            "listJsonPath": "rows[].inboundRequestHeader.rateExchange",
+            "nullable": true,
+            "jsonType": "string",
+            "format": "decimal-string"
+          },
+          {
+            "column": "ImageURL",
+            "jsonPath": "document.inboundRequestHeader.imageUrl",
+            "sqlType": "varchar(255)",
+            "listJsonPath": "rows[].inboundRequestHeader.imageUrl",
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "BBKCUrl",
+            "jsonPath": "document.inboundRequestHeader.bbkcUrl",
+            "sqlType": "varchar(255)",
+            "listJsonPath": "rows[].inboundRequestHeader.bbkcUrl",
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "Notes",
+            "jsonPath": "document.inboundRequestHeader.notes",
+            "sqlType": "nvarchar(500)",
+            "listJsonPath": "rows[].inboundRequestHeader.notes",
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "SendTo",
+            "jsonPath": "document.inboundRequestHeader.sendTo",
+            "sqlType": "nvarchar(max)",
+            "listJsonPath": "rows[].inboundRequestHeader.sendTo",
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "QRPrintType",
+            "jsonPath": "document.inboundRequestHeader.qrPrintType",
+            "sqlType": "varchar(10)",
+            "listJsonPath": "rows[].inboundRequestHeader.qrPrintType",
+            "nullable": false,
+            "jsonType": "string",
+            "format": null
+          }
+        ]
+      },
+      "lines": {
+        "table": "IV_InboundRequestDetailsTbl",
+        "sourceLine": 11005,
+        "fields": [
+          {
+            "column": "UserAutoID",
+            "jsonPath": "inboundRequestLines[].fields.userAutoId",
+            "sqlType": "varchar(50)",
+            "listJsonPath": null,
+            "nullable": false,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "DocumentID",
+            "jsonPath": "inboundRequestLines[].fields.documentId",
+            "sqlType": "varchar(50)",
+            "listJsonPath": null,
+            "nullable": false,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "ContractID",
+            "jsonPath": "inboundRequestLines[].fields.contractId",
+            "sqlType": "nvarchar(100)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "ItemID",
+            "jsonPath": "inboundRequestLines[].fields.itemId",
+            "sqlType": "varchar(50)",
+            "listJsonPath": null,
+            "nullable": false,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "HangSX",
+            "jsonPath": "inboundRequestLines[].fields.hangSX",
+            "sqlType": "nvarchar(100)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "UnitFactor",
+            "jsonPath": "inboundRequestLines[].fields.unitFactor",
+            "sqlType": "float",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "number",
+            "format": null
+          },
+          {
+            "column": "Unit2",
+            "jsonPath": "inboundRequestLines[].fields.unit2",
+            "sqlType": "nvarchar(50)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "Additional",
+            "jsonPath": "inboundRequestLines[].fields.additional",
+            "sqlType": "bit",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "boolean",
+            "format": null
+          },
+          {
+            "column": "LotNumberByDocument",
+            "jsonPath": "inboundRequestLines[].fields.lotNumberByDocument",
+            "sqlType": "nvarchar(50)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "SetQuantityByDocument",
+            "jsonPath": "inboundRequestLines[].fields.setQuantityByDocument",
+            "sqlType": "decimal(18, 0)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": "decimal-string"
+          },
+          {
+            "column": "BarrelQuantityByDocument",
+            "jsonPath": "inboundRequestLines[].fields.barrelQuantityByDocument",
+            "sqlType": "decimal(18, 0)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": "decimal-string"
+          },
+          {
+            "column": "ExpireDateByDocument",
+            "jsonPath": "inboundRequestLines[].fields.expireDateByDocument",
+            "sqlType": "datetime",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": "sql-datetime-without-timezone"
+          },
+          {
+            "column": "LotNumberByReal",
+            "jsonPath": "inboundRequestLines[].fields.lotNumberByReal",
+            "sqlType": "nvarchar(50)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "SetQuantityByReal",
+            "jsonPath": "inboundRequestLines[].fields.setQuantityByReal",
+            "sqlType": "decimal(18, 0)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": "decimal-string"
+          },
+          {
+            "column": "BarrelQuantityByReal",
+            "jsonPath": "inboundRequestLines[].fields.barrelQuantityByReal",
+            "sqlType": "decimal(18, 0)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": "decimal-string"
+          },
+          {
+            "column": "ExpireDateByReal",
+            "jsonPath": "inboundRequestLines[].fields.expireDateByReal",
+            "sqlType": "datetime",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": "sql-datetime-without-timezone"
+          },
+          {
+            "column": "SourceAmount",
+            "jsonPath": "inboundRequestLines[].fields.sourceAmount",
+            "sqlType": "decimal(18, 0)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": "decimal-string"
+          },
+          {
+            "column": "UnitPrice",
+            "jsonPath": "inboundRequestLines[].fields.unitPrice",
+            "sqlType": "decimal(18, 0)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": "decimal-string"
+          },
+          {
+            "column": "Amount",
+            "jsonPath": "inboundRequestLines[].fields.amount",
+            "sqlType": "decimal(18, 0)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": "decimal-string"
+          },
+          {
+            "column": "RandomTestQuantity",
+            "jsonPath": "inboundRequestLines[].fields.randomTestQuantity",
+            "sqlType": "decimal(18, 0)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": "decimal-string"
+          },
+          {
+            "column": "TestStatus",
+            "jsonPath": "inboundRequestLines[].fields.testStatus",
+            "sqlType": "nvarchar(100)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "NoPalletNote",
+            "jsonPath": "inboundRequestLines[].fields.noPalletNote",
+            "sqlType": "nvarchar(500)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "PalletNote",
+            "jsonPath": "inboundRequestLines[].fields.palletNote",
+            "sqlType": "nvarchar(500)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "CheckerNote",
+            "jsonPath": "inboundRequestLines[].fields.checkerNote",
+            "sqlType": "nvarchar(500)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "ItemCode",
+            "jsonPath": "inboundRequestLines[].fields.itemCode",
+            "sqlType": "nvarchar(50)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          }
+        ]
+      }
+    },
+    "purchase-requests": {
+      "header": {
+        "table": "AP_PurchaseRequestTbl",
+        "sourceLine": 23221,
+        "fields": [
+          {
+            "column": "PurchaseRequestID",
+            "jsonPath": "data.sourceFields.header.purchaseRequestId",
+            "sqlType": "nvarchar(50)",
+            "listJsonPath": "data.rows[].fields.purchaseRequestId",
+            "nullable": false,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "PurchaseDate",
+            "jsonPath": "data.sourceFields.header.purchaseDate",
+            "sqlType": "datetime",
+            "listJsonPath": "data.rows[].fields.purchaseDate",
+            "nullable": true,
+            "jsonType": "string",
+            "format": "sql-datetime-without-timezone"
+          },
+          {
+            "column": "PurposeID",
+            "jsonPath": "data.sourceFields.header.purposeId",
+            "sqlType": "int",
+            "listJsonPath": "data.rows[].fields.purposeId",
+            "nullable": true,
+            "jsonType": "integer",
+            "format": null
+          },
+          {
+            "column": "PersonSuggest",
+            "jsonPath": "data.sourceFields.header.personSuggest",
+            "sqlType": "nvarchar(500)",
+            "listJsonPath": "data.rows[].fields.personSuggest",
+            "nullable": false,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "Department",
+            "jsonPath": "data.sourceFields.header.department",
+            "sqlType": "nvarchar(100)",
+            "listJsonPath": "data.rows[].fields.department",
+            "nullable": false,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "PurposeDescOrClient",
+            "jsonPath": "data.sourceFields.header.purposeDescOrClient",
+            "sqlType": "nvarchar(max)",
+            "listJsonPath": "data.rows[].fields.purposeDescOrClient",
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "Price",
+            "jsonPath": "data.sourceFields.header.price",
+            "sqlType": "decimal(18, 2)",
+            "listJsonPath": "data.rows[].fields.price",
+            "nullable": true,
+            "jsonType": "string",
+            "format": "decimal-string"
+          },
+          {
+            "column": "Notes",
+            "jsonPath": "data.sourceFields.header.notes",
+            "sqlType": "nvarchar(max)",
+            "listJsonPath": "data.rows[].fields.notes",
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "StatusID",
+            "jsonPath": "data.sourceFields.header.statusId",
+            "sqlType": "int",
+            "listJsonPath": "data.rows[].fields.statusId",
+            "nullable": false,
+            "jsonType": "integer",
+            "format": null
+          },
+          {
+            "column": "isLock",
+            "jsonPath": "data.sourceFields.header.isLock",
+            "sqlType": "bit",
+            "listJsonPath": "data.rows[].fields.isLock",
+            "nullable": true,
+            "jsonType": "boolean",
+            "format": null
+          },
+          {
+            "column": "CurrencyID",
+            "jsonPath": "data.sourceFields.header.currencyId",
+            "sqlType": "varchar(3)",
+            "listJsonPath": "data.rows[].fields.currencyId",
+            "nullable": false,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "ObjectID",
+            "jsonPath": "data.sourceFields.header.objectId",
+            "sqlType": "varchar(100)",
+            "listJsonPath": "data.rows[].fields.objectId",
+            "nullable": false,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "RateExchange",
+            "jsonPath": "data.sourceFields.header.rateExchange",
+            "sqlType": "float",
+            "listJsonPath": "data.rows[].fields.rateExchange",
+            "nullable": false,
+            "jsonType": "number",
+            "format": null
+          },
+          {
+            "column": "BranchID",
+            "jsonPath": "data.sourceFields.header.branchId",
+            "sqlType": "varchar(50)",
+            "listJsonPath": "data.rows[].fields.branchId",
+            "nullable": false,
+            "jsonType": "string",
+            "format": null
+          }
+        ]
+      },
+      "lines": {
+        "table": "AP_PurchaseRequestDetailTbl",
+        "sourceLine": 23200,
+        "fields": [
+          {
+            "column": "UserAutoID",
+            "jsonPath": "data.sourceFields.lines[].userAutoId",
+            "sqlType": "varchar(50)",
+            "listJsonPath": null,
+            "nullable": false,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "ItemID",
+            "jsonPath": "data.sourceFields.lines[].itemId",
+            "sqlType": "varchar(50)",
+            "listJsonPath": null,
+            "nullable": false,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "Budget",
+            "jsonPath": "data.sourceFields.lines[].budget",
+            "sqlType": "decimal(18, 0)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": "decimal-string"
+          },
+          {
+            "column": "TimeRequired",
+            "jsonPath": "data.sourceFields.lines[].timeRequired",
+            "sqlType": "nvarchar(200)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "Quantity",
+            "jsonPath": "data.sourceFields.lines[].quantity",
+            "sqlType": "decimal(18, 0)",
+            "listJsonPath": null,
+            "nullable": false,
+            "jsonType": "string",
+            "format": "decimal-string"
+          },
+          {
+            "column": "UnitPrice",
+            "jsonPath": "data.sourceFields.lines[].unitPrice",
+            "sqlType": "decimal(18, 0)",
+            "listJsonPath": null,
+            "nullable": false,
+            "jsonType": "string",
+            "format": "decimal-string"
+          },
+          {
+            "column": "TotalPrice",
+            "jsonPath": "data.sourceFields.lines[].totalPrice",
+            "sqlType": "decimal(18, 0)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": "decimal-string"
+          },
+          {
+            "column": "Model",
+            "jsonPath": "data.sourceFields.lines[].model",
+            "sqlType": "varchar(50)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          },
+          {
+            "column": "PurchaseRequestID",
+            "jsonPath": "data.sourceFields.lines[].purchaseRequestId",
+            "sqlType": "nvarchar(50)",
+            "listJsonPath": null,
+            "nullable": true,
+            "jsonType": "string",
+            "format": null
+          }
+        ]
+      }
+    }
+  }
+}

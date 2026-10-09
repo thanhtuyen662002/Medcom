@@ -39,7 +39,7 @@ public sealed class SqlDocumentBranchScopeTests
                 ("Row",typeof(string)),("Item",typeof(string)),("Q1",typeof(string)),("Q2",typeof(string)),("Q3",typeof(string)),("Q4",typeof(string)),("Name",typeof(string)),("StatusRows",typeof(long)));
             for(var i=0;i<Math.Min(count,size+1);i++)rows.Rows.Add("DOC",new DateTime(2026,10,1),"BR",1,DBNull.Value,$"ROW{i}","ITEM",
                 "999999999999999999999999.1234",DBNull.Value,DBNull.Value,DBNull.Value,"Synthetic status",1L);
-            return rows.CreateDataReader();
+            return FullDocumentRows.Complete(rows,kind,true).CreateDataReader();
         }
         var service=new SqlDocumentReader(company,()=>new DisplayConnection(Read),(_,_)=>Task.FromResult<LegacyUser?>(user));
         var result=await service.ReadDetailAsync(identity,kind,new("DOC",1,size),default);
@@ -81,7 +81,7 @@ public sealed class SqlDocumentBranchScopeTests
                 ("Row",typeof(string)),("Item",typeof(string)),("Q1",typeof(string)),("Q2",typeof(string)),("Q3",typeof(string)),("Q4",typeof(string)),("Name",typeof(string)),("StatusRows",typeof(long)));
             for(var i=0;i<Math.Min(count,size+1);i++)rows.Rows.Add("DOC",new DateTime(2026,10,1),"BR",1,DBNull.Value,$"ROW{i}",i==0?itemId:"ITEM",
                 "999999999999999999999999.1234",DBNull.Value,DBNull.Value,DBNull.Value,"Synthetic status",1L);
-            return rows.CreateDataReader();
+            return FullDocumentRows.Complete(rows,kind,true).CreateDataReader();
         }
         var service=new SqlDocumentReader(company,()=>new DisplayConnection(Read),(_,_)=>Task.FromResult<LegacyUser?>(user));
         var result=await service.ReadDetailAsync(identity,kind,new("DOC",1,size),default);
@@ -151,7 +151,7 @@ public sealed class SqlDocumentBranchScopeTests
                 ("Row",typeof(string)),("Item",typeof(string)),("Q1",typeof(string)),("Q2",typeof(string)),("Q3",typeof(string)),("Q4",typeof(string)),("Name",typeof(string)),("StatusRows",typeof(long)));
             for(var i=0;i<Math.Min(count,size+1);i++)rows.Rows.Add("DOC",new DateTime(2026,10,1),"BR",1,DBNull.Value,i==0?lineId:lineId=="SAME"?"SAME":$"ROW{i}","ITEM",
                 "999999999999999999999999.1234",DBNull.Value,DBNull.Value,DBNull.Value,"Synthetic status",1L);
-            return rows.CreateDataReader();
+            return FullDocumentRows.Complete(rows,kind,true).CreateDataReader();
         }
         var service=new SqlDocumentReader(company,()=>new DisplayConnection(Read),(_,_)=>Task.FromResult<LegacyUser?>(user));
         var result=await service.ReadDetailAsync(identity,kind,new("DOC",1,size),default);

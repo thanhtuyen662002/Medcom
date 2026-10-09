@@ -1,0 +1,90 @@
+{
+  "admission": "24da7daa91db2fe5751b0e1260b68897795831e4",
+  "base": "3304766ab9d63329622b5bf18b6f1d6171405a94",
+  "pr": 122,
+  "files": [
+    {
+      "path": "src/backend/Medcom.Api/DocumentEndpoints.cs",
+      "sha256": "78c8c75dfc36158294a3b46b0c9015a8172d1ab9c0adaf1b15de35dc26dac76b"
+    },
+    {
+      "path": "src/backend/Medcom.Api/DocumentFieldCatalog.cs",
+      "sha256": "01f4a985dee06237d05ffcf276446a391733c82ca8070ebac59f6f8b0a669587"
+    },
+    {
+      "path": "src/backend/Medcom.Api/PurchaseRequestEndpoints.cs",
+      "sha256": "c81dba6d62796b74bada452088653521a77a2126ce947c1a62b556d81f1ba3c5"
+    },
+    {
+      "path": "src/backend/Medcom.Contracts/DocumentFieldContract.cs",
+      "sha256": "8b82fc356af86a86124cd1ddbb0da406b364c431153981a48ea8cf648b22c8d7"
+    },
+    {
+      "path": "src/backend/Medcom.Contracts/DocumentSourceFields.cs",
+      "sha256": "70ce6d75adc612d03278ac7eb8df1abfdf369f3de3bce1d592e7044ef720fdbb"
+    },
+    {
+      "path": "src/backend/Medcom.Contracts/Documents.cs",
+      "sha256": "0c3d8bbc69bfedcccd191eef5d8afa0a2dde9dc7fb8c613fe60b3bac8a5d8e50"
+    },
+    {
+      "path": "src/backend/Medcom.Contracts/PurchaseRequestWorkspace.cs",
+      "sha256": "d007742744a9100a32b22df35f42ed279da95f08428068873e8f0cf39b3082f3"
+    },
+    {
+      "path": "src/backend/Medcom.Infrastructure/DocumentSourceFieldReader.cs",
+      "sha256": "ea5beaa2f9a5ef81fc52806c7505f8e7d6c400d96c1de1937403a82e233bdb71"
+    },
+    {
+      "path": "src/backend/Medcom.Infrastructure/PurchaseRequests/SqlPurchaseRequestQueries.cs",
+      "sha256": "f9a11be21560879389ab5d31cad19322f8858610217e7972c7cad17a2339ca07"
+    },
+    {
+      "path": "src/backend/Medcom.Infrastructure/SqlDocumentReader.cs",
+      "sha256": "fb6c7570eb9b760d2e2a0f238999fd98ad9a91293ba6460ebf368aa3f4f54956"
+    },
+    {
+      "path": "tests/backend/Medcom.Api.Tests/DocumentFullFieldTests.cs",
+      "sha256": "695c838f75ec9c8e6be9e67ee44c64384cba7bcd56a9cbb78facf6f6de83f5e4"
+    },
+    {
+      "path": "tests/backend/Medcom.Api.Tests/FullDocumentRows.cs",
+      "sha256": "a918e3195cc00980f8de87b9e63346ff0201ee0d192ac53d3670861bd52b837c"
+    },
+    {
+      "path": "tests/backend/Medcom.Api.Tests/PurchaseRequestQueryTests.cs",
+      "sha256": "e7ae98aa56c6d5913385cddea69a1e08bf1e7c7a4e9e6ac9c05d8feecbb2212e"
+    },
+    {
+      "path": "tests/backend/Medcom.Api.Tests/SqlDocumentBranchScopeTests.cs",
+      "sha256": "2e19be2e9dc4e37cbd60f877a7ca79ee9447e7035b5975b94e92058cbfb4bb22"
+    }
+  ],
+  "test": {
+    "framework": ".NET 10.0.401 / Release / non-LegacyRuntime",
+    "counters": {
+      "total": "3067",
+      "executed": "3067",
+      "passed": "3067",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "trxFile": "I67-final-backend.trx",
+    "trxSha256": "f27622ae6d4a72dbd31264558758e89d968696b403ca70457a05daa6966fc2f1",
+    "newFullFieldCases": 30,
+    "hostedImplementationCI": "CHECK_EXACT_IMPLEMENTATION_HEAD_AND_BASE_IN_PR_122",
+    "nativeSqlDllRuntime": "NOT_RUN",
+    "deployment": "NOT_RUN"
+  }
+}

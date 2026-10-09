@@ -4,7 +4,7 @@ This source review reconciles the owner-supplied backend handover with the front
 
 ## Registered routes
 
-`src/backend/Medcom.Api/ApiHost.cs` maps the following **25 method/path pairs** through `AuthEndpoints.cs`, `DocumentEndpoints.cs`, `PurchaseRequestEndpoints.cs` and `InboundDraftEndpoints.cs`. A registered path is not a grant or an available operation.
+`src/backend/Medcom.Api/ApiHost.cs` originally mapped the 25 method/path pairs below through `AuthEndpoints.cs`, `DocumentEndpoints.cs`, `PurchaseRequestEndpoints.cs` and `InboundDraftEndpoints.cs`. I67 adds seven read-only mappings, for **32 method/path pairs**. A registered path is not a grant or an available operation.
 
 | Method | Path | Source behavior / admission |
 | --- | --- | --- |
@@ -21,6 +21,13 @@ This source review reconciles the owner-supplied backend handover with the front
 | GET | `/api/documents/purchase-orders/detail` | Independently paged PO lines. |
 | GET | `/api/documents/inbound-requests` | Authorized inbound list through the configured reader. |
 | GET | `/api/documents/inbound-requests/detail` | Independently paged inbound lines; separate from draft commands. |
+| GET | `/api/documents/field-contract` | Current session and module read capability; `kind` selects the static version 2 field contract. |
+| GET | `/api/v2/documents/purchase-orders` | Complete 19-field source headers; same authorization and list pagination. |
+| GET | `/api/v2/documents/purchase-orders/detail` | Complete source header and 12-field lines on the requested page. |
+| GET | `/api/v2/documents/inbound-requests` | Complete 37-field source headers; same authorization and list pagination. |
+| GET | `/api/v2/documents/inbound-requests/detail` | Complete source header and 25-field lines on the requested page. |
+| GET | `/api/v2/purchase-requests` | Scoped complete 14-field source headers. |
+| GET | `/api/v2/purchase-requests/detail` | Scoped complete 14-field header/9-field lines alongside the unchanged command aggregate/token/access. |
 | GET | `/api/purchase-requests/workspace` | Purchase workspace; boundary forces `writeAvailable=false`. |
 | GET | `/api/purchase-requests` | Purchase-request list, distinct from purchase orders. |
 | GET | `/api/purchase-requests/detail` | Full purchase read and currently resolved `commandAccess`. |
@@ -41,6 +48,8 @@ There are no registered Create, master Delete, transfer/PM-return business, QR b
 ## Frontend integration
 
 Use the same-origin Next BFF, `/api/erp/<backend path>`. Its allowlist, method checks, destination validation and cookie filtering are defined in `apps/medcom-sites/lib/erp/{proxy-policy,proxy}.ts`. `MEDCOM_API_ORIGIN` and `MEDCOM_PUBLIC_ORIGIN` are server-only HTTPS origins; ordinary deployments require validated DNS names and trusted certificates. The explicit paired localhost HTTPS mode belongs to the separately tested local relay. No browser SQL/DLL configuration, TLS bypass or open proxy is admitted.
+
+The existing unversioned responses retain their wire shape for strict frontend schemas. For all source fields, adopt the six `/api/v2` reads and the [version 2 field mapping](document-field-contract.json), described in [the full field handoff](FULL_DOCUMENT_FIELDS_20261009.md). The separately owned FE/BFF must explicitly permit these new GET routes and parse their full-field extensions; its current allowlist does not automatically include them. There is no version 2 write route.
 
 For POST, obtain `/api/auth/csrf`, retain the companion cookie and send `X-CSRF-TOKEN`. The BFF validates the browser Origin against the public FE origin; for purchase/inbound commands it sends the fixed backend Origin. ERP cookies use `__Host-`, Secure, HttpOnly, Path `/` and SameSite Strict. Current session, capability and branch checks remain authoritative. No API CORS integration is added by this refresh.
 
