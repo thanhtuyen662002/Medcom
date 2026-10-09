@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I65",
+  "role": "direct_interactive",
+  "owner": "Mika root integration",
+  "run_id": "I65-20261009-qualified-item-presentation",
+  "base_sha": "cbb1c8acf718c251944ba132c943ac54631a351e",
+  "work_branch": "codex/g45-item-identity-ui-i65-20261009",
+  "claim_branch": "medcom-claims/g45/direct/I65",
+  "scope": [
+    "apps/medcom-sites/components/erp/purchase-request-screen.tsx",
+    "apps/medcom-sites/components/erp/mobile-request.tsx",
+    "apps/medcom-sites/components/erp/mobile-request-lines.tsx",
+    "apps/medcom-sites/components/erp/inbound-request-readonly.tsx",
+    "apps/medcom-sites/components/erp/workspace.tsx",
+    "apps/medcom-sites/lib/erp/item-display.ts",
+    "apps/medcom-sites/tests/item-display-context.test.mjs",
+    "docs/execution/checkpoints/I65_ITEM_IDENTITY_PRESENTATION.md",
+    "docs/execution/direct-runs/I65.json"
+  ],
+  "purpose": "Wire existing qualified item-display metadata into current purchase, inbound read-only and order detail surfaces using the existing shared four-field identity component.",
+  "production_accepted": false,
+  "runtime_activation_authorized": false,
+  "constraints": [
+    "Root sole publisher; preserve marker, independent review and exact-head browser CI.",
+    "Use existing qualified ItemIdentity and binding rules. Display metadata remains a separate read-only prop; never add it to command snapshots, DTOs, serialization or business lookup choices.",
+    "Verify document/branch/token/status/lock/line/item binding and current presentation rights; stale receipt-before-fresh-read metadata must not be shown as current.",
+    "Preserve raw IDs, decimal/NULL data, full line sets and all command/guard/custody behavior. Missing metadata uses explicit unavailable labels, never inferred names or manufacturer codes.",
+    "Inbound editable bridge is outside this slice unless independently admitted. No backend, decoder acceptance, SQL, permissions, dependencies or writer changes.",
+    "Actual component and lifecycle regressions required; no public private data/screenshots."
+  ]
+}
