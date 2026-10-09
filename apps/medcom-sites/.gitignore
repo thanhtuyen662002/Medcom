@@ -48,6 +48,7 @@ next-env.d.ts
 *.tsbuildinfo
 /examples/
 !.env.example
+!.env.production
 
 /.test-runtime/
 /artifacts/

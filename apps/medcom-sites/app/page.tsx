@@ -1,2 +1,5 @@
-import Workspace from "@/components/erp/workspace";
-export default function Page() { return <Workspace />; }
+import { MedcomApp } from "@/components/untitledui/medcom-app";
+
+export default function Page() {
+  return <MedcomApp />;
+}

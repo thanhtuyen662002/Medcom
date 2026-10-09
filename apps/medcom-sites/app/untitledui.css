@@ -1,0 +1,165 @@
+/* Untitled UI Theme System & Utility Classes for Medcom ERP */
+:root {
+  /* UNTITLED UI BRAND (Default Violet/Purple) */
+  --uui-brand-25: #FCFAFF;
+  --uui-brand-50: #F9F5FF;
+  --uui-brand-100: #F4EBFF;
+  --uui-brand-200: #E9D7FE;
+  --uui-brand-300: #D6BBFB;
+  --uui-brand-400: #B692F6;
+  --uui-brand-500: #9E77ED;
+  --uui-brand-600: #7F56D9;
+  --uui-brand-700: #6941C6;
+  --uui-brand-800: #53389E;
+  --uui-brand-900: #42307D;
+  --uui-brand-950: #2C1C5F;
+
+  /* MEDICAL TEAL/BLUE PALETTE */
+  --uui-med-50: #EFF8FF;
+  --uui-med-100: #D1E9FF;
+  --uui-med-200: #B2DDFF;
+  --uui-med-500: #2E90FA;
+  --uui-med-600: #1570EF;
+  --uui-med-700: #175CD3;
+  --uui-med-800: #1849A9;
+
+  /* NEUTRALS / GRAYS */
+  --uui-gray-25: #FCFCFD;
+  --uui-gray-50: #F9FAFB;
+  --uui-gray-100: #F2F4F7;
+  --uui-gray-200: #EAECF0;
+  --uui-gray-300: #D0D5DD;
+  --uui-gray-400: #98A2B3;
+  --uui-gray-500: #667085;
+  --uui-gray-600: #475467;
+  --uui-gray-700: #344054;
+  --uui-gray-800: #1D2939;
+  --uui-gray-900: #0C111D;
+
+  /* STATUS COLORS */
+  --uui-success-50: #ECFDF3;
+  --uui-success-100: #D1FADF;
+  --uui-success-500: #12B76A;
+  --uui-success-600: #039855;
+  --uui-success-700: #027A48;
+
+  --uui-warning-50: #FFFAEB;
+  --uui-warning-100: #FEF0C7;
+  --uui-warning-500: #F79009;
+  --uui-warning-600: #DC6803;
+  --uui-warning-700: #B54708;
+
+  --uui-error-50: #FEF3F2;
+  --uui-error-100: #FEE4E2;
+  --uui-error-500: #F04438;
+  --uui-error-600: #D92D20;
+  --uui-error-700: #B42318;
+
+  /* ELEVATION / SHADOWS */
+  --uui-shadow-xs: 0px 1px 2px rgba(16, 24, 40, 0.05);
+  --uui-shadow-sm: 0px 1px 3px rgba(16, 24, 40, 0.1), 0px 1px 2px -1px rgba(16, 24, 40, 0.1);
+  --uui-shadow-md: 0px 4px 8px -2px rgba(16, 24, 40, 0.1), 0px 2px 4px -2px rgba(16, 24, 40, 0.06);
+  --uui-shadow-lg: 0px 12px 16px -4px rgba(16, 24, 40, 0.08), 0px 4px 6px -2px rgba(16, 24, 40, 0.03);
+  --uui-shadow-xl: 0px 20px 24px -4px rgba(16, 24, 40, 0.08), 0px 8px 8px -4px rgba(16, 24, 40, 0.03);
+  --uui-shadow-skeuo: 0px 0px 0px 1px rgba(16, 24, 40, 0.14) inset, 0px -2px 0px 0px rgba(16, 24, 40, 0.05) inset;
+}
+
+/* DARK MODE OVERRIDES */
+.dark, [data-theme="dark"] {
+  --uui-gray-25: #0C111D;
+  --uui-gray-50: #101828;
+  --uui-gray-100: #1D2939;
+  --uui-gray-200: #344054;
+  --uui-gray-300: #475467;
+  --uui-gray-400: #667085;
+  --uui-gray-500: #98A2B3;
+  --uui-gray-600: #D0D5DD;
+  --uui-gray-700: #EAECF0;
+  --uui-gray-800: #F2F4F7;
+  --uui-gray-900: #F9FAFB;
+
+  --uui-brand-50: #19142E;
+  --uui-brand-100: #2C1C5F;
+  --uui-brand-200: #42307D;
+  --uui-brand-300: #53389E;
+  --uui-brand-600: #9E77ED;
+  --uui-brand-700: #B692F6;
+
+  --uui-shadow-xs: 0px 1px 2px rgba(0, 0, 0, 0.4);
+  --uui-shadow-sm: 0px 1px 3px rgba(0, 0, 0, 0.5);
+  --uui-shadow-md: 0px 4px 8px -2px rgba(0, 0, 0, 0.6);
+  --uui-shadow-lg: 0px 12px 16px -4px rgba(0, 0, 0, 0.7);
+  --uui-shadow-xl: 0px 20px 24px -4px rgba(0, 0, 0, 0.8);
+}
+
+/* SCANNER LASER ANIMATION */
+@keyframes uui-laser-sweep {
+  0% {
+    top: 5%;
+    opacity: 0.8;
+  }
+  50% {
+    top: 90%;
+    opacity: 1;
+  }
+  100% {
+    top: 5%;
+    opacity: 0.8;
+  }
+}
+
+.animate-uui-laser {
+  animation: uui-laser-sweep 2.2s ease-in-out infinite;
+}
+
+/* PULSE GLOW */
+@keyframes uui-pulse-ring {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(127, 86, 217, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(127, 86, 217, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(127, 86, 217, 0);
+  }
+}
+
+.animate-uui-pulse-glow {
+  animation: uui-pulse-ring 2s infinite;
+}
+
+/* SMOOTH BOTTOM SHEET DRAWER ENTRY */
+@keyframes uui-slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0.5;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-uui-slide-up {
+  animation: uui-slide-up 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* SMOOTH FADE IN */
+@keyframes uui-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-uui-fade-in {
+  animation: uui-fade-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
