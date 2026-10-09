@@ -235,3 +235,222 @@ test('standalone component renders labelled exact fields, unknowns and mobile gr
  assert.ok(!html.includes(line.lineId));assert.ok(!html.includes('UserAutoID'));assert.equal((html.match(/<dt/g)||[]).length,4);
  const stale=renderToStaticMarkup(React.createElement(p.ItemIdentity,{binding:{...b,documentId:'OTHER'},line,context}));assert.ok(!stale.includes('synthetic'));
 });
+
+// I65 exercises the production screen/component wiring with synthetic transport.
+// Only DOM primitives/focus are doubled; no browser or real ERP is contacted.
+let presentationComponents;
+async function loadPresentationComponents(){
+ if(presentationComponents)return presentationComponents;
+ const {readFile}=await import('node:fs/promises');
+ const {createRequire}=await import('node:module');
+ const app=process.cwd(),file=path.join(output,'i65-presentation.cjs');
+ const primitive={button:['Button','button'],input:['Input','input'],textarea:['Textarea','textarea'],badge:['Badge','div'],skeleton:['Skeleton','div'],checkbox:['Checkbox','input']};
+ await build({stdin:{contents:`export {MobileRequest} from './components/erp/mobile-request';export {MobileRequestLines} from './components/erp/mobile-request-lines';export {RemoteLookup} from './components/erp/lookup';export {PurchaseRequestScreen,FullPurchaseReadback} from './components/erp/purchase-request-screen';export {InboundRequestReadOnly} from './components/erp/inbound-request-readonly';export {DetailContent} from './components/erp/workspace';export {QueryClient,QueryClientProvider} from '@tanstack/react-query';export {createPurchaseCommandAdapter} from './lib/erp/purchase-request-command-adapter';`,resolveDir:app,loader:'tsx'},outfile:file,bundle:true,platform:'node',format:'cjs',packages:'external',alias:{'@':app},jsx:'automatic',logLevel:'warning',plugins:[{name:'i65-component-test-seams',setup(builder){
+  builder.onLoad({filter:/[\\/]components[\\/]erp[\\/](purchase-request-screen|workspace)\.tsx$/},async args=>({contents:(await readFile(args.path,'utf8'))+`\nexport {${args.path.endsWith('workspace.tsx')?'DetailContent':'FullPurchaseReadback'}};`,loader:'tsx',resolveDir:path.dirname(args.path)}));
+  builder.onResolve({filter:/^\.\/request-selection-focus$/},()=>({path:'focus',namespace:'i65-dom'}));
+  builder.onResolve({filter:/components\/ui\/(button|input|textarea|badge|skeleton|checkbox|empty|table|dialog|alert-dialog)$/},args=>({path:args.path.split('/').at(-1),namespace:'i65-dom'}));
+  builder.onLoad({filter:/.*/,namespace:'i65-dom'},args=>{
+   if(args.path==='focus')return{contents:'const noop=()=>{};const focus={open:noop,close:noop,cancel:noop,row:noop,detail:noop,list:noop};export const useRequestSelectionFocus=()=>focus;',loader:'js'};
+   let code;
+   if(primitive[args.path]){const[name,tag]=primitive[args.path];code=`export const ${name}=({variant,...props})=><${tag} {...props}/>;`;}
+   else if(args.path==='empty')code=['Empty','EmptyHeader','EmptyTitle','EmptyDescription'].map(name=>`export const ${name}=props=><div {...props}/>;`).join('');
+   else if(args.path==='table')code=Object.entries({Table:'table',TableHeader:'thead',TableHead:'th',TableBody:'tbody',TableRow:'tr',TableCell:'td'}).map(([name,tag])=>`export const ${name}=props=><${tag} {...props}/>;`).join('');
+   else if(args.path==='dialog')code=`const C=React.createContext(false);export const Dialog=({open,children})=><C.Provider value={open}>{children}</C.Provider>;export const DialogContent=({children})=>React.useContext(C)?<section role="dialog">{children}</section>:null;export const DialogHeader=({children})=><div>{children}</div>;export const DialogTitle=({children})=><h2>{children}</h2>;export const DialogDescription=({children})=><p>{children}</p>;`;
+   else code=`const C=React.createContext(false);export const AlertDialog=({open,children})=><C.Provider value={open}>{children}</C.Provider>;export const AlertDialogContent=({children})=>React.useContext(C)?<section role="alertdialog">{children}</section>:null;export const AlertDialogHeader=({children})=><div>{children}</div>;export const AlertDialogTitle=({children})=><h2>{children}</h2>;export const AlertDialogDescription=({children})=><p>{children}</p>;export const AlertDialogFooter=({children})=><div>{children}</div>;export const AlertDialogCancel=props=><button {...props}/>;export const AlertDialogAction=props=><button {...props}/>;`;
+   return{contents:`import React from 'react';${code}`,loader:'tsx',resolveDir:app};
+  });
+ }}]});
+ presentationComponents=createRequire(import.meta.url)(file);return presentationComponents;
+}
+const i65Access={scopeKey:scope,canRead:true,canEdit:true,canSaveDraft:true,canSubmit:true,available:true,existingOnly:true,canAddLines:false,canReconcile:true,branches:[],currencies:[],purposes:[],maxNotesLength:65536,maxPurposeLength:65536,maxLines:500,itemLookupId:'items',objectLookupId:'objects'};
+const i65IdentityLabels=['Mã hàng','Mã hàng NSX','Tên hàng / dịch vụ','ĐVT'];
+const i65Text=node=>typeof node==='string'?node:Array.isArray(node)?node.map(i65Text).join(' '):node?i65Text(node.children):'';
+const i65VisibleText=node=>typeof node==='string'?node:Array.isArray(node)?node.map(i65VisibleText).join(' '):node&&!node.props?.hidden&&!node.props?.inert&&node.props?.['aria-hidden']!==true?i65VisibleText(node.children):'';
+function i65Groups(root){return root.findAll(node=>node.type==='dl'&&node.props['aria-label']==='Thông tin mặt hàng');}
+async function i65Renderer(run){
+ const {createRequire}=await import('node:module'),require=createRequire(import.meta.url),{create,act}=require('react-test-renderer');
+ const previous=globalThis.IS_REACT_ACT_ENVIRONMENT;globalThis.IS_REACT_ACT_ENVIRONMENT=true;
+ const mounted=[];const mount=async node=>{let view;await act(async()=>{view=create(node);});mounted.push(view);return view;};
+ try{await run({act,mount});}finally{for(const view of mounted)await act(async()=>view.unmount());globalThis.IS_REACT_ACT_ENVIRONMENT=previous;}
+}
+function i65Values(group){return group.findAll(node=>node.type==='dd').map(node=>node.children.join('')).join(' ');}
+function i65GroupText(group){return group.findAll(node=>node.type==='dt'||node.type==='dd').map(node=>node.children.join('')).join(' ');}
+function i65AssertGroups(view,count=1,expected=['ITEM','NSX','  Bộ thử nghiệm 😀  ','base']){
+ const groups=i65Groups(view.root);assert.equal(groups.length,count);
+ for(const group of groups)for(const value of [...i65IdentityLabels,...expected])assert.ok(i65GroupText(group).includes(value),`Missing ${value}`);
+}
+
+test('I65 real purchase editor and full-read table render four fields without changing draft/command data',async()=>{
+ const ui=await loadPresentationComponents();
+ await i65Renderer(async({mount,act})=>{
+  const raw={...purchase(),itemDisplayContext:display()},before=structuredClone(raw),snapshot=p.commandPurchaseSnapshot(raw),calls=[];
+  const adapter={lookup:async()=>{throw Error('No item lookup permitted');},execute:async intent=>{calls.push(intent);return{kind:'unknown',intentId:intent.intentId,message:'Synthetic unknown'};},reconcile:async()=>{throw Error('No reconciliation expected');}};
+  const props={initial:snapshot,access:i65Access,adapter,itemDisplay:{scopeKey:scope,binding:p.purchaseItemDisplayBinding(raw),context:raw.itemDisplayContext}};
+  const view=await mount(React.createElement(ui.MobileRequest,props));i65AssertGroups(view);
+  await act(async()=>view.root.findByType('form').props.onSubmit({preventDefault(){}}));i65AssertGroups(view);
+  assert.equal(view.root.findAll(node=>node.type==='button'&&i65Text(node.children).includes('Gửi đề nghị')).length,1);
+  assert.deepEqual(raw,before);assert.deepEqual(snapshot,p.commandPurchaseSnapshot(purchase()));assert.equal(calls.length,0);
+  const full=await mount(React.createElement(ui.FullPurchaseReadback,{readback:raw}));i65AssertGroups(full);
+  const text=i65Text(full.toJSON());assert.ok(text.includes('999999999999999999'));assert.ok(text.includes('NULL'));assert.ok(text.includes('""'));
+  assert.ok(!text.includes(raw.document.lines[0].lineId));
+  const intent={intentId:'abcdef',documentId:'DOC',expectedVersion:raw.stateToken,action:'saveDraft',values:snapshot.values};
+  assert.equal(p.freezePurchaseCommand(raw,intent).json,p.freezePurchaseCommand(purchase(),intent).json);
+ });
+});
+
+test('I65 real editor rejects stale scope, document, state, branch, status, line and item context and respects masks',async()=>{
+ const ui=await loadPresentationComponents();await i65Renderer(async({mount,act})=>{
+  const raw={...purchase(),itemDisplayContext:display()},initial=p.commandPurchaseSnapshot(raw),adapter={lookup:async()=>{throw Error('No lookup');},execute:async()=>{},reconcile:async()=>{}};
+  const itemDisplay={scopeKey:scope,binding:p.purchaseItemDisplayBinding(raw),context:raw.itemDisplayContext};
+  const props={initial,adapter,access:i65Access,itemDisplay};const view=await mount(React.createElement(ui.MobileRequest,props));
+  for(const patch of [{scopeKey:'c'.repeat(64)},{binding:{...itemDisplay.binding,documentId:'OTHER'}},{binding:{...itemDisplay.binding,stateToken:'prs1.'+'c'.repeat(64)}},{binding:{...itemDisplay.binding,branchId:'OTHER'}},{binding:{...itemDisplay.binding,statusId:2}},{binding:{...itemDisplay.binding,isLocked:true}},{binding:{...itemDisplay.binding,page:1}},{context:display(binding(),[{lineId:'OTHER',itemId:'ITEM'}])},{context:display(binding(),[{lineId:lines(1)[0].lineId,itemId:'OTHER'}])},{context:null},{context:undefined}]){
+   await act(async()=>view.update(React.createElement(ui.MobileRequest,{...props,itemDisplay:{...itemDisplay,...patch}})));
+   const groups=i65Groups(view.root);assert.equal(groups.length,1);assert.ok(i65GroupText(groups[0]).includes('Chưa có thông tin'));assert.ok(!i65Values(groups[0]).includes('NSX'));
+  }
+  await act(async()=>view.update(React.createElement(ui.MobileRequest,{...props,presentationAllowed:false})));assert.equal(i65Groups(view.root).length,0);
+  await act(async()=>view.update(React.createElement(ui.MobileRequest,{...props,access:{...i65Access,canRead:false}})));assert.equal(i65Groups(view.root).length,0);
+  await act(async()=>view.update(React.createElement(ui.MobileRequest,props)));i65AssertGroups(view);
+  for(const state of ['missing','ambiguous','invalid','unavailable']){
+   const context=display(binding(),lines(1),{manufacturerItemCode:null,manufacturerCodeSource:'unavailable',itemName:null,unit:null,referenceState:state});
+   await act(async()=>view.update(React.createElement(ui.MobileRequest,{...props,itemDisplay:{...itemDisplay,context}})));
+   assert.equal((i65GroupText(i65Groups(view.root)[0]).match(/Chưa có thông tin/g)||[]).length,3);
+  }
+  const context=display(binding(),lines(1),{manufacturerItemCode:'',itemName:null,unit:''});
+  await act(async()=>view.update(React.createElement(ui.MobileRequest,{...props,itemDisplay:{...itemDisplay,context}})));
+  const text=i65GroupText(i65Groups(view.root)[0]);assert.equal((text.match(/Trống/g)||[]).length,2);assert.equal((text.match(/Chưa có thông tin/g)||[]).length,1);
+ });
+});
+
+test('I65 real adapter receipt drops old metadata until a fresh authorized read and metadata refresh stays clean',async()=>{
+ const ui=await loadPresentationComponents();await i65Renderer(async({mount,act})=>{
+  const raw={...purchase(),itemDisplayContext:display()},initial=p.commandPurchaseSnapshot(raw),nextToken='prs1.'+'c'.repeat(64);
+  const bridge=ui.createPurchaseCommandAdapter(scope,raw,async(_scope,route,body)=>{
+   const dto=JSON.parse(body),desired=p.freezePurchaseCommand(raw,{intentId:dto.idempotencyKey,action:'submit',documentId:'DOC',expectedVersion:raw.stateToken,values:initial.values}).desired;
+   assert.equal(route,'submit');assert.equal(body.includes('manufacturerItemCode'),false);
+   return{scopeKey:scope,data:{outcome:0,receipt:{actionId:'purchase-request.submit',idempotencyKey:dto.idempotencyKey,document:desired,stateToken:nextToken,allocatedLines:[]}}};
+  });
+  const states=[];const props={initial,access:i65Access,adapter:bridge.adapter,onWorkStateChange:value=>states.push(value),itemDisplay:{scopeKey:scope,binding:p.purchaseItemDisplayBinding(raw),context:raw.itemDisplayContext}};
+  const view=await mount(React.createElement(ui.MobileRequest,props));i65AssertGroups(view);
+  const changed=display(binding(),lines(1),{itemName:'Synthetic refreshed name'});
+  await act(async()=>view.update(React.createElement(ui.MobileRequest,{...props,itemDisplay:{...props.itemDisplay,context:changed}})));
+  assert.equal(states.at(-1).dirty,false);
+  await act(async()=>view.root.findByType('form').props.onSubmit({preventDefault(){}}));
+  await act(async()=>view.root.findAll(node=>node.type==='button'&&i65Text(node.children)==='Gửi đề nghị')[0].props.onClick());
+  assert.equal(bridge.needsFreshRead(),true);assert.equal(bridge.currentReadback().itemDisplayContext,undefined);
+  assert.ok(!i65Values(i65Groups(view.root)[0]).includes('NSX'),'retained old props cannot decorate the new receipt baseline');
+  const fresh={...bridge.currentReadback(),itemDisplayContext:display({...binding(),stateToken:nextToken,statusId:2,isLocked:true})};bridge.adoptReadback(fresh);
+  await act(async()=>view.update(React.createElement(ui.MobileRequest,{...props,initial:p.commandPurchaseSnapshot(fresh),readRevision:1,itemDisplay:{scopeKey:scope,binding:p.purchaseItemDisplayBinding(fresh),context:fresh.itemDisplayContext}})));
+  i65AssertGroups(view);assert.equal(states.at(-1).dirty,false);
+ });
+});
+
+function i65Paged(kind,page=1,itemId='ITEM'){
+ const source=[{lineId:'SYNTHETIC-LINE',itemId}];
+ const detail={document:{documentId:'DOC',documentDate:'2026-10-01',branchId:'BR',statusId:1,isLocked:null},page,pageSize:50,hasMore:page===1,
+  purchaseOrderLines:kind==='purchase-orders'?source.map(line=>({...line,quantity:'999999999999999999999999.1234',quantity2:null})):[],
+  inboundRequestLines:kind==='inbound-requests'?source.map(line=>({...line,setQuantityByDocument:'999999999999999999999999.1234',barrelQuantityByDocument:null,setQuantityByReal:'0',barrelQuantityByReal:'-2'})):[]};
+ return{...detail,itemDisplayContext:display(p.pagedItemDisplayBinding(kind,detail),source,{manufacturerCodeSource:kind==='inbound-requests'?'document':'master'})};
+}
+const i65ReadScope={sessionScope:scope,readScope:'d'.repeat(64)};
+function i65Response(data){return Response.json(data,{headers:{'X-Medcom-Session-Scope':i65ReadScope.sessionScope,'X-Medcom-Read-Scope':i65ReadScope.readScope}});}
+
+test('I65 real inbound readonly uses document-code context and fences page/selection/denied reads',async()=>{
+ const ui=await loadPresentationComponents(),previous=globalThis.fetch;let resolvePending,mode='ready',calls=0;const denied=[];
+ globalThis.fetch=async(url,init)=>{calls++;assert.ok(!init?.method||init.method==='GET');if(mode==='pending')return new Promise(resolve=>{resolvePending=resolve;});if(mode==='denied')return Response.json({code:'denied'},{status:403});const page=Number(new URL(String(url),'https://synthetic.invalid').searchParams.get('page'));return i65Response(i65Paged('inbound-requests',page));};
+ try{await i65Renderer(async({mount,act})=>{
+  const props={documentId:'DOC',branchIds:['BR'],scope:i65ReadScope,initialPage:1,verifying:false,readRevision:1,onPageChange(){},onDenied:error=>denied.push(error.status),onPresented(){}};
+  const view=await mount(React.createElement(ui.InboundRequestReadOnly,props));i65AssertGroups(view);let text=i65Text(view.toJSON());assert.ok(text.includes('999999999999999999999999.1234'));assert.ok(text.includes('NULL'));assert.ok(!text.includes('SYNTHETIC-LINE'));
+  mode='pending';await act(async()=>view.root.findAll(node=>node.type==='button'&&i65Text(node.children)==='Dòng tiếp')[0].props.onClick());assert.equal(i65Groups(view.root).length,0);
+  await act(async()=>resolvePending(i65Response(i65Paged('inbound-requests',2))));i65AssertGroups(view);
+  mode='pending';await act(async()=>view.update(React.createElement(ui.InboundRequestReadOnly,{...props,documentId:'OTHER',readRevision:2})));assert.equal(i65Groups(view.root).length,0);
+  await act(async()=>resolvePending(i65Response(i65Paged('inbound-requests',1))));assert.equal(i65Groups(view.root).length,0,'wrong selected document rejected');
+  mode='denied';await act(async()=>view.update(React.createElement(ui.InboundRequestReadOnly,{...props,readRevision:3})));assert.equal(i65Groups(view.root).length,0);assert.deepEqual(denied,[403]);assert.ok(calls>=4);
+ });}finally{globalThis.fetch=previous;}
+});
+
+test('I65 real workspace detail renders desktop/mobile identity groups and masks read/presentation loss',async()=>{
+ const ui=await loadPresentationComponents(),previous=globalThis.fetch;let current=i65Paged('purchase-orders');globalThis.fetch=async()=>i65Response(current);
+ try{await i65Renderer(async({mount,act})=>{
+  const client=new ui.QueryClient({defaultOptions:{queries:{retry:false,gcTime:0}}});
+  const props={presentationAllowed:true,kind:'purchase-orders',selected:current.document,close(){},onDenied(){},read:{active:true,documentId:'DOC',scope:i65ReadScope,generation:1}};
+  const node=value=>React.createElement(ui.QueryClientProvider,{client},React.createElement(ui.DetailContent,value));
+  const view=await mount(node(props));await act(async()=>{await new Promise(resolve=>setTimeout(resolve,20));});i65AssertGroups(view,2);
+  assert.ok(i65Text(view.toJSON()).includes('999999999999999999999999.1234'));assert.ok(!i65Text(view.toJSON()).includes('SYNTHETIC-LINE'));
+  await act(async()=>view.update(node({...props,presentationAllowed:false})));assert.ok(!i65VisibleText(view.toJSON()).includes('NSX'));
+  await act(async()=>view.update(node({...props,read:{...props.read,active:false}})));assert.ok(!i65VisibleText(view.toJSON()).includes('NSX'));
+  current=i65Paged('inbound-requests');await act(async()=>view.update(node({...props,kind:'inbound-requests',read:{...props.read,generation:2}})));await act(async()=>{await new Promise(resolve=>setTimeout(resolve,20));});i65AssertGroups(view,2);
+  client.clear();
+ });}finally{globalThis.fetch=previous;}
+});
+
+test('I65 actual purchase host delivers its qualified readback to both identity surfaces and hides them on lost rights',async()=>{
+ const ui=await loadPresentationComponents(),previous=globalThis.fetch,calls=[];let mode='available';
+ const raw={...purchase(),itemDisplayContext:display(),commandAccess:{canSave:true,canSubmit:true,canLookup:true,canAddLines:false,reason:'synthetic'}};
+ const workspace={session:{displayName:'SYNTHETIC',tenantId:'T',companyId:'C',companyName:'SYNTHETIC',authorityVersion:1,absoluteExpiresAt:'2099-01-01T00:00:00Z',capabilities:['purchase-requests.read']},branchIds:['BR'],...i65ReadScope,navigation:[]};
+ globalThis.fetch=async(url,init={})=>{
+  const u=new URL(String(url),'https://synthetic.invalid'),route=u.pathname;calls.push({route,method:init.method??'GET'});assert.notEqual(init.method,'POST');
+  if(route.endsWith('/workspace'))return response({scopeKey:scope,data:{branchIds:['BR'],writeAvailable:false,writeReason:'numbering_journal_runtime_unqualified',lookups:[]}});
+  if(route.endsWith('/detail'))return response({scopeKey:scope,data:mode==='available'?raw:{...raw,itemDisplayContext:null}});
+  if(route.endsWith('/lookup'))return response({scopeKey:scope,data:{available:false,reason:'synthetic_unavailable',items:[],page:1,hasMore:false}});
+  if(route.endsWith('/purchase-requests'))return response({scopeKey:scope,data:{rows:[{documentId:'DOC',purchaseDate:raw.document.header.purchaseDate,branchId:'BR',personSuggest:'Synthetic requester',department:'Synthetic department',statusId:1,isLocked:null}],page:1,pageSize:20,hasMore:false}});
+  assert.fail('Unexpected synthetic route');
+ };
+ try{await i65Renderer(async({mount,act})=>{
+  let navigation;const props={workspace,loginBoundary:1,sessionEnded:false,onVerifyWorkspace:async()=>{},onDenied:error=>{throw error;},onLogin(){},registerDetailNavigation:value=>{navigation=value;}};
+  const view=await mount(React.createElement(ui.PurchaseRequestScreen,props));
+  await act(async()=>navigation.requestOpen('DOC'));i65AssertGroups(view,2);
+  const editor=view.root.findByType(ui.MobileRequest);assert.deepEqual(editor.props.itemDisplay.context,raw.itemDisplayContext);assert.deepEqual(editor.props.initial,p.commandPurchaseSnapshot(raw));
+  assert.ok(!JSON.stringify(editor.props.initial).includes('manufacturerItemCode'));
+  await act(async()=>view.update(React.createElement(ui.PurchaseRequestScreen,{...props,presentationAllowed:false})));assert.ok(!i65VisibleText(view.toJSON()).includes('Bộ thử nghiệm'));
+  mode='unavailable';await act(async()=>view.update(React.createElement(ui.PurchaseRequestScreen,props)));
+  for(const group of i65Groups(view.root)){assert.ok(i65GroupText(group).includes('Chưa có thông tin'));assert.ok(!i65Values(group).includes('NSX'));}
+  await act(async()=>view.update(React.createElement(ui.PurchaseRequestScreen,{...props,workspace:{...workspace,session:{...workspace.session,capabilities:[]}}})));
+  assert.ok(!i65VisibleText(view.toJSON()).includes('Bộ thử nghiệm'));assert.ok(calls.some(call=>call.route.endsWith('/detail')));assert.ok(calls.every(call=>call.method==='GET'));
+ });}finally{globalThis.fetch=previous;}
+});
+
+test('I65 R2 actual generic editable lines retain RemoteLookup with metadata and locked/review lines omit it',async()=>{
+ const ui=await loadPresentationComponents();await i65Renderer(async({mount,act})=>{
+  const raw={...purchase(),itemDisplayContext:display()},line=p.commandPurchaseSnapshot(raw).values.lines[0],changes=[],lookups=[];
+  const props={lines:[line],disabled:false,canAdd:false,canRemove:false,errors:{},itemLookupId:'items',
+   itemDisplay:{binding:p.purchaseItemDisplayBinding(raw),context:raw.itemDisplayContext},
+   lookupAdapter:async(...args)=>{lookups.push(args);return{items:[],hasMore:false};},
+   onChange:(key,patch)=>changes.push({key,patch}),onAdd(){},onRemove(){}};
+  const view=await mount(React.createElement(ui.MobileRequestLines,props));i65AssertGroups(view);
+  assert.equal(view.root.findAllByType(ui.RemoteLookup).length,1);
+  const trigger=view.root.findByProps({'aria-label':'Mặt hàng dòng 1'});assert.equal(trigger.props.disabled,false);
+  await act(async()=>view.root.findByProps({'aria-label':'Bỏ chọn Mặt hàng dòng 1'}).props.onClick());
+  assert.deepEqual(changes,[{key:line.localKey,patch:{itemId:'',itemLabel:undefined}}]);
+  await act(async()=>view.root.findByType(ui.RemoteLookup).props.onChange({id:'SYNTHETIC-NEXT',label:'Synthetic next item'}));
+  assert.deepEqual(changes[1],{key:line.localKey,patch:{itemId:'SYNTHETIC-NEXT',itemLabel:'Synthetic next item'}});
+  assert.equal(lookups.length,0,'display metadata alone performs no catalog request');
+  for(const state of [{lockItem:true},{readOnly:true},{lockItem:true,readOnly:true}]){
+   await act(async()=>view.update(React.createElement(ui.MobileRequestLines,{...props,...state})));i65AssertGroups(view);assert.equal(view.root.findAllByType(ui.RemoteLookup).length,0);
+  }
+  await act(async()=>view.update(React.createElement(ui.MobileRequestLines,{...props,disabled:true})));i65AssertGroups(view);assert.equal(view.root.findAllByType(ui.RemoteLookup).length,1);assert.equal(view.root.findByProps({'aria-label':'Mặt hàng dòng 1'}).props.disabled,true);
+  assert.deepEqual(raw,{...purchase(),itemDisplayContext:display()});
+ });
+});
+
+test('I65 R3 same-token canonical Save receipt retires metadata until a fresh read revision is adopted',async()=>{
+ const ui=await loadPresentationComponents();await i65Renderer(async({mount,act})=>{
+  const raw={...purchase(),itemDisplayContext:display()};raw.document.lines[0].values.quantity='1';
+  const initial=p.commandPurchaseSnapshot(raw),bodies=[],states=[];
+  const bridge=ui.createPurchaseCommandAdapter(scope,raw,async(_scope,route,body)=>{
+   assert.equal(route,'save');const dto=JSON.parse(body);bodies.push(body);assert.deepEqual(dto.lineChanges,[]);
+   return{scopeKey:scope,data:{outcome:0,receipt:{actionId:'purchase-request.save-draft',idempotencyKey:dto.idempotencyKey,document:raw.document,stateToken:raw.stateToken,allocatedLines:[]}}};
+  });
+  const props={initial,access:i65Access,adapter:bridge.adapter,onWorkStateChange:value=>states.push(value),itemDisplay:{scopeKey:scope,binding:p.purchaseItemDisplayBinding(raw),context:raw.itemDisplayContext}};
+  const view=await mount(React.createElement(ui.MobileRequest,props));i65AssertGroups(view);
+  await act(async()=>view.root.findAll(node=>node.type==='input'&&node.props.name===`lines.${initial.values.lines[0].localKey}.quantity`)[0].props.onChange({target:{value:'01'}}));
+  await act(async()=>view.root.findByType('form').props.onSubmit({preventDefault(){}}));
+  await act(async()=>view.root.findAll(node=>node.type==='button'&&i65Text(node.children)==='Lưu nháp trên ERP')[0].props.onClick());
+  assert.equal(bridge.needsFreshRead(),true);assert.equal(bridge.currentReadback().stateToken,raw.stateToken);assert.equal(bridge.currentReadback().itemDisplayContext,undefined);assert.equal(states.at(-1).dirty,false);
+  assert.ok(!i65Values(i65Groups(view.root)[0]).includes('NSX'),'same-token receipt cannot reuse retained metadata props');
+  await act(async()=>view.update(React.createElement(ui.MobileRequest,{...props,itemDisplay:{...props.itemDisplay,context:structuredClone(raw.itemDisplayContext)}})));
+  assert.ok(!i65Values(i65Groups(view.root)[0]).includes('NSX'),'new metadata object alone is not adopted read evidence');
+  const fresh={...bridge.currentReadback(),itemDisplayContext:structuredClone(raw.itemDisplayContext)};bridge.adoptReadback(fresh);
+  await act(async()=>view.update(React.createElement(ui.MobileRequest,{...props,initial:p.commandPurchaseSnapshot(fresh),readRevision:1,itemDisplay:{scopeKey:scope,binding:p.purchaseItemDisplayBinding(fresh),context:fresh.itemDisplayContext}})));
+  i65AssertGroups(view);assert.equal(states.at(-1).dirty,false);assert.equal(bodies.length,1);assert.ok(!bodies[0].includes('manufacturerItemCode'));assert.ok(!bodies[0].includes('itemDisplayContext'));
+ });
+});

@@ -1,4 +1,6 @@
 import {z} from "zod";
+import type {DocumentDetail,DocumentKind} from "./contracts";
+import type {PurchaseReadback} from "./purchase-request-api";
 
 const sourceText=(max:number,min=0)=>z.string().min(min).max(max).refine(value=>!value.includes("\0")&&!/[\uD800-\uDFFF]/u.test(value),"Invalid source text");
 const identity=sourceText(100,1);
@@ -28,6 +30,18 @@ export const itemDisplayContextSchema=z.object({kind:z.enum(["purchase-orders","
 export type ItemDisplayLine=z.infer<typeof itemDisplayLineSchema>;
 export type ItemDisplayContext=z.infer<typeof itemDisplayContextSchema>;
 export type ItemDisplayBinding=Omit<ItemDisplayContext,"lines">;
+/** Read-only presentation input; never put this in an editor snapshot or command. */
+export type ItemDisplayPresentation={binding:ItemDisplayBinding;context?:ItemDisplayContext|null};
+export function purchaseItemDisplayBinding(readback:PurchaseReadback):ItemDisplayBinding{
+ const {document,stateToken}=readback;
+ return {kind:"purchase-requests",documentId:document.purchaseRequestId,branchId:document.branchId,
+  stateToken,statusId:document.statusId,isLocked:document.isLocked,page:null,pageSize:null};
+}
+export function pagedItemDisplayBinding(kind:DocumentKind,detail:DocumentDetail):ItemDisplayBinding{
+ const {document,page,pageSize}=detail;
+ return {kind,documentId:document.documentId,branchId:document.branchId,stateToken:null,
+  statusId:document.statusId,isLocked:document.isLocked,page,pageSize};
+}
 export type ItemDisplaySourceLine={lineId:string;itemId:string};
 const sameBinding=(context:ItemDisplayContext,binding:ItemDisplayBinding)=>
  (["kind","documentId","branchId","stateToken","statusId","isLocked","page","pageSize"] as const).every(key=>context[key]===binding[key]);

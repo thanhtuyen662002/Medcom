@@ -1,4 +1,6 @@
 "use client";
+import {ItemIdentity} from "./item-identity";
+import {pagedItemDisplayBinding} from "@/lib/erp/item-display";
 
 import {useEffect, useLayoutEffect, useMemo, useRef, useState} from "react";
 import {ApiError, getDetail, type ReadScope} from "@/lib/erp/api";
@@ -153,9 +155,9 @@ export function InboundRequestReadOnly({documentId, branchIds, scope, initialPag
           ? <RequestEmpty title="Trang này không có dòng hàng">Dịch vụ đọc không trả về dòng hàng cho trang này.</RequestEmpty>
           : detail.inboundRequestLines.map((line, index) => <article key={`${index}:${line.lineId}`} className={requestStyles.line}>
             <h4 className="text-sm font-semibold">Dòng {(detail.page - 1) * detail.pageSize + index + 1}</h4>
+            <ItemIdentity binding={pagedItemDisplayBinding("inbound-requests",detail)} context={detail.itemDisplayContext} line={line}/>
             <dl className={cn(requestStyles.values, "grid-cols-1 sm:grid-cols-2")}>
               <div><dt>STT</dt><dd>{(page-1)*50+index+1}</dd></div>
-              <div><dt>Mã hàng</dt><dd className="whitespace-pre-wrap">{line.itemId}</dd></div>
               {quantities.map(([field, label]) => <div key={field}><dt>{label}</dt><dd className="whitespace-pre-wrap tabular-nums">{line[field] ?? "NULL"}</dd></div>)}
             </dl>
           </article>)}
