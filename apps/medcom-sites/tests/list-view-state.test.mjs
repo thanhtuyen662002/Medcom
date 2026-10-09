@@ -89,8 +89,13 @@ const scopeA={sessionScope:'a'.repeat(64),readScope:'b'.repeat(64)};
 const documentWorkspace=(scope=scopeA)=>({...scope,session:{capabilities:['purchase-orders.read','inbound-requests.read']},branchIds:['BR-A','BR-B'],navigation:[{id:'purchase-orders'},{id:'inbound-requests'}]});
 const documentRow={documentId:'SYNTHETIC-DOC',documentDate:'2026-10-06',branchId:'BR-A',statusId:1,isLocked:false};
 async function documentsHost(){
- const saved=captureGlobals(['window','fetch']);
+ // Explicit DOM/event doubles support the scoped presentation hook. These
+ // transport/control tests make no native focus or layout acceptance claim.
+ const saved=captureGlobals(['window','fetch','document','HTMLElement','requestAnimationFrame','cancelAnimationFrame']);
  globalThis.window={scrollY:0,addEventListener(){},removeEventListener(){},scrollTo(){}};
+ globalThis.document={...denialEventBus(),hidden:false,activeElement:null,querySelector(){return null;}};
+ globalThis.HTMLElement=class {};
+ globalThis.requestAnimationFrame=()=>1;globalThis.cancelAnimationFrame=()=>{};
  const store=createListViewStore();store.admit('A');
  const client=new QueryClient({defaultOptions:{queries:{retry:false,gcTime:0}}});
  let renderer,detail,hold=false,status=200,rows=[documentRow],props={kind:'purchase-orders',workspace:documentWorkspace(),verified:true,generation:1,compact:false,setCompact(){},onLogin(){}};
