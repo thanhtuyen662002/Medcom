@@ -1,0 +1,810 @@
+{
+  "formatVersion": 1,
+  "observedAtUtc": "2026-10-10T06:29:37.717625+00:00",
+  "increment": "I72",
+  "pr": 129,
+  "environment": "dedicated local SQL Server synthetic fixture; integrated Windows test identity",
+  "sqlServerVersion": "16.0.1000.6",
+  "result": "PASS",
+  "checksPassed": 154,
+  "checks": [
+    {
+      "name": "internal-transfer-requests create",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "internal-transfer-requests detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "internal-transfer-requests created line",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "internal-transfer-requests create replay",
+      "passed": true,
+      "observed": "Replayed"
+    },
+    {
+      "name": "internal-transfer-requests receipt lookup",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "internal-transfer-requests save",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "internal-transfer-requests stale edit",
+      "passed": true,
+      "observed": "document_state_changed"
+    },
+    {
+      "name": "internal-transfer-requests detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "internal-transfer-requests add and update lines",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "internal-transfer-requests detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "internal-transfer-requests two lines",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "internal-transfer-requests remove line",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "internal-transfer-requests selection",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "internal-transfer-requests PM dropdown",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "internal-transfer-requests PM no credentials",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "internal-transfer-requests PM foreign scope denied",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "internal-transfer-requests detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "internal-transfer-requests send PM",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "internal-transfer-requests detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "internal-transfer-requests recall",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "internal-transfer-requests detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "internal-transfer-requests delete",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "internal-transfer-requests absent after delete",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "machine-movements create",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "machine-movements detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "machine-movements created line",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "machine-movements create replay",
+      "passed": true,
+      "observed": "Replayed"
+    },
+    {
+      "name": "machine-movements receipt lookup",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "machine-movements save",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "machine-movements stale edit",
+      "passed": true,
+      "observed": "document_state_changed"
+    },
+    {
+      "name": "machine-movements detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "machine-movements add and update lines",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "machine-movements detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "machine-movements two lines",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "machine-movements remove line",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "machine-movements selection",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "machine-movements detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "machine-movements delete",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "machine-movements absent after delete",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "machine-repairs create",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "machine-repairs detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "machine-repairs created line",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "machine-repairs create replay",
+      "passed": true,
+      "observed": "Replayed"
+    },
+    {
+      "name": "machine-repairs receipt lookup",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "machine-repairs save",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "machine-repairs stale edit",
+      "passed": true,
+      "observed": "document_state_changed"
+    },
+    {
+      "name": "machine-repairs detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "machine-repairs add and update lines",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "machine-repairs detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "machine-repairs two lines",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "machine-repairs remove line",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "machine-repairs selection",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "machine-repairs detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "machine-repairs detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "machine-repairs linked parts disable delete",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "machine-repairs linked parts delete denied",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "machine-repairs linked parts edit rollback",
+      "passed": true,
+      "observed": "repair_line_has_active_part_references"
+    },
+    {
+      "name": "machine-repairs detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "machine-repairs delete",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "machine-repairs absent after delete",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "purchase-requests create",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "purchase-requests detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "purchase-requests created line",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "purchase-requests create replay",
+      "passed": true,
+      "observed": "Replayed"
+    },
+    {
+      "name": "purchase-requests receipt lookup",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "purchase-requests save",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "purchase-requests stale edit",
+      "passed": true,
+      "observed": "document_state_changed"
+    },
+    {
+      "name": "purchase-requests detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "purchase-requests add and update lines",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "purchase-requests detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "purchase-requests two lines",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "purchase-requests remove line",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "purchase-requests selection",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "purchase-requests second draft",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "purchase-requests detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "purchase-requests draft delete",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "purchase-requests draft absent",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "purchase-requests detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "purchase-requests submit",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "purchase-requests detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "purchase-requests submitted and locked",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "purchase-requests locked edit",
+      "passed": true,
+      "observed": "action_state_or_permission_denied"
+    },
+    {
+      "name": "purchase-requests detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "purchase-requests order generation",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "sales-orders create",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "sales-orders detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "sales-orders created line",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "sales-orders create replay",
+      "passed": true,
+      "observed": "Replayed"
+    },
+    {
+      "name": "sales-orders receipt lookup",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "sales-orders save",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "sales-orders stale edit",
+      "passed": true,
+      "observed": "document_state_changed"
+    },
+    {
+      "name": "sales-orders detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "sales-orders add and update lines",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "sales-orders detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "sales-orders two lines",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "sales-orders remove line",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "sales-orders selection",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "sales-orders PM dropdown",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "sales-orders PM no credentials",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "sales-orders PM foreign scope denied",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "sales-orders detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "sales-orders send PM",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "sales-orders detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "sales-orders recall",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "sales-orders detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "sales-orders delete",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "sales-orders absent after delete",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "warehouse-qr detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "warehouse-qr add QR",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "warehouse-qr QR replay",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "warehouse-qr detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "warehouse-qr QR count after replay",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "warehouse-qr repeated ordinary QR",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "warehouse-qr detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "warehouse-qr excess QR rollback",
+      "passed": true,
+      "observed": "native_action_rejected"
+    },
+    {
+      "name": "warehouse-qr detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "warehouse-qr excess left no row",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "warehouse-qr delete one QR",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "warehouse-qr detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "warehouse-qr one ordinary QR removed",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "warehouse-qr package QR add",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "warehouse-qr detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "warehouse-qr duplicate package rejected",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "warehouse-qr detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "warehouse-qr package QR delete",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "warehouse-qr detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "warehouse-qr package only removed",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "warehouse-qr detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "warehouse-qr locked QR rejected",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "sales-qr contract info",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "sales-qr contract no secrets",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "sales-qr contract foreign branch denied",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "sales-qr detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "sales-qr add QR",
+      "passed": true,
+      "observed": "Committed"
+    },
+    {
+      "name": "sales-qr QR replay",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "sales-qr detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "sales-qr QR count after replay",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "sales-qr repeated ordinary QR",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "sales-qr detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "sales-qr excess QR rollback",
+      "passed": true,
+      "observed": "native_action_rejected"
+    },
+    {
+      "name": "sales-qr detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "sales-qr excess left no row",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "sales-qr delete one QR",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "sales-qr detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "sales-qr one ordinary QR removed",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "sales-qr package QR add",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "sales-qr detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "sales-qr duplicate package rejected",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "sales-qr detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "sales-qr package QR delete",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "sales-qr detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "sales-qr package only removed",
+      "passed": true,
+      "observed": null
+    },
+    {
+      "name": "sales-qr detail",
+      "passed": true,
+      "observed": "Success"
+    },
+    {
+      "name": "sales-qr locked QR rejected",
+      "passed": true,
+      "observed": null
+    }
+  ],
+  "sourceEvidence": "inventories/erp/20261010/six-screen-catalog.json",
+  "sourceModulesInstalled": 67,
+  "emptyNativeTableShapesPrepared": 627,
+  "observedGatewayDefaultPins": 15,
+  "allNativeDefaultsConstraintsKeysAndIndexesAcceptance": "UNKNOWN",
+  "actualNativeSourceProceduresAndTriggers": true,
+  "realBusinessRows": 0,
+  "fixtureNumbering": "synthetic UUID prefix; NOT production or ERP numbering",
+  "fixtureIdentity": "synthetic authority/grants; NOT real ERP login acceptance",
+  "fixtureAdmission": "local synthetic target only; NOT production acceptance",
+  "remoteMedDataBusinessWrites": false,
+  "remoteMedDataSchemaWrites": false,
+  "rawDefinitionsPublished": false,
+  "privateSettingsPublished": false,
+  "productionAccepted": false,
+  "privateHarnessSha256": "8262cc90a908a38f8e92bdd9896b1d8ce0eb13817ed921e98cd0baa4c61fda03",
+  "privateSourceReceiptSha256": "12cf3979f45ba382ae7fb1329a8e004a87e54cade8fc1360fa8b635b944eef22",
+  "evidenceLocations": [
+    "private I72-native-fixture/Program.cs",
+    "private I72-native-fixture/setup-receipt.json",
+    "private SELECT-only full-module-closure.private.json",
+    "private SELECT-only fixture-metadata.private.json"
+  ],
+  "limits": [
+    "full foreign-key/check/index and native numbering parity unproved",
+    "source compatibility does not prove current Tools.dll or real target user acceptance",
+    "dynamic dependencies and all business branches remain separate acceptance gates"
+  ]
+}

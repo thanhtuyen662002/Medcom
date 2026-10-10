@@ -1,3 +1,48 @@
+owner_six_screen_commands_20261010:
+  instruction: typed_CUD_workflow_buttons_dropdowns_selection_paste_merge_main_and_per_screen_FE_handoff
+  canonical_goal: 45
+  current_increment: I72
+  pr: 129
+  base: 8531b9e18c6073982a9cb8d28345cb8da89ff466
+  integration_base: c7bfa10a43ea4515b17fb105815ef7d78080e9ce
+  source_catalog: inventories/erp/20261010/six-screen-catalog.json
+  current_forms: 7
+  screen_groups: 6
+  full_source_section_fields: 417
+  native_field_lookup_bindings: 106
+  additional_PM_option_routes: 2
+  observed_static_module_hash_pins: 67
+  observed_default_hash_pins: 15
+  total_registered_HTTP_operations: 115
+  total_openapi_schemas: 267
+  concrete_SQL_command_gateway: implemented_exercised_in_local_synthetic_SQL_trusted_target_admission_required
+  standard_startup_writer: UNQUALIFIED_commands_503
+  production_numbering_allocator: UNKNOWN_not_registered_fixture_numbering_never_shipped
+  PO_DMB_native_numbering_masks: UNKNOWN
+  complete_machine_repair_monetary_semantics: UNKNOWN
+  source_free_backend_tests: 3197_passed_zero_failed_zero_skipped
+  synthetic_SQL_checks: 154_passed
+  synthetic_runtime_receipt: docs/backend/erp-six-screen-synthetic-runtime-20261010.json
+  static_API_audit_tests: 8_passed
+  source_metadata_tests: 54_passed
+  policy_package_tests: 97_passed
+  local_quality_review: docs/execution/I72_LOCAL_REVIEW_20261010.md
+  exact_head_base_hosted_CI: PENDING_after_implementation_publication
+  FE_handoff: docs/backend/BE_FE_SIX_SCREEN_COMMANDS_20261010.md
+  field_lookup_appendix: docs/backend/ERP_SCREEN_FIELDS_AND_LOOKUPS_20261010.md
+  reports: UNKNOWN_runtime_unqualified_no_invented_route
+  source_selection: items_contract_items_machines_fixed_draft_sources
+  additional_ERP_cross_document_imports: UNKNOWN_no_silent_scope_exclusion
+  journal_schema: schemas/backend/erp-screen-command-journal-v1.sql_UNAPPLIED_to_MedData
+  target_authenticated_ERP_acceptance: UNKNOWN
+  target_business_SQL_writes: NONE
+  target_schema_writes: NONE
+  deployment: NOT_RUN
+  production_acceptance: OPEN
+  frontend_custody: separate_owner_no_FE_mutations
+  schedules: remain_off_no_administration
+  historical_state_below: preserved
+
 owner_live_meddata_audit_20261010:
   instruction: latest_local_ERP_masked_SQL_password_and_readonly_MedData_audit_for_full_FE_API_fields
   canonical_goal: 45

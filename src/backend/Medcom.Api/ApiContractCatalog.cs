@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Medcom.Contracts;
 using Medcom.Contracts.Inbound;
+using Medcom.Application;
 
 namespace Medcom.Api;
 
@@ -245,10 +246,118 @@ internal static class ApiContractCatalog
             schemas.SourceMetadata(head, fields.Header);
             schemas.SourceMetadata(line, fields.Lines);
         }
+        foreach(var module in ErpScreenCatalog.ModuleIds)
+        {
+            var screen=ErpScreenCatalog.Get(module)!;var path="/api/erp/"+module;var id=module.Replace("-","_",StringComparison.Ordinal);
+            const string admission="Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.";
+            var scope=Parameter("X-Medcom-Read-Scope","header",String(64),true);
+            var documentParameters=new JsonArray(Parameter("branchId","query",String(50),true),Parameter("documentId","query",String(50),true));
+            Add("get",path+"/screen",id+"_screen",Shape(typeof(ErpScopedResponse<ErpScreenDescription>)),admission,module+".read");
+            Add("get",path,id+"_list",Shape(typeof(ErpScopedResponse<ErpDocumentPage>)),admission,module+".read",parameters:new JsonArray(
+                Parameter("branchId","query",String(50),true),Parameter("page","query",Number(10000,1)),Parameter("pageSize","query",Number(100,20)),
+                Parameter("search","query",String(100)),Parameter("dateFrom","query",String(10)),Parameter("dateTo","query",String(10)),Parameter("statusId","query",new(){["type"]="integer"})));
+            var detailParameters=(JsonArray)documentParameters.DeepClone();detailParameters.Add(Parameter("page","query",Number(10000,1)));detailParameters.Add(Parameter("pageSize","query",Number(100,20)));
+            Add("get",path+"/detail",id+"_detail",Shape(typeof(ErpScopedResponse<ErpDocumentDetail>)),admission,module+".read",parameters:detailParameters);
+            var actionParameters=(JsonArray)documentParameters.DeepClone();actionParameters[1]!["required"]=false;
+            Add("get",path+"/actions",id+"_actions",Shape(typeof(ErpScopedResponse<IReadOnlyList<ErpActionState>>)),admission,module+".read",parameters:actionParameters);
+            if(screen.Actions.Any(action=>action.Operation=="contract-info"))Add("get",path+"/contract-info",id+"_contract_info",
+                Shape(typeof(ErpScopedResponse<ErpContractInfo>)),admission,module+".read",parameters:(JsonArray)documentParameters.DeepClone());
+            void Post(string suffix,string operation,Type request,Type response)=>Add("post",path+suffix,id+"_"+operation,Shape(response),admission,module+".read",request:request,
+                parameters:new JsonArray(scope.DeepClone(),Parameter("Origin","header",String(),true)));
+            Post("/options","options",typeof(ErpLookupQuery),typeof(ErpScopedResponse<ErpChoicePage>));
+            if(module is "sales-orders" or "internal-transfer-requests")Post("/actions/send-pm/options","pm_options",typeof(ErpPmLookupQuery),typeof(ErpScopedResponse<ErpChoicePage>));
+            Post("/commands/lookup","command_lookup",typeof(ErpCommandLookupRequest),typeof(ErpScopedResponse<ErpCommandObservation>));
+            if(module is not ("warehouse-qr" or "sales-qr"))
+            {
+                Post("/selection","selection",typeof(ErpSelectionRequest),typeof(ErpScopedResponse<ErpDraftSelection>));
+                Post("/paste/validate","paste_validate",typeof(ErpPasteRequest),typeof(ErpScopedResponse<ErpDraftSelection>));
+                Post("/create","create",typeof(ErpCreateRequest),typeof(ErpCommandResult));
+                Post("/save","save",typeof(ErpSaveRequest),typeof(ErpCommandResult));Post("/delete","delete",typeof(ErpDeleteRequest),typeof(ErpCommandResult));
+                var header=Shape(ErpInputRules.HeaderType(module)!);var line=Shape(ErpInputRules.LineType(module)!);
+                paths[path+"/create"]!["post"]!["x-medcom-typed-header"]=header.DeepClone();paths[path+"/create"]!["post"]!["x-medcom-typed-line"]=line.DeepClone();
+                paths[path+"/save"]!["post"]!["x-medcom-typed-header"]=header.DeepClone();paths[path+"/save"]!["post"]!["x-medcom-typed-line"]=line.DeepClone();
+                var typedHeader=ErpInputRules.HeaderType(module)!;var typedLine=ErpInputRules.LineType(module)!;
+                schemas.Values[typedHeader.Name]!["required"]=Array(screen.Fields["header"].Where(f=>f.Writable&&!f.Nullable).Select(f=>f.Name));
+                schemas.Values[typedLine.Name]!["required"]=Array(screen.Fields["lines"].Where(f=>f.Writable&&!f.Nullable).Select(f=>f.Name));
+                var newLine=schemas.Variant(typeof(ErpNewLine),"Erp_"+id+"_new_line");schemas.Property(newLine,"values",(JsonObject)line.DeepClone());
+                var create=schemas.Variant(typeof(ErpCreateRequest),"Erp_"+id+"_create");schemas.Property(create,"header",(JsonObject)header.DeepClone());
+                schemas.Property(create,"lines",new(){["type"]="array",["minItems"]=1,["maxItems"]=500,["items"]=Schemas.Ref(newLine)});
+                paths[path+"/create"]!["post"]!["requestBody"]!["content"]!["application/json"]!["schema"]=Schemas.Ref(create);
+                var changes=new JsonArray();
+                foreach(var kind in new[]{"Add","Update","Remove"})
+                {
+                    var change=schemas.Variant(typeof(ErpLineChange),"Erp_"+id+"_line_"+kind.ToLowerInvariant());
+                    schemas.Property(change,"kind",new(){["type"]="string",["const"]=kind});
+                    schemas.Property(change,"lineId",kind=="Add"?new(){["type"]="null"}:String(50));
+                    schemas.Property(change,"clientLineKey",kind=="Add"?String(64):new(){["type"]="null"});
+                    schemas.Property(change,"values",kind=="Remove"?new JsonObject{["type"]="null"}:(JsonObject)line.DeepClone());
+                    schemas.Values[change]!["required"]=Array(kind=="Add"?["kind","clientLineKey","values"]:kind=="Update"?["kind","lineId","values"]:["kind","lineId"]);
+                    changes.Add(Schemas.Ref(change));
+                }
+                var save=schemas.Variant(typeof(ErpSaveRequest),"Erp_"+id+"_save");schemas.Property(save,"header",(JsonObject)header.DeepClone());
+                schemas.Property(save,"lineChanges",new(){["type"]="array",["maxItems"]=500,["items"]=new JsonObject{["oneOf"]=changes}});
+                paths[path+"/save"]!["post"]!["requestBody"]!["content"]!["application/json"]!["schema"]=Schemas.Ref(save);
+                var paste=schemas.Variant(typeof(ErpPasteRequest),"Erp_"+id+"_paste");
+                schemas.Property(paste,"rows",new(){["type"]="array",["minItems"]=1,["maxItems"]=500,["items"]=line.DeepClone()});
+                paths[path+"/paste/validate"]!["post"]!["requestBody"]!["content"]!["application/json"]!["schema"]=Schemas.Ref(paste);
+            }
+            foreach(var action in screen.Actions.Where(action=>action.Operation is "submit" or "send-purchase-order" or "send-pm" or "recall"))
+            {
+                Post("/actions/"+action.Operation,action.Operation.Replace("-","_",StringComparison.Ordinal),typeof(ErpActionRequest),typeof(ErpCommandResult));
+                paths[path+"/actions/"+action.Operation]!["post"]!["x-medcom-typed-payload"]=action.Operation=="send-pm"
+                    ?Shape(module=="sales-orders"?typeof(ErpSendOrderPm):typeof(ErpSendTransferPm)):Object();
+                var actionPayload=schemas.Variant(typeof(ErpActionRequest),"Erp_"+id+"_"+action.Operation.Replace('-','_')+"_request");
+                schemas.Property(actionPayload,"payload",(JsonObject)paths[path+"/actions/"+action.Operation]!["post"]!["x-medcom-typed-payload"]!.DeepClone());
+                paths[path+"/actions/"+action.Operation]!["post"]!["requestBody"]!["content"]!["application/json"]!["schema"]=Schemas.Ref(actionPayload);
+            }
+            if(module is "warehouse-qr" or "sales-qr")foreach(var scan in new[]{"add","delete"})Post("/qr/"+scan,"scan_"+scan,typeof(ErpScanRequest),typeof(ErpCommandResult));
+            var sectionSchemas=new JsonObject();
+            foreach(var section in screen.Fields)
+            {
+                var name="Erp_"+id+"_"+section.Key+"_fields";var properties=new JsonObject();
+                foreach(var column in section.Value)
+                {
+                    var type=column.SqlType switch{"bit"=>"boolean","int" or "tinyint" or "smallint" or "bigint"=>"integer","float" or "real"=>"number",_=>"string"};
+                    JsonObject field=new(){["type"]=type};
+                    if(column.Nullable)field=new(){["anyOf"]=new JsonArray(field,new JsonObject{["type"]="null"})};
+                    field["x-medcom-source-column"]=column.Column;field["x-medcom-sql-type"]=column.SqlType;
+                    field["x-medcom-sql-type-arguments"]=column.TypeArguments;field["x-medcom-sql-nullable"]=column.Nullable;field["x-medcom-writable"]=column.Writable;
+                    properties[column.Name]=field;
+                }
+                schemas.Values[name]=new JsonObject{["type"]="object",["additionalProperties"]=false,["properties"]=properties,["required"]=Array(section.Value.Select(column=>column.Name))};
+                sectionSchemas[section.Key]=Schemas.Ref(name);
+            }
+            paths[path+"/detail"]!["get"]!["x-medcom-full-field-sections"]=sectionSchemas;
+            paths[path]!["get"]!["x-medcom-full-header"]=sectionSchemas["header"]!.DeepClone();
+            var documentRow=schemas.Variant(typeof(ErpDocumentRow),"Erp_"+id+"_document_row");
+            schemas.Property(documentRow,"header",(JsonObject)sectionSchemas["header"]!.DeepClone());
+            var documentPage=schemas.Variant(typeof(ErpDocumentPage),"Erp_"+id+"_document_page");
+            schemas.Property(documentPage,"rows",new(){["type"]="array",["items"]=Schemas.Ref(documentRow)});
+            var listResponse=schemas.Variant(typeof(ErpScopedResponse<ErpDocumentPage>),"Erp_"+id+"_list_response");
+            schemas.Property(listResponse,"data",Schemas.Ref(documentPage));
+            paths[path]!["get"]!["responses"]!["200"]!["content"]!["application/json"]!["schema"]=Schemas.Ref(listResponse);
+            var detail=schemas.Variant(typeof(ErpDocumentDetail),"Erp_"+id+"_detail");
+            schemas.Property(detail,"header",(JsonObject)sectionSchemas["header"]!.DeepClone());
+            foreach(var section in screen.Fields.Where(s=>s.Key!="header"))
+            {
+                var row=schemas.Variant(typeof(ErpLineRow),"Erp_"+id+"_"+section.Key+"_row");schemas.Property(row,"fields",(JsonObject)sectionSchemas[section.Key]!.DeepClone());
+                var page=schemas.Variant(typeof(ErpLinePage),"Erp_"+id+"_"+section.Key+"_page");schemas.Property(page,"rows",new(){["type"]="array",["items"]=Schemas.Ref(row)});
+                schemas.Property(detail,section.Key,Schemas.Ref(page));
+            }
+            foreach(var absent in new[]{"history","comparison"}.Where(s=>!screen.Fields.ContainsKey(s)))schemas.Property(detail,absent,new(){["type"]="null"});
+            var detailResponse=schemas.Variant(typeof(ErpScopedResponse<ErpDocumentDetail>),"Erp_"+id+"_detail_response");schemas.Property(detailResponse,"data",Schemas.Ref(detail));
+            paths[path+"/detail"]!["get"]!["responses"]!["200"]!["content"]!["application/json"]!["schema"]=Schemas.Ref(detailResponse);
+        }
+        schemas.SetRequired<ErpLookupQuery>(["branchId","lookupId"]);
+        schemas.SetRequired<ErpPmLookupQuery>(["branchId"]);
+        schemas.Property(nameof(ErpPmLookupQuery),"role",new(){["type"]="string",["enum"]=Array(["primary","supporting"]),["default"]="primary"});
+        schemas.SetRequired<ErpSelectionRequest>(["branchId","sourceId","selectedKeys"]);
+        schemas.SetRequired<ErpSendOrderPm>(["pmId"]);
+        schemas.SetRequired<ErpSendTransferPm>(["primaryPmId","supportingPmId"]);
         return new()
         {
             ["openapi"] = "3.1.1", ["info"] = new JsonObject { ["title"] = "Medcom backend HTTP contract", ["version"] = "2.0.0",
-                ["description"] = "All registered HTTP boundaries; full ERP business delivery is incomplete. Six v2 reads return all 116 qualified source columns. A route/schema never enables commands or proves target SQL/business acceptance." },
+                ["description"] = "Registered HTTP boundaries include full fields with pagination, seven current ERP forms across six screen groups, fixed typed CUD/workflow intents, dropdowns and draft selection/paste. A route/schema never enables commands or proves target SQL/business acceptance." },
             ["servers"] = new JsonArray(new JsonObject { ["url"] = "/", ["description"] = "This backend origin. FE uses its separately configured same-origin BFF." }),
             ["paths"] = paths,
             ["components"] = new JsonObject
@@ -289,7 +398,10 @@ internal static class ApiContractCatalog
                 if (decimalString) schema["pattern"] = @"^-?[0-9]+(?:\.[0-9]+)?$";
             }
             else if (type == typeof(bool)) schema = new() { ["type"] = "boolean" };
-            else if (type == typeof(int) || type == typeof(long)) schema = new() { ["type"] = "integer", ["format"] = type == typeof(int) ? "int32" : "int64" };
+            else if (type == typeof(int) || type == typeof(long)||type==typeof(short)||type==typeof(byte)) schema = new() { ["type"] = "integer", ["format"] = type == typeof(long) ? "int64" : "int32" };
+            else if(type==typeof(JsonElement)||type==typeof(object))schema=new(){["description"]="Fixed module field or action input; see x-medcom-typed-header, x-medcom-typed-line, x-medcom-typed-payload and x-medcom-full-field-sections on its operation."};
+            else if(type.IsGenericType&&type.GetGenericTypeDefinition()==typeof(IReadOnlyDictionary<,>)&&type.GetGenericArguments()[0]==typeof(string))
+                schema=new(){["type"]="object",["additionalProperties"]=Shape(type.GetGenericArguments()[1])};
             else if (type == typeof(double) || type == typeof(float) || type == typeof(decimal)) schema = new() { ["type"] = "number" };
             else if (type.IsEnum)
             {

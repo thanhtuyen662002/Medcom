@@ -12,6 +12,25 @@ namespace Medcom.Api.Tests;
 public sealed class ApiContractCatalogTests
 {
     [Fact]
+    public void Seven_screen_contracts_publish_module_specific_input_and_full_read_schemas()
+    {
+        var document=ApiContractCatalog.Build();var schemas=document["components"]!["schemas"]!;
+        foreach(var module in ErpScreenCatalog.ModuleIds)
+        {
+            var id=module.Replace('-','_');var prefix="Erp_"+id;
+            var detail=document["paths"]!["/api/erp/"+module+"/detail"]!["get"]!["responses"]!["200"]!["content"]!["application/json"]!["schema"]!["$ref"]!.GetValue<string>();
+            Assert.Equal("#/components/schemas/"+prefix+"_detail_response",detail);
+            var header=schemas[prefix+"_header_fields"]!;
+            Assert.Equal(ErpScreenCatalog.Get(module)!.Fields["header"].Count,((JsonObject)header["properties"]!).Count);
+            if(module is "sales-qr" or "warehouse-qr")continue;
+            var create=schemas[prefix+"_create"]!;
+            Assert.Contains("HeaderInput",create["properties"]!["header"]!["$ref"]!.GetValue<string>());
+            Assert.Equal(500,create["properties"]!["lines"]!["maxItems"]!.GetValue<int>());
+            Assert.Equal(3,((JsonArray)schemas[prefix+"_save"]!["properties"]!["lineChanges"]!["items"]!["oneOf"]!).Count);
+            Assert.Equal("Remove",schemas[prefix+"_line_remove"]!["properties"]!["kind"]!["const"]!.GetValue<string>());
+        }
+    }
+    [Fact]
     public void Frontend_download_artifact_matches_the_contract_exported_by_the_current_backend()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
@@ -35,11 +54,12 @@ public sealed class ApiContractCatalogTests
             .Order(StringComparer.Ordinal).ToArray();
         var document = ApiContractCatalog.Build();
         var expected = ((JsonObject)document["paths"]!).SelectMany(p => ((JsonObject)p.Value!).Select(m => m.Key + " " + p.Key)).Order(StringComparer.Ordinal).ToArray();
-        Assert.Equal(34, actual.Length); Assert.Equal(actual, expected);
+        Assert.Equal(115, actual.Length); Assert.Equal(actual, expected);
         var ids = ((JsonObject)document["paths"]!).SelectMany(p => ((JsonObject)p.Value!).Select(m => m.Value!["operationId"]!.GetValue<string>())).ToArray();
         Assert.Equal(ids.Length, ids.Distinct(StringComparer.Ordinal).Count());
         Assert.Equal("not-admitted", document["x-medcom-business-release"]!.GetValue<string>());
-        Assert.DoesNotContain(expected, p => p.Contains("/create", StringComparison.Ordinal) || p.Contains("/delete", StringComparison.Ordinal));
+        foreach(var module in new[]{"warehouse-qr","sales-qr"})
+            Assert.DoesNotContain(expected,p=>p=="post /api/erp/"+module+"/create"||p=="post /api/erp/"+module+"/delete");
         CheckReferences(document, document);
     }
 

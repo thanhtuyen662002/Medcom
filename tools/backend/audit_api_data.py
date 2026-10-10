@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 OPENAPI = "docs/backend/medcom-openapi.json"
 FIELDS = "docs/backend/document-field-contract.json"
+ERP_FIELDS = "inventories/erp/20261010/six-screen-catalog.json"
 SOURCE_TABLES = {
     "owner-attachment-20261002": "inventories/source/20261002/table-*.json",
     "owner-live-meddata-20261010": "inventories/source/20261010/document-read-tables.json",
@@ -45,7 +46,7 @@ def at_schema(api, schema, path):
     return resolve(api, schema)
 
 
-def audit(api, mapping, tables):
+def audit(api, mapping, tables, erp_catalog=None):
     modules = {}
     for kind, groups in mapping["kinds"].items():
         suffix = kind if kind == "purchase-requests" else "documents/" + kind
@@ -83,11 +84,37 @@ def audit(api, mapping, tables):
         modules[kind] = {"list": base, "detail": base + "/detail", "v2_alias_list": bases[1], "v2_alias_detail": bases[1] + "/detail", "source_fields": counts,
                          "evidence": [FIELDS, SOURCE_TABLES[mapping["sourceSet"]],
                                       "tests/backend/Medcom.Api.Tests/DocumentFullFieldTests.cs"]}
+    erp_catalog = erp_catalog if erp_catalog is not None else json.loads((ROOT / ERP_FIELDS).read_text(encoding="utf-8"))
+    erp_modules = {}
+    erp_read_paths = set()
+    for screen in erp_catalog["screens"]:
+        base = "/api/erp/" + screen["id"]
+        counts = {}
+        for section, fields in screen["fields"].items():
+            require(len(fields) == len({f["name"] for f in fields}), "Duplicate ERP source field")
+            counts[section] = len(fields)
+            for field in fields:
+                field_path = "data.header." + field["name"] if section == "header" else "data." + section + ".rows[].fields." + field["name"]
+                routes = [(base + "/detail", field_path)]
+                if section == "header":
+                    routes.append((base, "data.rows[].header." + field["name"]))
+                for path, member in routes:
+                    body = api["paths"][path]["get"]["responses"]["200"]["content"]["application/json"]["schema"]
+                    schema = at_schema(api, body, member)
+                    alternatives = schema.get("anyOf", [schema])
+                    expected_type = {"bit": "boolean", "int": "integer", "smallint": "integer", "tinyint": "integer", "bigint": "integer", "float": "number", "real": "number"}.get(field["type"], "string")
+                    require(any(s.get("type") == "null" for s in alternatives) is field["nullable"], "ERP wire nullability mismatch")
+                    require(any(s.get("type") == expected_type for s in alternatives), "ERP wire primitive mismatch")
+                    require(schema.get("x-medcom-source-column") == field["column"] and schema.get("x-medcom-sql-type") == field["type"]
+                            and schema.get("x-medcom-sql-type-arguments") == field.get("typeArguments"), "ERP wire source provenance mismatch")
+        erp_modules[screen["id"]] = {"form": screen["formId"], "source_fields": counts, "evidence": [ERP_FIELDS, OPENAPI]}
+        erp_read_paths.update([base, base + "/detail"])
+    require(len(erp_modules) == 7 and len(erp_read_paths) == 14, "Incomplete ERP form set")
     operations = []
     for path, item in api["paths"].items():
         for method, operation in item.items():
             projection = operation.get("x-medcom-data-projection")
-            category = ("full-source-fields" if projection == "full" else "legacy-summary" if projection == "summary"
+            category = ("erp-full-source-fields" if method == "get" and path in erp_read_paths else "full-source-fields" if projection == "full" else "legacy-summary" if projection == "summary"
                         else "business-provider-unavailable" if operation["x-medcom-admission"].startswith("default-provider-unavailable")
                         else "contract-specific-projection")
             operations.append({"method": method.upper(), "path": path, "operation_id": operation["operationId"],
@@ -100,7 +127,8 @@ def audit(api, mapping, tables):
     require(sum(o["category"] == "legacy-summary" for o in operations) == 0, "Current document route still strips source fields")
     return {"format": 2, "source_set": mapping["sourceSet"], "static_reconciliation": "PASS",
             "registered_operations": len(operations), "complete_source_columns": sum(sum(m["source_fields"].values()) for m in modules.values()),
-            "modules": modules, "operations": operations, "actual_SQL_rows": "NOT_RUN",
+            "erp_screen_source_columns": sum(sum(m["source_fields"].values()) for m in erp_modules.values()),
+            "erp_modules": erp_modules, "modules": modules, "operations": operations, "actual_SQL_rows": "NOT_RUN",
             "production_accepted": False, "FE_adoption": "UNKNOWN;requires_parsers_to_retain_all_full_fields_on_current_routes"}
 
 
@@ -115,7 +143,7 @@ def main():
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
-    print(json.dumps({key: report[key] for key in ("static_reconciliation", "registered_operations", "complete_source_columns", "actual_SQL_rows", "production_accepted")}))
+    print(json.dumps({key: report[key] for key in ("static_reconciliation", "registered_operations", "complete_source_columns", "erp_screen_source_columns", "actual_SQL_rows", "production_accepted")}))
 
 
 if __name__ == "__main__":
