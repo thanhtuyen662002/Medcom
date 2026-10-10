@@ -1,16 +1,16 @@
 # Medcom backend
 
-## Current source boundary — 10 October 2026
+## Current API and frontend handoff — 11 October 2026
 
-The current API registers 34 method/path pairs, including twelve complete document reads on current/v2 URLs, authenticated field/query metadata, a public OpenAPI contract, purchase Save/Submit/original lookup and the inbound draft facade. Every record in the requested page retains all source columns. The three v2 lists additionally support typed date/status filters and fixed server sorting; see [document query integration](../../docs/backend/DOCUMENT_QUERY_INTEGRATION_20261010.md). Default command/access providers remain unavailable; registered POST routes do not establish write admission or production readiness. Explicit legacy configuration may enable authorized typed reads. The shared Next frontend uses a same-origin BFF and backend availability/scope contracts.
+The [complete Vietnamese FE API reference](../../docs/backend/BE_FE_API_REFERENCE_20261011.md) covers all **119 HTTP operations, 274 schemas and 106 dropdown bindings**. It includes authentication/BFF integration, full fields with pagination, seven current forms, CUD, business buttons, selection/paste, command reconciliation and notifications. Its operation and schema appendices are reconciled against the committed OpenAPI and the live BE contract. This reference supersedes historical route counts and unavailable-writer statements for the current seven-screen API.
 
-The compiled backend serves `/api/contracts/openapi.json` and exports the same technical contract with `dotnet Medcom.Api.dll --print-api-contract`, without starting the host or loading private settings. [The integration handoff](../../docs/backend/FE_INTEGRATION_20261010.md) links the current 34-operation/99-schema artifact, deployment observations, FE/BFF adoption steps and the bounded read-only HTTPS verifier. Full ERP implementation and real target business acceptance remain open.
+Ordinary legacy startup now composes the SQL writer and number allocator when the private ERP write profile is configured. The owner-authorized MedData journal installation and activation of all seven modules on BE Medcom are recorded in [PR 132](https://github.com/thanhtuyen662002/Medcom/pull/132#issuecomment-6097976637) and the [main/deployment checkpoint of PR 134](https://github.com/thanhtuyen662002/Medcom/pull/134#issuecomment-6099096715). Use `/api/erp/{module}/*` for current CUD/workflow/QR. The older purchase command and inbound draft facades retain unavailable default providers; their availability flags do not govern the new API. See [write runtime setup](../../docs/backend/ERP_WRITE_RUNTIME_SETUP_20261010.md) for operator configuration.
 
-[The current full data audit](../../docs/backend/api-data-audit-current-full-20261010.json) reconciles every existing operation with source fields and actual consumer paths. Successful current/v2 document responses stamp `X-Medcom-Data-Projection: full` and identify their registered route via `X-Medcom-Full-Data-Path`. [The Vietnamese BE/FE handoff](../../docs/backend/BE_FE_FULL_FIELDS_INTEGRATION_20261010.md) contains all 116 columns, pagination and required FE parser/schema changes.
+The compiled backend serves `/api/contracts/openapi.json` and exports the same contract with `dotnet Medcom.Api.dll --print-api-contract`, without starting the host or loading private settings. [medcom-openapi.json](../../docs/backend/medcom-openapi.json) is the machine-readable contract. Current compatible document reads contain 118 source fields across three header/line modules, while the seven-screen catalog contains 417 section fields with overlapping purchase-request definitions. Both original and v2 reads retain full fields and pagination; v2 lists additionally offer fixed filter/sort semantics. Use the module-specific DTOs and preserve nullable keys.
 
-See [the current HTTP boundary](../../docs/backend/CURRENT_HTTP_BOUNDARY_20261009.md) for the full route inventory, body bounds, scope/CSRF/receipt rules and handover gaps. That source review supersedes the historical endpoint inventory and absent-write-route statements below; no private SQL/DLL runtime or business write is newly accepted.
+Notifications use the current native user's `SY_User.UserName` as recipient authority. Four notification routes return all 22 columns, resolve nine permitted form targets and mark read/unread using the native SQL procedure. BFF adoption remains the separately owned FE's responsibility. The readiness route still returns 503 for the business release gate; use per-document actions and actual command outcomes for FE operation availability.
 
-The version 2 field catalog `/api/documents/field-contract?kind=…` and [exact JSON mapping](../../docs/backend/document-field-contract.json) describe all 116 source columns of the three wired header/line modules. Both original and v2 URLs now return those fields, retain original scalars and keep existing page bounds. Strict FE parsers must explicitly admit the complete source objects. FE adoption and real SQL target validation remain separate.
+Full backend scope, real owner business acceptance, reports, additional imports and other tracked UNKNOWNs remain open under goal #45. No production acceptance is inferred from route counts, source tests or the existing write profile. Historical foundation checkpoints below describe their own earlier state.
 
 ## Historical foundation checkpoint — 2 October 2026
 
@@ -27,9 +27,9 @@ dotnet test Medcom.slnx --configuration Release --no-build
 dotnet run --project src/backend/Medcom.Api --no-launch-profile -- --urls http://127.0.0.1:5100
 ```
 
-The local HTTP binding is for health/development inspection. Login requires HTTPS. Deployment must configure `AllowedHosts` and privately managed TLS. Cookie security defaults are HttpOnly, Secure, SameSite Strict and no sliding expiration. A signed cookie alone is insufficient: every authenticated request resolves its bounded server session and revalidates the ERP authority. The current default provider always returns unavailable; there is no environment variable or development password to bypass it.
+The local HTTP binding is for health/development inspection. Login requires HTTPS. Deployment must configure `AllowedHosts` and privately managed TLS. Cookie security defaults are HttpOnly, Secure, SameSite Strict and no sliding expiration. A signed cookie alone is insufficient: every authenticated request resolves its bounded server session and revalidates the ERP authority. Without private legacy configuration the default identity provider returns unavailable; there is no development password bypass.
 
-## HTTP boundary
+## Historical foundation HTTP boundary
 
 | Route | Current behavior |
 | --- | --- |
