@@ -1,25 +1,24 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Search,
   Plus,
-  Filter,
   FileText,
   Calendar,
   Building,
   User,
   CheckCircle2,
   Clock,
-  AlertCircle,
-  XCircle,
   Printer,
   ChevronRight,
-  MoreVertical,
+  RefreshCw,
+  AlertCircle,
 } from "lucide-react";
 import { UntitledBadge } from "./badge";
 import { UntitledButton } from "./button";
 import { UntitledBottomSheet } from "./bottom-sheet";
+import { DocumentCardSkeleton, DetailLinesSkeleton } from "./skeleton";
 import { erpClient } from "@/lib/erp/erp-client";
 
 export interface PurchaseItem {
@@ -43,233 +42,165 @@ export interface PurchaseItem {
   }[];
 }
 
-const initialPurchases: PurchaseItem[] = [
-  {
-    id: "PR-2026-0128",
-    code: "PR-2026-0128",
-    date: "09/10/2026",
-    creator: "DS. Nguyễn Thùy Linh",
-    department: "Kho Cấp cứu",
-    branch: "Chi nhánh 1 (Trung tâm)",
-    purpose: "Bổ sung cơ số thuốc cấp cứu & hồi sức khẩn cấp",
-    status: "pending",
-    totalAmount: "48.500.000 đ",
-    lines: [
-      {
-        itemId: "MED-001",
-        itemName: "Hapacol 500mg (Paracetamol)",
-        specification: "Hộp 10 vỉ x 10 viên",
-        unit: "Hộp",
-        quantity: 200,
-        unitPrice: "45.000 đ",
-        amount: "9.000.000 đ",
-      },
-      {
-        itemId: "MED-003",
-        itemName: "Bơm tiêm vô trùng 5ml (Vinahankook)",
-        specification: "Hộp 100 cái, kim 23G",
-        unit: "Hộp",
-        quantity: 30,
-        unitPrice: "150.000 đ",
-        amount: "4.500.000 đ",
-      },
-      {
-        itemId: "MED-004",
-        itemName: "Dung dịch tiêm truyền NaCl 0.9% 500ml",
-        specification: "Thùng 20 chai",
-        unit: "Thùng",
-        quantity: 50,
-        unitPrice: "700.000 đ",
-        amount: "35.000.000 đ",
-      },
-    ],
-  },
-  {
-    id: "PR-2026-0127",
-    code: "PR-2026-0127",
-    date: "08/10/2026",
-    creator: "DS. Lê Hoàng Nam",
-    department: "Kho Ngoại trú",
-    branch: "Chi nhánh 2 (Kho Dược)",
-    purpose: "Đơn đặt hàng thuốc kháng sinh định kỳ tháng 10",
-    status: "approved",
-    totalAmount: "186.200.000 đ",
-    lines: [
-      {
-        itemId: "MED-002",
-        itemName: "Amoxicillin 500mg (Imexpharm)",
-        specification: "Hộp 10 vỉ x 10 viên nang",
-        unit: "Hộp",
-        quantity: 500,
-        unitPrice: "68.000 đ",
-        amount: "34.000.000 đ",
-      },
-      {
-        itemId: "MED-005",
-        itemName: "Augmentin 1g (Amoxicillin/Clavulanic)",
-        specification: "Hộp 14 viên nén bao phim",
-        unit: "Hộp",
-        quantity: 400,
-        unitPrice: "215.000 đ",
-        amount: "86.000.000 đ",
-      },
-      {
-        itemId: "MED-006",
-        itemName: "Cefixim 200mg",
-        specification: "Hộp 10 vỉ x 10 viên",
-        unit: "Hộp",
-        quantity: 300,
-        unitPrice: "220.667 đ",
-        amount: "66.200.000 đ",
-      },
-    ],
-  },
-  {
-    id: "PR-2026-0126",
-    code: "PR-2026-0126",
-    date: "07/10/2026",
-    creator: "DS. Phạm Thu Hà",
-    department: "Phòng Khám Đa Khoa",
-    branch: "Chi nhánh 1 (Trung tâm)",
-    purpose: "Dự thảo yêu cầu vật tư tiêu hao phòng xét nghiệm",
-    status: "draft",
-    totalAmount: "15.800.000 đ",
-    lines: [
-      {
-        itemId: "VT-012",
-        itemName: "Găng tay y tế không bột (Cỡ M)",
-        specification: "Hộp 100 chiếc (50 đôi)",
-        unit: "Hộp",
-        quantity: 100,
-        unitPrice: "98.000 đ",
-        amount: "9.800.000 đ",
-      },
-      {
-        itemId: "VT-014",
-        itemName: "Cồn y tế 70 độ 500ml",
-        specification: "Chai 500ml",
-        unit: "Chai",
-        quantity: 200,
-        unitPrice: "30.000 đ",
-        amount: "6.000.000 đ",
-      },
-    ],
-  },
-  {
-    id: "PR-2026-0125",
-    code: "PR-2026-0125",
-    date: "05/10/2026",
-    creator: "Võ Thanh Tùng",
-    department: "Kho Dược BV",
-    branch: "Chi nhánh 3 (Bệnh viện)",
-    purpose: "Đề nghị bổ sung hóa chất khử trùng",
-    status: "rejected",
-    totalAmount: "32.000.000 đ",
-    lines: [
-      {
-        itemId: "HC-001",
-        itemName: "Dung dịch khử trùng Cloramin B 25%",
-        specification: "Thùng 25kg",
-        unit: "Thùng",
-        quantity: 10,
-        unitPrice: "3.200.000 đ",
-        amount: "32.000.000 đ",
-      },
-    ],
-  },
-];
-
 export interface TabPurchasesProps {
   onOpenCreateModal: () => void;
   selectedItemForDetail?: PurchaseItem | null;
   onCloseDetailModal?: () => void;
+  currentBranch?: string;
+  isActive?: boolean;
+  onCountChange?: (count: number) => void;
 }
 
 export function TabPurchases({
   onOpenCreateModal,
   selectedItemForDetail,
   onCloseDetailModal,
+  currentBranch = "CN01",
+  isActive = true,
+  onCountChange,
 }: TabPurchasesProps) {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [purchases, setPurchases] = useState<PurchaseItem[]>(initialPurchases);
+  const [purchases, setPurchases] = useState<PurchaseItem[]>([]);
   const [activeItem, setActiveItem] = useState<PurchaseItem | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [currentScopeKey, setCurrentScopeKey] = useState<string | null>(null);
+  const lastFetchedRef = useRef<number>(0);
 
   // Sync prop if provided
-  React.useEffect(() => {
+  useEffect(() => {
     if (selectedItemForDetail) {
       setActiveItem(selectedItemForDetail);
     }
   }, [selectedItemForDetail]);
 
-  const loadPurchases = async () => {
-    setLoading(true);
-    try {
-      const res = await erpClient.getPurchaseRequestsList(1, search, "");
-      if (res && res.list && res.list.rows && res.list.rows.length > 0) {
-        setCurrentScopeKey(res.scopeKey);
-        const mapped = res.list.rows.map((r) => {
-          const seed = initialPurchases.find((p) => p.code === r.documentId);
-          return {
-            id: r.documentId,
-            code: r.documentId,
-            date: r.purchaseDate ? new Date(r.purchaseDate).toLocaleDateString("vi-VN") : "09/10/2026",
-            creator: r.personSuggest || seed?.creator || "DS. Nguyễn Thùy Linh",
-            department: r.department || seed?.department || "Kho Cấp cứu",
-            branch: r.branchId === "CN01" ? "Chi nhánh 1 (Trung tâm)" : r.branchId === "CN02" ? "Chi nhánh 2 (Kho Dược)" : `Chi nhánh ${r.branchId}`,
-            purpose: seed?.purpose || `Đề nghị mua sắm vật tư y tế [${r.documentId}]`,
-            status: (r.statusId === 2 ? "approved" : r.statusId === 1 ? "pending" : "draft") as any,
-            totalAmount: seed?.totalAmount || "Xem chi tiết",
-            lines: seed?.lines || [],
-          };
-        });
-        setPurchases(mapped);
-        return;
+  const loadPurchases = useCallback(
+    async (isBackground = false) => {
+      if (!isBackground) {
+        if (purchases.length === 0) setLoading(true);
+        else setIsRefreshing(true);
+      } else {
+        setIsRefreshing(true);
       }
-    } catch (e) {
-      console.warn("Could not load remote purchases:", e);
-    } finally {
-      setLoading(false);
-    }
-    // Fallback to initial
-    setPurchases(initialPurchases);
-  };
 
-  React.useEffect(() => {
+      try {
+        const res = await erpClient.getPurchaseRequestsList(1, search, currentBranch);
+        if (res && res.list && res.list.rows) {
+          setCurrentScopeKey(res.scopeKey);
+          const mapped: PurchaseItem[] = res.list.rows.map((r) => {
+            let status: PurchaseItem["status"] = "draft";
+            if (r.statusId === 2) status = "approved";
+            else if (r.statusId === 1) status = "pending";
+            else if (r.statusId === 3 || r.statusId === -1) status = "rejected";
+
+            const branchLabel =
+              r.branchId === "CN01"
+                ? "Chi nhánh 1 (Trung tâm)"
+                : r.branchId === "CN02"
+                ? "Chi nhánh 2 (Kho Dược)"
+                : `Chi nhánh ${r.branchId}`;
+
+            return {
+              id: r.documentId,
+              code: r.documentId,
+              date: r.purchaseDate
+                ? new Date(r.purchaseDate).toLocaleDateString("vi-VN")
+                : "—",
+              creator: r.personSuggest || "Dược sĩ phụ trách",
+              department: r.department || "Kho Dược GSP",
+              branch: branchLabel,
+              purpose: `Yêu cầu bổ sung thuốc / vật tư y tế [${r.documentId}]`,
+              status,
+              totalAmount: "Chi tiết dòng",
+              lines: [],
+            };
+          });
+
+          setPurchases(mapped);
+          onCountChange?.(mapped.length);
+          lastFetchedRef.current = Date.now();
+        } else {
+          setPurchases([]);
+          onCountChange?.(0);
+        }
+      } catch (e) {
+        console.warn("Could not load remote purchases:", e);
+      } finally {
+        setLoading(false);
+        setIsRefreshing(false);
+      }
+    },
+    [search, currentBranch, purchases.length, onCountChange]
+  );
+
+  // Initial and search-triggered fetch
+  useEffect(() => {
     loadPurchases();
-  }, [search]);
+  }, [search, currentBranch]);
+
+  // Tab activation: stale-while-revalidate caching
+  useEffect(() => {
+    if (isActive) {
+      const now = Date.now();
+      if (now - lastFetchedRef.current > 45000 || purchases.length === 0) {
+        loadPurchases(purchases.length > 0);
+      }
+    }
+  }, [isActive, loadPurchases, purchases.length]);
 
   const handleOpenDetail = async (item: PurchaseItem) => {
     setActiveItem(item);
-    if (currentScopeKey) {
-      try {
-        const detail = await erpClient.getPurchaseRequestDetail(currentScopeKey, item.id);
+    setDetailLoading(true);
+
+    try {
+      let scopeKey = currentScopeKey;
+      if (!scopeKey) {
+        const wsRes = await erpClient.getPurchaseRequestsList(1, "", currentBranch);
+        scopeKey = wsRes?.scopeKey || null;
+        if (scopeKey) setCurrentScopeKey(scopeKey);
+      }
+
+      if (scopeKey) {
+        const detail = await erpClient.getPurchaseRequestDetail(scopeKey, item.id);
         if (detail && detail.document) {
           const doc = detail.document;
           setActiveItem((prev) =>
             prev
               ? {
                   ...prev,
-                  purpose: doc.header.purposeDescOrClient || doc.header.notes || prev.purpose,
-                  totalAmount: doc.header.price ? `${Number(doc.header.price).toLocaleString("vi-VN")} đ` : prev.totalAmount,
+                  purpose:
+                    doc.header.purposeDescOrClient ||
+                    doc.header.notes ||
+                    prev.purpose,
+                  totalAmount: doc.header.price
+                    ? `${Number(doc.header.price).toLocaleString("vi-VN")} đ`
+                    : "—",
                   lines: doc.lines.map((l) => ({
                     itemId: l.values.itemId,
                     itemName: `Dược phẩm [${l.values.itemId}]`,
-                    specification: l.values.model || "Theo tiêu chuẩn Dược điển",
+                    specification: l.values.model || "Tiêu chuẩn Dược điển",
                     unit: "Hộp/Đơn vị",
                     quantity: Number(l.values.quantity) || 1,
-                    unitPrice: l.values.unitPrice ? `${Number(l.values.unitPrice).toLocaleString("vi-VN")} đ` : "Theo hợp đồng",
-                    amount: l.values.totalPrice ? `${Number(l.values.totalPrice).toLocaleString("vi-VN")} đ` : "Theo hợp đồng",
+                    unitPrice: l.values.unitPrice
+                      ? `${Number(l.values.unitPrice).toLocaleString("vi-VN")} đ`
+                      : "Theo đơn giá ERP",
+                    amount: l.values.totalPrice
+                      ? `${Number(l.values.totalPrice).toLocaleString("vi-VN")} đ`
+                      : l.values.unitPrice && l.values.quantity
+                      ? `${(Number(l.values.unitPrice) * Number(l.values.quantity)).toLocaleString("vi-VN")} đ`
+                      : "Theo đơn giá ERP",
                   })),
                 }
               : prev
           );
         }
-      } catch (e) {
-        console.warn("Could not fetch remote purchase detail:", e);
       }
+    } catch (e) {
+      console.warn("Could not fetch remote purchase detail:", e);
+    } finally {
+      setDetailLoading(false);
     }
   };
 
@@ -338,12 +269,22 @@ export function TabPurchases({
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
             <input
               type="text"
-              placeholder="Tìm theo số phiếu, người lập, nội dung..."
+              placeholder="Tìm theo số phiếu PR, người lập, nội dung..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-2xs"
             />
           </div>
+
+          <button
+            type="button"
+            onClick={() => loadPurchases(false)}
+            disabled={isRefreshing}
+            className="p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 transition-colors shrink-0 disabled:opacity-50"
+            title="Làm mới danh sách"
+          >
+            <RefreshCw className={`size-4 ${isRefreshing ? "animate-spin text-purple-600" : ""}`} />
+          </button>
 
           <UntitledButton
             variant="primary"
@@ -410,15 +351,27 @@ export function TabPurchases({
 
       {/* List of Purchases (Mobile Cards) */}
       <div className="space-y-3">
-        {filtered.length === 0 ? (
-          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-8 text-center space-y-2">
+        {loading && purchases.length === 0 ? (
+          <DocumentCardSkeleton count={4} />
+        ) : filtered.length === 0 ? (
+          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-8 text-center space-y-3">
             <FileText className="size-10 text-neutral-400 mx-auto stroke-[1.4]" />
-            <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
-              Không tìm thấy phiếu yêu cầu mua sắm nào
-            </p>
-            <p className="text-xs text-neutral-400">
-              Thử thay đổi từ khóa tìm kiếm hoặc bỏ bộ lọc trạng thái.
-            </p>
+            <div>
+              <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+                Không tìm thấy phiếu yêu cầu mua sắm nào
+              </p>
+              <p className="text-xs text-neutral-400 mt-0.5">
+                Chưa có dữ liệu cho chi nhánh này hoặc từ khóa tìm kiếm chưa khớp.
+              </p>
+            </div>
+            <UntitledButton
+              variant="secondary-gray"
+              size="sm"
+              onClick={() => loadPurchases(false)}
+              iconLeading={<RefreshCw className="size-3.5" />}
+            >
+              Tải lại dữ liệu
+            </UntitledButton>
           </div>
         ) : (
           filtered.map((item) => (
@@ -446,7 +399,7 @@ export function TabPurchases({
                     {item.totalAmount}
                   </span>
                   <span className="text-[11px] text-neutral-400">
-                    {item.lines.length} mặt hàng
+                    {item.lines.length > 0 ? `${item.lines.length} mặt hàng` : "Xem chi tiết"}
                   </span>
                 </div>
               </div>
@@ -507,7 +460,7 @@ export function TabPurchases({
                   variant="secondary-gray"
                   size="md"
                   fullWidth
-                  onClick={() => alert("Đang gửi lệnh in phiếu ra máy in GSP...")}
+                  onClick={() => alert("Đang chuẩn bị lệnh in ERP cho phiếu " + activeItem.code)}
                   iconLeading={<Printer className="size-4" />}
                 >
                   In phiếu ERP
@@ -553,6 +506,12 @@ export function TabPurchases({
                   {activeItem.date}
                 </span>
               </div>
+              <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
+                <span className="text-neutral-500">Chi nhánh trực thuộc:</span>
+                <span className="font-semibold text-neutral-900 dark:text-white">
+                  {activeItem.branch}
+                </span>
+              </div>
             </div>
 
             {/* Line Items Table */}
@@ -561,9 +520,11 @@ export function TabPurchases({
                 Danh sách thuốc & vật tư ({activeItem.lines?.length ?? 0})
               </h4>
               <div className="space-y-2">
-                {(!activeItem.lines || activeItem.lines.length === 0) ? (
+                {detailLoading ? (
+                  <DetailLinesSkeleton count={3} />
+                ) : !activeItem.lines || activeItem.lines.length === 0 ? (
                   <div className="p-4 rounded-xl border border-dashed border-neutral-200 dark:border-neutral-800 text-center text-xs text-neutral-400">
-                    Đang tải chi tiết các mặt hàng hoặc chưa có dòng phát sinh...
+                    Không có dòng thuốc hoặc chi tiết dòng chưa được lưu trên hệ thống.
                   </div>
                 ) : (
                   activeItem.lines.map((line, idx) => (
@@ -573,28 +534,28 @@ export function TabPurchases({
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                        <span className="text-[10px] font-mono text-neutral-400">
-                          #{idx + 1} · {line.itemId}
+                          <span className="text-[10px] font-mono text-neutral-400">
+                            #{idx + 1} · {line.itemId}
+                          </span>
+                          <h5 className="text-xs font-bold text-neutral-900 dark:text-white truncate">
+                            {line.itemName}
+                          </h5>
+                          <p className="text-[11px] text-neutral-400">{line.specification}</p>
+                        </div>
+                        <span className="text-xs font-bold text-neutral-900 dark:text-white shrink-0">
+                          {line.amount}
                         </span>
-                        <h5 className="text-xs font-bold text-neutral-900 dark:text-white truncate">
-                          {line.itemName}
-                        </h5>
-                        <p className="text-[11px] text-neutral-400">{line.specification}</p>
                       </div>
-                      <span className="text-xs font-bold text-neutral-900 dark:text-white shrink-0">
-                        {line.amount}
-                      </span>
-                    </div>
 
-                    <div className="flex items-center justify-between text-[11px] pt-1 border-t border-neutral-100 dark:border-neutral-800/80 text-neutral-500">
-                      <span>
-                        Số lượng: <strong className="text-purple-600">{line.quantity}</strong> {line.unit}
-                      </span>
-                      <span>Đơn giá: {line.unitPrice}</span>
+                      <div className="flex items-center justify-between text-[11px] pt-1 border-t border-neutral-100 dark:border-neutral-800/80 text-neutral-500">
+                        <span>
+                          Số lượng: <strong className="text-purple-600">{line.quantity}</strong> {line.unit}
+                        </span>
+                        <span>Đơn giá: {line.unitPrice}</span>
+                      </div>
                     </div>
-                  </div>
-                ))
-              )}
+                  ))
+                )}
               </div>
             </div>
           </div>

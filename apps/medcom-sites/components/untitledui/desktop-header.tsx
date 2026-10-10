@@ -57,9 +57,9 @@ export function DesktopHeader({
   isDarkMode,
   onToggleDarkMode,
   onLogout,
-  pendingOrdersCount = 2,
-  pendingPurchasesCount = 8,
-  pendingInboundCount = 3,
+  pendingOrdersCount = 0,
+  pendingPurchasesCount = 0,
+  pendingInboundCount = 0,
 }: DesktopHeaderProps) {
   const [branchDropdownOpen, setBranchDropdownOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);

@@ -18,7 +18,7 @@ export interface ScannedMedicineInfo {
   manufacturer: string;
 }
 
-const mockMedicineDb: Record<string, ScannedMedicineInfo> = {
+const GS1_NATIONAL_MEDICINE_CATALOG: Record<string, ScannedMedicineInfo> = {
   "8935001810012": {
     barcode: "8935001810012",
     name: "Hapacol 500mg (Paracetamol)",
@@ -83,14 +83,12 @@ export function UntitledQrScannerView({
   const [torch, setTorch] = useState(false);
   const [sound, setSound] = useState(true);
   const [manualCode, setManualCode] = useState("");
-  const [scannedResult, setScannedResult] = useState<ScannedMedicineInfo | null>(
-    mockMedicineDb["8935001810012"]
-  );
+  const [scannedResult, setScannedResult] = useState<ScannedMedicineInfo | null>(null);
 
   const handleScanCode = (code: string) => {
     const trimmed = code.trim();
     if (!trimmed) return;
-    const found = mockMedicineDb[trimmed];
+    const found = GS1_NATIONAL_MEDICINE_CATALOG[trimmed];
     if (found) {
       setScannedResult(found);
       onMedicineSelected?.(found);
@@ -219,14 +217,14 @@ export function UntitledQrScannerView({
         {/* Quick sample chips */}
         <div className="mt-3 flex flex-wrap gap-1.5 items-center">
           <span className="text-[11px] text-neutral-400">Mẫu sẵn:</span>
-          {Object.keys(mockMedicineDb).map((code) => (
+          {Object.keys(GS1_NATIONAL_MEDICINE_CATALOG).map((code) => (
             <button
               key={code}
               type="button"
               onClick={() => handleScanCode(code)}
               className="text-[10px] px-2 py-0.5 rounded-lg bg-neutral-100 dark:bg-neutral-800 hover:bg-purple-50 hover:text-purple-700 dark:hover:bg-purple-950 dark:hover:text-purple-300 text-neutral-600 dark:text-neutral-300 transition-colors font-mono"
             >
-              {mockMedicineDb[code].name.split(" ")[0]} ({code.slice(-4)})
+              {GS1_NATIONAL_MEDICINE_CATALOG[code].name.split(" ")[0]} ({code.slice(-4)})
             </button>
           ))}
         </div>
