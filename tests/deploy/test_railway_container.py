@@ -326,7 +326,8 @@ class DockerSmokeTests(unittest.TestCase):
             container = docker('create', tag, '/never-executed', text=True).stdout.strip()
             try:
                 with tarfile.open(fileobj=io.BytesIO(docker('export', container).stdout)) as stream:
-                    files = {member.name.removeprefix('context/') for member in stream if member.isfile()}
+                    files = {member.name.removeprefix('context/') for member in stream
+                             if member.isfile() and member.name.startswith('context/')}
                 self.assertFalse(files - {'.dockerignore'}, f'Directory-shaped catalog leaked: {files}')
             finally:
                 docker('rm', container)

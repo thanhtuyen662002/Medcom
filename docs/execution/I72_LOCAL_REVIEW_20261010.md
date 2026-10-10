@@ -28,6 +28,7 @@ Integration base advanced to `c7bfa10a43ea4515b17fb105815ef7d78080e9ce` when the
 | Contract ID collation alias | Binary exact contract match plus branch fence; actual contract read and foreign-branch rejection |
 | Container image omitted the new embedded resource | Initial current-head container run 38031476990 failed with CS1566. Copy/allowlist exactly the sanitized catalog; strengthen source-only and real Docker context checks to keep adjacent/private files excluded. Repair is verified by new current-head CI, without disabling a check. |
 | Follow-up Docker smoke retained 34-route expectation and had a colliding fixture file/directory | Run 38031643631 built the image, then correctly failed smoke tests. Update the actual operation count to 115 and exercise the directory-shaped impostor in a separate real context fixture; retain all forbidden-neighbor assertions. Local Docker daemon is unavailable; source-only checks run locally and real image/context tests run in hosted CI. |
+| New directory-shaped context check counted Docker-generated root files | Run 38031985803 passed actual image/contract/neighbor checks but the new assertion counted .dockerenv/etc outside the copied context. Restrict its inspection to context/ exactly like the existing neighbor test; preserve the no-extra-context-file assertion. |
 
 ## Acceptance that remains open
 
