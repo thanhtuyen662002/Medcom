@@ -44,6 +44,7 @@ public static class ApiHost
         builder.Services.AddSingleton<IPurchaseRequestCommandAccess, UnavailablePurchaseRequestCommandAccess>();
         builder.Services.AddSingleton<IPurchaseRequestCommands, UnavailablePurchaseRequestCommands>();
         builder.Services.AddSingleton<IErpScreenService, UnavailableErpScreenService>();
+        builder.Services.AddSingleton<INotificationQueries, UnavailableNotificationQueries>();
         builder.Services.AddInboundDraftFacade();
         var erpWrites = ErpWriteStartup.Read(builder.Configuration);
         if (erpWrites is not null && !builder.Configuration.GetValue("Legacy:Enabled", false))
@@ -60,6 +61,15 @@ public static class ApiHost
             builder.Services.AddSingleton(new SqlLegacyUserStore(connectionString, enablePilots: enablePilots,
                 developmentTestTlsTarget: developmentTestTlsTarget));
             builder.Services.AddSingleton<ILegacyUserStore>(provider=>provider.GetRequiredService<SqlLegacyUserStore>());
+            builder.Services.AddScoped<INotificationQueries>(provider=>{
+                var context=provider.GetRequiredService<IHttpContextAccessor>().HttpContext
+                    ?? throw new InvalidOperationException("Current request required.");
+                var sessionToken=AuthEndpoints.Current(context).Token;
+                var sessions=provider.GetRequiredService<IWebSessions>();
+                return new SqlNotificationQueries(provider.GetRequiredService<LegacyCompany>(),provider.GetRequiredService<SqlLegacyUserStore>(),
+                    async cancellation=>(await sessions.ResolveAsync(sessionToken,false,cancellation))?.Identity,
+                    async cancellation=>(await sessions.InspectAsync(sessionToken,cancellation))?.Identity);
+            });
             builder.Services.AddSingleton(new LegacyPasswordOptions(builder.Configuration["Legacy:DotnetPath"] ?? "dotnet",
                 Path.Combine(AppContext.BaseDirectory, "password-worker", "Medcom.LegacyPasswordWorker.dll"),
                 Required("Legacy:ToolsPath")));
@@ -271,6 +281,7 @@ public static class ApiHost
         ApiContractCatalog.Map(app);
         PurchaseRequestEndpoints.Map(app);
         ErpScreenEndpoints.Map(app);
+        NotificationEndpoints.Map(app);
         app.MapInboundDraftFacade();
         return app;
     }

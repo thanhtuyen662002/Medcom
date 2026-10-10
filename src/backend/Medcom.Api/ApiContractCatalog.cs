@@ -126,6 +126,13 @@ internal static class ApiContractCatalog
         Add("get", "/health/live", "healthLive", Object(("status", new() { ["type"] = "string", ["const"] = "healthy" })), "process-only", anonymous: true);
         Add("get", "/health/ready", "healthReady", Shape(typeof(PlatformHealth)), "business-release-not-admitted", anonymous: true, success: 503);
         Add("get", Path, "openApiContract", null, "static-contract", anonymous: true);
+        var notificationId=new JsonArray(Parameter("id","path",new(){["type"]="integer",["minimum"]=1,["maximum"]=int.MaxValue},true));
+        Add("get","/api/notifications","notificationList",Shape(typeof(ErpScopedResponse<NotificationPage>)),"current-erp-recipient-sql",
+            parameters:new JsonArray(Parameter("page","query",Number(1000,1)),Parameter("pageSize","query",Number(100,30)),
+                Parameter("unreadOnly","query",new(){["type"]="boolean",["default"]=false})));
+        Add("get","/api/notifications/{id}","notificationDetail",Shape(typeof(ErpScopedResponse<NotificationRow>)),"current-erp-recipient-sql",parameters:(JsonArray)notificationId.DeepClone());
+        Add("get","/api/notifications/{id}/target","notificationTarget",Shape(typeof(ErpScopedResponse<NotificationTarget>)),"current-erp-recipient-and-document-authority",parameters:(JsonArray)notificationId.DeepClone());
+        Add("post","/api/notifications/{id}/read","notificationSetRead",Shape(typeof(ErpScopedResponse<NotificationRow>)),"current-erp-recipient-native-mark-read",request:typeof(NotificationReadRequest),parameters:(JsonArray)notificationId.DeepClone());
         Add("get", "/api/platform/metadata", "platformMetadata", Object(("contractVersion", new() { ["type"] = "integer", ["const"] = 1 }),
             ("status", new() { ["type"] = "string", ["enum"] = Array(["foundation_only", "read_only_adapter"]) })), "identity-observation", "platform.status");
         Add("get", "/api/auth/csrf", "authCsrf", Object(("token", new() { ["type"] = Array(["string", "null"]) })), "antiforgery-bootstrap", anonymous: true);
