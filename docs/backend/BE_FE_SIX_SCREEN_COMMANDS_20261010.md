@@ -166,6 +166,12 @@ Giữ cookie phiên BE. Lấy CSRF qua GET `/api/auth/csrf`, giữ companion coo
 
 Nguồn HTTP: `ErpScreenEndpoints.cs`, middleware auth/CSRF hiện có. Có thể nhận ProblemDetails `{code, correlationId, ...}` hoặc ErpCommandResult tùy boundary; FE đọc cả hai, không phụ thuộc vào SQL error text riêng tư.
 
+## Việc FE cần cập nhật ở proxy hiện có
+
+Đã đọc snapshot FE trên main `c7bfa10a` (PR #130): `apps/medcom-sites/lib/erp/proxy-policy.ts` chưa allowlist các route `/api/erp/{module}` mới; `proxy.ts` chưa chuyển `X-Medcom-Read-Scope`/Origin cho nhóm POST này. Đây là việc FE cần tích hợp riêng, I72 không sửa FE. Với catchall BFF hiện có, ví dụ BE `/api/erp/sales-orders/screen` tương ứng URL trình duyệt `/api/erp/api/erp/sales-orders/screen`.
+
+FE cần allowlist **đúng từng route và method cố định** từ OpenAPI; đặt body limit 1 MiB cho nhóm POST ERP; kiểm tra browser Origin trước khi chuyển Origin cố định của BE; chuyển CSRF cookie/token và `X-Medcom-Read-Scope` hợp lệ, đồng thời relay scope/projection/correlation của response. Không mở proxy tùy ý tên bảng/path, không bỏ các kiểm tra hiện có. Cập nhật parser theo schema module để giữ full fields; gọi `/actions` để hiển thị nút và `/actions/send-pm/options` cho hộp chọn PM. Việc đọc/ghi trực tiếp BE và việc BFF đã tích hợp là hai nghiệm thu khác nhau.
+
 ## Việc còn lại trước khi mở ghi thật
 
 1. Nghiệm thu riêng DB đích: full constraints/index/trigger/default/hook/dynamic dependency, các nhánh nghiệp vụ và rollback. 67 module hash là static closure của phạm vi, không khẳng định exhaustive dynamic SQL closure.
