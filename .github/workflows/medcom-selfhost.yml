@@ -62,6 +62,7 @@ jobs:
         working-directory: src/frontend
         run: npm ci --ignore-scripts
       - name: Install Chromium from the locked synthetic browser toolchain
+        if: runner.os == 'Windows'
         working-directory: src/frontend
         run: node node_modules/playwright/cli.js install chromium
       - name: Require installed synthetic test browser
@@ -77,10 +78,15 @@ jobs:
           const driverVersion = require('playwright-core/package.json').version;
           const lockedVersion = require('./package.json').devDependencies['@playwright/test'];
           if (driverVersion !== lockedVersion) throw new Error('Required I12 browser driver does not match the locked package');
-          const browser = chromium.executablePath();
+          const linuxCandidates = ['/usr/bin/google-chrome', '/usr/bin/google-chrome-stable',
+            '/opt/google/chrome/chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser'];
+          const browser = process.platform === 'win32' ? chromium.executablePath() : linuxCandidates.find(candidate => {
+            try {accessSync(candidate, constants.X_OK); return true;} catch {return false;}
+          });
+          if (!browser) throw new Error('Required installed Linux browser is unavailable');
           accessSync(browser, constants.X_OK);
           appendFileSync(process.env.GITHUB_ENV, `MEDCOM_EDGE_PATH=${browser}\n`);
-          console.log(`Synthetic I12 locked Chromium: ${browser}; Playwright ${driverVersion}; Node ${process.versions.node}`);
+          console.log(`Synthetic I12 browser: ${browser}; Playwright ${driverVersion}; Node ${process.versions.node}; Windows uses locked Chromium`);
           NODE
       - name: Typecheck
         working-directory: apps/medcom-sites
