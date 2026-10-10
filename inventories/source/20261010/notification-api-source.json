@@ -1,0 +1,190 @@
+{
+  "sourceSet": "owner-live-meddata-20261010",
+  "observedAtUtc": "2026-10-10T13:31:24.3562246+00:00",
+  "table": "dbo.SY_NotifyMsgTbl",
+  "columns": [
+    {
+      "column": "ID",
+      "jsonField": "id",
+      "sqlType": "int",
+      "nullable": false,
+      "ordinal": 1
+    },
+    {
+      "column": "FromUserID",
+      "jsonField": "fromUserId",
+      "sqlType": "varchar(50)",
+      "nullable": false,
+      "ordinal": 2
+    },
+    {
+      "column": "ToUserID",
+      "jsonField": "toUserId",
+      "sqlType": "varchar(50)",
+      "nullable": false,
+      "ordinal": 3
+    },
+    {
+      "column": "Title",
+      "jsonField": "title",
+      "sqlType": "nvarchar(200)",
+      "nullable": false,
+      "ordinal": 4
+    },
+    {
+      "column": "Message",
+      "jsonField": "message",
+      "sqlType": "nvarchar(2000)",
+      "nullable": false,
+      "ordinal": 5
+    },
+    {
+      "column": "MsgTime",
+      "jsonField": "msgTime",
+      "sqlType": "datetime2(0)",
+      "nullable": false,
+      "ordinal": 6
+    },
+    {
+      "column": "NotifyType",
+      "jsonField": "notifyType",
+      "sqlType": "varchar(20)",
+      "nullable": false,
+      "ordinal": 7
+    },
+    {
+      "column": "ColorHex",
+      "jsonField": "colorHex",
+      "sqlType": "varchar(7)",
+      "nullable": true,
+      "ordinal": 8
+    },
+    {
+      "column": "SourceSystem",
+      "jsonField": "sourceSystem",
+      "sqlType": "varchar(20)",
+      "nullable": false,
+      "ordinal": 9
+    },
+    {
+      "column": "ERPFormName",
+      "jsonField": "erpFormName",
+      "sqlType": "varchar(100)",
+      "nullable": true,
+      "ordinal": 10
+    },
+    {
+      "column": "WebFormName",
+      "jsonField": "webFormName",
+      "sqlType": "varchar(100)",
+      "nullable": true,
+      "ordinal": 11
+    },
+    {
+      "column": "WebRoute",
+      "jsonField": "webRoute",
+      "sqlType": "nvarchar(400)",
+      "nullable": true,
+      "ordinal": 12
+    },
+    {
+      "column": "DocumentID",
+      "jsonField": "documentId",
+      "sqlType": "varchar(100)",
+      "nullable": true,
+      "ordinal": 13
+    },
+    {
+      "column": "OrderNo",
+      "jsonField": "orderNo",
+      "sqlType": "varchar(50)",
+      "nullable": true,
+      "ordinal": 14
+    },
+    {
+      "column": "StatusID",
+      "jsonField": "statusId",
+      "sqlType": "int",
+      "nullable": true,
+      "ordinal": 15
+    },
+    {
+      "column": "IsView",
+      "jsonField": "isView",
+      "sqlType": "bit",
+      "nullable": false,
+      "ordinal": 16
+    },
+    {
+      "column": "ViewDate",
+      "jsonField": "viewDate",
+      "sqlType": "datetime2(0)",
+      "nullable": true,
+      "ordinal": 17
+    },
+    {
+      "column": "IsActive",
+      "jsonField": "isActive",
+      "sqlType": "bit",
+      "nullable": false,
+      "ordinal": 18
+    },
+    {
+      "column": "ShowERP",
+      "jsonField": "showErp",
+      "sqlType": "bit",
+      "nullable": false,
+      "ordinal": 19
+    },
+    {
+      "column": "ShowWeb",
+      "jsonField": "showWeb",
+      "sqlType": "bit",
+      "nullable": false,
+      "ordinal": 20
+    },
+    {
+      "column": "ExpireAt",
+      "jsonField": "expireAt",
+      "sqlType": "datetime2(0)",
+      "nullable": true,
+      "ordinal": 21
+    },
+    {
+      "column": "EventKey",
+      "jsonField": "eventKey",
+      "sqlType": "varchar(200)",
+      "nullable": true,
+      "ordinal": 22
+    }
+  ],
+  "modules": [
+    {
+      "schema": "dbo",
+      "name": "SY_NotifyCheckStp",
+      "sqlDefinitionSha256": "f6b8764edf5bd74e6e462130f7d9532965261fa9707e0047bacf9aff31f128b5"
+    },
+    {
+      "schema": "dbo",
+      "name": "SY_NotifyListStp",
+      "sqlDefinitionSha256": "d41b4bb5afee6255037fe0dcba5ad661943701dc1a68d126a14640556f94d095"
+    },
+    {
+      "schema": "dbo",
+      "name": "SY_NotifyMarkReadStp",
+      "sqlDefinitionSha256": "7af88e6dab52888ebabc92dec8cea6f63eec0c3b280fdd2225cfdfa3aba9db63"
+    },
+    {
+      "schema": "dbo",
+      "name": "SY_NotifySendStp",
+      "sqlDefinitionSha256": "6cc932fc9c4c4736608ef654fc2be8af2d085dfef658f97d4783a714e3b5f964"
+    }
+  ],
+  "realRowsRead": false,
+  "remoteWrites": false,
+  "evidence": [
+    "inventories/source/20261010/catalog-columns.json",
+    "inventories/source/20261010/catalog-objects.json",
+    "docs/backend/NOTIFICATIONS_FE_HANDOFF_20261010.md"
+  ]
+}

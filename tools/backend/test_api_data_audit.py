@@ -16,7 +16,7 @@ class ApiDataAuditTests(unittest.TestCase):
 
     def test_every_current_route_and_all_source_columns_are_reconciled_without_a_runtime_attestation(self):
         result = audit(self.api, self.mapping, self.tables)
-        self.assertEqual(115, result["registered_operations"])
+        self.assertEqual(119, result["registered_operations"])
         self.assertEqual(118, result["complete_source_columns"])
         self.assertEqual(417, result["erp_screen_source_columns"])
         self.assertEqual(14, sum(o["category"] == "erp-full-source-fields" for o in result["operations"]))

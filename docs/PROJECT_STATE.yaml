@@ -1,3 +1,20 @@
+owner_notifications_20261010:
+  instruction: SY_NotifyMsgTbl_ToUserID_matches_current_SY_User_UserName_and_document_click_navigation
+  canonical_goal: 45
+  current_increment: I76
+  base: 75edfd7099a33ca31b2912a9bc575222ab24205f
+  source: inventories/source/20261010/notification-api-source.json
+  handoff: docs/backend/NOTIFICATIONS_FE_HANDOFF_20261010.md
+  evidence: docs/execution/I76_NOTIFICATIONS_20261010.md
+  native_columns: 22
+  new_api_operations: 4
+  verified_form_mappings: 9
+  SQL_and_ordinary_HTTPS_synthetic_checks: 28_passed_including_canonical_extended_username
+  public_full_suite: 3276_passed_zero_failed_zero_skipped
+  notification_test_cases: 43_passed
+  hosted_exact_head_base_CI: PENDING_publication
+  actual_owner_notification_acceptance: UNKNOWN
+  separately_owned_FE_changes: NONE_BFF_allowlist_and_renderer_handoff_required
 owner_operational_erp_writes_20261010:
   instruction: usable_FE_commands_persist_to_DB_no_permanently_absent_writer
   canonical_goal: 45
@@ -12,7 +29,8 @@ owner_operational_erp_writes_20261010:
   current_Tools_stored_password: Windows_NET10_and_real_SQL_HTTP_synthetic_user_PASS
   current_Tools_Linux: UNKNOWN
   production_business_acceptance: UNKNOWN
-  remote_MedData_install_write_deploy: OWNER_ENVIRONMENT_DECISION_PENDING
+  remote_MedData_install_write_deploy: I75_OWNER_AUTHORIZED_INSTALLED_AND_BE_ACTIVATED
+  remote_activation_evidence: https://github.com/thanhtuyen662002/Medcom/pull/132#issuecomment-6097976637
   separately_owned_FE: PR_133_integration_preserved_no_FE_edits
   source_free_tests: 3233_passed_zero_failed_zero_skipped
   synthetic_SQL_checks: 159_passed
