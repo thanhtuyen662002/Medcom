@@ -1,11 +1,12 @@
-import {resolveErpOrigins,erpCookies,relayCookie,routeAllowed,purchaseCommandRoute,inboundRoute,inboundCommandRoute,requestBodyLimit} from "./proxy-policy";
+import {resolveErpOrigins,erpCookies,relayCookie,routeAllowed,purchaseCommandRoute,inboundRoute,inboundCommandRoute,erpScreenRoute,erpScreenPostRoute,requestBodyLimit} from "./proxy-policy";
 const problem=(status:number,code:string)=>Response.json({code},{status,headers:{"Cache-Control":"no-store"}});
 export async function proxyErpRequest(request:Request,path:string[],configuredOrigin:string|undefined,configuredPublicOrigin:string|undefined,upstreamFetch:typeof fetch=fetch,localHttpsMode?:string){
  const route=path.join("/");
  if(!routeAllowed(route,request.method))return problem(404,"endpoint_unavailable");
  const inbound=inboundRoute(route),inboundCommand=request.method==="POST"&&inboundCommandRoute(route);
+ const erpScreen=erpScreenRoute(route),erpScreenPost=request.method==="POST"&&erpScreenPostRoute(route);
  // A decoded slash must not turn one catchall segment into an admitted route.
- if(inbound&&path.some(segment=>segment.includes("/")))return problem(404,"endpoint_unavailable");
+ if((inbound||erpScreen)&&path.some(segment=>segment.includes("/")))return problem(404,"endpoint_unavailable");
  const origins=resolveErpOrigins(configuredOrigin,configuredPublicOrigin,localHttpsMode);
  const sameOrigin=(origin:string|null)=>origins.publicOrigin!==null&&(origin===origins.publicOrigin||(process.env.NODE_ENV!=="production"&&(origin==="http://localhost:3000"||origin==="http://127.0.0.1:3000")));
  if((request.method==="POST"||inbound)&&!origins.publicOrigin)return problem(503,"frontend_not_configured");
@@ -21,6 +22,7 @@ export async function proxyErpRequest(request:Request,path:string[],configuredOr
  const command=request.method==="POST"&&purchaseCommandRoute(route);
  if(command&&incoming.search)return problem(400,"invalid_purchase_query");
  if(inboundCommand&&incoming.search)return problem(400,"invalid_inbound_query");
+ if(erpScreenPost&&incoming.search)return problem(400,"invalid_erp_query");
  const headers=new Headers({Accept:"application/json"});const cookie=erpCookies(request.headers.get("cookie"));if(cookie)headers.set("cookie",cookie);
  const csrf=request.headers.get("X-CSRF-TOKEN");if(csrf&&csrf.length<8192)headers.set("X-CSRF-TOKEN",csrf);
  if(inbound){
@@ -38,6 +40,12 @@ export async function proxyErpRequest(request:Request,path:string[],configuredOr
   // Browser origin was checked above; the server-to-server hop has its own fixed origin.
   headers.set("Origin",origin);
  }
+ if(erpScreenPost){
+  const scope=request.headers.get("X-Medcom-Read-Scope");
+  if(scope&&/^[a-f0-9]{64}$/.test(scope))headers.set("X-Medcom-Read-Scope",scope);
+  if(!csrf||csrf.length>=8192||csrf.includes(","))return problem(403,"csrf_invalid");
+  headers.set("Origin",origin);
+ }
  let body:BodyInit|undefined;
  try{
  if(request.method==="POST"){
@@ -50,13 +58,13 @@ export async function proxyErpRequest(request:Request,path:string[],configuredOr
   const bytes=new Uint8Array(size);let offset=0;for(const c of chunks){bytes.set(c,offset);offset+=c.length;}const decoded=new TextDecoder("utf-8",{fatal:true}).decode(bytes);
   body=decoded;
   if(declared!==null&&Number(declared)!==size)return problem(400,"invalid_request_body");
-  if(command||inboundCommand){
+  if(command||inboundCommand||erpScreenPost){
    if(!/^application\/json(?:;\s*charset=utf-8)?$/i.test(request.headers.get("content-type")??""))return problem(415,"json_required");
    if(bytes[0]===239&&bytes[1]===187&&bytes[2]===191)return problem(400,"invalid_request_body");
    const json:unknown=JSON.parse(decoded);
    if(json===null||typeof json!=="object"||Array.isArray(json))return problem(400,"invalid_request_body");
   }
-  if(inboundCommand){
+  if(inboundCommand||erpScreenPost){
    // JSON parsing above is validation only. Preserve the original intent bytes,
    // including whitespace, decimal strings, duplicate fields and operation ID.
    body=bytes;headers.set("Content-Type","application/json; charset=utf-8");
@@ -70,16 +78,23 @@ export async function proxyErpRequest(request:Request,path:string[],configuredOr
   for(const name of ["content-type","x-correlation-id","retry-after"]){const v=r.headers.get(name);if(v)outgoing.set(name,v);}
   // Response correlation only. Browser-supplied scope markers are never sent
   // upstream and neither marker can grant access or identify a session token.
-  if(request.method==="GET"&&r.status===200&&/^(?:api\/workspace|api\/documents\/(?:purchase-orders|inbound-requests)(?:\/detail)?)$/.test(route)){
+  if(request.method==="GET"&&r.status===200&&/^(?:api\/workspace|api\/documents\/(?:purchase-orders|inbound-requests)(?:\/detail)?|api\/erp\/.*)$/.test(route)){
    const session=r.headers.get("X-Medcom-Session-Scope"),read=r.headers.get("X-Medcom-Read-Scope");
    if(session&&read&&/^[a-f0-9]{64}$/.test(session)&&/^[a-f0-9]{64}$/.test(read)){
     outgoing.set("X-Medcom-Session-Scope",session);outgoing.set("X-Medcom-Read-Scope",read);
    }
   }
+  if(request.method==="POST"&&r.status===200&&erpScreenPostRoute(route)){
+   const read=r.headers.get("X-Medcom-Read-Scope");
+   if(read&&/^[a-f0-9]{64}$/.test(read))outgoing.set("X-Medcom-Read-Scope",read);
+  }
   if(request.method==="GET"&&r.status===200){
    const projection=r.headers.get("X-Medcom-Data-Projection"),fullPath=r.headers.get("X-Medcom-Full-Data-Path");
-   if(projection==="full"&&fullPath&&/^\/api\/(?:v2\/)?(?:documents\/(?:purchase-orders|inbound-requests)(?:\/detail)?|purchase-requests(?:\/detail)?)$/.test(fullPath)){
-    outgoing.set("X-Medcom-Data-Projection",projection);outgoing.set("X-Medcom-Full-Data-Path",fullPath);
+   if(projection==="full"){
+    outgoing.set("X-Medcom-Data-Projection",projection);
+    if(fullPath&&/^\/api\/(?:v2\/)?(?:documents\/(?:purchase-orders|inbound-requests)(?:\/detail)?|purchase-requests(?:\/detail)?|erp\/.*)$/.test(fullPath)){
+     outgoing.set("X-Medcom-Full-Data-Path",fullPath);
+    }
    }
   }
   for(const value of r.headers.getSetCookie()){const safe=relayCookie(value);if(safe)outgoing.append("Set-Cookie",safe);}

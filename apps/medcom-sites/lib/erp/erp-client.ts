@@ -25,6 +25,23 @@ import {
   type PurchaseReadback,
   type PurchasePage,
 } from "./purchase-request-api";
+import { type ErpScreenModule } from "./proxy-policy";
+import {
+  getErpScreen,
+  getErpList,
+  getErpDetail,
+  getErpActions,
+  getErpContractInfo,
+  getErpOptions,
+  getErpPmOptions,
+  createErpDocument,
+  saveErpDocument,
+  deleteErpDocument,
+  executeErpAction,
+  scanErpQr,
+  selectErpDraft,
+  validateErpPaste,
+} from "./erp-screen-api";
 
 // Real branches configured in Medcom ERP database
 export const REAL_BRANCHES = [
@@ -167,6 +184,168 @@ export class ErpClientService {
     this.currentSession = null;
     this.currentWorkspace = null;
   }
+
+  // --- 6-Group 7-Screen ERP CUD, Action, and Lookup APIs ---
+
+  public async getScreenMetadata(module: ErpScreenModule) {
+    return await getErpScreen(module);
+  }
+
+  public async getErpModuleList(
+    module: ErpScreenModule,
+    params: {
+      branchId: string;
+      page?: number;
+      pageSize?: number;
+      search?: string;
+      dateFrom?: string;
+      dateTo?: string;
+      statusId?: number | null;
+    }
+  ) {
+    return await getErpList(module, params);
+  }
+
+  public async getErpModuleDetail(
+    module: ErpScreenModule,
+    params: { branchId: string; documentId: string; page?: number; pageSize?: number }
+  ) {
+    return await getErpDetail(module, params);
+  }
+
+  public async getErpModuleActions(
+    module: ErpScreenModule,
+    params: { branchId: string; documentId?: string }
+  ) {
+    return await getErpActions(module, params);
+  }
+
+  public async getErpContract(
+    module: "sales-orders" | "sales-qr",
+    params: { branchId: string; documentId: string }
+  ) {
+    return await getErpContractInfo(module, params);
+  }
+
+  public async getLookupOptions(
+    module: ErpScreenModule,
+    query: {
+      branchId: string;
+      lookupId: string;
+      page?: number;
+      pageSize?: number;
+      search?: string | null;
+      context?: Record<string, string | null> | null;
+    }
+  ) {
+    return await getErpOptions(module, query);
+  }
+
+  public async getPmOptions(
+    module: "sales-orders" | "internal-transfer-requests",
+    query: {
+      branchId: string;
+      role?: "primary" | "supporting";
+      page?: number;
+      pageSize?: number;
+      search?: string | null;
+    }
+  ) {
+    return await getErpPmOptions(module, query);
+  }
+
+  public async createDocument(
+    module: ErpScreenModule,
+    request: {
+      idempotencyKey: string;
+      branchId: string;
+      header: Record<string, unknown>;
+      lines: Array<{ clientLineKey: string; values: Record<string, unknown> }>;
+    }
+  ) {
+    return await createErpDocument(module, request);
+  }
+
+  public async saveDocument(
+    module: ErpScreenModule,
+    request: {
+      idempotencyKey: string;
+      branchId: string;
+      documentId: string;
+      expectedStateToken: string;
+      header: Record<string, unknown>;
+      lineChanges: Array<{
+        kind: "Add" | "Update" | "Remove";
+        lineId?: string | null;
+        clientLineKey?: string | null;
+        values?: Record<string, unknown> | null;
+      }>;
+    }
+  ) {
+    return await saveErpDocument(module, request);
+  }
+
+  public async deleteDocument(
+    module: ErpScreenModule,
+    request: {
+      idempotencyKey: string;
+      branchId: string;
+      documentId: string;
+      expectedStateToken: string;
+    }
+  ) {
+    return await deleteErpDocument(module, request);
+  }
+
+  public async executeWorkflowAction(
+    module: ErpScreenModule,
+    operation: "submit" | "send-purchase-order" | "send-pm" | "recall",
+    request: {
+      idempotencyKey: string;
+      branchId: string;
+      documentId: string;
+      expectedStateToken: string;
+      payload: Record<string, unknown>;
+    }
+  ) {
+    return await executeErpAction(module, operation, request);
+  }
+
+  public async scanQr(
+    module: "warehouse-qr" | "sales-qr",
+    action: "add" | "delete",
+    request: {
+      idempotencyKey: string;
+      branchId: string;
+      documentId: string;
+      expectedStateToken: string;
+      barcode: string;
+    }
+  ) {
+    return await scanErpQr(module, action, request);
+  }
+
+  public async selectDraft(
+    module: ErpScreenModule,
+    request: {
+      branchId: string;
+      sourceId: "items" | "contract-items" | "machines";
+      selectedKeys: string[];
+      context?: Record<string, string | null> | null;
+    }
+  ) {
+    return await selectErpDraft(module, request);
+  }
+
+  public async validatePaste(
+    module: ErpScreenModule,
+    request: { branchId: string; rows: Array<Record<string, unknown>> }
+  ) {
+    return await validateErpPaste(module, request);
+  }
 }
 
 export const erpClient = ErpClientService.getInstance();
+export * from "./erp-screen-contracts";
+export * from "./erp-screen-api";
+export type { ErpScreenModule } from "./proxy-policy";

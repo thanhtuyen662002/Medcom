@@ -14,6 +14,8 @@ import { LoginScreen } from "./login-screen";
 import { QuickCreateModal } from "./quick-create-modal";
 import { UntitledBottomSheet } from "./bottom-sheet";
 import { SidebarDrawer } from "./sidebar-drawer";
+import { TabErpScreen } from "./tab-erp-screen";
+import { type ErpScreenModule } from "@/lib/erp/proxy-policy";
 import { REAL_BRANCHES, erpClient, type LoginResult } from "@/lib/erp/erp-client";
 
 const APP_BRANCHES: BranchOption[] = REAL_BRANCHES.map((b) => ({
@@ -205,6 +207,7 @@ export function MedcomApp() {
             branches={APP_BRANCHES}
             activeTab={activeTab}
             onTabChange={setActiveTab}
+            onOpenMenu={() => setIsSidebarOpen(true)}
             userName={currentUser.displayName}
             userRole={currentUser.role}
             unreadNotifications={0}
@@ -315,6 +318,23 @@ export function MedcomApp() {
               />
             </div>
           </div>
+
+          {/* TAB 7: ERP Screen Modules (I72 6 Screen Groups) */}
+          {(
+            activeTab === "sales-orders" ||
+            activeTab === "internal-transfer-requests" ||
+            activeTab === "warehouse-qr" ||
+            activeTab === "sales-qr" ||
+            activeTab === "machine-movements" ||
+            activeTab === "machine-repairs"
+          ) && (
+            <TabErpScreen
+              module={activeTab as ErpScreenModule}
+              currentBranch={currentBranch}
+              isActive={true}
+              onOpenScanner={() => setActiveTab("scan")}
+            />
+          )}
         </main>
 
         {/* Mobile Sticky Bottom Navigation (Fixed at bottom on screens < 768px) */}

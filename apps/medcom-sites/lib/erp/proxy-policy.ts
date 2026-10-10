@@ -9,10 +9,61 @@ const inboundCommandRoutes = new Set([
 ]);
 export function inboundCommandRoute(path:string){return inboundCommandRoutes.has(path);}
 export function inboundRoute(path:string){return path==="api/inbound-requests/draft"||inboundCommandRoute(path);}
-export function requestBodyLimit(path:string,method:string){return method==="POST"&&(purchaseCommandRoute(path)||inboundCommandRoute(path))?1048576:16384;}
+export const erpScreenModules = [
+ "purchase-requests",
+ "sales-orders",
+ "internal-transfer-requests",
+ "warehouse-qr",
+ "sales-qr",
+ "machine-movements",
+ "machine-repairs",
+] as const;
+export type ErpScreenModule = typeof erpScreenModules[number];
+
+const erpScreenPostRoutes = new Set([
+ ...erpScreenModules.map(m => `api/erp/${m}/options`),
+ ...erpScreenModules.map(m => `api/erp/${m}/commands/lookup`),
+ ...(["purchase-requests", "sales-orders", "internal-transfer-requests", "machine-movements", "machine-repairs"] as const).flatMap(m => [
+  `api/erp/${m}/selection`,
+  `api/erp/${m}/paste/validate`,
+  `api/erp/${m}/create`,
+  `api/erp/${m}/save`,
+  `api/erp/${m}/delete`,
+ ]),
+ "api/erp/purchase-requests/actions/submit",
+ "api/erp/purchase-requests/actions/send-purchase-order",
+ "api/erp/sales-orders/actions/send-pm",
+ "api/erp/sales-orders/actions/send-pm/options",
+ "api/erp/sales-orders/actions/recall",
+ "api/erp/internal-transfer-requests/actions/send-pm",
+ "api/erp/internal-transfer-requests/actions/send-pm/options",
+ "api/erp/internal-transfer-requests/actions/recall",
+ "api/erp/warehouse-qr/qr/add",
+ "api/erp/warehouse-qr/qr/delete",
+ "api/erp/sales-qr/qr/add",
+ "api/erp/sales-qr/qr/delete",
+]);
+export function erpScreenPostRoute(path:string){return erpScreenPostRoutes.has(path);}
+
+const erpScreenGetRoutes = new Set([
+ ...erpScreenModules.flatMap(m => [
+  `api/erp/${m}/screen`,
+  `api/erp/${m}`,
+  `api/erp/${m}/detail`,
+  `api/erp/${m}/actions`,
+ ]),
+ "api/erp/sales-orders/contract-info",
+ "api/erp/sales-qr/contract-info",
+]);
+export function erpScreenGetRoute(path:string){return erpScreenGetRoutes.has(path);}
+export function erpScreenRoute(path:string){return erpScreenPostRoute(path)||erpScreenGetRoute(path);}
+
+export function requestBodyLimit(path:string,method:string){return method==="POST"&&(purchaseCommandRoute(path)||inboundCommandRoute(path)||erpScreenPostRoute(path))?1048576:16384;}
 const routes = new Map([
  ...[...purchaseCommandRoutes].map(path=>[path,["POST"]] as [string,string[]]),
  ...[...inboundCommandRoutes].map(path=>[path,["POST"]] as [string,string[]]),
+ ...[...erpScreenPostRoutes].map(path=>[path,["POST"]] as [string,string[]]),
+ ...[...erpScreenGetRoutes].map(path=>[path,["GET"]] as [string,string[]]),
  ["api/inbound-requests/draft",["GET"]],
  ["api/purchase-requests",["GET"]],["api/purchase-requests/workspace",["GET"]],["api/purchase-requests/detail",["GET"]],["api/purchase-requests/lookup",["GET"]],
  ["health/live",["GET"]],["health/ready",["GET"]],["api/auth/csrf",["GET"]],["api/auth/login",["POST"]],["api/auth/session",["GET"]],["api/auth/session/continue",["POST"]],["api/auth/logout",["POST"]],["api/workspace",["GET"]],["api/platform/metadata",["GET"]],["api/documents/purchase-orders",["GET"]],["api/documents/purchase-orders/detail",["GET"]],["api/documents/inbound-requests",["GET"]],["api/documents/inbound-requests/detail",["GET"]],

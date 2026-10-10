@@ -3,7 +3,19 @@
 import React from "react";
 import { LayoutDashboard, ShoppingBag, FileText, PackageCheck, Menu } from "lucide-react";
 
-export type NavTabId = "home" | "orders" | "purchases" | "inbound" | "scan" | "settings";
+export type NavTabId =
+  | "home"
+  | "orders"
+  | "purchases"
+  | "inbound"
+  | "scan"
+  | "settings"
+  | "sales-orders"
+  | "internal-transfer-requests"
+  | "warehouse-qr"
+  | "sales-qr"
+  | "machine-movements"
+  | "machine-repairs";
 
 export interface UntitledBottomNavProps {
   activeTab: NavTabId;
