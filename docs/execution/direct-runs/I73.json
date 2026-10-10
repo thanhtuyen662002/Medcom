@@ -1,0 +1,13 @@
+{
+  "id": "I73",
+  "base": "5f9dc076437a7d0d2d221484af4c15bb80559640",
+  "scope": "Repair observed Windows browser CI runtime instability before any further product code; pin synthetic Chromium to the existing locked Playwright driver; preserve all FE source/tests and existing required checks",
+  "evidence": "docs/execution/I73_WINDOWS_CI_BROWSER_DRAIN_20261010.md",
+  "limits": [
+    "No separately owned FE application or test edits",
+    "No production SQL, deployment, schedule changes or fabricated acceptance",
+    "No disabled/weakened checks, force push or direct main overwrite",
+    "Preserve historical Draft #53 and immutable claims"
+  ],
+  "status": "ADMITTED_CI_REPAIR_ONLY"
+}
