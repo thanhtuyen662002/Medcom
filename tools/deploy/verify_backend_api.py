@@ -19,7 +19,7 @@ import urllib.request
 CONTRACT = "/api/contracts/openapi.json"
 MODULES = {
     "purchase-orders": ("/api/v2/documents/purchase-orders", 19, 12),
-    "inbound-requests": ("/api/v2/documents/inbound-requests", 37, 25),
+    "inbound-requests": ("/api/v2/documents/inbound-requests", 38, 26),
     "purchase-requests": ("/api/v2/purchase-requests", 14, 9),
 }
 

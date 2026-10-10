@@ -42,12 +42,12 @@ public sealed class DocumentFullFieldTests
             var records = detail ? body.GetProperty(kind == DocumentKind.PurchaseOrders ? "purchaseOrderLines" : "inboundRequestLines") : body.GetProperty("rows");
             Assert.Equal(page <= 2 ? 2 : page == 3 ? 1 : 0, records.GetArrayLength());
             if (detail)
-                Assert.Equal(kind == DocumentKind.PurchaseOrders ? 19 : 37,
+                Assert.Equal(kind == DocumentKind.PurchaseOrders ? 19 : 38,
                     body.GetProperty("document").GetProperty(headerName).EnumerateObject().Count());
             foreach (var record in records.EnumerateArray())
             {
                 var fields = record.GetProperty(detail ? "fields" : headerName);
-                Assert.Equal(detail ? kind == DocumentKind.PurchaseOrders ? 12 : 25 : kind == DocumentKind.PurchaseOrders ? 19 : 37,
+                Assert.Equal(detail ? kind == DocumentKind.PurchaseOrders ? 12 : 26 : kind == DocumentKind.PurchaseOrders ? 19 : 38,
                     fields.EnumerateObject().Count());
                 var identity = record.GetProperty(detail ? "lineId" : "documentId").GetString()!;
                 Assert.True(identities.Add(identity));
@@ -115,7 +115,7 @@ public sealed class DocumentFullFieldTests
             : JsonSerializer.SerializeToElement(Assert.Single(detail.Detail!.InboundRequestLines).Fields,Json);
         var expected=source.LastRows!.Rows[0];
         AssertProjection(header,expected,13,kind==DocumentKind.PurchaseOrders?FullDocumentRows.OrderHeader:FullDocumentRows.InboundHeader);
-        AssertProjection(line,expected,kind==DocumentKind.PurchaseOrders?32:50,
+        AssertProjection(line,expected,kind==DocumentKind.PurchaseOrders?32:51,
             kind==DocumentKind.PurchaseOrders?FullDocumentRows.OrderLine:FullDocumentRows.InboundLine);
         Assert.Equal("2026-10-01T12:34:56.997",header.GetProperty("documentDate").GetString());
         Assert.Equal(nulls?null:kind==DocumentKind.PurchaseOrders?"999999999999999999999999.12":"999999999999999999",
@@ -184,7 +184,7 @@ public sealed class DocumentFullFieldTests
 
     [Theory]
     [InlineData(DocumentKind.PurchaseOrders,"purchase-orders",19,12)]
-    [InlineData(DocumentKind.InboundRequests,"inbound-requests",37,25)]
+    [InlineData(DocumentKind.InboundRequests,"inbound-requests",38,26)]
     public async Task HTTPS_document_routes_serialize_complete_headers_and_lines_and_contract_matches_current_source(DocumentKind kind,string name,int heads,int lines)
     {
         var source=new FullReadSource(kind);
@@ -293,7 +293,7 @@ public sealed class DocumentFullFieldTests
         var root=Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,"../../../../../../"));
         using var saved=JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(root,"docs/backend/document-field-contract.json")));
         var tables=new Dictionary<string,JsonElement>(StringComparer.Ordinal);
-        foreach(var file in Directory.GetFiles(Path.Combine(root,"inventories/source/20261002"),"table-*.json"))
+        foreach(var file in new[]{Path.Combine(root,"inventories/source/20261010/document-read-tables.json")})
         {
             using var doc=JsonDocument.Parse(await File.ReadAllTextAsync(file));
             foreach(var table in doc.RootElement.GetProperty("objects").EnumerateArray())tables[table.GetProperty("name").GetString()!]=table.Clone();
@@ -319,7 +319,7 @@ public sealed class DocumentFullFieldTests
                 }
             }
         }
-        Assert.Equal(116,total);Assert.Equal(0,fixture.Source.Opens);
+        Assert.Equal(118,total);Assert.Equal(0,fixture.Source.Opens);
     }
 
     private static void AssertProjection(JsonElement json,DataRow row,int start,(string Name,Type Type,bool Nullable,string SqlType)[] columns)

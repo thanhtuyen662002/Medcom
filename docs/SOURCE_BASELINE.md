@@ -55,3 +55,12 @@ The ERP ZIP contains the exact standalone DLL. The full SQL member is now verifi
 ### Durable current-round recovery locators
 
 The current source-set records the owner-attached Library and attachment IDs for all three exact hashed files. Scheduled sessions should use those locators through the Library skill, materialize privately and rerun the archive/member integrity verifier. Old Phase 1 attachment IDs are historical, not the current-round recovery path. An ID lookup does not prove future access; record a real access error precisely and continue independent eligible code. Never put raw sources in this public repository.
+
+
+### Owner local ERP and authorized live metadata intake — 2026-10-10
+
+The owner supplied `D:\Projects\Company\Medcom\ERP_Medcom2026` and authorized masked local password entry for a SELECT-only MedData audit. This is a separately identified current round, `owner-live-meddata-20261010`, recorded in `inventories/source/20261010/source-set.json`, `erp-source-summary.json` and `docs/execution/I71_LIVE_AUDIT_20261010.md`. The historical approved Library archives and 2026-10-02 archive/member identities above are retained unchanged; no archive equivalence is inferred.
+
+The local ERP nested root contains 1,409 files, observed/hash-inventoried privately. Current root Tools.dll is 8,261,633 bytes, SHA-256 `7019a26a5129edf44716601678ea1aadaebde5082defebd195ff47a7452d7ec8`, file version `7.9.9778.19421`; ERP.NET.exe is 7,732,737 bytes, SHA-256 `20b512b6c9e3af36633877874d5ade22ad1e409fd247bdce3aa7d40e18e85964`, version `7.7.9778.19512`. Both differ from the verified 2026-10-02 archive root binaries. Runtime equivalence, pure password compatibility and full engine portability remain UNKNOWN; no existing password pin is changed. No settings/password files or raw binaries are committed.
+
+The authorized catalog SELECTs observed 627 tables, 231 views, 646 procedures, 110 functions, 49 object-level triggers and two sequences, totaling 1,665 selected objects and 13,534 column definitions. Full semantics are not proved by object counts. The current document-read slice has 118 columns; nullable `varchar(50)` `dbo.IV_InboundRequestTbl.LinkID` and `dbo.IV_InboundRequestDetailsTbl.ParentID` are additions compared with the prior 116-column slice. Hash-checked sanitized metadata is durable; SQL bodies, credentials, settings, IDs and real rows are excluded.

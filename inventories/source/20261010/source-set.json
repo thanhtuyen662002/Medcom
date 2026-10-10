@@ -1,0 +1,99 @@
+{
+  "formatVersion": 1,
+  "sourceSet": "owner-live-meddata-20261010",
+  "ownerAuthorizationDate": "2026-10-10",
+  "sourceAlias": "owner-meddata",
+  "observedAtUtc": "2026-10-10T02:54:40.2362887Z",
+  "sourceMode": "LIVE_FIXED_SELECT_ONLY_CATALOG",
+  "historicalBaselineRetained": true,
+  "historicalTechnicalSourceSet": "owner-attachment-20261002",
+  "historicalApprovedLibraryArchives": [
+    "ERP_Medcom2026(4).zip",
+    "Medcom-Data (3)(1).zip"
+  ],
+  "privateCatalogSha256": "0e57814afe3738b29b7459f1499752fd7f23941e21d259731b943bf0863d589b",
+  "sqlVersion": "16.0.1000.6",
+  "compatibilityLevel": 130,
+  "metadataViewDefinitionObserved": true,
+  "objectCounts": {
+    "FN": 17,
+    "IF": 8,
+    "P": 646,
+    "SO": 2,
+    "TF": 85,
+    "TR": 49,
+    "U": 627,
+    "V": 231
+  },
+  "catalogColumnCount": 13534,
+  "queryStatuses": {
+    "environment": "PASS",
+    "objects": "PASS",
+    "columns": "PASS",
+    "indexes": "PASS",
+    "foreignKeys": "PASS",
+    "checks": "PASS",
+    "parameters": "PASS",
+    "dependencies": "PASS",
+    "tableRowEstimates": "PASS",
+    "triggers": "PASS"
+  },
+  "members": {
+    "document-read-tables.json": {
+      "sha256": "615756dc9ce7d31849cfcde879fec2cf3489dca1d42a2d327099688994fd458c",
+      "bytes": 47673
+    },
+    "catalog-objects.json": {
+      "sha256": "9df674eea6842560e9c662c975b52b10b105c5ed1b6ef539c18e1836e3a7bf64",
+      "bytes": 377274
+    },
+    "catalog-columns.json": {
+      "sha256": "021b606721799f43eed02f9af79aafc9ecf4db2c86763954ffc6a4abef580759",
+      "bytes": 5832875
+    },
+    "catalog-indexes.json": {
+      "sha256": "443c6515dd85b38de7beb288c7aa33a2990c4b9a077f687ddebbd54f9905795a",
+      "bytes": 495056
+    },
+    "catalog-foreignKeys.json": {
+      "sha256": "deb4d485c2a0079070e42c9265bc0e15c14a83744418595385c9787fcf16accb",
+      "bytes": 166036
+    },
+    "catalog-checks.json": {
+      "sha256": "0b26b47a10fc80430304fe03a40293bc21510ae4e59687691b9b8eb79d2957fc",
+      "bytes": 13772
+    },
+    "catalog-parameters.json": {
+      "sha256": "2a997c5efa91e0c2e8e119050b99521feda496f4893628ff49303127d0164a86",
+      "bytes": 1040761
+    },
+    "catalog-dependencies.json": {
+      "sha256": "7ca3d4ec43bce97dd453969a6503c2884b280d8e820e060ede6dd17006e711c9",
+      "bytes": 1543184
+    },
+    "catalog-triggers.json": {
+      "sha256": "536cef305129af66de7cb15c60a08631ec54a56a51b6ca0ee5aeb16696648d56",
+      "bytes": 25505
+    },
+    "erp-source-summary.json": {
+      "sha256": "ef433fd670dd9fa1ac7c778447cfca9724841edf5792cf376daf91ba564dde0a",
+      "bytes": 2575
+    }
+  },
+  "currentDocumentSourceColumns": 118,
+  "definitionBodiesExported": 0,
+  "credentialsExported": 0,
+  "transactionRowsExported": 0,
+  "businessWritesPerformed": false,
+  "legacyRuntimeAcceptance": "UNKNOWN",
+  "webAuthenticatedTargetReads": "NOT_RUN",
+  "productionAccepted": false,
+  "limits": [
+    "Selected catalog types only; no claim of exhaustive ERP semantic coverage.",
+    "No procedure or trigger body is published; hashes do not prove behavior.",
+    "Metadata snapshot queries are sequential and are not a transactionally consistent database export.",
+    "SQL credentials do not establish an ERP user/session/branch grant.",
+    "Runtime, business commands, migrations and production release remain separately gated."
+  ],
+  "memberHashEncoding": "canonical UTF-8/LF sanitized JSON; raw owner binaries and archives are not normalized"
+}

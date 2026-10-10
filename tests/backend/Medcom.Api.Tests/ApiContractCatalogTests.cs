@@ -69,8 +69,8 @@ public sealed class ApiContractCatalogTests
     [Theory]
     [InlineData("PurchaseOrderHeaderFields", "purchase-orders", true, 19)]
     [InlineData("PurchaseOrderLineFields", "purchase-orders", false, 12)]
-    [InlineData("InboundRequestHeaderFields", "inbound-requests", true, 37)]
-    [InlineData("InboundRequestLineFields", "inbound-requests", false, 25)]
+    [InlineData("InboundRequestHeaderFields", "inbound-requests", true, 38)]
+    [InlineData("InboundRequestLineFields", "inbound-requests", false, 26)]
     [InlineData("PurchaseRequestHeaderFields", "purchase-requests", true, 14)]
     [InlineData("PurchaseRequestLineFields", "purchase-requests", false, 9)]
     public void Every_SQL_source_field_has_an_exact_required_typed_nullable_schema_and_mapping(string name, string kind, bool header, int count)

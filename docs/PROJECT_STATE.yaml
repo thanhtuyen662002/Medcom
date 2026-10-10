@@ -1,3 +1,41 @@
+owner_live_meddata_audit_20261010:
+  instruction: latest_local_ERP_masked_SQL_password_and_readonly_MedData_audit_for_full_FE_API_fields
+  canonical_goal: 45
+  current_increment: I71
+  pr: 128
+  base: cbcab793fd34e4bea36a20ec86dee82d561ca857
+  source_set: owner_live_meddata_20261010_separate_identity
+  source_inventory: inventories/source/20261010/source-set.json
+  current_ERP_binaries: hashed_changed_from_20261002_old_password_pin_preserved
+  new_Tools_runtime_compatibility: UNKNOWN
+  live_SQL_connection: PASS_owner_masked_dialog_fixed_readonly_probe
+  live_metadata: PASS_ten_fixed_SELECT_queries_VIEW_DEFINITION_observed
+  selected_live_objects: 1665
+  tables: 627
+  views: 231
+  procedures: 646
+  functions: 110
+  object_triggers: 49
+  catalog_columns: 13534
+  current_document_source_columns: 118
+  added_read_fields: [inboundRequestHeader.linkId, inboundRequestLines.fields.parentId]
+  bounded_SQL_data_audit: PASS_six_tables_114_observed_records_nine_pages_zero_values_exported
+  SQL_receipt: docs/backend/live-sql-read-audit-20261010.json
+  authenticated_Web_target_reads: NOT_RUN_SQL_credentials_do_not_establish_ERP_session
+  source_free_backend_tests: 3140_passed_zero_failed_zero_skipped
+  static_API_audit_tests: 7_passed
+  safe_operator_verifier_tests: 9_passed
+  source_metadata_tests: 51_passed
+  policy_package_tests: 97_passed
+  exact_head_hosted_CI: PENDING_after_publication
+  FE_handoff: docs/backend/BE_FE_FULL_FIELDS_INTEGRATION_20261010.md
+  frontend_custody: separate_owner_no_FE_mutations
+  business_SQL_writes: NONE
+  deployment: NOT_RUN
+  production_acceptance: OPEN
+  schedules: remain_off_no_administration
+  historical_state_below: preserved
+
 owner_backend_full_fields_20261010:
   instruction: full_fields_per_record_keep_paging_audit_merge_main_and_write_BE_FE_guide
   timezone: Asia/Saigon

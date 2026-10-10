@@ -20,6 +20,19 @@ metadata=catalog(args.dump,private/'table-ddl')
 names=['SY_User','SY_UserGroup','SY_UserBranch','SY_Menu','SY_UserGroupPermisstion','SY_UserPermisstion','AP_OrderTbl','IV_InboundRequestTbl','AP_OrderDetailTbl','IV_InboundRequestDetailsTbl']
 schema=private/'runtime-schema.sql'
 schema.write_text('\nGO\n'.join((private/'table-ddl'/f'{name}.sql').read_text() for name in names)+'\nGO\n')
+# The historical dump has 37/25 inbound read columns. Append the two verified
+# nullable current-source additions only to this private disposable fixture;
+# this tool still does not connect to or change any database.
+live=json.loads((ROOT/'inventories/source/20261010/document-read-tables.json').read_text())
+extensions=[]
+for table,column in [('IV_InboundRequestTbl','LinkID'),('IV_InboundRequestDetailsTbl','ParentID')]:
+    objects=[obj for obj in live['objects'] if obj['schema']=='dbo' and obj['name']==table]
+    if len(objects)!=1:raise SystemExit('Current fixture source table unavailable')
+    fields=[field for field in objects[0]['columns'] if field['name']==column]
+    if len(fields)!=1 or (fields[0]['type'],fields[0]['typeArguments'],fields[0]['nullable'])!=('varchar','(50)',True):
+        raise SystemExit('Current fixture extension source mismatch')
+    extensions.append(f'ALTER TABLE [dbo].[{table}] ADD [{column}] [varchar](50) NULL;')
+with schema.open('a') as output:output.write('\nGO\n'.join(extensions)+'\nGO\n')
 probe=private/'synthetic-probe';probe.mkdir(exist_ok=True)
 (probe/'probe.csproj').write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings></PropertyGroup></Project>')
 (probe/'Program.cs').write_text('''using System.Reflection;

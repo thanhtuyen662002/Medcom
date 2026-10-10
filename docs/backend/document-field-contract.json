@@ -1,11 +1,11 @@
 {
   "contractVersion": 2,
-  "sourceSet": "owner-attachment-20261002",
+  "sourceSet": "owner-live-meddata-20261010",
   "kinds": {
     "purchase-orders": {
       "header": {
         "table": "AP_OrderTbl",
-        "sourceLine": 11248,
+        "sourceLine": null,
         "fields": [
           {
             "column": "DocumentID",
@@ -178,11 +178,13 @@
             "jsonType": "string",
             "format": null
           }
-        ]
+        ],
+        "archiveSourceLine": 11248,
+        "sourceEvidence": "inventories/source/20261010/document-read-tables.json"
       },
       "lines": {
         "table": "AP_OrderDetailTbl",
-        "sourceLine": 11437,
+        "sourceLine": null,
         "fields": [
           {
             "column": "UserAutoID",
@@ -292,13 +294,15 @@
             "jsonType": "string",
             "format": null
           }
-        ]
+        ],
+        "archiveSourceLine": 11437,
+        "sourceEvidence": "inventories/source/20261010/document-read-tables.json"
       }
     },
     "inbound-requests": {
       "header": {
         "table": "IV_InboundRequestTbl",
-        "sourceLine": 11370,
+        "sourceLine": null,
         "fields": [
           {
             "column": "DocumentID",
@@ -632,12 +636,23 @@
             "nullable": false,
             "jsonType": "string",
             "format": null
+          },
+          {
+            "column": "LinkID",
+            "jsonPath": "document.inboundRequestHeader.linkId",
+            "sqlType": "varchar(50)",
+            "nullable": true,
+            "jsonType": "string",
+            "format": null,
+            "listJsonPath": "rows[].inboundRequestHeader.linkId"
           }
-        ]
+        ],
+        "archiveSourceLine": 11370,
+        "sourceEvidence": "inventories/source/20261010/document-read-tables.json"
       },
       "lines": {
         "table": "IV_InboundRequestDetailsTbl",
-        "sourceLine": 11005,
+        "sourceLine": null,
         "fields": [
           {
             "column": "UserAutoID",
@@ -863,14 +878,25 @@
             "nullable": true,
             "jsonType": "string",
             "format": null
+          },
+          {
+            "column": "ParentID",
+            "jsonPath": "inboundRequestLines[].fields.parentId",
+            "sqlType": "varchar(50)",
+            "nullable": true,
+            "jsonType": "string",
+            "format": null,
+            "listJsonPath": null
           }
-        ]
+        ],
+        "archiveSourceLine": 11005,
+        "sourceEvidence": "inventories/source/20261010/document-read-tables.json"
       }
     },
     "purchase-requests": {
       "header": {
         "table": "AP_PurchaseRequestTbl",
-        "sourceLine": 23221,
+        "sourceLine": null,
         "fields": [
           {
             "column": "PurchaseRequestID",
@@ -998,11 +1024,13 @@
             "jsonType": "string",
             "format": null
           }
-        ]
+        ],
+        "archiveSourceLine": 23221,
+        "sourceEvidence": "inventories/source/20261010/document-read-tables.json"
       },
       "lines": {
         "table": "AP_PurchaseRequestDetailTbl",
-        "sourceLine": 23200,
+        "sourceLine": null,
         "fields": [
           {
             "column": "UserAutoID",
@@ -1085,8 +1113,12 @@
             "jsonType": "string",
             "format": null
           }
-        ]
+        ],
+        "archiveSourceLine": 23200,
+        "sourceEvidence": "inventories/source/20261010/document-read-tables.json"
       }
     }
-  }
+  },
+  "previousSourceSet": "owner-attachment-20261002",
+  "sourceEvidence": "inventories/source/20261010/document-read-tables.json"
 }

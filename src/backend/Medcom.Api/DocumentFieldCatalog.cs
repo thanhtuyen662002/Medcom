@@ -78,7 +78,8 @@ internal static class DocumentFieldCatalog
                 new("BBKCUrl","document.inboundRequestHeader.bbkcUrl","varchar(255)",true,"string",null,"rows[].inboundRequestHeader.bbkcUrl"),
                 new("Notes","document.inboundRequestHeader.notes","nvarchar(500)",true,"string",null,"rows[].inboundRequestHeader.notes"),
                 new("SendTo","document.inboundRequestHeader.sendTo","nvarchar(max)",true,"string",null,"rows[].inboundRequestHeader.sendTo"),
-                new("QRPrintType","document.inboundRequestHeader.qrPrintType","varchar(10)",false,"string",null,"rows[].inboundRequestHeader.qrPrintType")]),
+                new("QRPrintType","document.inboundRequestHeader.qrPrintType","varchar(10)",false,"string",null,"rows[].inboundRequestHeader.qrPrintType"),
+                new("LinkID","document.inboundRequestHeader.linkId","varchar(50)",true,"string",null,"rows[].inboundRequestHeader.linkId")]),
             new("IV_InboundRequestDetailsTbl",[
                 new("UserAutoID","inboundRequestLines[].fields.userAutoId","varchar(50)",false,"string",null,null),
                 new("DocumentID","inboundRequestLines[].fields.documentId","varchar(50)",false,"string",null,null),
@@ -104,7 +105,8 @@ internal static class DocumentFieldCatalog
                 new("NoPalletNote","inboundRequestLines[].fields.noPalletNote","nvarchar(500)",true,"string",null,null),
                 new("PalletNote","inboundRequestLines[].fields.palletNote","nvarchar(500)",true,"string",null,null),
                 new("CheckerNote","inboundRequestLines[].fields.checkerNote","nvarchar(500)",true,"string",null,null),
-                new("ItemCode","inboundRequestLines[].fields.itemCode","nvarchar(50)",true,"string",null,null)])),
+                new("ItemCode","inboundRequestLines[].fields.itemCode","nvarchar(50)",true,"string",null,null),
+                new("ParentID","inboundRequestLines[].fields.parentId","varchar(50)",true,"string",null,null)])),
         "purchase-requests" => new(2,"purchase-requests",
             new("AP_PurchaseRequestTbl",[
                 new("PurchaseRequestID","data.sourceFields.header.purchaseRequestId","nvarchar(50)",false,"string",null,"data.rows[].fields.purchaseRequestId"),
