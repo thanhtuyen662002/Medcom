@@ -13,3 +13,9 @@ Base/main: `5f9dc076437a7d0d2d221484af4c15bb80559640` (merged I72, PR #129). Thi
 ## Required verification before integration
 
 Observe locked-browser installation, unchanged local QR cases on the selected executable, workflow policy checks, both hosted FE platform jobs and all backend/container checks on the exact source/base. Re-read current main/source/reviews/protection, verify package/tested-merge provenance and merge through the PR gate only after all checks succeed. Fresh integrated-main CI/package evidence is a separate receipt. Source and package integrity do not close ERP numbering, writer, target SQL, business or FE consumer acceptance. Goal #45 stays OPEN.
+
+## Local lead review and observed verification
+
+Chromium 141.0.7390.37, Playwright build 1194, was installed through the locked Playwright 1.56.1 CLI. The exact workflow preflight body was extracted and executed on Windows/Node 24.19.0: driver version equals the frontend lock, the selected executable is accessible and the environment receipt is generated. The unchanged QR scanner 10/10 and request QR 7/7 cases passed on that executable. The supplementary Edge results above are retained; this CI runtime stabilization is not a claim of exhaustive Edge/device compatibility or of the original timeout's root cause.
+
+`verify_ci_policy.py` passed, all 97 policy/integration/package guard tests passed, and `git diff --check` passed. Review of the workflow diff confirms one added browser-install step and fixed runtime selection; no existing test, timeout, platform, assertion or evidence-upload gate is removed or weakened. No `apps/medcom-sites` or `src/frontend` source/lock changes are included. This is a local lead review, not a claimed second GitHub reviewer. Current-head hosted checks remain required and are recorded in the PR checkpoint.

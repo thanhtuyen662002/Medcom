@@ -9,5 +9,5 @@
     "No disabled/weakened checks, force push or direct main overwrite",
     "Preserve historical Draft #53 and immutable claims"
   ],
-  "status": "ADMITTED_CI_REPAIR_ONLY"
+  "status": "LOCAL_VERIFIED_CI_REPAIR_HOSTED_CHECKS_PENDING"
 }
