@@ -18,6 +18,7 @@ import {
   LayoutDashboard,
   Settings2,
   Search,
+  Menu,
 } from "lucide-react";
 import { UntitledBadge } from "./badge";
 import { UntitledButton } from "./button";
@@ -30,6 +31,7 @@ export interface DesktopHeaderProps {
   branches: BranchOption[];
   activeTab: NavTabId;
   onTabChange: (tab: NavTabId) => void;
+  onOpenMenu?: () => void;
   userName?: string;
   userRole?: string;
   unreadNotifications?: number;
@@ -49,6 +51,7 @@ export function DesktopHeader({
   branches,
   activeTab,
   onTabChange,
+  onOpenMenu,
   userName = "DS. Trần Quang Minh",
   userRole = "Trưởng Ban Dược",
   unreadNotifications = 3,
@@ -238,6 +241,18 @@ export function DesktopHeader({
 
           {/* Right Header Actions */}
           <div className="flex items-center gap-2.5">
+            {onOpenMenu && (
+              <button
+                type="button"
+                onClick={onOpenMenu}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all cursor-pointer text-purple-700 dark:text-purple-300 bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/60 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-800 shadow-2xs"
+                title="Mở toàn bộ danh mục phân hệ ERP"
+              >
+                <Menu className="size-3.5 text-purple-600 dark:text-purple-400" />
+                <span>Phân hệ ERP</span>
+              </button>
+            )}
+
             {/* Quick Create Action */}
             <UntitledButton
               variant="primary"

@@ -1,6 +1,36 @@
-import{test}from"node:test";import assert from"node:assert/strict";import{backendOrigin,localHttpsOrigin,resolveErpOrigins,erpCookies,relayCookie,routeAllowed,sameOriginWrite}from"../lib/erp/proxy-policy.ts";
+import{test}from"node:test";import assert from"node:assert/strict";import{backendOrigin,localHttpsOrigin,resolveErpOrigins,erpCookies,relayCookie,routeAllowed,sameOriginWrite,erpScreenModules,requestBodyLimit}from"../lib/erp/proxy-policy.ts";
 test("only deployed HTTPS DNS origins",()=>{assert.equal(backendOrigin("https://erp.example.com"),"https://erp.example.com");for(const v of[undefined,"http://erp.example.com","https://localhost","https://127.0.0.1","https://[::1]","https://user:pass@erp.example.com","https://erp.example.com/path","https://erp.example.com?url=x"])assert.equal(backendOrigin(v),null);});
 test("route allowlist prevents open proxy and unsupported mutation",()=>{assert.ok(routeAllowed("api/auth/login","POST"));for(const p of["api/admin/delete","api/auth/../admin","https://evil.example","api/documents/purchase-orders/write"])assert.equal(routeAllowed(p,"GET"),false);assert.equal(routeAllowed("api/documents/purchase-orders","POST"),false);});
+test("ERP screen modules, routes and 1MiB body limits are correctly allowlisted",()=>{
+ assert.equal(erpScreenModules.length,7);
+ for(const m of erpScreenModules){
+  assert.ok(routeAllowed(`api/erp/${m}/screen`,"GET"));
+  assert.ok(routeAllowed(`api/erp/${m}`,"GET"));
+  assert.ok(routeAllowed(`api/erp/${m}/detail`,"GET"));
+  assert.ok(routeAllowed(`api/erp/${m}/actions`,"GET"));
+  assert.ok(routeAllowed(`api/erp/${m}/options`,"POST"));
+  assert.ok(routeAllowed(`api/erp/${m}/commands/lookup`,"POST"));
+  assert.equal(requestBodyLimit(`api/erp/${m}/options`,"POST"),1048576);
+  assert.equal(requestBodyLimit(`api/erp/${m}/commands/lookup`,"POST"),1048576);
+  assert.equal(routeAllowed(`api/erp/${m}/invalid`,"GET"),false);
+ }
+ assert.ok(routeAllowed("api/erp/sales-orders/contract-info","GET"));
+ assert.ok(routeAllowed("api/erp/sales-qr/contract-info","GET"));
+ assert.ok(routeAllowed("api/erp/purchase-requests/actions/submit","POST"));
+ assert.ok(routeAllowed("api/erp/purchase-requests/actions/send-purchase-order","POST"));
+ assert.ok(routeAllowed("api/erp/sales-orders/actions/send-pm","POST"));
+ assert.ok(routeAllowed("api/erp/sales-orders/actions/send-pm/options","POST"));
+ assert.ok(routeAllowed("api/erp/sales-orders/actions/recall","POST"));
+ assert.ok(routeAllowed("api/erp/internal-transfer-requests/actions/send-pm","POST"));
+ assert.ok(routeAllowed("api/erp/internal-transfer-requests/actions/send-pm/options","POST"));
+ assert.ok(routeAllowed("api/erp/internal-transfer-requests/actions/recall","POST"));
+ assert.ok(routeAllowed("api/erp/warehouse-qr/qr/add","POST"));
+ assert.ok(routeAllowed("api/erp/warehouse-qr/qr/delete","POST"));
+ assert.ok(routeAllowed("api/erp/sales-qr/qr/add","POST"));
+ assert.ok(routeAllowed("api/erp/sales-qr/qr/delete","POST"));
+ assert.equal(routeAllowed("api/erp/warehouse-qr/create","POST"),false);
+ assert.equal(routeAllowed("api/erp/sales-qr/create","POST"),false);
+});
 test("only ERP cookies forwarded",()=>{assert.equal(erpCookies("other=secret; __Host-Medcom.Session=a; __Host-Medcom.Csrf=b; csrf=fake; __Host-Medcom.SessionC1=c"),"__Host-Medcom.Session=a; __Host-Medcom.Csrf=b; __Host-Medcom.SessionC1=c");assert.equal(erpCookies(null),"");});
 test("relayed cookies retain host security",()=>{assert.ok(relayCookie("__Host-Medcom.Session=a; Path=/; Secure; HttpOnly; SameSite=Strict"));for(const c of["tracking=x; Path=/; Secure; HttpOnly","__Host-Medcom.Session=x; Domain=example.com; Path=/; Secure; HttpOnly","__Host-Medcom.Session=x; Path=/; HttpOnly"])assert.equal(relayCookie(c),null);});
 test("mutations require configured public origin",()=>{assert.equal(sameOriginWrite("https://medcom.example","https://medcom.example"),true);assert.equal(sameOriginWrite("https://medcom.example",null),false);assert.equal(sameOriginWrite("https://medcom.example","https://evil.example"),false);});

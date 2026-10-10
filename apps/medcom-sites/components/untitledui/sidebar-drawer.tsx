@@ -136,56 +136,65 @@ export function SidebarDrawer({
       ],
     },
     {
-      title: "Kho Dược & Điều chuyển (Mở rộng)",
+      title: "Quản lý Bán hàng & Điều chuyển (I72)",
       items: [
         {
-          id: "inventory",
-          label: "Kiểm kê kho & Hạn dùng",
-          description: "Cảnh báo thuốc cận hạn & tồn kho",
-          icon: Boxes,
-          badge: "Sắp có",
-          badgeColor: "neutral",
+          id: "sales-orders",
+          label: "Quản lý đơn hàng",
+          description: "Menu 0600201 • Gửi PM, thu hồi & hợp đồng",
+          icon: ShoppingBag,
+          badge: "ERP 54 trường",
+          badgeColor: "purple",
         },
         {
-          id: "transfer",
-          label: "Xuất kho điều chuyển",
-          description: "Điều phối thuốc giữa các chi nhánh",
+          id: "internal-transfer-requests",
+          label: "Đề nghị điều chuyển nội bộ",
+          description: "Menu 07010100 • Điều chuyển giữa các chi nhánh",
           icon: Truck,
-          badge: "Sắp có",
-          badgeColor: "neutral",
+          badge: "ERP 20 trường",
+          badgeColor: "purple",
+        },
+      ],
+    },
+    {
+      title: "Quét QR Xuất kho & Xuất bán (I72)",
+      items: [
+        {
+          id: "warehouse-qr",
+          label: "Quét QR xuất kho",
+          description: "Menu 0702001 • Quét thêm & quét xóa mã lô",
+          icon: QrCode,
+          badge: "26 đối chiếu",
+          badgeColor: "emerald",
         },
         {
-          id: "cold_chain",
-          label: "Giám sát nhiệt độ kho GSP",
-          description: "Theo dõi cảm biến kho lạnh 2-8°C",
-          icon: Thermometer,
-          badge: "Chuẩn GSP",
+          id: "sales-qr",
+          label: "Quét QR xuất bán hàng",
+          description: "Menu 0702010 • Quét thêm/xóa & đối chiếu hóa đơn",
+          icon: Boxes,
+          badge: "49 đối chiếu",
           badgeColor: "emerald",
         },
       ],
     },
     {
-      title: "Danh mục & Báo cáo",
+      title: "Thiết bị & Máy móc Y tế (I72)",
       items: [
         {
-          id: "medicines_catalog",
-          label: "Danh mục Thuốc & Vật tư",
-          description: "Kho dữ liệu 116 cột nguồn ERP",
-          icon: Pill,
-          badge: "116 cột",
+          id: "machine-movements",
+          label: "Bàn giao & di chuyển máy",
+          description: "Menu 1207 • Theo dõi luân chuyển thiết bị y tế",
+          icon: Building2,
+          badge: "18 trường",
           badgeColor: "purple",
         },
         {
-          id: "partners",
-          label: "Đối tác & Nhà cung cấp",
-          description: "Nhà sản xuất, đơn vị ủy quyền",
-          icon: Users,
-        },
-        {
-          id: "reports",
-          label: "Báo cáo phân tích chi phí",
-          description: "Biểu đồ chi tiêu & tiến độ giao hàng",
-          icon: BarChart3,
+          id: "machine-repairs",
+          label: "Sửa chữa & bảo trì máy",
+          description: "Menu 1209 • Quản lý bảo hành, phụ tùng thay thế",
+          icon: ShieldCheck,
+          badge: "22 trường",
+          badgeColor: "purple",
         },
       ],
     },
@@ -203,13 +212,8 @@ export function SidebarDrawer({
   ];
 
   const handleItemClick = (id: string) => {
-    if (id === "home" || id === "orders" || id === "purchases" || id === "inbound" || id === "scan" || id === "settings") {
-      onSelectTab(id as NavTabId);
-      onClose();
-    } else {
-      // Notification for roadmap tabs
-      alert(`Phân hệ "${id}" đang được đồng bộ dữ liệu theo lộ trình Production ERP Goal #45.`);
-    }
+    onSelectTab(id as NavTabId);
+    onClose();
   };
 
   const isDarkActive =
