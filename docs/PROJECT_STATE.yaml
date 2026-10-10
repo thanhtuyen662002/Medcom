@@ -1,3 +1,26 @@
+owner_operational_erp_writes_20261010:
+  instruction: usable_FE_commands_persist_to_DB_no_permanently_absent_writer
+  canonical_goal: 45
+  current_increment: I74
+  pr: 132
+  admission_base: 22cedef88216479216ee4d135088409dc3341cef
+  integration_base: 1a61b07d7cbf5557d1acd6d6a644781df4358222
+  ordinary_startup: concrete_SQL_writer_and_number_allocator_from_operator_target_profile
+  setup: explicit_install_or_read_only_prepare_no_startup_auto_migration
+  write_handoff: docs/backend/ERP_WRITE_RUNTIME_SETUP_20261010.md
+  native_number_masks: PO_DMB_global_and_DCNB_MLI_MLRP_form_DMK_verified_current_mask
+  current_Tools_stored_password: Windows_NET10_and_real_SQL_HTTP_synthetic_user_PASS
+  current_Tools_Linux: UNKNOWN
+  production_business_acceptance: UNKNOWN
+  remote_MedData_install_write_deploy: OWNER_ENVIRONMENT_DECISION_PENDING
+  separately_owned_FE: PR_133_integration_preserved_no_FE_edits
+  source_free_tests: 3233_passed_zero_failed_zero_skipped
+  synthetic_SQL_checks: 159_passed
+  ordinary_HTTPS_SQL_authenticated_checks: 100_passed
+  runtime_receipt: docs/backend/erp-operational-write-runtime-20261010.json
+  local_quality_review: docs/execution/I74_LOCAL_REVIEW_20261010.md
+  exact_head_base_CI: PENDING_after_implementation_publication
+  evidence: docs/execution/I74_ERP_WRITE_RUNTIME_20261010.md
 owner_six_screen_commands_20261010:
   instruction: typed_CUD_workflow_buttons_dropdowns_selection_paste_merge_main_and_per_screen_FE_handoff
   canonical_goal: 45

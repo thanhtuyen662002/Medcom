@@ -1,0 +1,17 @@
+{
+  "id":"I74",
+  "pr":132,
+  "base":"22cedef88216479216ee4d135088409dc3341cef",
+  "integrationBase":"1a61b07d7cbf5557d1acd6d6a644781df4358222",
+  "ownerDirection":"Usable FE operations persist into DB; do not deliver endpoints with a permanently absent writer",
+  "scope":"Concrete SQL write runtime and native numbering; ordinary HTTP/session wiring; protected operator setup; exact current stored-password worker pin; versioned API/FE handoff",
+  "sourceFreeTestsPassed":3233,
+  "nativeSqlChecksPassed":159,
+  "ordinarySqlAuthenticatedHttpChecksPassed":100,
+  "evidence":"docs/backend/erp-operational-write-runtime-20261010.json",
+  "review":"docs/execution/I74_LOCAL_REVIEW_20261010.md",
+  "handoff":"docs/backend/ERP_WRITE_RUNTIME_SETUP_20261010.md",
+  "limits":["No target DB/deployment authorization inferred", "Remote MedData stays SELECT-only pending owner target decision", "No raw SQL, binaries, credentials or real rows published", "No FE/schedule mutation, force-push or direct main overwrite", "Exact-head/base CI and preflight required before merge"],
+  "productionAccepted":false,
+  "status":"LOCAL_VERIFIED_PUBLICATION_AND_CURRENT_HEAD_CI_PENDING"
+}

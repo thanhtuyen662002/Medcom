@@ -1,0 +1,1085 @@
+{
+  "formatVersion": 1,
+  "increment": "I74",
+  "pr": 132,
+  "observedAtUtc": "2026-10-10T10:05:10.744427+00:00",
+  "environment": "local SQL Server synthetic fixture; ordinary HTTPS host and actual ERP identity/password worker",
+  "sqlServerVersion": "16.0.1000.6",
+  "sdk": "10.0.401",
+  "result": "PASS",
+  "sourceFreeTestsPassed": 3233,
+  "nativeSqlChecksPassed": 159,
+  "ordinaryHttpChecksPassed": 100,
+  "maximumHttpMilliseconds": 5493,
+  "nativeSqlChecks": [
+    {
+      "name": "internal-transfer-requests create",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests actual document numbering",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests detail",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests created line",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests create replay",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests receipt lookup",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests save",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests stale edit",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests detail",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests add and update lines",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests detail",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests two lines",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests remove line",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests selection",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests PM dropdown",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests PM no credentials",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests PM foreign scope denied",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests detail",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests send PM",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests detail",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests recall",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests detail",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests delete",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests absent after delete",
+      "passed": true
+    },
+    {
+      "name": "machine-movements create",
+      "passed": true
+    },
+    {
+      "name": "machine-movements actual document numbering",
+      "passed": true
+    },
+    {
+      "name": "machine-movements detail",
+      "passed": true
+    },
+    {
+      "name": "machine-movements created line",
+      "passed": true
+    },
+    {
+      "name": "machine-movements create replay",
+      "passed": true
+    },
+    {
+      "name": "machine-movements receipt lookup",
+      "passed": true
+    },
+    {
+      "name": "machine-movements save",
+      "passed": true
+    },
+    {
+      "name": "machine-movements stale edit",
+      "passed": true
+    },
+    {
+      "name": "machine-movements detail",
+      "passed": true
+    },
+    {
+      "name": "machine-movements add and update lines",
+      "passed": true
+    },
+    {
+      "name": "machine-movements detail",
+      "passed": true
+    },
+    {
+      "name": "machine-movements two lines",
+      "passed": true
+    },
+    {
+      "name": "machine-movements remove line",
+      "passed": true
+    },
+    {
+      "name": "machine-movements selection",
+      "passed": true
+    },
+    {
+      "name": "machine-movements detail",
+      "passed": true
+    },
+    {
+      "name": "machine-movements delete",
+      "passed": true
+    },
+    {
+      "name": "machine-movements absent after delete",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs create",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs actual document numbering",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs detail",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs created line",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs create replay",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs receipt lookup",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs save",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs stale edit",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs detail",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs add and update lines",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs detail",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs two lines",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs remove line",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs selection",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs detail",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs detail",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs linked parts disable delete",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs linked parts delete denied",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs linked parts edit rollback",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs detail",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs delete",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs absent after delete",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests create",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests actual document numbering",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests detail",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests created line",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests create replay",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests receipt lookup",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests save",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests stale edit",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests detail",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests add and update lines",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests detail",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests two lines",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests remove line",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests selection",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests second draft",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests detail",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests draft delete",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests draft absent",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests detail",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests submit",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests detail",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests submitted and locked",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests locked edit",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests detail",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests order generation",
+      "passed": true
+    },
+    {
+      "name": "sales-orders create",
+      "passed": true
+    },
+    {
+      "name": "sales-orders actual document numbering",
+      "passed": true
+    },
+    {
+      "name": "sales-orders detail",
+      "passed": true
+    },
+    {
+      "name": "sales-orders created line",
+      "passed": true
+    },
+    {
+      "name": "sales-orders create replay",
+      "passed": true
+    },
+    {
+      "name": "sales-orders receipt lookup",
+      "passed": true
+    },
+    {
+      "name": "sales-orders save",
+      "passed": true
+    },
+    {
+      "name": "sales-orders stale edit",
+      "passed": true
+    },
+    {
+      "name": "sales-orders detail",
+      "passed": true
+    },
+    {
+      "name": "sales-orders add and update lines",
+      "passed": true
+    },
+    {
+      "name": "sales-orders detail",
+      "passed": true
+    },
+    {
+      "name": "sales-orders two lines",
+      "passed": true
+    },
+    {
+      "name": "sales-orders remove line",
+      "passed": true
+    },
+    {
+      "name": "sales-orders selection",
+      "passed": true
+    },
+    {
+      "name": "sales-orders PM dropdown",
+      "passed": true
+    },
+    {
+      "name": "sales-orders PM no credentials",
+      "passed": true
+    },
+    {
+      "name": "sales-orders PM foreign scope denied",
+      "passed": true
+    },
+    {
+      "name": "sales-orders detail",
+      "passed": true
+    },
+    {
+      "name": "sales-orders send PM",
+      "passed": true
+    },
+    {
+      "name": "sales-orders detail",
+      "passed": true
+    },
+    {
+      "name": "sales-orders recall",
+      "passed": true
+    },
+    {
+      "name": "sales-orders detail",
+      "passed": true
+    },
+    {
+      "name": "sales-orders delete",
+      "passed": true
+    },
+    {
+      "name": "sales-orders absent after delete",
+      "passed": true
+    },
+    {
+      "name": "warehouse-qr detail",
+      "passed": true
+    },
+    {
+      "name": "warehouse-qr add QR",
+      "passed": true
+    },
+    {
+      "name": "warehouse-qr QR replay",
+      "passed": true
+    },
+    {
+      "name": "warehouse-qr detail",
+      "passed": true
+    },
+    {
+      "name": "warehouse-qr QR count after replay",
+      "passed": true
+    },
+    {
+      "name": "warehouse-qr repeated ordinary QR",
+      "passed": true
+    },
+    {
+      "name": "warehouse-qr detail",
+      "passed": true
+    },
+    {
+      "name": "warehouse-qr excess QR rollback",
+      "passed": true
+    },
+    {
+      "name": "warehouse-qr detail",
+      "passed": true
+    },
+    {
+      "name": "warehouse-qr excess left no row",
+      "passed": true
+    },
+    {
+      "name": "warehouse-qr delete one QR",
+      "passed": true
+    },
+    {
+      "name": "warehouse-qr detail",
+      "passed": true
+    },
+    {
+      "name": "warehouse-qr one ordinary QR removed",
+      "passed": true
+    },
+    {
+      "name": "warehouse-qr package QR add",
+      "passed": true
+    },
+    {
+      "name": "warehouse-qr detail",
+      "passed": true
+    },
+    {
+      "name": "warehouse-qr duplicate package rejected",
+      "passed": true
+    },
+    {
+      "name": "warehouse-qr detail",
+      "passed": true
+    },
+    {
+      "name": "warehouse-qr package QR delete",
+      "passed": true
+    },
+    {
+      "name": "warehouse-qr detail",
+      "passed": true
+    },
+    {
+      "name": "warehouse-qr package only removed",
+      "passed": true
+    },
+    {
+      "name": "warehouse-qr detail",
+      "passed": true
+    },
+    {
+      "name": "warehouse-qr locked QR rejected",
+      "passed": true
+    },
+    {
+      "name": "sales-qr contract info",
+      "passed": true
+    },
+    {
+      "name": "sales-qr contract no secrets",
+      "passed": true
+    },
+    {
+      "name": "sales-qr contract foreign branch denied",
+      "passed": true
+    },
+    {
+      "name": "sales-qr detail",
+      "passed": true
+    },
+    {
+      "name": "sales-qr add QR",
+      "passed": true
+    },
+    {
+      "name": "sales-qr QR replay",
+      "passed": true
+    },
+    {
+      "name": "sales-qr detail",
+      "passed": true
+    },
+    {
+      "name": "sales-qr QR count after replay",
+      "passed": true
+    },
+    {
+      "name": "sales-qr repeated ordinary QR",
+      "passed": true
+    },
+    {
+      "name": "sales-qr detail",
+      "passed": true
+    },
+    {
+      "name": "sales-qr excess QR rollback",
+      "passed": true
+    },
+    {
+      "name": "sales-qr detail",
+      "passed": true
+    },
+    {
+      "name": "sales-qr excess left no row",
+      "passed": true
+    },
+    {
+      "name": "sales-qr delete one QR",
+      "passed": true
+    },
+    {
+      "name": "sales-qr detail",
+      "passed": true
+    },
+    {
+      "name": "sales-qr one ordinary QR removed",
+      "passed": true
+    },
+    {
+      "name": "sales-qr package QR add",
+      "passed": true
+    },
+    {
+      "name": "sales-qr detail",
+      "passed": true
+    },
+    {
+      "name": "sales-qr duplicate package rejected",
+      "passed": true
+    },
+    {
+      "name": "sales-qr detail",
+      "passed": true
+    },
+    {
+      "name": "sales-qr package QR delete",
+      "passed": true
+    },
+    {
+      "name": "sales-qr detail",
+      "passed": true
+    },
+    {
+      "name": "sales-qr package only removed",
+      "passed": true
+    },
+    {
+      "name": "sales-qr detail",
+      "passed": true
+    },
+    {
+      "name": "sales-qr locked QR rejected",
+      "passed": true
+    }
+  ],
+  "ordinaryHttpChecks": [
+    {
+      "name": "install synthetic stored credential",
+      "passed": true
+    },
+    {
+      "name": "HTTP GET /api/auth/csrf",
+      "passed": true
+    },
+    {
+      "name": "actual current DLL wrong password rejected",
+      "passed": true
+    },
+    {
+      "name": "actual current DLL and SQL ERP login accepted",
+      "passed": true
+    },
+    {
+      "name": "HTTP GET /api/auth/csrf",
+      "passed": true
+    },
+    {
+      "name": "HTTP GET /api/erp/internal-transfer-requests/screen",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests CSRF enforced",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests origin enforced",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests scope enforced",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests HTTP create committed",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests native number format",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests HTTP replay without duplicate",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests durable HTTP lookup",
+      "passed": true
+    },
+    {
+      "name": "HTTP GET /api/erp/internal-transfer-requests/detail",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests SQL detail reread",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests HTTP save committed",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests stale update rejected",
+      "passed": true
+    },
+    {
+      "name": "HTTP GET /api/erp/internal-transfer-requests/detail",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests HTTP send PM",
+      "passed": true
+    },
+    {
+      "name": "HTTP GET /api/erp/internal-transfer-requests/detail",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests HTTP recall",
+      "passed": true
+    },
+    {
+      "name": "HTTP GET /api/erp/internal-transfer-requests/detail",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests HTTP delete committed",
+      "passed": true
+    },
+    {
+      "name": "internal-transfer-requests deleted row absent",
+      "passed": true
+    },
+    {
+      "name": "HTTP GET /api/erp/machine-movements/screen",
+      "passed": true
+    },
+    {
+      "name": "machine-movements CSRF enforced",
+      "passed": true
+    },
+    {
+      "name": "machine-movements origin enforced",
+      "passed": true
+    },
+    {
+      "name": "machine-movements scope enforced",
+      "passed": true
+    },
+    {
+      "name": "machine-movements HTTP create committed",
+      "passed": true
+    },
+    {
+      "name": "machine-movements native number format",
+      "passed": true
+    },
+    {
+      "name": "machine-movements HTTP replay without duplicate",
+      "passed": true
+    },
+    {
+      "name": "machine-movements durable HTTP lookup",
+      "passed": true
+    },
+    {
+      "name": "HTTP GET /api/erp/machine-movements/detail",
+      "passed": true
+    },
+    {
+      "name": "machine-movements SQL detail reread",
+      "passed": true
+    },
+    {
+      "name": "machine-movements HTTP save committed",
+      "passed": true
+    },
+    {
+      "name": "machine-movements stale update rejected",
+      "passed": true
+    },
+    {
+      "name": "HTTP GET /api/erp/machine-movements/detail",
+      "passed": true
+    },
+    {
+      "name": "machine-movements HTTP delete committed",
+      "passed": true
+    },
+    {
+      "name": "machine-movements deleted row absent",
+      "passed": true
+    },
+    {
+      "name": "HTTP GET /api/erp/machine-repairs/screen",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs CSRF enforced",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs origin enforced",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs scope enforced",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs HTTP create committed",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs native number format",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs HTTP replay without duplicate",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs durable HTTP lookup",
+      "passed": true
+    },
+    {
+      "name": "HTTP GET /api/erp/machine-repairs/detail",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs SQL detail reread",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs HTTP save committed",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs stale update rejected",
+      "passed": true
+    },
+    {
+      "name": "HTTP GET /api/erp/machine-repairs/detail",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs HTTP delete committed",
+      "passed": true
+    },
+    {
+      "name": "machine-repairs deleted row absent",
+      "passed": true
+    },
+    {
+      "name": "HTTP GET /api/erp/purchase-requests/screen",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests CSRF enforced",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests origin enforced",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests scope enforced",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests HTTP create committed",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests native number format",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests HTTP replay without duplicate",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests durable HTTP lookup",
+      "passed": true
+    },
+    {
+      "name": "HTTP GET /api/erp/purchase-requests/detail",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests SQL detail reread",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests HTTP save committed",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests stale update rejected",
+      "passed": true
+    },
+    {
+      "name": "HTTP GET /api/erp/purchase-requests/detail",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests HTTP delete committed",
+      "passed": true
+    },
+    {
+      "name": "purchase-requests deleted row absent",
+      "passed": true
+    },
+    {
+      "name": "HTTP GET /api/erp/sales-orders/screen",
+      "passed": true
+    },
+    {
+      "name": "sales-orders CSRF enforced",
+      "passed": true
+    },
+    {
+      "name": "sales-orders origin enforced",
+      "passed": true
+    },
+    {
+      "name": "sales-orders scope enforced",
+      "passed": true
+    },
+    {
+      "name": "sales-orders HTTP create committed",
+      "passed": true
+    },
+    {
+      "name": "sales-orders native number format",
+      "passed": true
+    },
+    {
+      "name": "sales-orders HTTP replay without duplicate",
+      "passed": true
+    },
+    {
+      "name": "sales-orders durable HTTP lookup",
+      "passed": true
+    },
+    {
+      "name": "HTTP GET /api/erp/sales-orders/detail",
+      "passed": true
+    },
+    {
+      "name": "sales-orders SQL detail reread",
+      "passed": true
+    },
+    {
+      "name": "sales-orders HTTP save committed",
+      "passed": true
+    },
+    {
+      "name": "sales-orders stale update rejected",
+      "passed": true
+    },
+    {
+      "name": "HTTP GET /api/erp/sales-orders/detail",
+      "passed": true
+    },
+    {
+      "name": "sales-orders HTTP send PM",
+      "passed": true
+    },
+    {
+      "name": "HTTP GET /api/erp/sales-orders/detail",
+      "passed": true
+    },
+    {
+      "name": "sales-orders HTTP recall",
+      "passed": true
+    },
+    {
+      "name": "HTTP GET /api/erp/sales-orders/detail",
+      "passed": true
+    },
+    {
+      "name": "HTTP GET /api/erp/sales-orders/detail",
+      "passed": true
+    },
+    {
+      "name": "sales-orders HTTP delete committed",
+      "passed": true
+    },
+    {
+      "name": "sales-orders deleted row absent",
+      "passed": true
+    },
+    {
+      "name": "HTTP GET /api/erp/purchase-requests/screen",
+      "passed": true
+    },
+    {
+      "name": "two simultaneous HTTP creates commit",
+      "passed": true
+    },
+    {
+      "name": "concurrent native numbers are unique",
+      "passed": true
+    },
+    {
+      "name": "simultaneous double-submit resolves",
+      "passed": true
+    },
+    {
+      "name": "double-submit commits once then replays",
+      "passed": true
+    },
+    {
+      "name": "double-submit has one document identity",
+      "passed": true
+    },
+    {
+      "name": "invalid native reference rolls back after numbering",
+      "passed": true
+    },
+    {
+      "name": "rolled back intent has no committed receipt",
+      "passed": true
+    },
+    {
+      "name": "exhausted monthly counter does not wrap or commit",
+      "passed": true
+    },
+    {
+      "name": "exhausted number leaves no committed intent",
+      "passed": true
+    },
+    {
+      "name": "changed target schema rejected without writing",
+      "passed": true
+    }
+  ],
+  "proofs": {
+    "nativeReceiptSha256": "974703b4c2bbaf925706e41d17302538deba6f697053f9f75eb59856a029f5f7",
+    "httpReceiptSha256": "e0c851222352849c9a1a79e85f48fcf7176452de8bc5dd5e1aeb93e11220c7c4",
+    "sourceFreeTrxSha256": "1dbf38edb4e9f02b837131002ed91a7c98baa8595d0956e7f299201dedeadf6b",
+    "httpHarnessSha256": "612d8af86b88b2238fccd5846f40aee5709eba709ac52052d7ed10deba197ae1",
+    "nativeHarnessSha256": "0c928040f587f5e3c5f01a6609fea1b067db616a807bdfe7f3722b1a1973a211"
+  },
+  "tools": {
+    "sha256": "7019a26a5129edf44716601678ea1aadaebde5082defebd195ff47a7452d7ec8",
+    "storedPasswordWindowsNet10": "PASS",
+    "newBuildLinux": "UNKNOWN",
+    "systemPasswordFallback": false
+  },
+  "ordinaryHostUsesTestExecutor": false,
+  "ordinaryHostUsesTestIdentity": false,
+  "syntheticRowsOnly": true,
+  "fixtureCorrection": "SY_Menu 05011 Parent=05 reconciled against current menu evidence; synthetic 05 enabled; no permission bypass",
+  "currentCatalog": "inventories/erp/20261010/six-screen-catalog.json",
+  "productionAccepted": false,
+  "remoteSchemaWrites": false,
+  "remoteBusinessWrites": false,
+  "targetInstallation": "OWNER_ENVIRONMENT_DECISION_PENDING",
+  "remainingUnknowns": [
+    "owner ERP business acceptance",
+    "current Tools Linux subset",
+    "target capacity",
+    "full dynamic closure",
+    "complete machine-repair monetary semantics",
+    "reports",
+    "additional ERP source-selection/import actions"
+  ]
+}

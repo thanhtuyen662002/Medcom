@@ -1,0 +1,18 @@
+# I74 local quality review
+
+Reviewer: interactive lead, sole authorized GitHub executor. This is a local review, not an independent GitHub approval. Scope: ordinary ERP write startup, target preparation, concrete numbering, current Tools stored-password subset and FE handoff. Review sources: changed BE files, current catalog, `I74_ERP_WRITE_RUNTIME_20261010.md` and `docs/backend/erp-operational-write-runtime-20261010.json`.
+
+Observed issue and correction: independent journal/header lock acquisition can deadlock concurrent numbering. Commands now acquire a database-owned exclusive application lock first; receipt observations use the shared lock. Ordinary HTTP simultaneous creates and double-submit passed. The global lock deliberately serializes Web mutations; target throughput remains UNKNOWN. Native WinForms interoperability is protected by header transaction locks, but production concurrency acceptance is not inferred.
+
+Observed issue and correction: a current Tools build was not in the old worker's exact hash table. Its pure stored-password path was verified privately and added as a separate exact pin. Actual current DLL plus SQL-backed ordinary HTTP authentication passed. No system-password method or raw binary is shipped. New-build Linux behavior remains UNKNOWN.
+
+Review conclusions:
+
+- Product startup uses real SQL connections, trusted sessions/native permissions and concrete writer/numbering. No fixture providers are registered. Protected operator profile is finite, tied to the resolved database and never accepted from HTTP/public settings/host argv. Incomplete provider overlays fail startup; repeated environment snapshots must agree. Evidence: `ApiHost.cs`, `ErpWriteStartup.cs`, `ErpWriteStartupTests.cs`.
+- Install is an explicit operator command, transactional and create-only for two Web objects. Existing journal cannot be overwritten; readonly preparation verifies binding/catalog/source/form contracts. Exact schema fingerprint includes module bodies, column/default/computed/index/FK/check/trigger metadata and relevant database options. No dynamic SQL names are accepted from FE. Evidence: `ErpWriteSetup.cs`, `SqlErpWritePreparation.cs`, `ErpWriteRuntime.cs`.
+- The allocator requires a typed calendar date, uses observed prefixes/mask and both native header/durable receipt counters, rejects collisions and exhaustion. Deletion does not enable reuse of Web-issued IDs. Native config changes are rejected rather than guessed. Evidence: allocator, contract tests, source inventory and HTTP exhaustion/numbering observations.
+- Existing stale-state, branch/action/lock/ref checks, native procedures/triggers, durable idempotency, rollback and uncertain-commit observation remain. Application lock timeout is a recoverable conflict with original-intent lookup. Credential/configuration/SQL error messages are not relayed. Evidence: `SqlErpScreenCommands.cs` and finite CLI result.
+- Full fields/paging and 115 operations remain; OpenAPI has 267 schemas. Create schemas now require the date and keep module-specific references; exported artifact matches runtime. Evidence: `ApiContractCatalogTests.cs`, `medcom-openapi.json`, API audit.
+- Public additions contain technical metadata and synthetic boolean receipts only. Raw SQL bodies, real credentials/rows and Tools binaries stay private. FE PR #133 is preserved; no FE path or schedule is mutated. Exact current-head/base CI and conversation preflight must still pass before merge.
+
+Local verdict: suitable for current-head CI/integration. Production verdict: UNKNOWN pending explicit target setup and owner acceptance. Reports/import extensions, complete repair monetary semantics, dynamic closure and capacity remain tracked; no full ERP completion claim.

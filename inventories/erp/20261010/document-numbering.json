@@ -1,0 +1,22 @@
+{
+  "formatVersion": 1,
+  "increment": "I74",
+  "sourceCatalog": "inventories/erp/20261010/six-screen-catalog.json",
+  "currentToolsSha256": "7019a26a5129edf44716601678ea1aadaebde5082defebd195ff47a7452d7ec8",
+  "sourceObjects": ["Tools.Layout.AutoDocNumberSetting", "Tools.Data.DefaultValueSQL", "Tools.Utils.Functions", "dbo.SY_FrmCfg", "dbo.SY_Setup.DocumentMask"],
+  "privateEvidence": "I74-numbering/global-document-mask.private.json and exact-type private decompilation; bodies and production values retained privately",
+  "observedGlobalMaskUtc": "2026-10-10T09:08:51.8880866Z",
+  "globalMask": "{P}{MM}{YY}/{4}",
+  "forms": [
+    {"module":"purchase-requests","menuId":"05011","prefix":"PO","formMask":null,"effectiveMask":"{P}{MM}{YY}/{4}","dateField":"purchaseDate"},
+    {"module":"sales-orders","menuId":"0600201","prefix":"DMB","formMask":null,"effectiveMask":"{P}{MM}{YY}/{4}","dateField":"documentDate"},
+    {"module":"internal-transfer-requests","menuId":"07010100","prefix":"DCNB","formMask":"{P}{MM}{YY}/{4}","effectiveMask":"{P}{MM}{YY}/{4}","dateField":"documentDate"},
+    {"module":"machine-movements","menuId":"1207","prefix":"MLI","formMask":"{P}{MM}{YY}/{4}","effectiveMask":"{P}{MM}{YY}/{4}","dateField":"documentDate"},
+    {"module":"machine-repairs","menuId":"1209","prefix":"MLRP","formMask":"{P}{MM}{YY}/{4}","effectiveMask":"{P}{MM}{YY}/{4}","dateField":"documentDate"}
+  ],
+  "webImplementation":"src/backend/Medcom.Infrastructure/Erp/SqlErpDocumentNumberAllocator.cs",
+  "webAddedPolicies":["native-header transaction lock", "database command application lock", "durable receipt counter retention after delete", "no counter wrap after 9999"],
+  "nativeWinFormsLockingAcceptance":"UNKNOWN",
+  "remoteBusinessWrites":false,
+  "productionAccepted":false
+}

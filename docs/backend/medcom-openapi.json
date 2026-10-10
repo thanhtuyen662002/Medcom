@@ -15917,7 +15917,17 @@
             "type": "string"
           },
           "header": {
-            "$ref": "#/components/schemas/ErpInternalTransferRequestHeaderInput"
+            "$ref": "#/components/schemas/ErpInternalTransferRequestHeaderInput",
+            "required": [
+              "documentDate"
+            ],
+            "properties": {
+              "documentDate": {
+                "type": "string",
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}$",
+                "description": "Required when creating a numbered document; ERP calendar date/time, yyyy-MM-ddTHH:mm:ss.fff."
+              }
+            }
           },
           "lines": {
             "type": "array",
@@ -17280,7 +17290,17 @@
             "type": "string"
           },
           "header": {
-            "$ref": "#/components/schemas/ErpMachineMovementHeaderInput"
+            "$ref": "#/components/schemas/ErpMachineMovementHeaderInput",
+            "required": [
+              "documentDate"
+            ],
+            "properties": {
+              "documentDate": {
+                "type": "string",
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}$",
+                "description": "Required when creating a numbered document; ERP calendar date/time, yyyy-MM-ddTHH:mm:ss.fff."
+              }
+            }
           },
           "lines": {
             "type": "array",
@@ -18522,7 +18542,17 @@
             "type": "string"
           },
           "header": {
-            "$ref": "#/components/schemas/ErpMachineRepairHeaderInput"
+            "$ref": "#/components/schemas/ErpMachineRepairHeaderInput",
+            "required": [
+              "documentDate"
+            ],
+            "properties": {
+              "documentDate": {
+                "type": "string",
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}$",
+                "description": "Required when creating a numbered document; ERP calendar date/time, yyyy-MM-ddTHH:mm:ss.fff."
+              }
+            }
           },
           "lines": {
             "type": "array",
@@ -19561,7 +19591,17 @@
             "type": "string"
           },
           "header": {
-            "$ref": "#/components/schemas/ErpPurchaseRequestHeaderInput"
+            "$ref": "#/components/schemas/ErpPurchaseRequestHeaderInput",
+            "required": [
+              "purchaseDate"
+            ],
+            "properties": {
+              "purchaseDate": {
+                "type": "string",
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}$",
+                "description": "Required when creating a numbered document; ERP calendar date/time, yyyy-MM-ddTHH:mm:ss.fff."
+              }
+            }
           },
           "lines": {
             "type": "array",
@@ -20898,7 +20938,17 @@
             "type": "string"
           },
           "header": {
-            "$ref": "#/components/schemas/ErpSalesOrderHeaderInput"
+            "$ref": "#/components/schemas/ErpSalesOrderHeaderInput",
+            "required": [
+              "documentDate"
+            ],
+            "properties": {
+              "documentDate": {
+                "type": "string",
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}$",
+                "description": "Required when creating a numbered document; ERP calendar date/time, yyyy-MM-ddTHH:mm:ss.fff."
+              }
+            }
           },
           "lines": {
             "type": "array",
