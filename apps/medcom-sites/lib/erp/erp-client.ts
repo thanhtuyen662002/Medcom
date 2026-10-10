@@ -42,6 +42,12 @@ import {
   selectErpDraft,
   validateErpPaste,
 } from "./erp-screen-api";
+import {
+  getNotificationsList,
+  getNotificationDetail,
+  getNotificationTarget,
+  markNotificationRead,
+} from "./notifications-api";
 
 // Real branches configured in Medcom ERP database
 export const REAL_BRANCHES = [
@@ -343,9 +349,32 @@ export class ErpClientService {
   ) {
     return await validateErpPaste(module, request);
   }
+
+  // --- ERP Notifications (I76) ---
+  public async getNotifications(params?: {
+    page?: number;
+    pageSize?: number;
+    unreadOnly?: boolean;
+  }) {
+    return await getNotificationsList(params);
+  }
+
+  public async getNotificationDetail(id: number) {
+    return await getNotificationDetail(id);
+  }
+
+  public async getNotificationTarget(id: number) {
+    return await getNotificationTarget(id);
+  }
+
+  public async markNotificationRead(id: number, isView: boolean) {
+    return await markNotificationRead(id, isView);
+  }
 }
 
 export const erpClient = ErpClientService.getInstance();
 export * from "./erp-screen-contracts";
 export * from "./erp-screen-api";
+export * from "./notifications-contracts";
+export * from "./notifications-api";
 export type { ErpScreenModule } from "./proxy-policy";

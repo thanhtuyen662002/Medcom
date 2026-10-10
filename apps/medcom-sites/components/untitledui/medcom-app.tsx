@@ -13,6 +13,7 @@ import { TabSettings } from "./tab-settings";
 import { LoginScreen } from "./login-screen";
 import { QuickCreateModal } from "./quick-create-modal";
 import { UntitledBottomSheet } from "./bottom-sheet";
+import { NotificationsSheet } from "./notifications-sheet";
 import { SidebarDrawer } from "./sidebar-drawer";
 import { TabErpScreen } from "./tab-erp-screen";
 import { type ErpScreenModule } from "@/lib/erp/proxy-policy";
@@ -38,6 +39,7 @@ export function MedcomApp() {
   const [ordersCount, setOrdersCount] = useState(0);
   const [purchasesCount, setPurchasesCount] = useState(0);
   const [inboundCount, setInboundCount] = useState(0);
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
   const [isLoadingCounts, setIsLoadingCounts] = useState(true);
 
   // Modals state
@@ -93,10 +95,11 @@ export function MedcomApp() {
   const refreshGlobalCounts = useCallback(async (branch: string) => {
     setIsLoadingCounts(true);
     try {
-      const [poData, prData, inData] = await Promise.allSettled([
+      const [poData, prData, inData, notifData] = await Promise.allSettled([
         erpClient.getDocumentsList("purchase-orders", 1, "", branch),
         erpClient.getPurchaseRequestsList(1, "", branch),
         erpClient.getDocumentsList("inbound-requests", 1, "", branch),
+        erpClient.getNotifications({ page: 1, pageSize: 1, unreadOnly: true }),
       ]);
 
       if (poData.status === "fulfilled" && poData.value?.rows) {
@@ -115,6 +118,10 @@ export function MedcomApp() {
         setInboundCount(inData.value.rows.length);
       } else {
         setInboundCount(0);
+      }
+
+      if (notifData.status === "fulfilled" && notifData.value?.unreadCount !== undefined) {
+        setUnreadNotificationsCount(notifData.value.unreadCount);
       }
     } catch {
       // Fallback zero counts
@@ -210,7 +217,7 @@ export function MedcomApp() {
             onOpenMenu={() => setIsSidebarOpen(true)}
             userName={currentUser.displayName}
             userRole={currentUser.role}
-            unreadNotifications={0}
+            unreadNotifications={unreadNotificationsCount}
             onNotificationsClick={() => setNotificationsOpen(true)}
             onOpenQuickCreate={() => setQuickCreateOpen(true)}
             isDarkMode={isDarkMode}
@@ -230,7 +237,7 @@ export function MedcomApp() {
             branches={APP_BRANCHES}
             userName={currentUser.displayName}
             userRole={currentUser.role}
-            unreadNotifications={0}
+            unreadNotifications={unreadNotificationsCount}
             onNotificationsClick={() => setNotificationsOpen(true)}
             onProfileClick={() => setIsSidebarOpen(true)}
           />
@@ -382,21 +389,17 @@ export function MedcomApp() {
         />
 
         {/* Realtime Notifications Sheet */}
-        <UntitledBottomSheet
+        <NotificationsSheet
           open={notificationsOpen}
           onClose={() => setNotificationsOpen(false)}
-          title="Thông báo hệ thống ERP Medcom"
-          subtitle="Cập nhật phê duyệt và luồng kho thời gian thực"
-        >
-          <div className="p-6 text-center space-y-2">
-            <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
-              Không có thông báo mới
-            </p>
-            <p className="text-xs text-neutral-400">
-              Các sự kiện phát sinh từ máy chủ ERP sẽ hiển thị tại đây khi có thay đổi.
-            </p>
-          </div>
-        </UntitledBottomSheet>
+          onUnreadCountChange={setUnreadNotificationsCount}
+          onNavigateToModule={(tab, branchId, _documentId) => {
+            if (branchId && branchId !== currentBranch) {
+              handleBranchChange(branchId);
+            }
+            setActiveTab(tab);
+          }}
+        />
       </div>
     </div>
   );

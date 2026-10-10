@@ -1,4 +1,4 @@
-import{test}from"node:test";import assert from"node:assert/strict";import{backendOrigin,localHttpsOrigin,resolveErpOrigins,erpCookies,relayCookie,routeAllowed,sameOriginWrite,erpScreenModules,requestBodyLimit}from"../lib/erp/proxy-policy.ts";
+import{test}from"node:test";import assert from"node:assert/strict";import{backendOrigin,localHttpsOrigin,resolveErpOrigins,erpCookies,relayCookie,routeAllowed,sameOriginWrite,erpScreenModules,requestBodyLimit,isNotificationId,notificationGetRoute,notificationReadRoute}from"../lib/erp/proxy-policy.ts";
 test("only deployed HTTPS DNS origins",()=>{assert.equal(backendOrigin("https://erp.example.com"),"https://erp.example.com");for(const v of[undefined,"http://erp.example.com","https://localhost","https://127.0.0.1","https://[::1]","https://user:pass@erp.example.com","https://erp.example.com/path","https://erp.example.com?url=x"])assert.equal(backendOrigin(v),null);});
 test("route allowlist prevents open proxy and unsupported mutation",()=>{assert.ok(routeAllowed("api/auth/login","POST"));for(const p of["api/admin/delete","api/auth/../admin","https://evil.example","api/documents/purchase-orders/write"])assert.equal(routeAllowed(p,"GET"),false);assert.equal(routeAllowed("api/documents/purchase-orders","POST"),false);});
 test("ERP screen modules, routes and 1MiB body limits are correctly allowlisted",()=>{
@@ -30,6 +30,30 @@ test("ERP screen modules, routes and 1MiB body limits are correctly allowlisted"
  assert.ok(routeAllowed("api/erp/sales-qr/qr/delete","POST"));
  assert.equal(routeAllowed("api/erp/warehouse-qr/create","POST"),false);
  assert.equal(routeAllowed("api/erp/sales-qr/create","POST"),false);
+});
+test("ERP notification routes and positive int32 ID validation",()=>{
+ for(const validId of ["1","42","999","2147483647"]){
+  assert.equal(isNotificationId(validId),true);
+  assert.equal(notificationGetRoute(`api/notifications/${validId}`),true);
+  assert.equal(notificationGetRoute(`api/notifications/${validId}/target`),true);
+  assert.equal(notificationReadRoute(`api/notifications/${validId}/read`),true);
+  assert.equal(routeAllowed(`api/notifications/${validId}`,"GET"),true);
+  assert.equal(routeAllowed(`api/notifications/${validId}/target`,"GET"),true);
+  assert.equal(routeAllowed(`api/notifications/${validId}/read`,"POST"),true);
+  assert.equal(routeAllowed(`api/notifications/${validId}`,"POST"),false);
+  assert.equal(routeAllowed(`api/notifications/${validId}/target`,"POST"),false);
+  assert.equal(routeAllowed(`api/notifications/${validId}/read`,"GET"),false);
+  assert.equal(routeAllowed(`api/notifications/${validId}/delete`,"POST"),false);
+ }
+ assert.equal(notificationGetRoute("api/notifications"),true);
+ assert.equal(routeAllowed("api/notifications","GET"),true);
+ assert.equal(routeAllowed("api/notifications","POST"),false);
+ for(const invalidId of ["0","-1","-42","abc","1a","2147483648","99999999999","01",""]){
+  assert.equal(isNotificationId(invalidId),false);
+  assert.equal(routeAllowed(`api/notifications/${invalidId}`,"GET"),false);
+  assert.equal(routeAllowed(`api/notifications/${invalidId}/target`,"GET"),false);
+  assert.equal(routeAllowed(`api/notifications/${invalidId}/read`,"POST"),false);
+ }
 });
 test("only ERP cookies forwarded",()=>{assert.equal(erpCookies("other=secret; __Host-Medcom.Session=a; __Host-Medcom.Csrf=b; csrf=fake; __Host-Medcom.SessionC1=c"),"__Host-Medcom.Session=a; __Host-Medcom.Csrf=b; __Host-Medcom.SessionC1=c");assert.equal(erpCookies(null),"");});
 test("relayed cookies retain host security",()=>{assert.ok(relayCookie("__Host-Medcom.Session=a; Path=/; Secure; HttpOnly; SameSite=Strict"));for(const c of["tracking=x; Path=/; Secure; HttpOnly","__Host-Medcom.Session=x; Domain=example.com; Path=/; Secure; HttpOnly","__Host-Medcom.Session=x; Path=/; HttpOnly"])assert.equal(relayCookie(c),null);});
