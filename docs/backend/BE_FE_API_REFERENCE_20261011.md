@@ -7657,4 +7657,4 @@ Library baseline `ERP_Medcom2026(4).zip` và `Medcom-Data (3)(1).zip` giữ hash
 
 Tài liệu chỉ gồm technical metadata, tên object và ví dụ tổng hợp. Không chứa password thật, connection string có secret, SQL body riêng tư, thông báo/hợp đồng hoặc transaction row thật. Hành vi chưa được xác nhận được ghi UNKNOWN và tiếp tục theo [goal 45](../goals/PRODUCTION_ERP_GOAL.md).
 
-SHA-256 file OpenAPI đối chiếu: `6a5d910208b6282c7ac5601f08f91fe4c8b6f00a95143b1bfa5b47c41e1f1f1e`.
+SHA-256 Git blob OpenAPI tại main nêu ở đầu tài liệu: `8560dda89e38347be540a466d70190f91f890f0db8e5118f1d8586e28402456b`. Checkout Windows dùng CRLF có SHA-256 `6a5d910208b6282c7ac5601f08f91fe4c8b6f00a95143b1bfa5b47c41e1f1f1e`; hai bản chỉ khác kết thúc dòng. So sánh contract live thực hiện trên JSON đã parse, không suy ra byte HTTP giống Git blob.
