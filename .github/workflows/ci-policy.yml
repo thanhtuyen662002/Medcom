@@ -31,6 +31,8 @@ jobs:
           python tools/backend/check_architecture.py
           python tools/source/validate_catalog.py
           python -m unittest discover -s tools/source -p 'test_*.py'
+      - name: Reconcile every API and full source data contract
+        run: python tools/backend/audit_api_data.py && python -m unittest discover -s tools/backend -p 'test_api_data_audit.py'
   backend-windows:
     runs-on: windows-latest
     timeout-minutes: 20

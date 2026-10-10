@@ -46,6 +46,24 @@ internal static class ApiContractCatalog
         JsonObject String(int? limit = null) => limit is {} n ? new() { ["type"] = "string", ["maxLength"] = n } : new() { ["type"] = "string" };
         JsonObject Number(int maximum, int fallback) => new()
         { ["type"] = "integer", ["minimum"] = 1, ["maximum"] = maximum, ["default"] = fallback };
+        JsonArray ListParameters(bool version2,int size,int fallback)
+        {
+            var parameters = new JsonArray(Parameter("page", "query", Number(1000, 1)),
+                Parameter("pageSize", "query", Number(size, fallback)),
+                Parameter("search", "query", String(100)), Parameter("branchId", "query", String(50)));
+            if(version2)
+            {
+                JsonObject Date() => new() { ["type"]="string",["format"]="date",["pattern"]="^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                    ["description"]="SQL datetime calendar date, 1753-01-01 through 9999-12-31; no timezone conversion. dateFrom <= dateTo. dateTo includes its entire day." };
+                parameters.Add(Parameter("dateFrom","query",Date()));parameters.Add(Parameter("dateTo","query",Date()));
+                parameters.Add(Parameter("statusId","query",new() { ["type"]="integer",["minimum"]=int.MinValue,["maximum"]=int.MaxValue,
+                    ["description"]="Exact source StatusID. A filter never authorizes a state change." }));
+                parameters.Add(Parameter("sortBy","query",new() { ["type"]="string",["enum"]=Array(["documentDate","documentId","statusId"]),["default"]="documentDate" }));
+                parameters.Add(Parameter("sortDirection","query",new() { ["type"]="string",["enum"]=Array(["asc","desc"]),["default"]="desc",
+                    ["description"]="Document ID uses binary byte ordering and breaks date/status ties ascending; SQL nulls sort first ascending and last descending. Offset pages are not a cross-request snapshot." }));
+            }
+            return parameters;
+        }
         void Add(string method, string path, string id, JsonObject? response,
             string admission, string? capability = null, bool anonymous = false,
             Type? request = null, JsonArray? parameters = null, int success = 200)
@@ -81,6 +99,18 @@ internal static class ApiContractCatalog
                 || path.StartsWith("/api/v2/", StringComparison.Ordinal) || path.StartsWith("/api/purchase-requests", StringComparison.Ordinal)))
                 foreach (var header in new[] { "X-Medcom-Session-Scope", "X-Medcom-Read-Scope" })
                     responseHeaders[header] = new JsonObject { ["description"] = "Opaque current scope of a successful authorized read; invalidate stale data when it changes.", ["schema"] = String() };
+            if(method=="get" && DocumentDataProjection.FullPath(path) is {} fullPath)
+            {
+                var projection=path==fullPath?"full":"summary";
+                operation["x-medcom-data-projection"]=projection;
+                operation["x-medcom-full-data-path"]=fullPath;
+                responseHeaders[DocumentDataProjection.Header]=new JsonObject
+                { ["description"]="Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                    ["schema"]=new JsonObject { ["type"]="string",["const"]=projection } };
+                responseHeaders[DocumentDataProjection.PathHeader]=new JsonObject
+                { ["description"]="Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                    ["schema"]=new JsonObject { ["type"]="string",["const"]=fullPath } };
+            }
             responses[success.ToString(System.Globalization.CultureInfo.InvariantCulture)]!["headers"] = responseHeaders;
             if (capability is not null) operation["x-medcom-capability"] = capability;
             if (parameters is not null) operation["parameters"] = parameters;
@@ -104,6 +134,8 @@ internal static class ApiContractCatalog
         Add("post", "/api/auth/logout", "authLogout", null, "authenticated-session", success: 204);
         Add("get", "/api/workspace", "workspace", Shape(typeof(WorkspaceView)), "authenticated-scoped-navigation");
         Add("get", "/api/documents/field-contract", "documentFieldContract", Shape(typeof(DocumentFieldContract)), "module-read-capability-required",
+            parameters: new JsonArray(Parameter("kind", "query", new() { ["type"] = "string", ["enum"] = Array(["purchase-orders", "inbound-requests", "purchase-requests"]) }, true)));
+        Add("get", "/api/documents/query-contract", "documentQueryContract", Shape(typeof(DocumentQueryContract)), "module-read-capability-required",
             parameters: new JsonArray(Parameter("kind", "query", new() { ["type"] = "string", ["enum"] = Array(["purchase-orders", "inbound-requests", "purchase-requests"]) }, true)));
         foreach (var (kind, header, line, headerName, lineName, maxId) in new[]
         {
@@ -129,8 +161,7 @@ internal static class ApiContractCatalog
             }
             var path = (v2 ? "/api/v2/documents/" : "/api/documents/") + kind;
             Add("get", path, suffix + "List", Schemas.Ref(page), "qualified-read-provider-required", kind + ".read",
-                parameters: new JsonArray(Parameter("page", "query", Number(1000, 1)), Parameter("pageSize", "query", Number(100, 50)),
-                    Parameter("search", "query", String(100)), Parameter("branchId", "query", String(50))));
+                parameters: ListParameters(v2,100,50));
             Add("get", path + "/detail", suffix + "Detail", Schemas.Ref(detail), "qualified-read-provider-required", kind + ".read",
                 parameters: new JsonArray(Parameter("documentId", "query", String(maxId), true), Parameter("page", "query", Number(1000, 1)), Parameter("pageSize", "query", Number(100, 50))));
         }
@@ -149,8 +180,7 @@ internal static class ApiContractCatalog
             schemas.Property(detail, "data", Schemas.Ref(read));
             var path = v2 ? "/api/v2/purchase-requests" : "/api/purchase-requests";
             Add("get", path, "purchaseRequestList" + suffix, Schemas.Ref(list), "qualified-read-provider-required", "purchase-requests.read",
-                parameters: new JsonArray(Parameter("page", "query", Number(1000, 1)), Parameter("pageSize", "query", Number(50, 20)),
-                    Parameter("search", "query", String(100)), Parameter("branchId", "query", String(50))));
+                parameters: ListParameters(v2,50,20));
             Add("get", path + "/detail", "purchaseRequestDetail" + suffix, Schemas.Ref(detail), "qualified-read-provider-required", "purchase-requests.read",
                 parameters: new JsonArray(Parameter("documentId", "query", String(50), true)));
         }

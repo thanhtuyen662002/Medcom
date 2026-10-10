@@ -235,7 +235,11 @@ class DockerSmokeTests(unittest.TestCase):
                           '--env', 'Medcom__PrivateConfigPath=/unreadable/private-fixture.json',
                           container, 'dotnet', '/app/Medcom.Api.dll', '--print-api-contract', timeout=15).stdout
         self.assertEqual(json.loads(exported), expected)
-        self.assertEqual(sum(len(item) for item in expected['paths'].values()), 33)
+        self.assertEqual(sum(len(item) for item in expected['paths'].values()), 34)
+        self.assertIn('/api/documents/query-contract', expected['paths'])
+        for path in ('/api/v2/documents/purchase-orders', '/api/v2/documents/inbound-requests', '/api/v2/purchase-requests'):
+            self.assertEqual([p['name'] for p in expected['paths'][path]['get']['parameters']],
+                             ['page', 'pageSize', 'search', 'branchId', 'dateFrom', 'dateTo', 'statusId', 'sortBy', 'sortDirection'])
         self.assertEqual(expected['x-medcom-business-release'], 'not-admitted')
         self.assertEqual(self.request(container, 8080, '/api/workspace')[0], 401)
 

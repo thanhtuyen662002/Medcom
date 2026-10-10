@@ -1,0 +1,230 @@
+{
+  "run": "I69",
+  "base": "0be72ba70e4d8b7ba231eedfa8b4a4c200069a8b",
+  "admission_head": "63716bd7c5e3d504d1c6d522b0ba25319a5cea25",
+  "pr": 125,
+  "committed_file_sha256": {
+    ".gitattributes": "769474c128af715aa976eef9089f406482e6ef324a4c7d5a119d636bcb8e819e",
+    "docs/PROJECT_STATE.yaml": "40b182f72db12ed0178341bf789188343924e7f2a5e0ce79a08d1aa6f0a7f514",
+    "docs/backend/DOCUMENT_QUERY_INTEGRATION_20261010.md": "82d0ddf99769d186a49924b5fb4e3e9d3ddab5df2a8d87d7bc0980de56d5309e",
+    "docs/backend/FE_INTEGRATION_20261010.md": "8e0459ff5fa104bccbd37b9399590b4f195cba495c7d92531fc21a28344be64a",
+    "docs/backend/medcom-openapi.json": "2147644d3296855dc50a5e6dc8bf407fea8b607cdfc354742a04891c7e7bfdfa",
+    "docs/goals/BACKEND_PRODUCTION_GOAL.md": "20feaa81302a315d106af2f0ec934367ceca0f8cb7ed2102bd83bebcf02ddb78",
+    "preparations/L02/20261002/test_preparation.py": "d75ebcc1a5590e3b0d652935d0bfc1bdfa1c5057530b075d37dc59723bd68d2e",
+    "preparations/L03/20261002/test_preparation.py": "1e68206185d6463428091f3b615e67a15d305434057e91652e150bacb57549a6",
+    "preparations/L09/20261002/test_preparation.py": "d08e759eccd24366e428a7da4674127dd8c3a76b5512ae3f174c2b68b85a14c7",
+    "preparations/L10/20261002/test_preparation.py": "271faeb86f4eaff54f943da11c060ee33be523587afced8b9055bd3fed9464c1",
+    "src/backend/Medcom.Api/ApiContractCatalog.cs": "373bdf083a95b3108e739b7cf0820e81b7ea136496e1237803b41576b17c4bbd",
+    "src/backend/Medcom.Api/DocumentEndpoints.cs": "917f14db2985e8d7d37937689815db5195f8d0288725bf659e2df02a1c8010de",
+    "src/backend/Medcom.Api/DocumentListBinding.cs": "c5401b72427e3d2d729a03d5c2c56890fd4b9d5fb83ad06aa2f2fe2151946fa3",
+    "src/backend/Medcom.Api/PurchaseRequestEndpoints.cs": "039bcf62f551d9204674bf02c99441ec2b33d32549e75d70930adee46284637b",
+    "src/backend/Medcom.Application/DocumentSelectionRules.cs": "a5483c96ba8f8c583c61dd5d9a0619ab96ecc2d34b210dbdc0b49c380225472f",
+    "src/backend/Medcom.Application/Documents.cs": "3bac55e49bc2fe03937562de380216458d914704f9cfcbc2a37410ac36417059",
+    "src/backend/Medcom.Application/PurchaseRequests/PurchaseRequestQueries.cs": "04df8d62750d0e6dfd91ca0d3f6ea61bba2809242bd9197675539980fc1fb0e1",
+    "src/backend/Medcom.Contracts/DocumentQueryContract.cs": "9830c7ca54f32c2ccfbc2513114d448862fc64a37b924a39499f3daba8374684",
+    "src/backend/Medcom.Contracts/PurchaseRequestWorkspace.cs": "581d08c46cb6069693554c792b1b2646d3bbbb840ffeee24add5a1a74b535954",
+    "src/backend/Medcom.Infrastructure/DocumentSelectionSql.cs": "ba777f9f0d94befaf0b3ffccef4023c32b75fa101309fe5e4c300c6f438f763f",
+    "src/backend/Medcom.Infrastructure/PurchaseRequests/SqlPurchaseRequestQueries.cs": "b1d2df684440a96132e637e5c669a44b025ac8165408b85812f6dfe7a443f51f",
+    "src/backend/Medcom.Infrastructure/SqlDocumentReader.cs": "e29a2ddaabdf8a45318339a0d8c5b41a4e365c10de4e8bf1782e774e708fb447",
+    "src/backend/README.md": "98276a0da9c34ab977dee43aa07061bf92d2ffa5d7f1c6ef11cdbbf7edeb5b02",
+    "tests/backend/Medcom.Api.Tests/ApiContractCatalogTests.cs": "bd76cc102c70873b944cf25112a7f6bc584a519b195944a7f2425d38ee49f8b3",
+    "tests/backend/Medcom.Api.Tests/DocumentFullFieldTests.cs": "af20c4bcb4b61c0ee6e40f8934d1adf23a126e6f90b4b84678b45f1ca02588bf",
+    "tests/backend/Medcom.Api.Tests/DocumentSelectionTests.cs": "f3de9ad3fdd59a104a5cb37249e920bcf674730ef18ceb68916ceedb71a7e4d7",
+    "tests/deploy/test_backend_api_contract.py": "20aa24bf35e1c86e26ae771280cfb7f1bd366ec5541f1d899f6ff3b311c46456",
+    "tools/deploy/verify_backend_api.py": "e32f1dcadac7aad1524847850951f135468b986cbcb17a098e7cad80c6249eb5",
+    "tests/deploy/test_railway_container.py": "f15a7953b86cf98e1c501c901f8ce14ec4aeceaccfc2fc27c16f8f8bc7dbb681",
+    "tools/backend/run_preparation_checks.py": "34f716e8123d45120286867eb349b747f7e465faa59b26443b992403766e40b7",
+    "tools/backend/run_reference_check.py": "87e232b3fe385ff5cc2e8d0d216a5ff60e4b8a13ec20e63b7c91020ad4e476ed",
+    "tools/backend/test_reference_runner.py": "d45c470784b47692ebd938a4a8a3591e4546d7366936f78a3dd0570633e1882a",
+    "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md": "87a9165f370e30294d69a409e81c918f1f2425c2eeeb86d534d68d79762a14ad",
+    "docs/erp/DAT_FILTER_QUERY_INVENTORY.md": "e14ed16146118556f11e4c30cabf10f6ae1795c4ccc53ee741054bb8b8037cc4",
+    "inventories/traceability/PHASE1_BOUND_CONTRACTS.md": "fd758158e2909a07d96ab0bf70afb6a445453dc118a6eab3fe43116f5b73252f",
+    "inventories/traceability/PHASE1_FILTER_CLOSURE_DELTA.md": "386a27eb711985bec82d490ee487cd18e99bb051519e7e9dbdb95f3f008de702",
+    "src/backend/Medcom.Api/DocumentDataProjection.cs": "68a9c6c1a18aac86f080016739ecc7a916e7b182c900b087a96ca80277bcd2e9",
+    "docs/backend/API_FULL_DATA_AUDIT_20261010.md": "dadc20a1749de17fe0386e181c4ed8071774dde86f362c3c76550be7d772bc9f",
+    ".github/workflows/backend.yml": "b1b4dfcf88bafb84d023c649a0b9332b5362632379907544c43e56aec7d2fd99",
+    "docs/backend/api-data-audit-20261010.json": "e728873c8eb7c3ba21e5faad2cf60f8b9b859cdad78499e59ecb6e36733e4c96",
+    "docs/execution/direct-runs/I69.json": "ab6816b65aac8259c06bccee090f1fe5287343c89bc0c475592a7df758172ed6",
+    ".github/workflows/ci-policy.yml": "dbb6371b712fb524331f742b2b4b87fa00009640d7f143992ad8201954ec7123",
+    "tests/backend/Medcom.Api.Tests/DocumentDataProjectionTests.cs": "f10355041af1a2dc2f21b9a16c861337824d43f4eae38f64f109b524614045bd",
+    "tools/backend/test_api_data_audit.py": "6b0789c9ec8cba03985e50877566646881d8617441d253c669b712f1f1d961a1",
+    "tools/backend/audit_api_data.py": "99694a90c0bec8e9444185c3827450e47cae6035725e84f337f1aa30037790b9"
+  },
+  "source_verification": {
+    "identity": "owner-attachment-20261002",
+    "ERP_Medcom2026.zip": "d5fe49f8e58de89fc0b9972a116a6c8f673ab9f9b326c626708d0b5d01fc5783",
+    "MedData-Data.zip": "6a74eb02dc747e9c6ab679f69ca515783a8724ad767f6702fcebd28f195b1144",
+    "sql_member_bytes": 1212595716,
+    "sql_member_crc32": "16a9a7e6",
+    "sql_member_sha256": "61a8744c7a9a007b13ef37fbda26ea8c78af11fcc469963a528eba9469174096",
+    "historical_archives": "NOT_REOPENED;absent_at_local_Downloads_locator;no_equivalence_claim"
+  },
+  "local_checks": {
+    "locked_restore": "PASS",
+    "release_build": "PASS_0_warnings_0_errors",
+    "backend_trx": {
+      "I69-query-focused.trx": {
+        "sha256": "1ca2041da76a91f2d2d417d64b173f7384e9194bbcd6974a415b25e653bd44b6",
+        "counters": {
+          "total": "34",
+          "executed": "34",
+          "passed": "34",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        }
+      },
+      "I69-full-backend.trx": {
+        "sha256": "07b45dc00a66a5b56a0caaa5f95a14dbce534f031bf19a74fb869150d26a1ed7",
+        "counters": {
+          "total": "3112",
+          "executed": "3112",
+          "passed": "3112",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        }
+      },
+      "I69-full-data-final.trx": {
+        "sha256": "0315463e681029a8163dc3a66b6060b647128b6bb8f3368ddeb0abd8019a54e3",
+        "counters": {
+          "total": "3130",
+          "executed": "3130",
+          "passed": "3130",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        }
+      }
+    },
+    "architecture": "PASS",
+    "catalog": "PASS_1527_objects_33_exact_checksum_members",
+    "source_scanner_tests": 48,
+    "policy_guard_tests": 97,
+    "api_verifier_tests": 9,
+    "preparation_reference_suites": "PASS_24_complete_serial_suites_with_exact_historical_bytes_and_pins",
+    "yaml_and_whitespace": "PASS",
+    "local_deploy_suite": {
+      "total": 21,
+      "passed": 16,
+      "native_Docker_not_run": 5
+    },
+    "reference_runner_regressions": "PASS_3_real_subprocess_cases_unicode_args_cwd_streams_nonzero_exits_missing_files_timeouts",
+    "api_data_audit_tests": 5
+  },
+  "contract": {
+    "operations": 34,
+    "schemas": 99,
+    "official_meta_schema": "https://spec.openapis.org/oas/3.1/schema/2022-10-07",
+    "official_meta_schema_sha256": "da01ba28852cac0de53893797cb8d1942bc3b05084f526dcc216717dec314ed0",
+    "official_and_99_component_validation": "PASS_jsonschema_4.25.1_ephemeral_validation_runtime"
+  },
+  "public_deployed_preflight": {
+    "operations": 33,
+    "query_metadata_registered": false,
+    "business_release": "not-admitted",
+    "deployment_operation": "NOT_RUN"
+  },
+  "local_quality_review": [
+    "fixed_source_identifiers_and_parameter_values_only",
+    "current_credential_menu_group_branch_enforcement_preserved",
+    "inclusive_final_day_and_maximum_datetime_without_overflow",
+    "nullable_purchase_dates_excluded_for_any_date_bound",
+    "legacy_query_projection_default_order_compatibility",
+    "duplicate_unknown_and_injection_inputs_rejected_before_provider",
+    "offset_pagination_is_not_cross_request_snapshot",
+    "BE_custody_handoff_17_files_to_managed_worktree_preserves_other_FE_changes",
+    "LF_catalog_attributes_preserve_all_existing_manifest_bytes",
+    "historical_fixture_bytes_retained_portable_interpreter_adapter_and_UTF8_test_environment",
+    "public_patch_contains_no_private_sources_settings_credentials_or_ERP_rows",
+    "all_34_API_routes_and_116_fields_reconciled_against_source_OpenAPI_and_required_JSON_paths",
+    "registered_route_constants_used_for_projection_header_including_case_and_trailing_slash",
+    "full_data_header_absent_on_partial_denied_and_unavailable_responses",
+    "FE_old_route_schema_BFF_and_error_gaps_cited_at_integrated_main_snapshot"
+  ],
+  "not_run": [
+    "actual_SQL_engine_date_status_order_result_and_index_load_acceptance",
+    "authenticated_deployed_ERP_reads_without_test_credentials",
+    "FE_BFF_adoption",
+    "business_writes",
+    "production_acceptance"
+  ],
+  "hosted_implementation_ci": "PENDING_after_publication_not_admission_checks",
+  "full_backend_goal_45": "OPEN",
+  "ci_repair": {
+    "run": 38006388572,
+    "head": "91822cb0f20be6a4acd8654be5350ab90fe633d5",
+    "failure": "Native Docker retained an obsolete 33-operation assertion after new query-contract registration.",
+    "repair": "Expect all 34 registered operations and verify new route and all nine v2 list parameters; retain source/live/export parity and isolation assertions.",
+    "hosted_recheck": "PASS_container_run_38006557505_on_562fc6244cfb231ef691ebfc342c3d126834eeeb;final_head_still_requires_its_own_checks"
+  },
+  "local_reference_repair": {
+    "original_failures": [
+      "Windows_direct_Python_shebang_launch",
+      "Windows_cp1252_UTF8_JSON_decode",
+      "Windows_CRLF_reviewed_artifact_checksum_drift",
+      "Windows_CRLF_four_filter_evidence_documents_checksum_drift"
+    ],
+    "repair": "Separate reference process prepends the current Python interpreter to existing direct .py child scripts, preserves subprocess errors/options/arguments, uses process-only UTF8 and LF checkout attributes; all 124 preparation files match their original approved bytes. Four hash-pinned filter evidence documents also retain exact LF source bytes; no register digest or fixture pin was rewritten.",
+    "current_result": "PASS_24_complete_serial_suites_including_40_filter_and_3_runner_regressions"
+  },
+  "reference_ci_repair": {
+    "run": 38006761372,
+    "head": "0612660c3d4eeb9690563225062d170d583a0a35",
+    "failure": "Direct interpreter edits changed a checksum-pinned reviewed preparation artifact.",
+    "repair": "Restore all four historical scripts to their exact preimage bytes; move adaptation to separate unpinned test runner. Preserve all review pins and assertions.",
+    "current_hosted_recheck": "PASS_backend_38008574777_policy_windows_38008574685_container_38008574720_on_99ca24b;new_API_audit_head_requires_own_checks"
+  },
+  "integrated_base": "b91e76e82268ff2c46187c7d23dc7aed1a39f462",
+  "all_api_data_audit": {
+    "operations": 34,
+    "source_columns": 116,
+    "full_source_reads": 6,
+    "original_summary_reads": 6,
+    "default_unavailable_business_facades": 8,
+    "contract_specific_operations": 14,
+    "source_free_backend_cases": 3130,
+    "new_projection_partial_payload_and_routing_cases": 18,
+    "FE_snapshot": "PR126_b91e76e82268ff2c46187c7d23dc7aed1a39f462",
+    "FE_gaps": [
+      "original_routes",
+      "original_schemas",
+      "BFF_v2_metadata_paths_not_admitted",
+      "full_scope_projection_headers_not_forwarded",
+      "failed_reads_become_empty_or_null"
+    ],
+    "evidence": "docs/backend/API_FULL_DATA_AUDIT_20261010.md",
+    "larger_purchase_aggregate_read": "UNAVAILABLE_over_500_lines_not_silently_truncated",
+    "actual_authenticated_SQL_rows": "NOT_RUN;three_test_environment_variables_absent"
+  }
+}

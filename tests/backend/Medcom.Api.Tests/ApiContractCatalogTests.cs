@@ -35,7 +35,7 @@ public sealed class ApiContractCatalogTests
             .Order(StringComparer.Ordinal).ToArray();
         var document = ApiContractCatalog.Build();
         var expected = ((JsonObject)document["paths"]!).SelectMany(p => ((JsonObject)p.Value!).Select(m => m.Key + " " + p.Key)).Order(StringComparer.Ordinal).ToArray();
-        Assert.Equal(33, actual.Length); Assert.Equal(actual, expected);
+        Assert.Equal(34, actual.Length); Assert.Equal(actual, expected);
         var ids = ((JsonObject)document["paths"]!).SelectMany(p => ((JsonObject)p.Value!).Select(m => m.Value!["operationId"]!.GetValue<string>())).ToArray();
         Assert.Equal(ids.Length, ids.Distinct(StringComparer.Ordinal).Count());
         Assert.Equal("not-admitted", document["x-medcom-business-release"]!.GetValue<string>());

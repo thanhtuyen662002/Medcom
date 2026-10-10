@@ -81,6 +81,8 @@ jobs:
         run: python tools/backend/run_preparation_checks.py
       - name: Verify finite source metadata and scanner regressions
         run: python tools/source/validate_catalog.py && python -m unittest discover -s tools/source -p 'test_*.py'
+      - name: Reconcile every API and full source data contract
+        run: python tools/backend/audit_api_data.py && python -m unittest discover -s tools/backend -p 'test_api_data_audit.py'
       - name: Install frontend dependencies
         working-directory: src/frontend
         run: npm ci

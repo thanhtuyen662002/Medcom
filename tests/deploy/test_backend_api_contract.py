@@ -61,12 +61,23 @@ class BackendContractVerifierTests(unittest.TestCase):
                 self.calls.append((path, body is not None))
                 if path == "/health/live": return 200, {"status": "healthy"}
                 if path == "/health/ready": return 503, {"status": "not_ready", "checks": []}
-                if path == API.CONTRACT: return 200, {"openapi": "3.1.1", "paths": {str(n): {"get": {}} for n in range(33)}, "x-medcom-business-release": "not-admitted"}
+                if path == API.CONTRACT: return 200, {"openapi": "3.1.1", "paths": {str(n): {"get": {}} for n in range(34)}, "x-medcom-business-release": "not-admitted"}
                 if path == "/api/auth/csrf": return 200, {"token": "PRIVATE_TOKEN_SENTINEL"}
                 if path == "/api/auth/login": return 200, {"capabilities": [kind + ".read" for kind in API.MODULES]}
                 if path == "/api/auth/logout": return 204, None
                 parsed = urllib.parse.urlsplit(path)
                 query = urllib.parse.parse_qs(parsed.query)
+                if parsed.path == "/api/documents/query-contract":
+                    kind = query["kind"][0]
+                    return 200, {"version": 2, "kind": kind, "listPath": API.MODULES[kind][0], "maximumPage": 1000,
+                                 "maximumPageSize": 50 if kind == "purchase-requests" else 100,
+                                 "dateColumn": "PurchaseDate" if kind == "purchase-requests" else "DocumentDate",
+                                 "identifierColumn": "PurchaseRequestID" if kind == "purchase-requests" else "DocumentID",
+                                 "sortFields": ["documentDate", "documentId", "statusId"],
+                                 "defaultSortBy": "documentDate", "defaultSortDirection": "desc",
+                                 "minimumDate": "1753-01-01", "maximumDate": "9999-12-31", "dateFormat": "yyyy-MM-dd",
+                                 "dateToInclusive": True, "nullableDatesIncludedWithoutBounds": kind == "purchase-requests",
+                                 "statusColumn": "StatusID"}
                 if parsed.path == "/api/documents/field-contract":
                     kind = query["kind"][0]
                     _, h, l = API.MODULES[kind]
@@ -76,6 +87,8 @@ class BackendContractVerifierTests(unittest.TestCase):
                     return 200, {"contractVersion": 2, "kind": kind, "header": {"fields": fields(h, "document.header", "rows[].fields")},
                                  "lines": {"fields": fields(l, "lines[].fields")}}
                 kind = next(k for k, (url, _, _) in API.MODULES.items() if parsed.path.startswith(url))
+                self.data_projection = "full"
+                self.full_data_path = parsed.path
                 _, h, l = API.MODULES[kind]
                 header = {"f" + str(n): "PRIVATE_FIELD_SENTINEL" if n == 0 else None for n in range(h)}
                 if parsed.path.endswith("/detail"):
@@ -88,8 +101,31 @@ class BackendContractVerifierTests(unittest.TestCase):
         self.assertEqual("AUTHENTICATED_READS_VERIFIED", report["status"])
         self.assertTrue(report["own_session_retired"])
         self.assertEqual(116, sum(v["header_fields"] + v["line_fields"] for v in report["modules"].values()))
+        self.assertTrue(all(v["query_contract_verified"] for v in report["modules"].values()))
+        self.assertTrue(all(v["server_order_requested"] == "documentId_asc" for v in report["modules"].values()))
+        self.assertEqual(3, len([p for p, _ in client.calls if "sortBy=documentId&sortDirection=asc" in p]))
         self.assertNotIn("PRIVATE_", json.dumps(report))
         self.assertEqual(["/api/auth/login", "/api/auth/logout"], [p for p, post in client.calls if post])
+
+    def test_unqualified_query_metadata_is_rejected_before_any_ERP_row_read(self):
+        class MissingMetadata:
+            def request(self, path):
+                self.path = path
+                return 200, {"version": 2, "kind": "purchase-orders", "listPath": "/private"}
+        client = MissingMetadata()
+        with self.assertRaisesRegex(API.Failure, "query_contract_mismatch"):
+            API.verify_module(client, "purchase-orders")
+        self.assertEqual("/api/documents/query-contract?kind=purchase-orders", client.path)
+
+
+    def test_missing_summary_and_wrong_route_projection_cannot_claim_full_data(self):
+        path = "/api/v2/documents/purchase-orders"
+        for projection, route in [(None, None), ("summary", path), ("full", "/api/documents/purchase-orders"),
+                                  ("full", "/api/v2/documents/inbound-requests")]:
+            observation = type("Observation", (), {"data_projection": projection, "full_data_path": route})()
+            with self.subTest(projection=projection, route=route), self.assertRaisesRegex(API.Failure, "full_data_projection_not_observed"):
+                API.require_full_projection(observation, path)
+        API.require_full_projection(type("Observation", (), {"data_projection": "full", "full_data_path": path})(), path)
 
 
 if __name__ == "__main__":

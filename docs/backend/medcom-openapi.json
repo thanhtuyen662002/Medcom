@@ -539,16 +539,16 @@
         ]
       }
     },
-    "/api/documents/purchase-orders": {
+    "/api/documents/query-contract": {
       "get": {
-        "operationId": "purchaseordersLegacyList",
+        "operationId": "documentQueryContract",
         "responses": {
           "200": {
             "description": "Typed response. Inspect access and outcome; HTTP 200 does not imply a committed write.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/purchaseordersLegacyPage"
+                  "$ref": "#/components/schemas/DocumentQueryContract"
                 }
               }
             },
@@ -589,8 +589,93 @@
             "SessionCookie": []
           }
         ],
+        "x-medcom-admission": "module-read-capability-required",
+        "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "purchase-orders",
+                "inbound-requests",
+                "purchase-requests"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "/api/documents/purchase-orders": {
+      "get": {
+        "operationId": "purchaseordersLegacyList",
+        "responses": {
+          "200": {
+            "description": "Typed response. Inspect access and outcome; HTTP 200 does not imply a committed write.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/purchaseordersLegacyPage"
+                }
+              }
+            },
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Server-generated request correlation, never client authority.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Medcom-Session-Scope": {
+                "description": "Opaque current scope of a successful authorized read; invalidate stale data when it changes.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Medcom-Read-Scope": {
+                "description": "Opaque current scope of a successful authorized read; invalidate stale data when it changes.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Medcom-Data-Projection": {
+                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "schema": {
+                  "type": "string",
+                  "const": "summary"
+                }
+              },
+              "X-Medcom-Full-Data-Path": {
+                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "schema": {
+                  "type": "string",
+                  "const": "/api/v2/documents/purchase-orders"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Non-success HTTP status. Do not infer an available operation or committed effect. Infrastructure errors may use another shape.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "x-medcom-data-projection": "summary",
+        "x-medcom-full-data-path": "/api/v2/documents/purchase-orders",
         "x-medcom-capability": "purchase-orders.read",
         "parameters": [
           {
@@ -667,6 +752,20 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "X-Medcom-Data-Projection": {
+                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "schema": {
+                  "type": "string",
+                  "const": "summary"
+                }
+              },
+              "X-Medcom-Full-Data-Path": {
+                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "schema": {
+                  "type": "string",
+                  "const": "/api/v2/documents/purchase-orders/detail"
+                }
               }
             }
           },
@@ -688,6 +787,8 @@
         ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "x-medcom-data-projection": "summary",
+        "x-medcom-full-data-path": "/api/v2/documents/purchase-orders/detail",
         "x-medcom-capability": "purchase-orders.read",
         "parameters": [
           {
@@ -755,6 +856,20 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "X-Medcom-Data-Projection": {
+                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "schema": {
+                  "type": "string",
+                  "const": "full"
+                }
+              },
+              "X-Medcom-Full-Data-Path": {
+                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "schema": {
+                  "type": "string",
+                  "const": "/api/v2/documents/purchase-orders"
+                }
               }
             }
           },
@@ -776,6 +891,8 @@
         ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "x-medcom-data-projection": "full",
+        "x-medcom-full-data-path": "/api/v2/documents/purchase-orders",
         "x-medcom-capability": "purchase-orders.read",
         "parameters": [
           {
@@ -817,6 +934,67 @@
               "type": "string",
               "maxLength": 50
             }
+          },
+          {
+            "name": "dateFrom",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+              "description": "SQL datetime calendar date, 1753-01-01 through 9999-12-31; no timezone conversion. dateFrom <= dateTo. dateTo includes its entire day."
+            }
+          },
+          {
+            "name": "dateTo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+              "description": "SQL datetime calendar date, 1753-01-01 through 9999-12-31; no timezone conversion. dateFrom <= dateTo. dateTo includes its entire day."
+            }
+          },
+          {
+            "name": "statusId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": -2147483648,
+              "maximum": 2147483647,
+              "description": "Exact source StatusID. A filter never authorizes a state change."
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "documentDate",
+                "documentId",
+                "statusId"
+              ],
+              "default": "documentDate"
+            }
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "desc",
+              "description": "Document ID uses binary byte ordering and breaks date/status ties ascending; SQL nulls sort first ascending and last descending. Offset pages are not a cross-request snapshot."
+            }
           }
         ]
       }
@@ -852,6 +1030,20 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "X-Medcom-Data-Projection": {
+                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "schema": {
+                  "type": "string",
+                  "const": "full"
+                }
+              },
+              "X-Medcom-Full-Data-Path": {
+                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "schema": {
+                  "type": "string",
+                  "const": "/api/v2/documents/purchase-orders/detail"
+                }
               }
             }
           },
@@ -873,6 +1065,8 @@
         ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "x-medcom-data-projection": "full",
+        "x-medcom-full-data-path": "/api/v2/documents/purchase-orders/detail",
         "x-medcom-capability": "purchase-orders.read",
         "parameters": [
           {
@@ -940,6 +1134,20 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "X-Medcom-Data-Projection": {
+                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "schema": {
+                  "type": "string",
+                  "const": "summary"
+                }
+              },
+              "X-Medcom-Full-Data-Path": {
+                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "schema": {
+                  "type": "string",
+                  "const": "/api/v2/documents/inbound-requests"
+                }
               }
             }
           },
@@ -961,6 +1169,8 @@
         ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "x-medcom-data-projection": "summary",
+        "x-medcom-full-data-path": "/api/v2/documents/inbound-requests",
         "x-medcom-capability": "inbound-requests.read",
         "parameters": [
           {
@@ -1037,6 +1247,20 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "X-Medcom-Data-Projection": {
+                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "schema": {
+                  "type": "string",
+                  "const": "summary"
+                }
+              },
+              "X-Medcom-Full-Data-Path": {
+                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "schema": {
+                  "type": "string",
+                  "const": "/api/v2/documents/inbound-requests/detail"
+                }
               }
             }
           },
@@ -1058,6 +1282,8 @@
         ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "x-medcom-data-projection": "summary",
+        "x-medcom-full-data-path": "/api/v2/documents/inbound-requests/detail",
         "x-medcom-capability": "inbound-requests.read",
         "parameters": [
           {
@@ -1125,6 +1351,20 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "X-Medcom-Data-Projection": {
+                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "schema": {
+                  "type": "string",
+                  "const": "full"
+                }
+              },
+              "X-Medcom-Full-Data-Path": {
+                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "schema": {
+                  "type": "string",
+                  "const": "/api/v2/documents/inbound-requests"
+                }
               }
             }
           },
@@ -1146,6 +1386,8 @@
         ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "x-medcom-data-projection": "full",
+        "x-medcom-full-data-path": "/api/v2/documents/inbound-requests",
         "x-medcom-capability": "inbound-requests.read",
         "parameters": [
           {
@@ -1187,6 +1429,67 @@
               "type": "string",
               "maxLength": 50
             }
+          },
+          {
+            "name": "dateFrom",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+              "description": "SQL datetime calendar date, 1753-01-01 through 9999-12-31; no timezone conversion. dateFrom <= dateTo. dateTo includes its entire day."
+            }
+          },
+          {
+            "name": "dateTo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+              "description": "SQL datetime calendar date, 1753-01-01 through 9999-12-31; no timezone conversion. dateFrom <= dateTo. dateTo includes its entire day."
+            }
+          },
+          {
+            "name": "statusId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": -2147483648,
+              "maximum": 2147483647,
+              "description": "Exact source StatusID. A filter never authorizes a state change."
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "documentDate",
+                "documentId",
+                "statusId"
+              ],
+              "default": "documentDate"
+            }
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "desc",
+              "description": "Document ID uses binary byte ordering and breaks date/status ties ascending; SQL nulls sort first ascending and last descending. Offset pages are not a cross-request snapshot."
+            }
           }
         ]
       }
@@ -1222,6 +1525,20 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "X-Medcom-Data-Projection": {
+                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "schema": {
+                  "type": "string",
+                  "const": "full"
+                }
+              },
+              "X-Medcom-Full-Data-Path": {
+                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "schema": {
+                  "type": "string",
+                  "const": "/api/v2/documents/inbound-requests/detail"
+                }
               }
             }
           },
@@ -1243,6 +1560,8 @@
         ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "x-medcom-data-projection": "full",
+        "x-medcom-full-data-path": "/api/v2/documents/inbound-requests/detail",
         "x-medcom-capability": "inbound-requests.read",
         "parameters": [
           {
@@ -1310,6 +1629,20 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "X-Medcom-Data-Projection": {
+                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "schema": {
+                  "type": "string",
+                  "const": "summary"
+                }
+              },
+              "X-Medcom-Full-Data-Path": {
+                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "schema": {
+                  "type": "string",
+                  "const": "/api/v2/purchase-requests"
+                }
               }
             }
           },
@@ -1331,6 +1664,8 @@
         ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "x-medcom-data-projection": "summary",
+        "x-medcom-full-data-path": "/api/v2/purchase-requests",
         "x-medcom-capability": "purchase-requests.read",
         "parameters": [
           {
@@ -1407,6 +1742,20 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "X-Medcom-Data-Projection": {
+                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "schema": {
+                  "type": "string",
+                  "const": "summary"
+                }
+              },
+              "X-Medcom-Full-Data-Path": {
+                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "schema": {
+                  "type": "string",
+                  "const": "/api/v2/purchase-requests/detail"
+                }
               }
             }
           },
@@ -1428,6 +1777,8 @@
         ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "x-medcom-data-projection": "summary",
+        "x-medcom-full-data-path": "/api/v2/purchase-requests/detail",
         "x-medcom-capability": "purchase-requests.read",
         "parameters": [
           {
@@ -1473,6 +1824,20 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "X-Medcom-Data-Projection": {
+                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "schema": {
+                  "type": "string",
+                  "const": "full"
+                }
+              },
+              "X-Medcom-Full-Data-Path": {
+                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "schema": {
+                  "type": "string",
+                  "const": "/api/v2/purchase-requests"
+                }
               }
             }
           },
@@ -1494,6 +1859,8 @@
         ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "x-medcom-data-projection": "full",
+        "x-medcom-full-data-path": "/api/v2/purchase-requests",
         "x-medcom-capability": "purchase-requests.read",
         "parameters": [
           {
@@ -1535,6 +1902,67 @@
               "type": "string",
               "maxLength": 50
             }
+          },
+          {
+            "name": "dateFrom",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+              "description": "SQL datetime calendar date, 1753-01-01 through 9999-12-31; no timezone conversion. dateFrom <= dateTo. dateTo includes its entire day."
+            }
+          },
+          {
+            "name": "dateTo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+              "description": "SQL datetime calendar date, 1753-01-01 through 9999-12-31; no timezone conversion. dateFrom <= dateTo. dateTo includes its entire day."
+            }
+          },
+          {
+            "name": "statusId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": -2147483648,
+              "maximum": 2147483647,
+              "description": "Exact source StatusID. A filter never authorizes a state change."
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "documentDate",
+                "documentId",
+                "statusId"
+              ],
+              "default": "documentDate"
+            }
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "desc",
+              "description": "Document ID uses binary byte ordering and breaks date/status ties ascending; SQL nulls sort first ascending and last descending. Offset pages are not a cross-request snapshot."
+            }
           }
         ]
       }
@@ -1570,6 +1998,20 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "X-Medcom-Data-Projection": {
+                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "schema": {
+                  "type": "string",
+                  "const": "full"
+                }
+              },
+              "X-Medcom-Full-Data-Path": {
+                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "schema": {
+                  "type": "string",
+                  "const": "/api/v2/purchase-requests/detail"
+                }
               }
             }
           },
@@ -1591,6 +2033,8 @@
         ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "x-medcom-data-projection": "full",
+        "x-medcom-full-data-path": "/api/v2/purchase-requests/detail",
         "x-medcom-capability": "purchase-requests.read",
         "parameters": [
           {
@@ -2645,6 +3089,84 @@
           "jsonType",
           "format",
           "listJsonPath"
+        ]
+      },
+      "DocumentQueryContract": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "listPath": {
+            "type": "string"
+          },
+          "maximumPage": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maximumPageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "dateColumn": {
+            "type": "string"
+          },
+          "identifierColumn": {
+            "type": "string"
+          },
+          "sortFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "defaultSortBy": {
+            "type": "string"
+          },
+          "defaultSortDirection": {
+            "type": "string"
+          },
+          "minimumDate": {
+            "type": "string"
+          },
+          "maximumDate": {
+            "type": "string"
+          },
+          "dateFormat": {
+            "type": "string"
+          },
+          "dateToInclusive": {
+            "type": "boolean"
+          },
+          "nullableDatesIncludedWithoutBounds": {
+            "type": "boolean"
+          },
+          "statusColumn": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "kind",
+          "listPath",
+          "maximumPage",
+          "maximumPageSize",
+          "dateColumn",
+          "identifierColumn",
+          "sortFields",
+          "defaultSortBy",
+          "defaultSortDirection",
+          "minimumDate",
+          "maximumDate",
+          "dateFormat",
+          "dateToInclusive",
+          "nullableDatesIncludedWithoutBounds",
+          "statusColumn"
         ]
       },
       "DocumentSummary": {

@@ -108,7 +108,7 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
             WHERE A.UserAutoID=C.UserAutoID)>1 THEN 1 ELSE 0 END) AS IdentityAlias
         FROM dbo.AP_PurchaseRequestDetailTbl C WITH (HOLDLOCK) WHERE C.PurchaseRequestID=@document;
         """;
-    public static string ListText(int branchCount)
+    public static string ListText(int branchCount,string? sortBy=null,string? sortDirection=null)
     {
         if (branchCount is < 1 or > 200) throw new ArgumentOutOfRangeException(nameof(branchCount));
         var scope = string.Join(" OR ", Enumerable.Range(0, branchCount).Select(i =>
@@ -121,7 +121,8 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
             FROM dbo.AP_PurchaseRequestTbl D WITH (HOLDLOCK)
             {{DocumentStatusSql.PurchaseRequests}}
             WHERE ({{scope}}) AND (@search='' OR D.PurchaseRequestID LIKE @search ESCAPE '~')
-            ORDER BY D.PurchaseDate DESC,CONVERT(varbinary(max),D.PurchaseRequestID) ASC
+              {{DocumentSelectionSql.Predicate("D.PurchaseDate")}}
+            ORDER BY {{DocumentSelectionSql.Order("D.PurchaseDate","D.PurchaseRequestID",sortBy,sortDirection)}}
             OFFSET @skip ROWS FETCH NEXT @take ROWS ONLY;
             """;
     }
@@ -152,7 +153,8 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
                 if (!branches.Contains(query.BranchId, StringComparer.Ordinal)) throw new QueryDenied();
                 branches = [query.BranchId];
             }
-            await using var command = PurchaseRequestSql.Command(tx, ListText(branches.Length));
+            await using var command = PurchaseRequestSql.Command(tx, ListText(branches.Length,query.SortBy,query.SortDirection));
+            DocumentSelectionSql.Bind(command,query.DateFrom,query.DateTo,query.StatusId);
             for (var i = 0; i < branches.Length; i++) PurchaseRequestSql.Parameter(command, $"@branch{i}", DbType.String, branches[i], 50);
             var search = (query.Search ?? "").Replace("~", "~~", StringComparison.Ordinal).Replace("%", "~%", StringComparison.Ordinal)
                 .Replace("_", "~_", StringComparison.Ordinal).Replace("[", "~[", StringComparison.Ordinal);

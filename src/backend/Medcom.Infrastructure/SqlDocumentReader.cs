@@ -33,7 +33,8 @@ public sealed class SqlDocumentReader : IDocumentReader
             || !identity.Capabilities.Contains(capability, StringComparer.Ordinal)
             || identity.BranchIds is not { Count: > 0 and <= 200 }) return new(DocumentOutcome.Denied);
         if (query.Page is < 1 or > 1000 || query.PageSize is < 1 or > 100 || query.Search?.Length > 100
-            || query.BranchId?.Length > 50) return new(DocumentOutcome.Invalid);
+            || query.BranchId?.Length > 50
+            || !DocumentSelectionRules.Valid(query.DateFrom,query.DateTo,query.SortBy,query.SortDirection)) return new(DocumentOutcome.Invalid);
         var branches = identity.BranchIds.Distinct(StringComparer.Ordinal).ToArray();
         if (query.BranchId is { Length: > 0 } && !branches.Contains(query.BranchId, StringComparer.Ordinal))
             return new(DocumentOutcome.Denied);
@@ -53,7 +54,8 @@ public sealed class SqlDocumentReader : IDocumentReader
             var nativeBranches = await SqlLegacyBranchScope.ReadAsync(transaction, current, cancellationToken);
             branches = branches.Intersect(nativeBranches, StringComparer.Ordinal).ToArray();
             if (branches.Length == 0) return new(DocumentOutcome.Denied);
-            await using var command = Command(transaction,ListSql(kind, branches.Length));
+            await using var command = Command(transaction,ListSql(kind, branches.Length,query.SortBy,query.SortDirection));
+            DocumentSelectionSql.Bind(command,query.DateFrom,query.DateTo,query.StatusId);
             Parameter(command,"@username",DbType.AnsiString,current.Username,100);
             Parameter(command,"@storedHash",DbType.AnsiString,current.StoredHash,200);
             Parameter(command,"@group",DbType.AnsiString,current.GroupId!,50);
@@ -156,7 +158,7 @@ public sealed class SqlDocumentReader : IDocumentReader
     private static void Parameter(DbCommand command,string name,DbType type,object value,int size)
     {var p=command.CreateParameter();p.ParameterName=name;p.DbType=type;p.Size=size;p.Value=value;command.Parameters.Add(p);}
 
-    internal static string ListSql(DocumentKind kind, int branchCount)
+    internal static string ListSql(DocumentKind kind, int branchCount,string? sortBy=null,string? sortDirection=null)
     {
         var scope = SqlLegacyBranchScope.ExactBranchPredicate("D.BranchID", branchCount);
         // Only these two reviewed shapes are executable. No identifier comes from an HTTP request.
@@ -165,7 +167,8 @@ public sealed class SqlDocumentReader : IDocumentReader
                 : "D.DocumentID, D.DocumentDate, D.BranchID, D.StatusID, CAST(NULL AS bit), S.StatusName, S.StatusRows," + DocumentSourceFieldReader.InboundRequestHeaderFieldsProjection + " FROM dbo.IV_InboundRequestTbl D " + DocumentStatusSql.InboundRequests;
         return SqlLegacyPolicy.GrantsCte + $"""
                 SELECT {projection}
-                WHERE ({scope}) AND (@search = '' OR DocumentID LIKE @search ESCAPE '~')
+                WHERE ({scope}) AND (@search = '' OR D.DocumentID LIKE @search ESCAPE '~')
+                  {DocumentSelectionSql.Predicate("D.DocumentDate")}
                   AND EXISTS (SELECT 1 FROM dbo.SY_User U JOIN dbo.SY_UserGroup G ON G.UserGroupID=U.UserGroupID
                     WHERE U.UserName=@username AND U.[Password] COLLATE Latin1_General_100_BIN2=@storedHash COLLATE Latin1_General_100_BIN2 AND U.UserGroupID=@group
                       AND U.[Disable]=0 AND G.IsDisable=0
@@ -175,7 +178,8 @@ public sealed class SqlDocumentReader : IDocumentReader
                   AND EXISTS (SELECT 1 FROM Grants P JOIN dbo.SY_Menu M ON M.MenuID=P.MenuID
                     WHERE M.MenuID=@menu AND M.FormName=@form AND M.isDisable=0 AND COALESCE(M.Para,'')=''
                       AND {SqlLegacyPolicy.ViewGrant})
-                ORDER BY DocumentDate DESC, DocumentID ASC
+                ORDER BY {(sortBy is null && sortDirection is null ? "DocumentDate DESC, DocumentID ASC"
+                    : DocumentSelectionSql.Order("D.DocumentDate","D.DocumentID",sortBy,sortDirection))}
                 OFFSET @skip ROWS FETCH NEXT @take ROWS ONLY;
                 """;
     }

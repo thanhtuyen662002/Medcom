@@ -2,6 +2,10 @@
 
 Backend origin: **https://medcom-production.up.railway.app**. FE uses this server-only origin through its same-origin BFF. No FE source or configuration was changed by I68.
 
+I69 / PR #125 adds typed date/status filtering, fixed server sorting and a scoped query-metadata endpoint for the three v2 lists. The current executable artifact has 34 operations / 99 schemas; the I68 counts below describe that historical delivery. See [document query integration](DOCUMENT_QUERY_INTEGRATION_20261010.md) for exact parameters, semantics, FE adoption and acceptance limits. I69 publication/integration evidence is recorded separately; this paragraph does not assert deployed adoption.
+
+The owner-requested [full data audit](API_FULL_DATA_AUDIT_20261010.md) reconciles all 34 existing APIs, the 116 source columns, full/summary response headers and current FE legacy-route/parser gaps. Complete fields require the six v2 routes and their schemas. Source tests do not establish real target rows; unavailable commands and the purchase aggregate limit are explicitly recorded.
+
 I67 / PR #122 is merged at `b9a5c61b3f9e819f8a28442d48e5e21566cb5c9a`. Railway deployment `db529fb9-dbdf-4064-93e7-ae2ed2bda189` reached SUCCESS at `2026-10-09T17:18:33.308Z` (10 October local time). This verifies deployment, not full ERP business acceptance.
 
 ## Contracts
