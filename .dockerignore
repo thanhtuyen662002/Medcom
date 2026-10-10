@@ -11,6 +11,7 @@
 !src/backend/**/*.csproj
 !src/backend/**/packages.lock.json
 !src/backend/Medcom.Api/appsettings.json
+!inventories/erp/20261010/six-screen-catalog.json
 
 # Treat allowlisted suffixes as files, never as directory trees.
 **/*.[Cc][Ss]/**

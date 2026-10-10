@@ -16,12 +16,23 @@ class ApiDataAuditTests(unittest.TestCase):
 
     def test_every_current_route_and_all_source_columns_are_reconciled_without_a_runtime_attestation(self):
         result = audit(self.api, self.mapping, self.tables)
-        self.assertEqual(34, result["registered_operations"])
+        self.assertEqual(115, result["registered_operations"])
         self.assertEqual(118, result["complete_source_columns"])
+        self.assertEqual(417, result["erp_screen_source_columns"])
+        self.assertEqual(14, sum(o["category"] == "erp-full-source-fields" for o in result["operations"]))
         self.assertEqual(12, sum(o["category"] == "full-source-fields" for o in result["operations"]))
         self.assertEqual(8, sum(o["category"] == "business-provider-unavailable" for o in result["operations"]))
         self.assertFalse(result["production_accepted"])
         self.assertEqual("NOT_RUN", result["actual_SQL_rows"])
+
+    def test_each_ERP_form_full_header_cannot_silently_become_optional(self):
+        result = audit(self.api, self.mapping, self.tables)
+        for module in result["erp_modules"]:
+            api = deepcopy(self.api)
+            schema = api["components"]["schemas"]["Erp_" + module.replace('-', '_') + "_header_fields"]
+            schema["required"].pop()
+            with self.subTest(module=module), self.assertRaisesRegex(ValueError, "Optional or omitted full field"):
+                audit(api, self.mapping, self.tables)
 
     def test_unknown_source_set_is_not_silently_replaced_with_an_old_or_live_catalog(self):
         mapping = deepcopy(self.mapping)

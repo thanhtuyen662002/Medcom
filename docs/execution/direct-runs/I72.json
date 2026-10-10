@@ -1,0 +1,14 @@
+{
+  "id": "I72",
+  "base": "8531b9e18c6073982a9cb8d28345cb8da89ff466",
+  "integrationBase": "c7bfa10a43ea4515b17fb105815ef7d78080e9ce",
+  "ownerDirection": "2026-10-10 Asia/Saigon: complete CUD, source-backed button states and actions, dropdowns and cross-document selection/paste for six ERP screen groups; merge main and provide a per-screen FE handoff",
+  "scope": "Purchase requests; sales order management; internal transfer requests; warehouse/sales QR scans; machine movement/handover; machine repair/warranty/maintenance. Sole direct GitHub executor on an isolated branch. Current ERP/MedData configuration is audited privately through fixed read-only queries; historical source identities are retained.",
+  "limits": [
+    "No production SQL/schema/business write or manual deployment authorization inferred from implementation",
+    "No credentials, raw binaries, SQL definition bodies, settings or real transaction values published",
+    "No separately owned FE changes, schedule administration, force-push or direct main overwrite",
+    "Preserve prior PRs, immutable claims and leases; verify exact source/base CI and source-qualified runtime gates"
+  ],
+  "status": "IMPLEMENTATION_LOCAL_VERIFIED_PUBLICATION_AND_EXACT_HEAD_CI_PENDING"
+}

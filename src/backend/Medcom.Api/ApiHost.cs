@@ -43,6 +43,7 @@ public static class ApiHost
         builder.Services.AddSingleton<IPurchaseRequestQueries, UnavailablePurchaseRequestQueries>();
         builder.Services.AddSingleton<IPurchaseRequestCommandAccess, UnavailablePurchaseRequestCommandAccess>();
         builder.Services.AddSingleton<IPurchaseRequestCommands, UnavailablePurchaseRequestCommands>();
+        builder.Services.AddSingleton<IErpScreenService, UnavailableErpScreenService>();
         builder.Services.AddInboundDraftFacade();
         if (builder.Configuration.GetValue("Legacy:Enabled", false))
         {
@@ -80,6 +81,15 @@ public static class ApiHost
                     async cancellation => (await sessions.InspectAsync(token, cancellation))?.Identity,
                     diagnostic => LogPurchaseReadUnavailable(provider.GetRequiredService<ILogger<SqlPurchaseRequestQueries>>(),
                         context, diagnostic));
+            });
+            if(enablePilots) builder.Services.AddScoped<IErpScreenService>(provider=>
+            {
+                var context=provider.GetRequiredService<IHttpContextAccessor>().HttpContext??throw new InvalidOperationException("Current request required.");
+                var token=AuthEndpoints.Current(context).Token;var sessions=provider.GetRequiredService<IWebSessions>();
+                return new Medcom.Infrastructure.Erp.SqlErpScreenService(provider.GetRequiredService<SqlLegacyUserStore>(),provider.GetRequiredService<LegacyCompany>(),
+                    async cancellation=>(await sessions.ResolveAsync(token,false,cancellation))?.Identity,
+                    async cancellation=>(await sessions.InspectAsync(token,cancellation))?.Identity,
+                    provider.GetService<Medcom.Infrastructure.Erp.IErpSqlCommandExecutor>());
             });
         }
         else
@@ -238,6 +248,7 @@ public static class ApiHost
         DocumentEndpoints.Map(app);
         ApiContractCatalog.Map(app);
         PurchaseRequestEndpoints.Map(app);
+        ErpScreenEndpoints.Map(app);
         app.MapInboundDraftFacade();
         return app;
     }

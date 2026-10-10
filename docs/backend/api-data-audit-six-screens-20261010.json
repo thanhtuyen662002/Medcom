@@ -1,0 +1,1753 @@
+{
+  "format": 2,
+  "source_set": "owner-live-meddata-20261010",
+  "static_reconciliation": "PASS",
+  "registered_operations": 115,
+  "complete_source_columns": 118,
+  "erp_screen_source_columns": 417,
+  "erp_modules": {
+    "purchase-requests": {
+      "form": "AP_PurposeRequestListFrm",
+      "source_fields": {
+        "header": 14,
+        "lines": 9
+      },
+      "evidence": [
+        "inventories/erp/20261010/six-screen-catalog.json",
+        "docs/backend/medcom-openapi.json"
+      ]
+    },
+    "sales-orders": {
+      "form": "AR_OrderByContractFrm",
+      "source_fields": {
+        "header": 54,
+        "lines": 27,
+        "history": 7
+      },
+      "evidence": [
+        "inventories/erp/20261010/six-screen-catalog.json",
+        "docs/backend/medcom-openapi.json"
+      ]
+    },
+    "internal-transfer-requests": {
+      "form": "IV_InternalTransferRequestFrm",
+      "source_fields": {
+        "header": 20,
+        "lines": 12,
+        "history": 7
+      },
+      "evidence": [
+        "inventories/erp/20261010/six-screen-catalog.json",
+        "docs/backend/medcom-openapi.json"
+      ]
+    },
+    "warehouse-qr": {
+      "form": "IV_Output_QRCodeFrm",
+      "source_fields": {
+        "header": 25,
+        "lines": 9,
+        "comparison": 26
+      },
+      "evidence": [
+        "inventories/erp/20261010/six-screen-catalog.json",
+        "docs/backend/medcom-openapi.json"
+      ]
+    },
+    "sales-qr": {
+      "form": "AR_Invoice_QRCodeFrm",
+      "source_fields": {
+        "header": 71,
+        "lines": 9,
+        "comparison": 49
+      },
+      "evidence": [
+        "inventories/erp/20261010/six-screen-catalog.json",
+        "docs/backend/medcom-openapi.json"
+      ]
+    },
+    "machine-movements": {
+      "form": "FA_Move2026Frm",
+      "source_fields": {
+        "header": 18,
+        "lines": 23
+      },
+      "evidence": [
+        "inventories/erp/20261010/six-screen-catalog.json",
+        "docs/backend/medcom-openapi.json"
+      ]
+    },
+    "machine-repairs": {
+      "form": "FA_Repair2026Frm",
+      "source_fields": {
+        "header": 22,
+        "lines": 15
+      },
+      "evidence": [
+        "inventories/erp/20261010/six-screen-catalog.json",
+        "docs/backend/medcom-openapi.json"
+      ]
+    }
+  },
+  "modules": {
+    "purchase-orders": {
+      "list": "/api/documents/purchase-orders",
+      "detail": "/api/documents/purchase-orders/detail",
+      "v2_alias_list": "/api/v2/documents/purchase-orders",
+      "v2_alias_detail": "/api/v2/documents/purchase-orders/detail",
+      "source_fields": {
+        "header": 19,
+        "lines": 12
+      },
+      "evidence": [
+        "docs/backend/document-field-contract.json",
+        "inventories/source/20261010/document-read-tables.json",
+        "tests/backend/Medcom.Api.Tests/DocumentFullFieldTests.cs"
+      ]
+    },
+    "inbound-requests": {
+      "list": "/api/documents/inbound-requests",
+      "detail": "/api/documents/inbound-requests/detail",
+      "v2_alias_list": "/api/v2/documents/inbound-requests",
+      "v2_alias_detail": "/api/v2/documents/inbound-requests/detail",
+      "source_fields": {
+        "header": 38,
+        "lines": 26
+      },
+      "evidence": [
+        "docs/backend/document-field-contract.json",
+        "inventories/source/20261010/document-read-tables.json",
+        "tests/backend/Medcom.Api.Tests/DocumentFullFieldTests.cs"
+      ]
+    },
+    "purchase-requests": {
+      "list": "/api/purchase-requests",
+      "detail": "/api/purchase-requests/detail",
+      "v2_alias_list": "/api/v2/purchase-requests",
+      "v2_alias_detail": "/api/v2/purchase-requests/detail",
+      "source_fields": {
+        "header": 14,
+        "lines": 9
+      },
+      "evidence": [
+        "docs/backend/document-field-contract.json",
+        "inventories/source/20261010/document-read-tables.json",
+        "tests/backend/Medcom.Api.Tests/DocumentFullFieldTests.cs"
+      ]
+    }
+  },
+  "operations": [
+    {
+      "method": "GET",
+      "path": "/health/live",
+      "operation_id": "healthLive",
+      "category": "contract-specific-projection",
+      "admission": "process-only",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/health/ready",
+      "operation_id": "healthReady",
+      "category": "contract-specific-projection",
+      "admission": "business-release-not-admitted",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/contracts/openapi.json",
+      "operation_id": "openApiContract",
+      "category": "contract-specific-projection",
+      "admission": "static-contract",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/platform/metadata",
+      "operation_id": "platformMetadata",
+      "category": "contract-specific-projection",
+      "admission": "identity-observation",
+      "capability": "platform.status",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/csrf",
+      "operation_id": "authCsrf",
+      "category": "contract-specific-projection",
+      "admission": "antiforgery-bootstrap",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "operation_id": "authLogin",
+      "category": "contract-specific-projection",
+      "admission": "legacy-identity-provider-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/session",
+      "operation_id": "authSession",
+      "category": "contract-specific-projection",
+      "admission": "authenticated-session",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/session/continue",
+      "operation_id": "authContinue",
+      "category": "contract-specific-projection",
+      "admission": "authenticated-explicit-activity",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/logout",
+      "operation_id": "authLogout",
+      "category": "contract-specific-projection",
+      "admission": "authenticated-session",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/workspace",
+      "operation_id": "workspace",
+      "category": "contract-specific-projection",
+      "admission": "authenticated-scoped-navigation",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/documents/field-contract",
+      "operation_id": "documentFieldContract",
+      "category": "contract-specific-projection",
+      "admission": "module-read-capability-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/documents/query-contract",
+      "operation_id": "documentQueryContract",
+      "category": "contract-specific-projection",
+      "admission": "module-read-capability-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/documents/purchase-orders",
+      "operation_id": "purchaseordersLegacyList",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "purchase-orders.read",
+      "full_data_path": "/api/documents/purchase-orders",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/documents/purchase-orders/detail",
+      "operation_id": "purchaseordersLegacyDetail",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "purchase-orders.read",
+      "full_data_path": "/api/documents/purchase-orders/detail",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/documents/purchase-orders",
+      "operation_id": "purchaseordersV2List",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "purchase-orders.read",
+      "full_data_path": "/api/v2/documents/purchase-orders",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/documents/purchase-orders/detail",
+      "operation_id": "purchaseordersV2Detail",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "purchase-orders.read",
+      "full_data_path": "/api/v2/documents/purchase-orders/detail",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/documents/inbound-requests",
+      "operation_id": "inboundrequestsLegacyList",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "inbound-requests.read",
+      "full_data_path": "/api/documents/inbound-requests",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/documents/inbound-requests/detail",
+      "operation_id": "inboundrequestsLegacyDetail",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "inbound-requests.read",
+      "full_data_path": "/api/documents/inbound-requests/detail",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/documents/inbound-requests",
+      "operation_id": "inboundrequestsV2List",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "inbound-requests.read",
+      "full_data_path": "/api/v2/documents/inbound-requests",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/documents/inbound-requests/detail",
+      "operation_id": "inboundrequestsV2Detail",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "inbound-requests.read",
+      "full_data_path": "/api/v2/documents/inbound-requests/detail",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/purchase-requests",
+      "operation_id": "purchaseRequestListLegacy",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "purchase-requests.read",
+      "full_data_path": "/api/purchase-requests",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/purchase-requests/detail",
+      "operation_id": "purchaseRequestDetailLegacy",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "purchase-requests.read",
+      "full_data_path": "/api/purchase-requests/detail",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/purchase-requests",
+      "operation_id": "purchaseRequestListV2",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "purchase-requests.read",
+      "full_data_path": "/api/v2/purchase-requests",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/purchase-requests/detail",
+      "operation_id": "purchaseRequestDetailV2",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "purchase-requests.read",
+      "full_data_path": "/api/v2/purchase-requests/detail",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/purchase-requests/workspace",
+      "operation_id": "purchaseRequestWorkspace",
+      "category": "contract-specific-projection",
+      "admission": "writeAvailable-forced-false",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/purchase-requests/lookup",
+      "operation_id": "purchaseRequestLookup",
+      "category": "contract-specific-projection",
+      "admission": "branches-purposes-currencies-qualified-individually;items-objects-unqualified",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/purchase-requests/save",
+      "operation_id": "purchaseRequestsaveCommand",
+      "category": "business-provider-unavailable",
+      "admission": "default-provider-unavailable;target-runtime-acceptance-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/purchase-requests/save/lookup",
+      "operation_id": "purchaseRequestsaveLookup",
+      "category": "business-provider-unavailable",
+      "admission": "default-provider-unavailable;target-runtime-acceptance-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/purchase-requests/submit",
+      "operation_id": "purchaseRequestsubmitCommand",
+      "category": "business-provider-unavailable",
+      "admission": "default-provider-unavailable;target-runtime-acceptance-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/purchase-requests/submit/lookup",
+      "operation_id": "purchaseRequestsubmitLookup",
+      "category": "business-provider-unavailable",
+      "admission": "default-provider-unavailable;target-runtime-acceptance-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/inbound-requests/draft",
+      "operation_id": "inboundDraftRead",
+      "category": "business-provider-unavailable",
+      "admission": "default-provider-unavailable;target-runtime-acceptance-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/inbound-requests/draft/save",
+      "operation_id": "inboundDraftsave",
+      "category": "business-provider-unavailable",
+      "admission": "default-provider-unavailable;target-runtime-acceptance-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/inbound-requests/draft/send-to-warehouse",
+      "operation_id": "inboundDraftsendtowarehouse",
+      "category": "business-provider-unavailable",
+      "admission": "default-provider-unavailable;target-runtime-acceptance-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/inbound-requests/draft/reconcile",
+      "operation_id": "inboundDraftreconcile",
+      "category": "business-provider-unavailable",
+      "admission": "default-provider-unavailable;target-runtime-acceptance-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-requests/screen",
+      "operation_id": "internal_transfer_requests_screen",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "internal-transfer-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-requests",
+      "operation_id": "internal_transfer_requests_list",
+      "category": "erp-full-source-fields",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "internal-transfer-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-requests/detail",
+      "operation_id": "internal_transfer_requests_detail",
+      "category": "erp-full-source-fields",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "internal-transfer-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-requests/actions",
+      "operation_id": "internal_transfer_requests_actions",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "internal-transfer-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-requests/options",
+      "operation_id": "internal_transfer_requests_options",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "internal-transfer-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-requests/actions/send-pm/options",
+      "operation_id": "internal_transfer_requests_pm_options",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "internal-transfer-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-requests/commands/lookup",
+      "operation_id": "internal_transfer_requests_command_lookup",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "internal-transfer-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-requests/selection",
+      "operation_id": "internal_transfer_requests_selection",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "internal-transfer-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-requests/paste/validate",
+      "operation_id": "internal_transfer_requests_paste_validate",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "internal-transfer-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-requests/create",
+      "operation_id": "internal_transfer_requests_create",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "internal-transfer-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-requests/save",
+      "operation_id": "internal_transfer_requests_save",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "internal-transfer-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-requests/delete",
+      "operation_id": "internal_transfer_requests_delete",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "internal-transfer-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-requests/actions/recall",
+      "operation_id": "internal_transfer_requests_recall",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "internal-transfer-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-requests/actions/send-pm",
+      "operation_id": "internal_transfer_requests_send_pm",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "internal-transfer-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/machine-movements/screen",
+      "operation_id": "machine_movements_screen",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "machine-movements.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/machine-movements",
+      "operation_id": "machine_movements_list",
+      "category": "erp-full-source-fields",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "machine-movements.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/machine-movements/detail",
+      "operation_id": "machine_movements_detail",
+      "category": "erp-full-source-fields",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "machine-movements.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/machine-movements/actions",
+      "operation_id": "machine_movements_actions",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "machine-movements.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/machine-movements/options",
+      "operation_id": "machine_movements_options",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "machine-movements.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/machine-movements/commands/lookup",
+      "operation_id": "machine_movements_command_lookup",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "machine-movements.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/machine-movements/selection",
+      "operation_id": "machine_movements_selection",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "machine-movements.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/machine-movements/paste/validate",
+      "operation_id": "machine_movements_paste_validate",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "machine-movements.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/machine-movements/create",
+      "operation_id": "machine_movements_create",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "machine-movements.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/machine-movements/save",
+      "operation_id": "machine_movements_save",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "machine-movements.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/machine-movements/delete",
+      "operation_id": "machine_movements_delete",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "machine-movements.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/machine-repairs/screen",
+      "operation_id": "machine_repairs_screen",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "machine-repairs.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/machine-repairs",
+      "operation_id": "machine_repairs_list",
+      "category": "erp-full-source-fields",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "machine-repairs.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/machine-repairs/detail",
+      "operation_id": "machine_repairs_detail",
+      "category": "erp-full-source-fields",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "machine-repairs.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/machine-repairs/actions",
+      "operation_id": "machine_repairs_actions",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "machine-repairs.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/machine-repairs/options",
+      "operation_id": "machine_repairs_options",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "machine-repairs.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/machine-repairs/commands/lookup",
+      "operation_id": "machine_repairs_command_lookup",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "machine-repairs.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/machine-repairs/selection",
+      "operation_id": "machine_repairs_selection",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "machine-repairs.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/machine-repairs/paste/validate",
+      "operation_id": "machine_repairs_paste_validate",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "machine-repairs.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/machine-repairs/create",
+      "operation_id": "machine_repairs_create",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "machine-repairs.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/machine-repairs/save",
+      "operation_id": "machine_repairs_save",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "machine-repairs.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/machine-repairs/delete",
+      "operation_id": "machine_repairs_delete",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "machine-repairs.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/purchase-requests/screen",
+      "operation_id": "purchase_requests_screen",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/purchase-requests",
+      "operation_id": "purchase_requests_list",
+      "category": "erp-full-source-fields",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/purchase-requests/detail",
+      "operation_id": "purchase_requests_detail",
+      "category": "erp-full-source-fields",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/purchase-requests/actions",
+      "operation_id": "purchase_requests_actions",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/purchase-requests/options",
+      "operation_id": "purchase_requests_options",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/purchase-requests/commands/lookup",
+      "operation_id": "purchase_requests_command_lookup",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/purchase-requests/selection",
+      "operation_id": "purchase_requests_selection",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/purchase-requests/paste/validate",
+      "operation_id": "purchase_requests_paste_validate",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/purchase-requests/create",
+      "operation_id": "purchase_requests_create",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/purchase-requests/save",
+      "operation_id": "purchase_requests_save",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/purchase-requests/delete",
+      "operation_id": "purchase_requests_delete",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/purchase-requests/actions/submit",
+      "operation_id": "purchase_requests_submit",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/purchase-requests/actions/send-purchase-order",
+      "operation_id": "purchase_requests_send_purchase_order",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-orders/screen",
+      "operation_id": "sales_orders_screen",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-orders",
+      "operation_id": "sales_orders_list",
+      "category": "erp-full-source-fields",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-orders/detail",
+      "operation_id": "sales_orders_detail",
+      "category": "erp-full-source-fields",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-orders/actions",
+      "operation_id": "sales_orders_actions",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-orders/contract-info",
+      "operation_id": "sales_orders_contract_info",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-orders/options",
+      "operation_id": "sales_orders_options",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-orders/actions/send-pm/options",
+      "operation_id": "sales_orders_pm_options",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-orders/commands/lookup",
+      "operation_id": "sales_orders_command_lookup",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-orders/selection",
+      "operation_id": "sales_orders_selection",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-orders/paste/validate",
+      "operation_id": "sales_orders_paste_validate",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-orders/create",
+      "operation_id": "sales_orders_create",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-orders/save",
+      "operation_id": "sales_orders_save",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-orders/delete",
+      "operation_id": "sales_orders_delete",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-orders/actions/recall",
+      "operation_id": "sales_orders_recall",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-orders/actions/send-pm",
+      "operation_id": "sales_orders_send_pm",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-qr/screen",
+      "operation_id": "sales_qr_screen",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "sales-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-qr",
+      "operation_id": "sales_qr_list",
+      "category": "erp-full-source-fields",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "sales-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-qr/detail",
+      "operation_id": "sales_qr_detail",
+      "category": "erp-full-source-fields",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "sales-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-qr/actions",
+      "operation_id": "sales_qr_actions",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "sales-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-qr/contract-info",
+      "operation_id": "sales_qr_contract_info",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "sales-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-qr/options",
+      "operation_id": "sales_qr_options",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "sales-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-qr/commands/lookup",
+      "operation_id": "sales_qr_command_lookup",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "sales-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-qr/qr/add",
+      "operation_id": "sales_qr_scan_add",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "sales-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-qr/qr/delete",
+      "operation_id": "sales_qr_scan_delete",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "sales-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/warehouse-qr/screen",
+      "operation_id": "warehouse_qr_screen",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "warehouse-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/warehouse-qr",
+      "operation_id": "warehouse_qr_list",
+      "category": "erp-full-source-fields",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "warehouse-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/warehouse-qr/detail",
+      "operation_id": "warehouse_qr_detail",
+      "category": "erp-full-source-fields",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "warehouse-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/warehouse-qr/actions",
+      "operation_id": "warehouse_qr_actions",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "warehouse-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/warehouse-qr/options",
+      "operation_id": "warehouse_qr_options",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "warehouse-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/warehouse-qr/commands/lookup",
+      "operation_id": "warehouse_qr_command_lookup",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "warehouse-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/warehouse-qr/qr/add",
+      "operation_id": "warehouse_qr_scan_add",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "warehouse-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/warehouse-qr/qr/delete",
+      "operation_id": "warehouse_qr_scan_delete",
+      "category": "contract-specific-projection",
+      "admission": "Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.",
+      "capability": "warehouse-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    }
+  ],
+  "actual_SQL_rows": "NOT_RUN",
+  "production_accepted": false,
+  "FE_adoption": "UNKNOWN;requires_parsers_to_retain_all_full_fields_on_current_routes"
+}

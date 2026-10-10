@@ -97,6 +97,23 @@ public sealed class SqlLegacyUserStore : ILegacyUserStore
         await grants.CloseAsync();
         if (await PurchaseRequests.SqlPurchaseRequestQueries.HasNativeReadGrantAsync(connection, user, cancellationToken))
             capabilities.Add("purchase-requests.read");
+        await using(var screens=new SqlCommand(SqlLegacyPolicy.GrantsCte+"""
+            SELECT DISTINCT M.MenuID,M.FormName FROM Grants P JOIN dbo.SY_Menu M ON M.MenuID=P.MenuID
+            WHERE M.isDisable=0 AND COALESCE(M.Para,'')=''
+              AND M.MenuID IN('0600201','07010100','0702001','0702010','1207','1209')
+              AND (P.IsRun=1 OR P.IsAdd=1 OR P.IsUpdate=1 OR P.IsDelete=1 OR P.isManager=1 OR P.isAdmin=1);
+            """,connection){CommandTimeout=5})
+        {
+            screens.Parameters.Add("@username",SqlDbType.VarChar,100).Value=user.Username;
+            screens.Parameters.Add("@group",SqlDbType.VarChar,50).Value=(object?)user.GroupId??DBNull.Value;
+            await using var data=await screens.ExecuteReaderAsync(cancellationToken);
+            while(await data.ReadAsync(cancellationToken))
+            {
+                var screen=Medcom.Contracts.ErpScreenCatalog.ModuleIds.Select(Medcom.Contracts.ErpScreenCatalog.Get)
+                    .SingleOrDefault(screen=>screen!.MenuId==data.GetString(0)&&screen.FormId==data.GetString(1));
+                if(screen is not null)capabilities.Add(screen.Id+".read");
+            }
+        }
         await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
         var scope = await SqlLegacyBranchScope.ResolveAsync(transaction, user, cancellationToken);
         await transaction.RollbackAsync(cancellationToken);
