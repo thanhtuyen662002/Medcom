@@ -31,6 +31,22 @@ test("ERP screen modules, routes and 1MiB body limits are correctly allowlisted"
  assert.equal(routeAllowed("api/erp/warehouse-qr/create","POST"),false);
  assert.equal(routeAllowed("api/erp/sales-qr/create","POST"),false);
 });
+test("documents v2, query/field contracts and openapi routes are correctly allowlisted",()=>{
+ for(const p of [
+  "api/v2/documents/purchase-orders",
+  "api/v2/documents/purchase-orders/detail",
+  "api/v2/documents/inbound-requests",
+  "api/v2/documents/inbound-requests/detail",
+  "api/v2/purchase-requests",
+  "api/v2/purchase-requests/detail",
+  "api/documents/field-contract",
+  "api/documents/query-contract",
+  "api/contracts/openapi.json",
+ ]){
+  assert.ok(routeAllowed(p,"GET"));
+  assert.equal(routeAllowed(p,"POST"),false);
+ }
+});
 test("ERP notification routes and positive int32 ID validation",()=>{
  for(const validId of ["1","42","999","2147483647"]){
   assert.equal(isNotificationId(validId),true);
