@@ -22,6 +22,7 @@ DOCKERFILE = (ROOT / 'Dockerfile').read_text()
 IGNORE = (ROOT / '.dockerignore').read_text()
 API = 'src/backend/Medcom.Api/Medcom.Api.csproj'
 WORKER = 'src/backend/Medcom.LegacyPasswordWorker/Medcom.LegacyPasswordWorker.csproj'
+ERP_CATALOG = 'inventories/erp/20261010/six-screen-catalog.json'
 IMAGE = os.environ.get('MEDCOM_CONTAINER_IMAGE')
 PUBLIC_ROOT = {'global.json', 'Directory.Build.props', 'Directory.Build.targets', 'NuGet.config'}
 
@@ -70,6 +71,7 @@ class ContainerContractTests(unittest.TestCase):
         self.assertEqual(copies, [
             'COPY global.json Directory.Build.props Directory.Build.targets NuGet.config ./',
             'COPY src/backend/ ./src/backend/',
+            f'COPY {ERP_CATALOG} ./{ERP_CATALOG}',
             'COPY --from=build /out/api/ ./',
             'COPY --from=build /out/password-worker/ ./password-worker/'])
         for project in (API, WORKER):
@@ -103,7 +105,7 @@ class ContainerContractTests(unittest.TestCase):
         expected = {'!' + path for path in PUBLIC_ROOT} | {
             '!Dockerfile', '!.dockerignore', '!src/backend/**/*.cs',
             '!src/backend/**/*.csproj', '!src/backend/**/packages.lock.json',
-            '!src/backend/Medcom.Api/appsettings.json'}
+            '!src/backend/Medcom.Api/appsettings.json', '!' + ERP_CATALOG}
         self.assertEqual(rules[0], '**')
         self.assertEqual({rule for rule in rules if rule.startswith('!')}, expected)
         final_exclusion = max(i for i, rule in enumerate(rules) if rule.startswith('!'))
@@ -245,12 +247,16 @@ class DockerSmokeTests(unittest.TestCase):
 
     def test_real_docker_context_accepts_future_source_and_rejects_private_neighbors(self):
         allowed = PUBLIC_ROOT | {
+            ERP_CATALOG,
             'src/backend/Medcom.Api/appsettings.json',
             'src/backend/Medcom.Api/Medcom.Api.csproj',
             'src/backend/Medcom.Api/packages.lock.json',
             'src/backend/Medcom.Api/NewClass.cs',
             'src/backend/Medcom.Application/NewFeature/More/QueryContext.cs'}
         denied = {
+            'inventories/erp/20261010/other-catalog.json',
+            'inventories/erp/20261010/six-screen-catalog.private.json',
+            ERP_CATALOG + '/unexpected.cs',
             '.env', '.git/config', 'src/frontend/public/example.cs', 'docs/notes.cs',
             'src/backend/Medcom.Api/bin/Generated.cs',
             'src/backend/Medcom.Api/obj/Generated.cs',

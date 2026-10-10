@@ -6,6 +6,8 @@ ENV DOTNET_CLI_TELEMETRY_OPTOUT=1 \
 COPY global.json Directory.Build.props Directory.Build.targets NuGet.config ./
 # .dockerignore admits only reviewed public backend source and lockfiles.
 COPY src/backend/ ./src/backend/
+# Exactly one sanitized finite catalog is embedded by Medcom.Contracts.
+COPY inventories/erp/20261010/six-screen-catalog.json ./inventories/erp/20261010/six-screen-catalog.json
 RUN dotnet restore src/backend/Medcom.Api/Medcom.Api.csproj --locked-mode \
     && dotnet restore src/backend/Medcom.LegacyPasswordWorker/Medcom.LegacyPasswordWorker.csproj --locked-mode
 RUN dotnet publish src/backend/Medcom.Api/Medcom.Api.csproj \

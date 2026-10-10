@@ -26,6 +26,7 @@ Integration base advanced to `c7bfa10a43ea4515b17fb105815ef7d78080e9ce` when the
 | PM popup choices absent from grid dropdown catalog | Two fixed scoped, paged action-option routes with credential-free projection; native local reads/scope rejection |
 | Exact reference lookup scanned entire simple master binding | Bound exact-key derived SELECT, preserve nested ORDER BY, bounded procedure/DECLARE fallback; native CUD plus lexical regressions |
 | Contract ID collation alias | Binary exact contract match plus branch fence; actual contract read and foreign-branch rejection |
+| Container image omitted the new embedded resource | Initial current-head container run 38031476990 failed with CS1566. Copy/allowlist exactly the sanitized catalog; strengthen source-only and real Docker context checks to keep adjacent/private files excluded. Repair is verified by new current-head CI, without disabling a check. |
 
 ## Acceptance that remains open
 
