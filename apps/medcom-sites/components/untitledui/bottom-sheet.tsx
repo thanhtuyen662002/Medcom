@@ -24,10 +24,18 @@ export function UntitledBottomSheet({
   maxHeight = "max-h-[85vh]",
 }: UntitledBottomSheetProps) {
   const [mounted, setMounted] = useState(false);
+  const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (typeof document !== "undefined") {
+      const active =
+        document.documentElement.classList.contains("dark") ||
+        document.body.classList.contains("dark") ||
+        localStorage.getItem("medcom.theme.dark") === "true";
+      setIsDark(active);
+    }
+  }, [open]);
 
   useEffect(() => {
     if (open) {
@@ -43,7 +51,7 @@ export function UntitledBottomSheet({
   if (!open || !mounted) return null;
 
   const content = (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end md:justify-center md:items-center overflow-hidden">
+    <div className={`fixed inset-0 z-50 flex flex-col justify-end md:justify-center md:items-center overflow-hidden ${isDark ? "dark" : ""}`}>
       {/* Backdrop covering full viewport */}
       <div
         className="fixed inset-0 bg-neutral-950/65 backdrop-blur-sm transition-opacity duration-200"
@@ -53,7 +61,7 @@ export function UntitledBottomSheet({
 
       {/* Sheet / Modal Container (Bottom on mobile, Centered on desktop) */}
       <div
-        className={`relative z-10 w-full max-w-lg md:max-w-2xl bg-white dark:bg-neutral-900 rounded-t-3xl md:rounded-3xl border-t border-x md:border border-neutral-200/90 dark:border-neutral-800 shadow-2xl overflow-hidden flex flex-col ${maxHeight} animate-uui-slide-up md:my-auto`}
+        className={`relative z-10 w-full max-w-lg md:max-w-2xl bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white rounded-t-3xl md:rounded-3xl border-t border-x md:border border-neutral-200/90 dark:border-neutral-800 shadow-2xl overflow-hidden flex flex-col ${maxHeight} animate-uui-slide-up md:my-auto`}
         role="dialog"
         aria-modal="true"
       >

@@ -20,6 +20,15 @@ import { UntitledButton } from "./button";
 import { UntitledBottomSheet } from "./bottom-sheet";
 import { DocumentCardSkeleton, DetailLinesSkeleton } from "./skeleton";
 import { erpClient } from "@/lib/erp/erp-client";
+import type { PurchaseRequestHeaderFields, PurchaseRequestLineFields, PurchaseReadback } from "@/lib/erp/purchase-request-api";
+import { errorMessage } from "@/lib/erp/api";
+
+function formatVND(value?: string | null, currency = "VND"): string {
+  if (!value) return "0 " + currency;
+  const parts = value.split(".");
+  const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return parts.length > 1 ? `${intPart},${parts[1]} ${currency}` : `${intPart} ${currency}`;
+}
 
 export interface PurchaseItem {
   id: string;
@@ -31,14 +40,23 @@ export interface PurchaseItem {
   purpose: string;
   status: "pending" | "approved" | "draft" | "rejected";
   totalAmount: string;
+  notes?: string | null;
+  currencyId?: string;
+  objectId?: string;
+  rateExchange?: number;
+  headerFields?: PurchaseRequestHeaderFields;
   lines: {
+    lineId?: string;
     itemId: string;
     itemName: string;
     specification: string;
     unit: string;
-    quantity: number;
+    quantity: number | string;
     unitPrice: string;
     amount: string;
+    budget?: string | null;
+    timeRequired?: string | null;
+    fields?: PurchaseRequestLineFields;
   }[];
 }
 
@@ -65,6 +83,7 @@ export function TabPurchases({
   const [activeItem, setActiveItem] = useState<PurchaseItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [currentScopeKey, setCurrentScopeKey] = useState<string | null>(null);
   const lastFetchedRef = useRef<number>(0);
@@ -86,10 +105,12 @@ export function TabPurchases({
       }
 
       try {
+        setError(null);
         const res = await erpClient.getPurchaseRequestsList(1, search, currentBranch);
         if (res && res.list && res.list.rows) {
           setCurrentScopeKey(res.scopeKey);
           const mapped: PurchaseItem[] = res.list.rows.map((r) => {
+            const f = r.fields;
             let status: PurchaseItem["status"] = "draft";
             if (r.statusId === 2) status = "approved";
             else if (r.statusId === 1) status = "pending";
@@ -102,18 +123,25 @@ export function TabPurchases({
                 ? "Chi nhánh 2 (Kho Dược)"
                 : `Chi nhánh ${r.branchId}`;
 
+            const dateStr = f?.purchaseDate ? f.purchaseDate.slice(0, 10) : r.purchaseDate ? r.purchaseDate.slice(0, 10) : "—";
+            const totalStr = f?.price ? formatVND(f.price, f.currencyId || "VND") : "Chi tiết dòng";
+            const purposeStr = f?.purposeDescOrClient || f?.notes || `Yêu cầu bổ sung thuốc / vật tư y tế [${r.documentId}]`;
+
             return {
               id: r.documentId,
               code: r.documentId,
-              date: r.purchaseDate
-                ? new Date(r.purchaseDate).toLocaleDateString("vi-VN")
-                : "—",
-              creator: r.personSuggest || "Dược sĩ phụ trách",
-              department: r.department || "Kho Dược GSP",
+              date: dateStr,
+              creator: f?.personSuggest || r.personSuggest || "Dược sĩ phụ trách",
+              department: f?.department || r.department || "Kho Dược GSP",
               branch: branchLabel,
-              purpose: `Yêu cầu bổ sung thuốc / vật tư y tế [${r.documentId}]`,
+              purpose: purposeStr,
               status,
-              totalAmount: "Chi tiết dòng",
+              totalAmount: totalStr,
+              notes: f?.notes,
+              currencyId: f?.currencyId,
+              objectId: f?.objectId,
+              rateExchange: f?.rateExchange,
+              headerFields: f,
               lines: [],
             };
           });
@@ -126,7 +154,7 @@ export function TabPurchases({
           onCountChange?.(0);
         }
       } catch (e) {
-        console.warn("Could not load remote purchases:", e);
+        setError(errorMessage(e));
       } finally {
         setLoading(false);
         setIsRefreshing(false);
@@ -163,35 +191,60 @@ export function TabPurchases({
       }
 
       if (scopeKey) {
-        const detail = await erpClient.getPurchaseRequestDetail(scopeKey, item.id);
+        const detail: PurchaseReadback = await erpClient.getPurchaseRequestDetail(scopeKey, item.id);
         if (detail && detail.document) {
           const doc = detail.document;
+          const src = detail.sourceFields;
+          const headerFields = src?.header || item.headerFields;
+          const totalStr = headerFields?.price
+            ? formatVND(headerFields.price, headerFields.currencyId || "VND")
+            : doc.header.price
+            ? formatVND(doc.header.price, doc.header.currencyId || "VND")
+            : item.totalAmount;
+
+          const lines = (src?.lines && src.lines.length > 0)
+            ? src.lines.map((l, idx) => ({
+                lineId: l.userAutoId || `line-${idx}`,
+                itemId: l.itemId,
+                itemName: `Dược phẩm [${l.itemId}]`,
+                specification: l.model || "Tiêu chuẩn Dược điển",
+                unit: "Hộp/Đơn vị",
+                quantity: l.quantity,
+                unitPrice: formatVND(l.unitPrice, headerFields?.currencyId || "VND"),
+                amount: l.totalPrice ? formatVND(l.totalPrice, headerFields?.currencyId || "VND") : formatVND(l.unitPrice, headerFields?.currencyId || "VND"),
+                budget: l.budget,
+                timeRequired: l.timeRequired,
+                fields: l,
+              }))
+            : doc.lines.map((l) => ({
+                lineId: l.lineId,
+                itemId: l.values.itemId,
+                itemName: `Dược phẩm [${l.values.itemId}]`,
+                specification: l.values.model || "Tiêu chuẩn Dược điển",
+                unit: "Hộp/Đơn vị",
+                quantity: l.values.quantity,
+                unitPrice: formatVND(l.values.unitPrice, headerFields?.currencyId || "VND"),
+                amount: l.values.totalPrice ? formatVND(l.values.totalPrice, headerFields?.currencyId || "VND") : formatVND(l.values.unitPrice, headerFields?.currencyId || "VND"),
+                budget: l.values.budget,
+                timeRequired: l.values.timeRequired,
+              }));
+
           setActiveItem((prev) =>
             prev
               ? {
                   ...prev,
+                  headerFields,
                   purpose:
+                    headerFields?.purposeDescOrClient ||
+                    headerFields?.notes ||
                     doc.header.purposeDescOrClient ||
                     doc.header.notes ||
                     prev.purpose,
-                  totalAmount: doc.header.price
-                    ? `${Number(doc.header.price).toLocaleString("vi-VN")} đ`
-                    : "—",
-                  lines: doc.lines.map((l) => ({
-                    itemId: l.values.itemId,
-                    itemName: `Dược phẩm [${l.values.itemId}]`,
-                    specification: l.values.model || "Tiêu chuẩn Dược điển",
-                    unit: "Hộp/Đơn vị",
-                    quantity: Number(l.values.quantity) || 1,
-                    unitPrice: l.values.unitPrice
-                      ? `${Number(l.values.unitPrice).toLocaleString("vi-VN")} đ`
-                      : "Theo đơn giá ERP",
-                    amount: l.values.totalPrice
-                      ? `${Number(l.values.totalPrice).toLocaleString("vi-VN")} đ`
-                      : l.values.unitPrice && l.values.quantity
-                      ? `${(Number(l.values.unitPrice) * Number(l.values.quantity)).toLocaleString("vi-VN")} đ`
-                      : "Theo đơn giá ERP",
-                  })),
+                  totalAmount: totalStr,
+                  currencyId: headerFields?.currencyId || doc.header.currencyId,
+                  objectId: headerFields?.objectId || doc.header.objectId,
+                  notes: headerFields?.notes || doc.header.notes,
+                  lines,
                 }
               : prev
           );
@@ -351,7 +404,19 @@ export function TabPurchases({
 
       {/* List of Purchases (Mobile Cards) */}
       <div className="space-y-3">
-        {loading && purchases.length === 0 ? (
+        {error ? (
+          <div className="rounded-2xl border border-red-200 dark:border-red-900/60 bg-red-50/50 dark:bg-red-950/30 p-6 text-center space-y-3">
+            <p className="text-sm font-semibold text-red-700 dark:text-red-400">{error}</p>
+            <UntitledButton
+              variant="secondary-gray"
+              size="sm"
+              onClick={() => loadPurchases(false)}
+              iconLeading={<RefreshCw className="size-3.5" />}
+            >
+              Thử lại
+            </UntitledButton>
+          </div>
+        ) : loading && purchases.length === 0 ? (
           <DocumentCardSkeleton count={4} />
         ) : filtered.length === 0 ? (
           <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-8 text-center space-y-3">
@@ -489,6 +554,12 @@ export function TabPurchases({
             {/* Information Grid */}
             <div className="space-y-2 text-xs">
               <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
+                <span className="text-neutral-500">Mã đề nghị mua:</span>
+                <span className="font-mono font-bold text-neutral-900 dark:text-white">
+                  {activeItem.code}
+                </span>
+              </div>
+              <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
                 <span className="text-neutral-500">Mục đích yêu cầu:</span>
                 <span className="font-semibold text-neutral-900 dark:text-white max-w-[60%] text-right">
                   {activeItem.purpose}
@@ -498,6 +569,12 @@ export function TabPurchases({
                 <span className="text-neutral-500">Người đề nghị:</span>
                 <span className="font-semibold text-neutral-900 dark:text-white">
                   {activeItem.creator}
+                </span>
+              </div>
+              <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
+                <span className="text-neutral-500">Phòng ban đề xuất:</span>
+                <span className="font-semibold text-neutral-900 dark:text-white">
+                  {activeItem.department}
                 </span>
               </div>
               <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
@@ -512,12 +589,28 @@ export function TabPurchases({
                   {activeItem.branch}
                 </span>
               </div>
+              {activeItem.objectId && (
+                <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
+                  <span className="text-neutral-500">Đối tượng liên kết:</span>
+                  <span className="font-semibold text-neutral-900 dark:text-white">
+                    {activeItem.objectId}
+                  </span>
+                </div>
+              )}
+              {activeItem.notes && (
+                <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
+                  <span className="text-neutral-500">Ghi chú bổ sung:</span>
+                  <span className="font-semibold text-neutral-900 dark:text-white max-w-[60%] text-right">
+                    {activeItem.notes}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Line Items Table */}
             <div>
               <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-2">
-                Danh sách thuốc & vật tư ({activeItem.lines?.length ?? 0})
+                Danh sách thuốc & vật tư ({activeItem.lines?.length ?? 0} mặt hàng)
               </h4>
               <div className="space-y-2">
                 {detailLoading ? (
@@ -529,18 +622,20 @@ export function TabPurchases({
                 ) : (
                   activeItem.lines.map((line, idx) => (
                     <div
-                      key={line.itemId || idx}
-                      className="p-3 rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-1.5"
+                      key={line.lineId || line.itemId || idx}
+                      className="p-3.5 rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-1.5"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <span className="text-[10px] font-mono text-neutral-400">
-                            #{idx + 1} · {line.itemId}
+                            #{idx + 1} · [{line.itemId}]
                           </span>
                           <h5 className="text-xs font-bold text-neutral-900 dark:text-white truncate">
                             {line.itemName}
                           </h5>
-                          <p className="text-[11px] text-neutral-400">{line.specification}</p>
+                          {line.specification && (
+                            <p className="text-[11px] text-neutral-400">Quy cách/Model: {line.specification}</p>
+                          )}
                         </div>
                         <span className="text-xs font-bold text-neutral-900 dark:text-white shrink-0">
                           {line.amount}
@@ -553,6 +648,11 @@ export function TabPurchases({
                         </span>
                         <span>Đơn giá: {line.unitPrice}</span>
                       </div>
+                      {line.timeRequired && (
+                        <p className="text-[11px] text-neutral-400 italic">
+                          Thời gian cần: {line.timeRequired}
+                        </p>
+                      )}
                     </div>
                   ))
                 )}

@@ -76,6 +76,12 @@ export async function proxyErpRequest(request:Request,path:string[],configuredOr
     outgoing.set("X-Medcom-Session-Scope",session);outgoing.set("X-Medcom-Read-Scope",read);
    }
   }
+  if(request.method==="GET"&&r.status===200){
+   const projection=r.headers.get("X-Medcom-Data-Projection"),fullPath=r.headers.get("X-Medcom-Full-Data-Path");
+   if(projection==="full"&&fullPath&&/^\/api\/(?:v2\/)?(?:documents\/(?:purchase-orders|inbound-requests)(?:\/detail)?|purchase-requests(?:\/detail)?)$/.test(fullPath)){
+    outgoing.set("X-Medcom-Data-Projection",projection);outgoing.set("X-Medcom-Full-Data-Path",fullPath);
+   }
+  }
   for(const value of r.headers.getSetCookie()){const safe=relayCookie(value);if(safe)outgoing.append("Set-Cookie",safe);}
   return new Response(r.body,{status:r.status,headers:outgoing});
  }catch{return problem(503,"backend_unavailable");}

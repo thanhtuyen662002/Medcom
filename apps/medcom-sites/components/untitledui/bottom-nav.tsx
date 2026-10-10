@@ -1,20 +1,21 @@
 "use client";
 
 import React from "react";
-import { LayoutDashboard, ShoppingBag, FileText, PackageCheck, Settings2 } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, FileText, PackageCheck, Menu } from "lucide-react";
 
 export type NavTabId = "home" | "orders" | "purchases" | "inbound" | "scan" | "settings";
 
 export interface UntitledBottomNavProps {
   activeTab: NavTabId;
   onTabChange: (tab: NavTabId) => void;
+  onOpenMenu?: () => void;
   pendingOrdersCount?: number;
   pendingPurchasesCount?: number;
   pendingInboundCount?: number;
 }
 
 interface TabItem {
-  id: NavTabId;
+  id: NavTabId | "menu";
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   badge: number;
@@ -23,6 +24,7 @@ interface TabItem {
 export function UntitledBottomNav({
   activeTab,
   onTabChange,
+  onOpenMenu,
   pendingOrdersCount = 0,
   pendingPurchasesCount = 0,
   pendingInboundCount = 0,
@@ -53,9 +55,9 @@ export function UntitledBottomNav({
       badge: pendingInboundCount,
     },
     {
-      id: "settings",
-      label: "Cài đặt",
-      icon: Settings2,
+      id: "menu",
+      label: "Menu",
+      icon: Menu,
       badge: 0,
     },
   ];
@@ -75,7 +77,13 @@ export function UntitledBottomNav({
               key={tab.id}
               data-tab={tab.id}
               type="button"
-              onClick={() => onTabChange(tab.id)}
+              onClick={() => {
+                if (tab.id === "menu") {
+                  onOpenMenu?.();
+                } else {
+                  onTabChange(tab.id as NavTabId);
+                }
+              }}
               className={`relative flex flex-col items-center justify-center py-1.5 px-2 rounded-xl transition-all duration-150 active:scale-95 flex-1 min-w-0 ${
                 isActive
                   ? "text-purple-600 dark:text-purple-400 font-semibold"
