@@ -19,6 +19,8 @@ Private isolated SQL Server fixture: 26 checks PASS, including native recipient 
 
 The first ordinary fixture login failed because the standalone test host had no packaged password-worker folder; copying the already-built worker into that private host corrected the fixture packaging. It was not a product authentication change or a target SQL connection failure. The subsequent 26-check run passed without a notification-provider or identity override.
 
+Initial hosted container validation failed at its old 115-operation count after the real image/contract equality check passed. The owned regression was repaired in-session: expected count is 119 and all four notification operations additionally require their published session security. No check was disabled; exact latest-head hosted container execution remains required. Local source-only deploy tests are distinct from Docker execution, which is observed in hosted CI.
+
 ## Local quality review
 
 Reviewed ownership and query binding, native identity/group/credential rechecks, source pin and varchar(50) truncation rejection, positive/negative recipient paths, full DTO and OpenAPI keys, source calendar timestamps, deterministic bounded paging, native first-view semantics, transaction disposal/rollback and uncertain-commit response, session change before/after commit, fixed routing and encoded document IDs, owner/asset/branch rights through existing readers, second personal read after navigation, and BFF handoff requirements. Early transaction returns were moved into a bounded observation function so cleanup failures can retire a response; invalid borrowed connections are not disposed as owned connections. No unresolved local finding is knowingly deferred.
