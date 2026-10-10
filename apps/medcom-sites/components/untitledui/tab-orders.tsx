@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Search,
   Filter,
@@ -14,34 +14,55 @@ import {
   Printer,
   ChevronRight,
   RefreshCw,
-  Plus,
   Package,
 } from "lucide-react";
 import { UntitledBadge } from "./badge";
 import { UntitledButton } from "./button";
 import { UntitledBottomSheet } from "./bottom-sheet";
-import {
-  erpClient,
-  REAL_PURCHASE_ORDERS,
-  type REAL_BRANCHES,
-} from "@/lib/erp/erp-client";
-import type { DocumentRow, DocumentDetail } from "@/lib/erp/contracts";
+import { DocumentCardSkeleton, DetailLinesSkeleton } from "./skeleton";
+import { erpClient } from "@/lib/erp/erp-client";
+import type { DocumentDetail } from "@/lib/erp/contracts";
+
+export interface OrderItem {
+  documentId: string;
+  documentDate: string;
+  branchId: string;
+  statusId: number | null;
+  statusName: string;
+  isLocked: boolean;
+  supplier: string;
+  creator: string;
+  totalAmount: string;
+  notes: string;
+  lines: {
+    lineId: string;
+    itemId: string;
+    itemName: string;
+    unit: string;
+    quantity: string;
+    quantity2: string;
+    unitPrice: string;
+    amount: string;
+  }[];
+}
 
 export interface TabOrdersProps {
   currentBranch: string;
+  isActive?: boolean;
+  onCountChange?: (count: number) => void;
 }
 
-export function TabOrders({ currentBranch }: TabOrdersProps) {
+export function TabOrders({ currentBranch, isActive = true, onCountChange }: TabOrdersProps) {
   const [search, setSearch] = useState("");
   const [selectedBranch, setSelectedBranch] = useState(currentBranch || "");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [loading, setLoading] = useState(false);
-  const [orders, setOrders] = useState<typeof REAL_PURCHASE_ORDERS>(REAL_PURCHASE_ORDERS);
-  const [selectedOrder, setSelectedOrder] = useState<
-    (typeof REAL_PURCHASE_ORDERS)[0] | null
-  >(null);
+  const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [orders, setOrders] = useState<OrderItem[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<OrderItem | null>(null);
   const [detailData, setDetailData] = useState<DocumentDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const lastFetchedRef = useRef<number>(0);
 
   // Sync selected branch if prop changes
   useEffect(() => {
@@ -50,65 +71,81 @@ export function TabOrders({ currentBranch }: TabOrdersProps) {
     }
   }, [currentBranch]);
 
-  // Load orders
-  const loadOrders = async () => {
-    setLoading(true);
-    try {
-      const pageData = await erpClient.getDocumentsList(
-        "purchase-orders",
-        1,
-        search,
-        selectedBranch
-      );
-
-      if (pageData && pageData.rows && pageData.rows.length > 0) {
-        const mapped = pageData.rows.map((r) => {
-          const seed = REAL_PURCHASE_ORDERS.find((p) => p.documentId === r.documentId);
-          return {
-            documentId: r.documentId,
-            documentDate: r.documentDate || "2026-10-09",
-            branchId: r.branchId,
-            statusId: r.statusId,
-            statusName: r.statusName || (r.statusId === 2 ? "Đã duyệt" : r.statusId === 1 ? "Chờ phê duyệt" : "Bản nháp"),
-            isLocked: r.isLocked ?? false,
-            supplier: seed?.supplier || "Công ty Cổ phần Dược phẩm",
-            creator: seed?.creator || "DS. Nguyễn Thùy Linh",
-            totalAmount: seed?.totalAmount || "Xem chi tiết",
-            notes: seed?.notes || `Đơn đặt hàng ${r.documentId}`,
-            lines: seed?.lines || [],
-          };
-        });
-        setOrders(mapped);
+  // Load orders from real backend
+  const loadOrders = useCallback(
+    async (isBackground = false) => {
+      if (!isBackground) {
+        if (orders.length === 0) setLoading(true);
+        else setIsRefreshing(true);
       } else {
-        // Fallback to filtered seed
-        const matched = REAL_PURCHASE_ORDERS.filter((p) => {
-          const matchSearch =
-            !search ||
-            p.documentId.toLowerCase().includes(search.toLowerCase()) ||
-            p.supplier.toLowerCase().includes(search.toLowerCase());
-          const matchBranch = !selectedBranch || p.branchId === selectedBranch;
-          return matchSearch && matchBranch;
-        });
-        setOrders(matched.length > 0 ? matched : REAL_PURCHASE_ORDERS);
+        setIsRefreshing(true);
       }
-    } catch {
-      setOrders(REAL_PURCHASE_ORDERS);
-    } finally {
-      setLoading(false);
-    }
-  };
 
+      try {
+        const pageData = await erpClient.getDocumentsList(
+          "purchase-orders",
+          1,
+          search,
+          selectedBranch
+        );
+
+        if (pageData && pageData.rows) {
+          const mapped: OrderItem[] = pageData.rows.map((r) => ({
+            documentId: r.documentId,
+            documentDate: r.documentDate || "—",
+            branchId: r.branchId || selectedBranch || "CN01",
+            statusId: r.statusId,
+            statusName:
+              r.statusName ||
+              (r.statusId === 2
+                ? "Đã duyệt"
+                : r.statusId === 1
+                ? "Chờ phê duyệt"
+                : "Bản nháp"),
+            isLocked: r.isLocked ?? false,
+            supplier: "Nhà cung cấp dược Medcom",
+            creator: "Dược sĩ phụ trách",
+            totalAmount: "Theo chi tiết đơn",
+            notes: `Đơn đặt hàng ${r.documentId}`,
+            lines: [],
+          }));
+
+          setOrders(mapped);
+          onCountChange?.(mapped.length);
+          lastFetchedRef.current = Date.now();
+        }
+      } catch {
+        // Keep existing cached orders or show empty
+      } finally {
+        setLoading(false);
+        setIsRefreshing(false);
+      }
+    },
+    [search, selectedBranch, orders.length, onCountChange]
+  );
+
+  // Fetch when search or branch changes
   useEffect(() => {
-    loadOrders();
+    loadOrders(false);
   }, [search, selectedBranch]);
 
+  // Re-fetch when tab becomes active if stale > 30s
+  useEffect(() => {
+    if (isActive && Date.now() - lastFetchedRef.current > 30000) {
+      loadOrders(true);
+    }
+  }, [isActive, loadOrders]);
+
   // Handle open order details
-  const handleOpenDetail = async (order: (typeof REAL_PURCHASE_ORDERS)[0]) => {
+  const handleOpenDetail = async (order: OrderItem) => {
     setSelectedOrder(order);
     setDetailLoading(true);
+    setDetailData(null);
+
     try {
       const detail = await erpClient.getDocumentDetail("purchase-orders", order.documentId);
       setDetailData(detail);
+
       if (detail && detail.purchaseOrderLines && detail.purchaseOrderLines.length > 0) {
         setSelectedOrder((prev) =>
           prev
@@ -117,12 +154,12 @@ export function TabOrders({ currentBranch }: TabOrdersProps) {
                 lines: detail.purchaseOrderLines.map((l) => ({
                   lineId: l.lineId,
                   itemId: l.itemId,
-                  itemName: `Vật tư y tế [${l.itemId}]`,
+                  itemName: `Mã dược phẩm: ${l.itemId}`,
                   unit: "Hộp/Đơn vị",
                   quantity: l.quantity || "1",
                   quantity2: l.quantity2 || "1",
-                  unitPrice: "Theo đơn",
-                  amount: "Theo đơn",
+                  unitPrice: "Theo hợp đồng",
+                  amount: "Theo hợp đồng",
                 })),
               }
             : prev
@@ -158,114 +195,57 @@ export function TabOrders({ currentBranch }: TabOrdersProps) {
         </UntitledBadge>
       );
     }
+    if (statusId === 1) {
+      return (
+        <UntitledBadge variant="warning" size="sm" dot>
+          {statusName || "Chờ phê duyệt"}
+        </UntitledBadge>
+      );
+    }
     return (
-      <UntitledBadge variant="warning" size="sm" dot>
-        {statusName || "Chờ phê duyệt"}
+      <UntitledBadge variant="gray" size="sm">
+        {statusName || "Bản nháp"}
       </UntitledBadge>
     );
   };
 
-  const handleApproveOrder = (orderId: string) => {
-    setOrders((prev) =>
-      prev.map((o) =>
-        o.documentId === orderId ? { ...o, statusId: 2, statusName: "Đã duyệt" } : o
-      )
-    );
-    if (selectedOrder && selectedOrder.documentId === orderId) {
-      setSelectedOrder({ ...selectedOrder, statusId: 2, statusName: "Đã duyệt" });
-    }
-  };
-
-  const handleLockOrder = (orderId: string) => {
-    setOrders((prev) =>
-      prev.map((o) =>
-        o.documentId === orderId ? { ...o, isLocked: !o.isLocked } : o
-      )
-    );
-    if (selectedOrder && selectedOrder.documentId === orderId) {
-      setSelectedOrder({ ...selectedOrder, isLocked: !selectedOrder.isLocked });
-    }
-  };
-
   return (
-    <div className="space-y-4 pb-20 animate-uui-fade-in w-full">
-      {/* Title & Stats Banner */}
-      <div className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 sm:p-5 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <ShoppingBag className="size-5 text-purple-600 dark:text-purple-400" />
-              <h2 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-white">
-                Quản lý Đơn đặt hàng (Purchase Orders)
-              </h2>
-            </div>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-              Dữ liệu đơn mua kết nối trực tiếp với backend ERP Medcom và nhà cung cấp
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <UntitledButton
-              variant="secondary-gray"
-              size="sm"
-              loading={loading}
-              onClick={loadOrders}
-              iconLeading={<RefreshCw className="size-3.5" />}
-            >
-              Làm mới
-            </UntitledButton>
-          </div>
-        </div>
-      </div>
-
-      {/* Search & Filter Bar */}
-      <div className="space-y-2.5">
-        <div className="flex flex-col sm:flex-row gap-2">
+    <div className="space-y-4 pb-28">
+      {/* Search & Actions Bar */}
+      <div className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-3 sm:p-4 shadow-xs space-y-3">
+        <div className="flex flex-col sm:flex-row gap-2.5 sm:items-center justify-between">
           <div className="relative flex-1">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
             <input
               type="text"
-              placeholder="Tìm theo số đơn PO, tên nhà cung cấp..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-2xs"
+              placeholder="Tìm mã PO, nhà cung cấp, dược phẩm..."
+              className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50/70 dark:bg-neutral-800/70 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
             />
           </div>
 
-          {/* Branch Filter */}
-          <div className="w-full sm:w-60">
-            <select
-              value={selectedBranch}
-              onChange={(e) => setSelectedBranch(e.target.value)}
-              className="w-full px-3 py-2.5 text-xs sm:text-sm rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-2xs cursor-pointer"
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => loadOrders(false)}
+              disabled={isRefreshing}
+              className="p-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 transition-all active:scale-95 flex items-center gap-1.5 text-xs font-semibold"
+              title="Làm mới dữ liệu từ backend"
             >
-              <option value="">Tất cả chi nhánh</option>
-              <option value="CN01">CN01 · Chi nhánh 1 Trung tâm</option>
-              <option value="CN02">CN02 · Kho Dược Bệnh viện</option>
-              <option value="CN03">CN03 · Kho Đà Nẵng</option>
-            </select>
+              <RefreshCw className={`size-3.5 ${isRefreshing ? "animate-spin text-purple-600" : ""}`} />
+              <span className="hidden sm:inline">Làm mới</span>
+            </button>
           </div>
         </div>
 
-        {/* Status Filter Chips */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+        {/* Filter Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
           {[
-            { id: "all", label: "Tất cả đơn hàng", count: orders.length },
-            {
-              id: "pending",
-              label: "Chờ phê duyệt",
-              count: orders.filter((o) => o.statusId === 1).length,
-            },
-            {
-              id: "approved",
-              label: "Đã phê duyệt",
-              count: orders.filter((o) => o.statusId === 2).length,
-            },
-            {
-              id: "completed",
-              label: "Hoàn tất",
-              count: orders.filter((o) => o.statusId === 3).length,
-            },
+            { id: "all", label: "Tất cả", count: orders.length },
+            { id: "pending", label: "Chờ duyệt", count: orders.filter((o) => o.statusId === 1).length },
+            { id: "approved", label: "Đã duyệt", count: orders.filter((o) => o.statusId === 2).length },
+            { id: "completed", label: "Hoàn tất", count: orders.filter((o) => o.statusId === 3).length },
           ].map((chip) => {
             const isSelected = statusFilter === chip.id;
             return (
@@ -295,17 +275,36 @@ export function TabOrders({ currentBranch }: TabOrdersProps) {
         </div>
       </div>
 
-      {/* Responsive Orders List / Grid */}
+      {/* Orders List Container */}
       <div className="space-y-3">
-        {filtered.length === 0 ? (
-          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-8 text-center space-y-2">
-            <ShoppingBag className="size-10 text-neutral-400 mx-auto stroke-[1.4]" />
-            <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
-              Không có đơn đặt hàng nào phù hợp
-            </p>
-            <p className="text-xs text-neutral-400">
-              Thử tìm kiếm với số đơn khác hoặc chọn lại chi nhánh.
-            </p>
+        {loading ? (
+          <>
+            <DocumentCardSkeleton />
+            <DocumentCardSkeleton />
+            <DocumentCardSkeleton />
+            <DocumentCardSkeleton />
+          </>
+        ) : filtered.length === 0 ? (
+          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-8 text-center space-y-3">
+            <div className="size-12 rounded-2xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center mx-auto">
+              <ShoppingBag className="size-6 stroke-[1.8]" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-neutral-900 dark:text-white">
+                Chưa có đơn đặt hàng PO nào
+              </p>
+              <p className="text-xs text-neutral-400 mt-1 max-w-sm mx-auto">
+                Không tìm thấy dữ liệu đơn đặt hàng cho chi nhánh hoặc điều kiện tìm kiếm hiện tại từ máy chủ backend.
+              </p>
+            </div>
+            <UntitledButton
+              variant="secondary-gray"
+              size="sm"
+              onClick={() => loadOrders(false)}
+              iconLeading={<RefreshCw className="size-3.5" />}
+            >
+              Tải lại danh sách
+            </UntitledButton>
           </div>
         ) : (
           filtered.map((order) => (
@@ -341,7 +340,7 @@ export function TabOrders({ currentBranch }: TabOrdersProps) {
                     {order.totalAmount}
                   </span>
                   <span className="text-[11px] text-neutral-400">
-                    {order.lines.length} dòng hàng
+                    {order.lines.length > 0 ? `${order.lines.length} dòng hàng` : "Xem chi tiết"}
                   </span>
                 </div>
               </div>
@@ -370,12 +369,12 @@ export function TabOrders({ currentBranch }: TabOrdersProps) {
         )}
       </div>
 
-      {/* Order Detail Slide-over Bottom Sheet */}
+      {/* Order Detail Viewport-Anchored Modal */}
       <UntitledBottomSheet
         open={Boolean(selectedOrder)}
         onClose={() => setSelectedOrder(null)}
-        title={selectedOrder?.documentId || "Chi tiết đơn đặt hàng"}
-        subtitle={`Chi nhánh: ${selectedOrder?.branchId} · Nhà cung cấp: ${selectedOrder?.supplier}`}
+        title={selectedOrder?.documentId || "Chi tiết đơn đặt hàng PO"}
+        subtitle={`Chi nhánh: ${selectedOrder?.branchId || "CN01"} · Ngày chứng từ: ${selectedOrder?.documentDate}`}
         footer={
           selectedOrder && (
             <div className="flex gap-2">
@@ -383,35 +382,20 @@ export function TabOrders({ currentBranch }: TabOrdersProps) {
                 variant="secondary-gray"
                 size="md"
                 fullWidth
-                onClick={() => handleLockOrder(selectedOrder.documentId)}
-                iconLeading={<Lock className="size-4" />}
+                onClick={() => setSelectedOrder(null)}
               >
-                {selectedOrder.isLocked ? "Mở khóa đơn" : "Khóa đơn"}
+                Đóng
               </UntitledButton>
 
-              {selectedOrder.statusId === 1 && (
-                <UntitledButton
-                  variant="primary"
-                  size="md"
-                  fullWidth
-                  onClick={() => handleApproveOrder(selectedOrder.documentId)}
-                  iconLeading={<CheckCircle2 className="size-4" />}
-                >
-                  Phê duyệt đơn PO
-                </UntitledButton>
-              )}
-
-              {selectedOrder.statusId !== 1 && (
-                <UntitledButton
-                  variant="primary"
-                  size="md"
-                  fullWidth
-                  onClick={() => alert("Đang in đơn đặt hàng PO ra khổ A4...")}
-                  iconLeading={<Printer className="size-4" />}
-                >
-                  In đơn đặt hàng
-                </UntitledButton>
-              )}
+              <UntitledButton
+                variant="primary"
+                size="md"
+                fullWidth
+                onClick={() => window.print()}
+                iconLeading={<Printer className="size-4" />}
+              >
+                In đơn đặt hàng
+              </UntitledButton>
             </div>
           )
         }
@@ -427,9 +411,9 @@ export function TabOrders({ currentBranch }: TabOrdersProps) {
                 </div>
               </div>
               <div className="text-right">
-                <span className="text-[11px] text-neutral-400 block">Tổng tiền đơn PO</span>
-                <span className="text-base sm:text-lg font-extrabold text-purple-700 dark:text-purple-300">
-                  {selectedOrder.totalAmount}
+                <span className="text-[11px] text-neutral-400 block">Mã chứng từ PO</span>
+                <span className="text-sm sm:text-base font-mono font-extrabold text-purple-700 dark:text-purple-300">
+                  {selectedOrder.documentId}
                 </span>
               </div>
             </div>
@@ -437,68 +421,66 @@ export function TabOrders({ currentBranch }: TabOrdersProps) {
             {/* Order Attributes */}
             <div className="space-y-2 text-xs">
               <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
-                <span className="text-neutral-500">Nhà cung cấp:</span>
-                <span className="font-semibold text-neutral-900 dark:text-white max-w-[65%] text-right">
-                  {selectedOrder.supplier}
-                </span>
-              </div>
-              <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
-                <span className="text-neutral-500">Người lập đơn:</span>
+                <span className="text-neutral-500">Chi nhánh:</span>
                 <span className="font-semibold text-neutral-900 dark:text-white">
-                  {selectedOrder.creator}
+                  {selectedOrder.branchId}
                 </span>
               </div>
               <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
-                <span className="text-neutral-500">Ngày tạo chứng từ:</span>
+                <span className="text-neutral-500">Ngày lập:</span>
                 <span className="font-semibold text-neutral-900 dark:text-white">
                   {selectedOrder.documentDate}
                 </span>
               </div>
               <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
-                <span className="text-neutral-500">Ghi chú nghiệp vụ:</span>
-                <span className="font-semibold text-neutral-900 dark:text-white max-w-[65%] text-right">
-                  {selectedOrder.notes}
+                <span className="text-neutral-500">Khóa chứng từ:</span>
+                <span className="font-semibold text-neutral-900 dark:text-white">
+                  {selectedOrder.isLocked ? "Đã khóa" : "Chưa khóa"}
                 </span>
               </div>
             </div>
 
-            {/* Line Items Table */}
+            {/* Line items Section */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                  Danh mục thuốc & vật tư đặt hàng ({selectedOrder.lines.length})
-                </h4>
+              <div className="flex items-center justify-between mb-2.5">
+                <h5 className="text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                  Danh mục dược phẩm & vật tư
+                </h5>
+                <span className="text-[11px] text-neutral-400">
+                  {detailData?.purchaseOrderLines?.length || selectedOrder.lines.length} dòng
+                </span>
               </div>
 
-              <div className="space-y-2.5">
-                {selectedOrder.lines.map((line, idx) => (
-                  <div
-                    key={line.lineId}
-                    className="p-3.5 rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-1.5 shadow-2xs"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <span className="text-[10px] font-mono text-neutral-400">
-                          #{idx + 1} · {line.itemId}
+              {detailLoading ? (
+                <DetailLinesSkeleton />
+              ) : (detailData?.purchaseOrderLines && detailData.purchaseOrderLines.length > 0) ||
+                selectedOrder.lines.length > 0 ? (
+                <div className="space-y-2">
+                  {(detailData?.purchaseOrderLines || selectedOrder.lines).map((line, idx) => (
+                    <div
+                      key={"lineId" in line ? line.lineId : idx}
+                      className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200/60 dark:border-neutral-800 space-y-1"
+                    >
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-neutral-900 dark:text-white">
+                          {"itemId" in line ? `Vật tư y tế [${line.itemId}]` : "Dược phẩm"}
                         </span>
-                        <h5 className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-white truncate">
-                          {line.itemName}
-                        </h5>
+                        <span className="font-mono font-bold text-purple-600 dark:text-purple-400">
+                          SL: {"quantity" in line ? line.quantity : "1"}
+                        </span>
                       </div>
-                      <span className="text-xs sm:text-sm font-extrabold text-neutral-900 dark:text-white shrink-0">
-                        {line.amount}
-                      </span>
+                      <div className="flex items-center justify-between text-[11px] text-neutral-400">
+                        <span>Dòng ID: {"lineId" in line ? line.lineId : `#${idx + 1}`}</span>
+                        <span>Đơn vị: Hộp / Thùng</span>
+                      </div>
                     </div>
-
-                    <div className="flex items-center justify-between text-xs pt-1.5 border-t border-neutral-100 dark:border-neutral-800 text-neutral-500">
-                      <span>
-                        Số lượng: <strong className="text-purple-600 font-bold">{parseFloat(line.quantity)}</strong> {line.unit}
-                      </span>
-                      <span>Đơn giá: {line.unitPrice}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 text-center text-xs text-neutral-400">
+                  Không có dòng vật tư chi tiết nào được ghi nhận cho đơn này.
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -27,8 +27,6 @@ export interface TabSettingsProps {
   onBranchChange: (branch: string) => void;
   isDarkMode: boolean;
   onToggleDarkMode: () => void;
-  isDeviceFrameMode: boolean;
-  onToggleDeviceFrame: () => void;
   onLogout: () => void;
 }
 
@@ -37,8 +35,6 @@ export function TabSettings({
   onBranchChange,
   isDarkMode,
   onToggleDarkMode,
-  isDeviceFrameMode,
-  onToggleDeviceFrame,
   onLogout,
 }: TabSettingsProps) {
   const [syncing, setSyncing] = useState(false);
@@ -116,43 +112,6 @@ export function TabSettings({
               <div
                 className={`size-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
                   isDarkMode ? "translate-x-5" : "translate-x-0"
-                }`}
-              />
-            </button>
-          </div>
-
-          {/* Desktop Frame Toggle */}
-          <div className="p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="size-9 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-                {isDeviceFrameMode ? (
-                  <Smartphone className="size-4" />
-                ) : (
-                  <Monitor className="size-4" />
-                )}
-              </div>
-              <div>
-                <p className="font-semibold text-neutral-900 dark:text-white">
-                  Khung viền giả lập Mobile
-                </p>
-                <p className="text-[11px] text-neutral-400">
-                  {isDeviceFrameMode
-                    ? "Hiển thị trong khung iPhone 16 Pro"
-                    : "Mở rộng toàn màn hình (Desktop view)"}
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={onToggleDeviceFrame}
-              className={`w-11 h-6 rounded-full transition-colors relative focus:outline-none p-0.5 ${
-                isDeviceFrameMode ? "bg-purple-600" : "bg-neutral-300 dark:bg-neutral-700"
-              }`}
-            >
-              <div
-                className={`size-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
-                  isDeviceFrameMode ? "translate-x-5" : "translate-x-0"
                 }`}
               />
             </button>

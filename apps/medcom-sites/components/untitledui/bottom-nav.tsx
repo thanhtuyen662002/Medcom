@@ -18,15 +18,14 @@ interface TabItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   badge: number;
-  isCenter?: boolean;
 }
 
 export function UntitledBottomNav({
   activeTab,
   onTabChange,
-  pendingOrdersCount = 2,
-  pendingPurchasesCount = 8,
-  pendingInboundCount = 3,
+  pendingOrdersCount = 0,
+  pendingPurchasesCount = 0,
+  pendingInboundCount = 0,
 }: UntitledBottomNavProps) {
   const tabs: TabItem[] = [
     {
@@ -37,13 +36,13 @@ export function UntitledBottomNav({
     },
     {
       id: "orders",
-      label: "Đơn hàng",
+      label: "Đơn hàng PO",
       icon: ShoppingBag,
       badge: pendingOrdersCount,
     },
     {
       id: "purchases",
-      label: "Đề nghị",
+      label: "Đề nghị PR",
       icon: FileText,
       badge: pendingPurchasesCount,
     },
@@ -63,42 +62,13 @@ export function UntitledBottomNav({
 
   return (
     <nav
-      className="sticky bottom-0 left-0 right-0 z-40 w-full bg-white/95 dark:bg-neutral-900/95 backdrop-blur-lg border-t border-neutral-200/80 dark:border-neutral-800/80 px-2 pt-1 pb-3 transition-all mt-auto"
-      aria-label="Thanh điều hướng ứng dụng"
+      className="fixed bottom-0 left-0 right-0 z-40 w-full bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl border-t border-neutral-200/90 dark:border-neutral-800/90 px-2 pt-1 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-lg transition-all"
+      aria-label="Thanh điều hướng ứng dụng di động"
     >
-      <div className="flex items-center justify-around gap-1">
+      <div className="flex items-center justify-around gap-1 max-w-lg mx-auto">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           const Icon = tab.icon;
-
-          if (tab.isCenter) {
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => onTabChange(tab.id)}
-                className="group relative -top-3.5 flex flex-col items-center justify-center focus:outline-none"
-                aria-label={tab.label}
-              >
-                <div
-                  className={`size-13 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-200 ${
-                    isActive
-                      ? "bg-purple-600 text-white ring-4 ring-purple-100 dark:ring-purple-950 scale-105 shadow-purple-500/30"
-                      : "bg-neutral-900 dark:bg-purple-600 text-white hover:scale-102 active:scale-95"
-                  }`}
-                >
-                  <Icon className="size-6 stroke-[2.2]" />
-                </div>
-                <span
-                  className={`mt-1 text-[10px] font-semibold tracking-tight transition-colors ${
-                    isActive ? "text-purple-600 dark:text-purple-400" : "text-neutral-500 dark:text-neutral-400"
-                  }`}
-                >
-                  {tab.label}
-                </span>
-              </button>
-            );
-          }
 
           return (
             <button
@@ -119,8 +89,8 @@ export function UntitledBottomNav({
                   }`}
                 />
                 {tab.badge > 0 && (
-                  <span className="absolute -top-1 -right-2 min-w-4 h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center ring-2 ring-white dark:ring-neutral-900 animate-pulse">
-                    {tab.badge}
+                  <span className="absolute -top-1 -right-2.5 min-w-4 h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center ring-2 ring-white dark:ring-neutral-900 shadow-xs">
+                    {tab.badge > 99 ? "99+" : tab.badge}
                   </span>
                 )}
               </div>

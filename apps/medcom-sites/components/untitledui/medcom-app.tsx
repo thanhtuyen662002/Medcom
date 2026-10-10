@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { DeviceFrame } from "./device-frame";
+import React, { useState, useEffect, useCallback } from "react";
 import { DesktopHeader } from "./desktop-header";
 import { UntitledMobileHeader, type BranchOption } from "./mobile-header";
 import { UntitledBottomNav, type NavTabId } from "./bottom-nav";
@@ -30,6 +29,12 @@ export function MedcomApp() {
   const [activeTab, setActiveTab] = useState<NavTabId>("home");
   const [currentBranch, setCurrentBranch] = useState("CN01");
   const [isDarkMode, setIsDarkMode] = useState(false);
+
+  // Real document counts for headers, badges, and dashboard
+  const [ordersCount, setOrdersCount] = useState(0);
+  const [purchasesCount, setPurchasesCount] = useState(0);
+  const [inboundCount, setInboundCount] = useState(0);
+  const [isLoadingCounts, setIsLoadingCounts] = useState(true);
 
   // Modals state
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
@@ -60,6 +65,49 @@ export function MedcomApp() {
     setIsAuthLoaded(true);
   }, []);
 
+  // Fetch real document counts whenever user is logged in and branch changes
+  const refreshGlobalCounts = useCallback(async (branch: string) => {
+    setIsLoadingCounts(true);
+    try {
+      const [poData, prData, inData] = await Promise.allSettled([
+        erpClient.getDocumentsList("purchase-orders", 1, "", branch),
+        erpClient.getPurchaseRequestsList(1, "", branch),
+        erpClient.getDocumentsList("inbound-requests", 1, "", branch),
+      ]);
+
+      if (poData.status === "fulfilled" && poData.value?.rows) {
+        setOrdersCount(poData.value.rows.length);
+      } else {
+        setOrdersCount(0);
+      }
+
+      if (prData.status === "fulfilled" && prData.value?.list?.rows) {
+        setPurchasesCount(prData.value.list.rows.length);
+      } else {
+        setPurchasesCount(0);
+      }
+
+      if (inData.status === "fulfilled" && inData.value?.rows) {
+        setInboundCount(inData.value.rows.length);
+      } else {
+        setInboundCount(0);
+      }
+    } catch {
+      // Fallback zero counts
+      setOrdersCount(0);
+      setPurchasesCount(0);
+      setInboundCount(0);
+    } finally {
+      setIsLoadingCounts(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+      refreshGlobalCounts(currentBranch);
+    }
+  }, [currentUser, currentBranch, refreshGlobalCounts]);
+
   const handleLoginSuccess = (user: NonNullable<LoginResult["user"]>) => {
     setCurrentUser(user);
     if (user.branchId) {
@@ -89,7 +137,11 @@ export function MedcomApp() {
     } catch {}
   };
 
-  // When medicine is scanned, user can choose to create PR with it
+  const handleBranchChange = (newBranch: string) => {
+    setCurrentBranch(newBranch);
+    refreshGlobalCounts(newBranch);
+  };
+
   const handleScanAddToPurchase = (_med: ScannedMedicineInfo) => {
     setQuickCreateOpen(true);
   };
@@ -119,29 +171,29 @@ export function MedcomApp() {
     );
   }
 
-  // Authenticated ERP Workspace
+  // Authenticated ERP Workspace - Edge to edge responsive (no simulator frame)
   return (
-    <DeviceFrame isDarkMode={isDarkMode}>
-      <div className="flex flex-col min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 transition-colors">
+    <div className={`min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 transition-colors ${isDarkMode ? "dark" : ""}`}>
+      <div className="flex flex-col min-h-screen">
         {/* Desktop Header (Visible on screens >= 768px) */}
         <div className="hidden md:block">
           <DesktopHeader
             currentBranch={currentBranch}
-            onBranchChange={setCurrentBranch}
+            onBranchChange={handleBranchChange}
             branches={APP_BRANCHES}
             activeTab={activeTab}
             onTabChange={setActiveTab}
             userName={currentUser.displayName}
             userRole={currentUser.role}
-            unreadNotifications={3}
+            unreadNotifications={0}
             onNotificationsClick={() => setNotificationsOpen(true)}
             onOpenQuickCreate={() => setQuickCreateOpen(true)}
             isDarkMode={isDarkMode}
             onToggleDarkMode={handleToggleDarkMode}
             onLogout={handleLogout}
-            pendingOrdersCount={2}
-            pendingPurchasesCount={8}
-            pendingInboundCount={3}
+            pendingOrdersCount={ordersCount}
+            pendingPurchasesCount={purchasesCount}
+            pendingInboundCount={inboundCount}
           />
         </div>
 
@@ -149,19 +201,20 @@ export function MedcomApp() {
         <div className="md:hidden">
           <UntitledMobileHeader
             currentBranch={currentBranch}
-            onBranchChange={setCurrentBranch}
+            onBranchChange={handleBranchChange}
             branches={APP_BRANCHES}
             userName={currentUser.displayName}
             userRole={currentUser.role}
-            unreadNotifications={3}
+            unreadNotifications={0}
             onNotificationsClick={() => setNotificationsOpen(true)}
             onProfileClick={() => setActiveTab("settings")}
           />
         </div>
 
-        {/* Responsive Content Workspace Container */}
-        <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 transition-all">
-          {activeTab === "home" && (
+        {/* Responsive Content Workspace Container with pb-28 for fixed bottom nav */}
+        <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-28 md:pb-8 transition-all">
+          {/* TAB 1: Home (Kept in DOM for instant response) */}
+          <div className={activeTab === "home" ? "block" : "hidden"}>
             <TabHome
               onNavigateTab={(tab) => setActiveTab(tab)}
               onOpenQuickCreate={() => setQuickCreateOpen(true)}
@@ -171,26 +224,46 @@ export function MedcomApp() {
               }}
               userName={currentUser.displayName}
               currentBranch={currentBranch}
+              ordersCount={ordersCount}
+              purchasesCount={purchasesCount}
+              inboundCount={inboundCount}
+              isLoadingCounts={isLoadingCounts}
             />
-          )}
+          </div>
 
-          {activeTab === "orders" && (
-            <TabOrders currentBranch={currentBranch} />
-          )}
+          {/* TAB 2: Orders (PO) */}
+          <div className={activeTab === "orders" ? "block" : "hidden"}>
+            <TabOrders
+              currentBranch={currentBranch}
+              isActive={activeTab === "orders"}
+              onCountChange={setOrdersCount}
+            />
+          </div>
 
-          {activeTab === "purchases" && (
+          {/* TAB 3: Purchases (PR) */}
+          <div className={activeTab === "purchases" ? "block" : "hidden"}>
             <TabPurchases
               onOpenCreateModal={() => setQuickCreateOpen(true)}
               selectedItemForDetail={selectedPurchaseItem}
               onCloseDetailModal={() => setSelectedPurchaseItem(null)}
+              currentBranch={currentBranch}
+              isActive={activeTab === "purchases"}
+              onCountChange={setPurchasesCount}
             />
-          )}
+          </div>
 
-          {activeTab === "inbound" && (
-            <TabInbound onOpenNewInbound={() => alert("Mở biểu mẫu nhập kho mới...")} />
-          )}
+          {/* TAB 4: Inbound Receipts */}
+          <div className={activeTab === "inbound" ? "block" : "hidden"}>
+            <TabInbound
+              currentBranch={currentBranch}
+              isActive={activeTab === "inbound"}
+              onCountChange={setInboundCount}
+              onOpenNewInbound={() => alert("Mở biểu mẫu tiếp nhận lô hàng mới...")}
+            />
+          </div>
 
-          {activeTab === "scan" && (
+          {/* TAB 5: QR / Barcode Scanner */}
+          <div className={activeTab === "scan" ? "block" : "hidden"}>
             <div className="space-y-4 max-w-2xl mx-auto">
               <div className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 sm:p-5 shadow-xs">
                 <h3 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-white">
@@ -205,31 +278,30 @@ export function MedcomApp() {
                 onAddToInbound={handleScanAddToInbound}
               />
             </div>
-          )}
+          </div>
 
-          {activeTab === "settings" && (
+          {/* TAB 6: Settings */}
+          <div className={activeTab === "settings" ? "block" : "hidden"}>
             <div className="max-w-2xl mx-auto">
               <TabSettings
                 currentBranch={currentBranch}
-                onBranchChange={setCurrentBranch}
+                onBranchChange={handleBranchChange}
                 isDarkMode={isDarkMode}
                 onToggleDarkMode={handleToggleDarkMode}
-                isDeviceFrameMode={false}
-                onToggleDeviceFrame={() => {}}
                 onLogout={handleLogout}
               />
             </div>
-          )}
+          </div>
         </main>
 
-        {/* Mobile Sticky Bottom Navigation (Visible on screens < 768px) */}
+        {/* Mobile Sticky Bottom Navigation (Fixed at bottom on screens < 768px) */}
         <div className="md:hidden">
           <UntitledBottomNav
             activeTab={activeTab}
             onTabChange={setActiveTab}
-            pendingOrdersCount={2}
-            pendingPurchasesCount={8}
-            pendingInboundCount={3}
+            pendingOrdersCount={ordersCount}
+            pendingPurchasesCount={purchasesCount}
+            pendingInboundCount={inboundCount}
           />
         </div>
 
@@ -251,53 +323,16 @@ export function MedcomApp() {
           title="Thông báo hệ thống ERP Medcom"
           subtitle="Cập nhật phê duyệt và luồng kho thời gian thực"
         >
-          <div className="space-y-2.5">
-            {[
-              {
-                id: 1,
-                title: "Đơn PO-2026-0891 đã được Giám đốc phê duyệt",
-                desc: "Đơn đặt hàng thuốc cấp cứu DHG Pharma trị giá 45.000.000 đ",
-                time: "5 phút trước",
-                type: "success",
-              },
-              {
-                id: 2,
-                title: "Đơn mua PR-2026-0128 cần duyệt khẩn cấp",
-                desc: "Kho Cấp cứu yêu cầu 200 hộp Paracetamol 500mg & kim tiêm",
-                time: "15 phút trước",
-                type: "warning",
-              },
-              {
-                id: 3,
-                title: "Xe lạnh DHG Pharma đã đến cổng kiểm định",
-                desc: "Lô hàng DHG-240811 sẵn sàng đo nhiệt độ GSP tại Cổng 2",
-                time: "40 phút trước",
-                type: "info",
-              },
-              {
-                id: 4,
-                title: "Hoàn tất nhập kho lô NK-2026-0410",
-                desc: "1.000 hộp Amoxicillin 500mg đã vào Kệ K02-B04",
-                time: "2 giờ trước",
-                type: "success",
-              },
-            ].map((n) => (
-              <div
-                key={n.id}
-                className="p-3.5 rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-1 shadow-xs"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-white">
-                    {n.title}
-                  </span>
-                  <span className="text-[10px] text-neutral-400 shrink-0 ml-2">{n.time}</span>
-                </div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">{n.desc}</p>
-              </div>
-            ))}
+          <div className="p-6 text-center space-y-2">
+            <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+              Không có thông báo mới
+            </p>
+            <p className="text-xs text-neutral-400">
+              Các sự kiện phát sinh từ máy chủ ERP sẽ hiển thị tại đây khi có thay đổi.
+            </p>
           </div>
         </UntitledBottomSheet>
       </div>
-    </DeviceFrame>
+    </div>
   );
 }
