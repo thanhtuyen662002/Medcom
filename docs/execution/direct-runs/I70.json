@@ -1,0 +1,12 @@
+{
+  "id": "I70",
+  "base": "2fd9779149e12ae46634de3218a2505c214244fb",
+  "ownerDirection": "2026-10-10 Asia/Saigon: full fields per record per API page; audit backend, merge main and write BE documentation for separately owned FE integration",
+  "scope": "Make current document list/detail routes return all source fields by default, preserving paging and existing compatibility scalar fields; retain v2 aliases, qualify complete payloads, audit all original/v2 wire paths and publish a Vietnamese BE-to-FE field-by-field handoff. No separately owned FE edits.",
+  "limits": [
+    "No business or production SQL/configuration writes, manual deployment, credentials, source/raw rows or production/runtime acceptance",
+    "Preserve I02/#53, prior direct run markers, immutable claim/scope refs and unrelated drafts",
+    "All schedules stay OFF; no automation administration"
+  ],
+  "status": "ADMISSION_ONLY"
+}
