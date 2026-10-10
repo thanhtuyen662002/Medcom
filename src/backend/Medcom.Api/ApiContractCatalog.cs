@@ -101,14 +101,14 @@ internal static class ApiContractCatalog
                     responseHeaders[header] = new JsonObject { ["description"] = "Opaque current scope of a successful authorized read; invalidate stale data when it changes.", ["schema"] = String() };
             if(method=="get" && DocumentDataProjection.FullPath(path) is {} fullPath)
             {
-                var projection=path==fullPath?"full":"summary";
+                const string projection="full";
                 operation["x-medcom-data-projection"]=projection;
                 operation["x-medcom-full-data-path"]=fullPath;
                 responseHeaders[DocumentDataProjection.Header]=new JsonObject
-                { ["description"]="Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                { ["description"]="Full fields for each record in the bounded page, including nullable properties. Pagination does not reduce the field set.",
                     ["schema"]=new JsonObject { ["type"]="string",["const"]=projection } };
                 responseHeaders[DocumentDataProjection.PathHeader]=new JsonObject
-                { ["description"]="Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                { ["description"]="The registered full-data route used by this response, without identifiers or query strings.",
                     ["schema"]=new JsonObject { ["type"]="string",["const"]=fullPath } };
             }
             responses[success.ToString(System.Globalization.CultureInfo.InvariantCulture)]!["headers"] = responseHeaders;
@@ -146,7 +146,7 @@ internal static class ApiContractCatalog
         {
             var suffix = kind.Replace("-", "", StringComparison.Ordinal) + (v2 ? "V2" : "Legacy");
             var summary = schemas.Variant(typeof(DocumentSummary), suffix + "Summary", ["purchaseOrderHeader", "inboundRequestHeader"]);
-            if (v2) schemas.Required(summary, headerName, Shape(header));
+            schemas.Required(summary, headerName, Shape(header));
             var page = schemas.Variant(typeof(DocumentPage), suffix + "Page");
             schemas.Property(page, "rows", new() { ["type"] = "array", ["items"] = Schemas.Ref(summary) });
             var detail = schemas.Variant(typeof(DocumentDetailPage), suffix + "Detail");
@@ -154,7 +154,7 @@ internal static class ApiContractCatalog
             foreach (var (property, type) in new[] { ("purchaseOrderLines", typeof(PurchaseOrderLine)), ("inboundRequestLines", typeof(InboundRequestLine)) })
             {
                 var lineSchema = schemas.Variant(type, suffix + property, ["fields"]);
-                if (v2 && property == lineName) schemas.Required(lineSchema, "fields", Shape(line));
+                if (property == lineName) schemas.Required(lineSchema, "fields", Shape(line));
                 var collection = new JsonObject { ["type"] = "array", ["items"] = Schemas.Ref(lineSchema) };
                 if (property != lineName) collection["maxItems"] = 0;
                 schemas.Property(detail, property, collection);
@@ -169,13 +169,13 @@ internal static class ApiContractCatalog
         {
             var suffix = v2 ? "V2" : "Legacy";
             var row = schemas.Variant(typeof(PurchaseRequestListRow), "PurchaseRequestRow" + suffix, ["fields"]);
-            if (v2) schemas.Required(row, "fields", Shape(typeof(PurchaseRequestHeaderFields)));
+            schemas.Required(row, "fields", Shape(typeof(PurchaseRequestHeaderFields)));
             var page = schemas.Variant(typeof(PurchaseRequestListPage), "PurchaseRequestPage" + suffix);
             schemas.Property(page, "rows", new() { ["type"] = "array", ["items"] = Schemas.Ref(row) });
             var list = schemas.Variant(typeof(PurchaseRequestScopedResponse<PurchaseRequestListPage>), "PurchaseRequestList" + suffix);
             schemas.Property(list, "data", Schemas.Ref(page));
             var read = schemas.Variant(typeof(PurchaseRequestReadback), "PurchaseRequestRead" + suffix, ["sourceFields"]);
-            if (v2) schemas.Required(read, "sourceFields", Shape(typeof(PurchaseRequestSourceFields)));
+            schemas.Required(read, "sourceFields", Shape(typeof(PurchaseRequestSourceFields)));
             var detail = schemas.Variant(typeof(PurchaseRequestScopedResponse<PurchaseRequestReadback>), "PurchaseRequestDetail" + suffix);
             schemas.Property(detail, "data", Schemas.Ref(read));
             var path = v2 ? "/api/v2/purchase-requests" : "/api/purchase-requests";

@@ -1,5 +1,7 @@
 # Complete document read fields — 9 October 2026
 
+I70 / PR #127 supersedes the v2-only projection described below: current and v2 document reads now both return full fields on each bounded page. Use [the current Vietnamese BE/FE guide](BE_FE_FULL_FIELDS_INTEGRATION_20261010.md) and executable OpenAPI. Historical source/runtime evidence below retains its identity.
+
 Owner request: continue the backend and return every field when calling its APIs. This increment covers the complete physical header/line field sets for the three currently wired document read modules. It does not establish full ERP API delivery or admit business writes.
 
 ## Read contract version 2

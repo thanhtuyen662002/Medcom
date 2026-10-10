@@ -1,3 +1,40 @@
+owner_backend_full_fields_20261010:
+  instruction: full_fields_per_record_keep_paging_audit_merge_main_and_write_BE_FE_guide
+  timezone: Asia/Saigon
+  canonical_goal: 45
+  current_increment: I70_current_document_reads_return_full_source_objects_by_default
+  pr: 127
+  base: 2fd9779149e12ae46634de3218a2505c214244fb
+  prior_merged_pr: 125
+  http_operations: 34
+  full_field_read_routes: 12
+  summary_read_routes: 0
+  source_tables: 6
+  source_columns: 116
+  row_paging: existing_page_pageSize_hasMore_and_bounds_preserved
+  current_route_query_parameters: [page, pageSize, search, branchId]
+  v2_alias_selection_parameters: [dateFrom, dateTo, statusId, sortBy, sortDirection]
+  full_field_objects: [purchaseOrderHeader, inboundRequestHeader, fields, sourceFields]
+  data_projection: full_on_current_and_v2_success_fixed_registered_path
+  unavailable_business_facades: 8
+  source_free_backend_tests: 3140_passed
+  static_audit_tests: 5_passed_all_current_and_v2_required_paths
+  safe_verifier_tests: 9_passed_current_and_v2_reads_no_row_exports
+  frontend_handoff: docs/backend/BE_FE_FULL_FIELDS_INTEGRATION_20261010.md
+  audit: docs/backend/api-data-audit-current-full-20261010.json
+  validation: docs/execution/I70_VALIDATION_20261010.json
+  FE_consumer_snapshot: main_2fd9779_PR126_parsers_strip_or_reject_full_field_objects
+  FE_adoption: UNKNOWN_separate_owner_schema_changes_required
+  purchase_detail_aggregate_bound: unchanged_500_lines_no_page_query_existing_explicit_unavailable_overflow
+  hosted_implementation_ci: PENDING_after_publication_exact_head_base_required
+  target_authenticated_SQL_reads: NOT_RUN_no_private_authorized_test_credentials
+  manual_deployment: NOT_RUN
+  business_release: NOT_ACCEPTED
+  full_backend_goal: OPEN_remaining_modules_actions_reports_and_target_acceptance
+  frontend_custody: separate_owner_no_FE_source_mutations
+  schedules: remain_off_no_administration
+  historical_state_below: preserved_checkpoint_not_current_behavior
+
 owner_backend_query_integration_20261010:
   instruction: continue_backend_api_and_audit_existing_APIs_for_full_FE_data
   timezone: Asia/Saigon

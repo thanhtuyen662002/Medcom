@@ -40,17 +40,17 @@ public static class DocumentEndpoints
         MapDetail(app, "/api/documents/inbound-requests/detail", DocumentKind.InboundRequests, "inbound-requests.read");
         Map(app, "/api/v2/documents/purchase-orders", DocumentKind.PurchaseOrders, "purchase-orders.read",true);
         Map(app, "/api/v2/documents/inbound-requests", DocumentKind.InboundRequests, "inbound-requests.read",true);
-        MapDetail(app, "/api/v2/documents/purchase-orders/detail", DocumentKind.PurchaseOrders, "purchase-orders.read",true);
-        MapDetail(app, "/api/v2/documents/inbound-requests/detail", DocumentKind.InboundRequests, "inbound-requests.read",true);
+        MapDetail(app, "/api/v2/documents/purchase-orders/detail", DocumentKind.PurchaseOrders, "purchase-orders.read");
+        MapDetail(app, "/api/v2/documents/inbound-requests/detail", DocumentKind.InboundRequests, "inbound-requests.read");
     }
-    private static void Map(WebApplication app, string path, DocumentKind kind, string capability,bool fullFields=false) =>
+    private static void Map(WebApplication app, string path, DocumentKind kind, string capability,bool version2=false) =>
         app.MapGet(path, async (HttpContext context, IDocumentReader reader, int? page, int? pageSize,
             string? search, string? branchId) =>
         {
             var session = AuthEndpoints.Current(context);
             if (!session.Identity.Capabilities.Contains(capability, StringComparer.Ordinal))
                 return Results.Problem(statusCode:403,title:"Access denied.");
-            if (!DocumentListBinding.TryRead(context,fullFields,out var selection)
+            if (!DocumentListBinding.TryRead(context,version2,out var selection)
                 || page is < 1 or > 1000 || pageSize is < 1 or > 100
                 || search?.Length>100 || branchId?.Length>50)
                 return Results.Problem(statusCode:400,title:"Invalid query.");
@@ -62,22 +62,22 @@ public static class DocumentEndpoints
             catch(OperationCanceledException) when(!context.RequestAborted.IsCancellationRequested)
             { return Results.Problem(statusCode:503,title:"Data is temporarily unavailable."); }
             if (result.Outcome == DocumentOutcome.Success && result.Page is not null
-                && (!fullFields || result.Page.Rows.All(row=>FullHeader(row,kind))))
+                && result.Page.Rows.All(row=>FullHeader(row,kind)))
             {
                 WorkspaceReadScope.Stamp(context, session);
                 DocumentDataProjection.Stamp(context,path);
             }
             return result.Outcome switch
             {
-                DocumentOutcome.Success when result.Page is not null && (!fullFields || result.Page.Rows.All(row=>FullHeader(row,kind)))
-                    => Results.Ok(fullFields?result.Page:result.Page with {Rows=result.Page.Rows.Select(LegacyHeader).ToArray()}),
+                DocumentOutcome.Success when result.Page is not null && result.Page.Rows.All(row=>FullHeader(row,kind))
+                    => Results.Ok(result.Page),
                 DocumentOutcome.Denied => Results.Problem(statusCode:403,title:"Access denied."),
                 DocumentOutcome.Invalid => Results.Problem(statusCode:400,title:"Invalid query."),
                 _ => Results.Problem(statusCode:503,title:"Data is temporarily unavailable.")
             };
         });
 
-    private static void MapDetail(WebApplication app, string path, DocumentKind kind, string capability,bool fullFields=false) =>
+    private static void MapDetail(WebApplication app, string path, DocumentKind kind, string capability) =>
         app.MapGet(path, async (HttpContext context, IDocumentReader reader, string? documentId, int? page, int? pageSize) =>
         {
             var session=AuthEndpoints.Current(context);
@@ -95,20 +95,15 @@ public static class DocumentEndpoints
             catch(OperationCanceledException) when(!context.RequestAborted.IsCancellationRequested)
             { return Results.Problem(statusCode:503,title:"Data is temporarily unavailable."); }
             if (result.Outcome == DocumentOutcome.Success && result.Detail is not null
-                && (!fullFields || FullDetail(result.Detail,kind)))
+                && FullDetail(result.Detail,kind))
             {
                 WorkspaceReadScope.Stamp(context, session);
                 DocumentDataProjection.Stamp(context,path);
             }
             return result.Outcome switch
             {
-                DocumentOutcome.Success when result.Detail is not null && (!fullFields || FullDetail(result.Detail,kind))
-                    => Results.Ok(fullFields?result.Detail:result.Detail with
-                    {
-                        Document=LegacyHeader(result.Detail.Document),
-                        PurchaseOrderLines=result.Detail.PurchaseOrderLines.Select(line=>line with {Fields=null}).ToArray(),
-                        InboundRequestLines=result.Detail.InboundRequestLines.Select(line=>line with {Fields=null}).ToArray()
-                    }),
+                DocumentOutcome.Success when result.Detail is not null && FullDetail(result.Detail,kind)
+                    => Results.Ok(result.Detail),
                 DocumentOutcome.Denied => Results.Problem(statusCode:403,title:"Access denied."),
                 DocumentOutcome.Invalid => Results.Problem(statusCode:400,title:"Invalid query."),
                 DocumentOutcome.NotFound => Results.Problem(statusCode:404,title:"Document unavailable."),
@@ -120,5 +115,4 @@ public static class DocumentEndpoints
     private static bool FullDetail(DocumentDetailPage detail,DocumentKind kind) => FullHeader(detail.Document,kind)
         && detail.PurchaseOrderLines.All(line=>line.Fields is not null)
         && detail.InboundRequestLines.All(line=>line.Fields is not null);
-    private static DocumentSummary LegacyHeader(DocumentSummary row) => row with {PurchaseOrderHeader=null,InboundRequestHeader=null};
 }

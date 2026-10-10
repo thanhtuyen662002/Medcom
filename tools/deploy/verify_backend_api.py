@@ -149,7 +149,17 @@ def verify_module(client, kind):
     hf, lf = contract["header"]["fields"], contract["lines"]["fields"]
     if len(hf) != headers or len(lf) != lines:
         raise Failure("field_count_mismatch")
-    status, page = client.request(path + "?page=1&pageSize=1&sortBy=documentId&sortDirection=asc")
+    current = path.replace("/api/v2/", "/api/", 1)
+    current_result = verify_route(client, kind, current, hf, lf)
+    alias_result = verify_route(client, kind, path, hf, lf)
+    return {**alias_result, "query_contract_verified": True, "verified_routes": 2,
+            "current_route": current_result, "v2_alias": alias_result}
+
+
+def verify_route(client, kind, path, hf, lf):
+    version2 = path.startswith("/api/v2/")
+    query = "?page=1&pageSize=1" + ("&sortBy=documentId&sortDirection=asc" if version2 else "")
+    status, page = client.request(path + query)
     if status != 200:
         raise Failure("list_unavailable")
     require_full_projection(client, path)
@@ -157,9 +167,9 @@ def verify_module(client, kind):
     rows = data["rows"]
     if not isinstance(rows, list) or len(rows) > 1:
         raise Failure("list_paging_invalid")
-    result = {"status": "PASS", "header_fields": headers, "line_fields": lines,
+    result = {"status": "PASS", "header_fields": len(hf), "line_fields": len(lf),
               "header_samples": len(rows), "line_samples": 0, "business_writes": 0,
-              "query_contract_verified": True, "server_order_requested": "documentId_asc",
+              "server_order_requested": "documentId_asc" if version2 else "route_default",
               "data_projection": "full"}
     if not rows:
         result["observation"] = "authorized_list_empty;field_contract_verified;row_values_not_observed"

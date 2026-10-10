@@ -86,7 +86,8 @@ class BackendContractVerifierTests(unittest.TestCase):
                                  "jsonType": "string", "nullable": True} for n in range(count)]
                     return 200, {"contractVersion": 2, "kind": kind, "header": {"fields": fields(h, "document.header", "rows[].fields")},
                                  "lines": {"fields": fields(l, "lines[].fields")}}
-                kind = next(k for k, (url, _, _) in API.MODULES.items() if parsed.path.startswith(url))
+                kind = next(k for k, (url, _, _) in API.MODULES.items()
+                            if parsed.path.startswith(url) or parsed.path.startswith(url.replace("/api/v2/", "/api/", 1)))
                 self.data_projection = "full"
                 self.full_data_path = parsed.path
                 _, h, l = API.MODULES[kind]
@@ -103,9 +104,24 @@ class BackendContractVerifierTests(unittest.TestCase):
         self.assertEqual(116, sum(v["header_fields"] + v["line_fields"] for v in report["modules"].values()))
         self.assertTrue(all(v["query_contract_verified"] for v in report["modules"].values()))
         self.assertTrue(all(v["server_order_requested"] == "documentId_asc" for v in report["modules"].values()))
+        self.assertTrue(all(v["verified_routes"] == 2 for v in report["modules"].values()))
+        self.assertTrue(all(v["current_route"]["data_projection"] == "full" for v in report["modules"].values()))
         self.assertEqual(3, len([p for p, _ in client.calls if "sortBy=documentId&sortDirection=asc" in p]))
+        self.assertEqual(3, len([p for p, _ in client.calls if p.startswith("/api/") and not p.startswith("/api/v2/")
+                                and "?page=1&pageSize=1" in p]))
         self.assertNotIn("PRIVATE_", json.dumps(report))
         self.assertEqual(["/api/auth/login", "/api/auth/logout"], [p for p, post in client.calls if post])
+
+        class PartialCurrentClient(FakeClient):
+            def request(self, path, body=None, token=None):
+                response = super().request(path, body, token)
+                if path.startswith("/api/documents/purchase-orders?"):
+                    self.data_projection = "summary"
+                return response
+        incomplete = API.run(PartialCurrentClient(), "PRIVATE_USER_SENTINEL", "PRIVATE_PASSWORD_SENTINEL")
+        self.assertEqual("AUTHENTICATED_READS_INCOMPLETE", incomplete["status"])
+        self.assertEqual("full_data_projection_not_observed", incomplete["modules"]["purchase-orders"]["reason"])
+        self.assertTrue(incomplete["own_session_retired"])
 
     def test_unqualified_query_metadata_is_rejected_before_any_ERP_row_read(self):
         class MissingMetadata:

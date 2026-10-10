@@ -19,6 +19,7 @@ class ApiDataAuditTests(unittest.TestCase):
         result = audit(self.api, self.mapping, self.tables)
         self.assertEqual(34, result["registered_operations"])
         self.assertEqual(116, result["complete_source_columns"])
+        self.assertEqual(12, sum(o["category"] == "full-source-fields" for o in result["operations"]))
         self.assertEqual(8, sum(o["category"] == "business-provider-unavailable" for o in result["operations"]))
         self.assertFalse(result["production_accepted"])
         self.assertEqual("NOT_RUN", result["actual_SQL_rows"])
@@ -34,10 +35,11 @@ class ApiDataAuditTests(unittest.TestCase):
                 audit(self.api, mapping, self.tables)
 
     def test_optional_full_header_cannot_be_advertised_as_complete(self):
-        schema = self.api["components"]["schemas"]["purchaseordersV2Summary"]
-        schema["required"].remove("purchaseOrderHeader")
-        with self.assertRaisesRegex(ValueError, "Optional or omitted full field"):
-            audit(self.api, self.mapping, self.tables)
+        for schema_name in ["purchaseordersLegacySummary", "purchaseordersV2Summary"]:
+            api = deepcopy(self.api)
+            api["components"]["schemas"][schema_name]["required"].remove("purchaseOrderHeader")
+            with self.subTest(schema=schema_name), self.assertRaisesRegex(ValueError, "Optional or omitted full field"):
+                audit(api, self.mapping, self.tables)
 
     def test_lost_nullability_or_wrong_source_type_cannot_pass(self):
         for nullable in (False, True):
@@ -51,12 +53,13 @@ class ApiDataAuditTests(unittest.TestCase):
                 audit(api, self.mapping, self.tables)
 
     def test_summary_payload_or_wrong_full_route_cannot_be_labeled_full(self):
-        for attribute, value in [("x-medcom-data-projection", "summary"),
-                                 ("x-medcom-full-data-path", "/api/v2/documents/inbound-requests")]:
-            api = deepcopy(self.api)
-            api["paths"]["/api/v2/documents/purchase-orders"]["get"][attribute] = value
-            with self.subTest(attribute=attribute), self.assertRaisesRegex(ValueError, "Full route projection mismatch"):
-                audit(api, self.mapping, self.tables)
+        for path in ["/api/documents/purchase-orders", "/api/v2/documents/purchase-orders"]:
+            for attribute, value in [("x-medcom-data-projection", "summary"),
+                                     ("x-medcom-full-data-path", "/api/v2/documents/inbound-requests")]:
+                api = deepcopy(self.api)
+                api["paths"][path]["get"][attribute] = value
+                with self.subTest(path=path, attribute=attribute), self.assertRaisesRegex(ValueError, "Full route projection mismatch"):
+                    audit(api, self.mapping, self.tables)
 
 
 if __name__ == "__main__":
