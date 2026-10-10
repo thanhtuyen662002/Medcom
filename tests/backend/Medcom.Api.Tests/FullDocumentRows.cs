@@ -102,7 +102,8 @@ internal static class FullDocumentRows
         ("BBKCUrl",typeof(string),true,"varchar"),
         ("Notes",typeof(string),true,"nvarchar"),
         ("SendTo",typeof(string),true,"nvarchar"),
-        ("QRPrintType",typeof(string),false,"varchar")];
+        ("QRPrintType",typeof(string),false,"varchar"),
+        ("LinkID",typeof(string),true,"varchar")];
     internal static readonly (string Name,Type Type,bool Nullable,string SqlType)[] OrderLine = [
         ("UserAutoID",typeof(string),false,"varchar"),
         ("DocumentID",typeof(string),false,"varchar"),
@@ -141,5 +142,6 @@ internal static class FullDocumentRows
         ("NoPalletNote",typeof(string),true,"nvarchar"),
         ("PalletNote",typeof(string),true,"nvarchar"),
         ("CheckerNote",typeof(string),true,"nvarchar"),
-        ("ItemCode",typeof(string),true,"nvarchar")];
+        ("ItemCode",typeof(string),true,"nvarchar"),
+        ("ParentID",typeof(string),true,"varchar")];
 }

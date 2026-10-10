@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 import unittest
 
-from audit_api_data import audit
+from audit_api_data import audit, load_source_tables
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -12,17 +12,29 @@ class ApiDataAuditTests(unittest.TestCase):
     def setUp(self):
         self.api = json.loads((ROOT / "docs/backend/medcom-openapi.json").read_text(encoding="utf-8"))
         self.mapping = json.loads((ROOT / "docs/backend/document-field-contract.json").read_text(encoding="utf-8"))
-        self.tables = [obj for file in (ROOT / "inventories/source/20261002").glob("table-*.json")
-                       for obj in json.loads(file.read_text(encoding="utf-8"))["objects"]]
+        self.tables = load_source_tables(self.mapping)
 
     def test_every_current_route_and_all_source_columns_are_reconciled_without_a_runtime_attestation(self):
         result = audit(self.api, self.mapping, self.tables)
         self.assertEqual(34, result["registered_operations"])
-        self.assertEqual(116, result["complete_source_columns"])
+        self.assertEqual(118, result["complete_source_columns"])
         self.assertEqual(12, sum(o["category"] == "full-source-fields" for o in result["operations"]))
         self.assertEqual(8, sum(o["category"] == "business-provider-unavailable" for o in result["operations"]))
         self.assertFalse(result["production_accepted"])
         self.assertEqual("NOT_RUN", result["actual_SQL_rows"])
+
+    def test_unknown_source_set_is_not_silently_replaced_with_an_old_or_live_catalog(self):
+        mapping = deepcopy(self.mapping)
+        mapping["sourceSet"] = "unverified-source"
+        with self.assertRaisesRegex(ValueError, "Unknown source set"):
+            load_source_tables(mapping)
+
+    def test_each_new_live_inbound_column_is_required_on_every_applicable_route(self):
+        for name, field in [("InboundRequestHeaderFields", "linkId"), ("InboundRequestLineFields", "parentId")]:
+            api = deepcopy(self.api)
+            api["components"]["schemas"][name]["required"].remove(field)
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, "Optional or omitted full field"):
+                audit(api, self.mapping, self.tables)
 
     def test_missing_or_duplicate_source_column_cannot_be_hidden_by_a_self_consistent_count(self):
         for duplicate in (False, True):

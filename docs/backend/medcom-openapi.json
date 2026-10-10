@@ -4038,6 +4038,21 @@
             "x-medcom-json-path": "document.inboundRequestHeader.qrPrintType",
             "x-medcom-list-json-path": "rows[].inboundRequestHeader.qrPrintType",
             "x-medcom-sql-nullable": false
+          },
+          "linkId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "x-medcom-sql-type": "varchar(50)",
+            "x-medcom-source-column": "LinkID",
+            "x-medcom-json-path": "document.inboundRequestHeader.linkId",
+            "x-medcom-list-json-path": "rows[].inboundRequestHeader.linkId",
+            "x-medcom-sql-nullable": true
           }
         },
         "required": [
@@ -4077,7 +4092,8 @@
           "bbkcUrl",
           "notes",
           "sendTo",
-          "qrPrintType"
+          "qrPrintType",
+          "linkId"
         ],
         "x-medcom-source-table": "IV_InboundRequestTbl"
       },
@@ -4933,6 +4949,21 @@
             "x-medcom-json-path": "inboundRequestLines[].fields.itemCode",
             "x-medcom-list-json-path": null,
             "x-medcom-sql-nullable": true
+          },
+          "parentId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "x-medcom-sql-type": "varchar(50)",
+            "x-medcom-source-column": "ParentID",
+            "x-medcom-json-path": "inboundRequestLines[].fields.parentId",
+            "x-medcom-list-json-path": null,
+            "x-medcom-sql-nullable": true
           }
         },
         "required": [
@@ -4960,7 +4991,8 @@
           "noPalletNote",
           "palletNote",
           "checkerNote",
-          "itemCode"
+          "itemCode",
+          "parentId"
         ],
         "x-medcom-source-table": "IV_InboundRequestDetailsTbl"
       },

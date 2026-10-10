@@ -1,0 +1,393 @@
+{
+  "formatVersion": 1,
+  "sourceSet": "owner-live-meddata-20261010",
+  "rows": [
+    {
+      "schemaName": "dbo",
+      "objectName": "AP_BPTMNotifyOrderRoutingTbl",
+      "constraintName": "CK_AP_BPTMNotifyOrderRouting_Role",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 3,
+      "definitionSha256": "5E51F2AB64B94CEED6811532DF6490F1D3B625BD364B0D8E6219494B9ACE42EB"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "AP_BPTMNotifyRoutingTbl",
+      "constraintName": "CK_AP_BPTMNotifyRouting_Role",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 0,
+      "definitionSha256": "7512FCFE9E269211F851B40D5EC5677C1FE98FE5D12C85408C8E8466CF390083"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "AP_POExtTbl",
+      "constraintName": "CK_AP_POExt_DueDays",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 10,
+      "definitionSha256": "2DEA50D1D6CF7C3514ADAB91B93D81BBE684EE6022CF6A1750BAC1D315614556"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "AP_POExtTbl",
+      "constraintName": "CK_AP_POExt_OrderKind",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 2,
+      "definitionSha256": "F999C0E9E7F71713CC8FED09C6AED459A2B54221CE7248D556C5F123219C01F6"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "AP_POShipmentDetailTbl",
+      "constraintName": "CK_AP_POShipmentDetail_Qty",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 4,
+      "definitionSha256": "B994534AF7761E7652F872E4120668019674B55D7A21990A64E81BDD3F1E1027"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "AP_POShipmentPaymentTbl",
+      "constraintName": "CK_AP_POShipmentPaymentTbl_Amount",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 5,
+      "definitionSha256": "F62493E9A2759963302F4CD39424C91FAE6FD08DD2E56F1B9CF90367FA33D4ED"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "AP_POShipmentTaxPaymentTbl",
+      "constraintName": "CK_AP_POShipmentTaxPaymentTbl_Status",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 2,
+      "definitionSha256": "C642A878FFD775958A7032D0D860BBB665F7559F88B0317308502BD11EDC1494"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "AP_POShipmentTbl",
+      "constraintName": "CK_AP_POShipment_DueDays",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 14,
+      "definitionSha256": "2DEA50D1D6CF7C3514ADAB91B93D81BBE684EE6022CF6A1750BAC1D315614556"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "AP_POShipmentTbl",
+      "constraintName": "CK_AP_POShipment_ExpectedAmount",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 18,
+      "definitionSha256": "30BCB04C9A596DBB5727E2BA09DA0D7FF28B29387671237ACA523049B40ADC91"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "AP_POShipmentTbl",
+      "constraintName": "CK_AP_POShipment_ImportTax",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 20,
+      "definitionSha256": "3C8E49D99ECC33FCE6F1FC51545B85B769DA77B9AED6E77255D3EB00F1CDB252"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "AP_POShipmentTbl",
+      "constraintName": "CK_AP_POShipment_ShipmentNo",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 3,
+      "definitionSha256": "B3BD8DC567361186F6BF065CF5801634FD4CE3C2FD3D0C4A11F2CA58F940FC7C"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "AP_PurchaseAllocateTbl",
+      "constraintName": "CK_AP_PurchaseAllocate_Value",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 0,
+      "definitionSha256": "8D1402170E23F62804058ACE4CCE94202B5A46F9DC1CAC6801A6DD8CA1EAA689"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "AP_PurchaseCostTbl",
+      "constraintName": "CK_AP_PurchaseCost_Amount",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 0,
+      "definitionSha256": "2535FD0D6C757B5281213ADC74DB7E54B8904A4772EF61E2A014AF5F14E2C0D7"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "AP_ServiceDetailTbl",
+      "constraintName": "CK_AP_ServiceDetail_Allocatable",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 0,
+      "definitionSha256": "4AFFD2425791E740C42B17066075861B382CDDF91C34E23AEF6CC200E917E91B"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "CF_ItemCodeSequenceTbl",
+      "constraintName": "CK_CF_ItemCodeSequence_LastNumber",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 4,
+      "definitionSha256": "B4CE78D5E2E88E5DBD3324BED3F32BA3F0379AEA813FDBEC4B50D56378735E4D"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "CF_ItemUnitTbl",
+      "constraintName": "CK_ItemUnit_Operation",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 4,
+      "definitionSha256": "AF8AF7DA3E0200A18BC8D236205C79866464D0A14A04F44366E04C457EE2B35E"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "CF_QRPackageTbl",
+      "constraintName": "CK_CF_QRPackageTbl_PrintType",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 19,
+      "definitionSha256": "3188E90CDF14D39AB8440A41C3A05E6C2780C7002AD11D767888B95E27104903"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "FA_PartBarcodeTbl",
+      "constraintName": "CK_FA_PartBarcode_QtyScan",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 8,
+      "definitionSha256": "2C6ED73132C214A620EEBDDBAE281CDE1CC6B4E0338D5CAC220560A9BFC9DA6D"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "FA_PartBarcodeTbl",
+      "constraintName": "CK_FA_PartBarcode_Type",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 3,
+      "definitionSha256": "16D4F0A7B0CDA9EF9B7749E956A624A3B623639CDA9EA3C55619C15670D55947"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "FA_PartEquivalentItemTbl",
+      "constraintName": "CK_FA_PartEquivalentItem_Different",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 0,
+      "definitionSha256": "E6A59D8A865C2D44B98B972A4FAFDC2ED2938FFDB2BA23F9F06170B61EDAAB88"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "FA_PartInputLinkTbl",
+      "constraintName": "CK_FA_PartInputLink_Qty",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 3,
+      "definitionSha256": "C2DD1251E08DF059D7016A74E7A439F67629CD50B0022A95DA9FF7AA4B040106"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "FA_PartOutputLinkTbl",
+      "constraintName": "CK_FA_PartOutputLink_Qty",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 3,
+      "definitionSha256": "C2DD1251E08DF059D7016A74E7A439F67629CD50B0022A95DA9FF7AA4B040106"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "FA_PartRegistrationBatchTbl",
+      "constraintName": "CK_FA_PartRegBatch_Count",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 4,
+      "definitionSha256": "519F9E4A78C8882C1E81DD1FD4106D62149F2636E3A606815EC7653718ED1C1B"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "FA_PartRegistrationBatchTbl",
+      "constraintName": "CK_FA_PartRegBatch_Status",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 7,
+      "definitionSha256": "7CF8DADF0AF5EC318D21BFE3B7BF18F979762C7DC7DE54423EC130DFA930EF11"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "FA_PartRegistrationRequestTbl",
+      "constraintName": "CK_FA_PartRegRequest_Count",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 10,
+      "definitionSha256": "53F78D5BF627ACC66636D17F1D59D14659B197CC8C079C790AAD4E503ED3B503"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "FA_PartRegistrationRequestTbl",
+      "constraintName": "CK_FA_PartRegRequest_Mode",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 2,
+      "definitionSha256": "B46B97026865F76F006F585A76EE631B4D6754797993FFE59592781E88D3D986"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "FA_PartRegistrationRequestTbl",
+      "constraintName": "CK_FA_PartRegRequest_Status",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 16,
+      "definitionSha256": "00B20B94C9A240641BB7DA5E40D24F9A2ADF15303D54F7E1DB041F792CE856BF"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "FA_PartReplacementTbl",
+      "constraintName": "CK_FA_PartReplacement_DifferentBarcode",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 0,
+      "definitionSha256": "89CC479B990886CA39D610366A9A30A9E47E5FDD09B49010003E5EFACDAE95CC"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "FA_PartTrackingPolicyTbl",
+      "constraintName": "CK_FA_PartPolicy_Mode",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 2,
+      "definitionSha256": "E71C6B6804BAC8F21F02E4D82DB1FF687F547FB08AC726B7460AD0F099143672"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "FA_PartTrackingPolicyTbl",
+      "constraintName": "CK_FA_PartPolicy_QtyScan",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 7,
+      "definitionSha256": "2C6ED73132C214A620EEBDDBAE281CDE1CC6B4E0338D5CAC220560A9BFC9DA6D"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "IV_InboundRequestCTCPTbl",
+      "constraintName": "CK_IV_InboundRequestCTCP_Allocatable",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 0,
+      "definitionSha256": "52B1D5FD659C7264559D9ABEA8CECB0307B5B4ADB93E25F59EA5F973E79B47B6"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "IV_InboundRequestTbl",
+      "constraintName": "CK_IV_InboundRequestTbl_QRPrintType",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 37,
+      "definitionSha256": "8F85D93BDDAF62002FB5E9D16FE79DD688AE88CE51314436ED82A4DE3EBF373D"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "IV_InternalTransferBatchDetailTbl",
+      "constraintName": "CK_ITBatchDetail_ActualIssue",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 17,
+      "definitionSha256": "74AF760104DD561353497D4F5F8C75B2CB29FE1B0FE32A8C1E4BA7FA01370C66"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "IV_InternalTransferBatchDetailTbl",
+      "constraintName": "CK_ITBatchDetail_ActualReceive",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 18,
+      "definitionSha256": "274E916C254C233E0FAF42F6AC0739324BAD80B25D3EED8AAA92C9EA96B7C4A7"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "IV_InternalTransferBatchDetailTbl",
+      "constraintName": "CK_ITBatchDetail_Qty",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 7,
+      "definitionSha256": "4DFBC3193054144E54E1CABD4D9C8207F5114DE90D3FAD8EBC8335594F250599"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "IV_InternalTransferRequestDetailTbl",
+      "constraintName": "CK_ITReqDetail_PMQty",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 5,
+      "definitionSha256": "95618DDFF02CF19DF6F7D9081057489A1C39A5F02DBCEE682D606DEA9F970855"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "IV_InternalTransferRequestDetailTbl",
+      "constraintName": "CK_ITReqDetail_Qty",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 4,
+      "definitionSha256": "EB73E43F07FBDEB4F4E063E4B45BA1415F040685CD36379B7EBD8CC0AC227AEA"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "MedcomPurchaseRequestCommandJournal",
+      "constraintName": "CK_MedcomPurchaseRequestCommandJournal",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 0,
+      "definitionSha256": "4CA5362B19D08259D618C652D91F82107F4E9729484DFBB0F5977447146BB5A3"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "MedcomPurchaseRequestCommandSchema",
+      "constraintName": "CK_MedcomPurchaseRequestCommandSchema",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 0,
+      "definitionSha256": "7B4788EF209BA4AAFB1E1D39DB65E91E163F2CA244B5CE53301FD36E181B887C"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "SY_NotifyMsgTbl",
+      "constraintName": "CK_SY_Notify_Channel",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 0,
+      "definitionSha256": "27AB2C98FE30469EB89C2E3BAA41153466F719B0224DC0C9EB18148C5F5F5B5B"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "SY_NotifyMsgTbl",
+      "constraintName": "CK_SY_Notify_Color",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 8,
+      "definitionSha256": "FBC86236ED3FB6B68B4CC519BF6EFF08725C32BC075DCA50FC86A4B1B34F8140"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "SY_NotifyMsgTbl",
+      "constraintName": "CK_SY_Notify_Type",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 7,
+      "definitionSha256": "415C15408209BDEB3D2286EBD3932BC5A70FE816B7C082174F5C32F9FABC71E1"
+    },
+    {
+      "schemaName": "dbo",
+      "objectName": "ZZ_MedcomUniformItemMigrationMap",
+      "constraintName": "CK_ZZ_MedcomUniformItemMigrationMap_Action",
+      "isDisabled": false,
+      "isNotTrusted": false,
+      "parentColumnId": 3,
+      "definitionSha256": "45BCB1B16A94AF5E0F5BFA28A38C053B4E93FFDDA9F01C8580BFBD14EE65E205"
+    }
+  ]
+}

@@ -135,7 +135,7 @@ public sealed class SqlDocumentReader : IDocumentReader
                 if(purchase) orderLines.Add(new(reader.GetString(5),reader.GetString(6),Value(7),Value(8),
                     DocumentSourceFieldReader.ReadPurchaseOrderLineFields(reader,32)));
                 else inboundLines.Add(new(reader.GetString(5),reader.GetString(6),Value(7),Value(8),Value(9),Value(10),
-                    DocumentSourceFieldReader.ReadInboundRequestLineFields(reader,50)));
+                    DocumentSourceFieldReader.ReadInboundRequestLineFields(reader,51)));
             }
             // Hidden and missing parents have the same response, regardless of child existence.
             if(document is null) return new(DocumentOutcome.NotFound);
@@ -195,7 +195,7 @@ public sealed class SqlDocumentReader : IDocumentReader
         var locked = purchase ? "D.isLock" : "CAST(NULL AS bit)";
         var headerFields = purchase ? DocumentSourceFieldReader.PurchaseOrderHeaderFieldsProjection : DocumentSourceFieldReader.InboundRequestHeaderFieldsProjection;
         var lineFields = purchase ? DocumentSourceFieldReader.PurchaseOrderLineFieldsProjection : DocumentSourceFieldReader.InboundRequestLineFieldsProjection;
-        var selectedFields = string.Join(",",Enumerable.Range(0,purchase?12:25).Select(i=>$"L.F{i}"));
+        var selectedFields = string.Join(",",Enumerable.Range(0,purchase?12:26).Select(i=>$"L.F{i}"));
         var quantities = purchase
                 ? "CONVERT(varchar(40),C.Quantity) AS Q1, CONVERT(varchar(40),C.Quantity2) AS Q2, CAST(NULL AS varchar(40)) AS Q3, CAST(NULL AS varchar(40)) AS Q4"
                 : "CONVERT(varchar(40),C.SetQuantityByDocument) AS Q1, CONVERT(varchar(40),C.BarrelQuantityByDocument) AS Q2, CONVERT(varchar(40),C.SetQuantityByReal) AS Q3, CONVERT(varchar(40),C.BarrelQuantityByReal) AS Q4";

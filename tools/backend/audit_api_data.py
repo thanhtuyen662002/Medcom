@@ -7,6 +7,18 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 OPENAPI = "docs/backend/medcom-openapi.json"
 FIELDS = "docs/backend/document-field-contract.json"
+SOURCE_TABLES = {
+    "owner-attachment-20261002": "inventories/source/20261002/table-*.json",
+    "owner-live-meddata-20261010": "inventories/source/20261010/document-read-tables.json",
+}
+
+
+def load_source_tables(mapping, root=ROOT):
+    pattern = SOURCE_TABLES.get(mapping.get("sourceSet"))
+    require(pattern is not None, "Unknown source set; no inferred catalog substitution")
+    files = sorted(root.glob(pattern))
+    require(bool(files), "Source catalog unavailable")
+    return [obj for file in files for obj in json.loads(file.read_text(encoding="utf-8"))["objects"]]
 
 
 def require(value, message):
@@ -69,7 +81,7 @@ def audit(api, mapping, tables):
                         require(schema.get("x-medcom-source-column") == field["column"]
                                 and schema.get("x-medcom-sql-type") == field["sqlType"], "Wire source provenance mismatch")
         modules[kind] = {"list": base, "detail": base + "/detail", "v2_alias_list": bases[1], "v2_alias_detail": bases[1] + "/detail", "source_fields": counts,
-                         "evidence": [FIELDS, "inventories/source/20261002/table-*.json",
+                         "evidence": [FIELDS, SOURCE_TABLES[mapping["sourceSet"]],
                                       "tests/backend/Medcom.Api.Tests/DocumentFullFieldTests.cs"]}
     operations = []
     for path, item in api["paths"].items():
@@ -98,8 +110,7 @@ def main():
     args = parser.parse_args()
     api = json.loads((ROOT / OPENAPI).read_text(encoding="utf-8"))
     fields = json.loads((ROOT / FIELDS).read_text(encoding="utf-8"))
-    tables = [obj for file in sorted((ROOT / "inventories/source/20261002").glob("table-*.json"))
-              for obj in json.loads(file.read_text(encoding="utf-8"))["objects"]]
+    tables = load_source_tables(fields)
     report = audit(api, fields, tables)
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)

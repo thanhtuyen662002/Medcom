@@ -101,7 +101,7 @@ class BackendContractVerifierTests(unittest.TestCase):
         report = API.run(client, "PRIVATE_USER_SENTINEL", "PRIVATE_PASSWORD_SENTINEL")
         self.assertEqual("AUTHENTICATED_READS_VERIFIED", report["status"])
         self.assertTrue(report["own_session_retired"])
-        self.assertEqual(116, sum(v["header_fields"] + v["line_fields"] for v in report["modules"].values()))
+        self.assertEqual(118, sum(v["header_fields"] + v["line_fields"] for v in report["modules"].values()))
         self.assertTrue(all(v["query_contract_verified"] for v in report["modules"].values()))
         self.assertTrue(all(v["server_order_requested"] == "documentId_asc" for v in report["modules"].values()))
         self.assertTrue(all(v["verified_routes"] == 2 for v in report["modules"].values()))

@@ -41,7 +41,7 @@ internal static class DocumentSourceFieldReader
         Text(reader,start+9),
         Text(reader,start+10),
         Text(reader,start+11));
-    internal const string InboundRequestHeaderFieldsProjection = "D.[DocumentID] AS H0,CONVERT(varchar(23),D.[DocumentDate],126) AS H1,D.[OrderNumber] AS H2,D.[BranchID] AS H3,D.[InvoiceNo] AS H4,D.[DeclarationNumber] AS H5,D.[DeparturePoint] AS H6,D.[DestinationPoint] AS H7,D.[IsRain] AS H8,D.[OrderTypeID] AS H9,D.[ObjectID] AS H10,CONVERT(varchar(64),D.[TotalPalletQuantityByDocument]) AS H11,CONVERT(varchar(64),D.[TotalBarrelQuantityByDocument]) AS H12,CONVERT(varchar(64),D.[TotalPalletQuantityByReal]) AS H13,CONVERT(varchar(64),D.[TotalBarrelQuantityByReal]) AS H14,CONVERT(varchar(64),D.[ExcessPackageQuantity]) AS H15,CONVERT(varchar(64),D.[LackOfPackageQuantity]) AS H16,CONVERT(varchar(64),D.[DamagedPackageQuantity]) AS H17,D.[PackageTypeID] AS H18,D.[IsDamageOutsidePackage] AS H19,D.[DamageDescription] AS H20,D.[DamageInsideStatusID] AS H21,D.[LocationDamageDetectedID] AS H22,D.[LocationDamageDescription] AS H23,D.[ResultDesciption] AS H24,CONVERT(varchar(64),D.[TotalQuantityInboundResult]) AS H25,CONVERT(varchar(64),D.[GoodAwaitingInboundResult]) AS H26,D.[ResultNote] AS H27,CONVERT(varchar(23),D.[DatetimeRecorded],126) AS H28,D.[StatusID] AS H29,D.[CurrencyID] AS H30,CONVERT(varchar(64),D.[RateExchange]) AS H31,D.[ImageURL] AS H32,D.[BBKCUrl] AS H33,D.[Notes] AS H34,D.[SendTo] AS H35,D.[QRPrintType] AS H36";
+    internal const string InboundRequestHeaderFieldsProjection = "D.[DocumentID] AS H0,CONVERT(varchar(23),D.[DocumentDate],126) AS H1,D.[OrderNumber] AS H2,D.[BranchID] AS H3,D.[InvoiceNo] AS H4,D.[DeclarationNumber] AS H5,D.[DeparturePoint] AS H6,D.[DestinationPoint] AS H7,D.[IsRain] AS H8,D.[OrderTypeID] AS H9,D.[ObjectID] AS H10,CONVERT(varchar(64),D.[TotalPalletQuantityByDocument]) AS H11,CONVERT(varchar(64),D.[TotalBarrelQuantityByDocument]) AS H12,CONVERT(varchar(64),D.[TotalPalletQuantityByReal]) AS H13,CONVERT(varchar(64),D.[TotalBarrelQuantityByReal]) AS H14,CONVERT(varchar(64),D.[ExcessPackageQuantity]) AS H15,CONVERT(varchar(64),D.[LackOfPackageQuantity]) AS H16,CONVERT(varchar(64),D.[DamagedPackageQuantity]) AS H17,D.[PackageTypeID] AS H18,D.[IsDamageOutsidePackage] AS H19,D.[DamageDescription] AS H20,D.[DamageInsideStatusID] AS H21,D.[LocationDamageDetectedID] AS H22,D.[LocationDamageDescription] AS H23,D.[ResultDesciption] AS H24,CONVERT(varchar(64),D.[TotalQuantityInboundResult]) AS H25,CONVERT(varchar(64),D.[GoodAwaitingInboundResult]) AS H26,D.[ResultNote] AS H27,CONVERT(varchar(23),D.[DatetimeRecorded],126) AS H28,D.[StatusID] AS H29,D.[CurrencyID] AS H30,CONVERT(varchar(64),D.[RateExchange]) AS H31,D.[ImageURL] AS H32,D.[BBKCUrl] AS H33,D.[Notes] AS H34,D.[SendTo] AS H35,D.[QRPrintType] AS H36,D.[LinkID] AS H37";
     internal static InboundRequestHeaderFields ReadInboundRequestHeaderFields(DbDataReader reader,int start) => new(
         RequiredText(reader,start+0),
         RequiredDate(reader,start+1),
@@ -79,8 +79,9 @@ internal static class DocumentSourceFieldReader
         Text(reader,start+33),
         Text(reader,start+34),
         Text(reader,start+35),
-        RequiredText(reader,start+36));
-    internal const string InboundRequestLineFieldsProjection = "C.[UserAutoID] AS F0,C.[DocumentID] AS F1,C.[ContractID] AS F2,C.[ItemID] AS F3,C.[HangSX] AS F4,C.[UnitFactor] AS F5,C.[Unit2] AS F6,C.[Additional] AS F7,C.[LotNumberByDocument] AS F8,CONVERT(varchar(64),C.[SetQuantityByDocument]) AS F9,CONVERT(varchar(64),C.[BarrelQuantityByDocument]) AS F10,CONVERT(varchar(23),C.[ExpireDateByDocument],126) AS F11,C.[LotNumberByReal] AS F12,CONVERT(varchar(64),C.[SetQuantityByReal]) AS F13,CONVERT(varchar(64),C.[BarrelQuantityByReal]) AS F14,CONVERT(varchar(23),C.[ExpireDateByReal],126) AS F15,CONVERT(varchar(64),C.[SourceAmount]) AS F16,CONVERT(varchar(64),C.[UnitPrice]) AS F17,CONVERT(varchar(64),C.[Amount]) AS F18,CONVERT(varchar(64),C.[RandomTestQuantity]) AS F19,C.[TestStatus] AS F20,C.[NoPalletNote] AS F21,C.[PalletNote] AS F22,C.[CheckerNote] AS F23,C.[ItemCode] AS F24";
+        RequiredText(reader,start+36),
+        Text(reader,start+37));
+    internal const string InboundRequestLineFieldsProjection = "C.[UserAutoID] AS F0,C.[DocumentID] AS F1,C.[ContractID] AS F2,C.[ItemID] AS F3,C.[HangSX] AS F4,C.[UnitFactor] AS F5,C.[Unit2] AS F6,C.[Additional] AS F7,C.[LotNumberByDocument] AS F8,CONVERT(varchar(64),C.[SetQuantityByDocument]) AS F9,CONVERT(varchar(64),C.[BarrelQuantityByDocument]) AS F10,CONVERT(varchar(23),C.[ExpireDateByDocument],126) AS F11,C.[LotNumberByReal] AS F12,CONVERT(varchar(64),C.[SetQuantityByReal]) AS F13,CONVERT(varchar(64),C.[BarrelQuantityByReal]) AS F14,CONVERT(varchar(23),C.[ExpireDateByReal],126) AS F15,CONVERT(varchar(64),C.[SourceAmount]) AS F16,CONVERT(varchar(64),C.[UnitPrice]) AS F17,CONVERT(varchar(64),C.[Amount]) AS F18,CONVERT(varchar(64),C.[RandomTestQuantity]) AS F19,C.[TestStatus] AS F20,C.[NoPalletNote] AS F21,C.[PalletNote] AS F22,C.[CheckerNote] AS F23,C.[ItemCode] AS F24,C.[ParentID] AS F25";
     internal static InboundRequestLineFields ReadInboundRequestLineFields(DbDataReader reader,int start) => new(
         RequiredText(reader,start+0),
         RequiredText(reader,start+1),
@@ -106,7 +107,8 @@ internal static class DocumentSourceFieldReader
         Text(reader,start+21),
         Text(reader,start+22),
         Text(reader,start+23),
-        Text(reader,start+24));
+        Text(reader,start+24),
+        Text(reader,start+25));
     // SQL style 126 omits the fractional component when milliseconds are zero.
     // Normalize only its two documented SQL datetime shapes, without timezone inference.
     private static readonly string[] DateFormats=["yyyy-MM-dd'T'HH:mm:ss","yyyy-MM-dd'T'HH:mm:ss.fff"];

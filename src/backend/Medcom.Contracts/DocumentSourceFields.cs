@@ -75,7 +75,8 @@ public sealed record InboundRequestHeaderFields(
     string? BbkcUrl,
     string? Notes,
     string? SendTo,
-    string QrPrintType);
+    string QrPrintType,
+    string? LinkId = null);
 
 public sealed record InboundRequestLineFields(
     string UserAutoId,
@@ -102,7 +103,8 @@ public sealed record InboundRequestLineFields(
     string? NoPalletNote,
     string? PalletNote,
     string? CheckerNote,
-    string? ItemCode);
+    string? ItemCode,
+    string? ParentId = null);
 
 public sealed record PurchaseRequestHeaderFields(
     string PurchaseRequestId,

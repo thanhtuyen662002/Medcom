@@ -1,9 +1,9 @@
 {
   "format": 2,
-  "source_set": "owner-attachment-20261002",
+  "source_set": "owner-live-meddata-20261010",
   "static_reconciliation": "PASS",
   "registered_operations": 34,
-  "complete_source_columns": 116,
+  "complete_source_columns": 118,
   "modules": {
     "purchase-orders": {
       "list": "/api/documents/purchase-orders",
@@ -16,7 +16,7 @@
       },
       "evidence": [
         "docs/backend/document-field-contract.json",
-        "inventories/source/20261002/table-*.json",
+        "inventories/source/20261010/document-read-tables.json",
         "tests/backend/Medcom.Api.Tests/DocumentFullFieldTests.cs"
       ]
     },
@@ -26,12 +26,12 @@
       "v2_alias_list": "/api/v2/documents/inbound-requests",
       "v2_alias_detail": "/api/v2/documents/inbound-requests/detail",
       "source_fields": {
-        "header": 37,
-        "lines": 25
+        "header": 38,
+        "lines": 26
       },
       "evidence": [
         "docs/backend/document-field-contract.json",
-        "inventories/source/20261002/table-*.json",
+        "inventories/source/20261010/document-read-tables.json",
         "tests/backend/Medcom.Api.Tests/DocumentFullFieldTests.cs"
       ]
     },
@@ -46,7 +46,7 @@
       },
       "evidence": [
         "docs/backend/document-field-contract.json",
-        "inventories/source/20261002/table-*.json",
+        "inventories/source/20261010/document-read-tables.json",
         "tests/backend/Medcom.Api.Tests/DocumentFullFieldTests.cs"
       ]
     }

@@ -1,15 +1,17 @@
 # Tài liệu BE cho FE: đầy đủ fields trên từng page — 10/10/2026
 
+Cập nhật I71 từ audit MedData trực tiếp ngày 2026-10-10: **118 cột** trên sáu bảng. Inbound bổ sung `rows[].inboundRequestHeader.linkId` / `document.inboundRequestHeader.linkId` và `inboundRequestLines[].fields.parentId`, đều `string | null` (`varchar(50)`). FE giữ cả key khi giá trị null và thêm chúng vào schema. URL, quyền và phân trang giữ nguyên. Metadata hiện tại: `inventories/source/20261010/document-read-tables.json`; đối chiếu live: `docs/execution/I71_LIVE_AUDIT_20261010.md`. `sourceLine` bên dưới chỉ định vị 116 cột của archive cũ; hai cột mới được xác minh qua `sys.columns`, không gán số dòng SQL archive. Kết nối/audit trực tiếp không thay cho kiểm định HTTP với session ERP thực.
+
 I70 / [PR #127](https://github.com/thanhtuyen662002/Medcom/pull/127) sửa các API hiện tại để **mỗi bản ghi trong page trả đầy đủ cột nguồn**. FE không cần chuyển URL sang `/api/v2` để lấy thêm cột. `page`, `pageSize`, `hasMore` tiếp tục giới hạn số bản ghi; không có chế độ trả toàn bộ bảng. Các scalar cũ được giữ, fields đầy đủ nằm trong các object bên dưới. Phần này thay thế hướng dẫn I67–I69 yêu cầu dùng v2 để nhận đủ fields. Các bản ghi kiểm chứng trước đó vẫn giữ nguyên danh tính lịch sử.
 
-Nguồn hợp đồng: `src/backend/Medcom.Api/{DocumentEndpoints,PurchaseRequestEndpoints,DocumentDataProjection,ApiContractCatalog}.cs`; [OpenAPI](medcom-openapi.json); [mapping 116 cột](document-field-contract.json); [đối soát tất cả 34 API](api-data-audit-current-full-20261010.json). Đối soát cột sử dụng `inventories/source/20261002/table-*.json`, source-set và extraction-integrity của vòng nguồn owner-attachment-20261002; không tuyên bố tương đương hai Library baseline lịch sử. Hướng dẫn WinForms đã đối soát tại `docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md` là bằng chứng bổ sung.
+Nguồn hợp đồng: `src/backend/Medcom.Api/{DocumentEndpoints,PurchaseRequestEndpoints,DocumentDataProjection,ApiContractCatalog}.cs`; [OpenAPI](medcom-openapi.json); [mapping 118 cột](document-field-contract.json); [đối soát tất cả 34 API](api-data-audit-current-full-20261010.json). Đối soát cột hiện tại sử dụng `inventories/source/20261010/document-read-tables.json` và source-set `owner-live-meddata-20261010`. Archive, source-set và extraction-integrity của vòng owner-attachment-20261002 được giữ riêng cho đối chiếu lịch sử; không tuyên bố tương đương hai Library baseline lịch sử. Hướng dẫn WinForms đã đối soát tại `docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md` là bằng chứng bổ sung.
 
 ## 1. URL, phân trang và vị trí fields
 
 | Nhóm | GET danh sách hiện tại | GET chi tiết | Header / line fields |
 | --- | --- | --- | --- |
 | Đơn mua hàng (PO) | `/api/documents/purchase-orders` | `/api/documents/purchase-orders/detail?documentId=...&page=1&pageSize=50` | 19 / 12 |
-| Yêu cầu nhập kho | `/api/documents/inbound-requests` | `/api/documents/inbound-requests/detail?documentId=...&page=1&pageSize=50` | 37 / 25 |
+| Yêu cầu nhập kho | `/api/documents/inbound-requests` | `/api/documents/inbound-requests/detail?documentId=...&page=1&pageSize=50` | 38 / 26 |
 | Đề nghị mua | `/api/purchase-requests` | `/api/purchase-requests/detail?documentId=...` | 14 / 9 |
 
 | Nhóm | Header trên từng row danh sách | Header chi tiết | Các dòng chi tiết |
@@ -175,7 +177,7 @@ Một property nullable vẫn **có key** trong full object, giá trị là `nul
 | POST | `/api/inbound-requests/draft/send-to-warehouse` | `business-provider-unavailable` | `default-provider-unavailable;target-runtime-acceptance-required` |
 | POST | `/api/inbound-requests/draft/reconcile` | `business-provider-unavailable` | `default-provider-unavailable;target-runtime-acceptance-required` |
 
-## 6. Danh mục đầy đủ 116 cột
+## 6. Danh mục đầy đủ 118 cột
 
 Các bảng được tạo trực tiếp từ [document-field-contract.json](document-field-contract.json), đã đối soát tên/SQL type/nullability với source inventory và required JSON paths của cả route hiện tại/v2. `nullable=có` vẫn yêu cầu key trong JSON. JSON type `string` với format `decimal-string` hoặc `sql-datetime-without-timezone` tuân theo phần 4. Prefix bảng cho biết vị trí đầy đủ; tên JSON trong mỗi dòng là key bên trong object đó. Header được trả trên từng row trong list và trong detail; line fields chỉ có trong detail.
 
@@ -224,7 +226,7 @@ Nguồn: `dbo.AP_OrderDetailTbl`, `sourceLine=11437` trong full SQL member đư�
 | `Property2` | `property2` | `nvarchar(50)` | `string` | có | — |
 | `ParentID` | `parentId` | `varchar(50)` | `string` | có | — |
 
-### Yêu cầu nhập kho — header: 37 cột
+### Yêu cầu nhập kho — header: 38 cột
 
 Nguồn: `dbo.IV_InboundRequestTbl`, `sourceLine=11370` trong full SQL member được định danh bởi `inventories/source/20261002/extraction-integrity.json`; metadata: `inventories/source/20261002/table-*.json`. List: `rows[].inboundRequestHeader`. Detail: `document.inboundRequestHeader`.
 
@@ -267,8 +269,9 @@ Nguồn: `dbo.IV_InboundRequestTbl`, `sourceLine=11370` trong full SQL member đ
 | `Notes` | `notes` | `nvarchar(500)` | `string` | có | — |
 | `SendTo` | `sendTo` | `nvarchar(max)` | `string` | có | — |
 | `QRPrintType` | `qrPrintType` | `varchar(10)` | `string` | không | — |
+| `LinkID` | `linkId` | `varchar(50)` | `string` | có | Audit MedData 2026-10-10 |
 
-### Yêu cầu nhập kho — lines: 25 cột
+### Yêu cầu nhập kho — lines: 26 cột
 
 Nguồn: `dbo.IV_InboundRequestDetailsTbl`, `sourceLine=11005` trong full SQL member được định danh bởi `inventories/source/20261002/extraction-integrity.json`; metadata: `inventories/source/20261002/table-*.json`. List: `Không có; dùng detail`. Detail: `inboundRequestLines[].fields`.
 
@@ -299,6 +302,7 @@ Nguồn: `dbo.IV_InboundRequestDetailsTbl`, `sourceLine=11005` trong full SQL me
 | `PalletNote` | `palletNote` | `nvarchar(500)` | `string` | có | — |
 | `CheckerNote` | `checkerNote` | `nvarchar(500)` | `string` | có | — |
 | `ItemCode` | `itemCode` | `nvarchar(50)` | `string` | có | — |
+| `ParentID` | `parentId` | `varchar(50)` | `string` | có | Audit MedData 2026-10-10 |
 
 ### Đề nghị mua — header: 14 cột
 
@@ -350,3 +354,12 @@ python tools/deploy/verify_backend_api.py --origin https://medcom-production.up.
 Nếu có tài khoản ERP được chủ sở hữu cấp quyền, operator đặt `MEDCOM_TEST_USERNAME`/`MEDCOM_TEST_PASSWORD` riêng trong environment để verifier đọc tối đa một header và một bounded detail page **trên mỗi current/v2 route** của từng module được cấp quyền. Không đặt credentials vào CLI/Git/tài liệu. Không có credentials thì authenticated reads ghi rõ NOT_RUN; kết quả rỗng không chứng minh tương thích row có dữ liệu.
 
 Evidence kiểm thử I70: `docs/execution/I70_VALIDATION_20261010.json`; receipt CI/package/exact-head-base/merge được lưu trên PR #127 sau khi quan sát thực tế. Kiểm chứng row SQL trên target có đăng nhập, tải thực tế và FE đã render đủ cột là **NOT_RUN / UNKNOWN** tại thời điểm handoff; không suy ra từ merge hay source tests. Không có SQL/configuration writes, kích hoạt writer, sửa FE hoặc điều chỉnh schedule trong I70. Goal #45 vẫn mở theo `docs/goals/PRODUCTION_ERP_GOAL.md`.
+
+
+## 10. Audit DB trực tiếp và giới hạn kiểm chứng I71
+
+Audit chỉ đọc ngày 2026-10-10 đã mở đúng MedData và kiểm tra 118 cột trên sáu bảng, gồm hai cột mới của inbound. [Biên nhận SQL đã làm sạch](live-sql-read-audit-20261010.json) ghi số trường/số bản ghi/page, không chứa giá trị chứng từ hoặc ID thật. Bốn projection PO/inbound được đọc nguyên từ source C# hiện tại; hai projection đề nghị mua dùng mapping kiểu đã đối soát. Sáu truy vấn SQL giữ đủ key khi null và không gặp lỗi kiểu trong 114 bản ghi quan sát. Không mở business transaction hoặc gọi procedure ghi.
+
+Đây là kiểm chứng SQL trực tiếp của owner và shape dữ liệu, chưa phải GET HTTP dùng session ERP thật hoặc kiểm định quyền/branch trên target. Các production mapper được kiểm tra riêng bằng HTTP/SQL recording fixtures; không ghi chúng thành live runtime PASS. Cơ sở dữ liệu cũ thiếu `LinkID`/`ParentID` phải báo unavailable; không gán null giả để tuyên bố đủ cột.
+
+ERP mới được định danh tại `inventories/source/20261010/erp-source-summary.json`. Tools.dll và ERP.NET.exe hiện tại khác bản 2026-10-02. Password worker vẫn chỉ chấp nhận DLL cũ đã được kiểm định; khả năng tương thích DLL mới và full engine là UNKNOWN, cần vòng kiểm định riêng trước khi thay pin. Mật khẩu SQL không phải mật khẩu tài khoản ERP.

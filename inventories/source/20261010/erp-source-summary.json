@@ -1,0 +1,87 @@
+{
+  "sourceSet": "owner-local-erp-20261010",
+  "sourceRootEvidence": "D:\\Projects\\Company\\Medcom\\ERP_Medcom2026\\ERP_Medcom2026",
+  "observedAtUtc": "2026-10-10T02:52:43.989541+00:00",
+  "fileCount": 1409,
+  "totalBytes": 407607377,
+  "extensions": {
+    ".bak": 3,
+    ".bk": 1,
+    ".bk2": 1,
+    ".config": 1,
+    ".dat": 253,
+    ".data": 2,
+    ".dll": 43,
+    ".doc": 7,
+    ".docx": 5,
+    ".exe": 15,
+    ".pass": 1,
+    ".png": 1,
+    ".res": 4,
+    ".rpx": 1024,
+    ".txt": 42,
+    ".xls": 2,
+    ".xlt": 4
+  },
+  "privateInventorySha256": "c0e0649c40a40093eec7cf1e5d0f326bb707804c15bb1488fcb3e54c298fd322",
+  "currentBinaries": [
+    {
+      "path": "ERP.NET.exe",
+      "bytes": 7732737,
+      "sha256": "20b512b6c9e3af36633877874d5ade22ad1e409fd247bdce3aa7d40e18e85964",
+      "fileVersion": "7.7.9778.19512"
+    },
+    {
+      "path": "Tools.dll",
+      "bytes": 8261633,
+      "sha256": "7019a26a5129edf44716601678ea1aadaebde5082defebd195ff47a7452d7ec8",
+      "fileVersion": "7.9.9778.19421"
+    }
+  ],
+  "latestBackupBinaries": [
+    {
+      "path": "UpdateBK/2026-10-09/ERP.NET.exe",
+      "bytes": 7733249,
+      "sha256": "cd5d304757d8bbf3f29612ea0411c5333d0e45e73df00297a902adfcc7e1d8f3"
+    },
+    {
+      "path": "UpdateBK/2026-10-09/Tools.dll",
+      "bytes": 8258049,
+      "sha256": "aa8910f3ba244fc405ccad2d322d142d40f938be3da94277ccd8d0814082dd61"
+    },
+    {
+      "path": "UpdateBK/2026-10-10/ERP.NET.exe",
+      "bytes": 7731713,
+      "sha256": "1e66ddf16a0f8061d0c163864d9738b8e073c0c7895ff4a4b1f5569521b850b4"
+    },
+    {
+      "path": "UpdateBK/2026-10-10/Tools.dll",
+      "bytes": 8259585,
+      "sha256": "f31aa9760ec45056b14c814dac3c9c6506be722b16aa524ba1a038032188f1e4"
+    }
+  ],
+  "rawBinariesExported": false,
+  "settingsOrPasswordFilesParsed": false,
+  "baselineEquivalence": "NOT_ASSUMED",
+  "legacyRuntimeAcceptance": "NOT_RUN",
+  "priorTechnicalArchiveComparison": {
+    "sourceSet": "owner-attachment-20261002",
+    "archiveSha256": "d5fe49f8e58de89fc0b9972a116a6c8f673ab9f9b326c626708d0b5d01fc5783",
+    "binaries": {
+      "ERP.NET.exe": {
+        "bytes": 7733249,
+        "sha256": "cd5d304757d8bbf3f29612ea0411c5333d0e45e73df00297a902adfcc7e1d8f3",
+        "archiveMember": "ERP_Medcom2026/ERP.NET.exe"
+      },
+      "Tools.dll": {
+        "bytes": 8258049,
+        "sha256": "aa8910f3ba244fc405ccad2d322d142d40f938be3da94277ccd8d0814082dd61",
+        "archiveMember": "ERP_Medcom2026/Tools.dll"
+      }
+    },
+    "identicalCurrentBinaryHashes": {
+      "ERP.NET.exe": false,
+      "Tools.dll": false
+    }
+  }
+}

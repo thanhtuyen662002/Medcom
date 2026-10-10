@@ -26,3 +26,6 @@ python tools/source/prepare_transfer_checks.py /private/MedData-Data.sql /privat
 ```
 
 Run prepare_transfer_checks after the base fixture. It adds three actual source table DDLs and eight actual check procedures to the optional private transfer fixture. The third private runtime test checks source assignment/status rules without enabling Web mutations. Raw SQL remains private.
+
+
+Current read fixtures (I71, 2026-10-10): the generator retains the pinned historical dump/DLL and appends the two nullable `varchar(50)` read additions verified in `inventories/source/20261010/document-read-tables.json`: inbound header `LinkID` and line `ParentID`. These statements are generated only in the private fixture schema and run only through the existing disposable loopback test harness. The generator performs no target DB mutation. The new owner ERP binary hash is not admitted by this old-DLL test; no new legacy/runtime compatibility is claimed.

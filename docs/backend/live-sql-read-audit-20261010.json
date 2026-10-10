@@ -1,0 +1,239 @@
+{
+  "formatVersion": 1,
+  "sourceSet": "owner-live-meddata-20261010",
+  "observedAtUtc": "2026-10-10T03:05:30.3991735Z",
+  "queryMode": "BOUNDED_SELECT_ONLY_SOURCE_PROJECTIONS",
+  "pageSize": 20,
+  "maximumPagesPerTable": 5,
+  "businessWritesPerformed": false,
+  "rowsExported": 0,
+  "credentialsExported": 0,
+  "webAuthenticatedReads": "NOT_RUN",
+  "productionMapperRuntime": "NOT_RUN_SQL_PROVIDER_SHAPES_AND_IN_MEMORY_TYPES_ONLY",
+  "tables": [
+    {
+      "kind": "purchase-orders",
+      "section": "header",
+      "fieldCount": 19,
+      "table": "AP_OrderTbl",
+      "sourceProjectionMode": "EXACT_CURRENT_CSHARP_SQL_PROJECTION",
+      "pagingExhausted": true,
+      "observedRows": 7,
+      "nullableFieldsObserved": [
+        "baseTotal",
+        "contractId",
+        "dateCreate",
+        "dateUpdate",
+        "deliverDate",
+        "linkId",
+        "memo",
+        "notes",
+        "searchField",
+        "userCreate",
+        "userUpdate"
+      ],
+      "sqlErrorNumber": 0,
+      "status": "PASS",
+      "pages": [
+        {
+          "rows": 7,
+          "page": 1,
+          "hasMore": false,
+          "fieldCount": 19
+        }
+      ]
+    },
+    {
+      "kind": "purchase-orders",
+      "section": "lines",
+      "fieldCount": 12,
+      "table": "AP_OrderDetailTbl",
+      "sourceProjectionMode": "EXACT_CURRENT_CSHARP_SQL_PROJECTION",
+      "pagingExhausted": true,
+      "observedRows": 9,
+      "nullableFieldsObserved": [
+        "amount",
+        "notes",
+        "parentId",
+        "property",
+        "property2",
+        "quantity2",
+        "sourceAmount"
+      ],
+      "sqlErrorNumber": 0,
+      "status": "PASS",
+      "pages": [
+        {
+          "rows": 9,
+          "page": 1,
+          "hasMore": false,
+          "fieldCount": 12
+        }
+      ]
+    },
+    {
+      "kind": "inbound-requests",
+      "section": "header",
+      "fieldCount": 38,
+      "table": "IV_InboundRequestTbl",
+      "sourceProjectionMode": "EXACT_CURRENT_CSHARP_SQL_PROJECTION",
+      "pagingExhausted": true,
+      "observedRows": 21,
+      "nullableFieldsObserved": [
+        "bbkcUrl",
+        "branchId",
+        "currencyId",
+        "damageDescription",
+        "damagedPackageQuantity",
+        "damageInsideStatusId",
+        "datetimeRecorded",
+        "declarationNumber",
+        "excessPackageQuantity",
+        "goodAwaitingInboundResult",
+        "imageUrl",
+        "lackOfPackageQuantity",
+        "linkId",
+        "locationDamageDescription",
+        "locationDamageDetectedId",
+        "notes",
+        "objectId",
+        "packageTypeId",
+        "rateExchange",
+        "resultDesciption",
+        "resultNote",
+        "sendTo",
+        "totalBarrelQuantityByDocument",
+        "totalBarrelQuantityByReal",
+        "totalPalletQuantityByDocument",
+        "totalPalletQuantityByReal",
+        "totalQuantityInboundResult"
+      ],
+      "sqlErrorNumber": 0,
+      "status": "PASS",
+      "pages": [
+        {
+          "rows": 20,
+          "page": 1,
+          "hasMore": true,
+          "fieldCount": 38
+        },
+        {
+          "rows": 1,
+          "page": 2,
+          "hasMore": false,
+          "fieldCount": 38
+        }
+      ]
+    },
+    {
+      "kind": "inbound-requests",
+      "section": "lines",
+      "fieldCount": 26,
+      "table": "IV_InboundRequestDetailsTbl",
+      "sourceProjectionMode": "EXACT_CURRENT_CSHARP_SQL_PROJECTION",
+      "pagingExhausted": true,
+      "observedRows": 59,
+      "nullableFieldsObserved": [
+        "additional",
+        "amount",
+        "barrelQuantityByDocument",
+        "barrelQuantityByReal",
+        "checkerNote",
+        "contractId",
+        "expireDateByReal",
+        "hangSX",
+        "itemCode",
+        "lotNumberByReal",
+        "noPalletNote",
+        "palletNote",
+        "parentId",
+        "randomTestQuantity",
+        "setQuantityByReal",
+        "sourceAmount",
+        "testStatus",
+        "unit2",
+        "unitFactor",
+        "unitPrice"
+      ],
+      "sqlErrorNumber": 0,
+      "status": "PASS",
+      "pages": [
+        {
+          "rows": 20,
+          "page": 1,
+          "hasMore": true,
+          "fieldCount": 26
+        },
+        {
+          "rows": 20,
+          "page": 2,
+          "hasMore": true,
+          "fieldCount": 26
+        },
+        {
+          "rows": 19,
+          "page": 3,
+          "hasMore": false,
+          "fieldCount": 26
+        }
+      ]
+    },
+    {
+      "kind": "purchase-requests",
+      "section": "header",
+      "fieldCount": 14,
+      "table": "AP_PurchaseRequestTbl",
+      "sourceProjectionMode": "CURRENT_TYPED_FIELD_CONTRACT_PROJECTION",
+      "pagingExhausted": true,
+      "observedRows": 8,
+      "nullableFieldsObserved": [
+        "notes",
+        "price",
+        "purposeDescOrClient"
+      ],
+      "sqlErrorNumber": 0,
+      "status": "PASS",
+      "pages": [
+        {
+          "rows": 8,
+          "page": 1,
+          "hasMore": false,
+          "fieldCount": 14
+        }
+      ]
+    },
+    {
+      "kind": "purchase-requests",
+      "section": "lines",
+      "fieldCount": 9,
+      "table": "AP_PurchaseRequestDetailTbl",
+      "sourceProjectionMode": "CURRENT_TYPED_FIELD_CONTRACT_PROJECTION",
+      "pagingExhausted": true,
+      "observedRows": 10,
+      "nullableFieldsObserved": [
+        "budget",
+        "model",
+        "timeRequired"
+      ],
+      "sqlErrorNumber": 0,
+      "status": "PASS",
+      "pages": [
+        {
+          "rows": 10,
+          "page": 1,
+          "hasMore": false,
+          "fieldCount": 9
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "Direct owner-authorized SQL audit, not ERP-session/branch-authorized HTTP acceptance.",
+    "Queries are sequential without a business transaction; paging consistency under concurrent production changes is not claimed.",
+    "No SQL bodies, record values, IDs, credentials or private settings are exported."
+  ],
+  "sourceProjectionFile": "src/backend/Medcom.Infrastructure/DocumentSourceFieldReader.cs",
+  "sourceProjectionFileSha256": "37d7e8d020642683dda51f3bd73db7c5c0cc4374bfa34500d840e5b323476514",
+  "fieldContractFile": "docs/backend/document-field-contract.json",
+  "fieldContractFileSha256": "33480dc751f1a6e0560223504201600a0cf1a62e8478c25c49bfea94b50fa5f1"
+}

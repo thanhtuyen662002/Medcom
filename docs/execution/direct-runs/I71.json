@@ -1,0 +1,12 @@
+{
+  "id": "I71",
+  "base": "cbcab793fd34e4bea36a20ec86dee82d561ca857",
+  "ownerDirection": "2026-10-10 Asia/Saigon: inspect the owner-provided latest local ERP, request the SQL password in a masked local dialog, audit the authorized MedData target and reconcile full API fields for FE integration",
+  "scope": "Private read-only live SQL metadata and bounded data audit; publish sanitized technical evidence; reconcile source-backed read fields, tests, OpenAPI and Vietnamese FE handoff. Sole direct GitHub executor on a new isolated branch.",
+  "limits": [
+    "No production SQL/schema/business writes, ERP authentication bypass, deployment or production acceptance",
+    "No credentials, raw binaries, source dumps, settings, SQL definition bodies or real transaction rows in Git/chat/handoff",
+    "Preserve prior runs, PRs and claims; no separately owned FE mutations; all schedules remain OFF"
+  ],
+  "status": "ADMISSION_ONLY"
+}
