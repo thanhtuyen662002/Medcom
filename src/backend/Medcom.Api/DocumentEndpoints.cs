@@ -62,7 +62,11 @@ public static class DocumentEndpoints
             catch(OperationCanceledException) when(!context.RequestAborted.IsCancellationRequested)
             { return Results.Problem(statusCode:503,title:"Data is temporarily unavailable."); }
             if (result.Outcome == DocumentOutcome.Success && result.Page is not null
-                && (!fullFields || result.Page.Rows.All(row=>FullHeader(row,kind)))) WorkspaceReadScope.Stamp(context, session);
+                && (!fullFields || result.Page.Rows.All(row=>FullHeader(row,kind))))
+            {
+                WorkspaceReadScope.Stamp(context, session);
+                DocumentDataProjection.Stamp(context,path);
+            }
             return result.Outcome switch
             {
                 DocumentOutcome.Success when result.Page is not null && (!fullFields || result.Page.Rows.All(row=>FullHeader(row,kind)))
@@ -91,7 +95,11 @@ public static class DocumentEndpoints
             catch(OperationCanceledException) when(!context.RequestAborted.IsCancellationRequested)
             { return Results.Problem(statusCode:503,title:"Data is temporarily unavailable."); }
             if (result.Outcome == DocumentOutcome.Success && result.Detail is not null
-                && (!fullFields || FullDetail(result.Detail,kind))) WorkspaceReadScope.Stamp(context, session);
+                && (!fullFields || FullDetail(result.Detail,kind)))
+            {
+                WorkspaceReadScope.Stamp(context, session);
+                DocumentDataProjection.Stamp(context,path);
+            }
             return result.Outcome switch
             {
                 DocumentOutcome.Success when result.Detail is not null && (!fullFields || FullDetail(result.Detail,kind))

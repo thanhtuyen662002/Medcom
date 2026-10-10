@@ -1,10 +1,11 @@
 owner_backend_query_integration_20261010:
-  instruction: continue_backend_api_for_separate_frontend_integration
+  instruction: continue_backend_api_and_audit_existing_APIs_for_full_FE_data
   timezone: Asia/Saigon
   canonical_goal: 45
-  current_increment: I69_typed_v2_document_selection_and_scoped_query_metadata
+  current_increment: I69_typed_v2_selection_query_metadata_and_complete_API_data_audit
   pr: 125
   base: 0be72ba70e4d8b7ba231eedfa8b4a4c200069a8b
+  integrated_base: b91e76e82268ff2c46187c7d23dc7aed1a39f462
   I68_merged_pr: 123
   I68_merge_head: 03eb0c402314b58405b3d87d551d0cdf997a9576
   http_operations: 34
@@ -12,6 +13,16 @@ owner_backend_query_integration_20261010:
   delivered_list_modules: [purchase_orders, inbound_requests, purchase_requests]
   query_parameters: [dateFrom, dateTo, statusId, sortBy, sortDirection]
   frontend_handoff: docs/backend/DOCUMENT_QUERY_INTEGRATION_20261010.md
+  all_API_data_audit: docs/backend/API_FULL_DATA_AUDIT_20261010.md
+  source_columns: 116
+  complete_source_read_routes: 6
+  original_summary_read_routes: 6
+  default_unavailable_business_facades: 8
+  data_projection_headers: [X-Medcom-Data-Projection, X-Medcom-Full-Data-Path]
+  source_free_backend_tests: 3130_passed
+  reference_suites: 24_passed_exact_historical_bytes
+  FE_consumer_snapshot: PR126_b91e76e_calls_original_summary_routes_and_parsers
+  purchase_detail_over_500_lines: explicit_unavailable_remaining_full_read_gap
   windows_source_catalog_integrity: exact_LF_checkout_attributes_no_metadata_change
   frontend_custody: separate_owner_changes_preserved_BE_moved_to_managed_worktree
   hosted_implementation_ci: pending_publication_readback

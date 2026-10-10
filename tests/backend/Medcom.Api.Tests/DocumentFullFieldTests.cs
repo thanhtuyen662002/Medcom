@@ -202,6 +202,8 @@ public sealed class DocumentFullFieldTests
             using var unavailable=await fixture.Client.GetAsync("/api/v2/documents/"+kind+suffix);
             Assert.Equal(HttpStatusCode.ServiceUnavailable,unavailable.StatusCode);
             Assert.False(unavailable.Headers.Contains("X-Medcom-Read-Scope"));
+            Assert.False(unavailable.Headers.Contains("X-Medcom-Data-Projection"));
+            Assert.False(unavailable.Headers.Contains("X-Medcom-Full-Data-Path"));
             using var original=await fixture.Client.GetAsync("/api/documents/"+kind+suffix);
             Assert.Equal(HttpStatusCode.OK,original.StatusCode);
         }

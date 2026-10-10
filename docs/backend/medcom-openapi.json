@@ -639,6 +639,20 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "X-Medcom-Data-Projection": {
+                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "schema": {
+                  "type": "string",
+                  "const": "summary"
+                }
+              },
+              "X-Medcom-Full-Data-Path": {
+                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "schema": {
+                  "type": "string",
+                  "const": "/api/v2/documents/purchase-orders"
+                }
               }
             }
           },
@@ -660,6 +674,8 @@
         ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "x-medcom-data-projection": "summary",
+        "x-medcom-full-data-path": "/api/v2/documents/purchase-orders",
         "x-medcom-capability": "purchase-orders.read",
         "parameters": [
           {
@@ -736,6 +752,20 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "X-Medcom-Data-Projection": {
+                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "schema": {
+                  "type": "string",
+                  "const": "summary"
+                }
+              },
+              "X-Medcom-Full-Data-Path": {
+                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "schema": {
+                  "type": "string",
+                  "const": "/api/v2/documents/purchase-orders/detail"
+                }
               }
             }
           },
@@ -757,6 +787,8 @@
         ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "x-medcom-data-projection": "summary",
+        "x-medcom-full-data-path": "/api/v2/documents/purchase-orders/detail",
         "x-medcom-capability": "purchase-orders.read",
         "parameters": [
           {
@@ -824,6 +856,20 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "X-Medcom-Data-Projection": {
+                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "schema": {
+                  "type": "string",
+                  "const": "full"
+                }
+              },
+              "X-Medcom-Full-Data-Path": {
+                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "schema": {
+                  "type": "string",
+                  "const": "/api/v2/documents/purchase-orders"
+                }
               }
             }
           },
@@ -845,6 +891,8 @@
         ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "x-medcom-data-projection": "full",
+        "x-medcom-full-data-path": "/api/v2/documents/purchase-orders",
         "x-medcom-capability": "purchase-orders.read",
         "parameters": [
           {
@@ -982,6 +1030,20 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "X-Medcom-Data-Projection": {
+                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "schema": {
+                  "type": "string",
+                  "const": "full"
+                }
+              },
+              "X-Medcom-Full-Data-Path": {
+                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "schema": {
+                  "type": "string",
+                  "const": "/api/v2/documents/purchase-orders/detail"
+                }
               }
             }
           },
@@ -1003,6 +1065,8 @@
         ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "x-medcom-data-projection": "full",
+        "x-medcom-full-data-path": "/api/v2/documents/purchase-orders/detail",
         "x-medcom-capability": "purchase-orders.read",
         "parameters": [
           {
@@ -1070,6 +1134,20 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "X-Medcom-Data-Projection": {
+                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "schema": {
+                  "type": "string",
+                  "const": "summary"
+                }
+              },
+              "X-Medcom-Full-Data-Path": {
+                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "schema": {
+                  "type": "string",
+                  "const": "/api/v2/documents/inbound-requests"
+                }
               }
             }
           },
@@ -1091,6 +1169,8 @@
         ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "x-medcom-data-projection": "summary",
+        "x-medcom-full-data-path": "/api/v2/documents/inbound-requests",
         "x-medcom-capability": "inbound-requests.read",
         "parameters": [
           {
@@ -1167,6 +1247,20 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "X-Medcom-Data-Projection": {
+                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "schema": {
+                  "type": "string",
+                  "const": "summary"
+                }
+              },
+              "X-Medcom-Full-Data-Path": {
+                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "schema": {
+                  "type": "string",
+                  "const": "/api/v2/documents/inbound-requests/detail"
+                }
               }
             }
           },
@@ -1188,6 +1282,8 @@
         ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "x-medcom-data-projection": "summary",
+        "x-medcom-full-data-path": "/api/v2/documents/inbound-requests/detail",
         "x-medcom-capability": "inbound-requests.read",
         "parameters": [
           {
@@ -1255,6 +1351,20 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "X-Medcom-Data-Projection": {
+                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "schema": {
+                  "type": "string",
+                  "const": "full"
+                }
+              },
+              "X-Medcom-Full-Data-Path": {
+                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "schema": {
+                  "type": "string",
+                  "const": "/api/v2/documents/inbound-requests"
+                }
               }
             }
           },
@@ -1276,6 +1386,8 @@
         ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "x-medcom-data-projection": "full",
+        "x-medcom-full-data-path": "/api/v2/documents/inbound-requests",
         "x-medcom-capability": "inbound-requests.read",
         "parameters": [
           {
@@ -1413,6 +1525,20 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "X-Medcom-Data-Projection": {
+                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "schema": {
+                  "type": "string",
+                  "const": "full"
+                }
+              },
+              "X-Medcom-Full-Data-Path": {
+                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "schema": {
+                  "type": "string",
+                  "const": "/api/v2/documents/inbound-requests/detail"
+                }
               }
             }
           },
@@ -1434,6 +1560,8 @@
         ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "x-medcom-data-projection": "full",
+        "x-medcom-full-data-path": "/api/v2/documents/inbound-requests/detail",
         "x-medcom-capability": "inbound-requests.read",
         "parameters": [
           {
@@ -1501,6 +1629,20 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "X-Medcom-Data-Projection": {
+                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "schema": {
+                  "type": "string",
+                  "const": "summary"
+                }
+              },
+              "X-Medcom-Full-Data-Path": {
+                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "schema": {
+                  "type": "string",
+                  "const": "/api/v2/purchase-requests"
+                }
               }
             }
           },
@@ -1522,6 +1664,8 @@
         ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "x-medcom-data-projection": "summary",
+        "x-medcom-full-data-path": "/api/v2/purchase-requests",
         "x-medcom-capability": "purchase-requests.read",
         "parameters": [
           {
@@ -1598,6 +1742,20 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "X-Medcom-Data-Projection": {
+                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "schema": {
+                  "type": "string",
+                  "const": "summary"
+                }
+              },
+              "X-Medcom-Full-Data-Path": {
+                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "schema": {
+                  "type": "string",
+                  "const": "/api/v2/purchase-requests/detail"
+                }
               }
             }
           },
@@ -1619,6 +1777,8 @@
         ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "x-medcom-data-projection": "summary",
+        "x-medcom-full-data-path": "/api/v2/purchase-requests/detail",
         "x-medcom-capability": "purchase-requests.read",
         "parameters": [
           {
@@ -1664,6 +1824,20 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "X-Medcom-Data-Projection": {
+                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "schema": {
+                  "type": "string",
+                  "const": "full"
+                }
+              },
+              "X-Medcom-Full-Data-Path": {
+                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "schema": {
+                  "type": "string",
+                  "const": "/api/v2/purchase-requests"
+                }
               }
             }
           },
@@ -1685,6 +1859,8 @@
         ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "x-medcom-data-projection": "full",
+        "x-medcom-full-data-path": "/api/v2/purchase-requests",
         "x-medcom-capability": "purchase-requests.read",
         "parameters": [
           {
@@ -1822,6 +1998,20 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "X-Medcom-Data-Projection": {
+                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "schema": {
+                  "type": "string",
+                  "const": "full"
+                }
+              },
+              "X-Medcom-Full-Data-Path": {
+                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "schema": {
+                  "type": "string",
+                  "const": "/api/v2/purchase-requests/detail"
+                }
               }
             }
           },
@@ -1843,6 +2033,8 @@
         ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "x-medcom-data-projection": "full",
+        "x-medcom-full-data-path": "/api/v2/purchase-requests/detail",
         "x-medcom-capability": "purchase-requests.read",
         "parameters": [
           {

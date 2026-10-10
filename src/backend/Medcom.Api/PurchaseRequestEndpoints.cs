@@ -62,6 +62,7 @@ public static class PurchaseRequestEndpoints
                 if(fullFields && value.Rows.Any(row=>row.Fields is null))
                     return Results.Problem(statusCode:503,title:"Data is temporarily unavailable.");
                 if(!fullFields)result=result with {Value=value with {Rows=value.Rows.Select(row=>row with {Fields=null}).ToArray()}};
+                if(result.Outcome==PurchaseRequestQueryOutcome.Success) DocumentDataProjection.Stamp(context,path);
             }
             return Response(context,result);
         });
@@ -87,6 +88,7 @@ public static class PurchaseRequestEndpoints
             if (grant.CanAddLines) grant = UnavailablePurchaseRequestCommandAccess.State;
             if (result.Value.Document.StatusId != 1 || result.Value.Document.IsLocked is true)
                 grant = grant with { CanSave = false, CanSubmit = false };
+            DocumentDataProjection.Stamp(context,path);
             return Response(context, result with { Value = result.Value with { CommandAccess = grant,SourceFields=fullFields?result.Value.SourceFields:null } });
         });
 

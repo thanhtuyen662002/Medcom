@@ -87,6 +87,8 @@ class BackendContractVerifierTests(unittest.TestCase):
                     return 200, {"contractVersion": 2, "kind": kind, "header": {"fields": fields(h, "document.header", "rows[].fields")},
                                  "lines": {"fields": fields(l, "lines[].fields")}}
                 kind = next(k for k, (url, _, _) in API.MODULES.items() if parsed.path.startswith(url))
+                self.data_projection = "full"
+                self.full_data_path = parsed.path
                 _, h, l = API.MODULES[kind]
                 header = {"f" + str(n): "PRIVATE_FIELD_SENTINEL" if n == 0 else None for n in range(h)}
                 if parsed.path.endswith("/detail"):
@@ -114,6 +116,16 @@ class BackendContractVerifierTests(unittest.TestCase):
         with self.assertRaisesRegex(API.Failure, "query_contract_mismatch"):
             API.verify_module(client, "purchase-orders")
         self.assertEqual("/api/documents/query-contract?kind=purchase-orders", client.path)
+
+
+    def test_missing_summary_and_wrong_route_projection_cannot_claim_full_data(self):
+        path = "/api/v2/documents/purchase-orders"
+        for projection, route in [(None, None), ("summary", path), ("full", "/api/documents/purchase-orders"),
+                                  ("full", "/api/v2/documents/inbound-requests")]:
+            observation = type("Observation", (), {"data_projection": projection, "full_data_path": route})()
+            with self.subTest(projection=projection, route=route), self.assertRaisesRegex(API.Failure, "full_data_projection_not_observed"):
+                API.require_full_projection(observation, path)
+        API.require_full_projection(type("Observation", (), {"data_projection": "full", "full_data_path": path})(), path)
 
 
 if __name__ == "__main__":

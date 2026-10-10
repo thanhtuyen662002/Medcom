@@ -1,13 +1,14 @@
 {
   "id": "I69",
   "base": "0be72ba70e4d8b7ba231eedfa8b4a4c200069a8b",
-  "ownerDirection": "2026-10-10 Asia/Saigon: continue ERP backend/API for separate FE integration",
-  "scope": "Typed v2 date/status filters and fixed server ordering for the three source-backed document list modules; permission-scoped query metadata, OpenAPI, consumer examples and actual HTTP/SQL-plan regressions.",
+  "ownerDirection": "2026-10-10 Asia/Saigon: continue ERP backend/API for separate FE integration; audit all existing APIs and ensure complete data for FE",
+  "scope": "Typed v2 date/status filters and fixed server ordering for the three source-backed document list modules; permission-scoped query metadata, OpenAPI, consumer examples and actual HTTP/SQL-plan regressions. Owner follow-up extends this same run to all 34 API/full-source-field reconciliation, explicit successful full/summary response headers, safe verifier and separate FE adoption evidence; no FE application mutation.",
   "limits": [
     "No separately-owned frontend mutation",
     "No business/SQL schema writes, runtime qualification, credential changes or production admission",
     "Preserve previous runs, merged PR #53, immutable claims and open unrelated Drafts",
     "All schedules stay OFF; no schedule administration"
   ],
-  "status": "ADMISSION_ONLY"
+  "status": "IMPLEMENTED_PENDING_FINAL_HEAD_CI_AND_INTEGRATION",
+  "integratedBase": "b91e76e82268ff2c46187c7d23dc7aed1a39f462"
 }

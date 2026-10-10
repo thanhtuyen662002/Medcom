@@ -99,6 +99,18 @@ internal static class ApiContractCatalog
                 || path.StartsWith("/api/v2/", StringComparison.Ordinal) || path.StartsWith("/api/purchase-requests", StringComparison.Ordinal)))
                 foreach (var header in new[] { "X-Medcom-Session-Scope", "X-Medcom-Read-Scope" })
                     responseHeaders[header] = new JsonObject { ["description"] = "Opaque current scope of a successful authorized read; invalidate stale data when it changes.", ["schema"] = String() };
+            if(method=="get" && DocumentDataProjection.FullPath(path) is {} fullPath)
+            {
+                var projection=path==fullPath?"full":"summary";
+                operation["x-medcom-data-projection"]=projection;
+                operation["x-medcom-full-data-path"]=fullPath;
+                responseHeaders[DocumentDataProjection.Header]=new JsonObject
+                { ["description"]="Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                    ["schema"]=new JsonObject { ["type"]="string",["const"]=projection } };
+                responseHeaders[DocumentDataProjection.PathHeader]=new JsonObject
+                { ["description"]="Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                    ["schema"]=new JsonObject { ["type"]="string",["const"]=fullPath } };
+            }
             responses[success.ToString(System.Globalization.CultureInfo.InvariantCulture)]!["headers"] = responseHeaders;
             if (capability is not null) operation["x-medcom-capability"] = capability;
             if (parameters is not null) operation["parameters"] = parameters;

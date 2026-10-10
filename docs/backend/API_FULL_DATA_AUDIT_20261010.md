@@ -1,0 +1,38 @@
+# Existing API data audit — 10 October 2026
+
+The current backend has **34 registered operations**. Six v2 reads expose all **116 source columns** in the three implemented document modules. Six original reads intentionally return the compatible summary/command projection. Eight purchase/inbound business facade operations have default unavailable providers. The remaining fourteen operations return their specific identity, scope, reference, metadata or health contracts. This is not a claim that every ERP API or business command is complete.
+
+Evidence: executable `src/backend/Medcom.Api/ApiContractCatalog.cs`, generated `medcom-openapi.json`, actual-host route reconciliation in `tests/backend/Medcom.Api.Tests/ApiContractCatalogTests.cs`, and the complete 34-operation [audit register](api-data-audit-20261010.json). `tools/backend/audit_api_data.py` independently joins source inventories, field mappings and every required OpenAPI JSON path; CI runs its omission/nullability/type/projection regressions. Current source provenance remains `inventories/source/20261002/source-set.json` and the exact full member in `extraction-integrity.json`; the earlier approved archive identities are not equated with this technical round.
+
+## Complete source data routes
+
+| Kind | List / detail | Full header / line fields | Payload locations |
+| --- | --- | --- | --- |
+| Purchase orders | `/api/v2/documents/purchase-orders` and `/detail?documentId=...` | 19 / 12 | `rows[].purchaseOrderHeader`; `document.purchaseOrderHeader`; `purchaseOrderLines[].fields` |
+| Inbound requests | `/api/v2/documents/inbound-requests` and `/detail?documentId=...` | 37 / 25 | `rows[].inboundRequestHeader`; `document.inboundRequestHeader`; `inboundRequestLines[].fields` |
+| Purchase requests | `/api/v2/purchase-requests` and `/detail?documentId=...` | 14 / 9 | `data.rows[].fields`; `data.sourceFields.header`; `data.sourceFields.lines[]` |
+
+Each column, SQL type, nullability and exact JSON path is in [document-field-contract.json](document-field-contract.json). Source objects: `dbo.AP_OrderTbl / AP_OrderDetailTbl`, `dbo.IV_InboundRequestTbl / IV_InboundRequestDetailsTbl`, `dbo.AP_PurchaseRequestTbl / AP_PurchaseRequestDetailTbl`, in `inventories/source/20261002/table-*.json`. Actual HTTP and real SQL-reader projection tests retain nullable properties, Unicode, zero/negative values, decimal strings, finite floats and SQL datetimes with milliseconds without an inferred timezone. Missing required full source objects return 503; they never silently become a successful summary. Evidence: `DocumentSourceFieldReader.cs`, `SqlDocumentReader.cs`, `PurchaseRequests/SqlPurchaseRequestQueries.cs`, `DocumentFullFieldTests.cs`, `DocumentDataProjectionTests.cs`.
+
+Successful document reads now include `X-Medcom-Data-Projection: full|summary` and `X-Medcom-Full-Data-Path` with the fixed corresponding v2 route. The headers include no query, identifier, row or authority value. Failed/denied reads do not advertise a full projection. The original response bodies retain their current wire shape. Header constants, projection distinctions and full routes are in the executable OpenAPI. Evidence: `src/backend/Medcom.Api/DocumentDataProjection.cs`, both document endpoint files and the 12-route HTTPS regressions.
+
+Full fields do not mean an unbounded database export. Follow `hasMore` on the lists and purchase-order/inbound line pages; maximum page is 1,000, document page size is 100, purchase-list page size is 50. Purchase detail returns its entire accepted aggregate up to 500 lines; a larger aggregate returns unavailable instead of a truncated success. This upper bound remains an explicit full-read gap for larger purchase documents. Do not display an unavailable response as an empty document. Current user/company/menu/group/branch authorization still applies. Evidence: `DocumentEndpoints.cs`, `PurchaseRequestQueryRules`, `PurchaseRequestCommandRules.MaxLines`, `SqlPurchaseRequestQueries.DetailsText`, and `PurchaseRequestQueryTests.cs`; filter/order contract: [DOCUMENT_QUERY_INTEGRATION_20261010.md](DOCUMENT_QUERY_INTEGRATION_20261010.md).
+
+## Why the current FE still sees a summary
+
+Read-only inspection of FE source at integrated main `b91e76e82268ff2c46187c7d23dc7aed1a39f462` / PR #126 shows these consumer gaps:
+
+- `apps/medcom-sites/lib/erp/api.ts` calls `api/documents/${kind}` and its original detail route. `purchase-request-api.ts` calls the original purchase list/detail routes. These paths intentionally omit the additional full source objects.
+- `contracts.ts` and `purchase-request-api.ts` parse the original schemas. Adopting a v2 URL also requires the complete v2 schema; copying the old parser would discard additional nested fields or reject the new response.
+- `proxy-policy.ts` admits the original routes but has no six-v2/field/query contract entries. `proxy.ts` forwards scope markers only for its original workspace/document route pattern and does not forward the new projection headers. The BFF owner must admit the exact GET paths and forward validated scope/projection headers before the browser can use the full contract.
+- `erp-client.ts` catches document-list failures and returns an empty page with `hasMore=false`; detail failures become null. The FE owner must preserve an explicit unavailable/error state so an API/permission failure does not appear to be an empty SQL result.
+
+These are source observations, not a rendered-browser or authenticated target acceptance. No FE files were changed. The separate FE owner should admit all six v2 paths through its BFF, adopt the generated schemas and full payload locations, retain valid query/paging/scope parameters, and preserve actual failure outcomes. Same-origin example: `/api/erp/api/v2/documents/purchase-orders?page=1&pageSize=50`. Do not replace server-derived branch authority or missing labels with hardcoded assumptions. Evidence: the six FE paths above at the pinned source head; integration sequence: [FE_INTEGRATION_20261010.md](FE_INTEGRATION_20261010.md).
+
+## Exact limits of this verification
+
+Build and actual HTTPS/SQL-reader tests passed with **3,130 source-free backend cases**; 18 new projection/partial-payload/routing cases cover all 12 original/v2 document routes and incomplete purchase providers. Five independent audit cases cover omitted/duplicate fields, optional full headers, lost nullability/type and a false full projection. The complete 24 historical reference suites passed without changing their bytes/pins. The safe verifier has nine regressions and rejects a missing/summary/wrong-route projection before accepting full data. Evidence: `docs/execution/I69_VALIDATION_20261010.json`; final hosted receipts remain attached to PR #125 after the final head is checked.
+
+`MEDCOM_TEST_SQL`, `MEDCOM_TEST_USERNAME` and `MEDCOM_TEST_PASSWORD` are absent in this process. Actual authorized SQL rows, nonempty deployed full-read compatibility, target load and FE adoption are **NOT_RUN / UNKNOWN**. The bounded HTTPS verifier can check those reads when real ERP credentials are supplied privately to the operator environment; it exports no identifiers, row values, credentials, cookies or scope tokens. No business write, production SQL/schema/configuration change, command activation, deployment operation or schedule administration was performed by this audit. Do not infer deployed adoption from a source test or GitHub merge.
+
+The canonical backend goal #45 stays open for the larger purchase aggregate read gap, unavailable business providers, reports/exports, other ERP modules and real target acceptance. All required scope remains in `docs/goals/PRODUCTION_ERP_GOAL.md`.
