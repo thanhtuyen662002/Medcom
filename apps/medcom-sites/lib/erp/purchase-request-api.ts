@@ -12,8 +12,49 @@ const header=z.object({purchaseDate:wallClock,purposeId:z.number().int().nullabl
 const values=z.object({itemId:id,budget:decimal.nullable(),timeRequired:text.nullable(),quantity:decimal,unitPrice:decimal,totalPrice:decimal.nullable(),model:text.nullable()}).strict();
 const document=z.object({purchaseRequestId:id,branchId:id,header,statusId:z.number().int(),isLocked:z.boolean().nullable(),
  lines:z.array(z.object({lineId:id,values}).strict()).max(500)}).strict();
+export const purchaseRequestHeaderFieldsSchema = z.object({
+  purchaseRequestId: id,
+  purchaseDate: wallClock,
+  purposeId: z.number().int().nullable(),
+  personSuggest: text,
+  department: text,
+  purposeDescOrClient: text.nullable(),
+  price: decimal.nullable(),
+  notes: text.nullable(),
+  statusId: z.number().int(),
+  isLock: z.boolean().nullable(),
+  currencyId: id,
+  objectId: id,
+  rateExchange: z.number().finite(),
+  branchId: id,
+}).strict();
+
+export const purchaseRequestLineFieldsSchema = z.object({
+  userAutoId: id,
+  itemId: id,
+  budget: decimal.nullable(),
+  timeRequired: text.nullable(),
+  quantity: decimal,
+  unitPrice: decimal,
+  totalPrice: decimal.nullable(),
+  model: text.nullable(),
+  purchaseRequestId: text.nullable(),
+}).strict();
+
+export const purchaseRequestSourceFieldsSchema = z.object({
+  header: purchaseRequestHeaderFieldsSchema,
+  lines: z.array(purchaseRequestLineFieldsSchema).max(500),
+}).strict();
+
 const commandAccess=z.object({canSave:z.boolean(),canSubmit:z.boolean(),canLookup:z.boolean(),canAddLines:z.literal(false),reason:z.string().min(1)}).strict();
-const snapshot=z.object({document,itemDisplayContext:itemDisplayContextSchema.nullable().optional(),statusName:z.string().max(50).nullable().optional(),commandAccess:commandAccess.nullable().optional(),stateToken:z.string().regex(/^prs1\.[a-f0-9]{64}$/)}).strict().superRefine((value,context)=>{
+const snapshot=z.object({
+  document,
+  itemDisplayContext:itemDisplayContextSchema.nullable().optional(),
+  statusName:z.string().max(50).nullable().optional(),
+  commandAccess:commandAccess.nullable().optional(),
+  sourceFields:purchaseRequestSourceFieldsSchema.optional(),
+  stateToken:z.string().regex(/^prs1\.[a-f0-9]{64}$/)
+}).strict().superRefine((value,context)=>{
  if(new Set(value.document.lines.map(line=>line.lineId)).size!==value.document.lines.length)context.addIssue({code:z.ZodIssueCode.custom,message:"Duplicate source line identity"});
  try{bindItemDisplayContext(value.itemDisplayContext,{kind:"purchase-requests",documentId:value.document.purchaseRequestId,
   branchId:value.document.branchId,stateToken:value.stateToken,statusId:value.document.statusId,isLocked:value.document.isLocked,page:null,pageSize:null},
@@ -25,7 +66,17 @@ const snapshot=z.object({document,itemDisplayContext:itemDisplayContextSchema.nu
  value.document.lines.map(line=>({lineId:line.lineId,itemId:line.values.itemId})))}));
 const workspace=z.object({branchIds:z.array(id).min(1).max(200),writeAvailable:z.literal(false),writeReason:z.literal("numbering_journal_runtime_unqualified"),
  lookups:z.array(z.object({kind:z.enum(["branches","items","objects","purposes","currencies"]),available:z.boolean(),reason:z.string().nullable(),evidence:z.string()}).strict()).max(5)}).strict();
-const list=z.object({rows:z.array(z.object({documentId:id,purchaseDate:wallClock,branchId:id,personSuggest:text,department:text,statusId:z.number().int(),statusName:z.string().max(50).nullable().optional(),isLocked:z.boolean().nullable()}).strict()).max(50),
+const list=z.object({rows:z.array(z.object({
+  documentId:id,
+  purchaseDate:wallClock,
+  branchId:id,
+  personSuggest:text,
+  department:text,
+  statusId:z.number().int(),
+  statusName:z.string().max(50).nullable().optional(),
+  isLocked:z.boolean().nullable(),
+  fields:purchaseRequestHeaderFieldsSchema.optional()
+ }).strict()).max(50),
  page:z.number().int().min(1).max(1000),pageSize:z.number().int().min(1).max(50),hasMore:z.boolean()}).strict();
 // These read-only choices preserve the qualified source values. In particular,
 // NULL purpose names and finite zero/negative currency rates are not defaults.
@@ -54,6 +105,9 @@ const envelope=<S extends z.ZodTypeAny>(data:S)=>z.object({scopeKey:scope,data})
 export type PurchaseReadback=Omit<z.infer<typeof snapshot>,"itemDisplayContext">&{itemDisplayContext?:import("./item-display").ItemDisplayContext};
 export type PurchaseWorkspace=z.infer<typeof workspace>;
 export type PurchasePage=z.infer<typeof list>;
+export type PurchaseRequestHeaderFields=z.infer<typeof purchaseRequestHeaderFieldsSchema>;
+export type PurchaseRequestLineFields=z.infer<typeof purchaseRequestLineFieldsSchema>;
+export type PurchaseRequestSourceFields=z.infer<typeof purchaseRequestSourceFieldsSchema>;
 function assertScope(actual:string,expected:string){if(actual!==expected)throw new ApiError(409,"purchase_scope_changed");}
 export const getPurchaseWorkspace=(signal?:AbortSignal)=>request("api/purchase-requests/workspace",envelope(workspace),{signal});
 export async function getPurchaseList(scopeKey:string,page:number,search:string,branchId:string,signal?:AbortSignal){

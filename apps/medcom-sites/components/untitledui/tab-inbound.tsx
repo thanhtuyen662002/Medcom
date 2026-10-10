@@ -22,12 +22,24 @@ import { UntitledButton } from "./button";
 import { UntitledBottomSheet } from "./bottom-sheet";
 import { DocumentCardSkeleton, DetailLinesSkeleton } from "./skeleton";
 import { erpClient } from "@/lib/erp/erp-client";
-import type { DocumentDetail } from "@/lib/erp/contracts";
+import type { DocumentDetail, InboundRequestHeader, InboundRequestLineFields } from "@/lib/erp/contracts";
+import { errorMessage } from "@/lib/erp/api";
+
+function formatVND(value?: string | null, currency = "VND"): string {
+  if (!value) return "0 " + currency;
+  const parts = value.split(".");
+  const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return parts.length > 1 ? `${intPart},${parts[1]} ${currency}` : `${intPart} ${currency}`;
+}
 
 export interface InboundReceipt {
   id: string;
   code: string;
   poCode: string;
+  invoiceNo?: string;
+  orderNumber?: string;
+  departurePoint?: string;
+  destinationPoint?: string;
   supplier: string;
   receivedDate: string;
   inspector: string;
@@ -37,6 +49,7 @@ export interface InboundReceipt {
   batchNo: string;
   expiryDate: string;
   totalQuantity: number;
+  header?: InboundRequestHeader;
   items: {
     lineId: string;
     itemId: string;
@@ -47,6 +60,12 @@ export interface InboundReceipt {
     receivedQty: string;
     unit: string;
     storageBin: string;
+    hangSX?: string | null;
+    unitPrice?: string;
+    amount?: string;
+    checkerNote?: string | null;
+    testStatus?: string | null;
+    fields?: InboundRequestLineFields;
   }[];
 }
 
@@ -65,9 +84,11 @@ export function TabInbound({
 }: TabInboundProps) {
   const [inbounds, setInbounds] = useState<InboundReceipt[]>([]);
   const [search, setSearch] = useState("");
+  const [stageFilter, setStageFilter] = useState<string>("all");
   const [activeItem, setActiveItem] = useState<InboundReceipt | null>(null);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const lastFetchedRef = useRef<number>(0);
 
@@ -81,6 +102,7 @@ export function TabInbound({
       }
 
       try {
+        setError(null);
         const pageData = await erpClient.getDocumentsList(
           "inbound-requests",
           1,
@@ -90,24 +112,33 @@ export function TabInbound({
 
         if (pageData && pageData.rows) {
           const mapped: InboundReceipt[] = pageData.rows.map((r) => {
+            const h = r.inboundRequestHeader;
             let stage: InboundReceipt["stage"] = "receiving";
             if (r.statusId === 2) stage = "stored";
             else if (r.statusId === 1) stage = "inspecting";
             else if (r.statusId === 3 || r.statusId === -1) stage = "rejected";
 
+            const poRef = h?.orderNumber || `PO-${r.documentId}`;
+            const supplierName = h?.objectId ? `NCC: ${h.objectId}` : "Nhà cung ứng Dược phẩm ERP";
+
             return {
               id: r.documentId,
               code: r.documentId,
-              poCode: `PO-REF-${r.documentId}`,
-              supplier: "Nhà cung ứng Dược phẩm ERP",
-              receivedDate: r.documentDate || "—",
-              inspector: "KTV. Kiểm soát Kho Dược",
+              poCode: poRef,
+              orderNumber: h?.orderNumber,
+              invoiceNo: h?.invoiceNo,
+              departurePoint: h?.departurePoint,
+              destinationPoint: h?.destinationPoint,
+              supplier: supplierName,
+              receivedDate: h?.documentDate ? h.documentDate.slice(0, 10) : (r.documentDate || "—"),
+              inspector: h?.qrPrintType ? `KTV. ${h.qrPrintType}` : "KTV. Kiểm soát Kho Dược",
               temperature: "22.5 °C (Chuẩn mát GSP)",
               tempStatus: "pass",
               stage,
-              batchNo: `LÔ-${r.documentId}`,
+              batchNo: h?.declarationNumber ? `TK: ${h.declarationNumber}` : `LÔ-${r.documentId}`,
               expiryDate: "Theo chứng từ",
               totalQuantity: 0,
+              header: h,
               items: [],
             };
           });
@@ -120,7 +151,7 @@ export function TabInbound({
           onCountChange?.(0);
         }
       } catch (e) {
-        console.warn("Could not load remote inbounds:", e);
+        setError(errorMessage(e));
       } finally {
         setLoading(false);
         setIsRefreshing(false);
@@ -151,22 +182,38 @@ export function TabInbound({
     try {
       const detail = await erpClient.getDocumentDetail("inbound-requests", item.id);
       if (detail && detail.inboundRequestLines) {
-        const lines = detail.inboundRequestLines.map((l, idx) => ({
-          lineId: l.lineId || `line-${idx}`,
-          itemId: l.itemId,
-          name: `Dược phẩm [${l.itemId}]`,
-          batch: item.batchNo,
-          exp: item.expiryDate,
-          orderedQty: l.setQuantityByDocument || "—",
-          receivedQty: l.setQuantityByReal || l.setQuantityByDocument || "—",
-          unit: "Hộp/Đơn vị",
-          storageBin: `Khu vực kho GSP · Ô ${idx + 1}`,
-        }));
+        const header = detail.document.inboundRequestHeader || item.header;
+        const lines = detail.inboundRequestLines.map((l, idx) => {
+          const f = l.fields;
+          const lot = f?.lotNumberByReal || f?.lotNumberByDocument || item.batchNo;
+          const exp = f?.expireDateByReal ? f.expireDateByReal.slice(0, 10) : f?.expireDateByDocument ? f.expireDateByDocument.slice(0, 10) : item.expiryDate;
+          const unitPriceStr = f?.unitPrice ? formatVND(f.unitPrice, "VND") : undefined;
+          const amountStr = f?.amount ? formatVND(f.amount, "VND") : undefined;
+
+          return {
+            lineId: l.lineId || `line-${idx}`,
+            itemId: l.itemId,
+            name: `Dược phẩm [${l.itemId}]`,
+            batch: lot,
+            exp,
+            orderedQty: f?.setQuantityByDocument || l.setQuantityByDocument || "—",
+            receivedQty: f?.setQuantityByReal || l.setQuantityByReal || f?.setQuantityByDocument || "—",
+            unit: f?.unit2 || "Hộp/Đơn vị",
+            storageBin: `Khu vực kho GSP · Ô ${idx + 1}`,
+            hangSX: f?.hangSX,
+            unitPrice: unitPriceStr,
+            amount: amountStr,
+            checkerNote: f?.checkerNote,
+            testStatus: f?.testStatus,
+            fields: f,
+          };
+        });
 
         setActiveItem((prev) =>
           prev
             ? {
                 ...prev,
+                header,
                 totalQuantity: lines.length,
                 items: lines,
               }
@@ -227,29 +274,88 @@ export function TabInbound({
     }
   };
 
+  const filtered = inbounds.filter((item) => {
+    if (stageFilter !== "all" && item.stage !== stageFilter) return false;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      const codeMatch = item.id.toLowerCase().includes(q) || (item.orderNumber && item.orderNumber.toLowerCase().includes(q));
+      const suppMatch = item.supplier.toLowerCase().includes(q);
+      const inspectorMatch = item.inspector.toLowerCase().includes(q);
+      const invoiceMatch = item.header?.invoiceNo?.toLowerCase().includes(q);
+      return codeMatch || suppMatch || inspectorMatch || invoiceMatch;
+    }
+    return true;
+  });
+
   return (
     <div className="space-y-4 pb-24 animate-uui-fade-in">
-      {/* Header Info Banner */}
-      <div className="rounded-2xl bg-gradient-to-r from-emerald-700 to-teal-800 text-white p-4 shadow-md">
-        <div className="flex items-center justify-between gap-3">
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-1.5 text-xs text-emerald-200">
-              <ShieldCheck className="size-4" />
-              <span>Tiêu chuẩn GSP & ISO 9001:2026</span>
-            </div>
-            <h3 className="text-base font-bold">Quy trình Kiểm nhập Kho Dược</h3>
-            <p className="text-xs text-emerald-100">
-              Kiểm tra 100% điều kiện nhiệt độ xe lạnh và niêm phong chứng từ.
-            </p>
+      {/* Search & Actions Bar */}
+      <div className="space-y-2.5">
+        <div className="flex gap-2 items-center">
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
+            <input
+              type="text"
+              placeholder="Tìm theo số phiếu nhập, số PO, nhà cung cấp..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-2xs"
+            />
           </div>
-          <UntitledButton
-            variant="secondary-gray"
-            size="sm"
-            onClick={onOpenNewInbound || (() => alert("Mở form lập biên bản nhập kho..."))}
-            iconLeading={<Plus className="size-3.5" />}
+
+          <button
+            type="button"
+            onClick={() => loadInbounds(false)}
+            disabled={isRefreshing}
+            className="p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 transition-colors shrink-0 disabled:opacity-50"
+            title="Làm mới danh sách"
           >
-            Tạo phiếu
+            <RefreshCw className={`size-4 ${isRefreshing ? "animate-spin text-purple-600" : ""}`} />
+          </button>
+
+          <UntitledButton
+            variant="primary"
+            size="md"
+            onClick={onOpenNewInbound || (() => alert("Mở form lập Yêu cầu nhập kho..."))}
+            iconLeading={<Plus className="size-4" />}
+          >
+            Tạo mới
           </UntitledButton>
+        </div>
+
+        {/* Filter Chips Bar */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+          {[
+            { id: "all", label: "Tất cả", count: inbounds.length },
+            { id: "receiving", label: "Cổng kho", count: inbounds.filter((i) => i.stage === "receiving").length },
+            { id: "inspecting", label: "Kiểm nghiệm GSP", count: inbounds.filter((i) => i.stage === "inspecting").length },
+            { id: "stored", label: "Đã nhập kệ", count: inbounds.filter((i) => i.stage === "stored").length },
+          ].map((chip) => {
+            const isSelected = stageFilter === chip.id;
+            return (
+              <button
+                key={chip.id}
+                type="button"
+                onClick={() => setStageFilter(chip.id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 shrink-0 ${
+                  isSelected
+                    ? "bg-purple-600 text-white shadow-xs"
+                    : "bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 border border-neutral-200/80 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                }`}
+              >
+                <span>{chip.label}</span>
+                <span
+                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                    isSelected
+                      ? "bg-purple-700 text-white"
+                      : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400"
+                  }`}
+                >
+                  {chip.count}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -282,35 +388,23 @@ export function TabInbound({
         </div>
       </div>
 
-      {/* Search Input and Refresh Button */}
-      <div className="flex gap-2 items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
-          <input
-            type="text"
-            placeholder="Tìm theo số phiếu nhập, số PO, nhà cung cấp..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-2xs"
-          />
-        </div>
-
-        <button
-          type="button"
-          onClick={() => loadInbounds(false)}
-          disabled={isRefreshing}
-          className="p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 transition-colors shrink-0 disabled:opacity-50"
-          title="Làm mới danh sách"
-        >
-          <RefreshCw className={`size-4 ${isRefreshing ? "animate-spin text-purple-600" : ""}`} />
-        </button>
-      </div>
-
       {/* Inbound List */}
       <div className="space-y-3">
-        {loading && inbounds.length === 0 ? (
+        {error ? (
+          <div className="rounded-2xl border border-red-200 dark:border-red-900/60 bg-red-50/50 dark:bg-red-950/30 p-6 text-center space-y-3">
+            <p className="text-sm font-semibold text-red-700 dark:text-red-400">{error}</p>
+            <UntitledButton
+              variant="secondary-gray"
+              size="sm"
+              onClick={() => loadInbounds(false)}
+              iconLeading={<RefreshCw className="size-3.5" />}
+            >
+              Thử lại
+            </UntitledButton>
+          </div>
+        ) : loading && inbounds.length === 0 ? (
           <DocumentCardSkeleton count={4} />
-        ) : inbounds.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-8 text-center space-y-3">
             <PackageCheck className="size-10 text-neutral-400 mx-auto stroke-[1.4]" />
             <div>
@@ -318,7 +412,7 @@ export function TabInbound({
                 Không có phiếu nhập kho nào
               </p>
               <p className="text-xs text-neutral-400 mt-0.5">
-                Chưa có phiếu nhập nào được ghi nhận cho chi nhánh này.
+                Chưa có phiếu nhập nào khớp với bộ lọc hoặc tìm kiếm.
               </p>
             </div>
             <UntitledButton
@@ -331,7 +425,7 @@ export function TabInbound({
             </UntitledButton>
           </div>
         ) : (
-          inbounds.map((item) => (
+          filtered.map((item) => (
             <div
               key={item.id}
               onClick={() => handleOpenDetail(item)}
@@ -431,6 +525,64 @@ export function TabInbound({
               </div>
             </div>
 
+            {/* Header Attributes */}
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
+                <span className="text-neutral-500">Mã yêu cầu nhập:</span>
+                <span className="font-mono font-bold text-neutral-900 dark:text-white">
+                  {activeItem.code}
+                </span>
+              </div>
+              {activeItem.orderNumber && (
+                <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
+                  <span className="text-neutral-500">Mã đơn mua hàng PO:</span>
+                  <span className="font-semibold text-neutral-900 dark:text-white">
+                    {activeItem.orderNumber}
+                  </span>
+                </div>
+              )}
+              {activeItem.invoiceNo && (
+                <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
+                  <span className="text-neutral-500">Số hóa đơn VAT:</span>
+                  <span className="font-semibold text-neutral-900 dark:text-white">
+                    {activeItem.invoiceNo}
+                  </span>
+                </div>
+              )}
+              {activeItem.departurePoint && activeItem.destinationPoint && (
+                <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
+                  <span className="text-neutral-500">Tuyến vận chuyển:</span>
+                  <span className="font-semibold text-neutral-900 dark:text-white text-right max-w-[65%]">
+                    {activeItem.departurePoint} → {activeItem.destinationPoint}
+                  </span>
+                </div>
+              )}
+              {activeItem.header?.totalPalletQuantityByDocument && (
+                <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
+                  <span className="text-neutral-500">Tổng Pallet (CT / Thực tế):</span>
+                  <span className="font-semibold text-neutral-900 dark:text-white">
+                    {activeItem.header.totalPalletQuantityByDocument} / {activeItem.header.totalPalletQuantityByReal || "—"} pallet
+                  </span>
+                </div>
+              )}
+              {activeItem.header?.totalBarrelQuantityByDocument && (
+                <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
+                  <span className="text-neutral-500">Tổng thùng (CT / Thực tế):</span>
+                  <span className="font-semibold text-neutral-900 dark:text-white">
+                    {activeItem.header.totalBarrelQuantityByDocument} / {activeItem.header.totalBarrelQuantityByReal || "—"} thùng
+                  </span>
+                </div>
+              )}
+              {activeItem.header?.notes && (
+                <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
+                  <span className="text-neutral-500">Ghi chú:</span>
+                  <span className="font-semibold text-neutral-900 dark:text-white text-right max-w-[65%]">
+                    {activeItem.header.notes}
+                  </span>
+                </div>
+              )}
+            </div>
+
             {/* Checklist */}
             <div className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 p-3.5 space-y-2">
               <h5 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
@@ -455,7 +607,7 @@ export function TabInbound({
             {/* Items */}
             <div>
               <h5 className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2">
-                Hàng hóa nhập kho ({activeItem.items?.length ?? 0})
+                Hàng hóa nhập kho ({activeItem.items?.length ?? 0} mặt hàng)
               </h5>
               <div className="space-y-2">
                 {detailLoading ? (
@@ -468,28 +620,48 @@ export function TabInbound({
                   activeItem.items.map((line, i) => (
                     <div
                       key={line.lineId || i}
-                      className="p-3 rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-1.5"
+                      className="p-3.5 rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-1.5"
                     >
                       <div className="flex justify-between items-start gap-2">
                         <div>
                           <span className="text-[10px] font-mono text-neutral-400 block">
-                            #{i + 1} · {line.itemId}
+                            #{i + 1} · [{line.itemId}]
                           </span>
                           <h6 className="text-xs font-bold text-neutral-900 dark:text-white">
                             {line.name}
                           </h6>
+                          {line.hangSX && (
+                            <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                              Hãng SX: {line.hangSX}
+                            </span>
+                          )}
                         </div>
                         <span className="text-xs font-extrabold text-emerald-600">
                           {line.receivedQty} {line.unit}
                         </span>
                       </div>
                       <div className="flex justify-between text-[11px] text-neutral-500 pt-1 border-t border-neutral-100 dark:border-neutral-800">
-                        <span>Số lượng theo CT: {line.orderedQty}</span>
+                        <span>Lô: {line.batch}</span>
+                        <span>HSD: {line.exp}</span>
+                      </div>
+                      <div className="flex justify-between text-[11px] text-neutral-500">
+                        <span>Theo CT: {line.orderedQty}</span>
                         <span>Thực nhận: {line.receivedQty}</span>
                       </div>
+                      {line.unitPrice && (
+                        <div className="flex justify-between text-[11px] text-neutral-500">
+                          <span>Đơn giá: {line.unitPrice}</span>
+                          <span className="font-semibold text-neutral-900 dark:text-white">Thành tiền: {line.amount}</span>
+                        </div>
+                      )}
                       <div className="text-[11px] text-purple-600 dark:text-purple-400 font-medium">
                         Vị trí lưu: {line.storageBin}
                       </div>
+                      {line.checkerNote && (
+                        <p className="text-[11px] text-neutral-400 italic">
+                          Ghi chú KTV: {line.checkerNote}
+                        </p>
+                      )}
                     </div>
                   ))
                 )}

@@ -13,6 +13,7 @@ import { TabSettings } from "./tab-settings";
 import { LoginScreen } from "./login-screen";
 import { QuickCreateModal } from "./quick-create-modal";
 import { UntitledBottomSheet } from "./bottom-sheet";
+import { SidebarDrawer } from "./sidebar-drawer";
 import { REAL_BRANCHES, erpClient, type LoginResult } from "@/lib/erp/erp-client";
 
 const APP_BRANCHES: BranchOption[] = REAL_BRANCHES.map((b) => ({
@@ -29,6 +30,7 @@ export function MedcomApp() {
   const [activeTab, setActiveTab] = useState<NavTabId>("home");
   const [currentBranch, setCurrentBranch] = useState("CN01");
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Real document counts for headers, badges, and dashboard
   const [ordersCount, setOrdersCount] = useState(0);
@@ -56,14 +58,34 @@ export function MedcomApp() {
       }
 
       const savedDark = localStorage.getItem("medcom.theme.dark");
+      let initialDark = false;
       if (savedDark !== null) {
-        setIsDarkMode(savedDark === "true");
+        initialDark = savedDark === "true";
       } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-        setIsDarkMode(true);
+        initialDark = true;
+      }
+      setIsDarkMode(initialDark);
+      if (initialDark) {
+        document.documentElement.classList.add("dark");
+        document.body.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+        document.body.classList.remove("dark");
       }
     } catch {}
     setIsAuthLoaded(true);
   }, []);
+
+  // Synchronize documentElement & body class with isDarkMode
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+      document.body.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      document.body.classList.remove("dark");
+    }
+  }, [isDarkMode]);
 
   // Fetch real document counts whenever user is logged in and branch changes
   const refreshGlobalCounts = useCallback(async (branch: string) => {
@@ -207,7 +229,7 @@ export function MedcomApp() {
             userRole={currentUser.role}
             unreadNotifications={0}
             onNotificationsClick={() => setNotificationsOpen(true)}
-            onProfileClick={() => setActiveTab("settings")}
+            onProfileClick={() => setIsSidebarOpen(true)}
           />
         </div>
 
@@ -237,6 +259,7 @@ export function MedcomApp() {
               currentBranch={currentBranch}
               isActive={activeTab === "orders"}
               onCountChange={setOrdersCount}
+              onOpenCreateModal={() => setQuickCreateOpen(true)}
             />
           </div>
 
@@ -258,7 +281,7 @@ export function MedcomApp() {
               currentBranch={currentBranch}
               isActive={activeTab === "inbound"}
               onCountChange={setInboundCount}
-              onOpenNewInbound={() => alert("Mở biểu mẫu tiếp nhận lô hàng mới...")}
+              onOpenNewInbound={() => setQuickCreateOpen(true)}
             />
           </div>
 
@@ -299,11 +322,33 @@ export function MedcomApp() {
           <UntitledBottomNav
             activeTab={activeTab}
             onTabChange={setActiveTab}
+            onOpenMenu={() => setIsSidebarOpen(true)}
             pendingOrdersCount={ordersCount}
             pendingPurchasesCount={purchasesCount}
             pendingInboundCount={inboundCount}
           />
         </div>
+
+        {/* Left Navigation Sidebar Drawer */}
+        <SidebarDrawer
+          open={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+          activeTab={activeTab}
+          onSelectTab={(tab) => {
+            setActiveTab(tab);
+            setIsSidebarOpen(false);
+          }}
+          userName={currentUser.displayName}
+          userRole={currentUser.role}
+          currentBranch={currentBranch}
+          branchName={APP_BRANCHES.find((b) => b.id === currentBranch)?.name}
+          isDarkMode={isDarkMode}
+          onToggleDarkMode={handleToggleDarkMode}
+          onLogout={handleLogout}
+          pendingOrdersCount={ordersCount}
+          pendingPurchasesCount={purchasesCount}
+          pendingInboundCount={inboundCount}
+        />
 
         {/* Quick Create PR Bottom Sheet */}
         <QuickCreateModal

@@ -112,6 +112,8 @@ export class ErpClientService {
 
   /**
    * Fetch Document list (Purchase Orders or Inbound Requests)
+   * Throws ApiError on non-200 or invalid responses so caller can distinguish
+   * errors from valid empty lists.
    */
   public async getDocumentsList(
     kind: DocumentKind,
@@ -119,17 +121,7 @@ export class ErpClientService {
     search: string = "",
     branchId: string = ""
   ): Promise<DocumentPage> {
-    try {
-      const remote = await apiGetDocuments(kind, page, search, branchId);
-      return remote;
-    } catch {
-      return {
-        rows: [],
-        page,
-        pageSize: 20,
-        hasMore: false,
-      };
-    }
+    return await apiGetDocuments(kind, page, search, branchId);
   }
 
   /**
@@ -138,13 +130,8 @@ export class ErpClientService {
   public async getDocumentDetail(
     kind: DocumentKind,
     documentId: string
-  ): Promise<DocumentDetail | null> {
-    try {
-      const remote = await apiGetDetail(kind, documentId, 1);
-      return remote;
-    } catch {
-      return null;
-    }
+  ): Promise<DocumentDetail> {
+    return await apiGetDetail(kind, documentId, 1);
   }
 
   /**
@@ -154,14 +141,10 @@ export class ErpClientService {
     page: number = 1,
     search: string = "",
     branchId: string = ""
-  ): Promise<{ list: PurchasePage; scopeKey: string } | null> {
-    try {
-      const ws = await getPurchaseWorkspace();
-      const list = await getPurchaseList(ws.scopeKey, page, search, branchId);
-      return { list, scopeKey: ws.scopeKey };
-    } catch {
-      return null;
-    }
+  ): Promise<{ list: PurchasePage; scopeKey: string }> {
+    const ws = await getPurchaseWorkspace();
+    const list = await getPurchaseList(ws.scopeKey, page, search, branchId);
+    return { list, scopeKey: ws.scopeKey };
   }
 
   /**
@@ -170,13 +153,8 @@ export class ErpClientService {
   public async getPurchaseRequestDetail(
     scopeKey: string,
     documentId: string
-  ): Promise<PurchaseReadback | null> {
-    try {
-      const detail = await getPurchaseDetail(scopeKey, documentId);
-      return detail;
-    } catch {
-      return null;
-    }
+  ): Promise<PurchaseReadback> {
+    return await getPurchaseDetail(scopeKey, documentId);
   }
 
   /**
