@@ -4,7 +4,7 @@
   "admission_head": "63716bd7c5e3d504d1c6d522b0ba25319a5cea25",
   "pr": 125,
   "committed_file_sha256": {
-    ".gitattributes": "ff91b18e62217e3fc626b5559a0df369516c6fa208a9ba5b4d93f963b7d9e918",
+    ".gitattributes": "769474c128af715aa976eef9089f406482e6ef324a4c7d5a119d636bcb8e819e",
     "docs/PROJECT_STATE.yaml": "57e5404636ff47390f1bd1b8478e5c937d048480e203644aafde85ff1623c77c",
     "docs/backend/DOCUMENT_QUERY_INTEGRATION_20261010.md": "60f6b4709e679a478f2722571a4445b4ac947cda0fc738a972a58a61e18b9e60",
     "docs/backend/FE_INTEGRATION_20261010.md": "66a51cc4134f697e85debe4880a64fa94e9db6546b9e7dd84f28561b0f25b6b2",
@@ -35,7 +35,11 @@
     "tests/deploy/test_railway_container.py": "f15a7953b86cf98e1c501c901f8ce14ec4aeceaccfc2fc27c16f8f8bc7dbb681",
     "tools/backend/run_preparation_checks.py": "34f716e8123d45120286867eb349b747f7e465faa59b26443b992403766e40b7",
     "tools/backend/run_reference_check.py": "87e232b3fe385ff5cc2e8d0d216a5ff60e4b8a13ec20e63b7c91020ad4e476ed",
-    "tools/backend/test_reference_runner.py": "d45c470784b47692ebd938a4a8a3591e4546d7366936f78a3dd0570633e1882a"
+    "tools/backend/test_reference_runner.py": "d45c470784b47692ebd938a4a8a3591e4546d7366936f78a3dd0570633e1882a",
+    "docs/erp/FILTER_CONFIGURATION_EVIDENCE.md": "87a9165f370e30294d69a409e81c918f1f2425c2eeeb86d534d68d79762a14ad",
+    "docs/erp/DAT_FILTER_QUERY_INVENTORY.md": "e14ed16146118556f11e4c30cabf10f6ae1795c4ccc53ee741054bb8b8037cc4",
+    "inventories/traceability/PHASE1_BOUND_CONTRACTS.md": "fd758158e2909a07d96ab0bf70afb6a445453dc118a6eab3fe43116f5b73252f",
+    "inventories/traceability/PHASE1_FILTER_CLOSURE_DELTA.md": "386a27eb711985bec82d490ee487cd18e99bb051519e7e9dbdb95f3f008de702"
   },
   "source_verification": {
     "identity": "owner-attachment-20261002",
@@ -98,7 +102,7 @@
     "source_scanner_tests": 48,
     "policy_guard_tests": 97,
     "api_verifier_tests": 8,
-    "preparation_reference_suites": "RUNNING_24_suites_with_preserved_historical_fixture_bytes",
+    "preparation_reference_suites": "PASS_22_unchanged_suites_from_prior_serial_run_plus_40_filter_and_3_runner_cases;full_24_suite_serial_rerun_RUNNING",
     "yaml_and_whitespace": "PASS",
     "local_deploy_suite": {
       "total": 20,
@@ -153,16 +157,17 @@
     "original_failures": [
       "Windows_direct_Python_shebang_launch",
       "Windows_cp1252_UTF8_JSON_decode",
-      "Windows_CRLF_reviewed_artifact_checksum_drift"
+      "Windows_CRLF_reviewed_artifact_checksum_drift",
+      "Windows_CRLF_four_filter_evidence_documents_checksum_drift"
     ],
-    "repair": "Separate reference process prepends the current Python interpreter to existing direct .py child scripts, preserves subprocess errors/options/arguments, uses process-only UTF8 and LF checkout attributes; all 124 preparation files match their original approved bytes.",
-    "current_result": "PASS_3_runner_regressions;complete_24_suite_recheck_RUNNING"
+    "repair": "Separate reference process prepends the current Python interpreter to existing direct .py child scripts, preserves subprocess errors/options/arguments, uses process-only UTF8 and LF checkout attributes; all 124 preparation files match their original approved bytes. Four hash-pinned filter evidence documents also retain exact LF source bytes; no register digest or fixture pin was rewritten.",
+    "current_result": "PASS_40_filter_cases_after_source_LF_checkout_plus_3_runner_regressions;full_24_suite_serial_rerun_RUNNING"
   },
   "reference_ci_repair": {
     "run": 38006761372,
     "head": "0612660c3d4eeb9690563225062d170d583a0a35",
     "failure": "Direct interpreter edits changed a checksum-pinned reviewed preparation artifact.",
     "repair": "Restore all four historical scripts to their exact preimage bytes; move adaptation to separate unpinned test runner. Preserve all review pins and assertions.",
-    "current_hosted_recheck": "PENDING_new_exact_head"
+    "current_hosted_recheck": "PASS_backend_38007410853_policy_windows_38007410954_container_38007410978_on_a403c8e;new_attribute_head_requires_own_checks"
   }
 }

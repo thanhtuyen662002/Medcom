@@ -2,3 +2,7 @@
 /schemas/backend/pm-return-audit-v1.sql text eol=lf
 /inventories/source/20261002/*.json text eol=lf
 /preparations/** text eol=lf
+/docs/erp/FILTER_CONFIGURATION_EVIDENCE.md text eol=lf
+/docs/erp/DAT_FILTER_QUERY_INVENTORY.md text eol=lf
+/inventories/traceability/PHASE1_BOUND_CONTRACTS.md text eol=lf
+/inventories/traceability/PHASE1_FILTER_CLOSURE_DELTA.md text eol=lf
