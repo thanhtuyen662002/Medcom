@@ -94,7 +94,7 @@ public sealed class ApiContractCatalogTests
     }
 
     [Fact]
-    public async Task Actual_purchase_read_wire_validates_against_distinct_legacy_and_complete_v2_schemas()
+    public async Task Actual_purchase_read_wire_requires_full_fields_on_current_and_v2_routes()
     {
         await using var fixture = await PurchaseHttpFixture.Start(); fixture.Source.Seed(); await fixture.Login();
         var contract = ApiContractCatalog.Build();
@@ -103,7 +103,6 @@ public sealed class ApiContractCatalogTests
             var body = await fixture.Json(path + (path.EndsWith("detail", StringComparison.Ordinal) ? "?documentId=QA-DOC" : ""));
             var schema = contract["paths"]![path]!["get"]!["responses"]!["200"]!["content"]!["application/json"]!["schema"]!;
             Assert.True(Matches(contract, schema, body), path);
-            if (path.Contains("/v2/", StringComparison.Ordinal))
             {
                 var altered = JsonNode.Parse(body.GetRawText())!;
                 if (path.EndsWith("detail", StringComparison.Ordinal)) ((JsonObject)altered["data"]!).Remove("sourceFields");

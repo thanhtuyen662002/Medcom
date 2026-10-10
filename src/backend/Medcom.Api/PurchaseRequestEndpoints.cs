@@ -25,8 +25,8 @@ public static class PurchaseRequestEndpoints
         });
         MapList(app,"/api/purchase-requests",false);
         MapList(app,"/api/v2/purchase-requests",true);
-        MapDetail(app,"/api/purchase-requests/detail",false);
-        MapDetail(app,"/api/v2/purchase-requests/detail",true);
+        MapDetail(app,"/api/purchase-requests/detail");
+        MapDetail(app,"/api/v2/purchase-requests/detail");
         app.MapGet("/api/purchase-requests/lookup", async (HttpContext context, IPurchaseRequestQueries queries) =>
         {
             if (!CanRead(context)) return Denied();
@@ -45,11 +45,11 @@ public static class PurchaseRequestEndpoints
             IPurchaseRequestCommandAccess access, IWebSessions sessions) => Command(context, commands, access, sessions, false, true));
     }
 
-    private static void MapList(WebApplication app,string path,bool fullFields) =>
+    private static void MapList(WebApplication app,string path,bool version2) =>
         app.MapGet(path, async (HttpContext context, IPurchaseRequestQueries queries) =>
         {
             if (!CanRead(context)) return Denied();
-            if (!DocumentListBinding.TryRead(context,fullFields,out var selection)
+            if (!DocumentListBinding.TryRead(context,version2,out var selection)
                 || !Number(context, "page", 1, out var page) || !Number(context, "pageSize", 20, out var size)) return Invalid();
             var query = new PurchaseRequestListQuery(page, size, context.Request.Query["search"], context.Request.Query["branchId"],
                 selection.DateFrom,selection.DateTo,selection.StatusId,selection.SortBy,selection.SortDirection);
@@ -57,24 +57,23 @@ public static class PurchaseRequestEndpoints
             if (!string.IsNullOrEmpty(query.BranchId)
                 && AuthEndpoints.Current(context).Identity.BranchIds?.Contains(query.BranchId, StringComparer.Ordinal) != true) return Denied();
             var result=await queries.ListAsync(query,context.RequestAborted);
-            if(result.Value is {} value)
+            if(result.Outcome==PurchaseRequestQueryOutcome.Success && result.Value is {} value)
             {
-                if(fullFields && value.Rows.Any(row=>row.Fields is null))
+                if(value.Rows.Any(row=>row.Fields is null))
                     return Results.Problem(statusCode:503,title:"Data is temporarily unavailable.");
-                if(!fullFields)result=result with {Value=value with {Rows=value.Rows.Select(row=>row with {Fields=null}).ToArray()}};
-                if(result.Outcome==PurchaseRequestQueryOutcome.Success) DocumentDataProjection.Stamp(context,path);
+                DocumentDataProjection.Stamp(context,path);
             }
             return Response(context,result);
         });
 
-    private static void MapDetail(WebApplication app,string path,bool fullFields) =>
+    private static void MapDetail(WebApplication app,string path) =>
         app.MapGet(path, async (HttpContext context, IPurchaseRequestQueries queries, IPurchaseRequestCommandAccess access, IWebSessions sessions) =>
         {
             if (!CanRead(context)) return Denied();
             if (!Fields(context, "documentId") || !PurchaseRequestCommandRules.Identifier(context.Request.Query["documentId"], 50)) return Invalid();
             var result = await queries.OpenAsync(context.Request.Query["documentId"].ToString(), context.RequestAborted);
             if (result.Outcome != PurchaseRequestQueryOutcome.Success || result.Value is null) return Response(context, result);
-            if(fullFields && result.Value.SourceFields is null)
+            if(result.Value.SourceFields is null)
                 return Results.Problem(statusCode:503,title:"Data is temporarily unavailable.");
             var original = AuthEndpoints.Current(context);
             var live = await Live(context, sessions, original, result.Value.Document.BranchId,
@@ -89,7 +88,7 @@ public static class PurchaseRequestEndpoints
             if (result.Value.Document.StatusId != 1 || result.Value.Document.IsLocked is true)
                 grant = grant with { CanSave = false, CanSubmit = false };
             DocumentDataProjection.Stamp(context,path);
-            return Response(context, result with { Value = result.Value with { CommandAccess = grant,SourceFields=fullFields?result.Value.SourceFields:null } });
+            return Response(context, result with { Value = result.Value with { CommandAccess = grant } });
         });
 
 

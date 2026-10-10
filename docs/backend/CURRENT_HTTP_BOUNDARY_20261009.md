@@ -1,5 +1,7 @@
 # Current backend HTTP boundary — 9 October 2026
 
+Current update: I69 adds query metadata (34 operations); I70 / PR #127 returns complete fields on both current and v2 paged document reads. The original scalar/command shapes remain, with required full source objects added. See [the current BE/FE guide](BE_FE_FULL_FIELDS_INTEGRATION_20261010.md) and [current audit](api-data-audit-current-full-20261010.json). The 33-operation/v2-only statements below describe the historical 9 October checkpoint.
+
 This source review reconciles the owner-supplied backend handover with the frontend refresh. Backend sources were inspected at main `ce95e1750b3df8ef46a4682f5f78f94450bf2829`. The frontend refresh changes presentation, not the API or business providers. This document is a source contract, not SQL, private DLL, live write or production acceptance evidence.
 
 ## Registered routes

@@ -15,6 +15,85 @@ public sealed class DocumentFullFieldTests
     private static readonly JsonSerializerOptions Json=new(JsonSerializerDefaults.Web);
 
     [Theory]
+    [InlineData(DocumentKind.PurchaseOrders, false, false)] [InlineData(DocumentKind.PurchaseOrders, false, true)]
+    [InlineData(DocumentKind.PurchaseOrders, true, false)] [InlineData(DocumentKind.PurchaseOrders, true, true)]
+    [InlineData(DocumentKind.InboundRequests, false, false)] [InlineData(DocumentKind.InboundRequests, false, true)]
+    [InlineData(DocumentKind.InboundRequests, true, false)] [InlineData(DocumentKind.InboundRequests, true, true)]
+    public async Task Every_record_keeps_full_columns_across_bounded_pages_including_the_empty_last_page(
+        DocumentKind kind, bool version2, bool detail)
+    {
+        var source = new FullReadSource(kind) { PagingCount = 5 };
+        await using var fixture = await PurchaseHttpFixture.Start(services => services.AddSingleton<IDocumentReader>(source.Reader));
+        fixture.Authority.Identity = source.Identity;
+        await fixture.Login();
+        var name = kind == DocumentKind.PurchaseOrders ? "purchase-orders" : "inbound-requests";
+        var path = (version2 ? "/api/v2/documents/" : "/api/documents/") + name;
+        var identities = new HashSet<string>(StringComparer.Ordinal);
+        for (var page = 1; page <= 4; page++)
+        {
+            var query = detail ? "/detail?documentId=DOC&" : "?";
+            var body = await fixture.Json(path + query + $"page={page}&pageSize=2");
+            Assert.Equal(page, body.GetProperty("page").GetInt32());
+            Assert.Equal(2, body.GetProperty("pageSize").GetInt32());
+            Assert.Equal(page < 3, body.GetProperty("hasMore").GetBoolean());
+            Assert.Equal((page - 1) * 2, source.LastDocumentParameters["@skip"]);
+            Assert.Equal(3, source.LastDocumentParameters["@take"]); // Only one sentinel beyond the requested page.
+            var headerName = kind == DocumentKind.PurchaseOrders ? "purchaseOrderHeader" : "inboundRequestHeader";
+            var records = detail ? body.GetProperty(kind == DocumentKind.PurchaseOrders ? "purchaseOrderLines" : "inboundRequestLines") : body.GetProperty("rows");
+            Assert.Equal(page <= 2 ? 2 : page == 3 ? 1 : 0, records.GetArrayLength());
+            if (detail)
+                Assert.Equal(kind == DocumentKind.PurchaseOrders ? 19 : 37,
+                    body.GetProperty("document").GetProperty(headerName).EnumerateObject().Count());
+            foreach (var record in records.EnumerateArray())
+            {
+                var fields = record.GetProperty(detail ? "fields" : headerName);
+                Assert.Equal(detail ? kind == DocumentKind.PurchaseOrders ? 12 : 25 : kind == DocumentKind.PurchaseOrders ? 19 : 37,
+                    fields.EnumerateObject().Count());
+                var identity = record.GetProperty(detail ? "lineId" : "documentId").GetString()!;
+                Assert.True(identities.Add(identity));
+                Assert.Equal(identity, fields.GetProperty(detail ? "userAutoId" : "documentId").GetString());
+            }
+        }
+        Assert.Equal(5, identities.Count);
+    }
+
+    [Theory]
+    [InlineData(false)] [InlineData(true)]
+    public async Task Purchase_list_retains_all_header_fields_on_every_SQL_selected_page_without_writes(bool version2)
+    {
+        await using var fixture = await PurchaseHttpFixture.Start();
+        fixture.Source.Seed();
+        var seed = fixture.Source.Documents[0];
+        fixture.Source.Documents.Clear();
+        for (var i = 1; i <= 5; i++) fixture.Source.Documents.Add(seed with { PurchaseRequestId = $"QA-DOC-{i}" });
+        await fixture.Login();
+        var identities = new HashSet<string>(StringComparer.Ordinal);
+        for (var page = 1; page <= 4; page++)
+        {
+            var body = await fixture.Json((version2 ? "/api/v2/" : "/api/") + $"purchase-requests?page={page}&pageSize=2");
+            var data = body.GetProperty("data");
+            Assert.Equal(page, data.GetProperty("page").GetInt32());
+            Assert.Equal(2, data.GetProperty("pageSize").GetInt32());
+            Assert.Equal(page < 3, data.GetProperty("hasMore").GetBoolean());
+            Assert.Equal(page <= 2 ? 2 : page == 3 ? 1 : 0, data.GetProperty("rows").GetArrayLength());
+            foreach (var row in data.GetProperty("rows").EnumerateArray())
+            {
+                var id = row.GetProperty("documentId").GetString()!;
+                Assert.True(identities.Add(id));
+                var fields = row.GetProperty("fields");
+                Assert.Equal(14, fields.EnumerateObject().Count());
+                Assert.Equal(id, fields.GetProperty("purchaseRequestId").GetString());
+                Assert.Equal(JsonValueKind.Null, fields.GetProperty("notes").ValueKind);
+            }
+            var selected = fixture.Source.Commands.Last(command => command.Sql.Contains("OFFSET @skip", StringComparison.Ordinal));
+            Assert.Equal((page - 1) * 2, selected.Parameters["@skip"]);
+            Assert.Equal(3, selected.Parameters["@take"]);
+        }
+        Assert.Equal(5, identities.Count);
+        Assert.Equal(0, fixture.Source.Commits);
+    }
+
+    [Theory]
     [InlineData(DocumentKind.PurchaseOrders,false)] [InlineData(DocumentKind.PurchaseOrders,true)]
     [InlineData(DocumentKind.InboundRequests,false)] [InlineData(DocumentKind.InboundRequests,true)]
     public async Task Actual_SQL_reader_returns_every_source_field_with_nulls_unicode_precision_and_wall_clock_time(DocumentKind kind,bool nulls)
@@ -123,12 +202,9 @@ public sealed class DocumentFullFieldTests
         var detail=await fixture.Json("/api/v2/documents/"+name+"/detail?documentId=DOC");
         var legacyList=await fixture.Json("/api/documents/"+name);
         var legacyDetail=await fixture.Json("/api/documents/"+name+"/detail?documentId=DOC");
-        Assert.Equal(new[]{"branchId","documentDate","documentId","isLocked","statusId","statusName"},
-            legacyList.GetProperty("rows")[0].EnumerateObject().Select(p=>p.Name).Order(StringComparer.Ordinal).ToArray());
-        Assert.False(legacyDetail.GetProperty("document").TryGetProperty("purchaseOrderHeader",out _));
-        Assert.False(legacyDetail.GetProperty("document").TryGetProperty("inboundRequestHeader",out _));
-        var legacyLines=legacyDetail.GetProperty(kind==DocumentKind.PurchaseOrders?"purchaseOrderLines":"inboundRequestLines");
-        Assert.False(legacyLines[0].TryGetProperty("fields",out _));
+        // The original routes retain compatibility scalars and now the complete source objects too.
+        Assert.Equal(list.GetRawText(),legacyList.GetRawText());
+        Assert.Equal(detail.GetRawText(),legacyDetail.GetRawText());
         foreach(var field in contract.GetProperty("header").GetProperty("fields").EnumerateArray())
         {
             var path=field.GetProperty("jsonPath").GetString()!.Split('.');
@@ -166,8 +242,8 @@ public sealed class DocumentFullFieldTests
         Assert.False(data.GetProperty("commandAccess").GetProperty("canSave").GetBoolean());
         var legacyList=await fixture.Json("/api/purchase-requests");
         var legacyDetail=await fixture.Json("/api/purchase-requests/detail?documentId=QA-DOC");
-        Assert.False(legacyList.GetProperty("data").GetProperty("rows")[0].TryGetProperty("fields",out _));
-        Assert.False(legacyDetail.GetProperty("data").TryGetProperty("sourceFields",out _));
+        Assert.Equal(list.GetRawText(),legacyList.GetRawText());
+        Assert.Equal(detail.GetRawText(),legacyDetail.GetRawText());
         Assert.Equal(legacyDetail.GetProperty("data").GetProperty("document").GetRawText(),data.GetProperty("document").GetRawText());
         Assert.Equal(token,legacyDetail.GetProperty("data").GetProperty("stateToken").GetString());
         var contract=await fixture.Json("/api/documents/field-contract?kind=purchase-requests");
@@ -192,7 +268,7 @@ public sealed class DocumentFullFieldTests
 
     [Theory]
     [InlineData("purchase-orders")] [InlineData("inbound-requests")]
-    public async Task Version_2_refuses_incomplete_provider_data_while_legacy_wire_remains_compatible(string kind)
+    public async Task All_read_routes_refuse_incomplete_provider_data_without_a_truncated_success(string kind)
     {
         await using var fixture=await PurchaseHttpFixture.Start(services=>services.AddSingleton<IDocumentReader>(new LegacyOnlyDocumentReader()));
         fixture.Authority.Identity=fixture.Authority.Identity with {Capabilities=[kind+".read"]};
@@ -205,7 +281,9 @@ public sealed class DocumentFullFieldTests
             Assert.False(unavailable.Headers.Contains("X-Medcom-Data-Projection"));
             Assert.False(unavailable.Headers.Contains("X-Medcom-Full-Data-Path"));
             using var original=await fixture.Client.GetAsync("/api/documents/"+kind+suffix);
-            Assert.Equal(HttpStatusCode.OK,original.StatusCode);
+            Assert.Equal(HttpStatusCode.ServiceUnavailable,original.StatusCode);
+            Assert.False(original.Headers.Contains("X-Medcom-Data-Projection"));
+            Assert.False(original.Headers.Contains("X-Medcom-Full-Data-Path"));
         }
     }
 
@@ -278,6 +356,7 @@ internal sealed class FullReadSource
     internal double? FloatValue{get;set;}
     internal bool DateWithoutFraction{get;set;}
     internal int DocumentReads;
+    internal int? PagingCount;
     internal string? LastDocumentSql;
     internal Dictionary<string,object?> LastDocumentParameters=[];
     internal FullReadSource(DocumentKind kind)
@@ -322,6 +401,25 @@ internal sealed class FullReadSource
         }
         else
         {t0.Columns.Add("Name",typeof(string));t0.Columns.Add("StatusRows",typeof(long));t0.Rows.Add("DOC",new DateTime(2026,10,1),"QA-A",1,false,"Synthetic",1L);}
+        if (PagingCount is {} count)
+        {
+            var template = t0.Rows[0].ItemArray;
+            t0.Rows.Clear();
+            var skip = (int)c.Parameters["@skip"].Value!;
+            var take = (int)c.Parameters["@take"].Value!;
+            foreach (var index in Enumerable.Range(1, count).Skip(skip).Take(take))
+            {
+                var values = (object[])template.Clone();
+                if (detail) values[5] = $"ROW-{index:00}";
+                else values[0] = $"DOC-{index:00}";
+                t0.Rows.Add(values);
+            }
+            if (detail && t0.Rows.Count == 0)
+            {
+                for (var i = 5; i <= 10; i++) template[i] = DBNull.Value;
+                t0.Rows.Add(template); // OUTER APPLY preserves the parent on an empty child page.
+            }
+        }
         LastRows=MissingProjection?t0:FullDocumentRows.Complete(t0,kind,detail,Nulls);
         if(FloatValue is {} value)
             foreach(DataColumn col in LastRows.Columns)

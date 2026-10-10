@@ -1,5 +1,7 @@
 # Backend integration handoff — 10 October 2026 (Asia/Saigon)
 
+**Current handoff — I70 / PR #127:** [Tài liệu BE cho FE: đầy đủ fields trên từng page](BE_FE_FULL_FIELDS_INTEGRATION_20261010.md) contains all 116 columns, current URLs, pagination, types/nulls, all 34 operations and the exact FE parser changes. Both original and v2 reads return full fields; v2 migration is only needed for its additional query filters/order. Current source: `DocumentEndpoints.cs`, `PurchaseRequestEndpoints.cs`, generated OpenAPI and [the current audit](api-data-audit-current-full-20261010.json). Below is the historical I68/I69 delivery, including its earlier v2-only adoption sequence; it does not describe I70 behavior. Runtime/FE acceptance still requires observed target evidence.
+
 Backend origin: **https://medcom-production.up.railway.app**. FE uses this server-only origin through its same-origin BFF. No FE source or configuration was changed by I68.
 
 I69 / PR #125 adds typed date/status filtering, fixed server sorting and a scoped query-metadata endpoint for the three v2 lists. The current executable artifact has 34 operations / 99 schemas; the I68 counts below describe that historical delivery. See [document query integration](DOCUMENT_QUERY_INTEGRATION_20261010.md) for exact parameters, semantics, FE adoption and acceptance limits. I69 publication/integration evidence is recorded separately; this paragraph does not assert deployed adoption.

@@ -36,7 +36,7 @@ GET /api/v2/purchase-requests?page=1&pageSize=20&dateTo=2026-10-10&sortBy=status
 
 Malformed dates, inverted ranges, duplicate/unknown fields, out-of-range integers, unknown sort fields/directions or SQL fragments return HTTP 400 before the document provider. Authentication remains 401; missing module authority or a foreign requested branch remains 403. Dependency/projection failures remain 503. A successful read has current `X-Medcom-Session-Scope` and `X-Medcom-Read-Scope`, no-store/security headers and server correlation. Filtering never bypasses credential/menu/group/current branch checks or creates write authority. Source evidence: `DocumentListBinding`, `DocumentSelectionRules`, `DocumentSelectionSql`, both real SQL readers and `DocumentSelectionTests`.
 
-Unversioned list routes accept only their original four fields and preserve their original projection/default order. Detail routes retain their current query contract; list filters are not detail parameters. There is no caller-selected table, column, SQL, offset, action or role.
+Unversioned list routes accept only their original four query fields and preserve their original default order. I70 / PR #127 adds the complete source objects to all current reads, so full columns no longer require a v2 URL. Detail routes retain their current query contract; list filters are not detail parameters. There is no caller-selected table, column, SQL, offset, action or role.
 
 ## Discoverable contract and FE handoff
 
@@ -44,7 +44,7 @@ Unversioned list routes accept only their original four fields and preserve thei
 
 The executable [OpenAPI](medcom-openapi.json) now covers **34 registered operations / 99 schemas**. FE's separately owned BFF must explicitly allow the query-metadata path and new v2 parameters, adopt the schema and clear cached selections when scope changes. Existing strict FE allowlists do not adopt this automatically. No CORS relaxation or cross-origin cookie workaround is introduced; follow [the integration handoff](FE_INTEGRATION_20261010.md).
 
-Successful document responses identify `full` or `summary` in `X-Medcom-Data-Projection` and provide the fixed full route in `X-Medcom-Full-Data-Path`. The original body projection stays compatible. See the [all-API data audit](API_FULL_DATA_AUDIT_20261010.md) for actual FE route/parser gaps and remaining non-full/unavailable surfaces.
+Successful current/v2 document reads identify `full` in `X-Medcom-Data-Projection`; `X-Medcom-Full-Data-Path` is the fixed registered route serving that response. Existing scalars remain alongside complete source objects. See [the current BE/FE guide](BE_FE_FULL_FIELDS_INTEGRATION_20261010.md) for parser adoption and remaining unavailable surfaces.
 
 The bounded HTTPS verifier `tools/deploy/verify_backend_api.py` now verifies the exact typed query metadata before reading ERP rows and requests the v2 list ordered by ID ascending. Its public report records only technical contract/order observations and field counts. It still permits only login/logout POSTs, retires its own session, rejects redirects and never exports credentials, scope tokens, identifiers or row values. Date/status predicates have source-free HTTP/SQL-plan tests; actual target date/status query-result acceptance remains separate.
 

@@ -225,7 +225,14 @@ public sealed class PurchaseRequestEndpointTests
         {
             AfterRead?.Invoke();
             return Task.FromResult(new PurchaseRequestQueryResult<PurchaseRequestReadback>(PurchaseRequestQueryOutcome.Success,
-                new(document, PurchaseRequestCommandRules.EqualityToken(document))));
+                new(document, PurchaseRequestCommandRules.EqualityToken(document), SourceFields: new(
+                    new(document.PurchaseRequestId,document.Header.PurchaseDate,document.Header.PurposeId,
+                        document.Header.PersonSuggest,document.Header.Department,document.Header.PurposeDescOrClient,
+                        document.Header.Price,document.Header.Notes,document.StatusId,document.IsLocked,
+                        document.Header.CurrencyId,document.Header.ObjectId,document.Header.RateExchange,document.BranchId),
+                    document.Lines.Select(line=>new PurchaseRequestLineFields(line.LineId,line.Values.ItemId,
+                        line.Values.Budget,line.Values.TimeRequired,line.Values.Quantity,line.Values.UnitPrice,
+                        line.Values.TotalPrice,line.Values.Model,document.PurchaseRequestId)).ToArray()))));
         }
         public Task<PurchaseRequestQueryResult<PurchaseRequestWorkspace>> WorkspaceAsync(CancellationToken token = default) => unavailable.WorkspaceAsync(token);
         public Task<PurchaseRequestQueryResult<PurchaseRequestListPage>> ListAsync(PurchaseRequestListQuery query, CancellationToken token = default) => unavailable.ListAsync(query, token);

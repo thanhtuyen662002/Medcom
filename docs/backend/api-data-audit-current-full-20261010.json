@@ -1,0 +1,535 @@
+{
+  "format": 2,
+  "source_set": "owner-attachment-20261002",
+  "static_reconciliation": "PASS",
+  "registered_operations": 34,
+  "complete_source_columns": 116,
+  "modules": {
+    "purchase-orders": {
+      "list": "/api/documents/purchase-orders",
+      "detail": "/api/documents/purchase-orders/detail",
+      "v2_alias_list": "/api/v2/documents/purchase-orders",
+      "v2_alias_detail": "/api/v2/documents/purchase-orders/detail",
+      "source_fields": {
+        "header": 19,
+        "lines": 12
+      },
+      "evidence": [
+        "docs/backend/document-field-contract.json",
+        "inventories/source/20261002/table-*.json",
+        "tests/backend/Medcom.Api.Tests/DocumentFullFieldTests.cs"
+      ]
+    },
+    "inbound-requests": {
+      "list": "/api/documents/inbound-requests",
+      "detail": "/api/documents/inbound-requests/detail",
+      "v2_alias_list": "/api/v2/documents/inbound-requests",
+      "v2_alias_detail": "/api/v2/documents/inbound-requests/detail",
+      "source_fields": {
+        "header": 37,
+        "lines": 25
+      },
+      "evidence": [
+        "docs/backend/document-field-contract.json",
+        "inventories/source/20261002/table-*.json",
+        "tests/backend/Medcom.Api.Tests/DocumentFullFieldTests.cs"
+      ]
+    },
+    "purchase-requests": {
+      "list": "/api/purchase-requests",
+      "detail": "/api/purchase-requests/detail",
+      "v2_alias_list": "/api/v2/purchase-requests",
+      "v2_alias_detail": "/api/v2/purchase-requests/detail",
+      "source_fields": {
+        "header": 14,
+        "lines": 9
+      },
+      "evidence": [
+        "docs/backend/document-field-contract.json",
+        "inventories/source/20261002/table-*.json",
+        "tests/backend/Medcom.Api.Tests/DocumentFullFieldTests.cs"
+      ]
+    }
+  },
+  "operations": [
+    {
+      "method": "GET",
+      "path": "/health/live",
+      "operation_id": "healthLive",
+      "category": "contract-specific-projection",
+      "admission": "process-only",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/health/ready",
+      "operation_id": "healthReady",
+      "category": "contract-specific-projection",
+      "admission": "business-release-not-admitted",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/contracts/openapi.json",
+      "operation_id": "openApiContract",
+      "category": "contract-specific-projection",
+      "admission": "static-contract",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/platform/metadata",
+      "operation_id": "platformMetadata",
+      "category": "contract-specific-projection",
+      "admission": "identity-observation",
+      "capability": "platform.status",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/csrf",
+      "operation_id": "authCsrf",
+      "category": "contract-specific-projection",
+      "admission": "antiforgery-bootstrap",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "operation_id": "authLogin",
+      "category": "contract-specific-projection",
+      "admission": "legacy-identity-provider-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/session",
+      "operation_id": "authSession",
+      "category": "contract-specific-projection",
+      "admission": "authenticated-session",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/session/continue",
+      "operation_id": "authContinue",
+      "category": "contract-specific-projection",
+      "admission": "authenticated-explicit-activity",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/logout",
+      "operation_id": "authLogout",
+      "category": "contract-specific-projection",
+      "admission": "authenticated-session",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/workspace",
+      "operation_id": "workspace",
+      "category": "contract-specific-projection",
+      "admission": "authenticated-scoped-navigation",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/documents/field-contract",
+      "operation_id": "documentFieldContract",
+      "category": "contract-specific-projection",
+      "admission": "module-read-capability-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/documents/query-contract",
+      "operation_id": "documentQueryContract",
+      "category": "contract-specific-projection",
+      "admission": "module-read-capability-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/documents/purchase-orders",
+      "operation_id": "purchaseordersLegacyList",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "purchase-orders.read",
+      "full_data_path": "/api/documents/purchase-orders",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/documents/purchase-orders/detail",
+      "operation_id": "purchaseordersLegacyDetail",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "purchase-orders.read",
+      "full_data_path": "/api/documents/purchase-orders/detail",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/documents/purchase-orders",
+      "operation_id": "purchaseordersV2List",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "purchase-orders.read",
+      "full_data_path": "/api/v2/documents/purchase-orders",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/documents/purchase-orders/detail",
+      "operation_id": "purchaseordersV2Detail",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "purchase-orders.read",
+      "full_data_path": "/api/v2/documents/purchase-orders/detail",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/documents/inbound-requests",
+      "operation_id": "inboundrequestsLegacyList",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "inbound-requests.read",
+      "full_data_path": "/api/documents/inbound-requests",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/documents/inbound-requests/detail",
+      "operation_id": "inboundrequestsLegacyDetail",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "inbound-requests.read",
+      "full_data_path": "/api/documents/inbound-requests/detail",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/documents/inbound-requests",
+      "operation_id": "inboundrequestsV2List",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "inbound-requests.read",
+      "full_data_path": "/api/v2/documents/inbound-requests",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/documents/inbound-requests/detail",
+      "operation_id": "inboundrequestsV2Detail",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "inbound-requests.read",
+      "full_data_path": "/api/v2/documents/inbound-requests/detail",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/purchase-requests",
+      "operation_id": "purchaseRequestListLegacy",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "purchase-requests.read",
+      "full_data_path": "/api/purchase-requests",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/purchase-requests/detail",
+      "operation_id": "purchaseRequestDetailLegacy",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "purchase-requests.read",
+      "full_data_path": "/api/purchase-requests/detail",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/purchase-requests",
+      "operation_id": "purchaseRequestListV2",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "purchase-requests.read",
+      "full_data_path": "/api/v2/purchase-requests",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/purchase-requests/detail",
+      "operation_id": "purchaseRequestDetailV2",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "purchase-requests.read",
+      "full_data_path": "/api/v2/purchase-requests/detail",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/purchase-requests/workspace",
+      "operation_id": "purchaseRequestWorkspace",
+      "category": "contract-specific-projection",
+      "admission": "writeAvailable-forced-false",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/purchase-requests/lookup",
+      "operation_id": "purchaseRequestLookup",
+      "category": "contract-specific-projection",
+      "admission": "branches-purposes-currencies-qualified-individually;items-objects-unqualified",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/purchase-requests/save",
+      "operation_id": "purchaseRequestsaveCommand",
+      "category": "business-provider-unavailable",
+      "admission": "default-provider-unavailable;target-runtime-acceptance-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/purchase-requests/save/lookup",
+      "operation_id": "purchaseRequestsaveLookup",
+      "category": "business-provider-unavailable",
+      "admission": "default-provider-unavailable;target-runtime-acceptance-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/purchase-requests/submit",
+      "operation_id": "purchaseRequestsubmitCommand",
+      "category": "business-provider-unavailable",
+      "admission": "default-provider-unavailable;target-runtime-acceptance-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/purchase-requests/submit/lookup",
+      "operation_id": "purchaseRequestsubmitLookup",
+      "category": "business-provider-unavailable",
+      "admission": "default-provider-unavailable;target-runtime-acceptance-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/inbound-requests/draft",
+      "operation_id": "inboundDraftRead",
+      "category": "business-provider-unavailable",
+      "admission": "default-provider-unavailable;target-runtime-acceptance-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/inbound-requests/draft/save",
+      "operation_id": "inboundDraftsave",
+      "category": "business-provider-unavailable",
+      "admission": "default-provider-unavailable;target-runtime-acceptance-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/inbound-requests/draft/send-to-warehouse",
+      "operation_id": "inboundDraftsendtowarehouse",
+      "category": "business-provider-unavailable",
+      "admission": "default-provider-unavailable;target-runtime-acceptance-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/inbound-requests/draft/reconcile",
+      "operation_id": "inboundDraftreconcile",
+      "category": "business-provider-unavailable",
+      "admission": "default-provider-unavailable;target-runtime-acceptance-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    }
+  ],
+  "actual_SQL_rows": "NOT_RUN",
+  "production_accepted": false,
+  "FE_adoption": "UNKNOWN;requires_parsers_to_retain_all_full_fields_on_current_routes"
+}

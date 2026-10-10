@@ -641,17 +641,17 @@
                 }
               },
               "X-Medcom-Data-Projection": {
-                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "description": "Full fields for each record in the bounded page, including nullable properties. Pagination does not reduce the field set.",
                 "schema": {
                   "type": "string",
-                  "const": "summary"
+                  "const": "full"
                 }
               },
               "X-Medcom-Full-Data-Path": {
-                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "description": "The registered full-data route used by this response, without identifiers or query strings.",
                 "schema": {
                   "type": "string",
-                  "const": "/api/v2/documents/purchase-orders"
+                  "const": "/api/documents/purchase-orders"
                 }
               }
             }
@@ -674,8 +674,8 @@
         ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
-        "x-medcom-data-projection": "summary",
-        "x-medcom-full-data-path": "/api/v2/documents/purchase-orders",
+        "x-medcom-data-projection": "full",
+        "x-medcom-full-data-path": "/api/documents/purchase-orders",
         "x-medcom-capability": "purchase-orders.read",
         "parameters": [
           {
@@ -754,17 +754,17 @@
                 }
               },
               "X-Medcom-Data-Projection": {
-                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "description": "Full fields for each record in the bounded page, including nullable properties. Pagination does not reduce the field set.",
                 "schema": {
                   "type": "string",
-                  "const": "summary"
+                  "const": "full"
                 }
               },
               "X-Medcom-Full-Data-Path": {
-                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "description": "The registered full-data route used by this response, without identifiers or query strings.",
                 "schema": {
                   "type": "string",
-                  "const": "/api/v2/documents/purchase-orders/detail"
+                  "const": "/api/documents/purchase-orders/detail"
                 }
               }
             }
@@ -787,8 +787,8 @@
         ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
-        "x-medcom-data-projection": "summary",
-        "x-medcom-full-data-path": "/api/v2/documents/purchase-orders/detail",
+        "x-medcom-data-projection": "full",
+        "x-medcom-full-data-path": "/api/documents/purchase-orders/detail",
         "x-medcom-capability": "purchase-orders.read",
         "parameters": [
           {
@@ -858,14 +858,14 @@
                 }
               },
               "X-Medcom-Data-Projection": {
-                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "description": "Full fields for each record in the bounded page, including nullable properties. Pagination does not reduce the field set.",
                 "schema": {
                   "type": "string",
                   "const": "full"
                 }
               },
               "X-Medcom-Full-Data-Path": {
-                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "description": "The registered full-data route used by this response, without identifiers or query strings.",
                 "schema": {
                   "type": "string",
                   "const": "/api/v2/documents/purchase-orders"
@@ -1032,14 +1032,14 @@
                 }
               },
               "X-Medcom-Data-Projection": {
-                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "description": "Full fields for each record in the bounded page, including nullable properties. Pagination does not reduce the field set.",
                 "schema": {
                   "type": "string",
                   "const": "full"
                 }
               },
               "X-Medcom-Full-Data-Path": {
-                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "description": "The registered full-data route used by this response, without identifiers or query strings.",
                 "schema": {
                   "type": "string",
                   "const": "/api/v2/documents/purchase-orders/detail"
@@ -1136,17 +1136,17 @@
                 }
               },
               "X-Medcom-Data-Projection": {
-                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "description": "Full fields for each record in the bounded page, including nullable properties. Pagination does not reduce the field set.",
                 "schema": {
                   "type": "string",
-                  "const": "summary"
+                  "const": "full"
                 }
               },
               "X-Medcom-Full-Data-Path": {
-                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "description": "The registered full-data route used by this response, without identifiers or query strings.",
                 "schema": {
                   "type": "string",
-                  "const": "/api/v2/documents/inbound-requests"
+                  "const": "/api/documents/inbound-requests"
                 }
               }
             }
@@ -1169,8 +1169,8 @@
         ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
-        "x-medcom-data-projection": "summary",
-        "x-medcom-full-data-path": "/api/v2/documents/inbound-requests",
+        "x-medcom-data-projection": "full",
+        "x-medcom-full-data-path": "/api/documents/inbound-requests",
         "x-medcom-capability": "inbound-requests.read",
         "parameters": [
           {
@@ -1249,17 +1249,17 @@
                 }
               },
               "X-Medcom-Data-Projection": {
-                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "description": "Full fields for each record in the bounded page, including nullable properties. Pagination does not reduce the field set.",
                 "schema": {
                   "type": "string",
-                  "const": "summary"
+                  "const": "full"
                 }
               },
               "X-Medcom-Full-Data-Path": {
-                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "description": "The registered full-data route used by this response, without identifiers or query strings.",
                 "schema": {
                   "type": "string",
-                  "const": "/api/v2/documents/inbound-requests/detail"
+                  "const": "/api/documents/inbound-requests/detail"
                 }
               }
             }
@@ -1282,8 +1282,8 @@
         ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
-        "x-medcom-data-projection": "summary",
-        "x-medcom-full-data-path": "/api/v2/documents/inbound-requests/detail",
+        "x-medcom-data-projection": "full",
+        "x-medcom-full-data-path": "/api/documents/inbound-requests/detail",
         "x-medcom-capability": "inbound-requests.read",
         "parameters": [
           {
@@ -1353,14 +1353,14 @@
                 }
               },
               "X-Medcom-Data-Projection": {
-                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "description": "Full fields for each record in the bounded page, including nullable properties. Pagination does not reduce the field set.",
                 "schema": {
                   "type": "string",
                   "const": "full"
                 }
               },
               "X-Medcom-Full-Data-Path": {
-                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "description": "The registered full-data route used by this response, without identifiers or query strings.",
                 "schema": {
                   "type": "string",
                   "const": "/api/v2/documents/inbound-requests"
@@ -1527,14 +1527,14 @@
                 }
               },
               "X-Medcom-Data-Projection": {
-                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "description": "Full fields for each record in the bounded page, including nullable properties. Pagination does not reduce the field set.",
                 "schema": {
                   "type": "string",
                   "const": "full"
                 }
               },
               "X-Medcom-Full-Data-Path": {
-                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "description": "The registered full-data route used by this response, without identifiers or query strings.",
                 "schema": {
                   "type": "string",
                   "const": "/api/v2/documents/inbound-requests/detail"
@@ -1631,17 +1631,17 @@
                 }
               },
               "X-Medcom-Data-Projection": {
-                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "description": "Full fields for each record in the bounded page, including nullable properties. Pagination does not reduce the field set.",
                 "schema": {
                   "type": "string",
-                  "const": "summary"
+                  "const": "full"
                 }
               },
               "X-Medcom-Full-Data-Path": {
-                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "description": "The registered full-data route used by this response, without identifiers or query strings.",
                 "schema": {
                   "type": "string",
-                  "const": "/api/v2/purchase-requests"
+                  "const": "/api/purchase-requests"
                 }
               }
             }
@@ -1664,8 +1664,8 @@
         ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
-        "x-medcom-data-projection": "summary",
-        "x-medcom-full-data-path": "/api/v2/purchase-requests",
+        "x-medcom-data-projection": "full",
+        "x-medcom-full-data-path": "/api/purchase-requests",
         "x-medcom-capability": "purchase-requests.read",
         "parameters": [
           {
@@ -1744,17 +1744,17 @@
                 }
               },
               "X-Medcom-Data-Projection": {
-                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "description": "Full fields for each record in the bounded page, including nullable properties. Pagination does not reduce the field set.",
                 "schema": {
                   "type": "string",
-                  "const": "summary"
+                  "const": "full"
                 }
               },
               "X-Medcom-Full-Data-Path": {
-                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "description": "The registered full-data route used by this response, without identifiers or query strings.",
                 "schema": {
                   "type": "string",
-                  "const": "/api/v2/purchase-requests/detail"
+                  "const": "/api/purchase-requests/detail"
                 }
               }
             }
@@ -1777,8 +1777,8 @@
         ],
         "x-medcom-admission": "qualified-read-provider-required",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
-        "x-medcom-data-projection": "summary",
-        "x-medcom-full-data-path": "/api/v2/purchase-requests/detail",
+        "x-medcom-data-projection": "full",
+        "x-medcom-full-data-path": "/api/purchase-requests/detail",
         "x-medcom-capability": "purchase-requests.read",
         "parameters": [
           {
@@ -1826,14 +1826,14 @@
                 }
               },
               "X-Medcom-Data-Projection": {
-                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "description": "Full fields for each record in the bounded page, including nullable properties. Pagination does not reduce the field set.",
                 "schema": {
                   "type": "string",
                   "const": "full"
                 }
               },
               "X-Medcom-Full-Data-Path": {
-                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "description": "The registered full-data route used by this response, without identifiers or query strings.",
                 "schema": {
                   "type": "string",
                   "const": "/api/v2/purchase-requests"
@@ -2000,14 +2000,14 @@
                 }
               },
               "X-Medcom-Data-Projection": {
-                "description": "Successful document data projection. Full includes every qualified source column; summary retains the legacy wire shape.",
+                "description": "Full fields for each record in the bounded page, including nullable properties. Pagination does not reduce the field set.",
                 "schema": {
                   "type": "string",
                   "const": "full"
                 }
               },
               "X-Medcom-Full-Data-Path": {
-                "description": "Fixed complete-data route. Retain valid query parameters and adopt that route's full response schema.",
+                "description": "The registered full-data route used by this response, without identifiers or query strings.",
                 "schema": {
                   "type": "string",
                   "const": "/api/v2/purchase-requests/detail"
@@ -4124,6 +4124,9 @@
                 "type": "null"
               }
             ]
+          },
+          "purchaseOrderHeader": {
+            "$ref": "#/components/schemas/PurchaseOrderHeaderFields"
           }
         },
         "required": [
@@ -4132,7 +4135,8 @@
           "branchId",
           "statusId",
           "isLocked",
-          "statusName"
+          "statusName",
+          "purchaseOrderHeader"
         ]
       },
       "DocumentPage": {
@@ -5183,13 +5187,17 @@
                 "type": "null"
               }
             ]
+          },
+          "fields": {
+            "$ref": "#/components/schemas/PurchaseOrderLineFields"
           }
         },
         "required": [
           "lineId",
           "itemId",
           "quantity",
-          "quantity2"
+          "quantity2",
+          "fields"
         ]
       },
       "purchaseordersLegacyinboundRequestLines": {
@@ -5536,6 +5544,9 @@
                 "type": "null"
               }
             ]
+          },
+          "inboundRequestHeader": {
+            "$ref": "#/components/schemas/InboundRequestHeaderFields"
           }
         },
         "required": [
@@ -5544,7 +5555,8 @@
           "branchId",
           "statusId",
           "isLocked",
-          "statusName"
+          "statusName",
+          "inboundRequestHeader"
         ]
       },
       "inboundrequestsLegacyPage": {
@@ -5715,6 +5727,9 @@
                 "type": "null"
               }
             ]
+          },
+          "fields": {
+            "$ref": "#/components/schemas/InboundRequestLineFields"
           }
         },
         "required": [
@@ -5723,7 +5738,8 @@
           "setQuantityByDocument",
           "barrelQuantityByDocument",
           "setQuantityByReal",
-          "barrelQuantityByReal"
+          "barrelQuantityByReal",
+          "fields"
         ]
       },
       "inboundrequestsV2Summary": {
@@ -6271,6 +6287,9 @@
                 "type": "null"
               }
             ]
+          },
+          "fields": {
+            "$ref": "#/components/schemas/PurchaseRequestHeaderFields"
           }
         },
         "required": [
@@ -6281,7 +6300,8 @@
           "department",
           "statusId",
           "isLocked",
-          "statusName"
+          "statusName",
+          "fields"
         ]
       },
       "PurchaseRequestListPage": {
@@ -6866,6 +6886,9 @@
                 "type": "null"
               }
             ]
+          },
+          "sourceFields": {
+            "$ref": "#/components/schemas/PurchaseRequestSourceFields"
           }
         },
         "required": [
@@ -6873,7 +6896,8 @@
           "stateToken",
           "commandAccess",
           "statusName",
-          "itemDisplayContext"
+          "itemDisplayContext",
+          "sourceFields"
         ]
       },
       "PurchaseRequestScopedResponse_PurchaseRequestReadback": {

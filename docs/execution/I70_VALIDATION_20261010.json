@@ -1,0 +1,128 @@
+{
+  "run": "I70",
+  "pr": 127,
+  "base": "2fd9779149e12ae46634de3218a2505c214244fb",
+  "admission_head": "a4dbfadcda994396c300eb05d1c3061681b47119",
+  "committed_file_sha256": {
+    "docs/PROJECT_STATE.yaml": "59e5b26f2abc48fd94bb5937614b296ffcaabd5d4a7c067c26b8c622e36c4ff3",
+    "docs/backend/API_FULL_DATA_AUDIT_20261010.md": "6c3ae6bfe46d5d1add164f2dc9d1af46f727afd860968e64c01a76372842ce6b",
+    "docs/backend/CURRENT_HTTP_BOUNDARY_20261009.md": "0bd31c27c47f79b5d8f7052e24fcc02c5bb6560175fc4325081e018369a2e4c9",
+    "docs/backend/DOCUMENT_QUERY_INTEGRATION_20261010.md": "caedc7ed94c2ad72aeaf1759d19678f855db8c84439cf3ede2170ffc2736b33c",
+    "docs/backend/FE_INTEGRATION_20261010.md": "d5dc240362b6c883e44385fd365320e12840f4927fce420cdfcae845ec42675b",
+    "docs/backend/FULL_DOCUMENT_FIELDS_20261009.md": "aa0e68f568c24e133cf7c5cb077949f177b89c30ed5c31ea2771ad40b1b18362",
+    "docs/backend/medcom-openapi.json": "9b792adc9ef9f4e727fbf91ca070efc1a4dd6040c95b5857deec0a0dd7c94272",
+    "docs/goals/BACKEND_PRODUCTION_GOAL.md": "6c22a44d5b33aaa8e14f849c1afd3f4f60443a33bdf36aafe309b67f0190f921",
+    "src/backend/Medcom.Api/ApiContractCatalog.cs": "3642e62b8c4739ae53088d4b31436e2cfe4beca5a347b1d09cb01cc4eda01367",
+    "src/backend/Medcom.Api/DocumentDataProjection.cs": "143908a7e8909fa1b49a0100fd5e64fe61d6c0368236a236696414bb912b6d64",
+    "src/backend/Medcom.Api/DocumentEndpoints.cs": "1baa2896889aa5e7a59e6928bb81e564c102af81591a9c78cf1acd7f80f946f0",
+    "src/backend/Medcom.Api/PurchaseRequestEndpoints.cs": "e8b9e984283b21bed09280eead9662643c2f7a46166819e4b57c81f674bd43e7",
+    "src/backend/README.md": "270c321c54f8498c0b9bd8f04db2330c5481de5692defba95ff46fe34ecc5429",
+    "tests/backend/Medcom.Api.Tests/ApiContractCatalogTests.cs": "a2f14aae1ad989d67fdfb8a54ea333f6b684b1de92d844a249523db94bf911bc",
+    "tests/backend/Medcom.Api.Tests/AuthenticationHttpTests.cs": "5b3b887c4a425d7dd8ab38e1eb39fe075c0372c855cf6bb409efe5c6d52de2fd",
+    "tests/backend/Medcom.Api.Tests/DocumentDataProjectionTests.cs": "dc8f1d80c1da958fb1e37061fc1dc6071771b49de2d20afb3b1f831ccd1f5f87",
+    "tests/backend/Medcom.Api.Tests/DocumentFullFieldTests.cs": "5cf049066e1bef7f445968b566758853104285cc35e53177988b369164a0750b",
+    "tests/backend/Medcom.Api.Tests/PurchaseRequestEndpointTests.cs": "abdb1127b110297d0ef404661a967c3e6713a5c8b2d8788427a271d1cf646b65",
+    "tests/deploy/test_backend_api_contract.py": "d732eef30c28bfffac84955434185f500681afc9ea0343d8eec9c61fb402672b",
+    "tools/backend/audit_api_data.py": "d6972615734881d0836975815a7df6f565b53bfbfba62ddd622fe705ed93e3c9",
+    "tools/backend/test_api_data_audit.py": "c3051bf14de7363fd8e3720ef4c0fd67c8e59565ae734b42d0b8e72228cac32a",
+    "tools/deploy/verify_backend_api.py": "e693879cbec53e552661b37386a91e83a10358cbc2bc5bb6575f8d36c648eeed",
+    "docs/backend/BE_FE_FULL_FIELDS_INTEGRATION_20261010.md": "7ca4c4966175a3f7ba674b03e8ef6544318902d267e1bf557ca1507b1296f522",
+    "docs/backend/api-data-audit-current-full-20261010.json": "94ad1a095aae2ff33c33864debb745190b19c600bbe8ce0862e4c3699a650539"
+  },
+  "source_verification": {
+    "sourceSet": "owner-attachment-20261002",
+    "archives": {
+      "ERP_Medcom2026.zip": {
+        "size": 162176322,
+        "sha256": "d5fe49f8e58de89fc0b9972a116a6c8f673ab9f9b326c626708d0b5d01fc5783",
+        "check": "PASS"
+      },
+      "MedData-Data.zip": {
+        "size": 134249929,
+        "sha256": "6a74eb02dc747e9c6ab679f69ca515783a8724ad767f6702fcebd28f195b1144",
+        "check": "PASS"
+      }
+    },
+    "historicalBaseline": "NOT_REOPENED;not_found_at_Downloads_locator;no_equivalence_claim",
+    "fullSqlMember": {
+      "size": 1212595716,
+      "crc32": "16a9a7e6",
+      "sha256": "61a8744c7a9a007b13ef37fbda26ea8c78af11fcc469963a528eba9469174096",
+      "check": "PASS"
+    }
+  },
+  "local_checks": {
+    "locked_restore": "PASS",
+    "release_build": "PASS_0_warnings_0_errors",
+    "backend_trx": {
+      "file": "artifacts/I70-test-results/backend-final.trx",
+      "sha256": "ab83e64f04338829ab6d277d64f188b385c57591d5589a7818185e7ec281c8f2",
+      "counters": {
+        "total": "3140",
+        "executed": "3140",
+        "passed": "3140",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    "architecture": "PASS",
+    "catalog": "PASS_1527_objects_33_checksum_members",
+    "source_scanner_tests": 48,
+    "policy_guard_tests": 97,
+    "ci_policy": "PASS_no_policy_mutation",
+    "reference_suites": "PASS_24_historical_suites_no_pin_or_source_bytes_changed",
+    "api_data_audit_tests": 5,
+    "safe_verifier_tests": 9,
+    "official_OpenAPI_schema_and_99_components": "PASS",
+    "Vietnamese_handoff_116_fields_and_complete_PO_example": "PASS",
+    "yaml_and_whitespace": "PASS"
+  },
+  "contract": {
+    "operations": 34,
+    "schemas": 99,
+    "full_read_routes": 12,
+    "summary_read_routes": 0,
+    "source_columns": 116,
+    "current_route_query": "original_four_query_fields_preserved",
+    "page_pageSize_hasMore": "preserved",
+    "full_fields_default": true,
+    "v2_only_selection_filters": "preserved"
+  },
+  "local_repair": {
+    "build_analyzers": "Replace two boolean Assert.Equal assertions with Assert.True; no analyzer suppression.",
+    "first_test_run": "3139_passed_1_failed_exported_OpenAPI_not_yet_regenerated",
+    "repair": "Regenerate saved OpenAPI from compiled executable; official schema/example audit and all 3140 tests pass."
+  },
+  "local_quality_review": [
+    "All current/v2 list/detail routes retain qualified typed source objects and nulls",
+    "Every row across requested pages remains complete; extra sentinel only drives hasMore",
+    "Missing full fields on a later row is 503 without false full headers",
+    "Existing query version bounds defaults order branch/current-authority and command token fences retained",
+    "12 required OpenAPI route schemas reconciled with all 116 source columns",
+    "Bounded operator verifier checks current/v2 and retires only its own session; no business POST or row exports",
+    "FE read-only source inspection and strict/strip parser migration documented at main 2fd9779",
+    "All 116 guide rows and synthetic full PO response checked against mapping/schema",
+    "Public patch has no raw archives DLLs SQL bodies private settings credentials or real ERP rows",
+    "FE historical pins schedules and prior direct-run immutable admissions unchanged"
+  ],
+  "hosted_implementation_ci": "VERIFY_live_final_source_and_base_on_PR127;admission_only_CI_is_not_implementation_evidence",
+  "not_run": [
+    "Real authenticated target SQL rows",
+    "FE parser/render adoption",
+    "Business writes",
+    "Manual deployment",
+    "Production acceptance"
+  ],
+  "full_backend_goal_45": "OPEN"
+}
