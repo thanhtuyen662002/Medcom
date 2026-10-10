@@ -6,7 +6,7 @@ Ngày: 2026-10-10, increment I72, PR #129, goal #45. Tài liệu này bổ sung 
 
 Đã có các route HTTP thật, DTO cố định, SQL gateway CUD/luồng nghiệp vụ, truy vấn dropdown, chọn/dán dữ liệu, quyền và trạng thái nút cho **7 form thuộc 6 nhóm** dưới đây. OpenAPI của toàn BE có **115 operation**; I72 thêm 81 operation vào 34 operation trước đó. Dữ liệu trả đủ trường trong mỗi bản ghi, vẫn phân trang. Nguồn kiểm đếm: `src/backend/Medcom.Api/ErpScreenEndpoints.cs`, `ApiContractCatalog.cs`, `inventories/erp/20261010/six-screen-catalog.json`; đối chiếu route thật trong `ApiContractCatalogTests`.
 
-**Chưa được phép hiểu là CUD đã mở trên MedData.** Startup thông thường chưa có writer được nghiệm thu và trả `503 QualificationRequired` cho command. SQL cục bộ dùng dữ liệu giả lập đã chạy qua 154 kiểm tra; không có ghi nghiệp vụ vào MedData. Việc đánh số chứng từ, đầy đủ ràng buộc/hook/trigger, môi trường đăng nhập ERP thật và nghiệm thu ghi trên DB đích còn mở. FE có thể tích hợp hợp đồng API và xử lý các trạng thái này; việc vận hành CUD thật phải hoàn tất các mục ở cuối tài liệu. Bằng chứng: `docs/backend/erp-six-screen-synthetic-runtime-20261010.json`, `SqlErpScreenCommands.cs`, `ApiHost.cs`.
+**I74 đã bổ sung bộ ghi SQL và cấp số cụ thể trong startup thông thường.** Cài journal và cấu hình profile DB theo [hướng dẫn vận hành ghi](ERP_WRITE_RUNTIME_SETUP_20261010.md), rồi FE gọi các route CUD/workflow/QR để ghi dữ liệu. Không còn yêu cầu tự viết implementation C# để mở command. Các kiểm tra quyền, khóa, trạng thái, reference, idempotency và schema drift vẫn được thực thi. Kiểm thử SQL/HTTP dùng dữ liệu giả lập, không phải nghiệm thu nghiệp vụ MedData; trạng thái áp dụng lên môi trường thật được ghi riêng trong PR #132. Bằng chứng: `ApiHost.cs`, `ErpWriteStartup.cs`, `ErpWriteRuntime.cs`, `SqlErpDocumentNumberAllocator.cs` và `docs/execution/I74_ERP_WRITE_RUNTIME_20261010.md`.
 
 ## Màn hình, số trường và đường dẫn
 
@@ -166,19 +166,19 @@ Giữ cookie phiên BE. Lấy CSRF qua GET `/api/auth/csrf`, giữ companion coo
 
 Nguồn HTTP: `ErpScreenEndpoints.cs`, middleware auth/CSRF hiện có. Có thể nhận ProblemDetails `{code, correlationId, ...}` hoặc ErpCommandResult tùy boundary; FE đọc cả hai, không phụ thuộc vào SQL error text riêng tư.
 
-## Việc FE cần cập nhật ở proxy hiện có
+## Tích hợp proxy FE hiện có
 
-Đã đọc snapshot FE trên main `c7bfa10a` (PR #130): `apps/medcom-sites/lib/erp/proxy-policy.ts` chưa allowlist các route `/api/erp/{module}` mới; `proxy.ts` chưa chuyển `X-Medcom-Read-Scope`/Origin cho nhóm POST này. Đây là việc FE cần tích hợp riêng, I72 không sửa FE. Với catchall BFF hiện có, ví dụ BE `/api/erp/sales-orders/screen` tương ứng URL trình duyệt `/api/erp/api/erp/sales-orders/screen`.
+FE đã tích hợp các route mới trong PR #133, main `1a61b07d7cbf5557d1acd6d6a644781df4358222`. Đã đối chiếu `apps/medcom-sites/lib/erp/proxy-policy.ts`, `proxy.ts`, `erp-screen-api.ts` và `erp-screen-contracts.ts`: allowlist route/method, giới hạn 1 MiB, chuyển readScope/CSRF/Origin và parser giữ các field. I74 giữ nguyên phần FE của chủ triển khai riêng. Với catchall BFF hiện có, ví dụ BE `/api/erp/sales-orders/screen` tương ứng URL trình duyệt `/api/erp/api/erp/sales-orders/screen`. Đối chiếu source này không phải bằng chứng đã nghiệm thu thao tác từ trình duyệt tới MedData.
 
-FE cần allowlist **đúng từng route và method cố định** từ OpenAPI; đặt body limit 1 MiB cho nhóm POST ERP; kiểm tra browser Origin trước khi chuyển Origin cố định của BE; chuyển CSRF cookie/token và `X-Medcom-Read-Scope` hợp lệ, đồng thời relay scope/projection/correlation của response. Không mở proxy tùy ý tên bảng/path, không bỏ các kiểm tra hiện có. Cập nhật parser theo schema module để giữ full fields; gọi `/actions` để hiển thị nút và `/actions/send-pm/options` cho hộp chọn PM. Việc đọc/ghi trực tiếp BE và việc BFF đã tích hợp là hai nghiệm thu khác nhau.
+Duy trì allowlist **đúng từng route và method cố định** từ OpenAPI, kiểm tra browser Origin và relay scope/projection/correlation. Khi tạo mới, FE phải truyền `header.purchaseDate` ở đề nghị mua hàng và `header.documentDate` ở bốn form tạo khác theo `yyyy-MM-ddTHH:mm:ss.fff`; I74 công bố yêu cầu này trong schema create. Gọi `/actions` để hiển thị nút và `/actions/send-pm/options` cho hộp chọn PM. Việc đọc/ghi trực tiếp BE và việc BFF đã tích hợp là hai nghiệm thu khác nhau.
 
 ## Việc còn lại trước khi mở ghi thật
 
 1. Nghiệm thu riêng DB đích: full constraints/index/trigger/default/hook/dynamic dependency, các nhánh nghiệp vụ và rollback. 67 module hash là static closure của phạm vi, không khẳng định exhaustive dynamic SQL closure.
-2. Hoàn tất đánh số đồng thời đúng ERP. Mask PO/DMB còn UNKNOWN; mask DCNB/MLI/MLRP có nguồn nhưng concurrency/runtime vẫn cần kiểm chứng. Không dùng bộ cấp mã giả của fixture trong server.
+2. Bộ cấp số thật đã có: PO/DMB dùng mask mặc định hệ thống `{P}{MM}{YY}/{4}` đã đọc trên MedData và đối chiếu Tools.dll hiện tại; DCNB/MLI/MLRP dùng DMK riêng cùng mask. Đã kiểm thử đồng thời/double-submit/rollback trong SQL và HTTP giả lập. Xác minh các writer WinForms cùng chạy và tải thực tế ở DB đích trước nghiệm thu vận hành.
 3. Hoàn tất tiền sửa chữa và khác biệt trạng thái mặc định đơn hàng; kiểm chứng các policy Web chặt hơn nguồn (scope máy, khóa QR, giới hạn/scale và hợp đồng).
 4. Chuẩn bị backup/rollback và áp dụng journal v1 sau khi có quyết định môi trường; file `schemas/backend/erp-screen-command-journal-v1.sql` **chưa áp dụng trên MedData**. Không startup auto-migrate.
-5. Cấu hình private writer bằng các implementation thực sự được nghiệm thu của `IErpSqlWriteAcceptance` và `IErpDocumentNumberAllocator`; wiring HTTP đã có, flag bật pilot không tự cấp quyền ghi. Login ERP thật/new Tools compatibility và các quyền/chi nhánh đích cần receipt.
+5. Cấu hình writer theo [hướng dẫn vận hành ghi](ERP_WRITE_RUNTIME_SETUP_20261010.md); server đã có implementation cụ thể và công cụ install/prepare, không dùng provider giả lập. Tools.dll hiện tại đã vượt qua stored-password và HTTP login trên Windows/.NET 10 với SQL user giả lập; quyền/chi nhánh/tài khoản thật và Linux của binary mới vẫn cần receipt.
 6. Nghiệm thu QR kiện, report/print và các nguồn import chứng từ bổ sung, test FE tiêu thụ schema và target HTTPS. Goal #45 vẫn mở cho đến khi các acceptance thực tế hoàn tất.
 
 Bằng chứng nguồn: source-set I71 hiện hành `inventories/source/20261010/source-set.json`; catalog I72; `docs/SOURCE_BASELINE.md` giữ danh tính Library archives và snapshot khác nhau; hướng dẫn WinForms cũ chỉ bổ sung. Mọi dữ liệu thử là giả lập, không kèm SQL body riêng tư/credential/dòng giao dịch thật trong tài liệu công khai.

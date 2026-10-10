@@ -280,7 +280,13 @@ internal static class ApiContractCatalog
                 schemas.Values[typedHeader.Name]!["required"]=Array(screen.Fields["header"].Where(f=>f.Writable&&!f.Nullable).Select(f=>f.Name));
                 schemas.Values[typedLine.Name]!["required"]=Array(screen.Fields["lines"].Where(f=>f.Writable&&!f.Nullable).Select(f=>f.Name));
                 var newLine=schemas.Variant(typeof(ErpNewLine),"Erp_"+id+"_new_line");schemas.Property(newLine,"values",(JsonObject)line.DeepClone());
-                var create=schemas.Variant(typeof(ErpCreateRequest),"Erp_"+id+"_create");schemas.Property(create,"header",(JsonObject)header.DeepClone());
+                var createHeader=(JsonObject)header.DeepClone();
+                var dateField=module=="purchase-requests"?"purchaseDate":"documentDate";
+                createHeader["required"]=Array([dateField]);
+                createHeader["properties"]=new JsonObject{[dateField]=new JsonObject{["type"]="string",
+                    ["pattern"]=@"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}$",
+                    ["description"]="Required when creating a numbered document; ERP calendar date/time, yyyy-MM-ddTHH:mm:ss.fff."}};
+                var create=schemas.Variant(typeof(ErpCreateRequest),"Erp_"+id+"_create");schemas.Property(create,"header",createHeader);
                 schemas.Property(create,"lines",new(){["type"]="array",["minItems"]=1,["maxItems"]=500,["items"]=Schemas.Ref(newLine)});
                 paths[path+"/create"]!["post"]!["requestBody"]!["content"]!["application/json"]!["schema"]=Schemas.Ref(create);
                 var changes=new JsonArray();

@@ -33,6 +33,10 @@ public sealed class SqlLegacyUserStore : ILegacyUserStore
     }
 
     internal SqlConnection CreateConnection() => new(connectionString);
+    internal SqlConnection CreateErpCommandConnection() => new(new SqlConnectionStringBuilder(connectionString)
+    {
+        ApplicationName = "Medcom.Web.ErpCommands", Enlist = false, MultipleActiveResultSets = false
+    }.ConnectionString);
 
     public async Task ProbeSchemaAsync(CancellationToken cancellationToken)
     {

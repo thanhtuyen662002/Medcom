@@ -45,11 +45,14 @@ public static class ApiHost
         builder.Services.AddSingleton<IPurchaseRequestCommands, UnavailablePurchaseRequestCommands>();
         builder.Services.AddSingleton<IErpScreenService, UnavailableErpScreenService>();
         builder.Services.AddInboundDraftFacade();
+        var erpWrites = ErpWriteStartup.Read(builder.Configuration);
+        if (erpWrites is not null && !builder.Configuration.GetValue("Legacy:Enabled", false))
+            throw new InvalidOperationException("ERP writes require ordinary legacy identity configuration.");
         if (builder.Configuration.GetValue("Legacy:Enabled", false))
         {
             string Required(string key) => builder.Configuration[key] is { Length: > 0 } value
                 ? value : throw new InvalidOperationException($"Missing server setting {key}.");
-            var enablePilots = builder.Configuration.GetValue("Legacy:EnableReadOnlyPilots", false);
+            var enablePilots = erpWrites is not null || builder.Configuration.GetValue("Legacy:EnableReadOnlyPilots", false);
             var connectionString = ServerConfiguration.ResolveConnectionString(builder.Configuration,
                 out var developmentTestTlsTarget);
             builder.Services.AddSingleton(new LegacyCompany(Required("Legacy:TenantId"),
@@ -65,6 +68,25 @@ public static class ApiHost
             builder.Services.AddSingleton<IPlatformReadiness>(provider=>provider.GetRequiredService<LegacyReadiness>());
             builder.Services.AddHostedService<LegacyHealthMonitor>();
             builder.Services.AddSingleton<IIdentityAuthority, LegacyIdentityAuthority>();
+            if (erpWrites is not null)
+            {
+                builder.Services.AddSingleton<Medcom.Infrastructure.Erp.IErpSqlWriteAcceptance>(
+                    new Medcom.Infrastructure.Erp.ErpWriteRuntime(erpWrites.Binding, erpWrites.Database, erpWrites.SchemaFingerprint!, erpWrites.Modules));
+                builder.Services.AddSingleton<Medcom.Infrastructure.Erp.IErpDocumentNumberAllocator, Medcom.Infrastructure.Erp.SqlErpDocumentNumberAllocator>();
+                builder.Services.AddScoped<Medcom.Infrastructure.Erp.IErpSqlCommandExecutor>(provider =>
+                {
+                    var context = provider.GetRequiredService<IHttpContextAccessor>().HttpContext
+                        ?? throw new InvalidOperationException("Current request required.");
+                    var sessionToken = AuthEndpoints.Current(context).Token;
+                    var sessions = provider.GetRequiredService<IWebSessions>();
+                    return Medcom.Infrastructure.Erp.SqlErpScreenCommands.FromStore(erpWrites.Binding,
+                        provider.GetRequiredService<LegacyCompany>(), provider.GetRequiredService<SqlLegacyUserStore>(),
+                        async cancellation => (await sessions.ResolveAsync(sessionToken, false, cancellation))?.Identity,
+                        async cancellation => (await sessions.InspectAsync(sessionToken, cancellation))?.Identity,
+                        provider.GetRequiredService<Medcom.Infrastructure.Erp.IErpSqlWriteAcceptance>(),
+                        provider.GetRequiredService<Medcom.Infrastructure.Erp.IErpDocumentNumberAllocator>());
+                });
+            }
             if (enablePilots) builder.Services.AddSingleton<IDocumentReader>(provider => new SqlDocumentReader(
                 connectionString, provider.GetRequiredService<LegacyCompany>(),
                 developmentTestTlsTarget: developmentTestTlsTarget));

@@ -11,6 +11,22 @@ namespace Medcom.Api.Tests;
 
 public sealed class ApiContractCatalogTests
 {
+    [Theory]
+    [InlineData("purchase-requests", "purchaseDate")]
+    [InlineData("sales-orders", "documentDate")]
+    [InlineData("internal-transfer-requests", "documentDate")]
+    [InlineData("machine-movements", "documentDate")]
+    [InlineData("machine-repairs", "documentDate")]
+    public void Create_contract_requires_a_non_null_calendar_date_for_native_document_numbering(string module, string field)
+    {
+        var schemas = ApiContractCatalog.Build()["components"]!["schemas"]!;
+        var prefix = "Erp_" + module.Replace('-', '_');
+        var header = schemas[prefix + "_create"]!["properties"]!["header"]!;
+        Assert.Contains(field, header["required"]!.AsArray().Select(value => value!.GetValue<string>()));
+        Assert.Equal("string", header["properties"]![field]!["type"]!.GetValue<string>());
+        Assert.Equal(@"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}$", header["properties"]![field]!["pattern"]!.GetValue<string>());
+    }
+
     [Fact]
     public void Seven_screen_contracts_publish_module_specific_input_and_full_read_schemas()
     {

@@ -9,9 +9,9 @@ using Medcom.Contracts;
 using Microsoft.Data.SqlClient;
 namespace Medcom.Infrastructure.Erp;
 
-// Trusted server seam for actual target acceptance. Schema presence, HTTP flags and catalog
-// discovery cannot qualify effects. Implementations must verify private binding, native
-// defaults/constraints/triggers and numbered-document/transaction runtime acceptance.
+// Trusted server seam for target verification. The concrete ErpWriteRuntime checks the
+// installed binding and exact schema/source/configuration. Business/release acceptance
+// is separately recorded; no HTTP flag or caller-supplied SQL can construct this runtime.
 public interface IErpSqlWriteAcceptance
 {
     bool Includes(string module);
@@ -32,6 +32,10 @@ public sealed partial class SqlErpScreenCommands:IErpSqlCommandExecutor
     private readonly IErpSqlWriteAcceptance acceptance;private readonly IErpDocumentNumberAllocator allocator;
     private readonly Action<ErpSqlCommandDiagnostic>? diagnostic;
     private readonly ConditionalWeakTable<DbConnection,object> issued=new();
+    public static SqlErpScreenCommands FromStore(Guid binding, LegacyCompany company, SqlLegacyUserStore store,
+        Func<CancellationToken,Task<AuthoritativeIdentity?>> resolve, Func<CancellationToken,Task<AuthoritativeIdentity?>> inspect,
+        IErpSqlWriteAcceptance acceptance, IErpDocumentNumberAllocator allocator)
+        => new(binding, company, () => store.CreateErpCommandConnection(), resolve, inspect, acceptance, allocator);
     public SqlErpScreenCommands(Guid binding,LegacyCompany company,Func<DbConnection> connections,
         Func<CancellationToken,Task<AuthoritativeIdentity?>> resolve,Func<CancellationToken,Task<AuthoritativeIdentity?>> inspect,
         IErpSqlWriteAcceptance acceptance,IErpDocumentNumberAllocator allocator,Action<ErpSqlCommandDiagnostic>? diagnostic=null)
@@ -79,6 +83,19 @@ public sealed partial class SqlErpScreenCommands:IErpSqlCommandExecutor
             connection=candidate!;issued.Add(connection,new());
             stage="open";await connection.OpenAsync(token);transaction=await connection.BeginTransactionAsync(IsolationLevel.Serializable,token);
             Require(ReferenceEquals(transaction.Connection,connection)&&await SqlErpScreenReader.TransactionValid(transaction,token),ErpCommandOutcome.Unavailable,"transaction_invalid");
+            // Consistent lock order across Web writers and receipt observation. Numbering
+            // reads durable receipts as well as native headers; taking independent journal
+            // ranges before the header lock could otherwise deadlock concurrent creates.
+            stage="command_lock";await using(var command=ErpSqlPlan.Command(transaction,"""
+                DECLARE @result int;
+                EXEC @result=sys.sp_getapplock @Resource=N'Medcom.ErpCommands.v1',@LockMode=@mode,
+                  @LockOwner='Transaction',@LockTimeout=8000,@DbPrincipal='public';
+                SELECT @result;
+                """))
+            {
+                ErpSqlPlan.Parameter(command,"@mode",DbType.String,observation?"Shared":"Exclusive",32);
+                Require(await command.ExecuteScalarAsync(token)is int locked&&locked>=0,ErpCommandOutcome.Conflict,"erp_command_busy");
+            }
             stage="qualification";Require(await acceptance.VerifyAsync(transaction,binding,module,token)&&await JournalBinding(transaction,token)
                 &&await SqlErpScreenReader.SchemaMatches(transaction,plan,token),ErpCommandOutcome.QualificationRequired,"target_acceptance_changed");
             stage="authority";var rights=await ErpSqlAuthority.Read(transaction,company,identity!,plan.Screen,request.BranchId,token);
@@ -102,6 +119,12 @@ public sealed partial class SqlErpScreenCommands:IErpSqlCommandExecutor
                 var context=await SqlErpScreenReader.ActionContext(transaction,identity,plan,request.BranchId,rights!,before,true,token);
                 Require(ErpActionRules.Evaluate(context).Any(action=>action.Enabled&&plan.Screen.Actions.Any(def=>def.Id==action.Id&&def.Operation==operation)),
                     ErpCommandOutcome.Denied,"action_state_or_permission_denied");
+                if(operation=="create")
+                {
+                    var dateField=module=="purchase-requests"?"purchaseDate":"documentDate";
+                    Require(request.Header!.Value.TryGetProperty(dateField,out var date)&&date.ValueKind==JsonValueKind.String,
+                        ErpCommandOutcome.InvalidInput,"document_date_required");
+                }
                 var document=request.DocumentId??await allocator.AllocateAsync(transaction,module,request.Header!.Value,token);
                 Require(ErpInputRules.Identifier(document,50)&& (module!="internal-transfer-requests"||document!.Length<=30),
                     ErpCommandOutcome.QualificationRequired,"document_number_unqualified");
@@ -129,6 +152,7 @@ public sealed partial class SqlErpScreenCommands:IErpSqlCommandExecutor
             if(!committed)await Fence(transaction,identity!,plan,rights!,request.BranchId,token);
         }
         catch(Stop stop){result=stop.Result;}
+        catch(ErpDocumentNumberExhaustedException){result=new(ErpCommandOutcome.Conflict,"document_number_exhausted");}
         catch(OperationCanceledException){result=new(ErpCommandOutcome.Cancelled);}
         catch(Exception error)
         {
