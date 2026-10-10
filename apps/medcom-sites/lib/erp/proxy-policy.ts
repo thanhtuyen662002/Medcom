@@ -58,7 +58,25 @@ const erpScreenGetRoutes = new Set([
 export function erpScreenGetRoute(path:string){return erpScreenGetRoutes.has(path);}
 export function erpScreenRoute(path:string){return erpScreenPostRoute(path)||erpScreenGetRoute(path);}
 
-export function requestBodyLimit(path:string,method:string){return method==="POST"&&(purchaseCommandRoute(path)||inboundCommandRoute(path)||erpScreenPostRoute(path))?1048576:16384;}
+export function isNotificationId(segment:string):boolean{
+ if(!/^[1-9]\d{0,9}$/.test(segment))return false;
+ const num=Number(segment);
+ return Number.isSafeInteger(num)&&num>0&&num<=2147483647;
+}
+export function notificationGetRoute(path:string):boolean{
+ if(path==="api/notifications")return true;
+ const parts=path.split("/");
+ if(parts.length===3&&parts[0]==="api"&&parts[1]==="notifications"&&isNotificationId(parts[2]))return true;
+ if(parts.length===4&&parts[0]==="api"&&parts[1]==="notifications"&&isNotificationId(parts[2])&&parts[3]==="target")return true;
+ return false;
+}
+export function notificationReadRoute(path:string):boolean{
+ const parts=path.split("/");
+ return parts.length===4&&parts[0]==="api"&&parts[1]==="notifications"&&isNotificationId(parts[2])&&parts[3]==="read";
+}
+export function notificationRoute(path:string):boolean{return notificationGetRoute(path)||notificationReadRoute(path);}
+
+export function requestBodyLimit(path:string,method:string){return method==="POST"&&(purchaseCommandRoute(path)||inboundCommandRoute(path)||erpScreenPostRoute(path)||notificationReadRoute(path))?1048576:16384;}
 const routes = new Map([
  ...[...purchaseCommandRoutes].map(path=>[path,["POST"]] as [string,string[]]),
  ...[...inboundCommandRoutes].map(path=>[path,["POST"]] as [string,string[]]),
@@ -68,7 +86,11 @@ const routes = new Map([
  ["api/purchase-requests",["GET"]],["api/purchase-requests/workspace",["GET"]],["api/purchase-requests/detail",["GET"]],["api/purchase-requests/lookup",["GET"]],
  ["health/live",["GET"]],["health/ready",["GET"]],["api/auth/csrf",["GET"]],["api/auth/login",["POST"]],["api/auth/session",["GET"]],["api/auth/session/continue",["POST"]],["api/auth/logout",["POST"]],["api/workspace",["GET"]],["api/platform/metadata",["GET"]],["api/documents/purchase-orders",["GET"]],["api/documents/purchase-orders/detail",["GET"]],["api/documents/inbound-requests",["GET"]],["api/documents/inbound-requests/detail",["GET"]],
 ]);
-export function routeAllowed(path:string,method:string){return routes.get(path)?.includes(method)===true;}
+export function routeAllowed(path:string,method:string){
+ if(method==="GET"&&notificationGetRoute(path))return true;
+ if(method==="POST"&&notificationReadRoute(path))return true;
+ return routes.get(path)?.includes(method)===true;
+}
 export function backendOrigin(value:string|undefined){
  if(!value)return null;
  try{const u=new URL(value);if(u.protocol!=="https:"||u.username||u.password||u.pathname!=="/"||u.search||u.hash)return null;const h=u.hostname.toLowerCase();if(h==="localhost"||h.endsWith(".localhost")||h.endsWith(".local")||h.includes(":")||/^\d+(\.\d+)*$/.test(h)||!h.includes("."))return null;return u.origin;}catch{return null;}
