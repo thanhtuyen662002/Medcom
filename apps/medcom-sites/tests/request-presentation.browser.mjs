@@ -3,6 +3,8 @@ import {serveLocalFont} from './local-font-assets.mjs';
 // Tailwind CSS. API data is entirely synthetic; this is not SQL/server acceptance.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+import {closeBrowserResources} from './close-browser-resources.mjs';
+import './close-browser-resources.test.mjs';
 import {createRequire} from 'node:module';
 import {createServer} from 'node:http';
 import {once} from 'node:events';
@@ -395,11 +397,9 @@ test('I30 compiled application presentation at 320,360,390,1440',{timeout:240000
  // Repeatable teardown also closes resources whose launch completed after abort.
  const cleanup=async()=>{
   release();server.closeAllConnections();
-  const outcomes=await Promise.allSettled([context?.close(),browser?.close(),new Promise((resolve,reject)=>server.close(error=>{
+  await closeBrowserResources(context,browser,()=>new Promise((resolve,reject)=>server.close(error=>{
    if(error&&error.code!=='ERR_SERVER_NOT_RUNNING')reject(error);else resolve();
-  }))]);
-  const rejected=outcomes.filter(value=>value.status==='rejected');
-  if(rejected.length)throw new AggregateError(rejected.map(value=>value.reason),'I30 browser teardown failed');
+  })));
  };
  const abortCleanup=()=>{void cleanup().catch(error=>errors.push(String(error)));};
  t.signal.addEventListener('abort',abortCleanup,{once:true});
