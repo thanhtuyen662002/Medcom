@@ -9,7 +9,7 @@ owner_notifications_20261010:
   native_columns: 22
   new_api_operations: 4
   verified_form_mappings: 9
-  SQL_and_ordinary_HTTPS_synthetic_checks: 26_passed
+  SQL_and_ordinary_HTTPS_synthetic_checks: 28_passed_including_canonical_extended_username
   public_full_suite: 3276_passed_zero_failed_zero_skipped
   notification_test_cases: 43_passed
   hosted_exact_head_base_CI: PENDING_publication

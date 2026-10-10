@@ -79,7 +79,11 @@ public sealed class SqlNotificationQueries : INotificationQueries
     }
     private async Task<bool> CurrentUser(DbTransaction transaction,AuthoritativeIdentity identity,CancellationToken token)
     {
-        if(identity.TenantId!=company.TenantId||identity.CompanyId!=company.CompanyId||string.IsNullOrEmpty(identity.CredentialStamp)||!ErpInputRules.AnsiIdentifier(identity.PrincipalId,100))return false;
+        // This principal is the canonical stored SY_User.UserName, not a client identifier.
+        // Parameterization and the exact credential recheck protect it without imposing
+        // document-key ASCII rules on otherwise valid ERP account names.
+        if(identity.TenantId!=company.TenantId||identity.CompanyId!=company.CompanyId||string.IsNullOrEmpty(identity.CredentialStamp)
+            ||string.IsNullOrWhiteSpace(identity.PrincipalId)||identity.PrincipalId.Length>100)return false;
         await using var command=Command(transaction,"SELECT TOP(2) U.UserName,U.[Password],U.[Disable],U.UserGroupID,G.IsDisable FROM dbo.SY_User U WITH(HOLDLOCK) LEFT JOIN dbo.SY_UserGroup G WITH(HOLDLOCK) ON G.UserGroupID=U.UserGroupID WHERE U.UserName=@username;",identity);
         await using var reader=await command.ExecuteReaderAsync(token);
         if(!await reader.ReadAsync(token)||Enumerable.Range(0,5).Any(reader.IsDBNull))return false;
