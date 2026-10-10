@@ -1,0 +1,9 @@
+# I74 operational ERP write runtime
+
+Direct owner request: finish the backend so a FE command persists data, rather than shipping endpoints with a permanently absent writer. Admission base: `22cedef88216479216ee4d135088409dc3341cef`; all four current-main workflows succeeded (38036523362, 38036523266, 38036523268, 38036523261). Canonical goal #45 remains open. This isolated direct-writer increment preserves historical leases and immutable claims; no separately owned FE files or schedules are changed.
+
+The current ordinary startup registers no `IErpSqlCommandExecutor`; production implementations of `IErpSqlWriteAcceptance` and `IErpDocumentNumberAllocator` are missing. Source evidence: `src/backend/Medcom.Api/ApiHost.cs`, `src/backend/Medcom.Infrastructure/Erp/SqlErpScreenCommands.cs`. I72's private fixture used a synthetic numbering provider, which is not an operational implementation.
+
+Work: recover exact current numbering configuration and source algorithm; implement concrete transactional numbering and database-bound runtime verification; wire the actual executor through private server configuration; exercise HTTP commands, SQL effects and rereads using real SQL with synthetic rows; supply executable deployment preparation and FE integration instructions. Source/configuration, permission/state, concurrency, idempotency and rollback checks remain enforced. Remote MedData writes or deployment are not inferred from a request to implement the backend; its audit remains SELECT-only until an authorized target-operation decision.
+
+Live GitHub is authoritative. Root checkout contains a separately owned FE modification at `apps/medcom-sites/lib/erp/proxy-policy.ts`; it is preserved outside this branch. Prior approved Library identities and the separately recorded current ERP/MedData round remain distinct. Actual target runtime, business acceptance and source unknowns are recorded as UNKNOWN until verified.
