@@ -1,3 +1,5 @@
+> Hướng dẫn lịch sử trước 11/10/2026. Dùng [bàn giao API theo màn hình và thao tác](BE_FE_API_REFERENCE_20261011.md) hiện hành và OpenAPI v3. Các vị trí dữ liệu bọc/lặp cũ trong tài liệu này đã được thay thế; không dùng thuật ngữ kỹ thuật dưới đây làm nhãn giao diện.
+
 # Rà soát dữ liệu hiển thị API — 11/10/2026
 
 CUD/workflow follow-up: [PR140](https://github.com/thanhtuyen662002/Medcom/pull/140) implements the remaining purchase/inbound/transfer CUD and department actions cataloged here. Current scope, validation, deployment and unresolved bounds are in [I78](../execution/I78_CUD_ACTIONS_20261011.md) and the [FE CUD guide](BE_FE_CUD_WORKFLOW_20261011.md). Tables below retain the preceding audit snapshot; print/import/copy additions are excluded by the newer owner instruction.

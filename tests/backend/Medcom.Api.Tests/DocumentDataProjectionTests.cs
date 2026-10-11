@@ -50,10 +50,18 @@ public sealed class DocumentDataProjectionTests
         var data = kind == "purchase-requests" ? body.RootElement.GetProperty("data") : body.RootElement;
         var row = detail ? data : data.GetProperty("rows")[0];
         if (kind == "purchase-requests")
-            Assert.True(row.TryGetProperty(detail ? "sourceFields" : "fields", out _));
+        {
+            var header = detail ? row.GetProperty("document").GetProperty("header") : row;
+            Assert.True(header.TryGetProperty("personSuggest", out _));
+            Assert.False(row.TryGetProperty(detail ? "sourceFields" : "fields", out _));
+        }
         else
-            Assert.True((detail ? row.GetProperty("document") : row)
-                .TryGetProperty(kind == "purchase-orders" ? "purchaseOrderHeader" : "inboundRequestHeader", out _));
+        {
+            var header = detail ? row.GetProperty("document") : row;
+            Assert.True(header.TryGetProperty(kind == "purchase-orders" ? "objectId" : "invoiceNo", out _));
+            Assert.False(header.TryGetProperty(kind == "purchase-orders" ? "purchaseOrderHeader" : "inboundRequestHeader", out _));
+        }
+        Assert.Equal("3", Assert.Single(response.Headers.GetValues("X-Medcom-Response-Contract")));
     }
 
     [Theory]

@@ -1,0 +1,3701 @@
+{
+  "format": 3,
+  "source_set": "owner-live-meddata-20261010",
+  "static_reconciliation": "PASS",
+  "registered_operations": 243,
+  "complete_source_columns": 118,
+  "erp_screen_source_columns": 1516,
+  "erp_modules": {
+    "purchase-requests": {
+      "form": "AP_PurposeRequestListFrm",
+      "source_fields": {
+        "header": 14,
+        "lines": 9
+      },
+      "evidence": [
+        "inventories/erp/20261010/six-screen-catalog.json",
+        "docs/backend/medcom-openapi.json"
+      ]
+    },
+    "sales-orders": {
+      "form": "AR_OrderByContractFrm",
+      "source_fields": {
+        "header": 54,
+        "lines": 27,
+        "history": 7
+      },
+      "evidence": [
+        "inventories/erp/20261010/six-screen-catalog.json",
+        "docs/backend/medcom-openapi.json"
+      ]
+    },
+    "internal-transfer-requests": {
+      "form": "IV_InternalTransferRequestFrm",
+      "source_fields": {
+        "header": 20,
+        "lines": 12,
+        "history": 7
+      },
+      "evidence": [
+        "inventories/erp/20261010/six-screen-catalog.json",
+        "docs/backend/medcom-openapi.json"
+      ]
+    },
+    "warehouse-qr": {
+      "form": "IV_Output_QRCodeFrm",
+      "source_fields": {
+        "header": 25,
+        "lines": 9,
+        "comparison": 26
+      },
+      "evidence": [
+        "inventories/erp/20261010/six-screen-catalog.json",
+        "docs/backend/medcom-openapi.json"
+      ]
+    },
+    "sales-qr": {
+      "form": "AR_Invoice_QRCodeFrm",
+      "source_fields": {
+        "header": 71,
+        "lines": 9,
+        "comparison": 49
+      },
+      "evidence": [
+        "inventories/erp/20261010/six-screen-catalog.json",
+        "docs/backend/medcom-openapi.json"
+      ]
+    },
+    "machine-movements": {
+      "form": "FA_Move2026Frm",
+      "source_fields": {
+        "header": 18,
+        "lines": 23
+      },
+      "evidence": [
+        "inventories/erp/20261010/six-screen-catalog.json",
+        "docs/backend/medcom-openapi.json"
+      ]
+    },
+    "machine-repairs": {
+      "form": "FA_Repair2026Frm",
+      "source_fields": {
+        "header": 22,
+        "lines": 15
+      },
+      "evidence": [
+        "inventories/erp/20261010/six-screen-catalog.json",
+        "docs/backend/medcom-openapi.json"
+      ]
+    },
+    "purchase-orders": {
+      "form": "AP_OrderFrm",
+      "source_fields": {
+        "header": 19,
+        "lines": 12
+      },
+      "evidence": [
+        "inventories/erp/20261011/cud-workflow-catalog.json",
+        "docs/backend/medcom-openapi.json"
+      ]
+    },
+    "inbound-requests": {
+      "form": "IV_InboundRequestFrm",
+      "source_fields": {
+        "header": 38,
+        "lines": 26,
+        "costs": 27,
+        "discrepancies": 13,
+        "history": 7
+      },
+      "evidence": [
+        "inventories/erp/20261011/cud-workflow-catalog.json",
+        "docs/backend/medcom-openapi.json"
+      ]
+    },
+    "purchase-approvals": {
+      "form": "AP_ApprovePurchaseRequestListFrm",
+      "source_fields": {
+        "header": 14,
+        "lines": 9
+      },
+      "evidence": [
+        "inventories/erp/20261011/cud-workflow-catalog.json",
+        "docs/backend/medcom-openapi.json"
+      ]
+    },
+    "sales-order-pm": {
+      "form": "AR_OrderComfirmFrm",
+      "source_fields": {
+        "header": 61,
+        "lines": 27,
+        "history": 7
+      },
+      "evidence": [
+        "inventories/erp/20261011/cud-workflow-catalog.json",
+        "docs/backend/medcom-openapi.json"
+      ]
+    },
+    "sales-order-sa": {
+      "form": "AR_OrderAproveFrm",
+      "source_fields": {
+        "header": 54,
+        "lines": 27,
+        "history": 7
+      },
+      "evidence": [
+        "inventories/erp/20261011/cud-workflow-catalog.json",
+        "docs/backend/medcom-openapi.json"
+      ]
+    },
+    "internal-transfer-pm": {
+      "form": "IV_InternalTransferPMFrm",
+      "source_fields": {
+        "header": 30,
+        "lines": 12,
+        "history": 7
+      },
+      "evidence": [
+        "inventories/erp/20261011/cud-workflow-catalog.json",
+        "docs/backend/medcom-openapi.json"
+      ]
+    },
+    "internal-transfer-batches": {
+      "form": "IV_InternalTransferBatchFrm",
+      "source_fields": {
+        "header": 48,
+        "lines": 11,
+        "details": 33,
+        "assets": 17,
+        "history": 8
+      },
+      "evidence": [
+        "inventories/erp/20261011/cud-workflow-catalog.json",
+        "docs/backend/medcom-openapi.json"
+      ]
+    },
+    "internal-transfer-tech": {
+      "form": "IV_InternalTransferTechFrm",
+      "source_fields": {
+        "header": 48,
+        "requests": 11,
+        "lines": 33,
+        "assets": 17,
+        "history": 8
+      },
+      "evidence": [
+        "inventories/erp/20261011/cud-workflow-catalog.json",
+        "docs/backend/medcom-openapi.json"
+      ]
+    },
+    "internal-transfer-sa": {
+      "form": "IV_InternalTransferSAFrm",
+      "source_fields": {
+        "header": 48,
+        "requests": 11,
+        "lines": 33,
+        "assets": 17,
+        "history": 8
+      },
+      "evidence": [
+        "inventories/erp/20261011/cud-workflow-catalog.json",
+        "docs/backend/medcom-openapi.json"
+      ]
+    },
+    "internal-transfer-accounting": {
+      "form": "IV_InternalTransferAccountingFrm",
+      "source_fields": {
+        "header": 48,
+        "requests": 11,
+        "lines": 33,
+        "assets": 17,
+        "history": 8
+      },
+      "evidence": [
+        "inventories/erp/20261011/cud-workflow-catalog.json",
+        "docs/backend/medcom-openapi.json"
+      ]
+    },
+    "internal-transfer-warehouse-out": {
+      "form": "IV_InternalTransferWarehouseOutFrm",
+      "source_fields": {
+        "header": 48,
+        "requests": 11,
+        "lines": 33,
+        "assets": 17,
+        "history": 8
+      },
+      "evidence": [
+        "inventories/erp/20261011/cud-workflow-catalog.json",
+        "docs/backend/medcom-openapi.json"
+      ]
+    },
+    "internal-transfer-warehouse-in": {
+      "form": "IV_InternalTransferWarehouseInFrm",
+      "source_fields": {
+        "header": 48,
+        "requests": 11,
+        "lines": 33,
+        "assets": 17,
+        "history": 8
+      },
+      "evidence": [
+        "inventories/erp/20261011/cud-workflow-catalog.json",
+        "docs/backend/medcom-openapi.json"
+      ]
+    }
+  },
+  "modules": {
+    "purchase-orders": {
+      "list": "/api/documents/purchase-orders",
+      "detail": "/api/documents/purchase-orders/detail",
+      "v2_alias_list": "/api/v2/documents/purchase-orders",
+      "v2_alias_detail": "/api/v2/documents/purchase-orders/detail",
+      "source_fields": {
+        "header": 19,
+        "lines": 12
+      },
+      "evidence": [
+        "docs/backend/document-field-contract.json",
+        "inventories/source/20261010/document-read-tables.json",
+        "tests/backend/Medcom.Api.Tests/DocumentFullFieldTests.cs"
+      ]
+    },
+    "inbound-requests": {
+      "list": "/api/documents/inbound-requests",
+      "detail": "/api/documents/inbound-requests/detail",
+      "v2_alias_list": "/api/v2/documents/inbound-requests",
+      "v2_alias_detail": "/api/v2/documents/inbound-requests/detail",
+      "source_fields": {
+        "header": 38,
+        "lines": 26
+      },
+      "evidence": [
+        "docs/backend/document-field-contract.json",
+        "inventories/source/20261010/document-read-tables.json",
+        "tests/backend/Medcom.Api.Tests/DocumentFullFieldTests.cs"
+      ]
+    },
+    "purchase-requests": {
+      "list": "/api/purchase-requests",
+      "detail": "/api/purchase-requests/detail",
+      "v2_alias_list": "/api/v2/purchase-requests",
+      "v2_alias_detail": "/api/v2/purchase-requests/detail",
+      "source_fields": {
+        "header": 14,
+        "lines": 9
+      },
+      "evidence": [
+        "docs/backend/document-field-contract.json",
+        "inventories/source/20261010/document-read-tables.json",
+        "tests/backend/Medcom.Api.Tests/DocumentFullFieldTests.cs"
+      ]
+    }
+  },
+  "operations": [
+    {
+      "method": "GET",
+      "path": "/health/live",
+      "operation_id": "healthLive",
+      "category": "contract-specific-projection",
+      "admission": "process-only",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/health/ready",
+      "operation_id": "healthReady",
+      "category": "contract-specific-projection",
+      "admission": "business-release-not-admitted",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/contracts/openapi.json",
+      "operation_id": "openApiContract",
+      "category": "contract-specific-projection",
+      "admission": "static-contract",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/notifications",
+      "operation_id": "notificationList",
+      "category": "contract-specific-projection",
+      "admission": "current-erp-recipient-sql",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/notifications/{id}",
+      "operation_id": "notificationDetail",
+      "category": "contract-specific-projection",
+      "admission": "current-erp-recipient-sql",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/notifications/{id}/target",
+      "operation_id": "notificationTarget",
+      "category": "contract-specific-projection",
+      "admission": "current-erp-recipient-and-document-authority",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/notifications/{id}/read",
+      "operation_id": "notificationSetRead",
+      "category": "contract-specific-projection",
+      "admission": "current-erp-recipient-native-mark-read",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/platform/metadata",
+      "operation_id": "platformMetadata",
+      "category": "contract-specific-projection",
+      "admission": "identity-observation",
+      "capability": "platform.status",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/csrf",
+      "operation_id": "authCsrf",
+      "category": "contract-specific-projection",
+      "admission": "antiforgery-bootstrap",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "operation_id": "authLogin",
+      "category": "contract-specific-projection",
+      "admission": "legacy-identity-provider-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/session",
+      "operation_id": "authSession",
+      "category": "contract-specific-projection",
+      "admission": "authenticated-session",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/session/continue",
+      "operation_id": "authContinue",
+      "category": "contract-specific-projection",
+      "admission": "authenticated-explicit-activity",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/logout",
+      "operation_id": "authLogout",
+      "category": "contract-specific-projection",
+      "admission": "authenticated-session",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/workspace",
+      "operation_id": "workspace",
+      "category": "contract-specific-projection",
+      "admission": "authenticated-scoped-navigation",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/lookups/branches",
+      "operation_id": "branchChoices",
+      "category": "contract-specific-projection",
+      "admission": "current-native-branch-grants",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/documents/field-contract",
+      "operation_id": "documentFieldContract",
+      "category": "contract-specific-projection",
+      "admission": "module-read-capability-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/documents/query-contract",
+      "operation_id": "documentQueryContract",
+      "category": "contract-specific-projection",
+      "admission": "module-read-capability-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/documents/purchase-orders",
+      "operation_id": "purchaseordersLegacyList",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "purchase-orders.read",
+      "full_data_path": "/api/documents/purchase-orders",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/documents/purchase-orders/detail",
+      "operation_id": "purchaseordersLegacyDetail",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "purchase-orders.read",
+      "full_data_path": "/api/documents/purchase-orders/detail",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/documents/purchase-orders",
+      "operation_id": "purchaseordersV2List",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "purchase-orders.read",
+      "full_data_path": "/api/v2/documents/purchase-orders",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/documents/purchase-orders/detail",
+      "operation_id": "purchaseordersV2Detail",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "purchase-orders.read",
+      "full_data_path": "/api/v2/documents/purchase-orders/detail",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/documents/inbound-requests",
+      "operation_id": "inboundrequestsLegacyList",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "inbound-requests.read",
+      "full_data_path": "/api/documents/inbound-requests",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/documents/inbound-requests/detail",
+      "operation_id": "inboundrequestsLegacyDetail",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "inbound-requests.read",
+      "full_data_path": "/api/documents/inbound-requests/detail",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/documents/inbound-requests",
+      "operation_id": "inboundrequestsV2List",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "inbound-requests.read",
+      "full_data_path": "/api/v2/documents/inbound-requests",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/documents/inbound-requests/detail",
+      "operation_id": "inboundrequestsV2Detail",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "inbound-requests.read",
+      "full_data_path": "/api/v2/documents/inbound-requests/detail",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/purchase-requests",
+      "operation_id": "purchaseRequestListLegacy",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "purchase-requests.read",
+      "full_data_path": "/api/purchase-requests",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/purchase-requests/detail",
+      "operation_id": "purchaseRequestDetailLegacy",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "purchase-requests.read",
+      "full_data_path": "/api/purchase-requests/detail",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/purchase-requests",
+      "operation_id": "purchaseRequestListV2",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "purchase-requests.read",
+      "full_data_path": "/api/v2/purchase-requests",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/purchase-requests/detail",
+      "operation_id": "purchaseRequestDetailV2",
+      "category": "full-source-fields",
+      "admission": "qualified-read-provider-required",
+      "capability": "purchase-requests.read",
+      "full_data_path": "/api/v2/purchase-requests/detail",
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/purchase-requests/workspace",
+      "operation_id": "purchaseRequestWorkspace",
+      "category": "contract-specific-projection",
+      "admission": "writeAvailable-forced-false",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/purchase-requests/lookup",
+      "operation_id": "purchaseRequestLookup",
+      "category": "contract-specific-projection",
+      "admission": "branches-purposes-currencies-qualified-individually;items-objects-unqualified",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/purchase-requests/save",
+      "operation_id": "purchaseRequestsaveCommand",
+      "category": "business-provider-unavailable",
+      "admission": "default-provider-unavailable;target-runtime-acceptance-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/purchase-requests/save/lookup",
+      "operation_id": "purchaseRequestsaveLookup",
+      "category": "business-provider-unavailable",
+      "admission": "default-provider-unavailable;target-runtime-acceptance-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/purchase-requests/submit",
+      "operation_id": "purchaseRequestsubmitCommand",
+      "category": "business-provider-unavailable",
+      "admission": "default-provider-unavailable;target-runtime-acceptance-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/purchase-requests/submit/lookup",
+      "operation_id": "purchaseRequestsubmitLookup",
+      "category": "business-provider-unavailable",
+      "admission": "default-provider-unavailable;target-runtime-acceptance-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/inbound-requests/draft",
+      "operation_id": "inboundDraftRead",
+      "category": "business-provider-unavailable",
+      "admission": "default-provider-unavailable;target-runtime-acceptance-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/inbound-requests/draft/save",
+      "operation_id": "inboundDraftsave",
+      "category": "business-provider-unavailable",
+      "admission": "default-provider-unavailable;target-runtime-acceptance-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/inbound-requests/draft/send-to-warehouse",
+      "operation_id": "inboundDraftsendtowarehouse",
+      "category": "business-provider-unavailable",
+      "admission": "default-provider-unavailable;target-runtime-acceptance-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/inbound-requests/draft/reconcile",
+      "operation_id": "inboundDraftreconcile",
+      "category": "business-provider-unavailable",
+      "admission": "default-provider-unavailable;target-runtime-acceptance-required",
+      "capability": null,
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/inbound-requests/screen",
+      "operation_id": "inbound_requests_screen",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "inbound-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/inbound-requests",
+      "operation_id": "inbound_requests_list",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "inbound-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/inbound-requests/detail",
+      "operation_id": "inbound_requests_detail",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "inbound-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/inbound-requests/actions",
+      "operation_id": "inbound_requests_actions",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "inbound-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/inbound-requests/options",
+      "operation_id": "inbound_requests_options",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "inbound-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/inbound-requests/commands/lookup",
+      "operation_id": "inbound_requests_command_lookup",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "inbound-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/inbound-requests/create",
+      "operation_id": "inbound_requests_create",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "inbound-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/inbound-requests/save",
+      "operation_id": "inbound_requests_save",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "inbound-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/inbound-requests/delete",
+      "operation_id": "inbound_requests_delete",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "inbound-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/inbound-requests/actions/send-management",
+      "operation_id": "inbound_requests_send_management",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "inbound-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/inbound-requests/actions/send-warehouse",
+      "operation_id": "inbound_requests_send_warehouse",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "inbound-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/inbound-requests/sections/costs/save",
+      "operation_id": "inbound_requests_save_costs",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "inbound-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-accounting/screen",
+      "operation_id": "internal_transfer_accounting_screen",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-accounting.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-accounting",
+      "operation_id": "internal_transfer_accounting_list",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-accounting.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-accounting/detail",
+      "operation_id": "internal_transfer_accounting_detail",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-accounting.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-accounting/actions",
+      "operation_id": "internal_transfer_accounting_actions",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-accounting.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-accounting/options",
+      "operation_id": "internal_transfer_accounting_options",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-accounting.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-accounting/commands/lookup",
+      "operation_id": "internal_transfer_accounting_command_lookup",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-accounting.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-accounting/save",
+      "operation_id": "internal_transfer_accounting_save",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-accounting.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-accounting/actions/send-warehouse",
+      "operation_id": "internal_transfer_accounting_send_warehouse",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-accounting.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-accounting/actions/reject",
+      "operation_id": "internal_transfer_accounting_reject",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-accounting.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-accounting/actions/return-step",
+      "operation_id": "internal_transfer_accounting_return_step",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-accounting.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-accounting/actions/return-step/options",
+      "operation_id": "internal_transfer_accounting_return_step_options",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-accounting.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-batches/screen",
+      "operation_id": "internal_transfer_batches_screen",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-batches.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-batches",
+      "operation_id": "internal_transfer_batches_list",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-batches.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-batches/detail",
+      "operation_id": "internal_transfer_batches_detail",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-batches.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-batches/actions",
+      "operation_id": "internal_transfer_batches_actions",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-batches.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-batches/options",
+      "operation_id": "internal_transfer_batches_options",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-batches.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-batches/commands/lookup",
+      "operation_id": "internal_transfer_batches_command_lookup",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-batches.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-batches/create",
+      "operation_id": "internal_transfer_batches_create",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-batches.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-batches/save",
+      "operation_id": "internal_transfer_batches_save",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-batches.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-batches/delete",
+      "operation_id": "internal_transfer_batches_delete",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-batches.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-batches/actions/sync-requests",
+      "operation_id": "internal_transfer_batches_sync_requests",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-batches.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-batches/actions/send-tech",
+      "operation_id": "internal_transfer_batches_send_tech",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-batches.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-pm/screen",
+      "operation_id": "internal_transfer_pm_screen",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-pm.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-pm",
+      "operation_id": "internal_transfer_pm_list",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-pm.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-pm/detail",
+      "operation_id": "internal_transfer_pm_detail",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-pm.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-pm/actions",
+      "operation_id": "internal_transfer_pm_actions",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-pm.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-pm/options",
+      "operation_id": "internal_transfer_pm_options",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-pm.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-pm/commands/lookup",
+      "operation_id": "internal_transfer_pm_command_lookup",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-pm.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-pm/save",
+      "operation_id": "internal_transfer_pm_save",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-pm.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-pm/actions/pm-confirm",
+      "operation_id": "internal_transfer_pm_pm_confirm",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-pm.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-pm/actions/reject",
+      "operation_id": "internal_transfer_pm_reject",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-pm.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-requests/screen",
+      "operation_id": "internal_transfer_requests_screen",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-requests",
+      "operation_id": "internal_transfer_requests_list",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-requests/detail",
+      "operation_id": "internal_transfer_requests_detail",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-requests/actions",
+      "operation_id": "internal_transfer_requests_actions",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-requests/options",
+      "operation_id": "internal_transfer_requests_options",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-requests/actions/send-pm/options",
+      "operation_id": "internal_transfer_requests_pm_options",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-requests/commands/lookup",
+      "operation_id": "internal_transfer_requests_command_lookup",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-requests/selection",
+      "operation_id": "internal_transfer_requests_selection",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-requests/paste/validate",
+      "operation_id": "internal_transfer_requests_paste_validate",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-requests/create",
+      "operation_id": "internal_transfer_requests_create",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-requests/save",
+      "operation_id": "internal_transfer_requests_save",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-requests/delete",
+      "operation_id": "internal_transfer_requests_delete",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-requests/actions/recall",
+      "operation_id": "internal_transfer_requests_recall",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-requests/actions/send-pm",
+      "operation_id": "internal_transfer_requests_send_pm",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-sa/screen",
+      "operation_id": "internal_transfer_sa_screen",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-sa.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-sa",
+      "operation_id": "internal_transfer_sa_list",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-sa.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-sa/detail",
+      "operation_id": "internal_transfer_sa_detail",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-sa.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-sa/actions",
+      "operation_id": "internal_transfer_sa_actions",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-sa.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-sa/options",
+      "operation_id": "internal_transfer_sa_options",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-sa.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-sa/commands/lookup",
+      "operation_id": "internal_transfer_sa_command_lookup",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-sa.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-sa/save",
+      "operation_id": "internal_transfer_sa_save",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-sa.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-sa/actions/send-accounting",
+      "operation_id": "internal_transfer_sa_send_accounting",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-sa.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-sa/actions/reject",
+      "operation_id": "internal_transfer_sa_reject",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-sa.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-sa/actions/return-step",
+      "operation_id": "internal_transfer_sa_return_step",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-sa.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-sa/actions/return-step/options",
+      "operation_id": "internal_transfer_sa_return_step_options",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-sa.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-tech/screen",
+      "operation_id": "internal_transfer_tech_screen",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-tech.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-tech",
+      "operation_id": "internal_transfer_tech_list",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-tech.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-tech/detail",
+      "operation_id": "internal_transfer_tech_detail",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-tech.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-tech/actions",
+      "operation_id": "internal_transfer_tech_actions",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-tech.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-tech/options",
+      "operation_id": "internal_transfer_tech_options",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-tech.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-tech/commands/lookup",
+      "operation_id": "internal_transfer_tech_command_lookup",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-tech.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-tech/save",
+      "operation_id": "internal_transfer_tech_save",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-tech.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-tech/actions/send-sa",
+      "operation_id": "internal_transfer_tech_send_sa",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-tech.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-tech/actions/reject",
+      "operation_id": "internal_transfer_tech_reject",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-tech.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-tech/sections/assets/save",
+      "operation_id": "internal_transfer_tech_save_assets",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-tech.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-tech/actions/send-sa/options",
+      "operation_id": "internal_transfer_tech_send_sa_options",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-tech.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-warehouse-in/screen",
+      "operation_id": "internal_transfer_warehouse_in_screen",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-warehouse-in.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-warehouse-in",
+      "operation_id": "internal_transfer_warehouse_in_list",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-warehouse-in.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-warehouse-in/detail",
+      "operation_id": "internal_transfer_warehouse_in_detail",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-warehouse-in.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-warehouse-in/actions",
+      "operation_id": "internal_transfer_warehouse_in_actions",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-warehouse-in.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-warehouse-in/options",
+      "operation_id": "internal_transfer_warehouse_in_options",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-warehouse-in.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-warehouse-in/commands/lookup",
+      "operation_id": "internal_transfer_warehouse_in_command_lookup",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-warehouse-in.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-warehouse-in/save",
+      "operation_id": "internal_transfer_warehouse_in_save",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-warehouse-in.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-warehouse-in/actions/receive",
+      "operation_id": "internal_transfer_warehouse_in_receive",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-warehouse-in.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-warehouse-out/screen",
+      "operation_id": "internal_transfer_warehouse_out_screen",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-warehouse-out.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-warehouse-out",
+      "operation_id": "internal_transfer_warehouse_out_list",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-warehouse-out.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-warehouse-out/detail",
+      "operation_id": "internal_transfer_warehouse_out_detail",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-warehouse-out.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/internal-transfer-warehouse-out/actions",
+      "operation_id": "internal_transfer_warehouse_out_actions",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-warehouse-out.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-warehouse-out/options",
+      "operation_id": "internal_transfer_warehouse_out_options",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-warehouse-out.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-warehouse-out/commands/lookup",
+      "operation_id": "internal_transfer_warehouse_out_command_lookup",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-warehouse-out.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-warehouse-out/save",
+      "operation_id": "internal_transfer_warehouse_out_save",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-warehouse-out.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-warehouse-out/actions/dispatch",
+      "operation_id": "internal_transfer_warehouse_out_dispatch",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-warehouse-out.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-warehouse-out/actions/reject",
+      "operation_id": "internal_transfer_warehouse_out_reject",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-warehouse-out.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-warehouse-out/actions/return-step",
+      "operation_id": "internal_transfer_warehouse_out_return_step",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-warehouse-out.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/internal-transfer-warehouse-out/actions/return-step/options",
+      "operation_id": "internal_transfer_warehouse_out_return_step_options",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "internal-transfer-warehouse-out.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/machine-movements/screen",
+      "operation_id": "machine_movements_screen",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "machine-movements.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/machine-movements",
+      "operation_id": "machine_movements_list",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "machine-movements.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/machine-movements/detail",
+      "operation_id": "machine_movements_detail",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "machine-movements.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/machine-movements/actions",
+      "operation_id": "machine_movements_actions",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "machine-movements.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/machine-movements/options",
+      "operation_id": "machine_movements_options",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "machine-movements.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/machine-movements/commands/lookup",
+      "operation_id": "machine_movements_command_lookup",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "machine-movements.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/machine-movements/selection",
+      "operation_id": "machine_movements_selection",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "machine-movements.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/machine-movements/paste/validate",
+      "operation_id": "machine_movements_paste_validate",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "machine-movements.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/machine-movements/create",
+      "operation_id": "machine_movements_create",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "machine-movements.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/machine-movements/save",
+      "operation_id": "machine_movements_save",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "machine-movements.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/machine-movements/delete",
+      "operation_id": "machine_movements_delete",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "machine-movements.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/machine-repairs/screen",
+      "operation_id": "machine_repairs_screen",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "machine-repairs.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/machine-repairs",
+      "operation_id": "machine_repairs_list",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "machine-repairs.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/machine-repairs/detail",
+      "operation_id": "machine_repairs_detail",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "machine-repairs.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/machine-repairs/actions",
+      "operation_id": "machine_repairs_actions",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "machine-repairs.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/machine-repairs/options",
+      "operation_id": "machine_repairs_options",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "machine-repairs.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/machine-repairs/commands/lookup",
+      "operation_id": "machine_repairs_command_lookup",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "machine-repairs.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/machine-repairs/selection",
+      "operation_id": "machine_repairs_selection",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "machine-repairs.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/machine-repairs/paste/validate",
+      "operation_id": "machine_repairs_paste_validate",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "machine-repairs.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/machine-repairs/create",
+      "operation_id": "machine_repairs_create",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "machine-repairs.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/machine-repairs/save",
+      "operation_id": "machine_repairs_save",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "machine-repairs.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/machine-repairs/delete",
+      "operation_id": "machine_repairs_delete",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "machine-repairs.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/purchase-approvals/screen",
+      "operation_id": "purchase_approvals_screen",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-approvals.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/purchase-approvals",
+      "operation_id": "purchase_approvals_list",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-approvals.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/purchase-approvals/detail",
+      "operation_id": "purchase_approvals_detail",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-approvals.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/purchase-approvals/actions",
+      "operation_id": "purchase_approvals_actions",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-approvals.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/purchase-approvals/options",
+      "operation_id": "purchase_approvals_options",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-approvals.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/purchase-approvals/commands/lookup",
+      "operation_id": "purchase_approvals_command_lookup",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-approvals.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/purchase-approvals/actions/reject",
+      "operation_id": "purchase_approvals_reject",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-approvals.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/purchase-approvals/actions/approve",
+      "operation_id": "purchase_approvals_approve",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-approvals.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/purchase-orders/screen",
+      "operation_id": "purchase_orders_screen",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/purchase-orders",
+      "operation_id": "purchase_orders_list",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/purchase-orders/detail",
+      "operation_id": "purchase_orders_detail",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/purchase-orders/actions",
+      "operation_id": "purchase_orders_actions",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/purchase-orders/options",
+      "operation_id": "purchase_orders_options",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/purchase-orders/item-price",
+      "operation_id": "purchase_orders_item_price",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/purchase-orders/commands/lookup",
+      "operation_id": "purchase_orders_command_lookup",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/purchase-orders/create",
+      "operation_id": "purchase_orders_create",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/purchase-orders/save",
+      "operation_id": "purchase_orders_save",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/purchase-orders/delete",
+      "operation_id": "purchase_orders_delete",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/purchase-requests/screen",
+      "operation_id": "purchase_requests_screen",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/purchase-requests",
+      "operation_id": "purchase_requests_list",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/purchase-requests/detail",
+      "operation_id": "purchase_requests_detail",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/purchase-requests/actions",
+      "operation_id": "purchase_requests_actions",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/purchase-requests/options",
+      "operation_id": "purchase_requests_options",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/purchase-requests/commands/lookup",
+      "operation_id": "purchase_requests_command_lookup",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/purchase-requests/selection",
+      "operation_id": "purchase_requests_selection",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/purchase-requests/paste/validate",
+      "operation_id": "purchase_requests_paste_validate",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/purchase-requests/create",
+      "operation_id": "purchase_requests_create",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/purchase-requests/save",
+      "operation_id": "purchase_requests_save",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/purchase-requests/delete",
+      "operation_id": "purchase_requests_delete",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/purchase-requests/actions/submit",
+      "operation_id": "purchase_requests_submit",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/purchase-requests/actions/send-purchase-order",
+      "operation_id": "purchase_requests_send_purchase_order",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "purchase-requests.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-order-pm/screen",
+      "operation_id": "sales_order_pm_screen",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-order-pm.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-order-pm",
+      "operation_id": "sales_order_pm_list",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-order-pm.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-order-pm/detail",
+      "operation_id": "sales_order_pm_detail",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-order-pm.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-order-pm/actions",
+      "operation_id": "sales_order_pm_actions",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-order-pm.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-order-pm/contract-info",
+      "operation_id": "sales_order_pm_contract_info",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-order-pm.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-order-pm/options",
+      "operation_id": "sales_order_pm_options",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-order-pm.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-order-pm/commands/lookup",
+      "operation_id": "sales_order_pm_command_lookup",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-order-pm.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-order-pm/actions/send-sa",
+      "operation_id": "sales_order_pm_send_sa",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-order-pm.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-order-pm/actions/reject",
+      "operation_id": "sales_order_pm_reject",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-order-pm.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-order-sa/screen",
+      "operation_id": "sales_order_sa_screen",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-order-sa.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-order-sa",
+      "operation_id": "sales_order_sa_list",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-order-sa.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-order-sa/detail",
+      "operation_id": "sales_order_sa_detail",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-order-sa.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-order-sa/actions",
+      "operation_id": "sales_order_sa_actions",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-order-sa.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-order-sa/contract-info",
+      "operation_id": "sales_order_sa_contract_info",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-order-sa.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-order-sa/options",
+      "operation_id": "sales_order_sa_options",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-order-sa.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-order-sa/commands/lookup",
+      "operation_id": "sales_order_sa_command_lookup",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-order-sa.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-order-sa/actions/send-accounting",
+      "operation_id": "sales_order_sa_send_accounting",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-order-sa.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-order-sa/actions/send-tech",
+      "operation_id": "sales_order_sa_send_tech",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-order-sa.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-order-sa/actions/reject",
+      "operation_id": "sales_order_sa_reject",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-order-sa.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-order-sa/actions/return-step",
+      "operation_id": "sales_order_sa_return_step",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-order-sa.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-order-sa/actions/return-step/options",
+      "operation_id": "sales_order_sa_return_step_options",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-order-sa.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-orders/screen",
+      "operation_id": "sales_orders_screen",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-orders",
+      "operation_id": "sales_orders_list",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-orders/detail",
+      "operation_id": "sales_orders_detail",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-orders/actions",
+      "operation_id": "sales_orders_actions",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-orders/contract-info",
+      "operation_id": "sales_orders_contract_info",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-orders/options",
+      "operation_id": "sales_orders_options",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-orders/actions/send-pm/options",
+      "operation_id": "sales_orders_pm_options",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-orders/commands/lookup",
+      "operation_id": "sales_orders_command_lookup",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-orders/selection",
+      "operation_id": "sales_orders_selection",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-orders/paste/validate",
+      "operation_id": "sales_orders_paste_validate",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-orders/create",
+      "operation_id": "sales_orders_create",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-orders/save",
+      "operation_id": "sales_orders_save",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-orders/delete",
+      "operation_id": "sales_orders_delete",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-orders/actions/recall",
+      "operation_id": "sales_orders_recall",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-orders/actions/send-pm",
+      "operation_id": "sales_orders_send_pm",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-orders.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-qr/screen",
+      "operation_id": "sales_qr_screen",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-qr",
+      "operation_id": "sales_qr_list",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-qr/detail",
+      "operation_id": "sales_qr_detail",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-qr/actions",
+      "operation_id": "sales_qr_actions",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/sales-qr/contract-info",
+      "operation_id": "sales_qr_contract_info",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-qr/options",
+      "operation_id": "sales_qr_options",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-qr/commands/lookup",
+      "operation_id": "sales_qr_command_lookup",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-qr/qr/add",
+      "operation_id": "sales_qr_scan_add",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/sales-qr/qr/delete",
+      "operation_id": "sales_qr_scan_delete",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "sales-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/warehouse-qr/screen",
+      "operation_id": "warehouse_qr_screen",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "warehouse-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/warehouse-qr",
+      "operation_id": "warehouse_qr_list",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "warehouse-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/warehouse-qr/detail",
+      "operation_id": "warehouse_qr_detail",
+      "category": "erp-full-source-fields",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "warehouse-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "GET",
+      "path": "/api/erp/warehouse-qr/actions",
+      "operation_id": "warehouse_qr_actions",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "warehouse-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/warehouse-qr/options",
+      "operation_id": "warehouse_qr_options",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "warehouse-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/warehouse-qr/commands/lookup",
+      "operation_id": "warehouse_qr_command_lookup",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "warehouse-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/warehouse-qr/qr/add",
+      "operation_id": "warehouse_qr_scan_add",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "warehouse-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/erp/warehouse-qr/qr/delete",
+      "operation_id": "warehouse_qr_scan_delete",
+      "category": "contract-specific-projection",
+      "admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.",
+      "capability": "warehouse-qr.read",
+      "full_data_path": null,
+      "evidence": [
+        "docs/backend/medcom-openapi.json",
+        "src/backend/Medcom.Api/ApiContractCatalog.cs"
+      ],
+      "real_authenticated_runtime": "NOT_RUN"
+    }
+  ],
+  "actual_SQL_rows": "NOT_RUN",
+  "production_accepted": false,
+  "FE_adoption": "UNKNOWN;requires_parsers_to_retain_all_full_fields_on_current_routes"
+}

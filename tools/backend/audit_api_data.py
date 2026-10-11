@@ -92,15 +92,20 @@ def audit(api, mapping, tables, erp_catalog=None):
     erp_read_paths = set()
     for screen in erp_catalog["screens"]:
         base = "/api/erp/" + screen["id"]
+        header_key = screen.get("headerKey", "PurchaseRequestID" if screen["id"] == "purchase-requests" else "DocumentID")
+        identity = next(field["name"] for field in screen["fields"]["header"] if field["column"] == header_key)
+        def canonical(name, fields):
+            separate_document = any(f["name"] == "documentId" for f in fields)
+            return "documentId" if name == identity and (identity == "purchaseRequestId" or not separate_document) else "lineId" if name == "userAutoId" else "isLocked" if name == "isLock" else name
         counts = {}
         for section, fields in screen["fields"].items():
             require(len(fields) == len({f["name"] for f in fields}), "Duplicate ERP source field")
             counts[section] = len(fields)
             for field in fields:
-                field_path = "data.header." + field["name"] if section == "header" else "data." + ("sections." if section not in ("lines", "history", "comparison") else "") + section + ".rows[].fields." + field["name"]
+                field_path = "data.header." + canonical(field["name"], fields) if section == "header" else "data." + ("sections." if section not in ("lines", "history", "comparison") else "") + section + ".rows[]." + canonical(field["name"], fields)
                 routes = [(base + "/detail", field_path)]
                 if section == "header":
-                    routes.append((base, "data.rows[].header." + field["name"]))
+                    routes.append((base, "data.rows[]." + canonical(field["name"], fields)))
                 for path, member in routes:
                     body = api["paths"][path]["get"]["responses"]["200"]["content"]["application/json"]["schema"]
                     schema = at_schema(api, body, member)
@@ -128,7 +133,27 @@ def audit(api, mapping, tables, erp_catalog=None):
                                "real_authenticated_runtime": "NOT_RUN"})
     require(sum(o["category"] == "full-source-fields" for o in operations) == 12, "Incomplete full read route set")
     require(sum(o["category"] == "legacy-summary" for o in operations) == 0, "Current document route still strips source fields")
-    return {"format": 2, "source_set": mapping["sourceSet"], "static_reconciliation": "PASS",
+    require(api["info"]["version"] == "3.0.0" and mapping["contractVersion"] == 3, "Response contract version mismatch")
+    def canonical_schema(schema, seen):
+        if "$ref" in schema:
+            ref = schema["$ref"]
+            if ref in seen: return
+            seen.add(ref)
+            canonical_schema(resolve(api, schema), seen)
+        for key, member in schema.get("properties", {}).items():
+            require(key not in ("fields", "sourceFields", "purchaseOrderHeader", "inboundRequestHeader", "itemDisplayContext")
+                    and not key.endswith("DisplayData"), "Duplicate business record wrapper: " + key)
+            require(not (key == "label" and "id" in schema["properties"]), "Duplicated choice name")
+            canonical_schema(member, seen)
+        for key in ("items", "additionalProperties"):
+            if isinstance(schema.get(key), dict): canonical_schema(schema[key], seen)
+        for alternative in schema.get("anyOf", []): canonical_schema(alternative, seen)
+    for path, item in api["paths"].items():
+        if path.endswith(("/screen", "-contract")): continue
+        for operation in item.values():
+            response = operation["responses"].get("200", {}).get("content", {}).get("application/json", {}).get("schema")
+            if response: canonical_schema(response, set())
+    return {"format": 3, "source_set": mapping["sourceSet"], "static_reconciliation": "PASS",
             "registered_operations": len(operations), "complete_source_columns": sum(sum(m["source_fields"].values()) for m in modules.values()),
             "erp_screen_source_columns": sum(sum(m["source_fields"].values()) for m in erp_modules.values()),
             "erp_modules": erp_modules, "modules": modules, "operations": operations, "actual_SQL_rows": "NOT_RUN",

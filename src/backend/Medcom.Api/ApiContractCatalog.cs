@@ -256,7 +256,7 @@ internal static class ApiContractCatalog
             ("inbound-requests", typeof(InboundRequestHeaderFields), typeof(InboundRequestLineFields)),
             ("purchase-requests", typeof(PurchaseRequestHeaderFields), typeof(PurchaseRequestLineFields)) })
         {
-            var fields = DocumentFieldCatalog.Get(kind) ?? throw new InvalidOperationException("Missing document field contract.");
+            var fields = DocumentFieldCatalog.Source(kind) ?? throw new InvalidOperationException("Missing document field contract.");
             schemas.SourceMetadata(head, fields.Header);
             schemas.SourceMetadata(line, fields.Lines);
         }
@@ -436,10 +436,11 @@ internal static class ApiContractCatalog
         schemas.SetRequired<ErpActionOptionsQuery>(["branchId"]);
         schemas.SetRequired<ErpItemPriceQuery>(["branchId","objectId","documentDate","itemId"]);
         FeDisplaySchemas.Apply(paths,schemas.Values);
+        CanonicalResponseSchemas.Apply(paths,schemas.Values);
         return new()
         {
-            ["openapi"] = "3.1.1", ["info"] = new JsonObject { ["title"] = "Medcom backend HTTP contract", ["version"] = "2.0.0",
-                ["description"] = "Registered HTTP boundaries include full fields with pagination, seven current ERP forms across six screen groups, fixed typed CUD/workflow intents, dropdowns and draft selection/paste. A route/schema never enables commands or proves target SQL/business acceptance." },
+            ["openapi"] = "3.1.1", ["info"] = new JsonObject { ["title"] = "Medcom backend HTTP contract", ["version"] = "3.0.0",
+                ["description"] = "Medcom ERP API for nineteen forms: full paged records, document details, create/update/delete, business actions, dropdowns and notifications. Successful record responses use one canonical location per field." },
             ["servers"] = new JsonArray(new JsonObject { ["url"] = "/", ["description"] = "This backend origin. FE uses its separately configured same-origin BFF." }),
             ["paths"] = paths,
             ["components"] = new JsonObject

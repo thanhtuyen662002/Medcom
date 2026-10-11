@@ -127,15 +127,15 @@ public sealed class FeDisplayTests
     {
         var source=new Names();await using var fixture=await PurchaseHttpFixture.Start(s=>s.AddSingleton<IReferenceData>(source));
         fixture.Source.Seed();await fixture.Login();var response=await fixture.Json("/api/purchase-requests/detail?documentId=QA-DOC");
-        var fields=response.GetProperty("data").GetProperty("sourceFields").GetProperty("lines")[0];
+        var fields=response.GetProperty("data").GetProperty("document").GetProperty("lines")[0];
         Assert.Equal("CODE",fields.GetProperty("itemCode").GetString());Assert.Equal("Tên hàng",fields.GetProperty("itemName").GetString());
         Assert.Contains(source.Keys,x=>x.Binding=="item");
         using var raw=JsonDocument.Parse("""{"itemId":"I","quantity":"1","unit":"Cái","itemName":"Name"}""");
         Assert.False(ErpInputRules.Normalize("purchase-requests","lines",raw.RootElement,out _));
         var document=response.GetProperty("data").GetProperty("document");
-        Assert.False(document.GetProperty("header").TryGetProperty("purchaseDateDisplay",out _));
-        Assert.True(document.GetProperty("headerDisplayData").TryGetProperty("purchaseDateDisplay",out _));
-        Assert.NotNull(document.GetProperty("header").Deserialize<PurchaseRequestHeaderInput>(new JsonSerializerOptions(JsonSerializerDefaults.Web)));
+        Assert.True(document.GetProperty("header").TryGetProperty("purchaseDateDisplay",out _));
+        Assert.False(document.TryGetProperty("headerDisplayData",out _));
+        Assert.Throws<JsonException>(()=>document.GetProperty("header").Deserialize<PurchaseRequestHeaderInput>(new JsonSerializerOptions(JsonSerializerDefaults.Web)));
     }
     [Fact]
     public async Task Nullable_item_name_does_not_discard_its_code_or_unit()

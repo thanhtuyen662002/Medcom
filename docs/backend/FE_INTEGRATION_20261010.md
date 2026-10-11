@@ -1,3 +1,5 @@
+> Hướng dẫn lịch sử trước 11/10/2026. Dùng [bàn giao API theo màn hình và thao tác](BE_FE_API_REFERENCE_20261011.md) hiện hành và OpenAPI v3. Các vị trí dữ liệu bọc/lặp cũ trong tài liệu này đã được thay thế; không dùng thuật ngữ kỹ thuật dưới đây làm nhãn giao diện.
+
 # Backend integration handoff — 10 October 2026 (Asia/Saigon)
 
 **Current handoff — I70 / PR #127:** [Tài liệu BE cho FE: đầy đủ fields trên từng page](BE_FE_FULL_FIELDS_INTEGRATION_20261010.md) contains all 116 columns, current URLs, pagination, types/nulls, all 34 operations and the exact FE parser changes. Both original and v2 reads return full fields; v2 migration is only needed for its additional query filters/order. Current source: `DocumentEndpoints.cs`, `PurchaseRequestEndpoints.cs`, generated OpenAPI and [the current audit](api-data-audit-current-full-20261010.json). Below is the historical I68/I69 delivery, including its earlier v2-only adoption sequence; it does not describe I70 behavior. Runtime/FE acceptance still requires observed target evidence.

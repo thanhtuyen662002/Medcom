@@ -40,6 +40,7 @@ internal static partial class FeDisplayProjection
         &&!path.EndsWith("-contract",StringComparison.Ordinal)&&!path.EndsWith("/workspace",StringComparison.Ordinal)
         &&!path.Contains("/commands/",StringComparison.Ordinal)
         &&(method.Equals("get",StringComparison.OrdinalIgnoreCase)||path.EndsWith("/options",StringComparison.Ordinal)
+            ||path.EndsWith("/item-price",StringComparison.Ordinal)
             ||path.EndsWith("/selection",StringComparison.Ordinal)||path.EndsWith("/paste/validate",StringComparison.Ordinal)
             ||path.EndsWith("/read",StringComparison.Ordinal));
     internal static string? Module(string path)=>ErpScreenCatalog.ModuleIds.FirstOrDefault(x=>path.Split('/').Contains(x,StringComparer.Ordinal));

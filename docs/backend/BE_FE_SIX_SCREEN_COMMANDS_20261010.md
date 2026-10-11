@@ -1,3 +1,5 @@
+> Hướng dẫn lịch sử trước 11/10/2026. Dùng [bàn giao API theo màn hình và thao tác](BE_FE_API_REFERENCE_20261011.md) hiện hành và OpenAPI v3. Các vị trí dữ liệu bọc/lặp cũ trong tài liệu này đã được thay thế; không dùng thuật ngữ kỹ thuật dưới đây làm nhãn giao diện.
+
 # BE → FE: CUD, nút nghiệp vụ và danh sách chọn của 6 nhóm màn hình
 
 Ngày: 2026-10-10, increment I72, PR #129, goal #45. Tài liệu này bổ sung tài liệu full-fields I71. FE thuộc người triển khai riêng; I72 không sửa giao diện.

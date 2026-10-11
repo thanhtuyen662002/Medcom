@@ -90,6 +90,9 @@ public static class ErpScreenEndpoints
             if(Guard(context,module)is {} rejection)return rejection;
             var raw=await Body(context);if(raw is null)return Problem(400,"invalid_json");
             var value=Decode<T>(raw.Value);if(value is null)return Problem(400,"invalid_json");
+            if(value is ErpLookupQuery lookup && ErpScreenCatalog.Get(module)!.Lookups.SingleOrDefault(item=>item.Id==lookup.LookupId) is {} definition)
+                context.Items["Medcom.CanonicalChoiceAliases"]=new[]{definition.ValueField,definition.DisplayField};
+            else if(value is ErpPmLookupQuery) context.Items["Medcom.CanonicalChoiceAliases"]=new[]{"UserName","HoTen"};
             return Read(context,await call(service,value,context.RequestAborted));
         });
     private static void MapCommand<T>(IEndpointRouteBuilder app,string path,string module,string operation,
