@@ -6,12 +6,13 @@ BE: `https://medcom-production.up.railway.app`. [Tài liệu đầy đủ API](B
 
 ## Cách FE tích hợp
 
-1. Đăng nhập bằng cookie ERP và CSRF theo tài liệu tổng hợp; lấy branch từ `/api/workspace` hoặc `/api/lookups/branches`. Không gửi username/quyền tự khai để ghi.
-2. GET `/api/erp/{module}/screen` để dựng cột, biết field writable và binding dropdown; GET list với `branchId,page,pageSize`. Mỗi record có đủ field, không lấy toàn bộ record trong một lần.
-3. GET `/api/erp/{module}/detail?branchId=...&documentId=...&page=1&pageSize=20`. Dùng `data.header`, `data.lines.rows[].fields`, `history` và `data.sections` theo schema module. Section có page/hasMore riêng; cùng tham số page/pageSize. `stateToken` bao gồm header, lines và section phụ như costs/assets ở các trang khác (giới hạn 500 dòng mỗi section); history chỉ đọc không tham gia token.
-4. Dựng nút từ `data.actions`, hoặc GET `/api/erp/{module}/actions` cùng branch/document. Tôn trọng `visible`, `enabled`, `reason`, `requiresSavedDocument`, `route`; không tự suy quyền từ StatusID. Server kiểm tra lại quyền, branch, trạng thái, người được giao và source khi ghi.
-5. POST command bằng JSON, cookie, Origin đúng BE/BFF, CSRF và scope header mới nhất theo tài liệu tổng hợp. `idempotencyKey` duy nhất cho mỗi ý định; retry giữ nguyên key và body. Sau `Committed`/`Replayed` tải lại detail để lấy token/nút mới. Khi mất response dùng `/commands/lookup` với operation và originalIntent; không đổi key để retry một thao tác chưa rõ kết quả.
-6. Decimal gửi bằng chuỗi invariant như `"1234.00"`; ngày SQL gửi ISO lịch như `"2026-10-11T00:00:00.000"`. FE hiển thị các field `...Name`, `...Display`, không gửi chúng hoặc field writable=false trở lại trong body CUD. Null có nghĩa dữ liệu nguồn null, không phải thiếu key.
+1. FE cập nhật allowlist BFF/proxy cho các method/path mới trong OpenAPI và đăng ký 12 module bổ sung; navigation workspace cũ chỉ có một phần catalog. BFF hiện hành không tự thêm route khi BE mở rộng.
+2. Đăng nhập bằng cookie ERP và CSRF theo tài liệu tổng hợp; lấy branch từ `/api/workspace` hoặc `/api/lookups/branches`. Không gửi username/quyền tự khai để ghi.
+3. GET `/api/erp/{module}/screen` để dựng cột, biết field writable và binding dropdown; GET list với `branchId,page,pageSize`. Mỗi record có đủ field, không lấy toàn bộ record trong một lần.
+4. GET `/api/erp/{module}/detail?branchId=...&documentId=...&page=1&pageSize=20`. Dùng `data.header`, `data.lines.rows[].fields`, `history` và `data.sections` theo schema module. Section có page/hasMore riêng; cùng tham số page/pageSize. `stateToken` bao gồm header, lines và section phụ như costs/assets ở các trang khác (giới hạn 500 dòng mỗi section); history chỉ đọc không tham gia token.
+5. Dựng nút từ `data.actions`, hoặc GET `/api/erp/{module}/actions` cùng branch/document. Tôn trọng `visible`, `enabled`, `reason`, `requiresSavedDocument`, `route`; không tự suy quyền từ StatusID. Server kiểm tra lại quyền, branch, trạng thái, người được giao và source khi ghi.
+6. POST command bằng JSON, cookie, Origin đúng BE/BFF, CSRF và scope header mới nhất theo tài liệu tổng hợp. `idempotencyKey` duy nhất cho mỗi ý định; retry giữ nguyên key và body. Sau `Committed`/`Replayed` tải lại detail để lấy token/nút mới. Khi mất response dùng `/commands/lookup` với operation và originalIntent; không đổi key để retry một thao tác chưa rõ kết quả.
+7. Decimal gửi bằng chuỗi invariant như `"1234.00"`; ngày SQL gửi ISO lịch như `"2026-10-11T00:00:00.000"`. FE hiển thị các field `...Name`, `...Display`, không gửi chúng hoặc field writable=false trở lại trong body CUD. Null có nghĩa dữ liệu nguồn null, không phải thiếu key.
 
 ## Body dùng chung
 

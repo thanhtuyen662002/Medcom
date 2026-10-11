@@ -2,7 +2,7 @@
 
 Tài liệu bàn giao toàn bộ **243 operation HTTP và 890 schema** hiện có của BE, đối chiếu contract xuất từ BE đã build của [PR 140](https://github.com/thanhtuyen662002/Medcom/pull/140), trên base main `b8955fba7a891adbc4f07714b182339bfa47651f`, cập nhật ngày 11/10/2026. FE dùng tài liệu này để tích hợp đăng nhập, danh sách đủ trường theo trang, chi tiết, CUD, nút nghiệp vụ, dropdown và thông báo. Lần bổ sung này bỏ In và Import/copy khỏi phạm vi; route chọn/dán cũ vẫn giữ contract tương thích. Những route tương thích chưa có provider vận hành được ghi rõ trong danh mục; chúng không được dùng để thay thế route ghi hiện hành.
 
-**Địa chỉ BE:** https://medcom-production.up.railway.app. **OpenAPI đang chạy:** https://medcom-production.up.railway.app/api/contracts/openapi.json. File contract trong repo: [medcom-openapi.json](medcom-openapi.json). Contract trong repo là bản xuất từ mã đã kiểm thử; trạng thái deployment/live nằm trong checkpoint PR 140, không suy ra mọi màn hình ERP đã nghiệm thu production.
+**Địa chỉ BE:** https://medcom-production.up.railway.app. **OpenAPI đang chạy:** https://medcom-production.up.railway.app/api/contracts/openapi.json. File contract trong repo: [medcom-openapi.json](medcom-openapi.json). Contract trong repo là bản xuất từ mã đã kiểm thử; trạng thái deployment/live nằm trong checkpoint phát hành ở comment PR 140 và [I78](../execution/I78_CUD_ACTIONS_20261011.md), không suy ra mọi màn hình ERP đã nghiệm thu production.
 
 ## Mục lục
 
@@ -27,7 +27,7 @@ Tài liệu bàn giao toàn bộ **243 operation HTTP và 890 schema** hiện c�
 | Nhóm | Dùng cho FE | Trạng thái thực tế và giới hạn |
 |---|---|---|
 | `/api/auth/*`, `/api/workspace` | Đăng nhập ERP, giữ phiên, lấy scope và chi nhánh | Provider legacy thật được cấu hình; tài khoản và quyền lấy lại từ ERP. |
-| `/api/erp/{module}/*` | 19 form hiện hành; đọc, CUD, nút nghiệp vụ, QR, dropdown | Bộ ghi SQL và cấp số đã có trong startup; profile bảy module đã bật trước PR 140; 19 module đã qualified SELECT-only trên MedData; cập nhật BE sau CI/merge theo checkpoint I78 và hai bảng journal đã cài trên MedData theo cho phép của owner. Quyền và trạng thái từng phiếu vẫn được kiểm tra. |
+| `/api/erp/{module}/*` | 19 form hiện hành; đọc, CUD, nút nghiệp vụ, QR, dropdown | Bộ ghi SQL và cấp số đã có trong startup; protected profile kiểm soát ghi; 19 module đã qualified SELECT-only trên MedData; merge/cấu hình BE/live được xác nhận trong checkpoint phát hành PR 140 và hai bảng journal đã cài trên MedData theo cho phép của owner. Quyền và trạng thái từng phiếu vẫn được kiểm tra. |
 | `/api/documents/*`, `/api/v2/documents/*` | Đọc đơn đặt hàng mua và yêu cầu nhập kho; metadata field/query | Đủ field cho mỗi record, giữ phân trang. Chưa có create/save/delete của hai module này trong nhóm route này. |
 | `/api/purchase-requests`, `/api/v2/purchase-requests` và `/detail` | Đọc đề nghị mua hàng theo contract tương thích | Đủ field, nhưng envelope khác `/api/erp/purchase-requests`. FE triển khai màn hình mới nên dùng nhóm `/api/erp/purchase-requests`. |
 | `/api/purchase-requests/workspace`, `/lookup` | Metadata và lookup tương thích | `writeAvailable=false` thuộc facade cũ. Không dùng cờ này để khóa CUD hiện hành của `/api/erp/purchase-requests`. Một số lookup cũ chưa qualified. |
