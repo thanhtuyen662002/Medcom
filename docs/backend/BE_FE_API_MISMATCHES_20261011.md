@@ -58,7 +58,7 @@ API: `GET /api/purchase-requests`, `GET /api/purchase-requests/detail`, `GET /ap
 
 FE còn bắt buộc `purchaseRequestId` bên ngoài header, `line.values`, `sourceFields`, các bản ghi strict cũ và dropdown có `label`. BE hiện trả định danh trong header, dòng đầy đủ trực tiếp và dropdown `id` đi với `name`. Tái hiện list, detail và lookup chi nhánh đều nhận `502 invalid_api_response` từ bộ đọc FE. Bằng chứng: `apps/medcom-sites/lib/erp/purchase-request-api.ts`; E2, E3.
 
-Sửa cả adapter và tab Đề nghị mua, không chỉ nới schema. `tab-purchases.tsx` còn lấy `sourceFields`; `` còn tự đặt tên hàng theo ID tự đặt đơn vị. Dùng `itemCode`, `itemName`, `unit`, tên trạng thái và giá hiển thị BE trả.
+Sửa cả adapter và tab Đề nghị mua, không chỉ nới schema. `tab-purchases.tsx` còn lấy `sourceFields`, tự đặt tên hàng theo ID và tự đặt đơn vị. Dùng `itemCode`, `itemName`, `unit`, tên trạng thái và giá hiển thị BE trả.
 
 `GET /api/purchase-requests/workspace` vẫn là facade cũ có `writeAvailable=false`, đúng với mã BE tại `PurchaseRequestEndpoints.cs`; không đổi thành true ở FE. Tạo/sửa/xóa đầy đủ nằm trong nhóm `/api/erp/purchase-requests/...` và trạng thái nút của nhóm này. Thử đọc workspace cũ vẫn thành công; không ghi nhầm nó vào danh sách API bị lỗi schema.
 
