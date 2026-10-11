@@ -16,6 +16,7 @@ Scope: PR 139, base `d7f901584b56a8620cc6ec68f59a9cc21bcf9b23`. The interactive 
 - Focused repair suite: 250 passed, including draft read/save, source fields and session authority. Nine real local synthetic SQL checks passed for name/code/unit, exact key matching, branch grants/paging, scope changes and capacity. These reads rolled back and created no MedData business transactions.
 - API audit: 120 operations; all 118 compatible document source fields and all 417 finite screen-section fields reconciled; eight audit regressions passed. OpenAPI export: 423 schemas / 3,450 schema properties. Full FE reference: 660 tables, 888 fragment links, zero missing anchors, valid JSON examples/local links and three GitHub Markdown render parts.
 - Required hosted checks and tested merge/package provenance must pass on the final source/base before merge. Their exact receipts and live deployment verification are recorded on PR 139; earlier doc-only checks do not prove this implementation.
+- Hosted container run 38110091830 exposed a missing build-context COPY for the new embedded reference catalog. Dockerfile and the exact .dockerignore allowlist now include that sanitized file; context tests also deny neighboring audit/private files and directory-shaped impostors. This owned failure must be green on the repaired source before integration. No broad inventory/raw-source inclusion was added.
 
 ## Remaining acceptance
 
