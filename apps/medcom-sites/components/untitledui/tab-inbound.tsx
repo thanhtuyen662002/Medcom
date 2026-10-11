@@ -112,30 +112,51 @@ export function TabInbound({
 
         if (pageData && pageData.rows) {
           const mapped: InboundReceipt[] = pageData.rows.map((r) => {
+            const raw = r as Record<string, unknown>;
             const h = r.inboundRequestHeader;
             let stage: InboundReceipt["stage"] = "receiving";
             if (r.statusId === 2) stage = "stored";
             else if (r.statusId === 1) stage = "inspecting";
             else if (r.statusId === 3 || r.statusId === -1) stage = "rejected";
 
-            const poRef = h?.orderNumber || `PO-${r.documentId}`;
-            const supplierName = h?.objectId ? `NCC: ${h.objectId}` : "Nhà cung ứng Dược phẩm ERP";
+            const orderNumber = h?.orderNumber || (raw.orderNumber as string);
+            const poRef = orderNumber || `PO-${r.documentId}`;
+            const objectId =
+              h?.objectId ||
+              (raw.objectId as string) ||
+              (raw.supplierName as string) ||
+              (raw.vendorName as string);
+            const supplierName = objectId ? `NCC: ${objectId}` : "Nhà cung ứng Dược phẩm ERP";
+            const invoiceNo = h?.invoiceNo || (raw.invoiceNo as string);
+            const departurePoint = h?.departurePoint || (raw.departurePoint as string);
+            const destinationPoint = h?.destinationPoint || (raw.destinationPoint as string);
+            const docDate = h?.documentDate
+              ? h.documentDate.slice(0, 10)
+              : r.documentDate
+              ? r.documentDate.slice(0, 10)
+              : "—";
+            const declarationNumber =
+              h?.declarationNumber || (raw.declarationNumber as string);
 
             return {
               id: r.documentId,
               code: r.documentId,
               poCode: poRef,
-              orderNumber: h?.orderNumber,
-              invoiceNo: h?.invoiceNo,
-              departurePoint: h?.departurePoint,
-              destinationPoint: h?.destinationPoint,
+              orderNumber,
+              invoiceNo,
+              departurePoint,
+              destinationPoint,
               supplier: supplierName,
-              receivedDate: h?.documentDate ? h.documentDate.slice(0, 10) : (r.documentDate || "—"),
-              inspector: h?.qrPrintType ? `KTV. ${h.qrPrintType}` : "KTV. Kiểm soát Kho Dược",
+              receivedDate: docDate,
+              inspector: h?.qrPrintType
+                ? `KTV. ${h.qrPrintType}`
+                : (raw.qrPrintType as string)
+                ? `KTV. ${raw.qrPrintType}`
+                : "KTV. Kiểm soát Kho Dược",
               temperature: "22.5 °C (Chuẩn mát GSP)",
               tempStatus: "pass",
               stage,
-              batchNo: h?.declarationNumber ? `TK: ${h.declarationNumber}` : `LÔ-${r.documentId}`,
+              batchNo: declarationNumber ? `TK: ${declarationNumber}` : `LÔ-${r.documentId}`,
               expiryDate: "Theo chứng từ",
               totalQuantity: 0,
               header: h,
@@ -185,26 +206,64 @@ export function TabInbound({
         const header = detail.document.inboundRequestHeader || item.header;
         const lines = detail.inboundRequestLines.map((l, idx) => {
           const f = l.fields;
-          const lot = f?.lotNumberByReal || f?.lotNumberByDocument || item.batchNo;
-          const exp = f?.expireDateByReal ? f.expireDateByReal.slice(0, 10) : f?.expireDateByDocument ? f.expireDateByDocument.slice(0, 10) : item.expiryDate;
-          const unitPriceStr = f?.unitPrice ? formatVND(f.unitPrice, "VND") : undefined;
-          const amountStr = f?.amount ? formatVND(f.amount, "VND") : undefined;
+          const rawL = l as Record<string, unknown>;
+          const lot =
+            f?.lotNumberByReal ||
+            (rawL.lotNumberByReal as string) ||
+            f?.lotNumberByDocument ||
+            (rawL.lotNumberByDocument as string) ||
+            (rawL.lotNumber as string) ||
+            item.batchNo;
+          const expVal =
+            f?.expireDateByReal ||
+            (rawL.expireDateByReal as string) ||
+            f?.expireDateByDocument ||
+            (rawL.expireDateByDocument as string) ||
+            (rawL.expireDate as string);
+          const exp = expVal ? expVal.slice(0, 10) : item.expiryDate;
+          const unitPriceVal = f?.unitPrice || (rawL.unitPrice as string);
+          const amountVal = f?.amount || (rawL.amount as string);
+          const unitPriceStr = unitPriceVal ? formatVND(unitPriceVal, "VND") : undefined;
+          const amountStr = amountVal ? formatVND(amountVal, "VND") : undefined;
+          const orderedQty =
+            f?.setQuantityByDocument ||
+            l.setQuantityByDocument ||
+            (rawL.setQuantityByDocument as string) ||
+            (rawL.quantity as string) ||
+            "—";
+          const receivedQty =
+            f?.setQuantityByReal ||
+            l.setQuantityByReal ||
+            (rawL.setQuantityByReal as string) ||
+            orderedQty;
+          const unit =
+            f?.unit2 ||
+            (rawL.unit2 as string) ||
+            (rawL.unit as string) ||
+            "Hộp/Đơn vị";
+          const itemName =
+            (f as Record<string, unknown> | undefined)?.itemName ||
+            (rawL.itemName as string) ||
+            `Dược phẩm [${l.itemId}]`;
+          const hangSX = f?.hangSX || (rawL.hangSX as string);
+          const checkerNote = f?.checkerNote || (rawL.checkerNote as string);
+          const testStatus = f?.testStatus || (rawL.testStatus as string);
 
           return {
             lineId: l.lineId || `line-${idx}`,
             itemId: l.itemId,
-            name: `Dược phẩm [${l.itemId}]`,
+            name: String(itemName),
             batch: lot,
             exp,
-            orderedQty: f?.setQuantityByDocument || l.setQuantityByDocument || "—",
-            receivedQty: f?.setQuantityByReal || l.setQuantityByReal || f?.setQuantityByDocument || "—",
-            unit: f?.unit2 || "Hộp/Đơn vị",
+            orderedQty,
+            receivedQty,
+            unit: String(unit),
             storageBin: `Khu vực kho GSP · Ô ${idx + 1}`,
-            hangSX: f?.hangSX,
+            hangSX,
             unitPrice: unitPriceStr,
             amount: amountStr,
-            checkerNote: f?.checkerNote,
-            testStatus: f?.testStatus,
+            checkerNote,
+            testStatus,
             fields: f,
           };
         });

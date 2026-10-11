@@ -88,19 +88,27 @@ async function erpGet<T>(
     );
   }
 
-  const bodyEnvelope = z.object({
-    readScope: z.string(),
-    data: z.unknown(),
-  }).safeParse(body);
-  if (!bodyEnvelope.success) {
+  const envelopeParsed = z
+    .object({
+      readScope: z.string().optional(),
+      data: z.unknown(),
+    })
+    .safeParse(body);
+  if (envelopeParsed.success && envelopeParsed.data.data !== undefined) {
+    if (envelopeParsed.data.readScope) {
+      activeReadScope = envelopeParsed.data.readScope;
+    }
+    const innerParsed = schema.safeParse(envelopeParsed.data.data);
+    if (innerParsed.success) {
+      return innerParsed.data;
+    }
+  }
+
+  const directParsed = schema.safeParse(body);
+  if (!directParsed.success) {
     throw new ApiError(502, "invalid_api_response");
   }
-  activeReadScope = bodyEnvelope.data.readScope;
-  const parsed = schema.safeParse(bodyEnvelope.data.data);
-  if (!parsed.success) {
-    throw new ApiError(502, "invalid_api_response");
-  }
-  return parsed.data;
+  return directParsed.data;
 }
 
 async function erpPost<T>(
