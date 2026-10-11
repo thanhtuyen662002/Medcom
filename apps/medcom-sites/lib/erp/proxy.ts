@@ -75,7 +75,8 @@ export async function proxyErpRequest(request:Request,path:string[],configuredOr
  }
  }catch{return problem(400,"invalid_request_body");}
  try{
-  const r=await upstreamFetch(`${origin}/${route}${incoming.search}`,{method:request.method,headers,body,cache:"no-store",redirect:"manual",signal:AbortSignal.any([request.signal,AbortSignal.timeout(20000)])});
+  const timeoutMs=/^(?:api\/lookups\/branches|api\/notifications(?:\/.*)?)$/.test(route)?35000:25000;
+  const r=await upstreamFetch(`${origin}/${route}${incoming.search}`,{method:request.method,headers,body,cache:"no-store",redirect:"manual",signal:AbortSignal.any([request.signal,AbortSignal.timeout(timeoutMs)])});
   if(r.status>=300&&r.status<400)return problem(502,"upstream_redirect_rejected");
   const outgoing=new Headers({"Cache-Control":"no-store","X-Content-Type-Options":"nosniff"});
   for(const name of ["content-type","x-correlation-id","retry-after"]){const v=r.headers.get(name);if(v)outgoing.set(name,v);}
@@ -104,5 +105,9 @@ export async function proxyErpRequest(request:Request,path:string[],configuredOr
   }
   for(const value of r.headers.getSetCookie()){const safe=relayCookie(value);if(safe)outgoing.append("Set-Cookie",safe);}
   return new Response(r.body,{status:r.status,headers:outgoing});
- }catch{return problem(503,"backend_unavailable");}
+ }catch(err: unknown){
+  const isTimeout=(err instanceof Error&&err.name==="TimeoutError")||(err as {name?:string})?.name==="TimeoutError";
+  if(isTimeout)return problem(504,"gateway_timeout");
+  return problem(503,"backend_unavailable");
+ }
 }

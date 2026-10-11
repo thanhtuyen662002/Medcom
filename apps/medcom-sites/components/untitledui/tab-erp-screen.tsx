@@ -41,6 +41,7 @@ interface TabErpScreenProps {
   module: ErpScreenModule;
   currentBranch: string;
   isActive: boolean;
+  targetDocumentId?: string;
   onOpenScanner?: () => void;
 }
 
@@ -280,10 +281,42 @@ function getActionErrorMessage(outcome: string, code?: string | null): string {
   }
 }
 
+function getActionReasonMessage(reason?: string | null): string {
+  if (!reason) return "";
+  switch (reason) {
+    case "native_permission_or_hidden":
+      return "Chức năng chưa được phân quyền hoặc bị ẩn theo quy tắc ERP.";
+    case "save_document_first":
+      return "Vui lòng lưu chứng từ trước khi thực hiện thao tác này.";
+    case "contract_missing":
+      return "Chứng từ chưa liên kết thông tin hợp đồng.";
+    case "state_or_assignment_not_allowed":
+      return "Trạng thái chứng từ hiện tại không cho phép thực hiện thao tác này.";
+    case "erp_write_unqualified":
+      return "Hệ thống đang ở chế độ bảo vệ dữ liệu, chưa ghi trực tiếp.";
+    case "document_numbering_unqualified":
+      return "Chức năng cấp số chứng từ tự động đang được bảo vệ.";
+    case "contract_read_unqualified":
+      return "Chức năng đọc thông tin hợp đồng đang được bảo vệ.";
+    case "report_runtime_unqualified":
+      return "Chức năng in báo cáo đang được bảo vệ.";
+    default:
+      return reason;
+  }
+}
+
+function isPrintAction(act: ErpActionState): boolean {
+  if (act.id === "contract-info") return false;
+  const id = act.id.toLowerCase();
+  const cap = act.caption.toLowerCase();
+  return id.includes("print") || /\b(in|print)\b/i.test(cap) || cap.startsWith("in ");
+}
+
 export function TabErpScreen({
   module,
   currentBranch,
   isActive,
+  targetDocumentId,
   onOpenScanner,
 }: TabErpScreenProps) {
   const isQrModule = module === "warehouse-qr" || module === "sales-qr";
@@ -297,6 +330,28 @@ export function TabErpScreen({
     "inbound-requests",
     "internal-transfer-batches",
   ].includes(module);
+
+  // Screen Level Actions (when no document selected - FE-14)
+  const [moduleActions, setModuleActions] = useState<ErpActionState[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    erpClient.getErpModuleActions(module, { branchId: currentBranch })
+      .then((acts) => {
+        if (active) setModuleActions(acts || []);
+      })
+      .catch(() => {
+        if (active) setModuleActions([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [module, currentBranch]);
+
+  const createActionFromApi = moduleActions.find((a) => a.id === "create");
+  const canCreate = createActionFromApi != null ? (createActionFromApi.visible && createActionFromApi.enabled) : hasCreate;
+  const isCreateVisible = createActionFromApi != null ? createActionFromApi.visible : hasCreate;
+  const createActionTooltip = createActionFromApi?.reason ? getActionReasonMessage(createActionFromApi.reason) : undefined;
 
   // Screen Metadata
   const [screenMeta, setScreenMeta] = useState<ErpScreenDescription | null>(null);
@@ -442,8 +497,19 @@ export function TabErpScreen({
     await loadList(1, true);
   };
 
-  // Open Document Detail
+  const openDetailRequestSeqRef = useRef<number>(0);
+
+  // Invalidate in-flight reads when branch changes (FE-14)
+  useEffect(() => {
+    openDetailRequestSeqRef.current++;
+    setSelectedDocId(null);
+    setDetail(null);
+    setDetailError(null);
+  }, [currentBranch]);
+
+  // Open Document Detail (Race-free: only applies response for latest requested documentId)
   const handleOpenDetail = async (documentId: string) => {
+    const seq = ++openDetailRequestSeqRef.current;
     setSelectedDocId(documentId);
     setLoadingDetail(true);
     setDetailError(null);
@@ -455,11 +521,56 @@ export function TabErpScreen({
         page: 1,
         pageSize: 50,
       });
-      setDetail(data);
-    } catch (err: unknown) {
-      setDetailError("Không thể tải chi tiết chứng từ. Vui lòng thử lại.");
+      if (seq === openDetailRequestSeqRef.current) {
+        setDetail(data);
+      }
+    } catch {
+      if (seq === openDetailRequestSeqRef.current) {
+        setDetailError("Không thể tải chi tiết chứng từ. Vui lòng thử lại.");
+      }
     } finally {
-      setLoadingDetail(false);
+      if (seq === openDetailRequestSeqRef.current) {
+        setLoadingDetail(false);
+      }
+    }
+  };
+
+  // Open detail if targetDocumentId is passed
+  useEffect(() => {
+    if (targetDocumentId && isActive) {
+      handleOpenDetail(targetDocumentId);
+    }
+  }, [targetDocumentId, isActive]);
+
+  // Load More Lines for Detail
+  const [loadingMoreLines, setLoadingMoreLines] = useState(false);
+  const handleLoadMoreLines = async () => {
+    if (!detail || loadingMoreLines || !detail.lines?.hasMore) return;
+    setLoadingMoreLines(true);
+    try {
+      const nextPage = (detail.lines.page || 1) + 1;
+      const nextData = await erpClient.getErpModuleDetail(module, {
+        branchId: currentBranch,
+        documentId: detail.documentId,
+        page: nextPage,
+        pageSize: 50,
+      });
+      if (nextData && nextData.lines) {
+        setDetail((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            lines: {
+              ...nextData.lines,
+              rows: [...(prev.lines.rows || []), ...(nextData.lines.rows || [])],
+            },
+          };
+        });
+      }
+    } catch (err) {
+      console.error("Failed to load more detail lines:", err);
+    } finally {
+      setLoadingMoreLines(false);
     }
   };
 
@@ -575,13 +686,105 @@ export function TabErpScreen({
     if (!action.enabled) {
       setActionFeedback({
         type: "warning",
-        message: action.reason || "Nút này hiện đang bị khóa theo quy tắc nghiệp vụ.",
+        message: getActionReasonMessage(action.reason) || "Nút này hiện đang bị khóa theo quy tắc nghiệp vụ.",
       });
       return;
     }
 
     if (!detail) return;
     const op = action.id;
+
+    // Create Action from detail buttons
+    if (op === "create") {
+      setCreateModalOpen(true);
+      return;
+    }
+
+    // Save Document (POST /api/erp/{module}/save)
+    if (op === "save") {
+      setExecutingAction("save");
+      setActionFeedback(null);
+      const idempotencyKey = `save-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      try {
+        const res = await erpClient.saveDocument(module, {
+          idempotencyKey,
+          branchId: currentBranch,
+          documentId: detail.documentId,
+          expectedStateToken: detail.stateToken,
+          header: detail.header || {},
+          lineChanges: [],
+        });
+        handleCommandOutcome(res);
+      } catch {
+        setActionFeedback({
+          type: "error",
+          message: "Lỗi kết nối khi lưu chứng từ ERP.",
+        });
+      } finally {
+        setExecutingAction(null);
+      }
+      return;
+    }
+
+    // Save Costs Section (POST /api/erp/inbound-requests/sections/costs/save)
+    if (op === "save-costs" || (op === "save" && module === "inbound-requests" && action.route?.includes("costs"))) {
+      setExecutingAction("save-costs");
+      setActionFeedback(null);
+      const idempotencyKey = `cost-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      try {
+        const res = await erpClient.saveSection(module, "costs", {
+          idempotencyKey,
+          branchId: currentBranch,
+          documentId: detail.documentId,
+          expectedStateToken: detail.stateToken,
+          lineChanges: [],
+        });
+        handleCommandOutcome(res);
+      } catch {
+        setActionFeedback({
+          type: "error",
+          message: "Lỗi kết nối khi lưu chi phí nhập kho.",
+        });
+      } finally {
+        setExecutingAction(null);
+      }
+      return;
+    }
+
+    // Save Tech Assets Section (POST /api/erp/internal-transfer-tech/sections/assets/save)
+    if (op === "save-assets" || (op === "save" && module === "internal-transfer-tech" && action.route?.includes("assets"))) {
+      setExecutingAction("save-assets");
+      setActionFeedback(null);
+      const idempotencyKey = `asset-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      try {
+        const res = await erpClient.saveSection(module, "assets", {
+          idempotencyKey,
+          branchId: currentBranch,
+          documentId: detail.documentId,
+          expectedStateToken: detail.stateToken,
+          lineChanges: [],
+        });
+        handleCommandOutcome(res);
+      } catch {
+        setActionFeedback({
+          type: "error",
+          message: "Lỗi kết nối khi lưu danh sách thiết bị / máy điều chuyển.",
+        });
+      } finally {
+        setExecutingAction(null);
+      }
+      return;
+    }
+
+    // Scan QR Add / Delete
+    if (op === "scan-add") {
+      openQrScannerModal("add");
+      return;
+    }
+    if (op === "scan-delete") {
+      openQrScannerModal("delete");
+      return;
+    }
 
     // View Contract Info (Sales Orders, Sales QR, Sales Order PM, Sales Order SA)
     if (
@@ -894,44 +1097,149 @@ export function TabErpScreen({
     setActionFeedback(null);
     const idempotencyKey = `crt-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     try {
-      const header: Record<string, unknown> = {
-        notes: createNotes || null,
-      };
+      const header: Record<string, unknown> = {};
+      const lines: Array<{ clientLineKey: string; values: Record<string, unknown> }> = [];
 
       if (module === "purchase-requests") {
         header.purchaseDate = `${createDate}T00:00:00.000`;
         header.personSuggest = createObject || "Nhân viên đề xuất";
+        header.department = "Phòng Kinh Doanh";
+        header.currencyId = "VND";
+        header.objectId = "NCC01";
+        header.rateExchange = 1.0;
+        header.notes = createNotes || null;
+        if (createItemId.trim()) {
+          lines.push({
+            clientLineKey: "line-1",
+            values: {
+              itemId: createItemId.trim(),
+              quantity: createQuantity || "1",
+              unitPrice: createUnitPrice || "0",
+            },
+          });
+        }
+      } else if (module === "sales-orders") {
+        header.documentDate = `${createDate}T00:00:00.000`;
+        header.objectId = createObject || "KH01";
+        header.employeeId = "NV01";
+        header.isOrder = true;
+        header.currencyId = "VND";
+        header.rateExchange = 1.0;
+        header.memo = createNotes || "Đơn hàng bán";
+        header.notes = createNotes || null;
+        if (createItemId.trim()) {
+          lines.push({
+            clientLineKey: "line-1",
+            values: {
+              itemId: createItemId.trim(),
+              quantity: createQuantity || "1",
+              unitPrice: createUnitPrice || "0",
+            },
+          });
+        }
+      } else if (module === "internal-transfer-requests") {
+        header.documentDate = `${createDate}T00:00:00.000`;
+        header.fromBranchId = currentBranch;
+        header.toBranchId = currentBranch;
+        header.transferReason = createNotes || "Đề nghị điều chuyển nội bộ";
+        header.notes = createNotes || null;
+        if (createItemId.trim()) {
+          lines.push({
+            clientLineKey: "line-1",
+            values: {
+              itemId: createItemId.trim(),
+              requestedQty: createQuantity || "1",
+              isEquipment: false,
+              notes: null,
+            },
+          });
+        }
+      } else if (module === "machine-movements") {
+        header.documentDate = `${createDate}T00:00:00.000`;
+        header.moveTypeId = "MOVE01";
+        header.memo = createNotes || "Phiếu di chuyển máy";
+        header.notes = createNotes || null;
+        if (createItemId.trim()) {
+          lines.push({
+            clientLineKey: "line-1",
+            values: {
+              assetId: createItemId.trim(),
+              quantity: createQuantity || "1",
+              notes: null,
+            },
+          });
+        }
+      } else if (module === "machine-repairs") {
+        header.documentDate = `${createDate}T00:00:00.000`;
+        header.serviceTypeId = "SRV01";
+        header.memo = createNotes || "Phiếu sửa chữa bảo trì";
+        header.notes = createNotes || null;
+        if (createItemId.trim()) {
+          lines.push({
+            clientLineKey: "line-1",
+            values: {
+              assetId: createItemId.trim(),
+              quantity: createQuantity || "1",
+              notes: null,
+            },
+          });
+        }
       } else if (module === "purchase-orders") {
         header.documentDate = `${createDate}T00:00:00.000`;
         header.objectId = createObject || "NCC01";
-        header.memo = createNotes || "Đơn đặt mua hàng";
         header.currencyId = "VND";
-        header.rateExchange = "1.00";
+        header.rateExchange = 1.0;
+        header.memo = createNotes || "Đơn đặt mua hàng";
+        header.notes = createNotes || null;
+        if (createItemId.trim()) {
+          lines.push({
+            clientLineKey: "line-1",
+            values: {
+              itemId: createItemId.trim(),
+              quantity: createQuantity || "1",
+              unitPrice: createUnitPrice || "0",
+            },
+          });
+        }
       } else if (module === "inbound-requests") {
         header.documentDate = `${createDate}T00:00:00.000`;
-        header.objectId = createObject || "NCC01";
         header.orderNumber = "ORD-" + Date.now().toString(36);
+        header.invoiceNo = "HD-" + Date.now().toString(36);
+        header.departurePoint = "Kho đi";
+        header.destinationPoint = "Kho đến";
+        header.orderTypeId = "IN01";
+        header.qrPrintType = "QR01";
+        header.objectId = createObject || "NCC01";
+        header.notes = createNotes || null;
+        if (createItemId.trim()) {
+          lines.push({
+            clientLineKey: "line-1",
+            values: {
+              itemId: createItemId.trim(),
+              setQuantityByDocument: createQuantity || "1",
+              barrelQuantityByDocument: createQuantity || "1",
+              unitPrice: createUnitPrice || "0",
+            },
+          });
+        }
       } else if (module === "internal-transfer-batches") {
         header.batchDate = `${createDate}T00:00:00.000`;
         header.fromBranchId = currentBranch;
         header.toBranchId = currentBranch;
+        header.notes = createNotes || null;
+        if (createItemId.trim()) {
+          lines.push({
+            clientLineKey: "line-1",
+            values: {
+              requestId: createItemId.trim(),
+              notes: null,
+            },
+          });
+        }
       } else {
         header.documentDate = `${createDate}T00:00:00.000`;
-        header.objectName = createObject || null;
+        header.notes = createNotes || null;
       }
-
-      const lines = createItemId.trim()
-        ? [
-            {
-              clientLineKey: "line-1",
-              values: {
-                itemId: createItemId.trim(),
-                quantity: createQuantity || "1",
-                unitPrice: createUnitPrice || "0",
-              },
-            },
-          ]
-        : [];
 
       const res = await erpClient.createDocument(module, {
         idempotencyKey,
@@ -1004,11 +1312,13 @@ export function TabErpScreen({
               <RefreshCw className={`size-4 ${isRefreshing ? "animate-spin text-purple-600" : ""}`} />
             </button>
 
-            {hasCreate && (
+            {isCreateVisible && (
               <UntitledButton
                 variant="primary"
                 size="md"
                 onClick={() => setCreateModalOpen(true)}
+                disabled={!canCreate}
+                title={createActionTooltip}
                 iconLeading={<Plus className="size-4" />}
               >
                 Tạo mới
@@ -1099,7 +1409,9 @@ export function TabErpScreen({
           displayRows.map((row) => {
             const h = row.header || {};
             const docId = row.documentId;
-            const dateStr = (h.documentDate || h.purchaseDate || h.datetimeRecorded || "") as string;
+            const dateDisplay = (h.documentDateDisplay || h.purchaseDateDisplay || h.datetimeRecordedDisplay || "") as string;
+            const rawDate = (h.documentDate || h.purchaseDate || h.datetimeRecorded || "") as string;
+            const dateText = dateDisplay || (rawDate ? formatVietnamDate(rawDate) : "");
             const statusName = (h.statusName || (h.isLocked ? "Đã khóa" : "Đang mở")) as string;
             const objectName = (h.objectName || h.personSuggest || h.orderNumber || h.customerName || h.vendorName || "") as string;
 
@@ -1126,10 +1438,10 @@ export function TabErpScreen({
                         {objectName}
                       </p>
                     )}
-                    {dateStr && (
+                    {dateText && (
                       <p className="text-[11px] text-neutral-400 mt-1.5 flex items-center gap-1">
                         <Calendar className="w-3.5 h-3.5 text-purple-600" />
-                        <span>{dateStr.slice(0, 10)}</span>
+                        <span>{dateText}</span>
                       </p>
                     )}
                   </div>
@@ -1191,34 +1503,25 @@ export function TabErpScreen({
             </div>
           ) : detail ? (
             <>
-              {/* Dynamic Action Buttons Toolbar (Print buttons removed per requirement) */}
+              {/* Dynamic Action Buttons Toolbar (Print buttons removed per requirement, contract info kept) */}
               {detail.actions &&
-                detail.actions.filter(
-                  (act) =>
-                    act.visible &&
-                    !act.id.toLowerCase().includes("print") &&
-                    !act.caption.toLowerCase().includes("in")
-                ).length > 0 && (
+                detail.actions.filter((act) => act.visible && !isPrintAction(act)).length > 0 && (
                   <div className="rounded-2xl p-3 bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200/70 dark:border-neutral-800">
                     <div className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400 mb-2">
                       Nút thao tác nghiệp vụ:
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {detail.actions
-                        .filter(
-                          (act) =>
-                            act.visible &&
-                            !act.id.toLowerCase().includes("print") &&
-                            !act.caption.toLowerCase().includes("in")
-                        )
+                        .filter((act) => act.visible && !isPrintAction(act))
                         .map((act) => {
                           const isCurrentExecuting = executingAction === act.id;
+                          const reasonTooltip = getActionReasonMessage(act.reason);
                           return (
                             <button
                               key={act.id}
                               onClick={() => handleAction(act)}
                               disabled={!act.enabled || Boolean(executingAction)}
-                              title={act.reason || undefined}
+                              title={reasonTooltip || undefined}
                               className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 ${
                                 act.enabled
                                   ? "bg-purple-600 hover:bg-purple-700 text-white shadow-xs"
@@ -1254,26 +1557,38 @@ export function TabErpScreen({
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-2.5">
-                    <UntitledButton
-                      variant="primary"
-                      size="md"
-                      onClick={() => openQrScannerModal("add")}
-                      disabled={qrOperationLoading}
-                      iconLeading={<Camera className="size-4" />}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
-                    >
-                      Quét thêm mã QR
-                    </UntitledButton>
-                    <UntitledButton
-                      variant="primary"
-                      size="md"
-                      onClick={() => openQrScannerModal("delete")}
-                      disabled={qrOperationLoading}
-                      iconLeading={<Camera className="size-4" />}
-                      className="bg-red-600 hover:bg-red-700 text-white shadow-xs"
-                    >
-                      Quét xóa mã QR
-                    </UntitledButton>
+                    {(() => {
+                      const scanAddAct = detail?.actions?.find((a) => a.id === "scan-add");
+                      const scanDelAct = detail?.actions?.find((a) => a.id === "scan-delete");
+                      const canScanAdd = scanAddAct ? scanAddAct.enabled : true;
+                      const canScanDel = scanDelAct ? scanDelAct.enabled : true;
+                      return (
+                        <>
+                          <UntitledButton
+                            variant="primary"
+                            size="md"
+                            onClick={() => openQrScannerModal("add")}
+                            disabled={qrOperationLoading || !canScanAdd}
+                            title={scanAddAct?.reason ? getActionReasonMessage(scanAddAct.reason) : undefined}
+                            iconLeading={<Camera className="size-4" />}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs disabled:opacity-50"
+                          >
+                            Quét thêm mã QR
+                          </UntitledButton>
+                          <UntitledButton
+                            variant="primary"
+                            size="md"
+                            onClick={() => openQrScannerModal("delete")}
+                            disabled={qrOperationLoading || !canScanDel}
+                            title={scanDelAct?.reason ? getActionReasonMessage(scanDelAct.reason) : undefined}
+                            iconLeading={<Camera className="size-4" />}
+                            className="bg-red-600 hover:bg-red-700 text-white shadow-xs disabled:opacity-50"
+                          >
+                            Quét xóa mã QR
+                          </UntitledButton>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               )}
@@ -1322,6 +1637,7 @@ export function TabErpScreen({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs pt-1">
                   {Object.entries(detail.header || {}).map(([key, value]) => {
                     if (value === null || value === undefined || value === "") return null;
+                    if (typeof value === "object") return null;
                     if (isTechnicalField(key)) return null;
                     if (
                       key === "objectName" ||
@@ -1409,9 +1725,21 @@ export function TabErpScreen({
                     </table>
                   </div>
                 )}
+                {detail.lines?.hasMore && (
+                  <div className="pt-3 text-center border-t border-neutral-100 dark:border-neutral-800/60 mt-3">
+                    <button
+                      type="button"
+                      onClick={handleLoadMoreLines}
+                      disabled={loadingMoreLines}
+                      className="px-3.5 py-1.5 text-xs font-medium rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50"
+                    >
+                      {loadingMoreLines ? "Đang tải thêm..." : "Tải thêm dòng chi tiết..."}
+                    </button>
+                  </div>
+                )}
               </div>
 
-              {/* QR Comparison Table (If comparison lines exist) */}
+              {/* QR Comparison Table (If comparison lines exist - uses canonical fields: itemId, lot, expireDate, storeHouseId, quantity) */}
               {detail.comparison && detail.comparison.rows && detail.comparison.rows.length > 0 && (
                 <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4 bg-white dark:bg-neutral-900">
                   <h4 className="text-xs font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider mb-2.5">
@@ -1422,24 +1750,40 @@ export function TabErpScreen({
                       <thead>
                         <tr className="border-b border-neutral-200 dark:border-neutral-800 text-[10px] text-neutral-400 uppercase">
                           <th className="py-2 px-2.5">Mã VT</th>
-                          <th className="py-2 px-2.5">Cần xuất</th>
-                          <th className="py-2 px-2.5">Đã quét</th>
+                          <th className="py-2 px-2.5">Lô SX</th>
+                          <th className="py-2 px-2.5">Hạn dùng</th>
+                          <th className="py-2 px-2.5">Kho</th>
+                          <th className="py-2 px-2.5">Số lượng</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                        {detail.comparison.rows.map((row) => (
-                          <tr key={row.lineId} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/40">
-                            <td className="py-2 px-2.5 text-neutral-700 dark:text-neutral-300 font-medium">
-                              {String(row.fields?.itemId || row.lineId)}
-                            </td>
-                            <td className="py-2 px-2.5 text-neutral-700 dark:text-neutral-300 font-semibold">
-                              {String(row.fields?.requiredQuantity || "—")}
-                            </td>
-                            <td className="py-2 px-2.5 text-neutral-700 dark:text-neutral-300 font-semibold">
-                              {String(row.fields?.scannedQuantity || "—")}
-                            </td>
-                          </tr>
-                        ))}
+                        {detail.comparison.rows.map((row) => {
+                          const cf = (row.fields || row || {}) as Record<string, unknown>;
+                          const itemId = (cf.itemId || cf.itemCode || row.lineId || "") as string;
+                          const lot = (cf.lot || "") as string;
+                          const expDate = cf.expireDate ? formatVietnamDate(cf.expireDate) : "";
+                          const wh = (cf.storeHouseId || "") as string;
+                          const qty = cf.quantity != null ? String(cf.quantity) : "";
+                          return (
+                            <tr key={row.lineId} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/40">
+                              <td className="py-2 px-2.5 text-neutral-700 dark:text-neutral-300 font-medium font-mono">
+                                {itemId || "—"}
+                              </td>
+                              <td className="py-2 px-2.5 text-neutral-600 dark:text-neutral-400">
+                                {lot || "—"}
+                              </td>
+                              <td className="py-2 px-2.5 text-neutral-600 dark:text-neutral-400">
+                                {expDate || "—"}
+                              </td>
+                              <td className="py-2 px-2.5 text-neutral-600 dark:text-neutral-400">
+                                {wh || "—"}
+                              </td>
+                              <td className="py-2 px-2.5 text-neutral-700 dark:text-neutral-300 font-semibold font-mono">
+                                {qty ? formatVietnamNumber(qty) : "—"}
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -1563,7 +1907,9 @@ export function TabErpScreen({
         >
           <div className="space-y-3.5 p-2 text-xs">
             <div>
-              <label className="block text-neutral-500 mb-1 font-medium">Ngày lập chứng từ (*):</label>
+              <label className="block text-neutral-500 mb-1 font-medium">
+                {module === "purchase-requests" ? "Ngày đề xuất (*):" : "Ngày lập chứng từ (*):"}
+              </label>
               <input
                 type="date"
                 value={createDate}
@@ -1572,48 +1918,100 @@ export function TabErpScreen({
               />
             </div>
 
-            <div>
-              <label className="block text-neutral-500 mb-1 font-medium">
-                {module === "purchase-requests" ? "Người đề xuất (*):" : "Tên đối tượng / Khách hàng:"}
-              </label>
-              <input
-                type="text"
-                value={createObject}
-                onChange={(e) => setCreateObject(e.target.value)}
-                placeholder="Nhập tên đối tượng hoặc người đề xuất..."
-                className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
-              />
-            </div>
+            {module !== "internal-transfer-batches" && (
+              <div>
+                <label className="block text-neutral-500 mb-1 font-medium">
+                  {module === "purchase-requests"
+                    ? "Người đề xuất (*):"
+                    : module === "sales-orders"
+                    ? "Mã khách hàng / Đối tác (ObjectId) (*):"
+                    : module === "purchase-orders"
+                    ? "Mã nhà cung cấp (ObjectId) (*):"
+                    : module === "inbound-requests"
+                    ? "Số hóa đơn / Số đơn hàng (*):"
+                    : module === "internal-transfer-requests"
+                    ? "Lý do điều chuyển:"
+                    : module === "machine-movements"
+                    ? "Mã loại di chuyển (MoveTypeId) (*):"
+                    : module === "machine-repairs"
+                    ? "Mã loại dịch vụ sửa chữa (ServiceTypeId) (*):"
+                    : "Đối tượng / Người liên quan (*):"}
+                </label>
+                <input
+                  type="text"
+                  value={createObject}
+                  onChange={(e) => setCreateObject(e.target.value)}
+                  placeholder={
+                    module === "purchase-requests"
+                      ? "VD: NV01, Nguyen Van A..."
+                      : module === "sales-orders"
+                      ? "Mã KH hoặc đối tác (VD: KH001)..."
+                      : module === "purchase-orders"
+                      ? "Mã NCC (VD: NCC001)..."
+                      : module === "inbound-requests"
+                      ? "VD: HD00123 / PO001..."
+                      : module === "machine-movements"
+                      ? "VD: MOVE01..."
+                      : module === "machine-repairs"
+                      ? "VD: REPAIR01..."
+                      : "Nhập thông tin đối tượng..."
+                  }
+                  className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
+                />
+              </div>
+            )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <div className="sm:col-span-1">
-                <label className="block text-neutral-500 mb-1 font-medium">Mã mặt hàng (ItemID):</label>
+            <div className={`grid grid-cols-1 ${module === "machine-movements" || module === "machine-repairs" || module === "internal-transfer-batches" ? "" : module === "internal-transfer-requests" || module === "inbound-requests" ? "sm:grid-cols-2" : "sm:grid-cols-3"} gap-2`}>
+              <div className={module === "machine-movements" || module === "machine-repairs" || module === "internal-transfer-batches" ? "w-full" : "sm:col-span-1"}>
+                <label className="block text-neutral-500 mb-1 font-medium">
+                  {module === "machine-movements" || module === "machine-repairs"
+                    ? "Mã thiết bị / máy (AssetId) (*):"
+                    : module === "internal-transfer-batches"
+                    ? "Mã đề nghị điều chuyển (RequestId) (*):"
+                    : "Mã mặt hàng (ItemID) (*):"}
+                </label>
                 <input
                   type="text"
                   value={createItemId}
                   onChange={(e) => setCreateItemId(e.target.value)}
-                  placeholder="Mã VT..."
+                  placeholder={
+                    module === "machine-movements" || module === "machine-repairs"
+                      ? "VD: ASSET01..."
+                      : module === "internal-transfer-batches"
+                      ? "VD: DNDC001..."
+                      : "Mã VT (VD: VT001)..."
+                  }
                   className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
                 />
               </div>
-              <div>
-                <label className="block text-neutral-500 mb-1 font-medium">Số lượng:</label>
-                <input
-                  type="number"
-                  value={createQuantity}
-                  onChange={(e) => setCreateQuantity(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
-                />
-              </div>
-              <div>
-                <label className="block text-neutral-500 mb-1 font-medium">Đơn giá dự kiến:</label>
-                <input
-                  type="number"
-                  value={createUnitPrice}
-                  onChange={(e) => setCreateUnitPrice(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
-                />
-              </div>
+              {module !== "machine-movements" && module !== "machine-repairs" && module !== "internal-transfer-batches" && (
+                <div>
+                  <label className="block text-neutral-500 mb-1 font-medium">
+                    {module === "internal-transfer-requests"
+                      ? "Số lượng yêu cầu (*):"
+                      : module === "inbound-requests"
+                      ? "Số lượng kiện/hộp (*):"
+                      : "Số lượng (*):"}
+                  </label>
+                  <input
+                    type="number"
+                    value={createQuantity}
+                    onChange={(e) => setCreateQuantity(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
+                  />
+                </div>
+              )}
+              {module !== "machine-movements" && module !== "machine-repairs" && module !== "internal-transfer-batches" && module !== "internal-transfer-requests" && module !== "inbound-requests" && (
+                <div>
+                  <label className="block text-neutral-500 mb-1 font-medium">Đơn giá dự kiến:</label>
+                  <input
+                    type="number"
+                    value={createUnitPrice}
+                    onChange={(e) => setCreateUnitPrice(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
+                  />
+                </div>
+              )}
             </div>
 
             <div>

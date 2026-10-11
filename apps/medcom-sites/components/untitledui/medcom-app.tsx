@@ -51,6 +51,7 @@ export function MedcomApp() {
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [selectedPurchaseItem, setSelectedPurchaseItem] = useState<PurchaseItem | null>(null);
+  const [targetDocPerModule, setTargetDocPerModule] = useState<{ module: ErpScreenModule; documentId: string } | null>(null);
 
   // Check saved session, theme, and layout on initial mount with automatic reauthentication
   useEffect(() => {
@@ -269,20 +270,23 @@ export function MedcomApp() {
         erpClient.getNotifications({ page: 1, pageSize: 1, unreadOnly: true }),
       ]);
 
-      if (poData.status === "fulfilled" && poData.value?.rows) {
-        setOrdersCount(poData.value.rows.length);
+      if (poData.status === "fulfilled" && poData.value) {
+        const val = poData.value as { totalRows?: number; rows?: unknown[] };
+        setOrdersCount(typeof val.totalRows === "number" ? val.totalRows : val.rows?.length ?? 0);
       } else {
         setOrdersCount(0);
       }
 
-      if (prData.status === "fulfilled" && prData.value?.list?.rows) {
-        setPurchasesCount(prData.value.list.rows.length);
+      if (prData.status === "fulfilled" && prData.value) {
+        const val = prData.value.list as unknown as { totalRows?: number; rows?: unknown[] };
+        setPurchasesCount(typeof val?.totalRows === "number" ? val.totalRows : val?.rows?.length ?? 0);
       } else {
         setPurchasesCount(0);
       }
 
-      if (inData.status === "fulfilled" && inData.value?.rows) {
-        setInboundCount(inData.value.rows.length);
+      if (inData.status === "fulfilled" && inData.value) {
+        const val = inData.value as { totalRows?: number; rows?: unknown[] };
+        setInboundCount(typeof val.totalRows === "number" ? val.totalRows : val.rows?.length ?? 0);
       } else {
         setInboundCount(0);
       }
@@ -535,6 +539,7 @@ export function MedcomApp() {
                   module={mod}
                   currentBranch={currentBranch}
                   isActive={activeTab === mod}
+                  targetDocumentId={targetDocPerModule?.module === mod ? targetDocPerModule.documentId : undefined}
                   onOpenScanner={() => setActiveTab("scan")}
                 />
               </div>
@@ -591,9 +596,12 @@ export function MedcomApp() {
           open={notificationsOpen}
           onClose={() => setNotificationsOpen(false)}
           onUnreadCountChange={setUnreadNotificationsCount}
-          onNavigateToModule={(tab, branchId, _documentId) => {
+          onNavigateToModule={(tab, branchId, documentId) => {
             if (branchId && branchId !== currentBranch) {
               handleBranchChange(branchId);
+            }
+            if (documentId) {
+              setTargetDocPerModule({ module: tab as ErpScreenModule, documentId });
             }
             setActiveTab(tab);
           }}

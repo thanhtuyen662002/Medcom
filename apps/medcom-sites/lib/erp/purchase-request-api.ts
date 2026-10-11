@@ -5,13 +5,31 @@ import type {PurchaseCommandRoute} from "./purchase-request-command-adapter";
 import type {PurchaseRequestSnapshot} from "@/components/erp/mobile-request";
 
 const id=z.string().min(1).max(100), text=z.string().max(65536), decimal=z.string().regex(/^-?\d+(?:\.\d+)?$/);
-const wallClock=z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}$/).nullable();
+const wallClock=z.string().regex(/^\d{4}-\d{2}-\d{2}(?:[T\s]\d{2}:\d{2}:\d{2}(?:\.\d{1,7})?)?$/).nullable();
 const scope=z.string().regex(/^[a-f0-9]{64}$/);
 const header=z.object({purchaseDate:wallClock,purposeId:z.number().int().nullable(),personSuggest:text,department:text,
- purposeDescOrClient:text.nullable(),price:decimal.nullable(),notes:text.nullable(),currencyId:id,objectId:id,rateExchange:z.number().finite()}).strict();
-const values=z.object({itemId:id,budget:decimal.nullable(),timeRequired:text.nullable(),quantity:decimal,unitPrice:decimal,totalPrice:decimal.nullable(),model:text.nullable()}).strict();
-const document=z.object({purchaseRequestId:id,branchId:id,header,statusId:z.number().int(),isLocked:z.boolean().nullable(),
- lines:z.array(z.object({lineId:id,values}).strict()).max(500)}).strict();
+ purposeDescOrClient:text.nullable(),price:decimal.nullable(),notes:text.nullable(),currencyId:id,objectId:id,rateExchange:z.number().finite()}).passthrough();
+const values=z.object({itemId:id,budget:decimal.nullable(),timeRequired:text.nullable(),quantity:decimal,unitPrice:decimal,totalPrice:decimal.nullable(),model:text.nullable()}).passthrough();
+const document=z.object({purchaseRequestId:id.optional(),documentId:id.optional(),branchId:id.optional(),header,statusId:z.number().int().optional(),isLocked:z.boolean().nullable().optional(),
+ lines:z.array(z.object({lineId:id,values:values.optional()}).passthrough()).max(500)}).passthrough().transform(doc => {
+  const purchaseRequestId = doc.purchaseRequestId ?? doc.documentId ?? (doc.header as any)?.purchaseRequestId ?? (doc.header as any)?.documentId ?? "";
+  const branchId = doc.branchId ?? (doc.header as any)?.branchId ?? "";
+  const statusId = doc.statusId ?? (doc.header as any)?.statusId ?? 1;
+  const isLocked = doc.isLocked ?? (doc.header as any)?.isLocked ?? null;
+  const lines = doc.lines.map(line => {
+    const vals = line.values ?? {
+      itemId: (line as any).itemId ?? "",
+      budget: (line as any).budget ?? null,
+      timeRequired: (line as any).timeRequired ?? null,
+      quantity: (line as any).quantity ?? "0",
+      unitPrice: (line as any).unitPrice ?? "0",
+      totalPrice: (line as any).totalPrice ?? null,
+      model: (line as any).model ?? null
+    };
+    return { ...line, lineId: line.lineId, values: vals };
+  });
+  return { ...doc, purchaseRequestId, branchId, statusId, isLocked, lines };
+});
 export const purchaseRequestHeaderFieldsSchema = z.object({
   purchaseRequestId: id,
   purchaseDate: wallClock,
@@ -27,7 +45,7 @@ export const purchaseRequestHeaderFieldsSchema = z.object({
   objectId: id,
   rateExchange: z.number().finite(),
   branchId: id,
-}).strict();
+}).passthrough();
 
 export const purchaseRequestLineFieldsSchema = z.object({
   userAutoId: id,
@@ -39,14 +57,14 @@ export const purchaseRequestLineFieldsSchema = z.object({
   totalPrice: decimal.nullable(),
   model: text.nullable(),
   purchaseRequestId: text.nullable(),
-}).strict();
+}).passthrough();
 
 export const purchaseRequestSourceFieldsSchema = z.object({
   header: purchaseRequestHeaderFieldsSchema,
   lines: z.array(purchaseRequestLineFieldsSchema).max(500),
-}).strict();
+}).passthrough();
 
-const commandAccess=z.object({canSave:z.boolean(),canSubmit:z.boolean(),canLookup:z.boolean(),canAddLines:z.literal(false),reason:z.string().min(1)}).strict();
+const commandAccess=z.object({canSave:z.boolean(),canSubmit:z.boolean(),canLookup:z.boolean(),canAddLines:z.literal(false),reason:z.string().min(1)}).passthrough();
 const snapshot=z.object({
   document,
   itemDisplayContext:itemDisplayContextSchema.nullable().optional(),
@@ -54,7 +72,7 @@ const snapshot=z.object({
   commandAccess:commandAccess.nullable().optional(),
   sourceFields:purchaseRequestSourceFieldsSchema.optional(),
   stateToken:z.string().regex(/^prs1\.[a-f0-9]{64}$/)
-}).strict().superRefine((value,context)=>{
+}).passthrough().superRefine((value,context)=>{
  if(new Set(value.document.lines.map(line=>line.lineId)).size!==value.document.lines.length)context.addIssue({code:z.ZodIssueCode.custom,message:"Duplicate source line identity"});
  try{bindItemDisplayContext(value.itemDisplayContext,{kind:"purchase-requests",documentId:value.document.purchaseRequestId,
   branchId:value.document.branchId,stateToken:value.stateToken,statusId:value.document.statusId,isLocked:value.document.isLocked,page:null,pageSize:null},
@@ -65,7 +83,7 @@ const snapshot=z.object({
   statusId:value.document.statusId,isLocked:value.document.isLocked,page:null,pageSize:null},
  value.document.lines.map(line=>({lineId:line.lineId,itemId:line.values.itemId})))}));
 const workspace=z.object({branchIds:z.array(id).min(1).max(200),writeAvailable:z.literal(false),writeReason:z.literal("numbering_journal_runtime_unqualified"),
- lookups:z.array(z.object({kind:z.enum(["branches","items","objects","purposes","currencies"]),available:z.boolean(),reason:z.string().nullable(),evidence:z.string()}).strict()).max(5)}).strict();
+ lookups:z.array(z.object({kind:z.enum(["branches","items","objects","purposes","currencies"]),available:z.boolean(),reason:z.string().nullable(),evidence:z.string()}).passthrough()).max(5)}).passthrough();
 const list=z.object({rows:z.array(z.object({
   documentId:id,
   purchaseDate:wallClock,
@@ -76,14 +94,18 @@ const list=z.object({rows:z.array(z.object({
   statusName:z.string().max(50).nullable().optional(),
   isLocked:z.boolean().nullable(),
   fields:purchaseRequestHeaderFieldsSchema.optional()
- }).strict()).max(50),
- page:z.number().int().min(1).max(1000),pageSize:z.number().int().min(1).max(50),hasMore:z.boolean()}).strict();
+ }).passthrough()).max(50),
+ page:z.number().int().min(1).max(1000),pageSize:z.number().int().min(1).max(50),hasMore:z.boolean()}).passthrough();
 // These read-only choices preserve the qualified source values. In particular,
 // NULL purpose names and finite zero/negative currency rates are not defaults.
 const purposeId=z.string().max(11).regex(/^(?:0|-?[1-9]\d*)$/).refine(value=>{
  const number=Number(value);return Number.isInteger(number)&&number>=-2147483648&&number<=2147483647;
 },"Expected a canonical Int32 identity");
-const branchChoice=z.object({id,label:z.string().max(100)}).strict();
+const branchChoice=z.union([
+  z.object({id,label:z.string().max(100)}).strict(),
+  z.object({id,name:z.string().max(100)}).strict().transform(b=>({id:b.id,label:b.name})),
+  z.object({id,branchName:z.string().max(100)}).strict().transform(b=>({id:b.id,label:b.branchName})),
+]);
 const sourceText=(value:string)=>!value.includes("\0")&&!/[\uD800-\uDFFF]/u.test(value);
 const purposeChoice=z.object({id:purposeId,label:z.string().max(50).refine(sourceText).nullable()}).strict();
 const currencyId=z.string().min(1).max(3).refine(value=>sourceText(value)&&!/\p{White_Space}$/u.test(value)&&!/\p{Cc}/u.test(value));

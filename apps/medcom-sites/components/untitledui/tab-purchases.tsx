@@ -25,6 +25,7 @@ import { errorMessage } from "@/lib/erp/api";
 
 function formatVND(value?: string | null, currency = "VND"): string {
   if (!value) return "0 " + currency;
+  if (value.includes("VND") || value.includes("USD") || value.includes("₫") || value.includes("$")) return value;
   const parts = value.split(".");
   const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   return parts.length > 1 ? `${intPart},${parts[1]} ${currency}` : `${intPart} ${currency}`;
@@ -125,14 +126,15 @@ export function TabPurchases({
                 ? "Chi nhánh 2 (Kho Dược)"
                 : `Chi nhánh ${branchId}`;
 
-            const dateStr = f?.purchaseDate
-              ? f.purchaseDate.slice(0, 10)
-              : r.purchaseDate
-              ? r.purchaseDate.slice(0, 10)
-              : (raw.purchaseDate as string)
-              ? String(raw.purchaseDate).slice(0, 10)
-              : "—";
+            const dateStr =
+              (raw.purchaseDateDisplay as string) ||
+              (f as any)?.purchaseDateDisplay ||
+              (f?.purchaseDate ? f.purchaseDate.slice(0, 10) : undefined) ||
+              (r.purchaseDate ? r.purchaseDate.slice(0, 10) : undefined) ||
+              (raw.purchaseDate as string ? String(raw.purchaseDate).slice(0, 10) : "—");
             const priceVal =
+              (raw.priceDisplay as string) ||
+              (raw.totalAmountDisplay as string) ||
               f?.price ||
               (raw.price as string) ||
               (raw.totalAmount as string) ||
@@ -165,7 +167,7 @@ export function TabPurchases({
               date: dateStr,
               creator: creatorStr,
               department: deptStr,
-              branch: branchLabel,
+              branch: (raw.branchName as string) || (f as any)?.branchName || branchLabel,
               purpose: purposeStr,
               status,
               totalAmount: totalStr,
@@ -240,32 +242,29 @@ export function TabPurchases({
             ? formatVND(doc.header.price, doc.header.currencyId || "VND")
             : item.totalAmount;
 
-          const lines = (src?.lines && src.lines.length > 0)
-            ? src.lines.map((l, idx) => ({
-                lineId: l.userAutoId || `line-${idx}`,
-                itemId: l.itemId,
-                itemName: `Dược phẩm [${l.itemId}]`,
-                specification: l.model || "Tiêu chuẩn Dược điển",
-                unit: "Hộp/Đơn vị",
-                quantity: l.quantity,
-                unitPrice: formatVND(l.unitPrice, headerFields?.currencyId || "VND"),
-                amount: l.totalPrice ? formatVND(l.totalPrice, headerFields?.currencyId || "VND") : formatVND(l.unitPrice, headerFields?.currencyId || "VND"),
-                budget: l.budget,
-                timeRequired: l.timeRequired,
-                fields: l,
-              }))
-            : doc.lines.map((l) => ({
-                lineId: l.lineId,
-                itemId: l.values.itemId,
-                itemName: `Dược phẩm [${l.values.itemId}]`,
-                specification: l.values.model || "Tiêu chuẩn Dược điển",
-                unit: "Hộp/Đơn vị",
-                quantity: l.values.quantity,
-                unitPrice: formatVND(l.values.unitPrice, headerFields?.currencyId || "VND"),
-                amount: l.values.totalPrice ? formatVND(l.values.totalPrice, headerFields?.currencyId || "VND") : formatVND(l.values.unitPrice, headerFields?.currencyId || "VND"),
-                budget: l.values.budget,
-                timeRequired: l.values.timeRequired,
-              }));
+          const rawLines = (src?.lines && src.lines.length > 0) ? src.lines : doc.lines;
+          const lines = rawLines.map((l: any, idx: number) => {
+            const vals = l.values ?? l;
+            const rawLine = l as Record<string, any>;
+            const itemName = rawLine.itemName || vals.itemName || rawLine.name || (vals.itemId ? `Dược phẩm [${vals.itemId}]` : "Vật tư y tế");
+            const itemCode = rawLine.itemCode || vals.itemCode || vals.itemId || "";
+            const unit = rawLine.unit || vals.unit || "Hộp";
+            const unitPrice = rawLine.unitPriceDisplay || vals.unitPriceDisplay || (vals.unitPrice ? formatVND(vals.unitPrice, headerFields?.currencyId || "VND") : "—");
+            const amount = rawLine.totalPriceDisplay || vals.totalPriceDisplay || (vals.totalPrice ? formatVND(vals.totalPrice, headerFields?.currencyId || "VND") : unitPrice);
+            return {
+              lineId: l.lineId || rawLine.userAutoId || `line-${idx}`,
+              itemId: vals.itemId || itemCode,
+              itemName,
+              specification: vals.model || rawLine.specification || "Tiêu chuẩn Dược điển",
+              unit,
+              quantity: vals.quantity,
+              unitPrice,
+              amount,
+              budget: vals.budget,
+              timeRequired: vals.timeRequired,
+              fields: l,
+            };
+          });
 
           setActiveItem((prev) =>
             prev

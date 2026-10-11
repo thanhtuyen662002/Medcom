@@ -48,6 +48,27 @@ export function NotificationsSheet({
   const [page, setPage] = useState(1);
   const [targetError, setTargetError] = useState<{ id: number; message: string } | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const handleLoadMore = async () => {
+    if (loadingMore || loading) return;
+    setLoadingMore(true);
+    try {
+      const nextPage = page + 1;
+      const result = await erpClient.getNotifications({
+        page: nextPage,
+        pageSize: 30,
+        unreadOnly: filterUnreadOnly,
+      });
+      setNotifications((prev) => [...prev, ...result.rows]);
+      setPage(nextPage);
+      setTotalRows(result.totalRows);
+    } catch (err) {
+      console.error("Failed to load more notifications:", err);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const fetchNotifications = useCallback(
     async (isBackground = false) => {
@@ -158,11 +179,11 @@ export function NotificationsSheet({
   const mapModuleToTab = (moduleId: string): NavTabId | null => {
     switch (moduleId) {
       case "purchase-orders":
-        return "orders";
+        return "purchase-orders";
       case "purchase-requests":
-        return "purchases";
+        return "purchase-requests";
       case "inbound-requests":
-        return "inbound";
+        return "inbound-requests";
       case "sales-orders":
         return "sales-orders";
       case "internal-transfer-requests":
@@ -175,6 +196,26 @@ export function NotificationsSheet({
         return "machine-movements";
       case "machine-repairs":
         return "machine-repairs";
+      case "purchase-approvals":
+        return "purchase-approvals";
+      case "sales-order-pm":
+        return "sales-order-pm";
+      case "sales-order-sa":
+        return "sales-order-sa";
+      case "internal-transfer-pm":
+        return "internal-transfer-pm";
+      case "internal-transfer-batches":
+        return "internal-transfer-batches";
+      case "internal-transfer-tech":
+        return "internal-transfer-tech";
+      case "internal-transfer-sa":
+        return "internal-transfer-sa";
+      case "internal-transfer-accounting":
+        return "internal-transfer-accounting";
+      case "internal-transfer-warehouse-out":
+        return "internal-transfer-warehouse-out";
+      case "internal-transfer-warehouse-in":
+        return "internal-transfer-warehouse-in";
       default:
         return null;
     }
@@ -433,6 +474,19 @@ export function NotificationsSheet({
                 </div>
               );
             })
+          )}
+
+          {notifications.length < totalRows && (
+            <div className="pt-2 pb-1 text-center shrink-0">
+              <button
+                type="button"
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                className="px-4 py-2 text-xs font-semibold rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50"
+              >
+                {loadingMore ? "Đang tải thêm..." : `Tải thêm thông báo (${notifications.length}/${totalRows})`}
+              </button>
+            </div>
           )}
         </div>
       </div>
