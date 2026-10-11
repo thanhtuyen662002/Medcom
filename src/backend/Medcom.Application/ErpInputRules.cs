@@ -50,19 +50,19 @@ public static class ErpInputRules
     {
         "purchase-requests"=>typeof(ErpPurchaseRequestHeaderInput),"sales-orders"=>typeof(ErpSalesOrderHeaderInput),
         "internal-transfer-requests"=>typeof(ErpInternalTransferRequestHeaderInput),
-        "machine-movements"=>typeof(ErpMachineMovementHeaderInput),"machine-repairs"=>typeof(ErpMachineRepairHeaderInput),_=>null
+        "machine-movements"=>typeof(ErpMachineMovementHeaderInput),"machine-repairs"=>typeof(ErpMachineRepairHeaderInput),_=>ErpWorkflowInputs.Type(module,"header")
     };
     public static Type? LineType(string module)=>module switch
     {
         "purchase-requests"=>typeof(ErpPurchaseRequestLineInput),"sales-orders"=>typeof(ErpSalesOrderLineInput),
         "internal-transfer-requests"=>typeof(ErpInternalTransferRequestLineInput),
-        "machine-movements"=>typeof(ErpMachineMovementLineInput),"machine-repairs"=>typeof(ErpMachineRepairLineInput),_=>null
+        "machine-movements"=>typeof(ErpMachineMovementLineInput),"machine-repairs"=>typeof(ErpMachineRepairLineInput),_=>ErpWorkflowInputs.Type(module,"lines")
     };
     public static bool Normalize(string module,string section,JsonElement raw,out JsonElement normalized)
     {
         normalized=default;
         if(ErpScreenCatalog.Get(module)is not {} catalog || !catalog.Fields.TryGetValue(section,out var fields)
-            || (section=="header"?HeaderType(module):LineType(module))is not {} type
+            || (section=="header"?HeaderType(module):section=="lines"?LineType(module):ErpWorkflowInputs.Type(module,section))is not {} type
             || raw.ValueKind!=JsonValueKind.Object || !UniqueJson(raw))return false;
         try
         {

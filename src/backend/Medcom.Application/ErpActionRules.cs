@@ -6,7 +6,8 @@ public sealed record ErpNativeRights(bool Read,bool Add,bool Update,bool Delete)
 public sealed record ErpActionContext(string Module,string Actor,string? DocumentId,int? StatusId,
     bool IsLocked,string? Owner,string? ContractId,int LineCount,bool LinkedToPurchaseOrder,
     bool LinkedToTransferBatch,ErpNativeRights Rights,bool WritesQualified,bool ContractReadQualified=false,
-    bool ReportsQualified=false,bool NumberingQualified=true,bool HasActivePartReferences=false);
+    bool ReportsQualified=false,bool NumberingQualified=true,bool HasActivePartReferences=false,
+    IReadOnlyDictionary<string,object?>? WorkflowFields=null);
 
 public static class ErpActionRules
 {
@@ -35,6 +36,7 @@ public static class ErpActionRules
         var suffix=operation switch
         {"create"=>"create","save"=>"save","delete"=>"delete","paste"=>"paste/validate",
           "contract-info"=>"contract-info","scan-add"=>"qr/add","scan-delete"=>"qr/delete",
+          _ when operation.StartsWith("save-",StringComparison.Ordinal)=>"sections/"+operation[5..]+"/save",
           _ when operation.StartsWith("print",StringComparison.Ordinal)=>"reports/"+operation,
           _=>"actions/"+operation};
         return new(action.Id,action.Caption,visible,reason is null,reason,action.RequiresSavedDocument,
@@ -45,6 +47,7 @@ public static class ErpActionRules
         if(operation=="paste")return state.DocumentId is null||StateAllows(state,"save");
         if(operation is "create" or "contract-info" || operation.StartsWith("print",StringComparison.Ordinal))return true;
         if(state.DocumentId is null)return false;
+        if(ErpScreenCatalog.IsWorkflow(state.Module))return ErpWorkflowRules.StateAllows(state,operation);
         var owner=state.Owner==state.Actor;
         return (state.Module,operation) switch
         {

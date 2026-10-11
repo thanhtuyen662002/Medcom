@@ -7,7 +7,7 @@ public sealed partial class SqlErpScreenService
 {
     public Task<ErpReadResult<ErpContractInfo>> ContractAsync(string module,string branch,string document,CancellationToken token)
     {
-        if(module is not ("sales-orders" or "sales-qr")||!ErpInputRules.Identifier(document,50))return Invalid<ErpContractInfo>();
+        if(module is not ("sales-orders" or "sales-qr" or "sales-order-pm" or "sales-order-sa")||!ErpInputRules.Identifier(document,50))return Invalid<ErpContractInfo>();
         return reader.Run<ErpContractInfo>(module,branch,async(transaction,identity,plan,rights)=>
         {
             var header=await SqlErpScreenReader.Header(transaction,identity,plan,branch,document,token);

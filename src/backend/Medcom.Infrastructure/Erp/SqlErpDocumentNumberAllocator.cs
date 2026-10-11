@@ -15,17 +15,18 @@ public sealed class SqlErpDocumentNumberAllocator : IErpDocumentNumberAllocator
 {
     internal const string CurrentMask = "{P}{MM}{YY}/{4}";
     public bool IsQualified(string module) => module is "purchase-requests" or "sales-orders" or "internal-transfer-requests"
-        or "machine-movements" or "machine-repairs";
+        or "machine-movements" or "machine-repairs" or "purchase-orders" or "inbound-requests" or "internal-transfer-batches";
     internal static string Prefix(string module) => module switch
     {
         "purchase-requests" => "PO", "sales-orders" => "DMB", "internal-transfer-requests" => "DCNB",
-        "machine-movements" => "MLI", "machine-repairs" => "MLRP", _ => throw new ArgumentException("Unsupported numbered screen.")
+        "machine-movements" => "MLI", "machine-repairs" => "MLRP", "purchase-orders"=>"PO","inbound-requests"=>"DN",
+        "internal-transfer-batches"=>"DCT",_ => throw new ArgumentException("Unsupported numbered screen.")
     };
     public async Task<string?> AllocateAsync(DbTransaction transaction, string module, JsonElement header, CancellationToken token)
     {
         if (!IsQualified(module)) return null;
         var plan = ErpSqlPlan.Get(module)!;
-        var dateName = module == "purchase-requests" ? "purchaseDate" : "documentDate";
+        var dateName = plan.DateJsonKey;
         if (!header.TryGetProperty(dateName, out var raw) || raw.ValueKind != JsonValueKind.String
             || !DateTime.TryParseExact(raw.GetString(), "yyyy-MM-dd'T'HH:mm:ss.fff", CultureInfo.InvariantCulture,
                 DateTimeStyles.None, out var date)) return null;

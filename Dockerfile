@@ -8,6 +8,7 @@ COPY global.json Directory.Build.props Directory.Build.targets NuGet.config ./
 COPY src/backend/ ./src/backend/
 # Only the two sanitized finite catalogs embedded by Medcom.Contracts.
 COPY inventories/erp/20261010/six-screen-catalog.json ./inventories/erp/20261010/six-screen-catalog.json
+COPY inventories/erp/20261011/cud-workflow-catalog.json ./inventories/erp/20261011/cud-workflow-catalog.json
 COPY inventories/backend/20261011/api-reference-bindings.json ./inventories/backend/20261011/api-reference-bindings.json
 RUN dotnet restore src/backend/Medcom.Api/Medcom.Api.csproj --locked-mode \
     && dotnet restore src/backend/Medcom.LegacyPasswordWorker/Medcom.LegacyPasswordWorker.csproj --locked-mode

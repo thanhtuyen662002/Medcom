@@ -1,5 +1,8 @@
 # Rà soát dữ liệu hiển thị API — 11/10/2026
 
+CUD/workflow follow-up: [PR140](https://github.com/thanhtuyen662002/Medcom/pull/140) implements the remaining purchase/inbound/transfer CUD and department actions cataloged here. Current scope, validation, deployment and unresolved bounds are in [I78](../execution/I78_CUD_ACTIONS_20261011.md) and the [FE CUD guide](BE_FE_CUD_WORKFLOW_20261011.md). Tables below retain the preceding audit snapshot; print/import/copy additions are excluded by the newer owner instruction.
+
+
 Yêu cầu chủ dự án: mọi ID tham chiếu phải kèm tên; ItemID kèm ItemCode, ItemName, Unit; tiền VND `1,234 VND`, USD `1,234.00 USD`; ngày Việt Nam; API chi nhánh; đối chiếu CUD và nút ERP.
 
 ## Nguồn và phạm vi

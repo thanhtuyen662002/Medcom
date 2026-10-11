@@ -23,6 +23,7 @@ IGNORE = (ROOT / '.dockerignore').read_text()
 API = 'src/backend/Medcom.Api/Medcom.Api.csproj'
 WORKER = 'src/backend/Medcom.LegacyPasswordWorker/Medcom.LegacyPasswordWorker.csproj'
 ERP_CATALOG = 'inventories/erp/20261010/six-screen-catalog.json'
+WORKFLOW_CATALOG = 'inventories/erp/20261011/cud-workflow-catalog.json'
 REFERENCE_CATALOG = 'inventories/backend/20261011/api-reference-bindings.json'
 IMAGE = os.environ.get('MEDCOM_CONTAINER_IMAGE')
 PUBLIC_ROOT = {'global.json', 'Directory.Build.props', 'Directory.Build.targets', 'NuGet.config'}
@@ -73,6 +74,7 @@ class ContainerContractTests(unittest.TestCase):
             'COPY global.json Directory.Build.props Directory.Build.targets NuGet.config ./',
             'COPY src/backend/ ./src/backend/',
             f'COPY {ERP_CATALOG} ./{ERP_CATALOG}',
+            f'COPY {WORKFLOW_CATALOG} ./{WORKFLOW_CATALOG}',
             f'COPY {REFERENCE_CATALOG} ./{REFERENCE_CATALOG}',
             'COPY --from=build /out/api/ ./',
             'COPY --from=build /out/password-worker/ ./password-worker/'])
@@ -108,7 +110,7 @@ class ContainerContractTests(unittest.TestCase):
             '!Dockerfile', '!.dockerignore', '!src/backend/**/*.cs',
             '!src/backend/**/*.csproj', '!src/backend/**/packages.lock.json',
             '!src/backend/Medcom.Api/appsettings.json', '!' + ERP_CATALOG,
-            '!' + REFERENCE_CATALOG}
+            '!' + REFERENCE_CATALOG, '!' + WORKFLOW_CATALOG}
         self.assertEqual(rules[0], '**')
         self.assertEqual({rule for rule in rules if rule.startswith('!')}, expected)
         final_exclusion = max(i for i, rule in enumerate(rules) if rule.startswith('!'))
@@ -240,7 +242,7 @@ class DockerSmokeTests(unittest.TestCase):
                           '--env', 'Medcom__PrivateConfigPath=/unreadable/private-fixture.json',
                           container, 'dotnet', '/app/Medcom.Api.dll', '--print-api-contract', timeout=15).stdout
         self.assertEqual(json.loads(exported), expected)
-        self.assertEqual(sum(len(item) for item in expected['paths'].values()), 120)
+        self.assertEqual(sum(len(item) for item in expected['paths'].values()), 243)
         for path, method in [('/api/notifications', 'get'), ('/api/notifications/{id}', 'get'),
                              ('/api/notifications/{id}/target', 'get'), ('/api/notifications/{id}/read', 'post')]:
             self.assertIn(method, expected['paths'][path])
@@ -255,6 +257,7 @@ class DockerSmokeTests(unittest.TestCase):
     def test_real_docker_context_accepts_future_source_and_rejects_private_neighbors(self):
         allowed = PUBLIC_ROOT | {
             ERP_CATALOG,
+            WORKFLOW_CATALOG,
             REFERENCE_CATALOG,
             'src/backend/Medcom.Api/appsettings.json',
             'src/backend/Medcom.Api/Medcom.Api.csproj',
@@ -264,6 +267,7 @@ class DockerSmokeTests(unittest.TestCase):
         denied = {
             'inventories/erp/20261010/other-catalog.json',
             'inventories/erp/20261010/six-screen-catalog.private.json',
+            'inventories/erp/20261011/cud-workflow-catalog.private.json',
             'inventories/backend/20261011/other-catalog.json',
             'inventories/backend/20261011/reference-source-reconciliation.json',
             'inventories/backend/20261011/api-reference-bindings.private.json',
@@ -328,7 +332,7 @@ class DockerSmokeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             context = Path(folder)
             (context / '.dockerignore').write_text(IGNORE)
-            for catalog in (ERP_CATALOG, REFERENCE_CATALOG):
+            for catalog in (ERP_CATALOG, WORKFLOW_CATALOG, REFERENCE_CATALOG):
                 child = context / catalog / 'unexpected.cs'
                 child.parent.mkdir(parents=True)
                 child.write_text('synthetic forbidden payload\n')

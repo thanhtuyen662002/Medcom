@@ -8,34 +8,54 @@ using Medcom.Application;
 using Medcom.Contracts;
 namespace Medcom.Infrastructure.Erp;
 
-// SQL identifiers originate only in the finite compiled seven-form catalog.
+// SQL identifiers originate only in the finite compiled form catalog.
 // No HTTP parameter, configuration SQL, caller-supplied schema or table is an identifier.
 internal sealed class ErpSqlPlan
 {
-    private static readonly FrozenDictionary<string,ErpSqlPlan> Plans=ErpScreenCatalog.SourceMetadata
-        .GetProperty("screens").EnumerateArray().Select(row=>new ErpSqlPlan(row)).ToFrozenDictionary(plan=>plan.Module,StringComparer.Ordinal);
+    private static readonly FrozenDictionary<string,ErpSqlPlan> Plans=ErpScreenCatalog.AllScreenMetadata
+        .Select(row=>new ErpSqlPlan(row)).ToFrozenDictionary(plan=>plan.Module,StringComparer.Ordinal);
     private ErpSqlPlan(JsonElement row)
     {
         Module=row.GetProperty("id").GetString()!;Screen=ErpScreenCatalog.Get(Module)!;
         HeaderTable=row.GetProperty("headerTable").GetString()!;
         LineTable=row.GetProperty("lineTable").GetString()!;
         HistoryTable=Optional(row,"historyTable");ComparisonTable=Optional(row,"comparisonTable");
-        HeaderKey=Module=="purchase-requests"?"PurchaseRequestID":"DocumentID";
-        DateColumn=Module=="purchase-requests"?"PurchaseDate":"DocumentDate";
+        HeaderKey=row.TryGetProperty("headerKey",out var key)?key.GetString()!:Module=="purchase-requests"?"PurchaseRequestID":"DocumentID";
+        DateColumn=row.TryGetProperty("dateColumn",out var date)?date.GetString()!:Module=="purchase-requests"?"PurchaseDate":"DocumentDate";
+        Tables=row.TryGetProperty("tables",out var tables)?tables.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.GetString()!,StringComparer.Ordinal)
+            :new Dictionary<string,string>(StringComparer.Ordinal){{"header",HeaderTable},{"lines",LineTable}};
+        if(HistoryTable is not null)Tables.TryAdd("history",HistoryTable);
+        if(ComparisonTable is not null)Tables.TryAdd("comparison",ComparisonTable);
     }
     internal string Module{get;} internal ErpScreenDescription Screen{get;}
     internal string HeaderTable{get;} internal string LineTable{get;}
     internal string? HistoryTable{get;} internal string? ComparisonTable{get;}
     internal string HeaderKey{get;} internal string DateColumn{get;}
+    internal Dictionary<string,string> Tables{get;}
+    internal string SectionKey(string section)=>ErpScreenCatalog.Metadata(Module).TryGetProperty("sectionKeys",out var keys)?keys.GetProperty(section).GetString()!:HeaderKey;
+    internal string HeaderJsonKey=>NativeName(HeaderKey);
+    internal string DateJsonKey=>NativeName(DateColumn);
+    private static string NativeName(string value){var name=value.Replace("ID","Id",StringComparison.Ordinal);return char.ToLowerInvariant(name[0])+name[1..];}
     internal static ErpSqlPlan? Get(string module)=>Plans.GetValueOrDefault(module);
     internal static string Exact(string expression,string parameter)=>
         $"CONVERT(varbinary(max),CONVERT(nvarchar(max),{expression}))=CONVERT(varbinary(max),CONVERT(nvarchar(max),{parameter}))";
     internal static string Projection(IReadOnlyList<ErpFieldDefinition> fields,string alias)=>
-        string.Join(",",fields.Select(field=>$"{alias}.[{field.Column}]"));
+        string.Join(",",fields.Select(field=>field.Virtual?$"V.[{field.SourceColumn??field.Column}] AS [{field.Column}]":$"{alias}.[{field.Column}]"));
+    private string ReadJoin(string section,string alias)
+    {
+        if(!ErpScreenCatalog.Metadata(Module).TryGetProperty("readJoins",out var joins)||!joins.TryGetProperty(section,out var join))return "";
+        var source=alias+".["+join.GetProperty("sourceKey").GetString()+"]";
+        var target="V.["+join.GetProperty("targetKey").GetString()+"]";
+        return $" LEFT JOIN dbo.[{join.GetProperty("view").GetString()}] V WITH(HOLDLOCK) ON {source}={target} AND {Exact(source,target)} ";
+    }
     internal string ScopePredicate=>Module switch
     {
         "sales-orders"=>$"H.BranchID=@branch AND {Exact("H.UserCreate","@actor")}",
         "internal-transfer-requests"=>$"H.BranchID=@branch AND {Exact("H.SalesUser","@actor")}",
+        "sales-order-pm"=>$"H.BranchID=@branch AND (EXISTS(SELECT 1 FROM dbo.SY_String2TableFnc(COALESCE(H.SendTo,N'')) U WHERE {Exact("LTRIM(RTRIM(CONVERT(nvarchar(4000),U.Value)))","@actor")}) OR EXISTS(SELECT 1 FROM dbo.AR_OrderLogTbl L WITH(HOLDLOCK) CROSS APPLY dbo.SY_String2TableFnc(COALESCE(L.SendTo,N'')) U WHERE L.DocumentID=H.DocumentID AND L.StatusID=12 AND {Exact("LTRIM(RTRIM(CONVERT(nvarchar(4000),U.Value)))","@actor")}))",
+        "sales-order-sa"=>"H.BranchID=@branch AND EXISTS(SELECT 1 FROM dbo.AR_OrderLogTbl L WITH(HOLDLOCK) WHERE L.DocumentID=H.DocumentID AND L.StatusID=14)",
+        "internal-transfer-pm"=>$"H.BranchID=@branch AND ( {Exact("H.AssignedPM","@actor")} OR EXISTS(SELECT 1 FROM dbo.SY_String2TableFnc(COALESCE(H.SendTo,N'')) U WHERE {Exact("LTRIM(RTRIM(CONVERT(nvarchar(4000),U.Value)))","@actor")}))",
+        _ when HeaderKey=="BatchID"=>Module=="internal-transfer-warehouse-in"?"H.ToBranchID=@branch":"H.FromBranchID=@branch",
         "machine-movements" or "machine-repairs"=>$"""
             EXISTS(SELECT 1 FROM dbo.[{LineTable}] S WITH(HOLDLOCK)
               JOIN dbo.FA_AssetTbl A WITH(HOLDLOCK) ON A.AssetID=S.AssetID
@@ -46,10 +66,11 @@ internal sealed class ErpSqlPlan
             """,
         _=>"H.BranchID=@branch"
     };
-    internal string HeaderText=>$"SELECT TOP(2) {Projection(Screen.Fields["header"],"H")} FROM dbo.[{HeaderTable}] H WITH(HOLDLOCK) WHERE H.[{HeaderKey}]=@document AND {Exact("H.["+HeaderKey+"]","@document")} AND ({ScopePredicate});";
+    internal string HeaderText=>$"SELECT TOP(2) {Projection(Screen.Fields["header"],"H")} FROM dbo.[{HeaderTable}] H WITH(HOLDLOCK) {ReadJoin("header","H")} WHERE H.[{HeaderKey}]=@document AND {Exact("H.["+HeaderKey+"]","@document")} AND ({ScopePredicate});";
     internal string ListText=>$"""
-        SELECT {Projection(Screen.Fields["header"],"H")} FROM dbo.[{HeaderTable}] H WITH(HOLDLOCK)
+        SELECT {Projection(Screen.Fields["header"],"H")} FROM dbo.[{HeaderTable}] H WITH(HOLDLOCK) {ReadJoin("header","H")}
         WHERE ({ScopePredicate}) AND (@search IS NULL OR H.[{HeaderKey}] LIKE @search ESCAPE N'~')
+          {(Module=="purchase-approvals"?"AND H.StatusID=2":"")}
           AND (@from IS NULL OR H.[{DateColumn}]>=@from) AND (@to IS NULL OR H.[{DateColumn}]<@to)
           {(Screen.Fields["header"].Any(column=>column.Column=="StatusID")?"AND (@status IS NULL OR H.StatusID=@status)":"")}
         ORDER BY H.[{DateColumn}] DESC,H.[{HeaderKey}] COLLATE Latin1_General_100_BIN2 DESC
@@ -57,9 +78,10 @@ internal sealed class ErpSqlPlan
         """;
     internal string LinesText(string section,bool full=false)
     {
-        var table=section switch{"lines"=>LineTable,"history"=>HistoryTable,"comparison"=>ComparisonTable,_=>null};
+        var table=Tables.GetValueOrDefault(section);
         if(table is null)throw new InvalidOperationException("Unsupported document section.");
-        return $"SELECT {Projection(Screen.Fields[section],"D")} FROM dbo.[{table}] D WITH(HOLDLOCK) WHERE D.[{HeaderKey}]=@document AND {Exact("D.["+HeaderKey+"]","@document")} ORDER BY D.UserAutoID COLLATE Latin1_General_100_BIN2 OFFSET @offset ROWS FETCH NEXT @take ROWS ONLY;";
+        var key=SectionKey(section);
+        return $"SELECT {Projection(Screen.Fields[section],"D")} FROM dbo.[{table}] D WITH(HOLDLOCK) {ReadJoin(section,"D")} WHERE D.[{key}]=@document AND {Exact("D.["+key+"]","@document")} ORDER BY D.UserAutoID COLLATE Latin1_General_100_BIN2 OFFSET @offset ROWS FETCH NEXT @take ROWS ONLY;";
     }
     internal static DbCommand Command(DbTransaction transaction,string text)
     {

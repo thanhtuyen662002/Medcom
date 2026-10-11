@@ -2,12 +2,12 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 namespace Medcom.Contracts;
 
-// The seven route identifiers are a finite server catalog; callers never select SQL objects or field mappings.
+// Route identifiers form a finite server catalog; callers never select SQL objects or field mappings.
 public sealed record ErpFieldDefinition(string Name, string Column, string SqlType, string? TypeArguments,
-    bool Nullable, int Ordinal, bool HasDefault, bool Writable);
+    bool Nullable, int Ordinal, bool HasDefault, bool Writable,bool Virtual=false,string? SourceColumn=null);
 public sealed record ErpLookupDefinition(string Id, string? Grid, string Field, string ValueField,
     string DisplayField, string? LinkedFields, string? Parameters, string? RequiredParameters, bool MultiSelect, bool Disabled,
-    string SourceHash);
+    string SourceHash,bool AllowUnlisted=false);
 public sealed record ErpActionDefinition(string Id, string Caption, string Control, string Operation,
     string? LockExpression, bool NativeVisible, bool RequiresSavedDocument, string Evidence);
 public sealed record ErpActionState(string Id, string Caption, bool Visible, bool Enabled,
@@ -23,13 +23,17 @@ public sealed record ErpLineRow(string LineId, IReadOnlyDictionary<string, objec
 public sealed record ErpLinePage(IReadOnlyList<ErpLineRow> Rows, int Page, int PageSize, bool HasMore);
 public sealed record ErpDocumentDetail(string DocumentId, string BranchId, string StateToken,
     IReadOnlyDictionary<string, object?> Header, ErpLinePage Lines,
-    ErpLinePage? History, ErpLinePage? Comparison, IReadOnlyList<ErpActionState> Actions);
+    ErpLinePage? History, ErpLinePage? Comparison, IReadOnlyList<ErpActionState> Actions,
+    [property:JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] IReadOnlyDictionary<string,ErpLinePage>? Sections=null);
 public sealed record ErpChoice(string Id, string? Label, IReadOnlyDictionary<string, object?> Fields);
 public sealed record ErpChoicePage(IReadOnlyList<ErpChoice> Items, int Page, int PageSize, bool HasMore,
     IReadOnlyList<string> RequiredParameters);
 public sealed record ErpLookupQuery(string BranchId, string LookupId, int Page = 1, int PageSize = 20,
     string? Search = null, IReadOnlyDictionary<string, string?>? Context = null);
 public sealed record ErpPmLookupQuery(string BranchId, string Role = "primary", int Page = 1, int PageSize = 20, string? Search = null);
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record ErpItemPriceQuery(string BranchId,string ObjectId,string DocumentDate,string ItemId,string? CurrencyId=null);
+public sealed record ErpItemPrice(string ItemId,string? UnitPrice,string? CurrencyId);
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record ErpNewLine(string ClientLineKey, JsonElement Values);
 [JsonConverter(typeof(JsonStringEnumConverter<ErpLineChangeKind>))]
@@ -50,6 +54,16 @@ public sealed record ErpDeleteRequest(string IdempotencyKey, string BranchId,
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record ErpActionRequest(string IdempotencyKey, string BranchId, string DocumentId,
     string ExpectedStateToken, JsonElement Payload);
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record ErpActionNotes(string? Notes);
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record ErpReturnStep(int StatusId,string? Notes);
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record ErpTransferTechSend(string PrimarySaId,string SupportingSaId,string? Notes);
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record ErpSectionSaveRequest(string IdempotencyKey,string BranchId,string DocumentId,
+    string ExpectedStateToken,IReadOnlyList<ErpLineChange> LineChanges);
+public sealed record ErpActionOptionsQuery(string BranchId,string Role="primary",int Page=1,int PageSize=20,string? Search=null);
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record ErpSendOrderPm(string PmId, string? Notes);
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]

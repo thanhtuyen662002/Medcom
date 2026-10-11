@@ -15,6 +15,12 @@ public interface IErpScreenService
     Task<ErpReadResult<ErpDraftSelection>> PasteAsync(string module,ErpPasteRequest request,CancellationToken token);
     Task<ErpCommandResult> CreateAsync(string module,ErpCreateRequest request,CancellationToken token);
     Task<ErpCommandResult> SaveAsync(string module,ErpSaveRequest request,CancellationToken token);
+    Task<ErpCommandResult> SaveSectionAsync(string module,string section,ErpSectionSaveRequest request,CancellationToken token)
+        =>Task.FromResult(new ErpCommandResult(ErpCommandOutcome.Unavailable,"erp_runtime_unavailable"));
+    Task<ErpReadResult<ErpChoicePage>> ActionOptionsAsync(string module,string action,ErpActionOptionsQuery query,CancellationToken token)
+        =>Task.FromResult(new ErpReadResult<ErpChoicePage>(ErpReadOutcome.Unavailable));
+    Task<ErpReadResult<ErpItemPrice>> ItemPriceAsync(ErpItemPriceQuery query,CancellationToken token)
+        =>Task.FromResult(new ErpReadResult<ErpItemPrice>(ErpReadOutcome.Unavailable));
     Task<ErpCommandResult> DeleteAsync(string module,ErpDeleteRequest request,CancellationToken token);
     Task<ErpCommandResult> ActionAsync(string module,string action,ErpActionRequest request,CancellationToken token);
     Task<ErpCommandResult> ScanAsync(string module,string action,ErpScanRequest request,CancellationToken token);

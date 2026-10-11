@@ -15,13 +15,21 @@ internal static class ErpLookupSql
     internal sealed record Bound(string Text,IReadOnlyList<(string Name,string Value)> Parameters);
     private static readonly Regex Literal=new(@"N?'(?:''|[^'])*'",RegexOptions.CultureInvariant|RegexOptions.IgnoreCase);
     private static readonly Regex Placeholder=new(@"\{([^{}]+)\}",RegexOptions.CultureInvariant);
+    internal static IReadOnlyList<string>? StaticChoices(string source)
+    {
+        if(Regex.IsMatch(source.TrimStart(),@"^(?:SELECT|DECLARE|EXEC|EXECUTE|WA_OrderByContract_GetItemStp|IV_GetItemByContractIDStp)\b",RegexOptions.IgnoreCase|RegexOptions.CultureInvariant)
+            ||source.Any(c=>c is '\'' or '"' or '(' or ')' or '{' or '}' or '\r' or '\n'))return null;
+        var choices=source.Split(';',StringSplitOptions.RemoveEmptyEntries|StringSplitOptions.TrimEntries);
+        return choices.Length is >0 and <=1000&&choices.All(c=>c.Length<=250&&ErpInputRules.Text(c,false))
+            &&choices.Distinct(StringComparer.Ordinal).Count()==choices.Length?Array.AsReadOnly(choices):null;
+    }
     internal static Bound? Bind(string source,IReadOnlyList<string> arguments,IReadOnlyList<string> values,string actor,string branch)
     {
         if(source.Length>65536||arguments.Count!=values.Count)return null;
         var masked=Literal.Replace(source," ");
         masked=Regex.Replace(masked,@"--[^\r\n]*|/\*[\s\S]*?\*/"," ",RegexOptions.CultureInvariant);
         if(Regex.IsMatch(masked,@"\b(?:INSERT|UPDATE|DELETE|MERGE|ALTER|CREATE|DROP|TRUNCATE|INTO|OPENROWSET|OPENQUERY|OPENDATASOURCE|GO|SP_EXECUTESQL|WAITFOR|DBCC|GRANT|REVOKE|DENY|BACKUP|RESTORE)\b",RegexOptions.IgnoreCase|RegexOptions.CultureInvariant))return null;
-        var procedure=Regex.Match(masked.Trim(),@"^(?:EXEC\s+)?(?:dbo\.)?WA_OrderByContract_GetItemStp\b",RegexOptions.IgnoreCase|RegexOptions.CultureInvariant);
+        var procedure=Regex.Match(masked.Trim(),@"^(?:EXEC\s+)?(?:dbo\.)?(?:WA_OrderByContract_GetItemStp|IV_GetItemByContractIDStp)\b",RegexOptions.IgnoreCase|RegexOptions.CultureInvariant);
         if(!procedure.Success&&(!Regex.IsMatch(masked.Trim(),@"^(?:SELECT|DECLARE)\b",RegexOptions.IgnoreCase|RegexOptions.CultureInvariant)
             ||Regex.IsMatch(masked,@"\b(?:EXEC|EXECUTE)\b",RegexOptions.IgnoreCase|RegexOptions.CultureInvariant)))return null;
         if(procedure.Success&&masked[(masked.IndexOf(procedure.Value,StringComparison.Ordinal)+procedure.Length)..].Any(c=>!char.IsWhiteSpace(c)&&c!=','))return null;
@@ -67,15 +75,21 @@ internal static class ErpLookupSql
             ||(reader.IsDBNull(4)?null:reader.GetString(4))!=lookup.RequiredParameters
             ||!reader.IsDBNull(5)&&reader.GetBoolean(5)||(!reader.IsDBNull(6)&&reader.GetBoolean(6))!=lookup.MultiSelect
             ||(reader.IsDBNull(7)?null:reader.GetString(7))!=lookup.LinkedFields)return null;
+        if(ErpScreenCatalog.IsWorkflow(screen.Id)&&(!reader.IsDBNull(8)&&reader.GetBoolean(8))!=lookup.AllowUnlisted)return null;
         if(await reader.ReadAsync(token)||await reader.NextResultAsync(token))return null;
         await reader.DisposeAsync();
-        if(Regex.IsMatch(source.TrimStart(),@"^(?:EXEC\s+)?(?:dbo\.)?WA_OrderByContract_GetItemStp\b",RegexOptions.IgnoreCase|RegexOptions.CultureInvariant))
+        var procedure=Regex.Match(source.TrimStart(),@"^(?:EXEC\s+)?(?:dbo\.)?(WA_OrderByContract_GetItemStp|IV_GetItemByContractIDStp)\b",RegexOptions.IgnoreCase|RegexOptions.CultureInvariant);
+        if(procedure.Success)
         {
-            var expected=ErpScreenCatalog.SourceMetadata.GetProperty("modules").EnumerateArray()
-                .Single(module=>module.GetProperty("name").GetString()=="WA_OrderByContract_GetItemStp")
-                .GetProperty("definitionSha256Utf16LE").GetString();
-            await using var probe=ErpSqlPlan.Command(transaction,"SELECT CONVERT(varchar(64),HASHBYTES('SHA2_256',CONVERT(varbinary(max),definition)),2) FROM sys.sql_modules WHERE object_id=OBJECT_ID('dbo.WA_OrderByContract_GetItemStp','P');");
-            if((await probe.ExecuteScalarAsync(token)as string)?.ToLowerInvariant()!=expected)return null;
+            var name=procedure.Groups[1].Value;
+            var pins=ErpScreenCatalog.SourceMetadata.GetProperty("modules").EnumerateArray()
+                .Concat(ErpScreenCatalog.WorkflowMetadata.GetProperty("modules").EnumerateArray())
+                .Where(module=>module.GetProperty("name").GetString()==name).Select(module=>module.GetProperty("definitionSha256Utf16LE").GetString())
+                .Distinct(StringComparer.Ordinal).ToArray();
+            if(pins.Length!=1)return null;
+            await using var probe=ErpSqlPlan.Command(transaction,"SELECT CONVERT(varchar(64),HASHBYTES('SHA2_256',CONVERT(varbinary(max),definition)),2) FROM sys.sql_modules WHERE object_id=OBJECT_ID(@object,'P');");
+            ErpSqlPlan.Parameter(probe,"@object",DbType.String,"dbo."+name,255);
+            if((await probe.ExecuteScalarAsync(token)as string)?.ToLowerInvariant()!=pins[0])return null;
         }
         return source;
     }
