@@ -173,7 +173,34 @@ export function routeAllowed(path:string,method:string){
 }
 export function backendOrigin(value:string|undefined){
  if(!value)return null;
- try{const u=new URL(value);if(u.protocol!=="https:"||u.username||u.password||u.pathname!=="/"||u.search||u.hash)return null;const h=u.hostname.toLowerCase();if(h==="localhost"||h.endsWith(".localhost")||h.endsWith(".local")||h.includes(":")||/^\d+(\.\d+)*$/.test(h)||!h.includes("."))return null;return u.origin;}catch{return null;}
+ try{const u=new URL(value);if(u.protocol!=="https:"||u.username||u.password||u.pathname!=="/"||u.search||u.hash)return null;const h=u.hostname.toLowerCase();if(h==="localhost"||h.endsWith(".localhost")||h.endsWith(".local")||h.includes(":")||/^\d+(\.\d+)*$/.test(h)||!h.includes("."))return null;const tld=h.split(".").pop()??"";if(/^\d+$/.test(tld)||tld.startsWith("-"))return null;return u.origin;}catch{return null;}
+}
+export function isCanonicalIpv4(hostname:string):boolean{
+ const parts=hostname.split(".");
+ if(parts.length!==4)return false;
+ for(const part of parts){
+  if(!/^(0|[1-9]\d{0,2})$/.test(part))return false;
+  const n=Number(part);
+  if(n<0||n>255)return false;
+ }
+ if(hostname==="0.0.0.0"||hostname==="255.255.255.255")return false;
+ return true;
+}
+export function publicOrigin(value:string|undefined){
+ if(!value)return null;
+ const dns=backendOrigin(value);
+ if(dns)return dns;
+ try{
+  const u=new URL(value);
+  if(u.protocol!=="https:"||u.username||u.password||u.pathname!=="/"||u.search||u.hash)return null;
+  const rawHost=value.slice("https://".length).split("/")[0].split("?")[0].split("#")[0].split(":")[0];
+  if(!isCanonicalIpv4(rawHost)||rawHost!==u.hostname)return null;
+  if(u.port){
+   const p=Number(u.port);
+   if(!Number.isSafeInteger(p)||p<1||p>65535)return null;
+  }
+  return u.origin;
+ }catch{return null;}
 }
 export function localHttpsOrigin(value:string|undefined){
  // Validate the original string: URL parsing would erase case, whitespace,
@@ -189,8 +216,8 @@ export function resolveErpOrigins(configuredOrigin:string|undefined,configuredPu
   // in production. Never combine a local hop with a public DNS origin.
   return backend&&publicOrigin?{backend,publicOrigin}:{backend:null,publicOrigin:null};
  }
- return {backend:backendOrigin(configuredOrigin),publicOrigin:backendOrigin(configuredPublicOrigin)};
+ return {backend:backendOrigin(configuredOrigin),publicOrigin:publicOrigin(configuredPublicOrigin)};
 }
 export function erpCookies(value:string|null){return(value??"").split(";").map(s=>s.trim()).filter(s=>/^__Host-Medcom\.(?:Session(?:C\d+)?|Csrf)=/.test(s)).join("; ");}
 export function relayCookie(value:string){if(!/^__Host-Medcom\.(?:Session(?:C\d+)?|Csrf)=/.test(value)||/;\s*domain\s*=/i.test(value))return null;if(!/;\s*secure(?:;|$)/i.test(value)||!/;\s*httponly(?:;|$)/i.test(value)||!/;\s*path=\/(?:;|$)/i.test(value))return null;return value;}
-export function sameOriginWrite(configuredPublicOrigin:string|undefined,origin:string|null){const expected=backendOrigin(configuredPublicOrigin);return expected!==null&&origin===expected;}
+export function sameOriginWrite(configuredPublicOrigin:string|undefined,origin:string|null){const expected=publicOrigin(configuredPublicOrigin);return expected!==null&&origin===expected;}
