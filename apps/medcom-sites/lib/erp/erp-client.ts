@@ -46,6 +46,7 @@ import {
   scanErpQr,
   selectErpDraft,
   validateErpPaste,
+  lookupErpCommand,
 } from "./erp-screen-api";
 import {
   getNotificationsList,
@@ -82,6 +83,8 @@ export class ErpClientService {
   private static instance: ErpClientService;
   private currentSession: Session | null = null;
   private currentWorkspace: WorkspaceData | null = null;
+  private branchInflightPromise?: Promise<{ items: BranchItem[]; hasMore: boolean }>;
+  private branchCache?: { items: BranchItem[]; hasMore: boolean; expiresAt: number; key: string };
 
   public static getInstance(): ErpClientService {
     if (!ErpClientService.instance) {
@@ -92,28 +95,61 @@ export class ErpClientService {
 
   /**
    * Fetch Real Branches from API (`/api/erp/api/lookups/branches`)
-   * Guaranteed by backend contract in PR 139.
+   * Guaranteed by backend contract in PR 139 with in-flight coalescing and caching.
    */
   public async getBranchesList(
     search = "",
     page = 1,
     pageSize = 50
   ): Promise<{ items: BranchItem[]; hasMore: boolean }> {
-    try {
-      const params = new URLSearchParams({
-        page: String(page),
-        pageSize: String(pageSize),
-      });
-      if (search.trim()) params.set("search", search.trim());
-      const res = await fetch(`/api/erp/api/lookups/branches?${params.toString()}`, {
-        credentials: "same-origin",
-        cache: "no-store",
-      });
-      if (res.status === 401 && typeof window !== "undefined" && typeof window.dispatchEvent === "function" && typeof CustomEvent !== "undefined") {
-        try { window.dispatchEvent(new CustomEvent("medcom:unauthorized")); } catch {}
-        return { items: [], hasMore: false };
-      }
-      if (!res.ok) {
+    const cacheKey = `${search.trim()}_${page}_${pageSize}`;
+    if (this.branchCache && this.branchCache.key === cacheKey && Date.now() < this.branchCache.expiresAt) {
+      return { items: this.branchCache.items, hasMore: this.branchCache.hasMore };
+    }
+    if (this.branchInflightPromise && !search.trim() && page === 1) {
+      return this.branchInflightPromise;
+    }
+    const fetchPromise = (async () => {
+      try {
+        const params = new URLSearchParams({
+          page: String(page),
+          pageSize: String(pageSize),
+        });
+        if (search.trim()) params.set("search", search.trim());
+        const res = await fetch(`/api/erp/api/lookups/branches?${params.toString()}`, {
+          credentials: "same-origin",
+          cache: "no-store",
+        });
+        if (res.status === 401 && typeof window !== "undefined" && typeof window.dispatchEvent === "function" && typeof CustomEvent !== "undefined") {
+          try { window.dispatchEvent(new CustomEvent("medcom:unauthorized")); } catch {}
+          return { items: [], hasMore: false };
+        }
+        if (!res.ok) {
+          if (this.currentWorkspace?.branchIds && this.currentWorkspace.branchIds.length > 0) {
+            return {
+              items: this.currentWorkspace.branchIds.map((id) => ({
+                id,
+                name: `Chi nhánh ${id}`,
+                code: id,
+              })),
+              hasMore: false,
+            };
+          }
+          return { items: [], hasMore: false };
+        }
+        const json = await res.json();
+        const data = json?.data || json;
+        const items = Array.isArray(data?.items)
+          ? data.items.map((b: { branchId?: string; branchName?: string | null }) => ({
+              id: b.branchId || "",
+              name: b.branchName || b.branchId || "Chi nhánh",
+              code: b.branchId || "",
+            }))
+          : [];
+        const result = { items, hasMore: Boolean(data?.hasMore) };
+        this.branchCache = { ...result, key: cacheKey, expiresAt: Date.now() + 30000 };
+        return result;
+      } catch {
         if (this.currentWorkspace?.branchIds && this.currentWorkspace.branchIds.length > 0) {
           return {
             items: this.currentWorkspace.branchIds.map((id) => ({
@@ -126,29 +162,15 @@ export class ErpClientService {
         }
         return { items: [], hasMore: false };
       }
-      const json = await res.json();
-      const data = json?.data || json;
-      const items = Array.isArray(data?.items)
-        ? data.items.map((b: { branchId?: string; branchName?: string | null }) => ({
-            id: b.branchId || "",
-            name: b.branchName || b.branchId || "Chi nhánh",
-            code: b.branchId || "",
-          }))
-        : [];
-      return { items, hasMore: Boolean(data?.hasMore) };
-    } catch {
-      if (this.currentWorkspace?.branchIds && this.currentWorkspace.branchIds.length > 0) {
-        return {
-          items: this.currentWorkspace.branchIds.map((id) => ({
-            id,
-            name: `Chi nhánh ${id}`,
-            code: id,
-          })),
-          hasMore: false,
-        };
-      }
-      return { items: [], hasMore: false };
+    })();
+
+    if (!search.trim() && page === 1) {
+      this.branchInflightPromise = fetchPromise.finally(() => {
+        this.branchInflightPromise = undefined;
+      });
+      return this.branchInflightPromise;
     }
+    return fetchPromise;
   }
 
   public async getSession(): Promise<Session> {
@@ -483,6 +505,13 @@ export class ErpClientService {
     request: { branchId: string; rows: Array<Record<string, unknown>> }
   ) {
     return await validateErpPaste(module, request);
+  }
+
+  public async lookupCommand(
+    module: ErpScreenModule,
+    request: { operation: string; originalIntent: unknown }
+  ) {
+    return await lookupErpCommand(module, request);
   }
 
   // --- ERP Notifications (I76) ---

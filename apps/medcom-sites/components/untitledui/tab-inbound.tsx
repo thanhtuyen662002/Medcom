@@ -27,6 +27,7 @@ import { errorMessage } from "@/lib/erp/api";
 
 function formatVND(value?: string | null, currency = "VND"): string {
   if (!value) return "0 " + currency;
+  if (value.includes("VND") || value.includes("USD") || value.includes("₫") || value.includes("$")) return value;
   const parts = value.split(".");
   const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   return parts.length > 1 ? `${intPart},${parts[1]} ${currency}` : `${intPart} ${currency}`;
@@ -122,19 +123,25 @@ export function TabInbound({
             const orderNumber = h?.orderNumber || (raw.orderNumber as string);
             const poRef = orderNumber || `PO-${r.documentId}`;
             const objectId =
+              (raw.objectName as string) ||
+              (raw.objectIdName as string) ||
+              (h as any)?.objectName ||
               h?.objectId ||
               (raw.objectId as string) ||
               (raw.supplierName as string) ||
               (raw.vendorName as string);
-            const supplierName = objectId ? `NCC: ${objectId}` : "Nhà cung ứng Dược phẩm ERP";
+            const supplierName = objectId ? (objectId.startsWith("NCC") ? objectId : `NCC: ${objectId}`) : "Nhà cung ứng Dược phẩm ERP";
             const invoiceNo = h?.invoiceNo || (raw.invoiceNo as string);
             const departurePoint = h?.departurePoint || (raw.departurePoint as string);
             const destinationPoint = h?.destinationPoint || (raw.destinationPoint as string);
-            const docDate = h?.documentDate
-              ? h.documentDate.slice(0, 10)
-              : r.documentDate
-              ? r.documentDate.slice(0, 10)
-              : "—";
+            const docDate =
+              (raw.documentDateDisplay as string) ||
+              (h as any)?.documentDateDisplay ||
+              (h?.documentDate
+                ? h.documentDate.slice(0, 10)
+                : r.documentDate
+                ? r.documentDate.slice(0, 10)
+                : "—");
             const declarationNumber =
               h?.declarationNumber || (raw.declarationNumber as string);
 
@@ -220,11 +227,11 @@ export function TabInbound({
             f?.expireDateByDocument ||
             (rawL.expireDateByDocument as string) ||
             (rawL.expireDate as string);
-          const exp = expVal ? expVal.slice(0, 10) : item.expiryDate;
-          const unitPriceVal = f?.unitPrice || (rawL.unitPrice as string);
-          const amountVal = f?.amount || (rawL.amount as string);
-          const unitPriceStr = unitPriceVal ? formatVND(unitPriceVal, "VND") : undefined;
-          const amountStr = amountVal ? formatVND(amountVal, "VND") : undefined;
+          const exp = (rawL.expireDateDisplay as string) || (expVal ? expVal.slice(0, 10) : item.expiryDate);
+          const unitPriceVal = (rawL.unitPriceDisplay as string) || f?.unitPrice || (rawL.unitPrice as string);
+          const amountVal = (rawL.amountDisplay as string) || (rawL.totalPriceDisplay as string) || f?.amount || (rawL.amount as string);
+          const unitPriceStr = (rawL.unitPriceDisplay as string) || (unitPriceVal ? formatVND(unitPriceVal, "VND") : undefined);
+          const amountStr = (rawL.amountDisplay as string) || (amountVal ? formatVND(amountVal, "VND") : undefined);
           const orderedQty =
             f?.setQuantityByDocument ||
             l.setQuantityByDocument ||
@@ -237,14 +244,15 @@ export function TabInbound({
             (rawL.setQuantityByReal as string) ||
             orderedQty;
           const unit =
+            (rawL.unit as string) ||
             f?.unit2 ||
             (rawL.unit2 as string) ||
-            (rawL.unit as string) ||
-            "Hộp/Đơn vị";
+            "Hộp";
           const itemName =
-            (f as Record<string, unknown> | undefined)?.itemName ||
             (rawL.itemName as string) ||
-            `Dược phẩm [${l.itemId}]`;
+            (f as Record<string, unknown> | undefined)?.itemName ||
+            (rawL.itemDescription as string) ||
+            (l.itemId ? `Dược phẩm [${l.itemId}]` : "Vật tư y tế");
           const hangSX = f?.hangSX || (rawL.hangSX as string);
           const checkerNote = f?.checkerNote || (rawL.checkerNote as string);
           const testStatus = f?.testStatus || (rawL.testStatus as string);

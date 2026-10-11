@@ -27,6 +27,7 @@ import { errorMessage } from "@/lib/erp/api";
 
 function formatVND(value?: string | null, currency = "VND"): string {
   if (!value) return "0 " + currency;
+  if (value.includes("VND") || value.includes("USD") || value.includes("₫") || value.includes("$")) return value;
   const parts = value.split(".");
   const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   return parts.length > 1 ? `${intPart},${parts[1]} ${currency}` : `${intPart} ${currency}`;
@@ -112,6 +113,8 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
             const raw = r as Record<string, unknown>;
             const h = r.purchaseOrderHeader;
             const baseTotal =
+              (raw.baseTotalDisplay as string) ||
+              (raw.totalAmountDisplay as string) ||
               h?.baseTotal ||
               (raw.baseTotal as string) ||
               (raw.totalAmount as string) ||
@@ -123,14 +126,18 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
 
             return {
               documentId: r.documentId,
-              documentDate: h?.documentDate
-                ? h.documentDate.slice(0, 10)
-                : r.documentDate
-                ? r.documentDate.slice(0, 10)
-                : "—",
-              branchId: r.branchId || selectedBranch || "CN01",
+              documentDate:
+                (raw.documentDateDisplay as string) ||
+                (h as any)?.documentDateDisplay ||
+                (h?.documentDate
+                  ? h.documentDate.slice(0, 10)
+                  : r.documentDate
+                  ? r.documentDate.slice(0, 10)
+                  : "—"),
+              branchId: (raw.branchName as string) || (h as any)?.branchName || r.branchId || selectedBranch || "CN01",
               statusId: r.statusId,
               statusName:
+                (raw.statusName as string) ||
                 r.statusName ||
                 (r.statusId === 2
                   ? "Đã duyệt"
@@ -139,11 +146,14 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
                   : "Bản nháp"),
               isLocked: r.isLocked ?? false,
               supplier:
-                h?.objectId
+                (raw.objectName as string) ||
+                (raw.objectIdName as string) ||
+                (h as any)?.objectName ||
+                (h?.objectId
                   ? `NCC: ${h.objectId}`
                   : (raw.objectId as string)
                   ? `NCC: ${raw.objectId}`
-                  : (raw.vendorName as string) || (raw.supplierName as string) || "Nhà cung cấp dược Medcom",
+                  : (raw.vendorName as string) || (raw.supplierName as string) || "Nhà cung cấp dược Medcom"),
               creator:
                 h?.userCreate ||
                 (raw.userCreate as string) ||
@@ -157,11 +167,14 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
                 (raw.memo as string) ||
                 `Đơn đặt hàng ${r.documentId}`,
               memo: h?.memo || (raw.memo as string),
-              deliverDate: h?.deliverDate
-                ? h.deliverDate.slice(0, 10)
-                : (raw.deliverDate as string)
-                ? String(raw.deliverDate).slice(0, 10)
-                : null,
+              deliverDate:
+                (raw.deliverDateDisplay as string) ||
+                (h as any)?.deliverDateDisplay ||
+                (h?.deliverDate
+                  ? h.deliverDate.slice(0, 10)
+                  : (raw.deliverDate as string)
+                  ? String(raw.deliverDate).slice(0, 10)
+                  : null),
               currencyId,
               contractId: h?.contractId || (raw.contractId as string),
               purchaseOrderHeader: h,
@@ -213,27 +226,23 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
                 purchaseOrderHeader:
                   detail.document.purchaseOrderHeader ||
                   prev.purchaseOrderHeader,
-                lines: detail.purchaseOrderLines.map((l) => {
+                lines: detail.purchaseOrderLines.map((l: any) => {
                   const f = l.fields;
                   const rawL = l as Record<string, unknown>;
-                  const unitPriceVal = f?.unitPrice || (rawL.unitPrice as string);
-                  const amountVal = f?.amount || (rawL.amount as string);
-                  const priceStr = unitPriceVal
-                    ? formatVND(unitPriceVal, prev.currencyId || "VND")
-                    : "Theo hợp đồng";
-                  const amtStr = amountVal
-                    ? formatVND(amountVal, prev.currencyId || "VND")
-                    : "Theo hợp đồng";
+                  const unitPriceVal = (rawL.unitPriceDisplay as string) || f?.unitPrice || (rawL.unitPrice as string);
+                  const amountVal = (rawL.amountDisplay as string) || (rawL.totalPriceDisplay as string) || f?.amount || (rawL.amount as string);
+                  const priceStr = (rawL.unitPriceDisplay as string) || (unitPriceVal ? formatVND(unitPriceVal, prev.currencyId || "VND") : "Theo hợp đồng");
+                  const amtStr = (rawL.amountDisplay as string) || (amountVal ? formatVND(amountVal, prev.currencyId || "VND") : "Theo hợp đồng");
                   const itemName =
-                    (f as Record<string, unknown> | undefined)?.itemName ||
                     (rawL.itemName as string) ||
+                    (f as Record<string, unknown> | undefined)?.itemName ||
                     (rawL.itemDescription as string) ||
-                    `Mã dược phẩm: ${l.itemId}`;
+                    (l.itemId ? `Dược phẩm [${l.itemId}]` : "Vật tư y tế");
                   const unit =
+                    (rawL.unit as string) ||
                     f?.property2 ||
                     (rawL.property2 as string) ||
-                    (rawL.unit as string) ||
-                    "Hộp/Đơn vị";
+                    "Hộp";
                   const qty = f?.quantity || l.quantity || (rawL.quantity as string) || "1";
                   const qty2 = f?.quantity2 || l.quantity2 || (rawL.quantity2 as string) || "1";
 

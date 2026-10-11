@@ -110,16 +110,23 @@ export const inboundRequestLineFieldsSchema = z.object({
   parentId: z.string().max(50).nullable().optional()
 });
 
-export const rowSchema=z.object({
+const baseRowSchema=z.object({
   documentId:z.string().min(1).max(50),
-  documentDate:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  documentDate:z.string().regex(/^\d{4}-\d{2}-\d{2}(?:[T\s].*)?$/),
   branchId:z.string().min(1),
   statusId:z.number().int().nullable(),
   statusName:z.string().max(100).nullable().optional(),
   isLocked:z.boolean().nullable(),
   purchaseOrderHeader:purchaseOrderHeaderSchema.optional(),
   inboundRequestHeader:inboundRequestHeaderSchema.optional()
-});
+}).passthrough();
+export const rowSchema=Object.assign(
+  baseRowSchema.refine(
+    (row) => !("purchaseDate" in row || "personSuggest" in row),
+    { message: "Mixed purchase and inbound list schemas rejected" }
+  ),
+  { shape: baseRowSchema.shape }
+);
 export const pageSchema=z.object({rows:z.array(rowSchema).max(100),page:z.number().int().positive(),pageSize:z.number().int().positive().max(100),hasMore:z.boolean()});
 const decimal=z.string().regex(/^-?\d{1,28}(?:\.\d{1,4})?$/).nullable();const line=z.object({lineId:z.string(),itemId:z.string()});
 const detailBase=z.object({

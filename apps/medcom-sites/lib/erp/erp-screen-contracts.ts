@@ -148,45 +148,75 @@ export const erpDocumentDetailSchema = z
   .passthrough()
   .transform((data) => {
     const raw = data as Record<string, unknown>;
-    const rawHeader = (data.header ? { ...raw, ...data.header } : { ...raw }) as Record<string, unknown>;
+    const structuralKeys = new Set([
+      "lines",
+      "actions",
+      "sections",
+      "header",
+      "stateToken",
+      "history",
+      "comparison",
+      "documentName",
+      "documentReferenceState",
+      "branchName",
+      "branchReferenceState",
+    ]);
+    const sourceHeader = (data.header ?? {}) as Record<string, unknown>;
+    const cleanHeader: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(sourceHeader)) {
+      if (!structuralKeys.has(k)) {
+        cleanHeader[k] = v;
+      }
+    }
+    if (!data.header) {
+      for (const [k, v] of Object.entries(raw)) {
+        if (!structuralKeys.has(k) && (typeof v !== "object" || v === null)) {
+          cleanHeader[k] = v;
+        }
+      }
+    }
     const docId =
       data.documentId ||
       String(
-        rawHeader.documentId ||
-          rawHeader.purchaseRequestId ||
-          rawHeader.batchId ||
-          rawHeader.orderNumber ||
+        cleanHeader.documentId ||
+          cleanHeader.purchaseRequestId ||
+          cleanHeader.batchId ||
+          cleanHeader.orderNumber ||
           raw.documentId ||
           ""
       );
     const brId =
       data.branchId ||
       String(
-        rawHeader.branchId ||
-          rawHeader.fromBranchId ||
+        cleanHeader.branchId ||
+          cleanHeader.fromBranchId ||
           raw.branchId ||
           ""
       );
-    const header: Record<string, unknown> = {
-      ...rawHeader,
-      documentId: docId,
-      branchId: brId,
-    };
+    cleanHeader.documentId = docId;
+    cleanHeader.branchId = brId;
+
     return {
       ...data,
       documentId: docId,
       branchId: brId,
       stateToken: data.stateToken ?? "",
-      header,
+      header: cleanHeader,
     };
   });
 export type ErpDocumentDetail = z.infer<typeof erpDocumentDetailSchema>;
 
-export const erpItemPriceSchema = z.object({
-  itemId: z.string(),
-  unitPrice: z.string().nullable(),
-  currencyId: z.string().nullable().optional(),
-});
+export const erpItemPriceSchema = z
+  .object({
+    itemId: z.string().optional(),
+    itemCode: z.string().nullable().optional(),
+    itemName: z.string().nullable().optional(),
+    unit: z.string().nullable().optional(),
+    unitPrice: z.union([z.string(), z.number()]).nullable().optional(),
+    unitPriceDisplay: z.string().nullable().optional(),
+    currencyId: z.string().nullable().optional(),
+  })
+  .passthrough();
 export type ErpItemPrice = z.infer<typeof erpItemPriceSchema>;
 
 export const erpChoiceSchema = z
