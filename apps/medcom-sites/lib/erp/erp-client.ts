@@ -12,6 +12,7 @@ import {
 } from "./contracts";
 import {
   login as apiLogin,
+  getSession as apiGetSession,
   getWorkspace as apiGetWorkspace,
   getDocuments as apiGetDocuments,
   getDetail as apiGetDetail,
@@ -49,11 +50,16 @@ import {
   markNotificationRead,
 } from "./notifications-api";
 
-// Real branches configured in Medcom ERP database
-export const REAL_BRANCHES = [
-  { id: "CN01", name: "Chi nhánh 1 (Trung tâm - Hà Nội)", address: "Hai Bà Trưng, Hà Nội" },
-  { id: "CN02", name: "Chi nhánh 2 (Kho Dược BV - TP.HCM)", address: "Tân Bình, TP.HCM" },
-  { id: "CN03", name: "Chi nhánh 3 (Bệnh viện Đa khoa - Đà Nẵng)", address: "Hải Châu, Đà Nẵng" },
+export interface BranchItem {
+  id: string;
+  name: string;
+  code: string;
+  address?: string;
+}
+
+// Fallback initial branches if offline before backend responds
+export const REAL_BRANCHES: BranchItem[] = [
+  { id: "CN01", name: "Chi nhánh 1", code: "CN01" },
 ];
 
 export interface LoginResult {
@@ -81,13 +87,87 @@ export class ErpClientService {
   }
 
   /**
+   * Fetch Real Branches from API (`/api/erp/api/lookups/branches`)
+   * Guaranteed by backend contract in PR 139.
+   */
+  public async getBranchesList(
+    search = "",
+    page = 1,
+    pageSize = 50
+  ): Promise<{ items: BranchItem[]; hasMore: boolean }> {
+    try {
+      const params = new URLSearchParams({
+        page: String(page),
+        pageSize: String(pageSize),
+      });
+      if (search.trim()) params.set("search", search.trim());
+      const res = await fetch(`/api/erp/api/lookups/branches?${params.toString()}`, {
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      if (res.status === 401 && typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("medcom:unauthorized"));
+        return { items: [], hasMore: false };
+      }
+      if (!res.ok) {
+        if (this.currentWorkspace?.branchIds && this.currentWorkspace.branchIds.length > 0) {
+          return {
+            items: this.currentWorkspace.branchIds.map((id) => ({
+              id,
+              name: `Chi nhánh ${id}`,
+              code: id,
+            })),
+            hasMore: false,
+          };
+        }
+        return { items: [], hasMore: false };
+      }
+      const json = await res.json();
+      const data = json?.data || json;
+      const items = Array.isArray(data?.items)
+        ? data.items.map((b: { branchId?: string; branchName?: string | null }) => ({
+            id: b.branchId || "",
+            name: b.branchName || b.branchId || "Chi nhánh",
+            code: b.branchId || "",
+          }))
+        : [];
+      return { items, hasMore: Boolean(data?.hasMore) };
+    } catch {
+      if (this.currentWorkspace?.branchIds && this.currentWorkspace.branchIds.length > 0) {
+        return {
+          items: this.currentWorkspace.branchIds.map((id) => ({
+            id,
+            name: `Chi nhánh ${id}`,
+            code: id,
+          })),
+          hasMore: false,
+        };
+      }
+      return { items: [], hasMore: false };
+    }
+  }
+
+  public async getSession(): Promise<Session> {
+    const s = await apiGetSession();
+    this.currentSession = s;
+    return s;
+  }
+
+  public async getWorkspace(): Promise<WorkspaceData> {
+    const ws = await apiGetWorkspace();
+    this.currentWorkspace = ws;
+    return ws;
+  }
+
+  /**
    * Real ERP Login:
    * Authenticates against the live backend HTTP endpoint `/api/erp/api/auth/login`.
+   * Branch selection is eliminated from login screen and fetched dynamically from backend.
    */
   public async login(
     username: string,
     password: string,
-    branchId: string = "CN01"
+    initialBranch?: string
   ): Promise<LoginResult> {
     if (!username.trim() || !password) {
       return { success: false, user: null, error: "Vui lòng nhập tên đăng nhập và mật khẩu." };
@@ -97,12 +177,14 @@ export class ErpClientService {
       const session = await apiLogin(username.trim(), password);
       this.currentSession = session;
 
-      let effectiveBranch = branchId;
+      let effectiveBranch = initialBranch || "";
       try {
         const ws = await apiGetWorkspace();
         this.currentWorkspace = ws;
-        if (ws.branchIds && ws.branchIds.length > 0 && !ws.branchIds.includes(branchId)) {
-          effectiveBranch = ws.branchIds[0];
+        if (ws.branchIds && ws.branchIds.length > 0) {
+          if (!effectiveBranch || !ws.branchIds.includes(effectiveBranch)) {
+            effectiveBranch = ws.branchIds[0];
+          }
         }
       } catch {}
 

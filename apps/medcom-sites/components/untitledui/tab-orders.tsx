@@ -441,100 +441,92 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
               >
                 Đóng
               </UntitledButton>
-
-              <UntitledButton
-                variant="primary"
-                size="md"
-                fullWidth
-                onClick={() => window.print()}
-                iconLeading={<Printer className="size-4" />}
-              >
-                In đơn đặt hàng
-              </UntitledButton>
             </div>
           )
         }
       >
         {selectedOrder && (
-          <div className="space-y-4">
-            {/* Overview Box */}
-            <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700/80 flex items-center justify-between">
-              <div>
-                <span className="text-[11px] text-neutral-400 block">Trạng thái duyệt</span>
-                <div className="mt-1">
+          <div className="space-y-4 pb-12">
+            {/* THẺ THÔNG TIN CHUNG ĐƠN HÀNG (Unified Card) */}
+            <div className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 shadow-xs space-y-3">
+              <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-neutral-100 dark:border-neutral-800">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-400">
+                    Mã đơn hàng PO
+                  </span>
+                  <p className="font-mono text-sm sm:text-base font-bold text-neutral-900 dark:text-white">
+                    {selectedOrder.documentId}
+                  </p>
+                </div>
+                <div className="text-right flex flex-col items-end gap-1">
                   {getStatusBadge(selectedOrder.statusId, selectedOrder.statusName)}
+                  <span className="text-sm font-mono font-extrabold text-purple-700 dark:text-purple-300">
+                    {selectedOrder.totalAmount}
+                  </span>
                 </div>
               </div>
-              <div className="text-right">
-                <span className="text-[11px] text-neutral-400 block">Tổng tiền đơn</span>
-                <span className="text-sm sm:text-base font-mono font-extrabold text-purple-700 dark:text-purple-300">
-                  {selectedOrder.totalAmount}
-                </span>
-              </div>
-            </div>
 
-            {/* Order Attributes */}
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
-                <span className="text-neutral-500">Mã chứng từ:</span>
-                <span className="font-mono font-bold text-neutral-900 dark:text-white">
-                  {selectedOrder.documentId}
+              {/* Tên đối tượng / Nhà cung cấp (ObjectName) */}
+              <div className="py-1 border-b border-neutral-100 dark:border-neutral-800/60">
+                <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold block mb-1">
+                  Nhà cung cấp / Đối tượng (ObjectName)
                 </span>
-              </div>
-              <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
-                <span className="text-neutral-500">Nhà cung cấp / Đối tượng:</span>
-                <span className="font-semibold text-neutral-900 dark:text-white">
+                <p className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-white leading-relaxed break-words">
                   {selectedOrder.purchaseOrderHeader?.objectId || selectedOrder.supplier}
-                </span>
+                </p>
               </div>
-              <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
-                <span className="text-neutral-500">Chi nhánh:</span>
-                <span className="font-semibold text-neutral-900 dark:text-white">
-                  {selectedOrder.branchId}
-                </span>
-              </div>
-              <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
-                <span className="text-neutral-500">Ngày lập chứng từ:</span>
-                <span className="font-semibold text-neutral-900 dark:text-white">
-                  {selectedOrder.documentDate}
-                </span>
-              </div>
-              {selectedOrder.deliverDate && (
-                <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
-                  <span className="text-neutral-500">Ngày giao hàng:</span>
-                  <span className="font-semibold text-neutral-900 dark:text-white">
-                    {selectedOrder.deliverDate}
+
+              {/* Chi tiết thông số thuộc tính */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+                <div className="flex flex-col py-1">
+                  <span className="text-[10px] text-neutral-400">Ngày lập chứng từ</span>
+                  <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                    {selectedOrder.documentDate}
                   </span>
                 </div>
-              )}
-              {selectedOrder.contractId && (
-                <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
-                  <span className="text-neutral-500">Hợp đồng liên kết:</span>
-                  <span className="font-semibold text-neutral-900 dark:text-white">
-                    {selectedOrder.contractId}
+                <div className="flex flex-col py-1">
+                  <span className="text-[10px] text-neutral-400">Chi nhánh</span>
+                  <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                    {selectedOrder.branchId}
                   </span>
                 </div>
-              )}
-              <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
-                <span className="text-neutral-500">Người lập đơn:</span>
-                <span className="font-semibold text-neutral-900 dark:text-white">
-                  {selectedOrder.creator}
-                </span>
-              </div>
-              <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
-                <span className="text-neutral-500">Khóa chứng từ:</span>
-                <span className="font-semibold text-neutral-900 dark:text-white">
-                  {selectedOrder.isLocked ? "Đã khóa (Bảo vệ dữ liệu)" : "Chưa khóa"}
-                </span>
-              </div>
-              {selectedOrder.memo && (
-                <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
-                  <span className="text-neutral-500">Ghi chú nghiệp vụ:</span>
-                  <span className="font-semibold text-neutral-900 dark:text-white text-right max-w-[65%]">
-                    {selectedOrder.memo}
+                {selectedOrder.deliverDate && (
+                  <div className="flex flex-col py-1">
+                    <span className="text-[10px] text-neutral-400">Ngày giao hàng</span>
+                    <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                      {selectedOrder.deliverDate}
+                    </span>
+                  </div>
+                )}
+                {selectedOrder.contractId && (
+                  <div className="flex flex-col py-1">
+                    <span className="text-[10px] text-neutral-400">Hợp đồng liên kết</span>
+                    <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                      {selectedOrder.contractId}
+                    </span>
+                  </div>
+                )}
+                <div className="flex flex-col py-1">
+                  <span className="text-[10px] text-neutral-400">Người lập đơn</span>
+                  <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                    {selectedOrder.creator}
                   </span>
                 </div>
-              )}
+                <div className="flex flex-col py-1">
+                  <span className="text-[10px] text-neutral-400">Khóa chứng từ</span>
+                  <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                    {selectedOrder.isLocked ? "Đã khóa (Bảo vệ dữ liệu)" : "Chưa khóa"}
+                  </span>
+                </div>
+                {selectedOrder.memo && (
+                  <div className="flex flex-col py-1 sm:col-span-2">
+                    <span className="text-[10px] text-neutral-400">Ghi chú nghiệp vụ</span>
+                    <span className="font-medium text-neutral-700 dark:text-neutral-300 break-words">
+                      {selectedOrder.memo}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Line items Section */}

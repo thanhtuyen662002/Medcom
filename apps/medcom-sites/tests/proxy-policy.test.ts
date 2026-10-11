@@ -42,6 +42,7 @@ test("documents v2, query/field contracts and openapi routes are correctly allow
   "api/documents/field-contract",
   "api/documents/query-contract",
   "api/contracts/openapi.json",
+  "api/lookups/branches",
  ]){
   assert.ok(routeAllowed(p,"GET"));
   assert.equal(routeAllowed(p,"POST"),false);

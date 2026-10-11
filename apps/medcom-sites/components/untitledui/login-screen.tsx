@@ -5,17 +5,15 @@ import {
   ShieldCheck,
   Lock,
   User,
-  Building2,
   Eye,
   EyeOff,
   ArrowRight,
   Server,
   AlertCircle,
-  CheckCircle2,
 } from "lucide-react";
 import { UntitledButton } from "./button";
 import { UntitledBadge } from "./badge";
-import { REAL_BRANCHES, erpClient, type LoginResult } from "@/lib/erp/erp-client";
+import { erpClient, type LoginResult } from "@/lib/erp/erp-client";
 
 export interface LoginScreenProps {
   onLoginSuccess: (user: NonNullable<LoginResult["user"]>) => void;
@@ -24,7 +22,6 @@ export interface LoginScreenProps {
 export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   const [username, setUsername] = useState("admin");
   const [password, setPassword] = useState("Medcom@2026");
-  const [selectedBranch, setSelectedBranch] = useState("CN01");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -36,7 +33,7 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
     setIsLoading(true);
 
     try {
-      const result = await erpClient.login(username, password, selectedBranch);
+      const result = await erpClient.login(username, password);
       if (result.success && result.user) {
         onLoginSuccess(result.user);
       } else {
@@ -135,27 +132,6 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                 >
                   {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
-              </div>
-            </div>
-
-            {/* Branch Selector */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                Chi nhánh làm việc
-              </label>
-              <div className="relative">
-                <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
-                <select
-                  value={selectedBranch}
-                  onChange={(e) => setSelectedBranch(e.target.value)}
-                  className="w-full pl-10 pr-8 py-2.5 text-xs sm:text-sm rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50/60 dark:bg-neutral-800/60 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all appearance-none cursor-pointer"
-                >
-                  {REAL_BRANCHES.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
               </div>
             </div>
 

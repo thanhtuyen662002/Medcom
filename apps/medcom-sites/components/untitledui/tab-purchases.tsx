@@ -520,91 +520,84 @@ export function TabPurchases({
                   </UntitledButton>
                 </>
               )}
-              {activeItem.status !== "pending" && (
-                <UntitledButton
-                  variant="secondary-gray"
-                  size="md"
-                  fullWidth
-                  onClick={() => alert("Đang chuẩn bị lệnh in ERP cho phiếu " + activeItem.code)}
-                  iconLeading={<Printer className="size-4" />}
-                >
-                  In phiếu ERP
-                </UntitledButton>
-              )}
             </div>
           )
         }
       >
         {activeItem && (
-          <div className="space-y-4">
-            {/* Status & Overview Box */}
-            <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700/80 flex items-center justify-between">
-              <div>
-                <span className="text-[11px] text-neutral-400 block">Trạng thái</span>
-                <div className="mt-0.5">{getStatusBadge(activeItem.status)}</div>
+          <div className="space-y-4 pb-12">
+            {/* THẺ THÔNG TIN CHUNG ĐỀ NGHỊ MUA (Unified Card) */}
+            <div className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 shadow-xs space-y-3">
+              <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-neutral-100 dark:border-neutral-800">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-400">
+                    Mã đề nghị PR
+                  </span>
+                  <p className="font-mono text-sm sm:text-base font-bold text-neutral-900 dark:text-white">
+                    {activeItem.code}
+                  </p>
+                </div>
+                <div className="text-right flex flex-col items-end gap-1">
+                  {getStatusBadge(activeItem.status)}
+                  <span className="text-sm font-mono font-extrabold text-purple-700 dark:text-purple-300">
+                    {activeItem.totalAmount}
+                  </span>
+                </div>
               </div>
-              <div className="text-right">
-                <span className="text-[11px] text-neutral-400 block">Tổng thanh toán</span>
-                <span className="text-base font-extrabold text-purple-700 dark:text-purple-300">
-                  {activeItem.totalAmount}
-                </span>
-              </div>
-            </div>
 
-            {/* Information Grid */}
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
-                <span className="text-neutral-500">Mã đề nghị mua:</span>
-                <span className="font-mono font-bold text-neutral-900 dark:text-white">
-                  {activeItem.code}
+              {/* Tên đối tượng / Mục đích đề nghị (ObjectName) */}
+              <div className="py-1 border-b border-neutral-100 dark:border-neutral-800/60">
+                <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold block mb-1">
+                  Mục đích đề xuất / Đối tượng (ObjectName)
                 </span>
+                <p className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-white leading-relaxed break-words">
+                  {activeItem.purpose || activeItem.objectId || "Mua sắm Dược phẩm theo kế hoạch"}
+                </p>
               </div>
-              <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
-                <span className="text-neutral-500">Mục đích yêu cầu:</span>
-                <span className="font-semibold text-neutral-900 dark:text-white max-w-[60%] text-right">
-                  {activeItem.purpose}
-                </span>
-              </div>
-              <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
-                <span className="text-neutral-500">Người đề nghị:</span>
-                <span className="font-semibold text-neutral-900 dark:text-white">
-                  {activeItem.creator}
-                </span>
-              </div>
-              <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
-                <span className="text-neutral-500">Phòng ban đề xuất:</span>
-                <span className="font-semibold text-neutral-900 dark:text-white">
-                  {activeItem.department}
-                </span>
-              </div>
-              <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
-                <span className="text-neutral-500">Ngày lập phiếu:</span>
-                <span className="font-semibold text-neutral-900 dark:text-white">
-                  {activeItem.date}
-                </span>
-              </div>
-              <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
-                <span className="text-neutral-500">Chi nhánh trực thuộc:</span>
-                <span className="font-semibold text-neutral-900 dark:text-white">
-                  {activeItem.branch}
-                </span>
-              </div>
-              {activeItem.objectId && (
-                <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
-                  <span className="text-neutral-500">Đối tượng liên kết:</span>
-                  <span className="font-semibold text-neutral-900 dark:text-white">
-                    {activeItem.objectId}
+
+              {/* Chi tiết thông số thuộc tính */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+                <div className="flex flex-col py-1">
+                  <span className="text-[10px] text-neutral-400">Người đề nghị</span>
+                  <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                    {activeItem.creator}
                   </span>
                 </div>
-              )}
-              {activeItem.notes && (
-                <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
-                  <span className="text-neutral-500">Ghi chú bổ sung:</span>
-                  <span className="font-semibold text-neutral-900 dark:text-white max-w-[60%] text-right">
-                    {activeItem.notes}
+                <div className="flex flex-col py-1">
+                  <span className="text-[10px] text-neutral-400">Phòng ban đề xuất</span>
+                  <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                    {activeItem.department}
                   </span>
                 </div>
-              )}
+                <div className="flex flex-col py-1">
+                  <span className="text-[10px] text-neutral-400">Ngày lập phiếu</span>
+                  <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                    {activeItem.date}
+                  </span>
+                </div>
+                <div className="flex flex-col py-1">
+                  <span className="text-[10px] text-neutral-400">Chi nhánh trực thuộc</span>
+                  <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                    {activeItem.branch}
+                  </span>
+                </div>
+                {activeItem.objectId && (
+                  <div className="flex flex-col py-1">
+                    <span className="text-[10px] text-neutral-400">Đối tượng liên kết</span>
+                    <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                      {activeItem.objectId}
+                    </span>
+                  </div>
+                )}
+                {activeItem.notes && (
+                  <div className="flex flex-col py-1 sm:col-span-2">
+                    <span className="text-[10px] text-neutral-400">Ghi chú</span>
+                    <span className="font-medium text-neutral-700 dark:text-neutral-300 break-words">
+                      {activeItem.notes}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Line Items Table */}

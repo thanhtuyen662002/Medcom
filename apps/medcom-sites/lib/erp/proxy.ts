@@ -81,7 +81,7 @@ export async function proxyErpRequest(request:Request,path:string[],configuredOr
   for(const name of ["content-type","x-correlation-id","retry-after"]){const v=r.headers.get(name);if(v)outgoing.set(name,v);}
   // Response correlation only. Browser-supplied scope markers are never sent
   // upstream and neither marker can grant access or identify a session token.
-  if(request.method==="GET"&&r.status===200&&/^(?:api\/workspace|api\/documents\/(?:purchase-orders|inbound-requests)(?:\/detail)?|api\/erp\/.*|api\/notifications(?:\/.*)?)$/.test(route)){
+  if(request.method==="GET"&&r.status===200&&/^(?:api\/workspace|api\/documents\/(?:purchase-orders|inbound-requests)(?:\/detail)?|api\/erp\/.*|api\/notifications(?:\/.*)?|api\/lookups\/branches)$/.test(route)){
    const session=r.headers.get("X-Medcom-Session-Scope"),read=r.headers.get("X-Medcom-Read-Scope");
    if(session&&read&&/^[a-f0-9]{64}$/.test(session)&&/^[a-f0-9]{64}$/.test(read)){
     outgoing.set("X-Medcom-Session-Scope",session);outgoing.set("X-Medcom-Read-Scope",read);
@@ -92,6 +92,8 @@ export async function proxyErpRequest(request:Request,path:string[],configuredOr
    if(read&&/^[a-f0-9]{64}$/.test(read))outgoing.set("X-Medcom-Read-Scope",read);
   }
   if(request.method==="GET"&&r.status===200){
+   const displayProjection=r.headers.get("X-Medcom-Display-Projection");
+   if(displayProjection)outgoing.set("X-Medcom-Display-Projection",displayProjection);
    const projection=r.headers.get("X-Medcom-Data-Projection"),fullPath=r.headers.get("X-Medcom-Full-Data-Path");
    if(projection==="full"){
     outgoing.set("X-Medcom-Data-Projection",projection);
