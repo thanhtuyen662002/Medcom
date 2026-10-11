@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[2]
 OPENAPI = "docs/backend/medcom-openapi.json"
 FIELDS = "docs/backend/document-field-contract.json"
 ERP_FIELDS = "inventories/erp/20261010/six-screen-catalog.json"
+ERP_WORKFLOWS = "inventories/erp/20261011/cud-workflow-catalog.json"
 SOURCE_TABLES = {
     "owner-attachment-20261002": "inventories/source/20261002/table-*.json",
     "owner-live-meddata-20261010": "inventories/source/20261010/document-read-tables.json",
@@ -84,7 +85,9 @@ def audit(api, mapping, tables, erp_catalog=None):
         modules[kind] = {"list": base, "detail": base + "/detail", "v2_alias_list": bases[1], "v2_alias_detail": bases[1] + "/detail", "source_fields": counts,
                          "evidence": [FIELDS, SOURCE_TABLES[mapping["sourceSet"]],
                                       "tests/backend/Medcom.Api.Tests/DocumentFullFieldTests.cs"]}
-    erp_catalog = erp_catalog if erp_catalog is not None else json.loads((ROOT / ERP_FIELDS).read_text(encoding="utf-8"))
+    erp_catalog = erp_catalog if erp_catalog is not None else {"screens":
+        json.loads((ROOT / ERP_FIELDS).read_text(encoding="utf-8"))["screens"]
+        + json.loads((ROOT / ERP_WORKFLOWS).read_text(encoding="utf-8"))["screens"]}
     erp_modules = {}
     erp_read_paths = set()
     for screen in erp_catalog["screens"]:
@@ -94,7 +97,7 @@ def audit(api, mapping, tables, erp_catalog=None):
             require(len(fields) == len({f["name"] for f in fields}), "Duplicate ERP source field")
             counts[section] = len(fields)
             for field in fields:
-                field_path = "data.header." + field["name"] if section == "header" else "data." + section + ".rows[].fields." + field["name"]
+                field_path = "data.header." + field["name"] if section == "header" else "data." + ("sections." if section not in ("lines", "history", "comparison") else "") + section + ".rows[].fields." + field["name"]
                 routes = [(base + "/detail", field_path)]
                 if section == "header":
                     routes.append((base, "data.rows[].header." + field["name"]))
@@ -107,9 +110,9 @@ def audit(api, mapping, tables, erp_catalog=None):
                     require(any(s.get("type") == expected_type for s in alternatives), "ERP wire primitive mismatch")
                     require(schema.get("x-medcom-source-column") == field["column"] and schema.get("x-medcom-sql-type") == field["type"]
                             and schema.get("x-medcom-sql-type-arguments") == field.get("typeArguments"), "ERP wire source provenance mismatch")
-        erp_modules[screen["id"]] = {"form": screen["formId"], "source_fields": counts, "evidence": [ERP_FIELDS, OPENAPI]}
+        erp_modules[screen["id"]] = {"form": screen["formId"], "source_fields": counts, "evidence": [ERP_WORKFLOWS if "directEditing" in screen else ERP_FIELDS, OPENAPI]}
         erp_read_paths.update([base, base + "/detail"])
-    require(len(erp_modules) == 7 and len(erp_read_paths) == 14, "Incomplete ERP form set")
+    require(len(erp_modules) == 19 and len(erp_read_paths) == 38, "Incomplete ERP form set")
     operations = []
     for path, item in api["paths"].items():
         for method, operation in item.items():

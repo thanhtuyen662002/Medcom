@@ -35,6 +35,7 @@ public sealed class ErpWriteRuntime : IErpSqlWriteAcceptance
         var observed = await SchemaFingerprintAsync(transaction, token);
         if (!CryptographicOperations.FixedTimeEquals(fingerprint, observed)) return false;
         await SqlErpScreenCommands.VerifyNativeMetadata(transaction, token);
+        if(ErpScreenCatalog.IsWorkflow(module))await SqlErpScreenCommands.VerifyWorkflowMetadata(transaction,token);
         await SqlErpScreenCommands.VerifyScreenConfiguration(transaction, ErpSqlPlan.Get(module)!, token);
         return true;
     }

@@ -1,0 +1,38 @@
+{
+  "status": "PASS",
+  "observedAtUtc": "2026-10-11T06:43:16.9509318+00:00",
+  "modules": [
+    "inbound-requests",
+    "internal-transfer-accounting",
+    "internal-transfer-batches",
+    "internal-transfer-pm",
+    "internal-transfer-requests",
+    "internal-transfer-sa",
+    "internal-transfer-tech",
+    "internal-transfer-warehouse-in",
+    "internal-transfer-warehouse-out",
+    "machine-movements",
+    "machine-repairs",
+    "purchase-approvals",
+    "purchase-orders",
+    "purchase-requests",
+    "sales-order-pm",
+    "sales-order-sa",
+    "sales-orders",
+    "sales-qr",
+    "warehouse-qr"
+  ],
+  "moduleCount": 19,
+  "installed": false,
+  "bindingVerified": true,
+  "runtimeVerified": true,
+  "productionBusinessWrites": false,
+  "productionAccepted": false,
+  "privateReceiptSha256": "af05d2520ecc830147087ef7d9b56dc1d6b997f33e3bd8b9055cab5e2fd806e2",
+  "evidence": [
+    "SqlErpWritePreparation.PrepareCoreAsync(install=false)",
+    "ErpWriteRuntime.VerifyAsync(internal-transfer-batches)",
+    "dbo.MedcomErpCommandSchema",
+    "inventories/erp/20261011/cud-workflow-catalog.json"
+  ]
+}

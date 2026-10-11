@@ -121,7 +121,7 @@ public sealed partial class SqlErpScreenCommands:IErpSqlCommandExecutor
                     ErpCommandOutcome.Denied,"action_state_or_permission_denied");
                 if(operation=="create")
                 {
-                    var dateField=module=="purchase-requests"?"purchaseDate":"documentDate";
+                    var dateField=plan.DateJsonKey;
                     Require(request.Header!.Value.TryGetProperty(dateField,out var date)&&date.ValueKind==JsonValueKind.String,
                         ErpCommandOutcome.InvalidInput,"document_date_required");
                 }
@@ -138,6 +138,8 @@ public sealed partial class SqlErpScreenCommands:IErpSqlCommandExecutor
                 Require(await SqlErpScreenReader.TransactionValid(transaction,token),ErpCommandOutcome.Unavailable,"native_transaction_changed");
                 stage="postcondition";var after=await SqlErpScreenReader.Snapshot(transaction,identity,plan,request.BranchId,document!,token);
                 Require(operation=="delete"?after is null:after is not null&&!after.LineLimitExceeded,ErpCommandOutcome.Unavailable,"post_write_observation_failed");
+                if(after is not null&&ErpScreenCatalog.IsWorkflow(module)&&operation is not ("create" or "save" or "delete")
+                    &&!operation.StartsWith("save-",StringComparison.Ordinal))WorkflowPostcondition(request,before!,after);
                 var state=after is null?ErpInputRules.Fingerprint(new[]{module,document!,"deleted"}):SqlErpScreenReader.StateToken(after);
                 var receipt=new ErpCommandReceipt(module,operation,request.IdempotencyKey,document!,state,audit.ToString("D"),operation=="delete",allocated);
                 stage="record";await JournalComplete(transaction,slot,receipt,token);

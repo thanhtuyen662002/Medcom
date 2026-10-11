@@ -258,7 +258,7 @@ internal static class ApiContractCatalog
         foreach(var module in ErpScreenCatalog.ModuleIds)
         {
             var screen=ErpScreenCatalog.Get(module)!;var path="/api/erp/"+module;var id=module.Replace("-","_",StringComparison.Ordinal);
-            const string admission="Current-form source-backed read/CUD contract. Ordinary startup has no qualified write provider. Dedicated target acceptance and private command composition required.";
+            const string admission="Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator's protected target profile and native menu/branch/state grants.";
             var scope=Parameter("X-Medcom-Read-Scope","header",String(64),true);
             var documentParameters=new JsonArray(Parameter("branchId","query",String(50),true),Parameter("documentId","query",String(50),true));
             Add("get",path+"/screen",id+"_screen",Shape(typeof(ErpScopedResponse<ErpScreenDescription>)),admission,module+".read");
@@ -275,31 +275,45 @@ internal static class ApiContractCatalog
                 parameters:new JsonArray(scope.DeepClone(),Parameter("Origin","header",String(),true)));
             Post("/options","options",typeof(ErpLookupQuery),typeof(ErpScopedResponse<ErpChoicePage>));
             if(module is "sales-orders" or "internal-transfer-requests")Post("/actions/send-pm/options","pm_options",typeof(ErpPmLookupQuery),typeof(ErpScopedResponse<ErpChoicePage>));
+            if(module=="purchase-orders")Post("/item-price","item_price",typeof(ErpItemPriceQuery),typeof(ErpScopedResponse<ErpItemPrice>));
             Post("/commands/lookup","command_lookup",typeof(ErpCommandLookupRequest),typeof(ErpScopedResponse<ErpCommandObservation>));
             if(module is not ("warehouse-qr" or "sales-qr"))
             {
+                var workflow=ErpScreenCatalog.IsWorkflow(module);
+                bool Toolbar(string op)=>!workflow||screen.Actions.Any(a=>a.Operation==op&&a.NativeVisible);
+                if(!workflow)
+                {
                 Post("/selection","selection",typeof(ErpSelectionRequest),typeof(ErpScopedResponse<ErpDraftSelection>));
                 Post("/paste/validate","paste_validate",typeof(ErpPasteRequest),typeof(ErpScopedResponse<ErpDraftSelection>));
-                Post("/create","create",typeof(ErpCreateRequest),typeof(ErpCommandResult));
-                Post("/save","save",typeof(ErpSaveRequest),typeof(ErpCommandResult));Post("/delete","delete",typeof(ErpDeleteRequest),typeof(ErpCommandResult));
+                }
+                if(Toolbar("create"))Post("/create","create",typeof(ErpCreateRequest),typeof(ErpCommandResult));
+                if(Toolbar("save"))Post("/save","save",typeof(ErpSaveRequest),typeof(ErpCommandResult));
+                if(Toolbar("delete"))Post("/delete","delete",typeof(ErpDeleteRequest),typeof(ErpCommandResult));
                 var header=Shape(ErpInputRules.HeaderType(module)!);var line=Shape(ErpInputRules.LineType(module)!);
-                paths[path+"/create"]!["post"]!["x-medcom-typed-header"]=header.DeepClone();paths[path+"/create"]!["post"]!["x-medcom-typed-line"]=line.DeepClone();
-                paths[path+"/save"]!["post"]!["x-medcom-typed-header"]=header.DeepClone();paths[path+"/save"]!["post"]!["x-medcom-typed-line"]=line.DeepClone();
+                if(Toolbar("create"))
+                {paths[path+"/create"]!["post"]!["x-medcom-typed-header"]=header.DeepClone();paths[path+"/create"]!["post"]!["x-medcom-typed-line"]=line.DeepClone();}
+                if(Toolbar("save"))
+                {paths[path+"/save"]!["post"]!["x-medcom-typed-header"]=header.DeepClone();paths[path+"/save"]!["post"]!["x-medcom-typed-line"]=line.DeepClone();}
                 var typedHeader=ErpInputRules.HeaderType(module)!;var typedLine=ErpInputRules.LineType(module)!;
                 schemas.Values[typedHeader.Name]!["required"]=Array(screen.Fields["header"].Where(f=>f.Writable&&!f.Nullable).Select(f=>f.Name));
                 schemas.Values[typedLine.Name]!["required"]=Array(screen.Fields["lines"].Where(f=>f.Writable&&!f.Nullable).Select(f=>f.Name));
                 var newLine=schemas.Variant(typeof(ErpNewLine),"Erp_"+id+"_new_line");schemas.Property(newLine,"values",(JsonObject)line.DeepClone());
+                if(Toolbar("create"))
+                {
                 var createHeader=(JsonObject)header.DeepClone();
-                var dateField=module=="purchase-requests"?"purchaseDate":"documentDate";
+                var dateField=module=="purchase-requests"?"purchaseDate":module=="internal-transfer-batches"?"batchDate":"documentDate";
                 createHeader["required"]=Array([dateField]);
                 createHeader["properties"]=new JsonObject{[dateField]=new JsonObject{["type"]="string",
                     ["pattern"]=@"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}$",
                     ["description"]="Required when creating a numbered document; ERP calendar date/time, yyyy-MM-ddTHH:mm:ss.fff."}};
                 var create=schemas.Variant(typeof(ErpCreateRequest),"Erp_"+id+"_create");schemas.Property(create,"header",createHeader);
-                schemas.Property(create,"lines",new(){["type"]="array",["minItems"]=1,["maxItems"]=500,["items"]=Schemas.Ref(newLine)});
+                schemas.Property(create,"lines",new(){["type"]="array",["minItems"]=module=="internal-transfer-batches"?0:1,["maxItems"]=500,["items"]=Schemas.Ref(newLine)});
                 paths[path+"/create"]!["post"]!["requestBody"]!["content"]!["application/json"]!["schema"]=Schemas.Ref(create);
+                }
+                if(Toolbar("save"))
+                {
                 var changes=new JsonArray();
-                foreach(var kind in new[]{"Add","Update","Remove"})
+                foreach(var kind in workflow&&!ErpScreenCatalog.Metadata(module).GetProperty("allowLineAddRemove").GetBoolean()?new[]{"Update"}:new[]{"Add","Update","Remove"})
                 {
                     var change=schemas.Variant(typeof(ErpLineChange),"Erp_"+id+"_line_"+kind.ToLowerInvariant());
                     schemas.Property(change,"kind",new(){["type"]="string",["const"]=kind});
@@ -312,18 +326,51 @@ internal static class ApiContractCatalog
                 var save=schemas.Variant(typeof(ErpSaveRequest),"Erp_"+id+"_save");schemas.Property(save,"header",(JsonObject)header.DeepClone());
                 schemas.Property(save,"lineChanges",new(){["type"]="array",["maxItems"]=500,["items"]=new JsonObject{["oneOf"]=changes}});
                 paths[path+"/save"]!["post"]!["requestBody"]!["content"]!["application/json"]!["schema"]=Schemas.Ref(save);
+                }
+                if(!workflow)
+                {
                 var paste=schemas.Variant(typeof(ErpPasteRequest),"Erp_"+id+"_paste");
                 schemas.Property(paste,"rows",new(){["type"]="array",["minItems"]=1,["maxItems"]=500,["items"]=line.DeepClone()});
                 paths[path+"/paste/validate"]!["post"]!["requestBody"]!["content"]!["application/json"]!["schema"]=Schemas.Ref(paste);
+                }
             }
-            foreach(var action in screen.Actions.Where(action=>action.Operation is "submit" or "send-purchase-order" or "send-pm" or "recall"))
+            foreach(var action in screen.Actions.Where(action=>action.Operation is "submit" or "send-purchase-order" or "send-pm" or "recall"
+                ||ErpScreenCatalog.IsWorkflow(module)&&action.Control.StartsWith("ExecSQL",StringComparison.Ordinal)))
             {
                 Post("/actions/"+action.Operation,action.Operation.Replace("-","_",StringComparison.Ordinal),typeof(ErpActionRequest),typeof(ErpCommandResult));
+                var payloadType=ErpWorkflowRules.PayloadType(module,action.Operation);
                 paths[path+"/actions/"+action.Operation]!["post"]!["x-medcom-typed-payload"]=action.Operation=="send-pm"
-                    ?Shape(module=="sales-orders"?typeof(ErpSendOrderPm):typeof(ErpSendTransferPm)):Object();
+                    ?Shape(module=="sales-orders"?typeof(ErpSendOrderPm):typeof(ErpSendTransferPm))
+                    :payloadType switch{"notes"=>Shape(typeof(ErpActionNotes)),"return"=>Shape(typeof(ErpReturnStep)),"transfer-tech"=>Shape(typeof(ErpTransferTechSend)),_=>Object()};
                 var actionPayload=schemas.Variant(typeof(ErpActionRequest),"Erp_"+id+"_"+action.Operation.Replace('-','_')+"_request");
                 schemas.Property(actionPayload,"payload",(JsonObject)paths[path+"/actions/"+action.Operation]!["post"]!["x-medcom-typed-payload"]!.DeepClone());
                 paths[path+"/actions/"+action.Operation]!["post"]!["requestBody"]!["content"]!["application/json"]!["schema"]=Schemas.Ref(actionPayload);
+            }
+            if(ErpScreenCatalog.IsWorkflow(module))
+            {
+                foreach(var action in screen.Actions.Where(a=>a.Operation.StartsWith("save-",StringComparison.Ordinal)))
+                {
+                    var section=action.Operation[5..];var suffix="/sections/"+section+"/save";
+                    Post(suffix,"save_"+section,typeof(ErpSectionSaveRequest),typeof(ErpCommandResult));
+                    var line=Shape(ErpWorkflowInputs.Type(module,section)!);
+                    schemas.Values[ErpWorkflowInputs.Type(module,section)!.Name]!["required"]=Array(screen.Fields[section].Where(f=>f.Writable&&!f.Nullable).Select(f=>f.Name));
+                    var changes=new JsonArray();
+                    foreach(var kind in section=="assets"?new[]{"Update"}:new[]{"Add","Update","Remove"})
+                    {
+                        var change=schemas.Variant(typeof(ErpLineChange),"Erp_"+id+"_"+section+"_"+kind.ToLowerInvariant());
+                        schemas.Property(change,"kind",new(){["type"]="string",["const"]=kind});
+                        schemas.Property(change,"lineId",kind=="Add"?new(){["type"]="null"}:String(50));
+                        schemas.Property(change,"clientLineKey",kind=="Add"?String(64):new(){["type"]="null"});
+                        schemas.Property(change,"values",kind=="Remove"?new(){["type"]="null"}:(JsonObject)line.DeepClone());
+                        schemas.Values[change]!["required"]=Array(kind=="Add"?["kind","clientLineKey","values"]:kind=="Update"?["kind","lineId","values"]:["kind","lineId"]);
+                        changes.Add(Schemas.Ref(change));
+                    }
+                    var save=schemas.Variant(typeof(ErpSectionSaveRequest),"Erp_"+id+"_"+section+"_save");
+                    schemas.Property(save,"lineChanges",new(){["type"]="array",["minItems"]=1,["maxItems"]=500,["items"]=new JsonObject{["oneOf"]=changes}});
+                    paths[path+suffix]!["post"]!["requestBody"]!["content"]!["application/json"]!["schema"]=Schemas.Ref(save);
+                }
+                foreach(var action in screen.Actions.Where(a=>a.Operation=="return-step"||module=="internal-transfer-tech"&&a.Operation=="send-sa"))
+                    Post("/actions/"+action.Operation+"/options",action.Operation.Replace('-','_')+"_options",typeof(ErpActionOptionsQuery),typeof(ErpScopedResponse<ErpChoicePage>));
             }
             if(module is "warehouse-qr" or "sales-qr")foreach(var scan in new[]{"add","delete"})Post("/qr/"+scan,"scan_"+scan,typeof(ErpScanRequest),typeof(ErpCommandResult));
             var sectionSchemas=new JsonObject();
@@ -353,11 +400,20 @@ internal static class ApiContractCatalog
             paths[path]!["get"]!["responses"]!["200"]!["content"]!["application/json"]!["schema"]=Schemas.Ref(listResponse);
             var detail=schemas.Variant(typeof(ErpDocumentDetail),"Erp_"+id+"_detail");
             schemas.Property(detail,"header",(JsonObject)sectionSchemas["header"]!.DeepClone());
+            var extraSections=new JsonObject();
             foreach(var section in screen.Fields.Where(s=>s.Key!="header"))
             {
                 var row=schemas.Variant(typeof(ErpLineRow),"Erp_"+id+"_"+section.Key+"_row");schemas.Property(row,"fields",(JsonObject)sectionSchemas[section.Key]!.DeepClone());
                 var page=schemas.Variant(typeof(ErpLinePage),"Erp_"+id+"_"+section.Key+"_page");schemas.Property(page,"rows",new(){["type"]="array",["items"]=Schemas.Ref(row)});
-                schemas.Property(detail,section.Key,Schemas.Ref(page));
+                if(section.Key is "lines" or "history" or "comparison")schemas.Property(detail,section.Key,Schemas.Ref(page));
+                else extraSections[section.Key]=Schemas.Ref(page);
+            }
+            if(extraSections.Count>0)
+            {
+                schemas.Property(detail,"sections",new(){["type"]="object",["additionalProperties"]=false,
+                    ["properties"]=extraSections,["required"]=Array(extraSections.Select(x=>x.Key))});
+                var required=schemas.Values[detail]!["required"]!.AsArray().Select(x=>x!.GetValue<string>()).Append("sections").Distinct(StringComparer.Ordinal);
+                schemas.Values[detail]!["required"]=Array(required);
             }
             foreach(var absent in new[]{"history","comparison"}.Where(s=>!screen.Fields.ContainsKey(s)))schemas.Property(detail,absent,new(){["type"]="null"});
             var detailResponse=schemas.Variant(typeof(ErpScopedResponse<ErpDocumentDetail>),"Erp_"+id+"_detail_response");schemas.Property(detailResponse,"data",Schemas.Ref(detail));
@@ -369,6 +425,11 @@ internal static class ApiContractCatalog
         schemas.SetRequired<ErpSelectionRequest>(["branchId","sourceId","selectedKeys"]);
         schemas.SetRequired<ErpSendOrderPm>(["pmId"]);
         schemas.SetRequired<ErpSendTransferPm>(["primaryPmId","supportingPmId"]);
+        schemas.SetRequired<ErpActionNotes>([]);
+        schemas.SetRequired<ErpReturnStep>(["statusId"]);
+        schemas.SetRequired<ErpTransferTechSend>(["primarySaId","supportingSaId"]);
+        schemas.SetRequired<ErpActionOptionsQuery>(["branchId"]);
+        schemas.SetRequired<ErpItemPriceQuery>(["branchId","objectId","documentDate","itemId"]);
         FeDisplaySchemas.Apply(paths,schemas.Values);
         return new()
         {

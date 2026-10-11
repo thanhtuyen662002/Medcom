@@ -75,6 +75,9 @@ public sealed partial class SqlErpScreenService
         ErpSqlPlan plan,ErpLookupDefinition definition,string[] arguments,string[] values,string branch,string? search,CancellationToken token,string? selectedKey=null)
     {
         var source=await ErpLookupSql.Source(transaction,plan.Screen,definition,token);
+        if(source is not null&&ErpLookupSql.StaticChoices(source)is {} constants)
+            return OrderChoices(constants.Where(c=>(selectedKey is null||c==selectedKey)&&(search is null||c.Contains(search,StringComparison.OrdinalIgnoreCase)))
+                .Select(c=>new ErpChoice(c,c,new ReadOnlyDictionary<string,object?>(new Dictionary<string,object?>{{definition.ValueField,c}}))));
         var bound=source is null?null:ErpLookupSql.Bind(source,arguments,values,identity.PrincipalId,branch);
         if(bound is null)return null;
         var expression=selectedKey is null?null:ErpLookupSql.SelectExpression(bound.Text);
@@ -93,12 +96,15 @@ public sealed partial class SqlErpScreenService
             if(++count>LookupMaximum)return null;
             var fields=new Dictionary<string,object?>(StringComparer.Ordinal);
             for(var i=0;i<data.FieldCount;i++)if(!ErpLookupSql.Sensitive(data.GetName(i)))
-                if(!fields.TryAdd(data.GetName(i),ErpLookupSql.Scalar(data,i)))return null;
+            {
+                var name=data.GetName(i);var value=ErpLookupSql.Scalar(data,i);
+                if(!fields.TryAdd(name,value)&&!(plan.Module=="inbound-requests"&&definition.Field=="ItemID"&&name=="ItemCode"&&Equals(fields[name],value)))return null;
+            }
             var id=Convert.ToString(ErpLookupSql.Scalar(data,ids[0]),CultureInfo.InvariantCulture);
             var label=Convert.ToString(ErpLookupSql.Scalar(data,labels[0]),CultureInfo.InvariantCulture);
             if(id is null||!ErpInputRules.Text(id,false))continue;
             if(selectedKey is not null&&id!=selectedKey)continue;
-            var transferBranch=plan.Module=="internal-transfer-requests"&&definition.Field is "FromBranchID" or "ToBranchID";
+            var transferBranch=plan.Module.StartsWith("internal-transfer-",StringComparison.Ordinal)&&definition.Field is "FromBranchID" or "ToBranchID" or "ToStoreHouseID";
             if(!transferBranch&&fields.TryGetValue("BranchID",out var rowBranch)&&rowBranch is string b&&b.Length>0&&b!=branch)continue;
             if(!transferBranch&&definition.ValueField=="BranchID"&&identity.BranchIds?.Contains(id,StringComparer.Ordinal)!=true)continue;
             if(search is not null&&!id.Contains(search,StringComparison.OrdinalIgnoreCase)&&label?.Contains(search,StringComparison.OrdinalIgnoreCase)!=true)continue;

@@ -65,7 +65,7 @@ public sealed class FeDisplayTests
         Retains(before,original);
         var snapshot=JsonNode.Parse("""{"ItemID":"I","ItemCode":null,"ItemName":"Tên lịch sử","Unit":"Bộ"}""")!;
         FeDisplayProjection.Apply(snapshot,"sales-orders",names);
-        Assert.Null(snapshot["ItemCode"]);Assert.Equal("Tên lịch sử",snapshot["ItemName"]!.GetValue<string>());
+        Assert.Equal("CODE",snapshot["ItemCode"]!.GetValue<string>());Assert.Equal("Tên lịch sử",snapshot["ItemName"]!.GetValue<string>());
         Assert.Equal("Bộ",snapshot["Unit"]!.GetValue<string>());
     }
     private static void Retains(JsonNode? raw,JsonNode? projected)

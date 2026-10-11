@@ -14,8 +14,13 @@ public static class ApiReferenceCatalog
         .ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
     public static ReferenceBinding? Get(string id)=>ById.GetValueOrDefault(id);
     public static string? Resolve(string field,string? module)=>field.Equals("StatusID",StringComparison.OrdinalIgnoreCase)
-        ?module is not null&&ById.ContainsKey("status:"+module)?"status:"+module:null
+        ?module is not null&&ById.ContainsKey("status:"+StatusModule(module))?"status:"+StatusModule(module):null
         :Aliases.GetValueOrDefault(field);
+    private static string StatusModule(string module)=>module switch
+    {"purchase-approvals"=>"purchase-requests","sales-order-pm" or "sales-order-sa"=>"sales-orders",
+     "internal-transfer-pm"=>"internal-transfer-requests",
+     "internal-transfer-batches" or "internal-transfer-tech" or "internal-transfer-sa" or "internal-transfer-accounting"
+       or "internal-transfer-warehouse-out" or "internal-transfer-warehouse-in"=>"internal-transfer-batches",_=>module};
     private static IReadOnlyList<ReferenceBinding> Load()
     {
         using var stream=typeof(ApiReferenceCatalog).Assembly.GetManifestResourceStream("Medcom.ApiReferenceCatalog")!;

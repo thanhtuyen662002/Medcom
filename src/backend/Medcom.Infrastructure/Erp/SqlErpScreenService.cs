@@ -49,7 +49,7 @@ public sealed partial class SqlErpScreenService:IErpScreenService
             {
                 if(rows.Count>query.PageSize)throw new InvalidOperationException("Unbounded list response.");
                 var header=await ErpSqlPlan.Row(data,plan.Screen.Fields["header"],token);
-                var id=header.GetValueOrDefault(module=="purchase-requests"?"purchaseRequestId":"documentId")as string;
+                var id=header.GetValueOrDefault(plan.HeaderJsonKey)as string;
                 if(!ErpInputRules.Identifier(id,50))throw new InvalidOperationException("Invalid document identity.");
                 rows.Add(new(id!,header));
             }
@@ -71,10 +71,13 @@ public sealed partial class SqlErpScreenService:IErpScreenService
             }
             var lines=await Section("lines");var history=plan.HistoryTable is null?null:await Section("history");
             var comparison=plan.ComparisonTable is null?null:await Section("comparison");
+            Dictionary<string,ErpLinePage>? extra=null;
+            foreach(var section in plan.Tables.Keys.Where(s=>s is not ("header" or "lines" or "history" or "comparison")))
+            {extra??=new(StringComparer.Ordinal);extra.Add(section,await Section(section));}
             var state=await SqlErpScreenReader.ActionContext(transaction,identity,plan,branch,rights,snapshot,commands?.IsQualified(module)==true,token);
             state=state with{NumberingQualified=commands?.CanExecute(module,"create")==true};
             return new(ErpReadOutcome.Success,new ErpDocumentDetail(document,branch,SqlErpScreenReader.StateToken(snapshot),snapshot.Header,
-                lines,history,comparison,ErpActionRules.Evaluate(state)));
+                lines,history,comparison,ErpActionRules.Evaluate(state),extra));
         },token);
     }
     public Task<ErpReadResult<IReadOnlyList<ErpActionState>>> ActionsAsync(string module,string branch,string? document,CancellationToken token)
@@ -110,6 +113,7 @@ public sealed partial class SqlErpScreenService:IErpScreenService
     }
     public Task<ErpCommandResult> CreateAsync(string module,ErpCreateRequest request,CancellationToken token)=>Dispatch(module,"create",request,token);
     public Task<ErpCommandResult> SaveAsync(string module,ErpSaveRequest request,CancellationToken token)=>Dispatch(module,"save",request,token);
+    public Task<ErpCommandResult> SaveSectionAsync(string module,string section,ErpSectionSaveRequest request,CancellationToken token)=>Dispatch(module,"save-"+section,request,token);
     public Task<ErpCommandResult> DeleteAsync(string module,ErpDeleteRequest request,CancellationToken token)=>Dispatch(module,"delete",request,token);
     public Task<ErpCommandResult> ActionAsync(string module,string action,ErpActionRequest request,CancellationToken token)=>Dispatch(module,action,request,token);
     public Task<ErpCommandResult> ScanAsync(string module,string action,ErpScanRequest request,CancellationToken token)=>Dispatch(module,action,request,token);

@@ -1099,6 +1099,28 @@
           "nullable": false
         }
       ]
+    },
+    {
+      "id": "status:internal-transfer-batches",
+      "table": "IV_InternalTransferBatchStatusTbl",
+      "key": "StatusID",
+      "label": "StatusName",
+      "extras": [],
+      "aliases": [],
+      "columns": [
+        {
+          "name": "StatusID",
+          "type": "int",
+          "typeArguments": null,
+          "nullable": false
+        },
+        {
+          "name": "StatusName",
+          "type": "nvarchar",
+          "typeArguments": "(150)",
+          "nullable": false
+        }
+      ]
     }
   ]
 }

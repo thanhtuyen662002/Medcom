@@ -13,13 +13,20 @@ public sealed partial class SqlErpScreenCommands
         ErpSqlPlan plan,ErpFrozenCommand request,string document,ErpReadSnapshot? before,CancellationToken token)
     {
         await VerifyNativeMetadata(transaction,token);
+        if(ErpScreenCatalog.IsWorkflow(plan.Module))await VerifyWorkflowMetadata(transaction,token);
         await VerifyScreenConfiguration(transaction,plan,token);
         if(before is not null)await PhysicalKeys(transaction,plan,document,before.Lines.Count,token);
         var allocated=new List<ErpAllocatedLine>();
+        if(ErpScreenCatalog.IsWorkflow(plan.Module))
+            await WorkflowBeforeWrite(transaction,identity,plan,request,document,token);
+        if(request.Operation.StartsWith("save-",StringComparison.Ordinal))
+            return await WorkflowSectionWrite(transaction,identity,plan,request,document,before!,token);
         if(request.Operation=="delete")
         {
             await DomainDeleteGuard(transaction,plan,document,token);
             await DeleteRows(transaction,plan.LineTable,plan.HeaderKey,document,null,before!.Lines.Count,token);
+            if(before.Sections is not null)foreach(var section in before.Sections)
+                await DeleteRows(transaction,plan.Tables[section.Key],plan.SectionKey(section.Key),document,null,section.Value.Count,token);
             // Native history is retained as evidence; a native FK/trigger can reject document deletion.
             await DeleteRows(transaction,plan.HeaderTable,plan.HeaderKey,document,null,1,token);
         }
@@ -43,20 +50,26 @@ public sealed partial class SqlErpScreenCommands
                     await DeleteRows(transaction,plan.LineTable,plan.HeaderKey,document,line,1,token);remaining.Remove(line);continue;
                 }
                 var fields=Map(change.Values!.Value);
-                var source=await References(transaction,identity,plan,"lines",fields,header,request.BranchId,token);
+                var source=await References(transaction,identity,plan,"lines",fields,header,request.BranchId,token,
+                    change.Kind==ErpLineChangeKind.Update?remaining[line]:null);
                 if(plan.Module is "machine-movements" or "machine-repairs")
                 {
                     await MachineBranch(transaction,fields["assetId"].GetString()!,request.BranchId,token);
                     if(change.Kind==ErpLineChangeKind.Update)await DomainLineGuard(transaction,plan,document,line,token);
                 }
                 Calculate(plan,fields,source,change.Kind==ErpLineChangeKind.Add?null:remaining[line]);
+                if(ErpScreenCatalog.IsWorkflow(plan.Module))WorkflowCalculate(plan,"lines",fields,header);
+                if(plan.Module=="internal-transfer-batches"&&change.Kind==ErpLineChangeKind.Add)
+                    fields["addedBy"]=ErpInputRules.Serialize(identity.PrincipalId);
                 await RowWrite(transaction,plan,fields,document,line,change.Kind==ErpLineChangeKind.Add,token);
                 if(change.Kind==ErpLineChangeKind.Add)allocated.Add(new(change.ClientLineKey!,line));
                 remaining[line]=fields.ToDictionary(pair=>pair.Key,pair=>(object?)pair.Value,StringComparer.Ordinal);
             }
-            Require(remaining.Count is >0 and <=ErpInputRules.MaximumLines,ErpCommandOutcome.InvalidInput,"document_line_count");
+            Require(remaining.Count<=ErpInputRules.MaximumLines&&(remaining.Count>0||plan.Module=="internal-transfer-batches"),ErpCommandOutcome.InvalidInput,"document_line_count");
             if(plan.Module=="sales-orders")await SalesAfterSave(transaction,document,token);
+            if(plan.Module=="purchase-orders")await PurchaseOrderAfterSave(transaction,document,token);
         }
+        else if(ErpScreenCatalog.IsWorkflow(plan.Module))await WorkflowAction(transaction,identity,plan,request,document,token);
         else if(plan.Module=="purchase-requests")
         {
             if(request.Operation=="submit")await PurchaseSubmit(transaction,plan,document,token);
@@ -116,14 +129,21 @@ public sealed partial class SqlErpScreenCommands
     private static Dictionary<string,JsonElement> Map(JsonElement value)=>value.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.Clone(),StringComparer.Ordinal);
     private static string? Text(JsonElement value,string key)=>value.TryGetProperty(key,out var text)&&text.ValueKind!=JsonValueKind.Null?text.GetString():null;
     private static async Task<IReadOnlyDictionary<string,object?>> References(DbTransaction transaction,AuthoritativeIdentity identity,
-        ErpSqlPlan plan,string section,Dictionary<string,JsonElement> row,Dictionary<string,JsonElement> header,string branch,CancellationToken token)
+        ErpSqlPlan plan,string section,Dictionary<string,JsonElement> row,Dictionary<string,JsonElement> header,string branch,CancellationToken token,
+        IReadOnlyDictionary<string,object?>? existing=null)
     {
         var projected=new Dictionary<string,object?>(StringComparer.Ordinal);
-        foreach(var column in plan.Screen.Fields[section].Where(c=>c.Writable&&c.Column.EndsWith("ID",StringComparison.Ordinal)))
+        foreach(var column in plan.Screen.Fields[section].Where(c=>c.Writable&&(c.Column.EndsWith("ID",StringComparison.Ordinal)
+            ||ErpScreenCatalog.IsWorkflow(plan.Module)&&plan.Screen.Lookups.Any(l=>l.Id==section+"."+c.Column&&!l.Disabled))))
         {
             if(!row.TryGetValue(column.Name,out var value)||value.ValueKind==JsonValueKind.Null||value.ValueKind==JsonValueKind.String&&value.GetString()=="")continue;
+            // Ready-for-batch lists exclude an already linked request. Keeping that exact
+            // saved association must remain editable; adding/changing one uses the popup.
+            if(plan.Module=="internal-transfer-batches"&&section=="lines"&&column.Column=="RequestID"
+                &&existing?.GetValueOrDefault(column.Name) is string request&&value.ValueKind==JsonValueKind.String&&value.GetString()==request)continue;
             var definition=plan.Screen.Lookups.SingleOrDefault(l=>l.Id==section+"."+column.Column&&!l.Disabled);
             if(definition is null)continue;
+            if(definition.AllowUnlisted&&column.Column!="VATID")continue;
             var args=(definition.Parameters??"").Split(';',StringSplitOptions.RemoveEmptyEntries);
             var vals=args.Select(arg=>header.GetValueOrDefault(NativeJsonName(arg)).ValueKind==JsonValueKind.String
                 ?header[NativeJsonName(arg)].GetString()??"":row.GetValueOrDefault(NativeJsonName(arg)).ValueKind==JsonValueKind.String
@@ -133,7 +153,7 @@ public sealed partial class SqlErpScreenCommands
             Require(choices is not null,ErpCommandOutcome.QualificationRequired,"reference_binding_unavailable");
             var matches=choices!.Where(choice=>choice.Id==key).Take(2).ToArray();
             Require(matches.Length==1,ErpCommandOutcome.InvalidInput,"reference_missing_or_ambiguous");
-            if(column.Column is "ItemID" or "AssetID")foreach(var pair in matches[0].Fields)projected[pair.Key]=pair.Value;
+            if(column.Column is "ItemID" or "AssetID" or "VATID")foreach(var pair in matches[0].Fields)projected[pair.Key]=pair.Value;
         }
         return projected;
     }
@@ -159,6 +179,11 @@ public sealed partial class SqlErpScreenCommands
             Require(ErpInputRules.Value(field,json),ErpCommandOutcome.InvalidInput,"calculated_value_requires_rounding");row[name]=json;
         }
         if(plan.Module=="purchase-requests")Decimal("totalPrice",Number("quantity")*Number("unitPrice"));
+        if(plan.Module=="inbound-requests")foreach(var native in new[]{"ItemCode","HangSX","UnitFactor"})
+        {
+            var name=NativeJsonName(native);
+            if(plan.Screen.Fields["lines"].Any(f=>f.Column==native&&!f.Writable)&&source.TryGetValue(native,out var value))Set(name,value);
+        }
         if(plan.Module=="sales-orders")
         {
             foreach(var native in new[]{"UnitFactor","Unit2","SoLuongHopDong","DeliveryQuantity"})
@@ -191,13 +216,13 @@ public sealed partial class SqlErpScreenCommands
             values[plan.HeaderKey]=document;
             if(plan.Screen.Fields["header"].Any(c=>c.Column=="BranchID"))values["BranchID"]=branch;
             if(plan.Screen.Fields["header"].Any(c=>c.Column=="StatusID"))values["StatusID"]=plan.Module switch{"purchase-requests"=>1,"sales-orders"=>-1,_=>0};
-            values["isLock"]=false;
+            if(plan.Screen.Fields["header"].Any(c=>c.Column=="isLock"))values["isLock"]=false;
             if(plan.Module=="internal-transfer-requests")values["SalesUser"]=actor.PrincipalId;
         }
         foreach(var name in new[]{"UserCreate","UserUpdate","DateCreate","DateUpdate"})
             if(plan.Screen.Fields["header"].Any(c=>c.Column==name)&&(create||name is "UserUpdate" or "DateUpdate"))
                 values[name]=name.StartsWith("User",StringComparison.Ordinal)?actor.PrincipalId:null;
-        await Write(transaction,plan.HeaderTable,plan.HeaderKey,document,null,values,plan.Screen.Fields["header"],create,token);
+        if(values.Count>0)await Write(transaction,plan.HeaderTable,plan.HeaderKey,document,null,values,plan.Screen.Fields["header"],create,token);
     }
     private static async Task RowWrite(DbTransaction transaction,ErpSqlPlan plan,Dictionary<string,JsonElement> row,string document,string line,bool create,CancellationToken token)
     {
@@ -306,8 +331,39 @@ public sealed partial class SqlErpScreenCommands
         }
     }
     internal static async Task VerifyModuleHashes(DbTransaction transaction,CancellationToken token)
+        =>await VerifyHashes(transaction,ErpScreenCatalog.SourceMetadata,token);
+    internal static async Task VerifyWorkflowMetadata(DbTransaction transaction,CancellationToken token)
     {
-        var expected=ErpScreenCatalog.SourceMetadata.GetProperty("modules").EnumerateArray().ToDictionary(row=>row.GetProperty("name").GetString()!,
+        await VerifyHashes(transaction,ErpScreenCatalog.WorkflowMetadata,token);
+        await VerifyWorkflowExpressions(transaction,token);
+        foreach(var field in ErpScreenCatalog.WorkflowMetadata.GetProperty("defaultEvidence").EnumerateArray())
+        {
+            await using var command=ErpSqlPlan.Command(transaction,"SELECT CONVERT(varchar(64),HASHBYTES('SHA2_256',CONVERT(varbinary(max),D.definition)),2) FROM sys.columns C JOIN sys.default_constraints D ON D.object_id=C.default_object_id WHERE C.object_id=OBJECT_ID(@table) AND C.name=@column;");
+            ErpSqlPlan.Parameter(command,"@table",DbType.String,"dbo."+field.GetProperty("table").GetString(),255);
+            ErpSqlPlan.Parameter(command,"@column",DbType.String,field.GetProperty("column").GetString(),255);
+            Require((await command.ExecuteScalarAsync(token)as string)?.ToLowerInvariant()==field.GetProperty("sha256Utf16LE").GetString(),ErpCommandOutcome.QualificationRequired,"native_default_changed");
+        }
+    }
+    private static async Task VerifyWorkflowExpressions(DbTransaction transaction,CancellationToken token)
+    {
+        var expected=ErpScreenCatalog.WorkflowMetadata.GetProperty("expressions").EnumerateArray().ToArray();
+        var forms=expected.Select(r=>r.GetProperty("FormID").GetString()!).Distinct(StringComparer.Ordinal).ToArray();
+        await using var command=ErpSqlPlan.Command(transaction,"SELECT FormID,DataName,Oderby,ColumnID,RefColumn,ParaArr,LevelLoop,RoundType,RoundPara,ResetColumnArr,CONVERT(varchar(64),HASHBYTES('SHA2_256',CONVERT(varbinary(max),COALESCE(Expression,N''))),2) FROM dbo.SY_FrmExpTbl WITH(HOLDLOCK) WHERE COALESCE(IsDisable,0)=0 AND FormID IN("+string.Join(',',forms.Select((_,i)=>"@form"+i))+ ");");
+        for(var i=0;i<forms.Length;i++)ErpSqlPlan.Parameter(command,"@form"+i,DbType.String,forms[i],255);
+        await using var data=await command.ExecuteReaderAsync(token);var seen=new HashSet<string>(StringComparer.Ordinal);
+        while(await data.ReadAsync(token))
+        {
+            var candidates=expected.Where(r=>r.GetProperty("FormID").GetString()==data.GetString(0)
+                &&r.GetProperty("DataName").GetString()==data.GetString(1)&&r.GetProperty("ColumnID").GetString()==data.GetString(3)).ToArray();
+            Require(candidates.Length==1&&seen.Add(data.GetString(0)+"/"+data.GetString(1)+"/"+data.GetString(3)),ErpCommandOutcome.QualificationRequired,"native_expression_changed");
+            for(var i=0;i<10;i++)Require(JsonElement.DeepEquals(ErpInputRules.Serialize(ErpLookupSql.Scalar(data,i)),candidates[0].GetProperty(data.GetName(i))),ErpCommandOutcome.QualificationRequired,"native_expression_changed");
+            Require(data.GetString(10).ToLowerInvariant()==candidates[0].GetProperty("expressionSha256Utf16LE").GetString(),ErpCommandOutcome.QualificationRequired,"native_expression_changed");
+        }
+        Require(seen.Count==expected.Length&&!await data.NextResultAsync(token),ErpCommandOutcome.QualificationRequired,"native_expression_changed");
+    }
+    private static async Task VerifyHashes(DbTransaction transaction,JsonElement metadata,CancellationToken token)
+    {
+        var expected=metadata.GetProperty("modules").EnumerateArray().ToDictionary(row=>row.GetProperty("name").GetString()!,
             row=>row.GetProperty("definitionSha256Utf16LE").GetString()!,StringComparer.Ordinal);
         await using var command=ErpSqlPlan.Command(transaction,"SELECT O.name,CONVERT(varchar(64),HASHBYTES('SHA2_256',CONVERT(varbinary(max),M.definition)),2) FROM sys.objects O JOIN sys.sql_modules M ON M.object_id=O.object_id JOIN sys.schemas S ON S.schema_id=O.schema_id WHERE S.name='dbo' AND O.name IN("+
             string.Join(',',Enumerable.Range(0,expected.Count).Select(i=>"@module"+i.ToString(CultureInfo.InvariantCulture)))+");");
@@ -319,7 +375,7 @@ public sealed partial class SqlErpScreenCommands
     }
     internal static async Task VerifyScreenConfiguration(DbTransaction transaction,ErpSqlPlan plan,CancellationToken token)
     {
-        var screen=ErpScreenCatalog.SourceMetadata.GetProperty("screens").EnumerateArray().Single(s=>s.GetProperty("id").GetString()==plan.Module);
+        var screen=ErpScreenCatalog.Metadata(plan.Module);
         var expected=screen.GetProperty("configuration").EnumerateArray().ToDictionary(row=>JsonSerializer.Serialize(new string?[]{row.GetProperty("key").GetString(),
             row.GetProperty("control").GetString(),row.GetProperty("property").GetString()}),StringComparer.Ordinal);
         await using var command=ErpSqlPlan.Command(transaction,"SELECT KeyID,SubID,SubValue,CONVERT(varchar(64),HASHBYTES('SHA2_256',CONVERT(varbinary(max),COALESCE(KeyValue,N''))),2),CASE WHEN KeyValue IS NULL THEN 1 ELSE 0 END FROM dbo.SY_FrmCfg WITH(HOLDLOCK) WHERE FID=@form;");

@@ -27,6 +27,7 @@ public static class SqlErpWritePreparation
                 throw new InvalidOperationException("Exact target and metadata visibility required.");
         }
         await SqlErpScreenCommands.VerifyNativeMetadata(transaction, token);
+        if(modules.Any(ErpScreenCatalog.IsWorkflow))await SqlErpScreenCommands.VerifyWorkflowMetadata(transaction,token);
         foreach (var module in modules)
         {
             var plan = ErpSqlPlan.Get(module)!;

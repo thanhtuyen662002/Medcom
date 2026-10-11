@@ -7,7 +7,8 @@ using Medcom.Contracts;
 namespace Medcom.Infrastructure.Erp;
 
 internal sealed record ErpReadSnapshot(ErpSqlPlan Plan,string Branch,string DocumentId,
-    IReadOnlyDictionary<string,object?> Header,IReadOnlyList<ErpLineRow> Lines,bool LineLimitExceeded,IReadOnlyList<ErpLineRow>? Comparison=null);
+    IReadOnlyDictionary<string,object?> Header,IReadOnlyList<ErpLineRow> Lines,bool LineLimitExceeded,IReadOnlyList<ErpLineRow>? Comparison=null,
+    IReadOnlyDictionary<string,IReadOnlyList<ErpLineRow>>? Sections=null);
 
 internal sealed class SqlErpScreenReader
 {
@@ -45,6 +46,7 @@ internal sealed class SqlErpScreenReader
             if(rights is null)return new(ErpReadOutcome.Denied);
             if(!await SchemaMatches(transaction,plan,token))return new(ErpReadOutcome.Unavailable,Code:"erp_source_schema_changed");
             await SqlErpScreenCommands.VerifyModuleHashes(transaction,token);
+            if(ErpScreenCatalog.IsWorkflow(module))await SqlErpScreenCommands.VerifyWorkflowMetadata(transaction,token);
             await SqlErpScreenCommands.VerifyScreenConfiguration(transaction,plan,token);
             var observed=await read(transaction,identity,plan,rights);
             if(!await TransactionValid(transaction,token))observed=new(ErpReadOutcome.Unavailable);
@@ -89,7 +91,7 @@ internal sealed class SqlErpScreenReader
     {
         foreach(var section in plan.Screen.Fields)
         {
-            var table=section.Key switch{"header"=>plan.HeaderTable,"lines"=>plan.LineTable,"history"=>plan.HistoryTable,_=>plan.ComparisonTable};
+            var table=plan.Tables.GetValueOrDefault(section.Key);
             await using var command=ErpSqlPlan.Command(transaction,"""
                 SELECT C.name,T.name,C.max_length,C.precision,C.scale,C.is_nullable,C.is_identity,C.is_computed,C.column_id
                 FROM sys.columns C JOIN sys.types T ON T.user_type_id=C.user_type_id
@@ -97,10 +99,11 @@ internal sealed class SqlErpScreenReader
                 """);
             ErpSqlPlan.Parameter(command,"@table",DbType.String,"dbo."+table,255);
             await using var reader=await command.ExecuteReaderAsync(token);var index=0;
+            var physical=section.Value.Where(f=>!f.Virtual).ToArray();
             while(await reader.ReadAsync(token))
             {
-                if(index>=section.Value.Count)return false;
-                var field=section.Value[index++];
+                if(index>=physical.Length)return false;
+                var field=physical[index++];
                 if(reader.GetString(0)!=field.Column||reader.GetString(1)!=field.SqlType||reader.GetBoolean(5)!=field.Nullable
                     ||reader.GetBoolean(6)||reader.GetBoolean(7)||reader.GetInt32(8)!=field.Ordinal)return false;
                 var args=field.TypeArguments?.Trim('(',')').Split(',');
@@ -112,7 +115,7 @@ internal sealed class SqlErpScreenReader
                 if(field.SqlType is "decimal" or "numeric"
                     &&(reader.GetByte(3)!=int.Parse(args![0],CultureInfo.InvariantCulture)||reader.GetByte(4)!=int.Parse(args[1],CultureInfo.InvariantCulture)))return false;
             }
-            if(index!=section.Value.Count||await reader.NextResultAsync(token))return false;
+            if(index!=physical.Length||await reader.NextResultAsync(token))return false;
         }
         return true;
     }
@@ -133,12 +136,12 @@ internal sealed class SqlErpScreenReader
         await using var command=ErpSqlPlan.Command(transaction,plan.LinesText(section));
         ErpSqlPlan.Parameter(command,"@document",DbType.String,document,50);
         ErpSqlPlan.Parameter(command,"@offset",DbType.Int32,offset);ErpSqlPlan.Parameter(command,"@take",DbType.Int32,take);
-        await using var reader=await command.ExecuteReaderAsync(token);var rows=new List<ErpLineRow>();
+        await using var reader=await command.ExecuteReaderAsync(token);var rows=new List<ErpLineRow>();var seen=new HashSet<string>(StringComparer.Ordinal);
         while(await reader.ReadAsync(token))
         {
             if(rows.Count>=take)throw new InvalidOperationException("Unbounded source response.");
             var fields=await ErpSqlPlan.Row(reader,plan.Screen.Fields[section],token);
-            if(fields.GetValueOrDefault("userAutoId")is not string lineId||!ErpInputRules.Identifier(lineId,50))
+            if(fields.GetValueOrDefault("userAutoId")is not string lineId||!ErpInputRules.Identifier(lineId,50)||!seen.Add(lineId))
                 throw new InvalidOperationException("Invalid source line identity.");
             rows.Add(new(lineId,fields));
         }
@@ -152,10 +155,23 @@ internal sealed class SqlErpScreenReader
         var limit=plan.Module is "warehouse-qr" or "sales-qr"?ErpInputRules.MaximumScans:ErpInputRules.MaximumLines;
         var lines=await Lines(transaction,plan,"lines",document,0,limit+1,token);
         var comparison=plan.ComparisonTable is null?null:await Lines(transaction,plan,"comparison",document,0,ErpInputRules.MaximumLines+1,token);
-        return new(plan,branch,document,header,lines,lines.Count>limit||comparison?.Count>ErpInputRules.MaximumLines,comparison);
+        Dictionary<string,IReadOnlyList<ErpLineRow>>? sections=null;
+        foreach(var section in plan.Tables.Keys.Where(s=>s is not ("header" or "lines" or "history" or "comparison")))
+        {
+            sections??=new(StringComparer.Ordinal);
+            sections.Add(section,await Lines(transaction,plan,section,document,0,ErpInputRules.MaximumLines+1,token));
+        }
+        return new(plan,branch,document,header,lines,lines.Count>limit||comparison?.Count>ErpInputRules.MaximumLines
+            ||sections?.Values.Any(rows=>rows.Count>ErpInputRules.MaximumLines)==true,comparison,sections);
     }
-    internal static string StateToken(ErpReadSnapshot snapshot)=>snapshot.LineLimitExceeded?"":ErpInputRules.Fingerprint(new object[]
-    {"medcom.erp.document-state.v1",snapshot.Plan.Module,snapshot.Branch,snapshot.DocumentId,snapshot.Header,snapshot.Lines,snapshot.Comparison??[]});
+    internal static string StateToken(ErpReadSnapshot snapshot)
+    {
+        if(snapshot.LineLimitExceeded)return "";
+        var values=new List<object>{"medcom.erp.document-state.v1",snapshot.Plan.Module,snapshot.Branch,
+            snapshot.DocumentId,snapshot.Header,snapshot.Lines,snapshot.Comparison??[]};
+        if(snapshot.Sections is not null)values.Add(snapshot.Sections);
+        return ErpInputRules.Fingerprint(values.ToArray());
+    }
     internal static async Task<ErpActionContext> ActionContext(DbTransaction transaction,AuthoritativeIdentity identity,
         ErpSqlPlan plan,string branch,ErpNativeRights rights,ErpReadSnapshot? snapshot,bool qualified,CancellationToken token)
     {
@@ -179,6 +195,7 @@ internal sealed class SqlErpScreenReader
         return new(plan.Module,identity.PrincipalId,snapshot?.DocumentId,header?.GetValueOrDefault("statusId")as int?,
             header?.GetValueOrDefault("isLocked")is true,header?.GetValueOrDefault(plan.Module=="internal-transfer-requests"?"salesUser":"userCreate")as string,
             header?.GetValueOrDefault("contractId")as string,snapshot?.Lines.Count??0,purchase,transfer,rights,
-            qualified&&snapshot?.LineLimitExceeded!=true,ContractReadQualified:plan.Module is "sales-orders" or "sales-qr",HasActivePartReferences:parts);
+            qualified&&snapshot?.LineLimitExceeded!=true,ContractReadQualified:plan.Module is "sales-orders" or "sales-qr" or "sales-order-pm" or "sales-order-sa",
+            HasActivePartReferences:parts,WorkflowFields:header);
     }
 }

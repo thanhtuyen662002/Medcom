@@ -1,0 +1,15 @@
+{
+  "status": "PASS",
+  "operations": 243,
+  "schemas": 890,
+  "schemaFields": 7821,
+  "lookupBindings": 214,
+  "renderedTables": 1373,
+  "fragmentLinks": 1885,
+  "missingAnchors": 0,
+  "renderParts": 5,
+  "localFileLinks": "PASS",
+  "JSONExamples": "PASS",
+  "openApiSha256": "92738555ff6f8aab59fd06fd604b9f0cbeb35897b3e1cc6a646c2eff89f8cca7",
+  "documentSha256": "3b20efcc4a93170dde52273687cd3cb36bae06a4b4d459656f6df01dfa10e3ac"
+}
