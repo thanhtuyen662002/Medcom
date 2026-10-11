@@ -75,6 +75,16 @@ public sealed class FeDisplayTests
         else Assert.True(JsonNode.DeepEquals(raw,projected));
     }
     [Fact]
+    public void ERP_fees_promotion_totals_budget_and_cost_get_currency_displays_without_formatting_rates_or_quantities()
+    {
+        var row=JsonNode.Parse("""{"CurrencyID":"USD","Budget":"1234.005","PhiKhac":"1234.005","PhiVanChuyen":"1234.005","SoTienKM":"1234.005","TongTienNhom1":"1234.005","TongTienNhom2":"1234.005","TongTienNhomFyto":"1234.005","UnitCost":1234.005,"Quantity":1234.005,"RateExchange":1234.005,"DiscountPercent":12.345}""")!;
+        var before=row.DeepClone();FeDisplayProjection.Apply(row,"sales-qr",new Dictionary<ReferenceKey,ReferenceValue>());
+        foreach(var field in new[]{"Budget","PhiKhac","PhiVanChuyen","SoTienKM","TongTienNhom1","TongTienNhom2","TongTienNhomFyto","UnitCost"})
+            Assert.Equal("1,234.01 USD",row[field+"Display"]!.GetValue<string>());
+        foreach(var field in new[]{"Quantity","RateExchange","DiscountPercent"})Assert.Null(row[field+"Display"]);
+        Retains(before,row);
+    }
+    [Fact]
     public void Status_names_use_document_kind_including_notification_rows_and_contracts()
     {
         var node=JsonNode.Parse("""{"rows":[{"erpFormName":"AR_OrderByContractFrm","statusId":12},{"erpFormName":"AR_Invoice_QRCodeFrm","statusId":12},{"erpFormName":"UNKNOWN","statusId":12}]}""")!;

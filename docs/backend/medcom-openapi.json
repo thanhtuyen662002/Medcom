@@ -32619,6 +32619,18 @@
             "readOnly": true,
             "description": "CF_ItemTbl.Unit; existing document unit is retained."
           },
+          "budgetDisplay": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "readOnly": true,
+            "description": "dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."
+          },
           "unitPriceDisplay": {
             "anyOf": [
               {
@@ -32656,6 +32668,7 @@
           "itemReferenceState",
           "itemCode",
           "unit",
+          "budgetDisplay",
           "unitPriceDisplay",
           "totalPriceDisplay"
         ],
@@ -32887,6 +32900,18 @@
             "readOnly": true,
             "description": "CF_ItemTbl.Unit; existing document unit is retained."
           },
+          "budgetDisplay": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "readOnly": true,
+            "description": "dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."
+          },
           "unitPriceDisplay": {
             "anyOf": [
               {
@@ -32945,6 +32970,7 @@
           "itemReferenceState",
           "itemCode",
           "unit",
+          "budgetDisplay",
           "unitPriceDisplay",
           "totalPriceDisplay",
           "purchaseRequestName",
@@ -38367,6 +38393,18 @@
             "readOnly": true,
             "description": "CF_ItemTbl.Unit; existing document unit is retained."
           },
+          "budgetDisplay": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "readOnly": true,
+            "description": "dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."
+          },
           "unitPriceDisplay": {
             "anyOf": [
               {
@@ -38425,6 +38463,7 @@
           "itemReferenceState",
           "itemCode",
           "unit",
+          "budgetDisplay",
           "unitPriceDisplay",
           "totalPriceDisplay",
           "purchaseRequestName",
@@ -42416,6 +42455,30 @@
             "readOnly": true,
             "description": "dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."
           },
+          "soTienKMDisplay": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "readOnly": true,
+            "description": "dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."
+          },
+          "phiVanChuyenDisplay": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "readOnly": true,
+            "description": "dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."
+          },
           "phiKhacTotalDisplay": {
             "anyOf": [
               {
@@ -42566,6 +42629,8 @@
           "ceoName",
           "ceoReferenceState",
           "ngayGiaoLaiDisplay",
+          "soTienKMDisplay",
+          "phiVanChuyenDisplay",
           "phiKhacTotalDisplay",
           "discountTotalDisplay"
         ],
@@ -44025,6 +44090,18 @@
             "readOnly": true,
             "description": "dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."
           },
+          "unitCostDisplay": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "readOnly": true,
+            "description": "dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."
+          },
           "amountCostDisplay": {
             "anyOf": [
               {
@@ -44128,6 +44205,54 @@
             "type": "string",
             "readOnly": true,
             "description": "available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission."
+          },
+          "tongTienNhom1Display": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "readOnly": true,
+            "description": "dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."
+          },
+          "tongTienNhom2Display": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "readOnly": true,
+            "description": "dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."
+          },
+          "phiKhacDisplay": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "readOnly": true,
+            "description": "dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."
+          },
+          "tongTienNhomFytoDisplay": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "readOnly": true,
+            "description": "dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."
           }
         },
         "required": [
@@ -44213,6 +44338,7 @@
           "discountAcctName",
           "discountAcctReferenceState",
           "discountAmount2Display",
+          "unitCostDisplay",
           "amountCostDisplay",
           "objectName",
           "objectReferenceState",
@@ -44223,7 +44349,11 @@
           "employeeName",
           "employeeReferenceState",
           "managerName",
-          "managerReferenceState"
+          "managerReferenceState",
+          "tongTienNhom1Display",
+          "tongTienNhom2Display",
+          "phiKhacDisplay",
+          "tongTienNhomFytoDisplay"
         ],
         "x-medcom-response-presentation": "reference-names-v1"
       },

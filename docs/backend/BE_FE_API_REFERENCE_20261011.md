@@ -8487,6 +8487,7 @@ Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presen
 | `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
 | `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
 | `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+| `budgetDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
 | `unitPriceDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
 | `totalPriceDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
 
@@ -8538,6 +8539,7 @@ Object: `{"type":"object","additionalProperties":false,"x-medcom-source-table":"
 | `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
 | `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
 | `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+| `budgetDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
 | `unitPriceDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
 | `totalPriceDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
 | `purchaseRequestName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
@@ -9601,6 +9603,7 @@ Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presen
 | `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
 | `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
 | `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+| `budgetDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
 | `unitPriceDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
 | `totalPriceDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
 | `purchaseRequestName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
@@ -10104,6 +10107,8 @@ Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presen
 | `ceoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
 | `ceoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
 | `ngayGiaoLaiDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `soTienKMDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `phiVanChuyenDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
 | `phiKhacTotalDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
 | `discountTotalDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
 
@@ -10308,6 +10313,7 @@ Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presen
 | `discountAcctName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
 | `discountAcctReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
 | `discountAmount2Display` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `unitCostDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
 | `amountCostDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
 | `objectName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
 | `objectReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
@@ -10319,6 +10325,10 @@ Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presen
 | `employeeReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
 | `managerName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
 | `managerReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `tongTienNhom1Display` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `tongTienNhom2Display` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `phiKhacDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `tongTienNhomFytoDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
 
 <a id="schema-erp_warehouse_qr_list_responsefedisplay"></a>
 
@@ -10788,4 +10798,4 @@ Library baseline `ERP_Medcom2026(4).zip` và `Medcom-Data (3)(1).zip` giữ hash
 
 Tài liệu chỉ gồm technical metadata, tên object và ví dụ tổng hợp. Không chứa password thật, connection string có secret, SQL body riêng tư, thông báo/hợp đồng hoặc transaction row thật. Hành vi chưa được xác nhận được ghi UNKNOWN và tiếp tục theo [goal 45](../goals/PRODUCTION_ERP_GOAL.md).
 
-SHA-256 file OpenAPI UTF-8/LF xuất từ host (checkout CRLF có thể khác byte): `6ef2319a9ba51ad3c9c1b4697db2271c9ba0866fa62687fb43be72853ad72ed2`.
+SHA-256 file OpenAPI UTF-8/LF xuất từ host (checkout CRLF có thể khác byte): `0767f10f4df98b58f98bffd7b12785f1c92841cda3670f645e403bfd4512310f`.

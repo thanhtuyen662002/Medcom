@@ -22,7 +22,7 @@ Yêu cầu chủ dự án: mọi ID tham chiếu phải kèm tên; ItemID kèm I
 
 `FeDisplayProjection.cs`/`FeDisplaySchemas.cs` áp dụng projection response đọc tại `ApiHost.cs`. Input nghiêm ngặt giữ raw và có sibling `...DisplayData`; Name/Display không tham gia stateToken hoặc intent/journal. 44 binding/90 cột được đối chiếu trực tiếp qua metadata và TOP(0) trên MedData, giữ transaction rollback: `inventories/backend/20261011/reference-source-reconciliation.json`. Không xuất row nghiệp vụ. `SqlReferenceData.cs` đọc theo batch, kiểm tra schema/identity/branch trước và sau, không chọn tên tùy tiện khi duplicate. Nine local synthetic SQL checks quan sát thành công cho scope chi nhánh, paging, ItemCode/Unit, identity exact case, missing key, scope đổi và capacity; không phải nghiệm thu production.
 
-Danh mục hiện tại: **120 operation / 423 schema / 3.450 property schema**, 106 binding dropdown native. `medcom-openapi.json` được xuất từ binary BE đã build; `BE_FE_API_REFERENCE_20261011.md` đối chiếu toàn bộ operation/schema và render Markdown với 660 bảng, 888 fragment links, không anchor thiếu. Input DTO và raw source column definitions giữ nguyên; schema response có variant bổ sung display.
+Danh mục hiện tại: **120 operation / 423 schema / 3.460 property schema**, 106 binding dropdown native. `medcom-openapi.json` được xuất từ binary BE đã build; `BE_FE_API_REFERENCE_20261011.md` đối chiếu toàn bộ operation/schema và render Markdown với 660 bảng, 888 fragment links, không anchor thiếu. Input DTO và raw source column definitions giữ nguyên; schema response có variant bổ sung display.
 
 ### Bảng CUD và nút — phạm vi 7 form/6 nhóm đã triển khai
 

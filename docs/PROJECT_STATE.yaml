@@ -14,7 +14,8 @@ owner_reference_displays_20261011:
   api_operations: 120
   api_schemas: 423
   native_dropdown_bindings: 106
-  public_full_suite: 3298_passed_zero_failed_three_private_runtime_cases_skipped
+  public_full_suite: 3298_passed_before_final_monetary_addition_zero_failed_three_private_runtime_cases_skipped
+  final_focused_validation: 80_unique_tests_passed_including_17_after_contract_regeneration
   native_SQL_synthetic_checks: 9_passed_read_only_rollback
   full_document_validation: 660_tables_888_fragment_links_zero_missing_anchors_three_render_parts
   hosted_exact_head_base_CI: PENDING_publication
