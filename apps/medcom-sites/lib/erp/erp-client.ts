@@ -13,6 +13,7 @@ import {
 import {
   login as apiLogin,
   getSession as apiGetSession,
+  continueSession as apiContinueSession,
   getWorkspace as apiGetWorkspace,
   getDocuments as apiGetDocuments,
   getDetail as apiGetDetail,
@@ -149,6 +150,12 @@ export class ErpClientService {
 
   public async getSession(): Promise<Session> {
     const s = await apiGetSession();
+    this.currentSession = s;
+    return s;
+  }
+
+  public async continueSession(): Promise<Session> {
+    const s = await apiContinueSession();
     this.currentSession = s;
     return s;
   }
