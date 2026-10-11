@@ -96,7 +96,10 @@ const list=z.object({rows:z.array(z.object({
   statusName:z.string().max(50).nullable().optional(),
   isLocked:z.boolean().nullable(),
   fields:purchaseRequestHeaderFieldsSchema.optional()
- }).passthrough()).max(50),
+ }).passthrough().refine(
+   (row) => !("documentDate" in row),
+   { message: "Mixed purchase and inbound list schemas rejected" }
+ )).max(50),
  page:z.number().int().min(1).max(1000),pageSize:z.number().int().min(1).max(50),hasMore:z.boolean()}).passthrough();
 // These read-only choices preserve the qualified source values. In particular,
 // NULL purpose names and finite zero/negative currency rates are not defaults.
