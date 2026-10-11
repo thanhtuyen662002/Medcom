@@ -19,6 +19,7 @@ import {
   Settings2,
   Search,
   Menu,
+  PanelLeft,
 } from "lucide-react";
 import { UntitledBadge } from "./badge";
 import { UntitledButton } from "./button";
@@ -40,6 +41,7 @@ export interface DesktopHeaderProps {
   isDarkMode: boolean;
   onToggleDarkMode: () => void;
   onLogout: () => void;
+  onToggleLayoutMode?: () => void;
   pendingOrdersCount?: number;
   pendingPurchasesCount?: number;
   pendingInboundCount?: number;
@@ -52,14 +54,15 @@ export function DesktopHeader({
   activeTab,
   onTabChange,
   onOpenMenu,
-  userName = "DS. Trần Quang Minh",
-  userRole = "Trưởng Ban Dược",
-  unreadNotifications = 3,
+  userName = "Administrator",
+  userRole = "Dược sĩ / Quản lý",
+  unreadNotifications = 0,
   onNotificationsClick,
   onOpenQuickCreate,
   isDarkMode,
   onToggleDarkMode,
   onLogout,
+  onToggleLayoutMode,
   pendingOrdersCount = 0,
   pendingPurchasesCount = 0,
   pendingInboundCount = 0,
@@ -240,7 +243,19 @@ export function DesktopHeader({
           </nav>
 
           {/* Right Header Actions */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
+            {onToggleLayoutMode && (
+              <button
+                type="button"
+                onClick={onToggleLayoutMode}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all cursor-pointer text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 shadow-2xs"
+                title="Dùng giao diện sidebar dọc bên trái"
+              >
+                <PanelLeft className="size-3.5 text-purple-600" />
+                <span className="hidden xl:inline">Sidebar dọc</span>
+              </button>
+            )}
+
             {onOpenMenu && (
               <button
                 type="button"
@@ -260,7 +275,7 @@ export function DesktopHeader({
               onClick={onOpenQuickCreate}
               iconLeading={<Plus className="size-3.5" />}
             >
-              + Đề nghị mới
+              Đề nghị mới
             </UntitledButton>
 
             {/* Notifications */}

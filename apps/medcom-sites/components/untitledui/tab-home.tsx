@@ -129,7 +129,7 @@ export function TabHome({
               className="px-4 py-2.5 rounded-xl bg-white text-purple-900 font-bold text-xs sm:text-sm shadow-md hover:bg-purple-50 active:scale-95 transition-all flex items-center gap-2 shrink-0"
             >
               <FilePlus2 className="size-4 text-purple-700" />
-              + Tạo đề nghị
+              Tạo đề nghị
             </button>
           </div>
         </div>

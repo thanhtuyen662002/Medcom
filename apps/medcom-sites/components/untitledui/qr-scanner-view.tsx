@@ -283,7 +283,7 @@ export function UntitledQrScannerView({
               fullWidth
               onClick={() => onAddToPurchase?.(scannedResult)}
             >
-              + Đề nghị mua
+              Đề nghị mua
             </UntitledButton>
             <UntitledButton
               variant="primary"
@@ -291,7 +291,7 @@ export function UntitledQrScannerView({
               fullWidth
               onClick={() => onAddToInbound?.(scannedResult)}
             >
-              + Nhập kho
+              Nhập kho
             </UntitledButton>
           </div>
         </div>
