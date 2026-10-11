@@ -105,8 +105,8 @@ export class ErpClientService {
         credentials: "same-origin",
         cache: "no-store",
       });
-      if (res.status === 401 && typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("medcom:unauthorized"));
+      if (res.status === 401 && typeof window !== "undefined" && typeof window.dispatchEvent === "function" && typeof CustomEvent !== "undefined") {
+        try { window.dispatchEvent(new CustomEvent("medcom:unauthorized")); } catch {}
         return { items: [], hasMore: false };
       }
       if (!res.ok) {
