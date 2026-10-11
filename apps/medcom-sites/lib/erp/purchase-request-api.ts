@@ -70,14 +70,14 @@ const list=z.object({rows:z.array(z.object({
   documentId:id,
   purchaseDate:wallClock,
   branchId:id,
-  personSuggest:text.optional(),
-  department:text.optional(),
-  statusId:z.number().int().optional(),
+  personSuggest:text,
+  department:text,
+  statusId:z.number().int(),
   statusName:z.string().max(50).nullable().optional(),
-  isLocked:z.boolean().nullable().optional(),
+  isLocked:z.boolean().nullable(),
   fields:purchaseRequestHeaderFieldsSchema.optional()
- }).passthrough()).max(50),
- page:z.number().int().min(1).max(1000),pageSize:z.number().int().min(1).max(50),hasMore:z.boolean()}).passthrough();
+ }).strict()).max(50),
+ page:z.number().int().min(1).max(1000),pageSize:z.number().int().min(1).max(50),hasMore:z.boolean()}).strict();
 // These read-only choices preserve the qualified source values. In particular,
 // NULL purpose names and finite zero/negative currency rates are not defaults.
 const purposeId=z.string().max(11).regex(/^(?:0|-?[1-9]\d*)$/).refine(value=>{
