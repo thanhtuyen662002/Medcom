@@ -99,8 +99,20 @@ export const erpDocumentDetailSchema = z.object({
   history: erpLinePageSchema.nullable().optional(),
   comparison: erpLinePageSchema.nullable().optional(),
   actions: z.array(erpActionStateSchema),
-});
+  sections: z.record(z.string(), erpLinePageSchema).nullable().optional(),
+  documentName: z.string().nullable().optional(),
+  documentReferenceState: z.string().nullable().optional(),
+  branchName: z.string().nullable().optional(),
+  branchReferenceState: z.string().nullable().optional(),
+}).passthrough();
 export type ErpDocumentDetail = z.infer<typeof erpDocumentDetailSchema>;
+
+export const erpItemPriceSchema = z.object({
+  itemId: z.string(),
+  unitPrice: z.string().nullable(),
+  currencyId: z.string().nullable(),
+});
+export type ErpItemPrice = z.infer<typeof erpItemPriceSchema>;
 
 export const erpChoiceSchema = z.object({
   id: z.string(),

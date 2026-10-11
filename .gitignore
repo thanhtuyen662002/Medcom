@@ -16,3 +16,4 @@ src/backend/Medcom.Api/wwwroot/
 *.tsbuildinfo
 src/frontend/test-results/
 src/frontend/playwright-report/
+.test-runtime/

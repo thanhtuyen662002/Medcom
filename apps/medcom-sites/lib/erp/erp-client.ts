@@ -36,6 +36,9 @@ import {
   getErpContractInfo,
   getErpOptions,
   getErpPmOptions,
+  getErpActionOptions,
+  saveErpSection,
+  getErpItemPrice,
   createErpDocument,
   saveErpDocument,
   deleteErpDocument,
@@ -316,7 +319,7 @@ export class ErpClientService {
   }
 
   public async getErpContract(
-    module: "sales-orders" | "sales-qr",
+    module: "sales-orders" | "sales-qr" | "sales-order-pm" | "sales-order-sa" | ErpScreenModule,
     params: { branchId: string; documentId: string }
   ) {
     return await getErpContractInfo(module, params);
@@ -394,7 +397,7 @@ export class ErpClientService {
 
   public async executeWorkflowAction(
     module: ErpScreenModule,
-    operation: "submit" | "send-purchase-order" | "send-pm" | "recall",
+    operation: string,
     request: {
       idempotencyKey: string;
       branchId: string;
@@ -404,6 +407,49 @@ export class ErpClientService {
     }
   ) {
     return await executeErpAction(module, operation, request);
+  }
+
+  public async saveSection(
+    module: ErpScreenModule,
+    section: string,
+    request: {
+      idempotencyKey: string;
+      branchId: string;
+      documentId: string;
+      expectedStateToken: string;
+      lineChanges: Array<{
+        kind: "Add" | "Update" | "Remove";
+        lineId?: string | null;
+        clientLineKey?: string | null;
+        values?: Record<string, unknown> | null;
+      }>;
+    }
+  ) {
+    return await saveErpSection(module, section, request);
+  }
+
+  public async getItemPrice(request: {
+    branchId: string;
+    objectId: string;
+    documentDate: string;
+    itemId: string;
+    currencyId?: string | null;
+  }) {
+    return await getErpItemPrice(request);
+  }
+
+  public async getActionOptions(
+    module: ErpScreenModule,
+    action: string,
+    query: {
+      branchId: string;
+      role?: "primary" | "supporting";
+      page?: number;
+      pageSize?: number;
+      search?: string | null;
+    }
+  ) {
+    return await getErpActionOptions(module, action, query);
   }
 
   public async scanQr(

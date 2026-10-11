@@ -3,6 +3,8 @@
 import React from "react";
 import { LayoutDashboard, ShoppingBag, FileText, PackageCheck, Menu } from "lucide-react";
 
+import { type ErpScreenModule } from "@/lib/erp/proxy-policy";
+
 export type NavTabId =
   | "home"
   | "orders"
@@ -10,12 +12,7 @@ export type NavTabId =
   | "inbound"
   | "scan"
   | "settings"
-  | "sales-orders"
-  | "internal-transfer-requests"
-  | "warehouse-qr"
-  | "sales-qr"
-  | "machine-movements"
-  | "machine-repairs";
+  | ErpScreenModule;
 
 export interface UntitledBottomNavProps {
   activeTab: NavTabId;
