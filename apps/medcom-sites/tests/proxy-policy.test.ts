@@ -1,4 +1,4 @@
-import{test}from"node:test";import assert from"node:assert/strict";import{backendOrigin,localHttpsOrigin,resolveErpOrigins,erpCookies,relayCookie,routeAllowed,sameOriginWrite,erpScreenModules,requestBodyLimit,isNotificationId,notificationGetRoute,notificationReadRoute}from"../lib/erp/proxy-policy.ts";
+import{test}from"node:test";import assert from"node:assert/strict";import{backendOrigin,publicOrigin,isCanonicalIpv4,localHttpsOrigin,resolveErpOrigins,erpCookies,relayCookie,routeAllowed,sameOriginWrite,erpScreenModules,requestBodyLimit,isNotificationId,notificationGetRoute,notificationReadRoute}from"../lib/erp/proxy-policy.ts";
 test("only deployed HTTPS DNS origins",()=>{assert.equal(backendOrigin("https://erp.example.com"),"https://erp.example.com");for(const v of[undefined,"http://erp.example.com","https://localhost","https://127.0.0.1","https://[::1]","https://user:pass@erp.example.com","https://erp.example.com/path","https://erp.example.com?url=x"])assert.equal(backendOrigin(v),null);});
 test("route allowlist prevents open proxy and unsupported mutation",()=>{assert.ok(routeAllowed("api/auth/login","POST"));for(const p of["api/admin/delete","api/auth/../admin","https://evil.example","api/documents/purchase-orders/write"])assert.equal(routeAllowed(p,"GET"),false);assert.equal(routeAllowed("api/documents/purchase-orders","POST"),false);});
 test("ERP screen modules, routes and 1MiB body limits are correctly allowlisted",()=>{
@@ -170,4 +170,71 @@ test("missing or unrecognized mode preserves production origin normalization and
  // Local mode must never alter the original production-only helpers.
  assert.equal(backendOrigin("https://localhost:7443"),null);
  assert.equal(sameOriginWrite("https://localhost:7444","https://localhost:7444"),false);
+});
+
+test("operator-configured HTTPS IP public origin validation and rejection",()=>{
+ const validIps = ["103.232.122.205", "10.0.0.1", "192.168.1.100", "172.16.0.1", "1.1.1.1", "8.8.8.8", "127.0.0.1"];
+ for(const ip of validIps){
+  assert.equal(isCanonicalIpv4(ip),true);
+  assert.equal(publicOrigin(`https://${ip}`),`https://${ip}`);
+  assert.equal(publicOrigin(`https://${ip}:84`),`https://${ip}:84`);
+  assert.equal(publicOrigin(`https://${ip}:443`),`https://${ip}`);
+  assert.equal(publicOrigin(`https://${ip}:8080`),`https://${ip}:8080`);
+  assert.equal(publicOrigin(`https://${ip}:65535`),`https://${ip}:65535`);
+ }
+
+ // Backend origin continues to reject IP literals to prevent unapproved destination routing
+ assert.equal(backendOrigin("https://103.232.122.205"),null);
+ assert.equal(backendOrigin("https://103.232.122.205:84"),null);
+
+ // Invalid or dangerous IP formats
+ for(const invalidIp of ["0.0.0.0", "255.255.255.255", "256.0.0.1", "103.232.122.256", "103.232.122.02", "103.232.122", "103.232.122.205.1", "", "abc", "103.232.122.-1"]){
+  assert.equal(isCanonicalIpv4(invalidIp),false);
+  assert.equal(publicOrigin(`https://${invalidIp}`),null);
+ }
+
+ // Rejected origin forms for IP destinations
+ for(const invalid of [
+  undefined,
+  "",
+  "http://103.232.122.205",
+  "http://103.232.122.205:84",
+  "https://103.232.122.205:0",
+  "https://103.232.122.205:65536",
+  "https://103.232.122.205/path",
+  "https://103.232.122.205:84/api",
+  "https://103.232.122.205?query=1",
+  "https://103.232.122.205#fragment",
+  "https://user:pass@103.232.122.205",
+  "https://user@103.232.122.205:84",
+  "https://0.0.0.0:84",
+  "https://255.255.255.255:84",
+  "https://localhost:84",
+  "https://[::1]:84",
+ ]){
+  assert.equal(publicOrigin(invalid),null,JSON.stringify(invalid));
+ }
+});
+
+test("mutations and resolveErpOrigins correctly accept operator-configured IP public origin",()=>{
+ const backend="https://api.medcom.internal:83", ipPublic="https://103.232.122.205:84";
+ const resolved=resolveErpOrigins(backend,ipPublic);
+ assert.deepEqual(resolved,{backend,publicOrigin:ipPublic});
+
+ // Exact same origin write succeeds
+ assert.equal(sameOriginWrite(ipPublic,ipPublic),true);
+
+ // Foreign, forged or mismatched origins fail closed
+ for(const mismatch of [
+  null,
+  "null",
+  "https://103.232.122.205",
+  "https://103.232.122.205:85",
+  "http://103.232.122.205:84",
+  "https://103.232.122.206:84",
+  "https://evil.example",
+  "https://api.medcom.internal:83",
+ ]){
+  assert.equal(sameOriginWrite(ipPublic,mismatch),false);
+ }
 });
