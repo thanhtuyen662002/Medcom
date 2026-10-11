@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ShieldCheck,
   Lock,
@@ -16,7 +16,7 @@ import { UntitledBadge } from "./badge";
 import { erpClient, type LoginResult } from "@/lib/erp/erp-client";
 
 export interface LoginScreenProps {
-  onLoginSuccess: (user: NonNullable<LoginResult["user"]>) => void;
+  onLoginSuccess: (user: NonNullable<LoginResult["user"]>, rememberMe: boolean) => void;
 }
 
 export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
@@ -27,6 +27,40 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  useEffect(() => {
+    try {
+      const savedRemember = localStorage.getItem("medcom.auth.remember");
+      if (savedRemember === "false") {
+        setRememberMe(false);
+      } else {
+        setRememberMe(true);
+      }
+
+      const savedUsername = localStorage.getItem("medcom.auth.username");
+      if (savedUsername) {
+        setUsername(savedUsername);
+      }
+
+      const savedCredsStr = localStorage.getItem("medcom.auth.credentials");
+      if (savedCredsStr && savedRemember !== "false") {
+        const creds = JSON.parse(savedCredsStr);
+        if (creds && typeof creds.password === "string") {
+          setPassword(creds.password);
+        }
+      }
+    } catch {}
+  }, []);
+
+  const handleRememberToggle = (checked: boolean) => {
+    setRememberMe(checked);
+    try {
+      localStorage.setItem("medcom.auth.remember", String(checked));
+      if (!checked) {
+        localStorage.removeItem("medcom.auth.credentials");
+      }
+    } catch {}
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
@@ -35,7 +69,20 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
     try {
       const result = await erpClient.login(username, password);
       if (result.success && result.user) {
-        onLoginSuccess(result.user);
+        try {
+          if (rememberMe) {
+            localStorage.setItem("medcom.auth.remember", "true");
+            localStorage.setItem("medcom.auth.username", username.trim());
+            localStorage.setItem(
+              "medcom.auth.credentials",
+              JSON.stringify({ username: username.trim(), password })
+            );
+          } else {
+            localStorage.setItem("medcom.auth.remember", "false");
+            localStorage.removeItem("medcom.auth.credentials");
+          }
+        } catch {}
+        onLoginSuccess(result.user, rememberMe);
       } else {
         setErrorMessage(result.error || "Tên đăng nhập hoặc mật khẩu không chính xác.");
       }
@@ -141,7 +188,7 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                 <input
                   type="checkbox"
                   checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
+                  onChange={(e) => handleRememberToggle(e.target.checked)}
                   className="size-4 rounded text-purple-600 focus:ring-purple-500 border-neutral-300 dark:border-neutral-700"
                 />
                 <span>Ghi nhớ phiên đăng nhập</span>

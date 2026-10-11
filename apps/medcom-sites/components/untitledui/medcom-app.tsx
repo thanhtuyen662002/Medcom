@@ -59,47 +59,129 @@ export function MedcomApp() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [selectedPurchaseItem, setSelectedPurchaseItem] = useState<PurchaseItem | null>(null);
 
-  // Check saved session, theme, and layout on initial mount
+  // Check saved session, theme, and layout on initial mount with automatic reauthentication
   useEffect(() => {
-    try {
-      const savedUserStr = localStorage.getItem("medcom.auth.user");
-      if (savedUserStr) {
-        const savedUser = JSON.parse(savedUserStr);
-        if (savedUser && savedUser.username) {
-          setCurrentUser(savedUser);
-          if (savedUser.branchId) {
-            setCurrentBranch(savedUser.branchId);
+    let isMounted = true;
+
+    const initAuth = async () => {
+      let cachedUser: LoginResult["user"] | null = null;
+      try {
+        const savedUserStr = localStorage.getItem("medcom.auth.user");
+        if (savedUserStr) {
+          const parsed = JSON.parse(savedUserStr);
+          if (parsed && parsed.username) {
+            cachedUser = parsed;
+            if (isMounted) {
+              setCurrentUser(parsed);
+              if (parsed.branchId) {
+                setCurrentBranch(parsed.branchId);
+              }
+            }
           }
+        }
+
+        const savedLayout = localStorage.getItem("medcom.layout.mode");
+        if (savedLayout === "vertical" || savedLayout === "top") {
+          if (isMounted) setLayoutMode(savedLayout);
+        }
+
+        const savedDark = localStorage.getItem("medcom.theme.dark");
+        let initialDark = false;
+        if (savedDark !== null) {
+          initialDark = savedDark === "true";
+        } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+          initialDark = true;
+        }
+        if (isMounted) setIsDarkMode(initialDark);
+        if (initialDark) {
+          document.documentElement.classList.add("dark");
+          document.body.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+          document.body.classList.remove("dark");
+        }
+      } catch {}
+
+      const isRemember = localStorage.getItem("medcom.auth.remember") !== "false";
+      const savedCredsStr = localStorage.getItem("medcom.auth.credentials");
+
+      try {
+        // Test existing server session
+        await erpClient.getSession();
+      } catch (err: unknown) {
+        const status = typeof err === "object" && err !== null && "status" in err ? (err as { status: number }).status : 0;
+        const code = typeof err === "object" && err !== null && "code" in err ? (err as { code: string }).code : "";
+
+        // If session expired or unauthorized on server, but user chose rememberMe with saved credentials
+        if ((status === 401 || code === "session_expired" || code === "unauthorized" || !cachedUser) && isRemember && savedCredsStr) {
+          try {
+            const creds = JSON.parse(savedCredsStr);
+            if (creds && typeof creds.username === "string" && typeof creds.password === "string") {
+              const res = await erpClient.login(creds.username, creds.password);
+              if (res.success && res.user && isMounted) {
+                setCurrentUser(res.user);
+                if (res.user.branchId) {
+                  setCurrentBranch(res.user.branchId);
+                }
+                try {
+                  localStorage.setItem("medcom.auth.user", JSON.stringify(res.user));
+                } catch {}
+                if (isMounted) setIsAuthLoaded(true);
+                return;
+              }
+            }
+          } catch {}
+        }
+
+        // If not rememberMe or auto-login failed
+        if (status === 401 || code === "session_expired" || code === "unauthorized") {
+          try {
+            localStorage.removeItem("medcom.auth.user");
+          } catch {}
+          if (isMounted) setCurrentUser(null);
+        }
+      } finally {
+        if (isMounted) setIsAuthLoaded(true);
+      }
+    };
+
+    void initAuth();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Listen for unauthorized 401 events with silent reauthentication fallback
+  useEffect(() => {
+    let isAttemptingReauth = false;
+
+    const handleUnauthorized = async () => {
+      if (isAttemptingReauth) return;
+      const isRemember = localStorage.getItem("medcom.auth.remember") !== "false";
+      const savedCredsStr = localStorage.getItem("medcom.auth.credentials");
+
+      if (isRemember && savedCredsStr) {
+        isAttemptingReauth = true;
+        try {
+          const creds = JSON.parse(savedCredsStr);
+          if (creds && typeof creds.username === "string" && typeof creds.password === "string") {
+            const res = await erpClient.login(creds.username, creds.password);
+            if (res.success && res.user) {
+              setCurrentUser(res.user);
+              try {
+                localStorage.setItem("medcom.auth.user", JSON.stringify(res.user));
+              } catch {}
+              isAttemptingReauth = false;
+              return;
+            }
+          }
+        } catch {
+        } finally {
+          isAttemptingReauth = false;
         }
       }
 
-      const savedLayout = localStorage.getItem("medcom.layout.mode");
-      if (savedLayout === "vertical" || savedLayout === "top") {
-        setLayoutMode(savedLayout);
-      }
-
-      const savedDark = localStorage.getItem("medcom.theme.dark");
-      let initialDark = false;
-      if (savedDark !== null) {
-        initialDark = savedDark === "true";
-      } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-        initialDark = true;
-      }
-      setIsDarkMode(initialDark);
-      if (initialDark) {
-        document.documentElement.classList.add("dark");
-        document.body.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-        document.body.classList.remove("dark");
-      }
-    } catch {}
-    setIsAuthLoaded(true);
-  }, []);
-
-  // Listen for unauthorized 401 events to redirect to login immediately
-  useEffect(() => {
-    const handleUnauthorized = () => {
       try {
         localStorage.removeItem("medcom.auth.user");
       } catch {}
@@ -112,20 +194,19 @@ export function MedcomApp() {
     };
   }, []);
 
-  // Validate session on mount if user is present
+  // Keep session alive periodically (every 10 minutes) to prevent idle timeouts
   useEffect(() => {
-    if (currentUser) {
-      erpClient.getSession().catch((err: unknown) => {
-        const status = typeof err === "object" && err !== null && "status" in err ? (err as { status: number }).status : 0;
-        const code = typeof err === "object" && err !== null && "code" in err ? (err as { code: string }).code : "";
-        if (status === 401 || code === "session_expired" || code === "unauthorized") {
-          try {
-            localStorage.removeItem("medcom.auth.user");
-          } catch {}
-          setCurrentUser(null);
-        }
-      });
-    }
+    if (!currentUser) return;
+
+    const interval = setInterval(async () => {
+      try {
+        await erpClient.continueSession();
+      } catch {
+        // If continueSession fails with 401, medcom:unauthorized is dispatched automatically by request()
+      }
+    }, 10 * 60 * 1000);
+
+    return () => clearInterval(interval);
   }, [currentUser]);
 
   // Synchronize documentElement & body class with isDarkMode
@@ -231,13 +312,14 @@ export function MedcomApp() {
     }
   }, [currentUser, currentBranch, refreshGlobalCounts]);
 
-  const handleLoginSuccess = (user: NonNullable<LoginResult["user"]>) => {
+  const handleLoginSuccess = (user: NonNullable<LoginResult["user"]>, rememberMe: boolean) => {
     setCurrentUser(user);
     if (user.branchId) {
       setCurrentBranch(user.branchId);
     }
     try {
       localStorage.setItem("medcom.auth.user", JSON.stringify(user));
+      localStorage.setItem("medcom.auth.remember", String(rememberMe));
     } catch {}
     setActiveTab("home");
   };
@@ -246,7 +328,8 @@ export function MedcomApp() {
     if (confirm("Bạn có chắc chắn muốn đăng xuất khỏi hệ thống ERP Medcom?")) {
       try {
         localStorage.removeItem("medcom.auth.user");
-        erpClient.logout();
+        localStorage.removeItem("medcom.auth.credentials");
+        void erpClient.logout();
       } catch {}
       setCurrentUser(null);
     }
