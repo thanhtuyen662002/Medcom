@@ -237,6 +237,65 @@ export function TabErpScreen({
     setContractInfo(null);
   };
 
+  // Process Command Outcome
+  const handleCommandOutcome = (res: ErpCommandResult) => {
+    if (res.outcome === "Committed" || res.outcome === "Replayed") {
+      setActionFeedback({
+        type: "success",
+        message: `Thao tác thành công. Biên nhận audit: ${res.receipt?.auditId || "OK"}.`,
+      });
+      loadList(page, true);
+      if (detail && !res.receipt?.deleted) {
+        handleOpenDetail(detail.documentId);
+      } else if (res.receipt?.deleted) {
+        handleCloseDetail();
+      }
+    } else if (res.outcome === "QualificationRequired") {
+      setActionFeedback({
+        type: "warning",
+        message:
+          "Chức năng ghi dữ liệu đang ở chế độ kiểm soát (503 QualificationRequired). Backend cần nghiệm thu target-qualified writer trước khi ghi thật vào DB.",
+      });
+    } else {
+      setActionFeedback({
+        type: "error",
+        message: `Lệnh từ chối: [${res.outcome}] ${res.code || ""}`,
+      });
+    }
+  };
+
+  // Execute QR Scan (Add or Delete)
+  const handleExecuteQrScan = async (actionType: "add" | "delete", barcodeValue: string) => {
+    if (!detail || !barcodeValue.trim()) return;
+    setQrOperationLoading(true);
+    setActionFeedback(null);
+    const idempotencyKey = `qr-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    try {
+      const res = await erpClient.scanQr(module as "warehouse-qr" | "sales-qr", actionType, {
+        idempotencyKey,
+        branchId: currentBranch,
+        documentId: detail.documentId,
+        expectedStateToken: detail.stateToken,
+        barcode: barcodeValue.trim(),
+      });
+      handleCommandOutcome(res);
+    } catch {
+      setActionFeedback({
+        type: "error",
+        message: "Lỗi kết nối khi gửi mã QR tới hệ thống.",
+      });
+    } finally {
+      setQrOperationLoading(false);
+    }
+  };
+
+  // Open QR Camera Scanner Modal
+  const openQrScannerModal = (mode: "add" | "delete") => {
+    setCameraScanMode(mode);
+    setManualBarcode("");
+    setCameraModalOpen(true);
+  };
+
   // Camera Lifecycle
   useEffect(() => {
     if (!cameraModalOpen) {
@@ -275,38 +334,6 @@ export function TabErpScreen({
       cam.stop();
     };
   }, [cameraModalOpen, cameraScanMode]);
-
-  // Open QR Camera Scanner Modal
-  const openQrScannerModal = (mode: "add" | "delete") => {
-    setCameraScanMode(mode);
-    setManualBarcode("");
-    setCameraModalOpen(true);
-  };
-
-  // Execute QR Scan (Add or Delete)
-  const handleExecuteQrScan = async (actionType: "add" | "delete", barcodeValue: string) => {
-    if (!detail || !barcodeValue.trim()) return;
-    setQrOperationLoading(true);
-    setActionFeedback(null);
-    const idempotencyKey = `qr-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-    try {
-      const res = await erpClient.scanQr(module as "warehouse-qr" | "sales-qr", actionType, {
-        idempotencyKey,
-        branchId: currentBranch,
-        documentId: detail.documentId,
-        expectedStateToken: detail.stateToken,
-        barcode: barcodeValue.trim(),
-      });
-      handleCommandOutcome(res);
-    } catch {
-      setActionFeedback({
-        type: "error",
-        message: "Lỗi kết nối khi gửi mã QR tới hệ thống.",
-      });
-    } finally {
-      setQrOperationLoading(false);
-    }
-  };
 
   // Execute Action / Command
   const handleAction = async (action: ErpActionState) => {
@@ -442,33 +469,6 @@ export function TabErpScreen({
       });
     } finally {
       setExecutingAction(null);
-    }
-  };
-
-  // Process Command Outcome
-  const handleCommandOutcome = (res: ErpCommandResult) => {
-    if (res.outcome === "Committed" || res.outcome === "Replayed") {
-      setActionFeedback({
-        type: "success",
-        message: `Thao tác thành công. Biên nhận audit: ${res.receipt?.auditId || "OK"}.`,
-      });
-      loadList(page, true);
-      if (detail && !res.receipt?.deleted) {
-        handleOpenDetail(detail.documentId);
-      } else if (res.receipt?.deleted) {
-        handleCloseDetail();
-      }
-    } else if (res.outcome === "QualificationRequired") {
-      setActionFeedback({
-        type: "warning",
-        message:
-          "Chức năng ghi dữ liệu đang ở chế độ kiểm soát (503 QualificationRequired). Backend cần nghiệm thu target-qualified writer trước khi ghi thật vào DB.",
-      });
-    } else {
-      setActionFeedback({
-        type: "error",
-        message: `Lệnh từ chối: [${res.outcome}] ${res.code || ""}`,
-      });
     }
   };
 
