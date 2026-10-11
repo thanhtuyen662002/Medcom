@@ -49,7 +49,7 @@ function getModuleTitle(mod: ErpScreenModule): string {
     case "purchase-requests":
       return "Đề nghị mua hàng";
     case "sales-orders":
-      return "Quản lý đơn hàng bán";
+      return "Quản lý đơn hàng";
     case "internal-transfer-requests":
       return "Đề nghị điều chuyển nội bộ";
     case "warehouse-qr":
@@ -57,9 +57,9 @@ function getModuleTitle(mod: ErpScreenModule): string {
     case "sales-qr":
       return "Quét QR xuất bán hàng";
     case "machine-movements":
-      return "Di chuyển bàn giao máy";
+      return "Phiếu di chuyển / bàn giao máy";
     case "machine-repairs":
-      return "Sửa chữa bảo hành máy";
+      return "Phiếu sửa chữa / bảo hành / bảo trì máy";
     case "purchase-orders":
       return "Đơn đặt mua";
     case "inbound-requests":
@@ -96,9 +96,188 @@ function isTechnicalField(key: string): boolean {
     k.includes("formid") ||
     k.includes("frm") ||
     k.includes("menuid") ||
-    k === "createdbyautoid" ||
-    k === "modifiedbyautoid"
+    k.includes("createdbyautoid") ||
+    k.includes("modifiedbyautoid") ||
+    k.includes("statetoken") ||
+    k.includes("readscope") ||
+    k.includes("referencestate") ||
+    k.includes("schema") ||
+    k.includes("fields") ||
+    k.includes("searchfield") ||
+    k.includes("idempotencykey") ||
+    k.includes("auditid") ||
+    k.includes("clientlinekey") ||
+    k.includes("token") ||
+    k.includes("hash") ||
+    k.includes("rowid")
   );
+}
+
+const FIELD_LABELS: Record<string, string> = {
+  documentId: "Mã chứng từ",
+  purchaseRequestId: "Mã đề nghị mua hàng",
+  batchId: "Mã đợt điều chuyển",
+  branchId: "Chi nhánh",
+  branchName: "Tên chi nhánh",
+  documentDate: "Ngày chứng từ",
+  purchaseDate: "Ngày mua",
+  datetimeRecorded: "Thời gian ghi nhận",
+  plannedTransferDate: "Ngày chuyển dự kiến",
+  batchDate: "Ngày tạo đợt",
+  deliverDate: "Ngày giao hàng",
+  expireDate: "Hạn sử dụng",
+  expireDateByDocument: "Hạn sử dụng theo CT",
+  statusId: "Trạng thái",
+  statusName: "Tên trạng thái",
+  isLocked: "Khóa phiếu",
+  objectId: "Mã đối tượng",
+  objectName: "Tên đối tượng",
+  personSuggest: "Người đề xuất",
+  customerName: "Khách hàng",
+  vendorName: "Nhà cung cấp",
+  memo: "Nội dung",
+  notes: "Ghi chú",
+  orderNumber: "Số đơn hàng",
+  invoiceNo: "Số hóa đơn",
+  declarationNumber: "Số tờ khai",
+  departurePoint: "Điểm đi",
+  destinationPoint: "Điểm đến",
+  fromBranchId: "Chi nhánh gửi",
+  fromBranchName: "Tên chi nhánh gửi",
+  toBranchId: "Chi nhánh nhận",
+  toBranchName: "Tên chi nhánh nhận",
+  fromStoreHouseId: "Kho nguồn",
+  fromStoreHouseName: "Tên kho nguồn",
+  toStoreHouseId: "Kho đích",
+  toStoreHouseName: "Tên kho đích",
+  assignedPM: "PM phụ trách",
+  assignedSA: "SA phụ trách",
+  assignedTechnician: "Kỹ thuật phụ trách",
+  transportMethod: "Phương thức vận chuyển",
+  carrierName: "Đơn vị vận chuyển",
+  carrierPhone: "SĐT vận chuyển",
+  vehicleNo: "Biển số xe",
+  outputDocumentId: "Phiếu xuất kho liên kết",
+  inputDocumentId: "Phiếu nhập kho liên kết",
+  contractId: "Mã hợp đồng",
+  currencyId: "Loại tiền",
+  currencyName: "Tên loại tiền",
+  rateExchange: "Tỷ giá",
+  totalAmount: "Tổng tiền",
+  totalQuantity: "Tổng số lượng",
+  packageTypeId: "Loại bao bì",
+  pMApprovedQty: "Số lượng PM duyệt",
+  pMNote: "Ghi chú PM",
+  techStatus: "Tình trạng kỹ thuật",
+  techNotes: "Ghi chú kỹ thuật",
+  approvedQty: "Số lượng duyệt",
+  actualIssueQty: "Số lượng xuất thực tế",
+  actualReceiveQty: "Số lượng nhận thực tế",
+  accountingNote: "Ghi chú kế toán",
+  warehouseNote: "Ghi chú thủ kho",
+  receiveNote: "Ghi chú nhận hàng",
+  bBKCUrl: "Biên bản kiểm tra",
+  imageURL: "Hình ảnh",
+  qrPrintType: "Loại in QR",
+  excessPackageQuantity: "Số kiện thừa",
+  lackOfPackageQuantity: "Số kiện thiếu",
+  damagedPackageQuantity: "Số kiện hỏng",
+  resultDesciption: "Kết quả kiểm tra",
+  damageDescription: "Mô tả hư hỏng",
+  isRain: "Thời tiết mưa",
+  isDamageOutsidePackage: "Hư hỏng ngoài bao bì",
+  itemId: "Mã hàng",
+  itemCode: "Mã hàng",
+  itemName: "Tên hàng",
+  unit: "Đơn vị tính",
+  quantity: "Số lượng",
+  unitPrice: "Đơn giá",
+  unitPriceDisplay: "Đơn giá",
+  amount: "Thành tiền",
+  amountDisplay: "Thành tiền",
+  sourceAmount: "Tiền nguyên tệ",
+  vatId: "Thuế VAT",
+  vatAmount: "Tiền VAT",
+  cost: "Chi phí",
+  assetCondition: "Tình trạng thiết bị",
+};
+
+function getFieldLabel(key: string): string {
+  if (FIELD_LABELS[key]) return FIELD_LABELS[key];
+  if (key.endsWith("Display")) {
+    const base = key.slice(0, -"Display".length);
+    if (FIELD_LABELS[base]) return FIELD_LABELS[base];
+  }
+  if (key.endsWith("Name")) {
+    const base = key.slice(0, -"Name".length);
+    if (FIELD_LABELS[base]) return `Tên ${FIELD_LABELS[base].toLowerCase()}`;
+  }
+  return key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase()).trim();
+}
+
+function formatVietnamDate(val: unknown): string {
+  if (!val || typeof val !== "string") return "";
+  const match = val.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2}))?)?/);
+  if (!match) return String(val);
+  const [, y, m, d, hh, mm] = match;
+  if (hh && mm) return `${d}/${m}/${y} ${hh}:${mm}`;
+  return `${d}/${m}/${y}`;
+}
+
+function formatVietnamNumber(val: unknown): string {
+  if (val === null || val === undefined || val === "") return "";
+  const num = Number(val);
+  if (isNaN(num)) return String(val);
+  return new Intl.NumberFormat("vi-VN").format(num);
+}
+
+const ACTION_CAPTIONS: Record<string, string> = {
+  submit: "Gửi đề nghị",
+  "send-purchase-order": "Gửi đặt mua hàng",
+  "send-management": "Gửi BLĐ",
+  "send-warehouse": "Gửi Thủ kho",
+  approve: "Duyệt",
+  reject: "Từ chối nhanh",
+  "send-sa": "Gửi SA",
+  "send-accounting": "Gửi Kế toán",
+  "send-tech": "Gửi Kỹ thuật",
+  "return-step": "Chọn bước gửi về",
+  "pm-confirm": "Đồng ý điều chuyển",
+  "sync-requests": "Đồng bộ đề nghị",
+  dispatch: "Xác nhận xuất / Gửi Kho đích",
+  receive: "Xác nhận nhận hàng",
+  recall: "Thu hồi để sửa",
+  delete: "Xóa",
+  save: "Lưu",
+  create: "Thêm",
+  "contract-info": "Xem thông tin hợp đồng",
+};
+
+function getActionCaption(module: ErpScreenModule, act: ErpActionState): string {
+  if (module === "purchase-approvals" && act.id === "reject") return "Không duyệt";
+  if (module === "internal-transfer-tech" && act.id === "send-sa") return "Gửi TP SA";
+  if (module === "internal-transfer-accounting" && act.id === "send-warehouse") return "Gửi Kho nguồn";
+  return act.caption || ACTION_CAPTIONS[act.id] || act.id;
+}
+
+function getActionErrorMessage(outcome: string, code?: string | null): string {
+  switch (outcome) {
+    case "InvalidInput":
+      return "Thông tin chưa hợp lệ hoặc thiếu trường bắt buộc. Vui lòng kiểm tra lại.";
+    case "Denied":
+      return "Tài khoản hiện tại không có quyền thực hiện thao tác này.";
+    case "Conflict":
+      return "Trạng thái hoặc dữ liệu chứng từ đã thay đổi bởi người dùng khác. Vui lòng làm mới lại trang.";
+    case "QualificationRequired":
+      return "Hệ thống đang ở chế độ kiểm soát an toàn. Dữ liệu chưa được ghi trực tiếp vào cơ sở dữ liệu.";
+    case "Unavailable":
+      return "Máy chủ ERP hiện chưa sẵn sàng xử lý yêu cầu. Vui lòng thử lại sau.";
+    case "Cancelled":
+      return "Thao tác đã bị hủy.";
+    default:
+      if (code) return `Thao tác không thành công (${code}). Vui lòng thử lại.`;
+      return "Thao tác không thành công. Vui lòng thử lại.";
+  }
 }
 
 export function TabErpScreen({
@@ -298,7 +477,7 @@ export function TabErpScreen({
     if (res.outcome === "Committed" || res.outcome === "Replayed") {
       setActionFeedback({
         type: "success",
-        message: `Thao tác thành công. Biên nhận audit: ${res.receipt?.auditId || "OK"}.`,
+        message: "Thao tác thành công. Dữ liệu chứng từ đã được cập nhật.",
       });
       loadList(page, true);
       if (detail && !res.receipt?.deleted) {
@@ -310,12 +489,12 @@ export function TabErpScreen({
       setActionFeedback({
         type: "warning",
         message:
-          "Chức năng ghi dữ liệu đang ở chế độ kiểm soát (503 QualificationRequired). Backend cần nghiệm thu target-qualified writer trước khi ghi thật vào DB.",
+          "Hệ thống đang ở chế độ kiểm soát an toàn. Dữ liệu chưa được ghi trực tiếp vào cơ sở dữ liệu.",
       });
     } else {
       setActionFeedback({
         type: "error",
-        message: `Lệnh từ chối: [${res.outcome}] ${res.code || ""}`,
+        message: getActionErrorMessage(res.outcome, res.code),
       });
     }
   };
@@ -1050,7 +1229,7 @@ export function TabErpScreen({
                               ) : (
                                 <SlidersHorizontal className="w-3.5 h-3.5" />
                               )}
-                              <span>{act.caption}</span>
+                              <span>{getActionCaption(module, act)}</span>
                             </button>
                           );
                         })}
@@ -1110,7 +1289,7 @@ export function TabErpScreen({
                   </div>
                 </div>
 
-                {/* Tên đối tượng / Khách hàng / Nhà cung cấp (ObjectName - có thể dài nên bố trí trọn dòng) */}
+                {/* Tên đối tượng / Khách hàng / Nhà cung cấp (Bố trí trọn dòng) */}
                 {Boolean(
                   detail.header?.objectName ||
                     detail.header?.personSuggest ||
@@ -1119,7 +1298,7 @@ export function TabErpScreen({
                 ) && (
                   <div className="py-2 border-b border-neutral-100 dark:border-neutral-800/60">
                     <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold block mb-1">
-                      Đối tượng / Khách hàng / Nhà cung cấp (ObjectName)
+                      Đối tượng / Khách hàng / Nhà cung cấp
                     </span>
                     <p className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-white leading-relaxed break-words">
                       {String(
@@ -1132,7 +1311,7 @@ export function TabErpScreen({
                   </div>
                 )}
 
-                {/* Chi tiết thuộc tính Header (Lọc bỏ userautoid, frm, menuid, ...) */}
+                {/* Chi tiết thuộc tính Header */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs pt-1">
                   {Object.entries(detail.header || {}).map(([key, value]) => {
                     if (value === null || value === undefined || value === "") return null;
@@ -1142,18 +1321,25 @@ export function TabErpScreen({
                       key === "personSuggest" ||
                       key === "customerName" ||
                       key === "vendorName" ||
-                      key === "statusName"
+                      key === "statusName" ||
+                      key === "documentId" ||
+                      key === "branchId"
                     )
                       return null;
+
+                    const displayVal =
+                      key.toLowerCase().includes("date") || key.toLowerCase().includes("time")
+                        ? formatVietnamDate(value)
+                        : String(value);
 
                     return (
                       <div
                         key={key}
                         className="flex flex-col py-1 border-b border-neutral-100 dark:border-neutral-800/60"
                       >
-                        <span className="text-[10px] text-neutral-400 font-medium">{key}</span>
+                        <span className="text-[10px] text-neutral-400 font-medium">{getFieldLabel(key)}</span>
                         <span className="text-neutral-800 dark:text-neutral-200 font-semibold break-all">
-                          {String(value)}
+                          {displayVal}
                         </span>
                       </div>
                     );
@@ -1186,9 +1372,11 @@ export function TabErpScreen({
                       </thead>
                       <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
                         {detail.lines.rows.map((row) => {
-                          const f = row.fields || {};
+                          const f = (row.fields || row || {}) as Record<string, unknown>;
                           const itemId = (f.itemId || f.itemCode || f.assetId || "") as string;
+                          const itemCode = (f.itemCode || f.itemId || "") as string;
                           const itemName = (f.itemName || f.name || "") as string;
+                          const unit = (f.unit || f.unit2 || "") as string;
                           const qty = (f.quantity || f.setQuantityByDocument || f.amount || "") as string;
                           const price = (f.unitPriceDisplay || f.unitPrice || f.totalPriceDisplay || f.totalPrice || "") as string;
                           return (
@@ -1197,11 +1385,12 @@ export function TabErpScreen({
                                 {row.lineId}
                               </td>
                               <td className="py-2.5 px-2.5 font-medium text-neutral-800 dark:text-neutral-200">
-                                <div>{itemId || "—"}</div>
-                                {itemName && <div className="text-[10px] text-neutral-400">{itemName}</div>}
+                                <div className="font-mono text-xs">{itemCode || itemId || "—"}</div>
+                                {itemName && <div className="text-[11px] text-neutral-600 dark:text-neutral-400 font-normal">{itemName}</div>}
+                                {unit && <div className="text-[10px] text-purple-600 dark:text-purple-400 font-medium">ĐVT: {unit}</div>}
                               </td>
                               <td className="py-2.5 px-2.5 text-neutral-700 dark:text-neutral-300 font-semibold">
-                                {qty || "—"}
+                                {formatVietnamNumber(qty) || qty || "—"}
                               </td>
                               <td className="py-2.5 px-2.5 text-neutral-700 dark:text-neutral-300 font-mono">
                                 {price || "—"}
@@ -1255,7 +1444,7 @@ export function TabErpScreen({
                   <div key={secKey} className="rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4 bg-white dark:bg-neutral-900 space-y-2">
                     <div className="flex items-center justify-between">
                       <h4 className="text-xs font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider">
-                        Phần {secKey === "costs" ? "Chi phí bổ sung" : secKey === "assets" ? "Thiết bị & Tài sản" : secKey} ({secPage?.rows?.length || 0})
+                        Phần {secKey === "costs" ? "Chi phí" : secKey === "assets" ? "Danh sách máy" : secKey} ({secPage?.rows?.length || 0})
                       </h4>
                       <span className="text-[10px] text-neutral-400 font-medium">
                         Trang {secPage?.page || 1}
@@ -1273,19 +1462,22 @@ export function TabErpScreen({
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                            {secPage.rows.map((row) => (
-                              <tr key={row.lineId} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/40">
-                                <td className="py-2 px-2.5 font-mono text-[11px] text-neutral-400">{row.lineId}</td>
-                                <td className="py-2 px-2.5 text-neutral-800 dark:text-neutral-200">
-                                  {Object.entries(row.fields || {}).filter(([k]) => !isTechnicalField(k)).map(([k, v]) => (
-                                    <span key={k} className="inline-block mr-3">
-                                      <span className="text-neutral-400 text-[10px] mr-1">{k}:</span>
-                                      <span className="font-semibold">{String(v ?? "—")}</span>
-                                    </span>
-                                  ))}
-                                </td>
-                              </tr>
-                            ))}
+                            {secPage.rows.map((row) => {
+                              const rData = (row.fields || row || {}) as Record<string, unknown>;
+                              return (
+                                <tr key={row.lineId} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/40">
+                                  <td className="py-2 px-2.5 font-mono text-[11px] text-neutral-400">{row.lineId}</td>
+                                  <td className="py-2 px-2.5 text-neutral-800 dark:text-neutral-200">
+                                    {Object.entries(rData).filter(([k]) => !isTechnicalField(k)).map(([k, v]) => (
+                                      <span key={k} className="inline-block mr-3 mb-1">
+                                        <span className="text-neutral-400 text-[10px] mr-1">{getFieldLabel(k)}:</span>
+                                        <span className="font-semibold text-xs">{String(v ?? "—")}</span>
+                                      </span>
+                                    ))}
+                                  </td>
+                                </tr>
+                              );
+                            })}
                           </tbody>
                         </table>
                       </div>
@@ -1457,16 +1649,20 @@ export function TabErpScreen({
           title={`Hợp đồng: ${contractInfo.contractId}`}
         >
           <div className="space-y-3 p-2 text-xs">
-            <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900">
-              <span className="font-semibold text-purple-900 dark:text-purple-300">
-                Mã HĐ: {contractInfo.contractNo || contractInfo.contractId}
+            <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900 space-y-1.5">
+              <span className="font-semibold text-purple-900 dark:text-purple-300 block">
+                Số / Mã hợp đồng: {contractInfo.contractNo || contractInfo.contractId}
               </span>
-              <p className="text-neutral-600 dark:text-neutral-300 mt-1">
-                Đối tác: {contractInfo.objectName || "—"} ({contractInfo.objectId || ""})
-              </p>
-              <p className="text-neutral-500 mt-1">Ghi chú: {contractInfo.notes || "—"}</p>
+              {contractInfo.objectName && (
+                <p className="text-neutral-700 dark:text-neutral-300">
+                  Đối tác: <span className="font-semibold">{contractInfo.objectName}</span>
+                </p>
+              )}
+              {contractInfo.notes && (
+                <p className="text-neutral-500">Ghi chú: {contractInfo.notes}</p>
+              )}
               {contractInfo.totalAmount && (
-                <p className="font-bold text-neutral-900 dark:text-white mt-1">
+                <p className="font-bold text-neutral-900 dark:text-white">
                   Giá trị hợp đồng: {contractInfo.totalAmount}
                 </p>
               )}

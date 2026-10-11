@@ -62,10 +62,21 @@ export const erpScreenDescriptionSchema = z.object({
 });
 export type ErpScreenDescription = z.infer<typeof erpScreenDescriptionSchema>;
 
-export const erpDocumentRowSchema = z.object({
-  documentId: z.string().min(1),
-  header: z.record(z.string(), z.unknown()),
-});
+export const erpDocumentRowSchema = z
+  .object({
+    documentId: z.string().min(1),
+    header: z.record(z.string(), z.unknown()).optional(),
+  })
+  .passthrough()
+  .transform((data) => {
+    const raw = data as Record<string, unknown>;
+    const header: Record<string, unknown> = data.header ? { ...raw, ...data.header } : { ...raw };
+    return {
+      ...raw,
+      documentId: data.documentId,
+      header,
+    };
+  });
 export type ErpDocumentRow = z.infer<typeof erpDocumentRowSchema>;
 
 export const erpDocumentPageSchema = z.object({
@@ -76,10 +87,21 @@ export const erpDocumentPageSchema = z.object({
 });
 export type ErpDocumentPage = z.infer<typeof erpDocumentPageSchema>;
 
-export const erpLineRowSchema = z.object({
-  lineId: z.string(),
-  fields: z.record(z.string(), z.unknown()),
-});
+export const erpLineRowSchema = z
+  .object({
+    lineId: z.string(),
+    fields: z.record(z.string(), z.unknown()).optional(),
+  })
+  .passthrough()
+  .transform((data) => {
+    const raw = data as Record<string, unknown>;
+    const fields: Record<string, unknown> = data.fields ? { ...raw, ...data.fields } : { ...raw };
+    return {
+      ...raw,
+      lineId: data.lineId,
+      fields,
+    };
+  });
 export type ErpLineRow = z.infer<typeof erpLineRowSchema>;
 
 export const erpLinePageSchema = z.object({
@@ -90,43 +112,77 @@ export const erpLinePageSchema = z.object({
 });
 export type ErpLinePage = z.infer<typeof erpLinePageSchema>;
 
-export const erpDocumentDetailSchema = z.object({
-  documentId: z.string().min(1),
-  branchId: z.string(),
-  stateToken: z.string(),
-  header: z.record(z.string(), z.unknown()),
-  lines: erpLinePageSchema,
-  history: erpLinePageSchema.nullable().optional(),
-  comparison: erpLinePageSchema.nullable().optional(),
-  actions: z.array(erpActionStateSchema),
-  sections: z.record(z.string(), erpLinePageSchema).nullable().optional(),
-  documentName: z.string().nullable().optional(),
-  documentReferenceState: z.string().nullable().optional(),
-  branchName: z.string().nullable().optional(),
-  branchReferenceState: z.string().nullable().optional(),
-}).passthrough();
+export const erpDocumentDetailSchema = z
+  .object({
+    documentId: z.string().optional(),
+    branchId: z.string().optional(),
+    stateToken: z.string(),
+    header: z.record(z.string(), z.unknown()),
+    lines: erpLinePageSchema,
+    history: erpLinePageSchema.nullable().optional(),
+    comparison: erpLinePageSchema.nullable().optional(),
+    actions: z.array(erpActionStateSchema).default([]),
+    sections: z.record(z.string(), erpLinePageSchema).nullable().optional(),
+    documentName: z.string().nullable().optional(),
+    documentReferenceState: z.string().nullable().optional(),
+    branchName: z.string().nullable().optional(),
+    branchReferenceState: z.string().nullable().optional(),
+  })
+  .passthrough()
+  .transform((data) => {
+    const rawHeader = data.header as Record<string, unknown>;
+    const docId = data.documentId || String(rawHeader.documentId || rawHeader.purchaseRequestId || rawHeader.batchId || "");
+    const brId = data.branchId || String(rawHeader.branchId || rawHeader.fromBranchId || "");
+    const header: Record<string, unknown> = {
+      ...rawHeader,
+      documentId: docId,
+      branchId: brId,
+    };
+    return {
+      ...data,
+      documentId: docId,
+      branchId: brId,
+      header,
+    };
+  });
 export type ErpDocumentDetail = z.infer<typeof erpDocumentDetailSchema>;
 
 export const erpItemPriceSchema = z.object({
   itemId: z.string(),
   unitPrice: z.string().nullable(),
-  currencyId: z.string().nullable(),
+  currencyId: z.string().nullable().optional(),
 });
 export type ErpItemPrice = z.infer<typeof erpItemPriceSchema>;
 
-export const erpChoiceSchema = z.object({
-  id: z.string(),
-  label: z.string().nullable().optional(),
-  fields: z.record(z.string(), z.unknown()),
-});
+export const erpChoiceSchema = z
+  .object({
+    id: z.string(),
+    name: z.string().nullable().optional(),
+    label: z.string().nullable().optional(),
+    fields: z.record(z.string(), z.unknown()).optional(),
+  })
+  .passthrough()
+  .transform((data) => {
+    const raw = data as Record<string, unknown>;
+    const name = data.name || data.label || data.id;
+    const label = data.label || data.name || data.id;
+    const fields: Record<string, unknown> = data.fields ? { ...raw, ...data.fields } : { ...raw };
+    return {
+      ...raw,
+      id: data.id,
+      name,
+      label,
+      fields,
+    };
+  });
 export type ErpChoice = z.infer<typeof erpChoiceSchema>;
 
 export const erpChoicePageSchema = z.object({
   items: z.array(erpChoiceSchema),
-  page: z.number().int().positive(),
-  pageSize: z.number().int().positive(),
-  hasMore: z.boolean(),
-  requiredParameters: z.array(z.string()),
+  page: z.number().int().positive().default(1),
+  pageSize: z.number().int().positive().default(20),
+  hasMore: z.boolean().default(false),
+  requiredParameters: z.array(z.string()).default([]),
 });
 export type ErpChoicePage = z.infer<typeof erpChoicePageSchema>;
 
@@ -181,15 +237,61 @@ export const erpDraftSelectionSchema = z.object({
 });
 export type ErpDraftSelection = z.infer<typeof erpDraftSelectionSchema>;
 
-export const erpContractInfoSchema = z.object({
-  contractId: z.string(),
-  contractNo: z.string().nullable().optional(),
-  contractDate: z.string().nullable().optional(),
-  objectId: z.string().nullable().optional(),
-  objectName: z.string().nullable().optional(),
-  notes: z.string().nullable().optional(),
-  totalAmount: z.string().nullable().optional(),
-}).passthrough();
+export const erpContractInfoSchema = z
+  .object({
+    documentId: z.string().optional(),
+    contract: z.record(z.string(), z.unknown()).optional(),
+    contractId: z.string().optional(),
+    contractNo: z.string().nullable().optional(),
+    contractDate: z.string().nullable().optional(),
+    objectId: z.string().nullable().optional(),
+    objectName: z.string().nullable().optional(),
+    notes: z.string().nullable().optional(),
+    totalAmount: z.string().nullable().optional(),
+  })
+  .passthrough()
+  .transform((data) => {
+    const raw = data as Record<string, unknown>;
+    const c = (data.contract || {}) as Record<string, unknown>;
+    const contractId =
+      data.contractId ||
+      (c.documentId as string) ||
+      (c.contractId as string) ||
+      (raw.documentId as string) ||
+      "";
+    const contractNo =
+      data.contractNo ||
+      (c.contractNo as string) ||
+      (c.ContractName as string) ||
+      (c.contractName as string) ||
+      contractId;
+    const objectName =
+      data.objectName ||
+      (c.objectName as string) ||
+      (c.ObjectName as string) ||
+      (c.customerName as string) ||
+      null;
+    const notes =
+      data.notes ||
+      (c.notes as string) ||
+      (c.Notes as string) ||
+      (c.memo as string) ||
+      null;
+    const totalAmount =
+      data.totalAmount ||
+      (c.totalAmount as string) ||
+      (c.TotalAmount as string) ||
+      null;
+    return {
+      ...raw,
+      contractId,
+      contractNo,
+      objectName,
+      notes,
+      totalAmount,
+      contract: data.contract || raw,
+    };
+  });
 export type ErpContractInfo = z.infer<typeof erpContractInfoSchema>;
 
 export const erpCommandObservationSchema = z.object({

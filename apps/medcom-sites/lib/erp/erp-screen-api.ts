@@ -47,7 +47,7 @@ async function getCsrfToken(): Promise<string> {
 
 async function erpGet<T>(
   path: string,
-  schema: z.ZodType<T>,
+  schema: z.ZodType<T, z.ZodTypeDef, any>,
   params?: Record<string, string | number | undefined | null>,
   signal?: AbortSignal
 ): Promise<T> {
@@ -105,7 +105,7 @@ async function erpGet<T>(
 
 async function erpPost<T>(
   path: string,
-  schema: z.ZodType<T>,
+  schema: z.ZodType<T, z.ZodTypeDef, any>,
   payload: unknown,
   signal?: AbortSignal
 ): Promise<T> {
