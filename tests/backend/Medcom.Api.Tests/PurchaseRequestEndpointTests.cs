@@ -323,7 +323,7 @@ public sealed class PurchaseRequestEndpointTests
         var purposes = await fixture.Json("/api/purchase-requests/lookup?kind=purposes");
         var purpose = Assert.Single(purposes.GetProperty("data").GetProperty("items").EnumerateArray());
         Assert.Equal("-1", purpose.GetProperty("id").GetString()); Assert.Equal(JsonValueKind.Null, purpose.GetProperty("label").ValueKind);
-        Assert.Equal(2, purpose.EnumerateObject().Count());
+        Assert.Equal(4, purpose.EnumerateObject().Count());Assert.Equal(JsonValueKind.Null,purpose.GetProperty("name").ValueKind);
         var currencies = await fixture.Json("/api/purchase-requests/lookup?kind=currencies");
         Assert.Equal(purposes.GetProperty("scopeKey").GetString(), currencies.GetProperty("scopeKey").GetString());
         var currency = currencies.GetProperty("data").GetProperty("items")[0];
@@ -332,7 +332,8 @@ public sealed class PurchaseRequestEndpointTests
         Assert.Equal(0, currencies.GetProperty("data").GetProperty("items")[1].GetProperty("rateExchange").GetDouble());
         var branches = await fixture.Json("/api/purchase-requests/lookup?kind=branches&search=QA-A");
         var branch = Assert.Single(branches.GetProperty("data").GetProperty("items").EnumerateArray());
-        Assert.Equal(new[] { "id", "label" }, branch.EnumerateObject().Select(property => property.Name));
+        Assert.Equal(new[] { "id", "label", "name", "referenceState" }, branch.EnumerateObject().Select(property => property.Name));
+        Assert.Equal("QA-A",branch.GetProperty("id").GetString());
         var workspace = (await fixture.Json("/api/purchase-requests/workspace")).GetProperty("data");
         Assert.False(workspace.GetProperty("writeAvailable").GetBoolean());
         foreach (var lookup in workspace.GetProperty("lookups").EnumerateArray())

@@ -8,7 +8,7 @@ namespace Medcom.Api;
 
 public static class ErpScreenEndpoints
 {
-    public static void Map(WebApplication app)
+    public static void Map(IEndpointRouteBuilder app)
     {
         foreach(var module in ErpScreenCatalog.ModuleIds)
         {
@@ -64,7 +64,7 @@ public static class ErpScreenEndpoints
                 (service,request,token)=>service.ObserveAsync(module,request,token));
         }
     }
-    private static void MapReadBody<T,R>(WebApplication app,string path,string module,
+    private static void MapReadBody<T,R>(IEndpointRouteBuilder app,string path,string module,
         Func<IErpScreenService,T,CancellationToken,Task<ErpReadResult<R>>> call)=>app.MapPost(path,async(HttpContext context,IErpScreenService service)=>
         {
             if(Guard(context,module)is {} rejection)return rejection;
@@ -72,7 +72,7 @@ public static class ErpScreenEndpoints
             var value=Decode<T>(raw.Value);if(value is null)return Problem(400,"invalid_json");
             return Read(context,await call(service,value,context.RequestAborted));
         });
-    private static void MapCommand<T>(WebApplication app,string path,string module,string operation,
+    private static void MapCommand<T>(IEndpointRouteBuilder app,string path,string module,string operation,
         Func<IErpScreenService,T,CancellationToken,Task<ErpCommandResult>> call)=>app.MapPost(path,async(HttpContext context,IErpScreenService service)=>
         {
             if(Guard(context,module)is {} rejection)return rejection;

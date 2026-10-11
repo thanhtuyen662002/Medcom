@@ -13,6 +13,16 @@ namespace Medcom.Api.Tests;
 public sealed class DocumentFullFieldTests
 {
     private static readonly JsonSerializerOptions Json=new(JsonSerializerDefaults.Web);
+    private static int SourceFieldCount(JsonElement row,string kind,bool header)
+    {
+        var mapping=DocumentFieldCatalog.Get(kind)!;var table=header?mapping.Header:mapping.Lines;
+        var names=table.Fields.Select(f=>f.JsonPath.Split('.')[^1]).ToHashSet(StringComparer.Ordinal);
+        foreach(var name in names)Assert.True(row.TryGetProperty(name,out _),"Missing source column: "+name);
+        Assert.All(row.EnumerateObject().Where(p=>!names.Contains(p.Name)),p=>Assert.True(
+            p.Name.EndsWith("Name",StringComparison.Ordinal)||p.Name.EndsWith("Display",StringComparison.Ordinal)
+            ||p.Name.EndsWith("ReferenceState",StringComparison.Ordinal)||p.Name is "itemCode" or "unit",p.Name));
+        return row.EnumerateObject().Count(p=>names.Contains(p.Name));
+    }
 
     [Theory]
     [InlineData(DocumentKind.PurchaseOrders, false, false)] [InlineData(DocumentKind.PurchaseOrders, false, true)]
@@ -43,12 +53,12 @@ public sealed class DocumentFullFieldTests
             Assert.Equal(page <= 2 ? 2 : page == 3 ? 1 : 0, records.GetArrayLength());
             if (detail)
                 Assert.Equal(kind == DocumentKind.PurchaseOrders ? 19 : 38,
-                    body.GetProperty("document").GetProperty(headerName).EnumerateObject().Count());
+                    SourceFieldCount(body.GetProperty("document").GetProperty(headerName),kind==DocumentKind.PurchaseOrders?"purchase-orders":"inbound-requests",true));
             foreach (var record in records.EnumerateArray())
             {
                 var fields = record.GetProperty(detail ? "fields" : headerName);
                 Assert.Equal(detail ? kind == DocumentKind.PurchaseOrders ? 12 : 26 : kind == DocumentKind.PurchaseOrders ? 19 : 38,
-                    fields.EnumerateObject().Count());
+                    SourceFieldCount(fields,kind==DocumentKind.PurchaseOrders?"purchase-orders":"inbound-requests",!detail));
                 var identity = record.GetProperty(detail ? "lineId" : "documentId").GetString()!;
                 Assert.True(identities.Add(identity));
                 Assert.Equal(identity, fields.GetProperty(detail ? "userAutoId" : "documentId").GetString());
@@ -81,7 +91,7 @@ public sealed class DocumentFullFieldTests
                 var id = row.GetProperty("documentId").GetString()!;
                 Assert.True(identities.Add(id));
                 var fields = row.GetProperty("fields");
-                Assert.Equal(14, fields.EnumerateObject().Count());
+                Assert.Equal(14, SourceFieldCount(fields,"purchase-requests",true));
                 Assert.Equal(id, fields.GetProperty("purchaseRequestId").GetString());
                 Assert.Equal(JsonValueKind.Null, fields.GetProperty("notes").ValueKind);
             }
@@ -231,9 +241,9 @@ public sealed class DocumentFullFieldTests
         var list=await fixture.Json("/api/v2/purchase-requests");
         var detail=await fixture.Json("/api/v2/purchase-requests/detail?documentId=QA-DOC");
         var data=detail.GetProperty("data");var fields=data.GetProperty("sourceFields");
-        Assert.Equal(14,fields.GetProperty("header").EnumerateObject().Count());
+        Assert.Equal(14,SourceFieldCount(fields.GetProperty("header"),"purchase-requests",true));
         Assert.Equal(fields.GetProperty("header").GetRawText(),list.GetProperty("data").GetProperty("rows")[0].GetProperty("fields").GetRawText());
-        Assert.Equal(9,fields.GetProperty("lines")[0].EnumerateObject().Count());
+        Assert.Equal(9,SourceFieldCount(fields.GetProperty("lines")[0],"purchase-requests",false));
         Assert.Equal("QA-DOC",fields.GetProperty("lines")[0].GetProperty("purchaseRequestId").GetString());
         Assert.Equal("999999999999999999",fields.GetProperty("lines")[0].GetProperty("quantity").GetString());
         Assert.Equal(JsonValueKind.Null,fields.GetProperty("header").GetProperty("notes").ValueKind);

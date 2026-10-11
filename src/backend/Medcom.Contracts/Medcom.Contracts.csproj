@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <EmbeddedResource Include="../../../inventories/erp/20261010/six-screen-catalog.json" LogicalName="Medcom.ErpScreenCatalog" />
+    <EmbeddedResource Include="../../../inventories/backend/20261011/api-reference-bindings.json" LogicalName="Medcom.ApiReferenceCatalog" />
   </ItemGroup>
 </Project>

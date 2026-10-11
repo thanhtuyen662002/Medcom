@@ -3,7 +3,7 @@ using Medcom.Contracts;
 namespace Medcom.Api;
 public static class DocumentEndpoints
 {
-    public static void Map(WebApplication app)
+    public static void Map(IEndpointRouteBuilder app)
     {
         app.MapGet("/api/documents/query-contract", (HttpContext context,string? kind) =>
         {
@@ -43,7 +43,7 @@ public static class DocumentEndpoints
         MapDetail(app, "/api/v2/documents/purchase-orders/detail", DocumentKind.PurchaseOrders, "purchase-orders.read");
         MapDetail(app, "/api/v2/documents/inbound-requests/detail", DocumentKind.InboundRequests, "inbound-requests.read");
     }
-    private static void Map(WebApplication app, string path, DocumentKind kind, string capability,bool version2=false) =>
+    private static void Map(IEndpointRouteBuilder app, string path, DocumentKind kind, string capability,bool version2=false) =>
         app.MapGet(path, async (HttpContext context, IDocumentReader reader, int? page, int? pageSize,
             string? search, string? branchId) =>
         {
@@ -77,7 +77,7 @@ public static class DocumentEndpoints
             };
         });
 
-    private static void MapDetail(WebApplication app, string path, DocumentKind kind, string capability) =>
+    private static void MapDetail(IEndpointRouteBuilder app, string path, DocumentKind kind, string capability) =>
         app.MapGet(path, async (HttpContext context, IDocumentReader reader, string? documentId, int? page, int? pageSize) =>
         {
             var session=AuthEndpoints.Current(context);

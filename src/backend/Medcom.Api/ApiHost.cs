@@ -45,6 +45,7 @@ public static class ApiHost
         builder.Services.AddSingleton<IPurchaseRequestCommands, UnavailablePurchaseRequestCommands>();
         builder.Services.AddSingleton<IErpScreenService, UnavailableErpScreenService>();
         builder.Services.AddSingleton<INotificationQueries, UnavailableNotificationQueries>();
+        builder.Services.AddSingleton<IReferenceData, UnavailableReferenceData>();
         builder.Services.AddInboundDraftFacade();
         var erpWrites = ErpWriteStartup.Read(builder.Configuration);
         if (erpWrites is not null && !builder.Configuration.GetValue("Legacy:Enabled", false))
@@ -61,6 +62,14 @@ public static class ApiHost
             builder.Services.AddSingleton(new SqlLegacyUserStore(connectionString, enablePilots: enablePilots,
                 developmentTestTlsTarget: developmentTestTlsTarget));
             builder.Services.AddSingleton<ILegacyUserStore>(provider=>provider.GetRequiredService<SqlLegacyUserStore>());
+            builder.Services.AddScoped<IReferenceData>(provider=>
+            {
+                var context=provider.GetRequiredService<IHttpContextAccessor>().HttpContext??throw new InvalidOperationException("Current request required.");
+                var token=AuthEndpoints.Current(context).Token;var sessions=provider.GetRequiredService<IWebSessions>();
+                return new SqlReferenceData(provider.GetRequiredService<LegacyCompany>(),provider.GetRequiredService<SqlLegacyUserStore>(),
+                    async cancellation=>(await sessions.ResolveAsync(token,false,cancellation))?.Identity,
+                    async cancellation=>(await sessions.InspectAsync(token,cancellation))?.Identity);
+            });
             builder.Services.AddScoped<INotificationQueries>(provider=>{
                 var context=provider.GetRequiredService<IHttpContextAccessor>().HttpContext
                     ?? throw new InvalidOperationException("Current request required.");
@@ -277,12 +286,14 @@ public static class ApiHost
             ? Results.Ok(new { contractVersion = 1, status = AuthEndpoints.Current(context).Identity.CredentialStamp is null ? "foundation_only" : "read_only_adapter" })
             : Results.Problem(statusCode: 403, title: "Access denied."));
         AuthEndpoints.Map(app);
-        DocumentEndpoints.Map(app);
+        var data=app.MapGroup("").AddEndpointFilter<FeDisplayFilter>();
+        DocumentEndpoints.Map(data);
         ApiContractCatalog.Map(app);
-        PurchaseRequestEndpoints.Map(app);
-        ErpScreenEndpoints.Map(app);
-        NotificationEndpoints.Map(app);
-        app.MapInboundDraftFacade();
+        PurchaseRequestEndpoints.Map(data);
+        ErpScreenEndpoints.Map(data);
+        NotificationEndpoints.Map(data);
+        BranchEndpoints.Map(data);
+        data.MapInboundDraftFacade();
         return app;
     }
 

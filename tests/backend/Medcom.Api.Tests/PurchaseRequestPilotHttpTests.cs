@@ -627,7 +627,8 @@ public sealed class PurchaseRequestPilotHttpTests
             return json.RootElement.GetProperty("data").Deserialize<PurchaseRequestLookupResult>(PurchaseRequestCommandRules.Json)!;
         }
         internal async Task<PurchaseRequestReadback> Detail() => (await GetJson("/api/purchase-requests/detail?documentId=" + PurchaseFixtures.DocumentId))
-            .GetProperty("data").Deserialize<PurchaseRequestReadback>(PurchaseRequestCommandRules.Json)!;
+            // Read variants are additive; explicit input DTO attributes and command/lookup parsing stay strict.
+            .GetProperty("data").Deserialize<PurchaseRequestReadback>(new JsonSerializerOptions(PurchaseRequestCommandRules.Json){UnmappedMemberHandling=System.Text.Json.Serialization.JsonUnmappedMemberHandling.Skip})!;
         private async Task<JsonElement> GetJson(string path)
         {
             using var response = await Client.GetAsync(path);

@@ -1,0 +1,452 @@
+{
+  "observedAtUtc": "2026-10-11T03:37:38.7203020Z",
+  "queryMode": "FIXED_METADATA_AND_TOP_ZERO_SELECTS",
+  "businessRowsRead": false,
+  "businessWrites": false,
+  "productionAccepted": false,
+  "manifest": "inventories/backend/20261011/api-reference-bindings.json",
+  "bindings": [
+    {
+      "binding": "item",
+      "sourceObject": "dbo.CF_ItemTbl",
+      "projectedColumns": [
+        "ItemID",
+        "ItemName",
+        "ItemCode",
+        "Unit"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "branch",
+      "sourceObject": "dbo.CF_BranchTbl",
+      "projectedColumns": [
+        "BranchID",
+        "BranchName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "store",
+      "sourceObject": "dbo.CF_StoreHouseTbl",
+      "projectedColumns": [
+        "StoreHouseID",
+        "StoreHouseName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "object",
+      "sourceObject": "dbo.CF_ObjectTbl",
+      "projectedColumns": [
+        "ObjectID",
+        "ObjectName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "employee",
+      "sourceObject": "dbo.vEmployee",
+      "projectedColumns": [
+        "EmployeeID",
+        "EmployeeName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "manager",
+      "sourceObject": "dbo.vManager",
+      "projectedColumns": [
+        "ManagerID",
+        "ManagerName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "ceo",
+      "sourceObject": "dbo.vCEO",
+      "projectedColumns": [
+        "CeoID",
+        "CeoName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "agency",
+      "sourceObject": "dbo.vAgency",
+      "projectedColumns": [
+        "AgencyID",
+        "AgencyName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "asset",
+      "sourceObject": "dbo.FA_AssetTbl",
+      "projectedColumns": [
+        "AssetID",
+        "AssetName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "asset-type",
+      "sourceObject": "dbo.FA_AssetTypeTbl",
+      "projectedColumns": [
+        "AssetTypeID",
+        "AssetTypeName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "capital",
+      "sourceObject": "dbo.FA_CapitalTbl",
+      "projectedColumns": [
+        "CapitalID",
+        "CapitalName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "object-group",
+      "sourceObject": "dbo.CF_ObjectGroupTbl",
+      "projectedColumns": [
+        "ObjectGroupID",
+        "ObjectGroupName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "account-kind",
+      "sourceObject": "dbo.CF_AccountKindTbl",
+      "projectedColumns": [
+        "AccountKindID",
+        "AccountKindName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "account-type",
+      "sourceObject": "dbo.CF_AccountTypeTbl",
+      "projectedColumns": [
+        "AccountTypeID",
+        "AccountTypeName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "user-group",
+      "sourceObject": "dbo.SY_UserGroup",
+      "projectedColumns": [
+        "UserGroupID",
+        "UserGroupName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "person",
+      "sourceObject": "dbo.HR_PersonTbl",
+      "projectedColumns": [
+        "PersonID",
+        "PersonName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "currency",
+      "sourceObject": "dbo.CF_CurrencyTbl",
+      "projectedColumns": [
+        "CurrencyID",
+        "CurrencyName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "purpose",
+      "sourceObject": "dbo.AP_PurposePurchaseTbl",
+      "projectedColumns": [
+        "PurposeID",
+        "PurposeName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "contract",
+      "sourceObject": "dbo.CF_ContractTbl",
+      "projectedColumns": [
+        "ContractID",
+        "ContractName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "account",
+      "sourceObject": "dbo.CF_ChartAccTbl",
+      "projectedColumns": [
+        "AccountID",
+        "AccountName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "cost",
+      "sourceObject": "dbo.CF_CostTbl",
+      "projectedColumns": [
+        "CostID",
+        "CostName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "cost-center",
+      "sourceObject": "dbo.CF_CostCenterTbl",
+      "projectedColumns": [
+        "CostCenterID",
+        "CostCenterName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "department",
+      "sourceObject": "dbo.CF_DepartmentTbl",
+      "projectedColumns": [
+        "DepartmentID",
+        "DepartmentName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "location",
+      "sourceObject": "dbo.CF_LocationTbl",
+      "projectedColumns": [
+        "LocationID",
+        "LocationName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "zone",
+      "sourceObject": "dbo.CF_ZoneTbl",
+      "projectedColumns": [
+        "ZoneID",
+        "ZoneName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "payment-term",
+      "sourceObject": "dbo.CF_PaymentTermTbl",
+      "projectedColumns": [
+        "PaymentTermID",
+        "PaymentTermName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "payment-type",
+      "sourceObject": "dbo.CF_PaymentTypeTbl",
+      "projectedColumns": [
+        "PaymentTypeID",
+        "PaymentTypeName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "vat",
+      "sourceObject": "dbo.CF_VATTbl",
+      "projectedColumns": [
+        "VATID",
+        "VATName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "impexp",
+      "sourceObject": "dbo.CF_ImpExpTbl",
+      "projectedColumns": [
+        "ImpExpID",
+        "ImExName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "move-type",
+      "sourceObject": "dbo.FA_MovementTypeTbl",
+      "projectedColumns": [
+        "MoveTypeID",
+        "MoveTypeName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "service-type",
+      "sourceObject": "dbo.FA_ServiceTypeTbl",
+      "projectedColumns": [
+        "ServiceTypeID",
+        "ServiceTypeName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "user",
+      "sourceObject": "dbo.SY_User",
+      "projectedColumns": [
+        "UserName",
+        "HoTen"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "delivery-status",
+      "sourceObject": "dbo.AR_OrderDeliveryStatusTbl",
+      "projectedColumns": [
+        "DeliveryStatusID",
+        "DeliveryStatusName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "damage-status",
+      "sourceObject": "dbo.IV_DamageInsideStatusTbl",
+      "projectedColumns": [
+        "DamageInsideStatusID",
+        "DamageInsideStatusName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "package-type",
+      "sourceObject": "dbo.IV_PackageTypeTbl",
+      "projectedColumns": [
+        "PackageTypeID",
+        "PackageTypeName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "order-type",
+      "sourceObject": "dbo.IV_OrderTypeTbl",
+      "projectedColumns": [
+        "OrderTypeID",
+        "OrderTypeName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "damage-location",
+      "sourceObject": "dbo.IV_LocationDamageDetectedTbl",
+      "projectedColumns": [
+        "LocationDamageDetectedID",
+        "LocationDamageDetectedName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "status:purchase-requests",
+      "sourceObject": "dbo.AP_PurchaseStatusTbl",
+      "projectedColumns": [
+        "StatusID",
+        "StatusName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "status:purchase-orders",
+      "sourceObject": "dbo.AP_OrderStatusTbl",
+      "projectedColumns": [
+        "StatusID",
+        "StatusName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "status:inbound-requests",
+      "sourceObject": "dbo.IV_InboundRequestStatusTbl",
+      "projectedColumns": [
+        "StatusID",
+        "StatusName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "status:sales-orders",
+      "sourceObject": "dbo.AR_OrderStatusTbl",
+      "projectedColumns": [
+        "StatusID",
+        "StatusName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "status:sales-qr",
+      "sourceObject": "dbo.AR_InvoiceStatusTbl",
+      "projectedColumns": [
+        "StatusID",
+        "StatusName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "status:internal-transfer-requests",
+      "sourceObject": "dbo.IV_InternalTransferRequestStatusTbl",
+      "projectedColumns": [
+        "StatusID",
+        "StatusName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "status:contract-info",
+      "sourceObject": "dbo.CF_ContractStatusTbl",
+      "projectedColumns": [
+        "StatusID",
+        "StatusName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    }
+  ]
+}

@@ -141,6 +141,8 @@ internal static class ApiContractCatalog
         Add("post", "/api/auth/session/continue", "authContinue", Shape(typeof(SessionView)), "authenticated-explicit-activity");
         Add("post", "/api/auth/logout", "authLogout", null, "authenticated-session", success: 204);
         Add("get", "/api/workspace", "workspace", Shape(typeof(WorkspaceView)), "authenticated-scoped-navigation");
+        Add("get","/api/lookups/branches","branchChoices",Shape(typeof(ErpScopedResponse<BranchChoicePage>)),"current-native-branch-grants",
+            parameters:new JsonArray(Parameter("page","query",Number(1000,1)),Parameter("pageSize","query",Number(100,20)),Parameter("search","query",String(100))));
         Add("get", "/api/documents/field-contract", "documentFieldContract", Shape(typeof(DocumentFieldContract)), "module-read-capability-required",
             parameters: new JsonArray(Parameter("kind", "query", new() { ["type"] = "string", ["enum"] = Array(["purchase-orders", "inbound-requests", "purchase-requests"]) }, true)));
         Add("get", "/api/documents/query-contract", "documentQueryContract", Shape(typeof(DocumentQueryContract)), "module-read-capability-required",
@@ -367,6 +369,7 @@ internal static class ApiContractCatalog
         schemas.SetRequired<ErpSelectionRequest>(["branchId","sourceId","selectedKeys"]);
         schemas.SetRequired<ErpSendOrderPm>(["pmId"]);
         schemas.SetRequired<ErpSendTransferPm>(["primaryPmId","supportingPmId"]);
+        FeDisplaySchemas.Apply(paths,schemas.Values);
         return new()
         {
             ["openapi"] = "3.1.1", ["info"] = new JsonObject { ["title"] = "Medcom backend HTTP contract", ["version"] = "2.0.0",
@@ -433,6 +436,7 @@ internal static class ApiContractCatalog
                 {
                     var properties = new JsonObject(); var required = new List<string>();
                     Values[name] = new JsonObject { ["type"] = "object", ["additionalProperties"] = false, ["properties"] = properties };
+                    if(FeDisplayProjection.ExactInput(type))Values[name]!["x-medcom-exact-input"]=true;
                     foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
                     {
                         var ignore = property.GetCustomAttribute<JsonIgnoreAttribute>();

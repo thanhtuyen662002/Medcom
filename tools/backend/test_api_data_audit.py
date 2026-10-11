@@ -16,7 +16,7 @@ class ApiDataAuditTests(unittest.TestCase):
 
     def test_every_current_route_and_all_source_columns_are_reconciled_without_a_runtime_attestation(self):
         result = audit(self.api, self.mapping, self.tables)
-        self.assertEqual(119, result["registered_operations"])
+        self.assertEqual(120, result["registered_operations"])
         self.assertEqual(118, result["complete_source_columns"])
         self.assertEqual(417, result["erp_screen_source_columns"])
         self.assertEqual(14, sum(o["category"] == "erp-full-source-fields" for o in result["operations"]))
@@ -29,8 +29,8 @@ class ApiDataAuditTests(unittest.TestCase):
         result = audit(self.api, self.mapping, self.tables)
         for module in result["erp_modules"]:
             api = deepcopy(self.api)
-            schema = api["components"]["schemas"]["Erp_" + module.replace('-', '_') + "_header_fields"]
-            schema["required"].pop()
+            schema = api["components"]["schemas"]["Erp_" + module.replace('-', '_') + "_header_fieldsFeDisplay"]
+            schema["required"].remove(next(k for k,v in schema["properties"].items() if "x-medcom-source-column" in v))
             with self.subTest(module=module), self.assertRaisesRegex(ValueError, "Optional or omitted full field"):
                 audit(api, self.mapping, self.tables)
 
@@ -43,7 +43,7 @@ class ApiDataAuditTests(unittest.TestCase):
     def test_each_new_live_inbound_column_is_required_on_every_applicable_route(self):
         for name, field in [("InboundRequestHeaderFields", "linkId"), ("InboundRequestLineFields", "parentId")]:
             api = deepcopy(self.api)
-            api["components"]["schemas"][name]["required"].remove(field)
+            api["components"]["schemas"][name+"FeDisplay"]["required"].remove(field)
             with self.subTest(field=field), self.assertRaisesRegex(ValueError, "Optional or omitted full field"):
                 audit(api, self.mapping, self.tables)
 
@@ -60,14 +60,14 @@ class ApiDataAuditTests(unittest.TestCase):
     def test_optional_full_header_cannot_be_advertised_as_complete(self):
         for schema_name in ["purchaseordersLegacySummary", "purchaseordersV2Summary"]:
             api = deepcopy(self.api)
-            api["components"]["schemas"][schema_name]["required"].remove("purchaseOrderHeader")
+            api["components"]["schemas"][schema_name+"FeDisplay"]["required"].remove("purchaseOrderHeader")
             with self.subTest(schema=schema_name), self.assertRaisesRegex(ValueError, "Optional or omitted full field"):
                 audit(api, self.mapping, self.tables)
 
     def test_lost_nullability_or_wrong_source_type_cannot_pass(self):
         for nullable in (False, True):
             api = deepcopy(self.api)
-            field = api["components"]["schemas"]["PurchaseOrderHeaderFields"]["properties"]["memo"]
+            field = api["components"]["schemas"]["PurchaseOrderHeaderFieldsFeDisplay"]["properties"]["memo"]
             if nullable:
                 field["anyOf"] = [{"type": "string"}]
             else:

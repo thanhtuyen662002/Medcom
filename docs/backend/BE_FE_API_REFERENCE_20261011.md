@@ -1,8 +1,8 @@
 # Tài liệu tổng hợp API backend ERP Medcom cho frontend
 
-Tài liệu bàn giao toàn bộ **119 operation HTTP và 274 schema** hiện có của BE, đối chiếu mã trên main `d6cdb6287cfc07200a3f011bfe7b355e8d74ba39` và OpenAPI trực tiếp tại BE ngày 2026-10-10 UTC. FE dùng tài liệu này để tích hợp đăng nhập, danh sách đủ trường theo trang, chi tiết, CUD, nút nghiệp vụ, dropdown, chọn/dán dữ liệu và thông báo. Những route tương thích chưa có provider vận hành được ghi rõ trong danh mục; chúng không được dùng để thay thế route ghi hiện hành.
+Tài liệu bàn giao toàn bộ **120 operation HTTP và 423 schema** hiện có của BE, đối chiếu contract xuất từ BE đã build của [PR 139](https://github.com/thanhtuyen662002/Medcom/pull/139), trên base main `d7f901584b56a8620cc6ec68f59a9cc21bcf9b23`, cập nhật ngày 11/10/2026. FE dùng tài liệu này để tích hợp đăng nhập, danh sách đủ trường theo trang, chi tiết, CUD, nút nghiệp vụ, dropdown, chọn/dán dữ liệu và thông báo. Những route tương thích chưa có provider vận hành được ghi rõ trong danh mục; chúng không được dùng để thay thế route ghi hiện hành.
 
-**Địa chỉ BE:** https://medcom-production.up.railway.app. **OpenAPI đang chạy:** https://medcom-production.up.railway.app/api/contracts/openapi.json. File contract trong repo: [medcom-openapi.json](medcom-openapi.json). Ngày đối chiếu là ngày UTC của lần chụp contract; không phải cam kết mọi màn hình ERP đã nghiệm thu production.
+**Địa chỉ BE:** https://medcom-production.up.railway.app. **OpenAPI đang chạy:** https://medcom-production.up.railway.app/api/contracts/openapi.json. File contract trong repo: [medcom-openapi.json](medcom-openapi.json). Contract trong repo là bản xuất từ mã đã kiểm thử; trạng thái deployment/live nằm trong checkpoint PR 139, không suy ra mọi màn hình ERP đã nghiệm thu production.
 
 ## Mục lục
 
@@ -15,9 +15,9 @@ Tài liệu bàn giao toàn bộ **119 operation HTTP và 274 schema** hiện c�
 - [Đọc đơn đặt hàng mua và yêu cầu nhập kho](#doc-tuong-thich)
 - [Thông báo và mở chứng từ](#thong-bao)
 - [Lỗi và hướng dẫn triển khai FE](#loi-va-fe)
-- [Danh mục đầy đủ 119 API](#danh-muc-api)
+- [Danh mục đầy đủ 120 API](#danh-muc-api)
 - [Chi tiết request và response từng API](#chi-tiet-api)
-- [Toàn bộ field trong 274 schema](#schema-api)
+- [Toàn bộ field trong 423 schema](#schema-api)
 - [106 binding dropdown theo màn hình](#binding-dropdown)
 - [Field hợp đồng và nguồn bằng chứng](#bang-chung)
 
@@ -74,7 +74,7 @@ FE khác host dùng BFF cùng origin với browser. Proxy hiện tại có prefi
 | `/api/v2/documents/purchase-orders` | `/api/erp/api/v2/documents/purchase-orders` |
 | `/api/notifications` | `/api/erp/api/notifications` |
 
-BFF phải giữ cookie/token đúng phiên, cho phép đúng method/path/query, chuyển scope/projection/correlation và response lỗi. Bốn notification route cần thêm allowlist trong phần FE riêng nếu chưa có. Tài liệu này không thay đổi FE hoặc BFF. Nguồn: [AuthEndpoints.cs](../../src/backend/Medcom.Api/AuthEndpoints.cs), [WorkspaceReadScope.cs](../../src/backend/Medcom.Api/WorkspaceReadScope.cs), [LocalWebSessions.cs](../../src/backend/Medcom.Infrastructure/LocalWebSessions.cs), `apps/medcom-sites/lib/erp/proxy-policy.ts` và `proxy.ts` tại main nêu ở đầu tài liệu.
+BFF phải giữ cookie/token đúng phiên, cho phép đúng method/path/query, chuyển scope/projection/correlation và response lỗi. Main base đã có allowlist 119 route cũ (PR 138). FE bổ sung GET `/api/lookups/branches`, query page/pageSize/search, và chuyển header X-Medcom-Display-Projection cho route mới; phần này thuộc FE riêng. Tài liệu này không thay đổi FE hoặc BFF. Nguồn: [AuthEndpoints.cs](../../src/backend/Medcom.Api/AuthEndpoints.cs), [WorkspaceReadScope.cs](../../src/backend/Medcom.Api/WorkspaceReadScope.cs), [LocalWebSessions.cs](../../src/backend/Medcom.Infrastructure/LocalWebSessions.cs), `apps/medcom-sites/lib/erp/proxy-policy.ts` và `proxy.ts` tại main nêu ở đầu tài liệu.
 
 <a id="du-lieu"></a>
 ## 3 Dữ liệu đầy đủ và phân trang
@@ -101,6 +101,25 @@ List bảy màn hình nhận branchId, page, pageSize, search, dateFrom, dateTo,
 
 Nguồn: [ErpScreenEndpoints.cs](../../src/backend/Medcom.Api/ErpScreenEndpoints.cs), [ErpInputRules.cs](../../src/backend/Medcom.Application/ErpInputRules.cs), [ErpSql.cs](../../src/backend/Medcom.Infrastructure/Erp/ErpSql.cs), [DocumentEndpoints.cs](../../src/backend/Medcom.Api/DocumentEndpoints.cs), [PurchaseRequestEndpoints.cs](../../src/backend/Medcom.Api/PurchaseRequestEndpoints.cs), [NotificationEndpoints.cs](../../src/backend/Medcom.Api/NotificationEndpoints.cs).
 
+
+### Bổ sung tên, tiền và ngày — PR 139
+
+Các API đọc dữ liệu nghiệp vụ bổ sung tên cho ID tham chiếu trong **cùng response**, giữ nguyên phân trang. Ví dụ `itemId` kèm `itemCode`, `itemName`, `unit`; `storeHouseId` kèm `storeHouseName`; `statusId` kèm `statusName`; `objectId`, `employeeId`, `currencyId`, `contractId`… kèm tên tương ứng. Dictionary có tên cột SQL thì giữ casing nguồn: `ItemID`, `ItemCode`, `ItemName`, `Unit`, `StoreHouseName`. Danh mục kỹ thuật `/screen`, `/actions`, auth/session và field/query contract giữ contract của chúng; caption/displayName đã mô tả các định danh giao diện. Chúng không phải dòng dữ liệu grid.
+
+`...ReferenceState` mô tả kết quả tra tên: `available`, `unnamed` (row có nhưng tên null/trống), `empty`, `missing`, `ambiguous`, `invalid`, `unavailable`, `unknown`, `identifier`. Tên null luôn có key, không được tự coi là không có quyền CUD. Khóa dòng/chứng từ/journal không có cột tên nguồn trả companion Name=null với state=identifier; ID chưa có binding xác minh trả Name=null/state=unknown. Không tự tạo tên từ mã.
+
+Tên/mã/đơn vị đã có trong snapshot chứng từ **giữ nguyên, kể cả null**. Phần bổ sung chỉ thêm key chưa tồn tại; không thay đổi giá trị raw, stateToken, intent, receipt hay tỷ giá. 44 binding tên được kiểm tra metadata/zero-row projection trực tiếp trên MedData: [catalog tên](../../inventories/backend/20261011/api-reference-bindings.json), [đối chiếu nguồn](../../inventories/backend/20261011/reference-source-reconciliation.json).
+
+Trường tiền thêm `...Display`, ví dụ `unitPriceDisplay`: VND `1,234 VND`; USD `1,234.00 USD`. Dùng CurrencyID của dòng, hoặc header chứng từ gần nhất. Chỉ định dạng, không chuyển đổi tiền/tỷ giá hoặc đoán currency còn thiếu. Rounding hiển thị midpoint away from zero; decimal string rất lớn vẫn giữ chính xác. Currency khác/chưa biết hoặc giá trị null cho Display=null; raw vẫn được trả.
+
+Ngày thêm `...Display`, ví dụ `documentDateDisplay`: `11/10/2026` cho date-only hoặc `11/10/2026 13:24:56` cho SQL datetime. Không tự đổi timezone SQL. Giá trị raw ISO và precision gốc giữ nguyên để gửi lệnh/lọc. Session expiry vẫn theo date-time offset của contract đăng nhập.
+
+**Nháp dùng lại DTO ghi nghiêm ngặt:** raw `header`, `values` hoặc `lines` giữ nguyên. Bản hiển thị nằm ở sibling `headerDisplayData`, `valuesDisplayData`, `linesDisplayData`. Ví dụ đề nghị mua hàng tương thích: `data.document.headerDisplayData`, `data.document.lines[].valuesDisplayData`; chọn/dán ERP: `data.linesDisplayData[].values`. FE render từ bản hiển thị, gửi CUD từ bản raw. Client .NET khi đọc dùng decoder response chấp nhận field additive; decoder request/command vẫn strict. Khi dựng lệnh từ full fields, chỉ chọn các cột writable trong field contract, không gửi Name/Display/ReferenceState/DisplayData bổ sung.
+
+**API chi nhánh mới:** GET `/api/lookups/branches?page=1&pageSize=20&search=...` → `{readScope,data:{items:[{branchId,branchName}],page,pageSize,hasMore}}`. Page 1–1000, size 1–100; không nhận branchId/actor/grants do FE truyền vào. Chỉ trả chi nhánh nằm trong quyền native của phiên ERP hiện tại. FE tiếp tục áp dụng branchSelection/filterLocked của workspace. BFF path: `/api/erp/api/lookups/branches`; bên FE thêm allowlist riêng trước khi gọi route này qua BFF. Route `/api/purchase-requests/lookup?kind=branches` cũ vẫn dùng được và có thêm name/referenceState.
+
+Chi tiết phạm vi, CUD và nút còn thiếu: [bản rà soát API](API_DISPLAY_AUDIT_20261011.md). Header bổ sung trên response có dữ liệu: `X-Medcom-Display-Projection: reference-names-v1`.
+
 <a id="man-hinh"></a>
 ## 4 Các màn hình và nút nghiệp vụ
 
@@ -118,7 +137,7 @@ Tiền tố BE của màn hình là `/api/erp/{module}`. GET `/screen` trả fie
 
 Tổng 417 field của bảy form, 106 binding dropdown và hai PM option route. Schema full fields, SQL column/type/nullable/writable nằm trong mục 12; binding cụ thể ở mục 13. Nguồn: [six-screen-catalog.json](../../inventories/erp/20261010/six-screen-catalog.json), [ErpScreenCatalog.cs](../../src/backend/Medcom.Contracts/ErpScreenCatalog.cs).
 
-Mỗi action state gồm `id`, `caption`, `visible`, `enabled`, `reason`, `requiresSavedDocument`, `route`. `visible=false` thì ẩn; visible=true/enabled=false thì hiện nhưng khóa và giải thích reason. **id của nút native không nhất thiết là tên operation**: dùng `route` trả về hoặc operation trong `/screen`, không tự ghép route từ action.id. Route có thể còn được trả khi nút bị disabled; chỉ gọi khi enabled=true, và BE vẫn kiểm tra lại. Các nút in chưa có report runtime qualified có route=null; không có API report/print thực thi trong 119 endpoint.
+Mỗi action state gồm `id`, `caption`, `visible`, `enabled`, `reason`, `requiresSavedDocument`, `route`. `visible=false` thì ẩn; visible=true/enabled=false thì hiện nhưng khóa và giải thích reason. **id của nút native không nhất thiết là tên operation**: dùng `route` trả về hoặc operation trong `/screen`, không tự ghép route từ action.id. Route có thể còn được trả khi nút bị disabled; chỉ gọi khi enabled=true, và BE vẫn kiểm tra lại. Các nút in chưa có report runtime qualified có route=null; không có API report/print thực thi trong 120 endpoint.
 
 Quyền Thêm cần native Add; Lưu/gửi/thu hồi/QR cần Update; Xóa cần Delete; xem hợp đồng cần Read. Không gửi quyền, visible/enabled, actor, trạng thái hoặc khóa từ FE để cấp quyền. Các reason thường gặp: native_permission_or_hidden, save_document_first, state_or_assignment_not_allowed, contract_missing, erp_write_unqualified, document_numbering_unqualified, contract_read_unqualified, report_runtime_unqualified. Nguồn: [ErpActionRules.cs](../../src/backend/Medcom.Application/ErpActionRules.cs), [ErpSqlAuthority.cs](../../src/backend/Medcom.Infrastructure/Erp/ErpSqlAuthority.cs).
 
@@ -333,7 +352,7 @@ Các mục dưới là bảng tra cứu đầy đủ được tạo từ contrac
 
 
 <a id="danh-muc-api"></a>
-## 10 Danh mục đầy đủ 119 API
+## 10 Danh mục đầy đủ 120 API
 
 Mỗi dòng là một method/path đã đăng ký. Liên kết operation mở phần tham số/body/response bên dưới. Các path được liệt kê là path BE; BFF prefix theo mục 2. Không dùng cùng body cho hai nhóm route chỉ vì tên màn hình giống nhau.
 
@@ -341,6 +360,7 @@ Mỗi dòng là một method/path đã đăng ký. Liên kết operation mở ph
 |---|---|
 | platform-auth | 10 |
 | notifications | 4 |
+| reference-lookups | 1 |
 | documents-compatible | 10 |
 | purchase-requests-compatible | 10 |
 | inbound-draft-compatible | 4 |
@@ -351,7 +371,7 @@ Mỗi dòng là một method/path đã đăng ký. Liên kết operation mở ph
 | sales-orders | 15 |
 | sales-qr | 9 |
 | warehouse-qr | 8 |
-| **Tổng** | **119** |
+| **Tổng** | **120** |
 
 | STT | Method | Path BE | Operation và công dụng | Tình trạng |
 |---|---|---|---|---|
@@ -369,111 +389,112 @@ Mỗi dòng là một method/path đã đăng ký. Liên kết operation mở ph
 | 12 | POST | `/api/auth/session/continue` | [authContinue](#api-authcontinue) — Gia hạn idle phiên | Provider/authority hiện hành; xem mục 1 |
 | 13 | POST | `/api/auth/logout` | [authLogout](#api-authlogout) — Thu hồi phiên | Provider/authority hiện hành; xem mục 1 |
 | 14 | GET | `/api/workspace` | [workspace](#api-workspace) — Phiên, navigation, branchIds, branchSelection | Provider/authority hiện hành; xem mục 1 |
-| 15 | GET | `/api/documents/field-contract` | [documentFieldContract](#api-documentfieldcontract) — Metadata cột nguồn và JSON path | Provider/authority hiện hành; xem mục 1 |
-| 16 | GET | `/api/documents/query-contract` | [documentQueryContract](#api-documentquerycontract) — Metadata filter/sort/paging list v2 | Provider/authority hiện hành; xem mục 1 |
-| 17 | GET | `/api/documents/purchase-orders` | [purchaseordersLegacyList](#api-purchaseorderslegacylist) — Danh sách full field tương thích | Provider/authority hiện hành; xem mục 1 |
-| 18 | GET | `/api/documents/purchase-orders/detail` | [purchaseordersLegacyDetail](#api-purchaseorderslegacydetail) — Chi tiết full field tương thích | Provider/authority hiện hành; xem mục 1 |
-| 19 | GET | `/api/v2/documents/purchase-orders` | [purchaseordersV2List](#api-purchaseordersv2list) — Danh sách full field tương thích | Provider/authority hiện hành; xem mục 1 |
-| 20 | GET | `/api/v2/documents/purchase-orders/detail` | [purchaseordersV2Detail](#api-purchaseordersv2detail) — Chi tiết full field tương thích | Provider/authority hiện hành; xem mục 1 |
-| 21 | GET | `/api/documents/inbound-requests` | [inboundrequestsLegacyList](#api-inboundrequestslegacylist) — Danh sách full field tương thích | Provider/authority hiện hành; xem mục 1 |
-| 22 | GET | `/api/documents/inbound-requests/detail` | [inboundrequestsLegacyDetail](#api-inboundrequestslegacydetail) — Chi tiết full field tương thích | Provider/authority hiện hành; xem mục 1 |
-| 23 | GET | `/api/v2/documents/inbound-requests` | [inboundrequestsV2List](#api-inboundrequestsv2list) — Danh sách full field tương thích | Provider/authority hiện hành; xem mục 1 |
-| 24 | GET | `/api/v2/documents/inbound-requests/detail` | [inboundrequestsV2Detail](#api-inboundrequestsv2detail) — Chi tiết full field tương thích | Provider/authority hiện hành; xem mục 1 |
-| 25 | GET | `/api/purchase-requests` | [purchaseRequestListLegacy](#api-purchaserequestlistlegacy) — Danh sách full field tương thích | Provider/authority hiện hành; xem mục 1 |
-| 26 | GET | `/api/purchase-requests/detail` | [purchaseRequestDetailLegacy](#api-purchaserequestdetaillegacy) — Chi tiết full field tương thích | Provider/authority hiện hành; xem mục 1 |
-| 27 | GET | `/api/v2/purchase-requests` | [purchaseRequestListV2](#api-purchaserequestlistv2) — Danh sách full field tương thích | Provider/authority hiện hành; xem mục 1 |
-| 28 | GET | `/api/v2/purchase-requests/detail` | [purchaseRequestDetailV2](#api-purchaserequestdetailv2) — Chi tiết full field tương thích | Provider/authority hiện hành; xem mục 1 |
-| 29 | GET | `/api/purchase-requests/workspace` | [purchaseRequestWorkspace](#api-purchaserequestworkspace) — Workspace đề nghị mua hàng tương thích | Provider/authority hiện hành; xem mục 1 |
-| 30 | GET | `/api/purchase-requests/lookup` | [purchaseRequestLookup](#api-purchaserequestlookup) — Lookup đề nghị mua hàng tương thích | Provider/authority hiện hành; xem mục 1 |
-| 31 | POST | `/api/purchase-requests/save` | [purchaseRequestsaveCommand](#api-purchaserequestsavecommand) — Command facade cũ, provider unavailable | UNAVAILABLE trong startup; xem mục 1 |
-| 32 | POST | `/api/purchase-requests/save/lookup` | [purchaseRequestsaveLookup](#api-purchaserequestsavelookup) — Tra cứu command facade cũ | UNAVAILABLE trong startup; xem mục 1 |
-| 33 | POST | `/api/purchase-requests/submit` | [purchaseRequestsubmitCommand](#api-purchaserequestsubmitcommand) — Command facade cũ, provider unavailable | UNAVAILABLE trong startup; xem mục 1 |
-| 34 | POST | `/api/purchase-requests/submit/lookup` | [purchaseRequestsubmitLookup](#api-purchaserequestsubmitlookup) — Tra cứu command facade cũ | UNAVAILABLE trong startup; xem mục 1 |
-| 35 | GET | `/api/inbound-requests/draft` | [inboundDraftRead](#api-inbounddraftread) — Facade nhập kho cũ, provider unavailable | UNAVAILABLE trong startup; xem mục 1 |
-| 36 | POST | `/api/inbound-requests/draft/save` | [inboundDraftsave](#api-inbounddraftsave) — Facade nhập kho cũ, provider unavailable | UNAVAILABLE trong startup; xem mục 1 |
-| 37 | POST | `/api/inbound-requests/draft/send-to-warehouse` | [inboundDraftsendtowarehouse](#api-inbounddraftsendtowarehouse) — Facade nhập kho cũ, provider unavailable | UNAVAILABLE trong startup; xem mục 1 |
-| 38 | POST | `/api/inbound-requests/draft/reconcile` | [inboundDraftreconcile](#api-inbounddraftreconcile) — Facade nhập kho cũ, provider unavailable | UNAVAILABLE trong startup; xem mục 1 |
-| 39 | GET | `/api/erp/internal-transfer-requests/screen` | [internal_transfer_requests_screen](#api-internal_transfer_requests_screen) — Metadata field/action/dropdown form | Reader native/profile hiện hành |
-| 40 | GET | `/api/erp/internal-transfer-requests` | [internal_transfer_requests_list](#api-internal_transfer_requests_list) — Danh sách full header theo trang | Reader native/profile hiện hành |
-| 41 | GET | `/api/erp/internal-transfer-requests/detail` | [internal_transfer_requests_detail](#api-internal_transfer_requests_detail) — Chi tiết full field và các trang section | Reader native/profile hiện hành |
-| 42 | GET | `/api/erp/internal-transfer-requests/actions` | [internal_transfer_requests_actions](#api-internal_transfer_requests_actions) — Trạng thái nút theo user/phiếu | Reader native/profile hiện hành |
-| 43 | POST | `/api/erp/internal-transfer-requests/options` | [internal_transfer_requests_options](#api-internal_transfer_requests_options) — Lựa chọn dropdown/dropselect | Reader native/profile hiện hành |
-| 44 | POST | `/api/erp/internal-transfer-requests/actions/send-pm/options` | [internal_transfer_requests_pm_options](#api-internal_transfer_requests_pm_options) — Danh sách PM theo role/branch | Reader native/profile hiện hành |
-| 45 | POST | `/api/erp/internal-transfer-requests/commands/lookup` | [internal_transfer_requests_command_lookup](#api-internal_transfer_requests_command_lookup) — Tra cứu receipt ý định gốc, không ghi | Reader native/profile hiện hành |
-| 46 | POST | `/api/erp/internal-transfer-requests/selection` | [internal_transfer_requests_selection](#api-internal_transfer_requests_selection) — Đọc nguồn chọn sang dòng nháp | Reader native/profile hiện hành |
-| 47 | POST | `/api/erp/internal-transfer-requests/paste/validate` | [internal_transfer_requests_paste_validate](#api-internal_transfer_requests_paste_validate) — Kiểm tra bảng dán, không ghi | Reader native/profile hiện hành |
-| 48 | POST | `/api/erp/internal-transfer-requests/create` | [internal_transfer_requests_create](#api-internal_transfer_requests_create) — Tạo phiếu và cấp số/LineID | SQL ghi đã bật; quyền/trạng thái recheck |
-| 49 | POST | `/api/erp/internal-transfer-requests/save` | [internal_transfer_requests_save](#api-internal_transfer_requests_save) — Lưu header và thay đổi dòng | SQL ghi đã bật; quyền/trạng thái recheck |
-| 50 | POST | `/api/erp/internal-transfer-requests/delete` | [internal_transfer_requests_delete](#api-internal_transfer_requests_delete) — Xóa phiếu được phép | SQL ghi đã bật; quyền/trạng thái recheck |
-| 51 | POST | `/api/erp/internal-transfer-requests/actions/recall` | [internal_transfer_requests_recall](#api-internal_transfer_requests_recall) — Thu hồi để sửa | SQL ghi đã bật; quyền/trạng thái recheck |
-| 52 | POST | `/api/erp/internal-transfer-requests/actions/send-pm` | [internal_transfer_requests_send_pm](#api-internal_transfer_requests_send_pm) — Gửi phiếu tới PM | SQL ghi đã bật; quyền/trạng thái recheck |
-| 53 | GET | `/api/erp/machine-movements/screen` | [machine_movements_screen](#api-machine_movements_screen) — Metadata field/action/dropdown form | Reader native/profile hiện hành |
-| 54 | GET | `/api/erp/machine-movements` | [machine_movements_list](#api-machine_movements_list) — Danh sách full header theo trang | Reader native/profile hiện hành |
-| 55 | GET | `/api/erp/machine-movements/detail` | [machine_movements_detail](#api-machine_movements_detail) — Chi tiết full field và các trang section | Reader native/profile hiện hành |
-| 56 | GET | `/api/erp/machine-movements/actions` | [machine_movements_actions](#api-machine_movements_actions) — Trạng thái nút theo user/phiếu | Reader native/profile hiện hành |
-| 57 | POST | `/api/erp/machine-movements/options` | [machine_movements_options](#api-machine_movements_options) — Lựa chọn dropdown/dropselect | Reader native/profile hiện hành |
-| 58 | POST | `/api/erp/machine-movements/commands/lookup` | [machine_movements_command_lookup](#api-machine_movements_command_lookup) — Tra cứu receipt ý định gốc, không ghi | Reader native/profile hiện hành |
-| 59 | POST | `/api/erp/machine-movements/selection` | [machine_movements_selection](#api-machine_movements_selection) — Đọc nguồn chọn sang dòng nháp | Reader native/profile hiện hành |
-| 60 | POST | `/api/erp/machine-movements/paste/validate` | [machine_movements_paste_validate](#api-machine_movements_paste_validate) — Kiểm tra bảng dán, không ghi | Reader native/profile hiện hành |
-| 61 | POST | `/api/erp/machine-movements/create` | [machine_movements_create](#api-machine_movements_create) — Tạo phiếu và cấp số/LineID | SQL ghi đã bật; quyền/trạng thái recheck |
-| 62 | POST | `/api/erp/machine-movements/save` | [machine_movements_save](#api-machine_movements_save) — Lưu header và thay đổi dòng | SQL ghi đã bật; quyền/trạng thái recheck |
-| 63 | POST | `/api/erp/machine-movements/delete` | [machine_movements_delete](#api-machine_movements_delete) — Xóa phiếu được phép | SQL ghi đã bật; quyền/trạng thái recheck |
-| 64 | GET | `/api/erp/machine-repairs/screen` | [machine_repairs_screen](#api-machine_repairs_screen) — Metadata field/action/dropdown form | Reader native/profile hiện hành |
-| 65 | GET | `/api/erp/machine-repairs` | [machine_repairs_list](#api-machine_repairs_list) — Danh sách full header theo trang | Reader native/profile hiện hành |
-| 66 | GET | `/api/erp/machine-repairs/detail` | [machine_repairs_detail](#api-machine_repairs_detail) — Chi tiết full field và các trang section | Reader native/profile hiện hành |
-| 67 | GET | `/api/erp/machine-repairs/actions` | [machine_repairs_actions](#api-machine_repairs_actions) — Trạng thái nút theo user/phiếu | Reader native/profile hiện hành |
-| 68 | POST | `/api/erp/machine-repairs/options` | [machine_repairs_options](#api-machine_repairs_options) — Lựa chọn dropdown/dropselect | Reader native/profile hiện hành |
-| 69 | POST | `/api/erp/machine-repairs/commands/lookup` | [machine_repairs_command_lookup](#api-machine_repairs_command_lookup) — Tra cứu receipt ý định gốc, không ghi | Reader native/profile hiện hành |
-| 70 | POST | `/api/erp/machine-repairs/selection` | [machine_repairs_selection](#api-machine_repairs_selection) — Đọc nguồn chọn sang dòng nháp | Reader native/profile hiện hành |
-| 71 | POST | `/api/erp/machine-repairs/paste/validate` | [machine_repairs_paste_validate](#api-machine_repairs_paste_validate) — Kiểm tra bảng dán, không ghi | Reader native/profile hiện hành |
-| 72 | POST | `/api/erp/machine-repairs/create` | [machine_repairs_create](#api-machine_repairs_create) — Tạo phiếu và cấp số/LineID | SQL ghi đã bật; quyền/trạng thái recheck |
-| 73 | POST | `/api/erp/machine-repairs/save` | [machine_repairs_save](#api-machine_repairs_save) — Lưu header và thay đổi dòng | SQL ghi đã bật; quyền/trạng thái recheck |
-| 74 | POST | `/api/erp/machine-repairs/delete` | [machine_repairs_delete](#api-machine_repairs_delete) — Xóa phiếu được phép | SQL ghi đã bật; quyền/trạng thái recheck |
-| 75 | GET | `/api/erp/purchase-requests/screen` | [purchase_requests_screen](#api-purchase_requests_screen) — Metadata field/action/dropdown form | Reader native/profile hiện hành |
-| 76 | GET | `/api/erp/purchase-requests` | [purchase_requests_list](#api-purchase_requests_list) — Danh sách full header theo trang | Reader native/profile hiện hành |
-| 77 | GET | `/api/erp/purchase-requests/detail` | [purchase_requests_detail](#api-purchase_requests_detail) — Chi tiết full field và các trang section | Reader native/profile hiện hành |
-| 78 | GET | `/api/erp/purchase-requests/actions` | [purchase_requests_actions](#api-purchase_requests_actions) — Trạng thái nút theo user/phiếu | Reader native/profile hiện hành |
-| 79 | POST | `/api/erp/purchase-requests/options` | [purchase_requests_options](#api-purchase_requests_options) — Lựa chọn dropdown/dropselect | Reader native/profile hiện hành |
-| 80 | POST | `/api/erp/purchase-requests/commands/lookup` | [purchase_requests_command_lookup](#api-purchase_requests_command_lookup) — Tra cứu receipt ý định gốc, không ghi | Reader native/profile hiện hành |
-| 81 | POST | `/api/erp/purchase-requests/selection` | [purchase_requests_selection](#api-purchase_requests_selection) — Đọc nguồn chọn sang dòng nháp | Reader native/profile hiện hành |
-| 82 | POST | `/api/erp/purchase-requests/paste/validate` | [purchase_requests_paste_validate](#api-purchase_requests_paste_validate) — Kiểm tra bảng dán, không ghi | Reader native/profile hiện hành |
-| 83 | POST | `/api/erp/purchase-requests/create` | [purchase_requests_create](#api-purchase_requests_create) — Tạo phiếu và cấp số/LineID | SQL ghi đã bật; quyền/trạng thái recheck |
-| 84 | POST | `/api/erp/purchase-requests/save` | [purchase_requests_save](#api-purchase_requests_save) — Lưu header và thay đổi dòng | SQL ghi đã bật; quyền/trạng thái recheck |
-| 85 | POST | `/api/erp/purchase-requests/delete` | [purchase_requests_delete](#api-purchase_requests_delete) — Xóa phiếu được phép | SQL ghi đã bật; quyền/trạng thái recheck |
-| 86 | POST | `/api/erp/purchase-requests/actions/submit` | [purchase_requests_submit](#api-purchase_requests_submit) — Gửi đề nghị mua hàng | SQL ghi đã bật; quyền/trạng thái recheck |
-| 87 | POST | `/api/erp/purchase-requests/actions/send-purchase-order` | [purchase_requests_send_purchase_order](#api-purchase_requests_send_purchase_order) — Tạo đặt mua hàng từ đề nghị | SQL ghi đã bật; quyền/trạng thái recheck |
-| 88 | GET | `/api/erp/sales-orders/screen` | [sales_orders_screen](#api-sales_orders_screen) — Metadata field/action/dropdown form | Reader native/profile hiện hành |
-| 89 | GET | `/api/erp/sales-orders` | [sales_orders_list](#api-sales_orders_list) — Danh sách full header theo trang | Reader native/profile hiện hành |
-| 90 | GET | `/api/erp/sales-orders/detail` | [sales_orders_detail](#api-sales_orders_detail) — Chi tiết full field và các trang section | Reader native/profile hiện hành |
-| 91 | GET | `/api/erp/sales-orders/actions` | [sales_orders_actions](#api-sales_orders_actions) — Trạng thái nút theo user/phiếu | Reader native/profile hiện hành |
-| 92 | GET | `/api/erp/sales-orders/contract-info` | [sales_orders_contract_info](#api-sales_orders_contract_info) — Thông tin hợp đồng cùng scope | Reader native/profile hiện hành |
-| 93 | POST | `/api/erp/sales-orders/options` | [sales_orders_options](#api-sales_orders_options) — Lựa chọn dropdown/dropselect | Reader native/profile hiện hành |
-| 94 | POST | `/api/erp/sales-orders/actions/send-pm/options` | [sales_orders_pm_options](#api-sales_orders_pm_options) — Danh sách PM theo role/branch | Reader native/profile hiện hành |
-| 95 | POST | `/api/erp/sales-orders/commands/lookup` | [sales_orders_command_lookup](#api-sales_orders_command_lookup) — Tra cứu receipt ý định gốc, không ghi | Reader native/profile hiện hành |
-| 96 | POST | `/api/erp/sales-orders/selection` | [sales_orders_selection](#api-sales_orders_selection) — Đọc nguồn chọn sang dòng nháp | Reader native/profile hiện hành |
-| 97 | POST | `/api/erp/sales-orders/paste/validate` | [sales_orders_paste_validate](#api-sales_orders_paste_validate) — Kiểm tra bảng dán, không ghi | Reader native/profile hiện hành |
-| 98 | POST | `/api/erp/sales-orders/create` | [sales_orders_create](#api-sales_orders_create) — Tạo phiếu và cấp số/LineID | SQL ghi đã bật; quyền/trạng thái recheck |
-| 99 | POST | `/api/erp/sales-orders/save` | [sales_orders_save](#api-sales_orders_save) — Lưu header và thay đổi dòng | SQL ghi đã bật; quyền/trạng thái recheck |
-| 100 | POST | `/api/erp/sales-orders/delete` | [sales_orders_delete](#api-sales_orders_delete) — Xóa phiếu được phép | SQL ghi đã bật; quyền/trạng thái recheck |
-| 101 | POST | `/api/erp/sales-orders/actions/recall` | [sales_orders_recall](#api-sales_orders_recall) — Thu hồi để sửa | SQL ghi đã bật; quyền/trạng thái recheck |
-| 102 | POST | `/api/erp/sales-orders/actions/send-pm` | [sales_orders_send_pm](#api-sales_orders_send_pm) — Gửi phiếu tới PM | SQL ghi đã bật; quyền/trạng thái recheck |
-| 103 | GET | `/api/erp/sales-qr/screen` | [sales_qr_screen](#api-sales_qr_screen) — Metadata field/action/dropdown form | Reader native/profile hiện hành |
-| 104 | GET | `/api/erp/sales-qr` | [sales_qr_list](#api-sales_qr_list) — Danh sách full header theo trang | Reader native/profile hiện hành |
-| 105 | GET | `/api/erp/sales-qr/detail` | [sales_qr_detail](#api-sales_qr_detail) — Chi tiết full field và các trang section | Reader native/profile hiện hành |
-| 106 | GET | `/api/erp/sales-qr/actions` | [sales_qr_actions](#api-sales_qr_actions) — Trạng thái nút theo user/phiếu | Reader native/profile hiện hành |
-| 107 | GET | `/api/erp/sales-qr/contract-info` | [sales_qr_contract_info](#api-sales_qr_contract_info) — Thông tin hợp đồng cùng scope | Reader native/profile hiện hành |
-| 108 | POST | `/api/erp/sales-qr/options` | [sales_qr_options](#api-sales_qr_options) — Lựa chọn dropdown/dropselect | Reader native/profile hiện hành |
-| 109 | POST | `/api/erp/sales-qr/commands/lookup` | [sales_qr_command_lookup](#api-sales_qr_command_lookup) — Tra cứu receipt ý định gốc, không ghi | Reader native/profile hiện hành |
-| 110 | POST | `/api/erp/sales-qr/qr/add` | [sales_qr_scan_add](#api-sales_qr_scan_add) — Ghi scan thêm | SQL ghi đã bật; quyền/trạng thái recheck |
-| 111 | POST | `/api/erp/sales-qr/qr/delete` | [sales_qr_scan_delete](#api-sales_qr_scan_delete) — Ghi scan xóa | SQL ghi đã bật; quyền/trạng thái recheck |
-| 112 | GET | `/api/erp/warehouse-qr/screen` | [warehouse_qr_screen](#api-warehouse_qr_screen) — Metadata field/action/dropdown form | Reader native/profile hiện hành |
-| 113 | GET | `/api/erp/warehouse-qr` | [warehouse_qr_list](#api-warehouse_qr_list) — Danh sách full header theo trang | Reader native/profile hiện hành |
-| 114 | GET | `/api/erp/warehouse-qr/detail` | [warehouse_qr_detail](#api-warehouse_qr_detail) — Chi tiết full field và các trang section | Reader native/profile hiện hành |
-| 115 | GET | `/api/erp/warehouse-qr/actions` | [warehouse_qr_actions](#api-warehouse_qr_actions) — Trạng thái nút theo user/phiếu | Reader native/profile hiện hành |
-| 116 | POST | `/api/erp/warehouse-qr/options` | [warehouse_qr_options](#api-warehouse_qr_options) — Lựa chọn dropdown/dropselect | Reader native/profile hiện hành |
-| 117 | POST | `/api/erp/warehouse-qr/commands/lookup` | [warehouse_qr_command_lookup](#api-warehouse_qr_command_lookup) — Tra cứu receipt ý định gốc, không ghi | Reader native/profile hiện hành |
-| 118 | POST | `/api/erp/warehouse-qr/qr/add` | [warehouse_qr_scan_add](#api-warehouse_qr_scan_add) — Ghi scan thêm | SQL ghi đã bật; quyền/trạng thái recheck |
-| 119 | POST | `/api/erp/warehouse-qr/qr/delete` | [warehouse_qr_scan_delete](#api-warehouse_qr_scan_delete) — Ghi scan xóa | SQL ghi đã bật; quyền/trạng thái recheck |
+| 15 | GET | `/api/lookups/branches` | [branchChoices](#api-branchchoices) — Lấy BranchID và BranchName theo quyền phiên, có phân trang | Provider/authority hiện hành; xem mục 1 |
+| 16 | GET | `/api/documents/field-contract` | [documentFieldContract](#api-documentfieldcontract) — Metadata cột nguồn và JSON path | Provider/authority hiện hành; xem mục 1 |
+| 17 | GET | `/api/documents/query-contract` | [documentQueryContract](#api-documentquerycontract) — Metadata filter/sort/paging list v2 | Provider/authority hiện hành; xem mục 1 |
+| 18 | GET | `/api/documents/purchase-orders` | [purchaseordersLegacyList](#api-purchaseorderslegacylist) — Danh sách full field tương thích | Provider/authority hiện hành; xem mục 1 |
+| 19 | GET | `/api/documents/purchase-orders/detail` | [purchaseordersLegacyDetail](#api-purchaseorderslegacydetail) — Chi tiết full field tương thích | Provider/authority hiện hành; xem mục 1 |
+| 20 | GET | `/api/v2/documents/purchase-orders` | [purchaseordersV2List](#api-purchaseordersv2list) — Danh sách full field tương thích | Provider/authority hiện hành; xem mục 1 |
+| 21 | GET | `/api/v2/documents/purchase-orders/detail` | [purchaseordersV2Detail](#api-purchaseordersv2detail) — Chi tiết full field tương thích | Provider/authority hiện hành; xem mục 1 |
+| 22 | GET | `/api/documents/inbound-requests` | [inboundrequestsLegacyList](#api-inboundrequestslegacylist) — Danh sách full field tương thích | Provider/authority hiện hành; xem mục 1 |
+| 23 | GET | `/api/documents/inbound-requests/detail` | [inboundrequestsLegacyDetail](#api-inboundrequestslegacydetail) — Chi tiết full field tương thích | Provider/authority hiện hành; xem mục 1 |
+| 24 | GET | `/api/v2/documents/inbound-requests` | [inboundrequestsV2List](#api-inboundrequestsv2list) — Danh sách full field tương thích | Provider/authority hiện hành; xem mục 1 |
+| 25 | GET | `/api/v2/documents/inbound-requests/detail` | [inboundrequestsV2Detail](#api-inboundrequestsv2detail) — Chi tiết full field tương thích | Provider/authority hiện hành; xem mục 1 |
+| 26 | GET | `/api/purchase-requests` | [purchaseRequestListLegacy](#api-purchaserequestlistlegacy) — Danh sách full field tương thích | Provider/authority hiện hành; xem mục 1 |
+| 27 | GET | `/api/purchase-requests/detail` | [purchaseRequestDetailLegacy](#api-purchaserequestdetaillegacy) — Chi tiết full field tương thích | Provider/authority hiện hành; xem mục 1 |
+| 28 | GET | `/api/v2/purchase-requests` | [purchaseRequestListV2](#api-purchaserequestlistv2) — Danh sách full field tương thích | Provider/authority hiện hành; xem mục 1 |
+| 29 | GET | `/api/v2/purchase-requests/detail` | [purchaseRequestDetailV2](#api-purchaserequestdetailv2) — Chi tiết full field tương thích | Provider/authority hiện hành; xem mục 1 |
+| 30 | GET | `/api/purchase-requests/workspace` | [purchaseRequestWorkspace](#api-purchaserequestworkspace) — Workspace đề nghị mua hàng tương thích | Provider/authority hiện hành; xem mục 1 |
+| 31 | GET | `/api/purchase-requests/lookup` | [purchaseRequestLookup](#api-purchaserequestlookup) — Lookup đề nghị mua hàng tương thích | Provider/authority hiện hành; xem mục 1 |
+| 32 | POST | `/api/purchase-requests/save` | [purchaseRequestsaveCommand](#api-purchaserequestsavecommand) — Command facade cũ, provider unavailable | UNAVAILABLE trong startup; xem mục 1 |
+| 33 | POST | `/api/purchase-requests/save/lookup` | [purchaseRequestsaveLookup](#api-purchaserequestsavelookup) — Tra cứu command facade cũ | UNAVAILABLE trong startup; xem mục 1 |
+| 34 | POST | `/api/purchase-requests/submit` | [purchaseRequestsubmitCommand](#api-purchaserequestsubmitcommand) — Command facade cũ, provider unavailable | UNAVAILABLE trong startup; xem mục 1 |
+| 35 | POST | `/api/purchase-requests/submit/lookup` | [purchaseRequestsubmitLookup](#api-purchaserequestsubmitlookup) — Tra cứu command facade cũ | UNAVAILABLE trong startup; xem mục 1 |
+| 36 | GET | `/api/inbound-requests/draft` | [inboundDraftRead](#api-inbounddraftread) — Facade nhập kho cũ, provider unavailable | UNAVAILABLE trong startup; xem mục 1 |
+| 37 | POST | `/api/inbound-requests/draft/save` | [inboundDraftsave](#api-inbounddraftsave) — Facade nhập kho cũ, provider unavailable | UNAVAILABLE trong startup; xem mục 1 |
+| 38 | POST | `/api/inbound-requests/draft/send-to-warehouse` | [inboundDraftsendtowarehouse](#api-inbounddraftsendtowarehouse) — Facade nhập kho cũ, provider unavailable | UNAVAILABLE trong startup; xem mục 1 |
+| 39 | POST | `/api/inbound-requests/draft/reconcile` | [inboundDraftreconcile](#api-inbounddraftreconcile) — Facade nhập kho cũ, provider unavailable | UNAVAILABLE trong startup; xem mục 1 |
+| 40 | GET | `/api/erp/internal-transfer-requests/screen` | [internal_transfer_requests_screen](#api-internal_transfer_requests_screen) — Metadata field/action/dropdown form | Reader native/profile hiện hành |
+| 41 | GET | `/api/erp/internal-transfer-requests` | [internal_transfer_requests_list](#api-internal_transfer_requests_list) — Danh sách full header theo trang | Reader native/profile hiện hành |
+| 42 | GET | `/api/erp/internal-transfer-requests/detail` | [internal_transfer_requests_detail](#api-internal_transfer_requests_detail) — Chi tiết full field và các trang section | Reader native/profile hiện hành |
+| 43 | GET | `/api/erp/internal-transfer-requests/actions` | [internal_transfer_requests_actions](#api-internal_transfer_requests_actions) — Trạng thái nút theo user/phiếu | Reader native/profile hiện hành |
+| 44 | POST | `/api/erp/internal-transfer-requests/options` | [internal_transfer_requests_options](#api-internal_transfer_requests_options) — Lựa chọn dropdown/dropselect | Reader native/profile hiện hành |
+| 45 | POST | `/api/erp/internal-transfer-requests/actions/send-pm/options` | [internal_transfer_requests_pm_options](#api-internal_transfer_requests_pm_options) — Danh sách PM theo role/branch | Reader native/profile hiện hành |
+| 46 | POST | `/api/erp/internal-transfer-requests/commands/lookup` | [internal_transfer_requests_command_lookup](#api-internal_transfer_requests_command_lookup) — Tra cứu receipt ý định gốc, không ghi | Reader native/profile hiện hành |
+| 47 | POST | `/api/erp/internal-transfer-requests/selection` | [internal_transfer_requests_selection](#api-internal_transfer_requests_selection) — Đọc nguồn chọn sang dòng nháp | Reader native/profile hiện hành |
+| 48 | POST | `/api/erp/internal-transfer-requests/paste/validate` | [internal_transfer_requests_paste_validate](#api-internal_transfer_requests_paste_validate) — Kiểm tra bảng dán, không ghi | Reader native/profile hiện hành |
+| 49 | POST | `/api/erp/internal-transfer-requests/create` | [internal_transfer_requests_create](#api-internal_transfer_requests_create) — Tạo phiếu và cấp số/LineID | SQL ghi đã bật; quyền/trạng thái recheck |
+| 50 | POST | `/api/erp/internal-transfer-requests/save` | [internal_transfer_requests_save](#api-internal_transfer_requests_save) — Lưu header và thay đổi dòng | SQL ghi đã bật; quyền/trạng thái recheck |
+| 51 | POST | `/api/erp/internal-transfer-requests/delete` | [internal_transfer_requests_delete](#api-internal_transfer_requests_delete) — Xóa phiếu được phép | SQL ghi đã bật; quyền/trạng thái recheck |
+| 52 | POST | `/api/erp/internal-transfer-requests/actions/recall` | [internal_transfer_requests_recall](#api-internal_transfer_requests_recall) — Thu hồi để sửa | SQL ghi đã bật; quyền/trạng thái recheck |
+| 53 | POST | `/api/erp/internal-transfer-requests/actions/send-pm` | [internal_transfer_requests_send_pm](#api-internal_transfer_requests_send_pm) — Gửi phiếu tới PM | SQL ghi đã bật; quyền/trạng thái recheck |
+| 54 | GET | `/api/erp/machine-movements/screen` | [machine_movements_screen](#api-machine_movements_screen) — Metadata field/action/dropdown form | Reader native/profile hiện hành |
+| 55 | GET | `/api/erp/machine-movements` | [machine_movements_list](#api-machine_movements_list) — Danh sách full header theo trang | Reader native/profile hiện hành |
+| 56 | GET | `/api/erp/machine-movements/detail` | [machine_movements_detail](#api-machine_movements_detail) — Chi tiết full field và các trang section | Reader native/profile hiện hành |
+| 57 | GET | `/api/erp/machine-movements/actions` | [machine_movements_actions](#api-machine_movements_actions) — Trạng thái nút theo user/phiếu | Reader native/profile hiện hành |
+| 58 | POST | `/api/erp/machine-movements/options` | [machine_movements_options](#api-machine_movements_options) — Lựa chọn dropdown/dropselect | Reader native/profile hiện hành |
+| 59 | POST | `/api/erp/machine-movements/commands/lookup` | [machine_movements_command_lookup](#api-machine_movements_command_lookup) — Tra cứu receipt ý định gốc, không ghi | Reader native/profile hiện hành |
+| 60 | POST | `/api/erp/machine-movements/selection` | [machine_movements_selection](#api-machine_movements_selection) — Đọc nguồn chọn sang dòng nháp | Reader native/profile hiện hành |
+| 61 | POST | `/api/erp/machine-movements/paste/validate` | [machine_movements_paste_validate](#api-machine_movements_paste_validate) — Kiểm tra bảng dán, không ghi | Reader native/profile hiện hành |
+| 62 | POST | `/api/erp/machine-movements/create` | [machine_movements_create](#api-machine_movements_create) — Tạo phiếu và cấp số/LineID | SQL ghi đã bật; quyền/trạng thái recheck |
+| 63 | POST | `/api/erp/machine-movements/save` | [machine_movements_save](#api-machine_movements_save) — Lưu header và thay đổi dòng | SQL ghi đã bật; quyền/trạng thái recheck |
+| 64 | POST | `/api/erp/machine-movements/delete` | [machine_movements_delete](#api-machine_movements_delete) — Xóa phiếu được phép | SQL ghi đã bật; quyền/trạng thái recheck |
+| 65 | GET | `/api/erp/machine-repairs/screen` | [machine_repairs_screen](#api-machine_repairs_screen) — Metadata field/action/dropdown form | Reader native/profile hiện hành |
+| 66 | GET | `/api/erp/machine-repairs` | [machine_repairs_list](#api-machine_repairs_list) — Danh sách full header theo trang | Reader native/profile hiện hành |
+| 67 | GET | `/api/erp/machine-repairs/detail` | [machine_repairs_detail](#api-machine_repairs_detail) — Chi tiết full field và các trang section | Reader native/profile hiện hành |
+| 68 | GET | `/api/erp/machine-repairs/actions` | [machine_repairs_actions](#api-machine_repairs_actions) — Trạng thái nút theo user/phiếu | Reader native/profile hiện hành |
+| 69 | POST | `/api/erp/machine-repairs/options` | [machine_repairs_options](#api-machine_repairs_options) — Lựa chọn dropdown/dropselect | Reader native/profile hiện hành |
+| 70 | POST | `/api/erp/machine-repairs/commands/lookup` | [machine_repairs_command_lookup](#api-machine_repairs_command_lookup) — Tra cứu receipt ý định gốc, không ghi | Reader native/profile hiện hành |
+| 71 | POST | `/api/erp/machine-repairs/selection` | [machine_repairs_selection](#api-machine_repairs_selection) — Đọc nguồn chọn sang dòng nháp | Reader native/profile hiện hành |
+| 72 | POST | `/api/erp/machine-repairs/paste/validate` | [machine_repairs_paste_validate](#api-machine_repairs_paste_validate) — Kiểm tra bảng dán, không ghi | Reader native/profile hiện hành |
+| 73 | POST | `/api/erp/machine-repairs/create` | [machine_repairs_create](#api-machine_repairs_create) — Tạo phiếu và cấp số/LineID | SQL ghi đã bật; quyền/trạng thái recheck |
+| 74 | POST | `/api/erp/machine-repairs/save` | [machine_repairs_save](#api-machine_repairs_save) — Lưu header và thay đổi dòng | SQL ghi đã bật; quyền/trạng thái recheck |
+| 75 | POST | `/api/erp/machine-repairs/delete` | [machine_repairs_delete](#api-machine_repairs_delete) — Xóa phiếu được phép | SQL ghi đã bật; quyền/trạng thái recheck |
+| 76 | GET | `/api/erp/purchase-requests/screen` | [purchase_requests_screen](#api-purchase_requests_screen) — Metadata field/action/dropdown form | Reader native/profile hiện hành |
+| 77 | GET | `/api/erp/purchase-requests` | [purchase_requests_list](#api-purchase_requests_list) — Danh sách full header theo trang | Reader native/profile hiện hành |
+| 78 | GET | `/api/erp/purchase-requests/detail` | [purchase_requests_detail](#api-purchase_requests_detail) — Chi tiết full field và các trang section | Reader native/profile hiện hành |
+| 79 | GET | `/api/erp/purchase-requests/actions` | [purchase_requests_actions](#api-purchase_requests_actions) — Trạng thái nút theo user/phiếu | Reader native/profile hiện hành |
+| 80 | POST | `/api/erp/purchase-requests/options` | [purchase_requests_options](#api-purchase_requests_options) — Lựa chọn dropdown/dropselect | Reader native/profile hiện hành |
+| 81 | POST | `/api/erp/purchase-requests/commands/lookup` | [purchase_requests_command_lookup](#api-purchase_requests_command_lookup) — Tra cứu receipt ý định gốc, không ghi | Reader native/profile hiện hành |
+| 82 | POST | `/api/erp/purchase-requests/selection` | [purchase_requests_selection](#api-purchase_requests_selection) — Đọc nguồn chọn sang dòng nháp | Reader native/profile hiện hành |
+| 83 | POST | `/api/erp/purchase-requests/paste/validate` | [purchase_requests_paste_validate](#api-purchase_requests_paste_validate) — Kiểm tra bảng dán, không ghi | Reader native/profile hiện hành |
+| 84 | POST | `/api/erp/purchase-requests/create` | [purchase_requests_create](#api-purchase_requests_create) — Tạo phiếu và cấp số/LineID | SQL ghi đã bật; quyền/trạng thái recheck |
+| 85 | POST | `/api/erp/purchase-requests/save` | [purchase_requests_save](#api-purchase_requests_save) — Lưu header và thay đổi dòng | SQL ghi đã bật; quyền/trạng thái recheck |
+| 86 | POST | `/api/erp/purchase-requests/delete` | [purchase_requests_delete](#api-purchase_requests_delete) — Xóa phiếu được phép | SQL ghi đã bật; quyền/trạng thái recheck |
+| 87 | POST | `/api/erp/purchase-requests/actions/submit` | [purchase_requests_submit](#api-purchase_requests_submit) — Gửi đề nghị mua hàng | SQL ghi đã bật; quyền/trạng thái recheck |
+| 88 | POST | `/api/erp/purchase-requests/actions/send-purchase-order` | [purchase_requests_send_purchase_order](#api-purchase_requests_send_purchase_order) — Tạo đặt mua hàng từ đề nghị | SQL ghi đã bật; quyền/trạng thái recheck |
+| 89 | GET | `/api/erp/sales-orders/screen` | [sales_orders_screen](#api-sales_orders_screen) — Metadata field/action/dropdown form | Reader native/profile hiện hành |
+| 90 | GET | `/api/erp/sales-orders` | [sales_orders_list](#api-sales_orders_list) — Danh sách full header theo trang | Reader native/profile hiện hành |
+| 91 | GET | `/api/erp/sales-orders/detail` | [sales_orders_detail](#api-sales_orders_detail) — Chi tiết full field và các trang section | Reader native/profile hiện hành |
+| 92 | GET | `/api/erp/sales-orders/actions` | [sales_orders_actions](#api-sales_orders_actions) — Trạng thái nút theo user/phiếu | Reader native/profile hiện hành |
+| 93 | GET | `/api/erp/sales-orders/contract-info` | [sales_orders_contract_info](#api-sales_orders_contract_info) — Thông tin hợp đồng cùng scope | Reader native/profile hiện hành |
+| 94 | POST | `/api/erp/sales-orders/options` | [sales_orders_options](#api-sales_orders_options) — Lựa chọn dropdown/dropselect | Reader native/profile hiện hành |
+| 95 | POST | `/api/erp/sales-orders/actions/send-pm/options` | [sales_orders_pm_options](#api-sales_orders_pm_options) — Danh sách PM theo role/branch | Reader native/profile hiện hành |
+| 96 | POST | `/api/erp/sales-orders/commands/lookup` | [sales_orders_command_lookup](#api-sales_orders_command_lookup) — Tra cứu receipt ý định gốc, không ghi | Reader native/profile hiện hành |
+| 97 | POST | `/api/erp/sales-orders/selection` | [sales_orders_selection](#api-sales_orders_selection) — Đọc nguồn chọn sang dòng nháp | Reader native/profile hiện hành |
+| 98 | POST | `/api/erp/sales-orders/paste/validate` | [sales_orders_paste_validate](#api-sales_orders_paste_validate) — Kiểm tra bảng dán, không ghi | Reader native/profile hiện hành |
+| 99 | POST | `/api/erp/sales-orders/create` | [sales_orders_create](#api-sales_orders_create) — Tạo phiếu và cấp số/LineID | SQL ghi đã bật; quyền/trạng thái recheck |
+| 100 | POST | `/api/erp/sales-orders/save` | [sales_orders_save](#api-sales_orders_save) — Lưu header và thay đổi dòng | SQL ghi đã bật; quyền/trạng thái recheck |
+| 101 | POST | `/api/erp/sales-orders/delete` | [sales_orders_delete](#api-sales_orders_delete) — Xóa phiếu được phép | SQL ghi đã bật; quyền/trạng thái recheck |
+| 102 | POST | `/api/erp/sales-orders/actions/recall` | [sales_orders_recall](#api-sales_orders_recall) — Thu hồi để sửa | SQL ghi đã bật; quyền/trạng thái recheck |
+| 103 | POST | `/api/erp/sales-orders/actions/send-pm` | [sales_orders_send_pm](#api-sales_orders_send_pm) — Gửi phiếu tới PM | SQL ghi đã bật; quyền/trạng thái recheck |
+| 104 | GET | `/api/erp/sales-qr/screen` | [sales_qr_screen](#api-sales_qr_screen) — Metadata field/action/dropdown form | Reader native/profile hiện hành |
+| 105 | GET | `/api/erp/sales-qr` | [sales_qr_list](#api-sales_qr_list) — Danh sách full header theo trang | Reader native/profile hiện hành |
+| 106 | GET | `/api/erp/sales-qr/detail` | [sales_qr_detail](#api-sales_qr_detail) — Chi tiết full field và các trang section | Reader native/profile hiện hành |
+| 107 | GET | `/api/erp/sales-qr/actions` | [sales_qr_actions](#api-sales_qr_actions) — Trạng thái nút theo user/phiếu | Reader native/profile hiện hành |
+| 108 | GET | `/api/erp/sales-qr/contract-info` | [sales_qr_contract_info](#api-sales_qr_contract_info) — Thông tin hợp đồng cùng scope | Reader native/profile hiện hành |
+| 109 | POST | `/api/erp/sales-qr/options` | [sales_qr_options](#api-sales_qr_options) — Lựa chọn dropdown/dropselect | Reader native/profile hiện hành |
+| 110 | POST | `/api/erp/sales-qr/commands/lookup` | [sales_qr_command_lookup](#api-sales_qr_command_lookup) — Tra cứu receipt ý định gốc, không ghi | Reader native/profile hiện hành |
+| 111 | POST | `/api/erp/sales-qr/qr/add` | [sales_qr_scan_add](#api-sales_qr_scan_add) — Ghi scan thêm | SQL ghi đã bật; quyền/trạng thái recheck |
+| 112 | POST | `/api/erp/sales-qr/qr/delete` | [sales_qr_scan_delete](#api-sales_qr_scan_delete) — Ghi scan xóa | SQL ghi đã bật; quyền/trạng thái recheck |
+| 113 | GET | `/api/erp/warehouse-qr/screen` | [warehouse_qr_screen](#api-warehouse_qr_screen) — Metadata field/action/dropdown form | Reader native/profile hiện hành |
+| 114 | GET | `/api/erp/warehouse-qr` | [warehouse_qr_list](#api-warehouse_qr_list) — Danh sách full header theo trang | Reader native/profile hiện hành |
+| 115 | GET | `/api/erp/warehouse-qr/detail` | [warehouse_qr_detail](#api-warehouse_qr_detail) — Chi tiết full field và các trang section | Reader native/profile hiện hành |
+| 116 | GET | `/api/erp/warehouse-qr/actions` | [warehouse_qr_actions](#api-warehouse_qr_actions) — Trạng thái nút theo user/phiếu | Reader native/profile hiện hành |
+| 117 | POST | `/api/erp/warehouse-qr/options` | [warehouse_qr_options](#api-warehouse_qr_options) — Lựa chọn dropdown/dropselect | Reader native/profile hiện hành |
+| 118 | POST | `/api/erp/warehouse-qr/commands/lookup` | [warehouse_qr_command_lookup](#api-warehouse_qr_command_lookup) — Tra cứu receipt ý định gốc, không ghi | Reader native/profile hiện hành |
+| 119 | POST | `/api/erp/warehouse-qr/qr/add` | [warehouse_qr_scan_add](#api-warehouse_qr_scan_add) — Ghi scan thêm | SQL ghi đã bật; quyền/trạng thái recheck |
+| 120 | POST | `/api/erp/warehouse-qr/qr/delete` | [warehouse_qr_scan_delete](#api-warehouse_qr_scan_delete) — Ghi scan xóa | SQL ghi đã bật; quyền/trạng thái recheck |
 
 <a id="chi-tiet-api"></a>
 ## 11 Chi tiết request và response từng API
@@ -573,7 +594,7 @@ Không có request body nghiệp vụ.
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [ErpScopedResponse_NotificationPage](#schema-erpscopedresponse_notificationpage) |
+| 200 | application/json | [ErpScopedResponse_NotificationPageFeDisplay](#schema-erpscopedresponse_notificationpagefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -594,7 +615,7 @@ Không có request body nghiệp vụ.
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [ErpScopedResponse_NotificationRow](#schema-erpscopedresponse_notificationrow) |
+| 200 | application/json | [ErpScopedResponse_NotificationRowFeDisplay](#schema-erpscopedresponse_notificationrowfedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -615,7 +636,7 @@ Không có request body nghiệp vụ.
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [ErpScopedResponse_NotificationTarget](#schema-erpscopedresponse_notificationtarget) |
+| 200 | application/json | [ErpScopedResponse_NotificationTargetFeDisplay](#schema-erpscopedresponse_notificationtargetfedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -638,7 +659,7 @@ Body bắt buộc `application/json`: [NotificationReadRequest](#schema-notifica
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [ErpScopedResponse_NotificationRow](#schema-erpscopedresponse_notificationrow) |
+| 200 | application/json | [ErpScopedResponse_NotificationRowFeDisplay](#schema-erpscopedresponse_notificationrowfedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -822,6 +843,29 @@ Không có request body nghiệp vụ.
 
 Response headers khai báo: `X-Correlation-ID`, `X-Medcom-Session-Scope`, `X-Medcom-Read-Scope`. Các stamp runtime bổ sung theo mục 2.
 
+<a id="api-branchchoices"></a>
+
+### API branchChoices
+
+**GET `/api/lookups/branches`** — Lấy BranchID và BranchName theo quyền phiên, có phân trang. Provider/authority hiện hành; xem mục 1.
+
+Security: SessionCookie.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `page` | query | false | integer | default=1; minimum=1; maximum=1000 |
+| `pageSize` | query | false | integer | default=20; minimum=1; maximum=100 |
+| `search` | query | false | string | maxLength=100 |
+
+Không có request body nghiệp vụ.
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_BranchChoicePageFeDisplay](#schema-erpscopedresponse_branchchoicepagefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
 <a id="api-documentfieldcontract"></a>
 
 ### API documentFieldContract
@@ -883,7 +927,7 @@ Không có request body nghiệp vụ.
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [purchaseordersLegacyPage](#schema-purchaseorderslegacypage) |
+| 200 | application/json | [purchaseordersLegacyPageFeDisplay](#schema-purchaseorderslegacypagefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`, `X-Medcom-Session-Scope`, `X-Medcom-Read-Scope`, `X-Medcom-Data-Projection="full"`, `X-Medcom-Full-Data-Path="/api/documents/purchase-orders"`. Các stamp runtime bổ sung theo mục 2.
@@ -906,7 +950,7 @@ Không có request body nghiệp vụ.
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [purchaseordersLegacyDetail](#schema-purchaseorderslegacydetail) |
+| 200 | application/json | [purchaseordersLegacyDetailFeDisplay](#schema-purchaseorderslegacydetailfedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`, `X-Medcom-Session-Scope`, `X-Medcom-Read-Scope`, `X-Medcom-Data-Projection="full"`, `X-Medcom-Full-Data-Path="/api/documents/purchase-orders/detail"`. Các stamp runtime bổ sung theo mục 2.
@@ -935,7 +979,7 @@ Không có request body nghiệp vụ.
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [purchaseordersV2Page](#schema-purchaseordersv2page) |
+| 200 | application/json | [purchaseordersV2PageFeDisplay](#schema-purchaseordersv2pagefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`, `X-Medcom-Session-Scope`, `X-Medcom-Read-Scope`, `X-Medcom-Data-Projection="full"`, `X-Medcom-Full-Data-Path="/api/v2/documents/purchase-orders"`. Các stamp runtime bổ sung theo mục 2.
@@ -958,7 +1002,7 @@ Không có request body nghiệp vụ.
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [purchaseordersV2Detail](#schema-purchaseordersv2detail) |
+| 200 | application/json | [purchaseordersV2DetailFeDisplay](#schema-purchaseordersv2detailfedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`, `X-Medcom-Session-Scope`, `X-Medcom-Read-Scope`, `X-Medcom-Data-Projection="full"`, `X-Medcom-Full-Data-Path="/api/v2/documents/purchase-orders/detail"`. Các stamp runtime bổ sung theo mục 2.
@@ -982,7 +1026,7 @@ Không có request body nghiệp vụ.
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [inboundrequestsLegacyPage](#schema-inboundrequestslegacypage) |
+| 200 | application/json | [inboundrequestsLegacyPageFeDisplay](#schema-inboundrequestslegacypagefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`, `X-Medcom-Session-Scope`, `X-Medcom-Read-Scope`, `X-Medcom-Data-Projection="full"`, `X-Medcom-Full-Data-Path="/api/documents/inbound-requests"`. Các stamp runtime bổ sung theo mục 2.
@@ -1005,7 +1049,7 @@ Không có request body nghiệp vụ.
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [inboundrequestsLegacyDetail](#schema-inboundrequestslegacydetail) |
+| 200 | application/json | [inboundrequestsLegacyDetailFeDisplay](#schema-inboundrequestslegacydetailfedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`, `X-Medcom-Session-Scope`, `X-Medcom-Read-Scope`, `X-Medcom-Data-Projection="full"`, `X-Medcom-Full-Data-Path="/api/documents/inbound-requests/detail"`. Các stamp runtime bổ sung theo mục 2.
@@ -1034,7 +1078,7 @@ Không có request body nghiệp vụ.
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [inboundrequestsV2Page](#schema-inboundrequestsv2page) |
+| 200 | application/json | [inboundrequestsV2PageFeDisplay](#schema-inboundrequestsv2pagefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`, `X-Medcom-Session-Scope`, `X-Medcom-Read-Scope`, `X-Medcom-Data-Projection="full"`, `X-Medcom-Full-Data-Path="/api/v2/documents/inbound-requests"`. Các stamp runtime bổ sung theo mục 2.
@@ -1057,7 +1101,7 @@ Không có request body nghiệp vụ.
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [inboundrequestsV2Detail](#schema-inboundrequestsv2detail) |
+| 200 | application/json | [inboundrequestsV2DetailFeDisplay](#schema-inboundrequestsv2detailfedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`, `X-Medcom-Session-Scope`, `X-Medcom-Read-Scope`, `X-Medcom-Data-Projection="full"`, `X-Medcom-Full-Data-Path="/api/v2/documents/inbound-requests/detail"`. Các stamp runtime bổ sung theo mục 2.
@@ -1081,7 +1125,7 @@ Không có request body nghiệp vụ.
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [PurchaseRequestListLegacy](#schema-purchaserequestlistlegacy) |
+| 200 | application/json | [PurchaseRequestListLegacyFeDisplay](#schema-purchaserequestlistlegacyfedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`, `X-Medcom-Session-Scope`, `X-Medcom-Read-Scope`, `X-Medcom-Data-Projection="full"`, `X-Medcom-Full-Data-Path="/api/purchase-requests"`. Các stamp runtime bổ sung theo mục 2.
@@ -1102,7 +1146,7 @@ Không có request body nghiệp vụ.
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [PurchaseRequestDetailLegacy](#schema-purchaserequestdetaillegacy) |
+| 200 | application/json | [PurchaseRequestDetailLegacyFeDisplay](#schema-purchaserequestdetaillegacyfedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`, `X-Medcom-Session-Scope`, `X-Medcom-Read-Scope`, `X-Medcom-Data-Projection="full"`, `X-Medcom-Full-Data-Path="/api/purchase-requests/detail"`. Các stamp runtime bổ sung theo mục 2.
@@ -1131,7 +1175,7 @@ Không có request body nghiệp vụ.
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [PurchaseRequestListV2](#schema-purchaserequestlistv2) |
+| 200 | application/json | [PurchaseRequestListV2FeDisplay](#schema-purchaserequestlistv2fedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`, `X-Medcom-Session-Scope`, `X-Medcom-Read-Scope`, `X-Medcom-Data-Projection="full"`, `X-Medcom-Full-Data-Path="/api/v2/purchase-requests"`. Các stamp runtime bổ sung theo mục 2.
@@ -1152,7 +1196,7 @@ Không có request body nghiệp vụ.
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [PurchaseRequestDetailV2](#schema-purchaserequestdetailv2) |
+| 200 | application/json | [PurchaseRequestDetailV2FeDisplay](#schema-purchaserequestdetailv2fedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`, `X-Medcom-Session-Scope`, `X-Medcom-Read-Scope`, `X-Medcom-Data-Projection="full"`, `X-Medcom-Full-Data-Path="/api/v2/purchase-requests/detail"`. Các stamp runtime bổ sung theo mục 2.
@@ -1194,7 +1238,7 @@ Không có request body nghiệp vụ.
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [PurchaseRequestScopedResponse_PurchaseRequestLookupPage](#schema-purchaserequestscopedresponse_purchaserequestlookuppage) |
+| 200 | application/json | [PurchaseRequestScopedResponse_PurchaseRequestLookupPageFeDisplay](#schema-purchaserequestscopedresponse_purchaserequestlookuppagefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`, `X-Medcom-Session-Scope`, `X-Medcom-Read-Scope`. Các stamp runtime bổ sung theo mục 2.
@@ -1306,7 +1350,7 @@ Không có request body nghiệp vụ.
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [InboundDraftWorkspace](#schema-inbounddraftworkspace) |
+| 200 | application/json | [InboundDraftWorkspaceFeDisplay](#schema-inbounddraftworkspacefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -1435,7 +1479,7 @@ Full header fields: [Erp_internal_transfer_requests_header_fields](#schema-erp_i
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [Erp_internal_transfer_requests_list_response](#schema-erp_internal_transfer_requests_list_response) |
+| 200 | application/json | [Erp_internal_transfer_requests_list_responseFeDisplay](#schema-erp_internal_transfer_requests_list_responsefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -1461,7 +1505,7 @@ Section full fields: header → [Erp_internal_transfer_requests_header_fields](#
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [Erp_internal_transfer_requests_detail_response](#schema-erp_internal_transfer_requests_detail_response) |
+| 200 | application/json | [Erp_internal_transfer_requests_detail_responseFeDisplay](#schema-erp_internal_transfer_requests_detail_responsefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -1505,7 +1549,7 @@ Body bắt buộc `application/json`: [ErpLookupQuery](#schema-erplookupquery).
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [ErpScopedResponse_ErpChoicePage](#schema-erpscopedresponse_erpchoicepage) |
+| 200 | application/json | [ErpScopedResponse_ErpChoicePageFeDisplay](#schema-erpscopedresponse_erpchoicepagefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -1527,7 +1571,7 @@ Body bắt buộc `application/json`: [ErpPmLookupQuery](#schema-erppmlookupquer
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [ErpScopedResponse_ErpChoicePage](#schema-erpscopedresponse_erpchoicepage) |
+| 200 | application/json | [ErpScopedResponse_ErpChoicePageFeDisplay](#schema-erpscopedresponse_erpchoicepagefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -1571,7 +1615,7 @@ Body bắt buộc `application/json`: [ErpSelectionRequest](#schema-erpselection
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [ErpScopedResponse_ErpDraftSelection](#schema-erpscopedresponse_erpdraftselection) |
+| 200 | application/json | [ErpScopedResponse_ErpDraftSelectionFeDisplay](#schema-erpscopedresponse_erpdraftselectionfedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -1593,7 +1637,7 @@ Body bắt buộc `application/json`: [Erp_internal_transfer_requests_paste](#sc
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [ErpScopedResponse_ErpDraftSelection](#schema-erpscopedresponse_erpdraftselection) |
+| 200 | application/json | [ErpScopedResponse_ErpDraftSelectionFeDisplay](#schema-erpscopedresponse_erpdraftselectionfedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -1763,7 +1807,7 @@ Full header fields: [Erp_machine_movements_header_fields](#schema-erp_machine_mo
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [Erp_machine_movements_list_response](#schema-erp_machine_movements_list_response) |
+| 200 | application/json | [Erp_machine_movements_list_responseFeDisplay](#schema-erp_machine_movements_list_responsefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -1789,7 +1833,7 @@ Section full fields: header → [Erp_machine_movements_header_fields](#schema-er
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [Erp_machine_movements_detail_response](#schema-erp_machine_movements_detail_response) |
+| 200 | application/json | [Erp_machine_movements_detail_responseFeDisplay](#schema-erp_machine_movements_detail_responsefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -1833,7 +1877,7 @@ Body bắt buộc `application/json`: [ErpLookupQuery](#schema-erplookupquery).
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [ErpScopedResponse_ErpChoicePage](#schema-erpscopedresponse_erpchoicepage) |
+| 200 | application/json | [ErpScopedResponse_ErpChoicePageFeDisplay](#schema-erpscopedresponse_erpchoicepagefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -1877,7 +1921,7 @@ Body bắt buộc `application/json`: [ErpSelectionRequest](#schema-erpselection
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [ErpScopedResponse_ErpDraftSelection](#schema-erpscopedresponse_erpdraftselection) |
+| 200 | application/json | [ErpScopedResponse_ErpDraftSelectionFeDisplay](#schema-erpscopedresponse_erpdraftselectionfedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -1899,7 +1943,7 @@ Body bắt buộc `application/json`: [Erp_machine_movements_paste](#schema-erp_
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [ErpScopedResponse_ErpDraftSelection](#schema-erpscopedresponse_erpdraftselection) |
+| 200 | application/json | [ErpScopedResponse_ErpDraftSelectionFeDisplay](#schema-erpscopedresponse_erpdraftselectionfedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -2021,7 +2065,7 @@ Full header fields: [Erp_machine_repairs_header_fields](#schema-erp_machine_repa
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [Erp_machine_repairs_list_response](#schema-erp_machine_repairs_list_response) |
+| 200 | application/json | [Erp_machine_repairs_list_responseFeDisplay](#schema-erp_machine_repairs_list_responsefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -2047,7 +2091,7 @@ Section full fields: header → [Erp_machine_repairs_header_fields](#schema-erp_
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [Erp_machine_repairs_detail_response](#schema-erp_machine_repairs_detail_response) |
+| 200 | application/json | [Erp_machine_repairs_detail_responseFeDisplay](#schema-erp_machine_repairs_detail_responsefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -2091,7 +2135,7 @@ Body bắt buộc `application/json`: [ErpLookupQuery](#schema-erplookupquery).
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [ErpScopedResponse_ErpChoicePage](#schema-erpscopedresponse_erpchoicepage) |
+| 200 | application/json | [ErpScopedResponse_ErpChoicePageFeDisplay](#schema-erpscopedresponse_erpchoicepagefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -2135,7 +2179,7 @@ Body bắt buộc `application/json`: [ErpSelectionRequest](#schema-erpselection
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [ErpScopedResponse_ErpDraftSelection](#schema-erpscopedresponse_erpdraftselection) |
+| 200 | application/json | [ErpScopedResponse_ErpDraftSelectionFeDisplay](#schema-erpscopedresponse_erpdraftselectionfedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -2157,7 +2201,7 @@ Body bắt buộc `application/json`: [Erp_machine_repairs_paste](#schema-erp_ma
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [ErpScopedResponse_ErpDraftSelection](#schema-erpscopedresponse_erpdraftselection) |
+| 200 | application/json | [ErpScopedResponse_ErpDraftSelectionFeDisplay](#schema-erpscopedresponse_erpdraftselectionfedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -2279,7 +2323,7 @@ Full header fields: [Erp_purchase_requests_header_fields](#schema-erp_purchase_r
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [Erp_purchase_requests_list_response](#schema-erp_purchase_requests_list_response) |
+| 200 | application/json | [Erp_purchase_requests_list_responseFeDisplay](#schema-erp_purchase_requests_list_responsefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -2305,7 +2349,7 @@ Section full fields: header → [Erp_purchase_requests_header_fields](#schema-er
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [Erp_purchase_requests_detail_response](#schema-erp_purchase_requests_detail_response) |
+| 200 | application/json | [Erp_purchase_requests_detail_responseFeDisplay](#schema-erp_purchase_requests_detail_responsefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -2349,7 +2393,7 @@ Body bắt buộc `application/json`: [ErpLookupQuery](#schema-erplookupquery).
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [ErpScopedResponse_ErpChoicePage](#schema-erpscopedresponse_erpchoicepage) |
+| 200 | application/json | [ErpScopedResponse_ErpChoicePageFeDisplay](#schema-erpscopedresponse_erpchoicepagefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -2393,7 +2437,7 @@ Body bắt buộc `application/json`: [ErpSelectionRequest](#schema-erpselection
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [ErpScopedResponse_ErpDraftSelection](#schema-erpscopedresponse_erpdraftselection) |
+| 200 | application/json | [ErpScopedResponse_ErpDraftSelectionFeDisplay](#schema-erpscopedresponse_erpdraftselectionfedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -2415,7 +2459,7 @@ Body bắt buộc `application/json`: [Erp_purchase_requests_paste](#schema-erp_
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [ErpScopedResponse_ErpDraftSelection](#schema-erpscopedresponse_erpdraftselection) |
+| 200 | application/json | [ErpScopedResponse_ErpDraftSelectionFeDisplay](#schema-erpscopedresponse_erpdraftselectionfedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -2585,7 +2629,7 @@ Full header fields: [Erp_sales_orders_header_fields](#schema-erp_sales_orders_he
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [Erp_sales_orders_list_response](#schema-erp_sales_orders_list_response) |
+| 200 | application/json | [Erp_sales_orders_list_responseFeDisplay](#schema-erp_sales_orders_list_responsefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -2611,7 +2655,7 @@ Section full fields: header → [Erp_sales_orders_header_fields](#schema-erp_sal
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [Erp_sales_orders_detail_response](#schema-erp_sales_orders_detail_response) |
+| 200 | application/json | [Erp_sales_orders_detail_responseFeDisplay](#schema-erp_sales_orders_detail_responsefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -2655,7 +2699,7 @@ Không có request body nghiệp vụ.
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [ErpScopedResponse_ErpContractInfo](#schema-erpscopedresponse_erpcontractinfo) |
+| 200 | application/json | [ErpScopedResponse_ErpContractInfoFeDisplay](#schema-erpscopedresponse_erpcontractinfofedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -2677,7 +2721,7 @@ Body bắt buộc `application/json`: [ErpLookupQuery](#schema-erplookupquery).
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [ErpScopedResponse_ErpChoicePage](#schema-erpscopedresponse_erpchoicepage) |
+| 200 | application/json | [ErpScopedResponse_ErpChoicePageFeDisplay](#schema-erpscopedresponse_erpchoicepagefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -2699,7 +2743,7 @@ Body bắt buộc `application/json`: [ErpPmLookupQuery](#schema-erppmlookupquer
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [ErpScopedResponse_ErpChoicePage](#schema-erpscopedresponse_erpchoicepage) |
+| 200 | application/json | [ErpScopedResponse_ErpChoicePageFeDisplay](#schema-erpscopedresponse_erpchoicepagefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -2743,7 +2787,7 @@ Body bắt buộc `application/json`: [ErpSelectionRequest](#schema-erpselection
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [ErpScopedResponse_ErpDraftSelection](#schema-erpscopedresponse_erpdraftselection) |
+| 200 | application/json | [ErpScopedResponse_ErpDraftSelectionFeDisplay](#schema-erpscopedresponse_erpdraftselectionfedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -2765,7 +2809,7 @@ Body bắt buộc `application/json`: [Erp_sales_orders_paste](#schema-erp_sales
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [ErpScopedResponse_ErpDraftSelection](#schema-erpscopedresponse_erpdraftselection) |
+| 200 | application/json | [ErpScopedResponse_ErpDraftSelectionFeDisplay](#schema-erpscopedresponse_erpdraftselectionfedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -2935,7 +2979,7 @@ Full header fields: [Erp_sales_qr_header_fields](#schema-erp_sales_qr_header_fie
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [Erp_sales_qr_list_response](#schema-erp_sales_qr_list_response) |
+| 200 | application/json | [Erp_sales_qr_list_responseFeDisplay](#schema-erp_sales_qr_list_responsefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -2961,7 +3005,7 @@ Section full fields: header → [Erp_sales_qr_header_fields](#schema-erp_sales_q
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [Erp_sales_qr_detail_response](#schema-erp_sales_qr_detail_response) |
+| 200 | application/json | [Erp_sales_qr_detail_responseFeDisplay](#schema-erp_sales_qr_detail_responsefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -3005,7 +3049,7 @@ Không có request body nghiệp vụ.
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [ErpScopedResponse_ErpContractInfo](#schema-erpscopedresponse_erpcontractinfo) |
+| 200 | application/json | [ErpScopedResponse_ErpContractInfoFeDisplay](#schema-erpscopedresponse_erpcontractinfofedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -3027,7 +3071,7 @@ Body bắt buộc `application/json`: [ErpLookupQuery](#schema-erplookupquery).
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [ErpScopedResponse_ErpChoicePage](#schema-erpscopedresponse_erpchoicepage) |
+| 200 | application/json | [ErpScopedResponse_ErpChoicePageFeDisplay](#schema-erpscopedresponse_erpchoicepagefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -3141,7 +3185,7 @@ Full header fields: [Erp_warehouse_qr_header_fields](#schema-erp_warehouse_qr_he
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [Erp_warehouse_qr_list_response](#schema-erp_warehouse_qr_list_response) |
+| 200 | application/json | [Erp_warehouse_qr_list_responseFeDisplay](#schema-erp_warehouse_qr_list_responsefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -3167,7 +3211,7 @@ Section full fields: header → [Erp_warehouse_qr_header_fields](#schema-erp_war
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [Erp_warehouse_qr_detail_response](#schema-erp_warehouse_qr_detail_response) |
+| 200 | application/json | [Erp_warehouse_qr_detail_responseFeDisplay](#schema-erp_warehouse_qr_detail_responsefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -3211,7 +3255,7 @@ Body bắt buộc `application/json`: [ErpLookupQuery](#schema-erplookupquery).
 
 | HTTP | Content type | Schema response |
 |---|---|---|
-| 200 | application/json | [ErpScopedResponse_ErpChoicePage](#schema-erpscopedresponse_erpchoicepage) |
+| 200 | application/json | [ErpScopedResponse_ErpChoicePageFeDisplay](#schema-erpscopedresponse_erpchoicepagefedisplay) |
 | default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
@@ -3283,7 +3327,7 @@ Body bắt buộc `application/json`: [ErpScanRequest](#schema-erpscanrequest).
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
 
 <a id="schema-api"></a>
-## 12 Toàn bộ field trong 274 schema
+## 12 Toàn bộ field trong 423 schema
 
 Field bắt buộc là key nằm trong required của schema đó. Ở response full, key nullable vẫn bắt buộc xuất hiện. Ở request, schema create có thể bổ sung required cho ngày trên header ngoài DTO gốc; ràng buộc này được giữ trong cột giới hạn. oneOf yêu cầu đúng một nhánh, anyOf chấp nhận một hoặc nhiều nhánh, allOf phải thỏa mọi nhánh. Generic Erp* schema là model chung; khi operation có schema module cụ thể, FE dùng schema module đó.
 
@@ -3495,6 +3539,41 @@ Object: `{"type":"object","additionalProperties":false}`.
 | `mode` | string | true | — |
 | `assignedBranchId` | string / null | true | anyOf[0]: —; anyOf[1]: — |
 | `filterLocked` | boolean | true | — |
+
+<a id="schema-erpscopedresponse_branchchoicepage"></a>
+
+### Schema ErpScopedResponse_BranchChoicePage
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [BranchChoicePage](#schema-branchchoicepage) / null | true | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-branchchoicepage"></a>
+
+### Schema BranchChoicePage
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `items` | array&lt;[BranchChoice](#schema-branchchoice)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-branchchoice"></a>
+
+### Schema BranchChoice
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `branchId` | string | true | — |
+| `branchName` | string | true | — |
 
 <a id="schema-documentfieldcontract"></a>
 
@@ -4239,7 +4318,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema PurchaseRequestHeaderInput
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -4269,7 +4348,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema PurchaseRequestLineValues
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -4563,7 +4642,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema SavePurchaseRequestDraft
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -4578,7 +4657,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema PurchaseRequestLineChange
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -4629,7 +4708,7 @@ Kiểu: integer.
 
 ### Schema SubmitPurchaseRequest
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -4704,7 +4783,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema InboundDraftHeader
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -4724,7 +4803,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema InboundDraftDetailUpsert
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -4779,7 +4858,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema InboundDraftCommand
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -4805,7 +4884,7 @@ Kiểu: string.
 
 ### Schema InboundDraftCostInput
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -4828,7 +4907,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema InboundDraftSavePayload
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -4846,7 +4925,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema InboundDraftSendPayload
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5176,7 +5255,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema ErpCommandLookupRequest
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5211,7 +5290,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema ErpNewLine
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5222,7 +5301,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema ErpSelectionRequest
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5235,7 +5314,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema ErpPasteRequest
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5266,7 +5345,7 @@ Kiểu: string.
 
 ### Schema ErpCreateRequest
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5279,7 +5358,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema ErpSaveRequest
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5294,7 +5373,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema ErpLineChange
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5315,7 +5394,7 @@ Kiểu: string.
 
 ### Schema ErpDeleteRequest
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5328,7 +5407,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema ErpInternalTransferRequestHeaderInput
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5344,7 +5423,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema ErpInternalTransferRequestLineInput
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5361,7 +5440,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_internal_transfer_requests_new_line
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5372,7 +5451,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_internal_transfer_requests_create
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5385,7 +5464,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_internal_transfer_requests_line_add
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5398,7 +5477,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_internal_transfer_requests_line_update
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5411,7 +5490,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_internal_transfer_requests_line_remove
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5424,7 +5503,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_internal_transfer_requests_save
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5439,7 +5518,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_internal_transfer_requests_paste
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5450,7 +5529,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema ErpActionRequest
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5464,7 +5543,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_internal_transfer_requests_recall_request
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5478,7 +5557,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema ErpSendTransferPm
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5490,7 +5569,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_internal_transfer_requests_send_pm_request
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5681,7 +5760,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema ErpMachineMovementHeaderInput
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5702,7 +5781,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema ErpMachineMovementLineInput
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5731,7 +5810,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_machine_movements_new_line
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5742,7 +5821,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_machine_movements_create
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5755,7 +5834,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_machine_movements_line_add
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5768,7 +5847,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_machine_movements_line_update
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5781,7 +5860,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_machine_movements_line_remove
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5794,7 +5873,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_machine_movements_save
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5809,7 +5888,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_machine_movements_paste
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5966,7 +6045,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema ErpMachineRepairHeaderInput
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -5991,7 +6070,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema ErpMachineRepairLineInput
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6011,7 +6090,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_machine_repairs_new_line
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6022,7 +6101,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_machine_repairs_create
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6035,7 +6114,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_machine_repairs_line_add
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6048,7 +6127,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_machine_repairs_line_update
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6061,7 +6140,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_machine_repairs_line_remove
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6074,7 +6153,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_machine_repairs_save
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6089,7 +6168,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_machine_repairs_paste
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6242,7 +6321,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema ErpPurchaseRequestHeaderInput
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6261,7 +6340,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema ErpPurchaseRequestLineInput
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6276,7 +6355,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_purchase_requests_new_line
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6287,7 +6366,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_purchase_requests_create
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6300,7 +6379,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_purchase_requests_line_add
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6313,7 +6392,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_purchase_requests_line_update
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6326,7 +6405,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_purchase_requests_line_remove
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6339,7 +6418,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_purchase_requests_save
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6354,7 +6433,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_purchase_requests_paste
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6365,7 +6444,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_purchase_requests_submit_request
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6379,7 +6458,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_purchase_requests_send_purchase_order_request
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6544,7 +6623,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema ErpSalesOrderHeaderInput
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6598,7 +6677,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema ErpSalesOrderLineInput
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6622,7 +6701,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_sales_orders_new_line
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6633,7 +6712,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_sales_orders_create
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6646,7 +6725,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_sales_orders_line_add
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6659,7 +6738,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_sales_orders_line_update
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6672,7 +6751,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_sales_orders_line_remove
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6685,7 +6764,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_sales_orders_save
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6700,7 +6779,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_sales_orders_paste
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6711,7 +6790,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_sales_orders_recall_request
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6725,7 +6804,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema ErpSendOrderPm
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6736,7 +6815,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema Erp_sales_orders_send_pm_request
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -6976,7 +7055,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 
 ### Schema ErpScanRequest
 
-Object: `{"type":"object","additionalProperties":false}`.
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
 
 | Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
 |---|---|---|---|
@@ -7451,6 +7530,3068 @@ Object: `{"type":"object","additionalProperties":false}`.
 | `readScope` | string | true | — |
 | `data` | [Erp_warehouse_qr_detail](#schema-erp_warehouse_qr_detail) | true | — |
 
+<a id="schema-erpscopedresponse_notificationpagefedisplay"></a>
+
+### Schema ErpScopedResponse_NotificationPageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [NotificationPageFeDisplay](#schema-notificationpagefedisplay) / null | true | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-notificationpagefedisplay"></a>
+
+### Schema NotificationPageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `totalRows` | integer (int64) | true | — |
+| `unreadCount` | integer (int64) | true | — |
+| `rows` | array&lt;[NotificationRowFeDisplay](#schema-notificationrowfedisplay)&gt; | true | items[0]: — |
+
+<a id="schema-notificationrowfedisplay"></a>
+
+### Schema NotificationRowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `id` | integer (int32) | true | — |
+| `fromUserId` | string | true | — |
+| `toUserId` | string | true | — |
+| `title` | string | true | — |
+| `message` | string | true | — |
+| `msgTime` | string | true | — |
+| `notifyType` | string | true | — |
+| `colorHex` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `sourceSystem` | string | true | — |
+| `erpFormName` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `webFormName` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `webRoute` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `documentId` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `orderNo` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `statusId` | integer (int32) / null | true | anyOf[0]: —; anyOf[1]: — |
+| `isView` | boolean | true | — |
+| `viewDate` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `isActive` | boolean | true | — |
+| `showErp` | boolean | true | — |
+| `showWeb` | boolean | true | — |
+| `expireAt` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `eventKey` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `name` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `referenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `fromUserName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `fromUserReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `toUserName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `toUserReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `msgTimeDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `statusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `viewDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `expireAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erpscopedresponse_notificationrowfedisplay"></a>
+
+### Schema ErpScopedResponse_NotificationRowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [NotificationRowFeDisplay](#schema-notificationrowfedisplay) / null | true | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erpscopedresponse_notificationtargetfedisplay"></a>
+
+### Schema ErpScopedResponse_NotificationTargetFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [NotificationTargetFeDisplay](#schema-notificationtargetfedisplay) / null | true | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-notificationtargetfedisplay"></a>
+
+### Schema NotificationTargetFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `canOpen` | boolean | true | — |
+| `reason` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `moduleId` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `formId` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `documentId` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `branchId` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `detailApi` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `moduleName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `moduleReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `formName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `formReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erpscopedresponse_branchchoicepagefedisplay"></a>
+
+### Schema ErpScopedResponse_BranchChoicePageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [BranchChoicePageFeDisplay](#schema-branchchoicepagefedisplay) / null | true | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-branchchoicepagefedisplay"></a>
+
+### Schema BranchChoicePageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `items` | array&lt;[BranchChoiceFeDisplay](#schema-branchchoicefedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-branchchoicefedisplay"></a>
+
+### Schema BranchChoiceFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `branchId` | string | true | — |
+| `branchName` | string | true | — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-purchaseorderslegacypagefedisplay"></a>
+
+### Schema purchaseordersLegacyPageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[purchaseordersLegacySummaryFeDisplay](#schema-purchaseorderslegacysummaryfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-purchaseorderslegacysummaryfedisplay"></a>
+
+### Schema purchaseordersLegacySummaryFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `documentDate` | string | true | — |
+| `branchId` | string | true | — |
+| `statusId` | integer (int32) / null | true | anyOf[0]: —; anyOf[1]: — |
+| `isLocked` | boolean / null | true | anyOf[0]: —; anyOf[1]: — |
+| `statusName` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `purchaseOrderHeader` | [PurchaseOrderHeaderFieldsFeDisplay](#schema-purchaseorderheaderfieldsfedisplay) | true | — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-purchaseorderheaderfieldsfedisplay"></a>
+
+### Schema PurchaseOrderHeaderFieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-source-table":"AP_OrderTbl","x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | SQL DocumentID varchar(30); nullable=false |
+| `documentDate` | string | true | pattern="^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}$"; description="sql-datetime-without-timezone"; SQL DocumentDate datetime; nullable=false |
+| `objectId` | string | true | SQL ObjectID varchar(100); nullable=false |
+| `memo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Memo nvarchar(200); nullable=true |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(200); nullable=true |
+| `deliverDate` | string / null | true | description="sql-datetime-without-timezone"; anyOf[0]: pattern="^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}$"; anyOf[1]: —; SQL DeliverDate datetime; nullable=true |
+| `currencyId` | string | true | SQL CurrencyID varchar(3); nullable=false |
+| `rateExchange` | number | true | SQL RateExchange float; nullable=false |
+| `baseTotal` | string / null | true | description="decimal-string"; anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: —; SQL BaseTotal decimal(28, 0); nullable=true |
+| `searchField` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SearchField nvarchar(2000); nullable=true |
+| `isLock` | boolean | true | SQL isLock bit; nullable=false |
+| `userCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserCreate varchar(50); nullable=true |
+| `userUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserUpdate varchar(50); nullable=true |
+| `dateUpdate` | string / null | true | description="sql-datetime-without-timezone"; anyOf[0]: pattern="^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}$"; anyOf[1]: —; SQL DateUpdate datetime; nullable=true |
+| `dateCreate` | string / null | true | description="sql-datetime-without-timezone"; anyOf[0]: pattern="^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}$"; anyOf[1]: —; SQL DateCreate datetime; nullable=true |
+| `linkId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LinkID varchar(50); nullable=true |
+| `contractId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ContractID nvarchar(100); nullable=true |
+| `statusId` | integer (int32) / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true |
+| `branchId` | string | true | SQL BranchID varchar(50); nullable=false |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `objectName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `objectReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `deliverDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `currencyName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `currencyReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `baseTotalDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateUpdateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateCreateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `linkName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `linkReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `contractName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `contractReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `statusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-purchaseorderslegacydetailfedisplay"></a>
+
+### Schema purchaseordersLegacyDetailFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `document` | [purchaseordersLegacySummaryFeDisplay](#schema-purchaseorderslegacysummaryfedisplay) | true | — |
+| `purchaseOrderLines` | array&lt;[purchaseordersLegacypurchaseOrderLinesFeDisplay](#schema-purchaseorderslegacypurchaseorderlinesfedisplay)&gt; | true | items[0]: — |
+| `inboundRequestLines` | array&lt;[purchaseordersLegacyinboundRequestLinesFeDisplay](#schema-purchaseorderslegacyinboundrequestlinesfedisplay)&gt; | true | maxItems=0; items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+| `itemDisplayContext` | [ItemDisplayContextFeDisplay](#schema-itemdisplaycontextfedisplay) / null | true | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-purchaseorderslegacypurchaseorderlinesfedisplay"></a>
+
+### Schema purchaseordersLegacypurchaseOrderLinesFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `itemId` | string | true | — |
+| `quantity` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `quantity2` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `fields` | [PurchaseOrderLineFieldsFeDisplay](#schema-purchaseorderlinefieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-purchaseorderlinefieldsfedisplay"></a>
+
+### Schema PurchaseOrderLineFieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-source-table":"AP_OrderDetailTbl","x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false |
+| `documentId` | string | true | SQL DocumentID varchar(30); nullable=false |
+| `itemId` | string | true | SQL ItemID nvarchar(50); nullable=false |
+| `quantity` | string / null | true | description="decimal-string"; anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: —; SQL Quantity decimal(28, 2); nullable=true |
+| `unitPrice` | string / null | true | description="decimal-string"; anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: —; SQL UnitPrice decimal(28, 4); nullable=true |
+| `sourceAmount` | string / null | true | description="decimal-string"; anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: —; SQL SourceAmount decimal(18, 2); nullable=true |
+| `amount` | string / null | true | description="decimal-string"; anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: —; SQL Amount decimal(28, 0); nullable=true |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(100); nullable=true |
+| `quantity2` | string / null | true | description="decimal-string"; anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: —; SQL Quantity2 decimal(28, 4); nullable=true |
+| `property` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Property nvarchar(50); nullable=true |
+| `property2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Property2 nvarchar(50); nullable=true |
+| `parentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ParentID varchar(50); nullable=true |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unitPriceDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `sourceAmountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `amountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `parentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `parentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-purchaseorderslegacyinboundrequestlinesfedisplay"></a>
+
+### Schema purchaseordersLegacyinboundRequestLinesFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `itemId` | string | true | — |
+| `setQuantityByDocument` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `barrelQuantityByDocument` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `setQuantityByReal` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `barrelQuantityByReal` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-itemdisplaycontextfedisplay"></a>
+
+### Schema ItemDisplayContextFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `kind` | string | true | — |
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `statusId` | integer (int32) / null | true | anyOf[0]: —; anyOf[1]: — |
+| `isLocked` | boolean / null | true | anyOf[0]: —; anyOf[1]: — |
+| `page` | integer (int32) / null | true | anyOf[0]: —; anyOf[1]: — |
+| `pageSize` | integer (int32) / null | true | anyOf[0]: —; anyOf[1]: — |
+| `lines` | array&lt;[ItemDisplayLineFeDisplay](#schema-itemdisplaylinefedisplay)&gt; | true | items[0]: — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `statusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-itemdisplaylinefedisplay"></a>
+
+### Schema ItemDisplayLineFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `itemId` | string | true | — |
+| `manufacturerItemCode` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `manufacturerCodeSource` | string | true | — |
+| `itemName` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `referenceState` | string | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-purchaseordersv2pagefedisplay"></a>
+
+### Schema purchaseordersV2PageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[purchaseordersV2SummaryFeDisplay](#schema-purchaseordersv2summaryfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-purchaseordersv2summaryfedisplay"></a>
+
+### Schema purchaseordersV2SummaryFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `documentDate` | string | true | — |
+| `branchId` | string | true | — |
+| `statusId` | integer (int32) / null | true | anyOf[0]: —; anyOf[1]: — |
+| `isLocked` | boolean / null | true | anyOf[0]: —; anyOf[1]: — |
+| `statusName` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `purchaseOrderHeader` | [PurchaseOrderHeaderFieldsFeDisplay](#schema-purchaseorderheaderfieldsfedisplay) | true | — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-purchaseordersv2detailfedisplay"></a>
+
+### Schema purchaseordersV2DetailFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `document` | [purchaseordersV2SummaryFeDisplay](#schema-purchaseordersv2summaryfedisplay) | true | — |
+| `purchaseOrderLines` | array&lt;[purchaseordersV2purchaseOrderLinesFeDisplay](#schema-purchaseordersv2purchaseorderlinesfedisplay)&gt; | true | items[0]: — |
+| `inboundRequestLines` | array&lt;[purchaseordersV2inboundRequestLinesFeDisplay](#schema-purchaseordersv2inboundrequestlinesfedisplay)&gt; | true | maxItems=0; items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+| `itemDisplayContext` | [ItemDisplayContextFeDisplay](#schema-itemdisplaycontextfedisplay) / null | true | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-purchaseordersv2purchaseorderlinesfedisplay"></a>
+
+### Schema purchaseordersV2purchaseOrderLinesFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `itemId` | string | true | — |
+| `quantity` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `quantity2` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `fields` | [PurchaseOrderLineFieldsFeDisplay](#schema-purchaseorderlinefieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-purchaseordersv2inboundrequestlinesfedisplay"></a>
+
+### Schema purchaseordersV2inboundRequestLinesFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `itemId` | string | true | — |
+| `setQuantityByDocument` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `barrelQuantityByDocument` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `setQuantityByReal` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `barrelQuantityByReal` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-inboundrequestslegacypagefedisplay"></a>
+
+### Schema inboundrequestsLegacyPageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[inboundrequestsLegacySummaryFeDisplay](#schema-inboundrequestslegacysummaryfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-inboundrequestslegacysummaryfedisplay"></a>
+
+### Schema inboundrequestsLegacySummaryFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `documentDate` | string | true | — |
+| `branchId` | string | true | — |
+| `statusId` | integer (int32) / null | true | anyOf[0]: —; anyOf[1]: — |
+| `isLocked` | boolean / null | true | anyOf[0]: —; anyOf[1]: — |
+| `statusName` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `inboundRequestHeader` | [InboundRequestHeaderFieldsFeDisplay](#schema-inboundrequestheaderfieldsfedisplay) | true | — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-inboundrequestheaderfieldsfedisplay"></a>
+
+### Schema InboundRequestHeaderFieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-source-table":"IV_InboundRequestTbl","x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false |
+| `documentDate` | string | true | pattern="^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}$"; description="sql-datetime-without-timezone"; SQL DocumentDate datetime; nullable=false |
+| `orderNumber` | string | true | SQL OrderNumber nvarchar(50); nullable=false |
+| `branchId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BranchID varchar(50); nullable=true |
+| `invoiceNo` | string | true | SQL InvoiceNo nvarchar(50); nullable=false |
+| `declarationNumber` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeclarationNumber varchar(50); nullable=true |
+| `departurePoint` | string | true | SQL DeparturePoint nvarchar(100); nullable=false |
+| `destinationPoint` | string | true | SQL DestinationPoint nvarchar(100); nullable=false |
+| `isRain` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL IsRain bit; nullable=true |
+| `orderTypeId` | string | true | SQL OrderTypeID nvarchar(50); nullable=false |
+| `objectId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ObjectID varchar(50); nullable=true |
+| `totalPalletQuantityByDocument` | string / null | true | description="decimal-string"; anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: —; SQL TotalPalletQuantityByDocument decimal(18, 0); nullable=true |
+| `totalBarrelQuantityByDocument` | string / null | true | description="decimal-string"; anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: —; SQL TotalBarrelQuantityByDocument decimal(18, 0); nullable=true |
+| `totalPalletQuantityByReal` | string / null | true | description="decimal-string"; anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: —; SQL TotalPalletQuantityByReal decimal(18, 0); nullable=true |
+| `totalBarrelQuantityByReal` | string / null | true | description="decimal-string"; anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: —; SQL TotalBarrelQuantityByReal decimal(18, 0); nullable=true |
+| `excessPackageQuantity` | string / null | true | description="decimal-string"; anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: —; SQL ExcessPackageQuantity decimal(18, 0); nullable=true |
+| `lackOfPackageQuantity` | string / null | true | description="decimal-string"; anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: —; SQL LackOfPackageQuantity decimal(18, 0); nullable=true |
+| `damagedPackageQuantity` | string / null | true | description="decimal-string"; anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: —; SQL DamagedPackageQuantity decimal(18, 0); nullable=true |
+| `packageTypeId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PackageTypeID nvarchar(50); nullable=true |
+| `isDamageOutsidePackage` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL IsDamageOutsidePackage bit; nullable=true |
+| `damageDescription` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DamageDescription nvarchar(500); nullable=true |
+| `damageInsideStatusId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DamageInsideStatusID nvarchar(50); nullable=true |
+| `locationDamageDetectedId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LocationDamageDetectedID nvarchar(50); nullable=true |
+| `locationDamageDescription` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LocationDamageDescription nvarchar(500); nullable=true |
+| `resultDesciption` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ResultDesciption nvarchar(max); nullable=true |
+| `totalQuantityInboundResult` | string / null | true | description="decimal-string"; anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: —; SQL TotalQuantityInboundResult decimal(18, 0); nullable=true |
+| `goodAwaitingInboundResult` | string / null | true | description="decimal-string"; anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: —; SQL GoodAwaitingInboundResult decimal(18, 0); nullable=true |
+| `resultNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ResultNote nvarchar(500); nullable=true |
+| `datetimeRecorded` | string / null | true | description="sql-datetime-without-timezone"; anyOf[0]: pattern="^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}$"; anyOf[1]: —; SQL DatetimeRecorded datetime; nullable=true |
+| `statusId` | integer (int32) | true | SQL StatusID int; nullable=false |
+| `currencyId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CurrencyID varchar(3); nullable=true |
+| `rateExchange` | string / null | true | description="decimal-string"; anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: —; SQL RateExchange decimal(28, 10); nullable=true |
+| `imageUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ImageURL varchar(255); nullable=true |
+| `bbkcUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl varchar(255); nullable=true |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true |
+| `qrPrintType` | string | true | SQL QRPrintType varchar(10); nullable=false |
+| `linkId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LinkID varchar(50); nullable=true |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `orderTypeName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `orderTypeReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `objectName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `objectReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `packageTypeName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `packageTypeReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `damageInsideStatusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `damageInsideStatusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `locationDamageDetectedName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `locationDamageDetectedReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `datetimeRecordedDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `statusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `currencyName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `currencyReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `linkName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `linkReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-inboundrequestslegacydetailfedisplay"></a>
+
+### Schema inboundrequestsLegacyDetailFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `document` | [inboundrequestsLegacySummaryFeDisplay](#schema-inboundrequestslegacysummaryfedisplay) | true | — |
+| `purchaseOrderLines` | array&lt;[inboundrequestsLegacypurchaseOrderLinesFeDisplay](#schema-inboundrequestslegacypurchaseorderlinesfedisplay)&gt; | true | maxItems=0; items[0]: — |
+| `inboundRequestLines` | array&lt;[inboundrequestsLegacyinboundRequestLinesFeDisplay](#schema-inboundrequestslegacyinboundrequestlinesfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+| `itemDisplayContext` | [ItemDisplayContextFeDisplay](#schema-itemdisplaycontextfedisplay) / null | true | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-inboundrequestslegacypurchaseorderlinesfedisplay"></a>
+
+### Schema inboundrequestsLegacypurchaseOrderLinesFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `itemId` | string | true | — |
+| `quantity` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `quantity2` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-inboundrequestslegacyinboundrequestlinesfedisplay"></a>
+
+### Schema inboundrequestsLegacyinboundRequestLinesFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `itemId` | string | true | — |
+| `setQuantityByDocument` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `barrelQuantityByDocument` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `setQuantityByReal` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `barrelQuantityByReal` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `fields` | [InboundRequestLineFieldsFeDisplay](#schema-inboundrequestlinefieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-inboundrequestlinefieldsfedisplay"></a>
+
+### Schema InboundRequestLineFieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-source-table":"IV_InboundRequestDetailsTbl","x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false |
+| `contractId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ContractID nvarchar(100); nullable=true |
+| `itemId` | string | true | SQL ItemID varchar(50); nullable=false |
+| `hangSX` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL HangSX nvarchar(100); nullable=true |
+| `unitFactor` | number / null | true | anyOf[0]: —; anyOf[1]: —; SQL UnitFactor float; nullable=true |
+| `unit2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Unit2 nvarchar(50); nullable=true |
+| `additional` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL Additional bit; nullable=true |
+| `lotNumberByDocument` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LotNumberByDocument nvarchar(50); nullable=true |
+| `setQuantityByDocument` | string / null | true | description="decimal-string"; anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: —; SQL SetQuantityByDocument decimal(18, 0); nullable=true |
+| `barrelQuantityByDocument` | string / null | true | description="decimal-string"; anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: —; SQL BarrelQuantityByDocument decimal(18, 0); nullable=true |
+| `expireDateByDocument` | string / null | true | description="sql-datetime-without-timezone"; anyOf[0]: pattern="^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}$"; anyOf[1]: —; SQL ExpireDateByDocument datetime; nullable=true |
+| `lotNumberByReal` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LotNumberByReal nvarchar(50); nullable=true |
+| `setQuantityByReal` | string / null | true | description="decimal-string"; anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: —; SQL SetQuantityByReal decimal(18, 0); nullable=true |
+| `barrelQuantityByReal` | string / null | true | description="decimal-string"; anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: —; SQL BarrelQuantityByReal decimal(18, 0); nullable=true |
+| `expireDateByReal` | string / null | true | description="sql-datetime-without-timezone"; anyOf[0]: pattern="^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}$"; anyOf[1]: —; SQL ExpireDateByReal datetime; nullable=true |
+| `sourceAmount` | string / null | true | description="decimal-string"; anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: —; SQL SourceAmount decimal(18, 0); nullable=true |
+| `unitPrice` | string / null | true | description="decimal-string"; anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: —; SQL UnitPrice decimal(18, 0); nullable=true |
+| `amount` | string / null | true | description="decimal-string"; anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: —; SQL Amount decimal(18, 0); nullable=true |
+| `randomTestQuantity` | string / null | true | description="decimal-string"; anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: —; SQL RandomTestQuantity decimal(18, 0); nullable=true |
+| `testStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TestStatus nvarchar(100); nullable=true |
+| `noPalletNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL NoPalletNote nvarchar(500); nullable=true |
+| `palletNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PalletNote nvarchar(500); nullable=true |
+| `checkerNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CheckerNote nvarchar(500); nullable=true |
+| `itemCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemCode nvarchar(50); nullable=true |
+| `parentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ParentID varchar(50); nullable=true |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `contractName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `contractReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+| `expireDateByDocumentDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `expireDateByRealDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `sourceAmountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `unitPriceDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `amountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `parentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `parentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-inboundrequestsv2pagefedisplay"></a>
+
+### Schema inboundrequestsV2PageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[inboundrequestsV2SummaryFeDisplay](#schema-inboundrequestsv2summaryfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-inboundrequestsv2summaryfedisplay"></a>
+
+### Schema inboundrequestsV2SummaryFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `documentDate` | string | true | — |
+| `branchId` | string | true | — |
+| `statusId` | integer (int32) / null | true | anyOf[0]: —; anyOf[1]: — |
+| `isLocked` | boolean / null | true | anyOf[0]: —; anyOf[1]: — |
+| `statusName` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `inboundRequestHeader` | [InboundRequestHeaderFieldsFeDisplay](#schema-inboundrequestheaderfieldsfedisplay) | true | — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-inboundrequestsv2detailfedisplay"></a>
+
+### Schema inboundrequestsV2DetailFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `document` | [inboundrequestsV2SummaryFeDisplay](#schema-inboundrequestsv2summaryfedisplay) | true | — |
+| `purchaseOrderLines` | array&lt;[inboundrequestsV2purchaseOrderLinesFeDisplay](#schema-inboundrequestsv2purchaseorderlinesfedisplay)&gt; | true | maxItems=0; items[0]: — |
+| `inboundRequestLines` | array&lt;[inboundrequestsV2inboundRequestLinesFeDisplay](#schema-inboundrequestsv2inboundrequestlinesfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+| `itemDisplayContext` | [ItemDisplayContextFeDisplay](#schema-itemdisplaycontextfedisplay) / null | true | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-inboundrequestsv2purchaseorderlinesfedisplay"></a>
+
+### Schema inboundrequestsV2purchaseOrderLinesFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `itemId` | string | true | — |
+| `quantity` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `quantity2` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-inboundrequestsv2inboundrequestlinesfedisplay"></a>
+
+### Schema inboundrequestsV2inboundRequestLinesFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `itemId` | string | true | — |
+| `setQuantityByDocument` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `barrelQuantityByDocument` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `setQuantityByReal` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `barrelQuantityByReal` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `fields` | [InboundRequestLineFieldsFeDisplay](#schema-inboundrequestlinefieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-purchaserequestlistlegacyfedisplay"></a>
+
+### Schema PurchaseRequestListLegacyFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `scopeKey` | string | true | — |
+| `data` | [PurchaseRequestPageLegacyFeDisplay](#schema-purchaserequestpagelegacyfedisplay) | true | — |
+
+<a id="schema-purchaserequestpagelegacyfedisplay"></a>
+
+### Schema PurchaseRequestPageLegacyFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[PurchaseRequestRowLegacyFeDisplay](#schema-purchaserequestrowlegacyfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-purchaserequestrowlegacyfedisplay"></a>
+
+### Schema PurchaseRequestRowLegacyFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `purchaseDate` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `branchId` | string | true | — |
+| `personSuggest` | string | true | — |
+| `department` | string | true | — |
+| `statusId` | integer (int32) | true | — |
+| `isLocked` | boolean / null | true | anyOf[0]: —; anyOf[1]: — |
+| `statusName` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `fields` | [PurchaseRequestHeaderFieldsFeDisplay](#schema-purchaserequestheaderfieldsfedisplay) | true | — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `purchaseDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-purchaserequestheaderfieldsfedisplay"></a>
+
+### Schema PurchaseRequestHeaderFieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-source-table":"AP_PurchaseRequestTbl","x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `purchaseRequestId` | string | true | SQL PurchaseRequestID nvarchar(50); nullable=false |
+| `purchaseDate` | string / null | true | description="sql-datetime-without-timezone"; anyOf[0]: pattern="^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}$"; anyOf[1]: —; SQL PurchaseDate datetime; nullable=true |
+| `purposeId` | integer (int32) / null | true | anyOf[0]: —; anyOf[1]: —; SQL PurposeID int; nullable=true |
+| `personSuggest` | string | true | SQL PersonSuggest nvarchar(500); nullable=false |
+| `department` | string | true | SQL Department nvarchar(100); nullable=false |
+| `purposeDescOrClient` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PurposeDescOrClient nvarchar(max); nullable=true |
+| `price` | string / null | true | description="decimal-string"; anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: —; SQL Price decimal(18, 2); nullable=true |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true |
+| `statusId` | integer (int32) | true | SQL StatusID int; nullable=false |
+| `isLock` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL isLock bit; nullable=true |
+| `currencyId` | string | true | SQL CurrencyID varchar(3); nullable=false |
+| `objectId` | string | true | SQL ObjectID varchar(100); nullable=false |
+| `rateExchange` | number | true | SQL RateExchange float; nullable=false |
+| `branchId` | string | true | SQL BranchID varchar(50); nullable=false |
+| `purchaseRequestName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `purchaseRequestReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `purchaseDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `purposeName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `purposeReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `priceDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `statusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `currencyName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `currencyReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `objectName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `objectReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-purchaserequestdetaillegacyfedisplay"></a>
+
+### Schema PurchaseRequestDetailLegacyFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `scopeKey` | string | true | — |
+| `data` | [PurchaseRequestReadLegacyFeDisplay](#schema-purchaserequestreadlegacyfedisplay) | true | — |
+
+<a id="schema-purchaserequestreadlegacyfedisplay"></a>
+
+### Schema PurchaseRequestReadLegacyFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `document` | [PurchaseRequestAggregateFeDisplay](#schema-purchaserequestaggregatefedisplay) | true | — |
+| `stateToken` | string | true | — |
+| `commandAccess` | [PurchaseRequestCommandAccessStateFeDisplay](#schema-purchaserequestcommandaccessstatefedisplay) / null | true | anyOf[0]: —; anyOf[1]: — |
+| `statusName` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `itemDisplayContext` | [ItemDisplayContextFeDisplay](#schema-itemdisplaycontextfedisplay) / null | true | anyOf[0]: —; anyOf[1]: — |
+| `sourceFields` | [PurchaseRequestSourceFieldsFeDisplay](#schema-purchaserequestsourcefieldsfedisplay) | true | — |
+
+<a id="schema-purchaserequestaggregatefedisplay"></a>
+
+### Schema PurchaseRequestAggregateFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `purchaseRequestId` | string | true | — |
+| `branchId` | string | true | — |
+| `header` | [PurchaseRequestHeaderInput](#schema-purchaserequestheaderinput) | true | — |
+| `statusId` | integer (int32) | true | — |
+| `isLocked` | boolean / null | true | anyOf[0]: —; anyOf[1]: — |
+| `lines` | array&lt;[PurchaseRequestPersistedLineFeDisplay](#schema-purchaserequestpersistedlinefedisplay)&gt; | true | items[0]: — |
+| `headerDisplayData` | [PurchaseRequestHeaderInputFeDisplayData](#schema-purchaserequestheaderinputfedisplaydata) | true | — |
+| `purchaseRequestName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `purchaseRequestReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `statusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-purchaserequestheaderinputfedisplaydata"></a>
+
+### Schema PurchaseRequestHeaderInputFeDisplayData
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `purchaseDate` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `purposeId` | integer (int32) / null | true | anyOf[0]: —; anyOf[1]: — |
+| `personSuggest` | string | true | — |
+| `department` | string | true | — |
+| `purposeDescOrClient` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `price` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `currencyId` | string | true | — |
+| `objectId` | string | true | — |
+| `rateExchange` | number | true | — |
+| `purchaseDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `purposeName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `purposeReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `priceDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `currencyName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `currencyReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `objectName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `objectReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-purchaserequestpersistedlinefedisplay"></a>
+
+### Schema PurchaseRequestPersistedLineFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `values` | [PurchaseRequestLineValues](#schema-purchaserequestlinevalues) | true | — |
+| `valuesDisplayData` | [PurchaseRequestLineValuesFeDisplayData](#schema-purchaserequestlinevaluesfedisplaydata) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-purchaserequestlinevaluesfedisplaydata"></a>
+
+### Schema PurchaseRequestLineValuesFeDisplayData
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `itemId` | string | true | — |
+| `budget` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `timeRequired` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `quantity` | string | true | — |
+| `unitPrice` | string | true | — |
+| `totalPrice` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `model` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+| `budgetDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `unitPriceDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `totalPriceDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-purchaserequestcommandaccessstatefedisplay"></a>
+
+### Schema PurchaseRequestCommandAccessStateFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `canSave` | boolean | true | — |
+| `canSubmit` | boolean | true | — |
+| `canLookup` | boolean | true | — |
+| `canAddLines` | boolean | true | — |
+| `reason` | string | true | — |
+
+<a id="schema-purchaserequestsourcefieldsfedisplay"></a>
+
+### Schema PurchaseRequestSourceFieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `header` | [PurchaseRequestHeaderFieldsFeDisplay](#schema-purchaserequestheaderfieldsfedisplay) | true | — |
+| `lines` | array&lt;[PurchaseRequestLineFieldsFeDisplay](#schema-purchaserequestlinefieldsfedisplay)&gt; | true | items[0]: — |
+
+<a id="schema-purchaserequestlinefieldsfedisplay"></a>
+
+### Schema PurchaseRequestLineFieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-source-table":"AP_PurchaseRequestDetailTbl","x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false |
+| `itemId` | string | true | SQL ItemID varchar(50); nullable=false |
+| `budget` | string / null | true | description="decimal-string"; anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: —; SQL Budget decimal(18, 0); nullable=true |
+| `timeRequired` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TimeRequired nvarchar(200); nullable=true |
+| `quantity` | string | true | pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; description="decimal-string"; SQL Quantity decimal(18, 0); nullable=false |
+| `unitPrice` | string | true | pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; description="decimal-string"; SQL UnitPrice decimal(18, 0); nullable=false |
+| `totalPrice` | string / null | true | description="decimal-string"; anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: —; SQL TotalPrice decimal(18, 0); nullable=true |
+| `model` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Model varchar(50); nullable=true |
+| `purchaseRequestId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PurchaseRequestID nvarchar(50); nullable=true |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+| `budgetDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `unitPriceDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `totalPriceDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `purchaseRequestName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `purchaseRequestReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-purchaserequestlistv2fedisplay"></a>
+
+### Schema PurchaseRequestListV2FeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `scopeKey` | string | true | — |
+| `data` | [PurchaseRequestPageV2FeDisplay](#schema-purchaserequestpagev2fedisplay) | true | — |
+
+<a id="schema-purchaserequestpagev2fedisplay"></a>
+
+### Schema PurchaseRequestPageV2FeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[PurchaseRequestRowV2FeDisplay](#schema-purchaserequestrowv2fedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-purchaserequestrowv2fedisplay"></a>
+
+### Schema PurchaseRequestRowV2FeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `purchaseDate` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `branchId` | string | true | — |
+| `personSuggest` | string | true | — |
+| `department` | string | true | — |
+| `statusId` | integer (int32) | true | — |
+| `isLocked` | boolean / null | true | anyOf[0]: —; anyOf[1]: — |
+| `statusName` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `fields` | [PurchaseRequestHeaderFieldsFeDisplay](#schema-purchaserequestheaderfieldsfedisplay) | true | — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `purchaseDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-purchaserequestdetailv2fedisplay"></a>
+
+### Schema PurchaseRequestDetailV2FeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `scopeKey` | string | true | — |
+| `data` | [PurchaseRequestReadV2FeDisplay](#schema-purchaserequestreadv2fedisplay) | true | — |
+
+<a id="schema-purchaserequestreadv2fedisplay"></a>
+
+### Schema PurchaseRequestReadV2FeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `document` | [PurchaseRequestAggregateFeDisplay](#schema-purchaserequestaggregatefedisplay) | true | — |
+| `stateToken` | string | true | — |
+| `commandAccess` | [PurchaseRequestCommandAccessStateFeDisplay](#schema-purchaserequestcommandaccessstatefedisplay) / null | true | anyOf[0]: —; anyOf[1]: — |
+| `statusName` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `itemDisplayContext` | [ItemDisplayContextFeDisplay](#schema-itemdisplaycontextfedisplay) / null | true | anyOf[0]: —; anyOf[1]: — |
+| `sourceFields` | [PurchaseRequestSourceFieldsFeDisplay](#schema-purchaserequestsourcefieldsfedisplay) | true | — |
+
+<a id="schema-purchaserequestscopedresponse_purchaserequestlookuppagefedisplay"></a>
+
+### Schema PurchaseRequestScopedResponse_PurchaseRequestLookupPageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `scopeKey` | string | true | — |
+| `data` | [PurchaseRequestLookupPageFeDisplay](#schema-purchaserequestlookuppagefedisplay) / null | true | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-purchaserequestlookuppagefedisplay"></a>
+
+### Schema PurchaseRequestLookupPageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `available` | boolean | true | — |
+| `reason` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `items` | array&lt;[PurchaseRequestChoiceFeDisplay](#schema-purchaserequestchoicefedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-purchaserequestchoicefedisplay"></a>
+
+### Schema PurchaseRequestChoiceFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `id` | string | true | — |
+| `label` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `currencyName` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `rateExchange` | number / null | false | anyOf[0]: —; anyOf[1]: — |
+| `name` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `referenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-inbounddraftworkspacefedisplay"></a>
+
+### Schema InboundDraftWorkspaceFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `scopeKey` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `access` | [InboundDraftAccessView](#schema-inbounddraftaccessview) | true | — |
+| `data` | [InboundDraftReadResultFeDisplay](#schema-inbounddraftreadresultfedisplay) | true | — |
+
+<a id="schema-inbounddraftreadresultfedisplay"></a>
+
+### Schema InboundDraftReadResultFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `outcome` | [InboundDraftOutcomeFeDisplay](#schema-inbounddraftoutcomefedisplay) | true | — |
+| `document` | [InboundDraftViewFeDisplay](#schema-inbounddraftviewfedisplay) / null | true | anyOf[0]: —; anyOf[1]: — |
+| `itemDisplayContext` | [ItemDisplayContextFeDisplay](#schema-itemdisplaycontextfedisplay) / null | true | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-inbounddraftoutcomefedisplay"></a>
+
+### Schema InboundDraftOutcomeFeDisplay
+
+Kiểu: string.
+
+Định nghĩa: `{"type":"string","enum":["Observed","Committed","Replayed","InvalidInput","Denied","NotFound","Conflict","Rejected","UnsupportedCostEdits","NumberingUnavailable","Unavailable","OutcomeUnknown"]}`.
+
+<a id="schema-inbounddraftviewfedisplay"></a>
+
+### Schema InboundDraftViewFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `statusId` | integer (int32) | true | — |
+| `header` | [InboundDraftHeader](#schema-inbounddraftheader) | true | — |
+| `details` | array&lt;[InboundDraftDetailUpsert](#schema-inbounddraftdetailupsert)&gt; | true | items[0]: — |
+| `costRowCount` | integer (int32) | true | — |
+| `stateEqualityToken` | string | true | — |
+| `costEditingSupported` | boolean | true | — |
+| `headerDisplayData` | [InboundDraftHeaderFeDisplayData](#schema-inbounddraftheaderfedisplaydata) | true | — |
+| `detailsDisplayData` | array&lt;[InboundDraftDetailUpsertFeDisplayData](#schema-inbounddraftdetailupsertfedisplaydata)&gt; | true | items[0]: — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `statusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-inbounddraftheaderfedisplaydata"></a>
+
+### Schema InboundDraftHeaderFeDisplayData
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentDate` | string | true | description="SQL wall-clock datetime for document fields; receipt CommittedAtUtc is UTC. No inferred timezone conversion." |
+| `orderNumber` | string | true | — |
+| `invoiceNo` | string | true | — |
+| `departurePoint` | string | true | — |
+| `destinationPoint` | string | true | — |
+| `orderTypeId` | string | true | — |
+| `branchId` | string | true | — |
+| `objectId` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `currencyId` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `rateExchange` | string / null | false | anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: — |
+| `notes` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `documentDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `orderTypeName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `orderTypeReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `objectName` | string / null | false | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `objectReferenceState` | string | false | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `currencyName` | string / null | false | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `currencyReferenceState` | string | false | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-inbounddraftdetailupsertfedisplaydata"></a>
+
+### Schema InboundDraftDetailUpsertFeDisplayData
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rowId` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `clientLineId` | string (uuid) / null | false | anyOf[0]: —; anyOf[1]: — |
+| `itemId` | string | true | — |
+| `lotNumberByDocument` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `setQuantityByDocument` | string / null | false | anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: — |
+| `barrelQuantityByDocument` | string / null | false | anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: — |
+| `expireDateByDocument` | string / null | false | anyOf[0]: description="SQL wall-clock datetime for document fields; receipt CommittedAtUtc is UTC. No inferred timezone conversion."; anyOf[1]: — |
+| `unitPrice` | string / null | false | anyOf[0]: pattern="^-?[0-9]+(?:\\.[0-9]+)?$"; anyOf[1]: — |
+| `rowName` | string / null | false | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `rowReferenceState` | string | false | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `clientLineName` | string / null | false | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `clientLineReferenceState` | string | false | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+| `expireDateByDocumentDisplay` | string / null | false | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `unitPriceDisplay` | string / null | false | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_requests_list_responsefedisplay"></a>
+
+### Schema Erp_internal_transfer_requests_list_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_requests_document_pageFeDisplay](#schema-erp_internal_transfer_requests_document_pagefedisplay) | true | — |
+
+<a id="schema-erp_internal_transfer_requests_document_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_requests_document_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_requests_document_rowFeDisplay](#schema-erp_internal_transfer_requests_document_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_requests_document_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_requests_document_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_internal_transfer_requests_header_fieldsFeDisplay](#schema-erp_internal_transfer_requests_header_fieldsfedisplay) | true | — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_requests_header_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_requests_header_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | SQL DocumentID nvarchar(50); nullable=false; writable=false |
+| `documentDate` | string | true | SQL DocumentDate datetime; nullable=false; writable=true |
+| `salesUser` | string | true | SQL SalesUser varchar(100); nullable=false; writable=false |
+| `branchId` | string | true | SQL BranchID varchar(50); nullable=false; writable=false |
+| `fromBranchId` | string | true | SQL FromBranchID varchar(50); nullable=false; writable=true |
+| `toBranchId` | string | true | SQL ToBranchID varchar(50); nullable=false; writable=true |
+| `requestedTransferDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedTransferDate datetime; nullable=true; writable=true |
+| `assignedPM` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedPM varchar(100); nullable=true; writable=false |
+| `statusId` | integer | true | SQL StatusID int; nullable=false; writable=false |
+| `transferReason` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TransferReason nvarchar(500); nullable=true; writable=true |
+| `transportMethod` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TransportMethod nvarchar(50); nullable=true; writable=true |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(1000); nullable=true; writable=true |
+| `pMConfirmedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PMConfirmedBy varchar(100); nullable=true; writable=false |
+| `pMConfirmedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PMConfirmedAt datetime; nullable=true; writable=false |
+| `isLocked` | boolean | true | SQL isLock bit; nullable=false; writable=false |
+| `userCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserCreate varchar(100); nullable=true; writable=false |
+| `userUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserUpdate varchar(100); nullable=true; writable=false |
+| `dateCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateCreate datetime; nullable=true; writable=false |
+| `dateUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateUpdate datetime; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `fromBranchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `fromBranchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `toBranchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `toBranchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `requestedTransferDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `statusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `pMConfirmedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateCreateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateUpdateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_requests_detail_responsefedisplay"></a>
+
+### Schema Erp_internal_transfer_requests_detail_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_requests_detailFeDisplay](#schema-erp_internal_transfer_requests_detailfedisplay) | true | — |
+
+<a id="schema-erp_internal_transfer_requests_detailfedisplay"></a>
+
+### Schema Erp_internal_transfer_requests_detailFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_internal_transfer_requests_header_fieldsFeDisplay](#schema-erp_internal_transfer_requests_header_fieldsfedisplay) | true | — |
+| `lines` | [Erp_internal_transfer_requests_lines_pageFeDisplay](#schema-erp_internal_transfer_requests_lines_pagefedisplay) | true | — |
+| `history` | [Erp_internal_transfer_requests_history_pageFeDisplay](#schema-erp_internal_transfer_requests_history_pagefedisplay) | true | — |
+| `comparison` | null | true | — |
+| `actions` | array&lt;[ErpActionStateFeDisplay](#schema-erpactionstatefedisplay)&gt; | true | items[0]: — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_requests_lines_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_requests_lines_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_requests_lines_rowFeDisplay](#schema-erp_internal_transfer_requests_lines_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_requests_lines_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_requests_lines_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_requests_lines_fieldsFeDisplay](#schema-erp_internal_transfer_requests_lines_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_requests_lines_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_requests_lines_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID nvarchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID nvarchar(50); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID nvarchar(50); nullable=false; writable=true |
+| `requestedQty` | string | true | SQL RequestedQty decimal(28, 4); nullable=false; writable=true |
+| `pMApprovedQty` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PMApprovedQty decimal(28, 4); nullable=true; writable=false |
+| `requestedLot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedLot nvarchar(100); nullable=true; writable=true |
+| `expectedObjectId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ExpectedObjectID varchar(100); nullable=true; writable=true |
+| `territoryNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TerritoryNote nvarchar(500); nullable=true; writable=true |
+| `isEquipment` | boolean | true | SQL IsEquipment bit; nullable=false; writable=true |
+| `requestedAssetId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedAssetID varchar(50); nullable=true; writable=true |
+| `pMNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PMNote nvarchar(500); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=true |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+| `expectedObjectName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `expectedObjectReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `requestedAssetName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `requestedAssetReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_requests_history_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_requests_history_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_requests_history_rowFeDisplay](#schema-erp_internal_transfer_requests_history_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_requests_history_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_requests_history_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_requests_history_fieldsFeDisplay](#schema-erp_internal_transfer_requests_history_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_requests_history_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_requests_history_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `thoiGian` | string | true | SQL ThoiGian datetime; nullable=false; writable=false |
+| `userName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserName varchar(50); nullable=true; writable=false |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `thoiGianDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `statusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erpactionstatefedisplay"></a>
+
+### Schema ErpActionStateFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `id` | string | true | — |
+| `caption` | string | true | — |
+| `visible` | boolean | true | — |
+| `enabled` | boolean | true | — |
+| `reason` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `requiresSavedDocument` | boolean | true | — |
+| `route` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `name` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `referenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erpscopedresponse_erpchoicepagefedisplay"></a>
+
+### Schema ErpScopedResponse_ErpChoicePageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [ErpChoicePageFeDisplay](#schema-erpchoicepagefedisplay) / null | true | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erpchoicepagefedisplay"></a>
+
+### Schema ErpChoicePageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `items` | array&lt;[ErpChoiceFeDisplay](#schema-erpchoicefedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+| `requiredParameters` | array&lt;string&gt; | true | items[0]: — |
+
+<a id="schema-erpchoicefedisplay"></a>
+
+### Schema ErpChoiceFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `id` | string | true | — |
+| `label` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `fields` | dictionary&lt;any JSON&gt; | true | additionalProperties={"description":"Fixed module field or action input; see x-medcom-typed-header, x-medcom-typed-line, x-medcom-typed-payload and x-medcom-full-field-sections on its operation."} |
+| `name` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `referenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erpscopedresponse_erpdraftselectionfedisplay"></a>
+
+### Schema ErpScopedResponse_ErpDraftSelectionFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [ErpDraftSelectionFeDisplay](#schema-erpdraftselectionfedisplay) / null | true | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erpdraftselectionfedisplay"></a>
+
+### Schema ErpDraftSelectionFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lines` | array&lt;[ErpNewLine](#schema-erpnewline)&gt; | true | items[0]: — |
+| `headerPatch` | dictionary&lt;any JSON&gt; | true | additionalProperties={"description":"Fixed module field or action input; see x-medcom-typed-header, x-medcom-typed-line, x-medcom-typed-payload and x-medcom-full-field-sections on its operation."} |
+| `sourceEvidence` | string | true | — |
+| `revalidatedOnSave` | boolean | true | — |
+| `linesDisplayData` | array&lt;[ErpNewLineFeDisplayData](#schema-erpnewlinefedisplaydata)&gt; | true | items[0]: — |
+
+<a id="schema-erpnewlinefedisplaydata"></a>
+
+### Schema ErpNewLineFeDisplayData
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `clientLineKey` | string | true | — |
+| `values` | any JSON | true | description="Fixed module field or action input; see x-medcom-typed-header, x-medcom-typed-line, x-medcom-typed-payload and x-medcom-full-field-sections on its operation." |
+
+<a id="schema-erp_machine_movements_list_responsefedisplay"></a>
+
+### Schema Erp_machine_movements_list_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_machine_movements_document_pageFeDisplay](#schema-erp_machine_movements_document_pagefedisplay) | true | — |
+
+<a id="schema-erp_machine_movements_document_pagefedisplay"></a>
+
+### Schema Erp_machine_movements_document_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_machine_movements_document_rowFeDisplay](#schema-erp_machine_movements_document_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_machine_movements_document_rowfedisplay"></a>
+
+### Schema Erp_machine_movements_document_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_machine_movements_header_fieldsFeDisplay](#schema-erp_machine_movements_header_fieldsfedisplay) | true | — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_machine_movements_header_fieldsfedisplay"></a>
+
+### Schema Erp_machine_movements_header_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | SQL DocumentID varchar(30); nullable=false; writable=false |
+| `documentDate` | string | true | SQL DocumentDate datetime; nullable=false; writable=true |
+| `nguoiGiao` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL NguoiGiao nvarchar(150); nullable=true; writable=true |
+| `nguoiNhan` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL NguoiNhan nvarchar(150); nullable=true; writable=true |
+| `memo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Memo nvarchar(150); nullable=true; writable=true |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(150); nullable=true; writable=true |
+| `isLocked` | boolean | true | SQL isLock bit; nullable=false; writable=false |
+| `userCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserCreate varchar(50); nullable=true; writable=false |
+| `userUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserUpdate varchar(50); nullable=true; writable=false |
+| `dateUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateUpdate datetime; nullable=true; writable=false |
+| `dateCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateCreate datetime; nullable=true; writable=false |
+| `moveTypeId` | string | true | SQL MoveTypeID varchar(30); nullable=false; writable=true |
+| `contractId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ContractID nvarchar(100); nullable=true; writable=true |
+| `effectiveFrom` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL EffectiveFrom datetime; nullable=true; writable=true |
+| `effectiveTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL EffectiveTo datetime; nullable=true; writable=true |
+| `referenceNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ReferenceNo nvarchar(100); nullable=true; writable=true |
+| `referenceDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ReferenceDate datetime; nullable=true; writable=true |
+| `documentLink` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DocumentLink nvarchar(1000); nullable=true; writable=true |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateUpdateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateCreateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `moveTypeName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `moveTypeReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `contractName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `contractReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `effectiveFromDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `effectiveToDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `referenceDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_machine_movements_detail_responsefedisplay"></a>
+
+### Schema Erp_machine_movements_detail_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_machine_movements_detailFeDisplay](#schema-erp_machine_movements_detailfedisplay) | true | — |
+
+<a id="schema-erp_machine_movements_detailfedisplay"></a>
+
+### Schema Erp_machine_movements_detailFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_machine_movements_header_fieldsFeDisplay](#schema-erp_machine_movements_header_fieldsfedisplay) | true | — |
+| `lines` | [Erp_machine_movements_lines_pageFeDisplay](#schema-erp_machine_movements_lines_pagefedisplay) | true | — |
+| `history` | null | true | — |
+| `comparison` | null | true | — |
+| `actions` | array&lt;[ErpActionStateFeDisplay](#schema-erpactionstatefedisplay)&gt; | true | items[0]: — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_machine_movements_lines_pagefedisplay"></a>
+
+### Schema Erp_machine_movements_lines_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_machine_movements_lines_rowFeDisplay](#schema-erp_machine_movements_lines_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_machine_movements_lines_rowfedisplay"></a>
+
+### Schema Erp_machine_movements_lines_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_machine_movements_lines_fieldsFeDisplay](#schema-erp_machine_movements_lines_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_machine_movements_lines_fieldsfedisplay"></a>
+
+### Schema Erp_machine_movements_lines_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(30); nullable=false; writable=false |
+| `assetId` | string | true | SQL AssetID varchar(50); nullable=false; writable=true |
+| `quantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Quantity decimal(18, 2); nullable=true; writable=true |
+| `departmentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DepartmentID varchar(50); nullable=true; writable=true |
+| `objectId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ObjectID varchar(50); nullable=true; writable=true |
+| `costCenterId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CostCenterID varchar(50); nullable=true; writable=true |
+| `costId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CostID varchar(50); nullable=true; writable=true |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(150); nullable=true; writable=true |
+| `fromObjectId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromObjectID varchar(100); nullable=true; writable=true |
+| `fromStoreHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromStoreHouseID varchar(50); nullable=true; writable=true |
+| `toStoreHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToStoreHouseID varchar(50); nullable=true; writable=true |
+| `fromLocation` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromLocation nvarchar(500); nullable=true; writable=true |
+| `toLocation` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToLocation nvarchar(500); nullable=true; writable=true |
+| `handoverDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL HandoverDate datetime; nullable=true; writable=true |
+| `handoverComponents` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL HandoverComponents nvarchar(max); nullable=true; writable=true |
+| `assetCondition` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetCondition nvarchar(1000); nullable=true; writable=true |
+| `lifecycleStatusAfter` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LifecycleStatusAfter varchar(30); nullable=true; writable=false |
+| `toLocationId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToLocationID nvarchar(50); nullable=true; writable=true |
+| `toQuanHuyen` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToQuanHuyen nvarchar(50); nullable=true; writable=true |
+| `toXaPhuong` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToXaPhuong nvarchar(50); nullable=true; writable=true |
+| `toChuyenKhoa` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToChuyenKhoa nvarchar(250); nullable=true; writable=true |
+| `toZoneId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToZoneID nvarchar(50); nullable=true; writable=true |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `assetName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `assetReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `departmentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `departmentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `objectName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `objectReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `costCenterName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `costCenterReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `costName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `costReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `fromObjectName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `fromObjectReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `fromStoreHouseName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `fromStoreHouseReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `toStoreHouseName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `toStoreHouseReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `handoverDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `toLocationName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `toLocationReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `toZoneName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `toZoneReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_machine_repairs_list_responsefedisplay"></a>
+
+### Schema Erp_machine_repairs_list_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_machine_repairs_document_pageFeDisplay](#schema-erp_machine_repairs_document_pagefedisplay) | true | — |
+
+<a id="schema-erp_machine_repairs_document_pagefedisplay"></a>
+
+### Schema Erp_machine_repairs_document_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_machine_repairs_document_rowFeDisplay](#schema-erp_machine_repairs_document_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_machine_repairs_document_rowfedisplay"></a>
+
+### Schema Erp_machine_repairs_document_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_machine_repairs_header_fieldsFeDisplay](#schema-erp_machine_repairs_header_fieldsfedisplay) | true | — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_machine_repairs_header_fieldsfedisplay"></a>
+
+### Schema Erp_machine_repairs_header_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | SQL DocumentID varchar(30); nullable=false; writable=false |
+| `documentDate` | string | true | SQL DocumentDate datetime; nullable=false; writable=true |
+| `nguoiGiao` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL NguoiGiao nvarchar(150); nullable=true; writable=true |
+| `nguoiNhan` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL NguoiNhan nvarchar(150); nullable=true; writable=true |
+| `memo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Memo nvarchar(150); nullable=true; writable=true |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(150); nullable=true; writable=true |
+| `isLocked` | boolean | true | SQL isLock bit; nullable=false; writable=false |
+| `userCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserCreate varchar(50); nullable=true; writable=false |
+| `userUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserUpdate varchar(50); nullable=true; writable=false |
+| `dateUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateUpdate datetime; nullable=true; writable=false |
+| `dateCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateCreate datetime; nullable=true; writable=false |
+| `serviceTypeId` | string | true | SQL ServiceTypeID varchar(30); nullable=false; writable=true |
+| `objectId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ObjectID varchar(100); nullable=true; writable=true |
+| `serviceLocation` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ServiceLocation nvarchar(500); nullable=true; writable=true |
+| `contractId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ContractID nvarchar(100); nullable=true; writable=true |
+| `startDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StartDate datetime; nullable=true; writable=true |
+| `endDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL EndDate datetime; nullable=true; writable=true |
+| `technician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Technician nvarchar(150); nullable=true; writable=true |
+| `serviceStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ServiceStatus varchar(30); nullable=true; writable=true |
+| `referenceNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ReferenceNo nvarchar(100); nullable=true; writable=true |
+| `referenceDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ReferenceDate datetime; nullable=true; writable=true |
+| `documentLink` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DocumentLink nvarchar(1000); nullable=true; writable=true |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateUpdateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateCreateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `serviceTypeName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `serviceTypeReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `objectName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `objectReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `contractName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `contractReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `startDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `endDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `referenceDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_machine_repairs_detail_responsefedisplay"></a>
+
+### Schema Erp_machine_repairs_detail_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_machine_repairs_detailFeDisplay](#schema-erp_machine_repairs_detailfedisplay) | true | — |
+
+<a id="schema-erp_machine_repairs_detailfedisplay"></a>
+
+### Schema Erp_machine_repairs_detailFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_machine_repairs_header_fieldsFeDisplay](#schema-erp_machine_repairs_header_fieldsfedisplay) | true | — |
+| `lines` | [Erp_machine_repairs_lines_pageFeDisplay](#schema-erp_machine_repairs_lines_pagefedisplay) | true | — |
+| `history` | null | true | — |
+| `comparison` | null | true | — |
+| `actions` | array&lt;[ErpActionStateFeDisplay](#schema-erpactionstatefedisplay)&gt; | true | items[0]: — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_machine_repairs_lines_pagefedisplay"></a>
+
+### Schema Erp_machine_repairs_lines_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_machine_repairs_lines_rowFeDisplay](#schema-erp_machine_repairs_lines_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_machine_repairs_lines_rowfedisplay"></a>
+
+### Schema Erp_machine_repairs_lines_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_machine_repairs_lines_fieldsFeDisplay](#schema-erp_machine_repairs_lines_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_machine_repairs_lines_fieldsfedisplay"></a>
+
+### Schema Erp_machine_repairs_lines_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(30); nullable=false; writable=false |
+| `assetId` | string | true | SQL AssetID varchar(50); nullable=false; writable=true |
+| `noiDung` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL NoiDung nvarchar(150); nullable=true; writable=true |
+| `quantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Quantity decimal(18, 2); nullable=true; writable=true |
+| `amount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Amount decimal(18, 2); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(150); nullable=true; writable=true |
+| `problemDescription` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ProblemDescription nvarchar(max); nullable=true; writable=true |
+| `actionTaken` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActionTaken nvarchar(max); nullable=true; writable=true |
+| `resultStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ResultStatus nvarchar(500); nullable=true; writable=true |
+| `warrantyCovered` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL WarrantyCovered bit; nullable=true; writable=true |
+| `nextServiceDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL NextServiceDate datetime; nullable=true; writable=true |
+| `laborAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LaborAmount decimal(28, 0); nullable=true; writable=true |
+| `partsAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PartsAmount decimal(28, 0); nullable=true; writable=false |
+| `internalAlert` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL InternalAlert nvarchar(1000); nullable=true; writable=true |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `assetName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `assetReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `amountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `nextServiceDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `laborAmountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `partsAmountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_purchase_requests_list_responsefedisplay"></a>
+
+### Schema Erp_purchase_requests_list_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_purchase_requests_document_pageFeDisplay](#schema-erp_purchase_requests_document_pagefedisplay) | true | — |
+
+<a id="schema-erp_purchase_requests_document_pagefedisplay"></a>
+
+### Schema Erp_purchase_requests_document_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_purchase_requests_document_rowFeDisplay](#schema-erp_purchase_requests_document_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_purchase_requests_document_rowfedisplay"></a>
+
+### Schema Erp_purchase_requests_document_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_purchase_requests_header_fieldsFeDisplay](#schema-erp_purchase_requests_header_fieldsfedisplay) | true | — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_purchase_requests_header_fieldsfedisplay"></a>
+
+### Schema Erp_purchase_requests_header_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `purchaseRequestId` | string | true | SQL PurchaseRequestID nvarchar(50); nullable=false; writable=false |
+| `purchaseDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PurchaseDate datetime; nullable=true; writable=true |
+| `purposeId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL PurposeID int; nullable=true; writable=true |
+| `personSuggest` | string | true | SQL PersonSuggest nvarchar(500); nullable=false; writable=true |
+| `department` | string | true | SQL Department nvarchar(100); nullable=false; writable=true |
+| `purposeDescOrClient` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PurposeDescOrClient nvarchar(max); nullable=true; writable=true |
+| `price` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Price decimal(18, 2); nullable=true; writable=true |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=true |
+| `statusId` | integer | true | SQL StatusID int; nullable=false; writable=false |
+| `isLocked` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL isLock bit; nullable=true; writable=false |
+| `currencyId` | string | true | SQL CurrencyID varchar(3); nullable=false; writable=true |
+| `objectId` | string | true | SQL ObjectID varchar(100); nullable=false; writable=true |
+| `rateExchange` | number | true | SQL RateExchange float; nullable=false; writable=true |
+| `branchId` | string | true | SQL BranchID varchar(50); nullable=false; writable=false |
+| `purchaseRequestName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `purchaseRequestReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `purchaseDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `purposeName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `purposeReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `priceDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `statusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `currencyName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `currencyReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `objectName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `objectReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_purchase_requests_detail_responsefedisplay"></a>
+
+### Schema Erp_purchase_requests_detail_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_purchase_requests_detailFeDisplay](#schema-erp_purchase_requests_detailfedisplay) | true | — |
+
+<a id="schema-erp_purchase_requests_detailfedisplay"></a>
+
+### Schema Erp_purchase_requests_detailFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_purchase_requests_header_fieldsFeDisplay](#schema-erp_purchase_requests_header_fieldsfedisplay) | true | — |
+| `lines` | [Erp_purchase_requests_lines_pageFeDisplay](#schema-erp_purchase_requests_lines_pagefedisplay) | true | — |
+| `history` | null | true | — |
+| `comparison` | null | true | — |
+| `actions` | array&lt;[ErpActionStateFeDisplay](#schema-erpactionstatefedisplay)&gt; | true | items[0]: — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_purchase_requests_lines_pagefedisplay"></a>
+
+### Schema Erp_purchase_requests_lines_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_purchase_requests_lines_rowFeDisplay](#schema-erp_purchase_requests_lines_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_purchase_requests_lines_rowfedisplay"></a>
+
+### Schema Erp_purchase_requests_lines_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_purchase_requests_lines_fieldsFeDisplay](#schema-erp_purchase_requests_lines_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_purchase_requests_lines_fieldsfedisplay"></a>
+
+### Schema Erp_purchase_requests_lines_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID varchar(50); nullable=false; writable=true |
+| `budget` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Budget decimal(18, 0); nullable=true; writable=true |
+| `timeRequired` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TimeRequired nvarchar(200); nullable=true; writable=true |
+| `quantity` | string | true | SQL Quantity decimal(18, 0); nullable=false; writable=true |
+| `unitPrice` | string | true | SQL UnitPrice decimal(18, 0); nullable=false; writable=true |
+| `totalPrice` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TotalPrice decimal(18, 0); nullable=true; writable=false |
+| `model` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Model varchar(50); nullable=true; writable=true |
+| `purchaseRequestId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PurchaseRequestID nvarchar(50); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+| `budgetDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `unitPriceDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `totalPriceDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `purchaseRequestName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `purchaseRequestReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_sales_orders_list_responsefedisplay"></a>
+
+### Schema Erp_sales_orders_list_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_sales_orders_document_pageFeDisplay](#schema-erp_sales_orders_document_pagefedisplay) | true | — |
+
+<a id="schema-erp_sales_orders_document_pagefedisplay"></a>
+
+### Schema Erp_sales_orders_document_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_sales_orders_document_rowFeDisplay](#schema-erp_sales_orders_document_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_sales_orders_document_rowfedisplay"></a>
+
+### Schema Erp_sales_orders_document_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_sales_orders_header_fieldsFeDisplay](#schema-erp_sales_orders_header_fieldsfedisplay) | true | — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_sales_orders_header_fieldsfedisplay"></a>
+
+### Schema Erp_sales_orders_header_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `documentDate` | string | true | SQL DocumentDate datetime; nullable=false; writable=true |
+| `objectId` | string | true | SQL ObjectID varchar(100); nullable=false; writable=true |
+| `contractId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ContractID nvarchar(250); nullable=true; writable=true |
+| `memo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Memo nvarchar(max); nullable=true; writable=true |
+| `deliverDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeliverDate datetime; nullable=true; writable=true |
+| `baseTotal` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BaseTotal decimal(28, 0); nullable=true; writable=true |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `employeeId` | string | true | SQL EmployeeID varchar(50); nullable=false; writable=true |
+| `managerId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ManagerID varchar(50); nullable=true; writable=true |
+| `phone` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Phone varchar(150); nullable=true; writable=true |
+| `branchId` | string | true | SQL BranchID varchar(50); nullable=false; writable=false |
+| `taxCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TaxCode varchar(50); nullable=true; writable=true |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=true |
+| `depositAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DepositAmount decimal(28, 0); nullable=true; writable=true |
+| `isLocked` | boolean | true | SQL isLock bit; nullable=false; writable=false |
+| `agencyId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AgencyID varchar(50); nullable=true; writable=true |
+| `isVAT` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL isVAT bit; nullable=true; writable=true |
+| `isOrder` | boolean | true | SQL isOrder bit; nullable=false; writable=true |
+| `currencyId` | string | true | SQL CurrencyID varchar(3); nullable=false; writable=true |
+| `rateExchange` | number | true | SQL RateExchange float; nullable=false; writable=true |
+| `linkId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LinkID varchar(50); nullable=true; writable=true |
+| `userCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserCreate varchar(50); nullable=true; writable=false |
+| `userUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserUpdate varchar(50); nullable=true; writable=false |
+| `dateUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateUpdate datetime; nullable=true; writable=false |
+| `dateCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateCreate datetime; nullable=true; writable=false |
+| `ghiChuDonHang` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL GhiChuDonHang nvarchar(250); nullable=true; writable=true |
+| `paymentTermId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PaymentTermID varchar(50); nullable=true; writable=true |
+| `ceoId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CeoID varchar(50); nullable=true; writable=true |
+| `thamGiaHopDongBan` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL ThamGiaHopDongBan bit; nullable=true; writable=true |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl varchar(500); nullable=true; writable=true |
+| `beforeOutStockUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BeforeOutStockUrl varchar(500); nullable=true; writable=true |
+| `bBBGUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBBGUrl varchar(500); nullable=true; writable=true |
+| `documentUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DocumentUrl nvarchar(500); nullable=true; writable=true |
+| `handoverLocation` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL HandoverLocation nvarchar(200); nullable=true; writable=true |
+| `representedByA` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RepresentedByA nvarchar(100); nullable=true; writable=true |
+| `positionA` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PositionA nvarchar(100); nullable=true; writable=true |
+| `addressA` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddressA nvarchar(200); nullable=true; writable=true |
+| `representedByB` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RepresentedByB nvarchar(100); nullable=true; writable=true |
+| `positionB` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PositionB nvarchar(100); nullable=true; writable=true |
+| `addressB` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddressB nvarchar(200); nullable=true; writable=true |
+| `conclude` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Conclude nvarchar(500); nullable=true; writable=true |
+| `minutesNumber` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL MinutesNumber int; nullable=true; writable=true |
+| `partyAKeep` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL PartyAKeep int; nullable=true; writable=true |
+| `partyBKeep` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL PartyBKeep int; nullable=true; writable=true |
+| `deliveryStatusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeliveryStatusID int; nullable=true; writable=true |
+| `deliveryEmployeeId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeliveryEmployeeID nvarchar(200); nullable=true; writable=true |
+| `deliveryEmployeeSubId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeliveryEmployeeSubID nvarchar(200); nullable=true; writable=true |
+| `vehicle` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Vehicle nvarchar(200); nullable=true; writable=true |
+| `soPhieu` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SoPhieu nvarchar(100); nullable=true; writable=true |
+| `soHoaDon` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SoHoaDon nvarchar(100); nullable=true; writable=true |
+| `ngayPhieu` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL NgayPhieu datetime; nullable=true; writable=true |
+| `ngayHoaDon` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL NgayHoaDon datetime; nullable=true; writable=true |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `objectName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `objectReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `contractName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `contractReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `deliverDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `baseTotalDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `statusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `employeeName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `employeeReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `managerName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `managerReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `depositAmountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `agencyName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `agencyReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `currencyName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `currencyReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `linkName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `linkReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `dateUpdateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateCreateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `paymentTermName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `paymentTermReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `ceoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `ceoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `deliveryStatusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `deliveryStatusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `deliveryEmployeeName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `deliveryEmployeeReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `deliveryEmployeeSubName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `deliveryEmployeeSubReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `ngayPhieuDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `ngayHoaDonDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_sales_orders_detail_responsefedisplay"></a>
+
+### Schema Erp_sales_orders_detail_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_sales_orders_detailFeDisplay](#schema-erp_sales_orders_detailfedisplay) | true | — |
+
+<a id="schema-erp_sales_orders_detailfedisplay"></a>
+
+### Schema Erp_sales_orders_detailFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_sales_orders_header_fieldsFeDisplay](#schema-erp_sales_orders_header_fieldsfedisplay) | true | — |
+| `lines` | [Erp_sales_orders_lines_pageFeDisplay](#schema-erp_sales_orders_lines_pagefedisplay) | true | — |
+| `history` | [Erp_sales_orders_history_pageFeDisplay](#schema-erp_sales_orders_history_pagefedisplay) | true | — |
+| `comparison` | null | true | — |
+| `actions` | array&lt;[ErpActionStateFeDisplay](#schema-erpactionstatefedisplay)&gt; | true | items[0]: — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_sales_orders_lines_pagefedisplay"></a>
+
+### Schema Erp_sales_orders_lines_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_sales_orders_lines_rowFeDisplay](#schema-erp_sales_orders_lines_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_sales_orders_lines_rowfedisplay"></a>
+
+### Schema Erp_sales_orders_lines_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_sales_orders_lines_fieldsFeDisplay](#schema-erp_sales_orders_lines_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_sales_orders_lines_fieldsfedisplay"></a>
+
+### Schema Erp_sales_orders_lines_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID nvarchar(50); nullable=false; writable=true |
+| `quantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Quantity decimal(18, 0); nullable=true; writable=true |
+| `unitFactor` | number / null | true | anyOf[0]: —; anyOf[1]: —; SQL UnitFactor float; nullable=true; writable=false |
+| `unit2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Unit2 nvarchar(50); nullable=true; writable=false |
+| `quantity2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Quantity2 decimal(18, 0); nullable=true; writable=false |
+| `unitPrice` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UnitPrice decimal(28, 0); nullable=true; writable=true |
+| `tonKhoHienTai` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TonKhoHienTai decimal(18, 0); nullable=true; writable=false |
+| `deliveryQuantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeliveryQuantity decimal(18, 0); nullable=true; writable=false |
+| `soLuongHopDong` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SoLuongHopDong decimal(18, 0); nullable=true; writable=false |
+| `amount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Amount decimal(28, 0); nullable=true; writable=false |
+| `discountPercent` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DiscountPercent decimal(18, 2); nullable=true; writable=true |
+| `discountAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DiscountAmount decimal(18, 0); nullable=true; writable=false |
+| `vATPercent` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATPercent decimal(18, 2); nullable=true; writable=true |
+| `vATAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATAmount decimal(18, 0); nullable=true; writable=false |
+| `totalAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TotalAmount decimal(18, 0); nullable=true; writable=false |
+| `vATQuantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATQuantity decimal(18, 2); nullable=true; writable=true |
+| `dienGiai` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DienGiai nvarchar(max); nullable=true; writable=true |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=true |
+| `property` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Property nvarchar(50); nullable=true; writable=true |
+| `property2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Property2 nvarchar(50); nullable=true; writable=true |
+| `parentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ParentID varchar(50); nullable=true; writable=true |
+| `notes2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes2 nvarchar(200); nullable=true; writable=true |
+| `costId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CostID varchar(50); nullable=true; writable=true |
+| `storeHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StoreHouseID varchar(50); nullable=true; writable=true |
+| `vATId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATID varchar(50); nullable=true; writable=true |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unitPriceDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `amountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `discountAmountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `vATAmountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `totalAmountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `parentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `parentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `costName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `costReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `storeHouseName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `storeHouseReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `vATName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `vATReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_sales_orders_history_pagefedisplay"></a>
+
+### Schema Erp_sales_orders_history_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_sales_orders_history_rowFeDisplay](#schema-erp_sales_orders_history_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_sales_orders_history_rowfedisplay"></a>
+
+### Schema Erp_sales_orders_history_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_sales_orders_history_fieldsFeDisplay](#schema-erp_sales_orders_history_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_sales_orders_history_fieldsfedisplay"></a>
+
+### Schema Erp_sales_orders_history_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `thoiGian` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ThoiGian datetime; nullable=true; writable=false |
+| `userName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserName nvarchar(50); nullable=true; writable=false |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `thoiGianDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `statusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erpscopedresponse_erpcontractinfofedisplay"></a>
+
+### Schema ErpScopedResponse_ErpContractInfoFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [ErpContractInfoFeDisplay](#schema-erpcontractinfofedisplay) / null | true | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erpcontractinfofedisplay"></a>
+
+### Schema ErpContractInfoFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `contractId` | string | true | — |
+| `fields` | dictionary&lt;any JSON&gt; | true | additionalProperties={"description":"Fixed module field or action input; see x-medcom-typed-header, x-medcom-typed-line, x-medcom-typed-payload and x-medcom-full-field-sections on its operation."} |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `contractName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `contractReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_sales_qr_list_responsefedisplay"></a>
+
+### Schema Erp_sales_qr_list_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_sales_qr_document_pageFeDisplay](#schema-erp_sales_qr_document_pagefedisplay) | true | — |
+
+<a id="schema-erp_sales_qr_document_pagefedisplay"></a>
+
+### Schema Erp_sales_qr_document_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_sales_qr_document_rowFeDisplay](#schema-erp_sales_qr_document_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_sales_qr_document_rowfedisplay"></a>
+
+### Schema Erp_sales_qr_document_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_sales_qr_header_fieldsFeDisplay](#schema-erp_sales_qr_header_fieldsfedisplay) | true | — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_sales_qr_header_fieldsfedisplay"></a>
+
+### Schema Erp_sales_qr_header_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | SQL DocumentID varchar(30); nullable=false; writable=false |
+| `documentDate` | string | true | SQL DocumentDate datetime; nullable=false; writable=false |
+| `objectId` | string | true | SQL ObjectID varchar(100); nullable=false; writable=false |
+| `employeeId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL EmployeeID varchar(50); nullable=true; writable=false |
+| `managerId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ManagerID varchar(50); nullable=true; writable=false |
+| `memo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Memo nvarchar(250); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(200); nullable=true; writable=false |
+| `receiver` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Receiver nvarchar(100); nullable=true; writable=false |
+| `currencyId` | string | true | SQL CurrencyID varchar(3); nullable=false; writable=false |
+| `rateExchange` | number | true | SQL RateExchange float; nullable=false; writable=false |
+| `paymentTypeId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PaymentTypeID varchar(50); nullable=true; writable=false |
+| `paymentTermId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PaymentTermID varchar(50); nullable=true; writable=false |
+| `dueDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DueDate datetime; nullable=true; writable=false |
+| `debtDueDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DebtDueDate datetime; nullable=true; writable=false |
+| `pONo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PONo varchar(50); nullable=true; writable=false |
+| `contractId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ContractID nvarchar(100); nullable=true; writable=false |
+| `refDoc` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RefDoc varchar(50); nullable=true; writable=false |
+| `baseTotal` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BaseTotal decimal(18, 0); nullable=true; writable=false |
+| `revAccId` | string | true | SQL RevAccID varchar(50); nullable=false; writable=false |
+| `vATAccId` | string | true | SQL VATAccID varchar(50); nullable=false; writable=false |
+| `isLocked` | boolean | true | SQL isLock bit; nullable=false; writable=false |
+| `invoiceNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL InvoiceNo varchar(50); nullable=true; writable=false |
+| `searchField` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SearchField nvarchar(2000); nullable=true; writable=false |
+| `userCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserCreate varchar(50); nullable=true; writable=false |
+| `userUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserUpdate varchar(50); nullable=true; writable=false |
+| `dateUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateUpdate datetime; nullable=true; writable=false |
+| `dateCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateCreate datetime; nullable=true; writable=false |
+| `status` | integer | true | SQL Status int; nullable=false; writable=false |
+| `linkId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LinkID varchar(50); nullable=true; writable=false |
+| `vATAccId2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATAccID2 varchar(50); nullable=true; writable=false |
+| `amountTotal` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AmountTotal decimal(28, 0); nullable=true; writable=false |
+| `vATAmountTotal` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATAmountTotal decimal(28, 0); nullable=true; writable=false |
+| `impExpId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ImpExpID varchar(10); nullable=true; writable=false |
+| `isExport` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL isExport bit; nullable=true; writable=false |
+| `costCenterId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CostCenterID varchar(50); nullable=true; writable=false |
+| `costId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CostID varchar(50); nullable=true; writable=false |
+| `vATAccExId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATAccExID varchar(50); nullable=true; writable=false |
+| `docBatch` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DocBatch varchar(50); nullable=true; writable=false |
+| `couponAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CouponAmount decimal(18, 0); nullable=true; writable=false |
+| `lanIn` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL LanIn int; nullable=true; writable=false |
+| `locationId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LocationID nvarchar(50); nullable=true; writable=false |
+| `attach` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Attach nvarchar(100); nullable=true; writable=false |
+| `attachDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AttachDate datetime; nullable=true; writable=false |
+| `noiDungHoaDon` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL NoiDungHoaDon nvarchar(500); nullable=true; writable=false |
+| `nguoiMuaHangHD` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL NguoiMuaHangHD nvarchar(250); nullable=true; writable=false |
+| `tenKhachLe` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TenKhachLe nvarchar(250); nullable=true; writable=false |
+| `mSTKhachLe` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL MSTKhachLe nvarchar(50); nullable=true; writable=false |
+| `branchId` | string | true | SQL BranchID varchar(50); nullable=false; writable=false |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `isLocal` | boolean | true | SQL isLocal bit; nullable=false; writable=false |
+| `invoiceKey` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL InvoiceKey varchar(50); nullable=true; writable=false |
+| `refInvoiceKey` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RefInvoiceKey varchar(50); nullable=true; writable=false |
+| `objectNameHD` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ObjectNameHD nvarchar(250); nullable=true; writable=false |
+| `addressHD` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddressHD nvarchar(250); nullable=true; writable=false |
+| `taxCodeHD` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TaxCodeHD nvarchar(50); nullable=true; writable=false |
+| `uId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UID varchar(50); nullable=true; writable=false |
+| `ghiChuHoaDon` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL GhiChuHoaDon nvarchar(250); nullable=true; writable=false |
+| `thuHo` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL ThuHo bit; nullable=true; writable=false |
+| `agencyId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AgencyID varchar(50); nullable=true; writable=false |
+| `ceoId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CeoID varchar(50); nullable=true; writable=false |
+| `ngayGiaoLai` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL NgayGiaoLai datetime; nullable=true; writable=false |
+| `hinhThucGiaoHang` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL HinhThucGiaoHang nvarchar(100); nullable=true; writable=false |
+| `thamGiaHopDongBan` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL ThamGiaHopDongBan bit; nullable=true; writable=false |
+| `cTKM` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CTKM varchar(50); nullable=true; writable=false |
+| `soTienKM` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SoTienKM decimal(18, 0); nullable=true; writable=false |
+| `maVanDon` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL MaVanDon nvarchar(50); nullable=true; writable=false |
+| `phiVanChuyen` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PhiVanChuyen decimal(18, 0); nullable=true; writable=false |
+| `phiKhacTotal` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PhiKhacTotal decimal(18, 0); nullable=true; writable=false |
+| `maHopDong` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL MaHopDong nvarchar(50); nullable=true; writable=false |
+| `discountTotal` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DiscountTotal decimal(18, 0); nullable=true; writable=false |
+| `isScanQrCode` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL isScanQRCode bit; nullable=true; writable=false |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `objectName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `objectReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `employeeName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `employeeReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `managerName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `managerReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `currencyName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `currencyReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `paymentTypeName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `paymentTypeReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `paymentTermName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `paymentTermReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `dueDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `debtDueDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `contractName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `contractReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `baseTotalDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `revAccName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `revAccReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `vATAccName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `vATAccReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `dateUpdateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateCreateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `linkName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `linkReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `amountTotalDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `vATAmountTotalDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `impExpName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `impExpReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `costCenterName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `costCenterReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `costName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `costReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `vATAccExName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `vATAccExReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `couponAmountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `locationName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `locationReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `attachDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `statusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `uName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `uReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `agencyName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `agencyReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `ceoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `ceoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `ngayGiaoLaiDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `soTienKMDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `phiVanChuyenDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `phiKhacTotalDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `discountTotalDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_sales_qr_detail_responsefedisplay"></a>
+
+### Schema Erp_sales_qr_detail_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_sales_qr_detailFeDisplay](#schema-erp_sales_qr_detailfedisplay) | true | — |
+
+<a id="schema-erp_sales_qr_detailfedisplay"></a>
+
+### Schema Erp_sales_qr_detailFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_sales_qr_header_fieldsFeDisplay](#schema-erp_sales_qr_header_fieldsfedisplay) | true | — |
+| `lines` | [Erp_sales_qr_lines_pageFeDisplay](#schema-erp_sales_qr_lines_pagefedisplay) | true | — |
+| `history` | null | true | — |
+| `comparison` | [Erp_sales_qr_comparison_pageFeDisplay](#schema-erp_sales_qr_comparison_pagefedisplay) | true | — |
+| `actions` | array&lt;[ErpActionStateFeDisplay](#schema-erpactionstatefedisplay)&gt; | true | items[0]: — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_sales_qr_lines_pagefedisplay"></a>
+
+### Schema Erp_sales_qr_lines_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_sales_qr_lines_rowFeDisplay](#schema-erp_sales_qr_lines_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_sales_qr_lines_rowfedisplay"></a>
+
+### Schema Erp_sales_qr_lines_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_sales_qr_lines_fieldsFeDisplay](#schema-erp_sales_qr_lines_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_sales_qr_lines_fieldsfedisplay"></a>
+
+### Schema Erp_sales_qr_lines_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID nvarchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID nvarchar(50); nullable=false; writable=false |
+| `qrCode` | string | true | SQL QRCode nvarchar(200); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID nvarchar(50); nullable=false; writable=false |
+| `itemCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemCode nvarchar(50); nullable=true; writable=false |
+| `lot` | string | true | SQL Lot nvarchar(50); nullable=false; writable=false |
+| `quantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Quantity decimal(38, 10); nullable=true; writable=false |
+| `qrPackageId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QRPackageID nvarchar(200); nullable=true; writable=false |
+| `quyCach` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QuyCach nvarchar(50); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+| `qrPackageName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `qrPackageReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_sales_qr_comparison_pagefedisplay"></a>
+
+### Schema Erp_sales_qr_comparison_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_sales_qr_comparison_rowFeDisplay](#schema-erp_sales_qr_comparison_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_sales_qr_comparison_rowfedisplay"></a>
+
+### Schema Erp_sales_qr_comparison_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_sales_qr_comparison_fieldsFeDisplay](#schema-erp_sales_qr_comparison_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_sales_qr_comparison_fieldsfedisplay"></a>
+
+### Schema Erp_sales_qr_comparison_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(30); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID nvarchar(50); nullable=false; writable=false |
+| `lot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Lot varchar(50); nullable=true; writable=false |
+| `expireDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ExpireDate datetime; nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=false |
+| `storeHouseId` | string | true | SQL StoreHouseID varchar(50); nullable=false; writable=false |
+| `quantity` | string | true | SQL Quantity decimal(28, 4); nullable=false; writable=false |
+| `unitPrice` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UnitPrice decimal(28, 4); nullable=true; writable=false |
+| `sourceAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SourceAmount decimal(28, 2); nullable=true; writable=false |
+| `amount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Amount decimal(28, 0); nullable=true; writable=false |
+| `vATId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATID varchar(50); nullable=true; writable=false |
+| `vATPercent` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATPercent decimal(18, 2); nullable=true; writable=false |
+| `vATAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATAmount decimal(28, 0); nullable=true; writable=false |
+| `discountPercentTT` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DiscountPercentTT decimal(18, 2); nullable=true; writable=false |
+| `discountAmountTT` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DiscountAmountTT decimal(28, 0); nullable=true; writable=false |
+| `discountPercent` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DiscountPercent decimal(18, 2); nullable=true; writable=false |
+| `discountAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DiscountAmount decimal(28, 0); nullable=true; writable=false |
+| `totalAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TotalAmount decimal(28, 0); nullable=true; writable=false |
+| `costCenterId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CostCenterID varchar(50); nullable=true; writable=false |
+| `costId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CostID varchar(50); nullable=true; writable=false |
+| `incomeAccId` | string | true | SQL IncomeAccID varchar(50); nullable=false; writable=false |
+| `invAccId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL InvAccID varchar(50); nullable=true; writable=false |
+| `costOfSaleAccId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CostOfSaleAccID varchar(50); nullable=true; writable=false |
+| `discountAcctId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DiscountAcctID varchar(50); nullable=true; writable=false |
+| `discountAmount2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DiscountAmount2 decimal(18, 0); nullable=true; writable=false |
+| `unitCost` | number / null | true | anyOf[0]: —; anyOf[1]: —; SQL UnitCost float; nullable=true; writable=false |
+| `amountCost` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AmountCost decimal(28, 0); nullable=true; writable=false |
+| `quantity2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Quantity2 decimal(28, 4); nullable=true; writable=false |
+| `property` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Property nvarchar(50); nullable=true; writable=false |
+| `property2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Property2 nvarchar(50); nullable=true; writable=false |
+| `objectId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ObjectID varchar(50); nullable=true; writable=false |
+| `parentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ParentID varchar(50); nullable=true; writable=false |
+| `unitPriceV` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UnitPriceV decimal(28, 2); nullable=true; writable=false |
+| `unitFactor` | number / null | true | anyOf[0]: —; anyOf[1]: —; SQL UnitFactor float; nullable=true; writable=false |
+| `exportPercent` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ExportPercent decimal(18, 2); nullable=true; writable=false |
+| `exportAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ExportAmount decimal(28, 2); nullable=true; writable=false |
+| `dienGiai` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DienGiai nvarchar(250); nullable=true; writable=false |
+| `stockQuantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StockQuantity decimal(28, 4); nullable=true; writable=false |
+| `isKM` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL isKM bit; nullable=true; writable=false |
+| `employeeId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL EmployeeID varchar(50); nullable=true; writable=false |
+| `managerId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ManagerID varchar(50); nullable=true; writable=false |
+| `cTKM` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CTKM varchar(50); nullable=true; writable=false |
+| `tongTienNhom1` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TongTienNhom1 decimal(18, 0); nullable=true; writable=false |
+| `tongTienNhom2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TongTienNhom2 decimal(18, 0); nullable=true; writable=false |
+| `phiKhac` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PhiKhac decimal(18, 0); nullable=true; writable=false |
+| `tongTienNhomFyto` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TongTienNhomFyto decimal(18, 0); nullable=true; writable=false |
+| `quyCach` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QuyCach nvarchar(50); nullable=true; writable=false |
+| `sLTheoQuyCach` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SLTheoQuyCach decimal(18, 2); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+| `expireDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `storeHouseName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `storeHouseReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `unitPriceDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `sourceAmountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `amountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `vATName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `vATReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `vATAmountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `discountAmountTTDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `discountAmountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `totalAmountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `costCenterName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `costCenterReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `costName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `costReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `incomeAccName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `incomeAccReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `invAccName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `invAccReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `costOfSaleAccName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `costOfSaleAccReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `discountAcctName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `discountAcctReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `discountAmount2Display` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `unitCostDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `amountCostDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `objectName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `objectReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `parentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `parentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `unitPriceVDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `exportAmountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `employeeName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `employeeReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `managerName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `managerReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `tongTienNhom1Display` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `tongTienNhom2Display` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `phiKhacDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `tongTienNhomFytoDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_warehouse_qr_list_responsefedisplay"></a>
+
+### Schema Erp_warehouse_qr_list_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_warehouse_qr_document_pageFeDisplay](#schema-erp_warehouse_qr_document_pagefedisplay) | true | — |
+
+<a id="schema-erp_warehouse_qr_document_pagefedisplay"></a>
+
+### Schema Erp_warehouse_qr_document_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_warehouse_qr_document_rowFeDisplay](#schema-erp_warehouse_qr_document_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_warehouse_qr_document_rowfedisplay"></a>
+
+### Schema Erp_warehouse_qr_document_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_warehouse_qr_header_fieldsFeDisplay](#schema-erp_warehouse_qr_header_fieldsfedisplay) | true | — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_warehouse_qr_header_fieldsfedisplay"></a>
+
+### Schema Erp_warehouse_qr_header_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | SQL DocumentID varchar(30); nullable=false; writable=false |
+| `documentDate` | string | true | SQL DocumentDate datetime; nullable=false; writable=false |
+| `objectId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ObjectID varchar(100); nullable=true; writable=false |
+| `memo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Memo nvarchar(200); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(200); nullable=true; writable=false |
+| `isLocked` | boolean | true | SQL isLock bit; nullable=false; writable=false |
+| `outputType` | string | true | SQL OutputType varchar(20); nullable=false; writable=false |
+| `searchField` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SearchField nvarchar(2000); nullable=true; writable=false |
+| `userCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserCreate varchar(50); nullable=true; writable=false |
+| `userUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserUpdate varchar(50); nullable=true; writable=false |
+| `dateUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateUpdate datetime; nullable=true; writable=false |
+| `dateCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateCreate datetime; nullable=true; writable=false |
+| `status` | integer | true | SQL Status int; nullable=false; writable=false |
+| `calPrice` | boolean | true | SQL CalPrice bit; nullable=false; writable=false |
+| `calCost` | boolean | true | SQL CalCost bit; nullable=false; writable=false |
+| `linkId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LinkID varchar(50); nullable=true; writable=false |
+| `isPacket` | boolean | true | SQL isPacket bit; nullable=false; writable=false |
+| `baseTotal` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BaseTotal decimal(28, 0); nullable=true; writable=false |
+| `docBatch` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DocBatch varchar(50); nullable=true; writable=false |
+| `nguoiNhan` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL NguoiNhan nvarchar(100); nullable=true; writable=false |
+| `productOrderId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ProductOrderID varchar(50); nullable=true; writable=false |
+| `branchId` | string | true | SQL BranchID varchar(50); nullable=false; writable=false |
+| `nguoiGiao` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL NguoiGiao nvarchar(100); nullable=true; writable=false |
+| `isScanQrCode` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL isScanQRCode bit; nullable=true; writable=false |
+| `internalTransferBatchId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL InternalTransferBatchID varchar(30); nullable=true; writable=false |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `objectName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `objectReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `dateUpdateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateCreateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `linkName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `linkReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `baseTotalDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `productOrderName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `productOrderReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `internalTransferBatchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `internalTransferBatchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_warehouse_qr_detail_responsefedisplay"></a>
+
+### Schema Erp_warehouse_qr_detail_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_warehouse_qr_detailFeDisplay](#schema-erp_warehouse_qr_detailfedisplay) | true | — |
+
+<a id="schema-erp_warehouse_qr_detailfedisplay"></a>
+
+### Schema Erp_warehouse_qr_detailFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_warehouse_qr_header_fieldsFeDisplay](#schema-erp_warehouse_qr_header_fieldsfedisplay) | true | — |
+| `lines` | [Erp_warehouse_qr_lines_pageFeDisplay](#schema-erp_warehouse_qr_lines_pagefedisplay) | true | — |
+| `history` | null | true | — |
+| `comparison` | [Erp_warehouse_qr_comparison_pageFeDisplay](#schema-erp_warehouse_qr_comparison_pagefedisplay) | true | — |
+| `actions` | array&lt;[ErpActionStateFeDisplay](#schema-erpactionstatefedisplay)&gt; | true | items[0]: — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_warehouse_qr_lines_pagefedisplay"></a>
+
+### Schema Erp_warehouse_qr_lines_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_warehouse_qr_lines_rowFeDisplay](#schema-erp_warehouse_qr_lines_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_warehouse_qr_lines_rowfedisplay"></a>
+
+### Schema Erp_warehouse_qr_lines_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_warehouse_qr_lines_fieldsFeDisplay](#schema-erp_warehouse_qr_lines_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_warehouse_qr_lines_fieldsfedisplay"></a>
+
+### Schema Erp_warehouse_qr_lines_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID nvarchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID nvarchar(50); nullable=false; writable=false |
+| `qrCode` | string | true | SQL QRCode nvarchar(200); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID nvarchar(50); nullable=false; writable=false |
+| `itemCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemCode nvarchar(50); nullable=true; writable=false |
+| `lot` | string | true | SQL Lot nvarchar(50); nullable=false; writable=false |
+| `quantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Quantity decimal(38, 10); nullable=true; writable=false |
+| `qrPackageId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QRPackageID nvarchar(200); nullable=true; writable=false |
+| `quyCach` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QuyCach nvarchar(50); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+| `qrPackageName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `qrPackageReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_warehouse_qr_comparison_pagefedisplay"></a>
+
+### Schema Erp_warehouse_qr_comparison_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_warehouse_qr_comparison_rowFeDisplay](#schema-erp_warehouse_qr_comparison_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_warehouse_qr_comparison_rowfedisplay"></a>
+
+### Schema Erp_warehouse_qr_comparison_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_warehouse_qr_comparison_fieldsFeDisplay](#schema-erp_warehouse_qr_comparison_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_warehouse_qr_comparison_fieldsfedisplay"></a>
+
+### Schema Erp_warehouse_qr_comparison_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(30); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID nvarchar(50); nullable=false; writable=false |
+| `lot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Lot varchar(50); nullable=true; writable=false |
+| `expireDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ExpireDate datetime; nullable=true; writable=false |
+| `storeHouseId` | string | true | SQL StoreHouseID varchar(50); nullable=false; writable=false |
+| `quantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Quantity decimal(28, 4); nullable=true; writable=false |
+| `unitPrice` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UnitPrice decimal(28, 2); nullable=true; writable=false |
+| `amount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Amount decimal(28, 0); nullable=true; writable=false |
+| `invAccId` | string | true | SQL InvAccID varchar(50); nullable=false; writable=false |
+| `accountId2` | string | true | SQL AccountID2 varchar(50); nullable=false; writable=false |
+| `costCenterId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CostCenterID varchar(50); nullable=true; writable=false |
+| `costId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CostID varchar(50); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(100); nullable=true; writable=false |
+| `quantity2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Quantity2 decimal(28, 4); nullable=true; writable=false |
+| `property` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Property nvarchar(50); nullable=true; writable=false |
+| `property2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Property2 nvarchar(50); nullable=true; writable=false |
+| `parentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ParentID varchar(50); nullable=true; writable=false |
+| `packetGroup` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PacketGroup varchar(50); nullable=true; writable=false |
+| `unitFactor` | number / null | true | anyOf[0]: —; anyOf[1]: —; SQL UnitFactor float; nullable=true; writable=false |
+| `refDoc` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RefDoc varchar(50); nullable=true; writable=false |
+| `assetId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetID varchar(50); nullable=true; writable=false |
+| `repairDocumentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RepairDocumentID varchar(30); nullable=true; writable=false |
+| `repairDetailId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RepairDetailID varchar(40); nullable=true; writable=false |
+| `sourceInputDetailId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SourceInputDetailID varchar(40); nullable=true; writable=false |
+| `partSerialNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PartSerialNo nvarchar(100); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+| `expireDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `storeHouseName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `storeHouseReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `unitPriceDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `amountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `invAccName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `invAccReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `costCenterName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `costCenterReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `costName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `costReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `parentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `parentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `assetName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `assetReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `repairDocumentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `repairDocumentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `repairDetailName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `repairDetailReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `sourceInputDetailName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `sourceInputDetailReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
 <a id="binding-dropdown"></a>
 ## 13 Các binding dropdown theo màn hình
 
@@ -7643,7 +10784,7 @@ Hai contract-info endpoint trả các cột của `dbo.CF_ContractTbl` trong `da
 
 | Nội dung | Bằng chứng chính |
 |---|---|
-| Method/path/body/schema của 119 operation | `src/backend/Medcom.Api/ApiContractCatalog.cs`; `docs/backend/medcom-openapi.json`; các *Endpoints.cs cùng thư mục; live OpenAPI khớp JSON committed khi tạo bản này. |
+| Method/path/body/schema của 120 operation | `src/backend/Medcom.Api/ApiContractCatalog.cs`; `docs/backend/medcom-openapi.json`; các *Endpoints.cs cùng thư mục; contract xuất từ host đã build; live xác nhận riêng trong checkpoint PR 139. |
 | Schema field và kiểu/null | `src/backend/Medcom.Contracts/*`; `inventories/erp/20261010/six-screen-catalog.json`; `inventories/source/20261010/document-read-tables.json`; `docs/backend/document-field-contract.json`. |
 | Dropdown và context | `ErpScreenCatalog.cs`, `ErpLookupSql.cs`, `SqlErpScreenLookups.cs`; các binding SY_FrmDrdwTbl trong catalog. |
 | CUD và native effects | `ErpCommandRules.cs`, `ErpActionRules.cs`, `SqlErpScreenCommands.cs`, `SqlErpScreenEffects.cs`, `SqlErpDocumentNumberAllocator.cs`; journal schema v1. |
@@ -7657,4 +10798,4 @@ Library baseline `ERP_Medcom2026(4).zip` và `Medcom-Data (3)(1).zip` giữ hash
 
 Tài liệu chỉ gồm technical metadata, tên object và ví dụ tổng hợp. Không chứa password thật, connection string có secret, SQL body riêng tư, thông báo/hợp đồng hoặc transaction row thật. Hành vi chưa được xác nhận được ghi UNKNOWN và tiếp tục theo [goal 45](../goals/PRODUCTION_ERP_GOAL.md).
 
-SHA-256 file OpenAPI đối chiếu: `6a5d910208b6282c7ac5601f08f91fe4c8b6f00a95143b1bfa5b47c41e1f1f1e`.
+SHA-256 file OpenAPI UTF-8/LF xuất từ host (checkout CRLF có thể khác byte): `0767f10f4df98b58f98bffd7b12785f1c92841cda3670f645e403bfd4512310f`.

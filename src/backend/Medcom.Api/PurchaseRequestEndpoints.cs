@@ -12,7 +12,7 @@ namespace Medcom.Api;
 
 public static class PurchaseRequestEndpoints
 {
-    public static void Map(WebApplication app)
+    public static void Map(IEndpointRouteBuilder app)
     {
         app.MapGet("/api/purchase-requests/workspace", async (HttpContext context, IPurchaseRequestQueries queries) =>
         {
@@ -45,7 +45,7 @@ public static class PurchaseRequestEndpoints
             IPurchaseRequestCommandAccess access, IWebSessions sessions) => Command(context, commands, access, sessions, false, true));
     }
 
-    private static void MapList(WebApplication app,string path,bool version2) =>
+    private static void MapList(IEndpointRouteBuilder app,string path,bool version2) =>
         app.MapGet(path, async (HttpContext context, IPurchaseRequestQueries queries) =>
         {
             if (!CanRead(context)) return Denied();
@@ -66,7 +66,7 @@ public static class PurchaseRequestEndpoints
             return Response(context,result);
         });
 
-    private static void MapDetail(WebApplication app,string path) =>
+    private static void MapDetail(IEndpointRouteBuilder app,string path) =>
         app.MapGet(path, async (HttpContext context, IPurchaseRequestQueries queries, IPurchaseRequestCommandAccess access, IWebSessions sessions) =>
         {
             if (!CanRead(context)) return Denied();
