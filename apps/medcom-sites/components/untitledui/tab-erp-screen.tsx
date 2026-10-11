@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Search,
   RefreshCw,
@@ -12,16 +12,15 @@ import {
   FileText,
   AlertCircle,
   CheckCircle2,
-  ExternalLink,
   ChevronRight,
-  ChevronDown,
-  Layers,
   Calendar,
   Building,
   User,
   Info,
   SlidersHorizontal,
-  ArrowRight,
+  Camera,
+  X,
+  Package,
 } from "lucide-react";
 import {
   erpClient,
@@ -35,6 +34,8 @@ import {
   type ErpContractInfo,
 } from "@/lib/erp/erp-client";
 import { UntitledBottomSheet } from "./bottom-sheet";
+import { UntitledButton } from "./button";
+import { QrCamera } from "@/lib/erp/qr-camera";
 
 interface TabErpScreenProps {
   module: ErpScreenModule;
@@ -43,12 +44,47 @@ interface TabErpScreenProps {
   onOpenScanner?: () => void;
 }
 
+function getModuleTitle(mod: ErpScreenModule): string {
+  switch (mod) {
+    case "purchase-requests":
+      return "Đề nghị mua hàng";
+    case "sales-orders":
+      return "Quản lý đơn hàng bán";
+    case "internal-transfer-requests":
+      return "Đề nghị điều chuyển nội bộ";
+    case "warehouse-qr":
+      return "Quét QR xuất kho";
+    case "sales-qr":
+      return "Quét QR xuất bán hàng";
+    case "machine-movements":
+      return "Di chuyển bàn giao máy";
+    case "machine-repairs":
+      return "Sửa chữa bảo hành máy";
+    default:
+      return mod;
+  }
+}
+
+function isTechnicalField(key: string): boolean {
+  const k = key.toLowerCase();
+  return (
+    k.includes("userautoid") ||
+    k.includes("formid") ||
+    k.includes("frm") ||
+    k.includes("menuid") ||
+    k === "createdbyautoid" ||
+    k === "modifiedbyautoid"
+  );
+}
+
 export function TabErpScreen({
   module,
   currentBranch,
   isActive,
   onOpenScanner,
 }: TabErpScreenProps) {
+  const isQrModule = module === "warehouse-qr" || module === "sales-qr";
+
   // Screen Metadata
   const [screenMeta, setScreenMeta] = useState<ErpScreenDescription | null>(null);
   const [loadingMeta, setLoadingMeta] = useState(false);
@@ -61,6 +97,7 @@ export function TabErpScreen({
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [statusId, setStatusId] = useState<number | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isLoadingList, setIsLoadingList] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -82,16 +119,31 @@ export function TabErpScreen({
   const [pmNotes, setPmNotes] = useState("");
   const [loadingPm, setLoadingPm] = useState(false);
 
-  // QR Input State (for warehouse-qr / sales-qr)
-  const [qrBarcode, setQrBarcode] = useState("");
-  const [qrOperationLoading, setQrOperationLoading] = useState(false);
-
   // Action Execution State
   const [executingAction, setExecutingAction] = useState<string | null>(null);
   const [actionFeedback, setActionFeedback] = useState<{
     type: "success" | "warning" | "error";
     message: string;
   } | null>(null);
+
+  // QR Camera Modal State
+  const [cameraModalOpen, setCameraModalOpen] = useState(false);
+  const [cameraScanMode, setCameraScanMode] = useState<"add" | "delete">("add");
+  const [cameraScanStatus, setCameraScanStatus] = useState("Đang khởi tạo máy ảnh...");
+  const [manualBarcode, setManualBarcode] = useState("");
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const qrCameraRef = useRef<QrCamera | null>(null);
+  const [qrOperationLoading, setQrOperationLoading] = useState(false);
+
+  // Create Modal State (for non-QR modules)
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [createDate, setCreateDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [createObject, setCreateObject] = useState("");
+  const [createNotes, setCreateNotes] = useState("");
+  const [createItemId, setCreateItemId] = useState("");
+  const [createQuantity, setCreateQuantity] = useState("1");
+  const [createUnitPrice, setCreateUnitPrice] = useState("100000");
+  const [creatingDocument, setCreatingDocument] = useState(false);
 
   // Load Screen Metadata
   useEffect(() => {
@@ -185,6 +237,104 @@ export function TabErpScreen({
     setContractInfo(null);
   };
 
+  // Process Command Outcome
+  const handleCommandOutcome = (res: ErpCommandResult) => {
+    if (res.outcome === "Committed" || res.outcome === "Replayed") {
+      setActionFeedback({
+        type: "success",
+        message: `Thao tác thành công. Biên nhận audit: ${res.receipt?.auditId || "OK"}.`,
+      });
+      loadList(page, true);
+      if (detail && !res.receipt?.deleted) {
+        handleOpenDetail(detail.documentId);
+      } else if (res.receipt?.deleted) {
+        handleCloseDetail();
+      }
+    } else if (res.outcome === "QualificationRequired") {
+      setActionFeedback({
+        type: "warning",
+        message:
+          "Chức năng ghi dữ liệu đang ở chế độ kiểm soát (503 QualificationRequired). Backend cần nghiệm thu target-qualified writer trước khi ghi thật vào DB.",
+      });
+    } else {
+      setActionFeedback({
+        type: "error",
+        message: `Lệnh từ chối: [${res.outcome}] ${res.code || ""}`,
+      });
+    }
+  };
+
+  // Execute QR Scan (Add or Delete)
+  const handleExecuteQrScan = async (actionType: "add" | "delete", barcodeValue: string) => {
+    if (!detail || !barcodeValue.trim()) return;
+    setQrOperationLoading(true);
+    setActionFeedback(null);
+    const idempotencyKey = `qr-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    try {
+      const res = await erpClient.scanQr(module as "warehouse-qr" | "sales-qr", actionType, {
+        idempotencyKey,
+        branchId: currentBranch,
+        documentId: detail.documentId,
+        expectedStateToken: detail.stateToken,
+        barcode: barcodeValue.trim(),
+      });
+      handleCommandOutcome(res);
+    } catch {
+      setActionFeedback({
+        type: "error",
+        message: "Lỗi kết nối khi gửi mã QR tới hệ thống.",
+      });
+    } finally {
+      setQrOperationLoading(false);
+    }
+  };
+
+  // Open QR Camera Scanner Modal
+  const openQrScannerModal = (mode: "add" | "delete") => {
+    setCameraScanMode(mode);
+    setManualBarcode("");
+    setCameraModalOpen(true);
+  };
+
+  // Camera Lifecycle
+  useEffect(() => {
+    if (!cameraModalOpen) {
+      if (qrCameraRef.current) {
+        qrCameraRef.current.stop();
+        qrCameraRef.current = null;
+      }
+      return;
+    }
+
+    const cam = new QrCamera();
+    qrCameraRef.current = cam;
+    setCameraScanStatus("Đang mở máy ảnh...");
+
+    const timer = setTimeout(() => {
+      if (videoRef.current) {
+        cam.start(
+          videoRef.current,
+          (state) => {
+            if (state === "scanning") setCameraScanStatus("Đang quét: Hãy đưa mã QR vào khung ngắm...");
+            else if (state === "found") setCameraScanStatus("Đã nhận diện mã QR!");
+            else if (state === "denied") setCameraScanStatus("Quyền truy cập máy ảnh bị từ chối.");
+            else if (state === "unavailable") setCameraScanStatus("Không tìm thấy camera trên thiết bị.");
+            else if (state === "failed") setCameraScanStatus("Không thể khởi động camera.");
+          },
+          (code) => {
+            handleExecuteQrScan(cameraScanMode, code);
+            setCameraModalOpen(false);
+          }
+        );
+      }
+    }, 200);
+
+    return () => {
+      clearTimeout(timer);
+      cam.stop();
+    };
+  }, [cameraModalOpen, cameraScanMode]);
+
   // Execute Action / Command
   const handleAction = async (action: ErpActionState) => {
     if (!action.enabled) {
@@ -276,7 +426,7 @@ export function TabErpScreen({
       }
 
       handleCommandOutcome(res);
-    } catch (err: unknown) {
+    } catch {
       setActionFeedback({
         type: "error",
         message: "Lỗi kết nối khi gửi lệnh thao tác tới máy chủ.",
@@ -322,109 +472,160 @@ export function TabErpScreen({
     }
   };
 
-  // Scan QR Code Add/Delete
-  const handleQrScanAction = async (actionType: "add" | "delete") => {
-    if (!detail || !qrBarcode.trim()) return;
-    setQrOperationLoading(true);
+  // Handle Create New Document
+  const handleCreateDocument = async () => {
+    setCreatingDocument(true);
     setActionFeedback(null);
-    const idempotencyKey = `qr-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const idempotencyKey = `crt-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     try {
-      const res = await erpClient.scanQr(module as "warehouse-qr" | "sales-qr", actionType, {
+      const header: Record<string, unknown> = {
+        notes: createNotes || null,
+      };
+
+      if (module === "purchase-requests") {
+        header.purchaseDate = `${createDate}T00:00:00.000`;
+        header.personSuggest = createObject || "Nhân viên đề xuất";
+      } else {
+        header.documentDate = `${createDate}T00:00:00.000`;
+        header.objectName = createObject || null;
+      }
+
+      const lines = createItemId.trim()
+        ? [
+            {
+              clientLineKey: "line-1",
+              values: {
+                itemId: createItemId.trim(),
+                quantity: createQuantity || "1",
+                unitPrice: createUnitPrice || "0",
+              },
+            },
+          ]
+        : [];
+
+      const res = await erpClient.createDocument(module, {
         idempotencyKey,
         branchId: currentBranch,
-        documentId: detail.documentId,
-        expectedStateToken: detail.stateToken,
-        barcode: qrBarcode.trim(),
+        header,
+        lines,
       });
-      setQrBarcode("");
+
+      setCreateModalOpen(false);
       handleCommandOutcome(res);
+      loadList(1);
     } catch {
       setActionFeedback({
         type: "error",
-        message: "Lỗi kết nối khi gửi mã QR tới hệ thống.",
+        message: "Lỗi kết nối khi tạo mới chứng từ ERP.",
       });
     } finally {
-      setQrOperationLoading(false);
+      setCreatingDocument(false);
     }
   };
 
-  // Process Command Outcome
-  const handleCommandOutcome = (res: ErpCommandResult) => {
-    if (res.outcome === "Committed" || res.outcome === "Replayed") {
-      setActionFeedback({
-        type: "success",
-        message: `Thao tác thành công. Biên nhận audit: ${res.receipt?.auditId || "OK"}.`,
-      });
-      // Reload list and current detail
-      loadList(page, true);
-      if (detail && !res.receipt?.deleted) {
-        handleOpenDetail(detail.documentId);
-      } else if (res.receipt?.deleted) {
-        handleCloseDetail();
-      }
-    } else if (res.outcome === "QualificationRequired") {
-      setActionFeedback({
-        type: "warning",
-        message:
-          "Chức năng ghi dữ liệu đang ở chế độ kiểm soát (503 QualificationRequired). Backend cần nghiệm thu target-qualified writer trước khi ghi thật vào DB.",
-      });
-    } else {
-      setActionFeedback({
-        type: "error",
-        message: `Lệnh từ chối: [${res.outcome}] ${res.code || ""}`,
-      });
-    }
-  };
+  // Filter rows locally if needed
+  const displayRows = rows.filter((r) => {
+    if (statusFilter === "locked") return r.header?.isLocked === true || r.header?.isLocked === 1;
+    if (statusFilter === "open") return r.header?.isLocked === false || r.header?.isLocked === 0;
+    return true;
+  });
 
   return (
-    <div className="space-y-4">
-      {/* Module Title Banner */}
+    <div className="space-y-4 pb-24 animate-uui-fade-in">
+      {/* Module Banner (No technical menu IDs or form names) */}
       <div className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 sm:p-5 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
-                Menu {screenMeta?.menuId || "ERP"} • {screenMeta?.formId || module}
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
+                Phân hệ ERP
               </span>
               <span className="text-xs text-neutral-400">Chi nhánh: {currentBranch}</span>
             </div>
             <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white mt-1">
-              {screenMeta?.caption || module}
+              {screenMeta?.caption || getModuleTitle(module)}
             </h2>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleRefresh}
-              disabled={isRefreshing || isLoadingList}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors"
-            >
-              <RefreshCw
-                className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-purple-600" : ""}`}
-              />
-              <span>Làm mới</span>
-            </button>
           </div>
         </div>
 
-        {/* Toolbar: Search & Filter */}
-        <div className="mt-4 pt-3 border-t border-neutral-100 dark:border-neutral-800 flex flex-col sm:flex-row gap-2">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && loadList(1)}
-              placeholder="Tìm kiếm mã chứng từ..."
-              className="w-full pl-9 pr-3 py-2 rounded-xl text-xs bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-800 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/20"
-            />
+        {/* Toolbar: Search, Refresh, Create (Synchronized with PO, PR, Inbound) */}
+        <div className="mt-4 pt-3 border-t border-neutral-100 dark:border-neutral-800 space-y-2.5">
+          <div className="flex gap-2 items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && loadList(1)}
+                placeholder="Tìm theo mã chứng từ, người lập, đối tượng..."
+                className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-2xs"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={isRefreshing || isLoadingList}
+              className="p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 transition-colors shrink-0 disabled:opacity-50"
+              title="Làm mới danh sách"
+            >
+              <RefreshCw className={`size-4 ${isRefreshing ? "animate-spin text-purple-600" : ""}`} />
+            </button>
+
+            {!isQrModule && (
+              <UntitledButton
+                variant="primary"
+                size="md"
+                onClick={() => setCreateModalOpen(true)}
+                iconLeading={<Plus className="size-4" />}
+              >
+                Tạo mới
+              </UntitledButton>
+            )}
           </div>
-          <button
-            onClick={() => loadList(1)}
-            className="px-4 py-2 rounded-xl text-xs font-semibold bg-purple-600 text-white hover:bg-purple-700 transition-colors shadow-xs"
-          >
-            Tìm kiếm
-          </button>
+
+          {/* Filter Chips Bar */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            {[
+              { id: "all", label: "Tất cả", count: rows.length },
+              {
+                id: "open",
+                label: "Đang mở / Chưa khóa",
+                count: rows.filter((r) => r.header?.isLocked === false || r.header?.isLocked === 0).length,
+              },
+              {
+                id: "locked",
+                label: "Đã khóa / Hoàn tất",
+                count: rows.filter((r) => r.header?.isLocked === true || r.header?.isLocked === 1).length,
+              },
+            ].map((chip) => {
+              const isSelected = statusFilter === chip.id;
+              return (
+                <button
+                  key={chip.id}
+                  type="button"
+                  onClick={() => setStatusFilter(chip.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 shrink-0 ${
+                    isSelected
+                      ? "bg-purple-600 text-white shadow-xs"
+                      : "bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 border border-neutral-200/80 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                  }`}
+                >
+                  <span>{chip.label}</span>
+                  <span
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                      isSelected
+                        ? "bg-purple-700 text-white"
+                        : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400"
+                    }`}
+                  >
+                    {chip.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -447,23 +648,23 @@ export function TabErpScreen({
               />
             ))}
           </div>
-        ) : rows.length === 0 ? (
+        ) : displayRows.length === 0 ? (
           <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-8 text-center">
             <Info className="w-8 h-8 mx-auto text-neutral-400 mb-2" />
             <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
               Không có chứng từ nào
             </p>
             <p className="text-xs text-neutral-500 mt-1">
-              Chưa có bản ghi thuộc phân hệ {module} tại chi nhánh {currentBranch}.
+              Chưa có bản ghi nào phù hợp với bộ lọc hiện tại tại chi nhánh {currentBranch}.
             </p>
           </div>
         ) : (
-          rows.map((row) => {
+          displayRows.map((row) => {
             const h = row.header || {};
             const docId = row.documentId;
             const dateStr = (h.documentDate || h.purchaseDate || h.datetimeRecorded || "") as string;
-            const statusName = (h.statusName || `Trạng thái ${h.statusId ?? ""}`) as string;
-            const objectName = (h.objectName || h.personSuggest || h.orderNumber || "") as string;
+            const statusName = (h.statusName || (h.isLocked ? "Đã khóa" : "Đang mở")) as string;
+            const objectName = (h.objectName || h.personSuggest || h.orderNumber || h.customerName || h.vendorName || "") as string;
 
             return (
               <div
@@ -472,25 +673,25 @@ export function TabErpScreen({
                 className="group cursor-pointer rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 hover:border-purple-300 dark:hover:border-purple-800/60 transition-all shadow-xs hover:shadow-md"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-neutral-900 dark:text-white">
+                      <span className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-white font-mono">
                         {docId}
                       </span>
                       {statusName && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
                           {statusName}
                         </span>
                       )}
                     </div>
                     {objectName && (
-                      <p className="text-xs text-neutral-600 dark:text-neutral-300 mt-1 line-clamp-1">
+                      <p className="text-xs text-neutral-700 dark:text-neutral-300 font-medium mt-1 leading-relaxed break-words line-clamp-2">
                         {objectName}
                       </p>
                     )}
                     {dateStr && (
-                      <p className="text-[11px] text-neutral-400 mt-1 flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
+                      <p className="text-[11px] text-neutral-400 mt-1.5 flex items-center gap-1">
+                        <Calendar className="w-3.5 h-3.5 text-purple-600" />
                         <span>{dateStr.slice(0, 10)}</span>
                       </p>
                     )}
@@ -515,13 +716,13 @@ export function TabErpScreen({
         )}
       </div>
 
-      {/* DETAIL BOTTOM SHEET MODAL */}
+      {/* DETAIL BOTTOM SHEET MODAL (No nested double scroll cut-off, padded pb-16) */}
       <UntitledBottomSheet
         open={Boolean(selectedDocId)}
         onClose={handleCloseDetail}
         title={`Chi tiết: ${selectedDocId || ""}`}
       >
-        <div className="space-y-5 p-1 max-h-[75vh] overflow-y-auto">
+        <div className="space-y-4 pb-16">
           {/* Action Feedback Banner */}
           {actionFeedback && (
             <div
@@ -543,7 +744,7 @@ export function TabErpScreen({
           )}
 
           {loadingDetail ? (
-            <div className="space-y-3 py-6 text-center">
+            <div className="space-y-3 py-8 text-center">
               <RefreshCw className="w-6 h-6 animate-spin mx-auto text-purple-600" />
               <p className="text-xs text-neutral-500">Đang tải đầy đủ trường chi tiết từ ERP...</p>
             </div>
@@ -553,99 +754,147 @@ export function TabErpScreen({
             </div>
           ) : detail ? (
             <>
-              {/* Dynamic Action Buttons Toolbar */}
-              {detail.actions && detail.actions.length > 0 && (
-                <div className="rounded-xl p-3 bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200/70 dark:border-neutral-800">
-                  <div className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400 mb-2">
-                    Nút thao tác nghiệp vụ (Từ cấu hình quyền ERP):
+              {/* Dynamic Action Buttons Toolbar (Print buttons removed per requirement) */}
+              {detail.actions &&
+                detail.actions.filter(
+                  (act) =>
+                    act.visible &&
+                    !act.id.toLowerCase().includes("print") &&
+                    !act.caption.toLowerCase().includes("in")
+                ).length > 0 && (
+                  <div className="rounded-2xl p-3 bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200/70 dark:border-neutral-800">
+                    <div className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400 mb-2">
+                      Nút thao tác nghiệp vụ:
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {detail.actions
+                        .filter(
+                          (act) =>
+                            act.visible &&
+                            !act.id.toLowerCase().includes("print") &&
+                            !act.caption.toLowerCase().includes("in")
+                        )
+                        .map((act) => {
+                          const isCurrentExecuting = executingAction === act.id;
+                          return (
+                            <button
+                              key={act.id}
+                              onClick={() => handleAction(act)}
+                              disabled={!act.enabled || Boolean(executingAction)}
+                              title={act.reason || undefined}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+                                act.enabled
+                                  ? "bg-purple-600 hover:bg-purple-700 text-white shadow-xs"
+                                  : "bg-neutral-200 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500 cursor-not-allowed"
+                              }`}
+                            >
+                              {isCurrentExecuting ? (
+                                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                              ) : act.id === "delete" ? (
+                                <Trash2 className="w-3.5 h-3.5" />
+                              ) : act.id === "send-pm" || act.id === "submit" ? (
+                                <Send className="w-3.5 h-3.5" />
+                              ) : act.id === "recall" ? (
+                                <RotateCcw className="w-3.5 h-3.5" />
+                              ) : (
+                                <SlidersHorizontal className="w-3.5 h-3.5" />
+                              )}
+                              <span>{act.caption}</span>
+                            </button>
+                          );
+                        })}
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {detail.actions
-                      .filter((act) => act.visible)
-                      .map((act) => {
-                        const isCurrentExecuting = executingAction === act.id;
-                        return (
-                          <button
-                            key={act.id}
-                            onClick={() => handleAction(act)}
-                            disabled={!act.enabled || Boolean(executingAction)}
-                            title={act.reason || undefined}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
-                              act.enabled
-                                ? "bg-purple-600 hover:bg-purple-700 text-white shadow-xs"
-                                : "bg-neutral-200 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500 cursor-not-allowed"
-                            }`}
-                          >
-                            {isCurrentExecuting ? (
-                              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                            ) : act.id === "delete" ? (
-                              <Trash2 className="w-3.5 h-3.5" />
-                            ) : act.id === "send-pm" || act.id === "submit" ? (
-                              <Send className="w-3.5 h-3.5" />
-                            ) : act.id === "recall" ? (
-                              <RotateCcw className="w-3.5 h-3.5" />
-                            ) : (
-                              <SlidersHorizontal className="w-3.5 h-3.5" />
-                            )}
-                            <span>{act.caption}</span>
-                          </button>
-                        );
-                      })}
-                  </div>
-                </div>
-              )}
+                )}
 
-              {/* QR Scanner Controls for warehouse-qr / sales-qr */}
-              {(module === "warehouse-qr" || module === "sales-qr") && (
-                <div className="p-3.5 rounded-xl bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900/40 space-y-2.5">
+              {/* QR Scanner Controls for warehouse-qr / sales-qr: Replaced input box with 2 camera buttons */}
+              {isQrModule && (
+                <div className="p-4 rounded-2xl bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900/40 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-purple-900 dark:text-purple-300 flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-purple-900 dark:text-purple-300 flex items-center gap-1.5">
                       <QrCode className="w-4 h-4 text-purple-600" />
-                      Quét mã vạch / QR tem kiện
+                      Thao tác quét mã vạch / QR tem kiện
                     </span>
-                    {onOpenScanner && (
-                      <button
-                        onClick={onOpenScanner}
-                        className="text-[11px] text-purple-600 dark:text-purple-400 underline font-medium"
-                      >
-                        Mở camera quét
-                      </button>
-                    )}
                   </div>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={qrBarcode}
-                      onChange={(e) => setQrBarcode(e.target.value)}
-                      placeholder="Mã ItemID;ItemCode;Lot hoặc PKG1;..."
-                      className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white"
-                    />
-                    <button
-                      onClick={() => handleQrScanAction("add")}
-                      disabled={!qrBarcode.trim() || qrOperationLoading}
-                      className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <UntitledButton
+                      variant="primary"
+                      size="md"
+                      onClick={() => openQrScannerModal("add")}
+                      disabled={qrOperationLoading}
+                      iconLeading={<Camera className="size-4" />}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
                     >
-                      + Quét thêm
-                    </button>
-                    <button
-                      onClick={() => handleQrScanAction("delete")}
-                      disabled={!qrBarcode.trim() || qrOperationLoading}
-                      className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                      Quét thêm mã QR
+                    </UntitledButton>
+                    <UntitledButton
+                      variant="primary"
+                      size="md"
+                      onClick={() => openQrScannerModal("delete")}
+                      disabled={qrOperationLoading}
+                      iconLeading={<Camera className="size-4" />}
+                      className="bg-red-600 hover:bg-red-700 text-white shadow-xs"
                     >
-                      - Quét xóa
-                    </button>
+                      Quét xóa mã QR
+                    </UntitledButton>
                   </div>
                 </div>
               )}
 
-              {/* Header Fields Summary */}
-              <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-3.5 bg-white dark:bg-neutral-900">
-                <h4 className="text-xs font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider mb-2.5">
-                  Thông tin Header chứng từ
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              {/* THẺ THÔNG TIN CHUNG CHỨNG TỪ (Unified Card following Inbound Standard) */}
+              <div className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 shadow-xs space-y-3">
+                <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-neutral-100 dark:border-neutral-800">
+                  <div className="space-y-0.5">
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-400">
+                      Mã chứng từ
+                    </span>
+                    <p className="font-mono text-sm sm:text-base font-bold text-neutral-900 dark:text-white">
+                      {detail.documentId}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200 dark:border-purple-900/40">
+                      {String(detail.header?.statusName || (detail.header?.isLocked ? "Đã khóa" : "Đang mở"))}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Tên đối tượng / Khách hàng / Nhà cung cấp (ObjectName - có thể dài nên bố trí trọn dòng) */}
+                {Boolean(
+                  detail.header?.objectName ||
+                    detail.header?.personSuggest ||
+                    detail.header?.customerName ||
+                    detail.header?.vendorName
+                ) && (
+                  <div className="py-2 border-b border-neutral-100 dark:border-neutral-800/60">
+                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold block mb-1">
+                      Đối tượng / Khách hàng / Nhà cung cấp (ObjectName)
+                    </span>
+                    <p className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-white leading-relaxed break-words">
+                      {String(
+                        detail.header?.objectName ||
+                          detail.header?.personSuggest ||
+                          detail.header?.customerName ||
+                          detail.header?.vendorName
+                      )}
+                    </p>
+                  </div>
+                )}
+
+                {/* Chi tiết thuộc tính Header (Lọc bỏ userautoid, frm, menuid, ...) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs pt-1">
                   {Object.entries(detail.header || {}).map(([key, value]) => {
                     if (value === null || value === undefined || value === "") return null;
+                    if (isTechnicalField(key)) return null;
+                    if (
+                      key === "objectName" ||
+                      key === "personSuggest" ||
+                      key === "customerName" ||
+                      key === "vendorName" ||
+                      key === "statusName"
+                    )
+                      return null;
+
                     return (
                       <div
                         key={key}
@@ -662,46 +911,48 @@ export function TabErpScreen({
               </div>
 
               {/* Lines Table */}
-              <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-3.5 bg-white dark:bg-neutral-900">
-                <div className="flex items-center justify-between mb-2">
+              <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4 bg-white dark:bg-neutral-900">
+                <div className="flex items-center justify-between mb-3">
                   <h4 className="text-xs font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider">
                     Dòng hàng chi tiết ({detail.lines?.rows?.length || 0})
                   </h4>
-                  <span className="text-[10px] text-neutral-400">
+                  <span className="text-[10px] text-neutral-400 font-medium">
                     Trang {detail.lines?.page || 1}
                   </span>
                 </div>
                 {detail.lines?.rows?.length === 0 ? (
-                  <p className="text-xs text-neutral-400 py-2">Chứng từ chưa có dòng hàng nào.</p>
+                  <p className="text-xs text-neutral-400 py-3 text-center">Chứng từ chưa có dòng hàng nào.</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
                         <tr className="border-b border-neutral-200 dark:border-neutral-800 text-[10px] text-neutral-400 uppercase">
-                          <th className="py-1.5 px-2">Dòng ID</th>
-                          <th className="py-1.5 px-2">Mã VT / Hàng</th>
-                          <th className="py-1.5 px-2">Số lượng</th>
-                          <th className="py-1.5 px-2">Đơn giá / Thành tiền</th>
+                          <th className="py-2 px-2.5">Mã dòng</th>
+                          <th className="py-2 px-2.5">Mã VT / Tên hàng</th>
+                          <th className="py-2 px-2.5">Số lượng</th>
+                          <th className="py-2 px-2.5">Đơn giá / Thành tiền</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
                         {detail.lines.rows.map((row) => {
                           const f = row.fields || {};
                           const itemId = (f.itemId || f.itemCode || f.assetId || "") as string;
+                          const itemName = (f.itemName || f.name || "") as string;
                           const qty = (f.quantity || f.setQuantityByDocument || f.amount || "") as string;
-                          const price = (f.unitPrice || f.totalPrice || "") as string;
+                          const price = (f.unitPriceDisplay || f.unitPrice || f.totalPriceDisplay || f.totalPrice || "") as string;
                           return (
                             <tr key={row.lineId} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/40">
-                              <td className="py-2 px-2 text-[11px] font-mono text-neutral-400">
+                              <td className="py-2.5 px-2.5 text-[11px] font-mono text-neutral-400">
                                 {row.lineId}
                               </td>
-                              <td className="py-2 px-2 font-medium text-neutral-800 dark:text-neutral-200">
-                                {itemId || "—"}
+                              <td className="py-2.5 px-2.5 font-medium text-neutral-800 dark:text-neutral-200">
+                                <div>{itemId || "—"}</div>
+                                {itemName && <div className="text-[10px] text-neutral-400">{itemName}</div>}
                               </td>
-                              <td className="py-2 px-2 text-neutral-700 dark:text-neutral-300">
+                              <td className="py-2.5 px-2.5 text-neutral-700 dark:text-neutral-300 font-semibold">
                                 {qty || "—"}
                               </td>
-                              <td className="py-2 px-2 text-neutral-700 dark:text-neutral-300 font-mono">
+                              <td className="py-2.5 px-2.5 text-neutral-700 dark:text-neutral-300 font-mono">
                                 {price || "—"}
                               </td>
                             </tr>
@@ -715,29 +966,29 @@ export function TabErpScreen({
 
               {/* QR Comparison Table (If comparison lines exist) */}
               {detail.comparison && detail.comparison.rows && detail.comparison.rows.length > 0 && (
-                <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-3.5 bg-white dark:bg-neutral-900">
-                  <h4 className="text-xs font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider mb-2">
+                <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4 bg-white dark:bg-neutral-900">
+                  <h4 className="text-xs font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider mb-2.5">
                     Dòng đối chiếu hàng cần quét ({detail.comparison.rows.length})
                   </h4>
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
                         <tr className="border-b border-neutral-200 dark:border-neutral-800 text-[10px] text-neutral-400 uppercase">
-                          <th className="py-1.5 px-2">Mã VT</th>
-                          <th className="py-1.5 px-2">Cần xuất</th>
-                          <th className="py-1.5 px-2">Đã quét</th>
+                          <th className="py-2 px-2.5">Mã VT</th>
+                          <th className="py-2 px-2.5">Cần xuất</th>
+                          <th className="py-2 px-2.5">Đã quét</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
                         {detail.comparison.rows.map((row) => (
-                          <tr key={row.lineId}>
-                            <td className="py-1.5 px-2 text-neutral-700 dark:text-neutral-300">
+                          <tr key={row.lineId} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/40">
+                            <td className="py-2 px-2.5 text-neutral-700 dark:text-neutral-300 font-medium">
                               {String(row.fields?.itemId || row.lineId)}
                             </td>
-                            <td className="py-1.5 px-2 text-neutral-700 dark:text-neutral-300">
+                            <td className="py-2 px-2.5 text-neutral-700 dark:text-neutral-300 font-semibold">
                               {String(row.fields?.requiredQuantity || "—")}
                             </td>
-                            <td className="py-1.5 px-2 text-neutral-700 dark:text-neutral-300">
+                            <td className="py-2 px-2.5 text-neutral-700 dark:text-neutral-300 font-semibold">
                               {String(row.fields?.scannedQuantity || "—")}
                             </td>
                           </tr>
@@ -752,6 +1003,158 @@ export function TabErpScreen({
         </div>
       </UntitledBottomSheet>
 
+      {/* QR CAMERA SCANNER BOTTOM SHEET MODAL */}
+      {cameraModalOpen && (
+        <UntitledBottomSheet
+          open={cameraModalOpen}
+          onClose={() => setCameraModalOpen(false)}
+          title={cameraScanMode === "add" ? "Quét thêm mã QR" : "Quét xóa mã QR"}
+        >
+          <div className="space-y-4 p-2 text-xs">
+            <div className="relative aspect-square max-w-sm mx-auto overflow-hidden rounded-2xl bg-black border border-neutral-800 flex items-center justify-center">
+              <video
+                ref={videoRef}
+                className="w-full h-full object-cover"
+                autoPlay
+                muted
+                playsInline
+              />
+              {/* Scanner Reticle Overlay */}
+              <div className="absolute inset-0 border-2 border-purple-500/60 rounded-2xl pointer-events-none flex items-center justify-center">
+                <div className="size-48 border-2 border-dashed border-purple-400 rounded-xl" />
+              </div>
+            </div>
+
+            <p className="text-center font-medium text-neutral-600 dark:text-neutral-400">
+              {cameraScanStatus}
+            </p>
+
+            {/* Manual Barcode Input Fallback */}
+            <div className="pt-2 border-t border-neutral-100 dark:border-neutral-800 space-y-2">
+              <label className="text-[11px] font-semibold text-neutral-500">
+                Nhập mã thủ công nếu thiết bị không có camera:
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={manualBarcode}
+                  onChange={(e) => setManualBarcode(e.target.value)}
+                  placeholder="Mã ItemID;ItemCode;Lot hoặc PKG1;..."
+                  className="flex-1 px-3 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (manualBarcode.trim()) {
+                      handleExecuteQrScan(cameraScanMode, manualBarcode.trim());
+                      setCameraModalOpen(false);
+                    }
+                  }}
+                  disabled={!manualBarcode.trim() || qrOperationLoading}
+                  className="px-4 py-2 rounded-xl bg-purple-600 text-white font-semibold hover:bg-purple-700 disabled:opacity-50"
+                >
+                  Xác nhận
+                </button>
+              </div>
+            </div>
+          </div>
+        </UntitledBottomSheet>
+      )}
+
+      {/* CREATE DOCUMENT MODAL (For non-QR modules) */}
+      {createModalOpen && (
+        <UntitledBottomSheet
+          open={createModalOpen}
+          onClose={() => setCreateModalOpen(false)}
+          title={`Tạo mới ${getModuleTitle(module)}`}
+        >
+          <div className="space-y-3.5 p-2 text-xs">
+            <div>
+              <label className="block text-neutral-500 mb-1 font-medium">Ngày lập chứng từ (*):</label>
+              <input
+                type="date"
+                value={createDate}
+                onChange={(e) => setCreateDate(e.target.value)}
+                className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
+              />
+            </div>
+
+            <div>
+              <label className="block text-neutral-500 mb-1 font-medium">
+                {module === "purchase-requests" ? "Người đề xuất (*):" : "Tên đối tượng / Khách hàng:"}
+              </label>
+              <input
+                type="text"
+                value={createObject}
+                onChange={(e) => setCreateObject(e.target.value)}
+                placeholder="Nhập tên đối tượng hoặc người đề xuất..."
+                className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="sm:col-span-1">
+                <label className="block text-neutral-500 mb-1 font-medium">Mã mặt hàng (ItemID):</label>
+                <input
+                  type="text"
+                  value={createItemId}
+                  onChange={(e) => setCreateItemId(e.target.value)}
+                  placeholder="Mã VT..."
+                  className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
+                />
+              </div>
+              <div>
+                <label className="block text-neutral-500 mb-1 font-medium">Số lượng:</label>
+                <input
+                  type="number"
+                  value={createQuantity}
+                  onChange={(e) => setCreateQuantity(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
+                />
+              </div>
+              <div>
+                <label className="block text-neutral-500 mb-1 font-medium">Đơn giá dự kiến:</label>
+                <input
+                  type="number"
+                  value={createUnitPrice}
+                  onChange={(e) => setCreateUnitPrice(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-neutral-500 mb-1 font-medium">Ghi chú / Diễn giải:</label>
+              <textarea
+                value={createNotes}
+                onChange={(e) => setCreateNotes(e.target.value)}
+                placeholder="Ghi chú nội dung phiếu..."
+                rows={3}
+                className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setCreateModalOpen(false)}
+                className="px-4 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 text-xs"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleCreateDocument}
+                disabled={creatingDocument}
+                className="px-4 py-2 rounded-xl bg-purple-600 text-white font-semibold hover:bg-purple-700 disabled:opacity-50 text-xs"
+              >
+                {creatingDocument ? "Đang tạo..." : "Xác nhận tạo chứng từ"}
+              </button>
+            </div>
+          </div>
+        </UntitledBottomSheet>
+      )}
+
       {/* CONTRACT INFO MODAL */}
       {contractInfo && (
         <UntitledBottomSheet
@@ -760,7 +1163,7 @@ export function TabErpScreen({
           title={`Hợp đồng: ${contractInfo.contractId}`}
         >
           <div className="space-y-3 p-2 text-xs">
-            <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900">
+            <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900">
               <span className="font-semibold text-purple-900 dark:text-purple-300">
                 Mã HĐ: {contractInfo.contractNo || contractInfo.contractId}
               </span>

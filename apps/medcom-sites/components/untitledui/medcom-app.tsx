@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { DesktopHeader } from "./desktop-header";
+import { DesktopSidebar } from "./desktop-sidebar";
 import { UntitledMobileHeader, type BranchOption } from "./mobile-header";
 import { UntitledBottomNav, type NavTabId } from "./bottom-nav";
 import { TabHome } from "./tab-home";
@@ -12,19 +13,20 @@ import { UntitledQrScannerView, type ScannedMedicineInfo } from "./qr-scanner-vi
 import { TabSettings } from "./tab-settings";
 import { LoginScreen } from "./login-screen";
 import { QuickCreateModal } from "./quick-create-modal";
-import { UntitledBottomSheet } from "./bottom-sheet";
 import { NotificationsSheet } from "./notifications-sheet";
 import { SidebarDrawer } from "./sidebar-drawer";
 import { TabErpScreen } from "./tab-erp-screen";
 import { type ErpScreenModule } from "@/lib/erp/proxy-policy";
 import { REAL_BRANCHES, erpClient, type LoginResult } from "@/lib/erp/erp-client";
 
-const APP_BRANCHES: BranchOption[] = REAL_BRANCHES.map((b) => ({
-  id: b.id,
-  name: b.name,
-  code: b.id,
-  address: b.address,
-}));
+const ERP_MODULES: ErpScreenModule[] = [
+  "sales-orders",
+  "internal-transfer-requests",
+  "warehouse-qr",
+  "sales-qr",
+  "machine-movements",
+  "machine-repairs",
+];
 
 export function MedcomApp() {
   const [currentUser, setCurrentUser] = useState<LoginResult["user"] | null>(null);
@@ -32,8 +34,18 @@ export function MedcomApp() {
 
   const [activeTab, setActiveTab] = useState<NavTabId>("home");
   const [currentBranch, setCurrentBranch] = useState("CN01");
+  const [branches, setBranches] = useState<BranchOption[]>(() =>
+    REAL_BRANCHES.map((b) => ({
+      id: b.id,
+      name: b.name,
+      code: b.id,
+      address: b.address,
+    }))
+  );
+
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [layoutMode, setLayoutMode] = useState<"vertical" | "top">("top");
 
   // Real document counts for headers, badges, and dashboard
   const [ordersCount, setOrdersCount] = useState(0);
@@ -47,7 +59,7 @@ export function MedcomApp() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [selectedPurchaseItem, setSelectedPurchaseItem] = useState<PurchaseItem | null>(null);
 
-  // Check saved session on load
+  // Check saved session, theme, and layout on initial mount
   useEffect(() => {
     try {
       const savedUserStr = localStorage.getItem("medcom.auth.user");
@@ -59,6 +71,11 @@ export function MedcomApp() {
             setCurrentBranch(savedUser.branchId);
           }
         }
+      }
+
+      const savedLayout = localStorage.getItem("medcom.layout.mode");
+      if (savedLayout === "vertical" || savedLayout === "top") {
+        setLayoutMode(savedLayout);
       }
 
       const savedDark = localStorage.getItem("medcom.theme.dark");
@@ -80,6 +97,37 @@ export function MedcomApp() {
     setIsAuthLoaded(true);
   }, []);
 
+  // Listen for unauthorized 401 events to redirect to login immediately
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      try {
+        localStorage.removeItem("medcom.auth.user");
+      } catch {}
+      setCurrentUser(null);
+    };
+
+    window.addEventListener("medcom:unauthorized", handleUnauthorized);
+    return () => {
+      window.removeEventListener("medcom:unauthorized", handleUnauthorized);
+    };
+  }, []);
+
+  // Validate session on mount if user is present
+  useEffect(() => {
+    if (currentUser) {
+      erpClient.getSession().catch((err: unknown) => {
+        const status = typeof err === "object" && err !== null && "status" in err ? (err as { status: number }).status : 0;
+        const code = typeof err === "object" && err !== null && "code" in err ? (err as { code: string }).code : "";
+        if (status === 401 || code === "session_expired" || code === "unauthorized") {
+          try {
+            localStorage.removeItem("medcom.auth.user");
+          } catch {}
+          setCurrentUser(null);
+        }
+      });
+    }
+  }, [currentUser]);
+
   // Synchronize documentElement & body class with isDarkMode
   useEffect(() => {
     if (isDarkMode) {
@@ -90,6 +138,51 @@ export function MedcomApp() {
       document.body.classList.remove("dark");
     }
   }, [isDarkMode]);
+
+  // Fetch dynamic branches from Backend API without hardcoding
+  const loadDynamicBranches = useCallback(async () => {
+    try {
+      const res = await erpClient.getBranchesList();
+      if (res && res.items && res.items.length > 0) {
+        const mapped: BranchOption[] = res.items.map((b) => ({
+          id: b.id,
+          name: b.name || `Chi nhánh ${b.id}`,
+          code: b.code || b.id,
+        }));
+        setBranches(mapped);
+
+        // Ensure currentBranch belongs to the allowed branch list
+        setCurrentBranch((prev) => {
+          if (!prev || !mapped.some((x) => x.id === prev)) {
+            return mapped[0].id;
+          }
+          return prev;
+        });
+        return;
+      }
+    } catch (err) {
+      console.warn("[MedcomApp] Could not load dynamic branches from API:", err);
+    }
+
+    // Secondary fallback: fetch from workspace if lookups failed
+    try {
+      const ws = await erpClient.getWorkspace();
+      if (ws.branchIds && ws.branchIds.length > 0) {
+        const mapped: BranchOption[] = ws.branchIds.map((id) => ({
+          id,
+          name: `Chi nhánh ${id}`,
+          code: id,
+        }));
+        setBranches(mapped);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+      loadDynamicBranches();
+    }
+  }, [currentUser, loadDynamicBranches]);
 
   // Fetch real document counts whenever user is logged in and branch changes
   const refreshGlobalCounts = useCallback(async (branch: string) => {
@@ -124,7 +217,6 @@ export function MedcomApp() {
         setUnreadNotificationsCount(notifData.value.unreadCount);
       }
     } catch {
-      // Fallback zero counts
       setOrdersCount(0);
       setPurchasesCount(0);
       setInboundCount(0);
@@ -168,6 +260,14 @@ export function MedcomApp() {
     } catch {}
   };
 
+  const handleToggleLayoutMode = () => {
+    const next = layoutMode === "vertical" ? "top" : "vertical";
+    setLayoutMode(next);
+    try {
+      localStorage.setItem("medcom.layout.mode", next);
+    } catch {}
+  };
+
   const handleBranchChange = (newBranch: string) => {
     setCurrentBranch(newBranch);
     refreshGlobalCounts(newBranch);
@@ -181,7 +281,7 @@ export function MedcomApp() {
     setActiveTab("inbound");
   };
 
-  // If still checking initial authentication in localStorage, show clean background
+  // If still checking initial authentication in localStorage, show clean loader
   if (!isAuthLoaded) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center bg-neutral-50 dark:bg-neutral-950">
@@ -193,7 +293,7 @@ export function MedcomApp() {
     );
   }
 
-  // Authentication Gate: if user is not logged in, show real Login Screen
+  // Authentication Gate: if user is not logged in or session expired, show Login Screen immediately
   if (!currentUser) {
     return (
       <div className={isDarkMode ? "dark" : ""}>
@@ -202,147 +302,169 @@ export function MedcomApp() {
     );
   }
 
-  // Authenticated ERP Workspace - Edge to edge responsive (no simulator frame)
   return (
     <div className={`min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 transition-colors ${isDarkMode ? "dark" : ""}`}>
-      <div className="flex flex-col min-h-screen">
-        {/* Desktop Header (Visible on screens >= 768px) */}
-        <div className="hidden md:block">
-          <DesktopHeader
-            currentBranch={currentBranch}
-            onBranchChange={handleBranchChange}
-            branches={APP_BRANCHES}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            onOpenMenu={() => setIsSidebarOpen(true)}
-            userName={currentUser.displayName}
-            userRole={currentUser.role}
-            unreadNotifications={unreadNotificationsCount}
-            onNotificationsClick={() => setNotificationsOpen(true)}
-            onOpenQuickCreate={() => setQuickCreateOpen(true)}
-            isDarkMode={isDarkMode}
-            onToggleDarkMode={handleToggleDarkMode}
-            onLogout={handleLogout}
-            pendingOrdersCount={ordersCount}
-            pendingPurchasesCount={purchasesCount}
-            pendingInboundCount={inboundCount}
-          />
-        </div>
-
-        {/* Mobile Header (Visible on screens < 768px) */}
-        <div className="md:hidden">
-          <UntitledMobileHeader
-            currentBranch={currentBranch}
-            onBranchChange={handleBranchChange}
-            branches={APP_BRANCHES}
-            userName={currentUser.displayName}
-            userRole={currentUser.role}
-            unreadNotifications={unreadNotificationsCount}
-            onNotificationsClick={() => setNotificationsOpen(true)}
-            onProfileClick={() => setIsSidebarOpen(true)}
-          />
-        </div>
-
-        {/* Responsive Content Workspace Container with pb-28 for fixed bottom nav */}
-        <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-28 md:pb-8 transition-all">
-          {/* TAB 1: Home (Kept in DOM for instant response) */}
-          <div className={activeTab === "home" ? "block" : "hidden"}>
-            <TabHome
-              onNavigateTab={(tab) => setActiveTab(tab)}
-              onOpenQuickCreate={() => setQuickCreateOpen(true)}
-              onSelectPurchaseItem={(item) => {
-                setSelectedPurchaseItem(item);
-                setActiveTab("purchases");
-              }}
+      <div className={`flex ${layoutMode === "vertical" ? "md:flex-row" : "flex-col"} min-h-screen`}>
+        {/* Desktop Sidebar (when layoutMode === "vertical") */}
+        {layoutMode === "vertical" ? (
+          <div className="hidden md:block shrink-0">
+            <DesktopSidebar
+              currentBranch={currentBranch}
+              onBranchChange={handleBranchChange}
+              branches={branches}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
               userName={currentUser.displayName}
+              userRole={currentUser.role}
+              unreadNotifications={unreadNotificationsCount}
+              onNotificationsClick={() => setNotificationsOpen(true)}
+              onOpenQuickCreate={() => setQuickCreateOpen(true)}
+              isDarkMode={isDarkMode}
+              onToggleDarkMode={handleToggleDarkMode}
+              onLogout={handleLogout}
+              onToggleLayoutMode={handleToggleLayoutMode}
+              pendingOrdersCount={ordersCount}
+              pendingPurchasesCount={purchasesCount}
+              pendingInboundCount={inboundCount}
+            />
+          </div>
+        ) : (
+          /* Desktop Header (when layoutMode === "top") */
+          <div className="hidden md:block">
+            <DesktopHeader
               currentBranch={currentBranch}
-              ordersCount={ordersCount}
-              purchasesCount={purchasesCount}
-              inboundCount={inboundCount}
-              isLoadingCounts={isLoadingCounts}
+              onBranchChange={handleBranchChange}
+              branches={branches}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              onOpenMenu={() => setIsSidebarOpen(true)}
+              userName={currentUser.displayName}
+              userRole={currentUser.role}
+              unreadNotifications={unreadNotificationsCount}
+              onNotificationsClick={() => setNotificationsOpen(true)}
+              onOpenQuickCreate={() => setQuickCreateOpen(true)}
+              isDarkMode={isDarkMode}
+              onToggleDarkMode={handleToggleDarkMode}
+              onLogout={handleLogout}
+              onToggleLayoutMode={handleToggleLayoutMode}
+              pendingOrdersCount={ordersCount}
+              pendingPurchasesCount={purchasesCount}
+              pendingInboundCount={inboundCount}
+            />
+          </div>
+        )}
+
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Mobile Header (Visible on screens < 768px) */}
+          <div className="md:hidden">
+            <UntitledMobileHeader
+              currentBranch={currentBranch}
+              onBranchChange={handleBranchChange}
+              branches={branches}
+              userName={currentUser.displayName}
+              userRole={currentUser.role}
+              unreadNotifications={unreadNotificationsCount}
+              onNotificationsClick={() => setNotificationsOpen(true)}
+              onProfileClick={() => setIsSidebarOpen(true)}
             />
           </div>
 
-          {/* TAB 2: Orders (PO) */}
-          <div className={activeTab === "orders" ? "block" : "hidden"}>
-            <TabOrders
-              currentBranch={currentBranch}
-              isActive={activeTab === "orders"}
-              onCountChange={setOrdersCount}
-              onOpenCreateModal={() => setQuickCreateOpen(true)}
-            />
-          </div>
-
-          {/* TAB 3: Purchases (PR) */}
-          <div className={activeTab === "purchases" ? "block" : "hidden"}>
-            <TabPurchases
-              onOpenCreateModal={() => setQuickCreateOpen(true)}
-              selectedItemForDetail={selectedPurchaseItem}
-              onCloseDetailModal={() => setSelectedPurchaseItem(null)}
-              currentBranch={currentBranch}
-              isActive={activeTab === "purchases"}
-              onCountChange={setPurchasesCount}
-            />
-          </div>
-
-          {/* TAB 4: Inbound Receipts */}
-          <div className={activeTab === "inbound" ? "block" : "hidden"}>
-            <TabInbound
-              currentBranch={currentBranch}
-              isActive={activeTab === "inbound"}
-              onCountChange={setInboundCount}
-              onOpenNewInbound={() => setQuickCreateOpen(true)}
-            />
-          </div>
-
-          {/* TAB 5: QR / Barcode Scanner */}
-          <div className={activeTab === "scan" ? "block" : "hidden"}>
-            <div className="space-y-4 max-w-2xl mx-auto">
-              <div className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 sm:p-5 shadow-xs">
-                <h3 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-white">
-                  Quét tem mã vạch thuốc & QR Lô GSP
-                </h3>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                  Nhận diện chuẩn GS1 DataMatrix, mã vạch EAN-13 và tem niêm phong dược phẩm
-                </p>
-              </div>
-              <UntitledQrScannerView
-                onAddToPurchase={handleScanAddToPurchase}
-                onAddToInbound={handleScanAddToInbound}
-              />
-            </div>
-          </div>
-
-          {/* TAB 6: Settings */}
-          <div className={activeTab === "settings" ? "block" : "hidden"}>
-            <div className="max-w-2xl mx-auto">
-              <TabSettings
+          {/* Responsive Content Workspace Container with pb-28 for fixed mobile nav */}
+          <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-28 md:pb-8 transition-all">
+            {/* TAB 1: Home (Cached in DOM for instant response) */}
+            <div className={activeTab === "home" ? "block" : "hidden"}>
+              <TabHome
+                onNavigateTab={(tab) => setActiveTab(tab)}
+                onOpenQuickCreate={() => setQuickCreateOpen(true)}
+                onSelectPurchaseItem={(item) => {
+                  setSelectedPurchaseItem(item);
+                  setActiveTab("purchases");
+                }}
+                userName={currentUser.displayName}
                 currentBranch={currentBranch}
-                onBranchChange={handleBranchChange}
-                isDarkMode={isDarkMode}
-                onToggleDarkMode={handleToggleDarkMode}
-                onLogout={handleLogout}
+                ordersCount={ordersCount}
+                purchasesCount={purchasesCount}
+                inboundCount={inboundCount}
+                isLoadingCounts={isLoadingCounts}
               />
             </div>
-          </div>
 
-          {/* TAB 7: ERP Screen Modules (I72 6 Screen Groups) */}
-          {(
-            activeTab === "sales-orders" ||
-            activeTab === "internal-transfer-requests" ||
-            activeTab === "warehouse-qr" ||
-            activeTab === "sales-qr" ||
-            activeTab === "machine-movements" ||
-            activeTab === "machine-repairs"
-          ) && (
-            <TabErpScreen
-              module={activeTab as ErpScreenModule}
-              currentBranch={currentBranch}
-              isActive={true}
-              onOpenScanner={() => setActiveTab("scan")}
-            />
-          )}
-        </main>
+            {/* TAB 2: Orders (PO) */}
+            <div className={activeTab === "orders" ? "block" : "hidden"}>
+              <TabOrders
+                currentBranch={currentBranch}
+                isActive={activeTab === "orders"}
+                onCountChange={setOrdersCount}
+                onOpenCreateModal={() => setQuickCreateOpen(true)}
+              />
+            </div>
+
+            {/* TAB 3: Purchases (PR) */}
+            <div className={activeTab === "purchases" ? "block" : "hidden"}>
+              <TabPurchases
+                onOpenCreateModal={() => setQuickCreateOpen(true)}
+                selectedItemForDetail={selectedPurchaseItem}
+                onCloseDetailModal={() => setSelectedPurchaseItem(null)}
+                currentBranch={currentBranch}
+                isActive={activeTab === "purchases"}
+                onCountChange={setPurchasesCount}
+              />
+            </div>
+
+            {/* TAB 4: Inbound Receipts */}
+            <div className={activeTab === "inbound" ? "block" : "hidden"}>
+              <TabInbound
+                currentBranch={currentBranch}
+                isActive={activeTab === "inbound"}
+                onCountChange={setInboundCount}
+                onOpenNewInbound={() => setQuickCreateOpen(true)}
+              />
+            </div>
+
+            {/* TAB 5: QR / Barcode Scanner */}
+            <div className={activeTab === "scan" ? "block" : "hidden"}>
+              <div className="space-y-4 max-w-2xl mx-auto">
+                <div className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 sm:p-5 shadow-xs">
+                  <h3 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-white">
+                    Quét tem mã vạch thuốc & QR Lô GSP
+                  </h3>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                    Nhận diện chuẩn GS1 DataMatrix, mã vạch EAN-13 và tem niêm phong dược phẩm
+                  </p>
+                </div>
+                <UntitledQrScannerView
+                  onAddToPurchase={handleScanAddToPurchase}
+                  onAddToInbound={handleScanAddToInbound}
+                />
+              </div>
+            </div>
+
+            {/* TAB 6: Settings */}
+            <div className={activeTab === "settings" ? "block" : "hidden"}>
+              <div className="max-w-2xl mx-auto">
+                <TabSettings
+                  currentBranch={currentBranch}
+                  onBranchChange={handleBranchChange}
+                  isDarkMode={isDarkMode}
+                  onToggleDarkMode={handleToggleDarkMode}
+                  onLogout={handleLogout}
+                />
+              </div>
+            </div>
+
+            {/* TAB 7+: All 6 ERP Screen Modules (Fully cached in DOM for instant tab switching) */}
+            {ERP_MODULES.map((mod) => (
+              <div key={mod} className={activeTab === mod ? "block" : "hidden"}>
+                <TabErpScreen
+                  module={mod}
+                  currentBranch={currentBranch}
+                  isActive={activeTab === mod}
+                  onOpenScanner={() => setActiveTab("scan")}
+                />
+              </div>
+            ))}
+          </main>
+        </div>
 
         {/* Mobile Sticky Bottom Navigation (Fixed at bottom on screens < 768px) */}
         <div className="md:hidden">
@@ -356,7 +478,7 @@ export function MedcomApp() {
           />
         </div>
 
-        {/* Left Navigation Sidebar Drawer */}
+        {/* Left Navigation Sidebar Drawer (Mobile & Hamburger) */}
         <SidebarDrawer
           open={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
@@ -368,7 +490,7 @@ export function MedcomApp() {
           userName={currentUser.displayName}
           userRole={currentUser.role}
           currentBranch={currentBranch}
-          branchName={APP_BRANCHES.find((b) => b.id === currentBranch)?.name}
+          branchName={branches.find((b) => b.id === currentBranch)?.name}
           isDarkMode={isDarkMode}
           onToggleDarkMode={handleToggleDarkMode}
           onLogout={handleLogout}

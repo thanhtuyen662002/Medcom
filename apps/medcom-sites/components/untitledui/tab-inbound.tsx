@@ -359,35 +359,6 @@ export function TabInbound({
         </div>
       </div>
 
-      {/* 4-Stage Visual Progress Bar */}
-      <div className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-3.5 shadow-xs">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400 block mb-2">
-          Giai đoạn luồng kiểm hàng GSP
-        </span>
-        <div className="grid grid-cols-4 gap-1.5 text-center">
-          {[
-            { step: "1", title: "Cổng kho", desc: "Tiếp nhận" },
-            { step: "2", title: "Ngoại quan", desc: "Niêm phong" },
-            { step: "3", title: "Kiểm nghiệm", desc: "Nhiệt độ GSP" },
-            { step: "4", title: "Nhập kệ", desc: "Mã vạch" },
-          ].map((s, idx) => (
-            <div
-              key={s.step}
-              className={`p-2 rounded-xl text-xs transition-colors ${
-                idx === 2
-                  ? "bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-bold border border-purple-200 dark:border-purple-800"
-                  : "bg-neutral-50 dark:bg-neutral-800/40 text-neutral-600 dark:text-neutral-400"
-              }`}
-            >
-              <span className="block text-[10px] font-mono text-neutral-400">
-                Bước {s.step}
-              </span>
-              <span className="font-semibold block truncate">{s.title}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Inbound List */}
       <div className="space-y-3">
         {error ? (
@@ -459,9 +430,9 @@ export function TabInbound({
 
               {/* Inbound Meta */}
               <div className="mt-3 pt-2.5 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between text-xs text-neutral-500">
-                <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-                  <ThermometerSnowflake className="size-3.5" />
-                  <span className="font-medium">{item.temperature}</span>
+                <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
+                  <Calendar className="size-3.5 text-purple-600" />
+                  <span className="font-medium">{item.receivedDate}</span>
                 </div>
 
                 <div className="flex items-center gap-1 text-neutral-400">
@@ -479,128 +450,111 @@ export function TabInbound({
         open={Boolean(activeItem)}
         onClose={() => setActiveItem(null)}
         title={activeItem?.code || "Chi tiết biên bản nhập kho"}
-        subtitle={`Chứng từ ERP: ${activeItem?.code} · ${activeItem?.supplier}`}
+        subtitle={`Chứng từ ERP: ${activeItem?.code}`}
         footer={
-          activeItem && (
+          activeItem && activeItem.stage !== "stored" ? (
             <div className="flex gap-2">
               <UntitledButton
-                variant="secondary-gray"
+                variant="primary"
                 size="md"
                 fullWidth
-                onClick={() => alert("Đang in mã vạch chuẩn GS1-128...")}
-                iconLeading={<Barcode className="size-4" />}
+                onClick={() => handleAdvanceStage(activeItem.id)}
+                iconLeading={<CheckCircle2 className="size-4" />}
               >
-                In tem mã vạch
+                Xác nhận vào kệ kho
               </UntitledButton>
-              {activeItem.stage !== "stored" && (
-                <UntitledButton
-                  variant="primary"
-                  size="md"
-                  fullWidth
-                  onClick={() => handleAdvanceStage(activeItem.id)}
-                  iconLeading={<CheckCircle2 className="size-4" />}
-                >
-                  Xác nhận vào kệ kho
-                </UntitledButton>
-              )}
             </div>
-          )
+          ) : null
         }
       >
         {activeItem && (
-          <div className="space-y-4">
-            {/* Status & Temp Card */}
-            <div className="grid grid-cols-2 gap-2">
-              <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700/80">
-                <span className="text-[11px] text-neutral-400 block">Trạng thái</span>
-                <div className="mt-1">{getStageBadge(activeItem.stage)}</div>
+          <div className="space-y-4 pb-12">
+            {/* THẺ THÔNG TIN CHUNG CHỨNG TỪ (Unified Card) */}
+            <div className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 shadow-xs space-y-3">
+              <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-neutral-100 dark:border-neutral-800">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-400">
+                    Mã chứng từ
+                  </span>
+                  <p className="font-mono text-sm sm:text-base font-bold text-neutral-900 dark:text-white">
+                    {activeItem.code}
+                  </p>
+                </div>
+                <div>{getStageBadge(activeItem.stage)}</div>
               </div>
-              <div className="p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
-                <span className="text-[11px] text-emerald-700 dark:text-emerald-300 block">
-                  Nhiệt độ tiếp nhận
-                </span>
-                <span className="text-xs font-bold text-emerald-800 dark:text-emerald-200 block mt-1">
-                  {activeItem.temperature}
-                </span>
-              </div>
-            </div>
 
-            {/* Header Attributes */}
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
-                <span className="text-neutral-500">Mã yêu cầu nhập:</span>
-                <span className="font-mono font-bold text-neutral-900 dark:text-white">
-                  {activeItem.code}
+              {/* Tên đối tượng / Nhà cung cấp (ObjectName - có thể dài nên bố trí trọn dòng rõ ràng) */}
+              <div className="py-1 border-b border-neutral-100 dark:border-neutral-800/60">
+                <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold block mb-1">
+                  Nhà cung cấp / Đối tượng (ObjectName)
                 </span>
+                <p className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-white leading-relaxed break-words">
+                  {activeItem.supplier}
+                </p>
               </div>
-              {activeItem.orderNumber && (
-                <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
-                  <span className="text-neutral-500">Mã đơn mua hàng PO:</span>
-                  <span className="font-semibold text-neutral-900 dark:text-white">
-                    {activeItem.orderNumber}
-                  </span>
-                </div>
-              )}
-              {activeItem.invoiceNo && (
-                <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
-                  <span className="text-neutral-500">Số hóa đơn VAT:</span>
-                  <span className="font-semibold text-neutral-900 dark:text-white">
-                    {activeItem.invoiceNo}
-                  </span>
-                </div>
-              )}
-              {activeItem.departurePoint && activeItem.destinationPoint && (
-                <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
-                  <span className="text-neutral-500">Tuyến vận chuyển:</span>
-                  <span className="font-semibold text-neutral-900 dark:text-white text-right max-w-[65%]">
-                    {activeItem.departurePoint} → {activeItem.destinationPoint}
-                  </span>
-                </div>
-              )}
-              {activeItem.header?.totalPalletQuantityByDocument && (
-                <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
-                  <span className="text-neutral-500">Tổng Pallet (CT / Thực tế):</span>
-                  <span className="font-semibold text-neutral-900 dark:text-white">
-                    {activeItem.header.totalPalletQuantityByDocument} / {activeItem.header.totalPalletQuantityByReal || "—"} pallet
-                  </span>
-                </div>
-              )}
-              {activeItem.header?.totalBarrelQuantityByDocument && (
-                <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
-                  <span className="text-neutral-500">Tổng thùng (CT / Thực tế):</span>
-                  <span className="font-semibold text-neutral-900 dark:text-white">
-                    {activeItem.header.totalBarrelQuantityByDocument} / {activeItem.header.totalBarrelQuantityByReal || "—"} thùng
-                  </span>
-                </div>
-              )}
-              {activeItem.header?.notes && (
-                <div className="flex justify-between py-1.5 border-b border-neutral-100 dark:border-neutral-800">
-                  <span className="text-neutral-500">Ghi chú:</span>
-                  <span className="font-semibold text-neutral-900 dark:text-white text-right max-w-[65%]">
-                    {activeItem.header.notes}
-                  </span>
-                </div>
-              )}
-            </div>
 
-            {/* Checklist */}
-            <div className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 p-3.5 space-y-2">
-              <h5 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-                Tiêu chuẩn nghiệm thu GSP
-              </h5>
-              <div className="space-y-1.5 text-xs">
-                <div className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
-                  <CheckCircle2 className="size-4 text-emerald-500 shrink-0" />
-                  <span>Bao bì nguyên vẹn, tem niêm phong nhà sản xuất đầy đủ</span>
+              {/* Chi tiết thông số thuộc tính */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+                {activeItem.orderNumber && (
+                  <div className="flex flex-col py-1">
+                    <span className="text-[10px] text-neutral-400">Mã đơn mua hàng PO</span>
+                    <span className="font-semibold text-neutral-800 dark:text-neutral-200 font-mono">
+                      {activeItem.orderNumber}
+                    </span>
+                  </div>
+                )}
+                {activeItem.invoiceNo && (
+                  <div className="flex flex-col py-1">
+                    <span className="text-[10px] text-neutral-400">Số hóa đơn VAT</span>
+                    <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                      {activeItem.invoiceNo}
+                    </span>
+                  </div>
+                )}
+                <div className="flex flex-col py-1">
+                  <span className="text-[10px] text-neutral-400">Ngày lập chứng từ</span>
+                  <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                    {activeItem.receivedDate}
+                  </span>
                 </div>
-                <div className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
-                  <CheckCircle2 className="size-4 text-emerald-500 shrink-0" />
-                  <span>Hóa đơn GTGT & Phiếu kiểm nghiệm (COA) kèm theo</span>
+                <div className="flex flex-col py-1">
+                  <span className="text-[10px] text-neutral-400">Người kiểm soát</span>
+                  <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                    {activeItem.inspector}
+                  </span>
                 </div>
-                <div className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300">
-                  <CheckCircle2 className="size-4 text-emerald-500 shrink-0" />
-                  <span>Số lô & Hạn sử dụng khớp hoàn toàn với chứng từ</span>
-                </div>
+                {activeItem.departurePoint && activeItem.destinationPoint && (
+                  <div className="flex flex-col py-1 sm:col-span-2">
+                    <span className="text-[10px] text-neutral-400">Tuyến vận chuyển</span>
+                    <span className="font-semibold text-neutral-800 dark:text-neutral-200 break-words">
+                      {activeItem.departurePoint} → {activeItem.destinationPoint}
+                    </span>
+                  </div>
+                )}
+                {activeItem.header?.totalPalletQuantityByDocument && (
+                  <div className="flex flex-col py-1">
+                    <span className="text-[10px] text-neutral-400">Tổng Pallet (CT / Thực tế)</span>
+                    <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                      {activeItem.header.totalPalletQuantityByDocument} / {activeItem.header.totalPalletQuantityByReal || "—"} pallet
+                    </span>
+                  </div>
+                )}
+                {activeItem.header?.totalBarrelQuantityByDocument && (
+                  <div className="flex flex-col py-1">
+                    <span className="text-[10px] text-neutral-400">Tổng thùng (CT / Thực tế)</span>
+                    <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                      {activeItem.header.totalBarrelQuantityByDocument} / {activeItem.header.totalBarrelQuantityByReal || "—"} thùng
+                    </span>
+                  </div>
+                )}
+                {activeItem.header?.notes && (
+                  <div className="flex flex-col py-1 sm:col-span-2">
+                    <span className="text-[10px] text-neutral-400">Ghi chú</span>
+                    <span className="font-medium text-neutral-700 dark:text-neutral-300 break-words">
+                      {activeItem.header.notes}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
