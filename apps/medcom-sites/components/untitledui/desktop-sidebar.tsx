@@ -23,6 +23,10 @@ import {
   Wrench,
   PanelLeftClose,
   PanelLeft,
+  CheckCircle2,
+  UserCheck,
+  ClipboardList,
+  Boxes,
 } from "lucide-react";
 import { UntitledBadge } from "./badge";
 import { UntitledButton } from "./button";
@@ -109,36 +113,49 @@ export function DesktopSidebar({
     },
   ];
 
-  const erpScreenNavItems = [
+  const erpSections = [
     {
-      id: "sales-orders" as NavTabId,
-      label: "Quản lý đơn hàng",
-      icon: ShoppingBag,
+      title: "Mua hàng & Nhập kho",
+      items: [
+        { id: "purchase-orders" as NavTabId, label: "Đơn đặt mua", icon: ShoppingBag },
+        { id: "purchase-approvals" as NavTabId, label: "Duyệt đề nghị mua", icon: CheckCircle2 },
+        { id: "inbound-requests" as NavTabId, label: "Đề nghị nhập kho", icon: PackageCheck },
+      ],
     },
     {
-      id: "internal-transfer-requests" as NavTabId,
-      label: "Điều chuyển nội bộ",
-      icon: ArrowRightLeft,
+      title: "Bán hàng & SA/PM",
+      items: [
+        { id: "sales-orders" as NavTabId, label: "Quản lý đơn hàng", icon: ShoppingBag },
+        { id: "sales-order-pm" as NavTabId, label: "PM xử lý đơn hàng", icon: UserCheck },
+        { id: "sales-order-sa" as NavTabId, label: "SA xử lý đơn hàng", icon: ClipboardList },
+      ],
     },
     {
-      id: "warehouse-qr" as NavTabId,
-      label: "Quét QR xuất kho",
-      icon: QrCode,
+      title: "Điều chuyển nội bộ (7 bước)",
+      items: [
+        { id: "internal-transfer-requests" as NavTabId, label: "Đề nghị điều chuyển", icon: ArrowRightLeft },
+        { id: "internal-transfer-pm" as NavTabId, label: "PM duyệt điều chuyển", icon: UserCheck },
+        { id: "internal-transfer-batches" as NavTabId, label: "Đợt điều chuyển", icon: Boxes },
+        { id: "internal-transfer-tech" as NavTabId, label: "Kỹ thuật điều chuyển", icon: Wrench },
+        { id: "internal-transfer-sa" as NavTabId, label: "SA duyệt điều chuyển", icon: ClipboardList },
+        { id: "internal-transfer-accounting" as NavTabId, label: "Kế toán điều chuyển", icon: FileText },
+        { id: "internal-transfer-warehouse-out" as NavTabId, label: "Kho xuất điều chuyển", icon: Truck },
+        { id: "internal-transfer-warehouse-in" as NavTabId, label: "Kho nhận điều chuyển", icon: PackageCheck },
+      ],
     },
     {
-      id: "sales-qr" as NavTabId,
-      label: "Quét QR xuất bán",
-      icon: QrCode,
+      title: "Mã vạch & Quét QR",
+      items: [
+        { id: "warehouse-qr" as NavTabId, label: "Quét QR xuất kho", icon: QrCode },
+        { id: "sales-qr" as NavTabId, label: "Quét QR xuất bán", icon: QrCode },
+      ],
     },
     {
-      id: "machine-movements" as NavTabId,
-      label: "Di chuyển bàn giao máy",
-      icon: Truck,
-    },
-    {
-      id: "machine-repairs" as NavTabId,
-      label: "Sửa chữa bảo hành máy",
-      icon: Wrench,
+      title: "Thiết bị & Bảo hành",
+      items: [
+        { id: "machine-movements" as NavTabId, label: "Bàn giao di chuyển máy", icon: Truck },
+        { id: "machine-repairs" as NavTabId, label: "Sửa chữa bảo hành máy", icon: Wrench },
+      ],
     },
   ];
 
@@ -296,38 +313,37 @@ export function DesktopSidebar({
           })}
         </div>
 
-        {/* 6 ERP Modules (I72) */}
-        <div className="space-y-1 pt-2 border-t border-neutral-100 dark:border-neutral-800/60">
-          <div className="flex items-center gap-1.5 px-2 mb-1">
-            <Layers className="size-3 text-purple-500" />
-            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block">
-              Phân hệ mở rộng (ERP)
+        {/* ERP Modules (19 Screens) */}
+        {erpSections.map((sec) => (
+          <div key={sec.title} className="space-y-1 pt-2 border-t border-neutral-100 dark:border-neutral-800/60">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 px-2 block mb-1">
+              {sec.title}
             </span>
-          </div>
-          {erpScreenNavItems.map((item) => {
-            const isActive = activeTab === item.id;
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => onTabChange(item.id)}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  isActive
-                    ? "bg-purple-50 dark:bg-purple-950/70 text-purple-700 dark:text-purple-300 shadow-2xs font-bold"
-                    : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
-                }`}
-              >
-                <Icon
-                  className={`size-4 shrink-0 ${
-                    isActive ? "text-purple-600 dark:text-purple-400" : "text-neutral-400"
+            {sec.items.map((item) => {
+              const isActive = activeTab === item.id;
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => onTabChange(item.id)}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                    isActive
+                      ? "bg-purple-50 dark:bg-purple-950/70 text-purple-700 dark:text-purple-300 shadow-2xs font-bold"
+                      : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
                   }`}
-                />
-                <span className="truncate">{item.label}</span>
-              </button>
-            );
-          })}
-        </div>
+                >
+                  <Icon
+                    className={`size-4 shrink-0 ${
+                      isActive ? "text-purple-600 dark:text-purple-400" : "text-neutral-400"
+                    }`}
+                  />
+                  <span className="truncate">{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        ))}
 
         {/* Settings */}
         <div className="space-y-1 pt-2 border-t border-neutral-100 dark:border-neutral-800/60">

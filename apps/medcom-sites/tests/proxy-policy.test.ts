@@ -2,7 +2,7 @@ import{test}from"node:test";import assert from"node:assert/strict";import{backen
 test("only deployed HTTPS DNS origins",()=>{assert.equal(backendOrigin("https://erp.example.com"),"https://erp.example.com");for(const v of[undefined,"http://erp.example.com","https://localhost","https://127.0.0.1","https://[::1]","https://user:pass@erp.example.com","https://erp.example.com/path","https://erp.example.com?url=x"])assert.equal(backendOrigin(v),null);});
 test("route allowlist prevents open proxy and unsupported mutation",()=>{assert.ok(routeAllowed("api/auth/login","POST"));for(const p of["api/admin/delete","api/auth/../admin","https://evil.example","api/documents/purchase-orders/write"])assert.equal(routeAllowed(p,"GET"),false);assert.equal(routeAllowed("api/documents/purchase-orders","POST"),false);});
 test("ERP screen modules, routes and 1MiB body limits are correctly allowlisted",()=>{
- assert.equal(erpScreenModules.length,7);
+ assert.equal(erpScreenModules.length,19);
  for(const m of erpScreenModules){
   assert.ok(routeAllowed(`api/erp/${m}/screen`,"GET"));
   assert.ok(routeAllowed(`api/erp/${m}`,"GET"));
@@ -16,6 +16,46 @@ test("ERP screen modules, routes and 1MiB body limits are correctly allowlisted"
  }
  assert.ok(routeAllowed("api/erp/sales-orders/contract-info","GET"));
  assert.ok(routeAllowed("api/erp/sales-qr/contract-info","GET"));
+ assert.ok(routeAllowed("api/erp/sales-order-pm/contract-info","GET"));
+ assert.ok(routeAllowed("api/erp/sales-order-sa/contract-info","GET"));
+
+ for(const m of ["purchase-requests", "sales-orders", "internal-transfer-requests", "machine-movements", "machine-repairs", "purchase-orders", "inbound-requests", "internal-transfer-batches"]){
+  assert.ok(routeAllowed(`api/erp/${m}/create`,"POST"));
+  assert.ok(routeAllowed(`api/erp/${m}/save`,"POST"));
+  assert.ok(routeAllowed(`api/erp/${m}/delete`,"POST"));
+  assert.equal(requestBodyLimit(`api/erp/${m}/create`,"POST"),1048576);
+  assert.equal(requestBodyLimit(`api/erp/${m}/save`,"POST"),1048576);
+  assert.equal(requestBodyLimit(`api/erp/${m}/delete`,"POST"),1048576);
+ }
+
+ for(const m of ["internal-transfer-pm", "internal-transfer-tech", "internal-transfer-sa", "internal-transfer-accounting", "internal-transfer-warehouse-out", "internal-transfer-warehouse-in"]){
+  assert.ok(routeAllowed(`api/erp/${m}/save`,"POST"));
+  assert.equal(routeAllowed(`api/erp/${m}/create`,"POST"),false);
+  assert.equal(routeAllowed(`api/erp/${m}/delete`,"POST"),false);
+  assert.equal(requestBodyLimit(`api/erp/${m}/save`,"POST"),1048576);
+ }
+
+ for(const m of ["purchase-approvals", "sales-order-pm", "sales-order-sa"]){
+  assert.equal(routeAllowed(`api/erp/${m}/create`,"POST"),false);
+  assert.equal(routeAllowed(`api/erp/${m}/save`,"POST"),false);
+  assert.equal(routeAllowed(`api/erp/${m}/delete`,"POST"),false);
+ }
+
+ assert.ok(routeAllowed("api/erp/inbound-requests/sections/costs/save","POST"));
+ assert.ok(routeAllowed("api/erp/internal-transfer-tech/sections/assets/save","POST"));
+ assert.equal(requestBodyLimit("api/erp/inbound-requests/sections/costs/save","POST"),1048576);
+ assert.equal(requestBodyLimit("api/erp/internal-transfer-tech/sections/assets/save","POST"),1048576);
+
+ assert.ok(routeAllowed("api/erp/purchase-orders/item-price","POST"));
+ assert.equal(requestBodyLimit("api/erp/purchase-orders/item-price","POST"),1048576);
+
+ assert.ok(routeAllowed("api/erp/warehouse-qr/qr/add","POST"));
+ assert.ok(routeAllowed("api/erp/warehouse-qr/qr/delete","POST"));
+ assert.ok(routeAllowed("api/erp/sales-qr/qr/add","POST"));
+ assert.ok(routeAllowed("api/erp/sales-qr/qr/delete","POST"));
+ assert.equal(routeAllowed("api/erp/warehouse-qr/create","POST"),false);
+ assert.equal(routeAllowed("api/erp/sales-qr/create","POST"),false);
+
  assert.ok(routeAllowed("api/erp/purchase-requests/actions/submit","POST"));
  assert.ok(routeAllowed("api/erp/purchase-requests/actions/send-purchase-order","POST"));
  assert.ok(routeAllowed("api/erp/sales-orders/actions/send-pm","POST"));
@@ -24,12 +64,37 @@ test("ERP screen modules, routes and 1MiB body limits are correctly allowlisted"
  assert.ok(routeAllowed("api/erp/internal-transfer-requests/actions/send-pm","POST"));
  assert.ok(routeAllowed("api/erp/internal-transfer-requests/actions/send-pm/options","POST"));
  assert.ok(routeAllowed("api/erp/internal-transfer-requests/actions/recall","POST"));
- assert.ok(routeAllowed("api/erp/warehouse-qr/qr/add","POST"));
- assert.ok(routeAllowed("api/erp/warehouse-qr/qr/delete","POST"));
- assert.ok(routeAllowed("api/erp/sales-qr/qr/add","POST"));
- assert.ok(routeAllowed("api/erp/sales-qr/qr/delete","POST"));
- assert.equal(routeAllowed("api/erp/warehouse-qr/create","POST"),false);
- assert.equal(routeAllowed("api/erp/sales-qr/create","POST"),false);
+ assert.ok(routeAllowed("api/erp/inbound-requests/actions/send-management","POST"));
+ assert.ok(routeAllowed("api/erp/inbound-requests/actions/send-warehouse","POST"));
+ assert.ok(routeAllowed("api/erp/purchase-approvals/actions/approve","POST"));
+ assert.ok(routeAllowed("api/erp/purchase-approvals/actions/reject","POST"));
+ assert.ok(routeAllowed("api/erp/sales-order-pm/actions/send-sa","POST"));
+ assert.ok(routeAllowed("api/erp/sales-order-pm/actions/reject","POST"));
+ assert.ok(routeAllowed("api/erp/sales-order-sa/actions/send-accounting","POST"));
+ assert.ok(routeAllowed("api/erp/sales-order-sa/actions/send-tech","POST"));
+ assert.ok(routeAllowed("api/erp/sales-order-sa/actions/reject","POST"));
+ assert.ok(routeAllowed("api/erp/sales-order-sa/actions/return-step","POST"));
+ assert.ok(routeAllowed("api/erp/sales-order-sa/actions/return-step/options","POST"));
+ assert.ok(routeAllowed("api/erp/internal-transfer-pm/actions/pm-confirm","POST"));
+ assert.ok(routeAllowed("api/erp/internal-transfer-pm/actions/reject","POST"));
+ assert.ok(routeAllowed("api/erp/internal-transfer-batches/actions/sync-requests","POST"));
+ assert.ok(routeAllowed("api/erp/internal-transfer-batches/actions/send-tech","POST"));
+ assert.ok(routeAllowed("api/erp/internal-transfer-tech/actions/send-sa","POST"));
+ assert.ok(routeAllowed("api/erp/internal-transfer-tech/actions/send-sa/options","POST"));
+ assert.ok(routeAllowed("api/erp/internal-transfer-tech/actions/reject","POST"));
+ assert.ok(routeAllowed("api/erp/internal-transfer-sa/actions/send-accounting","POST"));
+ assert.ok(routeAllowed("api/erp/internal-transfer-sa/actions/reject","POST"));
+ assert.ok(routeAllowed("api/erp/internal-transfer-sa/actions/return-step","POST"));
+ assert.ok(routeAllowed("api/erp/internal-transfer-sa/actions/return-step/options","POST"));
+ assert.ok(routeAllowed("api/erp/internal-transfer-accounting/actions/send-warehouse","POST"));
+ assert.ok(routeAllowed("api/erp/internal-transfer-accounting/actions/reject","POST"));
+ assert.ok(routeAllowed("api/erp/internal-transfer-accounting/actions/return-step","POST"));
+ assert.ok(routeAllowed("api/erp/internal-transfer-accounting/actions/return-step/options","POST"));
+ assert.ok(routeAllowed("api/erp/internal-transfer-warehouse-out/actions/dispatch","POST"));
+ assert.ok(routeAllowed("api/erp/internal-transfer-warehouse-out/actions/reject","POST"));
+ assert.ok(routeAllowed("api/erp/internal-transfer-warehouse-out/actions/return-step","POST"));
+ assert.ok(routeAllowed("api/erp/internal-transfer-warehouse-out/actions/return-step/options","POST"));
+ assert.ok(routeAllowed("api/erp/internal-transfer-warehouse-in/actions/receive","POST"));
 });
 test("documents v2, query/field contracts and openapi routes are correctly allowlisted",()=>{
  for(const p of [

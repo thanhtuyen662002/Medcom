@@ -22,6 +22,11 @@ import {
   ChevronRight,
   ShieldCheck,
   Building2,
+  CheckCircle2,
+  ArrowRightLeft,
+  UserCheck,
+  ClipboardList,
+  Wrench,
 } from "lucide-react";
 import { type NavTabId } from "./bottom-nav";
 
@@ -136,28 +141,134 @@ export function SidebarDrawer({
       ],
     },
     {
-      title: "Quản lý Bán hàng & Điều chuyển (I72)",
+      title: "Mua hàng & Nhập kho (ERP)",
+      items: [
+        {
+          id: "purchase-orders",
+          label: "Đơn đặt mua",
+          description: "Menu 050129 • AP_OrderFrm",
+          icon: ShoppingBag,
+          badge: "CUD & Tra giá",
+          badgeColor: "purple",
+        },
+        {
+          id: "purchase-approvals",
+          label: "Duyệt đề nghị mua hàng",
+          description: "Menu 05012 • Duyệt & Không duyệt",
+          icon: CheckCircle2,
+          badge: "Quy trình",
+          badgeColor: "purple",
+        },
+        {
+          id: "inbound-requests",
+          label: "Đề nghị nhập kho",
+          description: "Menu 07011 • Gửi BLĐ, Thủ kho & Chi phí",
+          icon: PackageCheck,
+          badge: "CUD & Chi phí",
+          badgeColor: "purple",
+        },
+      ],
+    },
+    {
+      title: "Quản lý Bán hàng & SA/PM",
       items: [
         {
           id: "sales-orders",
           label: "Quản lý đơn hàng",
           description: "Menu 0600201 • Gửi PM, thu hồi & hợp đồng",
           icon: ShoppingBag,
-          badge: "ERP 54 trường",
+          badge: "CUD",
           badgeColor: "purple",
         },
         {
-          id: "internal-transfer-requests",
-          label: "Đề nghị điều chuyển nội bộ",
-          description: "Menu 07010100 • Điều chuyển giữa các chi nhánh",
-          icon: Truck,
-          badge: "ERP 20 trường",
+          id: "sales-order-pm",
+          label: "PM xử lý đơn hàng",
+          description: "Menu 060021 • Gửi SA, Từ chối, Hợp đồng",
+          icon: UserCheck,
+          badge: "Xử lý PM",
+          badgeColor: "purple",
+        },
+        {
+          id: "sales-order-sa",
+          label: "SA xử lý đơn hàng",
+          description: "Menu 060022 • Gửi Kế toán/Kỹ thuật, Trả về",
+          icon: ClipboardList,
+          badge: "Duyệt SA",
           badgeColor: "purple",
         },
       ],
     },
     {
-      title: "Quét QR Xuất kho & Xuất bán (I72)",
+      title: "Điều chuyển nội bộ (Toàn trình 7 bước)",
+      items: [
+        {
+          id: "internal-transfer-requests",
+          label: "Đề nghị điều chuyển",
+          description: "Menu 07010100 • Điều chuyển giữa các chi nhánh",
+          icon: ArrowRightLeft,
+          badge: "CUD",
+          badgeColor: "purple",
+        },
+        {
+          id: "internal-transfer-pm",
+          label: "PM duyệt điều chuyển",
+          description: "Menu 07010110 • Xác nhận & Từ chối PM",
+          icon: UserCheck,
+          badge: "Bước 1",
+          badgeColor: "purple",
+        },
+        {
+          id: "internal-transfer-batches",
+          label: "Đợt điều chuyển",
+          description: "Menu 07010120 • Đồng bộ đề nghị & Gửi kỹ thuật",
+          icon: Boxes,
+          badge: "Bước 2",
+          badgeColor: "purple",
+        },
+        {
+          id: "internal-transfer-tech",
+          label: "Kỹ thuật điều chuyển",
+          description: "Menu 07010130 • Kiểm định thiết bị & Gửi SA",
+          icon: Wrench,
+          badge: "Bước 3",
+          badgeColor: "purple",
+        },
+        {
+          id: "internal-transfer-sa",
+          label: "SA duyệt điều chuyển",
+          description: "Menu 07010140 • Duyệt số lượng & Gửi kế toán",
+          icon: ClipboardList,
+          badge: "Bước 4",
+          badgeColor: "purple",
+        },
+        {
+          id: "internal-transfer-accounting",
+          label: "Kế toán điều chuyển",
+          description: "Menu 07010150 • Phiếu xuất & Gửi kho nguồn",
+          icon: FileText,
+          badge: "Bước 5",
+          badgeColor: "purple",
+        },
+        {
+          id: "internal-transfer-warehouse-out",
+          label: "Kho nguồn điều chuyển",
+          description: "Menu 07010160 • Xuất điều chuyển / Dispatch",
+          icon: Truck,
+          badge: "Bước 6",
+          badgeColor: "purple",
+        },
+        {
+          id: "internal-transfer-warehouse-in",
+          label: "Kho đích điều chuyển",
+          description: "Menu 07010170 • Xác nhận nhận hàng / Receive",
+          icon: PackageCheck,
+          badge: "Bước 7",
+          badgeColor: "emerald",
+        },
+      ],
+    },
+    {
+      title: "Quét QR Xuất kho & Xuất bán",
       items: [
         {
           id: "warehouse-qr",
@@ -178,7 +289,7 @@ export function SidebarDrawer({
       ],
     },
     {
-      title: "Thiết bị & Máy móc Y tế (I72)",
+      title: "Thiết bị & Máy móc Y tế",
       items: [
         {
           id: "machine-movements",
