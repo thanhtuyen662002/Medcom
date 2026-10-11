@@ -1,3 +1,26 @@
+owner_reference_displays_20261011:
+  instruction: all_reference_IDs_with_names_ItemCode_Unit_Vietnamese_money_dates_Branch_lookup_and_CUD_button_audit
+  canonical_goal: 45
+  current_increment: I77
+  pr: 139
+  base: d7f901584b56a8620cc6ec68f59a9cc21bcf9b23
+  source: inventories/backend/20261011/api-reference-bindings.json
+  remote_read_only_schema_evidence: inventories/backend/20261011/reference-source-reconciliation.json
+  handoff: docs/backend/BE_FE_API_REFERENCE_20261011.md
+  audit: docs/backend/API_DISPLAY_AUDIT_20261011.md
+  local_review: docs/execution/I77_LOCAL_REVIEW_20261011.md
+  verified_bindings: 44
+  selected_columns: 90
+  api_operations: 120
+  api_schemas: 423
+  native_dropdown_bindings: 106
+  public_full_suite: 3298_passed_zero_failed_three_private_runtime_cases_skipped
+  native_SQL_synthetic_checks: 9_passed_read_only_rollback
+  full_document_validation: 660_tables_888_fragment_links_zero_missing_anchors_three_render_parts
+  hosted_exact_head_base_CI: PENDING_publication
+  actual_owner_business_acceptance: UNKNOWN
+  all_ERP_CUD_reports_imports_complete: false_see_audit_gaps
+  separately_owned_FE_changes: NONE_new_branch_BFF_allowlist_and_display_renderer_handoff_required
 owner_notifications_20261010:
   instruction: SY_NotifyMsgTbl_ToUserID_matches_current_SY_User_UserName_and_document_click_navigation
   canonical_goal: 45

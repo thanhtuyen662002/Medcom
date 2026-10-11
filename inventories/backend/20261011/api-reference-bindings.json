@@ -1,0 +1,1104 @@
+{
+  "schemaVersion": 1,
+  "source": "inventories/source/20261010/catalog-columns.json",
+  "viewSemanticsSource": "inventories/source/20261010/catalog-dependencies.json",
+  "sourceRowsExcluded": true,
+  "bindings": [
+    {
+      "id": "item",
+      "table": "CF_ItemTbl",
+      "key": "ItemID",
+      "label": "ItemName",
+      "extras": [
+        "ItemCode",
+        "Unit"
+      ],
+      "aliases": [
+        "ItemID"
+      ],
+      "columns": [
+        {
+          "name": "ItemID",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": false
+        },
+        {
+          "name": "ItemName",
+          "type": "nvarchar",
+          "typeArguments": "(max)",
+          "nullable": true
+        },
+        {
+          "name": "ItemCode",
+          "type": "nvarchar",
+          "typeArguments": "(100)",
+          "nullable": true
+        },
+        {
+          "name": "Unit",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "id": "branch",
+      "table": "CF_BranchTbl",
+      "key": "BranchID",
+      "label": "BranchName",
+      "extras": [],
+      "aliases": [
+        "BranchID",
+        "FromBranchID",
+        "ToBranchID"
+      ],
+      "columns": [
+        {
+          "name": "BranchID",
+          "type": "varchar",
+          "typeArguments": "(50)",
+          "nullable": false
+        },
+        {
+          "name": "BranchName",
+          "type": "nvarchar",
+          "typeArguments": "(100)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "store",
+      "table": "CF_StoreHouseTbl",
+      "key": "StoreHouseID",
+      "label": "StoreHouseName",
+      "extras": [],
+      "aliases": [
+        "StoreHouseID",
+        "OrderStorehouseID",
+        "FromStoreHouseID",
+        "ToStoreHouseID",
+        "OriginStoreHouseID"
+      ],
+      "columns": [
+        {
+          "name": "StoreHouseID",
+          "type": "varchar",
+          "typeArguments": "(50)",
+          "nullable": false
+        },
+        {
+          "name": "StoreHouseName",
+          "type": "nvarchar",
+          "typeArguments": "(100)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "object",
+      "table": "CF_ObjectTbl",
+      "key": "ObjectID",
+      "label": "ObjectName",
+      "extras": [],
+      "aliases": [
+        "ObjectID",
+        "ExpectedObjectID",
+        "FromObjectID",
+        "FldObjectID"
+      ],
+      "columns": [
+        {
+          "name": "ObjectID",
+          "type": "varchar",
+          "typeArguments": "(100)",
+          "nullable": false
+        },
+        {
+          "name": "ObjectName",
+          "type": "nvarchar",
+          "typeArguments": "(300)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "employee",
+      "table": "vEmployee",
+      "key": "EmployeeID",
+      "label": "EmployeeName",
+      "extras": [],
+      "aliases": [
+        "EmployeeID",
+        "SupportEmployeeID",
+        "DeliveryEmployeeID",
+        "DeliveryEmployeeSubID"
+      ],
+      "columns": [
+        {
+          "name": "EmployeeID",
+          "type": "varchar",
+          "typeArguments": "(100)",
+          "nullable": false
+        },
+        {
+          "name": "EmployeeName",
+          "type": "nvarchar",
+          "typeArguments": "(300)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "manager",
+      "table": "vManager",
+      "key": "ManagerID",
+      "label": "ManagerName",
+      "extras": [],
+      "aliases": [
+        "ManagerID"
+      ],
+      "columns": [
+        {
+          "name": "ManagerID",
+          "type": "varchar",
+          "typeArguments": "(100)",
+          "nullable": false
+        },
+        {
+          "name": "ManagerName",
+          "type": "nvarchar",
+          "typeArguments": "(300)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "ceo",
+      "table": "vCEO",
+      "key": "CeoID",
+      "label": "CeoName",
+      "extras": [],
+      "aliases": [
+        "CeoID"
+      ],
+      "columns": [
+        {
+          "name": "CeoID",
+          "type": "varchar",
+          "typeArguments": "(100)",
+          "nullable": false
+        },
+        {
+          "name": "CeoName",
+          "type": "nvarchar",
+          "typeArguments": "(300)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "agency",
+      "table": "vAgency",
+      "key": "AgencyID",
+      "label": "AgencyName",
+      "extras": [],
+      "aliases": [
+        "AgencyID"
+      ],
+      "columns": [
+        {
+          "name": "AgencyID",
+          "type": "varchar",
+          "typeArguments": "(100)",
+          "nullable": false
+        },
+        {
+          "name": "AgencyName",
+          "type": "nvarchar",
+          "typeArguments": "(300)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "asset",
+      "table": "FA_AssetTbl",
+      "key": "AssetID",
+      "label": "AssetName",
+      "extras": [],
+      "aliases": [
+        "AssetID",
+        "RequestedAssetID"
+      ],
+      "columns": [
+        {
+          "name": "AssetID",
+          "type": "varchar",
+          "typeArguments": "(50)",
+          "nullable": false
+        },
+        {
+          "name": "AssetName",
+          "type": "nvarchar",
+          "typeArguments": "(200)",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "id": "asset-type",
+      "table": "FA_AssetTypeTbl",
+      "key": "AssetTypeID",
+      "label": "AssetTypeName",
+      "extras": [],
+      "aliases": [
+        "AssetTypeID"
+      ],
+      "columns": [
+        {
+          "name": "AssetTypeID",
+          "type": "varchar",
+          "typeArguments": "(50)",
+          "nullable": false
+        },
+        {
+          "name": "AssetTypeName",
+          "type": "nvarchar",
+          "typeArguments": "(150)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "capital",
+      "table": "FA_CapitalTbl",
+      "key": "CapitalID",
+      "label": "CapitalName",
+      "extras": [],
+      "aliases": [
+        "CapitalID"
+      ],
+      "columns": [
+        {
+          "name": "CapitalID",
+          "type": "varchar",
+          "typeArguments": "(50)",
+          "nullable": false
+        },
+        {
+          "name": "CapitalName",
+          "type": "nvarchar",
+          "typeArguments": "(40)",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "id": "object-group",
+      "table": "CF_ObjectGroupTbl",
+      "key": "ObjectGroupID",
+      "label": "ObjectGroupName",
+      "extras": [],
+      "aliases": [
+        "ObjectGroupID"
+      ],
+      "columns": [
+        {
+          "name": "ObjectGroupID",
+          "type": "varchar",
+          "typeArguments": "(50)",
+          "nullable": false
+        },
+        {
+          "name": "ObjectGroupName",
+          "type": "nvarchar",
+          "typeArguments": "(150)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "account-kind",
+      "table": "CF_AccountKindTbl",
+      "key": "AccountKindID",
+      "label": "AccountKindName",
+      "extras": [],
+      "aliases": [
+        "AccountKindID",
+        "AcctKindID"
+      ],
+      "columns": [
+        {
+          "name": "AccountKindID",
+          "type": "nvarchar",
+          "typeArguments": "(2)",
+          "nullable": false
+        },
+        {
+          "name": "AccountKindName",
+          "type": "nvarchar",
+          "typeArguments": "(100)",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "id": "account-type",
+      "table": "CF_AccountTypeTbl",
+      "key": "AccountTypeID",
+      "label": "AccountTypeName",
+      "extras": [],
+      "aliases": [
+        "AccountTypeID"
+      ],
+      "columns": [
+        {
+          "name": "AccountTypeID",
+          "type": "nvarchar",
+          "typeArguments": "(20)",
+          "nullable": false
+        },
+        {
+          "name": "AccountTypeName",
+          "type": "nvarchar",
+          "typeArguments": "(70)",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "id": "user-group",
+      "table": "SY_UserGroup",
+      "key": "UserGroupID",
+      "label": "UserGroupName",
+      "extras": [],
+      "aliases": [
+        "UserGroupID"
+      ],
+      "columns": [
+        {
+          "name": "UserGroupID",
+          "type": "varchar",
+          "typeArguments": "(20)",
+          "nullable": false
+        },
+        {
+          "name": "UserGroupName",
+          "type": "nvarchar",
+          "typeArguments": "(100)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "person",
+      "table": "HR_PersonTbl",
+      "key": "PersonID",
+      "label": "PersonName",
+      "extras": [],
+      "aliases": [
+        "PersonID"
+      ],
+      "columns": [
+        {
+          "name": "PersonID",
+          "type": "varchar",
+          "typeArguments": "(50)",
+          "nullable": false
+        },
+        {
+          "name": "PersonName",
+          "type": "nvarchar",
+          "typeArguments": "(200)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "currency",
+      "table": "CF_CurrencyTbl",
+      "key": "CurrencyID",
+      "label": "CurrencyName",
+      "extras": [],
+      "aliases": [
+        "CurrencyID"
+      ],
+      "columns": [
+        {
+          "name": "CurrencyID",
+          "type": "varchar",
+          "typeArguments": "(3)",
+          "nullable": false
+        },
+        {
+          "name": "CurrencyName",
+          "type": "nvarchar",
+          "typeArguments": "(100)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "purpose",
+      "table": "AP_PurposePurchaseTbl",
+      "key": "PurposeID",
+      "label": "PurposeName",
+      "extras": [],
+      "aliases": [
+        "PurposeID"
+      ],
+      "columns": [
+        {
+          "name": "PurposeID",
+          "type": "int",
+          "typeArguments": null,
+          "nullable": false
+        },
+        {
+          "name": "PurposeName",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "id": "contract",
+      "table": "CF_ContractTbl",
+      "key": "ContractID",
+      "label": "ContractName",
+      "extras": [],
+      "aliases": [
+        "ContractID"
+      ],
+      "columns": [
+        {
+          "name": "ContractID",
+          "type": "nvarchar",
+          "typeArguments": "(100)",
+          "nullable": false
+        },
+        {
+          "name": "ContractName",
+          "type": "nvarchar",
+          "typeArguments": "(100)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "account",
+      "table": "CF_ChartAccTbl",
+      "key": "AccountID",
+      "label": "AccountName",
+      "extras": [],
+      "aliases": [
+        "AccountID",
+        "InvAccID",
+        "RevAccID",
+        "VATAccID",
+        "VATAccExID",
+        "IncomeAccID",
+        "CostOfSaleAccID",
+        "DiscountAcctID",
+        "ChietKhau1AccID",
+        "ChietKhau2AccID",
+        "ChietKhau3AccID",
+        "ChietKhau4AccID",
+        "ExpenseAccountID",
+        "ExpenseAccID",
+        "AssetAccID",
+        "DepreAccID",
+        "PayAccID"
+      ],
+      "columns": [
+        {
+          "name": "AccountID",
+          "type": "varchar",
+          "typeArguments": "(30)",
+          "nullable": false
+        },
+        {
+          "name": "AccountName",
+          "type": "nvarchar",
+          "typeArguments": "(150)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "cost",
+      "table": "CF_CostTbl",
+      "key": "CostID",
+      "label": "CostName",
+      "extras": [],
+      "aliases": [
+        "CostID",
+        "ParentCostID"
+      ],
+      "columns": [
+        {
+          "name": "CostID",
+          "type": "varchar",
+          "typeArguments": "(50)",
+          "nullable": false
+        },
+        {
+          "name": "CostName",
+          "type": "nvarchar",
+          "typeArguments": "(250)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "cost-center",
+      "table": "CF_CostCenterTbl",
+      "key": "CostCenterID",
+      "label": "CostCenterName",
+      "extras": [],
+      "aliases": [
+        "CostCenterID",
+        "ParentCostCenterID"
+      ],
+      "columns": [
+        {
+          "name": "CostCenterID",
+          "type": "varchar",
+          "typeArguments": "(50)",
+          "nullable": false
+        },
+        {
+          "name": "CostCenterName",
+          "type": "nvarchar",
+          "typeArguments": "(250)",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "id": "department",
+      "table": "CF_DepartmentTbl",
+      "key": "DepartmentID",
+      "label": "DepartmentName",
+      "extras": [],
+      "aliases": [
+        "DepartmentID",
+        "ParentDepartmentID"
+      ],
+      "columns": [
+        {
+          "name": "DepartmentID",
+          "type": "varchar",
+          "typeArguments": "(50)",
+          "nullable": false
+        },
+        {
+          "name": "DepartmentName",
+          "type": "nvarchar",
+          "typeArguments": "(100)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "location",
+      "table": "CF_LocationTbl",
+      "key": "LocationID",
+      "label": "LocationName",
+      "extras": [],
+      "aliases": [
+        "LocationID",
+        "ToLocationID"
+      ],
+      "columns": [
+        {
+          "name": "LocationID",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": false
+        },
+        {
+          "name": "LocationName",
+          "type": "nvarchar",
+          "typeArguments": "(100)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "zone",
+      "table": "CF_ZoneTbl",
+      "key": "ZoneID",
+      "label": "ZoneName",
+      "extras": [],
+      "aliases": [
+        "ZoneID",
+        "ToZoneID"
+      ],
+      "columns": [
+        {
+          "name": "ZoneID",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": false
+        },
+        {
+          "name": "ZoneName",
+          "type": "nvarchar",
+          "typeArguments": "(250)",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "id": "payment-term",
+      "table": "CF_PaymentTermTbl",
+      "key": "PaymentTermID",
+      "label": "PaymentTermName",
+      "extras": [],
+      "aliases": [
+        "PaymentTermID"
+      ],
+      "columns": [
+        {
+          "name": "PaymentTermID",
+          "type": "varchar",
+          "typeArguments": "(50)",
+          "nullable": false
+        },
+        {
+          "name": "PaymentTermName",
+          "type": "nvarchar",
+          "typeArguments": "(70)",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "id": "payment-type",
+      "table": "CF_PaymentTypeTbl",
+      "key": "PaymentTypeID",
+      "label": "PaymentTypeName",
+      "extras": [],
+      "aliases": [
+        "PaymentTypeID"
+      ],
+      "columns": [
+        {
+          "name": "PaymentTypeID",
+          "type": "varchar",
+          "typeArguments": "(50)",
+          "nullable": false
+        },
+        {
+          "name": "PaymentTypeName",
+          "type": "nvarchar",
+          "typeArguments": "(100)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "vat",
+      "table": "CF_VATTbl",
+      "key": "VATID",
+      "label": "VATName",
+      "extras": [],
+      "aliases": [
+        "VATID"
+      ],
+      "columns": [
+        {
+          "name": "VATID",
+          "type": "varchar",
+          "typeArguments": "(4)",
+          "nullable": false
+        },
+        {
+          "name": "VATName",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "id": "impexp",
+      "table": "CF_ImpExpTbl",
+      "key": "ImpExpID",
+      "label": "ImExName",
+      "extras": [],
+      "aliases": [
+        "ImpExpID"
+      ],
+      "columns": [
+        {
+          "name": "ImpExpID",
+          "type": "varchar",
+          "typeArguments": "(50)",
+          "nullable": false
+        },
+        {
+          "name": "ImExName",
+          "type": "nvarchar",
+          "typeArguments": "(150)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "move-type",
+      "table": "FA_MovementTypeTbl",
+      "key": "MoveTypeID",
+      "label": "MoveTypeName",
+      "extras": [],
+      "aliases": [
+        "MoveTypeID"
+      ],
+      "columns": [
+        {
+          "name": "MoveTypeID",
+          "type": "varchar",
+          "typeArguments": "(30)",
+          "nullable": false
+        },
+        {
+          "name": "MoveTypeName",
+          "type": "nvarchar",
+          "typeArguments": "(150)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "service-type",
+      "table": "FA_ServiceTypeTbl",
+      "key": "ServiceTypeID",
+      "label": "ServiceTypeName",
+      "extras": [],
+      "aliases": [
+        "ServiceTypeID"
+      ],
+      "columns": [
+        {
+          "name": "ServiceTypeID",
+          "type": "varchar",
+          "typeArguments": "(30)",
+          "nullable": false
+        },
+        {
+          "name": "ServiceTypeName",
+          "type": "nvarchar",
+          "typeArguments": "(150)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "user",
+      "table": "SY_User",
+      "key": "UserName",
+      "label": "HoTen",
+      "extras": [],
+      "aliases": [
+        "FromUserID",
+        "ToUserID",
+        "PMID",
+        "PrimaryPmID",
+        "SupportingPmID"
+      ],
+      "columns": [
+        {
+          "name": "UserName",
+          "type": "varchar",
+          "typeArguments": "(100)",
+          "nullable": false
+        },
+        {
+          "name": "HoTen",
+          "type": "nvarchar",
+          "typeArguments": "(150)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "delivery-status",
+      "table": "AR_OrderDeliveryStatusTbl",
+      "key": "DeliveryStatusID",
+      "label": "DeliveryStatusName",
+      "extras": [],
+      "aliases": [
+        "DeliveryStatusID"
+      ],
+      "columns": [
+        {
+          "name": "DeliveryStatusID",
+          "type": "int",
+          "typeArguments": null,
+          "nullable": false
+        },
+        {
+          "name": "DeliveryStatusName",
+          "type": "nvarchar",
+          "typeArguments": "(100)",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "id": "damage-status",
+      "table": "IV_DamageInsideStatusTbl",
+      "key": "DamageInsideStatusID",
+      "label": "DamageInsideStatusName",
+      "extras": [],
+      "aliases": [
+        "DamageInsideStatusID"
+      ],
+      "columns": [
+        {
+          "name": "DamageInsideStatusID",
+          "type": "int",
+          "typeArguments": null,
+          "nullable": false
+        },
+        {
+          "name": "DamageInsideStatusName",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "package-type",
+      "table": "IV_PackageTypeTbl",
+      "key": "PackageTypeID",
+      "label": "PackageTypeName",
+      "extras": [],
+      "aliases": [
+        "PackageTypeID"
+      ],
+      "columns": [
+        {
+          "name": "PackageTypeID",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": false
+        },
+        {
+          "name": "PackageTypeName",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "order-type",
+      "table": "IV_OrderTypeTbl",
+      "key": "OrderTypeID",
+      "label": "OrderTypeName",
+      "extras": [],
+      "aliases": [
+        "OrderTypeID"
+      ],
+      "columns": [
+        {
+          "name": "OrderTypeID",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": false
+        },
+        {
+          "name": "OrderTypeName",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "damage-location",
+      "table": "IV_LocationDamageDetectedTbl",
+      "key": "LocationDamageDetectedID",
+      "label": "LocationDamageDetectedName",
+      "extras": [],
+      "aliases": [
+        "LocationDamageDetectedID"
+      ],
+      "columns": [
+        {
+          "name": "LocationDamageDetectedID",
+          "type": "int",
+          "typeArguments": null,
+          "nullable": false
+        },
+        {
+          "name": "LocationDamageDetectedName",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "status:purchase-requests",
+      "table": "AP_PurchaseStatusTbl",
+      "key": "StatusID",
+      "label": "StatusName",
+      "extras": [],
+      "aliases": [],
+      "columns": [
+        {
+          "name": "StatusID",
+          "type": "int",
+          "typeArguments": null,
+          "nullable": false
+        },
+        {
+          "name": "StatusName",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "id": "status:purchase-orders",
+      "table": "AP_OrderStatusTbl",
+      "key": "StatusID",
+      "label": "StatusName",
+      "extras": [],
+      "aliases": [],
+      "columns": [
+        {
+          "name": "StatusID",
+          "type": "int",
+          "typeArguments": null,
+          "nullable": false
+        },
+        {
+          "name": "StatusName",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "status:inbound-requests",
+      "table": "IV_InboundRequestStatusTbl",
+      "key": "StatusID",
+      "label": "StatusName",
+      "extras": [],
+      "aliases": [],
+      "columns": [
+        {
+          "name": "StatusID",
+          "type": "int",
+          "typeArguments": null,
+          "nullable": false
+        },
+        {
+          "name": "StatusName",
+          "type": "nvarchar",
+          "typeArguments": "(100)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "status:sales-orders",
+      "table": "AR_OrderStatusTbl",
+      "key": "StatusID",
+      "label": "StatusName",
+      "extras": [],
+      "aliases": [],
+      "columns": [
+        {
+          "name": "StatusID",
+          "type": "int",
+          "typeArguments": null,
+          "nullable": false
+        },
+        {
+          "name": "StatusName",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "status:sales-qr",
+      "table": "AR_InvoiceStatusTbl",
+      "key": "StatusID",
+      "label": "StatusName",
+      "extras": [],
+      "aliases": [],
+      "columns": [
+        {
+          "name": "StatusID",
+          "type": "int",
+          "typeArguments": null,
+          "nullable": false
+        },
+        {
+          "name": "StatusName",
+          "type": "nvarchar",
+          "typeArguments": "(50)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "status:internal-transfer-requests",
+      "table": "IV_InternalTransferRequestStatusTbl",
+      "key": "StatusID",
+      "label": "StatusName",
+      "extras": [],
+      "aliases": [],
+      "columns": [
+        {
+          "name": "StatusID",
+          "type": "int",
+          "typeArguments": null,
+          "nullable": false
+        },
+        {
+          "name": "StatusName",
+          "type": "nvarchar",
+          "typeArguments": "(150)",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "id": "status:contract-info",
+      "table": "CF_ContractStatusTbl",
+      "key": "StatusID",
+      "label": "StatusName",
+      "extras": [],
+      "aliases": [],
+      "columns": [
+        {
+          "name": "StatusID",
+          "type": "int",
+          "typeArguments": null,
+          "nullable": false
+        },
+        {
+          "name": "StatusName",
+          "type": "nvarchar",
+          "typeArguments": "(255)",
+          "nullable": false
+        }
+      ]
+    }
+  ]
+}

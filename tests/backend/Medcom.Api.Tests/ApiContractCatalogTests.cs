@@ -35,7 +35,7 @@ public sealed class ApiContractCatalogTests
         {
             var id=module.Replace('-','_');var prefix="Erp_"+id;
             var detail=document["paths"]!["/api/erp/"+module+"/detail"]!["get"]!["responses"]!["200"]!["content"]!["application/json"]!["schema"]!["$ref"]!.GetValue<string>();
-            Assert.Equal("#/components/schemas/"+prefix+"_detail_response",detail);
+            Assert.Equal("#/components/schemas/"+prefix+"_detail_responseFeDisplay",detail);
             var header=schemas[prefix+"_header_fields"]!;
             Assert.Equal(ErpScreenCatalog.Get(module)!.Fields["header"].Count,((JsonObject)header["properties"]!).Count);
             if(module is "sales-qr" or "warehouse-qr")continue;
@@ -70,7 +70,7 @@ public sealed class ApiContractCatalogTests
             .Order(StringComparer.Ordinal).ToArray();
         var document = ApiContractCatalog.Build();
         var expected = ((JsonObject)document["paths"]!).SelectMany(p => ((JsonObject)p.Value!).Select(m => m.Key + " " + p.Key)).Order(StringComparer.Ordinal).ToArray();
-        Assert.Equal(119, actual.Length); Assert.Equal(actual, expected);
+        Assert.Equal(120, actual.Length); Assert.Equal(actual, expected);
         var ids = ((JsonObject)document["paths"]!).SelectMany(p => ((JsonObject)p.Value!).Select(m => m.Value!["operationId"]!.GetValue<string>())).ToArray();
         Assert.Equal(ids.Length, ids.Distinct(StringComparer.Ordinal).Count());
         Assert.Equal("not-admitted", document["x-medcom-business-release"]!.GetValue<string>());

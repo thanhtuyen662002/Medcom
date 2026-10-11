@@ -55,7 +55,10 @@ public sealed class NotificationTests
         var response=await fixture.Json("/api/notifications?page=2&pageSize=10&unreadOnly=true");
         Assert.Equal((2,10,true),source.Selection);var data=response.GetProperty("data");
         Assert.Equal(2,data.GetProperty("page").GetInt32());Assert.Equal(8,data.GetProperty("unreadCount").GetInt64());
-        var row=data.GetProperty("rows")[0];Assert.Equal(22,row.EnumerateObject().Count());Assert.Equal(JsonValueKind.Null,row.GetProperty("viewDate").ValueKind);
+        var row=data.GetProperty("rows")[0];
+        foreach(var property in typeof(NotificationRow).GetProperties())Assert.True(row.TryGetProperty(JsonNamingPolicy.CamelCase.ConvertName(property.Name),out _));
+        Assert.True(row.TryGetProperty("statusName",out _));Assert.True(row.TryGetProperty("msgTimeDisplay",out _));
+        Assert.Equal(JsonValueKind.Null,row.GetProperty("viewDate").ValueKind);
         Assert.Equal(source.Row.Message,row.GetProperty("message").GetString());Assert.Equal("javascript:unsafe()",row.GetProperty("webRoute").GetString());
         var schema=ApiContractCatalog.Build()["components"]!["schemas"]![nameof(NotificationRow)]!;
         Assert.Equal(22,schema["required"]!.AsArray().Count);Assert.False(schema["additionalProperties"]!.GetValue<bool>());

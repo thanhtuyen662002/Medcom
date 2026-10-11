@@ -6,7 +6,7 @@ namespace Medcom.Api;
 
 public static class NotificationEndpoints
 {
-    public static void Map(WebApplication app)
+    public static void Map(IEndpointRouteBuilder app)
     {
         app.MapGet("/api/notifications",async(HttpContext context,INotificationQueries queries)=>{
             if(!Query(context,"page","pageSize","unreadOnly")||!Number(context,"page",1,out var page)||!Number(context,"pageSize",30,out var size)
