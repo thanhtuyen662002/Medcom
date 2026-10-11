@@ -1,3 +1,5 @@
+> Hướng dẫn lịch sử trước 11/10/2026. Dùng [bàn giao API theo màn hình và thao tác](BE_FE_API_REFERENCE_20261011.md) hiện hành và OpenAPI v3. Các vị trí dữ liệu bọc/lặp cũ trong tài liệu này đã được thay thế; không dùng thuật ngữ kỹ thuật dưới đây làm nhãn giao diện.
+
 # Tài liệu BE cho FE: đầy đủ fields trên từng page — 10/10/2026
 
 Cập nhật I71 từ audit MedData trực tiếp ngày 2026-10-10: **118 cột** trên sáu bảng. Inbound bổ sung `rows[].inboundRequestHeader.linkId` / `document.inboundRequestHeader.linkId` và `inboundRequestLines[].fields.parentId`, đều `string | null` (`varchar(50)`). FE giữ cả key khi giá trị null và thêm chúng vào schema. URL, quyền và phân trang giữ nguyên. Metadata hiện tại: `inventories/source/20261010/document-read-tables.json`; đối chiếu live: `docs/execution/I71_LIVE_AUDIT_20261010.md`. `sourceLine` bên dưới chỉ định vị 116 cột của archive cũ; hai cột mới được xác minh qua `sys.columns`, không gán số dòng SQL archive. Kết nối/audit trực tiếp không thay cho kiểm định HTTP với session ERP thực.

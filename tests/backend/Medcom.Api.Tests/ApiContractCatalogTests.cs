@@ -35,7 +35,7 @@ public sealed class ApiContractCatalogTests
         {
             var id=module.Replace('-','_');var prefix="Erp_"+id;
             var detail=document["paths"]!["/api/erp/"+module+"/detail"]!["get"]!["responses"]!["200"]!["content"]!["application/json"]!["schema"]!["$ref"]!.GetValue<string>();
-            Assert.Equal("#/components/schemas/"+prefix+"_detail_responseFeDisplay",detail);
+            Assert.StartsWith("#/components/schemas/"+prefix+"_detail_responseFeDisplayCanonicalV3_",detail,StringComparison.Ordinal);
             var header=schemas[prefix+"_header_fields"]!;
             Assert.Equal(ErpScreenCatalog.Get(module)!.Fields["header"].Count,((JsonObject)header["properties"]!).Count);
             if(module is "sales-qr" or "warehouse-qr"||ErpScreenCatalog.IsWorkflow(module))continue;
@@ -112,7 +112,7 @@ public sealed class ApiContractCatalogTests
     public void Every_SQL_source_field_has_an_exact_required_typed_nullable_schema_and_mapping(string name, string kind, bool header, int count)
     {
         var document = ApiContractCatalog.Build(); var schema = document["components"]!["schemas"]![name]!;
-        var mapping = DocumentFieldCatalog.Get(kind) ?? throw new InvalidOperationException();
+        var mapping = DocumentFieldCatalog.Source(kind) ?? throw new InvalidOperationException();
         var fields = header ? mapping.Header : mapping.Lines;
         var properties = (JsonObject)schema["properties"]!;
         Assert.Equal(count, properties.Count); Assert.Equal(count, ((JsonArray)schema["required"]!).Count);
@@ -141,8 +141,8 @@ public sealed class ApiContractCatalogTests
             Assert.True(Matches(contract, schema, body), path);
             {
                 var altered = JsonNode.Parse(body.GetRawText())!;
-                if (path.EndsWith("detail", StringComparison.Ordinal)) ((JsonObject)altered["data"]!).Remove("sourceFields");
-                else ((JsonObject)altered["data"]!["rows"]![0]!).Remove("fields");
+                if (path.EndsWith("detail", StringComparison.Ordinal)) ((JsonObject)altered["data"]!["document"]!["header"]!).Remove("notes");
+                else ((JsonObject)altered["data"]!["rows"]![0]!).Remove("notes");
                 Assert.False(Matches(contract, schema, JsonSerializer.SerializeToElement(altered)));
             }
         }
@@ -183,7 +183,7 @@ public sealed class ApiContractCatalogTests
         else if (node is JsonArray array) foreach (var child in array.OfType<JsonNode>()) CheckReferences(root, child);
     }
     private static JsonNode? Resolve(JsonNode root, string reference) => reference[2..].Split('/').Aggregate<string, JsonNode?>(root, (node, part) => node?[part]);
-    private static bool Matches(JsonNode root, JsonNode schema, JsonElement value)
+    internal static bool Matches(JsonNode root, JsonNode schema, JsonElement value)
     {
         if (schema["$ref"] is {} reference) return Matches(root, Resolve(root, reference.GetValue<string>())!, value);
         if (schema["anyOf"] is JsonArray alternatives) return alternatives.Any(s => Matches(root, s!, value));
@@ -192,11 +192,11 @@ public sealed class ApiContractCatalogTests
         if (type == "object")
         {
             if (value.ValueKind != JsonValueKind.Object) return false;
-            var properties = (JsonObject)schema["properties"]!;
-            if (((JsonArray)schema["required"]!).Any(n => !value.TryGetProperty(n!.GetValue<string>(), out _))) return false;
+            var properties = schema["properties"] as JsonObject ?? new JsonObject();
+            if ((schema["required"] as JsonArray ?? new JsonArray()).Any(n => !value.TryGetProperty(n!.GetValue<string>(), out _))) return false;
             return value.EnumerateObject().All(p => properties[p.Name] is {} child
                 ? Matches(root, child, p.Value)
-                : schema["additionalProperties"]?.GetValue<bool>() == true);
+                : schema["additionalProperties"] is JsonObject extra ? Matches(root, extra, p.Value) : schema["additionalProperties"]?.GetValue<bool>() == true);
         }
         if (type == "array") return value.ValueKind == JsonValueKind.Array && value.EnumerateArray().All(v => Matches(root, schema["items"]!, v));
         if (schema["pattern"] is {} pattern && (value.ValueKind != JsonValueKind.String

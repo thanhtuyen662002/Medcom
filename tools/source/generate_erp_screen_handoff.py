@@ -18,7 +18,8 @@ def lookup_id(grid, column):
 
 def generate():
     catalog = json.loads(SOURCE.read_text(encoding='utf-8'))
-    lines = ['# Phụ lục field và dropdown của 7 form ERP', '',
+    lines = ['> Hướng dẫn lịch sử trước 11/10/2026. Dùng [bàn giao API theo màn hình và thao tác](BE_FE_API_REFERENCE_20261011.md) hiện hành và OpenAPI v3. Các vị trí dữ liệu bọc/lặp cũ trong tài liệu này đã được thay thế; không dùng thuật ngữ kỹ thuật dưới đây làm nhãn giao diện.', '',
+             '# Phụ lục field và dropdown của 7 form ERP', '',
              'Generated from `inventories/erp/20261010/six-screen-catalog.json` by '
              '`tools/source/generate_erp_screen_handoff.py`. No SQL definitions or real rows.', '',
              '417 fields / 106 lookup bindings. `writable` means accepted in the fixed module draft input; '

@@ -63,7 +63,7 @@ public sealed class PurchaseRequestCommandEndpointTests
         var submit = new SubmitPurchaseRequest("qa-submit", save.BranchId, save.PurchaseRequestId, nextToken);
         using var submitted = await Send(fixture, "submit", submit); Assert.Equal(HttpStatusCode.OK, submitted.StatusCode); Assert.Equal(1, commands.SubmitCalls); Assert.Equal(nextToken, commands.LastSubmit!.ExpectedStateToken);
         using var submittedJson = JsonDocument.Parse(await submitted.Content.ReadAsStringAsync());
-        Assert.Equal(2, submittedJson.RootElement.GetProperty("data").GetProperty("receipt").GetProperty("document").GetProperty("statusId").GetInt32());
+        Assert.Equal(2, submittedJson.RootElement.GetProperty("data").GetProperty("receipt").GetProperty("document").GetProperty("header").GetProperty("statusId").GetInt32());
         using var submitLookup = await Send(fixture, "submit/lookup", submit);
         Assert.Equal(HttpStatusCode.OK, submitLookup.StatusCode);
         using var lookupJson = JsonDocument.Parse(await submitLookup.Content.ReadAsStringAsync());

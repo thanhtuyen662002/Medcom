@@ -64,7 +64,7 @@ public sealed class PurchaseRequestEndpointTests
         fixture.Source.Seed(); await fixture.Login();
         var body = await fixture.Json("/api/purchase-requests/detail?documentId=QA-DOC");
         var data = body.GetProperty("data");
-        Assert.Equal("QA-DOC", data.GetProperty("document").GetProperty("purchaseRequestId").GetString());
+        Assert.Equal("QA-DOC", data.GetProperty("document").GetProperty("header").GetProperty("documentId").GetString());
         var access = data.GetProperty("commandAccess");
         Assert.False(access.GetProperty("canSave").GetBoolean()); Assert.False(access.GetProperty("canSubmit").GetBoolean());
         Assert.Empty(events); Assert.Equal(0, fixture.Source.Commits);
@@ -86,18 +86,18 @@ public sealed class PurchaseRequestEndpointTests
     }
 
     [Fact]
-    public async Task Authorized_endpoint_serializes_display_outside_the_unchanged_aggregate()
+    public async Task Authorized_endpoint_puts_item_presentation_on_its_one_line_without_changing_domain_state()
     {
         await using var fixture=await PurchaseHttpFixture.Start();fixture.Source.Seed();
         fixture.Source.Display.MasterQualified=true;fixture.Source.Display.Items.Add(("QA-ITEM","NSX","Bộ thử nghiệm","ĐVT",true));
         await fixture.Login();
         var result=await fixture.Json("/api/purchase-requests/detail?documentId=QA-DOC");var data=result.GetProperty("data");
-        var display=data.GetProperty("itemDisplayContext");var document=data.GetProperty("document");
-        Assert.Equal(document.GetProperty("purchaseRequestId").GetString(),display.GetProperty("documentId").GetString());
-        Assert.Equal(data.GetProperty("stateToken").GetString(),display.GetProperty("stateToken").GetString());
-        Assert.Equal("NSX",display.GetProperty("lines")[0].GetProperty("manufacturerItemCode").GetString());
+        var document=data.GetProperty("document");
+        Assert.False(data.TryGetProperty("itemDisplayContext",out _));
+        Assert.Equal("QA-DOC",document.GetProperty("header").GetProperty("documentId").GetString());
+        Assert.Equal("NSX",document.GetProperty("lines")[0].GetProperty("manufacturerItemCode").GetString());
         Assert.False(document.TryGetProperty("itemDisplayContext",out _));
-        Assert.False(document.GetProperty("lines")[0].GetProperty("values").TryGetProperty("manufacturerItemCode",out _));
+        Assert.False(document.GetProperty("lines")[0].TryGetProperty("values",out _));
         Assert.Equal(0,fixture.Source.Commits);
     }
 
@@ -254,7 +254,7 @@ public sealed class PurchaseRequestEndpointTests
         Assert.Equal("QA-DOC",Assert.Single(list.GetProperty("data").GetProperty("rows").EnumerateArray()).GetProperty("documentId").GetString());
         var detail=await fixture.Json("/api/purchase-requests/detail?documentId=QA-DOC");Assert.Equal(scope,detail.GetProperty("scopeKey").GetString());
         Assert.Equal(101,detail.GetProperty("data").GetProperty("document").GetProperty("lines").GetArrayLength());
-        Assert.Equal("999999999999999999",detail.GetProperty("data").GetProperty("document").GetProperty("lines")[0].GetProperty("values").GetProperty("quantity").GetString());
+        Assert.Equal("999999999999999999",detail.GetProperty("data").GetProperty("document").GetProperty("lines")[0].GetProperty("quantity").GetString());
         Assert.Equal(0,fixture.Source.Commits);
     }
     [Theory]
@@ -322,17 +322,17 @@ public sealed class PurchaseRequestEndpointTests
         fixture.Source.Currencies.AddRange([("NEG", "  Synthetic currency  ", -1.25), ("ZER", "Zero synthetic", 0)]);
         var purposes = await fixture.Json("/api/purchase-requests/lookup?kind=purposes");
         var purpose = Assert.Single(purposes.GetProperty("data").GetProperty("items").EnumerateArray());
-        Assert.Equal("-1", purpose.GetProperty("id").GetString()); Assert.Equal(JsonValueKind.Null, purpose.GetProperty("label").ValueKind);
-        Assert.Equal(4, purpose.EnumerateObject().Count());Assert.Equal(JsonValueKind.Null,purpose.GetProperty("name").ValueKind);
+        Assert.Equal("-1", purpose.GetProperty("id").GetString()); Assert.False(purpose.TryGetProperty("label",out _));
+        Assert.Equal(3, purpose.EnumerateObject().Count());Assert.Equal(JsonValueKind.Null,purpose.GetProperty("name").ValueKind);
         var currencies = await fixture.Json("/api/purchase-requests/lookup?kind=currencies");
         Assert.Equal(purposes.GetProperty("scopeKey").GetString(), currencies.GetProperty("scopeKey").GetString());
         var currency = currencies.GetProperty("data").GetProperty("items")[0];
-        Assert.Equal("NEG", currency.GetProperty("id").GetString()); Assert.Equal("NEG", currency.GetProperty("label").GetString());
-        Assert.Equal("  Synthetic currency  ", currency.GetProperty("currencyName").GetString()); Assert.Equal(-1.25, currency.GetProperty("rateExchange").GetDouble());
+        Assert.Equal("NEG", currency.GetProperty("id").GetString()); Assert.False(currency.TryGetProperty("label",out _));
+        Assert.Equal("  Synthetic currency  ", currency.GetProperty("name").GetString()); Assert.False(currency.TryGetProperty("currencyName",out _)); Assert.Equal(-1.25, currency.GetProperty("rateExchange").GetDouble());
         Assert.Equal(0, currencies.GetProperty("data").GetProperty("items")[1].GetProperty("rateExchange").GetDouble());
         var branches = await fixture.Json("/api/purchase-requests/lookup?kind=branches&search=QA-A");
         var branch = Assert.Single(branches.GetProperty("data").GetProperty("items").EnumerateArray());
-        Assert.Equal(new[] { "id", "label", "name", "referenceState" }, branch.EnumerateObject().Select(property => property.Name));
+        Assert.Equal(new[] { "id", "name", "referenceState" }, branch.EnumerateObject().Select(property => property.Name));
         Assert.Equal("QA-A",branch.GetProperty("id").GetString());
         var workspace = (await fixture.Json("/api/purchase-requests/workspace")).GetProperty("data");
         Assert.False(workspace.GetProperty("writeAvailable").GetBoolean());

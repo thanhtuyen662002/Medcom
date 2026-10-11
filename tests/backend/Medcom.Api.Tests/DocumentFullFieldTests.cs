@@ -13,6 +13,8 @@ namespace Medcom.Api.Tests;
 public sealed class DocumentFullFieldTests
 {
     private static readonly JsonSerializerOptions Json=new(JsonSerializerDefaults.Web);
+    private static JsonElement At(JsonElement value,string path) => path.Split('.').Aggregate(value,(node,part)=>
+        part.EndsWith("[]",StringComparison.Ordinal)?node.GetProperty(part[..^2])[0]:node.GetProperty(part));
     private static int SourceFieldCount(JsonElement row,string kind,bool header)
     {
         var mapping=DocumentFieldCatalog.Get(kind)!;var table=header?mapping.Header:mapping.Lines;
@@ -20,7 +22,7 @@ public sealed class DocumentFullFieldTests
         foreach(var name in names)Assert.True(row.TryGetProperty(name,out _),"Missing source column: "+name);
         Assert.All(row.EnumerateObject().Where(p=>!names.Contains(p.Name)),p=>Assert.True(
             p.Name.EndsWith("Name",StringComparison.Ordinal)||p.Name.EndsWith("Display",StringComparison.Ordinal)
-            ||p.Name.EndsWith("ReferenceState",StringComparison.Ordinal)||p.Name is "itemCode" or "unit",p.Name));
+            ||p.Name.EndsWith("ReferenceState",StringComparison.Ordinal)||p.Name is "itemCode" or "unit" or "manufacturerItemCode" or "manufacturerCodeSource" or "isLocked",p.Name));
         return row.EnumerateObject().Count(p=>names.Contains(p.Name));
     }
 
@@ -53,15 +55,16 @@ public sealed class DocumentFullFieldTests
             Assert.Equal(page <= 2 ? 2 : page == 3 ? 1 : 0, records.GetArrayLength());
             if (detail)
                 Assert.Equal(kind == DocumentKind.PurchaseOrders ? 19 : 38,
-                    SourceFieldCount(body.GetProperty("document").GetProperty(headerName),kind==DocumentKind.PurchaseOrders?"purchase-orders":"inbound-requests",true));
+                    SourceFieldCount(body.GetProperty("document"),kind==DocumentKind.PurchaseOrders?"purchase-orders":"inbound-requests",true));
             foreach (var record in records.EnumerateArray())
             {
-                var fields = record.GetProperty(detail ? "fields" : headerName);
+                var fields = record;
                 Assert.Equal(detail ? kind == DocumentKind.PurchaseOrders ? 12 : 26 : kind == DocumentKind.PurchaseOrders ? 19 : 38,
                     SourceFieldCount(fields,kind==DocumentKind.PurchaseOrders?"purchase-orders":"inbound-requests",!detail));
                 var identity = record.GetProperty(detail ? "lineId" : "documentId").GetString()!;
                 Assert.True(identities.Add(identity));
-                Assert.Equal(identity, fields.GetProperty(detail ? "userAutoId" : "documentId").GetString());
+                Assert.False(record.TryGetProperty(detail ? "fields" : headerName, out _));
+                Assert.False(record.TryGetProperty("userAutoId", out _));
             }
         }
         Assert.Equal(5, identities.Count);
@@ -90,9 +93,10 @@ public sealed class DocumentFullFieldTests
             {
                 var id = row.GetProperty("documentId").GetString()!;
                 Assert.True(identities.Add(id));
-                var fields = row.GetProperty("fields");
+                var fields = row;
                 Assert.Equal(14, SourceFieldCount(fields,"purchase-requests",true));
-                Assert.Equal(id, fields.GetProperty("purchaseRequestId").GetString());
+                Assert.Equal(id, fields.GetProperty("documentId").GetString());
+                Assert.False(fields.TryGetProperty("fields", out _));
                 Assert.Equal(JsonValueKind.Null, fields.GetProperty("notes").ValueKind);
             }
             var selected = fixture.Source.Commands.Last(command => command.Sql.Contains("OFFSET @skip", StringComparison.Ordinal));
@@ -204,7 +208,7 @@ public sealed class DocumentFullFieldTests
             Assert.Equal(HttpStatusCode.Unauthorized,unauthorized.StatusCode);
         await fixture.Login();
         var contract=await fixture.Json("/api/documents/field-contract?kind="+name);
-        Assert.Equal(2,contract.GetProperty("contractVersion").GetInt32());
+        Assert.Equal(3,contract.GetProperty("contractVersion").GetInt32());
         Assert.Equal(heads,contract.GetProperty("header").GetProperty("fields").GetArrayLength());
         Assert.Equal(lines,contract.GetProperty("lines").GetProperty("fields").GetArrayLength());
         Assert.Equal(0,source.DocumentReads);
@@ -212,21 +216,18 @@ public sealed class DocumentFullFieldTests
         var detail=await fixture.Json("/api/v2/documents/"+name+"/detail?documentId=DOC");
         var legacyList=await fixture.Json("/api/documents/"+name);
         var legacyDetail=await fixture.Json("/api/documents/"+name+"/detail?documentId=DOC");
-        // The original routes retain compatibility scalars and now the complete source objects too.
+        // Every route returns the same canonical complete record shape.
         Assert.Equal(list.GetRawText(),legacyList.GetRawText());
         Assert.Equal(detail.GetRawText(),legacyDetail.GetRawText());
         foreach(var field in contract.GetProperty("header").GetProperty("fields").EnumerateArray())
         {
-            var path=field.GetProperty("jsonPath").GetString()!.Split('.');
-            var listPath=field.GetProperty("listJsonPath").GetString()!.Split('.');
-            var value=detail.GetProperty(path[0]).GetProperty(path[1]).GetProperty(path[2]);
-            var listValue=list.GetProperty("rows")[0].GetProperty(listPath[1]).GetProperty(listPath[2]);
+            var value=At(detail,field.GetProperty("jsonPath").GetString()!);
+            var listValue=At(list,field.GetProperty("listJsonPath").GetString()!);
             Assert.Equal(value.GetRawText(),listValue.GetRawText());
         }
         foreach(var field in contract.GetProperty("lines").GetProperty("fields").EnumerateArray())
         {
-            var path=field.GetProperty("jsonPath").GetString()!.Split('.');
-            Assert.NotEqual(JsonValueKind.Undefined,detail.GetProperty(path[0][..^2])[0].GetProperty(path[1]).GetProperty(path[2]).ValueKind);
+            Assert.NotEqual(JsonValueKind.Undefined,At(detail,field.GetProperty("jsonPath").GetString()!).ValueKind);
             Assert.Equal(JsonValueKind.Null,field.GetProperty("listJsonPath").ValueKind);
         }
     }
@@ -240,11 +241,15 @@ public sealed class DocumentFullFieldTests
         var raw=JsonSerializer.Serialize(before,Json);
         var list=await fixture.Json("/api/v2/purchase-requests");
         var detail=await fixture.Json("/api/v2/purchase-requests/detail?documentId=QA-DOC");
-        var data=detail.GetProperty("data");var fields=data.GetProperty("sourceFields");
+        var data=detail.GetProperty("data");var fields=data.GetProperty("document");
         Assert.Equal(14,SourceFieldCount(fields.GetProperty("header"),"purchase-requests",true));
-        Assert.Equal(fields.GetProperty("header").GetRawText(),list.GetProperty("data").GetProperty("rows")[0].GetProperty("fields").GetRawText());
+        var listed=list.GetProperty("data").GetProperty("rows")[0];
+        foreach(var field in fields.GetProperty("header").EnumerateObject())
+            Assert.Equal(field.Value.GetRawText(),listed.GetProperty(field.Name).GetRawText());
+        Assert.False(data.TryGetProperty("sourceFields",out _));
+        Assert.False(listed.TryGetProperty("fields",out _));
         Assert.Equal(9,SourceFieldCount(fields.GetProperty("lines")[0],"purchase-requests",false));
-        Assert.Equal("QA-DOC",fields.GetProperty("lines")[0].GetProperty("purchaseRequestId").GetString());
+        Assert.Equal("QA-DOC",fields.GetProperty("lines")[0].GetProperty("documentId").GetString());
         Assert.Equal("999999999999999999",fields.GetProperty("lines")[0].GetProperty("quantity").GetString());
         Assert.Equal(JsonValueKind.Null,fields.GetProperty("header").GetProperty("notes").ValueKind);
         Assert.Equal(token,data.GetProperty("stateToken").GetString());
@@ -259,8 +264,7 @@ public sealed class DocumentFullFieldTests
         var contract=await fixture.Json("/api/documents/field-contract?kind=purchase-requests");
         foreach(var field in contract.GetProperty("header").GetProperty("fields").EnumerateArray())
         {
-            var path=field.GetProperty("jsonPath").GetString()!.Split('.');
-            Assert.NotEqual(JsonValueKind.Undefined,detail.GetProperty(path[0]).GetProperty(path[1]).GetProperty(path[2]).GetProperty(path[3]).ValueKind);
+            Assert.NotEqual(JsonValueKind.Undefined,At(detail,field.GetProperty("jsonPath").GetString()!).ValueKind);
         }
     }
 

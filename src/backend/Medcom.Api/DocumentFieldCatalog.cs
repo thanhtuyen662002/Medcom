@@ -4,7 +4,18 @@ namespace Medcom.Api;
 
 internal static class DocumentFieldCatalog
 {
-    internal static DocumentFieldContract? Get(string kind) => kind switch
+    internal static DocumentFieldContract? Get(string kind)
+    {
+        var source = Source(kind);
+        if (source is null) return null;
+        DocumentFieldTable Map(DocumentFieldTable table) => table with { Fields = table.Fields.Select(field => field with
+        {
+            JsonPath = CanonicalResponseSchemas.CanonicalPath(field.JsonPath),
+            ListJsonPath = field.ListJsonPath is {} path ? CanonicalResponseSchemas.CanonicalPath(path) : null
+        }).ToArray() };
+        return source with { ContractVersion = 3, Header = Map(source.Header), Lines = Map(source.Lines) };
+    }
+    internal static DocumentFieldContract? Source(string kind) => kind switch
     {
         "purchase-orders" => new(2,"purchase-orders",
             new("AP_OrderTbl",[

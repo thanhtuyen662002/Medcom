@@ -615,7 +615,7 @@ public sealed class PurchaseRequestPilotHttpTests
             Assert.True(response.Headers.CacheControl?.NoStore);
             using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
             Assert.Equal(scope, json.RootElement.GetProperty("scopeKey").GetString());
-            return json.RootElement.GetProperty("data").Deserialize<PurchaseRequestCommandResult>(PurchaseRequestCommandRules.Json)!;
+            return PurchaseResponseReader.Read<PurchaseRequestCommandResult>(json.RootElement.GetProperty("data"),PurchaseRequestCommandRules.Json);
         }
         internal async Task<PurchaseRequestLookupResult> Lookup(string route, object body)
         {
@@ -624,11 +624,14 @@ public sealed class PurchaseRequestPilotHttpTests
             Assert.True(response.Headers.CacheControl?.NoStore);
             using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
             Assert.Equal(scope, json.RootElement.GetProperty("scopeKey").GetString());
-            return json.RootElement.GetProperty("data").Deserialize<PurchaseRequestLookupResult>(PurchaseRequestCommandRules.Json)!;
+            return PurchaseResponseReader.Read<PurchaseRequestLookupResult>(json.RootElement.GetProperty("data"),PurchaseRequestCommandRules.Json);
         }
-        internal async Task<PurchaseRequestReadback> Detail() => (await GetJson("/api/purchase-requests/detail?documentId=" + PurchaseFixtures.DocumentId))
-            // Read variants are additive; explicit input DTO attributes and command/lookup parsing stay strict.
-            .GetProperty("data").Deserialize<PurchaseRequestReadback>(new JsonSerializerOptions(PurchaseRequestCommandRules.Json){UnmappedMemberHandling=System.Text.Json.Serialization.JsonUnmappedMemberHandling.Skip})!;
+        internal async Task<PurchaseRequestReadback> Detail()
+        {
+            var wire = (await GetJson("/api/purchase-requests/detail?documentId=" + PurchaseFixtures.DocumentId)).GetProperty("data");
+            return PurchaseResponseReader.Read<PurchaseRequestReadback>(wire,
+                new JsonSerializerOptions(PurchaseRequestCommandRules.Json){UnmappedMemberHandling=System.Text.Json.Serialization.JsonUnmappedMemberHandling.Skip});
+        }
         private async Task<JsonElement> GetJson(string path)
         {
             using var response = await Client.GetAsync(path);

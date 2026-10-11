@@ -79,7 +79,9 @@ public static class ErpScreenCatalog
                 actions.Add(new(id,Text(button,"caption"),control,id,Optional(button,"lockExpression"),true,true,Text(button,"propertyEvidence")));
             }
             if(extension)foreach(var section in fields.Where(s=>s.Key is not ("header" or "lines")&&s.Value.Any(f=>f.Writable)))
-                actions.Add(new("save-"+section.Key,"Lưu "+section.Key,"native-toolbar","save-"+section.Key,null,true,true,evidence));
+                actions.Add(new("save-"+section.Key,section.Key switch
+                    {"costs"=>"Lưu chi phí","assets"=>"Lưu danh sách máy",_=>throw new InvalidOperationException("Unmapped business section caption.")},
+                    "native-toolbar","save-"+section.Key,null,true,true,evidence));
             result.Add(module,new(module,Text(row,"caption"),Text(row,"menuId"),Text(row,"formId"),
                 new ReadOnlyDictionary<string,IReadOnlyList<ErpFieldDefinition>>(fields),actions.AsReadOnly(),
                 Array.AsReadOnly(lookups),evidence));

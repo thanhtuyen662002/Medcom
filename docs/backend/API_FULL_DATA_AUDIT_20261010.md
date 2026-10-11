@@ -1,3 +1,5 @@
+> Hướng dẫn lịch sử trước 11/10/2026. Dùng [bàn giao API theo màn hình và thao tác](BE_FE_API_REFERENCE_20261011.md) hiện hành và OpenAPI v3. Các vị trí dữ liệu bọc/lặp cũ trong tài liệu này đã được thay thế; không dùng thuật ngữ kỹ thuật dưới đây làm nhãn giao diện.
+
 # Existing API data audit — 10 October 2026
 
 **Superseded behavior:** I70 / PR #127 now returns full source fields on the six original document reads too, while keeping pagination and compatibility scalars. The current audit is [api-data-audit-current-full-20261010.json](api-data-audit-current-full-20261010.json): 12 full reads, zero summary reads, 116 reconciled source columns, 34 operations. Use the Vietnamese [BE-to-FE integration guide](BE_FE_FULL_FIELDS_INTEGRATION_20261010.md). The I69 observations and counts below are retained as historical evidence, not current route behavior.

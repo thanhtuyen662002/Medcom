@@ -4,7 +4,8 @@ using Medcom.Api;
 // the host or starting SQL/legacy dependencies. No business operation is dispatched.
 if (args.Any(value => value.StartsWith("--print-api-contract", StringComparison.Ordinal)))
 {
-    if (args is ["--print-api-contract"]) Console.WriteLine(ApiContractCatalog.Json);
+    if (args is ["--print-api-contract"]) Console.WriteLine(System.Text.Json.Nodes.JsonNode.Parse(ApiContractCatalog.Json)!
+        .ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
     else { Console.Error.WriteLine("Use --print-api-contract as the only argument."); Environment.ExitCode = 64; }
     return;
 }

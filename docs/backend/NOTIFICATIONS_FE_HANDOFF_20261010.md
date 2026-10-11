@@ -1,3 +1,5 @@
+> Hướng dẫn lịch sử trước 11/10/2026. Dùng [bàn giao API theo màn hình và thao tác](BE_FE_API_REFERENCE_20261011.md) hiện hành và OpenAPI v3. Các vị trí dữ liệu bọc/lặp cũ trong tài liệu này đã được thay thế; không dùng thuật ngữ kỹ thuật dưới đây làm nhãn giao diện.
+
 # Thông báo ERP cho FE
 
 Nguồn: `dbo.SY_NotifyMsgTbl`, `dbo.SY_User`, `dbo.SY_NotifyListStp` và `dbo.SY_NotifyMarkReadStp` của vòng `owner-live-meddata-20261010`. Đối chiếu SELECT metadata mới nhất giữ đủ 22 cột và khớp catalog hiện có; tên cột, kiểu, nullable và hash procedure ở [notification-api-source.json](../../inventories/source/20261010/notification-api-source.json). SQL bodies và dữ liệu người dùng được giữ riêng, không đưa vào repository. Hai archive Library lịch sử giữ danh tính ở `docs/SOURCE_BASELINE.md`; không suy ra tương đương nguồn mới.

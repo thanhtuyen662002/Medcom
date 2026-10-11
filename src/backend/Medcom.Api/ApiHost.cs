@@ -286,7 +286,7 @@ public static class ApiHost
             ? Results.Ok(new { contractVersion = 1, status = AuthEndpoints.Current(context).Identity.CredentialStamp is null ? "foundation_only" : "read_only_adapter" })
             : Results.Problem(statusCode: 403, title: "Access denied."));
         AuthEndpoints.Map(app);
-        var data=app.MapGroup("").AddEndpointFilter<FeDisplayFilter>();
+        var data=app.MapGroup("").AddEndpointFilter<CanonicalResponseFilter>().AddEndpointFilter<FeDisplayFilter>();
         DocumentEndpoints.Map(data);
         ApiContractCatalog.Map(app);
         PurchaseRequestEndpoints.Map(data);

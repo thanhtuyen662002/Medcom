@@ -3,12 +3,15 @@ import json
 from pathlib import Path
 import unittest
 
-from audit_api_data import audit, load_source_tables
+from audit_api_data import audit, load_source_tables, at_schema
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
 class ApiDataAuditTests(unittest.TestCase):
+    def response(self, api, path, member):
+        body = api["paths"][path]["get"]["responses"]["200"]["content"]["application/json"]["schema"]
+        return at_schema(api, body, member)
     def setUp(self):
         self.api = json.loads((ROOT / "docs/backend/medcom-openapi.json").read_text(encoding="utf-8"))
         self.mapping = json.loads((ROOT / "docs/backend/document-field-contract.json").read_text(encoding="utf-8"))
@@ -29,7 +32,7 @@ class ApiDataAuditTests(unittest.TestCase):
         result = audit(self.api, self.mapping, self.tables)
         for module in result["erp_modules"]:
             api = deepcopy(self.api)
-            schema = api["components"]["schemas"]["Erp_" + module.replace('-', '_') + "_header_fieldsFeDisplay"]
+            schema = self.response(api, "/api/erp/" + module + "/detail", "data.header")
             schema["required"].remove(next(k for k,v in schema["properties"].items() if "x-medcom-source-column" in v))
             with self.subTest(module=module), self.assertRaisesRegex(ValueError, "Optional or omitted full field"):
                 audit(api, self.mapping, self.tables)
@@ -41,9 +44,9 @@ class ApiDataAuditTests(unittest.TestCase):
             load_source_tables(mapping)
 
     def test_each_new_live_inbound_column_is_required_on_every_applicable_route(self):
-        for name, field in [("InboundRequestHeaderFields", "linkId"), ("InboundRequestLineFields", "parentId")]:
+        for member, field in [("document", "linkId"), ("inboundRequestLines[]", "parentId")]:
             api = deepcopy(self.api)
-            api["components"]["schemas"][name+"FeDisplay"]["required"].remove(field)
+            self.response(api, "/api/documents/inbound-requests/detail", member)["required"].remove(field)
             with self.subTest(field=field), self.assertRaisesRegex(ValueError, "Optional or omitted full field"):
                 audit(api, self.mapping, self.tables)
 
@@ -58,16 +61,16 @@ class ApiDataAuditTests(unittest.TestCase):
                 audit(self.api, mapping, self.tables)
 
     def test_optional_full_header_cannot_be_advertised_as_complete(self):
-        for schema_name in ["purchaseordersLegacySummary", "purchaseordersV2Summary"]:
+        for path in ["/api/documents/purchase-orders", "/api/v2/documents/purchase-orders"]:
             api = deepcopy(self.api)
-            api["components"]["schemas"][schema_name+"FeDisplay"]["required"].remove("purchaseOrderHeader")
-            with self.subTest(schema=schema_name), self.assertRaisesRegex(ValueError, "Optional or omitted full field"):
+            self.response(api, path, "rows[]")["required"].remove("objectId")
+            with self.subTest(path=path), self.assertRaisesRegex(ValueError, "Optional or omitted full field"):
                 audit(api, self.mapping, self.tables)
 
     def test_lost_nullability_or_wrong_source_type_cannot_pass(self):
         for nullable in (False, True):
             api = deepcopy(self.api)
-            field = api["components"]["schemas"]["PurchaseOrderHeaderFieldsFeDisplay"]["properties"]["memo"]
+            field = self.response(api, "/api/documents/purchase-orders/detail", "document.memo")
             if nullable:
                 field["anyOf"] = [{"type": "string"}]
             else:
@@ -83,6 +86,12 @@ class ApiDataAuditTests(unittest.TestCase):
                 api["paths"][path]["get"][attribute] = value
                 with self.subTest(path=path, attribute=attribute), self.assertRaisesRegex(ValueError, "Full route projection mismatch"):
                     audit(api, self.mapping, self.tables)
+
+    def test_duplicate_record_wrapper_is_rejected_on_the_served_schema(self):
+        api = deepcopy(self.api)
+        self.response(api, "/api/erp/purchase-orders/detail", "data.lines.rows[]")["properties"]["fields"] = {"type": "object"}
+        with self.assertRaisesRegex(ValueError, "Duplicate business record wrapper"):
+            audit(api, self.mapping, self.tables)
 
 
 if __name__ == "__main__":
