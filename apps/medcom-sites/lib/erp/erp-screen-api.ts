@@ -11,6 +11,7 @@ import {
   erpCommandResultSchema,
   erpContractInfoSchema,
   erpCommandObservationSchema,
+  erpItemPriceSchema,
   type ErpScreenDescription,
   type ErpDocumentPage,
   type ErpDocumentDetail,
@@ -20,6 +21,7 @@ import {
   type ErpCommandResult,
   type ErpContractInfo,
   type ErpCommandObservation,
+  type ErpItemPrice,
 } from "./erp-screen-contracts";
 
 let activeReadScope: string | null = null;
@@ -217,9 +219,9 @@ export async function getErpActions(
   return erpGet(`api/erp/${module}/actions`, z.array(erpActionStateSchema), params, signal);
 }
 
-/** 5. Contract Info (Sales Orders & Sales QR) */
+/** 5. Contract Info (Sales Orders, Sales QR, Sales Order PM, Sales Order SA) */
 export async function getErpContractInfo(
-  module: "sales-orders" | "sales-qr",
+  module: "sales-orders" | "sales-qr" | "sales-order-pm" | "sales-order-sa" | ErpScreenModule,
   params: { branchId: string; documentId: string },
   signal?: AbortSignal
 ): Promise<ErpContractInfo> {
@@ -242,7 +244,23 @@ export async function getErpOptions(
   return erpPost(`api/erp/${module}/options`, erpChoicePageSchema, query, signal);
 }
 
-/** 7. PM Popup Options (Sales Orders & Internal Transfer Requests) */
+/** 7. Action Options (return-step/options, send-sa/options, send-pm/options) */
+export async function getErpActionOptions(
+  module: ErpScreenModule,
+  action: string,
+  query: {
+    branchId: string;
+    role?: "primary" | "supporting";
+    page?: number;
+    pageSize?: number;
+    search?: string | null;
+  },
+  signal?: AbortSignal
+): Promise<ErpChoicePage> {
+  return erpPost(`api/erp/${module}/actions/${action}/options`, erpChoicePageSchema, query, signal);
+}
+
+/** 7b. PM Popup Options (Sales Orders & Internal Transfer Requests) */
 export async function getErpPmOptions(
   module: "sales-orders" | "internal-transfer-requests",
   query: {
@@ -306,10 +324,10 @@ export async function deleteErpDocument(
   return erpPost(`api/erp/${module}/delete`, erpCommandResultSchema, request, signal);
 }
 
-/** 11. Workflow Action Commands (submit, send-purchase-order, send-pm, recall) */
+/** 11. Workflow Action Commands (e.g. submit, send-pm, send-sa, return-step, approve, reject, etc.) */
 export async function executeErpAction(
   module: ErpScreenModule,
-  operation: "submit" | "send-purchase-order" | "send-pm" | "recall",
+  operation: string,
   request: {
     idempotencyKey: string;
     branchId: string;
@@ -320,6 +338,41 @@ export async function executeErpAction(
   signal?: AbortSignal
 ): Promise<ErpCommandResult> {
   return erpPost(`api/erp/${module}/actions/${operation}`, erpCommandResultSchema, request, signal);
+}
+
+/** 11b. Save Sub-Section Changes (e.g. costs in inbound-requests, assets in internal-transfer-tech) */
+export async function saveErpSection(
+  module: ErpScreenModule,
+  section: string,
+  request: {
+    idempotencyKey: string;
+    branchId: string;
+    documentId: string;
+    expectedStateToken: string;
+    lineChanges: Array<{
+      kind: "Add" | "Update" | "Remove";
+      lineId?: string | null;
+      clientLineKey?: string | null;
+      values?: Record<string, unknown> | null;
+    }>;
+  },
+  signal?: AbortSignal
+): Promise<ErpCommandResult> {
+  return erpPost(`api/erp/${module}/sections/${section}/save`, erpCommandResultSchema, request, signal);
+}
+
+/** 11c. Query Purchase Order Item Price (AP_OrderGetItemPriceStp) */
+export async function getErpItemPrice(
+  request: {
+    branchId: string;
+    objectId: string;
+    documentDate: string;
+    itemId: string;
+    currencyId?: string | null;
+  },
+  signal?: AbortSignal
+): Promise<ErpItemPrice> {
+  return erpPost(`api/erp/purchase-orders/item-price`, erpItemPriceSchema, request, signal);
 }
 
 /** 12. QR Code Scan Add / Delete Commands */

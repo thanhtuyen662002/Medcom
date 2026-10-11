@@ -16,17 +16,10 @@ import { QuickCreateModal } from "./quick-create-modal";
 import { NotificationsSheet } from "./notifications-sheet";
 import { SidebarDrawer } from "./sidebar-drawer";
 import { TabErpScreen } from "./tab-erp-screen";
-import { type ErpScreenModule } from "@/lib/erp/proxy-policy";
+import { type ErpScreenModule, erpScreenModules } from "@/lib/erp/proxy-policy";
 import { REAL_BRANCHES, erpClient, type LoginResult } from "@/lib/erp/erp-client";
 
-const ERP_MODULES: ErpScreenModule[] = [
-  "sales-orders",
-  "internal-transfer-requests",
-  "warehouse-qr",
-  "sales-qr",
-  "machine-movements",
-  "machine-repairs",
-];
+const ERP_MODULES: readonly ErpScreenModule[] = erpScreenModules;
 
 export function MedcomApp() {
   const [currentUser, setCurrentUser] = useState<LoginResult["user"] | null>(null);
