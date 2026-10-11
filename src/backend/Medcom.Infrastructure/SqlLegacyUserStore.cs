@@ -104,7 +104,8 @@ public sealed class SqlLegacyUserStore : ILegacyUserStore
         await using(var screens=new SqlCommand(SqlLegacyPolicy.GrantsCte+"""
             SELECT DISTINCT M.MenuID,M.FormName FROM Grants P JOIN dbo.SY_Menu M ON M.MenuID=P.MenuID
             WHERE M.isDisable=0 AND COALESCE(M.Para,'')=''
-              AND M.MenuID IN('0600201','07010100','0702001','0702010','1207','1209')
+              AND M.MenuID IN('0600201','07010100','0702001','0702010','1207','1209',
+                '05012','060021','060022','07010110','07010120','07010130','07010140','07010150','07010160','07010170')
               AND (P.IsRun=1 OR P.IsAdd=1 OR P.IsUpdate=1 OR P.IsDelete=1 OR P.isManager=1 OR P.isAdmin=1);
             """,connection){CommandTimeout=5})
         {

@@ -1,5 +1,5 @@
 {
-  "observedAtUtc": "2026-10-11T03:37:38.7203020Z",
+  "observedAtUtc": "2026-10-11T06:14:19.7411334Z",
   "queryMode": "FIXED_METADATA_AND_TOP_ZERO_SELECTS",
   "businessRowsRead": false,
   "businessWrites": false,
@@ -441,6 +441,16 @@
     {
       "binding": "status:contract-info",
       "sourceObject": "dbo.CF_ContractStatusTbl",
+      "projectedColumns": [
+        "StatusID",
+        "StatusName"
+      ],
+      "metadataMatches": true,
+      "zeroRowProjectionCompiled": true
+    },
+    {
+      "binding": "status:internal-transfer-batches",
+      "sourceObject": "dbo.IV_InternalTransferBatchStatusTbl",
       "projectedColumns": [
         "StatusID",
         "StatusName"

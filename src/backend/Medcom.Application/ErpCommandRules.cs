@@ -4,7 +4,7 @@ namespace Medcom.Application;
 
 public sealed record ErpFrozenCommand(string Module,string Operation,string IdempotencyKey,string BranchId,
     string? DocumentId,string? ExpectedStateToken,JsonElement? Header,IReadOnlyList<ErpLineChange> Changes,
-    JsonElement Payload,string? Barcode,JsonElement OriginalIntent);
+    JsonElement Payload,string? Barcode,JsonElement OriginalIntent,string Section="lines");
 
 public static class ErpCommandRules
 {
@@ -15,13 +15,14 @@ public static class ErpCommandRules
             ||raw.ValueKind!=JsonValueKind.Object)return false;
         try
         {
-            string key,branch;string? document=null,state=null,barcode=null;JsonElement? header=null;
+            string key,branch;string? document=null,state=null,barcode=null;JsonElement? header=null;var section="lines";
             var changes=new List<ErpLineChange>();var payload=ErpInputRules.Serialize(new Dictionary<string,object?>());
             switch(operation)
             {
                 case "create":
                     var create=Read<ErpCreateRequest>(raw);key=create.IdempotencyKey;branch=create.BranchId;
-                    if(!ErpInputRules.Normalize(module,"header",create.Header,out var h)||create.Lines is not {Count:>0 and <=500})return false;
+                    if(!ErpInputRules.Normalize(module,"header",create.Header,out var h)||create.Lines is null||create.Lines.Count>500
+                        ||create.Lines.Count==0&&!(ErpScreenCatalog.IsWorkflow(module)&&ErpScreenCatalog.Metadata(module).GetProperty("allowEmptyLines").GetBoolean()))return false;
                     header=h;
                     foreach(var line in create.Lines)
                     {
@@ -56,10 +57,45 @@ public static class ErpCommandRules
                     if(!ErpInputRules.Identifier(barcode,250)||!barcode!.All(c=>c is >= '!' and <= '~'))return false;
                     break;
                 default:
-                    if(operation is not ("submit" or "send-purchase-order" or "send-pm" or "recall"))return false;
+                    if(operation.StartsWith("save-",StringComparison.Ordinal))
+                    {
+                        section=operation[5..];
+                        var saveSection=Read<ErpSectionSaveRequest>(raw);
+                        key=saveSection.IdempotencyKey;branch=saveSection.BranchId;document=saveSection.DocumentId;state=saveSection.ExpectedStateToken;
+                        if(!raw.TryGetProperty("lineChanges",out var rows)||rows.ValueKind!=JsonValueKind.Array
+                            ||rows.EnumerateArray().Any(row=>!row.TryGetProperty("kind",out var k)||k.ValueKind!=JsonValueKind.String||k.GetString()is not ("Add" or "Update" or "Remove"))
+                            ||saveSection.LineChanges is not {Count:>0 and <=500})return false;
+                        foreach(var change in saveSection.LineChanges)
+                        {
+                            if(change is null||!Enum.IsDefined(change.Kind))return false;
+                            if(change.Kind==ErpLineChangeKind.Add)
+                            {if(change.LineId is not null||!ErpInputRules.Identifier(change.ClientLineKey,64))return false;}
+                            else if(!ErpInputRules.Identifier(change.LineId,50)||change.ClientLineKey is not null)return false;
+                            if(change.Kind==ErpLineChangeKind.Remove)
+                            {if(change.Values is not null)return false;changes.Add(change);}
+                            else
+                            {if(change.Values is not {} v||!ErpInputRules.Normalize(module,section,v,out var n))return false;changes.Add(change with{Values=n});}
+                        }
+                        break;
+                    }
                     var action=Read<ErpActionRequest>(raw);key=action.IdempotencyKey;branch=action.BranchId;document=action.DocumentId;state=action.ExpectedStateToken;
                     if(action.Payload.ValueKind!=JsonValueKind.Object)return false;
-                    if(operation=="send-pm")
+                    if(ErpScreenCatalog.IsWorkflow(module))
+                    {
+                        if(action.Payload.TryGetProperty("notes",out var notes)&&notes.ValueKind==JsonValueKind.String
+                            &&notes.GetString()!.Length>ErpWorkflowRules.MaximumNotes(module,operation))return false;
+                        switch(ErpWorkflowRules.PayloadType(module,operation))
+                        {
+                            case "notes":var note=Read<ErpActionNotes>(action.Payload);if(!Note(note.Notes))return false;payload=ErpInputRules.Serialize(note);break;
+                            case "return":var step=Read<ErpReturnStep>(action.Payload);if(!action.Payload.TryGetProperty("statusId",out _)||!Note(step.Notes))return false;payload=ErpInputRules.Serialize(step);break;
+                            case "transfer-tech":var tech=Read<ErpTransferTechSend>(action.Payload);
+                                if(!ErpInputRules.AnsiIdentifier(tech.PrimarySaId,100)||!ErpInputRules.AnsiIdentifier(tech.SupportingSaId,100)
+                                    ||tech.PrimarySaId==tech.SupportingSaId||!Note(tech.Notes))return false;payload=ErpInputRules.Serialize(tech);break;
+                            case "empty":if(action.Payload.EnumerateObject().Any())return false;break;
+                            default:return false;
+                        }
+                    }
+                    else if(operation=="send-pm")
                     {
                         if(module=="sales-orders")
                         {var pm=Read<ErpSendOrderPm>(action.Payload);if(!ErpInputRules.AnsiIdentifier(pm.PmId,50)||!Note(pm.Notes))return false;payload=ErpInputRules.Serialize(pm);}
@@ -78,6 +114,13 @@ public static class ErpCommandRules
                 ||module=="internal-transfer-requests"&&document?.Length>30
                 ||changes.Where(c=>c.Kind==ErpLineChangeKind.Add).Select(c=>c.ClientLineKey).Distinct(StringComparer.Ordinal).Count()!=changes.Count(c=>c.Kind==ErpLineChangeKind.Add)
                 ||changes.Where(c=>c.Kind!=ErpLineChangeKind.Add).Select(c=>c.LineId).Distinct(StringComparer.Ordinal).Count()!=changes.Count(c=>c.Kind!=ErpLineChangeKind.Add))return false;
+            if(ErpScreenCatalog.IsWorkflow(module))
+            {
+                var metadata=ErpScreenCatalog.Metadata(module);
+                if(!metadata.GetProperty("allowLineAddRemove").GetBoolean()&&changes.Any(c=>c.Kind!=ErpLineChangeKind.Update))return false;
+                if(section=="assets"&&changes.Any(c=>c.Kind!=ErpLineChangeKind.Update))return false;
+                if(document is not null&&!ErpInputRules.Value(ErpScreenCatalog.Get(module)!.Fields["header"].Single(f=>f.Column==metadata.GetProperty("headerKey").GetString()),ErpInputRules.Serialize(document)))return false;
+            }
             // Normalize at this boundary for both execution and receipt lookup. Optional nulls,
             // record/JSON property ordering and numeric spellings never make the original intent conflict with itself.
             object normalizedIntent=operation switch
@@ -86,9 +129,10 @@ public static class ErpCommandRules
                 "save"=>new ErpSaveRequest(key,branch,document!,state!,header!.Value,changes.AsReadOnly()),
                 "delete"=>new ErpDeleteRequest(key,branch,document!,state!),
                 "scan-add" or "scan-delete"=>new ErpScanRequest(key,branch,document!,state!,barcode!),
+                _ when operation.StartsWith("save-",StringComparison.Ordinal)=>new ErpSectionSaveRequest(key,branch,document!,state!,changes.AsReadOnly()),
                 _=>new ErpActionRequest(key,branch,document!,state!,payload)
             };
-            command=new(module,operation,key,branch,document,state,header,changes.AsReadOnly(),payload,barcode,ErpInputRules.Serialize(normalizedIntent));return true;
+            command=new(module,operation,key,branch,document,state,header,changes.AsReadOnly(),payload,barcode,ErpInputRules.Serialize(normalizedIntent),section);return true;
         }
         catch(Exception e)when(e is JsonException or InvalidOperationException or ArgumentException or NullReferenceException){return false;}
     }

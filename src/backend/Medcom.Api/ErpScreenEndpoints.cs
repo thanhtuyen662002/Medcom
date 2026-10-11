@@ -45,18 +45,38 @@ public static class ErpScreenEndpoints
                     return Read(context,await service.ContractAsync(module,Value(context,"branchId")??"",Value(context,"documentId")??"",context.RequestAborted));
                 });
             MapReadBody<ErpLookupQuery,ErpChoicePage>(app,path+"/options",module,(service,request,token)=>service.OptionsAsync(module,request,token));
+            if(module=="purchase-orders")MapReadBody<ErpItemPriceQuery,ErpItemPrice>(app,path+"/item-price",module,
+                (service,request,token)=>service.ItemPriceAsync(request,token));
             if(module is "sales-orders" or "internal-transfer-requests")MapReadBody<ErpPmLookupQuery,ErpChoicePage>(app,path+"/actions/send-pm/options",module,
                 (service,request,token)=>service.PmOptionsAsync(module,request,token));
             if(module is not ("warehouse-qr" or "sales-qr"))
             {
+                if(!ErpScreenCatalog.IsWorkflow(module))
+                {
                 MapReadBody<ErpSelectionRequest,ErpDraftSelection>(app,path+"/selection",module,(service,request,token)=>service.SelectionAsync(module,request,token));
                 MapReadBody<ErpPasteRequest,ErpDraftSelection>(app,path+"/paste/validate",module,(service,request,token)=>service.PasteAsync(module,request,token));
+                }
+                bool Toolbar(string operation)=>!ErpScreenCatalog.IsWorkflow(module)||ErpScreenCatalog.Get(module)!.Actions.Any(a=>a.Operation==operation&&a.NativeVisible);
+                if(Toolbar("create"))
                 MapCommand<ErpCreateRequest>(app,path+"/create",module,"create",(service,request,token)=>service.CreateAsync(module,request,token));
+                if(Toolbar("save"))
                 MapCommand<ErpSaveRequest>(app,path+"/save",module,"save",(service,request,token)=>service.SaveAsync(module,request,token));
+                if(Toolbar("delete"))
                 MapCommand<ErpDeleteRequest>(app,path+"/delete",module,"delete",(service,request,token)=>service.DeleteAsync(module,request,token));
             }
-            foreach(var action in ErpScreenCatalog.Get(module)!.Actions.Where(action=>action.Operation is "submit" or "send-purchase-order" or "send-pm" or "recall"))
+            foreach(var action in ErpScreenCatalog.Get(module)!.Actions.Where(action=>action.Operation is "submit" or "send-purchase-order" or "send-pm" or "recall"
+                ||ErpScreenCatalog.IsWorkflow(module)&&action.Control.StartsWith("ExecSQL",StringComparison.Ordinal)))
                 MapCommand<ErpActionRequest>(app,path+"/actions/"+action.Operation,module,action.Operation,(service,request,token)=>service.ActionAsync(module,action.Operation,request,token));
+            if(ErpScreenCatalog.IsWorkflow(module))
+            {
+                foreach(var action in ErpScreenCatalog.Get(module)!.Actions.Where(a=>a.Operation.StartsWith("save-",StringComparison.Ordinal)))
+                {
+                    var section=action.Operation[5..];
+                    MapCommand<ErpSectionSaveRequest>(app,path+"/sections/"+section+"/save",module,action.Operation,(service,request,token)=>service.SaveSectionAsync(module,section,request,token));
+                }
+                foreach(var action in ErpScreenCatalog.Get(module)!.Actions.Where(a=>a.Operation=="return-step"||module=="internal-transfer-tech"&&a.Operation=="send-sa"))
+                    MapReadBody<ErpActionOptionsQuery,ErpChoicePage>(app,path+"/actions/"+action.Operation+"/options",module,(service,request,token)=>service.ActionOptionsAsync(module,action.Operation,request,token));
+            }
             if(module is "warehouse-qr" or "sales-qr")
                 foreach(var action in new[]{"add","delete"})MapCommand<ErpScanRequest>(app,path+"/qr/"+action,module,"scan-"+action,
                     (service,request,token)=>service.ScanAsync(module,"scan-"+action,request,token));

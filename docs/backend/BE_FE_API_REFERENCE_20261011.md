@@ -1,8 +1,8 @@
 # Tài liệu tổng hợp API backend ERP Medcom cho frontend
 
-Tài liệu bàn giao toàn bộ **120 operation HTTP và 423 schema** hiện có của BE, đối chiếu contract xuất từ BE đã build của [PR 139](https://github.com/thanhtuyen662002/Medcom/pull/139), trên base main `d7f901584b56a8620cc6ec68f59a9cc21bcf9b23`, cập nhật ngày 11/10/2026. FE dùng tài liệu này để tích hợp đăng nhập, danh sách đủ trường theo trang, chi tiết, CUD, nút nghiệp vụ, dropdown, chọn/dán dữ liệu và thông báo. Những route tương thích chưa có provider vận hành được ghi rõ trong danh mục; chúng không được dùng để thay thế route ghi hiện hành.
+Tài liệu bàn giao toàn bộ **243 operation HTTP và 890 schema** hiện có của BE, đối chiếu contract xuất từ BE đã build của [PR 140](https://github.com/thanhtuyen662002/Medcom/pull/140), trên base main `b8955fba7a891adbc4f07714b182339bfa47651f`, cập nhật ngày 11/10/2026. FE dùng tài liệu này để tích hợp đăng nhập, danh sách đủ trường theo trang, chi tiết, CUD, nút nghiệp vụ, dropdown và thông báo. Lần bổ sung này bỏ In và Import/copy khỏi phạm vi; route chọn/dán cũ vẫn giữ contract tương thích. Những route tương thích chưa có provider vận hành được ghi rõ trong danh mục; chúng không được dùng để thay thế route ghi hiện hành.
 
-**Địa chỉ BE:** https://medcom-production.up.railway.app. **OpenAPI đang chạy:** https://medcom-production.up.railway.app/api/contracts/openapi.json. File contract trong repo: [medcom-openapi.json](medcom-openapi.json). Contract trong repo là bản xuất từ mã đã kiểm thử; trạng thái deployment/live nằm trong checkpoint PR 139, không suy ra mọi màn hình ERP đã nghiệm thu production.
+**Địa chỉ BE:** https://medcom-production.up.railway.app. **OpenAPI đang chạy:** https://medcom-production.up.railway.app/api/contracts/openapi.json. File contract trong repo: [medcom-openapi.json](medcom-openapi.json). Contract trong repo là bản xuất từ mã đã kiểm thử; trạng thái deployment/live nằm trong checkpoint phát hành ở comment PR 140 và [I78](../execution/I78_CUD_ACTIONS_20261011.md), không suy ra mọi màn hình ERP đã nghiệm thu production.
 
 ## Mục lục
 
@@ -15,10 +15,10 @@ Tài liệu bàn giao toàn bộ **120 operation HTTP và 423 schema** hiện c�
 - [Đọc đơn đặt hàng mua và yêu cầu nhập kho](#doc-tuong-thich)
 - [Thông báo và mở chứng từ](#thong-bao)
 - [Lỗi và hướng dẫn triển khai FE](#loi-va-fe)
-- [Danh mục đầy đủ 120 API](#danh-muc-api)
+- [Danh mục đầy đủ 243 API](#danh-muc-api)
 - [Chi tiết request và response từng API](#chi-tiet-api)
-- [Toàn bộ field trong 423 schema](#schema-api)
-- [106 binding dropdown theo màn hình](#binding-dropdown)
+- [Toàn bộ field trong 890 schema](#schema-api)
+- [214 binding dropdown theo màn hình](#binding-dropdown)
 - [Field hợp đồng và nguồn bằng chứng](#bang-chung)
 
 <a id="chon-nhom-api"></a>
@@ -27,16 +27,16 @@ Tài liệu bàn giao toàn bộ **120 operation HTTP và 423 schema** hiện c�
 | Nhóm | Dùng cho FE | Trạng thái thực tế và giới hạn |
 |---|---|---|
 | `/api/auth/*`, `/api/workspace` | Đăng nhập ERP, giữ phiên, lấy scope và chi nhánh | Provider legacy thật được cấu hình; tài khoản và quyền lấy lại từ ERP. |
-| `/api/erp/{module}/*` | Bảy form hiện hành; đọc, CUD, gửi/thu hồi, QR, dropdown, chọn/dán | Bộ ghi SQL và cấp số đã có trong startup; profile ghi bảy module đã bật trên BE Medcom và hai bảng journal đã cài trên MedData theo cho phép của owner. Quyền và trạng thái từng phiếu vẫn được kiểm tra. |
+| `/api/erp/{module}/*` | 19 form hiện hành; đọc, CUD, nút nghiệp vụ, QR, dropdown | Bộ ghi SQL và cấp số đã có trong startup; protected profile kiểm soát ghi; 19 module đã qualified SELECT-only trên MedData; merge/cấu hình BE/live được xác nhận trong checkpoint phát hành PR 140 và hai bảng journal đã cài trên MedData theo cho phép của owner. Quyền và trạng thái từng phiếu vẫn được kiểm tra. |
 | `/api/documents/*`, `/api/v2/documents/*` | Đọc đơn đặt hàng mua và yêu cầu nhập kho; metadata field/query | Đủ field cho mỗi record, giữ phân trang. Chưa có create/save/delete của hai module này trong nhóm route này. |
 | `/api/purchase-requests`, `/api/v2/purchase-requests` và `/detail` | Đọc đề nghị mua hàng theo contract tương thích | Đủ field, nhưng envelope khác `/api/erp/purchase-requests`. FE triển khai màn hình mới nên dùng nhóm `/api/erp/purchase-requests`. |
 | `/api/purchase-requests/workspace`, `/lookup` | Metadata và lookup tương thích | `writeAvailable=false` thuộc facade cũ. Không dùng cờ này để khóa CUD hiện hành của `/api/erp/purchase-requests`. Một số lookup cũ chưa qualified. |
 | POST `/api/purchase-requests/save`, `/submit` và hai `/lookup` tương ứng | Contract command cũ | Provider command/access không được đăng ký trong startup thông thường. Không dùng các route này để ghi; dùng `/api/erp/purchase-requests/save`, `/actions/submit`, `/commands/lookup`. |
 | `/api/inbound-requests/draft*` | Facade nháp nhập kho cũ | Provider mặc định unavailable; chưa bàn giao ghi nhập kho qua facade này. Dù nhận HTTP 200 vẫn phải đọc `access`/`outcome`. |
 | `/api/notifications*` | Thông báo riêng và mở form | Provider SQL thật dùng SY_NotifyMsgTbl; đánh dấu đã xem bằng procedure native. Đích mở đã ánh xạ chín form; form khác trả lý do chưa hỗ trợ. |
-| `/health/*`, `/api/platform/metadata`, `/api/contracts/openapi.json` | Chẩn đoán và contract | `/health/live` 200; `/health/ready` hiện 503 do business release gate. Readiness không phải API kiểm tra quyền thao tác của người dùng. `platform/metadata.status=read_only_adapter` là nhãn tương thích cố định trong mã, không phản ánh công tắc ghi bảy module. |
+| `/health/*`, `/api/platform/metadata`, `/api/contracts/openapi.json` | Chẩn đoán và contract | `/health/live` 200; `/health/ready` hiện 503 do business release gate. Readiness không phải API kiểm tra quyền thao tác của người dùng. `platform/metadata.status=read_only_adapter` là nhãn tương thích cố định trong mã, không phản ánh profile ghi. |
 
-Các chuỗi `x-medcom-admission` của nhóm `/api/erp/*` trong OpenAPI còn mô tả thời điểm trước khi startup có writer. **Để xác định tình trạng ghi hiện tại**, dùng composition trong `ApiHost.cs`, `ErpWriteStartup.cs`, bằng chứng kích hoạt và `/actions` của user/phiếu. Schema request/response trong OpenAPI vẫn là contract của FE. Không suy ra mọi POST đều ghi: `/options`, PM options, `/selection`, `/paste/validate`, `/commands/lookup` là đọc hoặc chuẩn bị nháp.
+CUD của màn hình đơn mua dùng `/api/erp/purchase-orders/{create,save,delete}`; yêu cầu nhập kho dùng `/api/erp/inbound-requests/{create,save,delete}` và `/sections/costs/save`. Không dùng facade cũ để xác định quyền ghi hiện hành. Trạng thái triển khai của 19 module nằm trong [checkpoint I78](../execution/I78_CUD_ACTIONS_20261011.md). `/actions` trả nút theo quyền, trạng thái và người được giao; SQL vẫn kiểm tra lại khi ghi. `/options`, `/item-price` và `/commands/lookup` là đọc.
 
 Bằng chứng vận hành: [checkpoint main và BE của PR 134](https://github.com/thanhtuyen662002/Medcom/pull/134#issuecomment-6099096715), [kích hoạt ghi MedData của PR 132](https://github.com/thanhtuyen662002/Medcom/pull/132#issuecomment-6097976637); source: [ApiHost.cs](../../src/backend/Medcom.Api/ApiHost.cs), [ErpWriteStartup.cs](../../src/backend/Medcom.Api/ErpWriteStartup.cs), [PurchaseRequestEndpoints.cs](../../src/backend/Medcom.Api/PurchaseRequestEndpoints.cs), [InboundDraftEndpoints.cs](../../src/backend/Medcom.Api/InboundDraftEndpoints.cs). Nghiệm thu thao tác của owner trên chứng từ thật và toàn bộ business release vẫn **UNKNOWN**; [goal 45](https://github.com/thanhtuyen662002/Medcom/issues/45) còn mở.
 
@@ -49,7 +49,7 @@ Trình tự:
 
 1. GET `/api/auth/csrf`, giữ cookie CSRF và lấy `token` trong response.
 2. POST `/api/auth/login`, JSON `{ "username": "SYNTHETIC-USER", "password": "SYNTHETIC-PASSWORD" }`, gửi `X-CSRF-TOKEN` cùng cookie CSRF. Ví dụ chỉ là dữ liệu tổng hợp; không ghi password thật vào log, Git hoặc URL.
-3. GET `/api/auth/session` để biết tên hiển thị, company, capabilities, `idleExpiresAt` và `absoluteExpiresAt`. GET `/api/workspace` để lấy `branchIds`, `branchSelection`, navigation và các scope header. Navigation hiện chỉ tạo mục platform/purchase-orders/purchase-requests/inbound-requests; FE dùng catalog bảy màn hình cùng capability tương ứng, không coi navigation này là danh sách đầy đủ mọi form.
+3. GET `/api/auth/session` để biết tên hiển thị, company, capabilities, `idleExpiresAt` và `absoluteExpiresAt`. GET `/api/workspace` để lấy `branchIds`, `branchSelection`, navigation và các scope header. Navigation hiện chỉ tạo mục platform/purchase-orders/purchase-requests/inbound-requests; FE dùng catalog 19 màn hình cùng capability tương ứng, không coi navigation này là danh sách đầy đủ mọi form.
 4. Chọn branch trong `branchIds`. Nếu `branchSelection.mode="assigned"` và `filterLocked=true`, hiển thị branch được gán và khóa bộ chọn. `mode="all"` cho phép lựa chọn trong scope. Metadata null là unavailable; không tự suy ra quyền toàn bộ chi nhánh. Quyền bổ sung trong branchIds không thay thế semantics bộ lọc được gán.
 5. POST `/api/auth/session/continue` để gia hạn idle; absolute expiry vẫn là giới hạn. POST `/api/auth/logout` trả 204 và thu hồi phiên. BE restart có thể làm mất phiên local; xử lý 401 bằng đăng nhập lại.
 
@@ -83,8 +83,8 @@ BFF phải giữ cookie/token đúng phiên, cho phép đúng method/path/query,
 
 | Nhóm đọc | Envelope và vị trí dữ liệu | Phân trang |
 |---|---|---|
-| Bảy `/api/erp/{module}` list | `{readScope,data}`; `data.rows[].header` | page mặc định 1, size 20; page 1–10000, size 1–100; `hasMore`, không có totalCount. |
-| Bảy `/api/erp/{module}/detail` | `data.header`; `data.lines.rows[].fields`; history/comparison có ở các module tương ứng | Header toàn bộ; các section dùng cùng page/pageSize, mỗi section có hasMore riêng. |
+| 19 `/api/erp/{module}` list | `{readScope,data}`; `data.rows[].header` | page mặc định 1, size 20; page 1–10000, size 1–100; `hasMore`, không có totalCount. |
+| 19 `/api/erp/{module}/detail` | `data.header`; `data.lines.rows[].fields`; history/comparison và `data.sections` có ở các module tương ứng | Header toàn bộ; các section dùng cùng page/pageSize, mỗi section có hasMore riêng. |
 | `/api/erp/{module}/options` và PM options | `data.items[]`: id, label, fields | page 1–1000, size 1–100, mặc định 1/20; `hasMore`. |
 | Đơn đặt hàng mua/nhập kho, original và v2 | DocumentPage; `rows[].purchaseOrderHeader` hoặc `rows[].inboundRequestHeader` | page 1–1000, size 1–100, mặc định 1/50; `hasMore`. |
 | Detail đặt hàng mua/nhập kho | `document.purchaseOrderHeader`/`inboundRequestHeader`; các line array có `.fields` | page/size của dòng; giữ `hasMore` ở envelope detail. |
@@ -97,18 +97,18 @@ SQL decimal/numeric/money được trả **chuỗi thập phân**; dùng thư vi
 
 Datetime ERP dùng giờ lịch SQL, thường `yyyy-MM-ddTHH:mm:ss.fff`; thông báo datetime2(0) dùng `yyyy-MM-ddTHH:mm:ss`. Timezone nguồn **UNKNOWN**, không tự thêm `Z` hoặc convert UTC. Session expiry DateTimeOffset là contract khác, dùng date-time offset như API trả. Khi gửi datetime SQL, giá trị phải biểu diễn được đúng precision nguồn; `00:00:00.000` là ví dụ an toàn. Date-only dùng `yyyy-MM-dd`.
 
-List bảy màn hình nhận branchId, page, pageSize, search, dateFrom, dateTo, statusId. Search tìm mã phiếu; dateTo gồm cả ngày cuối. Màn hình không có StatusID không nhận filter này. Không có sortBy/sortDirection trên bảy list hiện hành. Các v2 list tương thích hỗ trợ sort được trình bày ở mục 7. Query lạ, query lặp, JSON field lạ/trùng/sai casing có thể bị từ chối; chỉ gửi các field công bố.
+List 19 màn hình nhận branchId, page, pageSize, search, dateFrom, dateTo, statusId. Search tìm mã phiếu; dateTo gồm cả ngày cuối. Màn hình không có StatusID không nhận filter này. Không có sortBy/sortDirection trên 19 list hiện hành. Các v2 list tương thích hỗ trợ sort được trình bày ở mục 7. Query lạ, query lặp, JSON field lạ/trùng/sai casing có thể bị từ chối; chỉ gửi các field công bố.
 
 Nguồn: [ErpScreenEndpoints.cs](../../src/backend/Medcom.Api/ErpScreenEndpoints.cs), [ErpInputRules.cs](../../src/backend/Medcom.Application/ErpInputRules.cs), [ErpSql.cs](../../src/backend/Medcom.Infrastructure/Erp/ErpSql.cs), [DocumentEndpoints.cs](../../src/backend/Medcom.Api/DocumentEndpoints.cs), [PurchaseRequestEndpoints.cs](../../src/backend/Medcom.Api/PurchaseRequestEndpoints.cs), [NotificationEndpoints.cs](../../src/backend/Medcom.Api/NotificationEndpoints.cs).
 
 
-### Bổ sung tên, tiền và ngày — PR 139
+### Bổ sung tên, tiền và ngày — PR 140
 
 Các API đọc dữ liệu nghiệp vụ bổ sung tên cho ID tham chiếu trong **cùng response**, giữ nguyên phân trang. Ví dụ `itemId` kèm `itemCode`, `itemName`, `unit`; `storeHouseId` kèm `storeHouseName`; `statusId` kèm `statusName`; `objectId`, `employeeId`, `currencyId`, `contractId`… kèm tên tương ứng. Dictionary có tên cột SQL thì giữ casing nguồn: `ItemID`, `ItemCode`, `ItemName`, `Unit`, `StoreHouseName`. Danh mục kỹ thuật `/screen`, `/actions`, auth/session và field/query contract giữ contract của chúng; caption/displayName đã mô tả các định danh giao diện. Chúng không phải dòng dữ liệu grid.
 
 `...ReferenceState` mô tả kết quả tra tên: `available`, `unnamed` (row có nhưng tên null/trống), `empty`, `missing`, `ambiguous`, `invalid`, `unavailable`, `unknown`, `identifier`. Tên null luôn có key, không được tự coi là không có quyền CUD. Khóa dòng/chứng từ/journal không có cột tên nguồn trả companion Name=null với state=identifier; ID chưa có binding xác minh trả Name=null/state=unknown. Không tự tạo tên từ mã.
 
-Tên/mã/đơn vị đã có trong snapshot chứng từ **giữ nguyên, kể cả null**. Phần bổ sung chỉ thêm key chưa tồn tại; không thay đổi giá trị raw, stateToken, intent, receipt hay tỷ giá. 44 binding tên được kiểm tra metadata/zero-row projection trực tiếp trên MedData: [catalog tên](../../inventories/backend/20261011/api-reference-bindings.json), [đối chiếu nguồn](../../inventories/backend/20261011/reference-source-reconciliation.json).
+Tên/mã/đơn vị đã có trong snapshot chứng từ **giữ nguyên nếu có giá trị**. Key Name/ItemCode/Unit null được bổ sung từ reference đã qualified; không thay đổi giá trị raw, stateToken, intent, receipt hay tỷ giá. 45 binding tên được kiểm tra metadata/zero-row projection trực tiếp trên MedData: [catalog tên](../../inventories/backend/20261011/api-reference-bindings.json), [đối chiếu nguồn](../../inventories/backend/20261011/reference-source-reconciliation.json).
 
 Trường tiền thêm `...Display`, ví dụ `unitPriceDisplay`: VND `1,234 VND`; USD `1,234.00 USD`. Dùng CurrencyID của dòng, hoặc header chứng từ gần nhất. Chỉ định dạng, không chuyển đổi tiền/tỷ giá hoặc đoán currency còn thiếu. Rounding hiển thị midpoint away from zero; decimal string rất lớn vẫn giữ chính xác. Currency khác/chưa biết hoặc giá trị null cho Display=null; raw vẫn được trả.
 
@@ -123,6 +123,8 @@ Chi tiết phạm vi, CUD và nút còn thiếu: [bản rà soát API](API_DISPL
 <a id="man-hinh"></a>
 ## 4 Các màn hình và nút nghiệp vụ
 
+Danh sách 12 form bổ sung, CUD/section/nút/trạng thái và body nằm trong [bàn giao CUD và workflow](BE_FE_CUD_WORKFLOW_20261011.md). Bảng dưới mô tả bảy form có trước PR 140. Tổng hiện hành là 19 form, 1.516 field source và 214 binding dropdown; đủ field trong mỗi row, vẫn chia trang.
+
 Tiền tố BE của màn hình là `/api/erp/{module}`. GET `/screen` trả field definitions, action definitions và lookup bindings; GET `/actions?branchId=...` lấy nút lúc tạo mới; thêm documentId khi mở phiếu đã lưu. Detail đã có `data.actions` và `stateToken`.
 
 | Màn hình và module | Form ERP và menu | header / lines / history / comparison | Nút được thực thi |
@@ -132,12 +134,12 @@ Tiền tố BE của màn hình là `/api/erp/{module}`. GET `/screen` trả fie
 | Đề nghị điều chuyển nội bộ `internal-transfer-requests` | IV_InternalTransferRequestFrm / 07010100 | 20 / 12 / 7 / — | Thêm, Lưu, Xóa, Dán; Gửi PM; Thu hồi để sửa. |
 | Quét QR xuất kho `warehouse-qr` | IV_Output_QRCodeFrm / 0702001 | 25 / 9 / — / 26 | Quét thêm, Quét xóa trên phiếu đã có. |
 | Quét QR xuất bán hàng `sales-qr` | AR_Invoice_QRCodeFrm / 0702010 | 71 / 9 / — / 49 | Quét thêm, Quét xóa; Xem thông tin hợp đồng. |
-| Di chuyển bàn giao máy `machine-movements` | FA_Move2026Frm / 1207 | 18 / 23 / — / — | Thêm, Lưu, Xóa, Dán. |
-| Sửa chữa bảo hành bảo trì máy `machine-repairs` | FA_Repair2026Frm / 1209 | 22 / 15 / — / — | Thêm, Lưu, Xóa, Dán. |
+| Di chuyển bàn giao máy `machine-movements` | FA_Move2026Frm / 2437 | 18 / 23 / — / — | Thêm, Lưu, Xóa, Dán. |
+| Sửa chữa bảo hành bảo trì máy `machine-repairs` | FA_Repair2026Frm / 2439 | 22 / 15 / — / — | Thêm, Lưu, Xóa, Dán. |
 
 Tổng 417 field của bảy form, 106 binding dropdown và hai PM option route. Schema full fields, SQL column/type/nullable/writable nằm trong mục 12; binding cụ thể ở mục 13. Nguồn: [six-screen-catalog.json](../../inventories/erp/20261010/six-screen-catalog.json), [ErpScreenCatalog.cs](../../src/backend/Medcom.Contracts/ErpScreenCatalog.cs).
 
-Mỗi action state gồm `id`, `caption`, `visible`, `enabled`, `reason`, `requiresSavedDocument`, `route`. `visible=false` thì ẩn; visible=true/enabled=false thì hiện nhưng khóa và giải thích reason. **id của nút native không nhất thiết là tên operation**: dùng `route` trả về hoặc operation trong `/screen`, không tự ghép route từ action.id. Route có thể còn được trả khi nút bị disabled; chỉ gọi khi enabled=true, và BE vẫn kiểm tra lại. Các nút in chưa có report runtime qualified có route=null; không có API report/print thực thi trong 120 endpoint.
+Mỗi action state gồm `id`, `caption`, `visible`, `enabled`, `reason`, `requiresSavedDocument`, `route`. `visible=false` thì ẩn; visible=true/enabled=false thì hiện nhưng khóa và giải thích reason. **id của nút native không nhất thiết là tên operation**: dùng `route` trả về hoặc operation trong `/screen`, không tự ghép route từ action.id. Route có thể còn được trả khi nút bị disabled; chỉ gọi khi enabled=true, và BE vẫn kiểm tra lại. Các nút in chưa có report runtime qualified có route=null; không có API report/print thực thi trong 243 endpoint.
 
 Quyền Thêm cần native Add; Lưu/gửi/thu hồi/QR cần Update; Xóa cần Delete; xem hợp đồng cần Read. Không gửi quyền, visible/enabled, actor, trạng thái hoặc khóa từ FE để cấp quyền. Các reason thường gặp: native_permission_or_hidden, save_document_first, state_or_assignment_not_allowed, contract_missing, erp_write_unqualified, document_numbering_unqualified, contract_read_unqualified, report_runtime_unqualified. Nguồn: [ErpActionRules.cs](../../src/backend/Medcom.Application/ErpActionRules.cs), [ErpSqlAuthority.cs](../../src/backend/Medcom.Infrastructure/Erp/ErpSqlAuthority.cs).
 
@@ -352,7 +354,7 @@ Các mục dưới là bảng tra cứu đầy đủ được tạo từ contrac
 
 
 <a id="danh-muc-api"></a>
-## 10 Danh mục đầy đủ 120 API
+## 10 Danh mục đầy đủ 243 API
 
 Mỗi dòng là một method/path đã đăng ký. Liên kết operation mở phần tham số/body/response bên dưới. Các path được liệt kê là path BE; BFF prefix theo mục 2. Không dùng cùng body cho hai nhóm route chỉ vì tên màn hình giống nhau.
 
@@ -364,14 +366,26 @@ Mỗi dòng là một method/path đã đăng ký. Liên kết operation mở ph
 | documents-compatible | 10 |
 | purchase-requests-compatible | 10 |
 | inbound-draft-compatible | 4 |
+| inbound-requests | 12 |
+| internal-transfer-accounting | 11 |
+| internal-transfer-batches | 11 |
+| internal-transfer-pm | 9 |
 | internal-transfer-requests | 14 |
+| internal-transfer-sa | 11 |
+| internal-transfer-tech | 11 |
+| internal-transfer-warehouse-in | 8 |
+| internal-transfer-warehouse-out | 11 |
 | machine-movements | 11 |
 | machine-repairs | 11 |
+| purchase-approvals | 8 |
+| purchase-orders | 10 |
 | purchase-requests | 13 |
+| sales-order-pm | 9 |
+| sales-order-sa | 12 |
 | sales-orders | 15 |
 | sales-qr | 9 |
 | warehouse-qr | 8 |
-| **Tổng** | **120** |
+| **Tổng** | **243** |
 
 | STT | Method | Path BE | Operation và công dụng | Tình trạng |
 |---|---|---|---|---|
@@ -414,87 +428,210 @@ Mỗi dòng là một method/path đã đăng ký. Liên kết operation mở ph
 | 37 | POST | `/api/inbound-requests/draft/save` | [inboundDraftsave](#api-inbounddraftsave) — Facade nhập kho cũ, provider unavailable | UNAVAILABLE trong startup; xem mục 1 |
 | 38 | POST | `/api/inbound-requests/draft/send-to-warehouse` | [inboundDraftsendtowarehouse](#api-inbounddraftsendtowarehouse) — Facade nhập kho cũ, provider unavailable | UNAVAILABLE trong startup; xem mục 1 |
 | 39 | POST | `/api/inbound-requests/draft/reconcile` | [inboundDraftreconcile](#api-inbounddraftreconcile) — Facade nhập kho cũ, provider unavailable | UNAVAILABLE trong startup; xem mục 1 |
-| 40 | GET | `/api/erp/internal-transfer-requests/screen` | [internal_transfer_requests_screen](#api-internal_transfer_requests_screen) — Metadata field/action/dropdown form | Reader native/profile hiện hành |
-| 41 | GET | `/api/erp/internal-transfer-requests` | [internal_transfer_requests_list](#api-internal_transfer_requests_list) — Danh sách full header theo trang | Reader native/profile hiện hành |
-| 42 | GET | `/api/erp/internal-transfer-requests/detail` | [internal_transfer_requests_detail](#api-internal_transfer_requests_detail) — Chi tiết full field và các trang section | Reader native/profile hiện hành |
-| 43 | GET | `/api/erp/internal-transfer-requests/actions` | [internal_transfer_requests_actions](#api-internal_transfer_requests_actions) — Trạng thái nút theo user/phiếu | Reader native/profile hiện hành |
-| 44 | POST | `/api/erp/internal-transfer-requests/options` | [internal_transfer_requests_options](#api-internal_transfer_requests_options) — Lựa chọn dropdown/dropselect | Reader native/profile hiện hành |
-| 45 | POST | `/api/erp/internal-transfer-requests/actions/send-pm/options` | [internal_transfer_requests_pm_options](#api-internal_transfer_requests_pm_options) — Danh sách PM theo role/branch | Reader native/profile hiện hành |
-| 46 | POST | `/api/erp/internal-transfer-requests/commands/lookup` | [internal_transfer_requests_command_lookup](#api-internal_transfer_requests_command_lookup) — Tra cứu receipt ý định gốc, không ghi | Reader native/profile hiện hành |
-| 47 | POST | `/api/erp/internal-transfer-requests/selection` | [internal_transfer_requests_selection](#api-internal_transfer_requests_selection) — Đọc nguồn chọn sang dòng nháp | Reader native/profile hiện hành |
-| 48 | POST | `/api/erp/internal-transfer-requests/paste/validate` | [internal_transfer_requests_paste_validate](#api-internal_transfer_requests_paste_validate) — Kiểm tra bảng dán, không ghi | Reader native/profile hiện hành |
-| 49 | POST | `/api/erp/internal-transfer-requests/create` | [internal_transfer_requests_create](#api-internal_transfer_requests_create) — Tạo phiếu và cấp số/LineID | SQL ghi đã bật; quyền/trạng thái recheck |
-| 50 | POST | `/api/erp/internal-transfer-requests/save` | [internal_transfer_requests_save](#api-internal_transfer_requests_save) — Lưu header và thay đổi dòng | SQL ghi đã bật; quyền/trạng thái recheck |
-| 51 | POST | `/api/erp/internal-transfer-requests/delete` | [internal_transfer_requests_delete](#api-internal_transfer_requests_delete) — Xóa phiếu được phép | SQL ghi đã bật; quyền/trạng thái recheck |
-| 52 | POST | `/api/erp/internal-transfer-requests/actions/recall` | [internal_transfer_requests_recall](#api-internal_transfer_requests_recall) — Thu hồi để sửa | SQL ghi đã bật; quyền/trạng thái recheck |
-| 53 | POST | `/api/erp/internal-transfer-requests/actions/send-pm` | [internal_transfer_requests_send_pm](#api-internal_transfer_requests_send_pm) — Gửi phiếu tới PM | SQL ghi đã bật; quyền/trạng thái recheck |
-| 54 | GET | `/api/erp/machine-movements/screen` | [machine_movements_screen](#api-machine_movements_screen) — Metadata field/action/dropdown form | Reader native/profile hiện hành |
-| 55 | GET | `/api/erp/machine-movements` | [machine_movements_list](#api-machine_movements_list) — Danh sách full header theo trang | Reader native/profile hiện hành |
-| 56 | GET | `/api/erp/machine-movements/detail` | [machine_movements_detail](#api-machine_movements_detail) — Chi tiết full field và các trang section | Reader native/profile hiện hành |
-| 57 | GET | `/api/erp/machine-movements/actions` | [machine_movements_actions](#api-machine_movements_actions) — Trạng thái nút theo user/phiếu | Reader native/profile hiện hành |
-| 58 | POST | `/api/erp/machine-movements/options` | [machine_movements_options](#api-machine_movements_options) — Lựa chọn dropdown/dropselect | Reader native/profile hiện hành |
-| 59 | POST | `/api/erp/machine-movements/commands/lookup` | [machine_movements_command_lookup](#api-machine_movements_command_lookup) — Tra cứu receipt ý định gốc, không ghi | Reader native/profile hiện hành |
-| 60 | POST | `/api/erp/machine-movements/selection` | [machine_movements_selection](#api-machine_movements_selection) — Đọc nguồn chọn sang dòng nháp | Reader native/profile hiện hành |
-| 61 | POST | `/api/erp/machine-movements/paste/validate` | [machine_movements_paste_validate](#api-machine_movements_paste_validate) — Kiểm tra bảng dán, không ghi | Reader native/profile hiện hành |
-| 62 | POST | `/api/erp/machine-movements/create` | [machine_movements_create](#api-machine_movements_create) — Tạo phiếu và cấp số/LineID | SQL ghi đã bật; quyền/trạng thái recheck |
-| 63 | POST | `/api/erp/machine-movements/save` | [machine_movements_save](#api-machine_movements_save) — Lưu header và thay đổi dòng | SQL ghi đã bật; quyền/trạng thái recheck |
-| 64 | POST | `/api/erp/machine-movements/delete` | [machine_movements_delete](#api-machine_movements_delete) — Xóa phiếu được phép | SQL ghi đã bật; quyền/trạng thái recheck |
-| 65 | GET | `/api/erp/machine-repairs/screen` | [machine_repairs_screen](#api-machine_repairs_screen) — Metadata field/action/dropdown form | Reader native/profile hiện hành |
-| 66 | GET | `/api/erp/machine-repairs` | [machine_repairs_list](#api-machine_repairs_list) — Danh sách full header theo trang | Reader native/profile hiện hành |
-| 67 | GET | `/api/erp/machine-repairs/detail` | [machine_repairs_detail](#api-machine_repairs_detail) — Chi tiết full field và các trang section | Reader native/profile hiện hành |
-| 68 | GET | `/api/erp/machine-repairs/actions` | [machine_repairs_actions](#api-machine_repairs_actions) — Trạng thái nút theo user/phiếu | Reader native/profile hiện hành |
-| 69 | POST | `/api/erp/machine-repairs/options` | [machine_repairs_options](#api-machine_repairs_options) — Lựa chọn dropdown/dropselect | Reader native/profile hiện hành |
-| 70 | POST | `/api/erp/machine-repairs/commands/lookup` | [machine_repairs_command_lookup](#api-machine_repairs_command_lookup) — Tra cứu receipt ý định gốc, không ghi | Reader native/profile hiện hành |
-| 71 | POST | `/api/erp/machine-repairs/selection` | [machine_repairs_selection](#api-machine_repairs_selection) — Đọc nguồn chọn sang dòng nháp | Reader native/profile hiện hành |
-| 72 | POST | `/api/erp/machine-repairs/paste/validate` | [machine_repairs_paste_validate](#api-machine_repairs_paste_validate) — Kiểm tra bảng dán, không ghi | Reader native/profile hiện hành |
-| 73 | POST | `/api/erp/machine-repairs/create` | [machine_repairs_create](#api-machine_repairs_create) — Tạo phiếu và cấp số/LineID | SQL ghi đã bật; quyền/trạng thái recheck |
-| 74 | POST | `/api/erp/machine-repairs/save` | [machine_repairs_save](#api-machine_repairs_save) — Lưu header và thay đổi dòng | SQL ghi đã bật; quyền/trạng thái recheck |
-| 75 | POST | `/api/erp/machine-repairs/delete` | [machine_repairs_delete](#api-machine_repairs_delete) — Xóa phiếu được phép | SQL ghi đã bật; quyền/trạng thái recheck |
-| 76 | GET | `/api/erp/purchase-requests/screen` | [purchase_requests_screen](#api-purchase_requests_screen) — Metadata field/action/dropdown form | Reader native/profile hiện hành |
-| 77 | GET | `/api/erp/purchase-requests` | [purchase_requests_list](#api-purchase_requests_list) — Danh sách full header theo trang | Reader native/profile hiện hành |
-| 78 | GET | `/api/erp/purchase-requests/detail` | [purchase_requests_detail](#api-purchase_requests_detail) — Chi tiết full field và các trang section | Reader native/profile hiện hành |
-| 79 | GET | `/api/erp/purchase-requests/actions` | [purchase_requests_actions](#api-purchase_requests_actions) — Trạng thái nút theo user/phiếu | Reader native/profile hiện hành |
-| 80 | POST | `/api/erp/purchase-requests/options` | [purchase_requests_options](#api-purchase_requests_options) — Lựa chọn dropdown/dropselect | Reader native/profile hiện hành |
-| 81 | POST | `/api/erp/purchase-requests/commands/lookup` | [purchase_requests_command_lookup](#api-purchase_requests_command_lookup) — Tra cứu receipt ý định gốc, không ghi | Reader native/profile hiện hành |
-| 82 | POST | `/api/erp/purchase-requests/selection` | [purchase_requests_selection](#api-purchase_requests_selection) — Đọc nguồn chọn sang dòng nháp | Reader native/profile hiện hành |
-| 83 | POST | `/api/erp/purchase-requests/paste/validate` | [purchase_requests_paste_validate](#api-purchase_requests_paste_validate) — Kiểm tra bảng dán, không ghi | Reader native/profile hiện hành |
-| 84 | POST | `/api/erp/purchase-requests/create` | [purchase_requests_create](#api-purchase_requests_create) — Tạo phiếu và cấp số/LineID | SQL ghi đã bật; quyền/trạng thái recheck |
-| 85 | POST | `/api/erp/purchase-requests/save` | [purchase_requests_save](#api-purchase_requests_save) — Lưu header và thay đổi dòng | SQL ghi đã bật; quyền/trạng thái recheck |
-| 86 | POST | `/api/erp/purchase-requests/delete` | [purchase_requests_delete](#api-purchase_requests_delete) — Xóa phiếu được phép | SQL ghi đã bật; quyền/trạng thái recheck |
-| 87 | POST | `/api/erp/purchase-requests/actions/submit` | [purchase_requests_submit](#api-purchase_requests_submit) — Gửi đề nghị mua hàng | SQL ghi đã bật; quyền/trạng thái recheck |
-| 88 | POST | `/api/erp/purchase-requests/actions/send-purchase-order` | [purchase_requests_send_purchase_order](#api-purchase_requests_send_purchase_order) — Tạo đặt mua hàng từ đề nghị | SQL ghi đã bật; quyền/trạng thái recheck |
-| 89 | GET | `/api/erp/sales-orders/screen` | [sales_orders_screen](#api-sales_orders_screen) — Metadata field/action/dropdown form | Reader native/profile hiện hành |
-| 90 | GET | `/api/erp/sales-orders` | [sales_orders_list](#api-sales_orders_list) — Danh sách full header theo trang | Reader native/profile hiện hành |
-| 91 | GET | `/api/erp/sales-orders/detail` | [sales_orders_detail](#api-sales_orders_detail) — Chi tiết full field và các trang section | Reader native/profile hiện hành |
-| 92 | GET | `/api/erp/sales-orders/actions` | [sales_orders_actions](#api-sales_orders_actions) — Trạng thái nút theo user/phiếu | Reader native/profile hiện hành |
-| 93 | GET | `/api/erp/sales-orders/contract-info` | [sales_orders_contract_info](#api-sales_orders_contract_info) — Thông tin hợp đồng cùng scope | Reader native/profile hiện hành |
-| 94 | POST | `/api/erp/sales-orders/options` | [sales_orders_options](#api-sales_orders_options) — Lựa chọn dropdown/dropselect | Reader native/profile hiện hành |
-| 95 | POST | `/api/erp/sales-orders/actions/send-pm/options` | [sales_orders_pm_options](#api-sales_orders_pm_options) — Danh sách PM theo role/branch | Reader native/profile hiện hành |
-| 96 | POST | `/api/erp/sales-orders/commands/lookup` | [sales_orders_command_lookup](#api-sales_orders_command_lookup) — Tra cứu receipt ý định gốc, không ghi | Reader native/profile hiện hành |
-| 97 | POST | `/api/erp/sales-orders/selection` | [sales_orders_selection](#api-sales_orders_selection) — Đọc nguồn chọn sang dòng nháp | Reader native/profile hiện hành |
-| 98 | POST | `/api/erp/sales-orders/paste/validate` | [sales_orders_paste_validate](#api-sales_orders_paste_validate) — Kiểm tra bảng dán, không ghi | Reader native/profile hiện hành |
-| 99 | POST | `/api/erp/sales-orders/create` | [sales_orders_create](#api-sales_orders_create) — Tạo phiếu và cấp số/LineID | SQL ghi đã bật; quyền/trạng thái recheck |
-| 100 | POST | `/api/erp/sales-orders/save` | [sales_orders_save](#api-sales_orders_save) — Lưu header và thay đổi dòng | SQL ghi đã bật; quyền/trạng thái recheck |
-| 101 | POST | `/api/erp/sales-orders/delete` | [sales_orders_delete](#api-sales_orders_delete) — Xóa phiếu được phép | SQL ghi đã bật; quyền/trạng thái recheck |
-| 102 | POST | `/api/erp/sales-orders/actions/recall` | [sales_orders_recall](#api-sales_orders_recall) — Thu hồi để sửa | SQL ghi đã bật; quyền/trạng thái recheck |
-| 103 | POST | `/api/erp/sales-orders/actions/send-pm` | [sales_orders_send_pm](#api-sales_orders_send_pm) — Gửi phiếu tới PM | SQL ghi đã bật; quyền/trạng thái recheck |
-| 104 | GET | `/api/erp/sales-qr/screen` | [sales_qr_screen](#api-sales_qr_screen) — Metadata field/action/dropdown form | Reader native/profile hiện hành |
-| 105 | GET | `/api/erp/sales-qr` | [sales_qr_list](#api-sales_qr_list) — Danh sách full header theo trang | Reader native/profile hiện hành |
-| 106 | GET | `/api/erp/sales-qr/detail` | [sales_qr_detail](#api-sales_qr_detail) — Chi tiết full field và các trang section | Reader native/profile hiện hành |
-| 107 | GET | `/api/erp/sales-qr/actions` | [sales_qr_actions](#api-sales_qr_actions) — Trạng thái nút theo user/phiếu | Reader native/profile hiện hành |
-| 108 | GET | `/api/erp/sales-qr/contract-info` | [sales_qr_contract_info](#api-sales_qr_contract_info) — Thông tin hợp đồng cùng scope | Reader native/profile hiện hành |
-| 109 | POST | `/api/erp/sales-qr/options` | [sales_qr_options](#api-sales_qr_options) — Lựa chọn dropdown/dropselect | Reader native/profile hiện hành |
-| 110 | POST | `/api/erp/sales-qr/commands/lookup` | [sales_qr_command_lookup](#api-sales_qr_command_lookup) — Tra cứu receipt ý định gốc, không ghi | Reader native/profile hiện hành |
-| 111 | POST | `/api/erp/sales-qr/qr/add` | [sales_qr_scan_add](#api-sales_qr_scan_add) — Ghi scan thêm | SQL ghi đã bật; quyền/trạng thái recheck |
-| 112 | POST | `/api/erp/sales-qr/qr/delete` | [sales_qr_scan_delete](#api-sales_qr_scan_delete) — Ghi scan xóa | SQL ghi đã bật; quyền/trạng thái recheck |
-| 113 | GET | `/api/erp/warehouse-qr/screen` | [warehouse_qr_screen](#api-warehouse_qr_screen) — Metadata field/action/dropdown form | Reader native/profile hiện hành |
-| 114 | GET | `/api/erp/warehouse-qr` | [warehouse_qr_list](#api-warehouse_qr_list) — Danh sách full header theo trang | Reader native/profile hiện hành |
-| 115 | GET | `/api/erp/warehouse-qr/detail` | [warehouse_qr_detail](#api-warehouse_qr_detail) — Chi tiết full field và các trang section | Reader native/profile hiện hành |
-| 116 | GET | `/api/erp/warehouse-qr/actions` | [warehouse_qr_actions](#api-warehouse_qr_actions) — Trạng thái nút theo user/phiếu | Reader native/profile hiện hành |
-| 117 | POST | `/api/erp/warehouse-qr/options` | [warehouse_qr_options](#api-warehouse_qr_options) — Lựa chọn dropdown/dropselect | Reader native/profile hiện hành |
-| 118 | POST | `/api/erp/warehouse-qr/commands/lookup` | [warehouse_qr_command_lookup](#api-warehouse_qr_command_lookup) — Tra cứu receipt ý định gốc, không ghi | Reader native/profile hiện hành |
-| 119 | POST | `/api/erp/warehouse-qr/qr/add` | [warehouse_qr_scan_add](#api-warehouse_qr_scan_add) — Ghi scan thêm | SQL ghi đã bật; quyền/trạng thái recheck |
-| 120 | POST | `/api/erp/warehouse-qr/qr/delete` | [warehouse_qr_scan_delete](#api-warehouse_qr_scan_delete) — Ghi scan xóa | SQL ghi đã bật; quyền/trạng thái recheck |
+| 40 | GET | `/api/erp/inbound-requests/screen` | [inbound_requests_screen](#api-inbound_requests_screen) — Metadata field/action/dropdown form | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 41 | GET | `/api/erp/inbound-requests` | [inbound_requests_list](#api-inbound_requests_list) — Danh sách full header theo trang | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 42 | GET | `/api/erp/inbound-requests/detail` | [inbound_requests_detail](#api-inbound_requests_detail) — Chi tiết full field và các trang section | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 43 | GET | `/api/erp/inbound-requests/actions` | [inbound_requests_actions](#api-inbound_requests_actions) — Trạng thái nút theo user/phiếu | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 44 | POST | `/api/erp/inbound-requests/options` | [inbound_requests_options](#api-inbound_requests_options) — Lựa chọn dropdown/dropselect | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 45 | POST | `/api/erp/inbound-requests/commands/lookup` | [inbound_requests_command_lookup](#api-inbound_requests_command_lookup) — Tra cứu receipt ý định gốc, không ghi | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 46 | POST | `/api/erp/inbound-requests/create` | [inbound_requests_create](#api-inbound_requests_create) — Tạo phiếu và cấp số/LineID | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 47 | POST | `/api/erp/inbound-requests/save` | [inbound_requests_save](#api-inbound_requests_save) — Lưu header và thay đổi dòng | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 48 | POST | `/api/erp/inbound-requests/delete` | [inbound_requests_delete](#api-inbound_requests_delete) — Xóa phiếu được phép | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 49 | POST | `/api/erp/inbound-requests/actions/send-management` | [inbound_requests_send_management](#api-inbound_requests_send_management) — Nút nghiệp vụ send-management | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 50 | POST | `/api/erp/inbound-requests/actions/send-warehouse` | [inbound_requests_send_warehouse](#api-inbound_requests_send_warehouse) — Nút nghiệp vụ send-warehouse | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 51 | POST | `/api/erp/inbound-requests/sections/costs/save` | [inbound_requests_save_costs](#api-inbound_requests_save_costs) — Lưu section | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 52 | GET | `/api/erp/internal-transfer-accounting/screen` | [internal_transfer_accounting_screen](#api-internal_transfer_accounting_screen) — Metadata field/action/dropdown form | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 53 | GET | `/api/erp/internal-transfer-accounting` | [internal_transfer_accounting_list](#api-internal_transfer_accounting_list) — Danh sách full header theo trang | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 54 | GET | `/api/erp/internal-transfer-accounting/detail` | [internal_transfer_accounting_detail](#api-internal_transfer_accounting_detail) — Chi tiết full field và các trang section | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 55 | GET | `/api/erp/internal-transfer-accounting/actions` | [internal_transfer_accounting_actions](#api-internal_transfer_accounting_actions) — Trạng thái nút theo user/phiếu | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 56 | POST | `/api/erp/internal-transfer-accounting/options` | [internal_transfer_accounting_options](#api-internal_transfer_accounting_options) — Lựa chọn dropdown/dropselect | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 57 | POST | `/api/erp/internal-transfer-accounting/commands/lookup` | [internal_transfer_accounting_command_lookup](#api-internal_transfer_accounting_command_lookup) — Tra cứu receipt ý định gốc, không ghi | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 58 | POST | `/api/erp/internal-transfer-accounting/save` | [internal_transfer_accounting_save](#api-internal_transfer_accounting_save) — Lưu header và thay đổi dòng | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 59 | POST | `/api/erp/internal-transfer-accounting/actions/send-warehouse` | [internal_transfer_accounting_send_warehouse](#api-internal_transfer_accounting_send_warehouse) — Nút nghiệp vụ send-warehouse | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 60 | POST | `/api/erp/internal-transfer-accounting/actions/reject` | [internal_transfer_accounting_reject](#api-internal_transfer_accounting_reject) — Nút nghiệp vụ reject | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 61 | POST | `/api/erp/internal-transfer-accounting/actions/return-step` | [internal_transfer_accounting_return_step](#api-internal_transfer_accounting_return_step) — Nút nghiệp vụ return-step | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 62 | POST | `/api/erp/internal-transfer-accounting/actions/return-step/options` | [internal_transfer_accounting_return_step_options](#api-internal_transfer_accounting_return_step_options) — Lựa chọn nghiệp vụ | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 63 | GET | `/api/erp/internal-transfer-batches/screen` | [internal_transfer_batches_screen](#api-internal_transfer_batches_screen) — Metadata field/action/dropdown form | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 64 | GET | `/api/erp/internal-transfer-batches` | [internal_transfer_batches_list](#api-internal_transfer_batches_list) — Danh sách full header theo trang | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 65 | GET | `/api/erp/internal-transfer-batches/detail` | [internal_transfer_batches_detail](#api-internal_transfer_batches_detail) — Chi tiết full field và các trang section | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 66 | GET | `/api/erp/internal-transfer-batches/actions` | [internal_transfer_batches_actions](#api-internal_transfer_batches_actions) — Trạng thái nút theo user/phiếu | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 67 | POST | `/api/erp/internal-transfer-batches/options` | [internal_transfer_batches_options](#api-internal_transfer_batches_options) — Lựa chọn dropdown/dropselect | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 68 | POST | `/api/erp/internal-transfer-batches/commands/lookup` | [internal_transfer_batches_command_lookup](#api-internal_transfer_batches_command_lookup) — Tra cứu receipt ý định gốc, không ghi | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 69 | POST | `/api/erp/internal-transfer-batches/create` | [internal_transfer_batches_create](#api-internal_transfer_batches_create) — Tạo phiếu và cấp số/LineID | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 70 | POST | `/api/erp/internal-transfer-batches/save` | [internal_transfer_batches_save](#api-internal_transfer_batches_save) — Lưu header và thay đổi dòng | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 71 | POST | `/api/erp/internal-transfer-batches/delete` | [internal_transfer_batches_delete](#api-internal_transfer_batches_delete) — Xóa phiếu được phép | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 72 | POST | `/api/erp/internal-transfer-batches/actions/sync-requests` | [internal_transfer_batches_sync_requests](#api-internal_transfer_batches_sync_requests) — Nút nghiệp vụ sync-requests | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 73 | POST | `/api/erp/internal-transfer-batches/actions/send-tech` | [internal_transfer_batches_send_tech](#api-internal_transfer_batches_send_tech) — Nút nghiệp vụ send-tech | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 74 | GET | `/api/erp/internal-transfer-pm/screen` | [internal_transfer_pm_screen](#api-internal_transfer_pm_screen) — Metadata field/action/dropdown form | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 75 | GET | `/api/erp/internal-transfer-pm` | [internal_transfer_pm_list](#api-internal_transfer_pm_list) — Danh sách full header theo trang | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 76 | GET | `/api/erp/internal-transfer-pm/detail` | [internal_transfer_pm_detail](#api-internal_transfer_pm_detail) — Chi tiết full field và các trang section | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 77 | GET | `/api/erp/internal-transfer-pm/actions` | [internal_transfer_pm_actions](#api-internal_transfer_pm_actions) — Trạng thái nút theo user/phiếu | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 78 | POST | `/api/erp/internal-transfer-pm/options` | [internal_transfer_pm_options](#api-internal_transfer_pm_options) — Lựa chọn dropdown/dropselect | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 79 | POST | `/api/erp/internal-transfer-pm/commands/lookup` | [internal_transfer_pm_command_lookup](#api-internal_transfer_pm_command_lookup) — Tra cứu receipt ý định gốc, không ghi | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 80 | POST | `/api/erp/internal-transfer-pm/save` | [internal_transfer_pm_save](#api-internal_transfer_pm_save) — Lưu header và thay đổi dòng | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 81 | POST | `/api/erp/internal-transfer-pm/actions/pm-confirm` | [internal_transfer_pm_pm_confirm](#api-internal_transfer_pm_pm_confirm) — Nút nghiệp vụ pm-confirm | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 82 | POST | `/api/erp/internal-transfer-pm/actions/reject` | [internal_transfer_pm_reject](#api-internal_transfer_pm_reject) — Nút nghiệp vụ reject | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 83 | GET | `/api/erp/internal-transfer-requests/screen` | [internal_transfer_requests_screen](#api-internal_transfer_requests_screen) — Metadata field/action/dropdown form | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 84 | GET | `/api/erp/internal-transfer-requests` | [internal_transfer_requests_list](#api-internal_transfer_requests_list) — Danh sách full header theo trang | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 85 | GET | `/api/erp/internal-transfer-requests/detail` | [internal_transfer_requests_detail](#api-internal_transfer_requests_detail) — Chi tiết full field và các trang section | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 86 | GET | `/api/erp/internal-transfer-requests/actions` | [internal_transfer_requests_actions](#api-internal_transfer_requests_actions) — Trạng thái nút theo user/phiếu | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 87 | POST | `/api/erp/internal-transfer-requests/options` | [internal_transfer_requests_options](#api-internal_transfer_requests_options) — Lựa chọn dropdown/dropselect | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 88 | POST | `/api/erp/internal-transfer-requests/actions/send-pm/options` | [internal_transfer_requests_pm_options](#api-internal_transfer_requests_pm_options) — Danh sách PM theo role/branch | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 89 | POST | `/api/erp/internal-transfer-requests/commands/lookup` | [internal_transfer_requests_command_lookup](#api-internal_transfer_requests_command_lookup) — Tra cứu receipt ý định gốc, không ghi | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 90 | POST | `/api/erp/internal-transfer-requests/selection` | [internal_transfer_requests_selection](#api-internal_transfer_requests_selection) — Đọc nguồn chọn sang dòng nháp | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 91 | POST | `/api/erp/internal-transfer-requests/paste/validate` | [internal_transfer_requests_paste_validate](#api-internal_transfer_requests_paste_validate) — Kiểm tra bảng dán, không ghi | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 92 | POST | `/api/erp/internal-transfer-requests/create` | [internal_transfer_requests_create](#api-internal_transfer_requests_create) — Tạo phiếu và cấp số/LineID | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 93 | POST | `/api/erp/internal-transfer-requests/save` | [internal_transfer_requests_save](#api-internal_transfer_requests_save) — Lưu header và thay đổi dòng | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 94 | POST | `/api/erp/internal-transfer-requests/delete` | [internal_transfer_requests_delete](#api-internal_transfer_requests_delete) — Xóa phiếu được phép | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 95 | POST | `/api/erp/internal-transfer-requests/actions/recall` | [internal_transfer_requests_recall](#api-internal_transfer_requests_recall) — Thu hồi để sửa | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 96 | POST | `/api/erp/internal-transfer-requests/actions/send-pm` | [internal_transfer_requests_send_pm](#api-internal_transfer_requests_send_pm) — Gửi phiếu tới PM | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 97 | GET | `/api/erp/internal-transfer-sa/screen` | [internal_transfer_sa_screen](#api-internal_transfer_sa_screen) — Metadata field/action/dropdown form | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 98 | GET | `/api/erp/internal-transfer-sa` | [internal_transfer_sa_list](#api-internal_transfer_sa_list) — Danh sách full header theo trang | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 99 | GET | `/api/erp/internal-transfer-sa/detail` | [internal_transfer_sa_detail](#api-internal_transfer_sa_detail) — Chi tiết full field và các trang section | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 100 | GET | `/api/erp/internal-transfer-sa/actions` | [internal_transfer_sa_actions](#api-internal_transfer_sa_actions) — Trạng thái nút theo user/phiếu | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 101 | POST | `/api/erp/internal-transfer-sa/options` | [internal_transfer_sa_options](#api-internal_transfer_sa_options) — Lựa chọn dropdown/dropselect | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 102 | POST | `/api/erp/internal-transfer-sa/commands/lookup` | [internal_transfer_sa_command_lookup](#api-internal_transfer_sa_command_lookup) — Tra cứu receipt ý định gốc, không ghi | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 103 | POST | `/api/erp/internal-transfer-sa/save` | [internal_transfer_sa_save](#api-internal_transfer_sa_save) — Lưu header và thay đổi dòng | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 104 | POST | `/api/erp/internal-transfer-sa/actions/send-accounting` | [internal_transfer_sa_send_accounting](#api-internal_transfer_sa_send_accounting) — Nút nghiệp vụ send-accounting | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 105 | POST | `/api/erp/internal-transfer-sa/actions/reject` | [internal_transfer_sa_reject](#api-internal_transfer_sa_reject) — Nút nghiệp vụ reject | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 106 | POST | `/api/erp/internal-transfer-sa/actions/return-step` | [internal_transfer_sa_return_step](#api-internal_transfer_sa_return_step) — Nút nghiệp vụ return-step | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 107 | POST | `/api/erp/internal-transfer-sa/actions/return-step/options` | [internal_transfer_sa_return_step_options](#api-internal_transfer_sa_return_step_options) — Lựa chọn nghiệp vụ | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 108 | GET | `/api/erp/internal-transfer-tech/screen` | [internal_transfer_tech_screen](#api-internal_transfer_tech_screen) — Metadata field/action/dropdown form | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 109 | GET | `/api/erp/internal-transfer-tech` | [internal_transfer_tech_list](#api-internal_transfer_tech_list) — Danh sách full header theo trang | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 110 | GET | `/api/erp/internal-transfer-tech/detail` | [internal_transfer_tech_detail](#api-internal_transfer_tech_detail) — Chi tiết full field và các trang section | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 111 | GET | `/api/erp/internal-transfer-tech/actions` | [internal_transfer_tech_actions](#api-internal_transfer_tech_actions) — Trạng thái nút theo user/phiếu | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 112 | POST | `/api/erp/internal-transfer-tech/options` | [internal_transfer_tech_options](#api-internal_transfer_tech_options) — Lựa chọn dropdown/dropselect | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 113 | POST | `/api/erp/internal-transfer-tech/commands/lookup` | [internal_transfer_tech_command_lookup](#api-internal_transfer_tech_command_lookup) — Tra cứu receipt ý định gốc, không ghi | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 114 | POST | `/api/erp/internal-transfer-tech/save` | [internal_transfer_tech_save](#api-internal_transfer_tech_save) — Lưu header và thay đổi dòng | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 115 | POST | `/api/erp/internal-transfer-tech/actions/send-sa` | [internal_transfer_tech_send_sa](#api-internal_transfer_tech_send_sa) — Nút nghiệp vụ send-sa | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 116 | POST | `/api/erp/internal-transfer-tech/actions/reject` | [internal_transfer_tech_reject](#api-internal_transfer_tech_reject) — Nút nghiệp vụ reject | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 117 | POST | `/api/erp/internal-transfer-tech/sections/assets/save` | [internal_transfer_tech_save_assets](#api-internal_transfer_tech_save_assets) — Lưu section | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 118 | POST | `/api/erp/internal-transfer-tech/actions/send-sa/options` | [internal_transfer_tech_send_sa_options](#api-internal_transfer_tech_send_sa_options) — Lựa chọn nghiệp vụ | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 119 | GET | `/api/erp/internal-transfer-warehouse-in/screen` | [internal_transfer_warehouse_in_screen](#api-internal_transfer_warehouse_in_screen) — Metadata field/action/dropdown form | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 120 | GET | `/api/erp/internal-transfer-warehouse-in` | [internal_transfer_warehouse_in_list](#api-internal_transfer_warehouse_in_list) — Danh sách full header theo trang | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 121 | GET | `/api/erp/internal-transfer-warehouse-in/detail` | [internal_transfer_warehouse_in_detail](#api-internal_transfer_warehouse_in_detail) — Chi tiết full field và các trang section | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 122 | GET | `/api/erp/internal-transfer-warehouse-in/actions` | [internal_transfer_warehouse_in_actions](#api-internal_transfer_warehouse_in_actions) — Trạng thái nút theo user/phiếu | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 123 | POST | `/api/erp/internal-transfer-warehouse-in/options` | [internal_transfer_warehouse_in_options](#api-internal_transfer_warehouse_in_options) — Lựa chọn dropdown/dropselect | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 124 | POST | `/api/erp/internal-transfer-warehouse-in/commands/lookup` | [internal_transfer_warehouse_in_command_lookup](#api-internal_transfer_warehouse_in_command_lookup) — Tra cứu receipt ý định gốc, không ghi | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 125 | POST | `/api/erp/internal-transfer-warehouse-in/save` | [internal_transfer_warehouse_in_save](#api-internal_transfer_warehouse_in_save) — Lưu header và thay đổi dòng | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 126 | POST | `/api/erp/internal-transfer-warehouse-in/actions/receive` | [internal_transfer_warehouse_in_receive](#api-internal_transfer_warehouse_in_receive) — Nút nghiệp vụ receive | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 127 | GET | `/api/erp/internal-transfer-warehouse-out/screen` | [internal_transfer_warehouse_out_screen](#api-internal_transfer_warehouse_out_screen) — Metadata field/action/dropdown form | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 128 | GET | `/api/erp/internal-transfer-warehouse-out` | [internal_transfer_warehouse_out_list](#api-internal_transfer_warehouse_out_list) — Danh sách full header theo trang | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 129 | GET | `/api/erp/internal-transfer-warehouse-out/detail` | [internal_transfer_warehouse_out_detail](#api-internal_transfer_warehouse_out_detail) — Chi tiết full field và các trang section | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 130 | GET | `/api/erp/internal-transfer-warehouse-out/actions` | [internal_transfer_warehouse_out_actions](#api-internal_transfer_warehouse_out_actions) — Trạng thái nút theo user/phiếu | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 131 | POST | `/api/erp/internal-transfer-warehouse-out/options` | [internal_transfer_warehouse_out_options](#api-internal_transfer_warehouse_out_options) — Lựa chọn dropdown/dropselect | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 132 | POST | `/api/erp/internal-transfer-warehouse-out/commands/lookup` | [internal_transfer_warehouse_out_command_lookup](#api-internal_transfer_warehouse_out_command_lookup) — Tra cứu receipt ý định gốc, không ghi | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 133 | POST | `/api/erp/internal-transfer-warehouse-out/save` | [internal_transfer_warehouse_out_save](#api-internal_transfer_warehouse_out_save) — Lưu header và thay đổi dòng | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 134 | POST | `/api/erp/internal-transfer-warehouse-out/actions/dispatch` | [internal_transfer_warehouse_out_dispatch](#api-internal_transfer_warehouse_out_dispatch) — Nút nghiệp vụ dispatch | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 135 | POST | `/api/erp/internal-transfer-warehouse-out/actions/reject` | [internal_transfer_warehouse_out_reject](#api-internal_transfer_warehouse_out_reject) — Nút nghiệp vụ reject | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 136 | POST | `/api/erp/internal-transfer-warehouse-out/actions/return-step` | [internal_transfer_warehouse_out_return_step](#api-internal_transfer_warehouse_out_return_step) — Nút nghiệp vụ return-step | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 137 | POST | `/api/erp/internal-transfer-warehouse-out/actions/return-step/options` | [internal_transfer_warehouse_out_return_step_options](#api-internal_transfer_warehouse_out_return_step_options) — Lựa chọn nghiệp vụ | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 138 | GET | `/api/erp/machine-movements/screen` | [machine_movements_screen](#api-machine_movements_screen) — Metadata field/action/dropdown form | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 139 | GET | `/api/erp/machine-movements` | [machine_movements_list](#api-machine_movements_list) — Danh sách full header theo trang | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 140 | GET | `/api/erp/machine-movements/detail` | [machine_movements_detail](#api-machine_movements_detail) — Chi tiết full field và các trang section | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 141 | GET | `/api/erp/machine-movements/actions` | [machine_movements_actions](#api-machine_movements_actions) — Trạng thái nút theo user/phiếu | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 142 | POST | `/api/erp/machine-movements/options` | [machine_movements_options](#api-machine_movements_options) — Lựa chọn dropdown/dropselect | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 143 | POST | `/api/erp/machine-movements/commands/lookup` | [machine_movements_command_lookup](#api-machine_movements_command_lookup) — Tra cứu receipt ý định gốc, không ghi | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 144 | POST | `/api/erp/machine-movements/selection` | [machine_movements_selection](#api-machine_movements_selection) — Đọc nguồn chọn sang dòng nháp | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 145 | POST | `/api/erp/machine-movements/paste/validate` | [machine_movements_paste_validate](#api-machine_movements_paste_validate) — Kiểm tra bảng dán, không ghi | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 146 | POST | `/api/erp/machine-movements/create` | [machine_movements_create](#api-machine_movements_create) — Tạo phiếu và cấp số/LineID | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 147 | POST | `/api/erp/machine-movements/save` | [machine_movements_save](#api-machine_movements_save) — Lưu header và thay đổi dòng | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 148 | POST | `/api/erp/machine-movements/delete` | [machine_movements_delete](#api-machine_movements_delete) — Xóa phiếu được phép | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 149 | GET | `/api/erp/machine-repairs/screen` | [machine_repairs_screen](#api-machine_repairs_screen) — Metadata field/action/dropdown form | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 150 | GET | `/api/erp/machine-repairs` | [machine_repairs_list](#api-machine_repairs_list) — Danh sách full header theo trang | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 151 | GET | `/api/erp/machine-repairs/detail` | [machine_repairs_detail](#api-machine_repairs_detail) — Chi tiết full field và các trang section | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 152 | GET | `/api/erp/machine-repairs/actions` | [machine_repairs_actions](#api-machine_repairs_actions) — Trạng thái nút theo user/phiếu | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 153 | POST | `/api/erp/machine-repairs/options` | [machine_repairs_options](#api-machine_repairs_options) — Lựa chọn dropdown/dropselect | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 154 | POST | `/api/erp/machine-repairs/commands/lookup` | [machine_repairs_command_lookup](#api-machine_repairs_command_lookup) — Tra cứu receipt ý định gốc, không ghi | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 155 | POST | `/api/erp/machine-repairs/selection` | [machine_repairs_selection](#api-machine_repairs_selection) — Đọc nguồn chọn sang dòng nháp | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 156 | POST | `/api/erp/machine-repairs/paste/validate` | [machine_repairs_paste_validate](#api-machine_repairs_paste_validate) — Kiểm tra bảng dán, không ghi | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 157 | POST | `/api/erp/machine-repairs/create` | [machine_repairs_create](#api-machine_repairs_create) — Tạo phiếu và cấp số/LineID | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 158 | POST | `/api/erp/machine-repairs/save` | [machine_repairs_save](#api-machine_repairs_save) — Lưu header và thay đổi dòng | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 159 | POST | `/api/erp/machine-repairs/delete` | [machine_repairs_delete](#api-machine_repairs_delete) — Xóa phiếu được phép | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 160 | GET | `/api/erp/purchase-approvals/screen` | [purchase_approvals_screen](#api-purchase_approvals_screen) — Metadata field/action/dropdown form | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 161 | GET | `/api/erp/purchase-approvals` | [purchase_approvals_list](#api-purchase_approvals_list) — Danh sách full header theo trang | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 162 | GET | `/api/erp/purchase-approvals/detail` | [purchase_approvals_detail](#api-purchase_approvals_detail) — Chi tiết full field và các trang section | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 163 | GET | `/api/erp/purchase-approvals/actions` | [purchase_approvals_actions](#api-purchase_approvals_actions) — Trạng thái nút theo user/phiếu | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 164 | POST | `/api/erp/purchase-approvals/options` | [purchase_approvals_options](#api-purchase_approvals_options) — Lựa chọn dropdown/dropselect | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 165 | POST | `/api/erp/purchase-approvals/commands/lookup` | [purchase_approvals_command_lookup](#api-purchase_approvals_command_lookup) — Tra cứu receipt ý định gốc, không ghi | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 166 | POST | `/api/erp/purchase-approvals/actions/reject` | [purchase_approvals_reject](#api-purchase_approvals_reject) — Nút nghiệp vụ reject | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 167 | POST | `/api/erp/purchase-approvals/actions/approve` | [purchase_approvals_approve](#api-purchase_approvals_approve) — Nút nghiệp vụ approve | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 168 | GET | `/api/erp/purchase-orders/screen` | [purchase_orders_screen](#api-purchase_orders_screen) — Metadata field/action/dropdown form | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 169 | GET | `/api/erp/purchase-orders` | [purchase_orders_list](#api-purchase_orders_list) — Danh sách full header theo trang | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 170 | GET | `/api/erp/purchase-orders/detail` | [purchase_orders_detail](#api-purchase_orders_detail) — Chi tiết full field và các trang section | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 171 | GET | `/api/erp/purchase-orders/actions` | [purchase_orders_actions](#api-purchase_orders_actions) — Trạng thái nút theo user/phiếu | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 172 | POST | `/api/erp/purchase-orders/options` | [purchase_orders_options](#api-purchase_orders_options) — Lựa chọn dropdown/dropselect | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 173 | POST | `/api/erp/purchase-orders/item-price` | [purchase_orders_item_price](#api-purchase_orders_item_price) — Tra giá mua | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 174 | POST | `/api/erp/purchase-orders/commands/lookup` | [purchase_orders_command_lookup](#api-purchase_orders_command_lookup) — Tra cứu receipt ý định gốc, không ghi | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 175 | POST | `/api/erp/purchase-orders/create` | [purchase_orders_create](#api-purchase_orders_create) — Tạo phiếu và cấp số/LineID | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 176 | POST | `/api/erp/purchase-orders/save` | [purchase_orders_save](#api-purchase_orders_save) — Lưu header và thay đổi dòng | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 177 | POST | `/api/erp/purchase-orders/delete` | [purchase_orders_delete](#api-purchase_orders_delete) — Xóa phiếu được phép | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 178 | GET | `/api/erp/purchase-requests/screen` | [purchase_requests_screen](#api-purchase_requests_screen) — Metadata field/action/dropdown form | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 179 | GET | `/api/erp/purchase-requests` | [purchase_requests_list](#api-purchase_requests_list) — Danh sách full header theo trang | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 180 | GET | `/api/erp/purchase-requests/detail` | [purchase_requests_detail](#api-purchase_requests_detail) — Chi tiết full field và các trang section | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 181 | GET | `/api/erp/purchase-requests/actions` | [purchase_requests_actions](#api-purchase_requests_actions) — Trạng thái nút theo user/phiếu | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 182 | POST | `/api/erp/purchase-requests/options` | [purchase_requests_options](#api-purchase_requests_options) — Lựa chọn dropdown/dropselect | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 183 | POST | `/api/erp/purchase-requests/commands/lookup` | [purchase_requests_command_lookup](#api-purchase_requests_command_lookup) — Tra cứu receipt ý định gốc, không ghi | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 184 | POST | `/api/erp/purchase-requests/selection` | [purchase_requests_selection](#api-purchase_requests_selection) — Đọc nguồn chọn sang dòng nháp | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 185 | POST | `/api/erp/purchase-requests/paste/validate` | [purchase_requests_paste_validate](#api-purchase_requests_paste_validate) — Kiểm tra bảng dán, không ghi | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 186 | POST | `/api/erp/purchase-requests/create` | [purchase_requests_create](#api-purchase_requests_create) — Tạo phiếu và cấp số/LineID | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 187 | POST | `/api/erp/purchase-requests/save` | [purchase_requests_save](#api-purchase_requests_save) — Lưu header và thay đổi dòng | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 188 | POST | `/api/erp/purchase-requests/delete` | [purchase_requests_delete](#api-purchase_requests_delete) — Xóa phiếu được phép | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 189 | POST | `/api/erp/purchase-requests/actions/submit` | [purchase_requests_submit](#api-purchase_requests_submit) — Gửi đề nghị mua hàng | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 190 | POST | `/api/erp/purchase-requests/actions/send-purchase-order` | [purchase_requests_send_purchase_order](#api-purchase_requests_send_purchase_order) — Tạo đặt mua hàng từ đề nghị | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 191 | GET | `/api/erp/sales-order-pm/screen` | [sales_order_pm_screen](#api-sales_order_pm_screen) — Metadata field/action/dropdown form | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 192 | GET | `/api/erp/sales-order-pm` | [sales_order_pm_list](#api-sales_order_pm_list) — Danh sách full header theo trang | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 193 | GET | `/api/erp/sales-order-pm/detail` | [sales_order_pm_detail](#api-sales_order_pm_detail) — Chi tiết full field và các trang section | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 194 | GET | `/api/erp/sales-order-pm/actions` | [sales_order_pm_actions](#api-sales_order_pm_actions) — Trạng thái nút theo user/phiếu | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 195 | GET | `/api/erp/sales-order-pm/contract-info` | [sales_order_pm_contract_info](#api-sales_order_pm_contract_info) — Thông tin hợp đồng cùng scope | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 196 | POST | `/api/erp/sales-order-pm/options` | [sales_order_pm_options](#api-sales_order_pm_options) — Lựa chọn dropdown/dropselect | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 197 | POST | `/api/erp/sales-order-pm/commands/lookup` | [sales_order_pm_command_lookup](#api-sales_order_pm_command_lookup) — Tra cứu receipt ý định gốc, không ghi | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 198 | POST | `/api/erp/sales-order-pm/actions/send-sa` | [sales_order_pm_send_sa](#api-sales_order_pm_send_sa) — Nút nghiệp vụ send-sa | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 199 | POST | `/api/erp/sales-order-pm/actions/reject` | [sales_order_pm_reject](#api-sales_order_pm_reject) — Nút nghiệp vụ reject | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 200 | GET | `/api/erp/sales-order-sa/screen` | [sales_order_sa_screen](#api-sales_order_sa_screen) — Metadata field/action/dropdown form | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 201 | GET | `/api/erp/sales-order-sa` | [sales_order_sa_list](#api-sales_order_sa_list) — Danh sách full header theo trang | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 202 | GET | `/api/erp/sales-order-sa/detail` | [sales_order_sa_detail](#api-sales_order_sa_detail) — Chi tiết full field và các trang section | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 203 | GET | `/api/erp/sales-order-sa/actions` | [sales_order_sa_actions](#api-sales_order_sa_actions) — Trạng thái nút theo user/phiếu | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 204 | GET | `/api/erp/sales-order-sa/contract-info` | [sales_order_sa_contract_info](#api-sales_order_sa_contract_info) — Thông tin hợp đồng cùng scope | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 205 | POST | `/api/erp/sales-order-sa/options` | [sales_order_sa_options](#api-sales_order_sa_options) — Lựa chọn dropdown/dropselect | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 206 | POST | `/api/erp/sales-order-sa/commands/lookup` | [sales_order_sa_command_lookup](#api-sales_order_sa_command_lookup) — Tra cứu receipt ý định gốc, không ghi | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 207 | POST | `/api/erp/sales-order-sa/actions/send-accounting` | [sales_order_sa_send_accounting](#api-sales_order_sa_send_accounting) — Nút nghiệp vụ send-accounting | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 208 | POST | `/api/erp/sales-order-sa/actions/send-tech` | [sales_order_sa_send_tech](#api-sales_order_sa_send_tech) — Nút nghiệp vụ send-tech | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 209 | POST | `/api/erp/sales-order-sa/actions/reject` | [sales_order_sa_reject](#api-sales_order_sa_reject) — Nút nghiệp vụ reject | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 210 | POST | `/api/erp/sales-order-sa/actions/return-step` | [sales_order_sa_return_step](#api-sales_order_sa_return_step) — Nút nghiệp vụ return-step | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 211 | POST | `/api/erp/sales-order-sa/actions/return-step/options` | [sales_order_sa_return_step_options](#api-sales_order_sa_return_step_options) — Lựa chọn nghiệp vụ | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 212 | GET | `/api/erp/sales-orders/screen` | [sales_orders_screen](#api-sales_orders_screen) — Metadata field/action/dropdown form | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 213 | GET | `/api/erp/sales-orders` | [sales_orders_list](#api-sales_orders_list) — Danh sách full header theo trang | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 214 | GET | `/api/erp/sales-orders/detail` | [sales_orders_detail](#api-sales_orders_detail) — Chi tiết full field và các trang section | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 215 | GET | `/api/erp/sales-orders/actions` | [sales_orders_actions](#api-sales_orders_actions) — Trạng thái nút theo user/phiếu | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 216 | GET | `/api/erp/sales-orders/contract-info` | [sales_orders_contract_info](#api-sales_orders_contract_info) — Thông tin hợp đồng cùng scope | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 217 | POST | `/api/erp/sales-orders/options` | [sales_orders_options](#api-sales_orders_options) — Lựa chọn dropdown/dropselect | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 218 | POST | `/api/erp/sales-orders/actions/send-pm/options` | [sales_orders_pm_options](#api-sales_orders_pm_options) — Danh sách PM theo role/branch | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 219 | POST | `/api/erp/sales-orders/commands/lookup` | [sales_orders_command_lookup](#api-sales_orders_command_lookup) — Tra cứu receipt ý định gốc, không ghi | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 220 | POST | `/api/erp/sales-orders/selection` | [sales_orders_selection](#api-sales_orders_selection) — Đọc nguồn chọn sang dòng nháp | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 221 | POST | `/api/erp/sales-orders/paste/validate` | [sales_orders_paste_validate](#api-sales_orders_paste_validate) — Kiểm tra bảng dán, không ghi | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 222 | POST | `/api/erp/sales-orders/create` | [sales_orders_create](#api-sales_orders_create) — Tạo phiếu và cấp số/LineID | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 223 | POST | `/api/erp/sales-orders/save` | [sales_orders_save](#api-sales_orders_save) — Lưu header và thay đổi dòng | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 224 | POST | `/api/erp/sales-orders/delete` | [sales_orders_delete](#api-sales_orders_delete) — Xóa phiếu được phép | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 225 | POST | `/api/erp/sales-orders/actions/recall` | [sales_orders_recall](#api-sales_orders_recall) — Thu hồi để sửa | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 226 | POST | `/api/erp/sales-orders/actions/send-pm` | [sales_orders_send_pm](#api-sales_orders_send_pm) — Gửi phiếu tới PM | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 227 | GET | `/api/erp/sales-qr/screen` | [sales_qr_screen](#api-sales_qr_screen) — Metadata field/action/dropdown form | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 228 | GET | `/api/erp/sales-qr` | [sales_qr_list](#api-sales_qr_list) — Danh sách full header theo trang | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 229 | GET | `/api/erp/sales-qr/detail` | [sales_qr_detail](#api-sales_qr_detail) — Chi tiết full field và các trang section | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 230 | GET | `/api/erp/sales-qr/actions` | [sales_qr_actions](#api-sales_qr_actions) — Trạng thái nút theo user/phiếu | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 231 | GET | `/api/erp/sales-qr/contract-info` | [sales_qr_contract_info](#api-sales_qr_contract_info) — Thông tin hợp đồng cùng scope | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 232 | POST | `/api/erp/sales-qr/options` | [sales_qr_options](#api-sales_qr_options) — Lựa chọn dropdown/dropselect | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 233 | POST | `/api/erp/sales-qr/commands/lookup` | [sales_qr_command_lookup](#api-sales_qr_command_lookup) — Tra cứu receipt ý định gốc, không ghi | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 234 | POST | `/api/erp/sales-qr/qr/add` | [sales_qr_scan_add](#api-sales_qr_scan_add) — Ghi scan thêm | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 235 | POST | `/api/erp/sales-qr/qr/delete` | [sales_qr_scan_delete](#api-sales_qr_scan_delete) — Ghi scan xóa | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 236 | GET | `/api/erp/warehouse-qr/screen` | [warehouse_qr_screen](#api-warehouse_qr_screen) — Metadata field/action/dropdown form | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 237 | GET | `/api/erp/warehouse-qr` | [warehouse_qr_list](#api-warehouse_qr_list) — Danh sách full header theo trang | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 238 | GET | `/api/erp/warehouse-qr/detail` | [warehouse_qr_detail](#api-warehouse_qr_detail) — Chi tiết full field và các trang section | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 239 | GET | `/api/erp/warehouse-qr/actions` | [warehouse_qr_actions](#api-warehouse_qr_actions) — Trạng thái nút theo user/phiếu | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 240 | POST | `/api/erp/warehouse-qr/options` | [warehouse_qr_options](#api-warehouse_qr_options) — Lựa chọn dropdown/dropselect | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 241 | POST | `/api/erp/warehouse-qr/commands/lookup` | [warehouse_qr_command_lookup](#api-warehouse_qr_command_lookup) — Tra cứu receipt ý định gốc, không ghi | SQL native; source/profile và trạng thái phiếu được kiểm tra |
+| 242 | POST | `/api/erp/warehouse-qr/qr/add` | [warehouse_qr_scan_add](#api-warehouse_qr_scan_add) — Ghi scan thêm | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
+| 243 | POST | `/api/erp/warehouse-qr/qr/delete` | [warehouse_qr_scan_delete](#api-warehouse_qr_scan_delete) — Ghi scan xóa | SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint |
 
 <a id="chi-tiet-api"></a>
 ## 11 Chi tiết request và response từng API
@@ -1436,11 +1573,1031 @@ Schema body inline:
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
 
+<a id="api-inbound_requests_screen"></a>
+
+### API inbound_requests_screen
+
+**GET `/api/erp/inbound-requests/screen`** — Metadata field/action/dropdown form. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `inbound-requests.read`.
+
+Không có query/path/header parameter khai báo riêng.
+
+Không có request body nghiệp vụ.
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpScreenDescription](#schema-erpscopedresponse_erpscreendescription) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-inbound_requests_list"></a>
+
+### API inbound_requests_list
+
+**GET `/api/erp/inbound-requests`** — Danh sách full header theo trang. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `inbound-requests.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `page` | query | false | integer | default=1; minimum=1; maximum=10000 |
+| `pageSize` | query | false | integer | default=20; minimum=1; maximum=100 |
+| `search` | query | false | string | maxLength=100 |
+| `dateFrom` | query | false | string | maxLength=10 |
+| `dateTo` | query | false | string | maxLength=10 |
+| `statusId` | query | false | integer | — |
+
+Không có request body nghiệp vụ.
+
+Full header fields: [Erp_inbound_requests_header_fields](#schema-erp_inbound_requests_header_fields).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [Erp_inbound_requests_list_responseFeDisplay](#schema-erp_inbound_requests_list_responsefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-inbound_requests_detail"></a>
+
+### API inbound_requests_detail
+
+**GET `/api/erp/inbound-requests/detail`** — Chi tiết full field và các trang section. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `inbound-requests.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `documentId` | query | true | string | maxLength=50 |
+| `page` | query | false | integer | default=1; minimum=1; maximum=10000 |
+| `pageSize` | query | false | integer | default=20; minimum=1; maximum=100 |
+
+Không có request body nghiệp vụ.
+
+Section full fields: header → [Erp_inbound_requests_header_fields](#schema-erp_inbound_requests_header_fields), lines → [Erp_inbound_requests_lines_fields](#schema-erp_inbound_requests_lines_fields), costs → [Erp_inbound_requests_costs_fields](#schema-erp_inbound_requests_costs_fields), discrepancies → [Erp_inbound_requests_discrepancies_fields](#schema-erp_inbound_requests_discrepancies_fields), history → [Erp_inbound_requests_history_fields](#schema-erp_inbound_requests_history_fields).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [Erp_inbound_requests_detail_responseFeDisplay](#schema-erp_inbound_requests_detail_responsefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-inbound_requests_actions"></a>
+
+### API inbound_requests_actions
+
+**GET `/api/erp/inbound-requests/actions`** — Trạng thái nút theo user/phiếu. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `inbound-requests.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `documentId` | query | false | string | maxLength=50 |
+
+Không có request body nghiệp vụ.
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_IReadOnlyList_ErpActionState](#schema-erpscopedresponse_ireadonlylist_erpactionstate) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-inbound_requests_options"></a>
+
+### API inbound_requests_options
+
+**POST `/api/erp/inbound-requests/options`** — Lựa chọn dropdown/dropselect. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `inbound-requests.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpLookupQuery](#schema-erplookupquery).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpChoicePageFeDisplay](#schema-erpscopedresponse_erpchoicepagefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-inbound_requests_command_lookup"></a>
+
+### API inbound_requests_command_lookup
+
+**POST `/api/erp/inbound-requests/commands/lookup`** — Tra cứu receipt ý định gốc, không ghi. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `inbound-requests.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpCommandLookupRequest](#schema-erpcommandlookuprequest).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpCommandObservation](#schema-erpscopedresponse_erpcommandobservation) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-inbound_requests_create"></a>
+
+### API inbound_requests_create
+
+**POST `/api/erp/inbound-requests/create`** — Tạo phiếu và cấp số/LineID. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `inbound-requests.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_inbound_requests_create](#schema-erp_inbound_requests_create).
+
+Header input module: [ErpInboundRequestsHeaderInput](#schema-erpinboundrequestsheaderinput).
+
+Line values input module: [ErpInboundRequestsLinesInput](#schema-erpinboundrequestslinesinput).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-inbound_requests_save"></a>
+
+### API inbound_requests_save
+
+**POST `/api/erp/inbound-requests/save`** — Lưu header và thay đổi dòng. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `inbound-requests.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_inbound_requests_save](#schema-erp_inbound_requests_save).
+
+Header input module: [ErpInboundRequestsHeaderInput](#schema-erpinboundrequestsheaderinput).
+
+Line values input module: [ErpInboundRequestsLinesInput](#schema-erpinboundrequestslinesinput).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-inbound_requests_delete"></a>
+
+### API inbound_requests_delete
+
+**POST `/api/erp/inbound-requests/delete`** — Xóa phiếu được phép. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `inbound-requests.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpDeleteRequest](#schema-erpdeleterequest).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-inbound_requests_send_management"></a>
+
+### API inbound_requests_send_management
+
+**POST `/api/erp/inbound-requests/actions/send-management`** — Nút nghiệp vụ send-management. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `inbound-requests.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_inbound_requests_send_management_request](#schema-erp_inbound_requests_send_management_request).
+
+Payload action: [ErpActionNotes](#schema-erpactionnotes).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-inbound_requests_send_warehouse"></a>
+
+### API inbound_requests_send_warehouse
+
+**POST `/api/erp/inbound-requests/actions/send-warehouse`** — Nút nghiệp vụ send-warehouse. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `inbound-requests.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_inbound_requests_send_warehouse_request](#schema-erp_inbound_requests_send_warehouse_request).
+
+Payload action: [ErpActionNotes](#schema-erpactionnotes).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-inbound_requests_save_costs"></a>
+
+### API inbound_requests_save_costs
+
+**POST `/api/erp/inbound-requests/sections/costs/save`** — Lưu section. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `inbound-requests.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_inbound_requests_costs_save](#schema-erp_inbound_requests_costs_save).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_accounting_screen"></a>
+
+### API internal_transfer_accounting_screen
+
+**GET `/api/erp/internal-transfer-accounting/screen`** — Metadata field/action/dropdown form. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `internal-transfer-accounting.read`.
+
+Không có query/path/header parameter khai báo riêng.
+
+Không có request body nghiệp vụ.
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpScreenDescription](#schema-erpscopedresponse_erpscreendescription) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_accounting_list"></a>
+
+### API internal_transfer_accounting_list
+
+**GET `/api/erp/internal-transfer-accounting`** — Danh sách full header theo trang. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `internal-transfer-accounting.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `page` | query | false | integer | default=1; minimum=1; maximum=10000 |
+| `pageSize` | query | false | integer | default=20; minimum=1; maximum=100 |
+| `search` | query | false | string | maxLength=100 |
+| `dateFrom` | query | false | string | maxLength=10 |
+| `dateTo` | query | false | string | maxLength=10 |
+| `statusId` | query | false | integer | — |
+
+Không có request body nghiệp vụ.
+
+Full header fields: [Erp_internal_transfer_accounting_header_fields](#schema-erp_internal_transfer_accounting_header_fields).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [Erp_internal_transfer_accounting_list_responseFeDisplay](#schema-erp_internal_transfer_accounting_list_responsefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_accounting_detail"></a>
+
+### API internal_transfer_accounting_detail
+
+**GET `/api/erp/internal-transfer-accounting/detail`** — Chi tiết full field và các trang section. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `internal-transfer-accounting.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `documentId` | query | true | string | maxLength=50 |
+| `page` | query | false | integer | default=1; minimum=1; maximum=10000 |
+| `pageSize` | query | false | integer | default=20; minimum=1; maximum=100 |
+
+Không có request body nghiệp vụ.
+
+Section full fields: header → [Erp_internal_transfer_accounting_header_fields](#schema-erp_internal_transfer_accounting_header_fields), requests → [Erp_internal_transfer_accounting_requests_fields](#schema-erp_internal_transfer_accounting_requests_fields), lines → [Erp_internal_transfer_accounting_lines_fields](#schema-erp_internal_transfer_accounting_lines_fields), assets → [Erp_internal_transfer_accounting_assets_fields](#schema-erp_internal_transfer_accounting_assets_fields), history → [Erp_internal_transfer_accounting_history_fields](#schema-erp_internal_transfer_accounting_history_fields).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [Erp_internal_transfer_accounting_detail_responseFeDisplay](#schema-erp_internal_transfer_accounting_detail_responsefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_accounting_actions"></a>
+
+### API internal_transfer_accounting_actions
+
+**GET `/api/erp/internal-transfer-accounting/actions`** — Trạng thái nút theo user/phiếu. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `internal-transfer-accounting.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `documentId` | query | false | string | maxLength=50 |
+
+Không có request body nghiệp vụ.
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_IReadOnlyList_ErpActionState](#schema-erpscopedresponse_ireadonlylist_erpactionstate) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_accounting_options"></a>
+
+### API internal_transfer_accounting_options
+
+**POST `/api/erp/internal-transfer-accounting/options`** — Lựa chọn dropdown/dropselect. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-accounting.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpLookupQuery](#schema-erplookupquery).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpChoicePageFeDisplay](#schema-erpscopedresponse_erpchoicepagefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_accounting_command_lookup"></a>
+
+### API internal_transfer_accounting_command_lookup
+
+**POST `/api/erp/internal-transfer-accounting/commands/lookup`** — Tra cứu receipt ý định gốc, không ghi. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-accounting.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpCommandLookupRequest](#schema-erpcommandlookuprequest).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpCommandObservation](#schema-erpscopedresponse_erpcommandobservation) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_accounting_save"></a>
+
+### API internal_transfer_accounting_save
+
+**POST `/api/erp/internal-transfer-accounting/save`** — Lưu header và thay đổi dòng. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-accounting.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_internal_transfer_accounting_save](#schema-erp_internal_transfer_accounting_save).
+
+Header input module: [ErpInternalTransferAccountingHeaderInput](#schema-erpinternaltransferaccountingheaderinput).
+
+Line values input module: [ErpInternalTransferAccountingLinesInput](#schema-erpinternaltransferaccountinglinesinput).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_accounting_send_warehouse"></a>
+
+### API internal_transfer_accounting_send_warehouse
+
+**POST `/api/erp/internal-transfer-accounting/actions/send-warehouse`** — Nút nghiệp vụ send-warehouse. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-accounting.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_internal_transfer_accounting_send_warehouse_request](#schema-erp_internal_transfer_accounting_send_warehouse_request).
+
+Payload action: [ErpActionNotes](#schema-erpactionnotes).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_accounting_reject"></a>
+
+### API internal_transfer_accounting_reject
+
+**POST `/api/erp/internal-transfer-accounting/actions/reject`** — Nút nghiệp vụ reject. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-accounting.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_internal_transfer_accounting_reject_request](#schema-erp_internal_transfer_accounting_reject_request).
+
+Payload action: [ErpActionNotes](#schema-erpactionnotes).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_accounting_return_step"></a>
+
+### API internal_transfer_accounting_return_step
+
+**POST `/api/erp/internal-transfer-accounting/actions/return-step`** — Nút nghiệp vụ return-step. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-accounting.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_internal_transfer_accounting_return_step_request](#schema-erp_internal_transfer_accounting_return_step_request).
+
+Payload action: [ErpReturnStep](#schema-erpreturnstep).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_accounting_return_step_options"></a>
+
+### API internal_transfer_accounting_return_step_options
+
+**POST `/api/erp/internal-transfer-accounting/actions/return-step/options`** — Lựa chọn nghiệp vụ. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-accounting.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpActionOptionsQuery](#schema-erpactionoptionsquery).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpChoicePageFeDisplay](#schema-erpscopedresponse_erpchoicepagefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_batches_screen"></a>
+
+### API internal_transfer_batches_screen
+
+**GET `/api/erp/internal-transfer-batches/screen`** — Metadata field/action/dropdown form. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `internal-transfer-batches.read`.
+
+Không có query/path/header parameter khai báo riêng.
+
+Không có request body nghiệp vụ.
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpScreenDescription](#schema-erpscopedresponse_erpscreendescription) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_batches_list"></a>
+
+### API internal_transfer_batches_list
+
+**GET `/api/erp/internal-transfer-batches`** — Danh sách full header theo trang. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `internal-transfer-batches.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `page` | query | false | integer | default=1; minimum=1; maximum=10000 |
+| `pageSize` | query | false | integer | default=20; minimum=1; maximum=100 |
+| `search` | query | false | string | maxLength=100 |
+| `dateFrom` | query | false | string | maxLength=10 |
+| `dateTo` | query | false | string | maxLength=10 |
+| `statusId` | query | false | integer | — |
+
+Không có request body nghiệp vụ.
+
+Full header fields: [Erp_internal_transfer_batches_header_fields](#schema-erp_internal_transfer_batches_header_fields).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [Erp_internal_transfer_batches_list_responseFeDisplay](#schema-erp_internal_transfer_batches_list_responsefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_batches_detail"></a>
+
+### API internal_transfer_batches_detail
+
+**GET `/api/erp/internal-transfer-batches/detail`** — Chi tiết full field và các trang section. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `internal-transfer-batches.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `documentId` | query | true | string | maxLength=50 |
+| `page` | query | false | integer | default=1; minimum=1; maximum=10000 |
+| `pageSize` | query | false | integer | default=20; minimum=1; maximum=100 |
+
+Không có request body nghiệp vụ.
+
+Section full fields: header → [Erp_internal_transfer_batches_header_fields](#schema-erp_internal_transfer_batches_header_fields), lines → [Erp_internal_transfer_batches_lines_fields](#schema-erp_internal_transfer_batches_lines_fields), details → [Erp_internal_transfer_batches_details_fields](#schema-erp_internal_transfer_batches_details_fields), assets → [Erp_internal_transfer_batches_assets_fields](#schema-erp_internal_transfer_batches_assets_fields), history → [Erp_internal_transfer_batches_history_fields](#schema-erp_internal_transfer_batches_history_fields).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [Erp_internal_transfer_batches_detail_responseFeDisplay](#schema-erp_internal_transfer_batches_detail_responsefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_batches_actions"></a>
+
+### API internal_transfer_batches_actions
+
+**GET `/api/erp/internal-transfer-batches/actions`** — Trạng thái nút theo user/phiếu. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `internal-transfer-batches.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `documentId` | query | false | string | maxLength=50 |
+
+Không có request body nghiệp vụ.
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_IReadOnlyList_ErpActionState](#schema-erpscopedresponse_ireadonlylist_erpactionstate) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_batches_options"></a>
+
+### API internal_transfer_batches_options
+
+**POST `/api/erp/internal-transfer-batches/options`** — Lựa chọn dropdown/dropselect. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-batches.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpLookupQuery](#schema-erplookupquery).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpChoicePageFeDisplay](#schema-erpscopedresponse_erpchoicepagefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_batches_command_lookup"></a>
+
+### API internal_transfer_batches_command_lookup
+
+**POST `/api/erp/internal-transfer-batches/commands/lookup`** — Tra cứu receipt ý định gốc, không ghi. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-batches.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpCommandLookupRequest](#schema-erpcommandlookuprequest).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpCommandObservation](#schema-erpscopedresponse_erpcommandobservation) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_batches_create"></a>
+
+### API internal_transfer_batches_create
+
+**POST `/api/erp/internal-transfer-batches/create`** — Tạo phiếu và cấp số/LineID. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-batches.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_internal_transfer_batches_create](#schema-erp_internal_transfer_batches_create).
+
+Header input module: [ErpInternalTransferBatchesHeaderInput](#schema-erpinternaltransferbatchesheaderinput).
+
+Line values input module: [ErpInternalTransferBatchesLinesInput](#schema-erpinternaltransferbatcheslinesinput).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_batches_save"></a>
+
+### API internal_transfer_batches_save
+
+**POST `/api/erp/internal-transfer-batches/save`** — Lưu header và thay đổi dòng. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-batches.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_internal_transfer_batches_save](#schema-erp_internal_transfer_batches_save).
+
+Header input module: [ErpInternalTransferBatchesHeaderInput](#schema-erpinternaltransferbatchesheaderinput).
+
+Line values input module: [ErpInternalTransferBatchesLinesInput](#schema-erpinternaltransferbatcheslinesinput).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_batches_delete"></a>
+
+### API internal_transfer_batches_delete
+
+**POST `/api/erp/internal-transfer-batches/delete`** — Xóa phiếu được phép. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-batches.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpDeleteRequest](#schema-erpdeleterequest).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_batches_sync_requests"></a>
+
+### API internal_transfer_batches_sync_requests
+
+**POST `/api/erp/internal-transfer-batches/actions/sync-requests`** — Nút nghiệp vụ sync-requests. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-batches.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_internal_transfer_batches_sync_requests_request](#schema-erp_internal_transfer_batches_sync_requests_request).
+
+Payload action: object.
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_batches_send_tech"></a>
+
+### API internal_transfer_batches_send_tech
+
+**POST `/api/erp/internal-transfer-batches/actions/send-tech`** — Nút nghiệp vụ send-tech. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-batches.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_internal_transfer_batches_send_tech_request](#schema-erp_internal_transfer_batches_send_tech_request).
+
+Payload action: [ErpActionNotes](#schema-erpactionnotes).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_pm_screen"></a>
+
+### API internal_transfer_pm_screen
+
+**GET `/api/erp/internal-transfer-pm/screen`** — Metadata field/action/dropdown form. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `internal-transfer-pm.read`.
+
+Không có query/path/header parameter khai báo riêng.
+
+Không có request body nghiệp vụ.
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpScreenDescription](#schema-erpscopedresponse_erpscreendescription) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_pm_list"></a>
+
+### API internal_transfer_pm_list
+
+**GET `/api/erp/internal-transfer-pm`** — Danh sách full header theo trang. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `internal-transfer-pm.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `page` | query | false | integer | default=1; minimum=1; maximum=10000 |
+| `pageSize` | query | false | integer | default=20; minimum=1; maximum=100 |
+| `search` | query | false | string | maxLength=100 |
+| `dateFrom` | query | false | string | maxLength=10 |
+| `dateTo` | query | false | string | maxLength=10 |
+| `statusId` | query | false | integer | — |
+
+Không có request body nghiệp vụ.
+
+Full header fields: [Erp_internal_transfer_pm_header_fields](#schema-erp_internal_transfer_pm_header_fields).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [Erp_internal_transfer_pm_list_responseFeDisplay](#schema-erp_internal_transfer_pm_list_responsefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_pm_detail"></a>
+
+### API internal_transfer_pm_detail
+
+**GET `/api/erp/internal-transfer-pm/detail`** — Chi tiết full field và các trang section. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `internal-transfer-pm.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `documentId` | query | true | string | maxLength=50 |
+| `page` | query | false | integer | default=1; minimum=1; maximum=10000 |
+| `pageSize` | query | false | integer | default=20; minimum=1; maximum=100 |
+
+Không có request body nghiệp vụ.
+
+Section full fields: header → [Erp_internal_transfer_pm_header_fields](#schema-erp_internal_transfer_pm_header_fields), lines → [Erp_internal_transfer_pm_lines_fields](#schema-erp_internal_transfer_pm_lines_fields), history → [Erp_internal_transfer_pm_history_fields](#schema-erp_internal_transfer_pm_history_fields).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [Erp_internal_transfer_pm_detail_responseFeDisplay](#schema-erp_internal_transfer_pm_detail_responsefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_pm_actions"></a>
+
+### API internal_transfer_pm_actions
+
+**GET `/api/erp/internal-transfer-pm/actions`** — Trạng thái nút theo user/phiếu. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `internal-transfer-pm.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `documentId` | query | false | string | maxLength=50 |
+
+Không có request body nghiệp vụ.
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_IReadOnlyList_ErpActionState](#schema-erpscopedresponse_ireadonlylist_erpactionstate) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_pm_options"></a>
+
+### API internal_transfer_pm_options
+
+**POST `/api/erp/internal-transfer-pm/options`** — Lựa chọn dropdown/dropselect. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-pm.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpLookupQuery](#schema-erplookupquery).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpChoicePageFeDisplay](#schema-erpscopedresponse_erpchoicepagefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_pm_command_lookup"></a>
+
+### API internal_transfer_pm_command_lookup
+
+**POST `/api/erp/internal-transfer-pm/commands/lookup`** — Tra cứu receipt ý định gốc, không ghi. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-pm.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpCommandLookupRequest](#schema-erpcommandlookuprequest).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpCommandObservation](#schema-erpscopedresponse_erpcommandobservation) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_pm_save"></a>
+
+### API internal_transfer_pm_save
+
+**POST `/api/erp/internal-transfer-pm/save`** — Lưu header và thay đổi dòng. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-pm.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_internal_transfer_pm_save](#schema-erp_internal_transfer_pm_save).
+
+Header input module: [ErpInternalTransferPmHeaderInput](#schema-erpinternaltransferpmheaderinput).
+
+Line values input module: [ErpInternalTransferPmLinesInput](#schema-erpinternaltransferpmlinesinput).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_pm_pm_confirm"></a>
+
+### API internal_transfer_pm_pm_confirm
+
+**POST `/api/erp/internal-transfer-pm/actions/pm-confirm`** — Nút nghiệp vụ pm-confirm. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-pm.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_internal_transfer_pm_pm_confirm_request](#schema-erp_internal_transfer_pm_pm_confirm_request).
+
+Payload action: [ErpActionNotes](#schema-erpactionnotes).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_pm_reject"></a>
+
+### API internal_transfer_pm_reject
+
+**POST `/api/erp/internal-transfer-pm/actions/reject`** — Nút nghiệp vụ reject. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-pm.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_internal_transfer_pm_reject_request](#schema-erp_internal_transfer_pm_reject_request).
+
+Payload action: [ErpActionNotes](#schema-erpactionnotes).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
 <a id="api-internal_transfer_requests_screen"></a>
 
 ### API internal_transfer_requests_screen
 
-**GET `/api/erp/internal-transfer-requests/screen`** — Metadata field/action/dropdown form. Reader native/profile hiện hành.
+**GET `/api/erp/internal-transfer-requests/screen`** — Metadata field/action/dropdown form. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `internal-transfer-requests.read`.
 
@@ -1459,7 +2616,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API internal_transfer_requests_list
 
-**GET `/api/erp/internal-transfer-requests`** — Danh sách full header theo trang. Reader native/profile hiện hành.
+**GET `/api/erp/internal-transfer-requests`** — Danh sách full header theo trang. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `internal-transfer-requests.read`.
 
@@ -1488,7 +2645,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API internal_transfer_requests_detail
 
-**GET `/api/erp/internal-transfer-requests/detail`** — Chi tiết full field và các trang section. Reader native/profile hiện hành.
+**GET `/api/erp/internal-transfer-requests/detail`** — Chi tiết full field và các trang section. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `internal-transfer-requests.read`.
 
@@ -1514,7 +2671,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API internal_transfer_requests_actions
 
-**GET `/api/erp/internal-transfer-requests/actions`** — Trạng thái nút theo user/phiếu. Reader native/profile hiện hành.
+**GET `/api/erp/internal-transfer-requests/actions`** — Trạng thái nút theo user/phiếu. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `internal-transfer-requests.read`.
 
@@ -1536,7 +2693,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API internal_transfer_requests_options
 
-**POST `/api/erp/internal-transfer-requests/options`** — Lựa chọn dropdown/dropselect. Reader native/profile hiện hành.
+**POST `/api/erp/internal-transfer-requests/options`** — Lựa chọn dropdown/dropselect. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-requests.read`.
 
@@ -1558,7 +2715,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API internal_transfer_requests_pm_options
 
-**POST `/api/erp/internal-transfer-requests/actions/send-pm/options`** — Danh sách PM theo role/branch. Reader native/profile hiện hành.
+**POST `/api/erp/internal-transfer-requests/actions/send-pm/options`** — Danh sách PM theo role/branch. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-requests.read`.
 
@@ -1580,7 +2737,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API internal_transfer_requests_command_lookup
 
-**POST `/api/erp/internal-transfer-requests/commands/lookup`** — Tra cứu receipt ý định gốc, không ghi. Reader native/profile hiện hành.
+**POST `/api/erp/internal-transfer-requests/commands/lookup`** — Tra cứu receipt ý định gốc, không ghi. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-requests.read`.
 
@@ -1602,7 +2759,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API internal_transfer_requests_selection
 
-**POST `/api/erp/internal-transfer-requests/selection`** — Đọc nguồn chọn sang dòng nháp. Reader native/profile hiện hành.
+**POST `/api/erp/internal-transfer-requests/selection`** — Đọc nguồn chọn sang dòng nháp. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-requests.read`.
 
@@ -1624,7 +2781,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API internal_transfer_requests_paste_validate
 
-**POST `/api/erp/internal-transfer-requests/paste/validate`** — Kiểm tra bảng dán, không ghi. Reader native/profile hiện hành.
+**POST `/api/erp/internal-transfer-requests/paste/validate`** — Kiểm tra bảng dán, không ghi. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-requests.read`.
 
@@ -1646,7 +2803,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API internal_transfer_requests_create
 
-**POST `/api/erp/internal-transfer-requests/create`** — Tạo phiếu và cấp số/LineID. SQL ghi đã bật; quyền/trạng thái recheck.
+**POST `/api/erp/internal-transfer-requests/create`** — Tạo phiếu và cấp số/LineID. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-requests.read`.
 
@@ -1672,7 +2829,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API internal_transfer_requests_save
 
-**POST `/api/erp/internal-transfer-requests/save`** — Lưu header và thay đổi dòng. SQL ghi đã bật; quyền/trạng thái recheck.
+**POST `/api/erp/internal-transfer-requests/save`** — Lưu header và thay đổi dòng. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-requests.read`.
 
@@ -1698,7 +2855,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API internal_transfer_requests_delete
 
-**POST `/api/erp/internal-transfer-requests/delete`** — Xóa phiếu được phép. SQL ghi đã bật; quyền/trạng thái recheck.
+**POST `/api/erp/internal-transfer-requests/delete`** — Xóa phiếu được phép. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-requests.read`.
 
@@ -1720,7 +2877,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API internal_transfer_requests_recall
 
-**POST `/api/erp/internal-transfer-requests/actions/recall`** — Thu hồi để sửa. SQL ghi đã bật; quyền/trạng thái recheck.
+**POST `/api/erp/internal-transfer-requests/actions/recall`** — Thu hồi để sửa. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-requests.read`.
 
@@ -1744,7 +2901,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API internal_transfer_requests_send_pm
 
-**POST `/api/erp/internal-transfer-requests/actions/send-pm`** — Gửi phiếu tới PM. SQL ghi đã bật; quyền/trạng thái recheck.
+**POST `/api/erp/internal-transfer-requests/actions/send-pm`** — Gửi phiếu tới PM. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-requests.read`.
 
@@ -1764,11 +2921,979 @@ Payload action: [ErpSendTransferPm](#schema-erpsendtransferpm).
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
 
+<a id="api-internal_transfer_sa_screen"></a>
+
+### API internal_transfer_sa_screen
+
+**GET `/api/erp/internal-transfer-sa/screen`** — Metadata field/action/dropdown form. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `internal-transfer-sa.read`.
+
+Không có query/path/header parameter khai báo riêng.
+
+Không có request body nghiệp vụ.
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpScreenDescription](#schema-erpscopedresponse_erpscreendescription) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_sa_list"></a>
+
+### API internal_transfer_sa_list
+
+**GET `/api/erp/internal-transfer-sa`** — Danh sách full header theo trang. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `internal-transfer-sa.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `page` | query | false | integer | default=1; minimum=1; maximum=10000 |
+| `pageSize` | query | false | integer | default=20; minimum=1; maximum=100 |
+| `search` | query | false | string | maxLength=100 |
+| `dateFrom` | query | false | string | maxLength=10 |
+| `dateTo` | query | false | string | maxLength=10 |
+| `statusId` | query | false | integer | — |
+
+Không có request body nghiệp vụ.
+
+Full header fields: [Erp_internal_transfer_sa_header_fields](#schema-erp_internal_transfer_sa_header_fields).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [Erp_internal_transfer_sa_list_responseFeDisplay](#schema-erp_internal_transfer_sa_list_responsefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_sa_detail"></a>
+
+### API internal_transfer_sa_detail
+
+**GET `/api/erp/internal-transfer-sa/detail`** — Chi tiết full field và các trang section. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `internal-transfer-sa.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `documentId` | query | true | string | maxLength=50 |
+| `page` | query | false | integer | default=1; minimum=1; maximum=10000 |
+| `pageSize` | query | false | integer | default=20; minimum=1; maximum=100 |
+
+Không có request body nghiệp vụ.
+
+Section full fields: header → [Erp_internal_transfer_sa_header_fields](#schema-erp_internal_transfer_sa_header_fields), requests → [Erp_internal_transfer_sa_requests_fields](#schema-erp_internal_transfer_sa_requests_fields), lines → [Erp_internal_transfer_sa_lines_fields](#schema-erp_internal_transfer_sa_lines_fields), assets → [Erp_internal_transfer_sa_assets_fields](#schema-erp_internal_transfer_sa_assets_fields), history → [Erp_internal_transfer_sa_history_fields](#schema-erp_internal_transfer_sa_history_fields).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [Erp_internal_transfer_sa_detail_responseFeDisplay](#schema-erp_internal_transfer_sa_detail_responsefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_sa_actions"></a>
+
+### API internal_transfer_sa_actions
+
+**GET `/api/erp/internal-transfer-sa/actions`** — Trạng thái nút theo user/phiếu. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `internal-transfer-sa.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `documentId` | query | false | string | maxLength=50 |
+
+Không có request body nghiệp vụ.
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_IReadOnlyList_ErpActionState](#schema-erpscopedresponse_ireadonlylist_erpactionstate) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_sa_options"></a>
+
+### API internal_transfer_sa_options
+
+**POST `/api/erp/internal-transfer-sa/options`** — Lựa chọn dropdown/dropselect. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-sa.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpLookupQuery](#schema-erplookupquery).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpChoicePageFeDisplay](#schema-erpscopedresponse_erpchoicepagefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_sa_command_lookup"></a>
+
+### API internal_transfer_sa_command_lookup
+
+**POST `/api/erp/internal-transfer-sa/commands/lookup`** — Tra cứu receipt ý định gốc, không ghi. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-sa.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpCommandLookupRequest](#schema-erpcommandlookuprequest).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpCommandObservation](#schema-erpscopedresponse_erpcommandobservation) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_sa_save"></a>
+
+### API internal_transfer_sa_save
+
+**POST `/api/erp/internal-transfer-sa/save`** — Lưu header và thay đổi dòng. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-sa.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_internal_transfer_sa_save](#schema-erp_internal_transfer_sa_save).
+
+Header input module: [ErpInternalTransferSaHeaderInput](#schema-erpinternaltransfersaheaderinput).
+
+Line values input module: [ErpInternalTransferSaLinesInput](#schema-erpinternaltransfersalinesinput).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_sa_send_accounting"></a>
+
+### API internal_transfer_sa_send_accounting
+
+**POST `/api/erp/internal-transfer-sa/actions/send-accounting`** — Nút nghiệp vụ send-accounting. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-sa.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_internal_transfer_sa_send_accounting_request](#schema-erp_internal_transfer_sa_send_accounting_request).
+
+Payload action: [ErpActionNotes](#schema-erpactionnotes).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_sa_reject"></a>
+
+### API internal_transfer_sa_reject
+
+**POST `/api/erp/internal-transfer-sa/actions/reject`** — Nút nghiệp vụ reject. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-sa.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_internal_transfer_sa_reject_request](#schema-erp_internal_transfer_sa_reject_request).
+
+Payload action: [ErpActionNotes](#schema-erpactionnotes).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_sa_return_step"></a>
+
+### API internal_transfer_sa_return_step
+
+**POST `/api/erp/internal-transfer-sa/actions/return-step`** — Nút nghiệp vụ return-step. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-sa.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_internal_transfer_sa_return_step_request](#schema-erp_internal_transfer_sa_return_step_request).
+
+Payload action: [ErpReturnStep](#schema-erpreturnstep).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_sa_return_step_options"></a>
+
+### API internal_transfer_sa_return_step_options
+
+**POST `/api/erp/internal-transfer-sa/actions/return-step/options`** — Lựa chọn nghiệp vụ. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-sa.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpActionOptionsQuery](#schema-erpactionoptionsquery).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpChoicePageFeDisplay](#schema-erpscopedresponse_erpchoicepagefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_tech_screen"></a>
+
+### API internal_transfer_tech_screen
+
+**GET `/api/erp/internal-transfer-tech/screen`** — Metadata field/action/dropdown form. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `internal-transfer-tech.read`.
+
+Không có query/path/header parameter khai báo riêng.
+
+Không có request body nghiệp vụ.
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpScreenDescription](#schema-erpscopedresponse_erpscreendescription) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_tech_list"></a>
+
+### API internal_transfer_tech_list
+
+**GET `/api/erp/internal-transfer-tech`** — Danh sách full header theo trang. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `internal-transfer-tech.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `page` | query | false | integer | default=1; minimum=1; maximum=10000 |
+| `pageSize` | query | false | integer | default=20; minimum=1; maximum=100 |
+| `search` | query | false | string | maxLength=100 |
+| `dateFrom` | query | false | string | maxLength=10 |
+| `dateTo` | query | false | string | maxLength=10 |
+| `statusId` | query | false | integer | — |
+
+Không có request body nghiệp vụ.
+
+Full header fields: [Erp_internal_transfer_tech_header_fields](#schema-erp_internal_transfer_tech_header_fields).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [Erp_internal_transfer_tech_list_responseFeDisplay](#schema-erp_internal_transfer_tech_list_responsefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_tech_detail"></a>
+
+### API internal_transfer_tech_detail
+
+**GET `/api/erp/internal-transfer-tech/detail`** — Chi tiết full field và các trang section. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `internal-transfer-tech.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `documentId` | query | true | string | maxLength=50 |
+| `page` | query | false | integer | default=1; minimum=1; maximum=10000 |
+| `pageSize` | query | false | integer | default=20; minimum=1; maximum=100 |
+
+Không có request body nghiệp vụ.
+
+Section full fields: header → [Erp_internal_transfer_tech_header_fields](#schema-erp_internal_transfer_tech_header_fields), requests → [Erp_internal_transfer_tech_requests_fields](#schema-erp_internal_transfer_tech_requests_fields), lines → [Erp_internal_transfer_tech_lines_fields](#schema-erp_internal_transfer_tech_lines_fields), assets → [Erp_internal_transfer_tech_assets_fields](#schema-erp_internal_transfer_tech_assets_fields), history → [Erp_internal_transfer_tech_history_fields](#schema-erp_internal_transfer_tech_history_fields).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [Erp_internal_transfer_tech_detail_responseFeDisplay](#schema-erp_internal_transfer_tech_detail_responsefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_tech_actions"></a>
+
+### API internal_transfer_tech_actions
+
+**GET `/api/erp/internal-transfer-tech/actions`** — Trạng thái nút theo user/phiếu. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `internal-transfer-tech.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `documentId` | query | false | string | maxLength=50 |
+
+Không có request body nghiệp vụ.
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_IReadOnlyList_ErpActionState](#schema-erpscopedresponse_ireadonlylist_erpactionstate) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_tech_options"></a>
+
+### API internal_transfer_tech_options
+
+**POST `/api/erp/internal-transfer-tech/options`** — Lựa chọn dropdown/dropselect. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-tech.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpLookupQuery](#schema-erplookupquery).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpChoicePageFeDisplay](#schema-erpscopedresponse_erpchoicepagefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_tech_command_lookup"></a>
+
+### API internal_transfer_tech_command_lookup
+
+**POST `/api/erp/internal-transfer-tech/commands/lookup`** — Tra cứu receipt ý định gốc, không ghi. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-tech.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpCommandLookupRequest](#schema-erpcommandlookuprequest).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpCommandObservation](#schema-erpscopedresponse_erpcommandobservation) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_tech_save"></a>
+
+### API internal_transfer_tech_save
+
+**POST `/api/erp/internal-transfer-tech/save`** — Lưu header và thay đổi dòng. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-tech.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_internal_transfer_tech_save](#schema-erp_internal_transfer_tech_save).
+
+Header input module: [ErpInternalTransferTechHeaderInput](#schema-erpinternaltransfertechheaderinput).
+
+Line values input module: [ErpInternalTransferTechLinesInput](#schema-erpinternaltransfertechlinesinput).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_tech_send_sa"></a>
+
+### API internal_transfer_tech_send_sa
+
+**POST `/api/erp/internal-transfer-tech/actions/send-sa`** — Nút nghiệp vụ send-sa. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-tech.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_internal_transfer_tech_send_sa_request](#schema-erp_internal_transfer_tech_send_sa_request).
+
+Payload action: [ErpTransferTechSend](#schema-erptransfertechsend).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_tech_reject"></a>
+
+### API internal_transfer_tech_reject
+
+**POST `/api/erp/internal-transfer-tech/actions/reject`** — Nút nghiệp vụ reject. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-tech.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_internal_transfer_tech_reject_request](#schema-erp_internal_transfer_tech_reject_request).
+
+Payload action: [ErpActionNotes](#schema-erpactionnotes).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_tech_save_assets"></a>
+
+### API internal_transfer_tech_save_assets
+
+**POST `/api/erp/internal-transfer-tech/sections/assets/save`** — Lưu section. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-tech.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_internal_transfer_tech_assets_save](#schema-erp_internal_transfer_tech_assets_save).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_tech_send_sa_options"></a>
+
+### API internal_transfer_tech_send_sa_options
+
+**POST `/api/erp/internal-transfer-tech/actions/send-sa/options`** — Lựa chọn nghiệp vụ. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-tech.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpActionOptionsQuery](#schema-erpactionoptionsquery).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpChoicePageFeDisplay](#schema-erpscopedresponse_erpchoicepagefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_warehouse_in_screen"></a>
+
+### API internal_transfer_warehouse_in_screen
+
+**GET `/api/erp/internal-transfer-warehouse-in/screen`** — Metadata field/action/dropdown form. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `internal-transfer-warehouse-in.read`.
+
+Không có query/path/header parameter khai báo riêng.
+
+Không có request body nghiệp vụ.
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpScreenDescription](#schema-erpscopedresponse_erpscreendescription) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_warehouse_in_list"></a>
+
+### API internal_transfer_warehouse_in_list
+
+**GET `/api/erp/internal-transfer-warehouse-in`** — Danh sách full header theo trang. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `internal-transfer-warehouse-in.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `page` | query | false | integer | default=1; minimum=1; maximum=10000 |
+| `pageSize` | query | false | integer | default=20; minimum=1; maximum=100 |
+| `search` | query | false | string | maxLength=100 |
+| `dateFrom` | query | false | string | maxLength=10 |
+| `dateTo` | query | false | string | maxLength=10 |
+| `statusId` | query | false | integer | — |
+
+Không có request body nghiệp vụ.
+
+Full header fields: [Erp_internal_transfer_warehouse_in_header_fields](#schema-erp_internal_transfer_warehouse_in_header_fields).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [Erp_internal_transfer_warehouse_in_list_responseFeDisplay](#schema-erp_internal_transfer_warehouse_in_list_responsefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_warehouse_in_detail"></a>
+
+### API internal_transfer_warehouse_in_detail
+
+**GET `/api/erp/internal-transfer-warehouse-in/detail`** — Chi tiết full field và các trang section. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `internal-transfer-warehouse-in.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `documentId` | query | true | string | maxLength=50 |
+| `page` | query | false | integer | default=1; minimum=1; maximum=10000 |
+| `pageSize` | query | false | integer | default=20; minimum=1; maximum=100 |
+
+Không có request body nghiệp vụ.
+
+Section full fields: header → [Erp_internal_transfer_warehouse_in_header_fields](#schema-erp_internal_transfer_warehouse_in_header_fields), requests → [Erp_internal_transfer_warehouse_in_requests_fields](#schema-erp_internal_transfer_warehouse_in_requests_fields), lines → [Erp_internal_transfer_warehouse_in_lines_fields](#schema-erp_internal_transfer_warehouse_in_lines_fields), assets → [Erp_internal_transfer_warehouse_in_assets_fields](#schema-erp_internal_transfer_warehouse_in_assets_fields), history → [Erp_internal_transfer_warehouse_in_history_fields](#schema-erp_internal_transfer_warehouse_in_history_fields).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [Erp_internal_transfer_warehouse_in_detail_responseFeDisplay](#schema-erp_internal_transfer_warehouse_in_detail_responsefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_warehouse_in_actions"></a>
+
+### API internal_transfer_warehouse_in_actions
+
+**GET `/api/erp/internal-transfer-warehouse-in/actions`** — Trạng thái nút theo user/phiếu. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `internal-transfer-warehouse-in.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `documentId` | query | false | string | maxLength=50 |
+
+Không có request body nghiệp vụ.
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_IReadOnlyList_ErpActionState](#schema-erpscopedresponse_ireadonlylist_erpactionstate) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_warehouse_in_options"></a>
+
+### API internal_transfer_warehouse_in_options
+
+**POST `/api/erp/internal-transfer-warehouse-in/options`** — Lựa chọn dropdown/dropselect. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-warehouse-in.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpLookupQuery](#schema-erplookupquery).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpChoicePageFeDisplay](#schema-erpscopedresponse_erpchoicepagefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_warehouse_in_command_lookup"></a>
+
+### API internal_transfer_warehouse_in_command_lookup
+
+**POST `/api/erp/internal-transfer-warehouse-in/commands/lookup`** — Tra cứu receipt ý định gốc, không ghi. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-warehouse-in.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpCommandLookupRequest](#schema-erpcommandlookuprequest).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpCommandObservation](#schema-erpscopedresponse_erpcommandobservation) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_warehouse_in_save"></a>
+
+### API internal_transfer_warehouse_in_save
+
+**POST `/api/erp/internal-transfer-warehouse-in/save`** — Lưu header và thay đổi dòng. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-warehouse-in.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_internal_transfer_warehouse_in_save](#schema-erp_internal_transfer_warehouse_in_save).
+
+Header input module: [ErpInternalTransferWarehouseInHeaderInput](#schema-erpinternaltransferwarehouseinheaderinput).
+
+Line values input module: [ErpInternalTransferWarehouseInLinesInput](#schema-erpinternaltransferwarehouseinlinesinput).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_warehouse_in_receive"></a>
+
+### API internal_transfer_warehouse_in_receive
+
+**POST `/api/erp/internal-transfer-warehouse-in/actions/receive`** — Nút nghiệp vụ receive. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-warehouse-in.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_internal_transfer_warehouse_in_receive_request](#schema-erp_internal_transfer_warehouse_in_receive_request).
+
+Payload action: [ErpActionNotes](#schema-erpactionnotes).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_warehouse_out_screen"></a>
+
+### API internal_transfer_warehouse_out_screen
+
+**GET `/api/erp/internal-transfer-warehouse-out/screen`** — Metadata field/action/dropdown form. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `internal-transfer-warehouse-out.read`.
+
+Không có query/path/header parameter khai báo riêng.
+
+Không có request body nghiệp vụ.
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpScreenDescription](#schema-erpscopedresponse_erpscreendescription) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_warehouse_out_list"></a>
+
+### API internal_transfer_warehouse_out_list
+
+**GET `/api/erp/internal-transfer-warehouse-out`** — Danh sách full header theo trang. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `internal-transfer-warehouse-out.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `page` | query | false | integer | default=1; minimum=1; maximum=10000 |
+| `pageSize` | query | false | integer | default=20; minimum=1; maximum=100 |
+| `search` | query | false | string | maxLength=100 |
+| `dateFrom` | query | false | string | maxLength=10 |
+| `dateTo` | query | false | string | maxLength=10 |
+| `statusId` | query | false | integer | — |
+
+Không có request body nghiệp vụ.
+
+Full header fields: [Erp_internal_transfer_warehouse_out_header_fields](#schema-erp_internal_transfer_warehouse_out_header_fields).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [Erp_internal_transfer_warehouse_out_list_responseFeDisplay](#schema-erp_internal_transfer_warehouse_out_list_responsefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_warehouse_out_detail"></a>
+
+### API internal_transfer_warehouse_out_detail
+
+**GET `/api/erp/internal-transfer-warehouse-out/detail`** — Chi tiết full field và các trang section. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `internal-transfer-warehouse-out.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `documentId` | query | true | string | maxLength=50 |
+| `page` | query | false | integer | default=1; minimum=1; maximum=10000 |
+| `pageSize` | query | false | integer | default=20; minimum=1; maximum=100 |
+
+Không có request body nghiệp vụ.
+
+Section full fields: header → [Erp_internal_transfer_warehouse_out_header_fields](#schema-erp_internal_transfer_warehouse_out_header_fields), requests → [Erp_internal_transfer_warehouse_out_requests_fields](#schema-erp_internal_transfer_warehouse_out_requests_fields), lines → [Erp_internal_transfer_warehouse_out_lines_fields](#schema-erp_internal_transfer_warehouse_out_lines_fields), assets → [Erp_internal_transfer_warehouse_out_assets_fields](#schema-erp_internal_transfer_warehouse_out_assets_fields), history → [Erp_internal_transfer_warehouse_out_history_fields](#schema-erp_internal_transfer_warehouse_out_history_fields).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [Erp_internal_transfer_warehouse_out_detail_responseFeDisplay](#schema-erp_internal_transfer_warehouse_out_detail_responsefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_warehouse_out_actions"></a>
+
+### API internal_transfer_warehouse_out_actions
+
+**GET `/api/erp/internal-transfer-warehouse-out/actions`** — Trạng thái nút theo user/phiếu. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `internal-transfer-warehouse-out.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `documentId` | query | false | string | maxLength=50 |
+
+Không có request body nghiệp vụ.
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_IReadOnlyList_ErpActionState](#schema-erpscopedresponse_ireadonlylist_erpactionstate) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_warehouse_out_options"></a>
+
+### API internal_transfer_warehouse_out_options
+
+**POST `/api/erp/internal-transfer-warehouse-out/options`** — Lựa chọn dropdown/dropselect. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-warehouse-out.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpLookupQuery](#schema-erplookupquery).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpChoicePageFeDisplay](#schema-erpscopedresponse_erpchoicepagefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_warehouse_out_command_lookup"></a>
+
+### API internal_transfer_warehouse_out_command_lookup
+
+**POST `/api/erp/internal-transfer-warehouse-out/commands/lookup`** — Tra cứu receipt ý định gốc, không ghi. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-warehouse-out.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpCommandLookupRequest](#schema-erpcommandlookuprequest).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpCommandObservation](#schema-erpscopedresponse_erpcommandobservation) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_warehouse_out_save"></a>
+
+### API internal_transfer_warehouse_out_save
+
+**POST `/api/erp/internal-transfer-warehouse-out/save`** — Lưu header và thay đổi dòng. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-warehouse-out.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_internal_transfer_warehouse_out_save](#schema-erp_internal_transfer_warehouse_out_save).
+
+Header input module: [ErpInternalTransferWarehouseOutHeaderInput](#schema-erpinternaltransferwarehouseoutheaderinput).
+
+Line values input module: [ErpInternalTransferWarehouseOutLinesInput](#schema-erpinternaltransferwarehouseoutlinesinput).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_warehouse_out_dispatch"></a>
+
+### API internal_transfer_warehouse_out_dispatch
+
+**POST `/api/erp/internal-transfer-warehouse-out/actions/dispatch`** — Nút nghiệp vụ dispatch. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-warehouse-out.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_internal_transfer_warehouse_out_dispatch_request](#schema-erp_internal_transfer_warehouse_out_dispatch_request).
+
+Payload action: [ErpActionNotes](#schema-erpactionnotes).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_warehouse_out_reject"></a>
+
+### API internal_transfer_warehouse_out_reject
+
+**POST `/api/erp/internal-transfer-warehouse-out/actions/reject`** — Nút nghiệp vụ reject. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-warehouse-out.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_internal_transfer_warehouse_out_reject_request](#schema-erp_internal_transfer_warehouse_out_reject_request).
+
+Payload action: [ErpActionNotes](#schema-erpactionnotes).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_warehouse_out_return_step"></a>
+
+### API internal_transfer_warehouse_out_return_step
+
+**POST `/api/erp/internal-transfer-warehouse-out/actions/return-step`** — Nút nghiệp vụ return-step. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-warehouse-out.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_internal_transfer_warehouse_out_return_step_request](#schema-erp_internal_transfer_warehouse_out_return_step_request).
+
+Payload action: [ErpReturnStep](#schema-erpreturnstep).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-internal_transfer_warehouse_out_return_step_options"></a>
+
+### API internal_transfer_warehouse_out_return_step_options
+
+**POST `/api/erp/internal-transfer-warehouse-out/actions/return-step/options`** — Lựa chọn nghiệp vụ. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `internal-transfer-warehouse-out.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpActionOptionsQuery](#schema-erpactionoptionsquery).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpChoicePageFeDisplay](#schema-erpscopedresponse_erpchoicepagefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
 <a id="api-machine_movements_screen"></a>
 
 ### API machine_movements_screen
 
-**GET `/api/erp/machine-movements/screen`** — Metadata field/action/dropdown form. Reader native/profile hiện hành.
+**GET `/api/erp/machine-movements/screen`** — Metadata field/action/dropdown form. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `machine-movements.read`.
 
@@ -1787,7 +3912,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API machine_movements_list
 
-**GET `/api/erp/machine-movements`** — Danh sách full header theo trang. Reader native/profile hiện hành.
+**GET `/api/erp/machine-movements`** — Danh sách full header theo trang. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `machine-movements.read`.
 
@@ -1816,7 +3941,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API machine_movements_detail
 
-**GET `/api/erp/machine-movements/detail`** — Chi tiết full field và các trang section. Reader native/profile hiện hành.
+**GET `/api/erp/machine-movements/detail`** — Chi tiết full field và các trang section. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `machine-movements.read`.
 
@@ -1842,7 +3967,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API machine_movements_actions
 
-**GET `/api/erp/machine-movements/actions`** — Trạng thái nút theo user/phiếu. Reader native/profile hiện hành.
+**GET `/api/erp/machine-movements/actions`** — Trạng thái nút theo user/phiếu. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `machine-movements.read`.
 
@@ -1864,7 +3989,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API machine_movements_options
 
-**POST `/api/erp/machine-movements/options`** — Lựa chọn dropdown/dropselect. Reader native/profile hiện hành.
+**POST `/api/erp/machine-movements/options`** — Lựa chọn dropdown/dropselect. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `machine-movements.read`.
 
@@ -1886,7 +4011,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API machine_movements_command_lookup
 
-**POST `/api/erp/machine-movements/commands/lookup`** — Tra cứu receipt ý định gốc, không ghi. Reader native/profile hiện hành.
+**POST `/api/erp/machine-movements/commands/lookup`** — Tra cứu receipt ý định gốc, không ghi. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `machine-movements.read`.
 
@@ -1908,7 +4033,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API machine_movements_selection
 
-**POST `/api/erp/machine-movements/selection`** — Đọc nguồn chọn sang dòng nháp. Reader native/profile hiện hành.
+**POST `/api/erp/machine-movements/selection`** — Đọc nguồn chọn sang dòng nháp. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `machine-movements.read`.
 
@@ -1930,7 +4055,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API machine_movements_paste_validate
 
-**POST `/api/erp/machine-movements/paste/validate`** — Kiểm tra bảng dán, không ghi. Reader native/profile hiện hành.
+**POST `/api/erp/machine-movements/paste/validate`** — Kiểm tra bảng dán, không ghi. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `machine-movements.read`.
 
@@ -1952,7 +4077,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API machine_movements_create
 
-**POST `/api/erp/machine-movements/create`** — Tạo phiếu và cấp số/LineID. SQL ghi đã bật; quyền/trạng thái recheck.
+**POST `/api/erp/machine-movements/create`** — Tạo phiếu và cấp số/LineID. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `machine-movements.read`.
 
@@ -1978,7 +4103,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API machine_movements_save
 
-**POST `/api/erp/machine-movements/save`** — Lưu header và thay đổi dòng. SQL ghi đã bật; quyền/trạng thái recheck.
+**POST `/api/erp/machine-movements/save`** — Lưu header và thay đổi dòng. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `machine-movements.read`.
 
@@ -2004,7 +4129,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API machine_movements_delete
 
-**POST `/api/erp/machine-movements/delete`** — Xóa phiếu được phép. SQL ghi đã bật; quyền/trạng thái recheck.
+**POST `/api/erp/machine-movements/delete`** — Xóa phiếu được phép. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `machine-movements.read`.
 
@@ -2026,7 +4151,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API machine_repairs_screen
 
-**GET `/api/erp/machine-repairs/screen`** — Metadata field/action/dropdown form. Reader native/profile hiện hành.
+**GET `/api/erp/machine-repairs/screen`** — Metadata field/action/dropdown form. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `machine-repairs.read`.
 
@@ -2045,7 +4170,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API machine_repairs_list
 
-**GET `/api/erp/machine-repairs`** — Danh sách full header theo trang. Reader native/profile hiện hành.
+**GET `/api/erp/machine-repairs`** — Danh sách full header theo trang. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `machine-repairs.read`.
 
@@ -2074,7 +4199,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API machine_repairs_detail
 
-**GET `/api/erp/machine-repairs/detail`** — Chi tiết full field và các trang section. Reader native/profile hiện hành.
+**GET `/api/erp/machine-repairs/detail`** — Chi tiết full field và các trang section. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `machine-repairs.read`.
 
@@ -2100,7 +4225,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API machine_repairs_actions
 
-**GET `/api/erp/machine-repairs/actions`** — Trạng thái nút theo user/phiếu. Reader native/profile hiện hành.
+**GET `/api/erp/machine-repairs/actions`** — Trạng thái nút theo user/phiếu. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `machine-repairs.read`.
 
@@ -2122,7 +4247,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API machine_repairs_options
 
-**POST `/api/erp/machine-repairs/options`** — Lựa chọn dropdown/dropselect. Reader native/profile hiện hành.
+**POST `/api/erp/machine-repairs/options`** — Lựa chọn dropdown/dropselect. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `machine-repairs.read`.
 
@@ -2144,7 +4269,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API machine_repairs_command_lookup
 
-**POST `/api/erp/machine-repairs/commands/lookup`** — Tra cứu receipt ý định gốc, không ghi. Reader native/profile hiện hành.
+**POST `/api/erp/machine-repairs/commands/lookup`** — Tra cứu receipt ý định gốc, không ghi. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `machine-repairs.read`.
 
@@ -2166,7 +4291,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API machine_repairs_selection
 
-**POST `/api/erp/machine-repairs/selection`** — Đọc nguồn chọn sang dòng nháp. Reader native/profile hiện hành.
+**POST `/api/erp/machine-repairs/selection`** — Đọc nguồn chọn sang dòng nháp. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `machine-repairs.read`.
 
@@ -2188,7 +4313,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API machine_repairs_paste_validate
 
-**POST `/api/erp/machine-repairs/paste/validate`** — Kiểm tra bảng dán, không ghi. Reader native/profile hiện hành.
+**POST `/api/erp/machine-repairs/paste/validate`** — Kiểm tra bảng dán, không ghi. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `machine-repairs.read`.
 
@@ -2210,7 +4335,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API machine_repairs_create
 
-**POST `/api/erp/machine-repairs/create`** — Tạo phiếu và cấp số/LineID. SQL ghi đã bật; quyền/trạng thái recheck.
+**POST `/api/erp/machine-repairs/create`** — Tạo phiếu và cấp số/LineID. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `machine-repairs.read`.
 
@@ -2236,7 +4361,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API machine_repairs_save
 
-**POST `/api/erp/machine-repairs/save`** — Lưu header và thay đổi dòng. SQL ghi đã bật; quyền/trạng thái recheck.
+**POST `/api/erp/machine-repairs/save`** — Lưu header và thay đổi dòng. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `machine-repairs.read`.
 
@@ -2262,9 +4387,433 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API machine_repairs_delete
 
-**POST `/api/erp/machine-repairs/delete`** — Xóa phiếu được phép. SQL ghi đã bật; quyền/trạng thái recheck.
+**POST `/api/erp/machine-repairs/delete`** — Xóa phiếu được phép. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `machine-repairs.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpDeleteRequest](#schema-erpdeleterequest).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-purchase_approvals_screen"></a>
+
+### API purchase_approvals_screen
+
+**GET `/api/erp/purchase-approvals/screen`** — Metadata field/action/dropdown form. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `purchase-approvals.read`.
+
+Không có query/path/header parameter khai báo riêng.
+
+Không có request body nghiệp vụ.
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpScreenDescription](#schema-erpscopedresponse_erpscreendescription) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-purchase_approvals_list"></a>
+
+### API purchase_approvals_list
+
+**GET `/api/erp/purchase-approvals`** — Danh sách full header theo trang. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `purchase-approvals.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `page` | query | false | integer | default=1; minimum=1; maximum=10000 |
+| `pageSize` | query | false | integer | default=20; minimum=1; maximum=100 |
+| `search` | query | false | string | maxLength=100 |
+| `dateFrom` | query | false | string | maxLength=10 |
+| `dateTo` | query | false | string | maxLength=10 |
+| `statusId` | query | false | integer | — |
+
+Không có request body nghiệp vụ.
+
+Full header fields: [Erp_purchase_approvals_header_fields](#schema-erp_purchase_approvals_header_fields).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [Erp_purchase_approvals_list_responseFeDisplay](#schema-erp_purchase_approvals_list_responsefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-purchase_approvals_detail"></a>
+
+### API purchase_approvals_detail
+
+**GET `/api/erp/purchase-approvals/detail`** — Chi tiết full field và các trang section. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `purchase-approvals.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `documentId` | query | true | string | maxLength=50 |
+| `page` | query | false | integer | default=1; minimum=1; maximum=10000 |
+| `pageSize` | query | false | integer | default=20; minimum=1; maximum=100 |
+
+Không có request body nghiệp vụ.
+
+Section full fields: header → [Erp_purchase_approvals_header_fields](#schema-erp_purchase_approvals_header_fields), lines → [Erp_purchase_approvals_lines_fields](#schema-erp_purchase_approvals_lines_fields).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [Erp_purchase_approvals_detail_responseFeDisplay](#schema-erp_purchase_approvals_detail_responsefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-purchase_approvals_actions"></a>
+
+### API purchase_approvals_actions
+
+**GET `/api/erp/purchase-approvals/actions`** — Trạng thái nút theo user/phiếu. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `purchase-approvals.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `documentId` | query | false | string | maxLength=50 |
+
+Không có request body nghiệp vụ.
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_IReadOnlyList_ErpActionState](#schema-erpscopedresponse_ireadonlylist_erpactionstate) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-purchase_approvals_options"></a>
+
+### API purchase_approvals_options
+
+**POST `/api/erp/purchase-approvals/options`** — Lựa chọn dropdown/dropselect. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `purchase-approvals.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpLookupQuery](#schema-erplookupquery).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpChoicePageFeDisplay](#schema-erpscopedresponse_erpchoicepagefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-purchase_approvals_command_lookup"></a>
+
+### API purchase_approvals_command_lookup
+
+**POST `/api/erp/purchase-approvals/commands/lookup`** — Tra cứu receipt ý định gốc, không ghi. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `purchase-approvals.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpCommandLookupRequest](#schema-erpcommandlookuprequest).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpCommandObservation](#schema-erpscopedresponse_erpcommandobservation) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-purchase_approvals_reject"></a>
+
+### API purchase_approvals_reject
+
+**POST `/api/erp/purchase-approvals/actions/reject`** — Nút nghiệp vụ reject. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `purchase-approvals.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_purchase_approvals_reject_request](#schema-erp_purchase_approvals_reject_request).
+
+Payload action: [ErpActionNotes](#schema-erpactionnotes).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-purchase_approvals_approve"></a>
+
+### API purchase_approvals_approve
+
+**POST `/api/erp/purchase-approvals/actions/approve`** — Nút nghiệp vụ approve. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `purchase-approvals.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_purchase_approvals_approve_request](#schema-erp_purchase_approvals_approve_request).
+
+Payload action: [ErpActionNotes](#schema-erpactionnotes).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-purchase_orders_screen"></a>
+
+### API purchase_orders_screen
+
+**GET `/api/erp/purchase-orders/screen`** — Metadata field/action/dropdown form. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `purchase-orders.read`.
+
+Không có query/path/header parameter khai báo riêng.
+
+Không có request body nghiệp vụ.
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpScreenDescription](#schema-erpscopedresponse_erpscreendescription) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-purchase_orders_list"></a>
+
+### API purchase_orders_list
+
+**GET `/api/erp/purchase-orders`** — Danh sách full header theo trang. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `purchase-orders.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `page` | query | false | integer | default=1; minimum=1; maximum=10000 |
+| `pageSize` | query | false | integer | default=20; minimum=1; maximum=100 |
+| `search` | query | false | string | maxLength=100 |
+| `dateFrom` | query | false | string | maxLength=10 |
+| `dateTo` | query | false | string | maxLength=10 |
+| `statusId` | query | false | integer | — |
+
+Không có request body nghiệp vụ.
+
+Full header fields: [Erp_purchase_orders_header_fields](#schema-erp_purchase_orders_header_fields).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [Erp_purchase_orders_list_responseFeDisplay](#schema-erp_purchase_orders_list_responsefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-purchase_orders_detail"></a>
+
+### API purchase_orders_detail
+
+**GET `/api/erp/purchase-orders/detail`** — Chi tiết full field và các trang section. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `purchase-orders.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `documentId` | query | true | string | maxLength=50 |
+| `page` | query | false | integer | default=1; minimum=1; maximum=10000 |
+| `pageSize` | query | false | integer | default=20; minimum=1; maximum=100 |
+
+Không có request body nghiệp vụ.
+
+Section full fields: header → [Erp_purchase_orders_header_fields](#schema-erp_purchase_orders_header_fields), lines → [Erp_purchase_orders_lines_fields](#schema-erp_purchase_orders_lines_fields).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [Erp_purchase_orders_detail_responseFeDisplay](#schema-erp_purchase_orders_detail_responsefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-purchase_orders_actions"></a>
+
+### API purchase_orders_actions
+
+**GET `/api/erp/purchase-orders/actions`** — Trạng thái nút theo user/phiếu. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `purchase-orders.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `documentId` | query | false | string | maxLength=50 |
+
+Không có request body nghiệp vụ.
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_IReadOnlyList_ErpActionState](#schema-erpscopedresponse_ireadonlylist_erpactionstate) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-purchase_orders_options"></a>
+
+### API purchase_orders_options
+
+**POST `/api/erp/purchase-orders/options`** — Lựa chọn dropdown/dropselect. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `purchase-orders.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpLookupQuery](#schema-erplookupquery).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpChoicePageFeDisplay](#schema-erpscopedresponse_erpchoicepagefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-purchase_orders_item_price"></a>
+
+### API purchase_orders_item_price
+
+**POST `/api/erp/purchase-orders/item-price`** — Tra giá mua. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `purchase-orders.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpItemPriceQuery](#schema-erpitempricequery).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpItemPrice](#schema-erpscopedresponse_erpitemprice) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-purchase_orders_command_lookup"></a>
+
+### API purchase_orders_command_lookup
+
+**POST `/api/erp/purchase-orders/commands/lookup`** — Tra cứu receipt ý định gốc, không ghi. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `purchase-orders.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpCommandLookupRequest](#schema-erpcommandlookuprequest).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpCommandObservation](#schema-erpscopedresponse_erpcommandobservation) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-purchase_orders_create"></a>
+
+### API purchase_orders_create
+
+**POST `/api/erp/purchase-orders/create`** — Tạo phiếu và cấp số/LineID. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `purchase-orders.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_purchase_orders_create](#schema-erp_purchase_orders_create).
+
+Header input module: [ErpPurchaseOrdersHeaderInput](#schema-erppurchaseordersheaderinput).
+
+Line values input module: [ErpPurchaseOrdersLinesInput](#schema-erppurchaseorderslinesinput).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-purchase_orders_save"></a>
+
+### API purchase_orders_save
+
+**POST `/api/erp/purchase-orders/save`** — Lưu header và thay đổi dòng. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `purchase-orders.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_purchase_orders_save](#schema-erp_purchase_orders_save).
+
+Header input module: [ErpPurchaseOrdersHeaderInput](#schema-erppurchaseordersheaderinput).
+
+Line values input module: [ErpPurchaseOrdersLinesInput](#schema-erppurchaseorderslinesinput).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-purchase_orders_delete"></a>
+
+### API purchase_orders_delete
+
+**POST `/api/erp/purchase-orders/delete`** — Xóa phiếu được phép. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `purchase-orders.read`.
 
 | Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
 |---|---|---|---|---|
@@ -2284,7 +4833,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API purchase_requests_screen
 
-**GET `/api/erp/purchase-requests/screen`** — Metadata field/action/dropdown form. Reader native/profile hiện hành.
+**GET `/api/erp/purchase-requests/screen`** — Metadata field/action/dropdown form. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `purchase-requests.read`.
 
@@ -2303,7 +4852,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API purchase_requests_list
 
-**GET `/api/erp/purchase-requests`** — Danh sách full header theo trang. Reader native/profile hiện hành.
+**GET `/api/erp/purchase-requests`** — Danh sách full header theo trang. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `purchase-requests.read`.
 
@@ -2332,7 +4881,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API purchase_requests_detail
 
-**GET `/api/erp/purchase-requests/detail`** — Chi tiết full field và các trang section. Reader native/profile hiện hành.
+**GET `/api/erp/purchase-requests/detail`** — Chi tiết full field và các trang section. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `purchase-requests.read`.
 
@@ -2358,7 +4907,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API purchase_requests_actions
 
-**GET `/api/erp/purchase-requests/actions`** — Trạng thái nút theo user/phiếu. Reader native/profile hiện hành.
+**GET `/api/erp/purchase-requests/actions`** — Trạng thái nút theo user/phiếu. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `purchase-requests.read`.
 
@@ -2380,7 +4929,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API purchase_requests_options
 
-**POST `/api/erp/purchase-requests/options`** — Lựa chọn dropdown/dropselect. Reader native/profile hiện hành.
+**POST `/api/erp/purchase-requests/options`** — Lựa chọn dropdown/dropselect. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `purchase-requests.read`.
 
@@ -2402,7 +4951,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API purchase_requests_command_lookup
 
-**POST `/api/erp/purchase-requests/commands/lookup`** — Tra cứu receipt ý định gốc, không ghi. Reader native/profile hiện hành.
+**POST `/api/erp/purchase-requests/commands/lookup`** — Tra cứu receipt ý định gốc, không ghi. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `purchase-requests.read`.
 
@@ -2424,7 +4973,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API purchase_requests_selection
 
-**POST `/api/erp/purchase-requests/selection`** — Đọc nguồn chọn sang dòng nháp. Reader native/profile hiện hành.
+**POST `/api/erp/purchase-requests/selection`** — Đọc nguồn chọn sang dòng nháp. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `purchase-requests.read`.
 
@@ -2446,7 +4995,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API purchase_requests_paste_validate
 
-**POST `/api/erp/purchase-requests/paste/validate`** — Kiểm tra bảng dán, không ghi. Reader native/profile hiện hành.
+**POST `/api/erp/purchase-requests/paste/validate`** — Kiểm tra bảng dán, không ghi. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `purchase-requests.read`.
 
@@ -2468,7 +5017,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API purchase_requests_create
 
-**POST `/api/erp/purchase-requests/create`** — Tạo phiếu và cấp số/LineID. SQL ghi đã bật; quyền/trạng thái recheck.
+**POST `/api/erp/purchase-requests/create`** — Tạo phiếu và cấp số/LineID. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `purchase-requests.read`.
 
@@ -2494,7 +5043,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API purchase_requests_save
 
-**POST `/api/erp/purchase-requests/save`** — Lưu header và thay đổi dòng. SQL ghi đã bật; quyền/trạng thái recheck.
+**POST `/api/erp/purchase-requests/save`** — Lưu header và thay đổi dòng. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `purchase-requests.read`.
 
@@ -2520,7 +5069,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API purchase_requests_delete
 
-**POST `/api/erp/purchase-requests/delete`** — Xóa phiếu được phép. SQL ghi đã bật; quyền/trạng thái recheck.
+**POST `/api/erp/purchase-requests/delete`** — Xóa phiếu được phép. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `purchase-requests.read`.
 
@@ -2542,7 +5091,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API purchase_requests_submit
 
-**POST `/api/erp/purchase-requests/actions/submit`** — Gửi đề nghị mua hàng. SQL ghi đã bật; quyền/trạng thái recheck.
+**POST `/api/erp/purchase-requests/actions/submit`** — Gửi đề nghị mua hàng. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `purchase-requests.read`.
 
@@ -2566,7 +5115,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API purchase_requests_send_purchase_order
 
-**POST `/api/erp/purchase-requests/actions/send-purchase-order`** — Tạo đặt mua hàng từ đề nghị. SQL ghi đã bật; quyền/trạng thái recheck.
+**POST `/api/erp/purchase-requests/actions/send-purchase-order`** — Tạo đặt mua hàng từ đề nghị. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `purchase-requests.read`.
 
@@ -2586,11 +5135,501 @@ Payload action: object.
 
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
 
+<a id="api-sales_order_pm_screen"></a>
+
+### API sales_order_pm_screen
+
+**GET `/api/erp/sales-order-pm/screen`** — Metadata field/action/dropdown form. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `sales-order-pm.read`.
+
+Không có query/path/header parameter khai báo riêng.
+
+Không có request body nghiệp vụ.
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpScreenDescription](#schema-erpscopedresponse_erpscreendescription) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-sales_order_pm_list"></a>
+
+### API sales_order_pm_list
+
+**GET `/api/erp/sales-order-pm`** — Danh sách full header theo trang. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `sales-order-pm.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `page` | query | false | integer | default=1; minimum=1; maximum=10000 |
+| `pageSize` | query | false | integer | default=20; minimum=1; maximum=100 |
+| `search` | query | false | string | maxLength=100 |
+| `dateFrom` | query | false | string | maxLength=10 |
+| `dateTo` | query | false | string | maxLength=10 |
+| `statusId` | query | false | integer | — |
+
+Không có request body nghiệp vụ.
+
+Full header fields: [Erp_sales_order_pm_header_fields](#schema-erp_sales_order_pm_header_fields).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [Erp_sales_order_pm_list_responseFeDisplay](#schema-erp_sales_order_pm_list_responsefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-sales_order_pm_detail"></a>
+
+### API sales_order_pm_detail
+
+**GET `/api/erp/sales-order-pm/detail`** — Chi tiết full field và các trang section. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `sales-order-pm.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `documentId` | query | true | string | maxLength=50 |
+| `page` | query | false | integer | default=1; minimum=1; maximum=10000 |
+| `pageSize` | query | false | integer | default=20; minimum=1; maximum=100 |
+
+Không có request body nghiệp vụ.
+
+Section full fields: header → [Erp_sales_order_pm_header_fields](#schema-erp_sales_order_pm_header_fields), lines → [Erp_sales_order_pm_lines_fields](#schema-erp_sales_order_pm_lines_fields), history → [Erp_sales_order_pm_history_fields](#schema-erp_sales_order_pm_history_fields).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [Erp_sales_order_pm_detail_responseFeDisplay](#schema-erp_sales_order_pm_detail_responsefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-sales_order_pm_actions"></a>
+
+### API sales_order_pm_actions
+
+**GET `/api/erp/sales-order-pm/actions`** — Trạng thái nút theo user/phiếu. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `sales-order-pm.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `documentId` | query | false | string | maxLength=50 |
+
+Không có request body nghiệp vụ.
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_IReadOnlyList_ErpActionState](#schema-erpscopedresponse_ireadonlylist_erpactionstate) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-sales_order_pm_contract_info"></a>
+
+### API sales_order_pm_contract_info
+
+**GET `/api/erp/sales-order-pm/contract-info`** — Thông tin hợp đồng cùng scope. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `sales-order-pm.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `documentId` | query | true | string | maxLength=50 |
+
+Không có request body nghiệp vụ.
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpContractInfoFeDisplay](#schema-erpscopedresponse_erpcontractinfofedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-sales_order_pm_options"></a>
+
+### API sales_order_pm_options
+
+**POST `/api/erp/sales-order-pm/options`** — Lựa chọn dropdown/dropselect. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `sales-order-pm.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpLookupQuery](#schema-erplookupquery).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpChoicePageFeDisplay](#schema-erpscopedresponse_erpchoicepagefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-sales_order_pm_command_lookup"></a>
+
+### API sales_order_pm_command_lookup
+
+**POST `/api/erp/sales-order-pm/commands/lookup`** — Tra cứu receipt ý định gốc, không ghi. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `sales-order-pm.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpCommandLookupRequest](#schema-erpcommandlookuprequest).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpCommandObservation](#schema-erpscopedresponse_erpcommandobservation) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-sales_order_pm_send_sa"></a>
+
+### API sales_order_pm_send_sa
+
+**POST `/api/erp/sales-order-pm/actions/send-sa`** — Nút nghiệp vụ send-sa. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `sales-order-pm.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_sales_order_pm_send_sa_request](#schema-erp_sales_order_pm_send_sa_request).
+
+Payload action: [ErpActionNotes](#schema-erpactionnotes).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-sales_order_pm_reject"></a>
+
+### API sales_order_pm_reject
+
+**POST `/api/erp/sales-order-pm/actions/reject`** — Nút nghiệp vụ reject. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `sales-order-pm.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_sales_order_pm_reject_request](#schema-erp_sales_order_pm_reject_request).
+
+Payload action: [ErpActionNotes](#schema-erpactionnotes).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-sales_order_sa_screen"></a>
+
+### API sales_order_sa_screen
+
+**GET `/api/erp/sales-order-sa/screen`** — Metadata field/action/dropdown form. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `sales-order-sa.read`.
+
+Không có query/path/header parameter khai báo riêng.
+
+Không có request body nghiệp vụ.
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpScreenDescription](#schema-erpscopedresponse_erpscreendescription) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-sales_order_sa_list"></a>
+
+### API sales_order_sa_list
+
+**GET `/api/erp/sales-order-sa`** — Danh sách full header theo trang. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `sales-order-sa.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `page` | query | false | integer | default=1; minimum=1; maximum=10000 |
+| `pageSize` | query | false | integer | default=20; minimum=1; maximum=100 |
+| `search` | query | false | string | maxLength=100 |
+| `dateFrom` | query | false | string | maxLength=10 |
+| `dateTo` | query | false | string | maxLength=10 |
+| `statusId` | query | false | integer | — |
+
+Không có request body nghiệp vụ.
+
+Full header fields: [Erp_sales_order_sa_header_fields](#schema-erp_sales_order_sa_header_fields).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [Erp_sales_order_sa_list_responseFeDisplay](#schema-erp_sales_order_sa_list_responsefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-sales_order_sa_detail"></a>
+
+### API sales_order_sa_detail
+
+**GET `/api/erp/sales-order-sa/detail`** — Chi tiết full field và các trang section. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `sales-order-sa.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `documentId` | query | true | string | maxLength=50 |
+| `page` | query | false | integer | default=1; minimum=1; maximum=10000 |
+| `pageSize` | query | false | integer | default=20; minimum=1; maximum=100 |
+
+Không có request body nghiệp vụ.
+
+Section full fields: header → [Erp_sales_order_sa_header_fields](#schema-erp_sales_order_sa_header_fields), lines → [Erp_sales_order_sa_lines_fields](#schema-erp_sales_order_sa_lines_fields), history → [Erp_sales_order_sa_history_fields](#schema-erp_sales_order_sa_history_fields).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [Erp_sales_order_sa_detail_responseFeDisplay](#schema-erp_sales_order_sa_detail_responsefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-sales_order_sa_actions"></a>
+
+### API sales_order_sa_actions
+
+**GET `/api/erp/sales-order-sa/actions`** — Trạng thái nút theo user/phiếu. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `sales-order-sa.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `documentId` | query | false | string | maxLength=50 |
+
+Không có request body nghiệp vụ.
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_IReadOnlyList_ErpActionState](#schema-erpscopedresponse_ireadonlylist_erpactionstate) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-sales_order_sa_contract_info"></a>
+
+### API sales_order_sa_contract_info
+
+**GET `/api/erp/sales-order-sa/contract-info`** — Thông tin hợp đồng cùng scope. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie. Capability: `sales-order-sa.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `branchId` | query | true | string | maxLength=50 |
+| `documentId` | query | true | string | maxLength=50 |
+
+Không có request body nghiệp vụ.
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpContractInfoFeDisplay](#schema-erpscopedresponse_erpcontractinfofedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-sales_order_sa_options"></a>
+
+### API sales_order_sa_options
+
+**POST `/api/erp/sales-order-sa/options`** — Lựa chọn dropdown/dropselect. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `sales-order-sa.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpLookupQuery](#schema-erplookupquery).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpChoicePageFeDisplay](#schema-erpscopedresponse_erpchoicepagefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-sales_order_sa_command_lookup"></a>
+
+### API sales_order_sa_command_lookup
+
+**POST `/api/erp/sales-order-sa/commands/lookup`** — Tra cứu receipt ý định gốc, không ghi. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `sales-order-sa.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpCommandLookupRequest](#schema-erpcommandlookuprequest).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpCommandObservation](#schema-erpscopedresponse_erpcommandobservation) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-sales_order_sa_send_accounting"></a>
+
+### API sales_order_sa_send_accounting
+
+**POST `/api/erp/sales-order-sa/actions/send-accounting`** — Nút nghiệp vụ send-accounting. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `sales-order-sa.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_sales_order_sa_send_accounting_request](#schema-erp_sales_order_sa_send_accounting_request).
+
+Payload action: [ErpActionNotes](#schema-erpactionnotes).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-sales_order_sa_send_tech"></a>
+
+### API sales_order_sa_send_tech
+
+**POST `/api/erp/sales-order-sa/actions/send-tech`** — Nút nghiệp vụ send-tech. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `sales-order-sa.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_sales_order_sa_send_tech_request](#schema-erp_sales_order_sa_send_tech_request).
+
+Payload action: [ErpActionNotes](#schema-erpactionnotes).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-sales_order_sa_reject"></a>
+
+### API sales_order_sa_reject
+
+**POST `/api/erp/sales-order-sa/actions/reject`** — Nút nghiệp vụ reject. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `sales-order-sa.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_sales_order_sa_reject_request](#schema-erp_sales_order_sa_reject_request).
+
+Payload action: [ErpActionNotes](#schema-erpactionnotes).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-sales_order_sa_return_step"></a>
+
+### API sales_order_sa_return_step
+
+**POST `/api/erp/sales-order-sa/actions/return-step`** — Nút nghiệp vụ return-step. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `sales-order-sa.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [Erp_sales_order_sa_return_step_request](#schema-erp_sales_order_sa_return_step_request).
+
+Payload action: [ErpReturnStep](#schema-erpreturnstep).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpCommandResult](#schema-erpcommandresult) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
+<a id="api-sales_order_sa_return_step_options"></a>
+
+### API sales_order_sa_return_step_options
+
+**POST `/api/erp/sales-order-sa/actions/return-step/options`** — Lựa chọn nghiệp vụ. SQL native; source/profile và trạng thái phiếu được kiểm tra.
+
+Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `sales-order-sa.read`.
+
+| Tên | Vị trí | Bắt buộc | Kiểu | Giới hạn và mặc định |
+|---|---|---|---|---|
+| `X-Medcom-Read-Scope` | header | true | string | maxLength=64 |
+| `Origin` | header | true | string | — |
+
+Body bắt buộc `application/json`: [ErpActionOptionsQuery](#schema-erpactionoptionsquery).
+
+| HTTP | Content type | Schema response |
+|---|---|---|
+| 200 | application/json | [ErpScopedResponse_ErpChoicePageFeDisplay](#schema-erpscopedresponse_erpchoicepagefedisplay) |
+| default | application/problem+json | [ProblemDetails](#schema-problemdetails) |
+
+Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
+
 <a id="api-sales_orders_screen"></a>
 
 ### API sales_orders_screen
 
-**GET `/api/erp/sales-orders/screen`** — Metadata field/action/dropdown form. Reader native/profile hiện hành.
+**GET `/api/erp/sales-orders/screen`** — Metadata field/action/dropdown form. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `sales-orders.read`.
 
@@ -2609,7 +5648,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API sales_orders_list
 
-**GET `/api/erp/sales-orders`** — Danh sách full header theo trang. Reader native/profile hiện hành.
+**GET `/api/erp/sales-orders`** — Danh sách full header theo trang. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `sales-orders.read`.
 
@@ -2638,7 +5677,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API sales_orders_detail
 
-**GET `/api/erp/sales-orders/detail`** — Chi tiết full field và các trang section. Reader native/profile hiện hành.
+**GET `/api/erp/sales-orders/detail`** — Chi tiết full field và các trang section. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `sales-orders.read`.
 
@@ -2664,7 +5703,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API sales_orders_actions
 
-**GET `/api/erp/sales-orders/actions`** — Trạng thái nút theo user/phiếu. Reader native/profile hiện hành.
+**GET `/api/erp/sales-orders/actions`** — Trạng thái nút theo user/phiếu. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `sales-orders.read`.
 
@@ -2686,7 +5725,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API sales_orders_contract_info
 
-**GET `/api/erp/sales-orders/contract-info`** — Thông tin hợp đồng cùng scope. Reader native/profile hiện hành.
+**GET `/api/erp/sales-orders/contract-info`** — Thông tin hợp đồng cùng scope. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `sales-orders.read`.
 
@@ -2708,7 +5747,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API sales_orders_options
 
-**POST `/api/erp/sales-orders/options`** — Lựa chọn dropdown/dropselect. Reader native/profile hiện hành.
+**POST `/api/erp/sales-orders/options`** — Lựa chọn dropdown/dropselect. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `sales-orders.read`.
 
@@ -2730,7 +5769,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API sales_orders_pm_options
 
-**POST `/api/erp/sales-orders/actions/send-pm/options`** — Danh sách PM theo role/branch. Reader native/profile hiện hành.
+**POST `/api/erp/sales-orders/actions/send-pm/options`** — Danh sách PM theo role/branch. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `sales-orders.read`.
 
@@ -2752,7 +5791,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API sales_orders_command_lookup
 
-**POST `/api/erp/sales-orders/commands/lookup`** — Tra cứu receipt ý định gốc, không ghi. Reader native/profile hiện hành.
+**POST `/api/erp/sales-orders/commands/lookup`** — Tra cứu receipt ý định gốc, không ghi. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `sales-orders.read`.
 
@@ -2774,7 +5813,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API sales_orders_selection
 
-**POST `/api/erp/sales-orders/selection`** — Đọc nguồn chọn sang dòng nháp. Reader native/profile hiện hành.
+**POST `/api/erp/sales-orders/selection`** — Đọc nguồn chọn sang dòng nháp. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `sales-orders.read`.
 
@@ -2796,7 +5835,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API sales_orders_paste_validate
 
-**POST `/api/erp/sales-orders/paste/validate`** — Kiểm tra bảng dán, không ghi. Reader native/profile hiện hành.
+**POST `/api/erp/sales-orders/paste/validate`** — Kiểm tra bảng dán, không ghi. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `sales-orders.read`.
 
@@ -2818,7 +5857,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API sales_orders_create
 
-**POST `/api/erp/sales-orders/create`** — Tạo phiếu và cấp số/LineID. SQL ghi đã bật; quyền/trạng thái recheck.
+**POST `/api/erp/sales-orders/create`** — Tạo phiếu và cấp số/LineID. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `sales-orders.read`.
 
@@ -2844,7 +5883,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API sales_orders_save
 
-**POST `/api/erp/sales-orders/save`** — Lưu header và thay đổi dòng. SQL ghi đã bật; quyền/trạng thái recheck.
+**POST `/api/erp/sales-orders/save`** — Lưu header và thay đổi dòng. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `sales-orders.read`.
 
@@ -2870,7 +5909,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API sales_orders_delete
 
-**POST `/api/erp/sales-orders/delete`** — Xóa phiếu được phép. SQL ghi đã bật; quyền/trạng thái recheck.
+**POST `/api/erp/sales-orders/delete`** — Xóa phiếu được phép. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `sales-orders.read`.
 
@@ -2892,7 +5931,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API sales_orders_recall
 
-**POST `/api/erp/sales-orders/actions/recall`** — Thu hồi để sửa. SQL ghi đã bật; quyền/trạng thái recheck.
+**POST `/api/erp/sales-orders/actions/recall`** — Thu hồi để sửa. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `sales-orders.read`.
 
@@ -2916,7 +5955,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API sales_orders_send_pm
 
-**POST `/api/erp/sales-orders/actions/send-pm`** — Gửi phiếu tới PM. SQL ghi đã bật; quyền/trạng thái recheck.
+**POST `/api/erp/sales-orders/actions/send-pm`** — Gửi phiếu tới PM. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `sales-orders.read`.
 
@@ -2940,7 +5979,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API sales_qr_screen
 
-**GET `/api/erp/sales-qr/screen`** — Metadata field/action/dropdown form. Reader native/profile hiện hành.
+**GET `/api/erp/sales-qr/screen`** — Metadata field/action/dropdown form. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `sales-qr.read`.
 
@@ -2959,7 +5998,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API sales_qr_list
 
-**GET `/api/erp/sales-qr`** — Danh sách full header theo trang. Reader native/profile hiện hành.
+**GET `/api/erp/sales-qr`** — Danh sách full header theo trang. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `sales-qr.read`.
 
@@ -2988,7 +6027,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API sales_qr_detail
 
-**GET `/api/erp/sales-qr/detail`** — Chi tiết full field và các trang section. Reader native/profile hiện hành.
+**GET `/api/erp/sales-qr/detail`** — Chi tiết full field và các trang section. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `sales-qr.read`.
 
@@ -3014,7 +6053,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API sales_qr_actions
 
-**GET `/api/erp/sales-qr/actions`** — Trạng thái nút theo user/phiếu. Reader native/profile hiện hành.
+**GET `/api/erp/sales-qr/actions`** — Trạng thái nút theo user/phiếu. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `sales-qr.read`.
 
@@ -3036,7 +6075,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API sales_qr_contract_info
 
-**GET `/api/erp/sales-qr/contract-info`** — Thông tin hợp đồng cùng scope. Reader native/profile hiện hành.
+**GET `/api/erp/sales-qr/contract-info`** — Thông tin hợp đồng cùng scope. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `sales-qr.read`.
 
@@ -3058,7 +6097,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API sales_qr_options
 
-**POST `/api/erp/sales-qr/options`** — Lựa chọn dropdown/dropselect. Reader native/profile hiện hành.
+**POST `/api/erp/sales-qr/options`** — Lựa chọn dropdown/dropselect. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `sales-qr.read`.
 
@@ -3080,7 +6119,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API sales_qr_command_lookup
 
-**POST `/api/erp/sales-qr/commands/lookup`** — Tra cứu receipt ý định gốc, không ghi. Reader native/profile hiện hành.
+**POST `/api/erp/sales-qr/commands/lookup`** — Tra cứu receipt ý định gốc, không ghi. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `sales-qr.read`.
 
@@ -3102,7 +6141,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API sales_qr_scan_add
 
-**POST `/api/erp/sales-qr/qr/add`** — Ghi scan thêm. SQL ghi đã bật; quyền/trạng thái recheck.
+**POST `/api/erp/sales-qr/qr/add`** — Ghi scan thêm. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `sales-qr.read`.
 
@@ -3124,7 +6163,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API sales_qr_scan_delete
 
-**POST `/api/erp/sales-qr/qr/delete`** — Ghi scan xóa. SQL ghi đã bật; quyền/trạng thái recheck.
+**POST `/api/erp/sales-qr/qr/delete`** — Ghi scan xóa. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `sales-qr.read`.
 
@@ -3146,7 +6185,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API warehouse_qr_screen
 
-**GET `/api/erp/warehouse-qr/screen`** — Metadata field/action/dropdown form. Reader native/profile hiện hành.
+**GET `/api/erp/warehouse-qr/screen`** — Metadata field/action/dropdown form. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `warehouse-qr.read`.
 
@@ -3165,7 +6204,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API warehouse_qr_list
 
-**GET `/api/erp/warehouse-qr`** — Danh sách full header theo trang. Reader native/profile hiện hành.
+**GET `/api/erp/warehouse-qr`** — Danh sách full header theo trang. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `warehouse-qr.read`.
 
@@ -3194,7 +6233,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API warehouse_qr_detail
 
-**GET `/api/erp/warehouse-qr/detail`** — Chi tiết full field và các trang section. Reader native/profile hiện hành.
+**GET `/api/erp/warehouse-qr/detail`** — Chi tiết full field và các trang section. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `warehouse-qr.read`.
 
@@ -3220,7 +6259,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API warehouse_qr_actions
 
-**GET `/api/erp/warehouse-qr/actions`** — Trạng thái nút theo user/phiếu. Reader native/profile hiện hành.
+**GET `/api/erp/warehouse-qr/actions`** — Trạng thái nút theo user/phiếu. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie. Capability: `warehouse-qr.read`.
 
@@ -3242,7 +6281,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API warehouse_qr_options
 
-**POST `/api/erp/warehouse-qr/options`** — Lựa chọn dropdown/dropselect. Reader native/profile hiện hành.
+**POST `/api/erp/warehouse-qr/options`** — Lựa chọn dropdown/dropselect. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `warehouse-qr.read`.
 
@@ -3264,7 +6303,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API warehouse_qr_command_lookup
 
-**POST `/api/erp/warehouse-qr/commands/lookup`** — Tra cứu receipt ý định gốc, không ghi. Reader native/profile hiện hành.
+**POST `/api/erp/warehouse-qr/commands/lookup`** — Tra cứu receipt ý định gốc, không ghi. SQL native; source/profile và trạng thái phiếu được kiểm tra.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `warehouse-qr.read`.
 
@@ -3286,7 +6325,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API warehouse_qr_scan_add
 
-**POST `/api/erp/warehouse-qr/qr/add`** — Ghi scan thêm. SQL ghi đã bật; quyền/trạng thái recheck.
+**POST `/api/erp/warehouse-qr/qr/add`** — Ghi scan thêm. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `warehouse-qr.read`.
 
@@ -3308,7 +6347,7 @@ Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung the
 
 ### API warehouse_qr_scan_delete
 
-**POST `/api/erp/warehouse-qr/qr/delete`** — Ghi scan xóa. SQL ghi đã bật; quyền/trạng thái recheck.
+**POST `/api/erp/warehouse-qr/qr/delete`** — Ghi scan xóa. SQL ghi; quyền/trạng thái recheck; trạng thái triển khai xem checkpoint.
 
 Security: SessionCookie + CsrfToken + CsrfCookie. Capability: `warehouse-qr.read`.
 
@@ -3327,7 +6366,7 @@ Body bắt buộc `application/json`: [ErpScanRequest](#schema-erpscanrequest).
 Response headers khai báo: `X-Correlation-ID`. Các stamp runtime bổ sung theo mục 2.
 
 <a id="schema-api"></a>
-## 12 Toàn bộ field trong 423 schema
+## 12 Toàn bộ field trong 890 schema
 
 Field bắt buộc là key nằm trong required của schema đó. Ở response full, key nullable vẫn bắt buộc xuất hiện. Ở request, schema create có thể bổ sung required cho ngày trên header ngoài DTO gốc; ràng buộc này được giữ trong cột giới hạn. oneOf yêu cầu đúng một nhánh, anyOf chấp nhận một hoặc nhiều nhánh, allOf phải thỏa mọi nhánh. Generic Erp* schema là model chung; khi operation có schema module cụ thể, FE dùng schema module đó.
 
@@ -4983,6 +8022,8 @@ Object: `{"type":"object","additionalProperties":false}`.
 | `ordinal` | integer (int32) | true | — |
 | `hasDefault` | boolean | true | — |
 | `writable` | boolean | true | — |
+| `virtual` | boolean | true | — |
+| `sourceColumn` | string / null | true | anyOf[0]: —; anyOf[1]: — |
 
 <a id="schema-erpactiondefinition"></a>
 
@@ -5020,6 +8061,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 | `multiSelect` | boolean | true | — |
 | `disabled` | boolean | true | — |
 | `sourceHash` | string | true | — |
+| `allowUnlisted` | boolean | true | — |
 
 <a id="schema-erpscopedresponse_erpdocumentpage"></a>
 
@@ -5083,6 +8125,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 | `history` | [ErpLinePage](#schema-erplinepage) / null | true | anyOf[0]: —; anyOf[1]: — |
 | `comparison` | [ErpLinePage](#schema-erplinepage) / null | true | anyOf[0]: —; anyOf[1]: — |
 | `actions` | array&lt;[ErpActionState](#schema-erpactionstate)&gt; | true | items[0]: — |
+| `sections` | dictionary&lt;[ErpLinePage](#schema-erplinepage)&gt; / null | false | anyOf[0]: additionalProperties={"$ref":"#/components/schemas/ErpLinePage"}; anyOf[1]: — |
 
 <a id="schema-erplinepage"></a>
 
@@ -5187,20 +8230,6 @@ Object: `{"type":"object","additionalProperties":false}`.
 | `search` | string / null | false | anyOf[0]: —; anyOf[1]: — |
 | `context` | dictionary&lt;string&gt; / null | false | anyOf[0]: additionalProperties={"type":"string"}; anyOf[1]: — |
 
-<a id="schema-erppmlookupquery"></a>
-
-### Schema ErpPmLookupQuery
-
-Object: `{"type":"object","additionalProperties":false}`.
-
-| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
-|---|---|---|---|
-| `branchId` | string | true | — |
-| `role` | string | false | enum=["primary","supporting"]; default="primary" |
-| `page` | integer (int32) | false | — |
-| `pageSize` | integer (int32) | false | — |
-| `search` | string / null | false | anyOf[0]: —; anyOf[1]: — |
-
 <a id="schema-erpscopedresponse_erpcommandobservation"></a>
 
 ### Schema ErpScopedResponse_ErpCommandObservation
@@ -5262,65 +8291,6 @@ Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":tr
 | `operation` | string | true | — |
 | `originalIntent` | any JSON | true | description="Fixed module field or action input; see x-medcom-typed-header, x-medcom-typed-line, x-medcom-typed-payload and x-medcom-full-field-sections on its operation." |
 
-<a id="schema-erpscopedresponse_erpdraftselection"></a>
-
-### Schema ErpScopedResponse_ErpDraftSelection
-
-Object: `{"type":"object","additionalProperties":false}`.
-
-| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
-|---|---|---|---|
-| `readScope` | string | true | — |
-| `data` | [ErpDraftSelection](#schema-erpdraftselection) / null | true | anyOf[0]: —; anyOf[1]: — |
-
-<a id="schema-erpdraftselection"></a>
-
-### Schema ErpDraftSelection
-
-Object: `{"type":"object","additionalProperties":false}`.
-
-| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
-|---|---|---|---|
-| `lines` | array&lt;[ErpNewLine](#schema-erpnewline)&gt; | true | items[0]: — |
-| `headerPatch` | dictionary&lt;any JSON&gt; | true | additionalProperties={"description":"Fixed module field or action input; see x-medcom-typed-header, x-medcom-typed-line, x-medcom-typed-payload and x-medcom-full-field-sections on its operation."} |
-| `sourceEvidence` | string | true | — |
-| `revalidatedOnSave` | boolean | true | — |
-
-<a id="schema-erpnewline"></a>
-
-### Schema ErpNewLine
-
-Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
-
-| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
-|---|---|---|---|
-| `clientLineKey` | string | true | — |
-| `values` | any JSON | true | description="Fixed module field or action input; see x-medcom-typed-header, x-medcom-typed-line, x-medcom-typed-payload and x-medcom-full-field-sections on its operation." |
-
-<a id="schema-erpselectionrequest"></a>
-
-### Schema ErpSelectionRequest
-
-Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
-
-| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
-|---|---|---|---|
-| `branchId` | string | true | — |
-| `sourceId` | string | true | — |
-| `selectedKeys` | array&lt;string&gt; | true | items[0]: — |
-| `context` | dictionary&lt;string&gt; / null | false | anyOf[0]: additionalProperties={"type":"string"}; anyOf[1]: — |
-
-<a id="schema-erppasterequest"></a>
-
-### Schema ErpPasteRequest
-
-Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
-
-| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
-|---|---|---|---|
-| `branchId` | string | true | — |
-| `rows` | array&lt;any JSON&gt; | true | items[0]: description="Fixed module field or action input; see x-medcom-typed-header, x-medcom-typed-line, x-medcom-typed-payload and x-medcom-full-field-sections on its operation." |
-
 <a id="schema-erpcommandresult"></a>
 
 ### Schema ErpCommandResult
@@ -5353,6 +8323,17 @@ Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":tr
 | `branchId` | string | true | — |
 | `header` | any JSON | true | description="Fixed module field or action input; see x-medcom-typed-header, x-medcom-typed-line, x-medcom-typed-payload and x-medcom-full-field-sections on its operation." |
 | `lines` | array&lt;[ErpNewLine](#schema-erpnewline)&gt; | true | items[0]: — |
+
+<a id="schema-erpnewline"></a>
+
+### Schema ErpNewLine
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `clientLineKey` | string | true | — |
+| `values` | any JSON | true | description="Fixed module field or action input; see x-medcom-typed-header, x-medcom-typed-line, x-medcom-typed-payload and x-medcom-full-field-sections on its operation." |
 
 <a id="schema-erpsaverequest"></a>
 
@@ -5402,6 +8383,1853 @@ Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":tr
 | `branchId` | string | true | — |
 | `documentId` | string | true | — |
 | `expectedStateToken` | string | true | — |
+
+<a id="schema-erpinboundrequestsheaderinput"></a>
+
+### Schema ErpInboundRequestsHeaderInput
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentDate` | string | true | — |
+| `orderNumber` | string | true | — |
+| `invoiceNo` | string | true | — |
+| `declarationNumber` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `departurePoint` | string | true | — |
+| `destinationPoint` | string | true | — |
+| `isRain` | boolean / null | false | anyOf[0]: —; anyOf[1]: — |
+| `orderTypeId` | string | true | — |
+| `objectId` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `totalPalletQuantityByDocument` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `totalBarrelQuantityByDocument` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `totalPalletQuantityByReal` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `totalBarrelQuantityByReal` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `excessPackageQuantity` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `lackOfPackageQuantity` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `damagedPackageQuantity` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `packageTypeId` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `isDamageOutsidePackage` | boolean / null | false | anyOf[0]: —; anyOf[1]: — |
+| `damageDescription` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `damageInsideStatusId` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `locationDamageDetectedId` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `locationDamageDescription` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `resultDesciption` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `totalQuantityInboundResult` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `goodAwaitingInboundResult` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `resultNote` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `datetimeRecorded` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `currencyId` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `rateExchange` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `imageURL` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `bBKCUrl` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `notes` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `qrPrintType` | string | true | — |
+
+<a id="schema-erpinboundrequestslinesinput"></a>
+
+### Schema ErpInboundRequestsLinesInput
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `contractId` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `itemId` | string | true | — |
+| `unit2` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `additional` | boolean / null | false | anyOf[0]: —; anyOf[1]: — |
+| `lotNumberByDocument` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `setQuantityByDocument` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `barrelQuantityByDocument` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `expireDateByDocument` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `sourceAmount` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `unitPrice` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_inbound_requests_new_line"></a>
+
+### Schema Erp_inbound_requests_new_line
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `clientLineKey` | string | true | — |
+| `values` | [ErpInboundRequestsLinesInput](#schema-erpinboundrequestslinesinput) | true | — |
+
+<a id="schema-erp_inbound_requests_create"></a>
+
+### Schema Erp_inbound_requests_create
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `header` | [ErpInboundRequestsHeaderInput](#schema-erpinboundrequestsheaderinput) | true | required=["documentDate"]; properties={"documentDate":{"type":"string","pattern":"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}$","description":"Required when creating a numbered document; ERP calendar date/time, yyyy-MM-ddTHH:mm:ss.fff."}} |
+| `lines` | array&lt;[Erp_inbound_requests_new_line](#schema-erp_inbound_requests_new_line)&gt; | true | minItems=1; maxItems=500; items[0]: — |
+
+<a id="schema-erp_inbound_requests_line_add"></a>
+
+### Schema Erp_inbound_requests_line_add
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `kind` | string | true | const="Add" |
+| `lineId` | null | false | — |
+| `clientLineKey` | string | true | maxLength=64 |
+| `values` | [ErpInboundRequestsLinesInput](#schema-erpinboundrequestslinesinput) | true | — |
+
+<a id="schema-erp_inbound_requests_line_update"></a>
+
+### Schema Erp_inbound_requests_line_update
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `kind` | string | true | const="Update" |
+| `lineId` | string | true | maxLength=50 |
+| `clientLineKey` | null | false | — |
+| `values` | [ErpInboundRequestsLinesInput](#schema-erpinboundrequestslinesinput) | true | — |
+
+<a id="schema-erp_inbound_requests_line_remove"></a>
+
+### Schema Erp_inbound_requests_line_remove
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `kind` | string | true | const="Remove" |
+| `lineId` | string | true | maxLength=50 |
+| `clientLineKey` | null | false | — |
+| `values` | null | false | — |
+
+<a id="schema-erp_inbound_requests_save"></a>
+
+### Schema Erp_inbound_requests_save
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `header` | [ErpInboundRequestsHeaderInput](#schema-erpinboundrequestsheaderinput) | true | — |
+| `lineChanges` | array&lt;oneOf [Erp_inbound_requests_line_add](#schema-erp_inbound_requests_line_add) / [Erp_inbound_requests_line_update](#schema-erp_inbound_requests_line_update) / [Erp_inbound_requests_line_remove](#schema-erp_inbound_requests_line_remove)&gt; | true | maxItems=500; items[0]: oneOf[0]: —; oneOf[1]: —; oneOf[2]: — |
+
+<a id="schema-erpactionrequest"></a>
+
+### Schema ErpActionRequest
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `payload` | any JSON | true | description="Fixed module field or action input; see x-medcom-typed-header, x-medcom-typed-line, x-medcom-typed-payload and x-medcom-full-field-sections on its operation." |
+
+<a id="schema-erpactionnotes"></a>
+
+### Schema ErpActionNotes
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `notes` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_inbound_requests_send_management_request"></a>
+
+### Schema Erp_inbound_requests_send_management_request
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `payload` | [ErpActionNotes](#schema-erpactionnotes) | true | — |
+
+<a id="schema-erp_inbound_requests_send_warehouse_request"></a>
+
+### Schema Erp_inbound_requests_send_warehouse_request
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `payload` | [ErpActionNotes](#schema-erpactionnotes) | true | — |
+
+<a id="schema-erpsectionsaverequest"></a>
+
+### Schema ErpSectionSaveRequest
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `lineChanges` | array&lt;[ErpLineChange](#schema-erplinechange)&gt; | true | items[0]: — |
+
+<a id="schema-erpinboundrequestscostsinput"></a>
+
+### Schema ErpInboundRequestsCostsInput
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `objectId` | string | true | — |
+| `nCC` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `memo` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `notes` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `costType` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `currencyId` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `rateExchange` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `sourceAmount` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `vATId` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `expenseAccId` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `invoiceNo` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `invoiceDate` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `allocateKind` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_inbound_requests_costs_add"></a>
+
+### Schema Erp_inbound_requests_costs_add
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `kind` | string | true | const="Add" |
+| `lineId` | null | false | — |
+| `clientLineKey` | string | true | maxLength=64 |
+| `values` | [ErpInboundRequestsCostsInput](#schema-erpinboundrequestscostsinput) | true | — |
+
+<a id="schema-erp_inbound_requests_costs_update"></a>
+
+### Schema Erp_inbound_requests_costs_update
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `kind` | string | true | const="Update" |
+| `lineId` | string | true | maxLength=50 |
+| `clientLineKey` | null | false | — |
+| `values` | [ErpInboundRequestsCostsInput](#schema-erpinboundrequestscostsinput) | true | — |
+
+<a id="schema-erp_inbound_requests_costs_remove"></a>
+
+### Schema Erp_inbound_requests_costs_remove
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `kind` | string | true | const="Remove" |
+| `lineId` | string | true | maxLength=50 |
+| `clientLineKey` | null | false | — |
+| `values` | null | false | — |
+
+<a id="schema-erp_inbound_requests_costs_save"></a>
+
+### Schema Erp_inbound_requests_costs_save
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `lineChanges` | array&lt;oneOf [Erp_inbound_requests_costs_add](#schema-erp_inbound_requests_costs_add) / [Erp_inbound_requests_costs_update](#schema-erp_inbound_requests_costs_update) / [Erp_inbound_requests_costs_remove](#schema-erp_inbound_requests_costs_remove)&gt; | true | minItems=1; maxItems=500; items[0]: oneOf[0]: —; oneOf[1]: —; oneOf[2]: — |
+
+<a id="schema-erp_inbound_requests_header_fields"></a>
+
+### Schema Erp_inbound_requests_header_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `documentDate` | string | true | SQL DocumentDate datetime; nullable=false; writable=true |
+| `orderNumber` | string | true | SQL OrderNumber nvarchar(50); nullable=false; writable=true |
+| `branchId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BranchID varchar(50); nullable=true; writable=false |
+| `invoiceNo` | string | true | SQL InvoiceNo nvarchar(50); nullable=false; writable=true |
+| `declarationNumber` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeclarationNumber varchar(50); nullable=true; writable=true |
+| `departurePoint` | string | true | SQL DeparturePoint nvarchar(100); nullable=false; writable=true |
+| `destinationPoint` | string | true | SQL DestinationPoint nvarchar(100); nullable=false; writable=true |
+| `isRain` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL IsRain bit; nullable=true; writable=true |
+| `orderTypeId` | string | true | SQL OrderTypeID nvarchar(50); nullable=false; writable=true |
+| `objectId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ObjectID varchar(50); nullable=true; writable=true |
+| `totalPalletQuantityByDocument` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TotalPalletQuantityByDocument decimal(18, 0); nullable=true; writable=true |
+| `totalBarrelQuantityByDocument` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TotalBarrelQuantityByDocument decimal(18, 0); nullable=true; writable=true |
+| `totalPalletQuantityByReal` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TotalPalletQuantityByReal decimal(18, 0); nullable=true; writable=true |
+| `totalBarrelQuantityByReal` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TotalBarrelQuantityByReal decimal(18, 0); nullable=true; writable=true |
+| `excessPackageQuantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ExcessPackageQuantity decimal(18, 0); nullable=true; writable=true |
+| `lackOfPackageQuantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LackOfPackageQuantity decimal(18, 0); nullable=true; writable=true |
+| `damagedPackageQuantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DamagedPackageQuantity decimal(18, 0); nullable=true; writable=true |
+| `packageTypeId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PackageTypeID nvarchar(50); nullable=true; writable=true |
+| `isDamageOutsidePackage` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL IsDamageOutsidePackage bit; nullable=true; writable=true |
+| `damageDescription` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DamageDescription nvarchar(500); nullable=true; writable=true |
+| `damageInsideStatusId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DamageInsideStatusID nvarchar(50); nullable=true; writable=true |
+| `locationDamageDetectedId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LocationDamageDetectedID nvarchar(50); nullable=true; writable=true |
+| `locationDamageDescription` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LocationDamageDescription nvarchar(500); nullable=true; writable=true |
+| `resultDesciption` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ResultDesciption nvarchar(max); nullable=true; writable=true |
+| `totalQuantityInboundResult` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TotalQuantityInboundResult decimal(18, 0); nullable=true; writable=true |
+| `goodAwaitingInboundResult` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL GoodAwaitingInboundResult decimal(18, 0); nullable=true; writable=true |
+| `resultNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ResultNote nvarchar(500); nullable=true; writable=true |
+| `datetimeRecorded` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DatetimeRecorded datetime; nullable=true; writable=true |
+| `statusId` | integer | true | SQL StatusID int; nullable=false; writable=false |
+| `currencyId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CurrencyID varchar(3); nullable=true; writable=true |
+| `rateExchange` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RateExchange decimal(28, 10); nullable=true; writable=true |
+| `imageURL` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ImageURL varchar(255); nullable=true; writable=true |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl varchar(255); nullable=true; writable=true |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=true |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `qrPrintType` | string | true | SQL QRPrintType varchar(10); nullable=false; writable=true |
+| `linkId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LinkID varchar(50); nullable=true; writable=false |
+
+<a id="schema-erp_inbound_requests_lines_fields"></a>
+
+### Schema Erp_inbound_requests_lines_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `contractId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ContractID nvarchar(100); nullable=true; writable=true |
+| `itemId` | string | true | SQL ItemID varchar(50); nullable=false; writable=true |
+| `hangSX` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL HangSX nvarchar(100); nullable=true; writable=false |
+| `unitFactor` | number / null | true | anyOf[0]: —; anyOf[1]: —; SQL UnitFactor float; nullable=true; writable=false |
+| `unit2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Unit2 nvarchar(50); nullable=true; writable=true |
+| `additional` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL Additional bit; nullable=true; writable=true |
+| `lotNumberByDocument` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LotNumberByDocument nvarchar(50); nullable=true; writable=true |
+| `setQuantityByDocument` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SetQuantityByDocument decimal(18, 0); nullable=true; writable=true |
+| `barrelQuantityByDocument` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BarrelQuantityByDocument decimal(18, 0); nullable=true; writable=true |
+| `expireDateByDocument` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ExpireDateByDocument datetime; nullable=true; writable=true |
+| `lotNumberByReal` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LotNumberByReal nvarchar(50); nullable=true; writable=false |
+| `setQuantityByReal` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SetQuantityByReal decimal(18, 0); nullable=true; writable=false |
+| `barrelQuantityByReal` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BarrelQuantityByReal decimal(18, 0); nullable=true; writable=false |
+| `expireDateByReal` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ExpireDateByReal datetime; nullable=true; writable=false |
+| `sourceAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SourceAmount decimal(18, 0); nullable=true; writable=true |
+| `unitPrice` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UnitPrice decimal(18, 0); nullable=true; writable=true |
+| `amount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Amount decimal(18, 0); nullable=true; writable=false |
+| `randomTestQuantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RandomTestQuantity decimal(18, 0); nullable=true; writable=false |
+| `testStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TestStatus nvarchar(100); nullable=true; writable=false |
+| `noPalletNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL NoPalletNote nvarchar(500); nullable=true; writable=false |
+| `palletNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PalletNote nvarchar(500); nullable=true; writable=false |
+| `checkerNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CheckerNote nvarchar(500); nullable=true; writable=false |
+| `itemCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemCode nvarchar(50); nullable=true; writable=false |
+| `parentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ParentID varchar(50); nullable=true; writable=false |
+
+<a id="schema-erp_inbound_requests_costs_fields"></a>
+
+### Schema Erp_inbound_requests_costs_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID nvarchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `objectId` | string | true | SQL ObjectID varchar(100); nullable=false; writable=true |
+| `nCC` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL NCC varchar(100); nullable=true; writable=true |
+| `memo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Memo nvarchar(200); nullable=true; writable=true |
+| `cost` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Cost decimal(18, 2); nullable=true; writable=false |
+| `vATAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATAmount decimal(18, 2); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(200); nullable=true; writable=true |
+| `costType` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CostType varchar(30); nullable=true; writable=true |
+| `currencyId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CurrencyID varchar(3); nullable=true; writable=true |
+| `rateExchange` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RateExchange decimal(28, 10); nullable=true; writable=true |
+| `sourceAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SourceAmount decimal(28, 4); nullable=true; writable=true |
+| `vATId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATID varchar(50); nullable=true; writable=true |
+| `vATPercent` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATPercent decimal(18, 2); nullable=true; writable=false |
+| `expenseAccId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ExpenseAccID varchar(50); nullable=true; writable=true |
+| `invoiceNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL InvoiceNo varchar(50); nullable=true; writable=true |
+| `invoiceDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL InvoiceDate datetime; nullable=true; writable=true |
+| `allocateKind` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AllocateKind varchar(5); nullable=true; writable=true |
+| `isAllocatable` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL IsAllocatable bit; nullable=true; writable=false |
+| `serviceDocumentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ServiceDocumentID varchar(30); nullable=true; writable=false |
+| `serviceDetailId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ServiceDetailID varchar(40); nullable=true; writable=false |
+| `status` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL Status int; nullable=true; writable=false |
+| `userCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserCreate varchar(50); nullable=true; writable=false |
+| `userUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserUpdate varchar(50); nullable=true; writable=false |
+| `dateCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateCreate datetime; nullable=true; writable=false |
+| `dateUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateUpdate datetime; nullable=true; writable=false |
+| `isActive` | boolean | true | SQL IsActive bit; nullable=false; writable=false |
+
+<a id="schema-erp_inbound_requests_discrepancies_fields"></a>
+
+### Schema Erp_inbound_requests_discrepancies_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID nvarchar(50); nullable=false; writable=false |
+| `lot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Lot nvarchar(50); nullable=true; writable=false |
+| `expireDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ExpireDate datetime; nullable=true; writable=false |
+| `quantityByDocument` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QuantityByDocument decimal(18, 0); nullable=true; writable=false |
+| `quantityByReal` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QuantityByReal decimal(18, 0); nullable=true; writable=false |
+| `quantityChecked` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QuantityChecked decimal(18, 0); nullable=true; writable=false |
+| `quantityNoSuitable` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QuantityNoSuitable decimal(18, 0); nullable=true; writable=false |
+| `status` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Status nvarchar(255); nullable=true; writable=false |
+| `solution` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Solution nvarchar(255); nullable=true; writable=false |
+| `conclude` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Conclude nvarchar(255); nullable=true; writable=false |
+| `suggestion` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Suggestion nvarchar(255); nullable=true; writable=false |
+
+<a id="schema-erp_inbound_requests_history_fields"></a>
+
+### Schema Erp_inbound_requests_history_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `thoiGian` | string | true | SQL ThoiGian datetime; nullable=false; writable=false |
+| `userName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserName varchar(50); nullable=true; writable=false |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(200); nullable=true; writable=false |
+
+<a id="schema-erp_inbound_requests_document_row"></a>
+
+### Schema Erp_inbound_requests_document_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_inbound_requests_header_fields](#schema-erp_inbound_requests_header_fields) | true | — |
+
+<a id="schema-erp_inbound_requests_document_page"></a>
+
+### Schema Erp_inbound_requests_document_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_inbound_requests_document_row](#schema-erp_inbound_requests_document_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_inbound_requests_list_response"></a>
+
+### Schema Erp_inbound_requests_list_response
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_inbound_requests_document_page](#schema-erp_inbound_requests_document_page) | true | — |
+
+<a id="schema-erp_inbound_requests_detail"></a>
+
+### Schema Erp_inbound_requests_detail
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_inbound_requests_header_fields](#schema-erp_inbound_requests_header_fields) | true | — |
+| `lines` | [Erp_inbound_requests_lines_page](#schema-erp_inbound_requests_lines_page) | true | — |
+| `history` | [Erp_inbound_requests_history_page](#schema-erp_inbound_requests_history_page) | true | — |
+| `comparison` | null | true | — |
+| `actions` | array&lt;[ErpActionState](#schema-erpactionstate)&gt; | true | items[0]: — |
+| `sections` | object | true | required=["costs","discrepancies"]; properties={"costs":{"$ref":"#/components/schemas/Erp_inbound_requests_costs_page"},"discrepancies":{"$ref":"#/components/schemas/Erp_inbound_requests_discrepancies_page"}}; additionalProperties=false |
+
+<a id="schema-erp_inbound_requests_lines_row"></a>
+
+### Schema Erp_inbound_requests_lines_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_inbound_requests_lines_fields](#schema-erp_inbound_requests_lines_fields) | true | — |
+
+<a id="schema-erp_inbound_requests_lines_page"></a>
+
+### Schema Erp_inbound_requests_lines_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_inbound_requests_lines_row](#schema-erp_inbound_requests_lines_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_inbound_requests_costs_row"></a>
+
+### Schema Erp_inbound_requests_costs_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_inbound_requests_costs_fields](#schema-erp_inbound_requests_costs_fields) | true | — |
+
+<a id="schema-erp_inbound_requests_costs_page"></a>
+
+### Schema Erp_inbound_requests_costs_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_inbound_requests_costs_row](#schema-erp_inbound_requests_costs_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_inbound_requests_discrepancies_row"></a>
+
+### Schema Erp_inbound_requests_discrepancies_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_inbound_requests_discrepancies_fields](#schema-erp_inbound_requests_discrepancies_fields) | true | — |
+
+<a id="schema-erp_inbound_requests_discrepancies_page"></a>
+
+### Schema Erp_inbound_requests_discrepancies_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_inbound_requests_discrepancies_row](#schema-erp_inbound_requests_discrepancies_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_inbound_requests_history_row"></a>
+
+### Schema Erp_inbound_requests_history_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_inbound_requests_history_fields](#schema-erp_inbound_requests_history_fields) | true | — |
+
+<a id="schema-erp_inbound_requests_history_page"></a>
+
+### Schema Erp_inbound_requests_history_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_inbound_requests_history_row](#schema-erp_inbound_requests_history_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_inbound_requests_detail_response"></a>
+
+### Schema Erp_inbound_requests_detail_response
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_inbound_requests_detail](#schema-erp_inbound_requests_detail) | true | — |
+
+<a id="schema-erpinternaltransferaccountingheaderinput"></a>
+
+### Schema ErpInternalTransferAccountingHeaderInput
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `outputDocumentId` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erpinternaltransferaccountinglinesinput"></a>
+
+### Schema ErpInternalTransferAccountingLinesInput
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lot` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `expireDate` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `accountingNote` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_accounting_new_line"></a>
+
+### Schema Erp_internal_transfer_accounting_new_line
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `clientLineKey` | string | true | — |
+| `values` | [ErpInternalTransferAccountingLinesInput](#schema-erpinternaltransferaccountinglinesinput) | true | — |
+
+<a id="schema-erp_internal_transfer_accounting_line_update"></a>
+
+### Schema Erp_internal_transfer_accounting_line_update
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `kind` | string | true | const="Update" |
+| `lineId` | string | true | maxLength=50 |
+| `clientLineKey` | null | false | — |
+| `values` | [ErpInternalTransferAccountingLinesInput](#schema-erpinternaltransferaccountinglinesinput) | true | — |
+
+<a id="schema-erp_internal_transfer_accounting_save"></a>
+
+### Schema Erp_internal_transfer_accounting_save
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `header` | [ErpInternalTransferAccountingHeaderInput](#schema-erpinternaltransferaccountingheaderinput) | true | — |
+| `lineChanges` | array&lt;oneOf [Erp_internal_transfer_accounting_line_update](#schema-erp_internal_transfer_accounting_line_update)&gt; | true | maxItems=500; items[0]: oneOf[0]: — |
+
+<a id="schema-erp_internal_transfer_accounting_send_warehouse_request"></a>
+
+### Schema Erp_internal_transfer_accounting_send_warehouse_request
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `payload` | [ErpActionNotes](#schema-erpactionnotes) | true | — |
+
+<a id="schema-erp_internal_transfer_accounting_reject_request"></a>
+
+### Schema Erp_internal_transfer_accounting_reject_request
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `payload` | [ErpActionNotes](#schema-erpactionnotes) | true | — |
+
+<a id="schema-erpreturnstep"></a>
+
+### Schema ErpReturnStep
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `statusId` | integer (int32) | true | — |
+| `notes` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_accounting_return_step_request"></a>
+
+### Schema Erp_internal_transfer_accounting_return_step_request
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `payload` | [ErpReturnStep](#schema-erpreturnstep) | true | — |
+
+<a id="schema-erpactionoptionsquery"></a>
+
+### Schema ErpActionOptionsQuery
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `branchId` | string | true | — |
+| `role` | string | false | — |
+| `page` | integer (int32) | false | — |
+| `pageSize` | integer (int32) | false | — |
+| `search` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_accounting_header_fields"></a>
+
+### Schema Erp_internal_transfer_accounting_header_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `batchDate` | string | true | SQL BatchDate datetime; nullable=false; writable=false |
+| `fromBranchId` | string | true | SQL FromBranchID varchar(50); nullable=false; writable=false |
+| `toBranchId` | string | true | SQL ToBranchID varchar(50); nullable=false; writable=false |
+| `fromStoreHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromStoreHouseID varchar(50); nullable=true; writable=false |
+| `toStoreHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToStoreHouseID varchar(50); nullable=true; writable=false |
+| `plannedTransferDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PlannedTransferDate datetime; nullable=true; writable=false |
+| `actualDispatchDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualDispatchDate datetime; nullable=true; writable=false |
+| `actualReceiveDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualReceiveDate datetime; nullable=true; writable=false |
+| `assignedPM` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedPM varchar(100); nullable=true; writable=false |
+| `assignedTechnician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedTechnician varchar(100); nullable=true; writable=false |
+| `assignedSA` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedSA varchar(100); nullable=true; writable=false |
+| `hasEquipment` | boolean | true | SQL HasEquipment bit; nullable=false; writable=false |
+| `statusId` | integer | true | SQL StatusID int; nullable=false; writable=false |
+| `transportMethod` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TransportMethod nvarchar(50); nullable=true; writable=false |
+| `carrierName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CarrierName nvarchar(150); nullable=true; writable=false |
+| `carrierPhone` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CarrierPhone nvarchar(100); nullable=true; writable=false |
+| `vehicleNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VehicleNo nvarchar(100); nullable=true; writable=false |
+| `outputDocumentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL OutputDocumentID varchar(30); nullable=true; writable=true |
+| `inputDocumentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL InputDocumentID varchar(30); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(1000); nullable=true; writable=false |
+| `technicalCheckedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicalCheckedBy varchar(100); nullable=true; writable=false |
+| `technicalCheckedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicalCheckedAt datetime; nullable=true; writable=false |
+| `sAApprovedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAApprovedBy varchar(100); nullable=true; writable=false |
+| `sAApprovedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAApprovedAt datetime; nullable=true; writable=false |
+| `accountingConfirmedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingConfirmedBy varchar(100); nullable=true; writable=false |
+| `accountingConfirmedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingConfirmedAt datetime; nullable=true; writable=false |
+| `dispatchedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DispatchedBy varchar(100); nullable=true; writable=false |
+| `receivedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ReceivedBy varchar(100); nullable=true; writable=false |
+| `isLocked` | boolean | true | SQL isLock bit; nullable=false; writable=false |
+| `userCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserCreate varchar(100); nullable=true; writable=false |
+| `userUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserUpdate varchar(100); nullable=true; writable=false |
+| `dateCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateCreate datetime; nullable=true; writable=false |
+| `dateUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateUpdate datetime; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `statusCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusCode varchar(30); nullable=true; writable=false |
+| `statusName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusName nvarchar(150); nullable=true; writable=false |
+| `backColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL BackColor int; nullable=true; writable=false |
+| `foreColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL ForeColor int; nullable=true; writable=false |
+| `fromBranchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromBranchName nvarchar(100); nullable=true; writable=false |
+| `toBranchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToBranchName nvarchar(100); nullable=true; writable=false |
+| `fromStoreHouseName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromStoreHouseName nvarchar(100); nullable=true; writable=false |
+| `toStoreHouseName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToStoreHouseName nvarchar(100); nullable=true; writable=false |
+| `pMName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PMName nvarchar(150); nullable=true; writable=false |
+| `technicianName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicianName nvarchar(150); nullable=true; writable=false |
+| `sAName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAName nvarchar(150); nullable=true; writable=false |
+| `requestCount` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestCount int; nullable=true; writable=false |
+| `lineCount` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL LineCount int; nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_accounting_requests_fields"></a>
+
+### Schema Erp_internal_transfer_accounting_requests_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `requestId` | string | true | SQL RequestID nvarchar(50); nullable=false; writable=false |
+| `addedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddedBy varchar(100); nullable=true; writable=false |
+| `addedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddedAt datetime; nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=false |
+| `documentDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DocumentDate datetime; nullable=true; writable=false |
+| `salesUser` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesUser varchar(100); nullable=true; writable=false |
+| `requestedTransferDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedTransferDate datetime; nullable=true; writable=false |
+| `requestStatusName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestStatusName nvarchar(150); nullable=true; writable=false |
+| `salesName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesName nvarchar(150); nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_accounting_lines_fields"></a>
+
+### Schema Erp_internal_transfer_accounting_lines_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `requestId` | string | true | SQL RequestID nvarchar(50); nullable=false; writable=false |
+| `requestDetailId` | string | true | SQL RequestDetailID nvarchar(50); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID nvarchar(50); nullable=false; writable=false |
+| `requestedQty` | string | true | SQL RequestedQty decimal(28, 4); nullable=false; writable=false |
+| `approvedQty` | string | true | SQL ApprovedQty decimal(28, 4); nullable=false; writable=false |
+| `requestedLot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedLot nvarchar(100); nullable=true; writable=false |
+| `lot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Lot varchar(50); nullable=true; writable=true |
+| `expireDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ExpireDate datetime; nullable=true; writable=true |
+| `isEquipment` | boolean | true | SQL IsEquipment bit; nullable=false; writable=false |
+| `techStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechStatus varchar(20); nullable=true; writable=false |
+| `techNotes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechNotes nvarchar(1000); nullable=true; writable=false |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl nvarchar(1000); nullable=true; writable=false |
+| `technician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Technician varchar(100); nullable=true; writable=false |
+| `techCheckedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechCheckedAt datetime; nullable=true; writable=false |
+| `actualIssueQty` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualIssueQty decimal(28, 4); nullable=true; writable=false |
+| `actualReceiveQty` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualReceiveQty decimal(28, 4); nullable=true; writable=false |
+| `accountingNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingNote nvarchar(500); nullable=true; writable=true |
+| `warehouseNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL WarehouseNote nvarchar(500); nullable=true; writable=false |
+| `receiveNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ReceiveNote nvarchar(500); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=false |
+| `itemCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemCode nvarchar(100); nullable=true; writable=false |
+| `itemName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemName nvarchar(max); nullable=true; writable=false |
+| `unit` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Unit nvarchar(50); nullable=true; writable=false |
+| `hangSX` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL HangSX nvarchar(100); nullable=true; writable=false |
+| `isLot` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL isLot bit; nullable=true; writable=false |
+| `requestDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestDate datetime; nullable=true; writable=false |
+| `salesUser` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesUser varchar(100); nullable=true; writable=false |
+| `salesName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesName nvarchar(150); nullable=true; writable=false |
+| `requestTerritoryNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestTerritoryNote nvarchar(500); nullable=true; writable=false |
+| `qtyNotIssued` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QtyNotIssued decimal(29, 4); nullable=true; writable=false |
+| `qtyInTransit` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QtyInTransit decimal(29, 4); nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_accounting_assets_fields"></a>
+
+### Schema Erp_internal_transfer_accounting_assets_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `batchDetailId` | string | true | SQL BatchDetailID varchar(40); nullable=false; writable=false |
+| `assetId` | string | true | SQL AssetID varchar(50); nullable=false; writable=false |
+| `assetCondition` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetCondition nvarchar(1000); nullable=true; writable=false |
+| `techStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechStatus varchar(20); nullable=true; writable=false |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl nvarchar(1000); nullable=true; writable=false |
+| `techNotes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechNotes nvarchar(1000); nullable=true; writable=false |
+| `technician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Technician varchar(100); nullable=true; writable=false |
+| `checkedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CheckedAt datetime; nullable=true; writable=false |
+| `isDispatched` | boolean | true | SQL IsDispatched bit; nullable=false; writable=false |
+| `isReceived` | boolean | true | SQL IsReceived bit; nullable=false; writable=false |
+| `assetName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetName nvarchar(200); nullable=true; writable=false |
+| `itemId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemID varchar(50); nullable=true; writable=false |
+| `serialNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SerialNo nvarchar(100); nullable=true; writable=false |
+| `assetStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetStatus nvarchar(100); nullable=true; writable=false |
+| `trackLifecycle` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL TrackLifecycle bit; nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_accounting_history_fields"></a>
+
+### Schema Erp_internal_transfer_accounting_history_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `thoiGian` | string | true | SQL ThoiGian datetime; nullable=false; writable=false |
+| `userName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserName varchar(50); nullable=true; writable=false |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+| `batchId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BatchID varchar(50); nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_accounting_document_row"></a>
+
+### Schema Erp_internal_transfer_accounting_document_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_internal_transfer_accounting_header_fields](#schema-erp_internal_transfer_accounting_header_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_accounting_document_page"></a>
+
+### Schema Erp_internal_transfer_accounting_document_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_accounting_document_row](#schema-erp_internal_transfer_accounting_document_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_accounting_list_response"></a>
+
+### Schema Erp_internal_transfer_accounting_list_response
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_accounting_document_page](#schema-erp_internal_transfer_accounting_document_page) | true | — |
+
+<a id="schema-erp_internal_transfer_accounting_detail"></a>
+
+### Schema Erp_internal_transfer_accounting_detail
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_internal_transfer_accounting_header_fields](#schema-erp_internal_transfer_accounting_header_fields) | true | — |
+| `lines` | [Erp_internal_transfer_accounting_lines_page](#schema-erp_internal_transfer_accounting_lines_page) | true | — |
+| `history` | [Erp_internal_transfer_accounting_history_page](#schema-erp_internal_transfer_accounting_history_page) | true | — |
+| `comparison` | null | true | — |
+| `actions` | array&lt;[ErpActionState](#schema-erpactionstate)&gt; | true | items[0]: — |
+| `sections` | object | true | required=["requests","assets"]; properties={"requests":{"$ref":"#/components/schemas/Erp_internal_transfer_accounting_requests_page"},"assets":{"$ref":"#/components/schemas/Erp_internal_transfer_accounting_assets_page"}}; additionalProperties=false |
+
+<a id="schema-erp_internal_transfer_accounting_requests_row"></a>
+
+### Schema Erp_internal_transfer_accounting_requests_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_accounting_requests_fields](#schema-erp_internal_transfer_accounting_requests_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_accounting_requests_page"></a>
+
+### Schema Erp_internal_transfer_accounting_requests_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_accounting_requests_row](#schema-erp_internal_transfer_accounting_requests_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_accounting_lines_row"></a>
+
+### Schema Erp_internal_transfer_accounting_lines_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_accounting_lines_fields](#schema-erp_internal_transfer_accounting_lines_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_accounting_lines_page"></a>
+
+### Schema Erp_internal_transfer_accounting_lines_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_accounting_lines_row](#schema-erp_internal_transfer_accounting_lines_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_accounting_assets_row"></a>
+
+### Schema Erp_internal_transfer_accounting_assets_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_accounting_assets_fields](#schema-erp_internal_transfer_accounting_assets_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_accounting_assets_page"></a>
+
+### Schema Erp_internal_transfer_accounting_assets_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_accounting_assets_row](#schema-erp_internal_transfer_accounting_assets_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_accounting_history_row"></a>
+
+### Schema Erp_internal_transfer_accounting_history_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_accounting_history_fields](#schema-erp_internal_transfer_accounting_history_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_accounting_history_page"></a>
+
+### Schema Erp_internal_transfer_accounting_history_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_accounting_history_row](#schema-erp_internal_transfer_accounting_history_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_accounting_detail_response"></a>
+
+### Schema Erp_internal_transfer_accounting_detail_response
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_accounting_detail](#schema-erp_internal_transfer_accounting_detail) | true | — |
+
+<a id="schema-erpinternaltransferbatchesheaderinput"></a>
+
+### Schema ErpInternalTransferBatchesHeaderInput
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `batchDate` | string | true | — |
+| `fromBranchId` | string | true | — |
+| `toBranchId` | string | true | — |
+| `fromStoreHouseId` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `toStoreHouseId` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `plannedTransferDate` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `assignedPM` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `assignedTechnician` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `assignedSA` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `transportMethod` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `carrierName` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `carrierPhone` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `vehicleNo` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `outputDocumentId` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `inputDocumentId` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `notes` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erpinternaltransferbatcheslinesinput"></a>
+
+### Schema ErpInternalTransferBatchesLinesInput
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `requestId` | string | true | — |
+| `notes` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_batches_new_line"></a>
+
+### Schema Erp_internal_transfer_batches_new_line
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `clientLineKey` | string | true | — |
+| `values` | [ErpInternalTransferBatchesLinesInput](#schema-erpinternaltransferbatcheslinesinput) | true | — |
+
+<a id="schema-erp_internal_transfer_batches_create"></a>
+
+### Schema Erp_internal_transfer_batches_create
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `header` | [ErpInternalTransferBatchesHeaderInput](#schema-erpinternaltransferbatchesheaderinput) | true | required=["batchDate"]; properties={"batchDate":{"type":"string","pattern":"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}$","description":"Required when creating a numbered document; ERP calendar date/time, yyyy-MM-ddTHH:mm:ss.fff."}} |
+| `lines` | array&lt;[Erp_internal_transfer_batches_new_line](#schema-erp_internal_transfer_batches_new_line)&gt; | true | minItems=0; maxItems=500; items[0]: — |
+
+<a id="schema-erp_internal_transfer_batches_line_add"></a>
+
+### Schema Erp_internal_transfer_batches_line_add
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `kind` | string | true | const="Add" |
+| `lineId` | null | false | — |
+| `clientLineKey` | string | true | maxLength=64 |
+| `values` | [ErpInternalTransferBatchesLinesInput](#schema-erpinternaltransferbatcheslinesinput) | true | — |
+
+<a id="schema-erp_internal_transfer_batches_line_update"></a>
+
+### Schema Erp_internal_transfer_batches_line_update
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `kind` | string | true | const="Update" |
+| `lineId` | string | true | maxLength=50 |
+| `clientLineKey` | null | false | — |
+| `values` | [ErpInternalTransferBatchesLinesInput](#schema-erpinternaltransferbatcheslinesinput) | true | — |
+
+<a id="schema-erp_internal_transfer_batches_line_remove"></a>
+
+### Schema Erp_internal_transfer_batches_line_remove
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `kind` | string | true | const="Remove" |
+| `lineId` | string | true | maxLength=50 |
+| `clientLineKey` | null | false | — |
+| `values` | null | false | — |
+
+<a id="schema-erp_internal_transfer_batches_save"></a>
+
+### Schema Erp_internal_transfer_batches_save
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `header` | [ErpInternalTransferBatchesHeaderInput](#schema-erpinternaltransferbatchesheaderinput) | true | — |
+| `lineChanges` | array&lt;oneOf [Erp_internal_transfer_batches_line_add](#schema-erp_internal_transfer_batches_line_add) / [Erp_internal_transfer_batches_line_update](#schema-erp_internal_transfer_batches_line_update) / [Erp_internal_transfer_batches_line_remove](#schema-erp_internal_transfer_batches_line_remove)&gt; | true | maxItems=500; items[0]: oneOf[0]: —; oneOf[1]: —; oneOf[2]: — |
+
+<a id="schema-erp_internal_transfer_batches_sync_requests_request"></a>
+
+### Schema Erp_internal_transfer_batches_sync_requests_request
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `payload` | object | true | required=[]; properties={}; additionalProperties=false |
+
+<a id="schema-erp_internal_transfer_batches_send_tech_request"></a>
+
+### Schema Erp_internal_transfer_batches_send_tech_request
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `payload` | [ErpActionNotes](#schema-erpactionnotes) | true | — |
+
+<a id="schema-erp_internal_transfer_batches_header_fields"></a>
+
+### Schema Erp_internal_transfer_batches_header_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `batchDate` | string | true | SQL BatchDate datetime; nullable=false; writable=true |
+| `fromBranchId` | string | true | SQL FromBranchID varchar(50); nullable=false; writable=true |
+| `toBranchId` | string | true | SQL ToBranchID varchar(50); nullable=false; writable=true |
+| `fromStoreHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromStoreHouseID varchar(50); nullable=true; writable=true |
+| `toStoreHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToStoreHouseID varchar(50); nullable=true; writable=true |
+| `plannedTransferDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PlannedTransferDate datetime; nullable=true; writable=true |
+| `actualDispatchDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualDispatchDate datetime; nullable=true; writable=false |
+| `actualReceiveDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualReceiveDate datetime; nullable=true; writable=false |
+| `assignedPM` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedPM varchar(100); nullable=true; writable=true |
+| `assignedTechnician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedTechnician varchar(100); nullable=true; writable=true |
+| `assignedSA` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedSA varchar(100); nullable=true; writable=true |
+| `hasEquipment` | boolean | true | SQL HasEquipment bit; nullable=false; writable=false |
+| `statusId` | integer | true | SQL StatusID int; nullable=false; writable=false |
+| `transportMethod` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TransportMethod nvarchar(50); nullable=true; writable=true |
+| `carrierName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CarrierName nvarchar(150); nullable=true; writable=true |
+| `carrierPhone` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CarrierPhone nvarchar(100); nullable=true; writable=true |
+| `vehicleNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VehicleNo nvarchar(100); nullable=true; writable=true |
+| `outputDocumentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL OutputDocumentID varchar(30); nullable=true; writable=true |
+| `inputDocumentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL InputDocumentID varchar(30); nullable=true; writable=true |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(1000); nullable=true; writable=true |
+| `technicalCheckedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicalCheckedBy varchar(100); nullable=true; writable=false |
+| `technicalCheckedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicalCheckedAt datetime; nullable=true; writable=false |
+| `sAApprovedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAApprovedBy varchar(100); nullable=true; writable=false |
+| `sAApprovedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAApprovedAt datetime; nullable=true; writable=false |
+| `accountingConfirmedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingConfirmedBy varchar(100); nullable=true; writable=false |
+| `accountingConfirmedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingConfirmedAt datetime; nullable=true; writable=false |
+| `dispatchedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DispatchedBy varchar(100); nullable=true; writable=false |
+| `receivedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ReceivedBy varchar(100); nullable=true; writable=false |
+| `isLocked` | boolean | true | SQL isLock bit; nullable=false; writable=false |
+| `userCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserCreate varchar(100); nullable=true; writable=false |
+| `userUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserUpdate varchar(100); nullable=true; writable=false |
+| `dateCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateCreate datetime; nullable=true; writable=false |
+| `dateUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateUpdate datetime; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `statusCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusCode varchar(30); nullable=true; writable=false |
+| `statusName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusName nvarchar(150); nullable=true; writable=false |
+| `backColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL BackColor int; nullable=true; writable=false |
+| `foreColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL ForeColor int; nullable=true; writable=false |
+| `fromBranchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromBranchName nvarchar(100); nullable=true; writable=false |
+| `toBranchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToBranchName nvarchar(100); nullable=true; writable=false |
+| `fromStoreHouseName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromStoreHouseName nvarchar(100); nullable=true; writable=false |
+| `toStoreHouseName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToStoreHouseName nvarchar(100); nullable=true; writable=false |
+| `pMName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PMName nvarchar(150); nullable=true; writable=false |
+| `technicianName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicianName nvarchar(150); nullable=true; writable=false |
+| `sAName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAName nvarchar(150); nullable=true; writable=false |
+| `requestCount` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestCount int; nullable=true; writable=false |
+| `lineCount` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL LineCount int; nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_batches_lines_fields"></a>
+
+### Schema Erp_internal_transfer_batches_lines_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `requestId` | string | true | SQL RequestID nvarchar(50); nullable=false; writable=true |
+| `addedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddedBy varchar(100); nullable=true; writable=false |
+| `addedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddedAt datetime; nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=true |
+| `documentDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DocumentDate datetime; nullable=true; writable=false |
+| `salesUser` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesUser varchar(100); nullable=true; writable=false |
+| `requestedTransferDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedTransferDate datetime; nullable=true; writable=false |
+| `requestStatusName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestStatusName nvarchar(150); nullable=true; writable=false |
+| `salesName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesName nvarchar(150); nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_batches_details_fields"></a>
+
+### Schema Erp_internal_transfer_batches_details_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `requestId` | string | true | SQL RequestID nvarchar(50); nullable=false; writable=false |
+| `requestDetailId` | string | true | SQL RequestDetailID nvarchar(50); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID nvarchar(50); nullable=false; writable=false |
+| `requestedQty` | string | true | SQL RequestedQty decimal(28, 4); nullable=false; writable=false |
+| `approvedQty` | string | true | SQL ApprovedQty decimal(28, 4); nullable=false; writable=false |
+| `requestedLot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedLot nvarchar(100); nullable=true; writable=false |
+| `lot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Lot varchar(50); nullable=true; writable=false |
+| `expireDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ExpireDate datetime; nullable=true; writable=false |
+| `isEquipment` | boolean | true | SQL IsEquipment bit; nullable=false; writable=false |
+| `techStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechStatus varchar(20); nullable=true; writable=false |
+| `techNotes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechNotes nvarchar(1000); nullable=true; writable=false |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl nvarchar(1000); nullable=true; writable=false |
+| `technician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Technician varchar(100); nullable=true; writable=false |
+| `techCheckedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechCheckedAt datetime; nullable=true; writable=false |
+| `actualIssueQty` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualIssueQty decimal(28, 4); nullable=true; writable=false |
+| `actualReceiveQty` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualReceiveQty decimal(28, 4); nullable=true; writable=false |
+| `accountingNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingNote nvarchar(500); nullable=true; writable=false |
+| `warehouseNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL WarehouseNote nvarchar(500); nullable=true; writable=false |
+| `receiveNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ReceiveNote nvarchar(500); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=false |
+| `itemCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemCode nvarchar(100); nullable=true; writable=false |
+| `itemName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemName nvarchar(max); nullable=true; writable=false |
+| `unit` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Unit nvarchar(50); nullable=true; writable=false |
+| `hangSX` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL HangSX nvarchar(100); nullable=true; writable=false |
+| `isLot` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL isLot bit; nullable=true; writable=false |
+| `requestDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestDate datetime; nullable=true; writable=false |
+| `salesUser` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesUser varchar(100); nullable=true; writable=false |
+| `salesName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesName nvarchar(150); nullable=true; writable=false |
+| `requestTerritoryNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestTerritoryNote nvarchar(500); nullable=true; writable=false |
+| `qtyNotIssued` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QtyNotIssued decimal(29, 4); nullable=true; writable=false |
+| `qtyInTransit` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QtyInTransit decimal(29, 4); nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_batches_assets_fields"></a>
+
+### Schema Erp_internal_transfer_batches_assets_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `batchDetailId` | string | true | SQL BatchDetailID varchar(40); nullable=false; writable=false |
+| `assetId` | string | true | SQL AssetID varchar(50); nullable=false; writable=false |
+| `assetCondition` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetCondition nvarchar(1000); nullable=true; writable=false |
+| `techStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechStatus varchar(20); nullable=true; writable=false |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl nvarchar(1000); nullable=true; writable=false |
+| `techNotes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechNotes nvarchar(1000); nullable=true; writable=false |
+| `technician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Technician varchar(100); nullable=true; writable=false |
+| `checkedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CheckedAt datetime; nullable=true; writable=false |
+| `isDispatched` | boolean | true | SQL IsDispatched bit; nullable=false; writable=false |
+| `isReceived` | boolean | true | SQL IsReceived bit; nullable=false; writable=false |
+| `assetName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetName nvarchar(200); nullable=true; writable=false |
+| `itemId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemID varchar(50); nullable=true; writable=false |
+| `serialNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SerialNo nvarchar(100); nullable=true; writable=false |
+| `assetStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetStatus nvarchar(100); nullable=true; writable=false |
+| `trackLifecycle` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL TrackLifecycle bit; nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_batches_history_fields"></a>
+
+### Schema Erp_internal_transfer_batches_history_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `thoiGian` | string | true | SQL ThoiGian datetime; nullable=false; writable=false |
+| `userName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserName varchar(50); nullable=true; writable=false |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+| `batchId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BatchID varchar(50); nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_batches_document_row"></a>
+
+### Schema Erp_internal_transfer_batches_document_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_internal_transfer_batches_header_fields](#schema-erp_internal_transfer_batches_header_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_batches_document_page"></a>
+
+### Schema Erp_internal_transfer_batches_document_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_batches_document_row](#schema-erp_internal_transfer_batches_document_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_batches_list_response"></a>
+
+### Schema Erp_internal_transfer_batches_list_response
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_batches_document_page](#schema-erp_internal_transfer_batches_document_page) | true | — |
+
+<a id="schema-erp_internal_transfer_batches_detail"></a>
+
+### Schema Erp_internal_transfer_batches_detail
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_internal_transfer_batches_header_fields](#schema-erp_internal_transfer_batches_header_fields) | true | — |
+| `lines` | [Erp_internal_transfer_batches_lines_page](#schema-erp_internal_transfer_batches_lines_page) | true | — |
+| `history` | [Erp_internal_transfer_batches_history_page](#schema-erp_internal_transfer_batches_history_page) | true | — |
+| `comparison` | null | true | — |
+| `actions` | array&lt;[ErpActionState](#schema-erpactionstate)&gt; | true | items[0]: — |
+| `sections` | object | true | required=["details","assets"]; properties={"details":{"$ref":"#/components/schemas/Erp_internal_transfer_batches_details_page"},"assets":{"$ref":"#/components/schemas/Erp_internal_transfer_batches_assets_page"}}; additionalProperties=false |
+
+<a id="schema-erp_internal_transfer_batches_lines_row"></a>
+
+### Schema Erp_internal_transfer_batches_lines_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_batches_lines_fields](#schema-erp_internal_transfer_batches_lines_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_batches_lines_page"></a>
+
+### Schema Erp_internal_transfer_batches_lines_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_batches_lines_row](#schema-erp_internal_transfer_batches_lines_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_batches_details_row"></a>
+
+### Schema Erp_internal_transfer_batches_details_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_batches_details_fields](#schema-erp_internal_transfer_batches_details_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_batches_details_page"></a>
+
+### Schema Erp_internal_transfer_batches_details_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_batches_details_row](#schema-erp_internal_transfer_batches_details_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_batches_assets_row"></a>
+
+### Schema Erp_internal_transfer_batches_assets_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_batches_assets_fields](#schema-erp_internal_transfer_batches_assets_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_batches_assets_page"></a>
+
+### Schema Erp_internal_transfer_batches_assets_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_batches_assets_row](#schema-erp_internal_transfer_batches_assets_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_batches_history_row"></a>
+
+### Schema Erp_internal_transfer_batches_history_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_batches_history_fields](#schema-erp_internal_transfer_batches_history_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_batches_history_page"></a>
+
+### Schema Erp_internal_transfer_batches_history_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_batches_history_row](#schema-erp_internal_transfer_batches_history_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_batches_detail_response"></a>
+
+### Schema Erp_internal_transfer_batches_detail_response
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_batches_detail](#schema-erp_internal_transfer_batches_detail) | true | — |
+
+<a id="schema-erpinternaltransferpmheaderinput"></a>
+
+### Schema ErpInternalTransferPmHeaderInput
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+
+<a id="schema-erpinternaltransferpmlinesinput"></a>
+
+### Schema ErpInternalTransferPmLinesInput
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `pMApprovedQty` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `pMNote` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_pm_new_line"></a>
+
+### Schema Erp_internal_transfer_pm_new_line
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `clientLineKey` | string | true | — |
+| `values` | [ErpInternalTransferPmLinesInput](#schema-erpinternaltransferpmlinesinput) | true | — |
+
+<a id="schema-erp_internal_transfer_pm_line_update"></a>
+
+### Schema Erp_internal_transfer_pm_line_update
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `kind` | string | true | const="Update" |
+| `lineId` | string | true | maxLength=50 |
+| `clientLineKey` | null | false | — |
+| `values` | [ErpInternalTransferPmLinesInput](#schema-erpinternaltransferpmlinesinput) | true | — |
+
+<a id="schema-erp_internal_transfer_pm_save"></a>
+
+### Schema Erp_internal_transfer_pm_save
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `header` | [ErpInternalTransferPmHeaderInput](#schema-erpinternaltransferpmheaderinput) | true | — |
+| `lineChanges` | array&lt;oneOf [Erp_internal_transfer_pm_line_update](#schema-erp_internal_transfer_pm_line_update)&gt; | true | maxItems=500; items[0]: oneOf[0]: — |
+
+<a id="schema-erp_internal_transfer_pm_pm_confirm_request"></a>
+
+### Schema Erp_internal_transfer_pm_pm_confirm_request
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `payload` | [ErpActionNotes](#schema-erpactionnotes) | true | — |
+
+<a id="schema-erp_internal_transfer_pm_reject_request"></a>
+
+### Schema Erp_internal_transfer_pm_reject_request
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `payload` | [ErpActionNotes](#schema-erpactionnotes) | true | — |
+
+<a id="schema-erp_internal_transfer_pm_header_fields"></a>
+
+### Schema Erp_internal_transfer_pm_header_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | SQL DocumentID nvarchar(50); nullable=false; writable=false |
+| `documentDate` | string | true | SQL DocumentDate datetime; nullable=false; writable=false |
+| `salesUser` | string | true | SQL SalesUser varchar(100); nullable=false; writable=false |
+| `branchId` | string | true | SQL BranchID varchar(50); nullable=false; writable=false |
+| `fromBranchId` | string | true | SQL FromBranchID varchar(50); nullable=false; writable=false |
+| `toBranchId` | string | true | SQL ToBranchID varchar(50); nullable=false; writable=false |
+| `requestedTransferDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedTransferDate datetime; nullable=true; writable=false |
+| `assignedPM` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedPM varchar(100); nullable=true; writable=false |
+| `statusId` | integer | true | SQL StatusID int; nullable=false; writable=false |
+| `transferReason` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TransferReason nvarchar(500); nullable=true; writable=false |
+| `transportMethod` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TransportMethod nvarchar(50); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(1000); nullable=true; writable=false |
+| `pMConfirmedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PMConfirmedBy varchar(100); nullable=true; writable=false |
+| `pMConfirmedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PMConfirmedAt datetime; nullable=true; writable=false |
+| `isLocked` | boolean | true | SQL isLock bit; nullable=false; writable=false |
+| `userCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserCreate varchar(100); nullable=true; writable=false |
+| `userUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserUpdate varchar(100); nullable=true; writable=false |
+| `dateCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateCreate datetime; nullable=true; writable=false |
+| `dateUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateUpdate datetime; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `statusCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusCode varchar(30); nullable=true; writable=false |
+| `statusName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusName nvarchar(150); nullable=true; writable=false |
+| `backColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL BackColor int; nullable=true; writable=false |
+| `foreColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL ForeColor int; nullable=true; writable=false |
+| `salesName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesName nvarchar(150); nullable=true; writable=false |
+| `pMName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PMName nvarchar(150); nullable=true; writable=false |
+| `branchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BranchName nvarchar(100); nullable=true; writable=false |
+| `fromBranchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromBranchName nvarchar(100); nullable=true; writable=false |
+| `toBranchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToBranchName nvarchar(100); nullable=true; writable=false |
+| `batchId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BatchID varchar(30); nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_pm_lines_fields"></a>
+
+### Schema Erp_internal_transfer_pm_lines_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID nvarchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID nvarchar(50); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID nvarchar(50); nullable=false; writable=false |
+| `requestedQty` | string | true | SQL RequestedQty decimal(28, 4); nullable=false; writable=false |
+| `pMApprovedQty` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PMApprovedQty decimal(28, 4); nullable=true; writable=true |
+| `requestedLot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedLot nvarchar(100); nullable=true; writable=false |
+| `expectedObjectId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ExpectedObjectID varchar(100); nullable=true; writable=false |
+| `territoryNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TerritoryNote nvarchar(500); nullable=true; writable=false |
+| `isEquipment` | boolean | true | SQL IsEquipment bit; nullable=false; writable=false |
+| `requestedAssetId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedAssetID varchar(50); nullable=true; writable=false |
+| `pMNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PMNote nvarchar(500); nullable=true; writable=true |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_pm_history_fields"></a>
+
+### Schema Erp_internal_transfer_pm_history_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `thoiGian` | string | true | SQL ThoiGian datetime; nullable=false; writable=false |
+| `userName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserName varchar(50); nullable=true; writable=false |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_pm_document_row"></a>
+
+### Schema Erp_internal_transfer_pm_document_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_internal_transfer_pm_header_fields](#schema-erp_internal_transfer_pm_header_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_pm_document_page"></a>
+
+### Schema Erp_internal_transfer_pm_document_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_pm_document_row](#schema-erp_internal_transfer_pm_document_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_pm_list_response"></a>
+
+### Schema Erp_internal_transfer_pm_list_response
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_pm_document_page](#schema-erp_internal_transfer_pm_document_page) | true | — |
+
+<a id="schema-erp_internal_transfer_pm_detail"></a>
+
+### Schema Erp_internal_transfer_pm_detail
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_internal_transfer_pm_header_fields](#schema-erp_internal_transfer_pm_header_fields) | true | — |
+| `lines` | [Erp_internal_transfer_pm_lines_page](#schema-erp_internal_transfer_pm_lines_page) | true | — |
+| `history` | [Erp_internal_transfer_pm_history_page](#schema-erp_internal_transfer_pm_history_page) | true | — |
+| `comparison` | null | true | — |
+| `actions` | array&lt;[ErpActionState](#schema-erpactionstate)&gt; | true | items[0]: — |
+| `sections` | dictionary&lt;[ErpLinePage](#schema-erplinepage)&gt; / null | false | anyOf[0]: additionalProperties={"$ref":"#/components/schemas/ErpLinePage"}; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_pm_lines_row"></a>
+
+### Schema Erp_internal_transfer_pm_lines_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_pm_lines_fields](#schema-erp_internal_transfer_pm_lines_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_pm_lines_page"></a>
+
+### Schema Erp_internal_transfer_pm_lines_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_pm_lines_row](#schema-erp_internal_transfer_pm_lines_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_pm_history_row"></a>
+
+### Schema Erp_internal_transfer_pm_history_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_pm_history_fields](#schema-erp_internal_transfer_pm_history_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_pm_history_page"></a>
+
+### Schema Erp_internal_transfer_pm_history_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_pm_history_row](#schema-erp_internal_transfer_pm_history_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_pm_detail_response"></a>
+
+### Schema Erp_internal_transfer_pm_detail_response
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_pm_detail](#schema-erp_internal_transfer_pm_detail) | true | — |
+
+<a id="schema-erppmlookupquery"></a>
+
+### Schema ErpPmLookupQuery
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `branchId` | string | true | — |
+| `role` | string | false | enum=["primary","supporting"]; default="primary" |
+| `page` | integer (int32) | false | — |
+| `pageSize` | integer (int32) | false | — |
+| `search` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erpscopedresponse_erpdraftselection"></a>
+
+### Schema ErpScopedResponse_ErpDraftSelection
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [ErpDraftSelection](#schema-erpdraftselection) / null | true | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erpdraftselection"></a>
+
+### Schema ErpDraftSelection
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lines` | array&lt;[ErpNewLine](#schema-erpnewline)&gt; | true | items[0]: — |
+| `headerPatch` | dictionary&lt;any JSON&gt; | true | additionalProperties={"description":"Fixed module field or action input; see x-medcom-typed-header, x-medcom-typed-line, x-medcom-typed-payload and x-medcom-full-field-sections on its operation."} |
+| `sourceEvidence` | string | true | — |
+| `revalidatedOnSave` | boolean | true | — |
+
+<a id="schema-erpselectionrequest"></a>
+
+### Schema ErpSelectionRequest
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `branchId` | string | true | — |
+| `sourceId` | string | true | — |
+| `selectedKeys` | array&lt;string&gt; | true | items[0]: — |
+| `context` | dictionary&lt;string&gt; / null | false | anyOf[0]: additionalProperties={"type":"string"}; anyOf[1]: — |
+
+<a id="schema-erppasterequest"></a>
+
+### Schema ErpPasteRequest
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `branchId` | string | true | — |
+| `rows` | array&lt;any JSON&gt; | true | items[0]: description="Fixed module field or action input; see x-medcom-typed-header, x-medcom-typed-line, x-medcom-typed-payload and x-medcom-full-field-sections on its operation." |
 
 <a id="schema-erpinternaltransferrequestheaderinput"></a>
 
@@ -5524,20 +10352,6 @@ Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":tr
 |---|---|---|---|
 | `branchId` | string | true | — |
 | `rows` | array&lt;[ErpInternalTransferRequestLineInput](#schema-erpinternaltransferrequestlineinput)&gt; | true | minItems=1; maxItems=500; items[0]: — |
-
-<a id="schema-erpactionrequest"></a>
-
-### Schema ErpActionRequest
-
-Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
-
-| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
-|---|---|---|---|
-| `idempotencyKey` | string | true | — |
-| `branchId` | string | true | — |
-| `documentId` | string | true | — |
-| `expectedStateToken` | string | true | — |
-| `payload` | any JSON | true | description="Fixed module field or action input; see x-medcom-typed-header, x-medcom-typed-line, x-medcom-typed-payload and x-medcom-full-field-sections on its operation." |
 
 <a id="schema-erp_internal_transfer_requests_recall_request"></a>
 
@@ -5696,6 +10510,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 | `history` | [Erp_internal_transfer_requests_history_page](#schema-erp_internal_transfer_requests_history_page) | true | — |
 | `comparison` | null | true | — |
 | `actions` | array&lt;[ErpActionState](#schema-erpactionstate)&gt; | true | items[0]: — |
+| `sections` | dictionary&lt;[ErpLinePage](#schema-erplinepage)&gt; / null | false | anyOf[0]: additionalProperties={"$ref":"#/components/schemas/ErpLinePage"}; anyOf[1]: — |
 
 <a id="schema-erp_internal_transfer_requests_lines_row"></a>
 
@@ -5755,6 +10570,1714 @@ Object: `{"type":"object","additionalProperties":false}`.
 |---|---|---|---|
 | `readScope` | string | true | — |
 | `data` | [Erp_internal_transfer_requests_detail](#schema-erp_internal_transfer_requests_detail) | true | — |
+
+<a id="schema-erpinternaltransfersaheaderinput"></a>
+
+### Schema ErpInternalTransferSaHeaderInput
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+
+<a id="schema-erpinternaltransfersalinesinput"></a>
+
+### Schema ErpInternalTransferSaLinesInput
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `approvedQty` | string | true | — |
+| `notes` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_sa_new_line"></a>
+
+### Schema Erp_internal_transfer_sa_new_line
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `clientLineKey` | string | true | — |
+| `values` | [ErpInternalTransferSaLinesInput](#schema-erpinternaltransfersalinesinput) | true | — |
+
+<a id="schema-erp_internal_transfer_sa_line_update"></a>
+
+### Schema Erp_internal_transfer_sa_line_update
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `kind` | string | true | const="Update" |
+| `lineId` | string | true | maxLength=50 |
+| `clientLineKey` | null | false | — |
+| `values` | [ErpInternalTransferSaLinesInput](#schema-erpinternaltransfersalinesinput) | true | — |
+
+<a id="schema-erp_internal_transfer_sa_save"></a>
+
+### Schema Erp_internal_transfer_sa_save
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `header` | [ErpInternalTransferSaHeaderInput](#schema-erpinternaltransfersaheaderinput) | true | — |
+| `lineChanges` | array&lt;oneOf [Erp_internal_transfer_sa_line_update](#schema-erp_internal_transfer_sa_line_update)&gt; | true | maxItems=500; items[0]: oneOf[0]: — |
+
+<a id="schema-erp_internal_transfer_sa_send_accounting_request"></a>
+
+### Schema Erp_internal_transfer_sa_send_accounting_request
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `payload` | [ErpActionNotes](#schema-erpactionnotes) | true | — |
+
+<a id="schema-erp_internal_transfer_sa_reject_request"></a>
+
+### Schema Erp_internal_transfer_sa_reject_request
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `payload` | [ErpActionNotes](#schema-erpactionnotes) | true | — |
+
+<a id="schema-erp_internal_transfer_sa_return_step_request"></a>
+
+### Schema Erp_internal_transfer_sa_return_step_request
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `payload` | [ErpReturnStep](#schema-erpreturnstep) | true | — |
+
+<a id="schema-erp_internal_transfer_sa_header_fields"></a>
+
+### Schema Erp_internal_transfer_sa_header_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `batchDate` | string | true | SQL BatchDate datetime; nullable=false; writable=false |
+| `fromBranchId` | string | true | SQL FromBranchID varchar(50); nullable=false; writable=false |
+| `toBranchId` | string | true | SQL ToBranchID varchar(50); nullable=false; writable=false |
+| `fromStoreHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromStoreHouseID varchar(50); nullable=true; writable=false |
+| `toStoreHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToStoreHouseID varchar(50); nullable=true; writable=false |
+| `plannedTransferDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PlannedTransferDate datetime; nullable=true; writable=false |
+| `actualDispatchDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualDispatchDate datetime; nullable=true; writable=false |
+| `actualReceiveDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualReceiveDate datetime; nullable=true; writable=false |
+| `assignedPM` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedPM varchar(100); nullable=true; writable=false |
+| `assignedTechnician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedTechnician varchar(100); nullable=true; writable=false |
+| `assignedSA` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedSA varchar(100); nullable=true; writable=false |
+| `hasEquipment` | boolean | true | SQL HasEquipment bit; nullable=false; writable=false |
+| `statusId` | integer | true | SQL StatusID int; nullable=false; writable=false |
+| `transportMethod` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TransportMethod nvarchar(50); nullable=true; writable=false |
+| `carrierName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CarrierName nvarchar(150); nullable=true; writable=false |
+| `carrierPhone` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CarrierPhone nvarchar(100); nullable=true; writable=false |
+| `vehicleNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VehicleNo nvarchar(100); nullable=true; writable=false |
+| `outputDocumentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL OutputDocumentID varchar(30); nullable=true; writable=false |
+| `inputDocumentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL InputDocumentID varchar(30); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(1000); nullable=true; writable=false |
+| `technicalCheckedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicalCheckedBy varchar(100); nullable=true; writable=false |
+| `technicalCheckedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicalCheckedAt datetime; nullable=true; writable=false |
+| `sAApprovedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAApprovedBy varchar(100); nullable=true; writable=false |
+| `sAApprovedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAApprovedAt datetime; nullable=true; writable=false |
+| `accountingConfirmedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingConfirmedBy varchar(100); nullable=true; writable=false |
+| `accountingConfirmedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingConfirmedAt datetime; nullable=true; writable=false |
+| `dispatchedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DispatchedBy varchar(100); nullable=true; writable=false |
+| `receivedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ReceivedBy varchar(100); nullable=true; writable=false |
+| `isLocked` | boolean | true | SQL isLock bit; nullable=false; writable=false |
+| `userCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserCreate varchar(100); nullable=true; writable=false |
+| `userUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserUpdate varchar(100); nullable=true; writable=false |
+| `dateCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateCreate datetime; nullable=true; writable=false |
+| `dateUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateUpdate datetime; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `statusCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusCode varchar(30); nullable=true; writable=false |
+| `statusName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusName nvarchar(150); nullable=true; writable=false |
+| `backColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL BackColor int; nullable=true; writable=false |
+| `foreColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL ForeColor int; nullable=true; writable=false |
+| `fromBranchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromBranchName nvarchar(100); nullable=true; writable=false |
+| `toBranchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToBranchName nvarchar(100); nullable=true; writable=false |
+| `fromStoreHouseName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromStoreHouseName nvarchar(100); nullable=true; writable=false |
+| `toStoreHouseName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToStoreHouseName nvarchar(100); nullable=true; writable=false |
+| `pMName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PMName nvarchar(150); nullable=true; writable=false |
+| `technicianName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicianName nvarchar(150); nullable=true; writable=false |
+| `sAName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAName nvarchar(150); nullable=true; writable=false |
+| `requestCount` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestCount int; nullable=true; writable=false |
+| `lineCount` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL LineCount int; nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_sa_requests_fields"></a>
+
+### Schema Erp_internal_transfer_sa_requests_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `requestId` | string | true | SQL RequestID nvarchar(50); nullable=false; writable=false |
+| `addedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddedBy varchar(100); nullable=true; writable=false |
+| `addedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddedAt datetime; nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=false |
+| `documentDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DocumentDate datetime; nullable=true; writable=false |
+| `salesUser` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesUser varchar(100); nullable=true; writable=false |
+| `requestedTransferDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedTransferDate datetime; nullable=true; writable=false |
+| `requestStatusName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestStatusName nvarchar(150); nullable=true; writable=false |
+| `salesName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesName nvarchar(150); nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_sa_lines_fields"></a>
+
+### Schema Erp_internal_transfer_sa_lines_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `requestId` | string | true | SQL RequestID nvarchar(50); nullable=false; writable=false |
+| `requestDetailId` | string | true | SQL RequestDetailID nvarchar(50); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID nvarchar(50); nullable=false; writable=false |
+| `requestedQty` | string | true | SQL RequestedQty decimal(28, 4); nullable=false; writable=false |
+| `approvedQty` | string | true | SQL ApprovedQty decimal(28, 4); nullable=false; writable=true |
+| `requestedLot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedLot nvarchar(100); nullable=true; writable=false |
+| `lot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Lot varchar(50); nullable=true; writable=false |
+| `expireDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ExpireDate datetime; nullable=true; writable=false |
+| `isEquipment` | boolean | true | SQL IsEquipment bit; nullable=false; writable=false |
+| `techStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechStatus varchar(20); nullable=true; writable=false |
+| `techNotes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechNotes nvarchar(1000); nullable=true; writable=false |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl nvarchar(1000); nullable=true; writable=false |
+| `technician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Technician varchar(100); nullable=true; writable=false |
+| `techCheckedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechCheckedAt datetime; nullable=true; writable=false |
+| `actualIssueQty` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualIssueQty decimal(28, 4); nullable=true; writable=false |
+| `actualReceiveQty` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualReceiveQty decimal(28, 4); nullable=true; writable=false |
+| `accountingNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingNote nvarchar(500); nullable=true; writable=false |
+| `warehouseNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL WarehouseNote nvarchar(500); nullable=true; writable=false |
+| `receiveNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ReceiveNote nvarchar(500); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=true |
+| `itemCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemCode nvarchar(100); nullable=true; writable=false |
+| `itemName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemName nvarchar(max); nullable=true; writable=false |
+| `unit` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Unit nvarchar(50); nullable=true; writable=false |
+| `hangSX` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL HangSX nvarchar(100); nullable=true; writable=false |
+| `isLot` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL isLot bit; nullable=true; writable=false |
+| `requestDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestDate datetime; nullable=true; writable=false |
+| `salesUser` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesUser varchar(100); nullable=true; writable=false |
+| `salesName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesName nvarchar(150); nullable=true; writable=false |
+| `requestTerritoryNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestTerritoryNote nvarchar(500); nullable=true; writable=false |
+| `qtyNotIssued` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QtyNotIssued decimal(29, 4); nullable=true; writable=false |
+| `qtyInTransit` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QtyInTransit decimal(29, 4); nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_sa_assets_fields"></a>
+
+### Schema Erp_internal_transfer_sa_assets_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `batchDetailId` | string | true | SQL BatchDetailID varchar(40); nullable=false; writable=false |
+| `assetId` | string | true | SQL AssetID varchar(50); nullable=false; writable=false |
+| `assetCondition` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetCondition nvarchar(1000); nullable=true; writable=false |
+| `techStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechStatus varchar(20); nullable=true; writable=false |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl nvarchar(1000); nullable=true; writable=false |
+| `techNotes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechNotes nvarchar(1000); nullable=true; writable=false |
+| `technician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Technician varchar(100); nullable=true; writable=false |
+| `checkedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CheckedAt datetime; nullable=true; writable=false |
+| `isDispatched` | boolean | true | SQL IsDispatched bit; nullable=false; writable=false |
+| `isReceived` | boolean | true | SQL IsReceived bit; nullable=false; writable=false |
+| `assetName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetName nvarchar(200); nullable=true; writable=false |
+| `itemId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemID varchar(50); nullable=true; writable=false |
+| `serialNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SerialNo nvarchar(100); nullable=true; writable=false |
+| `assetStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetStatus nvarchar(100); nullable=true; writable=false |
+| `trackLifecycle` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL TrackLifecycle bit; nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_sa_history_fields"></a>
+
+### Schema Erp_internal_transfer_sa_history_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `thoiGian` | string | true | SQL ThoiGian datetime; nullable=false; writable=false |
+| `userName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserName varchar(50); nullable=true; writable=false |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+| `batchId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BatchID varchar(50); nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_sa_document_row"></a>
+
+### Schema Erp_internal_transfer_sa_document_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_internal_transfer_sa_header_fields](#schema-erp_internal_transfer_sa_header_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_sa_document_page"></a>
+
+### Schema Erp_internal_transfer_sa_document_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_sa_document_row](#schema-erp_internal_transfer_sa_document_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_sa_list_response"></a>
+
+### Schema Erp_internal_transfer_sa_list_response
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_sa_document_page](#schema-erp_internal_transfer_sa_document_page) | true | — |
+
+<a id="schema-erp_internal_transfer_sa_detail"></a>
+
+### Schema Erp_internal_transfer_sa_detail
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_internal_transfer_sa_header_fields](#schema-erp_internal_transfer_sa_header_fields) | true | — |
+| `lines` | [Erp_internal_transfer_sa_lines_page](#schema-erp_internal_transfer_sa_lines_page) | true | — |
+| `history` | [Erp_internal_transfer_sa_history_page](#schema-erp_internal_transfer_sa_history_page) | true | — |
+| `comparison` | null | true | — |
+| `actions` | array&lt;[ErpActionState](#schema-erpactionstate)&gt; | true | items[0]: — |
+| `sections` | object | true | required=["requests","assets"]; properties={"requests":{"$ref":"#/components/schemas/Erp_internal_transfer_sa_requests_page"},"assets":{"$ref":"#/components/schemas/Erp_internal_transfer_sa_assets_page"}}; additionalProperties=false |
+
+<a id="schema-erp_internal_transfer_sa_requests_row"></a>
+
+### Schema Erp_internal_transfer_sa_requests_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_sa_requests_fields](#schema-erp_internal_transfer_sa_requests_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_sa_requests_page"></a>
+
+### Schema Erp_internal_transfer_sa_requests_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_sa_requests_row](#schema-erp_internal_transfer_sa_requests_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_sa_lines_row"></a>
+
+### Schema Erp_internal_transfer_sa_lines_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_sa_lines_fields](#schema-erp_internal_transfer_sa_lines_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_sa_lines_page"></a>
+
+### Schema Erp_internal_transfer_sa_lines_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_sa_lines_row](#schema-erp_internal_transfer_sa_lines_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_sa_assets_row"></a>
+
+### Schema Erp_internal_transfer_sa_assets_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_sa_assets_fields](#schema-erp_internal_transfer_sa_assets_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_sa_assets_page"></a>
+
+### Schema Erp_internal_transfer_sa_assets_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_sa_assets_row](#schema-erp_internal_transfer_sa_assets_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_sa_history_row"></a>
+
+### Schema Erp_internal_transfer_sa_history_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_sa_history_fields](#schema-erp_internal_transfer_sa_history_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_sa_history_page"></a>
+
+### Schema Erp_internal_transfer_sa_history_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_sa_history_row](#schema-erp_internal_transfer_sa_history_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_sa_detail_response"></a>
+
+### Schema Erp_internal_transfer_sa_detail_response
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_sa_detail](#schema-erp_internal_transfer_sa_detail) | true | — |
+
+<a id="schema-erpinternaltransfertechheaderinput"></a>
+
+### Schema ErpInternalTransferTechHeaderInput
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+
+<a id="schema-erpinternaltransfertechlinesinput"></a>
+
+### Schema ErpInternalTransferTechLinesInput
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `techStatus` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `techNotes` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `bBKCUrl` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_tech_new_line"></a>
+
+### Schema Erp_internal_transfer_tech_new_line
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `clientLineKey` | string | true | — |
+| `values` | [ErpInternalTransferTechLinesInput](#schema-erpinternaltransfertechlinesinput) | true | — |
+
+<a id="schema-erp_internal_transfer_tech_line_update"></a>
+
+### Schema Erp_internal_transfer_tech_line_update
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `kind` | string | true | const="Update" |
+| `lineId` | string | true | maxLength=50 |
+| `clientLineKey` | null | false | — |
+| `values` | [ErpInternalTransferTechLinesInput](#schema-erpinternaltransfertechlinesinput) | true | — |
+
+<a id="schema-erp_internal_transfer_tech_save"></a>
+
+### Schema Erp_internal_transfer_tech_save
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `header` | [ErpInternalTransferTechHeaderInput](#schema-erpinternaltransfertechheaderinput) | true | — |
+| `lineChanges` | array&lt;oneOf [Erp_internal_transfer_tech_line_update](#schema-erp_internal_transfer_tech_line_update)&gt; | true | maxItems=500; items[0]: oneOf[0]: — |
+
+<a id="schema-erptransfertechsend"></a>
+
+### Schema ErpTransferTechSend
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `primarySaId` | string | true | — |
+| `supportingSaId` | string | true | — |
+| `notes` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_tech_send_sa_request"></a>
+
+### Schema Erp_internal_transfer_tech_send_sa_request
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `payload` | [ErpTransferTechSend](#schema-erptransfertechsend) | true | — |
+
+<a id="schema-erp_internal_transfer_tech_reject_request"></a>
+
+### Schema Erp_internal_transfer_tech_reject_request
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `payload` | [ErpActionNotes](#schema-erpactionnotes) | true | — |
+
+<a id="schema-erpinternaltransfertechassetsinput"></a>
+
+### Schema ErpInternalTransferTechAssetsInput
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `assetCondition` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `techStatus` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `bBKCUrl` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `techNotes` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_tech_assets_update"></a>
+
+### Schema Erp_internal_transfer_tech_assets_update
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `kind` | string | true | const="Update" |
+| `lineId` | string | true | maxLength=50 |
+| `clientLineKey` | null | false | — |
+| `values` | [ErpInternalTransferTechAssetsInput](#schema-erpinternaltransfertechassetsinput) | true | — |
+
+<a id="schema-erp_internal_transfer_tech_assets_save"></a>
+
+### Schema Erp_internal_transfer_tech_assets_save
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `lineChanges` | array&lt;oneOf [Erp_internal_transfer_tech_assets_update](#schema-erp_internal_transfer_tech_assets_update)&gt; | true | minItems=1; maxItems=500; items[0]: oneOf[0]: — |
+
+<a id="schema-erp_internal_transfer_tech_header_fields"></a>
+
+### Schema Erp_internal_transfer_tech_header_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `batchDate` | string | true | SQL BatchDate datetime; nullable=false; writable=false |
+| `fromBranchId` | string | true | SQL FromBranchID varchar(50); nullable=false; writable=false |
+| `toBranchId` | string | true | SQL ToBranchID varchar(50); nullable=false; writable=false |
+| `fromStoreHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromStoreHouseID varchar(50); nullable=true; writable=false |
+| `toStoreHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToStoreHouseID varchar(50); nullable=true; writable=false |
+| `plannedTransferDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PlannedTransferDate datetime; nullable=true; writable=false |
+| `actualDispatchDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualDispatchDate datetime; nullable=true; writable=false |
+| `actualReceiveDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualReceiveDate datetime; nullable=true; writable=false |
+| `assignedPM` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedPM varchar(100); nullable=true; writable=false |
+| `assignedTechnician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedTechnician varchar(100); nullable=true; writable=false |
+| `assignedSA` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedSA varchar(100); nullable=true; writable=false |
+| `hasEquipment` | boolean | true | SQL HasEquipment bit; nullable=false; writable=false |
+| `statusId` | integer | true | SQL StatusID int; nullable=false; writable=false |
+| `transportMethod` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TransportMethod nvarchar(50); nullable=true; writable=false |
+| `carrierName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CarrierName nvarchar(150); nullable=true; writable=false |
+| `carrierPhone` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CarrierPhone nvarchar(100); nullable=true; writable=false |
+| `vehicleNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VehicleNo nvarchar(100); nullable=true; writable=false |
+| `outputDocumentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL OutputDocumentID varchar(30); nullable=true; writable=false |
+| `inputDocumentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL InputDocumentID varchar(30); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(1000); nullable=true; writable=false |
+| `technicalCheckedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicalCheckedBy varchar(100); nullable=true; writable=false |
+| `technicalCheckedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicalCheckedAt datetime; nullable=true; writable=false |
+| `sAApprovedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAApprovedBy varchar(100); nullable=true; writable=false |
+| `sAApprovedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAApprovedAt datetime; nullable=true; writable=false |
+| `accountingConfirmedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingConfirmedBy varchar(100); nullable=true; writable=false |
+| `accountingConfirmedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingConfirmedAt datetime; nullable=true; writable=false |
+| `dispatchedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DispatchedBy varchar(100); nullable=true; writable=false |
+| `receivedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ReceivedBy varchar(100); nullable=true; writable=false |
+| `isLocked` | boolean | true | SQL isLock bit; nullable=false; writable=false |
+| `userCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserCreate varchar(100); nullable=true; writable=false |
+| `userUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserUpdate varchar(100); nullable=true; writable=false |
+| `dateCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateCreate datetime; nullable=true; writable=false |
+| `dateUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateUpdate datetime; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `statusCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusCode varchar(30); nullable=true; writable=false |
+| `statusName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusName nvarchar(150); nullable=true; writable=false |
+| `backColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL BackColor int; nullable=true; writable=false |
+| `foreColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL ForeColor int; nullable=true; writable=false |
+| `fromBranchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromBranchName nvarchar(100); nullable=true; writable=false |
+| `toBranchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToBranchName nvarchar(100); nullable=true; writable=false |
+| `fromStoreHouseName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromStoreHouseName nvarchar(100); nullable=true; writable=false |
+| `toStoreHouseName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToStoreHouseName nvarchar(100); nullable=true; writable=false |
+| `pMName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PMName nvarchar(150); nullable=true; writable=false |
+| `technicianName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicianName nvarchar(150); nullable=true; writable=false |
+| `sAName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAName nvarchar(150); nullable=true; writable=false |
+| `requestCount` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestCount int; nullable=true; writable=false |
+| `lineCount` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL LineCount int; nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_tech_requests_fields"></a>
+
+### Schema Erp_internal_transfer_tech_requests_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `requestId` | string | true | SQL RequestID nvarchar(50); nullable=false; writable=false |
+| `addedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddedBy varchar(100); nullable=true; writable=false |
+| `addedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddedAt datetime; nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=false |
+| `documentDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DocumentDate datetime; nullable=true; writable=false |
+| `salesUser` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesUser varchar(100); nullable=true; writable=false |
+| `requestedTransferDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedTransferDate datetime; nullable=true; writable=false |
+| `requestStatusName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestStatusName nvarchar(150); nullable=true; writable=false |
+| `salesName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesName nvarchar(150); nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_tech_lines_fields"></a>
+
+### Schema Erp_internal_transfer_tech_lines_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `requestId` | string | true | SQL RequestID nvarchar(50); nullable=false; writable=false |
+| `requestDetailId` | string | true | SQL RequestDetailID nvarchar(50); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID nvarchar(50); nullable=false; writable=false |
+| `requestedQty` | string | true | SQL RequestedQty decimal(28, 4); nullable=false; writable=false |
+| `approvedQty` | string | true | SQL ApprovedQty decimal(28, 4); nullable=false; writable=false |
+| `requestedLot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedLot nvarchar(100); nullable=true; writable=false |
+| `lot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Lot varchar(50); nullable=true; writable=false |
+| `expireDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ExpireDate datetime; nullable=true; writable=false |
+| `isEquipment` | boolean | true | SQL IsEquipment bit; nullable=false; writable=false |
+| `techStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechStatus varchar(20); nullable=true; writable=true |
+| `techNotes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechNotes nvarchar(1000); nullable=true; writable=true |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl nvarchar(1000); nullable=true; writable=true |
+| `technician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Technician varchar(100); nullable=true; writable=false |
+| `techCheckedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechCheckedAt datetime; nullable=true; writable=false |
+| `actualIssueQty` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualIssueQty decimal(28, 4); nullable=true; writable=false |
+| `actualReceiveQty` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualReceiveQty decimal(28, 4); nullable=true; writable=false |
+| `accountingNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingNote nvarchar(500); nullable=true; writable=false |
+| `warehouseNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL WarehouseNote nvarchar(500); nullable=true; writable=false |
+| `receiveNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ReceiveNote nvarchar(500); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=false |
+| `itemCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemCode nvarchar(100); nullable=true; writable=false |
+| `itemName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemName nvarchar(max); nullable=true; writable=false |
+| `unit` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Unit nvarchar(50); nullable=true; writable=false |
+| `hangSX` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL HangSX nvarchar(100); nullable=true; writable=false |
+| `isLot` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL isLot bit; nullable=true; writable=false |
+| `requestDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestDate datetime; nullable=true; writable=false |
+| `salesUser` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesUser varchar(100); nullable=true; writable=false |
+| `salesName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesName nvarchar(150); nullable=true; writable=false |
+| `requestTerritoryNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestTerritoryNote nvarchar(500); nullable=true; writable=false |
+| `qtyNotIssued` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QtyNotIssued decimal(29, 4); nullable=true; writable=false |
+| `qtyInTransit` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QtyInTransit decimal(29, 4); nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_tech_assets_fields"></a>
+
+### Schema Erp_internal_transfer_tech_assets_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `batchDetailId` | string | true | SQL BatchDetailID varchar(40); nullable=false; writable=false |
+| `assetId` | string | true | SQL AssetID varchar(50); nullable=false; writable=false |
+| `assetCondition` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetCondition nvarchar(1000); nullable=true; writable=true |
+| `techStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechStatus varchar(20); nullable=true; writable=true |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl nvarchar(1000); nullable=true; writable=true |
+| `techNotes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechNotes nvarchar(1000); nullable=true; writable=true |
+| `technician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Technician varchar(100); nullable=true; writable=false |
+| `checkedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CheckedAt datetime; nullable=true; writable=false |
+| `isDispatched` | boolean | true | SQL IsDispatched bit; nullable=false; writable=false |
+| `isReceived` | boolean | true | SQL IsReceived bit; nullable=false; writable=false |
+| `assetName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetName nvarchar(200); nullable=true; writable=false |
+| `itemId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemID varchar(50); nullable=true; writable=false |
+| `serialNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SerialNo nvarchar(100); nullable=true; writable=false |
+| `assetStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetStatus nvarchar(100); nullable=true; writable=false |
+| `trackLifecycle` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL TrackLifecycle bit; nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_tech_history_fields"></a>
+
+### Schema Erp_internal_transfer_tech_history_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `thoiGian` | string | true | SQL ThoiGian datetime; nullable=false; writable=false |
+| `userName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserName varchar(50); nullable=true; writable=false |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+| `batchId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BatchID varchar(50); nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_tech_document_row"></a>
+
+### Schema Erp_internal_transfer_tech_document_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_internal_transfer_tech_header_fields](#schema-erp_internal_transfer_tech_header_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_tech_document_page"></a>
+
+### Schema Erp_internal_transfer_tech_document_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_tech_document_row](#schema-erp_internal_transfer_tech_document_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_tech_list_response"></a>
+
+### Schema Erp_internal_transfer_tech_list_response
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_tech_document_page](#schema-erp_internal_transfer_tech_document_page) | true | — |
+
+<a id="schema-erp_internal_transfer_tech_detail"></a>
+
+### Schema Erp_internal_transfer_tech_detail
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_internal_transfer_tech_header_fields](#schema-erp_internal_transfer_tech_header_fields) | true | — |
+| `lines` | [Erp_internal_transfer_tech_lines_page](#schema-erp_internal_transfer_tech_lines_page) | true | — |
+| `history` | [Erp_internal_transfer_tech_history_page](#schema-erp_internal_transfer_tech_history_page) | true | — |
+| `comparison` | null | true | — |
+| `actions` | array&lt;[ErpActionState](#schema-erpactionstate)&gt; | true | items[0]: — |
+| `sections` | object | true | required=["requests","assets"]; properties={"requests":{"$ref":"#/components/schemas/Erp_internal_transfer_tech_requests_page"},"assets":{"$ref":"#/components/schemas/Erp_internal_transfer_tech_assets_page"}}; additionalProperties=false |
+
+<a id="schema-erp_internal_transfer_tech_requests_row"></a>
+
+### Schema Erp_internal_transfer_tech_requests_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_tech_requests_fields](#schema-erp_internal_transfer_tech_requests_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_tech_requests_page"></a>
+
+### Schema Erp_internal_transfer_tech_requests_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_tech_requests_row](#schema-erp_internal_transfer_tech_requests_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_tech_lines_row"></a>
+
+### Schema Erp_internal_transfer_tech_lines_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_tech_lines_fields](#schema-erp_internal_transfer_tech_lines_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_tech_lines_page"></a>
+
+### Schema Erp_internal_transfer_tech_lines_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_tech_lines_row](#schema-erp_internal_transfer_tech_lines_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_tech_assets_row"></a>
+
+### Schema Erp_internal_transfer_tech_assets_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_tech_assets_fields](#schema-erp_internal_transfer_tech_assets_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_tech_assets_page"></a>
+
+### Schema Erp_internal_transfer_tech_assets_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_tech_assets_row](#schema-erp_internal_transfer_tech_assets_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_tech_history_row"></a>
+
+### Schema Erp_internal_transfer_tech_history_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_tech_history_fields](#schema-erp_internal_transfer_tech_history_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_tech_history_page"></a>
+
+### Schema Erp_internal_transfer_tech_history_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_tech_history_row](#schema-erp_internal_transfer_tech_history_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_tech_detail_response"></a>
+
+### Schema Erp_internal_transfer_tech_detail_response
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_tech_detail](#schema-erp_internal_transfer_tech_detail) | true | — |
+
+<a id="schema-erpinternaltransferwarehouseinheaderinput"></a>
+
+### Schema ErpInternalTransferWarehouseInHeaderInput
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `inputDocumentId` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erpinternaltransferwarehouseinlinesinput"></a>
+
+### Schema ErpInternalTransferWarehouseInLinesInput
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `actualReceiveQty` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `receiveNote` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_warehouse_in_new_line"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_new_line
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `clientLineKey` | string | true | — |
+| `values` | [ErpInternalTransferWarehouseInLinesInput](#schema-erpinternaltransferwarehouseinlinesinput) | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_in_line_update"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_line_update
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `kind` | string | true | const="Update" |
+| `lineId` | string | true | maxLength=50 |
+| `clientLineKey` | null | false | — |
+| `values` | [ErpInternalTransferWarehouseInLinesInput](#schema-erpinternaltransferwarehouseinlinesinput) | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_in_save"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_save
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `header` | [ErpInternalTransferWarehouseInHeaderInput](#schema-erpinternaltransferwarehouseinheaderinput) | true | — |
+| `lineChanges` | array&lt;oneOf [Erp_internal_transfer_warehouse_in_line_update](#schema-erp_internal_transfer_warehouse_in_line_update)&gt; | true | maxItems=500; items[0]: oneOf[0]: — |
+
+<a id="schema-erp_internal_transfer_warehouse_in_receive_request"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_receive_request
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `payload` | [ErpActionNotes](#schema-erpactionnotes) | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_in_header_fields"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_header_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `batchDate` | string | true | SQL BatchDate datetime; nullable=false; writable=false |
+| `fromBranchId` | string | true | SQL FromBranchID varchar(50); nullable=false; writable=false |
+| `toBranchId` | string | true | SQL ToBranchID varchar(50); nullable=false; writable=false |
+| `fromStoreHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromStoreHouseID varchar(50); nullable=true; writable=false |
+| `toStoreHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToStoreHouseID varchar(50); nullable=true; writable=false |
+| `plannedTransferDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PlannedTransferDate datetime; nullable=true; writable=false |
+| `actualDispatchDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualDispatchDate datetime; nullable=true; writable=false |
+| `actualReceiveDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualReceiveDate datetime; nullable=true; writable=false |
+| `assignedPM` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedPM varchar(100); nullable=true; writable=false |
+| `assignedTechnician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedTechnician varchar(100); nullable=true; writable=false |
+| `assignedSA` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedSA varchar(100); nullable=true; writable=false |
+| `hasEquipment` | boolean | true | SQL HasEquipment bit; nullable=false; writable=false |
+| `statusId` | integer | true | SQL StatusID int; nullable=false; writable=false |
+| `transportMethod` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TransportMethod nvarchar(50); nullable=true; writable=false |
+| `carrierName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CarrierName nvarchar(150); nullable=true; writable=false |
+| `carrierPhone` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CarrierPhone nvarchar(100); nullable=true; writable=false |
+| `vehicleNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VehicleNo nvarchar(100); nullable=true; writable=false |
+| `outputDocumentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL OutputDocumentID varchar(30); nullable=true; writable=false |
+| `inputDocumentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL InputDocumentID varchar(30); nullable=true; writable=true |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(1000); nullable=true; writable=false |
+| `technicalCheckedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicalCheckedBy varchar(100); nullable=true; writable=false |
+| `technicalCheckedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicalCheckedAt datetime; nullable=true; writable=false |
+| `sAApprovedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAApprovedBy varchar(100); nullable=true; writable=false |
+| `sAApprovedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAApprovedAt datetime; nullable=true; writable=false |
+| `accountingConfirmedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingConfirmedBy varchar(100); nullable=true; writable=false |
+| `accountingConfirmedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingConfirmedAt datetime; nullable=true; writable=false |
+| `dispatchedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DispatchedBy varchar(100); nullable=true; writable=false |
+| `receivedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ReceivedBy varchar(100); nullable=true; writable=false |
+| `isLocked` | boolean | true | SQL isLock bit; nullable=false; writable=false |
+| `userCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserCreate varchar(100); nullable=true; writable=false |
+| `userUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserUpdate varchar(100); nullable=true; writable=false |
+| `dateCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateCreate datetime; nullable=true; writable=false |
+| `dateUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateUpdate datetime; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `statusCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusCode varchar(30); nullable=true; writable=false |
+| `statusName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusName nvarchar(150); nullable=true; writable=false |
+| `backColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL BackColor int; nullable=true; writable=false |
+| `foreColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL ForeColor int; nullable=true; writable=false |
+| `fromBranchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromBranchName nvarchar(100); nullable=true; writable=false |
+| `toBranchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToBranchName nvarchar(100); nullable=true; writable=false |
+| `fromStoreHouseName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromStoreHouseName nvarchar(100); nullable=true; writable=false |
+| `toStoreHouseName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToStoreHouseName nvarchar(100); nullable=true; writable=false |
+| `pMName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PMName nvarchar(150); nullable=true; writable=false |
+| `technicianName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicianName nvarchar(150); nullable=true; writable=false |
+| `sAName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAName nvarchar(150); nullable=true; writable=false |
+| `requestCount` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestCount int; nullable=true; writable=false |
+| `lineCount` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL LineCount int; nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_warehouse_in_requests_fields"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_requests_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `requestId` | string | true | SQL RequestID nvarchar(50); nullable=false; writable=false |
+| `addedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddedBy varchar(100); nullable=true; writable=false |
+| `addedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddedAt datetime; nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=false |
+| `documentDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DocumentDate datetime; nullable=true; writable=false |
+| `salesUser` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesUser varchar(100); nullable=true; writable=false |
+| `requestedTransferDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedTransferDate datetime; nullable=true; writable=false |
+| `requestStatusName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestStatusName nvarchar(150); nullable=true; writable=false |
+| `salesName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesName nvarchar(150); nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_warehouse_in_lines_fields"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_lines_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `requestId` | string | true | SQL RequestID nvarchar(50); nullable=false; writable=false |
+| `requestDetailId` | string | true | SQL RequestDetailID nvarchar(50); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID nvarchar(50); nullable=false; writable=false |
+| `requestedQty` | string | true | SQL RequestedQty decimal(28, 4); nullable=false; writable=false |
+| `approvedQty` | string | true | SQL ApprovedQty decimal(28, 4); nullable=false; writable=false |
+| `requestedLot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedLot nvarchar(100); nullable=true; writable=false |
+| `lot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Lot varchar(50); nullable=true; writable=false |
+| `expireDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ExpireDate datetime; nullable=true; writable=false |
+| `isEquipment` | boolean | true | SQL IsEquipment bit; nullable=false; writable=false |
+| `techStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechStatus varchar(20); nullable=true; writable=false |
+| `techNotes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechNotes nvarchar(1000); nullable=true; writable=false |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl nvarchar(1000); nullable=true; writable=false |
+| `technician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Technician varchar(100); nullable=true; writable=false |
+| `techCheckedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechCheckedAt datetime; nullable=true; writable=false |
+| `actualIssueQty` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualIssueQty decimal(28, 4); nullable=true; writable=false |
+| `actualReceiveQty` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualReceiveQty decimal(28, 4); nullable=true; writable=true |
+| `accountingNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingNote nvarchar(500); nullable=true; writable=false |
+| `warehouseNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL WarehouseNote nvarchar(500); nullable=true; writable=false |
+| `receiveNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ReceiveNote nvarchar(500); nullable=true; writable=true |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=false |
+| `itemCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemCode nvarchar(100); nullable=true; writable=false |
+| `itemName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemName nvarchar(max); nullable=true; writable=false |
+| `unit` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Unit nvarchar(50); nullable=true; writable=false |
+| `hangSX` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL HangSX nvarchar(100); nullable=true; writable=false |
+| `isLot` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL isLot bit; nullable=true; writable=false |
+| `requestDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestDate datetime; nullable=true; writable=false |
+| `salesUser` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesUser varchar(100); nullable=true; writable=false |
+| `salesName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesName nvarchar(150); nullable=true; writable=false |
+| `requestTerritoryNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestTerritoryNote nvarchar(500); nullable=true; writable=false |
+| `qtyNotIssued` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QtyNotIssued decimal(29, 4); nullable=true; writable=false |
+| `qtyInTransit` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QtyInTransit decimal(29, 4); nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_warehouse_in_assets_fields"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_assets_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `batchDetailId` | string | true | SQL BatchDetailID varchar(40); nullable=false; writable=false |
+| `assetId` | string | true | SQL AssetID varchar(50); nullable=false; writable=false |
+| `assetCondition` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetCondition nvarchar(1000); nullable=true; writable=false |
+| `techStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechStatus varchar(20); nullable=true; writable=false |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl nvarchar(1000); nullable=true; writable=false |
+| `techNotes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechNotes nvarchar(1000); nullable=true; writable=false |
+| `technician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Technician varchar(100); nullable=true; writable=false |
+| `checkedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CheckedAt datetime; nullable=true; writable=false |
+| `isDispatched` | boolean | true | SQL IsDispatched bit; nullable=false; writable=false |
+| `isReceived` | boolean | true | SQL IsReceived bit; nullable=false; writable=false |
+| `assetName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetName nvarchar(200); nullable=true; writable=false |
+| `itemId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemID varchar(50); nullable=true; writable=false |
+| `serialNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SerialNo nvarchar(100); nullable=true; writable=false |
+| `assetStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetStatus nvarchar(100); nullable=true; writable=false |
+| `trackLifecycle` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL TrackLifecycle bit; nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_warehouse_in_history_fields"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_history_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `thoiGian` | string | true | SQL ThoiGian datetime; nullable=false; writable=false |
+| `userName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserName varchar(50); nullable=true; writable=false |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+| `batchId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BatchID varchar(50); nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_warehouse_in_document_row"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_document_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_internal_transfer_warehouse_in_header_fields](#schema-erp_internal_transfer_warehouse_in_header_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_in_document_page"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_document_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_warehouse_in_document_row](#schema-erp_internal_transfer_warehouse_in_document_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_in_list_response"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_list_response
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_warehouse_in_document_page](#schema-erp_internal_transfer_warehouse_in_document_page) | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_in_detail"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_detail
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_internal_transfer_warehouse_in_header_fields](#schema-erp_internal_transfer_warehouse_in_header_fields) | true | — |
+| `lines` | [Erp_internal_transfer_warehouse_in_lines_page](#schema-erp_internal_transfer_warehouse_in_lines_page) | true | — |
+| `history` | [Erp_internal_transfer_warehouse_in_history_page](#schema-erp_internal_transfer_warehouse_in_history_page) | true | — |
+| `comparison` | null | true | — |
+| `actions` | array&lt;[ErpActionState](#schema-erpactionstate)&gt; | true | items[0]: — |
+| `sections` | object | true | required=["requests","assets"]; properties={"requests":{"$ref":"#/components/schemas/Erp_internal_transfer_warehouse_in_requests_page"},"assets":{"$ref":"#/components/schemas/Erp_internal_transfer_warehouse_in_assets_page"}}; additionalProperties=false |
+
+<a id="schema-erp_internal_transfer_warehouse_in_requests_row"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_requests_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_warehouse_in_requests_fields](#schema-erp_internal_transfer_warehouse_in_requests_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_in_requests_page"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_requests_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_warehouse_in_requests_row](#schema-erp_internal_transfer_warehouse_in_requests_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_in_lines_row"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_lines_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_warehouse_in_lines_fields](#schema-erp_internal_transfer_warehouse_in_lines_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_in_lines_page"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_lines_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_warehouse_in_lines_row](#schema-erp_internal_transfer_warehouse_in_lines_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_in_assets_row"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_assets_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_warehouse_in_assets_fields](#schema-erp_internal_transfer_warehouse_in_assets_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_in_assets_page"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_assets_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_warehouse_in_assets_row](#schema-erp_internal_transfer_warehouse_in_assets_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_in_history_row"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_history_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_warehouse_in_history_fields](#schema-erp_internal_transfer_warehouse_in_history_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_in_history_page"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_history_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_warehouse_in_history_row](#schema-erp_internal_transfer_warehouse_in_history_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_in_detail_response"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_detail_response
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_warehouse_in_detail](#schema-erp_internal_transfer_warehouse_in_detail) | true | — |
+
+<a id="schema-erpinternaltransferwarehouseoutheaderinput"></a>
+
+### Schema ErpInternalTransferWarehouseOutHeaderInput
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `transportMethod` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `carrierName` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `carrierPhone` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `vehicleNo` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erpinternaltransferwarehouseoutlinesinput"></a>
+
+### Schema ErpInternalTransferWarehouseOutLinesInput
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `actualIssueQty` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `warehouseNote` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_warehouse_out_new_line"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_new_line
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `clientLineKey` | string | true | — |
+| `values` | [ErpInternalTransferWarehouseOutLinesInput](#schema-erpinternaltransferwarehouseoutlinesinput) | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_out_line_update"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_line_update
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `kind` | string | true | const="Update" |
+| `lineId` | string | true | maxLength=50 |
+| `clientLineKey` | null | false | — |
+| `values` | [ErpInternalTransferWarehouseOutLinesInput](#schema-erpinternaltransferwarehouseoutlinesinput) | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_out_save"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_save
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `header` | [ErpInternalTransferWarehouseOutHeaderInput](#schema-erpinternaltransferwarehouseoutheaderinput) | true | — |
+| `lineChanges` | array&lt;oneOf [Erp_internal_transfer_warehouse_out_line_update](#schema-erp_internal_transfer_warehouse_out_line_update)&gt; | true | maxItems=500; items[0]: oneOf[0]: — |
+
+<a id="schema-erp_internal_transfer_warehouse_out_dispatch_request"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_dispatch_request
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `payload` | [ErpActionNotes](#schema-erpactionnotes) | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_out_reject_request"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_reject_request
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `payload` | [ErpActionNotes](#schema-erpactionnotes) | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_out_return_step_request"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_return_step_request
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `payload` | [ErpReturnStep](#schema-erpreturnstep) | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_out_header_fields"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_header_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `batchDate` | string | true | SQL BatchDate datetime; nullable=false; writable=false |
+| `fromBranchId` | string | true | SQL FromBranchID varchar(50); nullable=false; writable=false |
+| `toBranchId` | string | true | SQL ToBranchID varchar(50); nullable=false; writable=false |
+| `fromStoreHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromStoreHouseID varchar(50); nullable=true; writable=false |
+| `toStoreHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToStoreHouseID varchar(50); nullable=true; writable=false |
+| `plannedTransferDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PlannedTransferDate datetime; nullable=true; writable=false |
+| `actualDispatchDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualDispatchDate datetime; nullable=true; writable=false |
+| `actualReceiveDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualReceiveDate datetime; nullable=true; writable=false |
+| `assignedPM` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedPM varchar(100); nullable=true; writable=false |
+| `assignedTechnician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedTechnician varchar(100); nullable=true; writable=false |
+| `assignedSA` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedSA varchar(100); nullable=true; writable=false |
+| `hasEquipment` | boolean | true | SQL HasEquipment bit; nullable=false; writable=false |
+| `statusId` | integer | true | SQL StatusID int; nullable=false; writable=false |
+| `transportMethod` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TransportMethod nvarchar(50); nullable=true; writable=true |
+| `carrierName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CarrierName nvarchar(150); nullable=true; writable=true |
+| `carrierPhone` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CarrierPhone nvarchar(100); nullable=true; writable=true |
+| `vehicleNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VehicleNo nvarchar(100); nullable=true; writable=true |
+| `outputDocumentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL OutputDocumentID varchar(30); nullable=true; writable=false |
+| `inputDocumentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL InputDocumentID varchar(30); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(1000); nullable=true; writable=false |
+| `technicalCheckedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicalCheckedBy varchar(100); nullable=true; writable=false |
+| `technicalCheckedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicalCheckedAt datetime; nullable=true; writable=false |
+| `sAApprovedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAApprovedBy varchar(100); nullable=true; writable=false |
+| `sAApprovedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAApprovedAt datetime; nullable=true; writable=false |
+| `accountingConfirmedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingConfirmedBy varchar(100); nullable=true; writable=false |
+| `accountingConfirmedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingConfirmedAt datetime; nullable=true; writable=false |
+| `dispatchedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DispatchedBy varchar(100); nullable=true; writable=false |
+| `receivedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ReceivedBy varchar(100); nullable=true; writable=false |
+| `isLocked` | boolean | true | SQL isLock bit; nullable=false; writable=false |
+| `userCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserCreate varchar(100); nullable=true; writable=false |
+| `userUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserUpdate varchar(100); nullable=true; writable=false |
+| `dateCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateCreate datetime; nullable=true; writable=false |
+| `dateUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateUpdate datetime; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `statusCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusCode varchar(30); nullable=true; writable=false |
+| `statusName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusName nvarchar(150); nullable=true; writable=false |
+| `backColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL BackColor int; nullable=true; writable=false |
+| `foreColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL ForeColor int; nullable=true; writable=false |
+| `fromBranchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromBranchName nvarchar(100); nullable=true; writable=false |
+| `toBranchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToBranchName nvarchar(100); nullable=true; writable=false |
+| `fromStoreHouseName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromStoreHouseName nvarchar(100); nullable=true; writable=false |
+| `toStoreHouseName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToStoreHouseName nvarchar(100); nullable=true; writable=false |
+| `pMName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PMName nvarchar(150); nullable=true; writable=false |
+| `technicianName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicianName nvarchar(150); nullable=true; writable=false |
+| `sAName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAName nvarchar(150); nullable=true; writable=false |
+| `requestCount` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestCount int; nullable=true; writable=false |
+| `lineCount` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL LineCount int; nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_warehouse_out_requests_fields"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_requests_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `requestId` | string | true | SQL RequestID nvarchar(50); nullable=false; writable=false |
+| `addedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddedBy varchar(100); nullable=true; writable=false |
+| `addedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddedAt datetime; nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=false |
+| `documentDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DocumentDate datetime; nullable=true; writable=false |
+| `salesUser` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesUser varchar(100); nullable=true; writable=false |
+| `requestedTransferDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedTransferDate datetime; nullable=true; writable=false |
+| `requestStatusName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestStatusName nvarchar(150); nullable=true; writable=false |
+| `salesName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesName nvarchar(150); nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_warehouse_out_lines_fields"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_lines_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `requestId` | string | true | SQL RequestID nvarchar(50); nullable=false; writable=false |
+| `requestDetailId` | string | true | SQL RequestDetailID nvarchar(50); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID nvarchar(50); nullable=false; writable=false |
+| `requestedQty` | string | true | SQL RequestedQty decimal(28, 4); nullable=false; writable=false |
+| `approvedQty` | string | true | SQL ApprovedQty decimal(28, 4); nullable=false; writable=false |
+| `requestedLot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedLot nvarchar(100); nullable=true; writable=false |
+| `lot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Lot varchar(50); nullable=true; writable=false |
+| `expireDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ExpireDate datetime; nullable=true; writable=false |
+| `isEquipment` | boolean | true | SQL IsEquipment bit; nullable=false; writable=false |
+| `techStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechStatus varchar(20); nullable=true; writable=false |
+| `techNotes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechNotes nvarchar(1000); nullable=true; writable=false |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl nvarchar(1000); nullable=true; writable=false |
+| `technician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Technician varchar(100); nullable=true; writable=false |
+| `techCheckedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechCheckedAt datetime; nullable=true; writable=false |
+| `actualIssueQty` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualIssueQty decimal(28, 4); nullable=true; writable=true |
+| `actualReceiveQty` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualReceiveQty decimal(28, 4); nullable=true; writable=false |
+| `accountingNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingNote nvarchar(500); nullable=true; writable=false |
+| `warehouseNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL WarehouseNote nvarchar(500); nullable=true; writable=true |
+| `receiveNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ReceiveNote nvarchar(500); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=false |
+| `itemCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemCode nvarchar(100); nullable=true; writable=false |
+| `itemName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemName nvarchar(max); nullable=true; writable=false |
+| `unit` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Unit nvarchar(50); nullable=true; writable=false |
+| `hangSX` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL HangSX nvarchar(100); nullable=true; writable=false |
+| `isLot` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL isLot bit; nullable=true; writable=false |
+| `requestDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestDate datetime; nullable=true; writable=false |
+| `salesUser` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesUser varchar(100); nullable=true; writable=false |
+| `salesName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesName nvarchar(150); nullable=true; writable=false |
+| `requestTerritoryNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestTerritoryNote nvarchar(500); nullable=true; writable=false |
+| `qtyNotIssued` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QtyNotIssued decimal(29, 4); nullable=true; writable=false |
+| `qtyInTransit` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QtyInTransit decimal(29, 4); nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_warehouse_out_assets_fields"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_assets_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `batchDetailId` | string | true | SQL BatchDetailID varchar(40); nullable=false; writable=false |
+| `assetId` | string | true | SQL AssetID varchar(50); nullable=false; writable=false |
+| `assetCondition` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetCondition nvarchar(1000); nullable=true; writable=false |
+| `techStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechStatus varchar(20); nullable=true; writable=false |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl nvarchar(1000); nullable=true; writable=false |
+| `techNotes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechNotes nvarchar(1000); nullable=true; writable=false |
+| `technician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Technician varchar(100); nullable=true; writable=false |
+| `checkedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CheckedAt datetime; nullable=true; writable=false |
+| `isDispatched` | boolean | true | SQL IsDispatched bit; nullable=false; writable=false |
+| `isReceived` | boolean | true | SQL IsReceived bit; nullable=false; writable=false |
+| `assetName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetName nvarchar(200); nullable=true; writable=false |
+| `itemId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemID varchar(50); nullable=true; writable=false |
+| `serialNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SerialNo nvarchar(100); nullable=true; writable=false |
+| `assetStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetStatus nvarchar(100); nullable=true; writable=false |
+| `trackLifecycle` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL TrackLifecycle bit; nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_warehouse_out_history_fields"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_history_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `thoiGian` | string | true | SQL ThoiGian datetime; nullable=false; writable=false |
+| `userName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserName varchar(50); nullable=true; writable=false |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+| `batchId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BatchID varchar(50); nullable=true; writable=false |
+
+<a id="schema-erp_internal_transfer_warehouse_out_document_row"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_document_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_internal_transfer_warehouse_out_header_fields](#schema-erp_internal_transfer_warehouse_out_header_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_out_document_page"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_document_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_warehouse_out_document_row](#schema-erp_internal_transfer_warehouse_out_document_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_out_list_response"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_list_response
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_warehouse_out_document_page](#schema-erp_internal_transfer_warehouse_out_document_page) | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_out_detail"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_detail
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_internal_transfer_warehouse_out_header_fields](#schema-erp_internal_transfer_warehouse_out_header_fields) | true | — |
+| `lines` | [Erp_internal_transfer_warehouse_out_lines_page](#schema-erp_internal_transfer_warehouse_out_lines_page) | true | — |
+| `history` | [Erp_internal_transfer_warehouse_out_history_page](#schema-erp_internal_transfer_warehouse_out_history_page) | true | — |
+| `comparison` | null | true | — |
+| `actions` | array&lt;[ErpActionState](#schema-erpactionstate)&gt; | true | items[0]: — |
+| `sections` | object | true | required=["requests","assets"]; properties={"requests":{"$ref":"#/components/schemas/Erp_internal_transfer_warehouse_out_requests_page"},"assets":{"$ref":"#/components/schemas/Erp_internal_transfer_warehouse_out_assets_page"}}; additionalProperties=false |
+
+<a id="schema-erp_internal_transfer_warehouse_out_requests_row"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_requests_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_warehouse_out_requests_fields](#schema-erp_internal_transfer_warehouse_out_requests_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_out_requests_page"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_requests_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_warehouse_out_requests_row](#schema-erp_internal_transfer_warehouse_out_requests_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_out_lines_row"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_lines_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_warehouse_out_lines_fields](#schema-erp_internal_transfer_warehouse_out_lines_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_out_lines_page"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_lines_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_warehouse_out_lines_row](#schema-erp_internal_transfer_warehouse_out_lines_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_out_assets_row"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_assets_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_warehouse_out_assets_fields](#schema-erp_internal_transfer_warehouse_out_assets_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_out_assets_page"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_assets_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_warehouse_out_assets_row](#schema-erp_internal_transfer_warehouse_out_assets_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_out_history_row"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_history_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_warehouse_out_history_fields](#schema-erp_internal_transfer_warehouse_out_history_fields) | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_out_history_page"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_history_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_warehouse_out_history_row](#schema-erp_internal_transfer_warehouse_out_history_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_out_detail_response"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_detail_response
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_warehouse_out_detail](#schema-erp_internal_transfer_warehouse_out_detail) | true | — |
 
 <a id="schema-erpmachinemovementheaderinput"></a>
 
@@ -6005,6 +12528,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 | `history` | null | true | — |
 | `comparison` | null | true | — |
 | `actions` | array&lt;[ErpActionState](#schema-erpactionstate)&gt; | true | items[0]: — |
+| `sections` | dictionary&lt;[ErpLinePage](#schema-erplinepage)&gt; / null | false | anyOf[0]: additionalProperties={"$ref":"#/components/schemas/ErpLinePage"}; anyOf[1]: — |
 
 <a id="schema-erp_machine_movements_lines_row"></a>
 
@@ -6281,6 +12805,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 | `history` | null | true | — |
 | `comparison` | null | true | — |
 | `actions` | array&lt;[ErpActionState](#schema-erpactionstate)&gt; | true | items[0]: — |
+| `sections` | dictionary&lt;[ErpLinePage](#schema-erplinepage)&gt; / null | false | anyOf[0]: additionalProperties={"$ref":"#/components/schemas/ErpLinePage"}; anyOf[1]: — |
 
 <a id="schema-erp_machine_repairs_lines_row"></a>
 
@@ -6316,6 +12841,478 @@ Object: `{"type":"object","additionalProperties":false}`.
 |---|---|---|---|
 | `readScope` | string | true | — |
 | `data` | [Erp_machine_repairs_detail](#schema-erp_machine_repairs_detail) | true | — |
+
+<a id="schema-erppurchaseapprovalsheaderinput"></a>
+
+### Schema ErpPurchaseApprovalsHeaderInput
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+
+<a id="schema-erppurchaseapprovalslinesinput"></a>
+
+### Schema ErpPurchaseApprovalsLinesInput
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+
+<a id="schema-erp_purchase_approvals_new_line"></a>
+
+### Schema Erp_purchase_approvals_new_line
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `clientLineKey` | string | true | — |
+| `values` | [ErpPurchaseApprovalsLinesInput](#schema-erppurchaseapprovalslinesinput) | true | — |
+
+<a id="schema-erp_purchase_approvals_reject_request"></a>
+
+### Schema Erp_purchase_approvals_reject_request
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `payload` | [ErpActionNotes](#schema-erpactionnotes) | true | — |
+
+<a id="schema-erp_purchase_approvals_approve_request"></a>
+
+### Schema Erp_purchase_approvals_approve_request
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `payload` | [ErpActionNotes](#schema-erpactionnotes) | true | — |
+
+<a id="schema-erp_purchase_approvals_header_fields"></a>
+
+### Schema Erp_purchase_approvals_header_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `purchaseRequestId` | string | true | SQL PurchaseRequestID nvarchar(50); nullable=false; writable=false |
+| `purchaseDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PurchaseDate datetime; nullable=true; writable=false |
+| `purposeId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL PurposeID int; nullable=true; writable=false |
+| `personSuggest` | string | true | SQL PersonSuggest nvarchar(500); nullable=false; writable=false |
+| `department` | string | true | SQL Department nvarchar(100); nullable=false; writable=false |
+| `purposeDescOrClient` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PurposeDescOrClient nvarchar(max); nullable=true; writable=false |
+| `price` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Price decimal(18, 2); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+| `statusId` | integer | true | SQL StatusID int; nullable=false; writable=false |
+| `isLocked` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL isLock bit; nullable=true; writable=false |
+| `currencyId` | string | true | SQL CurrencyID varchar(3); nullable=false; writable=false |
+| `objectId` | string | true | SQL ObjectID varchar(100); nullable=false; writable=false |
+| `rateExchange` | number | true | SQL RateExchange float; nullable=false; writable=false |
+| `branchId` | string | true | SQL BranchID varchar(50); nullable=false; writable=false |
+
+<a id="schema-erp_purchase_approvals_lines_fields"></a>
+
+### Schema Erp_purchase_approvals_lines_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID varchar(50); nullable=false; writable=false |
+| `budget` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Budget decimal(18, 0); nullable=true; writable=false |
+| `timeRequired` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TimeRequired nvarchar(200); nullable=true; writable=false |
+| `quantity` | string | true | SQL Quantity decimal(18, 0); nullable=false; writable=false |
+| `unitPrice` | string | true | SQL UnitPrice decimal(18, 0); nullable=false; writable=false |
+| `totalPrice` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TotalPrice decimal(18, 0); nullable=true; writable=false |
+| `model` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Model varchar(50); nullable=true; writable=false |
+| `purchaseRequestId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PurchaseRequestID nvarchar(50); nullable=true; writable=false |
+
+<a id="schema-erp_purchase_approvals_document_row"></a>
+
+### Schema Erp_purchase_approvals_document_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_purchase_approvals_header_fields](#schema-erp_purchase_approvals_header_fields) | true | — |
+
+<a id="schema-erp_purchase_approvals_document_page"></a>
+
+### Schema Erp_purchase_approvals_document_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_purchase_approvals_document_row](#schema-erp_purchase_approvals_document_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_purchase_approvals_list_response"></a>
+
+### Schema Erp_purchase_approvals_list_response
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_purchase_approvals_document_page](#schema-erp_purchase_approvals_document_page) | true | — |
+
+<a id="schema-erp_purchase_approvals_detail"></a>
+
+### Schema Erp_purchase_approvals_detail
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_purchase_approvals_header_fields](#schema-erp_purchase_approvals_header_fields) | true | — |
+| `lines` | [Erp_purchase_approvals_lines_page](#schema-erp_purchase_approvals_lines_page) | true | — |
+| `history` | null | true | — |
+| `comparison` | null | true | — |
+| `actions` | array&lt;[ErpActionState](#schema-erpactionstate)&gt; | true | items[0]: — |
+| `sections` | dictionary&lt;[ErpLinePage](#schema-erplinepage)&gt; / null | false | anyOf[0]: additionalProperties={"$ref":"#/components/schemas/ErpLinePage"}; anyOf[1]: — |
+
+<a id="schema-erp_purchase_approvals_lines_row"></a>
+
+### Schema Erp_purchase_approvals_lines_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_purchase_approvals_lines_fields](#schema-erp_purchase_approvals_lines_fields) | true | — |
+
+<a id="schema-erp_purchase_approvals_lines_page"></a>
+
+### Schema Erp_purchase_approvals_lines_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_purchase_approvals_lines_row](#schema-erp_purchase_approvals_lines_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_purchase_approvals_detail_response"></a>
+
+### Schema Erp_purchase_approvals_detail_response
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_purchase_approvals_detail](#schema-erp_purchase_approvals_detail) | true | — |
+
+<a id="schema-erpscopedresponse_erpitemprice"></a>
+
+### Schema ErpScopedResponse_ErpItemPrice
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [ErpItemPrice](#schema-erpitemprice) / null | true | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erpitemprice"></a>
+
+### Schema ErpItemPrice
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `itemId` | string | true | — |
+| `unitPrice` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `currencyId` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erpitempricequery"></a>
+
+### Schema ErpItemPriceQuery
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `branchId` | string | true | — |
+| `objectId` | string | true | — |
+| `documentDate` | string | true | — |
+| `itemId` | string | true | — |
+| `currencyId` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erppurchaseordersheaderinput"></a>
+
+### Schema ErpPurchaseOrdersHeaderInput
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentDate` | string | true | — |
+| `objectId` | string | true | — |
+| `memo` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `notes` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `deliverDate` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `currencyId` | string | true | — |
+| `rateExchange` | number | true | — |
+| `searchField` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `contractId` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erppurchaseorderslinesinput"></a>
+
+### Schema ErpPurchaseOrdersLinesInput
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `itemId` | string | true | — |
+| `quantity` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `unitPrice` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `notes` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `quantity2` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `property` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+| `property2` | string / null | false | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_purchase_orders_new_line"></a>
+
+### Schema Erp_purchase_orders_new_line
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `clientLineKey` | string | true | — |
+| `values` | [ErpPurchaseOrdersLinesInput](#schema-erppurchaseorderslinesinput) | true | — |
+
+<a id="schema-erp_purchase_orders_create"></a>
+
+### Schema Erp_purchase_orders_create
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `header` | [ErpPurchaseOrdersHeaderInput](#schema-erppurchaseordersheaderinput) | true | required=["documentDate"]; properties={"documentDate":{"type":"string","pattern":"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}$","description":"Required when creating a numbered document; ERP calendar date/time, yyyy-MM-ddTHH:mm:ss.fff."}} |
+| `lines` | array&lt;[Erp_purchase_orders_new_line](#schema-erp_purchase_orders_new_line)&gt; | true | minItems=1; maxItems=500; items[0]: — |
+
+<a id="schema-erp_purchase_orders_line_add"></a>
+
+### Schema Erp_purchase_orders_line_add
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `kind` | string | true | const="Add" |
+| `lineId` | null | false | — |
+| `clientLineKey` | string | true | maxLength=64 |
+| `values` | [ErpPurchaseOrdersLinesInput](#schema-erppurchaseorderslinesinput) | true | — |
+
+<a id="schema-erp_purchase_orders_line_update"></a>
+
+### Schema Erp_purchase_orders_line_update
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `kind` | string | true | const="Update" |
+| `lineId` | string | true | maxLength=50 |
+| `clientLineKey` | null | false | — |
+| `values` | [ErpPurchaseOrdersLinesInput](#schema-erppurchaseorderslinesinput) | true | — |
+
+<a id="schema-erp_purchase_orders_line_remove"></a>
+
+### Schema Erp_purchase_orders_line_remove
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `kind` | string | true | const="Remove" |
+| `lineId` | string | true | maxLength=50 |
+| `clientLineKey` | null | false | — |
+| `values` | null | false | — |
+
+<a id="schema-erp_purchase_orders_save"></a>
+
+### Schema Erp_purchase_orders_save
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `header` | [ErpPurchaseOrdersHeaderInput](#schema-erppurchaseordersheaderinput) | true | — |
+| `lineChanges` | array&lt;oneOf [Erp_purchase_orders_line_add](#schema-erp_purchase_orders_line_add) / [Erp_purchase_orders_line_update](#schema-erp_purchase_orders_line_update) / [Erp_purchase_orders_line_remove](#schema-erp_purchase_orders_line_remove)&gt; | true | maxItems=500; items[0]: oneOf[0]: —; oneOf[1]: —; oneOf[2]: — |
+
+<a id="schema-erp_purchase_orders_header_fields"></a>
+
+### Schema Erp_purchase_orders_header_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | SQL DocumentID varchar(30); nullable=false; writable=false |
+| `documentDate` | string | true | SQL DocumentDate datetime; nullable=false; writable=true |
+| `objectId` | string | true | SQL ObjectID varchar(100); nullable=false; writable=true |
+| `memo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Memo nvarchar(200); nullable=true; writable=true |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(200); nullable=true; writable=true |
+| `deliverDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeliverDate datetime; nullable=true; writable=true |
+| `currencyId` | string | true | SQL CurrencyID varchar(3); nullable=false; writable=true |
+| `rateExchange` | number | true | SQL RateExchange float; nullable=false; writable=true |
+| `baseTotal` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BaseTotal decimal(28, 0); nullable=true; writable=false |
+| `searchField` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SearchField nvarchar(2000); nullable=true; writable=true |
+| `isLocked` | boolean | true | SQL isLock bit; nullable=false; writable=false |
+| `userCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserCreate varchar(50); nullable=true; writable=false |
+| `userUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserUpdate varchar(50); nullable=true; writable=false |
+| `dateUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateUpdate datetime; nullable=true; writable=false |
+| `dateCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateCreate datetime; nullable=true; writable=false |
+| `linkId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LinkID varchar(50); nullable=true; writable=false |
+| `contractId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ContractID nvarchar(100); nullable=true; writable=true |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `branchId` | string | true | SQL BranchID varchar(50); nullable=false; writable=false |
+
+<a id="schema-erp_purchase_orders_lines_fields"></a>
+
+### Schema Erp_purchase_orders_lines_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(30); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID nvarchar(50); nullable=false; writable=true |
+| `quantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Quantity decimal(28, 2); nullable=true; writable=true |
+| `unitPrice` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UnitPrice decimal(28, 4); nullable=true; writable=true |
+| `sourceAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SourceAmount decimal(18, 2); nullable=true; writable=false |
+| `amount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Amount decimal(28, 0); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(100); nullable=true; writable=true |
+| `quantity2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Quantity2 decimal(28, 4); nullable=true; writable=true |
+| `property` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Property nvarchar(50); nullable=true; writable=true |
+| `property2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Property2 nvarchar(50); nullable=true; writable=true |
+| `parentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ParentID varchar(50); nullable=true; writable=false |
+
+<a id="schema-erp_purchase_orders_document_row"></a>
+
+### Schema Erp_purchase_orders_document_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_purchase_orders_header_fields](#schema-erp_purchase_orders_header_fields) | true | — |
+
+<a id="schema-erp_purchase_orders_document_page"></a>
+
+### Schema Erp_purchase_orders_document_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_purchase_orders_document_row](#schema-erp_purchase_orders_document_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_purchase_orders_list_response"></a>
+
+### Schema Erp_purchase_orders_list_response
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_purchase_orders_document_page](#schema-erp_purchase_orders_document_page) | true | — |
+
+<a id="schema-erp_purchase_orders_detail"></a>
+
+### Schema Erp_purchase_orders_detail
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_purchase_orders_header_fields](#schema-erp_purchase_orders_header_fields) | true | — |
+| `lines` | [Erp_purchase_orders_lines_page](#schema-erp_purchase_orders_lines_page) | true | — |
+| `history` | null | true | — |
+| `comparison` | null | true | — |
+| `actions` | array&lt;[ErpActionState](#schema-erpactionstate)&gt; | true | items[0]: — |
+| `sections` | dictionary&lt;[ErpLinePage](#schema-erplinepage)&gt; / null | false | anyOf[0]: additionalProperties={"$ref":"#/components/schemas/ErpLinePage"}; anyOf[1]: — |
+
+<a id="schema-erp_purchase_orders_lines_row"></a>
+
+### Schema Erp_purchase_orders_lines_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_purchase_orders_lines_fields](#schema-erp_purchase_orders_lines_fields) | true | — |
+
+<a id="schema-erp_purchase_orders_lines_page"></a>
+
+### Schema Erp_purchase_orders_lines_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_purchase_orders_lines_row](#schema-erp_purchase_orders_lines_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_purchase_orders_detail_response"></a>
+
+### Schema Erp_purchase_orders_detail_response
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_purchase_orders_detail](#schema-erp_purchase_orders_detail) | true | — |
 
 <a id="schema-erppurchaserequestheaderinput"></a>
 
@@ -6560,6 +13557,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 | `history` | null | true | — |
 | `comparison` | null | true | — |
 | `actions` | array&lt;[ErpActionState](#schema-erpactionstate)&gt; | true | items[0]: — |
+| `sections` | dictionary&lt;[ErpLinePage](#schema-erplinepage)&gt; / null | false | anyOf[0]: additionalProperties={"$ref":"#/components/schemas/ErpLinePage"}; anyOf[1]: — |
 
 <a id="schema-erp_purchase_requests_lines_row"></a>
 
@@ -6618,6 +13616,609 @@ Object: `{"type":"object","additionalProperties":false}`.
 | `documentId` | string | true | — |
 | `contractId` | string | true | — |
 | `fields` | dictionary&lt;any JSON&gt; | true | additionalProperties={"description":"Fixed module field or action input; see x-medcom-typed-header, x-medcom-typed-line, x-medcom-typed-payload and x-medcom-full-field-sections on its operation."} |
+
+<a id="schema-erpsalesorderpmheaderinput"></a>
+
+### Schema ErpSalesOrderPmHeaderInput
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+
+<a id="schema-erpsalesorderpmlinesinput"></a>
+
+### Schema ErpSalesOrderPmLinesInput
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+
+<a id="schema-erp_sales_order_pm_new_line"></a>
+
+### Schema Erp_sales_order_pm_new_line
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `clientLineKey` | string | true | — |
+| `values` | [ErpSalesOrderPmLinesInput](#schema-erpsalesorderpmlinesinput) | true | — |
+
+<a id="schema-erp_sales_order_pm_send_sa_request"></a>
+
+### Schema Erp_sales_order_pm_send_sa_request
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `payload` | [ErpActionNotes](#schema-erpactionnotes) | true | — |
+
+<a id="schema-erp_sales_order_pm_reject_request"></a>
+
+### Schema Erp_sales_order_pm_reject_request
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `payload` | [ErpActionNotes](#schema-erpactionnotes) | true | — |
+
+<a id="schema-erp_sales_order_pm_header_fields"></a>
+
+### Schema Erp_sales_order_pm_header_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `documentDate` | string | true | SQL DocumentDate datetime; nullable=false; writable=false |
+| `objectId` | string | true | SQL ObjectID varchar(100); nullable=false; writable=false |
+| `contractId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ContractID nvarchar(250); nullable=true; writable=false |
+| `memo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Memo nvarchar(max); nullable=true; writable=false |
+| `deliverDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeliverDate datetime; nullable=true; writable=false |
+| `baseTotal` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BaseTotal decimal(28, 0); nullable=true; writable=false |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `employeeId` | string | true | SQL EmployeeID varchar(50); nullable=false; writable=false |
+| `managerId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ManagerID varchar(50); nullable=true; writable=false |
+| `phone` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Phone varchar(150); nullable=true; writable=false |
+| `branchId` | string | true | SQL BranchID varchar(50); nullable=false; writable=false |
+| `taxCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TaxCode varchar(50); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+| `depositAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DepositAmount decimal(28, 0); nullable=true; writable=false |
+| `isLocked` | boolean | true | SQL isLock bit; nullable=false; writable=false |
+| `agencyId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AgencyID varchar(50); nullable=true; writable=false |
+| `isVAT` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL isVAT bit; nullable=true; writable=false |
+| `isOrder` | boolean | true | SQL isOrder bit; nullable=false; writable=false |
+| `currencyId` | string | true | SQL CurrencyID varchar(3); nullable=false; writable=false |
+| `rateExchange` | number | true | SQL RateExchange float; nullable=false; writable=false |
+| `linkId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LinkID varchar(50); nullable=true; writable=false |
+| `userCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserCreate varchar(50); nullable=true; writable=false |
+| `userUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserUpdate varchar(50); nullable=true; writable=false |
+| `dateUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateUpdate datetime; nullable=true; writable=false |
+| `dateCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateCreate datetime; nullable=true; writable=false |
+| `ghiChuDonHang` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL GhiChuDonHang nvarchar(250); nullable=true; writable=false |
+| `paymentTermId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PaymentTermID varchar(50); nullable=true; writable=false |
+| `ceoId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CeoID varchar(50); nullable=true; writable=false |
+| `thamGiaHopDongBan` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL ThamGiaHopDongBan bit; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl varchar(500); nullable=true; writable=false |
+| `beforeOutStockUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BeforeOutStockUrl varchar(500); nullable=true; writable=false |
+| `bBBGUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBBGUrl varchar(500); nullable=true; writable=false |
+| `documentUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DocumentUrl nvarchar(500); nullable=true; writable=false |
+| `handoverLocation` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL HandoverLocation nvarchar(200); nullable=true; writable=false |
+| `representedByA` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RepresentedByA nvarchar(100); nullable=true; writable=false |
+| `positionA` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PositionA nvarchar(100); nullable=true; writable=false |
+| `addressA` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddressA nvarchar(200); nullable=true; writable=false |
+| `representedByB` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RepresentedByB nvarchar(100); nullable=true; writable=false |
+| `positionB` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PositionB nvarchar(100); nullable=true; writable=false |
+| `addressB` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddressB nvarchar(200); nullable=true; writable=false |
+| `conclude` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Conclude nvarchar(500); nullable=true; writable=false |
+| `minutesNumber` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL MinutesNumber int; nullable=true; writable=false |
+| `partyAKeep` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL PartyAKeep int; nullable=true; writable=false |
+| `partyBKeep` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL PartyBKeep int; nullable=true; writable=false |
+| `deliveryStatusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeliveryStatusID int; nullable=true; writable=false |
+| `deliveryEmployeeId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeliveryEmployeeID nvarchar(200); nullable=true; writable=false |
+| `deliveryEmployeeSubId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeliveryEmployeeSubID nvarchar(200); nullable=true; writable=false |
+| `vehicle` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Vehicle nvarchar(200); nullable=true; writable=false |
+| `soPhieu` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SoPhieu nvarchar(100); nullable=true; writable=false |
+| `soHoaDon` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SoHoaDon nvarchar(100); nullable=true; writable=false |
+| `ngayPhieu` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL NgayPhieu datetime; nullable=true; writable=false |
+| `ngayHoaDon` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL NgayHoaDon datetime; nullable=true; writable=false |
+| `gio` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Gio varchar(5); nullable=true; writable=false |
+| `objectName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ObjectName nvarchar(300); nullable=true; writable=false |
+| `address` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Address nvarchar(max); nullable=true; writable=false |
+| `statusName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusName nvarchar(50); nullable=true; writable=false |
+| `backColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL BackColor int; nullable=true; writable=false |
+| `employeeName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL EmployeeName nvarchar(300); nullable=true; writable=false |
+| `managerName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ManagerName nvarchar(300); nullable=true; writable=false |
+
+<a id="schema-erp_sales_order_pm_lines_fields"></a>
+
+### Schema Erp_sales_order_pm_lines_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID nvarchar(50); nullable=false; writable=false |
+| `quantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Quantity decimal(18, 0); nullable=true; writable=false |
+| `unitFactor` | number / null | true | anyOf[0]: —; anyOf[1]: —; SQL UnitFactor float; nullable=true; writable=false |
+| `unit2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Unit2 nvarchar(50); nullable=true; writable=false |
+| `quantity2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Quantity2 decimal(18, 0); nullable=true; writable=false |
+| `unitPrice` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UnitPrice decimal(28, 0); nullable=true; writable=false |
+| `tonKhoHienTai` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TonKhoHienTai decimal(18, 0); nullable=true; writable=false |
+| `deliveryQuantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeliveryQuantity decimal(18, 0); nullable=true; writable=false |
+| `soLuongHopDong` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SoLuongHopDong decimal(18, 0); nullable=true; writable=false |
+| `amount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Amount decimal(28, 0); nullable=true; writable=false |
+| `discountPercent` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DiscountPercent decimal(18, 2); nullable=true; writable=false |
+| `discountAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DiscountAmount decimal(18, 0); nullable=true; writable=false |
+| `vATPercent` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATPercent decimal(18, 2); nullable=true; writable=false |
+| `vATAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATAmount decimal(18, 0); nullable=true; writable=false |
+| `totalAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TotalAmount decimal(18, 0); nullable=true; writable=false |
+| `vATQuantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATQuantity decimal(18, 2); nullable=true; writable=false |
+| `dienGiai` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DienGiai nvarchar(max); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+| `property` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Property nvarchar(50); nullable=true; writable=false |
+| `property2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Property2 nvarchar(50); nullable=true; writable=false |
+| `parentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ParentID varchar(50); nullable=true; writable=false |
+| `notes2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes2 nvarchar(200); nullable=true; writable=false |
+| `costId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CostID varchar(50); nullable=true; writable=false |
+| `storeHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StoreHouseID varchar(50); nullable=true; writable=false |
+| `vATId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATID varchar(50); nullable=true; writable=false |
+
+<a id="schema-erp_sales_order_pm_history_fields"></a>
+
+### Schema Erp_sales_order_pm_history_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `thoiGian` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ThoiGian datetime; nullable=true; writable=false |
+| `userName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserName nvarchar(50); nullable=true; writable=false |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+
+<a id="schema-erp_sales_order_pm_document_row"></a>
+
+### Schema Erp_sales_order_pm_document_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_sales_order_pm_header_fields](#schema-erp_sales_order_pm_header_fields) | true | — |
+
+<a id="schema-erp_sales_order_pm_document_page"></a>
+
+### Schema Erp_sales_order_pm_document_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_sales_order_pm_document_row](#schema-erp_sales_order_pm_document_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_sales_order_pm_list_response"></a>
+
+### Schema Erp_sales_order_pm_list_response
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_sales_order_pm_document_page](#schema-erp_sales_order_pm_document_page) | true | — |
+
+<a id="schema-erp_sales_order_pm_detail"></a>
+
+### Schema Erp_sales_order_pm_detail
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_sales_order_pm_header_fields](#schema-erp_sales_order_pm_header_fields) | true | — |
+| `lines` | [Erp_sales_order_pm_lines_page](#schema-erp_sales_order_pm_lines_page) | true | — |
+| `history` | [Erp_sales_order_pm_history_page](#schema-erp_sales_order_pm_history_page) | true | — |
+| `comparison` | null | true | — |
+| `actions` | array&lt;[ErpActionState](#schema-erpactionstate)&gt; | true | items[0]: — |
+| `sections` | dictionary&lt;[ErpLinePage](#schema-erplinepage)&gt; / null | false | anyOf[0]: additionalProperties={"$ref":"#/components/schemas/ErpLinePage"}; anyOf[1]: — |
+
+<a id="schema-erp_sales_order_pm_lines_row"></a>
+
+### Schema Erp_sales_order_pm_lines_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_sales_order_pm_lines_fields](#schema-erp_sales_order_pm_lines_fields) | true | — |
+
+<a id="schema-erp_sales_order_pm_lines_page"></a>
+
+### Schema Erp_sales_order_pm_lines_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_sales_order_pm_lines_row](#schema-erp_sales_order_pm_lines_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_sales_order_pm_history_row"></a>
+
+### Schema Erp_sales_order_pm_history_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_sales_order_pm_history_fields](#schema-erp_sales_order_pm_history_fields) | true | — |
+
+<a id="schema-erp_sales_order_pm_history_page"></a>
+
+### Schema Erp_sales_order_pm_history_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_sales_order_pm_history_row](#schema-erp_sales_order_pm_history_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_sales_order_pm_detail_response"></a>
+
+### Schema Erp_sales_order_pm_detail_response
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_sales_order_pm_detail](#schema-erp_sales_order_pm_detail) | true | — |
+
+<a id="schema-erpsalesordersaheaderinput"></a>
+
+### Schema ErpSalesOrderSaHeaderInput
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+
+<a id="schema-erpsalesordersalinesinput"></a>
+
+### Schema ErpSalesOrderSaLinesInput
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+
+<a id="schema-erp_sales_order_sa_new_line"></a>
+
+### Schema Erp_sales_order_sa_new_line
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `clientLineKey` | string | true | — |
+| `values` | [ErpSalesOrderSaLinesInput](#schema-erpsalesordersalinesinput) | true | — |
+
+<a id="schema-erp_sales_order_sa_send_accounting_request"></a>
+
+### Schema Erp_sales_order_sa_send_accounting_request
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `payload` | [ErpActionNotes](#schema-erpactionnotes) | true | — |
+
+<a id="schema-erp_sales_order_sa_send_tech_request"></a>
+
+### Schema Erp_sales_order_sa_send_tech_request
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `payload` | [ErpActionNotes](#schema-erpactionnotes) | true | — |
+
+<a id="schema-erp_sales_order_sa_reject_request"></a>
+
+### Schema Erp_sales_order_sa_reject_request
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `payload` | [ErpActionNotes](#schema-erpactionnotes) | true | — |
+
+<a id="schema-erp_sales_order_sa_return_step_request"></a>
+
+### Schema Erp_sales_order_sa_return_step_request
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-exact-input":true}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `idempotencyKey` | string | true | — |
+| `branchId` | string | true | — |
+| `documentId` | string | true | — |
+| `expectedStateToken` | string | true | — |
+| `payload` | [ErpReturnStep](#schema-erpreturnstep) | true | — |
+
+<a id="schema-erp_sales_order_sa_header_fields"></a>
+
+### Schema Erp_sales_order_sa_header_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `documentDate` | string | true | SQL DocumentDate datetime; nullable=false; writable=false |
+| `objectId` | string | true | SQL ObjectID varchar(100); nullable=false; writable=false |
+| `contractId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ContractID nvarchar(250); nullable=true; writable=false |
+| `memo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Memo nvarchar(max); nullable=true; writable=false |
+| `deliverDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeliverDate datetime; nullable=true; writable=false |
+| `baseTotal` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BaseTotal decimal(28, 0); nullable=true; writable=false |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `employeeId` | string | true | SQL EmployeeID varchar(50); nullable=false; writable=false |
+| `managerId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ManagerID varchar(50); nullable=true; writable=false |
+| `phone` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Phone varchar(150); nullable=true; writable=false |
+| `branchId` | string | true | SQL BranchID varchar(50); nullable=false; writable=false |
+| `taxCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TaxCode varchar(50); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+| `depositAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DepositAmount decimal(28, 0); nullable=true; writable=false |
+| `isLocked` | boolean | true | SQL isLock bit; nullable=false; writable=false |
+| `agencyId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AgencyID varchar(50); nullable=true; writable=false |
+| `isVAT` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL isVAT bit; nullable=true; writable=false |
+| `isOrder` | boolean | true | SQL isOrder bit; nullable=false; writable=false |
+| `currencyId` | string | true | SQL CurrencyID varchar(3); nullable=false; writable=false |
+| `rateExchange` | number | true | SQL RateExchange float; nullable=false; writable=false |
+| `linkId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LinkID varchar(50); nullable=true; writable=false |
+| `userCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserCreate varchar(50); nullable=true; writable=false |
+| `userUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserUpdate varchar(50); nullable=true; writable=false |
+| `dateUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateUpdate datetime; nullable=true; writable=false |
+| `dateCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateCreate datetime; nullable=true; writable=false |
+| `ghiChuDonHang` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL GhiChuDonHang nvarchar(250); nullable=true; writable=false |
+| `paymentTermId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PaymentTermID varchar(50); nullable=true; writable=false |
+| `ceoId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CeoID varchar(50); nullable=true; writable=false |
+| `thamGiaHopDongBan` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL ThamGiaHopDongBan bit; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl varchar(500); nullable=true; writable=false |
+| `beforeOutStockUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BeforeOutStockUrl varchar(500); nullable=true; writable=false |
+| `bBBGUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBBGUrl varchar(500); nullable=true; writable=false |
+| `documentUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DocumentUrl nvarchar(500); nullable=true; writable=false |
+| `handoverLocation` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL HandoverLocation nvarchar(200); nullable=true; writable=false |
+| `representedByA` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RepresentedByA nvarchar(100); nullable=true; writable=false |
+| `positionA` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PositionA nvarchar(100); nullable=true; writable=false |
+| `addressA` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddressA nvarchar(200); nullable=true; writable=false |
+| `representedByB` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RepresentedByB nvarchar(100); nullable=true; writable=false |
+| `positionB` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PositionB nvarchar(100); nullable=true; writable=false |
+| `addressB` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddressB nvarchar(200); nullable=true; writable=false |
+| `conclude` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Conclude nvarchar(500); nullable=true; writable=false |
+| `minutesNumber` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL MinutesNumber int; nullable=true; writable=false |
+| `partyAKeep` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL PartyAKeep int; nullable=true; writable=false |
+| `partyBKeep` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL PartyBKeep int; nullable=true; writable=false |
+| `deliveryStatusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeliveryStatusID int; nullable=true; writable=false |
+| `deliveryEmployeeId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeliveryEmployeeID nvarchar(200); nullable=true; writable=false |
+| `deliveryEmployeeSubId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeliveryEmployeeSubID nvarchar(200); nullable=true; writable=false |
+| `vehicle` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Vehicle nvarchar(200); nullable=true; writable=false |
+| `soPhieu` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SoPhieu nvarchar(100); nullable=true; writable=false |
+| `soHoaDon` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SoHoaDon nvarchar(100); nullable=true; writable=false |
+| `ngayPhieu` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL NgayPhieu datetime; nullable=true; writable=false |
+| `ngayHoaDon` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL NgayHoaDon datetime; nullable=true; writable=false |
+
+<a id="schema-erp_sales_order_sa_lines_fields"></a>
+
+### Schema Erp_sales_order_sa_lines_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID nvarchar(50); nullable=false; writable=false |
+| `quantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Quantity decimal(18, 0); nullable=true; writable=false |
+| `unitFactor` | number / null | true | anyOf[0]: —; anyOf[1]: —; SQL UnitFactor float; nullable=true; writable=false |
+| `unit2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Unit2 nvarchar(50); nullable=true; writable=false |
+| `quantity2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Quantity2 decimal(18, 0); nullable=true; writable=false |
+| `unitPrice` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UnitPrice decimal(28, 0); nullable=true; writable=false |
+| `tonKhoHienTai` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TonKhoHienTai decimal(18, 0); nullable=true; writable=false |
+| `deliveryQuantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeliveryQuantity decimal(18, 0); nullable=true; writable=false |
+| `soLuongHopDong` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SoLuongHopDong decimal(18, 0); nullable=true; writable=false |
+| `amount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Amount decimal(28, 0); nullable=true; writable=false |
+| `discountPercent` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DiscountPercent decimal(18, 2); nullable=true; writable=false |
+| `discountAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DiscountAmount decimal(18, 0); nullable=true; writable=false |
+| `vATPercent` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATPercent decimal(18, 2); nullable=true; writable=false |
+| `vATAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATAmount decimal(18, 0); nullable=true; writable=false |
+| `totalAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TotalAmount decimal(18, 0); nullable=true; writable=false |
+| `vATQuantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATQuantity decimal(18, 2); nullable=true; writable=false |
+| `dienGiai` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DienGiai nvarchar(max); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+| `property` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Property nvarchar(50); nullable=true; writable=false |
+| `property2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Property2 nvarchar(50); nullable=true; writable=false |
+| `parentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ParentID varchar(50); nullable=true; writable=false |
+| `notes2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes2 nvarchar(200); nullable=true; writable=false |
+| `costId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CostID varchar(50); nullable=true; writable=false |
+| `storeHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StoreHouseID varchar(50); nullable=true; writable=false |
+| `vATId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATID varchar(50); nullable=true; writable=false |
+
+<a id="schema-erp_sales_order_sa_history_fields"></a>
+
+### Schema Erp_sales_order_sa_history_fields
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `thoiGian` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ThoiGian datetime; nullable=true; writable=false |
+| `userName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserName nvarchar(50); nullable=true; writable=false |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+
+<a id="schema-erp_sales_order_sa_document_row"></a>
+
+### Schema Erp_sales_order_sa_document_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_sales_order_sa_header_fields](#schema-erp_sales_order_sa_header_fields) | true | — |
+
+<a id="schema-erp_sales_order_sa_document_page"></a>
+
+### Schema Erp_sales_order_sa_document_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_sales_order_sa_document_row](#schema-erp_sales_order_sa_document_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_sales_order_sa_list_response"></a>
+
+### Schema Erp_sales_order_sa_list_response
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_sales_order_sa_document_page](#schema-erp_sales_order_sa_document_page) | true | — |
+
+<a id="schema-erp_sales_order_sa_detail"></a>
+
+### Schema Erp_sales_order_sa_detail
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_sales_order_sa_header_fields](#schema-erp_sales_order_sa_header_fields) | true | — |
+| `lines` | [Erp_sales_order_sa_lines_page](#schema-erp_sales_order_sa_lines_page) | true | — |
+| `history` | [Erp_sales_order_sa_history_page](#schema-erp_sales_order_sa_history_page) | true | — |
+| `comparison` | null | true | — |
+| `actions` | array&lt;[ErpActionState](#schema-erpactionstate)&gt; | true | items[0]: — |
+| `sections` | dictionary&lt;[ErpLinePage](#schema-erplinepage)&gt; / null | false | anyOf[0]: additionalProperties={"$ref":"#/components/schemas/ErpLinePage"}; anyOf[1]: — |
+
+<a id="schema-erp_sales_order_sa_lines_row"></a>
+
+### Schema Erp_sales_order_sa_lines_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_sales_order_sa_lines_fields](#schema-erp_sales_order_sa_lines_fields) | true | — |
+
+<a id="schema-erp_sales_order_sa_lines_page"></a>
+
+### Schema Erp_sales_order_sa_lines_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_sales_order_sa_lines_row](#schema-erp_sales_order_sa_lines_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_sales_order_sa_history_row"></a>
+
+### Schema Erp_sales_order_sa_history_row
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_sales_order_sa_history_fields](#schema-erp_sales_order_sa_history_fields) | true | — |
+
+<a id="schema-erp_sales_order_sa_history_page"></a>
+
+### Schema Erp_sales_order_sa_history_page
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_sales_order_sa_history_row](#schema-erp_sales_order_sa_history_row)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_sales_order_sa_detail_response"></a>
+
+### Schema Erp_sales_order_sa_detail_response
+
+Object: `{"type":"object","additionalProperties":false}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_sales_order_sa_detail](#schema-erp_sales_order_sa_detail) | true | — |
 
 <a id="schema-erpsalesorderheaderinput"></a>
 
@@ -6991,6 +14592,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 | `history` | [Erp_sales_orders_history_page](#schema-erp_sales_orders_history_page) | true | — |
 | `comparison` | null | true | — |
 | `actions` | array&lt;[ErpActionState](#schema-erpactionstate)&gt; | true | items[0]: — |
+| `sections` | dictionary&lt;[ErpLinePage](#schema-erplinepage)&gt; / null | false | anyOf[0]: additionalProperties={"$ref":"#/components/schemas/ErpLinePage"}; anyOf[1]: — |
 
 <a id="schema-erp_sales_orders_lines_row"></a>
 
@@ -7272,6 +14874,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 | `history` | null | true | — |
 | `comparison` | [Erp_sales_qr_comparison_page](#schema-erp_sales_qr_comparison_page) | true | — |
 | `actions` | array&lt;[ErpActionState](#schema-erpactionstate)&gt; | true | items[0]: — |
+| `sections` | dictionary&lt;[ErpLinePage](#schema-erplinepage)&gt; / null | false | anyOf[0]: additionalProperties={"$ref":"#/components/schemas/ErpLinePage"}; anyOf[1]: — |
 
 <a id="schema-erp_sales_qr_lines_row"></a>
 
@@ -7470,6 +15073,7 @@ Object: `{"type":"object","additionalProperties":false}`.
 | `history` | null | true | — |
 | `comparison` | [Erp_warehouse_qr_comparison_page](#schema-erp_warehouse_qr_comparison_page) | true | — |
 | `actions` | array&lt;[ErpActionState](#schema-erpactionstate)&gt; | true | items[0]: — |
+| `sections` | dictionary&lt;[ErpLinePage](#schema-erplinepage)&gt; / null | false | anyOf[0]: additionalProperties={"$ref":"#/components/schemas/ErpLinePage"}; anyOf[1]: — |
 
 <a id="schema-erp_warehouse_qr_lines_row"></a>
 
@@ -8769,6 +16373,1519 @@ Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presen
 | `expireDateByDocumentDisplay` | string / null | false | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
 | `unitPriceDisplay` | string / null | false | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
 
+<a id="schema-erp_inbound_requests_list_responsefedisplay"></a>
+
+### Schema Erp_inbound_requests_list_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_inbound_requests_document_pageFeDisplay](#schema-erp_inbound_requests_document_pagefedisplay) | true | — |
+
+<a id="schema-erp_inbound_requests_document_pagefedisplay"></a>
+
+### Schema Erp_inbound_requests_document_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_inbound_requests_document_rowFeDisplay](#schema-erp_inbound_requests_document_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_inbound_requests_document_rowfedisplay"></a>
+
+### Schema Erp_inbound_requests_document_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_inbound_requests_header_fieldsFeDisplay](#schema-erp_inbound_requests_header_fieldsfedisplay) | true | — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_inbound_requests_header_fieldsfedisplay"></a>
+
+### Schema Erp_inbound_requests_header_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `documentDate` | string | true | SQL DocumentDate datetime; nullable=false; writable=true |
+| `orderNumber` | string | true | SQL OrderNumber nvarchar(50); nullable=false; writable=true |
+| `branchId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BranchID varchar(50); nullable=true; writable=false |
+| `invoiceNo` | string | true | SQL InvoiceNo nvarchar(50); nullable=false; writable=true |
+| `declarationNumber` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeclarationNumber varchar(50); nullable=true; writable=true |
+| `departurePoint` | string | true | SQL DeparturePoint nvarchar(100); nullable=false; writable=true |
+| `destinationPoint` | string | true | SQL DestinationPoint nvarchar(100); nullable=false; writable=true |
+| `isRain` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL IsRain bit; nullable=true; writable=true |
+| `orderTypeId` | string | true | SQL OrderTypeID nvarchar(50); nullable=false; writable=true |
+| `objectId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ObjectID varchar(50); nullable=true; writable=true |
+| `totalPalletQuantityByDocument` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TotalPalletQuantityByDocument decimal(18, 0); nullable=true; writable=true |
+| `totalBarrelQuantityByDocument` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TotalBarrelQuantityByDocument decimal(18, 0); nullable=true; writable=true |
+| `totalPalletQuantityByReal` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TotalPalletQuantityByReal decimal(18, 0); nullable=true; writable=true |
+| `totalBarrelQuantityByReal` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TotalBarrelQuantityByReal decimal(18, 0); nullable=true; writable=true |
+| `excessPackageQuantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ExcessPackageQuantity decimal(18, 0); nullable=true; writable=true |
+| `lackOfPackageQuantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LackOfPackageQuantity decimal(18, 0); nullable=true; writable=true |
+| `damagedPackageQuantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DamagedPackageQuantity decimal(18, 0); nullable=true; writable=true |
+| `packageTypeId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PackageTypeID nvarchar(50); nullable=true; writable=true |
+| `isDamageOutsidePackage` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL IsDamageOutsidePackage bit; nullable=true; writable=true |
+| `damageDescription` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DamageDescription nvarchar(500); nullable=true; writable=true |
+| `damageInsideStatusId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DamageInsideStatusID nvarchar(50); nullable=true; writable=true |
+| `locationDamageDetectedId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LocationDamageDetectedID nvarchar(50); nullable=true; writable=true |
+| `locationDamageDescription` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LocationDamageDescription nvarchar(500); nullable=true; writable=true |
+| `resultDesciption` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ResultDesciption nvarchar(max); nullable=true; writable=true |
+| `totalQuantityInboundResult` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TotalQuantityInboundResult decimal(18, 0); nullable=true; writable=true |
+| `goodAwaitingInboundResult` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL GoodAwaitingInboundResult decimal(18, 0); nullable=true; writable=true |
+| `resultNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ResultNote nvarchar(500); nullable=true; writable=true |
+| `datetimeRecorded` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DatetimeRecorded datetime; nullable=true; writable=true |
+| `statusId` | integer | true | SQL StatusID int; nullable=false; writable=false |
+| `currencyId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CurrencyID varchar(3); nullable=true; writable=true |
+| `rateExchange` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RateExchange decimal(28, 10); nullable=true; writable=true |
+| `imageURL` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ImageURL varchar(255); nullable=true; writable=true |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl varchar(255); nullable=true; writable=true |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=true |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `qrPrintType` | string | true | SQL QRPrintType varchar(10); nullable=false; writable=true |
+| `linkId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LinkID varchar(50); nullable=true; writable=false |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `orderTypeName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `orderTypeReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `objectName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `objectReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `packageTypeName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `packageTypeReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `damageInsideStatusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `damageInsideStatusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `locationDamageDetectedName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `locationDamageDetectedReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `datetimeRecordedDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `statusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `currencyName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `currencyReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `linkName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `linkReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_inbound_requests_detail_responsefedisplay"></a>
+
+### Schema Erp_inbound_requests_detail_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_inbound_requests_detailFeDisplay](#schema-erp_inbound_requests_detailfedisplay) | true | — |
+
+<a id="schema-erp_inbound_requests_detailfedisplay"></a>
+
+### Schema Erp_inbound_requests_detailFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_inbound_requests_header_fieldsFeDisplay](#schema-erp_inbound_requests_header_fieldsfedisplay) | true | — |
+| `lines` | [Erp_inbound_requests_lines_pageFeDisplay](#schema-erp_inbound_requests_lines_pagefedisplay) | true | — |
+| `history` | [Erp_inbound_requests_history_pageFeDisplay](#schema-erp_inbound_requests_history_pagefedisplay) | true | — |
+| `comparison` | null | true | — |
+| `actions` | array&lt;[ErpActionStateFeDisplay](#schema-erpactionstatefedisplay)&gt; | true | items[0]: — |
+| `sections` | object | true | required=["costs","discrepancies"]; properties={"costs":{"$ref":"#/components/schemas/Erp_inbound_requests_costs_pageFeDisplay"},"discrepancies":{"$ref":"#/components/schemas/Erp_inbound_requests_discrepancies_pageFeDisplay"}}; additionalProperties=false |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_inbound_requests_lines_pagefedisplay"></a>
+
+### Schema Erp_inbound_requests_lines_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_inbound_requests_lines_rowFeDisplay](#schema-erp_inbound_requests_lines_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_inbound_requests_lines_rowfedisplay"></a>
+
+### Schema Erp_inbound_requests_lines_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_inbound_requests_lines_fieldsFeDisplay](#schema-erp_inbound_requests_lines_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_inbound_requests_lines_fieldsfedisplay"></a>
+
+### Schema Erp_inbound_requests_lines_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `contractId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ContractID nvarchar(100); nullable=true; writable=true |
+| `itemId` | string | true | SQL ItemID varchar(50); nullable=false; writable=true |
+| `hangSX` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL HangSX nvarchar(100); nullable=true; writable=false |
+| `unitFactor` | number / null | true | anyOf[0]: —; anyOf[1]: —; SQL UnitFactor float; nullable=true; writable=false |
+| `unit2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Unit2 nvarchar(50); nullable=true; writable=true |
+| `additional` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL Additional bit; nullable=true; writable=true |
+| `lotNumberByDocument` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LotNumberByDocument nvarchar(50); nullable=true; writable=true |
+| `setQuantityByDocument` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SetQuantityByDocument decimal(18, 0); nullable=true; writable=true |
+| `barrelQuantityByDocument` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BarrelQuantityByDocument decimal(18, 0); nullable=true; writable=true |
+| `expireDateByDocument` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ExpireDateByDocument datetime; nullable=true; writable=true |
+| `lotNumberByReal` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LotNumberByReal nvarchar(50); nullable=true; writable=false |
+| `setQuantityByReal` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SetQuantityByReal decimal(18, 0); nullable=true; writable=false |
+| `barrelQuantityByReal` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BarrelQuantityByReal decimal(18, 0); nullable=true; writable=false |
+| `expireDateByReal` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ExpireDateByReal datetime; nullable=true; writable=false |
+| `sourceAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SourceAmount decimal(18, 0); nullable=true; writable=true |
+| `unitPrice` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UnitPrice decimal(18, 0); nullable=true; writable=true |
+| `amount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Amount decimal(18, 0); nullable=true; writable=false |
+| `randomTestQuantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RandomTestQuantity decimal(18, 0); nullable=true; writable=false |
+| `testStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TestStatus nvarchar(100); nullable=true; writable=false |
+| `noPalletNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL NoPalletNote nvarchar(500); nullable=true; writable=false |
+| `palletNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PalletNote nvarchar(500); nullable=true; writable=false |
+| `checkerNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CheckerNote nvarchar(500); nullable=true; writable=false |
+| `itemCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemCode nvarchar(50); nullable=true; writable=false |
+| `parentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ParentID varchar(50); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `contractName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `contractReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+| `expireDateByDocumentDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `expireDateByRealDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `sourceAmountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `unitPriceDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `amountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `parentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `parentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_inbound_requests_history_pagefedisplay"></a>
+
+### Schema Erp_inbound_requests_history_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_inbound_requests_history_rowFeDisplay](#schema-erp_inbound_requests_history_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_inbound_requests_history_rowfedisplay"></a>
+
+### Schema Erp_inbound_requests_history_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_inbound_requests_history_fieldsFeDisplay](#schema-erp_inbound_requests_history_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_inbound_requests_history_fieldsfedisplay"></a>
+
+### Schema Erp_inbound_requests_history_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `thoiGian` | string | true | SQL ThoiGian datetime; nullable=false; writable=false |
+| `userName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserName varchar(50); nullable=true; writable=false |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(200); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `thoiGianDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `statusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erpactionstatefedisplay"></a>
+
+### Schema ErpActionStateFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `id` | string | true | — |
+| `caption` | string | true | — |
+| `visible` | boolean | true | — |
+| `enabled` | boolean | true | — |
+| `reason` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `requiresSavedDocument` | boolean | true | — |
+| `route` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `name` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `referenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_inbound_requests_costs_pagefedisplay"></a>
+
+### Schema Erp_inbound_requests_costs_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_inbound_requests_costs_rowFeDisplay](#schema-erp_inbound_requests_costs_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_inbound_requests_costs_rowfedisplay"></a>
+
+### Schema Erp_inbound_requests_costs_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_inbound_requests_costs_fieldsFeDisplay](#schema-erp_inbound_requests_costs_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_inbound_requests_costs_fieldsfedisplay"></a>
+
+### Schema Erp_inbound_requests_costs_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID nvarchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `objectId` | string | true | SQL ObjectID varchar(100); nullable=false; writable=true |
+| `nCC` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL NCC varchar(100); nullable=true; writable=true |
+| `memo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Memo nvarchar(200); nullable=true; writable=true |
+| `cost` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Cost decimal(18, 2); nullable=true; writable=false |
+| `vATAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATAmount decimal(18, 2); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(200); nullable=true; writable=true |
+| `costType` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CostType varchar(30); nullable=true; writable=true |
+| `currencyId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CurrencyID varchar(3); nullable=true; writable=true |
+| `rateExchange` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RateExchange decimal(28, 10); nullable=true; writable=true |
+| `sourceAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SourceAmount decimal(28, 4); nullable=true; writable=true |
+| `vATId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATID varchar(50); nullable=true; writable=true |
+| `vATPercent` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATPercent decimal(18, 2); nullable=true; writable=false |
+| `expenseAccId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ExpenseAccID varchar(50); nullable=true; writable=true |
+| `invoiceNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL InvoiceNo varchar(50); nullable=true; writable=true |
+| `invoiceDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL InvoiceDate datetime; nullable=true; writable=true |
+| `allocateKind` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AllocateKind varchar(5); nullable=true; writable=true |
+| `isAllocatable` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL IsAllocatable bit; nullable=true; writable=false |
+| `serviceDocumentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ServiceDocumentID varchar(30); nullable=true; writable=false |
+| `serviceDetailId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ServiceDetailID varchar(40); nullable=true; writable=false |
+| `status` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL Status int; nullable=true; writable=false |
+| `userCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserCreate varchar(50); nullable=true; writable=false |
+| `userUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserUpdate varchar(50); nullable=true; writable=false |
+| `dateCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateCreate datetime; nullable=true; writable=false |
+| `dateUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateUpdate datetime; nullable=true; writable=false |
+| `isActive` | boolean | true | SQL IsActive bit; nullable=false; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `objectName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `objectReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `costDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `vATAmountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `currencyName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `currencyReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `sourceAmountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `vATName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `vATReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `expenseAccName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `expenseAccReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `invoiceDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `serviceDocumentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `serviceDocumentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `serviceDetailName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `serviceDetailReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `dateCreateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateUpdateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_inbound_requests_discrepancies_pagefedisplay"></a>
+
+### Schema Erp_inbound_requests_discrepancies_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_inbound_requests_discrepancies_rowFeDisplay](#schema-erp_inbound_requests_discrepancies_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_inbound_requests_discrepancies_rowfedisplay"></a>
+
+### Schema Erp_inbound_requests_discrepancies_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_inbound_requests_discrepancies_fieldsFeDisplay](#schema-erp_inbound_requests_discrepancies_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_inbound_requests_discrepancies_fieldsfedisplay"></a>
+
+### Schema Erp_inbound_requests_discrepancies_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID nvarchar(50); nullable=false; writable=false |
+| `lot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Lot nvarchar(50); nullable=true; writable=false |
+| `expireDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ExpireDate datetime; nullable=true; writable=false |
+| `quantityByDocument` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QuantityByDocument decimal(18, 0); nullable=true; writable=false |
+| `quantityByReal` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QuantityByReal decimal(18, 0); nullable=true; writable=false |
+| `quantityChecked` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QuantityChecked decimal(18, 0); nullable=true; writable=false |
+| `quantityNoSuitable` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QuantityNoSuitable decimal(18, 0); nullable=true; writable=false |
+| `status` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Status nvarchar(255); nullable=true; writable=false |
+| `solution` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Solution nvarchar(255); nullable=true; writable=false |
+| `conclude` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Conclude nvarchar(255); nullable=true; writable=false |
+| `suggestion` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Suggestion nvarchar(255); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+| `expireDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erpscopedresponse_erpchoicepagefedisplay"></a>
+
+### Schema ErpScopedResponse_ErpChoicePageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [ErpChoicePageFeDisplay](#schema-erpchoicepagefedisplay) / null | true | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erpchoicepagefedisplay"></a>
+
+### Schema ErpChoicePageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `items` | array&lt;[ErpChoiceFeDisplay](#schema-erpchoicefedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+| `requiredParameters` | array&lt;string&gt; | true | items[0]: — |
+
+<a id="schema-erpchoicefedisplay"></a>
+
+### Schema ErpChoiceFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `id` | string | true | — |
+| `label` | string / null | true | anyOf[0]: —; anyOf[1]: — |
+| `fields` | dictionary&lt;any JSON&gt; | true | additionalProperties={"description":"Fixed module field or action input; see x-medcom-typed-header, x-medcom-typed-line, x-medcom-typed-payload and x-medcom-full-field-sections on its operation."} |
+| `name` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `referenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_accounting_list_responsefedisplay"></a>
+
+### Schema Erp_internal_transfer_accounting_list_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_accounting_document_pageFeDisplay](#schema-erp_internal_transfer_accounting_document_pagefedisplay) | true | — |
+
+<a id="schema-erp_internal_transfer_accounting_document_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_accounting_document_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_accounting_document_rowFeDisplay](#schema-erp_internal_transfer_accounting_document_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_accounting_document_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_accounting_document_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_internal_transfer_accounting_header_fieldsFeDisplay](#schema-erp_internal_transfer_accounting_header_fieldsfedisplay) | true | — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_accounting_header_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_accounting_header_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `batchDate` | string | true | SQL BatchDate datetime; nullable=false; writable=false |
+| `fromBranchId` | string | true | SQL FromBranchID varchar(50); nullable=false; writable=false |
+| `toBranchId` | string | true | SQL ToBranchID varchar(50); nullable=false; writable=false |
+| `fromStoreHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromStoreHouseID varchar(50); nullable=true; writable=false |
+| `toStoreHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToStoreHouseID varchar(50); nullable=true; writable=false |
+| `plannedTransferDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PlannedTransferDate datetime; nullable=true; writable=false |
+| `actualDispatchDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualDispatchDate datetime; nullable=true; writable=false |
+| `actualReceiveDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualReceiveDate datetime; nullable=true; writable=false |
+| `assignedPM` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedPM varchar(100); nullable=true; writable=false |
+| `assignedTechnician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedTechnician varchar(100); nullable=true; writable=false |
+| `assignedSA` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedSA varchar(100); nullable=true; writable=false |
+| `hasEquipment` | boolean | true | SQL HasEquipment bit; nullable=false; writable=false |
+| `statusId` | integer | true | SQL StatusID int; nullable=false; writable=false |
+| `transportMethod` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TransportMethod nvarchar(50); nullable=true; writable=false |
+| `carrierName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CarrierName nvarchar(150); nullable=true; writable=false |
+| `carrierPhone` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CarrierPhone nvarchar(100); nullable=true; writable=false |
+| `vehicleNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VehicleNo nvarchar(100); nullable=true; writable=false |
+| `outputDocumentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL OutputDocumentID varchar(30); nullable=true; writable=true |
+| `inputDocumentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL InputDocumentID varchar(30); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(1000); nullable=true; writable=false |
+| `technicalCheckedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicalCheckedBy varchar(100); nullable=true; writable=false |
+| `technicalCheckedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicalCheckedAt datetime; nullable=true; writable=false |
+| `sAApprovedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAApprovedBy varchar(100); nullable=true; writable=false |
+| `sAApprovedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAApprovedAt datetime; nullable=true; writable=false |
+| `accountingConfirmedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingConfirmedBy varchar(100); nullable=true; writable=false |
+| `accountingConfirmedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingConfirmedAt datetime; nullable=true; writable=false |
+| `dispatchedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DispatchedBy varchar(100); nullable=true; writable=false |
+| `receivedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ReceivedBy varchar(100); nullable=true; writable=false |
+| `isLocked` | boolean | true | SQL isLock bit; nullable=false; writable=false |
+| `userCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserCreate varchar(100); nullable=true; writable=false |
+| `userUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserUpdate varchar(100); nullable=true; writable=false |
+| `dateCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateCreate datetime; nullable=true; writable=false |
+| `dateUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateUpdate datetime; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `statusCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusCode varchar(30); nullable=true; writable=false |
+| `statusName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusName nvarchar(150); nullable=true; writable=false |
+| `backColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL BackColor int; nullable=true; writable=false |
+| `foreColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL ForeColor int; nullable=true; writable=false |
+| `fromBranchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromBranchName nvarchar(100); nullable=true; writable=false |
+| `toBranchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToBranchName nvarchar(100); nullable=true; writable=false |
+| `fromStoreHouseName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromStoreHouseName nvarchar(100); nullable=true; writable=false |
+| `toStoreHouseName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToStoreHouseName nvarchar(100); nullable=true; writable=false |
+| `pMName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PMName nvarchar(150); nullable=true; writable=false |
+| `technicianName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicianName nvarchar(150); nullable=true; writable=false |
+| `sAName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAName nvarchar(150); nullable=true; writable=false |
+| `requestCount` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestCount int; nullable=true; writable=false |
+| `lineCount` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL LineCount int; nullable=true; writable=false |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `fromBranchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `toBranchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `fromStoreHouseReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `toStoreHouseReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `plannedTransferDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `actualDispatchDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `actualReceiveDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `outputDocumentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `outputDocumentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `inputDocumentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `inputDocumentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `technicalCheckedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `sAApprovedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `accountingConfirmedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateCreateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateUpdateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_accounting_detail_responsefedisplay"></a>
+
+### Schema Erp_internal_transfer_accounting_detail_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_accounting_detailFeDisplay](#schema-erp_internal_transfer_accounting_detailfedisplay) | true | — |
+
+<a id="schema-erp_internal_transfer_accounting_detailfedisplay"></a>
+
+### Schema Erp_internal_transfer_accounting_detailFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_internal_transfer_accounting_header_fieldsFeDisplay](#schema-erp_internal_transfer_accounting_header_fieldsfedisplay) | true | — |
+| `lines` | [Erp_internal_transfer_accounting_lines_pageFeDisplay](#schema-erp_internal_transfer_accounting_lines_pagefedisplay) | true | — |
+| `history` | [Erp_internal_transfer_accounting_history_pageFeDisplay](#schema-erp_internal_transfer_accounting_history_pagefedisplay) | true | — |
+| `comparison` | null | true | — |
+| `actions` | array&lt;[ErpActionStateFeDisplay](#schema-erpactionstatefedisplay)&gt; | true | items[0]: — |
+| `sections` | object | true | required=["requests","assets"]; properties={"requests":{"$ref":"#/components/schemas/Erp_internal_transfer_accounting_requests_pageFeDisplay"},"assets":{"$ref":"#/components/schemas/Erp_internal_transfer_accounting_assets_pageFeDisplay"}}; additionalProperties=false |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_accounting_lines_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_accounting_lines_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_accounting_lines_rowFeDisplay](#schema-erp_internal_transfer_accounting_lines_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_accounting_lines_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_accounting_lines_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_accounting_lines_fieldsFeDisplay](#schema-erp_internal_transfer_accounting_lines_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_accounting_lines_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_accounting_lines_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `requestId` | string | true | SQL RequestID nvarchar(50); nullable=false; writable=false |
+| `requestDetailId` | string | true | SQL RequestDetailID nvarchar(50); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID nvarchar(50); nullable=false; writable=false |
+| `requestedQty` | string | true | SQL RequestedQty decimal(28, 4); nullable=false; writable=false |
+| `approvedQty` | string | true | SQL ApprovedQty decimal(28, 4); nullable=false; writable=false |
+| `requestedLot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedLot nvarchar(100); nullable=true; writable=false |
+| `lot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Lot varchar(50); nullable=true; writable=true |
+| `expireDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ExpireDate datetime; nullable=true; writable=true |
+| `isEquipment` | boolean | true | SQL IsEquipment bit; nullable=false; writable=false |
+| `techStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechStatus varchar(20); nullable=true; writable=false |
+| `techNotes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechNotes nvarchar(1000); nullable=true; writable=false |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl nvarchar(1000); nullable=true; writable=false |
+| `technician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Technician varchar(100); nullable=true; writable=false |
+| `techCheckedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechCheckedAt datetime; nullable=true; writable=false |
+| `actualIssueQty` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualIssueQty decimal(28, 4); nullable=true; writable=false |
+| `actualReceiveQty` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualReceiveQty decimal(28, 4); nullable=true; writable=false |
+| `accountingNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingNote nvarchar(500); nullable=true; writable=true |
+| `warehouseNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL WarehouseNote nvarchar(500); nullable=true; writable=false |
+| `receiveNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ReceiveNote nvarchar(500); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=false |
+| `itemCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemCode nvarchar(100); nullable=true; writable=false |
+| `itemName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemName nvarchar(max); nullable=true; writable=false |
+| `unit` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Unit nvarchar(50); nullable=true; writable=false |
+| `hangSX` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL HangSX nvarchar(100); nullable=true; writable=false |
+| `isLot` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL isLot bit; nullable=true; writable=false |
+| `requestDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestDate datetime; nullable=true; writable=false |
+| `salesUser` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesUser varchar(100); nullable=true; writable=false |
+| `salesName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesName nvarchar(150); nullable=true; writable=false |
+| `requestTerritoryNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestTerritoryNote nvarchar(500); nullable=true; writable=false |
+| `qtyNotIssued` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QtyNotIssued decimal(29, 4); nullable=true; writable=false |
+| `qtyInTransit` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QtyInTransit decimal(29, 4); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `requestName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `requestReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `requestDetailName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `requestDetailReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `expireDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `techCheckedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_accounting_history_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_accounting_history_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_accounting_history_rowFeDisplay](#schema-erp_internal_transfer_accounting_history_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_accounting_history_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_accounting_history_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_accounting_history_fieldsFeDisplay](#schema-erp_internal_transfer_accounting_history_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_accounting_history_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_accounting_history_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `thoiGian` | string | true | SQL ThoiGian datetime; nullable=false; writable=false |
+| `userName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserName varchar(50); nullable=true; writable=false |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+| `batchId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BatchID varchar(50); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `thoiGianDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `statusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_accounting_requests_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_accounting_requests_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_accounting_requests_rowFeDisplay](#schema-erp_internal_transfer_accounting_requests_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_accounting_requests_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_accounting_requests_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_accounting_requests_fieldsFeDisplay](#schema-erp_internal_transfer_accounting_requests_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_accounting_requests_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_accounting_requests_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `requestId` | string | true | SQL RequestID nvarchar(50); nullable=false; writable=false |
+| `addedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddedBy varchar(100); nullable=true; writable=false |
+| `addedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddedAt datetime; nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=false |
+| `documentDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DocumentDate datetime; nullable=true; writable=false |
+| `salesUser` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesUser varchar(100); nullable=true; writable=false |
+| `requestedTransferDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedTransferDate datetime; nullable=true; writable=false |
+| `requestStatusName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestStatusName nvarchar(150); nullable=true; writable=false |
+| `salesName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesName nvarchar(150); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `requestName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `requestReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `addedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `documentDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `requestedTransferDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_accounting_assets_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_accounting_assets_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_accounting_assets_rowFeDisplay](#schema-erp_internal_transfer_accounting_assets_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_accounting_assets_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_accounting_assets_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_accounting_assets_fieldsFeDisplay](#schema-erp_internal_transfer_accounting_assets_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_accounting_assets_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_accounting_assets_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `batchDetailId` | string | true | SQL BatchDetailID varchar(40); nullable=false; writable=false |
+| `assetId` | string | true | SQL AssetID varchar(50); nullable=false; writable=false |
+| `assetCondition` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetCondition nvarchar(1000); nullable=true; writable=false |
+| `techStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechStatus varchar(20); nullable=true; writable=false |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl nvarchar(1000); nullable=true; writable=false |
+| `techNotes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechNotes nvarchar(1000); nullable=true; writable=false |
+| `technician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Technician varchar(100); nullable=true; writable=false |
+| `checkedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CheckedAt datetime; nullable=true; writable=false |
+| `isDispatched` | boolean | true | SQL IsDispatched bit; nullable=false; writable=false |
+| `isReceived` | boolean | true | SQL IsReceived bit; nullable=false; writable=false |
+| `assetName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetName nvarchar(200); nullable=true; writable=false |
+| `itemId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemID varchar(50); nullable=true; writable=false |
+| `serialNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SerialNo nvarchar(100); nullable=true; writable=false |
+| `assetStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetStatus nvarchar(100); nullable=true; writable=false |
+| `trackLifecycle` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL TrackLifecycle bit; nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchDetailName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchDetailReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `assetReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `checkedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_batches_list_responsefedisplay"></a>
+
+### Schema Erp_internal_transfer_batches_list_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_batches_document_pageFeDisplay](#schema-erp_internal_transfer_batches_document_pagefedisplay) | true | — |
+
+<a id="schema-erp_internal_transfer_batches_document_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_batches_document_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_batches_document_rowFeDisplay](#schema-erp_internal_transfer_batches_document_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_batches_document_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_batches_document_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_internal_transfer_batches_header_fieldsFeDisplay](#schema-erp_internal_transfer_batches_header_fieldsfedisplay) | true | — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_batches_header_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_batches_header_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `batchDate` | string | true | SQL BatchDate datetime; nullable=false; writable=true |
+| `fromBranchId` | string | true | SQL FromBranchID varchar(50); nullable=false; writable=true |
+| `toBranchId` | string | true | SQL ToBranchID varchar(50); nullable=false; writable=true |
+| `fromStoreHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromStoreHouseID varchar(50); nullable=true; writable=true |
+| `toStoreHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToStoreHouseID varchar(50); nullable=true; writable=true |
+| `plannedTransferDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PlannedTransferDate datetime; nullable=true; writable=true |
+| `actualDispatchDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualDispatchDate datetime; nullable=true; writable=false |
+| `actualReceiveDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualReceiveDate datetime; nullable=true; writable=false |
+| `assignedPM` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedPM varchar(100); nullable=true; writable=true |
+| `assignedTechnician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedTechnician varchar(100); nullable=true; writable=true |
+| `assignedSA` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedSA varchar(100); nullable=true; writable=true |
+| `hasEquipment` | boolean | true | SQL HasEquipment bit; nullable=false; writable=false |
+| `statusId` | integer | true | SQL StatusID int; nullable=false; writable=false |
+| `transportMethod` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TransportMethod nvarchar(50); nullable=true; writable=true |
+| `carrierName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CarrierName nvarchar(150); nullable=true; writable=true |
+| `carrierPhone` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CarrierPhone nvarchar(100); nullable=true; writable=true |
+| `vehicleNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VehicleNo nvarchar(100); nullable=true; writable=true |
+| `outputDocumentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL OutputDocumentID varchar(30); nullable=true; writable=true |
+| `inputDocumentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL InputDocumentID varchar(30); nullable=true; writable=true |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(1000); nullable=true; writable=true |
+| `technicalCheckedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicalCheckedBy varchar(100); nullable=true; writable=false |
+| `technicalCheckedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicalCheckedAt datetime; nullable=true; writable=false |
+| `sAApprovedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAApprovedBy varchar(100); nullable=true; writable=false |
+| `sAApprovedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAApprovedAt datetime; nullable=true; writable=false |
+| `accountingConfirmedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingConfirmedBy varchar(100); nullable=true; writable=false |
+| `accountingConfirmedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingConfirmedAt datetime; nullable=true; writable=false |
+| `dispatchedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DispatchedBy varchar(100); nullable=true; writable=false |
+| `receivedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ReceivedBy varchar(100); nullable=true; writable=false |
+| `isLocked` | boolean | true | SQL isLock bit; nullable=false; writable=false |
+| `userCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserCreate varchar(100); nullable=true; writable=false |
+| `userUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserUpdate varchar(100); nullable=true; writable=false |
+| `dateCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateCreate datetime; nullable=true; writable=false |
+| `dateUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateUpdate datetime; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `statusCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusCode varchar(30); nullable=true; writable=false |
+| `statusName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusName nvarchar(150); nullable=true; writable=false |
+| `backColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL BackColor int; nullable=true; writable=false |
+| `foreColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL ForeColor int; nullable=true; writable=false |
+| `fromBranchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromBranchName nvarchar(100); nullable=true; writable=false |
+| `toBranchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToBranchName nvarchar(100); nullable=true; writable=false |
+| `fromStoreHouseName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromStoreHouseName nvarchar(100); nullable=true; writable=false |
+| `toStoreHouseName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToStoreHouseName nvarchar(100); nullable=true; writable=false |
+| `pMName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PMName nvarchar(150); nullable=true; writable=false |
+| `technicianName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicianName nvarchar(150); nullable=true; writable=false |
+| `sAName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAName nvarchar(150); nullable=true; writable=false |
+| `requestCount` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestCount int; nullable=true; writable=false |
+| `lineCount` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL LineCount int; nullable=true; writable=false |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `fromBranchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `toBranchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `fromStoreHouseReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `toStoreHouseReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `plannedTransferDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `actualDispatchDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `actualReceiveDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `outputDocumentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `outputDocumentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `inputDocumentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `inputDocumentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `technicalCheckedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `sAApprovedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `accountingConfirmedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateCreateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateUpdateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_batches_detail_responsefedisplay"></a>
+
+### Schema Erp_internal_transfer_batches_detail_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_batches_detailFeDisplay](#schema-erp_internal_transfer_batches_detailfedisplay) | true | — |
+
+<a id="schema-erp_internal_transfer_batches_detailfedisplay"></a>
+
+### Schema Erp_internal_transfer_batches_detailFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_internal_transfer_batches_header_fieldsFeDisplay](#schema-erp_internal_transfer_batches_header_fieldsfedisplay) | true | — |
+| `lines` | [Erp_internal_transfer_batches_lines_pageFeDisplay](#schema-erp_internal_transfer_batches_lines_pagefedisplay) | true | — |
+| `history` | [Erp_internal_transfer_batches_history_pageFeDisplay](#schema-erp_internal_transfer_batches_history_pagefedisplay) | true | — |
+| `comparison` | null | true | — |
+| `actions` | array&lt;[ErpActionStateFeDisplay](#schema-erpactionstatefedisplay)&gt; | true | items[0]: — |
+| `sections` | object | true | required=["details","assets"]; properties={"details":{"$ref":"#/components/schemas/Erp_internal_transfer_batches_details_pageFeDisplay"},"assets":{"$ref":"#/components/schemas/Erp_internal_transfer_batches_assets_pageFeDisplay"}}; additionalProperties=false |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_batches_lines_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_batches_lines_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_batches_lines_rowFeDisplay](#schema-erp_internal_transfer_batches_lines_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_batches_lines_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_batches_lines_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_batches_lines_fieldsFeDisplay](#schema-erp_internal_transfer_batches_lines_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_batches_lines_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_batches_lines_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `requestId` | string | true | SQL RequestID nvarchar(50); nullable=false; writable=true |
+| `addedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddedBy varchar(100); nullable=true; writable=false |
+| `addedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddedAt datetime; nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=true |
+| `documentDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DocumentDate datetime; nullable=true; writable=false |
+| `salesUser` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesUser varchar(100); nullable=true; writable=false |
+| `requestedTransferDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedTransferDate datetime; nullable=true; writable=false |
+| `requestStatusName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestStatusName nvarchar(150); nullable=true; writable=false |
+| `salesName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesName nvarchar(150); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `requestName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `requestReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `addedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `documentDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `requestedTransferDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_batches_history_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_batches_history_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_batches_history_rowFeDisplay](#schema-erp_internal_transfer_batches_history_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_batches_history_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_batches_history_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_batches_history_fieldsFeDisplay](#schema-erp_internal_transfer_batches_history_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_batches_history_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_batches_history_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `thoiGian` | string | true | SQL ThoiGian datetime; nullable=false; writable=false |
+| `userName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserName varchar(50); nullable=true; writable=false |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+| `batchId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BatchID varchar(50); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `thoiGianDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `statusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_batches_details_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_batches_details_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_batches_details_rowFeDisplay](#schema-erp_internal_transfer_batches_details_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_batches_details_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_batches_details_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_batches_details_fieldsFeDisplay](#schema-erp_internal_transfer_batches_details_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_batches_details_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_batches_details_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `requestId` | string | true | SQL RequestID nvarchar(50); nullable=false; writable=false |
+| `requestDetailId` | string | true | SQL RequestDetailID nvarchar(50); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID nvarchar(50); nullable=false; writable=false |
+| `requestedQty` | string | true | SQL RequestedQty decimal(28, 4); nullable=false; writable=false |
+| `approvedQty` | string | true | SQL ApprovedQty decimal(28, 4); nullable=false; writable=false |
+| `requestedLot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedLot nvarchar(100); nullable=true; writable=false |
+| `lot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Lot varchar(50); nullable=true; writable=false |
+| `expireDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ExpireDate datetime; nullable=true; writable=false |
+| `isEquipment` | boolean | true | SQL IsEquipment bit; nullable=false; writable=false |
+| `techStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechStatus varchar(20); nullable=true; writable=false |
+| `techNotes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechNotes nvarchar(1000); nullable=true; writable=false |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl nvarchar(1000); nullable=true; writable=false |
+| `technician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Technician varchar(100); nullable=true; writable=false |
+| `techCheckedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechCheckedAt datetime; nullable=true; writable=false |
+| `actualIssueQty` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualIssueQty decimal(28, 4); nullable=true; writable=false |
+| `actualReceiveQty` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualReceiveQty decimal(28, 4); nullable=true; writable=false |
+| `accountingNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingNote nvarchar(500); nullable=true; writable=false |
+| `warehouseNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL WarehouseNote nvarchar(500); nullable=true; writable=false |
+| `receiveNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ReceiveNote nvarchar(500); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=false |
+| `itemCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemCode nvarchar(100); nullable=true; writable=false |
+| `itemName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemName nvarchar(max); nullable=true; writable=false |
+| `unit` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Unit nvarchar(50); nullable=true; writable=false |
+| `hangSX` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL HangSX nvarchar(100); nullable=true; writable=false |
+| `isLot` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL isLot bit; nullable=true; writable=false |
+| `requestDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestDate datetime; nullable=true; writable=false |
+| `salesUser` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesUser varchar(100); nullable=true; writable=false |
+| `salesName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesName nvarchar(150); nullable=true; writable=false |
+| `requestTerritoryNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestTerritoryNote nvarchar(500); nullable=true; writable=false |
+| `qtyNotIssued` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QtyNotIssued decimal(29, 4); nullable=true; writable=false |
+| `qtyInTransit` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QtyInTransit decimal(29, 4); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `requestName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `requestReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `requestDetailName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `requestDetailReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `expireDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `techCheckedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_batches_assets_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_batches_assets_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_batches_assets_rowFeDisplay](#schema-erp_internal_transfer_batches_assets_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_batches_assets_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_batches_assets_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_batches_assets_fieldsFeDisplay](#schema-erp_internal_transfer_batches_assets_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_batches_assets_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_batches_assets_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `batchDetailId` | string | true | SQL BatchDetailID varchar(40); nullable=false; writable=false |
+| `assetId` | string | true | SQL AssetID varchar(50); nullable=false; writable=false |
+| `assetCondition` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetCondition nvarchar(1000); nullable=true; writable=false |
+| `techStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechStatus varchar(20); nullable=true; writable=false |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl nvarchar(1000); nullable=true; writable=false |
+| `techNotes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechNotes nvarchar(1000); nullable=true; writable=false |
+| `technician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Technician varchar(100); nullable=true; writable=false |
+| `checkedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CheckedAt datetime; nullable=true; writable=false |
+| `isDispatched` | boolean | true | SQL IsDispatched bit; nullable=false; writable=false |
+| `isReceived` | boolean | true | SQL IsReceived bit; nullable=false; writable=false |
+| `assetName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetName nvarchar(200); nullable=true; writable=false |
+| `itemId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemID varchar(50); nullable=true; writable=false |
+| `serialNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SerialNo nvarchar(100); nullable=true; writable=false |
+| `assetStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetStatus nvarchar(100); nullable=true; writable=false |
+| `trackLifecycle` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL TrackLifecycle bit; nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchDetailName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchDetailReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `assetReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `checkedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_pm_list_responsefedisplay"></a>
+
+### Schema Erp_internal_transfer_pm_list_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_pm_document_pageFeDisplay](#schema-erp_internal_transfer_pm_document_pagefedisplay) | true | — |
+
+<a id="schema-erp_internal_transfer_pm_document_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_pm_document_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_pm_document_rowFeDisplay](#schema-erp_internal_transfer_pm_document_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_pm_document_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_pm_document_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_internal_transfer_pm_header_fieldsFeDisplay](#schema-erp_internal_transfer_pm_header_fieldsfedisplay) | true | — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_pm_header_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_pm_header_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | SQL DocumentID nvarchar(50); nullable=false; writable=false |
+| `documentDate` | string | true | SQL DocumentDate datetime; nullable=false; writable=false |
+| `salesUser` | string | true | SQL SalesUser varchar(100); nullable=false; writable=false |
+| `branchId` | string | true | SQL BranchID varchar(50); nullable=false; writable=false |
+| `fromBranchId` | string | true | SQL FromBranchID varchar(50); nullable=false; writable=false |
+| `toBranchId` | string | true | SQL ToBranchID varchar(50); nullable=false; writable=false |
+| `requestedTransferDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedTransferDate datetime; nullable=true; writable=false |
+| `assignedPM` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedPM varchar(100); nullable=true; writable=false |
+| `statusId` | integer | true | SQL StatusID int; nullable=false; writable=false |
+| `transferReason` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TransferReason nvarchar(500); nullable=true; writable=false |
+| `transportMethod` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TransportMethod nvarchar(50); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(1000); nullable=true; writable=false |
+| `pMConfirmedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PMConfirmedBy varchar(100); nullable=true; writable=false |
+| `pMConfirmedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PMConfirmedAt datetime; nullable=true; writable=false |
+| `isLocked` | boolean | true | SQL isLock bit; nullable=false; writable=false |
+| `userCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserCreate varchar(100); nullable=true; writable=false |
+| `userUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserUpdate varchar(100); nullable=true; writable=false |
+| `dateCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateCreate datetime; nullable=true; writable=false |
+| `dateUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateUpdate datetime; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `statusCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusCode varchar(30); nullable=true; writable=false |
+| `statusName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusName nvarchar(150); nullable=true; writable=false |
+| `backColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL BackColor int; nullable=true; writable=false |
+| `foreColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL ForeColor int; nullable=true; writable=false |
+| `salesName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesName nvarchar(150); nullable=true; writable=false |
+| `pMName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PMName nvarchar(150); nullable=true; writable=false |
+| `branchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BranchName nvarchar(100); nullable=true; writable=false |
+| `fromBranchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromBranchName nvarchar(100); nullable=true; writable=false |
+| `toBranchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToBranchName nvarchar(100); nullable=true; writable=false |
+| `batchId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BatchID varchar(30); nullable=true; writable=false |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `fromBranchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `toBranchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `requestedTransferDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `pMConfirmedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateCreateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateUpdateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_pm_detail_responsefedisplay"></a>
+
+### Schema Erp_internal_transfer_pm_detail_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_pm_detailFeDisplay](#schema-erp_internal_transfer_pm_detailfedisplay) | true | — |
+
+<a id="schema-erp_internal_transfer_pm_detailfedisplay"></a>
+
+### Schema Erp_internal_transfer_pm_detailFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_internal_transfer_pm_header_fieldsFeDisplay](#schema-erp_internal_transfer_pm_header_fieldsfedisplay) | true | — |
+| `lines` | [Erp_internal_transfer_pm_lines_pageFeDisplay](#schema-erp_internal_transfer_pm_lines_pagefedisplay) | true | — |
+| `history` | [Erp_internal_transfer_pm_history_pageFeDisplay](#schema-erp_internal_transfer_pm_history_pagefedisplay) | true | — |
+| `comparison` | null | true | — |
+| `actions` | array&lt;[ErpActionStateFeDisplay](#schema-erpactionstatefedisplay)&gt; | true | items[0]: — |
+| `sections` | dictionary&lt;[ErpLinePageFeDisplay](#schema-erplinepagefedisplay)&gt; / null | false | anyOf[0]: additionalProperties={"$ref":"#/components/schemas/ErpLinePageFeDisplay"}; anyOf[1]: — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_pm_lines_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_pm_lines_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_pm_lines_rowFeDisplay](#schema-erp_internal_transfer_pm_lines_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_pm_lines_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_pm_lines_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_pm_lines_fieldsFeDisplay](#schema-erp_internal_transfer_pm_lines_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_pm_lines_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_pm_lines_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID nvarchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID nvarchar(50); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID nvarchar(50); nullable=false; writable=false |
+| `requestedQty` | string | true | SQL RequestedQty decimal(28, 4); nullable=false; writable=false |
+| `pMApprovedQty` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PMApprovedQty decimal(28, 4); nullable=true; writable=true |
+| `requestedLot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedLot nvarchar(100); nullable=true; writable=false |
+| `expectedObjectId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ExpectedObjectID varchar(100); nullable=true; writable=false |
+| `territoryNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TerritoryNote nvarchar(500); nullable=true; writable=false |
+| `isEquipment` | boolean | true | SQL IsEquipment bit; nullable=false; writable=false |
+| `requestedAssetId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedAssetID varchar(50); nullable=true; writable=false |
+| `pMNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PMNote nvarchar(500); nullable=true; writable=true |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+| `expectedObjectName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `expectedObjectReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `requestedAssetName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `requestedAssetReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_pm_history_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_pm_history_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_pm_history_rowFeDisplay](#schema-erp_internal_transfer_pm_history_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_pm_history_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_pm_history_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_pm_history_fieldsFeDisplay](#schema-erp_internal_transfer_pm_history_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_pm_history_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_pm_history_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `thoiGian` | string | true | SQL ThoiGian datetime; nullable=false; writable=false |
+| `userName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserName varchar(50); nullable=true; writable=false |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `thoiGianDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `statusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erplinepagefedisplay"></a>
+
+### Schema ErpLinePageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[ErpLineRowFeDisplay](#schema-erplinerowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erplinerowfedisplay"></a>
+
+### Schema ErpLineRowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | dictionary&lt;any JSON&gt; | true | additionalProperties={"description":"Fixed module field or action input; see x-medcom-typed-header, x-medcom-typed-line, x-medcom-typed-payload and x-medcom-full-field-sections on its operation."} |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
 <a id="schema-erp_internal_transfer_requests_list_responsefedisplay"></a>
 
 ### Schema Erp_internal_transfer_requests_list_responseFeDisplay
@@ -8877,6 +17994,7 @@ Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presen
 | `history` | [Erp_internal_transfer_requests_history_pageFeDisplay](#schema-erp_internal_transfer_requests_history_pagefedisplay) | true | — |
 | `comparison` | null | true | — |
 | `actions` | array&lt;[ErpActionStateFeDisplay](#schema-erpactionstatefedisplay)&gt; | true | items[0]: — |
+| `sections` | dictionary&lt;[ErpLinePageFeDisplay](#schema-erplinepagefedisplay)&gt; / null | false | anyOf[0]: additionalProperties={"$ref":"#/components/schemas/ErpLinePageFeDisplay"}; anyOf[1]: — |
 | `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
 | `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
 | `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
@@ -8990,63 +18108,6 @@ Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presen
 | `statusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
 | `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
 
-<a id="schema-erpactionstatefedisplay"></a>
-
-### Schema ErpActionStateFeDisplay
-
-Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
-
-| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
-|---|---|---|---|
-| `id` | string | true | — |
-| `caption` | string | true | — |
-| `visible` | boolean | true | — |
-| `enabled` | boolean | true | — |
-| `reason` | string / null | true | anyOf[0]: —; anyOf[1]: — |
-| `requiresSavedDocument` | boolean | true | — |
-| `route` | string / null | true | anyOf[0]: —; anyOf[1]: — |
-| `name` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
-| `referenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
-
-<a id="schema-erpscopedresponse_erpchoicepagefedisplay"></a>
-
-### Schema ErpScopedResponse_ErpChoicePageFeDisplay
-
-Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
-
-| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
-|---|---|---|---|
-| `readScope` | string | true | — |
-| `data` | [ErpChoicePageFeDisplay](#schema-erpchoicepagefedisplay) / null | true | anyOf[0]: —; anyOf[1]: — |
-
-<a id="schema-erpchoicepagefedisplay"></a>
-
-### Schema ErpChoicePageFeDisplay
-
-Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
-
-| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
-|---|---|---|---|
-| `items` | array&lt;[ErpChoiceFeDisplay](#schema-erpchoicefedisplay)&gt; | true | items[0]: — |
-| `page` | integer (int32) | true | — |
-| `pageSize` | integer (int32) | true | — |
-| `hasMore` | boolean | true | — |
-| `requiredParameters` | array&lt;string&gt; | true | items[0]: — |
-
-<a id="schema-erpchoicefedisplay"></a>
-
-### Schema ErpChoiceFeDisplay
-
-Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
-
-| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
-|---|---|---|---|
-| `id` | string | true | — |
-| `label` | string / null | true | anyOf[0]: —; anyOf[1]: — |
-| `fields` | dictionary&lt;any JSON&gt; | true | additionalProperties={"description":"Fixed module field or action input; see x-medcom-typed-header, x-medcom-typed-line, x-medcom-typed-payload and x-medcom-full-field-sections on its operation."} |
-| `name` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
-| `referenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
-
 <a id="schema-erpscopedresponse_erpdraftselectionfedisplay"></a>
 
 ### Schema ErpScopedResponse_ErpDraftSelectionFeDisplay
@@ -9082,6 +18143,1594 @@ Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presen
 |---|---|---|---|
 | `clientLineKey` | string | true | — |
 | `values` | any JSON | true | description="Fixed module field or action input; see x-medcom-typed-header, x-medcom-typed-line, x-medcom-typed-payload and x-medcom-full-field-sections on its operation." |
+
+<a id="schema-erp_internal_transfer_sa_list_responsefedisplay"></a>
+
+### Schema Erp_internal_transfer_sa_list_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_sa_document_pageFeDisplay](#schema-erp_internal_transfer_sa_document_pagefedisplay) | true | — |
+
+<a id="schema-erp_internal_transfer_sa_document_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_sa_document_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_sa_document_rowFeDisplay](#schema-erp_internal_transfer_sa_document_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_sa_document_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_sa_document_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_internal_transfer_sa_header_fieldsFeDisplay](#schema-erp_internal_transfer_sa_header_fieldsfedisplay) | true | — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_sa_header_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_sa_header_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `batchDate` | string | true | SQL BatchDate datetime; nullable=false; writable=false |
+| `fromBranchId` | string | true | SQL FromBranchID varchar(50); nullable=false; writable=false |
+| `toBranchId` | string | true | SQL ToBranchID varchar(50); nullable=false; writable=false |
+| `fromStoreHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromStoreHouseID varchar(50); nullable=true; writable=false |
+| `toStoreHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToStoreHouseID varchar(50); nullable=true; writable=false |
+| `plannedTransferDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PlannedTransferDate datetime; nullable=true; writable=false |
+| `actualDispatchDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualDispatchDate datetime; nullable=true; writable=false |
+| `actualReceiveDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualReceiveDate datetime; nullable=true; writable=false |
+| `assignedPM` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedPM varchar(100); nullable=true; writable=false |
+| `assignedTechnician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedTechnician varchar(100); nullable=true; writable=false |
+| `assignedSA` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedSA varchar(100); nullable=true; writable=false |
+| `hasEquipment` | boolean | true | SQL HasEquipment bit; nullable=false; writable=false |
+| `statusId` | integer | true | SQL StatusID int; nullable=false; writable=false |
+| `transportMethod` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TransportMethod nvarchar(50); nullable=true; writable=false |
+| `carrierName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CarrierName nvarchar(150); nullable=true; writable=false |
+| `carrierPhone` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CarrierPhone nvarchar(100); nullable=true; writable=false |
+| `vehicleNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VehicleNo nvarchar(100); nullable=true; writable=false |
+| `outputDocumentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL OutputDocumentID varchar(30); nullable=true; writable=false |
+| `inputDocumentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL InputDocumentID varchar(30); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(1000); nullable=true; writable=false |
+| `technicalCheckedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicalCheckedBy varchar(100); nullable=true; writable=false |
+| `technicalCheckedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicalCheckedAt datetime; nullable=true; writable=false |
+| `sAApprovedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAApprovedBy varchar(100); nullable=true; writable=false |
+| `sAApprovedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAApprovedAt datetime; nullable=true; writable=false |
+| `accountingConfirmedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingConfirmedBy varchar(100); nullable=true; writable=false |
+| `accountingConfirmedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingConfirmedAt datetime; nullable=true; writable=false |
+| `dispatchedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DispatchedBy varchar(100); nullable=true; writable=false |
+| `receivedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ReceivedBy varchar(100); nullable=true; writable=false |
+| `isLocked` | boolean | true | SQL isLock bit; nullable=false; writable=false |
+| `userCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserCreate varchar(100); nullable=true; writable=false |
+| `userUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserUpdate varchar(100); nullable=true; writable=false |
+| `dateCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateCreate datetime; nullable=true; writable=false |
+| `dateUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateUpdate datetime; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `statusCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusCode varchar(30); nullable=true; writable=false |
+| `statusName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusName nvarchar(150); nullable=true; writable=false |
+| `backColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL BackColor int; nullable=true; writable=false |
+| `foreColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL ForeColor int; nullable=true; writable=false |
+| `fromBranchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromBranchName nvarchar(100); nullable=true; writable=false |
+| `toBranchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToBranchName nvarchar(100); nullable=true; writable=false |
+| `fromStoreHouseName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromStoreHouseName nvarchar(100); nullable=true; writable=false |
+| `toStoreHouseName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToStoreHouseName nvarchar(100); nullable=true; writable=false |
+| `pMName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PMName nvarchar(150); nullable=true; writable=false |
+| `technicianName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicianName nvarchar(150); nullable=true; writable=false |
+| `sAName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAName nvarchar(150); nullable=true; writable=false |
+| `requestCount` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestCount int; nullable=true; writable=false |
+| `lineCount` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL LineCount int; nullable=true; writable=false |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `fromBranchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `toBranchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `fromStoreHouseReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `toStoreHouseReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `plannedTransferDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `actualDispatchDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `actualReceiveDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `outputDocumentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `outputDocumentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `inputDocumentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `inputDocumentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `technicalCheckedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `sAApprovedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `accountingConfirmedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateCreateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateUpdateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_sa_detail_responsefedisplay"></a>
+
+### Schema Erp_internal_transfer_sa_detail_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_sa_detailFeDisplay](#schema-erp_internal_transfer_sa_detailfedisplay) | true | — |
+
+<a id="schema-erp_internal_transfer_sa_detailfedisplay"></a>
+
+### Schema Erp_internal_transfer_sa_detailFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_internal_transfer_sa_header_fieldsFeDisplay](#schema-erp_internal_transfer_sa_header_fieldsfedisplay) | true | — |
+| `lines` | [Erp_internal_transfer_sa_lines_pageFeDisplay](#schema-erp_internal_transfer_sa_lines_pagefedisplay) | true | — |
+| `history` | [Erp_internal_transfer_sa_history_pageFeDisplay](#schema-erp_internal_transfer_sa_history_pagefedisplay) | true | — |
+| `comparison` | null | true | — |
+| `actions` | array&lt;[ErpActionStateFeDisplay](#schema-erpactionstatefedisplay)&gt; | true | items[0]: — |
+| `sections` | object | true | required=["requests","assets"]; properties={"requests":{"$ref":"#/components/schemas/Erp_internal_transfer_sa_requests_pageFeDisplay"},"assets":{"$ref":"#/components/schemas/Erp_internal_transfer_sa_assets_pageFeDisplay"}}; additionalProperties=false |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_sa_lines_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_sa_lines_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_sa_lines_rowFeDisplay](#schema-erp_internal_transfer_sa_lines_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_sa_lines_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_sa_lines_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_sa_lines_fieldsFeDisplay](#schema-erp_internal_transfer_sa_lines_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_sa_lines_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_sa_lines_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `requestId` | string | true | SQL RequestID nvarchar(50); nullable=false; writable=false |
+| `requestDetailId` | string | true | SQL RequestDetailID nvarchar(50); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID nvarchar(50); nullable=false; writable=false |
+| `requestedQty` | string | true | SQL RequestedQty decimal(28, 4); nullable=false; writable=false |
+| `approvedQty` | string | true | SQL ApprovedQty decimal(28, 4); nullable=false; writable=true |
+| `requestedLot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedLot nvarchar(100); nullable=true; writable=false |
+| `lot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Lot varchar(50); nullable=true; writable=false |
+| `expireDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ExpireDate datetime; nullable=true; writable=false |
+| `isEquipment` | boolean | true | SQL IsEquipment bit; nullable=false; writable=false |
+| `techStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechStatus varchar(20); nullable=true; writable=false |
+| `techNotes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechNotes nvarchar(1000); nullable=true; writable=false |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl nvarchar(1000); nullable=true; writable=false |
+| `technician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Technician varchar(100); nullable=true; writable=false |
+| `techCheckedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechCheckedAt datetime; nullable=true; writable=false |
+| `actualIssueQty` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualIssueQty decimal(28, 4); nullable=true; writable=false |
+| `actualReceiveQty` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualReceiveQty decimal(28, 4); nullable=true; writable=false |
+| `accountingNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingNote nvarchar(500); nullable=true; writable=false |
+| `warehouseNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL WarehouseNote nvarchar(500); nullable=true; writable=false |
+| `receiveNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ReceiveNote nvarchar(500); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=true |
+| `itemCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemCode nvarchar(100); nullable=true; writable=false |
+| `itemName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemName nvarchar(max); nullable=true; writable=false |
+| `unit` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Unit nvarchar(50); nullable=true; writable=false |
+| `hangSX` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL HangSX nvarchar(100); nullable=true; writable=false |
+| `isLot` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL isLot bit; nullable=true; writable=false |
+| `requestDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestDate datetime; nullable=true; writable=false |
+| `salesUser` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesUser varchar(100); nullable=true; writable=false |
+| `salesName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesName nvarchar(150); nullable=true; writable=false |
+| `requestTerritoryNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestTerritoryNote nvarchar(500); nullable=true; writable=false |
+| `qtyNotIssued` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QtyNotIssued decimal(29, 4); nullable=true; writable=false |
+| `qtyInTransit` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QtyInTransit decimal(29, 4); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `requestName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `requestReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `requestDetailName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `requestDetailReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `expireDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `techCheckedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_sa_history_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_sa_history_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_sa_history_rowFeDisplay](#schema-erp_internal_transfer_sa_history_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_sa_history_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_sa_history_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_sa_history_fieldsFeDisplay](#schema-erp_internal_transfer_sa_history_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_sa_history_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_sa_history_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `thoiGian` | string | true | SQL ThoiGian datetime; nullable=false; writable=false |
+| `userName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserName varchar(50); nullable=true; writable=false |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+| `batchId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BatchID varchar(50); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `thoiGianDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `statusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_sa_requests_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_sa_requests_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_sa_requests_rowFeDisplay](#schema-erp_internal_transfer_sa_requests_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_sa_requests_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_sa_requests_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_sa_requests_fieldsFeDisplay](#schema-erp_internal_transfer_sa_requests_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_sa_requests_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_sa_requests_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `requestId` | string | true | SQL RequestID nvarchar(50); nullable=false; writable=false |
+| `addedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddedBy varchar(100); nullable=true; writable=false |
+| `addedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddedAt datetime; nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=false |
+| `documentDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DocumentDate datetime; nullable=true; writable=false |
+| `salesUser` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesUser varchar(100); nullable=true; writable=false |
+| `requestedTransferDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedTransferDate datetime; nullable=true; writable=false |
+| `requestStatusName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestStatusName nvarchar(150); nullable=true; writable=false |
+| `salesName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesName nvarchar(150); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `requestName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `requestReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `addedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `documentDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `requestedTransferDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_sa_assets_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_sa_assets_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_sa_assets_rowFeDisplay](#schema-erp_internal_transfer_sa_assets_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_sa_assets_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_sa_assets_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_sa_assets_fieldsFeDisplay](#schema-erp_internal_transfer_sa_assets_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_sa_assets_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_sa_assets_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `batchDetailId` | string | true | SQL BatchDetailID varchar(40); nullable=false; writable=false |
+| `assetId` | string | true | SQL AssetID varchar(50); nullable=false; writable=false |
+| `assetCondition` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetCondition nvarchar(1000); nullable=true; writable=false |
+| `techStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechStatus varchar(20); nullable=true; writable=false |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl nvarchar(1000); nullable=true; writable=false |
+| `techNotes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechNotes nvarchar(1000); nullable=true; writable=false |
+| `technician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Technician varchar(100); nullable=true; writable=false |
+| `checkedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CheckedAt datetime; nullable=true; writable=false |
+| `isDispatched` | boolean | true | SQL IsDispatched bit; nullable=false; writable=false |
+| `isReceived` | boolean | true | SQL IsReceived bit; nullable=false; writable=false |
+| `assetName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetName nvarchar(200); nullable=true; writable=false |
+| `itemId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemID varchar(50); nullable=true; writable=false |
+| `serialNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SerialNo nvarchar(100); nullable=true; writable=false |
+| `assetStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetStatus nvarchar(100); nullable=true; writable=false |
+| `trackLifecycle` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL TrackLifecycle bit; nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchDetailName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchDetailReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `assetReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `checkedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_tech_list_responsefedisplay"></a>
+
+### Schema Erp_internal_transfer_tech_list_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_tech_document_pageFeDisplay](#schema-erp_internal_transfer_tech_document_pagefedisplay) | true | — |
+
+<a id="schema-erp_internal_transfer_tech_document_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_tech_document_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_tech_document_rowFeDisplay](#schema-erp_internal_transfer_tech_document_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_tech_document_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_tech_document_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_internal_transfer_tech_header_fieldsFeDisplay](#schema-erp_internal_transfer_tech_header_fieldsfedisplay) | true | — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_tech_header_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_tech_header_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `batchDate` | string | true | SQL BatchDate datetime; nullable=false; writable=false |
+| `fromBranchId` | string | true | SQL FromBranchID varchar(50); nullable=false; writable=false |
+| `toBranchId` | string | true | SQL ToBranchID varchar(50); nullable=false; writable=false |
+| `fromStoreHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromStoreHouseID varchar(50); nullable=true; writable=false |
+| `toStoreHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToStoreHouseID varchar(50); nullable=true; writable=false |
+| `plannedTransferDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PlannedTransferDate datetime; nullable=true; writable=false |
+| `actualDispatchDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualDispatchDate datetime; nullable=true; writable=false |
+| `actualReceiveDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualReceiveDate datetime; nullable=true; writable=false |
+| `assignedPM` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedPM varchar(100); nullable=true; writable=false |
+| `assignedTechnician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedTechnician varchar(100); nullable=true; writable=false |
+| `assignedSA` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedSA varchar(100); nullable=true; writable=false |
+| `hasEquipment` | boolean | true | SQL HasEquipment bit; nullable=false; writable=false |
+| `statusId` | integer | true | SQL StatusID int; nullable=false; writable=false |
+| `transportMethod` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TransportMethod nvarchar(50); nullable=true; writable=false |
+| `carrierName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CarrierName nvarchar(150); nullable=true; writable=false |
+| `carrierPhone` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CarrierPhone nvarchar(100); nullable=true; writable=false |
+| `vehicleNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VehicleNo nvarchar(100); nullable=true; writable=false |
+| `outputDocumentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL OutputDocumentID varchar(30); nullable=true; writable=false |
+| `inputDocumentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL InputDocumentID varchar(30); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(1000); nullable=true; writable=false |
+| `technicalCheckedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicalCheckedBy varchar(100); nullable=true; writable=false |
+| `technicalCheckedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicalCheckedAt datetime; nullable=true; writable=false |
+| `sAApprovedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAApprovedBy varchar(100); nullable=true; writable=false |
+| `sAApprovedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAApprovedAt datetime; nullable=true; writable=false |
+| `accountingConfirmedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingConfirmedBy varchar(100); nullable=true; writable=false |
+| `accountingConfirmedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingConfirmedAt datetime; nullable=true; writable=false |
+| `dispatchedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DispatchedBy varchar(100); nullable=true; writable=false |
+| `receivedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ReceivedBy varchar(100); nullable=true; writable=false |
+| `isLocked` | boolean | true | SQL isLock bit; nullable=false; writable=false |
+| `userCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserCreate varchar(100); nullable=true; writable=false |
+| `userUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserUpdate varchar(100); nullable=true; writable=false |
+| `dateCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateCreate datetime; nullable=true; writable=false |
+| `dateUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateUpdate datetime; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `statusCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusCode varchar(30); nullable=true; writable=false |
+| `statusName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusName nvarchar(150); nullable=true; writable=false |
+| `backColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL BackColor int; nullable=true; writable=false |
+| `foreColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL ForeColor int; nullable=true; writable=false |
+| `fromBranchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromBranchName nvarchar(100); nullable=true; writable=false |
+| `toBranchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToBranchName nvarchar(100); nullable=true; writable=false |
+| `fromStoreHouseName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromStoreHouseName nvarchar(100); nullable=true; writable=false |
+| `toStoreHouseName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToStoreHouseName nvarchar(100); nullable=true; writable=false |
+| `pMName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PMName nvarchar(150); nullable=true; writable=false |
+| `technicianName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicianName nvarchar(150); nullable=true; writable=false |
+| `sAName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAName nvarchar(150); nullable=true; writable=false |
+| `requestCount` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestCount int; nullable=true; writable=false |
+| `lineCount` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL LineCount int; nullable=true; writable=false |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `fromBranchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `toBranchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `fromStoreHouseReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `toStoreHouseReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `plannedTransferDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `actualDispatchDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `actualReceiveDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `outputDocumentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `outputDocumentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `inputDocumentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `inputDocumentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `technicalCheckedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `sAApprovedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `accountingConfirmedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateCreateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateUpdateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_tech_detail_responsefedisplay"></a>
+
+### Schema Erp_internal_transfer_tech_detail_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_tech_detailFeDisplay](#schema-erp_internal_transfer_tech_detailfedisplay) | true | — |
+
+<a id="schema-erp_internal_transfer_tech_detailfedisplay"></a>
+
+### Schema Erp_internal_transfer_tech_detailFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_internal_transfer_tech_header_fieldsFeDisplay](#schema-erp_internal_transfer_tech_header_fieldsfedisplay) | true | — |
+| `lines` | [Erp_internal_transfer_tech_lines_pageFeDisplay](#schema-erp_internal_transfer_tech_lines_pagefedisplay) | true | — |
+| `history` | [Erp_internal_transfer_tech_history_pageFeDisplay](#schema-erp_internal_transfer_tech_history_pagefedisplay) | true | — |
+| `comparison` | null | true | — |
+| `actions` | array&lt;[ErpActionStateFeDisplay](#schema-erpactionstatefedisplay)&gt; | true | items[0]: — |
+| `sections` | object | true | required=["requests","assets"]; properties={"requests":{"$ref":"#/components/schemas/Erp_internal_transfer_tech_requests_pageFeDisplay"},"assets":{"$ref":"#/components/schemas/Erp_internal_transfer_tech_assets_pageFeDisplay"}}; additionalProperties=false |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_tech_lines_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_tech_lines_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_tech_lines_rowFeDisplay](#schema-erp_internal_transfer_tech_lines_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_tech_lines_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_tech_lines_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_tech_lines_fieldsFeDisplay](#schema-erp_internal_transfer_tech_lines_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_tech_lines_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_tech_lines_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `requestId` | string | true | SQL RequestID nvarchar(50); nullable=false; writable=false |
+| `requestDetailId` | string | true | SQL RequestDetailID nvarchar(50); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID nvarchar(50); nullable=false; writable=false |
+| `requestedQty` | string | true | SQL RequestedQty decimal(28, 4); nullable=false; writable=false |
+| `approvedQty` | string | true | SQL ApprovedQty decimal(28, 4); nullable=false; writable=false |
+| `requestedLot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedLot nvarchar(100); nullable=true; writable=false |
+| `lot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Lot varchar(50); nullable=true; writable=false |
+| `expireDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ExpireDate datetime; nullable=true; writable=false |
+| `isEquipment` | boolean | true | SQL IsEquipment bit; nullable=false; writable=false |
+| `techStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechStatus varchar(20); nullable=true; writable=true |
+| `techNotes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechNotes nvarchar(1000); nullable=true; writable=true |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl nvarchar(1000); nullable=true; writable=true |
+| `technician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Technician varchar(100); nullable=true; writable=false |
+| `techCheckedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechCheckedAt datetime; nullable=true; writable=false |
+| `actualIssueQty` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualIssueQty decimal(28, 4); nullable=true; writable=false |
+| `actualReceiveQty` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualReceiveQty decimal(28, 4); nullable=true; writable=false |
+| `accountingNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingNote nvarchar(500); nullable=true; writable=false |
+| `warehouseNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL WarehouseNote nvarchar(500); nullable=true; writable=false |
+| `receiveNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ReceiveNote nvarchar(500); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=false |
+| `itemCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemCode nvarchar(100); nullable=true; writable=false |
+| `itemName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemName nvarchar(max); nullable=true; writable=false |
+| `unit` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Unit nvarchar(50); nullable=true; writable=false |
+| `hangSX` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL HangSX nvarchar(100); nullable=true; writable=false |
+| `isLot` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL isLot bit; nullable=true; writable=false |
+| `requestDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestDate datetime; nullable=true; writable=false |
+| `salesUser` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesUser varchar(100); nullable=true; writable=false |
+| `salesName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesName nvarchar(150); nullable=true; writable=false |
+| `requestTerritoryNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestTerritoryNote nvarchar(500); nullable=true; writable=false |
+| `qtyNotIssued` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QtyNotIssued decimal(29, 4); nullable=true; writable=false |
+| `qtyInTransit` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QtyInTransit decimal(29, 4); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `requestName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `requestReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `requestDetailName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `requestDetailReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `expireDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `techCheckedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_tech_history_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_tech_history_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_tech_history_rowFeDisplay](#schema-erp_internal_transfer_tech_history_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_tech_history_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_tech_history_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_tech_history_fieldsFeDisplay](#schema-erp_internal_transfer_tech_history_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_tech_history_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_tech_history_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `thoiGian` | string | true | SQL ThoiGian datetime; nullable=false; writable=false |
+| `userName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserName varchar(50); nullable=true; writable=false |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+| `batchId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BatchID varchar(50); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `thoiGianDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `statusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_tech_requests_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_tech_requests_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_tech_requests_rowFeDisplay](#schema-erp_internal_transfer_tech_requests_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_tech_requests_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_tech_requests_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_tech_requests_fieldsFeDisplay](#schema-erp_internal_transfer_tech_requests_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_tech_requests_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_tech_requests_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `requestId` | string | true | SQL RequestID nvarchar(50); nullable=false; writable=false |
+| `addedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddedBy varchar(100); nullable=true; writable=false |
+| `addedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddedAt datetime; nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=false |
+| `documentDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DocumentDate datetime; nullable=true; writable=false |
+| `salesUser` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesUser varchar(100); nullable=true; writable=false |
+| `requestedTransferDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedTransferDate datetime; nullable=true; writable=false |
+| `requestStatusName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestStatusName nvarchar(150); nullable=true; writable=false |
+| `salesName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesName nvarchar(150); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `requestName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `requestReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `addedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `documentDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `requestedTransferDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_tech_assets_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_tech_assets_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_tech_assets_rowFeDisplay](#schema-erp_internal_transfer_tech_assets_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_tech_assets_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_tech_assets_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_tech_assets_fieldsFeDisplay](#schema-erp_internal_transfer_tech_assets_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_tech_assets_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_tech_assets_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `batchDetailId` | string | true | SQL BatchDetailID varchar(40); nullable=false; writable=false |
+| `assetId` | string | true | SQL AssetID varchar(50); nullable=false; writable=false |
+| `assetCondition` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetCondition nvarchar(1000); nullable=true; writable=true |
+| `techStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechStatus varchar(20); nullable=true; writable=true |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl nvarchar(1000); nullable=true; writable=true |
+| `techNotes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechNotes nvarchar(1000); nullable=true; writable=true |
+| `technician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Technician varchar(100); nullable=true; writable=false |
+| `checkedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CheckedAt datetime; nullable=true; writable=false |
+| `isDispatched` | boolean | true | SQL IsDispatched bit; nullable=false; writable=false |
+| `isReceived` | boolean | true | SQL IsReceived bit; nullable=false; writable=false |
+| `assetName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetName nvarchar(200); nullable=true; writable=false |
+| `itemId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemID varchar(50); nullable=true; writable=false |
+| `serialNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SerialNo nvarchar(100); nullable=true; writable=false |
+| `assetStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetStatus nvarchar(100); nullable=true; writable=false |
+| `trackLifecycle` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL TrackLifecycle bit; nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchDetailName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchDetailReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `assetReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `checkedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_warehouse_in_list_responsefedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_list_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_warehouse_in_document_pageFeDisplay](#schema-erp_internal_transfer_warehouse_in_document_pagefedisplay) | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_in_document_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_document_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_warehouse_in_document_rowFeDisplay](#schema-erp_internal_transfer_warehouse_in_document_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_in_document_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_document_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_internal_transfer_warehouse_in_header_fieldsFeDisplay](#schema-erp_internal_transfer_warehouse_in_header_fieldsfedisplay) | true | — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_warehouse_in_header_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_header_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `batchDate` | string | true | SQL BatchDate datetime; nullable=false; writable=false |
+| `fromBranchId` | string | true | SQL FromBranchID varchar(50); nullable=false; writable=false |
+| `toBranchId` | string | true | SQL ToBranchID varchar(50); nullable=false; writable=false |
+| `fromStoreHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromStoreHouseID varchar(50); nullable=true; writable=false |
+| `toStoreHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToStoreHouseID varchar(50); nullable=true; writable=false |
+| `plannedTransferDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PlannedTransferDate datetime; nullable=true; writable=false |
+| `actualDispatchDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualDispatchDate datetime; nullable=true; writable=false |
+| `actualReceiveDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualReceiveDate datetime; nullable=true; writable=false |
+| `assignedPM` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedPM varchar(100); nullable=true; writable=false |
+| `assignedTechnician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedTechnician varchar(100); nullable=true; writable=false |
+| `assignedSA` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedSA varchar(100); nullable=true; writable=false |
+| `hasEquipment` | boolean | true | SQL HasEquipment bit; nullable=false; writable=false |
+| `statusId` | integer | true | SQL StatusID int; nullable=false; writable=false |
+| `transportMethod` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TransportMethod nvarchar(50); nullable=true; writable=false |
+| `carrierName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CarrierName nvarchar(150); nullable=true; writable=false |
+| `carrierPhone` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CarrierPhone nvarchar(100); nullable=true; writable=false |
+| `vehicleNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VehicleNo nvarchar(100); nullable=true; writable=false |
+| `outputDocumentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL OutputDocumentID varchar(30); nullable=true; writable=false |
+| `inputDocumentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL InputDocumentID varchar(30); nullable=true; writable=true |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(1000); nullable=true; writable=false |
+| `technicalCheckedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicalCheckedBy varchar(100); nullable=true; writable=false |
+| `technicalCheckedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicalCheckedAt datetime; nullable=true; writable=false |
+| `sAApprovedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAApprovedBy varchar(100); nullable=true; writable=false |
+| `sAApprovedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAApprovedAt datetime; nullable=true; writable=false |
+| `accountingConfirmedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingConfirmedBy varchar(100); nullable=true; writable=false |
+| `accountingConfirmedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingConfirmedAt datetime; nullable=true; writable=false |
+| `dispatchedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DispatchedBy varchar(100); nullable=true; writable=false |
+| `receivedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ReceivedBy varchar(100); nullable=true; writable=false |
+| `isLocked` | boolean | true | SQL isLock bit; nullable=false; writable=false |
+| `userCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserCreate varchar(100); nullable=true; writable=false |
+| `userUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserUpdate varchar(100); nullable=true; writable=false |
+| `dateCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateCreate datetime; nullable=true; writable=false |
+| `dateUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateUpdate datetime; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `statusCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusCode varchar(30); nullable=true; writable=false |
+| `statusName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusName nvarchar(150); nullable=true; writable=false |
+| `backColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL BackColor int; nullable=true; writable=false |
+| `foreColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL ForeColor int; nullable=true; writable=false |
+| `fromBranchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromBranchName nvarchar(100); nullable=true; writable=false |
+| `toBranchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToBranchName nvarchar(100); nullable=true; writable=false |
+| `fromStoreHouseName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromStoreHouseName nvarchar(100); nullable=true; writable=false |
+| `toStoreHouseName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToStoreHouseName nvarchar(100); nullable=true; writable=false |
+| `pMName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PMName nvarchar(150); nullable=true; writable=false |
+| `technicianName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicianName nvarchar(150); nullable=true; writable=false |
+| `sAName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAName nvarchar(150); nullable=true; writable=false |
+| `requestCount` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestCount int; nullable=true; writable=false |
+| `lineCount` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL LineCount int; nullable=true; writable=false |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `fromBranchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `toBranchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `fromStoreHouseReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `toStoreHouseReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `plannedTransferDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `actualDispatchDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `actualReceiveDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `outputDocumentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `outputDocumentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `inputDocumentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `inputDocumentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `technicalCheckedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `sAApprovedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `accountingConfirmedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateCreateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateUpdateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_warehouse_in_detail_responsefedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_detail_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_warehouse_in_detailFeDisplay](#schema-erp_internal_transfer_warehouse_in_detailfedisplay) | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_in_detailfedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_detailFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_internal_transfer_warehouse_in_header_fieldsFeDisplay](#schema-erp_internal_transfer_warehouse_in_header_fieldsfedisplay) | true | — |
+| `lines` | [Erp_internal_transfer_warehouse_in_lines_pageFeDisplay](#schema-erp_internal_transfer_warehouse_in_lines_pagefedisplay) | true | — |
+| `history` | [Erp_internal_transfer_warehouse_in_history_pageFeDisplay](#schema-erp_internal_transfer_warehouse_in_history_pagefedisplay) | true | — |
+| `comparison` | null | true | — |
+| `actions` | array&lt;[ErpActionStateFeDisplay](#schema-erpactionstatefedisplay)&gt; | true | items[0]: — |
+| `sections` | object | true | required=["requests","assets"]; properties={"requests":{"$ref":"#/components/schemas/Erp_internal_transfer_warehouse_in_requests_pageFeDisplay"},"assets":{"$ref":"#/components/schemas/Erp_internal_transfer_warehouse_in_assets_pageFeDisplay"}}; additionalProperties=false |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_warehouse_in_lines_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_lines_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_warehouse_in_lines_rowFeDisplay](#schema-erp_internal_transfer_warehouse_in_lines_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_in_lines_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_lines_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_warehouse_in_lines_fieldsFeDisplay](#schema-erp_internal_transfer_warehouse_in_lines_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_warehouse_in_lines_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_lines_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `requestId` | string | true | SQL RequestID nvarchar(50); nullable=false; writable=false |
+| `requestDetailId` | string | true | SQL RequestDetailID nvarchar(50); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID nvarchar(50); nullable=false; writable=false |
+| `requestedQty` | string | true | SQL RequestedQty decimal(28, 4); nullable=false; writable=false |
+| `approvedQty` | string | true | SQL ApprovedQty decimal(28, 4); nullable=false; writable=false |
+| `requestedLot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedLot nvarchar(100); nullable=true; writable=false |
+| `lot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Lot varchar(50); nullable=true; writable=false |
+| `expireDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ExpireDate datetime; nullable=true; writable=false |
+| `isEquipment` | boolean | true | SQL IsEquipment bit; nullable=false; writable=false |
+| `techStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechStatus varchar(20); nullable=true; writable=false |
+| `techNotes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechNotes nvarchar(1000); nullable=true; writable=false |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl nvarchar(1000); nullable=true; writable=false |
+| `technician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Technician varchar(100); nullable=true; writable=false |
+| `techCheckedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechCheckedAt datetime; nullable=true; writable=false |
+| `actualIssueQty` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualIssueQty decimal(28, 4); nullable=true; writable=false |
+| `actualReceiveQty` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualReceiveQty decimal(28, 4); nullable=true; writable=true |
+| `accountingNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingNote nvarchar(500); nullable=true; writable=false |
+| `warehouseNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL WarehouseNote nvarchar(500); nullable=true; writable=false |
+| `receiveNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ReceiveNote nvarchar(500); nullable=true; writable=true |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=false |
+| `itemCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemCode nvarchar(100); nullable=true; writable=false |
+| `itemName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemName nvarchar(max); nullable=true; writable=false |
+| `unit` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Unit nvarchar(50); nullable=true; writable=false |
+| `hangSX` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL HangSX nvarchar(100); nullable=true; writable=false |
+| `isLot` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL isLot bit; nullable=true; writable=false |
+| `requestDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestDate datetime; nullable=true; writable=false |
+| `salesUser` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesUser varchar(100); nullable=true; writable=false |
+| `salesName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesName nvarchar(150); nullable=true; writable=false |
+| `requestTerritoryNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestTerritoryNote nvarchar(500); nullable=true; writable=false |
+| `qtyNotIssued` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QtyNotIssued decimal(29, 4); nullable=true; writable=false |
+| `qtyInTransit` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QtyInTransit decimal(29, 4); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `requestName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `requestReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `requestDetailName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `requestDetailReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `expireDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `techCheckedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_warehouse_in_history_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_history_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_warehouse_in_history_rowFeDisplay](#schema-erp_internal_transfer_warehouse_in_history_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_in_history_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_history_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_warehouse_in_history_fieldsFeDisplay](#schema-erp_internal_transfer_warehouse_in_history_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_warehouse_in_history_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_history_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `thoiGian` | string | true | SQL ThoiGian datetime; nullable=false; writable=false |
+| `userName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserName varchar(50); nullable=true; writable=false |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+| `batchId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BatchID varchar(50); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `thoiGianDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `statusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_warehouse_in_requests_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_requests_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_warehouse_in_requests_rowFeDisplay](#schema-erp_internal_transfer_warehouse_in_requests_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_in_requests_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_requests_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_warehouse_in_requests_fieldsFeDisplay](#schema-erp_internal_transfer_warehouse_in_requests_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_warehouse_in_requests_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_requests_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `requestId` | string | true | SQL RequestID nvarchar(50); nullable=false; writable=false |
+| `addedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddedBy varchar(100); nullable=true; writable=false |
+| `addedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddedAt datetime; nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=false |
+| `documentDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DocumentDate datetime; nullable=true; writable=false |
+| `salesUser` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesUser varchar(100); nullable=true; writable=false |
+| `requestedTransferDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedTransferDate datetime; nullable=true; writable=false |
+| `requestStatusName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestStatusName nvarchar(150); nullable=true; writable=false |
+| `salesName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesName nvarchar(150); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `requestName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `requestReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `addedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `documentDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `requestedTransferDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_warehouse_in_assets_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_assets_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_warehouse_in_assets_rowFeDisplay](#schema-erp_internal_transfer_warehouse_in_assets_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_in_assets_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_assets_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_warehouse_in_assets_fieldsFeDisplay](#schema-erp_internal_transfer_warehouse_in_assets_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_warehouse_in_assets_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_in_assets_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `batchDetailId` | string | true | SQL BatchDetailID varchar(40); nullable=false; writable=false |
+| `assetId` | string | true | SQL AssetID varchar(50); nullable=false; writable=false |
+| `assetCondition` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetCondition nvarchar(1000); nullable=true; writable=false |
+| `techStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechStatus varchar(20); nullable=true; writable=false |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl nvarchar(1000); nullable=true; writable=false |
+| `techNotes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechNotes nvarchar(1000); nullable=true; writable=false |
+| `technician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Technician varchar(100); nullable=true; writable=false |
+| `checkedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CheckedAt datetime; nullable=true; writable=false |
+| `isDispatched` | boolean | true | SQL IsDispatched bit; nullable=false; writable=false |
+| `isReceived` | boolean | true | SQL IsReceived bit; nullable=false; writable=false |
+| `assetName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetName nvarchar(200); nullable=true; writable=false |
+| `itemId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemID varchar(50); nullable=true; writable=false |
+| `serialNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SerialNo nvarchar(100); nullable=true; writable=false |
+| `assetStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetStatus nvarchar(100); nullable=true; writable=false |
+| `trackLifecycle` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL TrackLifecycle bit; nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchDetailName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchDetailReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `assetReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `checkedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_warehouse_out_list_responsefedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_list_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_warehouse_out_document_pageFeDisplay](#schema-erp_internal_transfer_warehouse_out_document_pagefedisplay) | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_out_document_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_document_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_warehouse_out_document_rowFeDisplay](#schema-erp_internal_transfer_warehouse_out_document_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_out_document_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_document_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_internal_transfer_warehouse_out_header_fieldsFeDisplay](#schema-erp_internal_transfer_warehouse_out_header_fieldsfedisplay) | true | — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_warehouse_out_header_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_header_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `batchDate` | string | true | SQL BatchDate datetime; nullable=false; writable=false |
+| `fromBranchId` | string | true | SQL FromBranchID varchar(50); nullable=false; writable=false |
+| `toBranchId` | string | true | SQL ToBranchID varchar(50); nullable=false; writable=false |
+| `fromStoreHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromStoreHouseID varchar(50); nullable=true; writable=false |
+| `toStoreHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToStoreHouseID varchar(50); nullable=true; writable=false |
+| `plannedTransferDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PlannedTransferDate datetime; nullable=true; writable=false |
+| `actualDispatchDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualDispatchDate datetime; nullable=true; writable=false |
+| `actualReceiveDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualReceiveDate datetime; nullable=true; writable=false |
+| `assignedPM` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedPM varchar(100); nullable=true; writable=false |
+| `assignedTechnician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedTechnician varchar(100); nullable=true; writable=false |
+| `assignedSA` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssignedSA varchar(100); nullable=true; writable=false |
+| `hasEquipment` | boolean | true | SQL HasEquipment bit; nullable=false; writable=false |
+| `statusId` | integer | true | SQL StatusID int; nullable=false; writable=false |
+| `transportMethod` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TransportMethod nvarchar(50); nullable=true; writable=true |
+| `carrierName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CarrierName nvarchar(150); nullable=true; writable=true |
+| `carrierPhone` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CarrierPhone nvarchar(100); nullable=true; writable=true |
+| `vehicleNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VehicleNo nvarchar(100); nullable=true; writable=true |
+| `outputDocumentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL OutputDocumentID varchar(30); nullable=true; writable=false |
+| `inputDocumentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL InputDocumentID varchar(30); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(1000); nullable=true; writable=false |
+| `technicalCheckedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicalCheckedBy varchar(100); nullable=true; writable=false |
+| `technicalCheckedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicalCheckedAt datetime; nullable=true; writable=false |
+| `sAApprovedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAApprovedBy varchar(100); nullable=true; writable=false |
+| `sAApprovedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAApprovedAt datetime; nullable=true; writable=false |
+| `accountingConfirmedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingConfirmedBy varchar(100); nullable=true; writable=false |
+| `accountingConfirmedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingConfirmedAt datetime; nullable=true; writable=false |
+| `dispatchedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DispatchedBy varchar(100); nullable=true; writable=false |
+| `receivedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ReceivedBy varchar(100); nullable=true; writable=false |
+| `isLocked` | boolean | true | SQL isLock bit; nullable=false; writable=false |
+| `userCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserCreate varchar(100); nullable=true; writable=false |
+| `userUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserUpdate varchar(100); nullable=true; writable=false |
+| `dateCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateCreate datetime; nullable=true; writable=false |
+| `dateUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateUpdate datetime; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `statusCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusCode varchar(30); nullable=true; writable=false |
+| `statusName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusName nvarchar(150); nullable=true; writable=false |
+| `backColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL BackColor int; nullable=true; writable=false |
+| `foreColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL ForeColor int; nullable=true; writable=false |
+| `fromBranchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromBranchName nvarchar(100); nullable=true; writable=false |
+| `toBranchName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToBranchName nvarchar(100); nullable=true; writable=false |
+| `fromStoreHouseName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL FromStoreHouseName nvarchar(100); nullable=true; writable=false |
+| `toStoreHouseName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ToStoreHouseName nvarchar(100); nullable=true; writable=false |
+| `pMName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PMName nvarchar(150); nullable=true; writable=false |
+| `technicianName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechnicianName nvarchar(150); nullable=true; writable=false |
+| `sAName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SAName nvarchar(150); nullable=true; writable=false |
+| `requestCount` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestCount int; nullable=true; writable=false |
+| `lineCount` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL LineCount int; nullable=true; writable=false |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `fromBranchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `toBranchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `fromStoreHouseReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `toStoreHouseReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `plannedTransferDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `actualDispatchDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `actualReceiveDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `outputDocumentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `outputDocumentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `inputDocumentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `inputDocumentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `technicalCheckedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `sAApprovedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `accountingConfirmedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateCreateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateUpdateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_warehouse_out_detail_responsefedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_detail_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_internal_transfer_warehouse_out_detailFeDisplay](#schema-erp_internal_transfer_warehouse_out_detailfedisplay) | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_out_detailfedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_detailFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_internal_transfer_warehouse_out_header_fieldsFeDisplay](#schema-erp_internal_transfer_warehouse_out_header_fieldsfedisplay) | true | — |
+| `lines` | [Erp_internal_transfer_warehouse_out_lines_pageFeDisplay](#schema-erp_internal_transfer_warehouse_out_lines_pagefedisplay) | true | — |
+| `history` | [Erp_internal_transfer_warehouse_out_history_pageFeDisplay](#schema-erp_internal_transfer_warehouse_out_history_pagefedisplay) | true | — |
+| `comparison` | null | true | — |
+| `actions` | array&lt;[ErpActionStateFeDisplay](#schema-erpactionstatefedisplay)&gt; | true | items[0]: — |
+| `sections` | object | true | required=["requests","assets"]; properties={"requests":{"$ref":"#/components/schemas/Erp_internal_transfer_warehouse_out_requests_pageFeDisplay"},"assets":{"$ref":"#/components/schemas/Erp_internal_transfer_warehouse_out_assets_pageFeDisplay"}}; additionalProperties=false |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_warehouse_out_lines_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_lines_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_warehouse_out_lines_rowFeDisplay](#schema-erp_internal_transfer_warehouse_out_lines_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_out_lines_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_lines_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_warehouse_out_lines_fieldsFeDisplay](#schema-erp_internal_transfer_warehouse_out_lines_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_warehouse_out_lines_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_lines_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `requestId` | string | true | SQL RequestID nvarchar(50); nullable=false; writable=false |
+| `requestDetailId` | string | true | SQL RequestDetailID nvarchar(50); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID nvarchar(50); nullable=false; writable=false |
+| `requestedQty` | string | true | SQL RequestedQty decimal(28, 4); nullable=false; writable=false |
+| `approvedQty` | string | true | SQL ApprovedQty decimal(28, 4); nullable=false; writable=false |
+| `requestedLot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedLot nvarchar(100); nullable=true; writable=false |
+| `lot` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Lot varchar(50); nullable=true; writable=false |
+| `expireDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ExpireDate datetime; nullable=true; writable=false |
+| `isEquipment` | boolean | true | SQL IsEquipment bit; nullable=false; writable=false |
+| `techStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechStatus varchar(20); nullable=true; writable=false |
+| `techNotes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechNotes nvarchar(1000); nullable=true; writable=false |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl nvarchar(1000); nullable=true; writable=false |
+| `technician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Technician varchar(100); nullable=true; writable=false |
+| `techCheckedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechCheckedAt datetime; nullable=true; writable=false |
+| `actualIssueQty` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualIssueQty decimal(28, 4); nullable=true; writable=true |
+| `actualReceiveQty` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ActualReceiveQty decimal(28, 4); nullable=true; writable=false |
+| `accountingNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AccountingNote nvarchar(500); nullable=true; writable=false |
+| `warehouseNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL WarehouseNote nvarchar(500); nullable=true; writable=true |
+| `receiveNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ReceiveNote nvarchar(500); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=false |
+| `itemCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemCode nvarchar(100); nullable=true; writable=false |
+| `itemName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemName nvarchar(max); nullable=true; writable=false |
+| `unit` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Unit nvarchar(50); nullable=true; writable=false |
+| `hangSX` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL HangSX nvarchar(100); nullable=true; writable=false |
+| `isLot` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL isLot bit; nullable=true; writable=false |
+| `requestDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestDate datetime; nullable=true; writable=false |
+| `salesUser` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesUser varchar(100); nullable=true; writable=false |
+| `salesName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesName nvarchar(150); nullable=true; writable=false |
+| `requestTerritoryNote` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestTerritoryNote nvarchar(500); nullable=true; writable=false |
+| `qtyNotIssued` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QtyNotIssued decimal(29, 4); nullable=true; writable=false |
+| `qtyInTransit` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL QtyInTransit decimal(29, 4); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `requestName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `requestReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `requestDetailName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `requestDetailReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `expireDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `techCheckedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_warehouse_out_history_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_history_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_warehouse_out_history_rowFeDisplay](#schema-erp_internal_transfer_warehouse_out_history_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_out_history_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_history_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_warehouse_out_history_fieldsFeDisplay](#schema-erp_internal_transfer_warehouse_out_history_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_warehouse_out_history_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_history_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `thoiGian` | string | true | SQL ThoiGian datetime; nullable=false; writable=false |
+| `userName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserName varchar(50); nullable=true; writable=false |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+| `batchId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BatchID varchar(50); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `thoiGianDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `statusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_warehouse_out_requests_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_requests_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_warehouse_out_requests_rowFeDisplay](#schema-erp_internal_transfer_warehouse_out_requests_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_out_requests_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_requests_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_warehouse_out_requests_fieldsFeDisplay](#schema-erp_internal_transfer_warehouse_out_requests_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_warehouse_out_requests_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_requests_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `requestId` | string | true | SQL RequestID nvarchar(50); nullable=false; writable=false |
+| `addedBy` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddedBy varchar(100); nullable=true; writable=false |
+| `addedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddedAt datetime; nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(500); nullable=true; writable=false |
+| `documentDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DocumentDate datetime; nullable=true; writable=false |
+| `salesUser` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesUser varchar(100); nullable=true; writable=false |
+| `requestedTransferDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestedTransferDate datetime; nullable=true; writable=false |
+| `requestStatusName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RequestStatusName nvarchar(150); nullable=true; writable=false |
+| `salesName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SalesName nvarchar(150); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `requestName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `requestReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `addedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `documentDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `requestedTransferDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_internal_transfer_warehouse_out_assets_pagefedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_assets_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_internal_transfer_warehouse_out_assets_rowFeDisplay](#schema-erp_internal_transfer_warehouse_out_assets_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_internal_transfer_warehouse_out_assets_rowfedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_assets_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_internal_transfer_warehouse_out_assets_fieldsFeDisplay](#schema-erp_internal_transfer_warehouse_out_assets_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_internal_transfer_warehouse_out_assets_fieldsfedisplay"></a>
+
+### Schema Erp_internal_transfer_warehouse_out_assets_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `batchId` | string | true | SQL BatchID varchar(30); nullable=false; writable=false |
+| `batchDetailId` | string | true | SQL BatchDetailID varchar(40); nullable=false; writable=false |
+| `assetId` | string | true | SQL AssetID varchar(50); nullable=false; writable=false |
+| `assetCondition` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetCondition nvarchar(1000); nullable=true; writable=false |
+| `techStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechStatus varchar(20); nullable=true; writable=false |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl nvarchar(1000); nullable=true; writable=false |
+| `techNotes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TechNotes nvarchar(1000); nullable=true; writable=false |
+| `technician` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Technician varchar(100); nullable=true; writable=false |
+| `checkedAt` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CheckedAt datetime; nullable=true; writable=false |
+| `isDispatched` | boolean | true | SQL IsDispatched bit; nullable=false; writable=false |
+| `isReceived` | boolean | true | SQL IsReceived bit; nullable=false; writable=false |
+| `assetName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetName nvarchar(200); nullable=true; writable=false |
+| `itemId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ItemID varchar(50); nullable=true; writable=false |
+| `serialNo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SerialNo nvarchar(100); nullable=true; writable=false |
+| `assetStatus` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AssetStatus nvarchar(100); nullable=true; writable=false |
+| `trackLifecycle` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL TrackLifecycle bit; nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `batchDetailName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `batchDetailReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `assetReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `checkedAtDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
 
 <a id="schema-erp_machine_movements_list_responsefedisplay"></a>
 
@@ -9186,6 +19835,7 @@ Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presen
 | `history` | null | true | — |
 | `comparison` | null | true | — |
 | `actions` | array&lt;[ErpActionStateFeDisplay](#schema-erpactionstatefedisplay)&gt; | true | items[0]: — |
+| `sections` | dictionary&lt;[ErpLinePageFeDisplay](#schema-erplinepagefedisplay)&gt; / null | false | anyOf[0]: additionalProperties={"$ref":"#/components/schemas/ErpLinePageFeDisplay"}; anyOf[1]: — |
 | `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
 | `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
 | `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
@@ -9383,6 +20033,7 @@ Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presen
 | `history` | null | true | — |
 | `comparison` | null | true | — |
 | `actions` | array&lt;[ErpActionStateFeDisplay](#schema-erpactionstatefedisplay)&gt; | true | items[0]: — |
+| `sections` | dictionary&lt;[ErpLinePageFeDisplay](#schema-erplinepagefedisplay)&gt; / null | false | anyOf[0]: additionalProperties={"$ref":"#/components/schemas/ErpLinePageFeDisplay"}; anyOf[1]: — |
 | `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
 | `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
 | `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
@@ -9447,6 +20098,345 @@ Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presen
 | `nextServiceDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
 | `laborAmountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
 | `partsAmountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_purchase_approvals_list_responsefedisplay"></a>
+
+### Schema Erp_purchase_approvals_list_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_purchase_approvals_document_pageFeDisplay](#schema-erp_purchase_approvals_document_pagefedisplay) | true | — |
+
+<a id="schema-erp_purchase_approvals_document_pagefedisplay"></a>
+
+### Schema Erp_purchase_approvals_document_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_purchase_approvals_document_rowFeDisplay](#schema-erp_purchase_approvals_document_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_purchase_approvals_document_rowfedisplay"></a>
+
+### Schema Erp_purchase_approvals_document_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_purchase_approvals_header_fieldsFeDisplay](#schema-erp_purchase_approvals_header_fieldsfedisplay) | true | — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_purchase_approvals_header_fieldsfedisplay"></a>
+
+### Schema Erp_purchase_approvals_header_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `purchaseRequestId` | string | true | SQL PurchaseRequestID nvarchar(50); nullable=false; writable=false |
+| `purchaseDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PurchaseDate datetime; nullable=true; writable=false |
+| `purposeId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL PurposeID int; nullable=true; writable=false |
+| `personSuggest` | string | true | SQL PersonSuggest nvarchar(500); nullable=false; writable=false |
+| `department` | string | true | SQL Department nvarchar(100); nullable=false; writable=false |
+| `purposeDescOrClient` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PurposeDescOrClient nvarchar(max); nullable=true; writable=false |
+| `price` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Price decimal(18, 2); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+| `statusId` | integer | true | SQL StatusID int; nullable=false; writable=false |
+| `isLocked` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL isLock bit; nullable=true; writable=false |
+| `currencyId` | string | true | SQL CurrencyID varchar(3); nullable=false; writable=false |
+| `objectId` | string | true | SQL ObjectID varchar(100); nullable=false; writable=false |
+| `rateExchange` | number | true | SQL RateExchange float; nullable=false; writable=false |
+| `branchId` | string | true | SQL BranchID varchar(50); nullable=false; writable=false |
+| `purchaseRequestName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `purchaseRequestReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `purchaseDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `purposeName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `purposeReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `priceDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `statusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `currencyName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `currencyReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `objectName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `objectReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_purchase_approvals_detail_responsefedisplay"></a>
+
+### Schema Erp_purchase_approvals_detail_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_purchase_approvals_detailFeDisplay](#schema-erp_purchase_approvals_detailfedisplay) | true | — |
+
+<a id="schema-erp_purchase_approvals_detailfedisplay"></a>
+
+### Schema Erp_purchase_approvals_detailFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_purchase_approvals_header_fieldsFeDisplay](#schema-erp_purchase_approvals_header_fieldsfedisplay) | true | — |
+| `lines` | [Erp_purchase_approvals_lines_pageFeDisplay](#schema-erp_purchase_approvals_lines_pagefedisplay) | true | — |
+| `history` | null | true | — |
+| `comparison` | null | true | — |
+| `actions` | array&lt;[ErpActionStateFeDisplay](#schema-erpactionstatefedisplay)&gt; | true | items[0]: — |
+| `sections` | dictionary&lt;[ErpLinePageFeDisplay](#schema-erplinepagefedisplay)&gt; / null | false | anyOf[0]: additionalProperties={"$ref":"#/components/schemas/ErpLinePageFeDisplay"}; anyOf[1]: — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_purchase_approvals_lines_pagefedisplay"></a>
+
+### Schema Erp_purchase_approvals_lines_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_purchase_approvals_lines_rowFeDisplay](#schema-erp_purchase_approvals_lines_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_purchase_approvals_lines_rowfedisplay"></a>
+
+### Schema Erp_purchase_approvals_lines_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_purchase_approvals_lines_fieldsFeDisplay](#schema-erp_purchase_approvals_lines_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_purchase_approvals_lines_fieldsfedisplay"></a>
+
+### Schema Erp_purchase_approvals_lines_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID varchar(50); nullable=false; writable=false |
+| `budget` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Budget decimal(18, 0); nullable=true; writable=false |
+| `timeRequired` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TimeRequired nvarchar(200); nullable=true; writable=false |
+| `quantity` | string | true | SQL Quantity decimal(18, 0); nullable=false; writable=false |
+| `unitPrice` | string | true | SQL UnitPrice decimal(18, 0); nullable=false; writable=false |
+| `totalPrice` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TotalPrice decimal(18, 0); nullable=true; writable=false |
+| `model` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Model varchar(50); nullable=true; writable=false |
+| `purchaseRequestId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PurchaseRequestID nvarchar(50); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+| `budgetDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `unitPriceDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `totalPriceDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `purchaseRequestName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `purchaseRequestReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_purchase_orders_list_responsefedisplay"></a>
+
+### Schema Erp_purchase_orders_list_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_purchase_orders_document_pageFeDisplay](#schema-erp_purchase_orders_document_pagefedisplay) | true | — |
+
+<a id="schema-erp_purchase_orders_document_pagefedisplay"></a>
+
+### Schema Erp_purchase_orders_document_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_purchase_orders_document_rowFeDisplay](#schema-erp_purchase_orders_document_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_purchase_orders_document_rowfedisplay"></a>
+
+### Schema Erp_purchase_orders_document_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_purchase_orders_header_fieldsFeDisplay](#schema-erp_purchase_orders_header_fieldsfedisplay) | true | — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_purchase_orders_header_fieldsfedisplay"></a>
+
+### Schema Erp_purchase_orders_header_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | SQL DocumentID varchar(30); nullable=false; writable=false |
+| `documentDate` | string | true | SQL DocumentDate datetime; nullable=false; writable=true |
+| `objectId` | string | true | SQL ObjectID varchar(100); nullable=false; writable=true |
+| `memo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Memo nvarchar(200); nullable=true; writable=true |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(200); nullable=true; writable=true |
+| `deliverDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeliverDate datetime; nullable=true; writable=true |
+| `currencyId` | string | true | SQL CurrencyID varchar(3); nullable=false; writable=true |
+| `rateExchange` | number | true | SQL RateExchange float; nullable=false; writable=true |
+| `baseTotal` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BaseTotal decimal(28, 0); nullable=true; writable=false |
+| `searchField` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SearchField nvarchar(2000); nullable=true; writable=true |
+| `isLocked` | boolean | true | SQL isLock bit; nullable=false; writable=false |
+| `userCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserCreate varchar(50); nullable=true; writable=false |
+| `userUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserUpdate varchar(50); nullable=true; writable=false |
+| `dateUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateUpdate datetime; nullable=true; writable=false |
+| `dateCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateCreate datetime; nullable=true; writable=false |
+| `linkId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LinkID varchar(50); nullable=true; writable=false |
+| `contractId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ContractID nvarchar(100); nullable=true; writable=true |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `branchId` | string | true | SQL BranchID varchar(50); nullable=false; writable=false |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `objectName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `objectReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `deliverDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `currencyName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `currencyReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `baseTotalDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateUpdateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateCreateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `linkName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `linkReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `contractName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `contractReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `statusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_purchase_orders_detail_responsefedisplay"></a>
+
+### Schema Erp_purchase_orders_detail_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_purchase_orders_detailFeDisplay](#schema-erp_purchase_orders_detailfedisplay) | true | — |
+
+<a id="schema-erp_purchase_orders_detailfedisplay"></a>
+
+### Schema Erp_purchase_orders_detailFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_purchase_orders_header_fieldsFeDisplay](#schema-erp_purchase_orders_header_fieldsfedisplay) | true | — |
+| `lines` | [Erp_purchase_orders_lines_pageFeDisplay](#schema-erp_purchase_orders_lines_pagefedisplay) | true | — |
+| `history` | null | true | — |
+| `comparison` | null | true | — |
+| `actions` | array&lt;[ErpActionStateFeDisplay](#schema-erpactionstatefedisplay)&gt; | true | items[0]: — |
+| `sections` | dictionary&lt;[ErpLinePageFeDisplay](#schema-erplinepagefedisplay)&gt; / null | false | anyOf[0]: additionalProperties={"$ref":"#/components/schemas/ErpLinePageFeDisplay"}; anyOf[1]: — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_purchase_orders_lines_pagefedisplay"></a>
+
+### Schema Erp_purchase_orders_lines_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_purchase_orders_lines_rowFeDisplay](#schema-erp_purchase_orders_lines_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_purchase_orders_lines_rowfedisplay"></a>
+
+### Schema Erp_purchase_orders_lines_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_purchase_orders_lines_fieldsFeDisplay](#schema-erp_purchase_orders_lines_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_purchase_orders_lines_fieldsfedisplay"></a>
+
+### Schema Erp_purchase_orders_lines_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(30); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID nvarchar(50); nullable=false; writable=true |
+| `quantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Quantity decimal(28, 2); nullable=true; writable=true |
+| `unitPrice` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UnitPrice decimal(28, 4); nullable=true; writable=true |
+| `sourceAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SourceAmount decimal(18, 2); nullable=true; writable=false |
+| `amount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Amount decimal(28, 0); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(100); nullable=true; writable=true |
+| `quantity2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Quantity2 decimal(28, 4); nullable=true; writable=true |
+| `property` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Property nvarchar(50); nullable=true; writable=true |
+| `property2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Property2 nvarchar(50); nullable=true; writable=true |
+| `parentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ParentID varchar(50); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unitPriceDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `sourceAmountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `amountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `parentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `parentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
 
 <a id="schema-erp_purchase_requests_list_responsefedisplay"></a>
 
@@ -9549,6 +20539,7 @@ Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presen
 | `history` | null | true | — |
 | `comparison` | null | true | — |
 | `actions` | array&lt;[ErpActionStateFeDisplay](#schema-erpactionstatefedisplay)&gt; | true | items[0]: — |
+| `sections` | dictionary&lt;[ErpLinePageFeDisplay](#schema-erplinepagefedisplay)&gt; / null | false | anyOf[0]: additionalProperties={"$ref":"#/components/schemas/ErpLinePageFeDisplay"}; anyOf[1]: — |
 | `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
 | `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
 | `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
@@ -9608,6 +20599,642 @@ Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presen
 | `totalPriceDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
 | `purchaseRequestName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
 | `purchaseRequestReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_sales_order_pm_list_responsefedisplay"></a>
+
+### Schema Erp_sales_order_pm_list_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_sales_order_pm_document_pageFeDisplay](#schema-erp_sales_order_pm_document_pagefedisplay) | true | — |
+
+<a id="schema-erp_sales_order_pm_document_pagefedisplay"></a>
+
+### Schema Erp_sales_order_pm_document_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_sales_order_pm_document_rowFeDisplay](#schema-erp_sales_order_pm_document_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_sales_order_pm_document_rowfedisplay"></a>
+
+### Schema Erp_sales_order_pm_document_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_sales_order_pm_header_fieldsFeDisplay](#schema-erp_sales_order_pm_header_fieldsfedisplay) | true | — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_sales_order_pm_header_fieldsfedisplay"></a>
+
+### Schema Erp_sales_order_pm_header_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `documentDate` | string | true | SQL DocumentDate datetime; nullable=false; writable=false |
+| `objectId` | string | true | SQL ObjectID varchar(100); nullable=false; writable=false |
+| `contractId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ContractID nvarchar(250); nullable=true; writable=false |
+| `memo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Memo nvarchar(max); nullable=true; writable=false |
+| `deliverDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeliverDate datetime; nullable=true; writable=false |
+| `baseTotal` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BaseTotal decimal(28, 0); nullable=true; writable=false |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `employeeId` | string | true | SQL EmployeeID varchar(50); nullable=false; writable=false |
+| `managerId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ManagerID varchar(50); nullable=true; writable=false |
+| `phone` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Phone varchar(150); nullable=true; writable=false |
+| `branchId` | string | true | SQL BranchID varchar(50); nullable=false; writable=false |
+| `taxCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TaxCode varchar(50); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+| `depositAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DepositAmount decimal(28, 0); nullable=true; writable=false |
+| `isLocked` | boolean | true | SQL isLock bit; nullable=false; writable=false |
+| `agencyId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AgencyID varchar(50); nullable=true; writable=false |
+| `isVAT` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL isVAT bit; nullable=true; writable=false |
+| `isOrder` | boolean | true | SQL isOrder bit; nullable=false; writable=false |
+| `currencyId` | string | true | SQL CurrencyID varchar(3); nullable=false; writable=false |
+| `rateExchange` | number | true | SQL RateExchange float; nullable=false; writable=false |
+| `linkId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LinkID varchar(50); nullable=true; writable=false |
+| `userCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserCreate varchar(50); nullable=true; writable=false |
+| `userUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserUpdate varchar(50); nullable=true; writable=false |
+| `dateUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateUpdate datetime; nullable=true; writable=false |
+| `dateCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateCreate datetime; nullable=true; writable=false |
+| `ghiChuDonHang` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL GhiChuDonHang nvarchar(250); nullable=true; writable=false |
+| `paymentTermId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PaymentTermID varchar(50); nullable=true; writable=false |
+| `ceoId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CeoID varchar(50); nullable=true; writable=false |
+| `thamGiaHopDongBan` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL ThamGiaHopDongBan bit; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl varchar(500); nullable=true; writable=false |
+| `beforeOutStockUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BeforeOutStockUrl varchar(500); nullable=true; writable=false |
+| `bBBGUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBBGUrl varchar(500); nullable=true; writable=false |
+| `documentUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DocumentUrl nvarchar(500); nullable=true; writable=false |
+| `handoverLocation` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL HandoverLocation nvarchar(200); nullable=true; writable=false |
+| `representedByA` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RepresentedByA nvarchar(100); nullable=true; writable=false |
+| `positionA` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PositionA nvarchar(100); nullable=true; writable=false |
+| `addressA` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddressA nvarchar(200); nullable=true; writable=false |
+| `representedByB` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RepresentedByB nvarchar(100); nullable=true; writable=false |
+| `positionB` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PositionB nvarchar(100); nullable=true; writable=false |
+| `addressB` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddressB nvarchar(200); nullable=true; writable=false |
+| `conclude` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Conclude nvarchar(500); nullable=true; writable=false |
+| `minutesNumber` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL MinutesNumber int; nullable=true; writable=false |
+| `partyAKeep` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL PartyAKeep int; nullable=true; writable=false |
+| `partyBKeep` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL PartyBKeep int; nullable=true; writable=false |
+| `deliveryStatusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeliveryStatusID int; nullable=true; writable=false |
+| `deliveryEmployeeId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeliveryEmployeeID nvarchar(200); nullable=true; writable=false |
+| `deliveryEmployeeSubId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeliveryEmployeeSubID nvarchar(200); nullable=true; writable=false |
+| `vehicle` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Vehicle nvarchar(200); nullable=true; writable=false |
+| `soPhieu` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SoPhieu nvarchar(100); nullable=true; writable=false |
+| `soHoaDon` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SoHoaDon nvarchar(100); nullable=true; writable=false |
+| `ngayPhieu` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL NgayPhieu datetime; nullable=true; writable=false |
+| `ngayHoaDon` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL NgayHoaDon datetime; nullable=true; writable=false |
+| `gio` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Gio varchar(5); nullable=true; writable=false |
+| `objectName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ObjectName nvarchar(300); nullable=true; writable=false |
+| `address` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Address nvarchar(max); nullable=true; writable=false |
+| `statusName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusName nvarchar(50); nullable=true; writable=false |
+| `backColor` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL BackColor int; nullable=true; writable=false |
+| `employeeName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL EmployeeName nvarchar(300); nullable=true; writable=false |
+| `managerName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ManagerName nvarchar(300); nullable=true; writable=false |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `objectReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `contractName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `contractReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `deliverDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `baseTotalDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `employeeReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `managerReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `depositAmountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `agencyName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `agencyReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `currencyName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `currencyReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `linkName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `linkReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `dateUpdateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateCreateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `paymentTermName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `paymentTermReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `ceoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `ceoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `deliveryStatusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `deliveryStatusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `deliveryEmployeeName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `deliveryEmployeeReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `deliveryEmployeeSubName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `deliveryEmployeeSubReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `ngayPhieuDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `ngayHoaDonDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_sales_order_pm_detail_responsefedisplay"></a>
+
+### Schema Erp_sales_order_pm_detail_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_sales_order_pm_detailFeDisplay](#schema-erp_sales_order_pm_detailfedisplay) | true | — |
+
+<a id="schema-erp_sales_order_pm_detailfedisplay"></a>
+
+### Schema Erp_sales_order_pm_detailFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_sales_order_pm_header_fieldsFeDisplay](#schema-erp_sales_order_pm_header_fieldsfedisplay) | true | — |
+| `lines` | [Erp_sales_order_pm_lines_pageFeDisplay](#schema-erp_sales_order_pm_lines_pagefedisplay) | true | — |
+| `history` | [Erp_sales_order_pm_history_pageFeDisplay](#schema-erp_sales_order_pm_history_pagefedisplay) | true | — |
+| `comparison` | null | true | — |
+| `actions` | array&lt;[ErpActionStateFeDisplay](#schema-erpactionstatefedisplay)&gt; | true | items[0]: — |
+| `sections` | dictionary&lt;[ErpLinePageFeDisplay](#schema-erplinepagefedisplay)&gt; / null | false | anyOf[0]: additionalProperties={"$ref":"#/components/schemas/ErpLinePageFeDisplay"}; anyOf[1]: — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_sales_order_pm_lines_pagefedisplay"></a>
+
+### Schema Erp_sales_order_pm_lines_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_sales_order_pm_lines_rowFeDisplay](#schema-erp_sales_order_pm_lines_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_sales_order_pm_lines_rowfedisplay"></a>
+
+### Schema Erp_sales_order_pm_lines_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_sales_order_pm_lines_fieldsFeDisplay](#schema-erp_sales_order_pm_lines_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_sales_order_pm_lines_fieldsfedisplay"></a>
+
+### Schema Erp_sales_order_pm_lines_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID nvarchar(50); nullable=false; writable=false |
+| `quantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Quantity decimal(18, 0); nullable=true; writable=false |
+| `unitFactor` | number / null | true | anyOf[0]: —; anyOf[1]: —; SQL UnitFactor float; nullable=true; writable=false |
+| `unit2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Unit2 nvarchar(50); nullable=true; writable=false |
+| `quantity2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Quantity2 decimal(18, 0); nullable=true; writable=false |
+| `unitPrice` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UnitPrice decimal(28, 0); nullable=true; writable=false |
+| `tonKhoHienTai` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TonKhoHienTai decimal(18, 0); nullable=true; writable=false |
+| `deliveryQuantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeliveryQuantity decimal(18, 0); nullable=true; writable=false |
+| `soLuongHopDong` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SoLuongHopDong decimal(18, 0); nullable=true; writable=false |
+| `amount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Amount decimal(28, 0); nullable=true; writable=false |
+| `discountPercent` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DiscountPercent decimal(18, 2); nullable=true; writable=false |
+| `discountAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DiscountAmount decimal(18, 0); nullable=true; writable=false |
+| `vATPercent` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATPercent decimal(18, 2); nullable=true; writable=false |
+| `vATAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATAmount decimal(18, 0); nullable=true; writable=false |
+| `totalAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TotalAmount decimal(18, 0); nullable=true; writable=false |
+| `vATQuantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATQuantity decimal(18, 2); nullable=true; writable=false |
+| `dienGiai` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DienGiai nvarchar(max); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+| `property` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Property nvarchar(50); nullable=true; writable=false |
+| `property2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Property2 nvarchar(50); nullable=true; writable=false |
+| `parentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ParentID varchar(50); nullable=true; writable=false |
+| `notes2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes2 nvarchar(200); nullable=true; writable=false |
+| `costId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CostID varchar(50); nullable=true; writable=false |
+| `storeHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StoreHouseID varchar(50); nullable=true; writable=false |
+| `vATId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATID varchar(50); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unitPriceDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `amountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `discountAmountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `vATAmountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `totalAmountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `parentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `parentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `costName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `costReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `storeHouseName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `storeHouseReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `vATName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `vATReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_sales_order_pm_history_pagefedisplay"></a>
+
+### Schema Erp_sales_order_pm_history_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_sales_order_pm_history_rowFeDisplay](#schema-erp_sales_order_pm_history_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_sales_order_pm_history_rowfedisplay"></a>
+
+### Schema Erp_sales_order_pm_history_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_sales_order_pm_history_fieldsFeDisplay](#schema-erp_sales_order_pm_history_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_sales_order_pm_history_fieldsfedisplay"></a>
+
+### Schema Erp_sales_order_pm_history_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `thoiGian` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ThoiGian datetime; nullable=true; writable=false |
+| `userName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserName nvarchar(50); nullable=true; writable=false |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `thoiGianDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `statusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erpscopedresponse_erpcontractinfofedisplay"></a>
+
+### Schema ErpScopedResponse_ErpContractInfoFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [ErpContractInfoFeDisplay](#schema-erpcontractinfofedisplay) / null | true | anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erpcontractinfofedisplay"></a>
+
+### Schema ErpContractInfoFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `contractId` | string | true | — |
+| `fields` | dictionary&lt;any JSON&gt; | true | additionalProperties={"description":"Fixed module field or action input; see x-medcom-typed-header, x-medcom-typed-line, x-medcom-typed-payload and x-medcom-full-field-sections on its operation."} |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `contractName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `contractReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_sales_order_sa_list_responsefedisplay"></a>
+
+### Schema Erp_sales_order_sa_list_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_sales_order_sa_document_pageFeDisplay](#schema-erp_sales_order_sa_document_pagefedisplay) | true | — |
+
+<a id="schema-erp_sales_order_sa_document_pagefedisplay"></a>
+
+### Schema Erp_sales_order_sa_document_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_sales_order_sa_document_rowFeDisplay](#schema-erp_sales_order_sa_document_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_sales_order_sa_document_rowfedisplay"></a>
+
+### Schema Erp_sales_order_sa_document_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `header` | [Erp_sales_order_sa_header_fieldsFeDisplay](#schema-erp_sales_order_sa_header_fieldsfedisplay) | true | — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_sales_order_sa_header_fieldsfedisplay"></a>
+
+### Schema Erp_sales_order_sa_header_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `documentDate` | string | true | SQL DocumentDate datetime; nullable=false; writable=false |
+| `objectId` | string | true | SQL ObjectID varchar(100); nullable=false; writable=false |
+| `contractId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ContractID nvarchar(250); nullable=true; writable=false |
+| `memo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Memo nvarchar(max); nullable=true; writable=false |
+| `deliverDate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeliverDate datetime; nullable=true; writable=false |
+| `baseTotal` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BaseTotal decimal(28, 0); nullable=true; writable=false |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `employeeId` | string | true | SQL EmployeeID varchar(50); nullable=false; writable=false |
+| `managerId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ManagerID varchar(50); nullable=true; writable=false |
+| `phone` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Phone varchar(150); nullable=true; writable=false |
+| `branchId` | string | true | SQL BranchID varchar(50); nullable=false; writable=false |
+| `taxCode` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TaxCode varchar(50); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+| `depositAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DepositAmount decimal(28, 0); nullable=true; writable=false |
+| `isLocked` | boolean | true | SQL isLock bit; nullable=false; writable=false |
+| `agencyId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AgencyID varchar(50); nullable=true; writable=false |
+| `isVAT` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL isVAT bit; nullable=true; writable=false |
+| `isOrder` | boolean | true | SQL isOrder bit; nullable=false; writable=false |
+| `currencyId` | string | true | SQL CurrencyID varchar(3); nullable=false; writable=false |
+| `rateExchange` | number | true | SQL RateExchange float; nullable=false; writable=false |
+| `linkId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL LinkID varchar(50); nullable=true; writable=false |
+| `userCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserCreate varchar(50); nullable=true; writable=false |
+| `userUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserUpdate varchar(50); nullable=true; writable=false |
+| `dateUpdate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateUpdate datetime; nullable=true; writable=false |
+| `dateCreate` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DateCreate datetime; nullable=true; writable=false |
+| `ghiChuDonHang` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL GhiChuDonHang nvarchar(250); nullable=true; writable=false |
+| `paymentTermId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PaymentTermID varchar(50); nullable=true; writable=false |
+| `ceoId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CeoID varchar(50); nullable=true; writable=false |
+| `thamGiaHopDongBan` | boolean / null | true | anyOf[0]: —; anyOf[1]: —; SQL ThamGiaHopDongBan bit; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `bBKCUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBKCUrl varchar(500); nullable=true; writable=false |
+| `beforeOutStockUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BeforeOutStockUrl varchar(500); nullable=true; writable=false |
+| `bBBGUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL BBBGUrl varchar(500); nullable=true; writable=false |
+| `documentUrl` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DocumentUrl nvarchar(500); nullable=true; writable=false |
+| `handoverLocation` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL HandoverLocation nvarchar(200); nullable=true; writable=false |
+| `representedByA` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RepresentedByA nvarchar(100); nullable=true; writable=false |
+| `positionA` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PositionA nvarchar(100); nullable=true; writable=false |
+| `addressA` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddressA nvarchar(200); nullable=true; writable=false |
+| `representedByB` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL RepresentedByB nvarchar(100); nullable=true; writable=false |
+| `positionB` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL PositionB nvarchar(100); nullable=true; writable=false |
+| `addressB` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL AddressB nvarchar(200); nullable=true; writable=false |
+| `conclude` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Conclude nvarchar(500); nullable=true; writable=false |
+| `minutesNumber` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL MinutesNumber int; nullable=true; writable=false |
+| `partyAKeep` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL PartyAKeep int; nullable=true; writable=false |
+| `partyBKeep` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL PartyBKeep int; nullable=true; writable=false |
+| `deliveryStatusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeliveryStatusID int; nullable=true; writable=false |
+| `deliveryEmployeeId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeliveryEmployeeID nvarchar(200); nullable=true; writable=false |
+| `deliveryEmployeeSubId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeliveryEmployeeSubID nvarchar(200); nullable=true; writable=false |
+| `vehicle` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Vehicle nvarchar(200); nullable=true; writable=false |
+| `soPhieu` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SoPhieu nvarchar(100); nullable=true; writable=false |
+| `soHoaDon` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SoHoaDon nvarchar(100); nullable=true; writable=false |
+| `ngayPhieu` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL NgayPhieu datetime; nullable=true; writable=false |
+| `ngayHoaDon` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL NgayHoaDon datetime; nullable=true; writable=false |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `objectName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `objectReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `contractName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `contractReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `deliverDateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `baseTotalDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `statusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `employeeName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `employeeReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `managerName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `managerReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `depositAmountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `agencyName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `agencyReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `currencyName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `currencyReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `linkName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `linkReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `dateUpdateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `dateCreateDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `paymentTermName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `paymentTermReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `ceoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `ceoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `deliveryStatusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `deliveryStatusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `deliveryEmployeeName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `deliveryEmployeeReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `deliveryEmployeeSubName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `deliveryEmployeeSubReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `ngayPhieuDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `ngayHoaDonDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+
+<a id="schema-erp_sales_order_sa_detail_responsefedisplay"></a>
+
+### Schema Erp_sales_order_sa_detail_responseFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `readScope` | string | true | — |
+| `data` | [Erp_sales_order_sa_detailFeDisplay](#schema-erp_sales_order_sa_detailfedisplay) | true | — |
+
+<a id="schema-erp_sales_order_sa_detailfedisplay"></a>
+
+### Schema Erp_sales_order_sa_detailFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `documentId` | string | true | — |
+| `branchId` | string | true | — |
+| `stateToken` | string | true | — |
+| `header` | [Erp_sales_order_sa_header_fieldsFeDisplay](#schema-erp_sales_order_sa_header_fieldsfedisplay) | true | — |
+| `lines` | [Erp_sales_order_sa_lines_pageFeDisplay](#schema-erp_sales_order_sa_lines_pagefedisplay) | true | — |
+| `history` | [Erp_sales_order_sa_history_pageFeDisplay](#schema-erp_sales_order_sa_history_pagefedisplay) | true | — |
+| `comparison` | null | true | — |
+| `actions` | array&lt;[ErpActionStateFeDisplay](#schema-erpactionstatefedisplay)&gt; | true | items[0]: — |
+| `sections` | dictionary&lt;[ErpLinePageFeDisplay](#schema-erplinepagefedisplay)&gt; / null | false | anyOf[0]: additionalProperties={"$ref":"#/components/schemas/ErpLinePageFeDisplay"}; anyOf[1]: — |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `branchReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_sales_order_sa_lines_pagefedisplay"></a>
+
+### Schema Erp_sales_order_sa_lines_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_sales_order_sa_lines_rowFeDisplay](#schema-erp_sales_order_sa_lines_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_sales_order_sa_lines_rowfedisplay"></a>
+
+### Schema Erp_sales_order_sa_lines_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_sales_order_sa_lines_fieldsFeDisplay](#schema-erp_sales_order_sa_lines_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_sales_order_sa_lines_fieldsfedisplay"></a>
+
+### Schema Erp_sales_order_sa_lines_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(40); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `itemId` | string | true | SQL ItemID nvarchar(50); nullable=false; writable=false |
+| `quantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Quantity decimal(18, 0); nullable=true; writable=false |
+| `unitFactor` | number / null | true | anyOf[0]: —; anyOf[1]: —; SQL UnitFactor float; nullable=true; writable=false |
+| `unit2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Unit2 nvarchar(50); nullable=true; writable=false |
+| `quantity2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Quantity2 decimal(18, 0); nullable=true; writable=false |
+| `unitPrice` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UnitPrice decimal(28, 0); nullable=true; writable=false |
+| `tonKhoHienTai` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TonKhoHienTai decimal(18, 0); nullable=true; writable=false |
+| `deliveryQuantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DeliveryQuantity decimal(18, 0); nullable=true; writable=false |
+| `soLuongHopDong` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SoLuongHopDong decimal(18, 0); nullable=true; writable=false |
+| `amount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Amount decimal(28, 0); nullable=true; writable=false |
+| `discountPercent` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DiscountPercent decimal(18, 2); nullable=true; writable=false |
+| `discountAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DiscountAmount decimal(18, 0); nullable=true; writable=false |
+| `vATPercent` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATPercent decimal(18, 2); nullable=true; writable=false |
+| `vATAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATAmount decimal(18, 0); nullable=true; writable=false |
+| `totalAmount` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL TotalAmount decimal(18, 0); nullable=true; writable=false |
+| `vATQuantity` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATQuantity decimal(18, 2); nullable=true; writable=false |
+| `dienGiai` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL DienGiai nvarchar(max); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+| `property` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Property nvarchar(50); nullable=true; writable=false |
+| `property2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Property2 nvarchar(50); nullable=true; writable=false |
+| `parentId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ParentID varchar(50); nullable=true; writable=false |
+| `notes2` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes2 nvarchar(200); nullable=true; writable=false |
+| `costId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL CostID varchar(50); nullable=true; writable=false |
+| `storeHouseId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL StoreHouseID varchar(50); nullable=true; writable=false |
+| `vATId` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL VATID varchar(50); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `itemReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `itemCode` | string / null | true | description="CF_ItemTbl.ItemCode; existing document snapshot is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unit` | string / null | true | description="CF_ItemTbl.Unit; existing document unit is retained."; anyOf[0]: —; anyOf[1]: — |
+| `unitPriceDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `amountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `discountAmountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `vATAmountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `totalAmountDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `parentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `parentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `costName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `costReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `storeHouseName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `storeHouseReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `vATName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `vATReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_sales_order_sa_history_pagefedisplay"></a>
+
+### Schema Erp_sales_order_sa_history_pageFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `rows` | array&lt;[Erp_sales_order_sa_history_rowFeDisplay](#schema-erp_sales_order_sa_history_rowfedisplay)&gt; | true | items[0]: — |
+| `page` | integer (int32) | true | — |
+| `pageSize` | integer (int32) | true | — |
+| `hasMore` | boolean | true | — |
+
+<a id="schema-erp_sales_order_sa_history_rowfedisplay"></a>
+
+### Schema Erp_sales_order_sa_history_rowFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `lineId` | string | true | — |
+| `fields` | [Erp_sales_order_sa_history_fieldsFeDisplay](#schema-erp_sales_order_sa_history_fieldsfedisplay) | true | — |
+| `lineName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `lineReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+
+<a id="schema-erp_sales_order_sa_history_fieldsfedisplay"></a>
+
+### Schema Erp_sales_order_sa_history_fieldsFeDisplay
+
+Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
+
+| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
+|---|---|---|---|
+| `userAutoId` | string | true | SQL UserAutoID varchar(50); nullable=false; writable=false |
+| `documentId` | string | true | SQL DocumentID varchar(50); nullable=false; writable=false |
+| `thoiGian` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL ThoiGian datetime; nullable=true; writable=false |
+| `userName` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL UserName nvarchar(50); nullable=true; writable=false |
+| `statusId` | integer / null | true | anyOf[0]: —; anyOf[1]: —; SQL StatusID int; nullable=true; writable=false |
+| `sendTo` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL SendTo nvarchar(max); nullable=true; writable=false |
+| `notes` | string / null | true | anyOf[0]: —; anyOf[1]: —; SQL Notes nvarchar(max); nullable=true; writable=false |
+| `userAutoName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `userAutoReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
+| `thoiGianDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
+| `statusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
+| `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
 
 <a id="schema-erp_sales_orders_list_responsefedisplay"></a>
 
@@ -9774,6 +21401,7 @@ Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presen
 | `history` | [Erp_sales_orders_history_pageFeDisplay](#schema-erp_sales_orders_history_pagefedisplay) | true | — |
 | `comparison` | null | true | — |
 | `actions` | array&lt;[ErpActionStateFeDisplay](#schema-erpactionstatefedisplay)&gt; | true | items[0]: — |
+| `sections` | dictionary&lt;[ErpLinePageFeDisplay](#schema-erplinepagefedisplay)&gt; / null | false | anyOf[0]: additionalProperties={"$ref":"#/components/schemas/ErpLinePageFeDisplay"}; anyOf[1]: — |
 | `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
 | `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
 | `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
@@ -9910,33 +21538,6 @@ Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presen
 | `thoiGianDisplay` | string / null | true | description="dd/MM/yyyy[ HH:mm:ss], or comma-grouped VND (0 decimals) / USD (2 decimals). Raw values retained. Unknown currency/date yields null."; anyOf[0]: —; anyOf[1]: — |
 | `statusName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
 | `statusReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
-
-<a id="schema-erpscopedresponse_erpcontractinfofedisplay"></a>
-
-### Schema ErpScopedResponse_ErpContractInfoFeDisplay
-
-Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
-
-| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
-|---|---|---|---|
-| `readScope` | string | true | — |
-| `data` | [ErpContractInfoFeDisplay](#schema-erpcontractinfofedisplay) / null | true | anyOf[0]: —; anyOf[1]: — |
-
-<a id="schema-erpcontractinfofedisplay"></a>
-
-### Schema ErpContractInfoFeDisplay
-
-Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presentation":"reference-names-v1"}`.
-
-| Field | Kiểu JSON hoặc schema | Bắt buộc | Giới hạn mô tả và nguồn SQL |
-|---|---|---|---|
-| `documentId` | string | true | — |
-| `contractId` | string | true | — |
-| `fields` | dictionary&lt;any JSON&gt; | true | additionalProperties={"description":"Fixed module field or action input; see x-medcom-typed-header, x-medcom-typed-line, x-medcom-typed-payload and x-medcom-full-field-sections on its operation."} |
-| `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
-| `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
-| `contractName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
-| `contractReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
 
 <a id="schema-erp_sales_qr_list_responsefedisplay"></a>
 
@@ -10139,6 +21740,7 @@ Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presen
 | `history` | null | true | — |
 | `comparison` | [Erp_sales_qr_comparison_pageFeDisplay](#schema-erp_sales_qr_comparison_pagefedisplay) | true | — |
 | `actions` | array&lt;[ErpActionStateFeDisplay](#schema-erpactionstatefedisplay)&gt; | true | items[0]: — |
+| `sections` | dictionary&lt;[ErpLinePageFeDisplay](#schema-erplinepagefedisplay)&gt; / null | false | anyOf[0]: additionalProperties={"$ref":"#/components/schemas/ErpLinePageFeDisplay"}; anyOf[1]: — |
 | `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
 | `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
 | `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
@@ -10444,6 +22046,7 @@ Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presen
 | `history` | null | true | — |
 | `comparison` | [Erp_warehouse_qr_comparison_pageFeDisplay](#schema-erp_warehouse_qr_comparison_pagefedisplay) | true | — |
 | `actions` | array&lt;[ErpActionStateFeDisplay](#schema-erpactionstatefedisplay)&gt; | true | items[0]: — |
+| `sections` | dictionary&lt;[ErpLinePageFeDisplay](#schema-erplinepagefedisplay)&gt; / null | false | anyOf[0]: additionalProperties={"$ref":"#/components/schemas/ErpLinePageFeDisplay"}; anyOf[1]: — |
 | `documentName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
 | `documentReferenceState` | string | true | description="available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission." |
 | `branchName` | string / null | true | description="Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged."; anyOf[0]: —; anyOf[1]: — |
@@ -10595,11 +22198,11 @@ Object: `{"type":"object","additionalProperties":false,"x-medcom-response-presen
 <a id="binding-dropdown"></a>
 ## 13 Các binding dropdown theo màn hình
 
-106 binding native; giá trị Multi/Disabled mô tả binding nguồn. API options vẫn kiểm tra user/branch/context và source hash. lookupId giữ nguyên case; tham số ngăn cách bằng dấu chấm phẩy là tên context exact. Nếu không có context thì bỏ hoặc gửi object rỗng. PM options là hai API riêng, không cộng vào 106 binding.
+214 binding native; giá trị Multi/Disabled mô tả binding nguồn. API options vẫn kiểm tra user/branch/context và source hash. lookupId giữ nguyên case; tham số ngăn cách bằng dấu chấm phẩy là tên context exact. Nếu không có context thì bỏ hoặc gửi object rỗng. PM options là hai API riêng, không cộng vào 214 binding.
 
 ### Dropdown purchase-requests
 
-Nguồn: `screens[id=purchase-requests]`, form `AP_PurposeRequestListFrm` trong [six-screen-catalog.json](../../inventories/erp/20261010/six-screen-catalog.json).
+Nguồn: `screens[id=purchase-requests]`, form `AP_PurposeRequestListFrm` trong [catalog CUD/workflow](../../inventories/erp/20261011/cud-workflow-catalog.json) hoặc [catalog bảy form](../../inventories/erp/20261010/six-screen-catalog.json).
 
 | lookupId | Value column | Label column | Context parameters | Required context | Linked columns | Multi | Disabled |
 |---|---|---|---|---|---|---|---|
@@ -10616,7 +22219,7 @@ Nguồn: `screens[id=purchase-requests]`, form `AP_PurposeRequestListFrm` trong 
 
 ### Dropdown sales-orders
 
-Nguồn: `screens[id=sales-orders]`, form `AR_OrderByContractFrm` trong [six-screen-catalog.json](../../inventories/erp/20261010/six-screen-catalog.json).
+Nguồn: `screens[id=sales-orders]`, form `AR_OrderByContractFrm` trong [catalog CUD/workflow](../../inventories/erp/20261011/cud-workflow-catalog.json) hoặc [catalog bảy form](../../inventories/erp/20261010/six-screen-catalog.json).
 
 | lookupId | Value column | Label column | Context parameters | Required context | Linked columns | Multi | Disabled |
 |---|---|---|---|---|---|---|---|
@@ -10629,7 +22232,7 @@ Nguồn: `screens[id=sales-orders]`, form `AR_OrderByContractFrm` trong [six-scr
 
 ### Dropdown internal-transfer-requests
 
-Nguồn: `screens[id=internal-transfer-requests]`, form `IV_InternalTransferRequestFrm` trong [six-screen-catalog.json](../../inventories/erp/20261010/six-screen-catalog.json).
+Nguồn: `screens[id=internal-transfer-requests]`, form `IV_InternalTransferRequestFrm` trong [catalog CUD/workflow](../../inventories/erp/20261011/cud-workflow-catalog.json) hoặc [catalog bảy form](../../inventories/erp/20261010/six-screen-catalog.json).
 
 | lookupId | Value column | Label column | Context parameters | Required context | Linked columns | Multi | Disabled |
 |---|---|---|---|---|---|---|---|
@@ -10644,7 +22247,7 @@ Nguồn: `screens[id=internal-transfer-requests]`, form `IV_InternalTransferRequ
 
 ### Dropdown warehouse-qr
 
-Nguồn: `screens[id=warehouse-qr]`, form `IV_Output_QRCodeFrm` trong [six-screen-catalog.json](../../inventories/erp/20261010/six-screen-catalog.json).
+Nguồn: `screens[id=warehouse-qr]`, form `IV_Output_QRCodeFrm` trong [catalog CUD/workflow](../../inventories/erp/20261011/cud-workflow-catalog.json) hoặc [catalog bảy form](../../inventories/erp/20261010/six-screen-catalog.json).
 
 | lookupId | Value column | Label column | Context parameters | Required context | Linked columns | Multi | Disabled |
 |---|---|---|---|---|---|---|---|
@@ -10666,7 +22269,7 @@ Nguồn: `screens[id=warehouse-qr]`, form `IV_Output_QRCodeFrm` trong [six-scree
 
 ### Dropdown sales-qr
 
-Nguồn: `screens[id=sales-qr]`, form `AR_Invoice_QRCodeFrm` trong [six-screen-catalog.json](../../inventories/erp/20261010/six-screen-catalog.json).
+Nguồn: `screens[id=sales-qr]`, form `AR_Invoice_QRCodeFrm` trong [catalog CUD/workflow](../../inventories/erp/20261011/cud-workflow-catalog.json) hoặc [catalog bảy form](../../inventories/erp/20261010/six-screen-catalog.json).
 
 | lookupId | Value column | Label column | Context parameters | Required context | Linked columns | Multi | Disabled |
 |---|---|---|---|---|---|---|---|
@@ -10720,7 +22323,7 @@ Nguồn: `screens[id=sales-qr]`, form `AR_Invoice_QRCodeFrm` trong [six-screen-c
 
 ### Dropdown machine-movements
 
-Nguồn: `screens[id=machine-movements]`, form `FA_Move2026Frm` trong [six-screen-catalog.json](../../inventories/erp/20261010/six-screen-catalog.json).
+Nguồn: `screens[id=machine-movements]`, form `FA_Move2026Frm` trong [catalog CUD/workflow](../../inventories/erp/20261011/cud-workflow-catalog.json) hoặc [catalog bảy form](../../inventories/erp/20261010/six-screen-catalog.json).
 
 | lookupId | Value column | Label column | Context parameters | Required context | Linked columns | Multi | Disabled |
 |---|---|---|---|---|---|---|---|
@@ -10741,7 +22344,7 @@ Nguồn: `screens[id=machine-movements]`, form `FA_Move2026Frm` trong [six-scree
 
 ### Dropdown machine-repairs
 
-Nguồn: `screens[id=machine-repairs]`, form `FA_Repair2026Frm` trong [six-screen-catalog.json](../../inventories/erp/20261010/six-screen-catalog.json).
+Nguồn: `screens[id=machine-repairs]`, form `FA_Repair2026Frm` trong [catalog CUD/workflow](../../inventories/erp/20261011/cud-workflow-catalog.json) hoặc [catalog bảy form](../../inventories/erp/20261010/six-screen-catalog.json).
 
 | lookupId | Value column | Label column | Context parameters | Required context | Linked columns | Multi | Disabled |
 |---|---|---|---|---|---|---|---|
@@ -10752,10 +22355,202 @@ Nguồn: `screens[id=machine-repairs]`, form `FA_Repair2026Frm` trong [six-scree
 | lines.AssetID | AssetID | AssetID | — | — | AssetID;AssetName;Unit | false | false |
 | lines.AssetName | AssetName | AssetName | — | — | AssetID;AssetName;Unit | true | true |
 
+### Dropdown purchase-orders
+
+Nguồn: `screens[id=purchase-orders]`, form `AP_OrderFrm` trong [catalog CUD/workflow](../../inventories/erp/20261011/cud-workflow-catalog.json) hoặc [catalog bảy form](../../inventories/erp/20261010/six-screen-catalog.json).
+
+| lookupId | Value column | Label column | Context parameters | Required context | Linked columns | Multi | Disabled |
+|---|---|---|---|---|---|---|---|
+| header.BranchID | BranchID | BranchID | — | — | — | false | false |
+| header.CurrencyID | CurrencyID | CurrencyID | — | — | RateExchange | false | false |
+| header.ObjectID | ObjectID | ObjectID | — | — | ObjectID;ObjectName;Address | false | false |
+| lines.ItemID | ItemID | ItemID | — | — | ItemID;ItemName;Unit | false | false |
+| lines.ItemName | ItemName | ItemName | — | — | ItemID;ItemName;Unit | false | false |
+
+### Dropdown inbound-requests
+
+Nguồn: `screens[id=inbound-requests]`, form `IV_InboundRequestFrm` trong [catalog CUD/workflow](../../inventories/erp/20261011/cud-workflow-catalog.json) hoặc [catalog bảy form](../../inventories/erp/20261010/six-screen-catalog.json).
+
+| lookupId | Value column | Label column | Context parameters | Required context | Linked columns | Multi | Disabled |
+|---|---|---|---|---|---|---|---|
+| header.BranchID | BranchID | BranchID | — | — | — | false | false |
+| header.CurrencyID | CurrencyID | CurrencyID | — | — | RateExchange | false | false |
+| header.DamageInsideStatusID | DamageInsideStatusID | DamageInsideStatusName | — | — | DamageInsideStatusID | false | false |
+| header.DestinationPoint | DestinationPoint | DestinationPoint | — | — | DestinationPoint | false | false |
+| header.LocationDamageDetectedID | LocationDamageDetectedID | LocationDamageDetectedName | — | — | LocationDamageDetectedID | false | false |
+| header.ObjectID | ObjectID | ObjectID | — | — | ObjectID;ObjectName | false | false |
+| header.OrderTypeID | OrderTypeID | OrderTypeName | — | — | — | false | false |
+| header.PackageTypeID | PackageTypeID | PackageTypeName | — | — | — | false | false |
+| header.StatusID | StatusID | StatusName | — | — | StatusID | false | false |
+| lines.ContractID | ContractID | ContractID | — | — | — | false | false |
+| lines.CurrencyID | CurrencyID | CurrencyID | — | — | RateExchange | false | true |
+| lines.ItemID | ItemID | ItemID | ContractID | — | ItemName;Unit;HangSX;ItemCode | true | false |
+| lines.OrderTypeID | OrderTypeID | OrderTypeName | — | — | — | false | true |
+| lines.PackageTypeID | PackageTypeID | PackageTypeName | — | — | — | false | true |
+| lines.Unit2 | Unit2 | Unit2 | ItemID | ItemID | Unit2;UnitFactor | false | false |
+| costs.AllocateKind | AllocateKind | AllocateKindName | — | — | — | false | false |
+| costs.CostType | CostType | CostTypeName | — | — | IsAllocatable;AllocateKind | false | false |
+| costs.CurrencyID | CurrencyID | CurrencyID | — | — | RateExchange | false | false |
+| costs.ExpenseAccID | ExpenseAccID | AccountName | — | — | — | false | false |
+| costs.NCC | NCC | ObjectName | — | — | — | false | false |
+| costs.ObjectID | ObjectID | ObjectName | — | — | — | false | false |
+| costs.Status | Status | StatusName | — | — | — | false | false |
+| costs.VATID | VATID | VATName | — | — | VATPercent | false | false |
+
+### Dropdown purchase-approvals
+
+Nguồn: `screens[id=purchase-approvals]`, form `AP_ApprovePurchaseRequestListFrm` trong [catalog CUD/workflow](../../inventories/erp/20261011/cud-workflow-catalog.json) hoặc [catalog bảy form](../../inventories/erp/20261010/six-screen-catalog.json).
+
+| lookupId | Value column | Label column | Context parameters | Required context | Linked columns | Multi | Disabled |
+|---|---|---|---|---|---|---|---|
+| header.BranchID | BranchID | BranchID | — | — | — | false | false |
+| header.CurrencyID | CurrencyID | CurrencyID | — | — | RateExchange | false | false |
+| header.ObjectID | ObjectID | ObjectID | — | — | ObjectID;ObjectName;Address | false | false |
+| header.PurposeID | PurposeID | PurposeName | — | — | PurposeID;PurposeName | false | false |
+| header.StatusID | StatusID | StatusName | — | — | StatusID;StatusName | false | false |
+| lines.ItemID | ItemID | ItemID | — | — | ItemID;ItemName;Unit;HangSX | false | false |
+| list.PurposeID | PurposeID | PurposeName | — | — | PurposeID;PurposeName | false | false |
+| list.StatusID | StatusID | StatusName | — | — | StatusID;StatusName | true | false |
+
+### Dropdown sales-order-pm
+
+Nguồn: `screens[id=sales-order-pm]`, form `AR_OrderComfirmFrm` trong [catalog CUD/workflow](../../inventories/erp/20261011/cud-workflow-catalog.json) hoặc [catalog bảy form](../../inventories/erp/20261010/six-screen-catalog.json).
+
+| lookupId | Value column | Label column | Context parameters | Required context | Linked columns | Multi | Disabled |
+|---|---|---|---|---|---|---|---|
+| header.ContractID | ContractID | ContractID | ObjectID | — | ObjectID;ObjectName | false | false |
+| header.EmployeeID | EmployeeID | EmployeeID | — | — | — | false | false |
+| header.ManagerID | ManagerID | ManagerID | — | — | — | false | false |
+| header.ObjectID | ObjectID | ObjectID | ContractID | — | ObjectName;Address | false | false |
+| header.StatusID | StatusID | StatusName | — | — | — | false | false |
+| lines.ItemID | ItemID | ItemID | Master.ContractID;UserAutoID | — | ItemName;SoLuongHopDong;DeliveryQuantity;VATPercent;UnitPrice;DienGiai;UnitFactor;Unit2 | false | false |
+
+### Dropdown sales-order-sa
+
+Nguồn: `screens[id=sales-order-sa]`, form `AR_OrderAproveFrm` trong [catalog CUD/workflow](../../inventories/erp/20261011/cud-workflow-catalog.json) hoặc [catalog bảy form](../../inventories/erp/20261010/six-screen-catalog.json).
+
+| lookupId | Value column | Label column | Context parameters | Required context | Linked columns | Multi | Disabled |
+|---|---|---|---|---|---|---|---|
+| header.ContractID | ContractID | ContractID | ObjectID | — | ObjectID;ObjectName | false | false |
+| header.EmployeeID | EmployeeID | EmployeeID | — | — | — | false | false |
+| header.ManagerID | ManagerID | ManagerID | — | — | — | false | false |
+| header.ObjectID | ObjectID | ObjectID | ContractID | — | ObjectName;Address | false | false |
+| header.StatusID | StatusID | StatusName | — | — | — | false | false |
+| lines.ItemID | ItemID | ItemID | Master.ContractID;UserAutoID | — | ItemName;SoLuongHopDong;DeliveryQuantity;VATPercent;UnitPrice;DienGiai;UnitFactor;Unit2 | false | false |
+
+### Dropdown internal-transfer-pm
+
+Nguồn: `screens[id=internal-transfer-pm]`, form `IV_InternalTransferPMFrm` trong [catalog CUD/workflow](../../inventories/erp/20261011/cud-workflow-catalog.json) hoặc [catalog bảy form](../../inventories/erp/20261010/six-screen-catalog.json).
+
+| lookupId | Value column | Label column | Context parameters | Required context | Linked columns | Multi | Disabled |
+|---|---|---|---|---|---|---|---|
+| header.AssignedPM | UserName | UserName | FromBranchID | FromBranchID | — | false | false |
+| header.BranchID | BranchID | BranchID | — | — | — | false | false |
+| header.FromBranchID | BranchID | BranchID | — | — | — | false | false |
+| header.ToBranchID | BranchID | BranchID | — | — | — | false | false |
+| header.TransportMethod | ID | Name | — | — | — | false | false |
+| lines.ExpectedObjectID | ObjectID | ObjectID | — | — | ExpectedObjectName | false | false |
+| lines.ItemID | ItemID | ItemID | — | — | ItemCode,ItemName,Unit,HangSX,isLot | false | false |
+| lines.RequestedAssetID | AssetID | AssetID | ItemID | ItemID | RequestedAssetName | false | false |
+
+### Dropdown internal-transfer-batches
+
+Nguồn: `screens[id=internal-transfer-batches]`, form `IV_InternalTransferBatchFrm` trong [catalog CUD/workflow](../../inventories/erp/20261011/cud-workflow-catalog.json) hoặc [catalog bảy form](../../inventories/erp/20261010/six-screen-catalog.json).
+
+| lookupId | Value column | Label column | Context parameters | Required context | Linked columns | Multi | Disabled |
+|---|---|---|---|---|---|---|---|
+| header.AssignedPM | UserName | HoTen | FromBranchID | FromBranchID | — | false | false |
+| header.AssignedSA | UserName | HoTen | FromBranchID | FromBranchID | — | false | false |
+| header.AssignedTechnician | UserName | HoTen | FromBranchID | FromBranchID | — | false | false |
+| header.FromBranchID | BranchID | BranchName | — | — | — | false | false |
+| header.FromStoreHouseID | StoreHouseID | StoreHouseID | FromBranchID | FromBranchID | — | false | false |
+| header.ToBranchID | BranchID | BranchName | — | — | — | false | false |
+| header.ToStoreHouseID | StoreHouseID | StoreHouseID | ToBranchID | ToBranchID | — | false | false |
+| header.TransportMethod | ID | Name | — | — | — | false | false |
+| lines.RequestID | DocumentID | DocumentID | Master.FromBranchID;Master.ToBranchID | Master.FromBranchID;Master.ToBranchID | DocumentDate;SalesUser;SalesName;FromBranchName;ToBranchName;RequestedTransferDate | false | false |
+
+### Dropdown internal-transfer-tech
+
+Nguồn: `screens[id=internal-transfer-tech]`, form `IV_InternalTransferTechFrm` trong [catalog CUD/workflow](../../inventories/erp/20261011/cud-workflow-catalog.json) hoặc [catalog bảy form](../../inventories/erp/20261010/six-screen-catalog.json).
+
+| lookupId | Value column | Label column | Context parameters | Required context | Linked columns | Multi | Disabled |
+|---|---|---|---|---|---|---|---|
+| header.AssignedPM | UserName | HoTen | FromBranchID | FromBranchID | — | false | false |
+| header.AssignedSA | UserName | HoTen | FromBranchID | FromBranchID | — | false | false |
+| header.AssignedTechnician | UserName | HoTen | FromBranchID | FromBranchID | — | false | false |
+| header.FromBranchID | BranchID | BranchName | — | — | — | false | false |
+| header.FromStoreHouseID | StoreHouseID | StoreHouseName | FromBranchID | FromBranchID | — | false | false |
+| header.ToBranchID | BranchID | BranchName | — | — | — | false | false |
+| header.ToStoreHouseID | StoreHouseID | StoreHouseName | ToBranchID | ToBranchID | — | false | false |
+| header.TransportMethod | ID | Name | — | — | — | false | false |
+| assets.AssetID | AssetID | AssetID | BatchDetailID | BatchDetailID | AssetName,SerialNo,ItemID | false | false |
+
+### Dropdown internal-transfer-sa
+
+Nguồn: `screens[id=internal-transfer-sa]`, form `IV_InternalTransferSAFrm` trong [catalog CUD/workflow](../../inventories/erp/20261011/cud-workflow-catalog.json) hoặc [catalog bảy form](../../inventories/erp/20261010/six-screen-catalog.json).
+
+| lookupId | Value column | Label column | Context parameters | Required context | Linked columns | Multi | Disabled |
+|---|---|---|---|---|---|---|---|
+| header.AssignedPM | UserName | HoTen | FromBranchID | FromBranchID | — | false | false |
+| header.AssignedSA | UserName | HoTen | FromBranchID | FromBranchID | — | false | false |
+| header.AssignedTechnician | UserName | HoTen | FromBranchID | FromBranchID | — | false | false |
+| header.FromBranchID | BranchID | BranchID | — | — | — | false | false |
+| header.FromStoreHouseID | StoreHouseID | StoreHouseName | FromBranchID | FromBranchID | — | false | false |
+| header.ToBranchID | BranchID | BranchID | — | — | — | false | false |
+| header.ToStoreHouseID | StoreHouseID | StoreHouseName | ToBranchID | ToBranchID | — | false | false |
+| header.TransportMethod | ID | Name | — | — | — | false | false |
+
+### Dropdown internal-transfer-accounting
+
+Nguồn: `screens[id=internal-transfer-accounting]`, form `IV_InternalTransferAccountingFrm` trong [catalog CUD/workflow](../../inventories/erp/20261011/cud-workflow-catalog.json) hoặc [catalog bảy form](../../inventories/erp/20261010/six-screen-catalog.json).
+
+| lookupId | Value column | Label column | Context parameters | Required context | Linked columns | Multi | Disabled |
+|---|---|---|---|---|---|---|---|
+| header.AssignedPM | UserName | HoTen | FromBranchID | FromBranchID | — | false | false |
+| header.AssignedSA | UserName | HoTen | FromBranchID | FromBranchID | — | false | false |
+| header.AssignedTechnician | UserName | HoTen | FromBranchID | FromBranchID | — | false | false |
+| header.FromBranchID | BranchID | BranchName | — | — | — | false | false |
+| header.FromStoreHouseID | StoreHouseID | StoreHouseID | FromBranchID | FromBranchID | — | false | false |
+| header.OutputDocumentID | DocumentID | DocumentID | FromStoreHouseID | FromStoreHouseID | — | false | false |
+| header.ToBranchID | BranchID | BranchName | — | — | — | false | false |
+| header.ToStoreHouseID | StoreHouseID | StoreHouseID | ToBranchID | ToBranchID | — | false | false |
+| header.TransportMethod | ID | Name | — | — | — | false | false |
+
+### Dropdown internal-transfer-warehouse-out
+
+Nguồn: `screens[id=internal-transfer-warehouse-out]`, form `IV_InternalTransferWarehouseOutFrm` trong [catalog CUD/workflow](../../inventories/erp/20261011/cud-workflow-catalog.json) hoặc [catalog bảy form](../../inventories/erp/20261010/six-screen-catalog.json).
+
+| lookupId | Value column | Label column | Context parameters | Required context | Linked columns | Multi | Disabled |
+|---|---|---|---|---|---|---|---|
+| header.AssignedPM | UserName | HoTen | FromBranchID | FromBranchID | — | false | false |
+| header.AssignedSA | UserName | UserName | FromBranchID | FromBranchID | — | false | false |
+| header.AssignedTechnician | UserName | UserName | FromBranchID | FromBranchID | — | false | false |
+| header.FromBranchID | BranchID | BranchName | — | — | — | false | false |
+| header.FromStoreHouseID | StoreHouseID | StoreHouseID | FromBranchID | FromBranchID | — | false | false |
+| header.ToBranchID | BranchID | BranchName | — | — | — | false | false |
+| header.ToStoreHouseID | StoreHouseID | StoreHouseID | ToBranchID | ToBranchID | — | false | false |
+| header.TransportMethod | ID | Name | — | — | — | false | false |
+
+### Dropdown internal-transfer-warehouse-in
+
+Nguồn: `screens[id=internal-transfer-warehouse-in]`, form `IV_InternalTransferWarehouseInFrm` trong [catalog CUD/workflow](../../inventories/erp/20261011/cud-workflow-catalog.json) hoặc [catalog bảy form](../../inventories/erp/20261010/six-screen-catalog.json).
+
+| lookupId | Value column | Label column | Context parameters | Required context | Linked columns | Multi | Disabled |
+|---|---|---|---|---|---|---|---|
+| header.AssignedPM | UserName | HoTen | FromBranchID | FromBranchID | — | false | false |
+| header.AssignedSA | UserName | HoTen | FromBranchID | FromBranchID | — | false | false |
+| header.AssignedTechnician | UserName | HoTen | FromBranchID | FromBranchID | — | false | false |
+| header.FromBranchID | BranchID | BranchName | — | — | — | false | false |
+| header.FromStoreHouseID | StoreHouseID | StoreHouseID | FromBranchID | FromBranchID | — | false | false |
+| header.InputDocumentID | DocumentID | DocumentID | ToStoreHouseID | ToStoreHouseID | — | false | false |
+| header.ToBranchID | BranchID | BranchName | — | — | — | false | false |
+| header.ToStoreHouseID | StoreHouseID | StoreHouseID | ToBranchID | ToBranchID | — | false | false |
+| header.TransportMethod | ID | Name | — | — | — | false | false |
+
 <a id="bang-chung"></a>
 ## 14 Field hợp đồng và nguồn bằng chứng
 
-Hai contract-info endpoint trả các cột của `dbo.CF_ContractTbl` trong `data.fields` với tên native. Bảng dưới là metadata snapshot SELECT-only 2026-10-10, không phải row hợp đồng thật. Không có schema typed riêng liệt kê từng key của dictionary hợp đồng trong OpenAPI; reader lấy cột hiện hành và bỏ tên nhạy cảm. Vì vậy field đổi ở DB cần đối chiếu response/metadata trước khi FE đặt cột bắt buộc. Quyền/scope giữ theo phiếu và branch của contract.
+Bốn contract-info endpoint trả các cột của `dbo.CF_ContractTbl` trong `data.fields` với tên native. Bảng dưới là metadata snapshot SELECT-only 2026-10-10, không phải row hợp đồng thật. Không có schema typed riêng liệt kê từng key của dictionary hợp đồng trong OpenAPI; reader lấy cột hiện hành và bỏ tên nhạy cảm. Vì vậy field đổi ở DB cần đối chiếu response/metadata trước khi FE đặt cột bắt buộc. Quyền/scope giữ theo phiếu và branch của contract.
 
 | Field trong data.fields | Kiểu SQL | Nullable |
 |---|---|---|
@@ -10784,7 +22579,7 @@ Hai contract-info endpoint trả các cột của `dbo.CF_ContractTbl` trong `da
 
 | Nội dung | Bằng chứng chính |
 |---|---|
-| Method/path/body/schema của 120 operation | `src/backend/Medcom.Api/ApiContractCatalog.cs`; `docs/backend/medcom-openapi.json`; các *Endpoints.cs cùng thư mục; contract xuất từ host đã build; live xác nhận riêng trong checkpoint PR 139. |
+| Method/path/body/schema của 243 operation | `src/backend/Medcom.Api/ApiContractCatalog.cs`; `docs/backend/medcom-openapi.json`; các *Endpoints.cs cùng thư mục; contract xuất từ host đã build; live xác nhận riêng trong checkpoint PR 140. |
 | Schema field và kiểu/null | `src/backend/Medcom.Contracts/*`; `inventories/erp/20261010/six-screen-catalog.json`; `inventories/source/20261010/document-read-tables.json`; `docs/backend/document-field-contract.json`. |
 | Dropdown và context | `ErpScreenCatalog.cs`, `ErpLookupSql.cs`, `SqlErpScreenLookups.cs`; các binding SY_FrmDrdwTbl trong catalog. |
 | CUD và native effects | `ErpCommandRules.cs`, `ErpActionRules.cs`, `SqlErpScreenCommands.cs`, `SqlErpScreenEffects.cs`, `SqlErpDocumentNumberAllocator.cs`; journal schema v1. |
@@ -10798,4 +22593,4 @@ Library baseline `ERP_Medcom2026(4).zip` và `Medcom-Data (3)(1).zip` giữ hash
 
 Tài liệu chỉ gồm technical metadata, tên object và ví dụ tổng hợp. Không chứa password thật, connection string có secret, SQL body riêng tư, thông báo/hợp đồng hoặc transaction row thật. Hành vi chưa được xác nhận được ghi UNKNOWN và tiếp tục theo [goal 45](../goals/PRODUCTION_ERP_GOAL.md).
 
-SHA-256 file OpenAPI UTF-8/LF xuất từ host (checkout CRLF có thể khác byte): `0767f10f4df98b58f98bffd7b12785f1c92841cda3670f645e403bfd4512310f`.
+SHA-256 file OpenAPI UTF-8/LF xuất từ host (checkout CRLF có thể khác byte): `92738555ff6f8aab59fd06fd604b9f0cbeb35897b3e1cc6a646c2eff89f8cca7`.

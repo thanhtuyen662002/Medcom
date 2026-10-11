@@ -9,14 +9,14 @@ public sealed class ErpScreenRulesTests
     [Fact]
     public void Catalog_preserves_current_seven_forms_and_all_417_source_fields()
     {
-        Assert.Equal(7,ErpScreenCatalog.ModuleIds.Count);
-        Assert.Equal(417,ErpScreenCatalog.ModuleIds.Sum(module=>ErpScreenCatalog.Get(module)!.Fields.Sum(section=>section.Value.Count)));
+        Assert.Equal(19,ErpScreenCatalog.ModuleIds.Count);
+        Assert.Equal(417,ErpScreenCatalog.ModuleIds.Where(m=>!ErpScreenCatalog.IsWorkflow(m)).Sum(module=>ErpScreenCatalog.Get(module)!.Fields.Sum(section=>section.Value.Count)));
         Assert.Equal("AR_OrderByContractFrm",ErpScreenCatalog.Get("sales-orders")!.FormId);
         Assert.Equal("FA_Move2026Frm",ErpScreenCatalog.Get("machine-movements")!.FormId);
         Assert.Equal("FA_Repair2026Frm",ErpScreenCatalog.Get("machine-repairs")!.FormId);
         Assert.Null(ErpScreenCatalog.Get("AP_OrderTbl"));
         Assert.Null(ErpScreenCatalog.Get("sales-orders;DROP TABLE X"));
-        Assert.Equal(106,ErpScreenCatalog.ModuleIds.Sum(module=>ErpScreenCatalog.Get(module)!.Lookups.Count));
+        Assert.Equal(106,ErpScreenCatalog.ModuleIds.Where(m=>!ErpScreenCatalog.IsWorkflow(m)).Sum(module=>ErpScreenCatalog.Get(module)!.Lookups.Count));
         Assert.Equal(14,ErpScreenCatalog.SourceMetadata.GetProperty("screens").EnumerateArray().Sum(row=>row.GetProperty("buttons").GetArrayLength()));
     }
     [Theory]

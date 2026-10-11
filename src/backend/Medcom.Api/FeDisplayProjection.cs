@@ -19,12 +19,14 @@ internal static partial class FeDisplayProjection
     {"Amount","AmountCost","AmountTotal","BaseTotal","CouponAmount","DepositAmount","DiscountAmount","DiscountAmount2",
      "DiscountAmountTT","DiscountTotal","ExportAmount","LaborAmount","PartsAmount","PhiKhacTotal","Price","SourceAmount",
      "TotalAmount","TotalPrice","UnitPrice","UnitPriceV","VATAmount","VATAmountTotal","CreditMax","CreditMax2","CreditMin",
-     "Budget","PhiKhac","PhiVanChuyen","SoTienKM","TongTienNhom1","TongTienNhom2","TongTienNhomFyto","UnitCost"};
+     "Budget","PhiKhac","PhiVanChuyen","SoTienKM","TongTienNhom1","TongTienNhom2","TongTienNhomFyto","UnitCost","Cost"};
     private static readonly HashSet<string> DateNames=new(StringComparer.OrdinalIgnoreCase)
     {"AttachDate","DateCreate","DateUpdate","DebtDueDate","DeliverDate","DocumentDate","DueDate","EffectiveFrom","EffectiveTo",
      "EndDate","ExpireDate","HandoverDate","NextServiceDate","NgayGiaoLai","NgayHoaDon","NgayPhieu","PMConfirmedAt","PurchaseDate",
      "ReferenceDate","RequestedTransferDate","StartDate","ThoiGian","DatetimeRecorded","ExpireDateByDocument","ExpireDateByReal",
      "MsgTime","ViewDate","ExpireAt","WarrantyFrom","WarrantyTo","UsingDate","DepreDate","StopDate","LiquidationDate",
+     "BatchDate","PlannedTransferDate","ActualDispatchDate","ActualReceiveDate","TechnicalCheckedAt","SAApprovedAt",
+     "AccountingConfirmedAt","AddedAt","CheckedAt","TechCheckedAt","InvoiceDate",
      "NgayChungTu","CustomsDeclarationDate","OriginDocumentDate","Birthday","NgayThanhLap"};
     private static readonly HashSet<string> TechnicalIds=new(StringComparer.OrdinalIgnoreCase)
     {"DocumentID","PurchaseRequestID","UserAutoID","LineID","ParentID","LinkID","QRPackageID","UID","AuditID","ModuleID","FormID",
@@ -40,13 +42,12 @@ internal static partial class FeDisplayProjection
         &&(method.Equals("get",StringComparison.OrdinalIgnoreCase)||path.EndsWith("/options",StringComparison.Ordinal)
             ||path.EndsWith("/selection",StringComparison.Ordinal)||path.EndsWith("/paste/validate",StringComparison.Ordinal)
             ||path.EndsWith("/read",StringComparison.Ordinal));
-    internal static string? Module(string path)=>new[]{"internal-transfer-requests","purchase-requests","purchase-orders","inbound-requests",
-        "sales-orders","warehouse-qr","sales-qr","machine-movements","machine-repairs"}.FirstOrDefault(x=>path.Split('/').Contains(x,StringComparer.Ordinal));
+    internal static string? Module(string path)=>ErpScreenCatalog.ModuleIds.FirstOrDefault(x=>path.Split('/').Contains(x,StringComparer.Ordinal));
     private static string? FormModule(string? form)=>form switch
     {"AP_PurposeRequestListFrm"=>"purchase-requests","AP_OrderFrm"=>"purchase-orders","IV_InboundRequestFrm"=>"inbound-requests",
      "AR_OrderByContractFrm"=>"sales-orders","IV_InternalTransferRequestFrm"=>"internal-transfer-requests",
      "IV_Output_QRCodeFrm"=>"warehouse-qr","AR_Invoice_QRCodeFrm"=>"sales-qr","FA_Move2026Frm"=>"machine-movements",
-     "FA_Repair2026Frm"=>"machine-repairs",_=>null};
+     "FA_Repair2026Frm"=>"machine-repairs",_=>ErpScreenCatalog.ModuleIds.Select(ErpScreenCatalog.Get).SingleOrDefault(s=>s!.FormId==form)?.Id};
     internal static string? Text(JsonNode? value)=>value is JsonValue v&&v.TryGetValue<string>(out var s)?s:null;
     private static string? Key(JsonNode? value)=>value is JsonValue v?v.GetValueKind() switch
     {JsonValueKind.String=>Text(v),JsonValueKind.Number=>v.ToJsonString(),_=>null}:null;
@@ -95,14 +96,14 @@ internal static partial class FeDisplayProjection
                 if(field.Key.Equals("id",StringComparison.OrdinalIgnoreCase)&&binding is null)name=Text(Get(row,"label"))??Text(Get(row,"title"));
                 var state=found is not null?found.State:name is not null?"available":key is null?"empty":TechnicalIds.Contains(field.Key)?"identifier"
                     :binding is null?"unknown":found?.State??fallback;
-                var nameField=NameField(field.Key);if(!row.ContainsKey(nameField))row[nameField]=name;
+                var nameField=NameField(field.Key);if(!row.ContainsKey(nameField)||row[nameField] is null)row[nameField]=name;
                 var stateField=StateField(field.Key);if(!row.ContainsKey(stateField))row[stateField]=state;
                 if(field.Key.Equals("ItemID",StringComparison.OrdinalIgnoreCase))
                 {
                     var native=field.Key.EndsWith("ID",StringComparison.Ordinal);
                     var code=native?"ItemCode":"itemCode";var unit=native?"Unit":"unit";
-                    if(!row.ContainsKey(code))row[code]=Text(Get(row,"manufacturerItemCode"))??found?.Extra.GetValueOrDefault("ItemCode");
-                    if(!row.ContainsKey(unit))row[unit]=found?.Extra.GetValueOrDefault("Unit");
+                    if(!row.ContainsKey(code)||row[code] is null)row[code]=Text(Get(row,"manufacturerItemCode"))??found?.Extra.GetValueOrDefault("ItemCode");
+                    if(!row.ContainsKey(unit)||row[unit] is null)row[unit]=found?.Extra.GetValueOrDefault("Unit");
                 }
             }
             if(IsDisplay(field.Key))
