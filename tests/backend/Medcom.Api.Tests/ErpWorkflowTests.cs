@@ -7,6 +7,17 @@ namespace Medcom.Api.Tests;
 
 public sealed class ErpWorkflowTests
 {
+    [Fact]
+    public void Contract_inspection_cannot_change_the_served_contract_or_other_callers()
+    {
+        var copy=ApiContractCatalog.Build();
+        var original=copy["paths"]!["/api/erp/inbound-requests/create"]!.DeepClone();
+        copy["paths"]!["/api/erp/inbound-requests/create"]=null;
+        Assert.True(System.Text.Json.Nodes.JsonNode.DeepEquals(original,
+            ApiContractCatalog.Build()["paths"]!["/api/erp/inbound-requests/create"]));
+        Assert.True(System.Text.Json.Nodes.JsonNode.DeepEquals(ApiContractCatalog.Build(),
+            System.Text.Json.Nodes.JsonNode.Parse(ApiContractCatalog.Json)));
+    }
     private static ErpActionContext State(string module,int status,string actor="primary")=>new(module,actor,"SYNTHETIC-DOC",status,false,
         actor,null,1,false,false,new(true,true,true,true),true,WorkflowFields:new Dictionary<string,object?>
         {{"assignedPM","primary"},{"assignedTechnician","primary"},{"assignedSA","primary"},{"sendTo","primary; supporting"}});

@@ -13,13 +13,18 @@ namespace Medcom.Api;
 internal static class ApiContractCatalog
 {
     internal const string Path = "/api/contracts/openapi.json";
-    private static readonly string Document = Build().ToJsonString();
+    private static readonly JsonObject Template = BuildCore();
+    private static readonly string Document = Template.ToJsonString();
     internal static string Json => Document;
 
     internal static void Map(WebApplication app) => app.MapGet(Path,
         () => Results.Text(Document, "application/json", System.Text.Encoding.UTF8)).AllowAnonymous();
 
-    internal static JsonObject Build()
+    // The contract depends only on compiled public metadata. Give callers an isolated
+    // tree without repeating reflection/source reconciliation for every inspection.
+    internal static JsonObject Build() => (JsonObject)Template.DeepClone();
+
+    private static JsonObject BuildCore()
     {
         var schemas = new Schemas();
         var paths = new JsonObject();

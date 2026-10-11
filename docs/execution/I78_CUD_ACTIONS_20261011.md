@@ -37,3 +37,7 @@ Historical approved Library baseline identities: ERP_Medcom2026(4).zip and Medco
 Integration, protected BE profile expansion to 19 modules and live deployment verification: PENDING. Do not interpret the registered new routes as already deployed before the observed release checkpoint.
 
 CI repair: first implementation head b50bf7c exposed a stale container COPY allowlist assertion and missing workflow-catalog Docker context exception. The fixed context admits only the exact sanitized catalog; Docker contract/count and positive/negative context tests cover it. All 22 source-only deploy tests observed, 16 PASS and six platform/opt-in skips; actual Docker smoke remains a required CI check, not a local claim. Full local suite still pending; exact-head CI must pass before integration.
+
+Contract inspection performance: cache the compiled public contract template and return a DeepClone to each inspector. The served JSON is unchanged, and a regression test verifies that a caller cannot mutate another caller or the public document. That test PASS (403 ms); fresh Release build has zero warnings/errors. This addresses repeated schema reflection during the expanded parallel test load; earlier local 20-second HTTPS timeouts are disclosed, not waived or relabeled as success.
+
+Owner-local ERP.NET.exe and Tools.dll were rehashed on 2026-10-11; hashes match the distinct current source-round metadata (20b512b6… / 7019a26a…), without claiming approved-archive equivalence.
