@@ -110,37 +110,75 @@ export function TabPurchases({
         if (res && res.list && res.list.rows) {
           setCurrentScopeKey(res.scopeKey);
           const mapped: PurchaseItem[] = res.list.rows.map((r) => {
+            const raw = r as Record<string, unknown>;
             const f = r.fields;
             let status: PurchaseItem["status"] = "draft";
             if (r.statusId === 2) status = "approved";
             else if (r.statusId === 1) status = "pending";
             else if (r.statusId === 3 || r.statusId === -1) status = "rejected";
 
+            const branchId = r.branchId || (raw.branchId as string) || currentBranch || "CN01";
             const branchLabel =
-              r.branchId === "CN01"
+              branchId === "CN01"
                 ? "Chi nhánh 1 (Trung tâm)"
-                : r.branchId === "CN02"
+                : branchId === "CN02"
                 ? "Chi nhánh 2 (Kho Dược)"
-                : `Chi nhánh ${r.branchId}`;
+                : `Chi nhánh ${branchId}`;
 
-            const dateStr = f?.purchaseDate ? f.purchaseDate.slice(0, 10) : r.purchaseDate ? r.purchaseDate.slice(0, 10) : "—";
-            const totalStr = f?.price ? formatVND(f.price, f.currencyId || "VND") : "Chi tiết dòng";
-            const purposeStr = f?.purposeDescOrClient || f?.notes || `Yêu cầu bổ sung thuốc / vật tư y tế [${r.documentId}]`;
+            const dateStr = f?.purchaseDate
+              ? f.purchaseDate.slice(0, 10)
+              : r.purchaseDate
+              ? r.purchaseDate.slice(0, 10)
+              : (raw.purchaseDate as string)
+              ? String(raw.purchaseDate).slice(0, 10)
+              : "—";
+            const priceVal =
+              f?.price ||
+              (raw.price as string) ||
+              (raw.totalAmount as string) ||
+              (raw.baseTotal as string);
+            const currencyVal = f?.currencyId || (raw.currencyId as string) || "VND";
+            const totalStr = priceVal ? formatVND(priceVal, currencyVal) : "Chi tiết dòng";
+            const purposeStr =
+              f?.purposeDescOrClient ||
+              (raw.purposeDescOrClient as string) ||
+              f?.notes ||
+              (raw.notes as string) ||
+              (raw.purpose as string) ||
+              `Yêu cầu bổ sung thuốc / vật tư y tế [${r.documentId}]`;
+            const creatorStr =
+              f?.personSuggest ||
+              (raw.personSuggest as string) ||
+              r.personSuggest ||
+              (raw.creator as string) ||
+              (raw.userCreate as string) ||
+              "Dược sĩ phụ trách";
+            const deptStr =
+              f?.department ||
+              (raw.department as string) ||
+              r.department ||
+              "Kho Dược GSP";
 
             return {
               id: r.documentId,
               code: r.documentId,
               date: dateStr,
-              creator: f?.personSuggest || r.personSuggest || "Dược sĩ phụ trách",
-              department: f?.department || r.department || "Kho Dược GSP",
+              creator: creatorStr,
+              department: deptStr,
               branch: branchLabel,
               purpose: purposeStr,
               status,
               totalAmount: totalStr,
-              notes: f?.notes,
-              currencyId: f?.currencyId,
-              objectId: f?.objectId,
-              rateExchange: f?.rateExchange,
+              notes: f?.notes || (raw.notes as string),
+              currencyId: f?.currencyId || (raw.currencyId as string) || "VND",
+              rateExchange:
+                typeof f?.rateExchange === "number"
+                  ? f.rateExchange
+                  : typeof raw.rateExchange === "number"
+                  ? raw.rateExchange
+                  : typeof raw.rateExchange === "string" && !isNaN(Number(raw.rateExchange))
+                  ? Number(raw.rateExchange)
+                  : undefined,
               headerFields: f,
               lines: [],
             };

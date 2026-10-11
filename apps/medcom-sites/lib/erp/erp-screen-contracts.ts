@@ -64,61 +64,78 @@ export type ErpScreenDescription = z.infer<typeof erpScreenDescriptionSchema>;
 
 export const erpDocumentRowSchema = z
   .object({
-    documentId: z.string().min(1),
+    documentId: z.string().optional(),
     header: z.record(z.string(), z.unknown()).optional(),
   })
   .passthrough()
   .transform((data) => {
     const raw = data as Record<string, unknown>;
+    const docId =
+      data.documentId ||
+      String(
+        raw.documentId ||
+          raw.purchaseRequestId ||
+          raw.batchId ||
+          raw.orderNumber ||
+          raw.voucherNo ||
+          raw.documentNo ||
+          raw.id ||
+          ""
+      );
     const header: Record<string, unknown> = data.header ? { ...raw, ...data.header } : { ...raw };
     return {
       ...raw,
-      documentId: data.documentId,
+      documentId: docId,
       header,
     };
   });
 export type ErpDocumentRow = z.infer<typeof erpDocumentRowSchema>;
 
-export const erpDocumentPageSchema = z.object({
-  rows: z.array(erpDocumentRowSchema),
-  page: z.number().int().positive(),
-  pageSize: z.number().int().positive(),
-  hasMore: z.boolean(),
-});
+export const erpDocumentPageSchema = z
+  .object({
+    rows: z.array(erpDocumentRowSchema).default([]),
+    page: z.number().int().default(1),
+    pageSize: z.number().int().default(20),
+    hasMore: z.boolean().default(false),
+  })
+  .passthrough();
 export type ErpDocumentPage = z.infer<typeof erpDocumentPageSchema>;
 
 export const erpLineRowSchema = z
   .object({
-    lineId: z.string(),
+    lineId: z.string().optional(),
     fields: z.record(z.string(), z.unknown()).optional(),
   })
   .passthrough()
   .transform((data) => {
     const raw = data as Record<string, unknown>;
+    const lineId = data.lineId || String(raw.lineId || raw.id || raw.itemCode || raw.itemId || "");
     const fields: Record<string, unknown> = data.fields ? { ...raw, ...data.fields } : { ...raw };
     return {
       ...raw,
-      lineId: data.lineId,
+      lineId,
       fields,
     };
   });
 export type ErpLineRow = z.infer<typeof erpLineRowSchema>;
 
-export const erpLinePageSchema = z.object({
-  rows: z.array(erpLineRowSchema),
-  page: z.number().int().positive(),
-  pageSize: z.number().int().positive(),
-  hasMore: z.boolean(),
-});
+export const erpLinePageSchema = z
+  .object({
+    rows: z.array(erpLineRowSchema).default([]),
+    page: z.number().int().default(1),
+    pageSize: z.number().int().default(20),
+    hasMore: z.boolean().default(false),
+  })
+  .passthrough();
 export type ErpLinePage = z.infer<typeof erpLinePageSchema>;
 
 export const erpDocumentDetailSchema = z
   .object({
     documentId: z.string().optional(),
     branchId: z.string().optional(),
-    stateToken: z.string(),
-    header: z.record(z.string(), z.unknown()),
-    lines: erpLinePageSchema,
+    stateToken: z.string().nullable().optional(),
+    header: z.record(z.string(), z.unknown()).optional(),
+    lines: erpLinePageSchema.default({ rows: [], page: 1, pageSize: 20, hasMore: false }),
     history: erpLinePageSchema.nullable().optional(),
     comparison: erpLinePageSchema.nullable().optional(),
     actions: z.array(erpActionStateSchema).default([]),
@@ -130,9 +147,26 @@ export const erpDocumentDetailSchema = z
   })
   .passthrough()
   .transform((data) => {
-    const rawHeader = data.header as Record<string, unknown>;
-    const docId = data.documentId || String(rawHeader.documentId || rawHeader.purchaseRequestId || rawHeader.batchId || "");
-    const brId = data.branchId || String(rawHeader.branchId || rawHeader.fromBranchId || "");
+    const raw = data as Record<string, unknown>;
+    const rawHeader = (data.header ? { ...raw, ...data.header } : { ...raw }) as Record<string, unknown>;
+    const docId =
+      data.documentId ||
+      String(
+        rawHeader.documentId ||
+          rawHeader.purchaseRequestId ||
+          rawHeader.batchId ||
+          rawHeader.orderNumber ||
+          raw.documentId ||
+          ""
+      );
+    const brId =
+      data.branchId ||
+      String(
+        rawHeader.branchId ||
+          rawHeader.fromBranchId ||
+          raw.branchId ||
+          ""
+      );
     const header: Record<string, unknown> = {
       ...rawHeader,
       documentId: docId,
@@ -142,6 +176,7 @@ export const erpDocumentDetailSchema = z
       ...data,
       documentId: docId,
       branchId: brId,
+      stateToken: data.stateToken ?? "",
       header,
     };
   });

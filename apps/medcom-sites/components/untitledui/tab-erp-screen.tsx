@@ -955,8 +955,9 @@ export function TabErpScreen({
 
   // Filter rows locally if needed
   const displayRows = rows.filter((r) => {
-    if (statusFilter === "locked") return r.header?.isLocked === true || r.header?.isLocked === 1;
-    if (statusFilter === "open") return r.header?.isLocked === false || r.header?.isLocked === 0;
+    const isLocked = r.header?.isLocked ?? (r as Record<string, unknown>).isLocked;
+    if (statusFilter === "locked") return isLocked === true || isLocked === 1 || isLocked === "1";
+    if (statusFilter === "open") return isLocked === false || isLocked === 0 || isLocked === "0" || isLocked == null;
     return true;
   });
 
@@ -1022,12 +1023,18 @@ export function TabErpScreen({
               {
                 id: "open",
                 label: "Đang mở / Chưa khóa",
-                count: rows.filter((r) => r.header?.isLocked === false || r.header?.isLocked === 0).length,
+                count: rows.filter((r) => {
+                  const isLocked = r.header?.isLocked ?? (r as Record<string, unknown>).isLocked;
+                  return isLocked === false || isLocked === 0 || isLocked === "0" || isLocked == null;
+                }).length,
               },
               {
                 id: "locked",
                 label: "Đã khóa / Hoàn tất",
-                count: rows.filter((r) => r.header?.isLocked === true || r.header?.isLocked === 1).length,
+                count: rows.filter((r) => {
+                  const isLocked = r.header?.isLocked ?? (r as Record<string, unknown>).isLocked;
+                  return isLocked === true || isLocked === 1 || isLocked === "1";
+                }).length,
               },
             ].map((chip) => {
               const isSelected = statusFilter === chip.id;

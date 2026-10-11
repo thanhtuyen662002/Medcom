@@ -109,14 +109,25 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
 
         if (pageData && pageData.rows) {
           const mapped: OrderItem[] = pageData.rows.map((r) => {
+            const raw = r as Record<string, unknown>;
             const h = r.purchaseOrderHeader;
-            const formattedTotal = h?.baseTotal
-              ? formatVND(h.baseTotal, h.currencyId || "VND")
+            const baseTotal =
+              h?.baseTotal ||
+              (raw.baseTotal as string) ||
+              (raw.totalAmount as string) ||
+              (raw.amount as string);
+            const currencyId = h?.currencyId || (raw.currencyId as string) || "VND";
+            const formattedTotal = baseTotal
+              ? formatVND(baseTotal, currencyId)
               : "Theo chi tiết đơn";
 
             return {
               documentId: r.documentId,
-              documentDate: h?.documentDate ? h.documentDate.slice(0, 10) : (r.documentDate || "—"),
+              documentDate: h?.documentDate
+                ? h.documentDate.slice(0, 10)
+                : r.documentDate
+                ? r.documentDate.slice(0, 10)
+                : "—",
               branchId: r.branchId || selectedBranch || "CN01",
               statusId: r.statusId,
               statusName:
@@ -127,14 +138,32 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
                   ? "Chờ phê duyệt"
                   : "Bản nháp"),
               isLocked: r.isLocked ?? false,
-              supplier: h?.objectId ? `NCC: ${h.objectId}` : "Nhà cung cấp dược Medcom",
-              creator: h?.userCreate || "Dược sĩ phụ trách",
+              supplier:
+                h?.objectId
+                  ? `NCC: ${h.objectId}`
+                  : (raw.objectId as string)
+                  ? `NCC: ${raw.objectId}`
+                  : (raw.vendorName as string) || (raw.supplierName as string) || "Nhà cung cấp dược Medcom",
+              creator:
+                h?.userCreate ||
+                (raw.userCreate as string) ||
+                (raw.creator as string) ||
+                "Dược sĩ phụ trách",
               totalAmount: formattedTotal,
-              notes: h?.notes || h?.memo || `Đơn đặt hàng ${r.documentId}`,
-              memo: h?.memo,
-              deliverDate: h?.deliverDate ? h.deliverDate.slice(0, 10) : null,
-              currencyId: h?.currencyId || "VND",
-              contractId: h?.contractId,
+              notes:
+                h?.notes ||
+                h?.memo ||
+                (raw.notes as string) ||
+                (raw.memo as string) ||
+                `Đơn đặt hàng ${r.documentId}`,
+              memo: h?.memo || (raw.memo as string),
+              deliverDate: h?.deliverDate
+                ? h.deliverDate.slice(0, 10)
+                : (raw.deliverDate as string)
+                ? String(raw.deliverDate).slice(0, 10)
+                : null,
+              currencyId,
+              contractId: h?.contractId || (raw.contractId as string),
               purchaseOrderHeader: h,
               lines: [],
             };
@@ -181,18 +210,40 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
           prev
             ? {
                 ...prev,
-                purchaseOrderHeader: detail.document.purchaseOrderHeader || prev.purchaseOrderHeader,
+                purchaseOrderHeader:
+                  detail.document.purchaseOrderHeader ||
+                  prev.purchaseOrderHeader,
                 lines: detail.purchaseOrderLines.map((l) => {
                   const f = l.fields;
-                  const priceStr = f?.unitPrice ? formatVND(f.unitPrice, prev.currencyId || "VND") : "Theo hợp đồng";
-                  const amtStr = f?.amount ? formatVND(f.amount, prev.currencyId || "VND") : "Theo hợp đồng";
+                  const rawL = l as Record<string, unknown>;
+                  const unitPriceVal = f?.unitPrice || (rawL.unitPrice as string);
+                  const amountVal = f?.amount || (rawL.amount as string);
+                  const priceStr = unitPriceVal
+                    ? formatVND(unitPriceVal, prev.currencyId || "VND")
+                    : "Theo hợp đồng";
+                  const amtStr = amountVal
+                    ? formatVND(amountVal, prev.currencyId || "VND")
+                    : "Theo hợp đồng";
+                  const itemName =
+                    (f as Record<string, unknown> | undefined)?.itemName ||
+                    (rawL.itemName as string) ||
+                    (rawL.itemDescription as string) ||
+                    `Mã dược phẩm: ${l.itemId}`;
+                  const unit =
+                    f?.property2 ||
+                    (rawL.property2 as string) ||
+                    (rawL.unit as string) ||
+                    "Hộp/Đơn vị";
+                  const qty = f?.quantity || l.quantity || (rawL.quantity as string) || "1";
+                  const qty2 = f?.quantity2 || l.quantity2 || (rawL.quantity2 as string) || "1";
+
                   return {
                     lineId: l.lineId,
                     itemId: l.itemId,
-                    itemName: `Mã dược phẩm: ${l.itemId}`,
-                    unit: f?.property2 || "Hộp/Đơn vị",
-                    quantity: f?.quantity || l.quantity || "1",
-                    quantity2: f?.quantity2 || l.quantity2 || "1",
+                    itemName: String(itemName),
+                    unit: String(unit),
+                    quantity: String(qty),
+                    quantity2: String(qty2),
                     unitPrice: priceStr,
                     amount: amtStr,
                     fields: f,

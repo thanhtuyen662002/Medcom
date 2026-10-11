@@ -110,27 +110,55 @@ export const inboundRequestLineFieldsSchema = z.object({
   parentId: z.string().max(50).nullable().optional()
 });
 
-export const rowSchema=z.object({
-  documentId:z.string().min(1).max(50),
-  documentDate:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  branchId:z.string().min(1),
-  statusId:z.number().int().nullable(),
-  statusName:z.string().max(100).nullable().optional(),
-  isLocked:z.boolean().nullable(),
-  purchaseOrderHeader:purchaseOrderHeaderSchema.optional(),
-  inboundRequestHeader:inboundRequestHeaderSchema.optional()
+export const rowSchema = z
+  .object({
+    documentId: z.string().min(1).max(50),
+    documentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}(?:[T\s].*)?$/),
+    branchId: z.string().min(1),
+    statusId: z.number().int().nullable(),
+    statusName: z.string().max(100).nullable().optional(),
+    isLocked: z.boolean().nullable(),
+    purchaseOrderHeader: purchaseOrderHeaderSchema.optional(),
+    inboundRequestHeader: inboundRequestHeaderSchema.optional(),
+  })
+  .passthrough();
+export const pageSchema = z.object({
+  rows: z.array(rowSchema).max(100),
+  page: z.number().int().positive(),
+  pageSize: z.number().int().positive().max(100),
+  hasMore: z.boolean(),
 });
-export const pageSchema=z.object({rows:z.array(rowSchema).max(100),page:z.number().int().positive(),pageSize:z.number().int().positive().max(100),hasMore:z.boolean()});
-const decimal=z.string().regex(/^-?\d{1,28}(?:\.\d{1,4})?$/).nullable();const line=z.object({lineId:z.string(),itemId:z.string()});
-const detailBase=z.object({
-  itemDisplayContext:itemDisplayContextSchema.nullable().optional(),
-  document:rowSchema,
-  purchaseOrderLines:z.array(line.extend({quantity:decimal,quantity2:decimal,fields:purchaseOrderLineFieldsSchema.optional()})).max(100),
-  inboundRequestLines:z.array(line.extend({setQuantityByDocument:decimal,barrelQuantityByDocument:decimal,setQuantityByReal:decimal,barrelQuantityByReal:decimal,fields:inboundRequestLineFieldsSchema.optional()})).max(100),
-  page:z.number().int().positive(),
-  pageSize:z.number().int().positive().max(100),
-  hasMore:z.boolean()
-}).strict();
+const decimal = z.string().regex(/^-?\d{1,28}(?:\.\d{1,4})?$/).nullable();
+const line = z.object({ lineId: z.string(), itemId: z.string() });
+const detailBase = z
+  .object({
+    itemDisplayContext: itemDisplayContextSchema.nullable().optional(),
+    document: rowSchema,
+    purchaseOrderLines: z
+      .array(
+        line.extend({
+          quantity: decimal,
+          quantity2: decimal,
+          fields: purchaseOrderLineFieldsSchema.optional(),
+        }).passthrough()
+      )
+      .max(100),
+    inboundRequestLines: z
+      .array(
+        line.extend({
+          setQuantityByDocument: decimal,
+          barrelQuantityByDocument: decimal,
+          setQuantityByReal: decimal,
+          barrelQuantityByReal: decimal,
+          fields: inboundRequestLineFieldsSchema.optional(),
+        }).passthrough()
+      )
+      .max(100),
+    page: z.number().int().positive(),
+    pageSize: z.number().int().positive().max(100),
+    hasMore: z.boolean(),
+  })
+  .passthrough();
 function detailBinding(value:z.infer<typeof detailBase>):ItemDisplayBinding{
  return {kind:value.inboundRequestLines.length?"inbound-requests":value.purchaseOrderLines.length?"purchase-orders":value.itemDisplayContext?.kind??"purchase-orders",
   documentId:value.document.documentId,branchId:value.document.branchId,stateToken:null,statusId:value.document.statusId,
