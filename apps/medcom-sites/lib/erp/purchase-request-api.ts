@@ -12,19 +12,21 @@ const header=z.object({purchaseDate:wallClock,purposeId:z.number().int().nullabl
 const values=z.object({itemId:id,budget:decimal.nullable(),timeRequired:text.nullable(),quantity:decimal,unitPrice:decimal,totalPrice:decimal.nullable(),model:text.nullable()}).passthrough();
 const document=z.object({purchaseRequestId:id.optional(),documentId:id.optional(),branchId:id.optional(),header,statusId:z.number().int().optional(),isLocked:z.boolean().nullable().optional(),
  lines:z.array(z.object({lineId:id,values:values.optional()}).passthrough()).max(500)}).passthrough().transform(doc => {
-  const purchaseRequestId = doc.purchaseRequestId ?? doc.documentId ?? (doc.header as any)?.purchaseRequestId ?? (doc.header as any)?.documentId ?? "";
-  const branchId = doc.branchId ?? (doc.header as any)?.branchId ?? "";
-  const statusId = doc.statusId ?? (doc.header as any)?.statusId ?? 1;
-  const isLocked = doc.isLocked ?? (doc.header as any)?.isLocked ?? null;
+  const h = (doc.header || {}) as Record<string, unknown>;
+  const purchaseRequestId = doc.purchaseRequestId ?? doc.documentId ?? (typeof h.purchaseRequestId === "string" ? h.purchaseRequestId : (typeof h.documentId === "string" ? h.documentId : "")) ?? "";
+  const branchId = doc.branchId ?? (typeof h.branchId === "string" ? h.branchId : "") ?? "";
+  const statusId = doc.statusId ?? (typeof h.statusId === "number" ? h.statusId : 1);
+  const isLocked = doc.isLocked ?? (typeof h.isLocked === "boolean" ? h.isLocked : null);
   const lines = doc.lines.map(line => {
+    const lRecord = line as Record<string, unknown>;
     const vals = line.values ?? {
-      itemId: (line as any).itemId ?? "",
-      budget: (line as any).budget ?? null,
-      timeRequired: (line as any).timeRequired ?? null,
-      quantity: (line as any).quantity ?? "0",
-      unitPrice: (line as any).unitPrice ?? "0",
-      totalPrice: (line as any).totalPrice ?? null,
-      model: (line as any).model ?? null
+      itemId: typeof lRecord.itemId === "string" ? lRecord.itemId : "",
+      budget: typeof lRecord.budget === "string" ? lRecord.budget : null,
+      timeRequired: typeof lRecord.timeRequired === "string" ? lRecord.timeRequired : null,
+      quantity: typeof lRecord.quantity === "string" ? lRecord.quantity : "0",
+      unitPrice: typeof lRecord.unitPrice === "string" ? lRecord.unitPrice : "0",
+      totalPrice: typeof lRecord.totalPrice === "string" ? lRecord.totalPrice : null,
+      model: typeof lRecord.model === "string" ? lRecord.model : null
     };
     return { ...line, lineId: line.lineId, values: vals };
   });
