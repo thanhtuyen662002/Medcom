@@ -1,0 +1,705 @@
+{
+  "status": "PASS",
+  "observedAtUtc": "2026-10-11T06:57:37.191367+00:00",
+  "sourceRevision": "b50bf7c",
+  "sourceCatalogSha256": "1a043ce268726f643407ee136449d75e5d3feba43e15edc3ddd4dd0c70cae289",
+  "nativeActionChecks": 102,
+  "auxiliaryChecks": 33,
+  "privateArtifacts": [
+    {
+      "name": "native-checks.json",
+      "sha256": "1cc429eb1eb849388a31ad2d46dd7a5c942a22a800467afa93227449143e6615",
+      "checks": 102
+    },
+    {
+      "name": "aux-checks.json",
+      "sha256": "5da6a2c836b7373f0d6a4db2b571fd589e894ecb7bdecf0b70216fad26ab0349",
+      "checks": 33
+    }
+  ],
+  "checks": [
+    {
+      "name": "purchase-orders create",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "purchase-orders detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "purchase-orders replay",
+      "passed": true,
+      "outcome": null
+    },
+    {
+      "name": "purchase-orders save",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "purchase-orders detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "purchase-orders stale conflict",
+      "passed": true,
+      "outcome": "document_state_changed"
+    },
+    {
+      "name": "purchase-orders delete",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "inbound-requests create",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "inbound-requests detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "inbound-requests replay",
+      "passed": true,
+      "outcome": null
+    },
+    {
+      "name": "inbound-requests save",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "inbound-requests detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "inbound-requests stale conflict",
+      "passed": true,
+      "outcome": "document_state_changed"
+    },
+    {
+      "name": "inbound-requests delete",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "internal-transfer-batches create",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "internal-transfer-batches detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "internal-transfer-batches replay",
+      "passed": true,
+      "outcome": null
+    },
+    {
+      "name": "internal-transfer-batches save",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "internal-transfer-batches detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "internal-transfer-batches stale conflict",
+      "passed": true,
+      "outcome": "document_state_changed"
+    },
+    {
+      "name": "internal-transfer-batches delete",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "readonly preparation qualifies all modules",
+      "passed": true,
+      "outcome": null
+    },
+    {
+      "name": "inbound-requests detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "inbound-requests send-management",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "inbound-requests send-management replay",
+      "passed": true,
+      "outcome": "Replayed"
+    },
+    {
+      "name": "inbound-requests detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "inbound-requests send-warehouse",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "inbound-requests send-warehouse replay",
+      "passed": true,
+      "outcome": "Replayed"
+    },
+    {
+      "name": "purchase-approvals detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "purchase-approvals reject",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "purchase-approvals reject replay",
+      "passed": true,
+      "outcome": "Replayed"
+    },
+    {
+      "name": "purchase-approvals detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "purchase-approvals approve",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "purchase-approvals approve replay",
+      "passed": true,
+      "outcome": "Replayed"
+    },
+    {
+      "name": "sales-order-pm contract-info",
+      "passed": true,
+      "outcome": null
+    },
+    {
+      "name": "sales-order-pm detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "sales-order-pm send-sa",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "sales-order-pm send-sa replay",
+      "passed": true,
+      "outcome": "Replayed"
+    },
+    {
+      "name": "sales-order-pm detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "sales-order-pm reject",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "sales-order-pm reject replay",
+      "passed": true,
+      "outcome": "Replayed"
+    },
+    {
+      "name": "sales-order-sa contract-info",
+      "passed": true,
+      "outcome": null
+    },
+    {
+      "name": "sales-order-sa detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "sales-order-sa send-accounting",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "sales-order-sa send-accounting replay",
+      "passed": true,
+      "outcome": "Replayed"
+    },
+    {
+      "name": "sales-order-sa detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "sales-order-sa send-tech",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "sales-order-sa send-tech replay",
+      "passed": true,
+      "outcome": "Replayed"
+    },
+    {
+      "name": "sales-order-sa detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "sales-order-sa reject",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "sales-order-sa reject replay",
+      "passed": true,
+      "outcome": "Replayed"
+    },
+    {
+      "name": "sales-order-sa detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "sales-order-sa return-step",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "sales-order-sa return-step replay",
+      "passed": true,
+      "outcome": "Replayed"
+    },
+    {
+      "name": "internal-transfer-pm detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "internal-transfer-pm pm-confirm",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "internal-transfer-pm pm-confirm replay",
+      "passed": true,
+      "outcome": "Replayed"
+    },
+    {
+      "name": "internal-transfer-pm detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "internal-transfer-pm reject",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "internal-transfer-pm reject replay",
+      "passed": true,
+      "outcome": "Replayed"
+    },
+    {
+      "name": "internal-transfer-batches detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "internal-transfer-batches sync-requests",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "internal-transfer-batches sync-requests replay",
+      "passed": true,
+      "outcome": "Replayed"
+    },
+    {
+      "name": "internal-transfer-batches detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "internal-transfer-batches send-tech",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "internal-transfer-batches send-tech replay",
+      "passed": true,
+      "outcome": "Replayed"
+    },
+    {
+      "name": "internal-transfer-tech detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "internal-transfer-tech send-sa",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "internal-transfer-tech send-sa replay",
+      "passed": true,
+      "outcome": "Replayed"
+    },
+    {
+      "name": "internal-transfer-tech detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "internal-transfer-tech reject",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "internal-transfer-tech reject replay",
+      "passed": true,
+      "outcome": "Replayed"
+    },
+    {
+      "name": "internal-transfer-sa detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "internal-transfer-sa send-accounting",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "internal-transfer-sa send-accounting replay",
+      "passed": true,
+      "outcome": "Replayed"
+    },
+    {
+      "name": "internal-transfer-sa detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "internal-transfer-sa reject",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "internal-transfer-sa reject replay",
+      "passed": true,
+      "outcome": "Replayed"
+    },
+    {
+      "name": "internal-transfer-sa detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "internal-transfer-sa return-step",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "internal-transfer-sa return-step replay",
+      "passed": true,
+      "outcome": "Replayed"
+    },
+    {
+      "name": "internal-transfer-accounting detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "internal-transfer-accounting send-warehouse",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "internal-transfer-accounting send-warehouse replay",
+      "passed": true,
+      "outcome": "Replayed"
+    },
+    {
+      "name": "internal-transfer-accounting detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "internal-transfer-accounting reject",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "internal-transfer-accounting reject replay",
+      "passed": true,
+      "outcome": "Replayed"
+    },
+    {
+      "name": "internal-transfer-accounting detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "internal-transfer-accounting return-step",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "internal-transfer-accounting return-step replay",
+      "passed": true,
+      "outcome": "Replayed"
+    },
+    {
+      "name": "internal-transfer-warehouse-out detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "internal-transfer-warehouse-out dispatch",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "internal-transfer-warehouse-out dispatch replay",
+      "passed": true,
+      "outcome": "Replayed"
+    },
+    {
+      "name": "internal-transfer-warehouse-out detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "internal-transfer-warehouse-out reject",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "internal-transfer-warehouse-out reject replay",
+      "passed": true,
+      "outcome": "Replayed"
+    },
+    {
+      "name": "internal-transfer-warehouse-out detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "internal-transfer-warehouse-out return-step",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "internal-transfer-warehouse-out return-step replay",
+      "passed": true,
+      "outcome": "Replayed"
+    },
+    {
+      "name": "internal-transfer-warehouse-in detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "internal-transfer-warehouse-in receive",
+      "passed": true,
+      "outcome": "Committed"
+    },
+    {
+      "name": "internal-transfer-warehouse-in receive replay",
+      "passed": true,
+      "outcome": "Replayed"
+    },
+    {
+      "name": "inbound create for costs",
+      "passed": true,
+      "outcome": null
+    },
+    {
+      "name": "inbound-requests detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "cost add",
+      "passed": true,
+      "outcome": null
+    },
+    {
+      "name": "cost replay",
+      "passed": true,
+      "outcome": null
+    },
+    {
+      "name": "inbound-requests detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "native cost formula",
+      "passed": true,
+      "outcome": null
+    },
+    {
+      "name": "native VAT formula",
+      "passed": true,
+      "outcome": null
+    },
+    {
+      "name": "cost update",
+      "passed": true,
+      "outcome": null
+    },
+    {
+      "name": "inbound-requests detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "cost remove",
+      "passed": true,
+      "outcome": null
+    },
+    {
+      "name": "native purchase price read",
+      "passed": true,
+      "outcome": null
+    },
+    {
+      "name": "inbound-requests detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "multiple cost rows",
+      "passed": true,
+      "outcome": null
+    },
+    {
+      "name": "cost section remains paged",
+      "passed": true,
+      "outcome": null
+    },
+    {
+      "name": "state token covers all cost pages",
+      "passed": true,
+      "outcome": null
+    },
+    {
+      "name": "internal-transfer-batches detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "scoped sync actual request",
+      "passed": true,
+      "outcome": null
+    },
+    {
+      "name": "linked request in batch",
+      "passed": true,
+      "outcome": null
+    },
+    {
+      "name": "sync creates asset",
+      "passed": true,
+      "outcome": null
+    },
+    {
+      "name": "unrelated orphan unchanged",
+      "passed": true,
+      "outcome": null
+    },
+    {
+      "name": "internal-transfer-tech detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "tech asset update",
+      "passed": true,
+      "outcome": null
+    },
+    {
+      "name": "internal-transfer-tech detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "asset condition persisted",
+      "passed": true,
+      "outcome": null
+    },
+    {
+      "name": "internal-transfer-batches detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "sync removes association",
+      "passed": true,
+      "outcome": null
+    },
+    {
+      "name": "removed request restored by custody history",
+      "passed": true,
+      "outcome": null
+    },
+    {
+      "name": "removed assets deleted",
+      "passed": true,
+      "outcome": null
+    },
+    {
+      "name": "other batch request still unchanged",
+      "passed": true,
+      "outcome": null
+    },
+    {
+      "name": "internal-transfer-sa detail",
+      "passed": true,
+      "outcome": "Success"
+    },
+    {
+      "name": "blank native rejection rollback",
+      "passed": true,
+      "outcome": "native_action_rejected"
+    },
+    {
+      "name": "failed action no receipt commit",
+      "passed": true,
+      "outcome": null
+    },
+    {
+      "name": "failed action preserves status",
+      "passed": true,
+      "outcome": null
+    }
+  ],
+  "fixtureMode": "owned local synthetic SQL Server; concrete writer and native procedure definitions",
+  "fixtureTables": 627,
+  "nativeModuleClosure": 100,
+  "nativeDefaults": 36,
+  "expressionPins": 5,
+  "fixtureNativeConstraintsIndexesTriggers": "NOT_EXHAUSTIVE",
+  "productionBusinessWrites": false,
+  "productionAccepted": false
+}
