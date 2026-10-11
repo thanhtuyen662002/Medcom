@@ -240,7 +240,7 @@ class DockerSmokeTests(unittest.TestCase):
                           '--env', 'Medcom__PrivateConfigPath=/unreadable/private-fixture.json',
                           container, 'dotnet', '/app/Medcom.Api.dll', '--print-api-contract', timeout=15).stdout
         self.assertEqual(json.loads(exported), expected)
-        self.assertEqual(sum(len(item) for item in expected['paths'].values()), 119)
+        self.assertEqual(sum(len(item) for item in expected['paths'].values()), 120)
         for path, method in [('/api/notifications', 'get'), ('/api/notifications/{id}', 'get'),
                              ('/api/notifications/{id}/target', 'get'), ('/api/notifications/{id}/read', 'post')]:
             self.assertIn(method, expected['paths'][path])
