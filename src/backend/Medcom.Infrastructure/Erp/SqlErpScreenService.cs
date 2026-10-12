@@ -77,7 +77,7 @@ public sealed partial class SqlErpScreenService:IErpScreenService
             var state=await SqlErpScreenReader.ActionContext(transaction,identity,plan,branch,rights,snapshot,commands?.IsQualified(module)==true,token);
             state=state with{NumberingQualified=commands?.CanExecute(module,"create")==true};
             return new(ErpReadOutcome.Success,new ErpDocumentDetail(document,branch,SqlErpScreenReader.StateToken(snapshot),snapshot.Header,
-                lines,history,comparison,ErpActionRules.Evaluate(state),extra));
+                lines,history,comparison,ErpActionRules.ForDisplay(state),extra));
         },token);
     }
     public Task<ErpReadResult<IReadOnlyList<ErpActionState>>> ActionsAsync(string module,string branch,string? document,CancellationToken token)
@@ -89,7 +89,7 @@ public sealed partial class SqlErpScreenService:IErpScreenService
             if(document is not null&&snapshot is null)return new(ErpReadOutcome.NotFound);
             var state=await SqlErpScreenReader.ActionContext(transaction,identity,plan,branch,rights,snapshot,commands?.IsQualified(module)==true,token);
             state=state with{NumberingQualified=commands?.CanExecute(module,"create")==true};
-            return new(ErpReadOutcome.Success,ErpActionRules.Evaluate(state));
+            return new(ErpReadOutcome.Success,ErpActionRules.ForDisplay(state));
         },token);
     }
     public Task<ErpReadResult<ErpDraftSelection>> PasteAsync(string module,ErpPasteRequest request,CancellationToken token)

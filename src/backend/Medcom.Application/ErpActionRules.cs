@@ -11,6 +11,23 @@ public sealed record ErpActionContext(string Module,string Actor,string? Documen
 
 public static class ErpActionRules
 {
+    public static bool IsCudOperation(string operation)=>operation is "create" or "save" or "delete"
+        or "scan-add" or "scan-delete" or "save-costs" or "save-assets";
+    // Presentation only, per owner UI-test request. Never use this for command admission.
+    public static IReadOnlyList<ErpActionState> ForDisplay(ErpActionContext state)
+    {
+        var screen=ErpScreenCatalog.Get(state.Module);
+        return Array.AsReadOnly(Evaluate(state).Select(action=>
+        {
+            var definition=screen!.Actions.Single(item=>item.Id==action.Id);
+            return IsCudOperation(definition.Operation)
+                ?action with{Visible=true,Enabled=true,Reason=null,Route=Route(state.Module,definition.Operation)}:action;
+        }).ToArray());
+    }
+    public static ErpScreenDescription ForDisplay(ErpScreenDescription screen)=>screen with
+    {Actions=Array.AsReadOnly(screen.Actions.Select(action=>IsCudOperation(action.Operation)
+        ?action with{NativeVisible=true,LockExpression=null}:action).ToArray())};
+
     public static IReadOnlyList<ErpActionState> Evaluate(ErpActionContext state)
     {
         if(ErpScreenCatalog.Get(state.Module)is not {} screen)return Array.Empty<ErpActionState>();
@@ -33,14 +50,18 @@ public static class ErpActionRules
         if(reason is null&&action.Operation=="contract-info"&&!state.ContractReadQualified)reason="contract_read_unqualified";
         if(reason is null&&action.Operation.StartsWith("print",StringComparison.Ordinal)&&!state.ReportsQualified)reason="report_runtime_unqualified";
         var operation=action.Operation;
+        return new(action.Id,action.Caption,visible,reason is null,reason,action.RequiresSavedDocument,
+            visible&&!operation.StartsWith("print",StringComparison.Ordinal)?Route(state.Module,operation):null);
+    }
+    private static string Route(string module,string operation)
+    {
         var suffix=operation switch
         {"create"=>"create","save"=>"save","delete"=>"delete","paste"=>"paste/validate",
           "contract-info"=>"contract-info","scan-add"=>"qr/add","scan-delete"=>"qr/delete",
           _ when operation.StartsWith("save-",StringComparison.Ordinal)=>"sections/"+operation[5..]+"/save",
           _ when operation.StartsWith("print",StringComparison.Ordinal)=>"reports/"+operation,
           _=>"actions/"+operation};
-        return new(action.Id,action.Caption,visible,reason is null,reason,action.RequiresSavedDocument,
-            visible&&!operation.StartsWith("print",StringComparison.Ordinal)?"/api/erp/"+state.Module+"/"+suffix:null);
+        return "/api/erp/"+module+"/"+suffix;
     }
     public static bool StateAllows(ErpActionContext state,string operation)
     {
