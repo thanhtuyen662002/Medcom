@@ -25,6 +25,11 @@ public interface IWebSessions
 {
     ResolvedSession? Create(AuthoritativeIdentity identity);
     Task<ResolvedSession?> ResolveAsync(string token, bool userInteraction, CancellationToken cancellationToken);
+    // Passive reads may share a successful observation completed while they were
+    // waiting. A request beginning after it completes must revalidate again.
+    // This is not a time-based authority cache and never extends session activity.
+    Task<ResolvedSession?> ResolveReadAsync(string token, CancellationToken cancellationToken)
+        => ResolveAsync(token, false, cancellationToken);
     // Liveness only, never proof of current database authority. Implementations without
     // a local session store conservatively retain full revalidation.
     Task<ResolvedSession?> InspectAsync(string token, CancellationToken cancellationToken)

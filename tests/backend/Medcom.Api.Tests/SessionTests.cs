@@ -380,6 +380,8 @@ public sealed class SessionTests
         var implementation = new ConservativeSessions(); IWebSessions sessions = implementation;
         Assert.Null(await sessions.InspectAsync("synthetic-token", default));
         Assert.Equal(1, implementation.Calls); Assert.False(implementation.UserInteraction);
+        Assert.Null(await sessions.ResolveReadAsync("synthetic-token", default));
+        Assert.Equal(2, implementation.Calls); Assert.False(implementation.UserInteraction);
     }
 
     private sealed class ConservativeSessions : IWebSessions
@@ -442,6 +444,91 @@ public sealed class SessionTests
         clock.Advance(TimeSpan.FromMinutes(10));
         Assert.Null(await sessions.InspectAsync(session.Token, default));
         Assert.Null(await sessions.ResolveAsync(session.Token, true, default));
+    }
+
+    [Fact]
+    public async Task Nineteen_overlapping_reads_share_one_observation_and_next_request_observes_changed_rights()
+    {
+        var users = new GatedLegacyUsers(); var clock = new ManualClock();
+        var (sessions, session) = await LegacySession(users, clock);
+        users.DelayNextRead = true;
+        var first = sessions.ResolveReadAsync(session.Token, default);
+        await users.ReadEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        var pending = Enumerable.Range(0,18).Select(_=>sessions.ResolveReadAsync(session.Token,default)).ToArray();
+        Assert.All(pending, task=>Assert.False(task.IsCompleted));
+        users.ReleaseRead.SetResult();
+        var results = await Task.WhenAll(pending.Prepend(first)).WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.All(results, result=>{
+            Assert.NotNull(result); Assert.Equal(results[0]!.Identity,result.Identity);
+            Assert.Equal(session.View.IdleExpiresAt,result.View.IdleExpiresAt);
+        });
+        Assert.Equal(2,users.Reads); // Login plus one shared observation.
+        users.User=users.User with{Capabilities=[],BranchIds=[]};
+        var next=await sessions.ResolveReadAsync(session.Token,default);
+        Assert.NotNull(next); Assert.Equal(new[]{"platform.status"},next.Identity.Capabilities); Assert.Empty(next.Identity.BranchIds!);
+        Assert.True(next.Identity.AuthorityVersion>results[0]!.Identity.AuthorityVersion);
+        Assert.Equal(3,users.Reads);
+    }
+
+    [Theory]
+    [InlineData("logout")]
+    [InlineData("expiry")]
+    [InlineData("disabled")]
+    [InlineData("password")]
+    public async Task Shared_read_observation_never_revives_invalid_authority(string change)
+    {
+        var users=new GatedLegacyUsers(); var clock=new ManualClock();
+        var(sessions,session)=await LegacySession(users,clock); users.DelayNextRead=true;
+        var first=sessions.ResolveReadAsync(session.Token,default);
+        await users.ReadEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        var second=sessions.ResolveReadAsync(session.Token,default);
+        if(change=="logout")sessions.Revoke(session.Token);
+        else if(change=="expiry")clock.Advance(TimeSpan.FromMinutes(10));
+        else users.User=change=="disabled"?users.User with{Disabled=true}:users.User with{StoredHash="changed-hash"};
+        users.ReleaseRead.SetResult();
+        Assert.All(await Task.WhenAll(first,second),result=>Assert.Null(result));
+        Assert.Null(await sessions.ResolveReadAsync(session.Token,default)); Assert.Equal(2,users.Reads);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Writes_and_explicit_interactions_never_reuse_an_overlapping_read(bool interaction)
+    {
+        var users=new GatedLegacyUsers(); var(sessions,session)=await LegacySession(users,new ManualClock());
+        users.DelayNextRead=true; var read=sessions.ResolveReadAsync(session.Token,default);
+        await users.ReadEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        var mutation=sessions.ResolveAsync(session.Token,interaction,default);
+        users.ReleaseRead.SetResult();
+        var results=await Task.WhenAll(read,mutation);
+        Assert.All(results,result=>Assert.NotNull(result));
+        Assert.True(results[1]!.Identity.AuthorityVersion>results[0]!.Identity.AuthorityVersion); Assert.Equal(3,users.Reads);
+    }
+
+    [Fact]
+    public async Task Cancelled_read_waiter_does_not_cancel_the_shared_observation()
+    {
+        var users=new GatedLegacyUsers(); var(sessions,session)=await LegacySession(users,new ManualClock());
+        users.DelayNextRead=true; var first=sessions.ResolveReadAsync(session.Token,default);
+        await users.ReadEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        using var cancel=new CancellationTokenSource();
+        var cancelled=sessions.ResolveReadAsync(session.Token,cancel.Token);
+        var other=sessions.ResolveReadAsync(session.Token,default); cancel.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(()=>cancelled);
+        Assert.False(other.IsCompleted); users.ReleaseRead.SetResult();
+        Assert.All(await Task.WhenAll(first,other),result=>Assert.NotNull(result)); Assert.Equal(2,users.Reads);
+    }
+
+    [Fact]
+    public async Task Cancelled_read_leader_requires_a_new_database_observation_for_waiters()
+    {
+        var users=new GatedLegacyUsers(); var(sessions,session)=await LegacySession(users,new ManualClock());
+        using var cancel=new CancellationTokenSource(); users.DelayNextRead=true;
+        var first=sessions.ResolveReadAsync(session.Token,cancel.Token);
+        await users.ReadEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        var other=sessions.ResolveReadAsync(session.Token,default); cancel.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(()=>first);
+        Assert.NotNull(await other.WaitAsync(TimeSpan.FromSeconds(5))); Assert.Equal(3,users.Reads);
     }
 
     private static async Task<(LocalWebSessions Sessions, ResolvedSession Session)> LegacySession(
