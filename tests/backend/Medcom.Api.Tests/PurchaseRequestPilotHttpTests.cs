@@ -41,7 +41,7 @@ public sealed class PurchaseRequestPilotHttpTests
         Assert.True(initial.CommandAccess!.CanSave);
         Assert.True(initial.CommandAccess.CanSubmit);
         Assert.True(initial.CommandAccess.CanLookup);
-        Assert.False(initial.CommandAccess.CanAddLines);
+        Assert.True(initial.CommandAccess.CanAddLines);
         Assert.Equal(PurchaseRequestCommandRules.EqualityToken(host.Document), initial.StateToken);
 
         var original = host.Save("http-save") with
@@ -81,7 +81,7 @@ public sealed class PurchaseRequestPilotHttpTests
         Assert.Equal(2, host.Model.Journal.Count);
         var locked = await host.Detail();
         Assert.Equal(Json(submitted.Receipt.Document), Json(locked.Document));
-        Assert.False(locked.CommandAccess!.CanSave);
+        Assert.True(locked.CommandAccess!.CanSave);
         Assert.False(locked.CommandAccess.CanSubmit);
         Assert.True(locked.CommandAccess.CanLookup);
 
@@ -430,7 +430,8 @@ public sealed class PurchaseRequestPilotHttpTests
         Assert.False(host.Factory.RuntimeAccepted);
         await host.Login();
         var detail = await host.Detail();
-        Assert.False(detail.CommandAccess!.CanSave);
+        Assert.True(detail.CommandAccess!.CanSave);
+        Assert.True(detail.CommandAccess.CanAddLines);
         Assert.False(detail.CommandAccess.CanSubmit);
         Assert.False(detail.CommandAccess.CanLookup);
         using var denied = await host.Send("save", host.Save("http-production-still-off"));
