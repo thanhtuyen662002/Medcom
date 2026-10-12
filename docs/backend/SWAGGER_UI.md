@@ -56,3 +56,11 @@ CI đầu PR149 (run `38197496469`) vượt budget Windows 20 phút: bộ BE tes
 đạt nhưng inspector tests bị hủy ngay khi bắt đầu và thiếu TRX. Budget được
 đưa lên 30 phút trong `.github/workflows/ci-policy.yml`; mọi kiểm tra và yêu
 cầu artifact vẫn giữ nguyên. Chỉ merge khi CI của head/base hiện tại đạt.
+
+Kiểm tra triển khai sau PR149 phát hiện HTTP 500 trên `/swagger/index.html`:
+`.dockerignore` chưa đưa ba resource UI mới vào build context. Bản sửa chỉ
+cho phép đúng ba file public trong `src/backend/Medcom.Api/Swagger`, vẫn
+chặn file lân cận và đường dẫn giả làm thư mục. `tests/deploy/test_railway_container.py`
+kiểm tra resource nhúng, context thật và GET đủ năm asset Swagger trong image
+published chạy cô lập mạng. Nghiệm thu endpoint live được ghi tại PR sửa;
+không dùng health 200 làm bằng chứng Swagger đã hoạt động.

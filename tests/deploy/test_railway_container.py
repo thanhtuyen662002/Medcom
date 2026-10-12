@@ -27,6 +27,8 @@ WORKFLOW_CATALOG = 'inventories/erp/20261011/cud-workflow-catalog.json'
 REFERENCE_CATALOG = 'inventories/backend/20261011/api-reference-bindings.json'
 IMAGE = os.environ.get('MEDCOM_CONTAINER_IMAGE')
 PUBLIC_ROOT = {'global.json', 'Directory.Build.props', 'Directory.Build.targets', 'NuGet.config'}
+SWAGGER_ASSETS = {'src/backend/Medcom.Api/Swagger/' + name for name in
+                  ('index.html', 'medcom-swagger.js', 'medcom-swagger.css')}
 
 # Each forbidden family has source-shaped descendants in the real context test.
 # Both the matching parent and all descendants must have final deny rules.
@@ -110,7 +112,7 @@ class ContainerContractTests(unittest.TestCase):
             '!Dockerfile', '!.dockerignore', '!src/backend/**/*.cs',
             '!src/backend/**/*.csproj', '!src/backend/**/packages.lock.json',
             '!src/backend/Medcom.Api/appsettings.json', '!' + ERP_CATALOG,
-            '!' + REFERENCE_CATALOG, '!' + WORKFLOW_CATALOG}
+            '!' + REFERENCE_CATALOG, '!' + WORKFLOW_CATALOG} | {'!' + path for path in SWAGGER_ASSETS}
         self.assertEqual(rules[0], '**')
         self.assertEqual({rule for rule in rules if rule.startswith('!')}, expected)
         final_exclusion = max(i for i, rule in enumerate(rules) if rule.startswith('!'))
@@ -118,10 +120,19 @@ class ContainerContractTests(unittest.TestCase):
         forbidden_rules |= {rule + '/**' for rule in FORBIDDEN_CONTEXT_FAMILIES}
         file_only_rules = {'**/*.' + ''.join(f'[{c.upper()}{c}]' for c in suffix) + '/**'
                            for suffix in FILE_ONLY_CONTEXT_SUFFIXES}
-        file_only_rules |= {'Dockerfile/**', '.dockerignore/**'}
+        file_only_rules |= {'Dockerfile/**', '.dockerignore/**'} | {path + '/**' for path in SWAGGER_ASSETS}
         self.assertEqual(set(rules[final_exclusion + 1:]), forbidden_rules | file_only_rules)
         for rule in forbidden_rules | file_only_rules:
             self.assertGreater(rules.index(rule), final_exclusion)
+
+    def test_embedded_swagger_resources_are_present_in_the_container_context(self):
+        project = ET.parse(ROOT / API)
+        resources = {path.relative_to(ROOT).as_posix()
+                     for item in project.findall('.//EmbeddedResource')
+                     for path in (ROOT / API).parent.glob(item.attrib['Include']) if path.is_file()}
+        self.assertEqual(resources, SWAGGER_ASSETS)
+        for resource in resources:
+            self.assertIn('!' + resource, IGNORE.splitlines())
 
     def test_runtime_stays_unprivileged_and_unconfigured(self):
         self.assertIn('USER $APP_UID', DOCKERFILE)
@@ -232,6 +243,21 @@ class DockerSmokeTests(unittest.TestCase):
         self.assertEqual(self.request(container, 9123, '/health/live')[0], 200)
         self.assertEqual(self.request(container, 9123, '/health/ready')[0], 503)
 
+    def test_swagger_ui_and_all_local_assets_are_served_by_the_published_image(self):
+        container = self.start_container()
+        self.assertEqual(self.request(container, 8080, '/swagger')[0], 301)
+        for path, marker in (
+            ('/swagger/index.html', b'Medcom'),
+            ('/swagger/medcom-swagger.js', b'prepareRequest'),
+            ('/swagger/medcom-swagger.css', b'.medcom-auth'),
+            ('/swagger/swagger-ui-bundle.js', b'SwaggerUIBundle'),
+            ('/swagger/swagger-ui.css', b'.swagger-ui')):
+            with self.subTest(path=path):
+                status, body = self.request(container, 8080, path)
+                self.assertEqual(status, 200)
+                self.assertIn(marker, body)
+        self.assertEqual(self.request(container, 8080, '/api/workspace')[0], 401)
+
     def test_public_http_contract_and_isolated_export_match_reviewed_source_without_private_configuration(self):
         container = self.start_container()
         status, body = self.request(container, 8080, '/api/contracts/openapi.json')
@@ -255,7 +281,7 @@ class DockerSmokeTests(unittest.TestCase):
         self.assertEqual(self.request(container, 8080, '/api/workspace')[0], 401)
 
     def test_real_docker_context_accepts_future_source_and_rejects_private_neighbors(self):
-        allowed = PUBLIC_ROOT | {
+        allowed = PUBLIC_ROOT | SWAGGER_ASSETS | {
             ERP_CATALOG,
             WORKFLOW_CATALOG,
             REFERENCE_CATALOG,
@@ -271,6 +297,10 @@ class DockerSmokeTests(unittest.TestCase):
             'inventories/backend/20261011/other-catalog.json',
             'inventories/backend/20261011/reference-source-reconciliation.json',
             'inventories/backend/20261011/api-reference-bindings.private.json',
+            'src/backend/Medcom.Api/Swagger/other.js',
+            'src/backend/Medcom.Api/Swagger/other.html',
+            'src/backend/Medcom.Api/Swagger/index.html.backup',
+            'src/backend/Medcom.Api/Swagger/Nested/medcom-swagger.js',
             '.env', '.git/config', 'src/frontend/public/example.cs', 'docs/notes.cs',
             'src/backend/Medcom.Api/bin/Generated.cs',
             'src/backend/Medcom.Api/obj/Generated.cs',
@@ -332,7 +362,7 @@ class DockerSmokeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             context = Path(folder)
             (context / '.dockerignore').write_text(IGNORE)
-            for catalog in (ERP_CATALOG, WORKFLOW_CATALOG, REFERENCE_CATALOG):
+            for catalog in (ERP_CATALOG, WORKFLOW_CATALOG, REFERENCE_CATALOG, *SWAGGER_ASSETS):
                 child = context / catalog / 'unexpected.cs'
                 child.parent.mkdir(parents=True)
                 child.write_text('synthetic forbidden payload\n')
