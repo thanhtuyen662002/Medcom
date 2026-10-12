@@ -256,9 +256,10 @@ export class ErpClientService {
     kind: DocumentKind,
     page: number = 1,
     search: string = "",
-    branchId: string = ""
+    branchId: string = "",
+    pageSize: number = 50
   ): Promise<DocumentPage> {
-    return await apiGetDocuments(kind, page, search, branchId);
+    return await apiGetDocuments(kind, page, search, branchId, undefined, undefined, pageSize);
   }
 
   /**
@@ -277,10 +278,11 @@ export class ErpClientService {
   public async getPurchaseRequestsList(
     page: number = 1,
     search: string = "",
-    branchId: string = ""
+    branchId: string = "",
+    pageSize: number = 20
   ): Promise<{ list: PurchasePage; scopeKey: string }> {
     const ws = await getPurchaseWorkspace();
-    const list = await getPurchaseList(ws.scopeKey, page, search, branchId);
+    const list = await getPurchaseList(ws.scopeKey, page, search, branchId, undefined, pageSize);
     return { list, scopeKey: ws.scopeKey };
   }
 

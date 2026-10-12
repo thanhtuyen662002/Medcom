@@ -564,7 +564,7 @@ export function TabInbound({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
                 {activeItem.orderNumber && (
                   <div className="flex flex-col py-1">
-                    <span className="text-[10px] text-neutral-400">Mã đơn mua hàng PO</span>
+                    <span className="text-[10px] text-neutral-400">Mã Đề nghị mua hàng PO</span>
                     <span className="font-semibold text-neutral-800 dark:text-neutral-200 font-mono">
                       {activeItem.orderNumber}
                     </span>

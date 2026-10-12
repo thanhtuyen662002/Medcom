@@ -137,9 +137,9 @@ export type PurchaseRequestLineFields=z.infer<typeof purchaseRequestLineFieldsSc
 export type PurchaseRequestSourceFields=z.infer<typeof purchaseRequestSourceFieldsSchema>;
 function assertScope(actual:string,expected:string){if(actual!==expected)throw new ApiError(409,"purchase_scope_changed");}
 export const getPurchaseWorkspace=(signal?:AbortSignal)=>request("api/purchase-requests/workspace",envelope(workspace),{signal});
-export async function getPurchaseList(scopeKey:string,page:number,search:string,branchId:string,signal?:AbortSignal){
- const response=await request(`api/purchase-requests?${new URLSearchParams({page:String(page),pageSize:"20",search,branchId})}`,envelope(list),{signal});assertScope(response.scopeKey,scopeKey);
- if(response.data.page!==page||response.data.pageSize!==20||branchId&&response.data.rows.some(row=>row.branchId!==branchId))throw new ApiError(502,"invalid_api_response");return response.data;
+export async function getPurchaseList(scopeKey:string,page:number,search:string,branchId:string,signal?:AbortSignal,pageSize = 20){
+ const response=await request(`api/purchase-requests?${new URLSearchParams({page:String(page),pageSize:String(pageSize),search,branchId})}`,envelope(list),{signal});assertScope(response.scopeKey,scopeKey);
+ if(response.data.page!==page||response.data.pageSize!==pageSize||branchId&&response.data.rows.some(row=>row.branchId!==branchId))throw new ApiError(502,"invalid_api_response");return response.data;
 }
 export async function getPurchaseDetail(scopeKey:string,documentId:string,signal?:AbortSignal){
  const response=await request(`api/purchase-requests/detail?${new URLSearchParams({documentId})}`,envelope(snapshot),{signal});assertScope(response.scopeKey,scopeKey);

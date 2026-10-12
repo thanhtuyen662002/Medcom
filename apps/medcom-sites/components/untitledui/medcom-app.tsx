@@ -466,6 +466,7 @@ export function MedcomApp() {
                 purchasesCount={purchasesCount}
                 inboundCount={inboundCount}
                 isLoadingCounts={isLoadingCounts}
+                isActive={activeTab === "home"}
               />
             </div>
 

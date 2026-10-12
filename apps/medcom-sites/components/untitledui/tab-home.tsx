@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Clock,
   PackageCheck,
@@ -31,6 +31,7 @@ export interface TabHomeProps {
   purchasesCount?: number;
   inboundCount?: number;
   isLoadingCounts?: boolean;
+  isActive?: boolean;
 }
 
 export function TabHome({
@@ -43,17 +44,27 @@ export function TabHome({
   purchasesCount = 0,
   inboundCount = 0,
   isLoadingCounts = false,
+  isActive = true,
 }: TabHomeProps) {
   const [pendingItems, setPendingItems] = useState<any[]>([]);
   const [loadingPending, setLoadingPending] = useState(true);
   const [approvedIds, setApprovedIds] = useState<string[]>([]);
+  const lastFetchedRef = useRef<{ branch: string; at: number } | null>(null);
 
   useEffect(() => {
+    if (!isActive) return;
+    if (
+      lastFetchedRef.current &&
+      lastFetchedRef.current.branch === currentBranch &&
+      Date.now() - lastFetchedRef.current.at < 30000
+    )
+      return;
     let isCancelled = false;
+    const branch = currentBranch;
     const fetchPending = async () => {
       setLoadingPending(true);
       try {
-        const res = await erpClient.getPurchaseRequestsList(1, "", currentBranch);
+        const res = await erpClient.getPurchaseRequestsList(1, "", branch);
         if (!isCancelled && res && res.list && res.list.rows) {
           const pending = res.list.rows
             .filter((r) => r.statusId === 1 || r.statusId === null)
@@ -69,6 +80,7 @@ export function TabHome({
               itemsCount: 1,
             }));
           setPendingItems(pending);
+          lastFetchedRef.current = { branch, at: Date.now() };
         } else if (!isCancelled) {
           setPendingItems([]);
         }
@@ -83,7 +95,7 @@ export function TabHome({
     return () => {
       isCancelled = true;
     };
-  }, [currentBranch]);
+  }, [currentBranch, isActive]);
 
   const handleQuickApprove = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();

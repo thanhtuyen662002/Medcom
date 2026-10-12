@@ -335,7 +335,7 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
           <UntitledButton
             variant="primary"
             size="md"
-            onClick={onOpenCreateModal || (() => alert("Mở form lập Đơn mua hàng (PO)..."))}
+            onClick={onOpenCreateModal || (() => alert("Mở form lập đề nghị mua hàng (PO)..."))}
             iconLeading={<Plus className="size-4" />}
           >
             Tạo mới

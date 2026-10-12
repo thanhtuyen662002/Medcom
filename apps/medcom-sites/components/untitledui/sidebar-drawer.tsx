@@ -108,7 +108,7 @@ export function SidebarDrawer({
         },
         {
           id: "orders",
-          label: "Đơn mua hàng (PO)",
+          label: "Đề nghị mua hàng (PO)",
           description: "19 trường header & 12 cột chi tiết",
           icon: ShoppingBag,
           badge: pendingOrdersCount > 0 ? pendingOrdersCount : undefined,
@@ -145,7 +145,7 @@ export function SidebarDrawer({
       items: [
         {
           id: "purchase-orders",
-          label: "Đơn đặt mua",
+          label: "Đề nghị mua hàng (PO)",
           description: "Menu 050129 • AP_OrderFrm",
           icon: ShoppingBag,
           badge: "CUD & Tra giá",

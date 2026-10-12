@@ -62,7 +62,7 @@ function getModuleTitle(mod: ErpScreenModule): string {
     case "machine-repairs":
       return "Phiếu sửa chữa / bảo hành / bảo trì máy";
     case "purchase-orders":
-      return "Đơn đặt mua";
+      return "Đề nghị mua hàng (PO)";
     case "inbound-requests":
       return "Đề nghị nhập kho";
     case "purchase-approvals":
@@ -312,6 +312,23 @@ function isPrintAction(act: ErpActionState): boolean {
   return id.includes("print") || /\b(in|print)\b/i.test(cap) || cap.startsWith("in ");
 }
 
+const moduleActionsCache = new Map<string, ErpActionState[]>();
+const moduleActionsInflight = new Map<string, Promise<ErpActionState[]>>();
+
+function moduleActionsKey(module: ErpScreenModule, branchId: string) {
+  return `${module}::${branchId}`;
+}
+
+// Screen metadata has no branch dependency: fetch once per module.
+// Document lists load lazily once per tab+branch; refresh button and branch
+// changes are the explicit reload paths.
+const screenMetaCache = new Map<ErpScreenModule, ErpScreenDescription>();
+const listLoadedKeys = new Set<string>();
+
+function listLoadedKey(module: ErpScreenModule, branchId: string) {
+  return `${module}::${branchId}`;
+}
+
 export function TabErpScreen({
   module,
   currentBranch,
@@ -335,18 +352,38 @@ export function TabErpScreen({
   const [moduleActions, setModuleActions] = useState<ErpActionState[]>([]);
 
   useEffect(() => {
-    let active = true;
-    erpClient.getErpModuleActions(module, { branchId: currentBranch })
-      .then((acts) => {
-        if (active) setModuleActions(acts || []);
-      })
-      .catch(() => {
-        if (active) setModuleActions([]);
-      });
+    const key = moduleActionsKey(module, currentBranch);
+    const cached = moduleActionsCache.get(key);
+    if (cached) {
+      setModuleActions(cached);
+      return;
+    }
+    // Drop stale data from another branch; hidden tabs refetch on activation.
+    setModuleActions([]);
+    if (!isActive) return;
+    let cancelled = false;
+    let pending = moduleActionsInflight.get(key);
+    if (!pending) {
+      pending = erpClient
+        .getErpModuleActions(module, { branchId: currentBranch })
+        .then((acts) => {
+          const list = acts || [];
+          moduleActionsCache.set(key, list);
+          return list;
+        })
+        .catch(() => [] as ErpActionState[])
+        .finally(() => {
+          moduleActionsInflight.delete(key);
+        });
+      moduleActionsInflight.set(key, pending);
+    }
+    pending.then((acts) => {
+      if (!cancelled) setModuleActions(acts);
+    });
     return () => {
-      active = false;
+      cancelled = true;
     };
-  }, [module, currentBranch]);
+  }, [module, currentBranch, isActive]);
 
   const createActionFromApi = moduleActions.find((a) => a.id === "create");
   const canCreate = createActionFromApi != null ? (createActionFromApi.visible && createActionFromApi.enabled) : hasCreate;
@@ -438,11 +475,17 @@ export function TabErpScreen({
   // Load Screen Metadata
   useEffect(() => {
     if (!isActive) return;
+    const cached = screenMetaCache.get(module);
+    if (cached) {
+      setScreenMeta(cached);
+      return;
+    }
     let cancelled = false;
     async function loadMeta() {
       setLoadingMeta(true);
       try {
         const meta = await erpClient.getScreenMetadata(module);
+        screenMetaCache.set(module, meta);
         if (!cancelled) setScreenMeta(meta);
       } catch (err: unknown) {
         console.warn(`[ErpScreen] Screen metadata for ${module}:`, err);
@@ -474,6 +517,7 @@ export function TabErpScreen({
         setRows(result.rows || []);
         setPage(result.page);
         setHasMore(result.hasMore);
+        listLoadedKeys.add(listLoadedKey(module, currentBranch));
       } catch (err: unknown) {
         setErrorMsg("Không thể tải danh sách bản ghi từ máy chủ ERP.");
       } finally {
@@ -484,12 +528,12 @@ export function TabErpScreen({
     [module, currentBranch, search, dateFrom, dateTo, statusId]
   );
 
-  // Initial load or branch/filter change
+  // Lazily load once per tab+branch; revisit via refresh button or branch change.
   useEffect(() => {
-    if (isActive) {
+    if (isActive && !listLoadedKeys.has(listLoadedKey(module, currentBranch))) {
       loadList(1);
     }
-  }, [isActive, loadList]);
+  }, [isActive, module, currentBranch, loadList]);
 
   // Handle Manual Refresh
   const handleRefresh = async () => {

@@ -12,7 +12,7 @@ Nguồn hợp đồng: `src/backend/Medcom.Api/{DocumentEndpoints,PurchaseReques
 
 | Nhóm | GET danh sách hiện tại | GET chi tiết | Header / line fields |
 | --- | --- | --- | --- |
-| Đơn mua hàng (PO) | `/api/documents/purchase-orders` | `/api/documents/purchase-orders/detail?documentId=...&page=1&pageSize=50` | 19 / 12 |
+| Đề nghị mua hàng (PO) | `/api/documents/purchase-orders` | `/api/documents/purchase-orders/detail?documentId=...&page=1&pageSize=50` | 19 / 12 |
 | Yêu cầu nhập kho | `/api/documents/inbound-requests` | `/api/documents/inbound-requests/detail?documentId=...&page=1&pageSize=50` | 38 / 26 |
 | Đề nghị mua | `/api/purchase-requests` | `/api/purchase-requests/detail?documentId=...` | 14 / 9 |
 
@@ -183,7 +183,7 @@ Một property nullable vẫn **có key** trong full object, giá trị là `nul
 
 Các bảng được tạo trực tiếp từ [document-field-contract.json](document-field-contract.json), đã đối soát tên/SQL type/nullability với source inventory và required JSON paths của cả route hiện tại/v2. `nullable=có` vẫn yêu cầu key trong JSON. JSON type `string` với format `decimal-string` hoặc `sql-datetime-without-timezone` tuân theo phần 4. Prefix bảng cho biết vị trí đầy đủ; tên JSON trong mỗi dòng là key bên trong object đó. Header được trả trên từng row trong list và trong detail; line fields chỉ có trong detail.
 
-### Đơn mua hàng — header: 19 cột
+### Đề nghị mua hàng — header: 19 cột
 
 Nguồn: `dbo.AP_OrderTbl`, `sourceLine=11248` trong full SQL member được định danh bởi `inventories/source/20261002/extraction-integrity.json`; metadata: `inventories/source/20261002/table-*.json`. List: `rows[].purchaseOrderHeader`. Detail: `document.purchaseOrderHeader`.
 
@@ -209,7 +209,7 @@ Nguồn: `dbo.AP_OrderTbl`, `sourceLine=11248` trong full SQL member được đ
 | `StatusID` | `statusId` | `int` | `integer` | có | — |
 | `BranchID` | `branchId` | `varchar(50)` | `string` | không | — |
 
-### Đơn mua hàng — lines: 12 cột
+### Đề nghị mua hàng — lines: 12 cột
 
 Nguồn: `dbo.AP_OrderDetailTbl`, `sourceLine=11437` trong full SQL member được định danh bởi `inventories/source/20261002/extraction-integrity.json`; metadata: `inventories/source/20261002/table-*.json`. List: `Không có; dùng detail`. Detail: `purchaseOrderLines[].fields`.
 
