@@ -14,7 +14,7 @@ public static class ErpScreenEndpoints
         {
             var path="/api/erp/"+module;
             app.MapGet(path+"/screen",(HttpContext context)=>CanRead(context,module)&&Query(context)
-                ? Read(context,new ErpReadResult<ErpScreenDescription>(ErpReadOutcome.Success,ErpScreenCatalog.Get(module))) : Problem(403,"native_read_denied"));
+                ? Read(context,new ErpReadResult<ErpScreenDescription>(ErpReadOutcome.Success,ErpActionRules.ForDisplay(ErpScreenCatalog.Get(module)!))) : Problem(403,"native_read_denied"));
             app.MapGet(path,async(HttpContext context,IErpScreenService service)=>
             {
                 if(!CanRead(context,module))return Problem(403,"native_read_denied");

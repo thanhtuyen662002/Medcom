@@ -1,10 +1,20 @@
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using Medcom.Application;
 using Medcom.Contracts;
+using Microsoft.Data.SqlClient;
 namespace Medcom.Infrastructure.Erp;
+
+// Server-only finite diagnostics. Never include exception text, SQL, parameters,
+// credentials, user/branch/document identifiers or response data.
+public enum ErpReadStage { Session, OpenConnection, BeginTransaction, Transaction, NativeAuthority, Schema,
+    NativeModules, WorkflowMetadata, ScreenConfiguration, Read, FinalAuthority, Cleanup, LocalSession }
+public enum ErpReadException { None, Sql, Database, Timeout, InvalidOperation, Other }
+public sealed record ErpReadDiagnostic(string Module,ErpReadStage Stage,ErpReadException ExceptionKind,
+    int? ProviderErrorNumber,long ElapsedMilliseconds);
 
 internal sealed record ErpReadSnapshot(ErpSqlPlan Plan,string Branch,string DocumentId,
     IReadOnlyDictionary<string,object?> Header,IReadOnlyList<ErpLineRow> Lines,bool LineLimitExceeded,IReadOnlyList<ErpLineRow>? Comparison=null,
@@ -16,11 +26,12 @@ internal sealed class SqlErpScreenReader
     private readonly Func<DbConnection> connections;
     private readonly Func<CancellationToken,Task<AuthoritativeIdentity?>> resolve;
     private readonly Func<CancellationToken,Task<AuthoritativeIdentity?>>? inspect;
+    private readonly Action<ErpReadDiagnostic>? diagnostic;
     private readonly ConditionalWeakTable<DbConnection,object> issued=new();
     internal SqlErpScreenReader(LegacyCompany company,Func<DbConnection> connections,
         Func<CancellationToken,Task<AuthoritativeIdentity?>> resolve,
-        Func<CancellationToken,Task<AuthoritativeIdentity?>>? inspect)
-    {this.company=company;this.connections=connections;this.resolve=resolve;this.inspect=inspect;}
+        Func<CancellationToken,Task<AuthoritativeIdentity?>>? inspect,Action<ErpReadDiagnostic>? diagnostic=null)
+    {this.company=company;this.connections=connections;this.resolve=resolve;this.inspect=inspect;this.diagnostic=diagnostic;}
 
     internal async Task<ErpReadResult<T>> Run<T>(string module,string branch,
         Func<DbTransaction,AuthoritativeIdentity,ErpSqlPlan,ErpNativeRights,Task<ErpReadResult<T>>> read,CancellationToken token)
@@ -28,6 +39,8 @@ internal sealed class SqlErpScreenReader
         if(ErpSqlPlan.Get(module)is not {} plan||!ErpInputRules.AnsiIdentifier(branch,50))return new(ErpReadOutcome.Invalid);
         if(inspect is null||System.Transactions.Transaction.Current is not null)return new(ErpReadOutcome.Unavailable);
         DbConnection? connection=null;DbTransaction? transaction=null;var cleaned=true;
+        var started=Stopwatch.GetTimestamp();var stage=ErpReadStage.Session;
+        var exceptionKind=ErpReadException.None;int? providerNumber=null;
         AuthoritativeIdentity? originalIdentity=null;
         var result=new ErpReadResult<T>(ErpReadOutcome.Unavailable);
         async Task<ErpReadResult<T>> Observe()
@@ -35,20 +48,29 @@ internal sealed class SqlErpScreenReader
             var identity=await resolve(token);
             originalIdentity=identity;
             if(identity is null||identity.BranchIds?.Contains(branch,StringComparer.Ordinal)!=true)return new(ErpReadOutcome.Denied);
-            var candidate=connections();
+            stage=ErpReadStage.OpenConnection;var candidate=connections();
             if(candidate is null||candidate.State!=ConnectionState.Closed||issued.TryGetValue(candidate,out _))
                 return new(ErpReadOutcome.Unavailable);
             connection=candidate;
             issued.Add(connection,new object());
-            await connection.OpenAsync(token);transaction=await connection.BeginTransactionAsync(IsolationLevel.Serializable,token);
+            await connection.OpenAsync(token);stage=ErpReadStage.BeginTransaction;
+            transaction=await connection.BeginTransactionAsync(IsolationLevel.Serializable,token);
+            stage=ErpReadStage.Transaction;
             if(!ReferenceEquals(transaction.Connection,connection)||!await TransactionValid(transaction,token))return new(ErpReadOutcome.Unavailable);
+            stage=ErpReadStage.NativeAuthority;
             var rights=await ErpSqlAuthority.Read(transaction,company,identity,plan.Screen,branch,token);
             if(rights is null)return new(ErpReadOutcome.Denied);
+            stage=ErpReadStage.Schema;
             if(!await SchemaMatches(transaction,plan,token))return new(ErpReadOutcome.Unavailable,Code:"erp_source_schema_changed");
+            stage=ErpReadStage.NativeModules;
             await SqlErpScreenCommands.VerifyModuleHashes(transaction,token);
+            stage=ErpReadStage.WorkflowMetadata;
             if(ErpScreenCatalog.IsWorkflow(module))await SqlErpScreenCommands.VerifyWorkflowMetadata(transaction,token);
+            stage=ErpReadStage.ScreenConfiguration;
             await SqlErpScreenCommands.VerifyScreenConfiguration(transaction,plan,token);
+            stage=ErpReadStage.Read;
             var observed=await read(transaction,identity,plan,rights);
+            stage=ErpReadStage.FinalAuthority;
             if(!await TransactionValid(transaction,token))observed=new(ErpReadOutcome.Unavailable);
             else if(await ErpSqlAuthority.Read(transaction,company,identity,plan.Screen,branch,token) is not {} after||after!=rights
                 ||!SameSession(identity,await inspect(token)))observed=new(ErpReadOutcome.Denied);
@@ -57,7 +79,13 @@ internal sealed class SqlErpScreenReader
         }
         try{result=await Observe();}
         catch(OperationCanceledException){result=new(ErpReadOutcome.Cancelled);}
-        catch(Exception){result=new(ErpReadOutcome.Unavailable);}
+        catch(Exception error)
+        {
+            exceptionKind=error switch {SqlException=>ErpReadException.Sql,DbException=>ErpReadException.Database,
+                TimeoutException=>ErpReadException.Timeout,InvalidOperationException=>ErpReadException.InvalidOperation,_=>ErpReadException.Other};
+            providerNumber=error is SqlException sql?sql.Number:null;
+            result=new(ErpReadOutcome.Unavailable);
+        }
         finally
         {
             // Read-only transaction cleanup is part of acceptance, including negative observations.
@@ -66,13 +94,17 @@ internal sealed class SqlErpScreenReader
              try{await transaction.DisposeAsync();}catch{cleaned=false;}}
             if(connection is not null){try{await connection.DisposeAsync();}catch{cleaned=false;}}
         }
-        if(!cleaned)return new(ErpReadOutcome.Unavailable);
+        if(!cleaned){stage=ErpReadStage.Cleanup;result=new(ErpReadOutcome.Unavailable);}
         if(result.Outcome==ErpReadOutcome.Success)
         {
+            stage=ErpReadStage.LocalSession;
             try{token.ThrowIfCancellationRequested();if(originalIdentity is null||!SameSession(originalIdentity,await inspect(token)))return new(ErpReadOutcome.Denied);}
             catch(OperationCanceledException){return new(ErpReadOutcome.Cancelled);}
-            catch{return new(ErpReadOutcome.Unavailable);}
+            catch{exceptionKind=ErpReadException.Other;result=new(ErpReadOutcome.Unavailable);}
         }
+        if(result.Outcome==ErpReadOutcome.Unavailable)
+            try{diagnostic?.Invoke(new(plan.Module,stage,exceptionKind,providerNumber,(long)Stopwatch.GetElapsedTime(started).TotalMilliseconds));}
+            catch{/* Telemetry cannot change an API result. */}
         return result;
     }
     internal static bool SameSession(AuthoritativeIdentity first,AuthoritativeIdentity? last)=>last is not null

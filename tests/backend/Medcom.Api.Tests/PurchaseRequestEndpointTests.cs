@@ -66,7 +66,8 @@ public sealed class PurchaseRequestEndpointTests
         var data = body.GetProperty("data");
         Assert.Equal("QA-DOC", data.GetProperty("document").GetProperty("header").GetProperty("documentId").GetString());
         var access = data.GetProperty("commandAccess");
-        Assert.False(access.GetProperty("canSave").GetBoolean()); Assert.False(access.GetProperty("canSubmit").GetBoolean());
+        Assert.True(access.GetProperty("canSave").GetBoolean()); Assert.False(access.GetProperty("canSubmit").GetBoolean());
+        Assert.True(access.GetProperty("canAddLines").GetBoolean());
         Assert.Empty(events); Assert.Equal(0, fixture.Source.Commits);
     }
 
@@ -249,7 +250,7 @@ public sealed class PurchaseRequestEndpointTests
         Assert.Contains(workspace.GetProperty("navigation").EnumerateArray(),entry=>entry.GetProperty("id").GetString()=="purchase-requests");
         Assert.DoesNotContain(workspace.GetProperty("navigation").EnumerateArray(),entry=>entry.GetProperty("id").GetString()=="purchase-orders");
         var bootstrap=await fixture.Json("/api/purchase-requests/workspace");var scope=bootstrap.GetProperty("scopeKey").GetString();
-        Assert.Matches("^[a-f0-9]{64}$",scope!);Assert.False(bootstrap.GetProperty("data").GetProperty("writeAvailable").GetBoolean());
+        Assert.Matches("^[a-f0-9]{64}$",scope!);Assert.True(bootstrap.GetProperty("data").GetProperty("writeAvailable").GetBoolean());
         var list=await fixture.Json("/api/purchase-requests?page=1&pageSize=20&branchId=QA-A");Assert.Equal(scope,list.GetProperty("scopeKey").GetString());
         Assert.Equal("QA-DOC",Assert.Single(list.GetProperty("data").GetProperty("rows").EnumerateArray()).GetProperty("documentId").GetString());
         var detail=await fixture.Json("/api/purchase-requests/detail?documentId=QA-DOC");Assert.Equal(scope,detail.GetProperty("scopeKey").GetString());
@@ -335,7 +336,7 @@ public sealed class PurchaseRequestEndpointTests
         Assert.Equal(new[] { "id", "name", "referenceState" }, branch.EnumerateObject().Select(property => property.Name));
         Assert.Equal("QA-A",branch.GetProperty("id").GetString());
         var workspace = (await fixture.Json("/api/purchase-requests/workspace")).GetProperty("data");
-        Assert.False(workspace.GetProperty("writeAvailable").GetBoolean());
+        Assert.True(workspace.GetProperty("writeAvailable").GetBoolean());
         foreach (var lookup in workspace.GetProperty("lookups").EnumerateArray())
             Assert.Equal(lookup.GetProperty("kind").GetString() is "branches" or "purposes" or "currencies", lookup.GetProperty("available").GetBoolean());
         Assert.Equal(0, fixture.Source.Commits);

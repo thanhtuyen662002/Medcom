@@ -17,6 +17,7 @@
 !inventories/erp/20261010/six-screen-catalog.json
 !inventories/erp/20261011/cud-workflow-catalog.json
 !inventories/backend/20261011/api-reference-bindings.json
+!inventories/erp/20261012/captions.json
 
 # Treat allowlisted suffixes as files, never as directory trees.
 **/*.[Cc][Ss]/**

@@ -21,6 +21,17 @@ public sealed class ErpScreenEndpointTests
         Assert.Equal(ErpScreenCatalog.Get(module)!.FormId,screen.GetProperty("formId").GetString());
         Assert.Equal(ErpScreenCatalog.Get(module)!.Fields["header"].Count,screen.GetProperty("fields").GetProperty("header").GetArrayLength());
         Assert.Equal(ErpScreenCatalog.Get(module)!.Lookups.Count,screen.GetProperty("lookups").GetArrayLength());
+        Assert.Equal(ErpScreenCatalog.Get(module)!.Caption,screen.GetProperty("caption").GetString());
+        foreach(var action in screen.GetProperty("actions").EnumerateArray())
+        {
+            var operation=action.GetProperty("operation").GetString()!;
+            if(ErpActionRules.IsCudOperation(operation))
+            {
+                Assert.True(action.GetProperty("nativeVisible").GetBoolean());
+                Assert.Equal(JsonValueKind.Null,action.GetProperty("lockExpression").ValueKind);
+                Assert.Equal("",action.GetProperty("caption").GetString());
+            }
+        }
         fixture.Authority.Identity=fixture.Authority.Identity with{Capabilities=[]};
         using var revoked=await fixture.Client.GetAsync("/api/erp/"+module+"/screen");Assert.Equal(HttpStatusCode.Forbidden,revoked.StatusCode);
     }
