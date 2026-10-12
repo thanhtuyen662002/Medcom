@@ -146,9 +146,7 @@ public sealed partial class SqlErpScreenCommands
         {
             if(operation=="send-warehouse")
             {
-                await using var check=ErpSqlPlan.Command(transaction,"SELECT COUNT_BIG(*) FROM dbo.IV_InboundRequestDetailsTbl WITH(HOLDLOCK) WHERE DocumentID=@document AND (LotNumberByDocument IS NULL OR SetQuantityByDocument IS NULL OR BarrelQuantityByDocument IS NULL OR ExpireDateByDocument IS NULL);");
-                ErpSqlPlan.Parameter(check,"@document",DbType.AnsiString,document,50);
-                Require(await check.ExecuteScalarAsync(token)is long count&&count==0,ErpCommandOutcome.Conflict,"inbound_document_information_incomplete");
+                await ValidateInboundWarehouseInformation(transaction,document,token);
             }
             var status=operation=="send-management"?10:2;
             await using var command=ErpSqlPlan.Command(transaction,"UPDATE dbo.IV_InboundRequestTbl SET StatusID=@status WHERE DocumentID=@document; INSERT dbo.IV_InboundRequestLogTbl(UserAutoID,DocumentID,UserName,StatusID,Notes) VALUES(@line,@document,@actor,@status,@notes);");
@@ -193,6 +191,17 @@ public sealed partial class SqlErpScreenCommands
         if(procedure=="IV_InternalTransfer_BatchReceiveStp")parameters.Add(("@InputDocumentID",DbType.AnsiString,null,30));
         if(operation!="sync-requests")parameters.Add((procedure=="IV_InternalTransfer_RequestPMReturnStp"?"@Reason":"@Notes",DbType.String,notes,-1));
         await Procedure(transaction,procedure,parameters.ToArray(),token);
+    }
+    internal static async Task ValidateInboundWarehouseInformation(DbTransaction transaction,string document,CancellationToken token)
+    {
+        // SY_FrmCfg/IV_InboundRequestFrm/LYS1/ExecSQLWithParaButtonCtl_1/CS4,
+        // rechecked on 2026-10-12: barrel quantity is optional for this action.
+        await using var check=ErpSqlPlan.Command(transaction,"SELECT COUNT_BIG(*) FROM dbo.IV_InboundRequestDetailsTbl WITH(HOLDLOCK) WHERE DocumentID=@document AND (LotNumberByDocument IS NULL OR SetQuantityByDocument IS NULL OR ExpireDateByDocument IS NULL);");
+        ErpSqlPlan.Parameter(check,"@document",DbType.AnsiString,document,50);
+        await using var rows=await check.ExecuteReaderAsync(token);
+        Require(await rows.ReadAsync(token)&&rows.FieldCount==1&&rows.GetInt64(0)==0
+            &&!await rows.ReadAsync(token)&&!await rows.NextResultAsync(token),
+            ErpCommandOutcome.Conflict,"inbound_document_information_incomplete");
     }
     private static async Task ReturnStepAllowed(DbTransaction transaction,string module,int status,CancellationToken token)
     {

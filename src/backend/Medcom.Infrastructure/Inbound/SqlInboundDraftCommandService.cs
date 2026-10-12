@@ -441,7 +441,7 @@ public sealed class SqlInboundDraftCommandService : IInboundDraftCommandService
         public InboundDraftView View{get;}=view;
         public bool HasDetail(string row)=>View.Details.Any(x=>x.RowId==row);
         public bool CanSend()=>tables[4].Rows.Count<500 && View.Details.Count!=0 && View.Details.All(x=>x.LotNumberByDocument is not null
-            && x.SetQuantityByDocument is not null && x.BarrelQuantityByDocument is not null && x.ExpireDateByDocument is not null);
+            && x.SetQuantityByDocument is not null && x.ExpireDateByDocument is not null);
         public static bool SupportsExactCalculations(Snapshot? before,InboundDraftCommand request)
         {
             var rate=request.Header!.RateExchange;

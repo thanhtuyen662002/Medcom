@@ -22,13 +22,13 @@ public sealed partial class SqlErpScreenService:IErpScreenService
     public SqlErpScreenService(SqlLegacyUserStore store,LegacyCompany company,
         Func<CancellationToken,Task<AuthoritativeIdentity?>> resolveLiveSession,
         Func<CancellationToken,Task<AuthoritativeIdentity?>>? inspectLocalSession=null,
-        IErpSqlCommandExecutor? commands=null)
-        :this(company,()=>store.CreateConnection(),resolveLiveSession,inspectLocalSession,commands){ }
+        IErpSqlCommandExecutor? commands=null,Action<ErpReadDiagnostic>? diagnostic=null)
+        :this(company,()=>store.CreateConnection(),resolveLiveSession,inspectLocalSession,commands,diagnostic){ }
     internal SqlErpScreenService(LegacyCompany company,Func<DbConnection> connections,
         Func<CancellationToken,Task<AuthoritativeIdentity?>> resolveLiveSession,
         Func<CancellationToken,Task<AuthoritativeIdentity?>>? inspectLocalSession=null,
-        IErpSqlCommandExecutor? commands=null)
-    {reader=new(company,connections,resolveLiveSession,inspectLocalSession);this.commands=commands;}
+        IErpSqlCommandExecutor? commands=null,Action<ErpReadDiagnostic>? diagnostic=null)
+    {reader=new(company,connections,resolveLiveSession,inspectLocalSession,diagnostic);this.commands=commands;}
     public Task<ErpReadResult<ErpDocumentPage>> ListAsync(string module,ErpPageQuery query,CancellationToken token)
     {
         if(query is null||!ErpInputRules.Page(query.Page,query.PageSize)||query.Search?.Length>100||!ErpInputRules.Text(query.Search,false)
