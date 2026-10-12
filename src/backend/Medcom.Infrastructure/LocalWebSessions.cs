@@ -51,8 +51,14 @@ public sealed class LocalWebSessions : IWebSessions
         }
     }
 
-    public async Task<ResolvedSession?> ResolveAsync(string token, bool userInteraction,
-        CancellationToken cancellationToken)
+    public Task<ResolvedSession?> ResolveAsync(string token, bool userInteraction,
+        CancellationToken cancellationToken) => Revalidate(token, userInteraction, false, cancellationToken);
+
+    public Task<ResolvedSession?> ResolveReadAsync(string token, CancellationToken cancellationToken)
+        => Revalidate(token, false, true, cancellationToken);
+
+    private async Task<ResolvedSession?> Revalidate(string token, bool userInteraction,
+        bool shareConcurrentObservation, CancellationToken cancellationToken)
     {
         if (token.Length != 64 || token.Any(c => !Uri.IsHexDigit(c))) return null;
         var key = Hash(token);
@@ -70,11 +76,13 @@ public sealed class LocalWebSessions : IWebSessions
         // of order. Keep different sessions independent and preserve the gate
         // through immutable Entry replacements.
         var revalidationGate = original.RevalidationGate;
+        var atRequestStart = original;
         await revalidationGate.WaitAsync(cancellationToken);
         try
         {
             lock (gate)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 // A queued validation must read the latest identity and cannot
                 // begin a database read after logout or expiry.
                 if (!entries.TryGetValue(key, out original!) || Expired(original, clock.GetUtcNow()))
@@ -82,6 +90,11 @@ public sealed class LocalWebSessions : IWebSessions
                     entries.Remove(key);
                     return null;
                 }
+                // Entry replacement proves a successful observation since this
+                // invocation started. Only overlapping passive reads reuse it;
+                // writes and explicit interactions always observe authority anew.
+                if (shareConcurrentObservation && !ReferenceEquals(original, atRequestStart))
+                    return Resolve(token, original);
             }
             var result = await authority.RevalidateAsync(original.Identity, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();

@@ -67,7 +67,7 @@ public static class ApiHost
                 var context=provider.GetRequiredService<IHttpContextAccessor>().HttpContext??throw new InvalidOperationException("Current request required.");
                 var token=AuthEndpoints.Current(context).Token;var sessions=provider.GetRequiredService<IWebSessions>();
                 return new SqlReferenceData(provider.GetRequiredService<LegacyCompany>(),provider.GetRequiredService<SqlLegacyUserStore>(),
-                    async cancellation=>(await sessions.ResolveAsync(token,false,cancellation))?.Identity,
+                    cancellation=>NativeReadSession.Resolve(context,sessions,cancellation),
                     async cancellation=>(await sessions.InspectAsync(token,cancellation))?.Identity);
             });
             builder.Services.AddScoped<INotificationQueries>(provider=>{
@@ -76,7 +76,7 @@ public static class ApiHost
                 var sessionToken=AuthEndpoints.Current(context).Token;
                 var sessions=provider.GetRequiredService<IWebSessions>();
                 return new SqlNotificationQueries(provider.GetRequiredService<LegacyCompany>(),provider.GetRequiredService<SqlLegacyUserStore>(),
-                    async cancellation=>(await sessions.ResolveAsync(sessionToken,false,cancellation))?.Identity,
+                    cancellation=>NativeReadSession.Resolve(context,sessions,cancellation),
                     async cancellation=>(await sessions.InspectAsync(sessionToken,cancellation))?.Identity);
             });
             builder.Services.AddSingleton(new LegacyPasswordOptions(builder.Configuration["Legacy:DotnetPath"] ?? "dotnet",
@@ -128,7 +128,7 @@ public static class ApiHost
                 var context=provider.GetRequiredService<IHttpContextAccessor>().HttpContext??throw new InvalidOperationException("Current request required.");
                 var token=AuthEndpoints.Current(context).Token;var sessions=provider.GetRequiredService<IWebSessions>();
                 return new Medcom.Infrastructure.Erp.SqlErpScreenService(provider.GetRequiredService<SqlLegacyUserStore>(),provider.GetRequiredService<LegacyCompany>(),
-                    async cancellation=>(await sessions.ResolveAsync(token,false,cancellation))?.Identity,
+                    cancellation=>NativeReadSession.Resolve(context,sessions,cancellation),
                     async cancellation=>(await sessions.InspectAsync(token,cancellation))?.Identity,
                     provider.GetService<Medcom.Infrastructure.Erp.IErpSqlCommandExecutor>());
             });
@@ -202,7 +202,9 @@ public static class ApiHost
                         var sessions = context.HttpContext.RequestServices.GetRequiredService<IWebSessions>();
                         try
                         {
-                            var session = await sessions.ResolveAsync(token, false, timeout.Token);
+                            var session = HttpMethods.IsGet(context.Request.Method)
+                                ? await sessions.ResolveReadAsync(token, timeout.Token)
+                                : await sessions.ResolveAsync(token, false, timeout.Token);
                             if (session is null) { context.RejectPrincipal(); return; }
                             context.HttpContext.Items[AuthEndpoints.ResolvedKey] = session;
                             context.ReplacePrincipal(AuthEndpoints.Principal(session));

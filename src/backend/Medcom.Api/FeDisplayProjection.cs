@@ -184,7 +184,15 @@ internal sealed class FeDisplayFilter(IReferenceData references,IOptions<Microso
             {"branches"=>"branch","items"=>"item","objects"=>"object","purposes"=>"purpose","currencies"=>"currency",_=>null}:null;
         var keys=FeDisplayProjection.Collect(node,module,protectedNodes,choiceBinding);
         if(keys.Length==0&&protectedNodes.Count==0&&!FeDisplayProjection.Rows(node,module).Any(x=>x.Row.Any(p=>FeDisplayProjection.IsId(p.Key)||FeDisplayProjection.IsDisplay(p.Key))))return result;
-        var names=keys.Length==0?new ErpReadResult<IReadOnlyDictionary<ReferenceKey,ReferenceValue>>(ErpReadOutcome.Success,new Dictionary<ReferenceKey,ReferenceValue>())
+        // Only the typed, authorized branch endpoint proves these names were
+        // already resolved in its native SQL transaction. Other DTOs (including
+        // rows with an existing Name property) still use the reference reader.
+        var branchNames=context.Request.Method=="GET"&&context.Request.Path.Value=="/api/lookups/branches"
+            &&value is ErpScopedResponse<BranchChoicePage> branches
+            ? branches.Data.Items.ToDictionary(x=>new ReferenceKey("branch",x.BranchId),
+                x=>new ReferenceValue(x.BranchName,"available",new Dictionary<string,string?>())):null;
+        var names=branchNames is not null?new ErpReadResult<IReadOnlyDictionary<ReferenceKey,ReferenceValue>>(ErpReadOutcome.Success,branchNames)
+            :keys.Length==0?new ErpReadResult<IReadOnlyDictionary<ReferenceKey,ReferenceValue>>(ErpReadOutcome.Success,new Dictionary<ReferenceKey,ReferenceValue>())
             :await references.ReadAsync(keys,context.RequestAborted);
         var original=AuthEndpoints.Current(context);
         var current=await sessions.InspectAsync(original.Token,context.RequestAborted);

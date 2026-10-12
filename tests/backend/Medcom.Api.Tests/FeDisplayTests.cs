@@ -120,7 +120,25 @@ public sealed class FeDisplayTests
         await fixture.Login();var data=await fixture.Json("/api/lookups/branches?page=2&pageSize=1&search=Chi");
         Assert.Equal((2,1,"Chi"),source.Query);Assert.Equal("B2",data.GetProperty("data").GetProperty("items")[0].GetProperty("branchId").GetString());
         Assert.Equal("Chi nhánh 2",data.GetProperty("data").GetProperty("items")[0].GetProperty("branchName").GetString());
+        Assert.Equal("available",data.GetProperty("data").GetProperty("items")[0].GetProperty("branchReferenceState").GetString());
+        Assert.Empty(source.Keys); // ID/name already returned by the authorized branch query.
+        Assert.Equal(2,data.GetProperty("data").GetProperty("page").GetInt32());
+        Assert.True(data.GetProperty("data").GetProperty("hasMore").GetBoolean());
         using(var forged=await fixture.Client.GetAsync("/api/lookups/branches?branchId=FOREIGN"))Assert.Equal(HttpStatusCode.BadRequest,forged.StatusCode);
+    }
+    [Fact]
+    public async Task Branch_names_already_resolved_still_fence_logout_before_response()
+    {
+        var source=new Names();
+        await using var fixture=await PurchaseHttpFixture.Start(s=>s.AddSingleton<IReferenceData>(provider=>{
+            source.BeforeBranchesReturn=()=>{
+                var context=provider.GetRequiredService<Microsoft.AspNetCore.Http.IHttpContextAccessor>().HttpContext!;
+                provider.GetRequiredService<IWebSessions>().Revoke(AuthEndpoints.Current(context).Token);
+            };return source;
+        }));
+        await fixture.Login();
+        using var result=await fixture.Client.GetAsync("/api/lookups/branches");
+        Assert.Equal(HttpStatusCode.Forbidden,result.StatusCode); Assert.Empty(source.Keys);
     }
     [Fact]
     public async Task HTTP_read_gets_names_and_dates_but_no_display_value_is_accepted_as_a_write_field()
@@ -152,10 +170,10 @@ public sealed class FeDisplayTests
     }
     private sealed class Names:IReferenceData
     {
-        internal (int,int,string?) Query;internal IReadOnlyList<ReferenceKey> Keys=[];
+        internal (int,int,string?) Query;internal IReadOnlyList<ReferenceKey> Keys=[];internal Action? BeforeBranchesReturn;
         public Task<ErpReadResult<IReadOnlyDictionary<ReferenceKey,ReferenceValue>>> ReadAsync(IReadOnlyList<ReferenceKey> keys,CancellationToken token)
         {Keys=keys;return Task.FromResult(new ErpReadResult<IReadOnlyDictionary<ReferenceKey,ReferenceValue>>(ErpReadOutcome.Success,keys.ToDictionary(x=>x,x=>new ReferenceValue(x.Binding=="item"?"Tên hàng":"Tên","available",new Dictionary<string,string?>{{"ItemCode","CODE"},{"Unit","Cái"}}))));}
         public Task<ErpReadResult<BranchChoicePage>> BranchesAsync(int page,int size,string? search,CancellationToken token)
-        {Query=(page,size,search);return Task.FromResult(new ErpReadResult<BranchChoicePage>(ErpReadOutcome.Success,new([new("B2","Chi nhánh 2")],page,size,true)));}
+        {Query=(page,size,search);BeforeBranchesReturn?.Invoke();return Task.FromResult(new ErpReadResult<BranchChoicePage>(ErpReadOutcome.Success,new([new("B2","Chi nhánh 2")],page,size,true)));}
     }
 }
