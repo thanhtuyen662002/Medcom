@@ -11,6 +11,9 @@
 !src/backend/**/*.csproj
 !src/backend/**/packages.lock.json
 !src/backend/Medcom.Api/appsettings.json
+!src/backend/Medcom.Api/Swagger/index.html
+!src/backend/Medcom.Api/Swagger/medcom-swagger.js
+!src/backend/Medcom.Api/Swagger/medcom-swagger.css
 !inventories/erp/20261010/six-screen-catalog.json
 !inventories/erp/20261011/cud-workflow-catalog.json
 !inventories/backend/20261011/api-reference-bindings.json
@@ -24,6 +27,9 @@
 **/*.[Cc][Oo][Nn][Ff][Ii][Gg]/**
 Dockerfile/**
 .dockerignore/**
+src/backend/Medcom.Api/Swagger/index.html/**
+src/backend/Medcom.Api/Swagger/medcom-swagger.js/**
+src/backend/Medcom.Api/Swagger/medcom-swagger.css/**
 
 # Deny each forbidden name AND its descendants, including mixed casing.
 # Parent-only matches are not enough: source exceptions can reopen children.
