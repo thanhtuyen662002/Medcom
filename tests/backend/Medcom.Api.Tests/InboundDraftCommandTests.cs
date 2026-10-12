@@ -261,6 +261,7 @@ public sealed class InboundDraftCommandTests
         var m=new InboundModel();m.Tables[0].Rows[0]["StatusID"]=1;
         // Source checks NULL, not positivity or an empty-string rule.
         m.Tables[1].Rows[0]["SetQuantityByDocument"]=0m;m.Tables[1].Rows[0]["LotNumberByDocument"]="";
+        m.Tables[1].Rows[0]["BarrelQuantityByDocument"]=DBNull.Value;
         var s=m.Service();var request=await m.Send(s);
         var result=await s.ExecuteAsync(request);
         Assert.Equal(InboundDraftOutcome.Committed,result.Outcome);Assert.Equal(2,result.Receipt!.StatusId);
@@ -271,12 +272,15 @@ public sealed class InboundDraftCommandTests
 
     [Theory]
     [InlineData("state")] [InlineData("missing-detail")] [InlineData("missing-lot")]
+    [InlineData("missing-quantity")] [InlineData("missing-expiry")]
     public async Task Source_send_rejections_do_not_update_status_or_append_a_log(string reason)
     {
         var m=new InboundModel();
         if(reason=="state")m.Tables[0].Rows[0]["StatusID"]=10;
         if(reason=="missing-detail")m.Tables[1].Clear();
         if(reason=="missing-lot")m.Tables[1].Rows[0]["LotNumberByDocument"]=DBNull.Value;
+        if(reason=="missing-quantity")m.Tables[1].Rows[0]["SetQuantityByDocument"]=DBNull.Value;
+        if(reason=="missing-expiry")m.Tables[1].Rows[0]["ExpireDateByDocument"]=DBNull.Value;
         var s=m.Service();var result=await s.ExecuteAsync(await m.Send(s));
         Assert.Equal(InboundDraftOutcome.Rejected,result.Outcome);Assert.Empty(m.Tables[4].Rows.Cast<DataRow>());
     }

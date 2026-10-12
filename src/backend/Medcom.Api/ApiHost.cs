@@ -14,6 +14,13 @@ public static class ApiHost
 {
     public const string CorrelationHeader = "X-Correlation-ID";
 
+    internal static void LogErpReadUnavailable(ILogger logger,HttpContext context,
+        Medcom.Infrastructure.Erp.ErpReadDiagnostic diagnostic)=>logger.LogWarning(
+        new EventId(1003,"ErpReadUnavailable"),
+        "ERP read unavailable; correlation {CorrelationId}; module {Module}; stage {Stage}; exception kind {ExceptionKind}; provider number {ProviderErrorNumber}; elapsed ms {ElapsedMilliseconds}",
+        context.TraceIdentifier,diagnostic.Module,diagnostic.Stage,diagnostic.ExceptionKind,
+        diagnostic.ProviderErrorNumber,diagnostic.ElapsedMilliseconds);
+
     internal static void LogPurchaseReadUnavailable(ILogger logger, HttpContext context,
         PurchaseRequestReadDiagnostic diagnostic) => logger.LogWarning(
         new EventId(1002, "PurchaseReadUnavailable"),
@@ -130,7 +137,8 @@ public static class ApiHost
                 return new Medcom.Infrastructure.Erp.SqlErpScreenService(provider.GetRequiredService<SqlLegacyUserStore>(),provider.GetRequiredService<LegacyCompany>(),
                     cancellation=>NativeReadSession.Resolve(context,sessions,cancellation),
                     async cancellation=>(await sessions.InspectAsync(token,cancellation))?.Identity,
-                    provider.GetService<Medcom.Infrastructure.Erp.IErpSqlCommandExecutor>());
+                    provider.GetService<Medcom.Infrastructure.Erp.IErpSqlCommandExecutor>(),
+                    diagnostic=>LogErpReadUnavailable(provider.GetRequiredService<ILogger<Medcom.Infrastructure.Erp.SqlErpScreenService>>(),context,diagnostic));
             });
         }
         else

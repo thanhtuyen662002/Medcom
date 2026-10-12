@@ -3,6 +3,7 @@
   "sourceSet": "owner-live-meddata-20261011-i78",
   "observedAtUtc": "2026-10-11T05:40:10.8210712Z",
   "moduleObservedAtUtc": "2026-10-11T06:28:08.9766687Z",
+  "amendments": ["inventories/source/20261012/inbound-screen-configuration.json"],
   "productionAccepted": false,
   "businessWritesPerformed": false,
   "scope": "Remaining CUD and workflow buttons; print/upload/import/copy excluded",
@@ -1195,9 +1196,9 @@
           "key": "LYS1",
           "control": "ExecSQLWithParaButtonCtl_1",
           "property": "CS4",
-          "sha256Utf16LE": "0e2167a49fd1cfb83055dd108b5636ca5fa9a1730b9c2e95cdb38914c1ccaf94",
+          "sha256Utf16LE": "8f28068831ebda75b4e87c751c65fd6b08ce45f6e32770cac0e42215e43efaa1",
           "valueIsNull": false,
-          "characters": 851
+          "characters": 590
         },
         {
           "key": "LYS1",
@@ -3855,7 +3856,7 @@
           ],
           "procedure": null,
           "commandSha256Utf16LE": "92d449bfb6d7c71e586b7e54e6113d59f3a67d8953b075c8dbafcced50d262c7",
-          "checkSha256Utf16LE": "0e2167a49fd1cfb83055dd108b5636ca5fa9a1730b9c2e95cdb38914c1ccaf94",
+          "checkSha256Utf16LE": "8f28068831ebda75b4e87c751c65fd6b08ce45f6e32770cac0e42215e43efaa1",
           "propertyEvidence": "dbo.SY_FrmCfg/IV_InboundRequestFrm/LYS1/ExecSQLWithParaButtonCtl_1/C4"
         }
       ],
