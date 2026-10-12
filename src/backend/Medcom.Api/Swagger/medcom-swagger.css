@@ -1,0 +1,8 @@
+.medcom-auth { max-width: 1460px; margin: 24px auto; padding: 0 20px; font: 15px/1.5 sans-serif; color: #263238; }
+.medcom-auth h1 { font-size: 24px; }
+.medcom-auth form { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; }
+.medcom-auth label { display: grid; gap: 4px; }
+.medcom-auth input { padding: 8px; border: 1px solid #7d8b94; border-radius: 4px; max-width: 100%; }
+.medcom-auth button { padding: 9px 14px; border: 1px solid #526575; border-radius: 4px; background: #eef4f8; cursor: pointer; }
+.medcom-auth button:disabled { cursor: wait; }
+.medcom-auth [role="status"] { font-weight: 600; }

@@ -1,5 +1,9 @@
 # Medcom backend
 
+The backend includes `/swagger` for API inspection. Sign in with an ERP account,
+then use **Try it out**; its client supplies CSRF/current scope and retains normal
+server permissions. See the [Swagger usage guide](../../docs/backend/SWAGGER_UI.md).
+
 ## Current API and frontend handoff — 11 October 2026
 
 The [complete Vietnamese FE API reference](../../docs/backend/BE_FE_API_REFERENCE_20261011.md) covers **243 HTTP operations, 890 schemas and 214 dropdown bindings** across 19 forms. The [CUD/workflow handoff](../../docs/backend/BE_FE_CUD_WORKFLOW_20261011.md) identifies each added screen, owned input fields, business buttons, statuses, section routes and stock-voucher preconditions. Print/import/copy additions are excluded from PR140. Source, native SQL fixture, CI and deployment evidence are recorded separately in [I78](../../docs/execution/I78_CUD_ACTIONS_20261011.md).

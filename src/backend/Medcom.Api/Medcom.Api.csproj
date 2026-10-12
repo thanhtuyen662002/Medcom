@@ -1,5 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <ItemGroup>
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.3.0" />
+    <EmbeddedResource Include="Swagger/*" />
     <ProjectReference Include="../Medcom.Application/Medcom.Application.csproj" />
     <ProjectReference Include="../Medcom.Contracts/Medcom.Contracts.csproj" />
     <ProjectReference Include="../Medcom.Infrastructure/Medcom.Infrastructure.csproj" />

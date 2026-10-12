@@ -2,6 +2,12 @@
   "version": 1,
   "dependencies": {
     "net10.0": {
+      "Swashbuckle.AspNetCore.SwaggerUI": {
+        "type": "Direct",
+        "requested": "[10.3.0, )",
+        "resolved": "10.3.0",
+        "contentHash": "3qcin6S55lsFTsWf0vQO3P0bFc0tvk2EOkH+6wgJF9UQUk1WqsDUPEkexQE9Ievc+3zTPoYds9BTlvPMRbmkcQ=="
+      },
       "Microsoft.Bcl.Cryptography": {
         "type": "Transitive",
         "resolved": "9.0.13",

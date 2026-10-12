@@ -35,7 +35,9 @@ jobs:
         run: python tools/backend/audit_api_data.py && python -m unittest discover -s tools/backend -p 'test_api_data_audit.py'
   backend-windows:
     runs-on: windows-latest
-    timeout-minutes: 20
+    # Full backend tests plus the inspector/package gates exceeded the former
+    # 20-minute job budget on run 38197496469. Keep every gate and allow completion.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
