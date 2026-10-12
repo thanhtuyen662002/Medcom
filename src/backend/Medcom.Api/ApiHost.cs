@@ -257,6 +257,7 @@ public static class ApiHost
         });
         // Static HTML contains no session or business data; all data routes
         // continue through authentication/authorization below.
+        SwaggerDocumentation.Use(app);
         app.UseDefaultFiles();
         app.UseStaticFiles();
         app.UseAuthentication();

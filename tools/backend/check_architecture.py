@@ -20,7 +20,11 @@ for name, expected in ALLOWED.items():
     if actual != expected:
         errors.append(f'{name}: invalid project reference direction {actual}')
     packages = {(node.attrib['Include'], node.attrib.get('Version')) for node in tree.findall('.//PackageReference')}
-    allowed_packages = {('Microsoft.Data.SqlClient', '7.0.3')} if name == 'Medcom.Infrastructure' else set()
+    allowed_packages = {
+        'Medcom.Infrastructure': {('Microsoft.Data.SqlClient', '7.0.3')},
+        # Documentation assets only; no Swagger generator or legacy assembly coupling.
+        'Medcom.Api': {('Swashbuckle.AspNetCore.SwaggerUI', '10.3.0')},
+    }.get(name, set())
     if packages != allowed_packages or tree.findall('.//Reference'):
         errors.append(f'{name}: unexpected package or legacy assembly reference')
 for name in ('Medcom.Contracts', 'Medcom.Application'):

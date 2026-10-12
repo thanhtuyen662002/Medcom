@@ -47,6 +47,8 @@ jobs:
         run: dotnet build Medcom.slnx --configuration Release --no-restore
       - name: Test actual HTTP boundary
         run: dotnet test Medcom.slnx --configuration Release --no-build --filter 'Category!=LegacyRuntime' --logger 'trx;LogFileName=backend.trx'
+      - name: Verify Swagger session, CSRF, scope and dispatch boundaries
+        run: node --test tests/backend/swagger-ui.test.mjs
       - name: Verify fixed inspector plans and synthetic packaging regressions
         run: python tools/inspect/verify_inspect.py
       - name: Restore isolated target inspector with locked dependencies
@@ -101,6 +103,8 @@ jobs:
       - name: Install browser for end-to-end checks
         working-directory: src/frontend
         run: npx playwright install --with-deps chromium
+      - name: Verify compiled Swagger UI in the browser under production CSP
+        run: node tests/backend/swagger-ui.browser.mjs
       - name: Test packaged HTTPS app in browser
         working-directory: src/frontend
         run: npm run test:e2e

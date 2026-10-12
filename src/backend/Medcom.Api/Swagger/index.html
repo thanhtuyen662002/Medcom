@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Medcom — Kiểm tra API</title>
+  <link rel="stylesheet" href="./swagger-ui.css">
+  <link rel="stylesheet" href="./medcom-swagger.css">
+</head>
+<body>
+  <main class="medcom-auth">
+    <h1>Medcom — Kiểm tra API</h1>
+    <p>Đăng nhập bằng tài khoản ERP để thử API theo quyền và chi nhánh của bạn.
+      Các lệnh tạo, sửa, xóa và gửi có thể thay đổi dữ liệu đang kết nối.</p>
+    <form id="medcom-login">
+      <label>Tên đăng nhập <input id="medcom-username" autocomplete="username" maxlength="100" required></label>
+      <label>Mật khẩu <input id="medcom-password" type="password" autocomplete="current-password" maxlength="256" required></label>
+      <button type="submit">Đăng nhập</button>
+      <button id="medcom-logout" type="button">Đăng xuất</button>
+    </form>
+    <p id="medcom-status" role="status" aria-live="polite">Chưa đăng nhập.</p>
+    <p>Chọn API → Try it out → nhập dữ liệu → Execute. Token và phạm vi dữ liệu
+      được gửi tự động. Với lệnh ghi, giữ nguyên mã yêu cầu khi kiểm tra lại kết quả;
+      trang này không tự gửi lại lệnh.</p>
+  </main>
+  <div id="swagger-ui"></div>
+  <script src="./swagger-ui-bundle.js"></script>
+  <script src="./medcom-swagger.js"></script>
+</body>
+</html>
