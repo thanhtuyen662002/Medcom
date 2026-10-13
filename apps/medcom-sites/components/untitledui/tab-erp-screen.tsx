@@ -413,9 +413,16 @@ const DEFAULT_EDIT_LOOKUPS: Record<string, string> = { objectId: "header.ObjectI
 function editLookupId(module: ErpScreenModule, key: string): string | undefined {
   return (EDIT_LOOKUPS[module] ?? DEFAULT_EDIT_LOOKUPS)[key];
 }
-// Exact writable input DTO per module. The display header carries *Display /
+// Exact writable DTOs per module. The display header/rows carry *Display /
 // *Name / status companions that the backend Freeze validator rejects
 // (UnmappedMemberHandling.Disallow), so save must send only these keys.
+const SAVE_LINE_BY_MODULE: Record<string, readonly string[]> = {
+  "purchase-requests": ["itemId", "quantity", "unitPrice", "budget", "timeRequired", "model"],
+  "purchase-orders": ["itemId", "quantity", "unitPrice", "notes", "quantity2", "property", "property2"],
+};
+function saveLineKeys(module: ErpScreenModule): readonly string[] {
+  return SAVE_LINE_BY_MODULE[module] ?? [];
+}
 const SAVE_HEADER_BY_MODULE: Record<string, readonly string[]> = {
   "purchase-requests": [
     "purchaseDate",
@@ -556,6 +563,7 @@ export function TabErpScreen({
   const [menuOpen, setMenuOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editHeader, setEditHeader] = useState<Record<string, string>>({});
+  const [editLines, setEditLines] = useState<Record<string, Record<string, string>>>({});
   const [editChoices, setEditChoices] = useState<Record<string, ErpChoice | null>>({});
   const [editMulti, setEditMulti] = useState<Record<string, ErpChoice[]>>({});
   const [editRate, setEditRate] = useState<string | null>(null);
@@ -701,6 +709,7 @@ export function TabErpScreen({
     setDeleteArmed(false);
     setEditChoices({});
     setEditMulti({});
+    setEditLines({});
     setEditRate(null);
     try {
       const data = await erpClient.getErpModuleDetail(module, {
@@ -774,6 +783,7 @@ export function TabErpScreen({
     setDeleteArmed(false);
     setEditChoices({});
     setEditMulti({});
+    setEditLines({});
     setEditRate(null);
   };
 
@@ -790,6 +800,20 @@ export function TabErpScreen({
       initial[key] = key.toLowerCase().includes("date") ? isoDate(raw) : text(raw);
     }
     setEditHeader(initial);
+    const lineKeys = saveLineKeys(module);
+    const lineDrafts: Record<string, Record<string, string>> = {};
+    if (lineKeys.length > 0) {
+      for (const row of detail.lines?.rows || []) {
+        const f = ((row as { fields?: unknown }).fields || row || {}) as Record<string, unknown>;
+        const draft: Record<string, string> = {};
+        for (const k of lineKeys) {
+          const v = f[k];
+          draft[k] = v == null ? "" : String(v);
+        }
+        lineDrafts[row.lineId] = draft;
+      }
+    }
+    setEditLines(lineDrafts);
     setEditChoices({});
     setEditMulti({});
     setEditRate(null);
@@ -797,6 +821,9 @@ export function TabErpScreen({
     setMenuOpen(false);
     setActionFeedback(null);
   };
+
+  const patchEditLine = (lineId: string, k: string, v: string) =>
+    setEditLines((prev) => ({ ...prev, [lineId]: { ...(prev[lineId] || {}), [k]: v } }));
 
   const handleSaveHeader = async () => {
     if (!detail) return;
@@ -855,13 +882,43 @@ export function TabErpScreen({
       } else {
         Object.assign(header, base, edited);
       }
+      // Line edits: Update only changed rows, exact input DTO keys.
+      const lineKeys = saveLineKeys(module);
+      const lineChanges: Array<{ kind: "Update"; lineId: string; values: Record<string, unknown> }> = [];
+      if (lineKeys.length > 0) {
+        for (const row of detail.lines?.rows || []) {
+          const f = ((row as { fields?: unknown }).fields || row || {}) as Record<string, unknown>;
+          const draft = editLines[row.lineId];
+          if (!draft) continue;
+          const itemId = (draft.itemId ?? "").trim();
+          const qty = (draft.quantity ?? "").trim();
+          const priceVal = (draft.unitPrice ?? "").trim();
+          if (!itemId || !/^\d+(\.\d+)?$/.test(qty) || !/^\d+(\.\d+)?$/.test(priceVal)) {
+            setActionFeedback({
+              type: "warning",
+              message: "Mỗi dòng cần Mã hàng, Số lượng và Đơn giá hợp lệ.",
+            });
+            setExecutingAction(null);
+            return;
+          }
+          const values: Record<string, unknown> = {};
+          let changed = false;
+          for (const k of lineKeys) {
+            const cur = f[k] == null ? "" : String(f[k]).trim();
+            const next = (draft[k] ?? "").trim();
+            values[k] = next ? next : null;
+            if (next !== cur) changed = true;
+          }
+          if (changed) lineChanges.push({ kind: "Update", lineId: row.lineId, values });
+        }
+      }
       const res = await erpClient.saveDocument(module, {
         idempotencyKey,
         branchId: currentBranch,
         documentId: detail.documentId,
         expectedStateToken: detail.stateToken,
         header,
-        lineChanges: [],
+        lineChanges,
       });
       if (res.outcome === "Committed" || res.outcome === "Replayed") setEditing(false);
       handleCommandOutcome(res);
@@ -1946,6 +2003,196 @@ export function TabErpScreen({
                 </div>
                 {detail.lines?.rows?.length === 0 ? (
                   <p className="text-xs text-neutral-400 py-3 text-center">Chứng từ chưa có dòng hàng nào.</p>
+                ) : editing && (saveLineKeys(module) as readonly string[]).length > 0 ? (
+                  <>
+                    {/* Mobile: editable line cards */}
+                    <div className="space-y-2 md:hidden">
+                      {(detail.lines.rows || []).map((row, idx) => {
+                        const f = ((row as { fields?: unknown }).fields || row || {}) as Record<string, unknown>;
+                        const d = editLines[row.lineId] || {};
+                        const set = (k: string, v: string) => patchEditLine(row.lineId, k, v);
+                        const lineKeys = saveLineKeys(module) as readonly string[];
+                        const extras = ["model", "budget", "timeRequired", "notes"].filter((k) =>
+                          lineKeys.includes(k)
+                        );
+                        const q = (d.quantity ?? "").trim();
+                        const p = (d.unitPrice ?? "").trim();
+                        const live =
+                          /^\d+(\.\d+)?$/.test(q) && /^\d+(\.\d+)?$/.test(p)
+                            ? Number(q) * Number(p)
+                            : null;
+                        const inputCls =
+                          "mt-0.5 p-1.5 rounded-lg border border-purple-300 dark:border-purple-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 w-full";
+                        const itemName = (f.itemName || f.name || "") as string;
+                        return (
+                          <div
+                            key={row.lineId}
+                            className="rounded-xl border border-purple-200 dark:border-purple-800/60 p-3 bg-white dark:bg-neutral-900 space-y-2.5"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-xs font-bold text-neutral-500">Dòng {idx + 1}</span>
+                            </div>
+                            <div>
+                              <label className="block text-[10px] text-purple-600 dark:text-purple-400 font-medium">
+                                Mã hàng <span className="text-red-500">*</span>
+                              </label>
+                              <input
+                                type="text"
+                                value={d.itemId ?? ""}
+                                onChange={(e) => set("itemId", e.target.value)}
+                                className={inputCls}
+                              />
+                            </div>
+                            {itemName && (
+                              <p className="text-[11px] text-neutral-500 dark:text-neutral-400">{itemName}</p>
+                            )}
+                            {extras.length > 0 && (
+                              <div className="grid grid-cols-1 gap-2.5">
+                                {extras.map((k) => (
+                                  <div key={k}>
+                                    <label className="block text-[10px] text-purple-600 dark:text-purple-400 font-medium">
+                                      {getFieldLabel(k)}
+                                    </label>
+                                    <input
+                                      type="text"
+                                      inputMode={k === "budget" ? "decimal" : "text"}
+                                      value={d[k] ?? ""}
+                                      onChange={(e) => set(k, e.target.value)}
+                                      className={inputCls}
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            <div className="grid grid-cols-2 gap-2.5">
+                              <div>
+                                <label className="block text-[10px] text-purple-600 dark:text-purple-400 font-medium">
+                                  Số lượng <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  inputMode="decimal"
+                                  value={d.quantity ?? ""}
+                                  onChange={(e) => set("quantity", e.target.value)}
+                                  className={inputCls}
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] text-purple-600 dark:text-purple-400 font-medium">
+                                  Đơn giá <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  inputMode="decimal"
+                                  value={d.unitPrice ?? ""}
+                                  onChange={(e) => set("unitPrice", e.target.value)}
+                                  className={inputCls}
+                                />
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-[10px] text-neutral-400">Tổng giá</span>
+                              <span className="font-bold text-purple-700 dark:text-purple-300 font-mono">
+                                {live === null ? "—" : formatMoney(live, docCurrencyId(detail.header))}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {/* Desktop: editable line table */}
+                    <div className="overflow-x-auto hidden md:block">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="border-b border-neutral-200 dark:border-neutral-800 text-[10px] text-neutral-400 uppercase">
+                            <th className="py-2 px-2.5">Mã hàng *</th>
+                            <th className="py-2 px-2.5">Tên hàng</th>
+                            {(saveLineKeys(module) as readonly string[])
+                              .filter((k) => ["model", "budget", "timeRequired", "notes"].includes(k))
+                              .map((k) => (
+                                <th key={k} className="py-2 px-2.5">
+                                  {getFieldLabel(k)}
+                                </th>
+                              ))}
+                            <th className="py-2 px-2.5">Số lượng *</th>
+                            <th className="py-2 px-2.5">Đơn giá *</th>
+                            <th className="py-2 px-2.5 text-right">Tổng giá</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                          {(detail.lines.rows || []).map((row) => {
+                            const f = ((row as { fields?: unknown }).fields || row || {}) as Record<string, unknown>;
+                            const d = editLines[row.lineId] || {};
+                            const set = (k: string, v: string) => patchEditLine(row.lineId, k, v);
+                            const cellInput =
+                              "mt-0.5 p-1.5 rounded-lg border border-purple-300 dark:border-purple-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 w-full min-w-20";
+                            const q = (d.quantity ?? "").trim();
+                            const p = (d.unitPrice ?? "").trim();
+                            const live =
+                              /^\d+(\.\d+)?$/.test(q) && /^\d+(\.\d+)?$/.test(p)
+                                ? Number(q) * Number(p)
+                                : null;
+                            const itemName = (f.itemName || f.name || "") as string;
+                            const unit = (f.unit || f.unit2 || "") as string;
+                            return (
+                              <tr key={row.lineId} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/40 align-top">
+                                <td className="py-2 px-2.5">
+                                  <input
+                                    type="text"
+                                    value={d.itemId ?? ""}
+                                    onChange={(e) => set("itemId", e.target.value)}
+                                    className={`${cellInput} font-mono`}
+                                  />
+                                </td>
+                                <td className="py-2.5 px-2.5 font-medium text-neutral-800 dark:text-neutral-200">
+                                  <div className="text-xs">{itemName || "—"}</div>
+                                  {unit && (
+                                    <div className="text-[10px] text-purple-600 dark:text-purple-400 font-medium">
+                                      ĐVT: {unit}
+                                    </div>
+                                  )}
+                                </td>
+                                {(saveLineKeys(module) as readonly string[])
+                                  .filter((k) => ["model", "budget", "timeRequired", "notes"].includes(k))
+                                  .map((k) => (
+                                    <td key={k} className="py-2 px-2.5">
+                                      <input
+                                        type="text"
+                                        inputMode={k === "budget" ? "decimal" : "text"}
+                                        value={d[k] ?? ""}
+                                        onChange={(e) => set(k, e.target.value)}
+                                        className={cellInput}
+                                      />
+                                    </td>
+                                  ))}
+                                <td className="py-2 px-2.5">
+                                  <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    value={d.quantity ?? ""}
+                                    onChange={(e) => set("quantity", e.target.value)}
+                                    className={cellInput}
+                                  />
+                                </td>
+                                <td className="py-2 px-2.5">
+                                  <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    value={d.unitPrice ?? ""}
+                                    onChange={(e) => set("unitPrice", e.target.value)}
+                                    className={cellInput}
+                                  />
+                                </td>
+                                <td className="py-2.5 px-2.5 text-right font-bold text-purple-700 dark:text-purple-300 font-mono">
+                                  {live === null ? "—" : formatMoney(live, docCurrencyId(detail.header))}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
                 ) : (
                   <>
                     {/* Mobile: stacked cards instead of a wide scrollable table */}
@@ -1986,21 +2233,21 @@ export function TabErpScreen({
                                 ((f.budgetDisplay || f.budget || "") as string) ||
                                 ((f.timeRequired || "") as string)) && (
                                 <div className="mt-1.5 grid grid-cols-3 gap-2 text-xs">
-                                  <div>
+                                  <div className="min-w-0">
                                     <p className="text-[10px] text-neutral-400">Model</p>
-                                    <p className="font-medium text-neutral-700 dark:text-neutral-300 truncate">
+                                    <p className="font-medium text-neutral-700 dark:text-neutral-300 break-all">
                                       {(f.model as string) || "—"}
                                     </p>
                                   </div>
-                                  <div>
+                                  <div className="min-w-0">
                                     <p className="text-[10px] text-neutral-400">Ngân sách</p>
-                                    <p className="font-mono text-neutral-700 dark:text-neutral-300 truncate">
+                                    <p className="font-mono text-neutral-700 dark:text-neutral-300 break-all">
                                       {((f.budgetDisplay || f.budget || "") as string) || "—"}
                                     </p>
                                   </div>
-                                  <div>
+                                  <div className="min-w-0">
                                     <p className="text-[10px] text-neutral-400">T.gian YC</p>
-                                    <p className="font-medium text-neutral-700 dark:text-neutral-300 truncate">
+                                    <p className="font-medium text-neutral-700 dark:text-neutral-300 break-all">
                                       {(f.timeRequired as string) || "—"}
                                     </p>
                                   </div>
@@ -2116,7 +2363,7 @@ export function TabErpScreen({
                     <button
                       type="button"
                       onClick={handleLoadMoreLines}
-                      disabled={loadingMoreLines}
+                      disabled={loadingMoreLines || editing}
                       className="px-3.5 py-1.5 text-xs font-medium rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50"
                     >
                       {loadingMoreLines ? "Đang tải thêm..." : "Tải thêm dòng chi tiết..."}
