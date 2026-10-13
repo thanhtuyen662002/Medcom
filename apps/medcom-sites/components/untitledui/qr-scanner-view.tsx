@@ -127,13 +127,13 @@ export function UntitledQrScannerView({
         {/* Viewfinder Target Frame */}
         <div className="relative size-56 sm:size-64 border border-white/20 rounded-2xl flex items-center justify-center">
           {/* 4 Glowing Corner Marks */}
-          <div className="absolute top-0 left-0 size-6 border-t-4 border-l-4 border-purple-500 rounded-tl-xl" />
-          <div className="absolute top-0 right-0 size-6 border-t-4 border-r-4 border-purple-500 rounded-tr-xl" />
-          <div className="absolute bottom-0 left-0 size-6 border-b-4 border-l-4 border-purple-500 rounded-bl-xl" />
-          <div className="absolute bottom-0 right-0 size-6 border-b-4 border-r-4 border-purple-500 rounded-br-xl" />
+          <div className="absolute top-0 left-0 size-6 border-t-4 border-l-4 border-brand-500 rounded-tl-xl" />
+          <div className="absolute top-0 right-0 size-6 border-t-4 border-r-4 border-brand-500 rounded-tr-xl" />
+          <div className="absolute bottom-0 left-0 size-6 border-b-4 border-l-4 border-brand-500 rounded-bl-xl" />
+          <div className="absolute bottom-0 right-0 size-6 border-b-4 border-r-4 border-brand-500 rounded-br-xl" />
 
           {/* Laser Scanner Beam */}
-          <div className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-purple-400 to-transparent shadow-[0_0_12px_#a855f7] animate-uui-laser" />
+          <div className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-brand-400 to-transparent shadow-[0_0_12px_#a855f7] animate-uui-laser" />
 
           {/* QR Icon in center */}
           <div className="text-white/30 flex flex-col items-center gap-2">
@@ -165,7 +165,7 @@ export function UntitledQrScannerView({
               type="button"
               onClick={() => setSound(!sound)}
               className={`p-2 rounded-xl backdrop-blur-md transition-colors ${
-                sound ? "bg-purple-600 text-white" : "bg-white/10 text-white/80 hover:bg-white/20"
+                sound ? "bg-brand-600 text-white" : "bg-white/10 text-white/80 hover:bg-white/20"
               }`}
               title="Bật/Tắt Âm thanh"
             >
@@ -201,7 +201,7 @@ export function UntitledQrScannerView({
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleScanCode(manualCode);
               }}
-              className="w-full pl-3 pr-8 py-2 text-xs rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full pl-3 pr-8 py-2 text-xs rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
           <UntitledButton
@@ -222,7 +222,7 @@ export function UntitledQrScannerView({
               key={code}
               type="button"
               onClick={() => handleScanCode(code)}
-              className="text-[10px] px-2 py-0.5 rounded-lg bg-neutral-100 dark:bg-neutral-800 hover:bg-purple-50 hover:text-purple-700 dark:hover:bg-purple-950 dark:hover:text-purple-300 text-neutral-600 dark:text-neutral-300 transition-colors font-mono"
+              className="text-[10px] px-2 py-0.5 rounded-lg bg-neutral-100 dark:bg-neutral-800 hover:bg-brand-50 hover:text-brand-700 dark:hover:bg-brand-950 dark:hover:text-brand-300 text-neutral-600 dark:text-neutral-300 transition-colors font-mono"
             >
               {GS1_NATIONAL_MEDICINE_CATALOG[code].name.split(" ")[0]} ({code.slice(-4)})
             </button>
@@ -232,7 +232,7 @@ export function UntitledQrScannerView({
 
       {/* Scanned Medication Result Card */}
       {scannedResult && (
-        <div className="rounded-2xl bg-white dark:bg-neutral-900 border border-purple-200 dark:border-purple-900/60 p-4 sm:p-5 shadow-md relative overflow-hidden animate-uui-fade-in">
+        <div className="rounded-2xl bg-white dark:bg-neutral-900 border border-brand-200 dark:border-brand-900/60 p-4 sm:p-5 shadow-md relative overflow-hidden animate-uui-fade-in">
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-1 min-w-0">
               <div className="flex items-center gap-2">
@@ -246,12 +246,12 @@ export function UntitledQrScannerView({
               <h4 className="text-base font-bold text-neutral-900 dark:text-white truncate">
                 {scannedResult.name}
               </h4>
-              <p className="text-xs text-purple-700 dark:text-purple-400 font-medium">
+              <p className="text-xs text-brand-700 dark:text-brand-400 font-medium">
                 {scannedResult.activeIngredient}
               </p>
             </div>
 
-            <div className="size-11 rounded-2xl bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+            <div className="size-11 rounded-2xl bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 flex items-center justify-center shrink-0">
               <Package className="size-6" />
             </div>
           </div>

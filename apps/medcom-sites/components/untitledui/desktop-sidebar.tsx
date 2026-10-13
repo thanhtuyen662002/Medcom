@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import {
   ShieldCheck,
   Building2,
@@ -166,21 +167,8 @@ export function DesktopSidebar({
       <div className="p-4 border-b border-neutral-100 dark:border-neutral-800/80">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="size-9 rounded-xl bg-gradient-to-tr from-purple-700 via-purple-600 to-indigo-600 text-white flex items-center justify-center font-black text-sm shadow-sm ring-2 ring-purple-100 dark:ring-purple-950">
-              <ShieldCheck className="size-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-sm font-black tracking-tight text-neutral-900 dark:text-white">
-                  MEDCOM ERP
-                </span>
-                <UntitledBadge variant="purple" size="sm">
-                  2026
-                </UntitledBadge>
-              </div>
-              <span className="text-[10px] text-neutral-400 block leading-tight">
-                Quản lý Dược GSP
-              </span>
+            <div className="w-full flex items-center justify-center">
+              <Image src="/medcom-logo.png" alt="MEDCOMTECH" width={144} height={52} className="h-full w-full object-contain" priority />
             </div>
           </div>
 
@@ -204,7 +192,7 @@ export function DesktopSidebar({
             className="w-full flex items-center justify-between px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50/80 dark:bg-neutral-800/60 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-xs font-semibold text-neutral-800 dark:text-neutral-200 transition-all cursor-pointer"
           >
             <div className="flex items-center gap-2 min-w-0">
-              <Building2 className="size-3.5 text-purple-600 shrink-0" />
+              <Building2 className="size-3.5 text-brand-600 shrink-0" />
               <span className="truncate">{activeBranch.name}</span>
             </div>
             <ChevronDown
@@ -238,13 +226,13 @@ export function DesktopSidebar({
                         }}
                         className={`w-full flex items-center justify-between p-2 rounded-xl text-left text-xs transition-colors ${
                           isSelected
-                            ? "bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-semibold"
+                            ? "bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 font-semibold"
                             : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800/60"
                         }`}
                       >
                         <span className="truncate">{b.name}</span>
                         {isSelected && (
-                          <Check className="size-3.5 text-purple-600 shrink-0 ml-1.5" />
+                          <Check className="size-3.5 text-brand-600 shrink-0 ml-1.5" />
                         )}
                       </button>
                     );
@@ -286,14 +274,14 @@ export function DesktopSidebar({
                 onClick={() => onTabChange(item.id)}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                   isActive
-                    ? "bg-purple-50 dark:bg-purple-950/70 text-purple-700 dark:text-purple-300 shadow-2xs font-bold"
+                    ? "bg-brand-50 dark:bg-brand-950/70 text-brand-700 dark:text-brand-300 shadow-2xs font-bold"
                     : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
                 }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <Icon
                     className={`size-4 shrink-0 ${
-                      isActive ? "text-purple-600 dark:text-purple-400" : "text-neutral-400"
+                      isActive ? "text-brand-600 dark:text-brand-400" : "text-neutral-400"
                     }`}
                   />
                   <span className="truncate">{item.label}</span>
@@ -302,7 +290,7 @@ export function DesktopSidebar({
                   <span
                     className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold shrink-0 ${
                       isActive
-                        ? "bg-purple-200 dark:bg-purple-800 text-purple-900 dark:text-purple-200"
+                        ? "bg-brand-200 dark:bg-brand-800 text-brand-900 dark:text-brand-200"
                         : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300"
                     }`}
                   >
@@ -330,13 +318,13 @@ export function DesktopSidebar({
                   onClick={() => onTabChange(item.id)}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                     isActive
-                      ? "bg-purple-50 dark:bg-purple-950/70 text-purple-700 dark:text-purple-300 shadow-2xs font-bold"
+                      ? "bg-brand-50 dark:bg-brand-950/70 text-brand-700 dark:text-brand-300 shadow-2xs font-bold"
                       : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
                   }`}
                 >
                   <Icon
                     className={`size-4 shrink-0 ${
-                      isActive ? "text-purple-600 dark:text-purple-400" : "text-neutral-400"
+                      isActive ? "text-brand-600 dark:text-brand-400" : "text-neutral-400"
                     }`}
                   />
                   <span className="truncate">{item.label}</span>
@@ -353,13 +341,13 @@ export function DesktopSidebar({
             onClick={() => onTabChange("settings")}
             className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
               activeTab === "settings"
-                ? "bg-purple-50 dark:bg-purple-950/70 text-purple-700 dark:text-purple-300 shadow-2xs font-bold"
+                ? "bg-brand-50 dark:bg-brand-950/70 text-brand-700 dark:text-brand-300 shadow-2xs font-bold"
                 : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
             }`}
           >
             <Settings2
               className={`size-4 shrink-0 ${
-                activeTab === "settings" ? "text-purple-600 dark:text-purple-400" : "text-neutral-400"
+                activeTab === "settings" ? "text-brand-600 dark:text-brand-400" : "text-neutral-400"
               }`}
             />
             <span className="truncate">Cài đặt hệ thống</span>
@@ -380,7 +368,7 @@ export function DesktopSidebar({
             >
               <Bell className="size-4" />
               {unreadNotifications > 0 && (
-                <span className="absolute top-1 right-1 size-2 rounded-full bg-purple-600 ring-2 ring-white dark:ring-neutral-900" />
+                <span className="absolute top-1 right-1 size-2 rounded-full bg-brand-600 ring-2 ring-white dark:ring-neutral-900" />
               )}
             </button>
 
@@ -407,7 +395,7 @@ export function DesktopSidebar({
 
         {/* User Card */}
         <div className="flex items-center gap-2.5 p-1.5 rounded-xl bg-white dark:bg-neutral-800/80 border border-neutral-200/60 dark:border-neutral-700/60">
-          <div className="size-8 rounded-lg bg-gradient-to-tr from-purple-700 to-purple-500 text-white font-bold text-xs flex items-center justify-center shrink-0">
+          <div className="size-8 rounded-lg bg-gradient-to-tr from-brand-700 to-brand-500 text-white font-bold text-xs flex items-center justify-center shrink-0">
             {userName.charAt(0)}
           </div>
           <div className="min-w-0 flex-1">

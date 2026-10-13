@@ -420,7 +420,7 @@ export function PurchaseRequestCreateSheet({
         <button
           type="button"
           onClick={() => setLines((prev) => [...prev, emptyLine()])}
-          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-purple-600 text-white hover:bg-purple-700"
+          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-brand-600 text-white hover:bg-brand-700"
         >
           <Plus className="size-3.5" /> Thêm dòng
         </button>
@@ -519,7 +519,7 @@ export function PurchaseRequestCreateSheet({
         <span>
           Tổng: {lines.length} dòng
         </span>
-        <span className="text-purple-700 dark:text-purple-300">Tổng tiền: {formatVND(grandTotal)}</span>
+        <span className="text-brand-700 dark:text-brand-300">Tổng tiền: {formatVND(grandTotal)}</span>
       </div>
     </section>
   );
@@ -562,13 +562,13 @@ export function PurchaseRequestCreateSheet({
                 >
                   <span
                     className={`block h-1 rounded-full ${
-                      i <= step ? "bg-purple-600" : "bg-neutral-200 dark:bg-neutral-700"
+                      i <= step ? "bg-brand-600" : "bg-neutral-200 dark:bg-neutral-700"
                     }`}
                   />
                   <span
                     className={`mt-1 block text-[10px] font-semibold ${
                       i === step
-                        ? "text-purple-700 dark:text-purple-300"
+                        ? "text-brand-700 dark:text-brand-300"
                         : "text-neutral-400"
                     }`}
                   >
@@ -623,7 +623,7 @@ export function PurchaseRequestCreateSheet({
                 ))
               )}
             </div>
-            <p className="text-xs font-bold text-purple-700 dark:text-purple-300 pt-1">
+            <p className="text-xs font-bold text-brand-700 dark:text-brand-300 pt-1">
               Tổng thanh toán: {formatVND(grandTotal)} {currencyId}
             </p>
           </section>

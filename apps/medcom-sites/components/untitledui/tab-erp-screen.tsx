@@ -1415,7 +1415,7 @@ export function TabErpScreen({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
                 Phân hệ ERP
               </span>
               <span className="text-xs text-neutral-400">Chi nhánh: {currentBranch}</span>
@@ -1437,7 +1437,7 @@ export function TabErpScreen({
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && loadList(1)}
                 placeholder="Tìm theo mã chứng từ, người lập, đối tượng..."
-                className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-2xs"
+                className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-2xs"
               />
             </div>
 
@@ -1448,7 +1448,7 @@ export function TabErpScreen({
               className="p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 transition-colors shrink-0 disabled:opacity-50"
               title="Làm mới danh sách"
             >
-              <RefreshCw className={`size-4 ${isRefreshing ? "animate-spin text-purple-600" : ""}`} />
+              <RefreshCw className={`size-4 ${isRefreshing ? "animate-spin text-brand-600" : ""}`} />
             </button>
 
             {isCreateVisible && (
@@ -1504,7 +1504,7 @@ export function TabErpScreen({
                   onClick={() => setStatusFilter(chip.id)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 shrink-0 ${
                     isSelected
-                      ? "bg-purple-600 text-white shadow-xs"
+                      ? "bg-brand-600 text-white shadow-xs"
                       : "bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 border border-neutral-200/80 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800"
                   }`}
                 >
@@ -1512,7 +1512,7 @@ export function TabErpScreen({
                   <span
                     className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
                       isSelected
-                        ? "bg-purple-700 text-white"
+                        ? "bg-brand-700 text-white"
                         : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400"
                     }`}
                   >
@@ -1568,7 +1568,7 @@ export function TabErpScreen({
               <div
                 key={docId}
                 onClick={() => handleOpenDetail(docId)}
-                className="group cursor-pointer rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 hover:border-purple-300 dark:hover:border-purple-800/60 transition-all shadow-xs hover:shadow-md"
+                className="group cursor-pointer rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 hover:border-brand-300 dark:hover:border-brand-800/60 transition-all shadow-xs hover:shadow-md"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
@@ -1589,12 +1589,12 @@ export function TabErpScreen({
                     )}
                     {dateText && (
                       <p className="text-[11px] text-neutral-400 mt-1.5 flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5 text-purple-600" />
+                        <Calendar className="w-3.5 h-3.5 text-brand-600" />
                         <span>{dateText}</span>
                       </p>
                     )}
                   </div>
-                  <ChevronRight className="w-4 h-4 text-neutral-400 group-hover:text-purple-600 transition-colors shrink-0 mt-1" />
+                  <ChevronRight className="w-4 h-4 text-neutral-400 group-hover:text-brand-600 transition-colors shrink-0 mt-1" />
                 </div>
               </div>
             );
@@ -1659,7 +1659,7 @@ export function TabErpScreen({
 
           {loadingDetail ? (
             <div className="space-y-3 py-8 text-center">
-              <RefreshCw className="w-6 h-6 animate-spin mx-auto text-purple-600" />
+              <RefreshCw className="w-6 h-6 animate-spin mx-auto text-brand-600" />
               <p className="text-xs text-neutral-500">Đang tải đầy đủ trường chi tiết từ ERP...</p>
             </div>
           ) : detailError ? (
@@ -1670,10 +1670,10 @@ export function TabErpScreen({
             <>
               {/* QR Scanner Controls for warehouse-qr / sales-qr: Replaced input box with 2 camera buttons */}
               {isQrModule && (
-                <div className="p-4 rounded-2xl bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900/40 space-y-3">
+                <div className="p-4 rounded-2xl bg-brand-50/50 dark:bg-brand-950/20 border border-brand-200 dark:border-brand-900/40 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-purple-900 dark:text-purple-300 flex items-center gap-1.5">
-                      <QrCode className="w-4 h-4 text-purple-600" />
+                    <span className="text-xs font-bold text-brand-900 dark:text-brand-300 flex items-center gap-1.5">
+                      <QrCode className="w-4 h-4 text-brand-600" />
                       Thao tác quét mã vạch / QR tem kiện
                     </span>
                   </div>
@@ -1726,7 +1726,7 @@ export function TabErpScreen({
                     </p>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200 dark:border-purple-900/40">
+                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 border border-brand-200 dark:border-brand-900/40">
                       {String(detail.header?.statusName || (detail.header?.isLocked ? "Đã khóa" : "Đang mở"))}
                     </span>
                     {menuActs.length > 0 && (
@@ -1944,7 +1944,7 @@ export function TabErpScreen({
                           key={key}
                           className="flex flex-col py-1"
                         >
-                          <span className="text-[10px] text-purple-600 dark:text-purple-400 font-medium">
+                          <span className="text-[10px] text-brand-600 dark:text-brand-400 font-medium">
                             {getFieldLabel(key)}
                           </span>
                           <input
@@ -1953,7 +1953,7 @@ export function TabErpScreen({
                             onChange={(e) =>
                               setEditHeader((prev) => ({ ...prev, [key]: e.target.value }))
                             }
-                            className="mt-0.5 p-1.5 rounded-lg border border-purple-300 dark:border-purple-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            className="mt-0.5 p-1.5 rounded-lg border border-brand-300 dark:border-brand-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
                           />
                         </div>
                       );
@@ -2022,18 +2022,18 @@ export function TabErpScreen({
                             ? Number(q) * Number(p)
                             : null;
                         const inputCls =
-                          "mt-0.5 p-1.5 rounded-lg border border-purple-300 dark:border-purple-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 w-full";
+                          "mt-0.5 p-1.5 rounded-lg border border-brand-300 dark:border-brand-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 w-full";
                         const itemName = (f.itemName || f.name || "") as string;
                         return (
                           <div
                             key={row.lineId}
-                            className="rounded-xl border border-purple-200 dark:border-purple-800/60 p-3 bg-white dark:bg-neutral-900 space-y-2.5"
+                            className="rounded-xl border border-brand-200 dark:border-brand-800/60 p-3 bg-white dark:bg-neutral-900 space-y-2.5"
                           >
                             <div className="flex items-center justify-between gap-2">
                               <span className="text-xs font-bold text-neutral-500">Dòng {idx + 1}</span>
                             </div>
                             <div>
-                              <label className="block text-[10px] text-purple-600 dark:text-purple-400 font-medium">
+                              <label className="block text-[10px] text-brand-600 dark:text-brand-400 font-medium">
                                 Mã hàng <span className="text-red-500">*</span>
                               </label>
                               <input
@@ -2050,7 +2050,7 @@ export function TabErpScreen({
                               <div className="grid grid-cols-1 gap-2.5">
                                 {extras.map((k) => (
                                   <div key={k}>
-                                    <label className="block text-[10px] text-purple-600 dark:text-purple-400 font-medium">
+                                    <label className="block text-[10px] text-brand-600 dark:text-brand-400 font-medium">
                                       {getFieldLabel(k)}
                                     </label>
                                     <input
@@ -2066,7 +2066,7 @@ export function TabErpScreen({
                             )}
                             <div className="grid grid-cols-2 gap-2.5">
                               <div>
-                                <label className="block text-[10px] text-purple-600 dark:text-purple-400 font-medium">
+                                <label className="block text-[10px] text-brand-600 dark:text-brand-400 font-medium">
                                   Số lượng <span className="text-red-500">*</span>
                                 </label>
                                 <input
@@ -2078,7 +2078,7 @@ export function TabErpScreen({
                                 />
                               </div>
                               <div>
-                                <label className="block text-[10px] text-purple-600 dark:text-purple-400 font-medium">
+                                <label className="block text-[10px] text-brand-600 dark:text-brand-400 font-medium">
                                   Đơn giá <span className="text-red-500">*</span>
                                 </label>
                                 <input
@@ -2092,7 +2092,7 @@ export function TabErpScreen({
                             </div>
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-[10px] text-neutral-400">Tổng giá</span>
-                              <span className="font-bold text-purple-700 dark:text-purple-300 font-mono">
+                              <span className="font-bold text-brand-700 dark:text-brand-300 font-mono">
                                 {live === null ? "—" : formatMoney(live, docCurrencyId(detail.header))}
                               </span>
                             </div>
@@ -2125,7 +2125,7 @@ export function TabErpScreen({
                             const d = editLines[row.lineId] || {};
                             const set = (k: string, v: string) => patchEditLine(row.lineId, k, v);
                             const cellInput =
-                              "mt-0.5 p-1.5 rounded-lg border border-purple-300 dark:border-purple-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 w-full min-w-20";
+                              "mt-0.5 p-1.5 rounded-lg border border-brand-300 dark:border-brand-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 w-full min-w-20";
                             const q = (d.quantity ?? "").trim();
                             const p = (d.unitPrice ?? "").trim();
                             const live =
@@ -2147,7 +2147,7 @@ export function TabErpScreen({
                                 <td className="py-2.5 px-2.5 font-medium text-neutral-800 dark:text-neutral-200">
                                   <div className="text-xs">{itemName || "—"}</div>
                                   {unit && (
-                                    <div className="text-[10px] text-purple-600 dark:text-purple-400 font-medium">
+                                    <div className="text-[10px] text-brand-600 dark:text-brand-400 font-medium">
                                       ĐVT: {unit}
                                     </div>
                                   )}
@@ -2183,7 +2183,7 @@ export function TabErpScreen({
                                     className={cellInput}
                                   />
                                 </td>
-                                <td className="py-2.5 px-2.5 text-right font-bold text-purple-700 dark:text-purple-300 font-mono">
+                                <td className="py-2.5 px-2.5 text-right font-bold text-brand-700 dark:text-brand-300 font-mono">
                                   {live === null ? "—" : formatMoney(live, docCurrencyId(detail.header))}
                                 </td>
                               </tr>
@@ -2222,7 +2222,7 @@ export function TabErpScreen({
                                 {itemName}
                               </p>
                             )}
-                            {unit && <p className="text-[10px] text-purple-600 dark:text-purple-400 font-medium">ĐVT: {unit}</p>}
+                            {unit && <p className="text-[10px] text-brand-600 dark:text-brand-400 font-medium">ĐVT: {unit}</p>}
                             {lineNotes && (
                               <p className="mt-0.5 text-[11px] text-neutral-500 dark:text-neutral-400 italic break-words">
                                 {lineNotes}
@@ -2267,7 +2267,7 @@ export function TabErpScreen({
                             </div>
                             <div className="mt-1.5 pt-1.5 border-t border-neutral-200/70 dark:border-neutral-800 flex items-center justify-between">
                               <span className="text-[10px] text-neutral-400">Tổng giá</span>
-                              <span className="text-xs font-bold text-purple-700 dark:text-purple-300 font-mono">
+                              <span className="text-xs font-bold text-brand-700 dark:text-brand-300 font-mono">
                                 {total || "—"}
                               </span>
                             </div>
@@ -2311,7 +2311,7 @@ export function TabErpScreen({
                                 </td>
                                 <td className="py-2.5 px-2.5 font-medium text-neutral-800 dark:text-neutral-200">
                                   <div className="text-xs">{itemName || "—"}</div>
-                                  {unit && <div className="text-[10px] text-purple-600 dark:text-purple-400 font-medium">ĐVT: {unit}</div>}
+                                  {unit && <div className="text-[10px] text-brand-600 dark:text-brand-400 font-medium">ĐVT: {unit}</div>}
                                   {lineNotes && <div className="text-[11px] text-neutral-500 dark:text-neutral-400 italic">{lineNotes}</div>}
                                 </td>
                                 {module === "purchase-requests" && (
@@ -2333,7 +2333,7 @@ export function TabErpScreen({
                                 <td className="py-2.5 px-2.5 text-neutral-700 dark:text-neutral-300 font-mono">
                                   {price || "—"}
                                 </td>
-                                <td className="py-2.5 px-2.5 text-right font-bold text-purple-700 dark:text-purple-300 font-mono">
+                                <td className="py-2.5 px-2.5 text-right font-bold text-brand-700 dark:text-brand-300 font-mono">
                                   {total || "—"}
                                 </td>
                               </tr>
@@ -2352,7 +2352,7 @@ export function TabErpScreen({
                       <span className="font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                         Tổng cộng ({detail.lines?.rows?.length || 0} dòng)
                       </span>
-                      <span className="font-bold text-purple-700 dark:text-purple-300 font-mono">
+                      <span className="font-bold text-brand-700 dark:text-brand-300 font-mono">
                         {formatMoney(grand, cur)}{cur ? ` ${cur}` : ""}
                       </span>
                     </div>
@@ -2490,8 +2490,8 @@ export function TabErpScreen({
                 playsInline
               />
               {/* Scanner Reticle Overlay */}
-              <div className="absolute inset-0 border-2 border-purple-500/60 rounded-2xl pointer-events-none flex items-center justify-center">
-                <div className="size-48 border-2 border-dashed border-purple-400 rounded-xl" />
+              <div className="absolute inset-0 border-2 border-brand-500/60 rounded-2xl pointer-events-none flex items-center justify-center">
+                <div className="size-48 border-2 border-dashed border-brand-400 rounded-xl" />
               </div>
             </div>
 
@@ -2521,7 +2521,7 @@ export function TabErpScreen({
                     }
                   }}
                   disabled={!manualBarcode.trim() || qrOperationLoading}
-                  className="px-4 py-2 rounded-xl bg-purple-600 text-white font-semibold hover:bg-purple-700 disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-50"
                 >
                   Xác nhận
                 </button>
@@ -2696,7 +2696,7 @@ export function TabErpScreen({
                 type="button"
                 onClick={handleCreateDocument}
                 disabled={creatingDocument}
-                className="px-4 py-2 rounded-xl bg-purple-600 text-white font-semibold hover:bg-purple-700 disabled:opacity-50 text-xs"
+                className="px-4 py-2 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-50 text-xs"
               >
                 {creatingDocument ? "Đang tạo..." : "Xác nhận tạo chứng từ"}
               </button>
@@ -2713,8 +2713,8 @@ export function TabErpScreen({
           title={`Hợp đồng: ${contractInfo.contractId}`}
         >
           <div className="space-y-3 p-2 text-xs">
-            <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900 space-y-1.5">
-              <span className="font-semibold text-purple-900 dark:text-purple-300 block">
+            <div className="p-3 rounded-2xl bg-brand-50 dark:bg-brand-950/30 border border-brand-200 dark:border-brand-900 space-y-1.5">
+              <span className="font-semibold text-brand-900 dark:text-brand-300 block">
                 Số / Mã hợp đồng: {contractInfo.contractNo || contractInfo.contractId}
               </span>
               {contractInfo.objectName && (
@@ -2783,7 +2783,7 @@ export function TabErpScreen({
               <button
                 onClick={handleConfirmSendPm}
                 disabled={!selectedPmId || executingAction === "send-pm"}
-                className="px-4 py-2 rounded-xl bg-purple-600 text-white font-semibold hover:bg-purple-700 disabled:opacity-50"
+                className="px-4 py-2 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-50"
               >
                 {executingAction === "send-pm" ? "Đang gửi..." : "Xác nhận gửi PM"}
               </button>
@@ -2800,8 +2800,8 @@ export function TabErpScreen({
           title={`Thao tác: ${actionPromptModal.action.caption}`}
         >
           <div className="space-y-3.5 p-2 text-xs">
-            <div className="p-3 rounded-xl bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200/60 dark:border-purple-900/40">
-              <p className="text-xs font-semibold text-purple-900 dark:text-purple-300">
+            <div className="p-3 rounded-xl bg-brand-50/60 dark:bg-brand-950/30 border border-brand-200/60 dark:border-brand-900/40">
+              <p className="text-xs font-semibold text-brand-900 dark:text-brand-300">
                 Xác nhận thực hiện thao tác &ldquo;{actionPromptModal.action.caption}&rdquo; trên chứng từ {detail?.documentId}
               </p>
             </div>
@@ -2836,7 +2836,7 @@ export function TabErpScreen({
                 className={`px-4 py-2 rounded-xl text-white font-semibold text-xs disabled:opacity-50 ${
                   actionPromptModal.action.id === "reject"
                     ? "bg-rose-600 hover:bg-rose-700"
-                    : "bg-purple-600 hover:bg-purple-700"
+                    : "bg-brand-600 hover:bg-brand-700"
                 }`}
               >
                 {executingAction === actionPromptModal.action.id ? "Đang xử lý..." : `Xác nhận ${actionPromptModal.action.caption}`}
@@ -2898,7 +2898,7 @@ export function TabErpScreen({
                 type="button"
                 onClick={handleConfirmReturnStep}
                 disabled={!selectedReturnStatusId || executingAction === "return-step"}
-                className="px-4 py-2 rounded-xl bg-purple-600 text-white font-semibold hover:bg-purple-700 disabled:opacity-50 text-xs"
+                className="px-4 py-2 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-50 text-xs"
               >
                 {executingAction === "return-step" ? "Đang gửi..." : "Xác nhận gửi về"}
               </button>
@@ -2973,7 +2973,7 @@ export function TabErpScreen({
                 type="button"
                 onClick={handleConfirmSendSa}
                 disabled={!selectedPrimarySaId || !selectedSupportingSaId || executingAction === "send-sa"}
-                className="px-4 py-2 rounded-xl bg-purple-600 text-white font-semibold hover:bg-purple-700 disabled:opacity-50 text-xs"
+                className="px-4 py-2 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-50 text-xs"
               >
                 {executingAction === "send-sa" ? "Đang gửi..." : "Xác nhận gửi SA"}
               </button>

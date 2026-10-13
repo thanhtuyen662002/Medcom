@@ -366,7 +366,7 @@ export function TabInbound({
               placeholder="Tìm theo số phiếu nhập, số PO, nhà cung cấp..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-2xs"
+              className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-2xs"
             />
           </div>
 
@@ -377,7 +377,7 @@ export function TabInbound({
             className="p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 transition-colors shrink-0 disabled:opacity-50"
             title="Làm mới danh sách"
           >
-            <RefreshCw className={`size-4 ${isRefreshing ? "animate-spin text-purple-600" : ""}`} />
+            <RefreshCw className={`size-4 ${isRefreshing ? "animate-spin text-brand-600" : ""}`} />
           </button>
 
           <UntitledButton
@@ -406,7 +406,7 @@ export function TabInbound({
                 onClick={() => setStageFilter(chip.id)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 shrink-0 ${
                   isSelected
-                    ? "bg-purple-600 text-white shadow-xs"
+                    ? "bg-brand-600 text-white shadow-xs"
                     : "bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 border border-neutral-200/80 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800"
                 }`}
               >
@@ -414,7 +414,7 @@ export function TabInbound({
                 <span
                   className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
                     isSelected
-                      ? "bg-purple-700 text-white"
+                      ? "bg-brand-700 text-white"
                       : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400"
                   }`}
                 >
@@ -467,7 +467,7 @@ export function TabInbound({
             <div
               key={item.id}
               onClick={() => handleOpenDetail(item)}
-              className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 hover:border-purple-300 dark:hover:border-purple-800 p-4 transition-all duration-150 cursor-pointer shadow-xs active:scale-[0.99] group"
+              className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 hover:border-brand-300 dark:hover:border-brand-800 p-4 transition-all duration-150 cursor-pointer shadow-xs active:scale-[0.99] group"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="space-y-1 min-w-0">
@@ -498,13 +498,13 @@ export function TabInbound({
               {/* Inbound Meta */}
               <div className="mt-3 pt-2.5 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between text-xs text-neutral-500">
                 <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
-                  <Calendar className="size-3.5 text-purple-600" />
+                  <Calendar className="size-3.5 text-brand-600" />
                   <span className="font-medium">{item.receivedDate}</span>
                 </div>
 
                 <div className="flex items-center gap-1 text-neutral-400">
                   <span>{item.inspector}</span>
-                  <ChevronRight className="size-4 group-hover:text-purple-600 transition-colors ml-1" />
+                  <ChevronRight className="size-4 group-hover:text-brand-600 transition-colors ml-1" />
                 </div>
               </div>
             </div>
@@ -675,7 +675,7 @@ export function TabInbound({
                           <span className="font-semibold text-neutral-900 dark:text-white">Thành tiền: {line.amount}</span>
                         </div>
                       )}
-                      <div className="text-[11px] text-purple-600 dark:text-purple-400 font-medium">
+                      <div className="text-[11px] text-brand-600 dark:text-brand-400 font-medium">
                         Vị trí lưu: {line.storageBin}
                       </div>
                       {line.checkerNote && (

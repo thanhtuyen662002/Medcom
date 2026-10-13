@@ -54,7 +54,7 @@ export function TabSettings({
       {/* Profile Card */}
       <div className="rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-5 shadow-xs">
         <div className="flex items-center gap-3.5">
-          <div className="size-14 rounded-2xl bg-gradient-to-tr from-purple-700 to-purple-500 text-white font-extrabold text-xl flex items-center justify-center shadow-md ring-4 ring-purple-50 dark:ring-purple-950/60">
+          <div className="size-14 rounded-2xl bg-gradient-to-tr from-brand-700 to-brand-500 text-white font-extrabold text-xl flex items-center justify-center shadow-md ring-4 ring-brand-50 dark:ring-brand-950/60">
             M
           </div>
           <div className="min-w-0 flex-1">
@@ -89,7 +89,7 @@ export function TabSettings({
           {/* Dark Mode Toggle */}
           <div className="p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="size-9 rounded-xl bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+              <div className="size-9 rounded-xl bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 flex items-center justify-center">
                 {isDarkMode ? <Moon className="size-4" /> : <Sun className="size-4" />}
               </div>
               <div>
@@ -106,7 +106,7 @@ export function TabSettings({
               type="button"
               onClick={onToggleDarkMode}
               className={`w-11 h-6 rounded-full transition-colors relative focus:outline-none p-0.5 ${
-                isDarkMode ? "bg-purple-600" : "bg-neutral-300 dark:bg-neutral-700"
+                isDarkMode ? "bg-brand-600" : "bg-neutral-300 dark:bg-neutral-700"
               }`}
             >
               <div
@@ -123,7 +123,7 @@ export function TabSettings({
       <div className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 shadow-xs space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Server className="size-4 text-purple-600" />
+            <Server className="size-4 text-brand-600" />
             <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300">
               Kết nối Máy chủ ERP .NET 10
             </h4>

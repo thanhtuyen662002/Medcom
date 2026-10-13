@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import {
   ShieldCheck,
   Building2,
@@ -118,21 +119,8 @@ export function DesktopHeader({
           {/* Brand & Branch Selector */}
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2.5">
-              <div className="size-9 rounded-xl bg-gradient-to-tr from-purple-700 via-purple-600 to-indigo-600 text-white flex items-center justify-center font-black text-sm shadow-sm ring-2 ring-purple-100 dark:ring-purple-950">
-                <ShieldCheck className="size-5" />
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-extrabold tracking-tight text-neutral-900 dark:text-white">
-                    MEDCOM ERP
-                  </span>
-                  <UntitledBadge variant="purple" size="sm">
-                    2026
-                  </UntitledBadge>
-                </div>
-                <span className="text-[10px] text-neutral-400 block leading-tight">
-                  Quản lý Dược GSP
-                </span>
+              <div className="h-10 w-20 rounded-xl bg-white flex items-center justify-center">
+                <Image src="/medcom-logo.png" alt="MEDCOMTECH" width={144} height={52} className="h-full w-full object-contain" priority />
               </div>
             </div>
 
@@ -143,7 +131,7 @@ export function DesktopHeader({
                 onClick={() => setBranchDropdownOpen(!branchDropdownOpen)}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50/80 dark:bg-neutral-800/80 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-xs font-semibold text-neutral-800 dark:text-neutral-200 transition-all cursor-pointer"
               >
-                <Building2 className="size-3.5 text-purple-600" />
+                <Building2 className="size-3.5 text-brand-600" />
                 <span className="max-w-[150px] lg:max-w-[200px] truncate">
                   {activeBranch.name}
                 </span>
@@ -182,13 +170,13 @@ export function DesktopHeader({
                             }}
                             className={`w-full flex items-center justify-between p-2 rounded-xl text-left text-xs transition-colors ${
                               isSelected
-                                ? "bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-semibold"
+                                ? "bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 font-semibold"
                                 : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800/60"
                             }`}
                           >
                             <span className="truncate">{b.name}</span>
                             {isSelected && (
-                              <Check className="size-3.5 text-purple-600 shrink-0 ml-2" />
+                              <Check className="size-3.5 text-brand-600 shrink-0 ml-2" />
                             )}
                           </button>
                         );
@@ -213,13 +201,13 @@ export function DesktopHeader({
                   onClick={() => onTabChange(item.id)}
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all relative cursor-pointer ${
                     isActive
-                      ? "bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 shadow-2xs"
+                      ? "bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 shadow-2xs"
                       : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
                   }`}
                 >
                   <Icon
                     className={`size-4 ${
-                      isActive ? "text-purple-600 dark:text-purple-400" : "text-neutral-400"
+                      isActive ? "text-brand-600 dark:text-brand-400" : "text-neutral-400"
                     }`}
                   />
                   <span>{item.label}</span>
@@ -227,7 +215,7 @@ export function DesktopHeader({
                     <span
                       className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
                         isActive
-                          ? "bg-purple-200 dark:bg-purple-800 text-purple-900 dark:text-purple-200"
+                          ? "bg-brand-200 dark:bg-brand-800 text-brand-900 dark:text-brand-200"
                           : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300"
                       }`}
                     >
@@ -235,7 +223,7 @@ export function DesktopHeader({
                     </span>
                   )}
                   {isActive && (
-                    <span className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-purple-600 dark:bg-purple-400" />
+                    <span className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-brand-600 dark:bg-brand-400" />
                   )}
                 </button>
               );
@@ -251,7 +239,7 @@ export function DesktopHeader({
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all cursor-pointer text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 shadow-2xs"
                 title="Dùng giao diện sidebar dọc bên trái"
               >
-                <PanelLeft className="size-3.5 text-purple-600" />
+                <PanelLeft className="size-3.5 text-brand-600" />
                 <span className="hidden xl:inline">Sidebar dọc</span>
               </button>
             )}
@@ -260,10 +248,10 @@ export function DesktopHeader({
               <button
                 type="button"
                 onClick={onOpenMenu}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all cursor-pointer text-purple-700 dark:text-purple-300 bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/60 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-800 shadow-2xs"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all cursor-pointer text-brand-700 dark:text-brand-300 bg-brand-50 hover:bg-brand-100 dark:bg-brand-950/60 dark:hover:bg-brand-900/60 border border-brand-200 dark:border-brand-800 shadow-2xs"
                 title="Mở toàn bộ danh mục phân hệ ERP"
               >
-                <Menu className="size-3.5 text-purple-600 dark:text-purple-400" />
+                <Menu className="size-3.5 text-brand-600 dark:text-brand-400" />
                 <span>Phân hệ ERP</span>
               </button>
             )}
@@ -287,7 +275,7 @@ export function DesktopHeader({
             >
               <Bell className="size-4" />
               {unreadNotifications > 0 && (
-                <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-purple-600 ring-2 ring-white dark:ring-neutral-900" />
+                <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-brand-600 ring-2 ring-white dark:ring-neutral-900" />
               )}
             </button>
 
@@ -308,7 +296,7 @@ export function DesktopHeader({
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                 className="flex items-center gap-2 p-1.5 pl-2 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all cursor-pointer"
               >
-                <div className="size-7 rounded-lg bg-gradient-to-tr from-purple-700 to-purple-500 text-white font-bold text-xs flex items-center justify-center">
+                <div className="size-7 rounded-lg bg-gradient-to-tr from-brand-700 to-brand-500 text-white font-bold text-xs flex items-center justify-center">
                   {userName.charAt(0)}
                 </div>
                 <div className="text-left hidden lg:block">

@@ -94,7 +94,7 @@ export function LookupField({
       <label className="block text-neutral-500 dark:text-neutral-400 mb-1 font-medium">
         {label} {required && <span className="text-red-500">*</span>}
         {multiple && (selected ?? []).length > 0 && (
-          <span className="ml-1.5 text-[10px] font-bold text-purple-600 dark:text-purple-400">
+          <span className="ml-1.5 text-[10px] font-bold text-brand-600 dark:text-brand-400">
             {(selected ?? []).length} đã chọn
           </span>
         )}
@@ -120,7 +120,7 @@ export function LookupField({
                 {(selected ?? []).map((c) => (
                   <span
                     key={c.id}
-                    className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 text-[11px] font-semibold"
+                    className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full bg-brand-100 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 text-[11px] font-semibold"
                   >
                     <span className="max-w-32 truncate">{fieldText(c.label) || c.id}</span>
                     <span
@@ -138,7 +138,7 @@ export function LookupField({
                           onMultiSelect?.((selected ?? []).filter((x) => x.id !== c.id));
                         }
                       }}
-                      className="p-0.5 rounded-full hover:bg-purple-200 dark:hover:bg-purple-900"
+                      className="p-0.5 rounded-full hover:bg-brand-200 dark:hover:bg-brand-900"
                     >
                       <X className="size-3" />
                     </span>
@@ -197,17 +197,17 @@ export function LookupField({
                           setOpen(false);
                         }
                       }}
-                      className={`w-full text-left px-3 py-2 text-xs hover:bg-purple-50 dark:hover:bg-purple-950/40 flex items-center gap-2 ${
+                      className={`w-full text-left px-3 py-2 text-xs hover:bg-brand-50 dark:hover:bg-brand-950/40 flex items-center gap-2 ${
                         !multiple && item.id === value
-                          ? "text-purple-700 dark:text-purple-300 font-bold"
+                          ? "text-brand-700 dark:text-brand-300 font-bold"
                           : "text-neutral-700 dark:text-neutral-300"
-                      } ${checked ? "bg-purple-50/60 dark:bg-purple-950/30" : ""}`}
+                      } ${checked ? "bg-brand-50/60 dark:bg-brand-950/30" : ""}`}
                     >
                       {multiple && (
                         <span
                           className={`size-4 rounded border flex items-center justify-center shrink-0 ${
                             checked
-                              ? "bg-purple-600 border-purple-600 text-white"
+                              ? "bg-brand-600 border-brand-600 text-white"
                               : "border-neutral-300 dark:border-neutral-600 text-transparent"
                           }`}
                         >
@@ -215,7 +215,7 @@ export function LookupField({
                         </span>
                       )}
                       <span className="min-w-0 flex-1">
-                        <span className={`block truncate ${checked ? "font-bold text-purple-700 dark:text-purple-300" : ""}`}>
+                        <span className={`block truncate ${checked ? "font-bold text-brand-700 dark:text-brand-300" : ""}`}>
                           {fieldText(item.label) || item.id}
                         </span>
                         {fieldText(item.label) && item.label !== item.id && (
@@ -232,7 +232,7 @@ export function LookupField({
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-bold bg-purple-600 text-white hover:bg-purple-700"
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold bg-brand-600 text-white hover:bg-brand-700"
                 >
                   Xong{(selected ?? []).length > 0 ? ` (${(selected ?? []).length})` : ""}
                 </button>

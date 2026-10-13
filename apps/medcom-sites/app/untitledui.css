@@ -1,18 +1,18 @@
 /* Untitled UI Theme System & Utility Classes for Medcom ERP */
 :root {
-  /* UNTITLED UI BRAND (Default Violet/Purple) */
-  --uui-brand-25: #FCFAFF;
-  --uui-brand-50: #F9F5FF;
-  --uui-brand-100: #F4EBFF;
-  --uui-brand-200: #E9D7FE;
-  --uui-brand-300: #D6BBFB;
-  --uui-brand-400: #B692F6;
-  --uui-brand-500: #9E77ED;
-  --uui-brand-600: #7F56D9;
-  --uui-brand-700: #6941C6;
-  --uui-brand-800: #53389E;
-  --uui-brand-900: #42307D;
-  --uui-brand-950: #2C1C5F;
+  /* UNTITLED UI BRAND (Medcomtech navy) */
+  --uui-brand-25: #F4F6FB;
+  --uui-brand-50: #EDF1F9;
+  --uui-brand-100: #D8E1F3;
+  --uui-brand-200: #B2C4E6;
+  --uui-brand-300: #7F9CD4;
+  --uui-brand-400: #4C72BC;
+  --uui-brand-500: #2B4FA1;
+  --uui-brand-600: #1A3A84;
+  --uui-brand-700: #102A68;
+  --uui-brand-800: #0C224F;
+  --uui-brand-900: #0A1E46;
+  --uui-brand-950: #060F2C;
 
   /* MEDICAL TEAL/BLUE PALETTE */
   --uui-med-50: #EFF8FF;
@@ -78,12 +78,12 @@
   --uui-gray-800: #F2F4F7;
   --uui-gray-900: #F9FAFB;
 
-  --uui-brand-50: #19142E;
-  --uui-brand-100: #2C1C5F;
-  --uui-brand-200: #42307D;
-  --uui-brand-300: #53389E;
-  --uui-brand-600: #9E77ED;
-  --uui-brand-700: #B692F6;
+  --uui-brand-50: #131B36;
+  --uui-brand-100: #1B2650;
+  --uui-brand-200: #2A3A6E;
+  --uui-brand-300: #3E5394;
+  --uui-brand-600: #7E9BD4;
+  --uui-brand-700: #A3BCE8;
 
   --uui-shadow-xs: 0px 1px 2px rgba(0, 0, 0, 0.4);
   --uui-shadow-sm: 0px 1px 3px rgba(0, 0, 0, 0.5);

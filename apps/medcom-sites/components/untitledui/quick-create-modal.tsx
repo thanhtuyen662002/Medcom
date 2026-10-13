@@ -140,7 +140,7 @@ export function QuickCreateModal({
               type="text"
               value={purpose}
               onChange={(e) => setPurpose(e.target.value)}
-              className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
@@ -151,7 +151,7 @@ export function QuickCreateModal({
             <select
               value={department}
               onChange={(e) => setDepartment(e.target.value)}
-              className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full px-3 py-2 text-xs rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="Kho Cấp cứu">Kho Cấp cứu</option>
               <option value="Kho Dược Trung tâm">Kho Dược Trung tâm</option>
@@ -167,7 +167,7 @@ export function QuickCreateModal({
             <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
               Thuốc đã chọn ({selectedItems.length})
             </h4>
-            <span className="text-xs font-bold text-purple-600">
+            <span className="text-xs font-bold text-brand-600">
               {totalAmountNumber.toLocaleString("vi-VN")} đ
             </span>
           </div>
@@ -222,10 +222,10 @@ export function QuickCreateModal({
                 key={cat.id}
                 type="button"
                 onClick={() => handleAddItem(cat)}
-                className="w-full p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-purple-300 dark:hover:border-purple-800 text-left flex items-center justify-between text-xs transition-colors"
+                className="w-full p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-brand-300 dark:hover:border-brand-800 text-left flex items-center justify-between text-xs transition-colors"
               >
                 <span className="truncate font-medium">{cat.name}</span>
-                <span className="text-purple-600 dark:text-purple-400 font-bold shrink-0 ml-2">
+                <span className="text-brand-600 dark:text-brand-400 font-bold shrink-0 ml-2">
                   + {cat.unit}
                 </span>
               </button>

@@ -362,7 +362,7 @@ export function TabPurchases({
               placeholder="Tìm theo số phiếu PR, người lập, nội dung..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-2xs"
+              className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-2xs"
             />
           </div>
 
@@ -373,7 +373,7 @@ export function TabPurchases({
             className="p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 transition-colors shrink-0 disabled:opacity-50"
             title="Làm mới danh sách"
           >
-            <RefreshCw className={`size-4 ${isRefreshing ? "animate-spin text-purple-600" : ""}`} />
+            <RefreshCw className={`size-4 ${isRefreshing ? "animate-spin text-brand-600" : ""}`} />
           </button>
 
           <UntitledButton
@@ -419,7 +419,7 @@ export function TabPurchases({
                 onClick={() => setFilterStatus(chip.id)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 shrink-0 ${
                   isSelected
-                    ? "bg-purple-600 text-white shadow-xs"
+                    ? "bg-brand-600 text-white shadow-xs"
                     : "bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 border border-neutral-200/80 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800"
                 }`}
               >
@@ -427,7 +427,7 @@ export function TabPurchases({
                 <span
                   className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
                     isSelected
-                      ? "bg-purple-700 text-white"
+                      ? "bg-brand-700 text-white"
                       : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400"
                   }`}
                 >
@@ -481,12 +481,12 @@ export function TabPurchases({
               key={item.id}
               data-purchase-id={item.code}
               onClick={() => handleOpenDetail(item)}
-              className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 hover:border-purple-300 dark:hover:border-purple-800 p-4 transition-all duration-150 cursor-pointer shadow-xs active:scale-[0.99] group"
+              className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 hover:border-brand-300 dark:hover:border-brand-800 p-4 transition-all duration-150 cursor-pointer shadow-xs active:scale-[0.99] group"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="space-y-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold text-purple-700 dark:text-purple-300">
+                    <span className="text-xs font-mono font-bold text-brand-700 dark:text-brand-300">
                       {item.code}
                     </span>
                     {getStatusBadge(item.status)}
@@ -516,7 +516,7 @@ export function TabPurchases({
                 <div className="flex items-center gap-1.5 text-neutral-400 shrink-0">
                   <Calendar className="size-3.5" />
                   <span>{item.date}</span>
-                  <ChevronRight className="size-4 text-neutral-400 group-hover:text-purple-600 transition-colors ml-1" />
+                  <ChevronRight className="size-4 text-neutral-400 group-hover:text-brand-600 transition-colors ml-1" />
                 </div>
               </div>
             </div>
@@ -576,7 +576,7 @@ export function TabPurchases({
                 </div>
                 <div className="text-right flex flex-col items-end gap-1">
                   {getStatusBadge(activeItem.status)}
-                  <span className="text-sm font-mono font-extrabold text-purple-700 dark:text-purple-300">
+                  <span className="text-sm font-mono font-extrabold text-brand-700 dark:text-brand-300">
                     {activeItem.totalAmount}
                   </span>
                 </div>
@@ -674,7 +674,7 @@ export function TabPurchases({
 
                       <div className="flex items-center justify-between text-[11px] pt-1 border-t border-neutral-100 dark:border-neutral-800/80 text-neutral-500">
                         <span>
-                          Số lượng: <strong className="text-purple-600">{line.quantity}</strong> {line.unit}
+                          Số lượng: <strong className="text-brand-600">{line.quantity}</strong> {line.unit}
                         </span>
                         <span>Đơn giá: {line.unitPrice}</span>
                       </div>

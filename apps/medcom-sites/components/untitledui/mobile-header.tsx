@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import { Building2, Bell, ChevronDown, Check, ShieldCheck, Wifi, Sparkles } from "lucide-react";
 
 export interface BranchOption {
@@ -46,13 +47,13 @@ export function UntitledMobileHeader({
       <div className="px-4 py-2.5 flex items-center justify-between gap-3">
         {/* Brand & Branch Selector */}
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="size-9 rounded-xl bg-gradient-to-tr from-purple-700 to-purple-500 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0 ring-2 ring-purple-100 dark:ring-purple-950">
-            M
+          <div className="h-9 w-20 flex items-center justify-center">
+            <Image src="/medcom-logo.png" alt="MEDCOMTECH" width={144} height={52} className="h-full w-full object-contain" priority />
           </div>
 
           <div className="relative min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">
                 MEDCOM ERP
               </span>
               <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-medium bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-600/20">
@@ -64,13 +65,13 @@ export function UntitledMobileHeader({
             <button
               type="button"
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="group flex items-center gap-1 text-xs font-semibold text-neutral-800 dark:text-neutral-100 hover:text-purple-600 dark:hover:text-purple-400 transition-colors truncate text-left"
+              className="group flex items-center gap-1 text-xs font-semibold text-neutral-800 dark:text-neutral-100 hover:text-brand-600 dark:hover:text-brand-400 transition-colors truncate text-left"
             >
               <span className="truncate max-w-[170px] sm:max-w-[240px]">
                 {activeBranch.name}
               </span>
               <ChevronDown
-                className={`size-3.5 text-neutral-400 group-hover:text-purple-500 transition-transform ${
+                className={`size-3.5 text-neutral-400 group-hover:text-brand-500 transition-transform ${
                   dropdownOpen ? "rotate-180" : ""
                 }`}
               />
@@ -89,7 +90,7 @@ export function UntitledMobileHeader({
           >
             <Bell className="size-5" />
             {unreadNotifications > 0 && (
-              <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-purple-600 ring-2 ring-white dark:ring-neutral-900" />
+              <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-brand-600 ring-2 ring-white dark:ring-neutral-900" />
             )}
           </button>
 
@@ -100,7 +101,7 @@ export function UntitledMobileHeader({
             className="relative flex items-center gap-1.5 p-1 pl-1.5 pr-2 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 active:scale-95 transition-all border border-neutral-200/80 dark:border-neutral-800"
             aria-label="Hồ sơ tài khoản"
           >
-            <div className="size-6 rounded-lg bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 font-semibold text-xs flex items-center justify-center">
+            <div className="size-6 rounded-lg bg-brand-100 dark:bg-brand-900/60 text-brand-700 dark:text-brand-300 font-semibold text-xs flex items-center justify-center">
               {userName.charAt(0)}
             </div>
             <span className="text-xs font-medium text-neutral-700 dark:text-neutral-200 hidden xs:inline max-w-[80px] truncate">
@@ -139,7 +140,7 @@ export function UntitledMobileHeader({
                     }}
                     className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs transition-colors ${
                       isSelected
-                        ? "bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-semibold"
+                        ? "bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 font-semibold"
                         : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800/60"
                     }`}
                   >
@@ -147,7 +148,7 @@ export function UntitledMobileHeader({
                       <div
                         className={`size-7 rounded-lg flex items-center justify-center shrink-0 ${
                           isSelected
-                            ? "bg-purple-600 text-white"
+                            ? "bg-brand-600 text-white"
                             : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300"
                         }`}
                       >
@@ -162,7 +163,7 @@ export function UntitledMobileHeader({
                         )}
                       </div>
                     </div>
-                    {isSelected && <Check className="size-4 text-purple-600 shrink-0 ml-2" />}
+                    {isSelected && <Check className="size-4 text-brand-600 shrink-0 ml-2" />}
                   </button>
                 );
               })}

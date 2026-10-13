@@ -105,20 +105,20 @@ export function TabHome({
   return (
     <div className="space-y-5 pb-24 animate-uui-fade-in">
       {/* Welcome Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-700 via-purple-800 to-indigo-950 text-white p-5 sm:p-6 shadow-xl">
-        <div className="absolute -right-8 -top-8 size-40 rounded-full bg-purple-500/20 blur-2xl pointer-events-none" />
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-700 via-brand-800 to-brand-950 text-white p-5 sm:p-6 shadow-xl">
+        <div className="absolute -right-8 -top-8 size-40 rounded-full bg-brand-500/20 blur-2xl pointer-events-none" />
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/15 backdrop-blur-xs text-purple-200">
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/15 backdrop-blur-xs text-brand-200">
                 Phiên bản Di động 2026
               </span>
-              <span className="text-xs text-purple-300">· Hệ thống Dược GSP</span>
+              <span className="text-xs text-brand-300">· Hệ thống Dược GSP</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight">
-              Xin chào, {userName} 👋
+              Xin chào, {userName}
             </h2>
-            <p className="text-xs sm:text-sm text-purple-200 max-w-md">
+            <p className="text-xs sm:text-sm text-brand-200 max-w-md">
               Chi nhánh: <strong className="text-white">{currentBranch}</strong> · Hiện có{" "}
               <strong className="text-white underline">{ordersCount} đơn hàng PO</strong> và{" "}
               <strong className="text-white underline">{purchasesCount} phiếu đề nghị PR</strong>{" "}
@@ -130,7 +130,7 @@ export function TabHome({
             <button
               type="button"
               onClick={() => onNavigateTab("orders")}
-              className="px-3.5 py-2.5 rounded-xl bg-purple-600/60 hover:bg-purple-600 text-white font-bold text-xs sm:text-sm border border-purple-400/40 active:scale-95 transition-all flex items-center gap-2 shrink-0"
+              className="px-3.5 py-2.5 rounded-xl bg-brand-600/60 hover:bg-brand-600 text-white font-bold text-xs sm:text-sm border border-brand-400/40 active:scale-95 transition-all flex items-center gap-2 shrink-0"
             >
               <ShoppingBag className="size-4" />
               Đơn hàng PO ({ordersCount})
@@ -138,9 +138,9 @@ export function TabHome({
             <button
               type="button"
               onClick={onOpenQuickCreate}
-              className="px-4 py-2.5 rounded-xl bg-white text-purple-900 font-bold text-xs sm:text-sm shadow-md hover:bg-purple-50 active:scale-95 transition-all flex items-center gap-2 shrink-0"
+              className="px-4 py-2.5 rounded-xl bg-white text-brand-900 font-bold text-xs sm:text-sm shadow-md hover:bg-brand-50 active:scale-95 transition-all flex items-center gap-2 shrink-0"
             >
-              <FilePlus2 className="size-4 text-purple-700" />
+              <FilePlus2 className="size-4 text-brand-700" />
               Tạo đề nghị
             </button>
           </div>
@@ -203,7 +203,7 @@ export function TabHome({
           <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
             Thao tác nghiệp vụ nhanh
           </h3>
-          <span className="text-[11px] text-purple-600 dark:text-purple-400 font-medium">
+          <span className="text-[11px] text-brand-600 dark:text-brand-400 font-medium">
             Phân hệ Quản trị Dược
           </span>
         </div>
@@ -212,9 +212,9 @@ export function TabHome({
           <button
             type="button"
             onClick={() => onNavigateTab("orders")}
-            className="flex flex-col items-center justify-center p-3 rounded-2xl bg-purple-50/80 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/40 border border-purple-100 dark:border-purple-900 active:scale-95 transition-all group"
+            className="flex flex-col items-center justify-center p-3 rounded-2xl bg-brand-50/80 dark:bg-brand-950/40 hover:bg-brand-100 dark:hover:bg-brand-900/40 border border-brand-100 dark:border-brand-900 active:scale-95 transition-all group"
           >
-            <div className="size-11 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+            <div className="size-11 rounded-xl bg-brand-600 text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
               <ShoppingBag className="size-5" />
             </div>
             <span className="mt-2 text-[11px] font-semibold text-neutral-800 dark:text-neutral-200 text-center leading-tight">
@@ -270,14 +270,14 @@ export function TabHome({
             <h3 className="text-sm font-bold text-neutral-900 dark:text-white">
               Cần xử lý phê duyệt
             </h3>
-            <span className="size-5 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 text-xs font-bold flex items-center justify-center">
+            <span className="size-5 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-600 dark:text-brand-400 text-xs font-bold flex items-center justify-center">
               {pendingItems.filter((i) => !approvedIds.includes(i.id)).length}
             </span>
           </div>
           <button
             type="button"
             onClick={() => onNavigateTab("purchases")}
-            className="text-xs font-semibold text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-0.5"
+            className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline flex items-center gap-0.5"
           >
             Xem tất cả <ChevronRight className="size-3.5" />
           </button>
@@ -306,7 +306,7 @@ export function TabHome({
                   className={`rounded-2xl border p-4 transition-all duration-200 cursor-pointer shadow-xs ${
                     isApproved
                       ? "bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800"
-                      : "bg-white dark:bg-neutral-900 border-neutral-200/80 dark:border-neutral-800 hover:border-purple-300 dark:hover:border-purple-800"
+                      : "bg-white dark:bg-neutral-900 border-neutral-200/80 dark:border-neutral-800 hover:border-brand-300 dark:hover:border-brand-800"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -336,7 +336,7 @@ export function TabHome({
                     </div>
 
                     <div className="text-right shrink-0">
-                      <span className="text-xs font-bold text-purple-700 dark:text-purple-300 block">
+                      <span className="text-xs font-bold text-brand-700 dark:text-brand-300 block">
                         {item.amount}
                       </span>
                     </div>
@@ -357,7 +357,7 @@ export function TabHome({
                       <button
                         type="button"
                         onClick={(e) => handleQuickApprove(item.id, e)}
-                        className="px-3 py-1.5 rounded-lg text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white shadow-xs transition-colors flex items-center gap-1 active:scale-95"
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold bg-brand-600 hover:bg-brand-700 text-white shadow-xs transition-colors flex items-center gap-1 active:scale-95"
                       >
                         <CheckCircle2 className="size-3.5" />
                         Duyệt nhanh

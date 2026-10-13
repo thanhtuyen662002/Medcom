@@ -32,11 +32,11 @@ export function UntitledButton({
 
   const variantStyles: Record<ButtonVariant, string> = {
     primary:
-      "bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white shadow-sm border border-purple-500/30 focus-visible:ring-purple-500",
+      "bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white shadow-sm border border-brand-500/30 focus-visible:ring-brand-500",
     "secondary-gray":
       "bg-white dark:bg-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-750 text-neutral-700 dark:text-neutral-200 border border-neutral-300/80 dark:border-neutral-700 shadow-xs focus-visible:ring-neutral-400",
     "secondary-color":
-      "bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 focus-visible:ring-purple-400",
+      "bg-brand-50 dark:bg-brand-950/60 hover:bg-brand-100 dark:hover:bg-brand-900/60 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-800 focus-visible:ring-brand-400",
     "tertiary-gray":
       "bg-transparent hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 focus-visible:ring-neutral-400",
     destructive:
