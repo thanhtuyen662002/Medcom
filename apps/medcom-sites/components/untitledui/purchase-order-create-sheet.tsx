@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Plus, Search, X, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { Plus, X, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { erpClient } from "@/lib/erp/erp-client";
 import type { ErpChoice } from "@/lib/erp/erp-screen-contracts";
 import { UntitledBottomSheet } from "./bottom-sheet";
+import { LookupField, choiceLabel, fieldText } from "./lookup-field";
 import { UntitledButton } from "./button";
 
 interface PurchaseOrderCreateSheetProps {
@@ -43,151 +44,6 @@ function formatVND(n: number): string {
 function lineTotal(line: DraftLine): number | null {
   if (!DECIMAL_RE.test(line.quantity.trim()) || !DECIMAL_RE.test(line.unitPrice.trim())) return null;
   return Number(line.quantity) * Number(line.unitPrice);
-}
-
-function choiceLabel(choice: ErpChoice | null, fallback: string): string {
-  if (choice && typeof choice.label === "string" && choice.label) return choice.label;
-  return fallback;
-}
-
-function fieldText(value: unknown): string {
-  return typeof value === "string" ? value : value == null ? "" : String(value);
-}
-
-/* ---------- Searchable lookup combobox (options API) ---------- */
-function LookupField({
-  label,
-  required,
-  lookupId,
-  branchId,
-  value,
-  choice,
-  onSelect,
-  placeholder,
-  error,
-}: {
-  label: string;
-  required?: boolean;
-  lookupId: string;
-  branchId: string;
-  value: string;
-  choice: ErpChoice | null;
-  onSelect: (choice: ErpChoice | null) => void;
-  placeholder?: string;
-  error?: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const [items, setItems] = useState<ErpChoice[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!open) return;
-    let cancelled = false;
-    setLoading(true);
-    const timer = setTimeout(() => {
-      erpClient
-        .getLookupOptions(MODULE, {
-          branchId,
-          lookupId,
-          page: 1,
-          pageSize: 20,
-          search: search.trim() ? search.trim() : null,
-        })
-        .then((page) => {
-          if (!cancelled) setItems(page.items || []);
-        })
-        .catch(() => {
-          if (!cancelled) setItems([]);
-        })
-        .finally(() => {
-          if (!cancelled) setLoading(false);
-        });
-    }, search ? 300 : 0);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [open, search, lookupId, branchId]);
-
-  return (
-    <div>
-      <label className="block text-neutral-500 dark:text-neutral-400 mb-1 font-medium">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      <div className="relative">
-        <button
-          type="button"
-          onClick={() => {
-            setSearch("");
-            setOpen((v) => !v);
-          }}
-          className={`w-full p-2.5 pr-8 rounded-xl border bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs text-left truncate ${
-            error
-              ? "border-red-400 dark:border-red-700"
-              : "border-neutral-300 dark:border-neutral-700"
-          }`}
-        >
-          {choiceLabel(choice, value) || <span className="text-neutral-400">{placeholder || "Chọn..."}</span>}
-        </button>
-        {value && (
-          <button
-            type="button"
-            aria-label="Xóa lựa chọn"
-            onClick={() => onSelect(null)}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
-          >
-            <X className="size-3.5" />
-          </button>
-        )}
-        {open && (
-          <div className="absolute z-30 mt-1 w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-xl overflow-hidden">
-            <div className="flex items-center gap-2 p-2 border-b border-neutral-100 dark:border-neutral-800">
-              <Search className="size-3.5 text-neutral-400 shrink-0" />
-              <input
-                autoFocus
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Tìm kiếm..."
-                className="w-full bg-transparent outline-none text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400"
-              />
-            </div>
-            <div className="max-h-48 overflow-y-auto">
-              {loading ? (
-                <p className="p-3 text-xs text-neutral-400 flex items-center gap-2">
-                  <Loader2 className="size-3.5 animate-spin" /> Đang tải...
-                </p>
-              ) : items.length === 0 ? (
-                <p className="p-3 text-xs text-neutral-400">Không có lựa chọn nào.</p>
-              ) : (
-                items.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => {
-                      onSelect(item);
-                      setOpen(false);
-                    }}
-                    className={`w-full text-left px-3 py-2 text-xs hover:bg-purple-50 dark:hover:bg-purple-950/40 ${
-                      item.id === value
-                        ? "text-purple-700 dark:text-purple-300 font-bold"
-                        : "text-neutral-700 dark:text-neutral-300"
-                    }`}
-                  >
-                    <span className="block truncate">{fieldText(item.label) || item.id}</span>
-                    {fieldText(item.label) && item.label !== item.id && (
-                      <span className="block truncate text-[10px] text-neutral-400">{item.id}</span>
-                    )}
-                  </button>
-                ))
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-      {error && <p className="mt-1 text-[11px] text-red-500">{error}</p>}
-    </div>
-  );
 }
 
 /* ---------- Small labeled inputs ---------- */
@@ -354,7 +210,9 @@ export function PurchaseOrderCreateSheet({
       }
       if (res.outcome === "QualificationRequired") {
         setSubmitWarning(
-          "Hệ thống đang ở chế độ kiểm soát an toàn. Dữ liệu chưa được ghi trực tiếp vào cơ sở dữ liệu."
+          res.code === "target_acceptance_changed"
+            ? "Máy chủ từ chối ghi: cấu hình ERP writes không còn khớp với cơ sở dữ liệu (schema/binding đổi sau khi prepare). Liên hệ vận hành chạy lại prepare và cập nhật SchemaFingerprint."
+            : "Hệ thống đang ở chế độ kiểm soát an toàn. Dữ liệu chưa được ghi trực tiếp vào cơ sở dữ liệu."
         );
         return;
       }
@@ -443,6 +301,7 @@ export function PurchaseOrderCreateSheet({
       <LookupField
         label="Nhà cung cấp"
         required
+        module="purchase-orders"
         lookupId="header.ObjectID"
         branchId={currentBranch}
         value={objectId}
@@ -465,6 +324,7 @@ export function PurchaseOrderCreateSheet({
         <LookupField
           label="Loại tiền"
           required
+          module="purchase-orders"
           lookupId="header.CurrencyID"
           branchId={currentBranch}
           value={currencyId}
@@ -481,14 +341,22 @@ export function PurchaseOrderCreateSheet({
             } else setCurrencyId("");
           }}
         />
-        <TextField
-          label="Tỷ giá"
-          required
-          value={rateExchange}
-          onChange={setRateExchange}
-          inputMode="decimal"
-          error={errors["header.rateExchange"]}
-        />
+        <div>
+          <label className="block text-neutral-500 dark:text-neutral-400 mb-1 font-medium">Tỷ giá</label>
+          <p
+            className={`p-2.5 rounded-xl text-xs font-bold ${
+              errors["header.rateExchange"]
+                ? "bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-400 dark:border-red-700"
+                : "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200"
+            }`}
+            title="Tự động theo loại tiền, không sửa tay"
+          >
+            {rateExchange || "—"}
+          </p>
+          {errors["header.rateExchange"] && (
+            <p className="mt-1 text-[11px] text-red-500">{errors["header.rateExchange"]}</p>
+          )}
+        </div>
       </div>
     </section>
   );
@@ -533,7 +401,8 @@ export function PurchaseOrderCreateSheet({
               <LookupField
                 label="Mã hàng"
                 required
-                lookupId="lines.ItemID"
+                module="purchase-orders"
+          lookupId="lines.ItemID"
                 branchId={currentBranch}
                 value={line.itemId}
                 choice={line.itemChoice}

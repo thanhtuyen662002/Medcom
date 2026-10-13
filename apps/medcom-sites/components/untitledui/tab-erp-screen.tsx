@@ -5,6 +5,8 @@ import {
   Search,
   RefreshCw,
   Plus,
+  Trash2,
+  Send,
   QrCode,
   FileText,
   AlertCircle,
@@ -17,6 +19,10 @@ import {
   Camera,
   X,
   Package,
+  MoreVertical,
+  Pencil,
+  Lock,
+  LockOpen,
 } from "lucide-react";
 import {
   erpClient,
@@ -31,7 +37,9 @@ import {
 } from "@/lib/erp/erp-client";
 import { UntitledBottomSheet } from "./bottom-sheet";
 import { UntitledButton } from "./button";
+import { LookupField } from "./lookup-field";
 import { PurchaseOrderCreateSheet } from "./purchase-order-create-sheet";
+import { PurchaseRequestCreateSheet } from "./purchase-request-create-sheet";
 import { QrCamera } from "@/lib/erp/qr-camera";
 
 interface TabErpScreenProps {
@@ -118,7 +126,7 @@ const FIELD_LABELS: Record<string, string> = {
   branchId: "Chi nhánh",
   branchName: "Tên chi nhánh",
   documentDate: "Ngày chứng từ",
-  purchaseDate: "Ngày mua",
+  purchaseDate: "Ngày đề xuất",
   datetimeRecorded: "Thời gian ghi nhận",
   plannedTransferDate: "Ngày chuyển dự kiến",
   batchDate: "Ngày tạo đợt",
@@ -128,11 +136,22 @@ const FIELD_LABELS: Record<string, string> = {
   statusId: "Trạng thái",
   statusName: "Tên trạng thái",
   isLocked: "Khóa phiếu",
-  objectId: "Mã đối tượng",
+  objectId: "Khách hàng",
   objectName: "Tên đối tượng",
-  personSuggest: "Người đề xuất",
+  personSuggest: "Người đề nghị",
   customerName: "Khách hàng",
   vendorName: "Nhà cung cấp",
+  department: "Bộ phận",
+  purposeId: "Mục đích",
+  purposeName: "Tên mục đích",
+  purposeDescOrClient: "Mục đích / Khách hàng",
+  price: "Giá bán",
+  model: "Model",
+  budget: "Ngân sách",
+  budgetDisplay: "Ngân sách",
+  timeRequired: "Thời gian yêu cầu",
+  totalPrice: "Tổng giá",
+  totalPriceDisplay: "Tổng giá",
   memo: "Nội dung",
   notes: "Ghi chú",
   orderNumber: "Số đơn hàng",
@@ -217,8 +236,9 @@ function formatVietnamDate(val: unknown): string {
   if (!val || typeof val !== "string") return "";
   const match = val.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2}))?)?/);
   if (!match) return String(val);
-  const [, y, m, d, hh, mm] = match;
-  if (hh && mm) return `${d}/${m}/${y} ${hh}:${mm}`;
+  const [, y, m, d, hh, mm, ss] = match;
+  if (hh && mm && !(hh === "00" && mm === "00" && (!ss || ss === "00")))
+    return `${d}/${m}/${y} ${hh}:${mm}`;
   return `${d}/${m}/${y}`;
 }
 
@@ -347,6 +367,94 @@ function listLoadedKey(module: ErpScreenModule, branchId: string) {
   return `${module}::${branchId}`;
 }
 
+// Header fields editable inline in the detail card. Lookup-backed keys render
+// the shared options combobox; dates render date inputs; the rest are text.
+// Rate follows the currency lookup and stays read-only.
+const EDITABLE_HEADER_BY_MODULE: Record<string, readonly string[]> = {
+  "purchase-requests": [
+    "personSuggest",
+    "department",
+    "purposeId",
+    "purposeDescOrClient",
+    "price",
+    "notes",
+    "objectId",
+    "currencyId",
+  ],
+};
+const DEFAULT_EDITABLE_HEADER_KEYS = [
+  "documentDate",
+  "objectId",
+  "deliverDate",
+  "contractId",
+  "memo",
+  "notes",
+] as const;
+function editableHeaderKeys(module: ErpScreenModule): readonly string[] {
+  return EDITABLE_HEADER_BY_MODULE[module] ?? DEFAULT_EDITABLE_HEADER_KEYS;
+}
+const REQUIRED_EDIT_KEYS: Record<string, readonly string[]> = {
+  "purchase-requests": ["personSuggest", "department", "objectId", "currencyId"],
+};
+const DEFAULT_REQUIRED_EDIT_KEYS = ["documentDate", "objectId"] as const;
+function requiredEditKeys(module: ErpScreenModule): readonly string[] {
+  return REQUIRED_EDIT_KEYS[module] ?? DEFAULT_REQUIRED_EDIT_KEYS;
+}
+const EDIT_LOOKUPS: Record<string, Record<string, string>> = {
+  "purchase-requests": {
+    personSuggest: "header.PersonSuggest",
+    department: "header.Department",
+    objectId: "header.ObjectID",
+    purposeId: "header.PurposeID",
+    currencyId: "header.CurrencyID",
+  },
+};
+const DEFAULT_EDIT_LOOKUPS: Record<string, string> = { objectId: "header.ObjectID" };
+function editLookupId(module: ErpScreenModule, key: string): string | undefined {
+  return (EDIT_LOOKUPS[module] ?? DEFAULT_EDIT_LOOKUPS)[key];
+}
+// Exact writable input DTO per module. The display header carries *Display /
+// *Name / status companions that the backend Freeze validator rejects
+// (UnmappedMemberHandling.Disallow), so save must send only these keys.
+const SAVE_HEADER_BY_MODULE: Record<string, readonly string[]> = {
+  "purchase-requests": [
+    "purchaseDate",
+    "purposeId",
+    "personSuggest",
+    "department",
+    "purposeDescOrClient",
+    "price",
+    "notes",
+    "currencyId",
+    "objectId",
+    "rateExchange",
+  ],
+  "purchase-orders": [
+    "documentDate",
+    "objectId",
+    "memo",
+    "notes",
+    "deliverDate",
+    "currencyId",
+    "rateExchange",
+    "searchField",
+    "contractId",
+  ],
+};
+
+// Lock state for the header badge: true = locked, false = unlocked,
+// null = field absent (hide the badge instead of printing true/false).
+function lockBadgeState(header: unknown): boolean | null {
+  const v = (header as Record<string, unknown> | null | undefined)?.isLocked;
+  if (v === true || v === 1 || v === "1") return true;
+  if (v === false || v === 0 || v === "0") return false;
+  return null;
+}
+
+// Detail dropdown entries, in display order. Rendered only when the backend
+// marks them visible; enabled state and reason come from the same action.
+const MENU_ACTION_IDS = ["save", "submit", "send-purchase-order", "delete"] as const;
+
 export function TabErpScreen({
   module,
   currentBranch,
@@ -444,6 +552,14 @@ export function TabErpScreen({
 
   // Action Execution State
   const [executingAction, setExecutingAction] = useState<string | null>(null);
+  // Detail action dropdown + inline header edit state
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editHeader, setEditHeader] = useState<Record<string, string>>({});
+  const [editChoices, setEditChoices] = useState<Record<string, ErpChoice | null>>({});
+  const [editMulti, setEditMulti] = useState<Record<string, ErpChoice[]>>({});
+  const [editRate, setEditRate] = useState<string | null>(null);
+  const [deleteArmed, setDeleteArmed] = useState(false);
   const [actionFeedback, setActionFeedback] = useState<{
     type: "success" | "warning" | "error";
     message: string;
@@ -484,6 +600,8 @@ export function TabErpScreen({
   const [createModalOpen, setCreateModalOpen] = useState(false);
   // Redesigned purchase-order create sheet (header + editable line grid).
   const [poCreateOpen, setPoCreateOpen] = useState(false);
+  // Redesigned purchase-request create sheet (matches the desktop PR form).
+  const [prCreateOpen, setPrCreateOpen] = useState(false);
   const [createDate, setCreateDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [createObject, setCreateObject] = useState("");
   const [createNotes, setCreateNotes] = useState("");
@@ -578,6 +696,12 @@ export function TabErpScreen({
     setLoadingDetail(true);
     setDetailError(null);
     setActionFeedback(null);
+    setEditing(false);
+    setMenuOpen(false);
+    setDeleteArmed(false);
+    setEditChoices({});
+    setEditMulti({});
+    setEditRate(null);
     try {
       const data = await erpClient.getErpModuleDetail(module, {
         branchId: currentBranch,
@@ -645,6 +769,170 @@ export function TabErpScreen({
     setDetailError(null);
     setActionFeedback(null);
     setContractInfo(null);
+    setEditing(false);
+    setMenuOpen(false);
+    setDeleteArmed(false);
+    setEditChoices({});
+    setEditMulti({});
+    setEditRate(null);
+  };
+
+  // Detail action dropdown helpers: inline header edit, delete (two-step
+  // confirm), and workflow prompts reuse the existing prompt modal.
+  const startEditing = () => {
+    if (!detail) return;
+    const h = (detail.header || {}) as Record<string, unknown>;
+    const isoDate = (v: unknown) => (typeof v === "string" ? v.slice(0, 10) : "");
+    const text = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : String(v));
+    const initial: Record<string, string> = {};
+    for (const key of editableHeaderKeys(module)) {
+      const raw = h[key];
+      initial[key] = key.toLowerCase().includes("date") ? isoDate(raw) : text(raw);
+    }
+    setEditHeader(initial);
+    setEditChoices({});
+    setEditMulti({});
+    setEditRate(null);
+    setEditing(true);
+    setMenuOpen(false);
+    setActionFeedback(null);
+  };
+
+  const handleSaveHeader = async () => {
+    if (!detail) return;
+    const keys = editableHeaderKeys(module);
+    const missing = requiredEditKeys(module).filter((k) => !(editHeader[k] ?? "").trim());
+    if (missing.length > 0) {
+      setActionFeedback({
+        type: "warning",
+        message: "Vui lòng nhập đủ các trường bắt buộc trước khi lưu.",
+      });
+      return;
+    }
+    if (
+      keys.includes("price") &&
+      (editHeader.price ?? "").trim() !== "" &&
+      !/^\d+(\.\d+)?$/.test(editHeader.price.trim())
+    ) {
+      setActionFeedback({ type: "warning", message: "Giá bán phải là số." });
+      return;
+    }
+    setExecutingAction("save");
+    setActionFeedback(null);
+    const idempotencyKey = `save-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
+    try {
+      const edited: Record<string, unknown> = {};
+      for (const k of keys) {
+        const v = (editHeader[k] ?? "").trim();
+        if (k === "purposeId") edited[k] = v ? Number(v) : null;
+        else
+          edited[k] = k.toLowerCase().includes("date") ? (v ? `${v}T00:00:00.000` : null) : v ? v : null;
+      }
+      const base = (detail.header || {}) as Record<string, unknown>;
+      const allow = SAVE_HEADER_BY_MODULE[module];
+      const header: Record<string, unknown> = {};
+      if (allow) {
+        for (const k of allow) {
+          if (k in edited) {
+            header[k] = edited[k];
+            continue;
+          }
+          if (k === "rateExchange" && editRate !== null) {
+            const n = Number(editRate);
+            header[k] = Number.isFinite(n) && n > 0 ? n : (k in base ? base[k] : null);
+            continue;
+          }
+          let raw: unknown = k in base ? base[k] : null;
+          if (
+            typeof raw === "string" &&
+            k.toLowerCase().includes("date") &&
+            /T\d{2}:\d{2}:\d{2}$/.test(raw)
+          ) {
+            raw = `${raw}.000`;
+          }
+          header[k] = raw ?? null;
+        }
+      } else {
+        Object.assign(header, base, edited);
+      }
+      const res = await erpClient.saveDocument(module, {
+        idempotencyKey,
+        branchId: currentBranch,
+        documentId: detail.documentId,
+        expectedStateToken: detail.stateToken,
+        header,
+        lineChanges: [],
+      });
+      if (res.outcome === "Committed" || res.outcome === "Replayed") setEditing(false);
+      handleCommandOutcome(res);
+    } catch {
+      setActionFeedback({
+        type: "error",
+        message: "Lỗi kết nối khi lưu chứng từ.",
+      });
+    } finally {
+      setExecutingAction(null);
+    }
+  };
+
+  const handleDeleteDocument = async () => {
+    if (!detail) return;
+    if (!deleteArmed) {
+      setDeleteArmed(true);
+      return;
+    }
+    setDeleteArmed(false);
+    setMenuOpen(false);
+    setExecutingAction("delete");
+    setActionFeedback(null);
+    const idempotencyKey = `del-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
+    try {
+      const res = await erpClient.deleteDocument(module, {
+        idempotencyKey,
+        branchId: currentBranch,
+        documentId: detail.documentId,
+        expectedStateToken: detail.stateToken,
+      });
+      handleCommandOutcome(res);
+      if (res.receipt?.deleted) loadList(1);
+    } catch {
+      setActionFeedback({
+        type: "error",
+        message: "Lỗi kết nối khi xóa chứng từ.",
+      });
+    } finally {
+      setExecutingAction(null);
+    }
+  };
+
+  const openWorkflowPrompt = (act: ErpActionState) => {
+    setMenuOpen(false);
+    setDeleteArmed(false);
+    setActionPromptModal({ open: true, action: act, notes: "" });
+  };
+
+  const menuActs = (detail?.actions || []).filter(
+    (a): a is ErpActionState =>
+      a.visible && (MENU_ACTION_IDS as readonly string[]).includes(a.id)
+  );
+
+  const menuLabel = (act: ErpActionState): string => {
+    if (act.id === "save") return editing ? "Lưu thay đổi" : "Sửa thông tin";
+    if (act.id === "delete") return deleteArmed ? "Bấm lần nữa để xóa" : "Xóa chứng từ";
+    if (act.id === "submit") return "Gửi đề nghị";
+    if (act.id === "send-purchase-order") return "Gửi đặt mua hàng";
+    return act.caption || act.id;
+  };
+
+  const handleMenuClick = (act: ErpActionState) => {
+    if (act.id === "save") {
+      if (editing) void handleSaveHeader();
+      else startEditing();
+    } else if (act.id === "delete") {
+      void handleDeleteDocument();
+    } else {
+      openWorkflowPrompt(act);
+    }
   };
 
   // Process Command Outcome
@@ -1110,9 +1398,11 @@ export function TabErpScreen({
               <UntitledButton
                 variant="primary"
                 size="md"
-                onClick={() =>
-                  module === "purchase-orders" ? setPoCreateOpen(true) : setCreateModalOpen(true)
-                }
+                onClick={() => {
+                  if (module === "purchase-orders") setPoCreateOpen(true);
+                  else if (module === "purchase-requests") setPrCreateOpen(true);
+                  else setCreateModalOpen(true);
+                }}
                 disabled={!canCreate}
                 title={createActionTooltip}
                 iconLeading={<Plus className="size-4" />}
@@ -1272,6 +1562,22 @@ export function TabErpScreen({
         open={Boolean(selectedDocId)}
         onClose={handleCloseDetail}
         title={`Chi tiết: ${selectedDocId || ""}`}
+        titleExtra={(() => {
+          const locked = lockBadgeState(detail?.header);
+          if (locked === null) return undefined;
+          return (
+            <span
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold shrink-0 ${
+                locked
+                  ? "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300"
+                  : "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300"
+              }`}
+            >
+              {locked ? <Lock className="size-3" /> : <LockOpen className="size-3" />}
+              {locked ? "Đã khóa" : "Chưa khóa"}
+            </span>
+          );
+        })()}
       >
         <div className="space-y-4 pb-16">
           {/* Action Feedback Banner */}
@@ -1362,10 +1668,67 @@ export function TabErpScreen({
                       {detail.documentId}
                     </p>
                   </div>
-                  <div>
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200 dark:border-purple-900/40">
                       {String(detail.header?.statusName || (detail.header?.isLocked ? "Đã khóa" : "Đang mở"))}
                     </span>
+                    {menuActs.length > 0 && (
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMenuOpen((v) => !v);
+                              setDeleteArmed(false);
+                            }}
+                            aria-label="Thao tác chứng từ"
+                            className="p-1.5 rounded-xl text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                          >
+                            <MoreVertical className="size-5" />
+                          </button>
+                          {menuOpen && (
+                            <>
+                              <div
+                                className="fixed inset-0 z-40"
+                                onClick={() => {
+                                  setMenuOpen(false);
+                                  setDeleteArmed(false);
+                                }}
+                                aria-hidden="true"
+                              />
+                              <div className="absolute right-0 z-50 mt-1 w-52 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-xl overflow-hidden py-1">
+                                {menuActs.map((act) => {
+                                  const disabled =
+                                    !act.enabled || Boolean(executingAction) || (editing && act.id !== "save");
+                                  const danger = act.id === "delete";
+                                  return (
+                                    <button
+                                      key={act.id}
+                                      type="button"
+                                      disabled={disabled}
+                                      title={getActionReasonMessage(act.reason) || undefined}
+                                      onClick={() => handleMenuClick(act)}
+                                      className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-left transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                        danger
+                                          ? "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
+                                          : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                                      } ${deleteArmed && danger ? "bg-red-50 dark:bg-red-950/40" : ""}`}
+                                    >
+                                      {act.id === "save" ? (
+                                        <Pencil className="size-4" />
+                                      ) : danger ? (
+                                        <Trash2 className="size-4" />
+                                      ) : (
+                                        <Send className="size-4" />
+                                      )}
+                                      <span className="flex-1">{menuLabel(act)}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
                   </div>
                 </div>
 
@@ -1393,25 +1756,151 @@ export function TabErpScreen({
 
                 {/* Chi tiết thuộc tính Header */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs pt-1">
-                  {Object.entries(detail.header || {}).map(([key, value]) => {
-                    if (value === null || value === undefined || value === "") return null;
-                    if (typeof value === "object") return null;
+                  {(() => {
+                    const headerKeys = Object.keys(detail.header || {});
+                    // Render the full known field set in both modes: the
+                    // backend omits null fields, but empty rows ("—") tell
+                    // the reader the field exists. Edit mode additionally
+                    // covers editable keys missing from the payload.
+                    const saveKeys = ((SAVE_HEADER_BY_MODULE[module] ?? []) as readonly string[]);
+                    const editKeys = editableHeaderKeys(module) as readonly string[];
+                    // Edit mode renders every known key even when the backend
+                    // omits null fields; view mode hides empties (no "—" rows).
+                    const keys = [...headerKeys];
+                    for (const k of [...saveKeys, ...(editing ? editKeys : [])]) {
+                      if (!keys.includes(k)) keys.push(k);
+                    }
+                    return keys.map((key) => {
+                      const value = (detail.header as Record<string, unknown> | undefined)?.[key];
+                    const isEditKey = editing && editKeys.includes(key);
+                    const isEmpty = value === null || value === undefined || value === "";
+                    if (isEmpty && !isEditKey) return null;
+                    if (typeof value === "object" && value !== null) return null;
                     if (isTechnicalField(key)) return null;
                     if (
                       key === "objectName" ||
-                      key === "personSuggest" ||
                       key === "customerName" ||
                       key === "vendorName" ||
                       key === "statusName" ||
                       key === "documentId" ||
-                      key === "branchId"
+                      key === "isLocked"
                     )
                       return null;
+                    const headerObj = (detail.header || {}) as Record<string, unknown>;
+                    // personSuggest doubles as the top identity block: keep a
+                    // dedicated row when objectName takes that slot (or while
+                    // editing, where it renders its dropdown).
+                    if (key === "personSuggest" && !headerObj.objectName && !editing) return null;
+                    // Rate is read-only and shown under its currency while editing.
+                    if (key === "rateExchange" && editing) return null;
+                    // Prefer resolved names over raw ids/codes.
+                    if (key === "statusId" && headerObj.statusName) return null;
+                    // purposeId edits through its own dropdown while editing;
+                    // otherwise the resolved name row covers it.
+                    if (key === "purposeId" && headerObj.purposeName && !editing) return null;
+                    if (key === "purposeName" && editing) return null;
+                    // objectId edits through its own dropdown while editing;
+                    // otherwise the top identity block already shows the name.
+                    if (key === "objectId" && headerObj.objectName && !editing) return null;
+                    // Display companions duplicate the base field; the base
+                    // render already formats dates/numbers.
+                    if (key.endsWith("Display") && key.slice(0, -"Display".length) in headerObj)
+                      return null;
+                    if (key === "currencyName" && "currencyId" in headerObj) return null;
 
                     const displayVal =
                       key.toLowerCase().includes("date") || key.toLowerCase().includes("time")
                         ? formatVietnamDate(value)
                         : String(value);
+
+                    if (editing && (editableHeaderKeys(module) as readonly string[]).includes(key)) {
+                      const lookupId = editLookupId(module, key);
+                      if (lookupId) {
+                        const selected = editChoices[key] ?? null;
+                        const isMultiKey = key === "personSuggest" || key === "department";
+                        const multiSelected: ErpChoice[] | undefined = isMultiKey
+                          ? (editMulti[key] ?? (editHeader[key] ?? "")
+                              .split(",")
+                              .map((s) => s.trim())
+                              .filter(Boolean)
+                              .map((s) => ({ id: s, label: s }) as ErpChoice))
+                          : undefined;
+                        const knownName =
+                          key === "objectId" && typeof headerObj.objectName === "string"
+                            ? headerObj.objectName
+                            : key === "purposeId" && typeof headerObj.purposeName === "string"
+                              ? headerObj.purposeName
+                              : "";
+                        return (
+                          <div
+                            key={key}
+                            className="flex flex-col py-1"
+                          >
+                            <LookupField
+                              label={getFieldLabel(key)}
+                              required={(requiredEditKeys(module) as readonly string[]).includes(key)}
+                              module={module}
+                              lookupId={lookupId}
+                              branchId={currentBranch}
+                              value={editHeader[key] ?? ""}
+                              choice={selected}
+                              displayValue={knownName || undefined}
+                              compact
+                              multiple={isMultiKey || undefined}
+                              selected={multiSelected}
+                              onMultiSelect={
+                                isMultiKey
+                                  ? (cs) => {
+                                      setEditMulti((prev) => ({ ...prev, [key]: cs }));
+                                      setEditHeader((prev) => ({
+                                        ...prev,
+                                        [key]: cs.map((c) => c.id).join(", "),
+                                      }));
+                                    }
+                                  : undefined
+                              }
+                              onSelect={(c) => {
+                                setEditHeader((prev) => ({ ...prev, [key]: c ? c.id : "" }));
+                                setEditChoices((prev) => ({ ...prev, [key]: c }));
+                                if (key === "currencyId") {
+                                  const rate = c?.fields?.["RateExchange"];
+                                  setEditRate(
+                                    typeof rate === "number" && Number.isFinite(rate) && rate > 0
+                                      ? String(rate)
+                                      : null
+                                  );
+                                }
+                              }}
+                            />
+                            {key === "currencyId" && (
+                              <p className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400">
+                                <span className="font-semibold">Tỷ giá:</span>{" "}
+                                {editRate ?? String(headerObj.rateExchange ?? "—")} (tự động theo loại tiền)
+                              </p>
+                            )}
+                          </div>
+                        );
+                      }
+                      const isDate = key.toLowerCase().includes("date");
+                      return (
+                        <div
+                          key={key}
+                          className="flex flex-col py-1"
+                        >
+                          <span className="text-[10px] text-purple-600 dark:text-purple-400 font-medium">
+                            {getFieldLabel(key)}
+                          </span>
+                          <input
+                            type={isDate ? "date" : "text"}
+                            value={editHeader[key] ?? ""}
+                            onChange={(e) =>
+                              setEditHeader((prev) => ({ ...prev, [key]: e.target.value }))
+                            }
+                            className="mt-0.5 p-1.5 rounded-lg border border-purple-300 dark:border-purple-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          />
+                        </div>
+                      );
+                    }
 
                     return (
                       <div
@@ -1424,8 +1913,25 @@ export function TabErpScreen({
                         </span>
                       </div>
                     );
-                  })}
+                    });
+                  })()}
                 </div>
+                {editing && (
+                  <div className="flex gap-2 pt-1">
+                    <UntitledButton
+                      variant="primary"
+                      size="md"
+                      onClick={handleSaveHeader}
+                      disabled={executingAction === "save"}
+                      iconLeading={<CheckCircle2 className="size-4" />}
+                    >
+                      {executingAction === "save" ? "Đang lưu..." : "Lưu thay đổi"}
+                    </UntitledButton>
+                    <UntitledButton variant="secondary-gray" size="md" onClick={() => setEditing(false)}>
+                      Hủy sửa
+                    </UntitledButton>
+                  </div>
+                )}
               </div>
 
               {/* Lines Table */}
@@ -1475,6 +1981,31 @@ export function TabErpScreen({
                                 {lineNotes}
                               </p>
                             )}
+                            {module === "purchase-requests" &&
+                              (((f.model || "") as string) ||
+                                ((f.budgetDisplay || f.budget || "") as string) ||
+                                ((f.timeRequired || "") as string)) && (
+                                <div className="mt-1.5 grid grid-cols-3 gap-2 text-xs">
+                                  <div>
+                                    <p className="text-[10px] text-neutral-400">Model</p>
+                                    <p className="font-medium text-neutral-700 dark:text-neutral-300 truncate">
+                                      {(f.model as string) || "—"}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-[10px] text-neutral-400">Ngân sách</p>
+                                    <p className="font-mono text-neutral-700 dark:text-neutral-300 truncate">
+                                      {((f.budgetDisplay || f.budget || "") as string) || "—"}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-[10px] text-neutral-400">T.gian YC</p>
+                                    <p className="font-medium text-neutral-700 dark:text-neutral-300 truncate">
+                                      {(f.timeRequired as string) || "—"}
+                                    </p>
+                                  </div>
+                                </div>
+                              )}
                             <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
                               <div>
                                 <p className="text-[10px] text-neutral-400">Số lượng</p>
@@ -1504,6 +2035,13 @@ export function TabErpScreen({
                           <tr className="border-b border-neutral-200 dark:border-neutral-800 text-[10px] text-neutral-400 uppercase">
                             <th className="py-2 px-2.5">Mã hàng</th>
                             <th className="py-2 px-2.5">Tên hàng</th>
+                            {module === "purchase-requests" && (
+                              <>
+                                <th className="py-2 px-2.5">Model</th>
+                                <th className="py-2 px-2.5">Ngân sách</th>
+                                <th className="py-2 px-2.5">Thời gian YC</th>
+                              </>
+                            )}
                             <th className="py-2 px-2.5">Số lượng</th>
                             <th className="py-2 px-2.5">Đơn giá</th>
                             <th className="py-2 px-2.5 text-right">Tổng giá</th>
@@ -1529,6 +2067,19 @@ export function TabErpScreen({
                                   {unit && <div className="text-[10px] text-purple-600 dark:text-purple-400 font-medium">ĐVT: {unit}</div>}
                                   {lineNotes && <div className="text-[11px] text-neutral-500 dark:text-neutral-400 italic">{lineNotes}</div>}
                                 </td>
+                                {module === "purchase-requests" && (
+                                  <>
+                                    <td className="py-2.5 px-2.5 text-neutral-700 dark:text-neutral-300">
+                                      {(f.model as string) || "—"}
+                                    </td>
+                                    <td className="py-2.5 px-2.5 text-neutral-700 dark:text-neutral-300 font-mono">
+                                      {((f.budgetDisplay || f.budget || "") as string) || "—"}
+                                    </td>
+                                    <td className="py-2.5 px-2.5 text-neutral-700 dark:text-neutral-300">
+                                      {(f.timeRequired as string) || "—"}
+                                    </td>
+                                  </>
+                                )}
                                 <td className="py-2.5 px-2.5 text-neutral-700 dark:text-neutral-300 font-semibold">
                                   {formatVietnamNumber(qty) || qty || "—"}
                                 </td>
@@ -1741,6 +2292,19 @@ export function TabErpScreen({
           currentBranch={currentBranch}
           onCreated={(docId) => {
             setPoCreateOpen(false);
+            loadList(1);
+            handleOpenDetail(docId);
+          }}
+        />
+      )}
+
+      {module === "purchase-requests" && (
+        <PurchaseRequestCreateSheet
+          open={prCreateOpen}
+          onClose={() => setPrCreateOpen(false)}
+          currentBranch={currentBranch}
+          onCreated={(docId) => {
+            setPrCreateOpen(false);
             loadList(1);
             handleOpenDetail(docId);
           }}

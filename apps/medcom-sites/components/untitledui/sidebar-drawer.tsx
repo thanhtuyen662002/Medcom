@@ -144,6 +144,14 @@ export function SidebarDrawer({
       title: "Mua hàng & Nhập kho (ERP)",
       items: [
         {
+          id: "purchase-requests",
+          label: "Đề nghị mua hàng (PR)",
+          description: "Menu 05011 • AP_PurposeRequestListFrm",
+          icon: FileText,
+          badge: "Mới",
+          badgeColor: "emerald",
+        },
+        {
           id: "purchase-orders",
           label: "Đề nghị mua hàng (PO)",
           description: "Menu 050129 • AP_OrderFrm",
