@@ -65,7 +65,7 @@
         : segments[1] === "auth" || segments[1] === "workspace" ? "Đăng nhập và phiên"
         : segments[1] === "notifications" ? "Thông báo"
         : segments[1] === "lookups" ? "Chi nhánh"
-        : segments[1] === "erp" ? "ERP · " + segments[2]
+        : segments[1] === "erp" ? "Màn hình ERP"
         : segments[1] === "contracts" ? "Tài liệu API" : "Chứng từ và danh mục";
       for (const [method, operation] of Object.entries(item))
         if (["get", "post", "put", "patch", "delete", "head", "options"].includes(method)) {
