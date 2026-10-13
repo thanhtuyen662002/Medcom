@@ -104,12 +104,14 @@ test("login uses the real endpoint and clears the password even after a denied a
 test("UI grouping preserves operations, security, payload schemas and explicit tags", () => {
   const f = fixture(() => reply({}));
   const original = { paths: {
-    "/api/erp/purchase-orders/create": { post: { security: [{ SessionCookie: [] }], requestBody: { required: true } } },
+    "/api/erp/purchase-orders/create": { post: { tags: ["Đặt mua hàng"], security: [{ SessionCookie: [] }], requestBody: { required: true } } },
+    "/api/erp/unknown": { get: { responses: { 200: {} } } },
     "/api/notifications": { get: { tags: ["Existing"], responses: { 200: {} } } },
     "/health/live": { get: { security: [] } }
   } };
   const document = f.client.groupDocument(structuredClone(original));
-  assert.equal(document.paths["/api/erp/purchase-orders/create"].post.tags[0], "ERP · purchase-orders");
+  assert.equal(document.paths["/api/erp/purchase-orders/create"].post.tags[0], "Đặt mua hàng");
+  assert.equal(document.paths["/api/erp/unknown"].get.tags[0], "Màn hình ERP");
   assert.deepEqual(document.paths["/api/notifications"].get.tags, ["Existing"]);
   for (const [path, item] of Object.entries(document.paths))
     for (const [method, operation] of Object.entries(item)) {

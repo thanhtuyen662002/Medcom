@@ -11,6 +11,22 @@ namespace Medcom.Api.Tests;
 
 public sealed class ApiContractCatalogTests
 {
+    [Fact]
+    public void Swagger_groups_every_ERP_operation_by_its_verified_Vietnamese_form_caption()
+    {
+        var paths = ApiContractCatalog.Build()["paths"]!.AsObject();
+        foreach (var module in ErpScreenCatalog.ModuleIds)
+        {
+            var caption = ErpScreenCatalog.Get(module)!.Caption;
+            Assert.False(string.IsNullOrWhiteSpace(caption), module);
+            var operations = paths.Where(path => path.Key == "/api/erp/" + module
+                || path.Key.StartsWith("/api/erp/" + module + "/", StringComparison.Ordinal))
+                .SelectMany(path => path.Value!.AsObject().Select(operation => operation.Value!)).ToArray();
+            Assert.NotEmpty(operations);
+            Assert.All(operations, operation => Assert.Equal(caption, Assert.Single(operation["tags"]!.AsArray())!.GetValue<string>()));
+        }
+    }
+
     [Theory]
     [InlineData("purchase-requests", "purchaseDate")]
     [InlineData("sales-orders", "documentDate")]

@@ -97,6 +97,11 @@ internal static class ApiContractCatalog
                 ["x-medcom-admission"] = admission,
                 ["description"] = "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative."
             };
+            // Swagger groups use the reviewed ERP form caption. This is static
+            // documentation metadata; business routes and payloads are unchanged.
+            if (path.StartsWith("/api/erp/", StringComparison.Ordinal)
+                && ErpScreenCatalog.Get(path.Split('/')[3]) is {} screen)
+                operation["tags"] = new JsonArray(string.IsNullOrEmpty(screen.Caption) ? "Màn hình ERP" : screen.Caption);
             var responseHeaders = new JsonObject
             {
                 ["X-Correlation-ID"] = new JsonObject { ["description"] = "Server-generated request correlation, never client authority.", ["schema"] = String() }
