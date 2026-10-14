@@ -22,7 +22,7 @@ export interface LoginScreenProps {
 
 export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("Medcom@2026");
+  const [password, setPassword] = useState("123456");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -49,7 +49,7 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
           setPassword(creds.password);
         }
       }
-    } catch {}
+    } catch { }
   }, []);
 
   const handleRememberToggle = (checked: boolean) => {
@@ -59,7 +59,7 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
       if (!checked) {
         localStorage.removeItem("medcom.auth.credentials");
       }
-    } catch {}
+    } catch { }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -82,7 +82,7 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
             localStorage.setItem("medcom.auth.remember", "false");
             localStorage.removeItem("medcom.auth.credentials");
           }
-        } catch {}
+        } catch { }
         onLoginSuccess(result.user, rememberMe);
       } else {
         setErrorMessage(result.error || "Tên đăng nhập hoặc mật khẩu không chính xác.");
