@@ -1,0 +1,11 @@
+# I90 — Purchase approval list across statuses, 2026-10-14
+
+The owner explicitly requested removing `StatusID = 2` from the purchase-approval list. Backend-only scope: widen `GET /api/erp/purchase-approvals` within the same authorized branch, preserve optional filters and bounded paging, and retain independent approve/reject permission/state checks. No FE, native DB configuration or business-state change is requested.
+
+Source base: `9d7c13151e9bf872ecf3a31649a98822bcffa719` (latest main, PR #156). Its required BE/policy Windows/Linux workflows passed; no competing approval-list Draft lease was observed. Latest main makes the standalone FE/Railway workflows manual-only; this change preserves that approved CI configuration and the active strict required-check policy.
+
+I89 SELECT-only MedData evidence at `2026-10-14T07:46:58Z`: `dbo.SY_FrmCfg` for `AP_ApprovePurchaseRequestListFrm/T0/NT2` has the native criterion `StatusID = 2`; `dbo.AP_PurchaseStatusTbl` names state 2 Chờ duyệt, state 3 Đã duyệt and state 5 Đã gửi đặt mua hàng. The aggregate branch MB result had zero pending, one approved and six order-sent records. Private evidence: `I89-purchase-approvals-20261014/metadata.json`, `form-configurations.private.json`, `Program.cs`; no record IDs/PII/native SQL bodies are published. Approved historical archive identities remain in `docs/SOURCE_BASELINE.md`, and the supplementary guide does not replace them.
+
+This owner-directed Web read behavior intentionally differs from the unchanged native pending-only form. `ErpSqlPlan.ListText` owns the fixed list predicate; `ScopePredicate` retains branch isolation. Existing header/detail projections, optional `statusId`, session/native grant fences, record state tokens and actual `ErpWorkflowRules` command admission remain authoritative. Seeing an approved/rejected/order-sent document in the list does not authorize another approval.
+
+Before integration, verify the generated SQL against read-only current MedData using only aggregate results, inspect state/branch/paging regressions, and obtain exact-head/base required CI and tested-merge provenance. VPS deployment and authenticated post-deployment results remain **UNKNOWN** until operator execution. Goal #45 remains open.
