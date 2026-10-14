@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       platform:
-        description: 'Runner platform (tick chọn trước khi bấm Run workflow)'
+        description: 'Runner platform (select before Run workflow)'
         required: false
         default: both
         type: choice
