@@ -70,7 +70,6 @@ internal sealed class ErpSqlPlan
     internal string ListText=>$"""
         SELECT {Projection(Screen.Fields["header"],"H")} FROM dbo.[{HeaderTable}] H WITH(HOLDLOCK) {ReadJoin("header","H")}
         WHERE ({ScopePredicate}) AND (@search IS NULL OR H.[{HeaderKey}] LIKE @search ESCAPE N'~')
-          {(Module=="purchase-approvals"?"AND H.StatusID=2":"")}
           AND (@from IS NULL OR H.[{DateColumn}]>=@from) AND (@to IS NULL OR H.[{DateColumn}]<@to)
           {(Screen.Fields["header"].Any(column=>column.Column=="StatusID")?"AND (@status IS NULL OR H.StatusID=@status)":"")}
         ORDER BY H.[{DateColumn}] DESC,H.[{HeaderKey}] COLLATE Latin1_General_100_BIN2 DESC

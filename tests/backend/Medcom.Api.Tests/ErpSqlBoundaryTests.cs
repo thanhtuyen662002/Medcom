@@ -9,6 +9,14 @@ namespace Medcom.Api.Tests;
 public sealed class ErpSqlBoundaryTests
 {
     [Fact]
+    public void Approval_list_reads_the_same_branch_bounded_request_rows_without_a_pending_only_filter()
+    {
+        var approvals=ErpSqlPlan.Get("purchase-approvals")!;
+        var requests=ErpSqlPlan.Get("purchase-requests")!;
+        Assert.Equal(requests.ListText,approvals.ListText);
+    }
+
+    [Fact]
     public void Bare_native_lookup_procedure_remains_valid_after_the_rowcount_prefix()
     {
         var bound=ErpLookupSql.Bind("WA_OrderByContract_GetItemStp '{0}','{User}'",["ContractID"],["synthetic-contract"],"actor","B1");

@@ -24,7 +24,8 @@ def verify_sources():
     project = ROOT / package.PROJECT
     package.validate_project(ROOT)
     xml = ET.parse(project)
-    assert {(n.attrib['Include'], n.attrib['Version']) for n in xml.findall('.//PackageReference')} == {('Microsoft.Data.SqlClient', '7.0.3')}
+    assert {(n.attrib['Include'], n.attrib['Version']) for n in xml.findall('.//PackageReference')} == {
+        ('Microsoft.Data.SqlClient', '7.0.3'), ('System.Security.Cryptography.Pkcs', '9.0.21')}
     lock = json.loads((project.parent / 'packages.lock.json').read_text(encoding='utf-8'))['dependencies']['net10.0']
     origin = json.loads((ROOT / 'src/backend/Medcom.Infrastructure/packages.lock.json').read_text(encoding='utf-8'))['dependencies']['net10.0']
     assert lock == {k: v for k, v in origin.items() if v['type'] != 'Project'}

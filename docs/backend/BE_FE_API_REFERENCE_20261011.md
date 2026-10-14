@@ -1,6 +1,6 @@
 # Bàn giao API BE cho FE — màn hình và thao tác
 
-Danh mục đủ 243 API hiện có, phục vụ 19 màn hình ERP. Cập nhật 12/10/2026. Trên VPS, FE gọi qua proxy tại https://medcom.bms79.com/api/erp; nối đường dẫn BE trong các bảng dưới đây vào địa chỉ đó.
+Danh mục đủ 243 API hiện có, phục vụ 19 màn hình ERP. Cập nhật 14/10/2026. Trên VPS, FE gọi qua proxy tại https://medcom.bms79.com/api/erp; nối đường dẫn BE trong các bảng dưới đây vào địa chỉ đó.
 
 ## Quy định giao diện
 
@@ -187,7 +187,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Thao tác / vị trí | API | Làm gì |
 |---|---|---|
 | Chuẩn bị màn hình | `GET /api/erp/purchase-approvals/screen` | Lấy mô tả các cột, lựa chọn và nút của màn hình; không hiển thị thông tin nội bộ này cho người dùng. |
-| Danh sách | `GET /api/erp/purchase-approvals` | Tải danh sách phiếu theo trang, tìm kiếm và bộ lọc của màn hình. |
+| Danh sách | `GET /api/erp/purchase-approvals` | Tải danh sách đề nghị ở mọi trạng thái trong chi nhánh được phép, theo trang; có thể lọc trạng thái khi cần. Nút Duyệt/Không duyệt vẫn theo quyền và trạng thái phiếu. |
 | Mở phiếu | `GET /api/erp/purchase-approvals/detail` | Lấy đầy đủ thông tin phiếu và các bảng chi tiết theo trang. |
 | Các nút trên phiếu | `GET /api/erp/purchase-approvals/actions` | Lấy trạng thái nút; các nút thêm/lưu/xóa luôn bật để thử giao diện, các nút gửi/duyệt/thu hồi vẫn theo quyền và trạng thái phiếu. |
 | Danh sách chọn | `POST /api/erp/purchase-approvals/options` | Lấy danh sách cho các ô chọn trên phiếu, có tìm kiếm và phân trang. |

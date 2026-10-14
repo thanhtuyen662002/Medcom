@@ -21,7 +21,8 @@ for name, expected in ALLOWED.items():
         errors.append(f'{name}: invalid project reference direction {actual}')
     packages = {(node.attrib['Include'], node.attrib.get('Version')) for node in tree.findall('.//PackageReference')}
     allowed_packages = {
-        'Medcom.Infrastructure': {('Microsoft.Data.SqlClient', '7.0.3')},
+        'Medcom.Infrastructure': {('Microsoft.Data.SqlClient', '7.0.3'),
+                                  ('System.Security.Cryptography.Pkcs', '9.0.21')},
         # Documentation assets only; no Swagger generator or legacy assembly coupling.
         'Medcom.Api': {('Swashbuckle.AspNetCore.SwaggerUI', '10.3.0')},
     }.get(name, set())
