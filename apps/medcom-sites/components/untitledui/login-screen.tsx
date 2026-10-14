@@ -102,7 +102,7 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
       <div className="w-full max-w-md relative z-10 space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex h-14 w-40 rounded-2xl bg-white items-center justify-center shadow-lg mb-2 p-2">
+          <div className="inline-flex h-14 w-40 items-center justify-center">
             <Image src="/medcom-logo.png" alt="MEDCOMTECH" width={288} height={104} className="h-full w-full object-contain" priority />
           </div>
 

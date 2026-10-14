@@ -460,7 +460,7 @@ function lockBadgeState(header: unknown): boolean | null {
 
 // Detail dropdown entries, in display order. Rendered only when the backend
 // marks them visible; enabled state and reason come from the same action.
-const MENU_ACTION_IDS = ["save", "submit", "send-purchase-order", "delete"] as const;
+const MENU_ACTION_IDS = ["save", "submit", "send-purchase-order", "approve", "reject", "delete"] as const;
 
 export function TabErpScreen({
   module,
@@ -978,6 +978,8 @@ export function TabErpScreen({
     if (act.id === "delete") return deleteArmed ? "Bấm lần nữa để xóa" : "Xóa chứng từ";
     if (act.id === "submit") return "Gửi đề nghị";
     if (act.id === "send-purchase-order") return "Gửi đặt mua hàng";
+    if (act.id === "approve") return "Duyệt";
+    if (act.id === "reject") return module === "purchase-approvals" ? "Không duyệt" : "Từ chối";
     return act.caption || act.id;
   };
 
@@ -1774,6 +1776,10 @@ export function TabErpScreen({
                                         <Pencil className="size-4" />
                                       ) : danger ? (
                                         <Trash2 className="size-4" />
+                                      ) : act.id === "approve" ? (
+                                        <CheckCircle2 className="size-4" />
+                                      ) : act.id === "reject" ? (
+                                        <X className="size-4" />
                                       ) : (
                                         <Send className="size-4" />
                                       )}

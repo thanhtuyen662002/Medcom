@@ -108,14 +108,6 @@ export function SidebarDrawer({
           icon: LayoutDashboard,
         },
         {
-          id: "orders",
-          label: "Đề nghị mua hàng (PO)",
-          description: "19 trường header & 12 cột chi tiết",
-          icon: ShoppingBag,
-          badge: pendingOrdersCount > 0 ? pendingOrdersCount : undefined,
-          badgeColor: "purple",
-        },
-        {
           id: "purchases",
           label: "Phiếu đề nghị mua (PR)",
           description: "14 trường header & 9 cột chi tiết",
@@ -151,14 +143,6 @@ export function SidebarDrawer({
           icon: FileText,
           badge: "Mới",
           badgeColor: "emerald",
-        },
-        {
-          id: "purchase-orders",
-          label: "Đề nghị mua hàng (PO)",
-          description: "Menu 050129 • AP_OrderFrm",
-          icon: ShoppingBag,
-          badge: "CUD & Tra giá",
-          badgeColor: "purple",
         },
         {
           id: "purchase-approvals",
