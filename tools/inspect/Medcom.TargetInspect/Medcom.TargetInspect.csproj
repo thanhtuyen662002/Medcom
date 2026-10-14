@@ -3,10 +3,13 @@
     <OutputType>Exe</OutputType>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <RestoreLockedMode>true</RestoreLockedMode>
+    <!-- Preserve the exact provider dependency graph checked against Infrastructure. -->
+    <RestoreEnablePackagePruning>false</RestoreEnablePackagePruning>
   </PropertyGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.3" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="9.0.21" />
     <Compile Include="../../../src/backend/Medcom.Api/ServerConfiguration.cs" Link="Policy/ServerConfiguration.cs" />
     <Compile Include="../../../src/backend/Medcom.Infrastructure/SqlDevelopmentTestTlsTarget.cs" Link="Policy/SqlDevelopmentTestTlsTarget.cs" />
     <Using Include="Microsoft.Extensions.Configuration" />
