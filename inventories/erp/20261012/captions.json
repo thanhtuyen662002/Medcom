@@ -1,0 +1,943 @@
+{
+  "schemaVersion": 1,
+  "sourceSet": "owner-live-meddata-20261012-i86",
+  "observedAtUtc": "2026-10-12T11:13:55.6602309Z",
+  "queryMode": "SELECT-only serializable transaction, rolled back",
+  "businessWritesPerformed": false,
+  "productionAccepted": false,
+  "screens": [
+    {
+      "module": "inbound-requests",
+      "formId": "IV_InboundRequestFrm",
+      "menuId": "07011",
+      "caption": "Phi\u1EBFu \u0111\u1EC1 ngh\u1ECB nh\u1EADp h\u00E0ng",
+      "source": "dbo.SY_FrmLstTbl.CaptionVN",
+      "formMatches": 1,
+      "menuMatches": 1
+    },
+    {
+      "module": "internal-transfer-accounting",
+      "formId": "IV_InternalTransferAccountingFrm",
+      "menuId": "07010150",
+      "caption": "X\u1EED l\u00FD \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9",
+      "source": "dbo.SY_FrmLstTbl.CaptionVN",
+      "formMatches": 1,
+      "menuMatches": 1
+    },
+    {
+      "module": "internal-transfer-batches",
+      "formId": "IV_InternalTransferBatchFrm",
+      "menuId": "07010120",
+      "caption": "\u0110\u1EE3t \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9",
+      "source": "dbo.SY_FrmLstTbl.CaptionVN",
+      "formMatches": 1,
+      "menuMatches": 1
+    },
+    {
+      "module": "internal-transfer-pm",
+      "formId": "IV_InternalTransferPMFrm",
+      "menuId": "07010110",
+      "caption": "X\u00E1c nh\u1EADn \u0111\u1EC1 ngh\u1ECB \u0111i\u1EC1u chuy\u1EC3n",
+      "source": "dbo.SY_FrmLstTbl.CaptionVN",
+      "formMatches": 1,
+      "menuMatches": 1
+    },
+    {
+      "module": "internal-transfer-requests",
+      "formId": "IV_InternalTransferRequestFrm",
+      "menuId": "07010100",
+      "caption": "Phi\u1EBFu \u0111\u1EC1 ngh\u1ECB \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9",
+      "source": "dbo.SY_FrmLstTbl.CaptionVN",
+      "formMatches": 1,
+      "menuMatches": 1
+    },
+    {
+      "module": "internal-transfer-sa",
+      "formId": "IV_InternalTransferSAFrm",
+      "menuId": "07010140",
+      "caption": "Ph\u00EA duy\u1EC7t \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9",
+      "source": "dbo.SY_FrmLstTbl.CaptionVN",
+      "formMatches": 1,
+      "menuMatches": 1
+    },
+    {
+      "module": "internal-transfer-tech",
+      "formId": "IV_InternalTransferTechFrm",
+      "menuId": "07010130",
+      "caption": "X\u00E1c nh\u1EADn thi\u1EBFt b\u1ECB \u0111i\u1EC1u chuy\u1EC3n",
+      "source": "dbo.SY_FrmLstTbl.CaptionVN",
+      "formMatches": 1,
+      "menuMatches": 1
+    },
+    {
+      "module": "internal-transfer-warehouse-in",
+      "formId": "IV_InternalTransferWarehouseInFrm",
+      "menuId": "07010170",
+      "caption": "X\u00E1c nh\u1EADn nh\u1EADn \u0111i\u1EC1u chuy\u1EC3n",
+      "source": "dbo.SY_FrmLstTbl.CaptionVN",
+      "formMatches": 1,
+      "menuMatches": 1
+    },
+    {
+      "module": "internal-transfer-warehouse-out",
+      "formId": "IV_InternalTransferWarehouseOutFrm",
+      "menuId": "07010160",
+      "caption": "X\u00E1c nh\u1EADn xu\u1EA5t \u0111i\u1EC1u chuy\u1EC3n",
+      "source": "dbo.SY_FrmLstTbl.CaptionVN",
+      "formMatches": 1,
+      "menuMatches": 1
+    },
+    {
+      "module": "machine-movements",
+      "formId": "FA_Move2026Frm",
+      "menuId": "1207",
+      "caption": "Phi\u1EBFu di chuy\u1EC3n / b\u00E0n giao m\u00E1y",
+      "source": "dbo.SY_FrmLstTbl.CaptionVN",
+      "formMatches": 1,
+      "menuMatches": 1
+    },
+    {
+      "module": "machine-repairs",
+      "formId": "FA_Repair2026Frm",
+      "menuId": "1209",
+      "caption": "Phi\u1EBFu s\u1EEDa ch\u1EEFa / b\u1EA3o h\u00E0nh / b\u1EA3o tr\u00EC m\u00E1y",
+      "source": "dbo.SY_FrmLstTbl.CaptionVN",
+      "formMatches": 1,
+      "menuMatches": 1
+    },
+    {
+      "module": "purchase-approvals",
+      "formId": "AP_ApprovePurchaseRequestListFrm",
+      "menuId": "05012",
+      "caption": "Duy\u1EC7t \u0111\u1EC1 ngh\u1ECB mua h\u00E0ng",
+      "source": "dbo.SY_FrmLstTbl.CaptionVN",
+      "formMatches": 1,
+      "menuMatches": 1
+    },
+    {
+      "module": "purchase-orders",
+      "formId": "AP_OrderFrm",
+      "menuId": "050129",
+      "caption": "\u0110\u1EB7t mua h\u00E0ng",
+      "source": "dbo.SY_FrmLstTbl.CaptionVN",
+      "formMatches": 1,
+      "menuMatches": 1
+    },
+    {
+      "module": "purchase-requests",
+      "formId": "AP_PurposeRequestListFrm",
+      "menuId": "05011",
+      "caption": "\u0110\u1EC1 ngh\u1ECB mua h\u00E0ng",
+      "source": "dbo.SY_FrmLstTbl.CaptionVN",
+      "formMatches": 1,
+      "menuMatches": 1
+    },
+    {
+      "module": "sales-order-pm",
+      "formId": "AR_OrderComfirmFrm",
+      "menuId": "060021",
+      "caption": "X\u00E1c nh\u1EADn \u0111\u01A1n h\u00E0ng",
+      "source": "dbo.SY_FrmLstTbl.CaptionVN",
+      "formMatches": 1,
+      "menuMatches": 1
+    },
+    {
+      "module": "sales-order-sa",
+      "formId": "AR_OrderAproveFrm",
+      "menuId": "060022",
+      "caption": "Duy\u1EC7t \u0111\u01A1n h\u00E0ng",
+      "source": "dbo.SY_FrmLstTbl.CaptionVN",
+      "formMatches": 1,
+      "menuMatches": 1
+    },
+    {
+      "module": "sales-orders",
+      "formId": "AR_OrderByContractFrm",
+      "menuId": "0600201",
+      "caption": "Qu\u1EA3n l\u00FD \u0111\u01A1n h\u00E0ng",
+      "source": "dbo.SY_FrmLstTbl.CaptionVN",
+      "formMatches": 1,
+      "menuMatches": 1
+    },
+    {
+      "module": "sales-qr",
+      "formId": "AR_Invoice_QRCodeFrm",
+      "menuId": "0702010",
+      "caption": "Xu\u1EA5t b\u00E1n h\u00E0ng",
+      "source": "dbo.SY_FrmLstTbl.CaptionVN",
+      "formMatches": 1,
+      "menuMatches": 1
+    },
+    {
+      "module": "warehouse-qr",
+      "formId": "IV_Output_QRCodeFrm",
+      "menuId": "0702001",
+      "caption": "Xu\u1EA5t kho",
+      "source": "dbo.SY_FrmLstTbl.CaptionVN",
+      "formMatches": 1,
+      "menuMatches": 1
+    }
+  ],
+  "actions": [
+    {
+      "module": "inbound-requests",
+      "actionId": "create",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "inbound-requests",
+      "actionId": "save",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "inbound-requests",
+      "actionId": "delete",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "inbound-requests",
+      "actionId": "send-management",
+      "control": "ExecSQLWithParaButtonCtl",
+      "caption": "G\u1EEDi BL\u0110",
+      "source": "dbo.SY_FrmCfg/IV_InboundRequestFrm/LYS1/ExecSQLWithParaButtonCtl/BT",
+      "matches": 1
+    },
+    {
+      "module": "inbound-requests",
+      "actionId": "send-warehouse",
+      "control": "ExecSQLWithParaButtonCtl_1",
+      "caption": "G\u1EEDi Th\u1EE7 kho",
+      "source": "dbo.SY_FrmCfg/IV_InboundRequestFrm/LYS1/ExecSQLWithParaButtonCtl_1/BT",
+      "matches": 1
+    },
+    {
+      "module": "inbound-requests",
+      "actionId": "save-costs",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "internal-transfer-accounting",
+      "actionId": "create",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "internal-transfer-accounting",
+      "actionId": "save",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "internal-transfer-accounting",
+      "actionId": "delete",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "internal-transfer-accounting",
+      "actionId": "send-warehouse",
+      "control": "ExecSQLWithParaButtonCtl",
+      "caption": "G\u1EEDi Kho ngu\u1ED3n",
+      "source": "dbo.SY_FrmCfg/IV_InternalTransferAccountingFrm/LYS1/ExecSQLWithParaButtonCtl/BT",
+      "matches": 1
+    },
+    {
+      "module": "internal-transfer-accounting",
+      "actionId": "reject",
+      "control": "ExecSQLWithParaButtonCtl_1",
+      "caption": "T\u1EEB ch\u1ED1i nhanh",
+      "source": "dbo.SY_FrmCfg/IV_InternalTransferAccountingFrm/LYS1/ExecSQLWithParaButtonCtl_1/BT",
+      "matches": 1
+    },
+    {
+      "module": "internal-transfer-accounting",
+      "actionId": "return-step",
+      "control": "ExecSQLWithParaButtonCtl_2",
+      "caption": "Ch\u1ECDn b\u01B0\u1EDBc g\u1EEDi v\u1EC1",
+      "source": "dbo.SY_FrmCfg/IV_InternalTransferAccountingFrm/LYS1/ExecSQLWithParaButtonCtl_2/BT",
+      "matches": 1
+    },
+    {
+      "module": "internal-transfer-batches",
+      "actionId": "create",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "internal-transfer-batches",
+      "actionId": "save",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "internal-transfer-batches",
+      "actionId": "delete",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "internal-transfer-batches",
+      "actionId": "sync-requests",
+      "control": "ExecSQLWithParaButtonCtl",
+      "caption": "\u0110\u1ED3ng b\u1ED9 \u0111\u1EC1 ngh\u1ECB",
+      "source": "dbo.SY_FrmCfg/IV_InternalTransferBatchFrm/LYS1/ExecSQLWithParaButtonCtl/BT",
+      "matches": 1
+    },
+    {
+      "module": "internal-transfer-batches",
+      "actionId": "send-tech",
+      "control": "ExecSQLWithParaButtonCtl_1",
+      "caption": "G\u1EEDi k\u1EF9 thu\u1EADt",
+      "source": "dbo.SY_FrmCfg/IV_InternalTransferBatchFrm/LYS1/ExecSQLWithParaButtonCtl_1/BT",
+      "matches": 1
+    },
+    {
+      "module": "internal-transfer-pm",
+      "actionId": "create",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "internal-transfer-pm",
+      "actionId": "save",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "internal-transfer-pm",
+      "actionId": "delete",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "internal-transfer-pm",
+      "actionId": "pm-confirm",
+      "control": "ExecSQLWithParaButtonCtl",
+      "caption": "\u0110\u1ED3ng \u00FD \u0111i\u1EC1u chuy\u1EC3n",
+      "source": "dbo.SY_FrmCfg/IV_InternalTransferPMFrm/LYS1/ExecSQLWithParaButtonCtl/BT",
+      "matches": 1
+    },
+    {
+      "module": "internal-transfer-pm",
+      "actionId": "reject",
+      "control": "ExecSQLWithParaButtonCtl_1",
+      "caption": "T\u1EEB ch\u1ED1i nhanh",
+      "source": "dbo.SY_FrmCfg/IV_InternalTransferPMFrm/LYS1/ExecSQLWithParaButtonCtl_1/BT",
+      "matches": 1
+    },
+    {
+      "module": "internal-transfer-requests",
+      "actionId": "create",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "internal-transfer-requests",
+      "actionId": "save",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "internal-transfer-requests",
+      "actionId": "delete",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "internal-transfer-requests",
+      "actionId": "paste",
+      "control": "web-draft-validation",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "internal-transfer-requests",
+      "actionId": "recall",
+      "control": "CommandButtonCtl_1",
+      "caption": "Thu h\u1ED3i \u0111\u1EC3 s\u1EEDa",
+      "source": "dbo.SY_FrmCfg/IV_InternalTransferRequestFrm/LYS1/CommandButtonCtl_1/BT",
+      "matches": 1
+    },
+    {
+      "module": "internal-transfer-requests",
+      "actionId": "send-pm",
+      "control": "ExecSQLWithParaButtonCtl",
+      "caption": "G\u1EEDi PM",
+      "source": "dbo.SY_FrmCfg/IV_InternalTransferRequestFrm/LYS1/ExecSQLWithParaButtonCtl/BT",
+      "matches": 1
+    },
+    {
+      "module": "internal-transfer-sa",
+      "actionId": "create",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "internal-transfer-sa",
+      "actionId": "save",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "internal-transfer-sa",
+      "actionId": "delete",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "internal-transfer-sa",
+      "actionId": "send-accounting",
+      "control": "ExecSQLWithParaButtonCtl",
+      "caption": "G\u1EEDi K\u1EBF to\u00E1n",
+      "source": "dbo.SY_FrmCfg/IV_InternalTransferSAFrm/LYS1/ExecSQLWithParaButtonCtl/BT",
+      "matches": 1
+    },
+    {
+      "module": "internal-transfer-sa",
+      "actionId": "reject",
+      "control": "ExecSQLWithParaButtonCtl_1",
+      "caption": "T\u1EEB ch\u1ED1i nhanh",
+      "source": "dbo.SY_FrmCfg/IV_InternalTransferSAFrm/LYS1/ExecSQLWithParaButtonCtl_1/BT",
+      "matches": 1
+    },
+    {
+      "module": "internal-transfer-sa",
+      "actionId": "return-step",
+      "control": "ExecSQLWithParaButtonCtl_2",
+      "caption": "Ch\u1ECDn b\u01B0\u1EDBc g\u1EEDi v\u1EC1",
+      "source": "dbo.SY_FrmCfg/IV_InternalTransferSAFrm/LYS1/ExecSQLWithParaButtonCtl_2/BT",
+      "matches": 1
+    },
+    {
+      "module": "internal-transfer-tech",
+      "actionId": "create",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "internal-transfer-tech",
+      "actionId": "save",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "internal-transfer-tech",
+      "actionId": "delete",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "internal-transfer-tech",
+      "actionId": "send-sa",
+      "control": "ExecSQLWithParaButtonCtl",
+      "caption": "G\u1EEDi TP SA",
+      "source": "dbo.SY_FrmCfg/IV_InternalTransferTechFrm/LYS1/ExecSQLWithParaButtonCtl/BT",
+      "matches": 1
+    },
+    {
+      "module": "internal-transfer-tech",
+      "actionId": "reject",
+      "control": "ExecSQLWithParaButtonCtl_1",
+      "caption": "T\u1EEB ch\u1ED1i nhanh",
+      "source": "dbo.SY_FrmCfg/IV_InternalTransferTechFrm/LYS1/ExecSQLWithParaButtonCtl_1/BT",
+      "matches": 1
+    },
+    {
+      "module": "internal-transfer-tech",
+      "actionId": "save-assets",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "internal-transfer-warehouse-in",
+      "actionId": "create",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "internal-transfer-warehouse-in",
+      "actionId": "save",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "internal-transfer-warehouse-in",
+      "actionId": "delete",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "internal-transfer-warehouse-in",
+      "actionId": "receive",
+      "control": "ExecSQLWithParaButtonCtl",
+      "caption": "X\u00E1c nh\u1EADn nh\u1EADn h\u00E0ng",
+      "source": "dbo.SY_FrmCfg/IV_InternalTransferWarehouseInFrm/LYS1/ExecSQLWithParaButtonCtl/BT",
+      "matches": 1
+    },
+    {
+      "module": "internal-transfer-warehouse-out",
+      "actionId": "create",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "internal-transfer-warehouse-out",
+      "actionId": "save",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "internal-transfer-warehouse-out",
+      "actionId": "delete",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "internal-transfer-warehouse-out",
+      "actionId": "dispatch",
+      "control": "ExecSQLWithParaButtonCtl",
+      "caption": "X\u00E1c nh\u1EADn xu\u1EA5t / G\u1EEDi Kho \u0111\u00EDch",
+      "source": "dbo.SY_FrmCfg/IV_InternalTransferWarehouseOutFrm/LYS1/ExecSQLWithParaButtonCtl/BT",
+      "matches": 1
+    },
+    {
+      "module": "internal-transfer-warehouse-out",
+      "actionId": "reject",
+      "control": "ExecSQLWithParaButtonCtl_1",
+      "caption": "T\u1EEB ch\u1ED1i nhanh",
+      "source": "dbo.SY_FrmCfg/IV_InternalTransferWarehouseOutFrm/LYS1/ExecSQLWithParaButtonCtl_1/BT",
+      "matches": 1
+    },
+    {
+      "module": "internal-transfer-warehouse-out",
+      "actionId": "return-step",
+      "control": "ExecSQLWithParaButtonCtl_2",
+      "caption": "Ch\u1ECDn b\u01B0\u1EDBc g\u1EEDi v\u1EC1",
+      "source": "dbo.SY_FrmCfg/IV_InternalTransferWarehouseOutFrm/LYS1/ExecSQLWithParaButtonCtl_2/BT",
+      "matches": 1
+    },
+    {
+      "module": "machine-movements",
+      "actionId": "create",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "machine-movements",
+      "actionId": "save",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "machine-movements",
+      "actionId": "delete",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "machine-movements",
+      "actionId": "paste",
+      "control": "web-draft-validation",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "machine-repairs",
+      "actionId": "create",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "machine-repairs",
+      "actionId": "save",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "machine-repairs",
+      "actionId": "delete",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "machine-repairs",
+      "actionId": "paste",
+      "control": "web-draft-validation",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "purchase-approvals",
+      "actionId": "reject",
+      "control": "ExecSQLWithParaButtonCtl",
+      "caption": "Kh\u00F4ng duy\u1EC7t",
+      "source": "dbo.SY_FrmCfg/AP_ApprovePurchaseRequestListFrm/LYS1/ExecSQLWithParaButtonCtl/BT",
+      "matches": 1
+    },
+    {
+      "module": "purchase-approvals",
+      "actionId": "approve",
+      "control": "ExecSQLWithParaButtonCtl_1",
+      "caption": "Duy\u1EC7t",
+      "source": "dbo.SY_FrmCfg/AP_ApprovePurchaseRequestListFrm/LYS1/ExecSQLWithParaButtonCtl_1/BT",
+      "matches": 1
+    },
+    {
+      "module": "purchase-orders",
+      "actionId": "create",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "purchase-orders",
+      "actionId": "save",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "purchase-orders",
+      "actionId": "delete",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "purchase-requests",
+      "actionId": "create",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "purchase-requests",
+      "actionId": "save",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "purchase-requests",
+      "actionId": "delete",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "purchase-requests",
+      "actionId": "paste",
+      "control": "web-draft-validation",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "purchase-requests",
+      "actionId": "submit",
+      "control": "CommandButtonCtl",
+      "caption": "G\u1EEDi \u0111\u1EC1 ngh\u1ECB",
+      "source": "dbo.SY_FrmCfg/AP_PurposeRequestListFrm/LYS1/CommandButtonCtl/BT",
+      "matches": 1
+    },
+    {
+      "module": "purchase-requests",
+      "actionId": "send-purchase-order",
+      "control": "CommandButtonCtl_1",
+      "caption": "G\u1EEDi \u0111\u1EB7t mua h\u00E0ng",
+      "source": "dbo.SY_FrmCfg/AP_PurposeRequestListFrm/LYS1/CommandButtonCtl_1/BT",
+      "matches": 1
+    },
+    {
+      "module": "purchase-requests",
+      "actionId": "print",
+      "control": "PrintButtonCtl",
+      "caption": "In \u0111\u1EC1 xu\u1EA5t mua h\u00E0ng",
+      "source": "dbo.SY_FrmCfg/AP_PurposeRequestListFrm/LYS1/PrintButtonCtl/BT",
+      "matches": 1
+    },
+    {
+      "module": "purchase-requests",
+      "actionId": "print_1",
+      "control": "PrintButtonCtl_1",
+      "caption": "In BB giao nh\u1EADn h\u00E0ng h\u00F3a",
+      "source": "dbo.SY_FrmCfg/AP_PurposeRequestListFrm/LYS1/PrintButtonCtl_1/BT",
+      "matches": 1
+    },
+    {
+      "module": "purchase-requests",
+      "actionId": "print_2",
+      "control": "PrintButtonCtl_2",
+      "caption": "In BB kh\u00F4ng ph\u00F9 h\u1EE3p",
+      "source": "dbo.SY_FrmCfg/AP_PurposeRequestListFrm/LYS1/PrintButtonCtl_2/BT",
+      "matches": 1
+    },
+    {
+      "module": "purchase-requests",
+      "actionId": "print_3",
+      "control": "PrintButtonCtl_3",
+      "caption": "In \u0110N ph\u00EA duy\u1EC7t H\u0110/\u0110H",
+      "source": "dbo.SY_FrmCfg/AP_PurposeRequestListFrm/LYS1/PrintButtonCtl_3/BT",
+      "matches": 1
+    },
+    {
+      "module": "purchase-requests",
+      "actionId": "print_4",
+      "control": "PrintButtonCtl_4",
+      "caption": "In BB ki\u1EC3m nh\u1EADp kho HH",
+      "source": "dbo.SY_FrmCfg/AP_PurposeRequestListFrm/LYS1/PrintButtonCtl_4/BT",
+      "matches": 1
+    },
+    {
+      "module": "sales-order-pm",
+      "actionId": "contract-info",
+      "control": "CommandButtonCtl",
+      "caption": "Xem th\u00F4ng tin h\u1EE3p \u0111\u1ED3ng",
+      "source": "dbo.SY_FrmCfg/AR_OrderComfirmFrm/LYS1/CommandButtonCtl/BT",
+      "matches": 1
+    },
+    {
+      "module": "sales-order-pm",
+      "actionId": "send-sa",
+      "control": "ExecSQLWithParaButtonCtl",
+      "caption": "G\u1EEDi SA",
+      "source": "dbo.SY_FrmCfg/AR_OrderComfirmFrm/LYS1/ExecSQLWithParaButtonCtl/BT",
+      "matches": 1
+    },
+    {
+      "module": "sales-order-pm",
+      "actionId": "reject",
+      "control": "ExecSQLWithParaButtonCtl_1",
+      "caption": "T\u1EEB ch\u1ED1i nhanh",
+      "source": "dbo.SY_FrmCfg/AR_OrderComfirmFrm/LYS1/ExecSQLWithParaButtonCtl_1/BT",
+      "matches": 1
+    },
+    {
+      "module": "sales-order-sa",
+      "actionId": "contract-info",
+      "control": "CommandButtonCtl",
+      "caption": "Xem th\u00F4ng tin h\u1EE3p \u0111\u1ED3ng",
+      "source": "dbo.SY_FrmCfg/AR_OrderAproveFrm/LYS1/CommandButtonCtl/BT",
+      "matches": 1
+    },
+    {
+      "module": "sales-order-sa",
+      "actionId": "send-accounting",
+      "control": "ExecSQLWithParaButtonCtl_2",
+      "caption": "G\u1EEDi K\u1EBF to\u00E1n",
+      "source": "dbo.SY_FrmCfg/AR_OrderAproveFrm/LYS1/ExecSQLWithParaButtonCtl_2/BT",
+      "matches": 1
+    },
+    {
+      "module": "sales-order-sa",
+      "actionId": "send-tech",
+      "control": "ExecSQLWithParaButtonCtl_3",
+      "caption": "G\u1EEDi K\u1EF9 thu\u1EADt",
+      "source": "dbo.SY_FrmCfg/AR_OrderAproveFrm/LYS1/ExecSQLWithParaButtonCtl_3/BT",
+      "matches": 1
+    },
+    {
+      "module": "sales-order-sa",
+      "actionId": "reject",
+      "control": "ExecSQLWithParaButtonCtl_4",
+      "caption": "T\u1EEB ch\u1ED1i nhanh",
+      "source": "dbo.SY_FrmCfg/AR_OrderAproveFrm/LYS1/ExecSQLWithParaButtonCtl_4/BT",
+      "matches": 1
+    },
+    {
+      "module": "sales-order-sa",
+      "actionId": "return-step",
+      "control": "ExecSQLWithParaButtonCtl_5",
+      "caption": "Ch\u1ECDn b\u01B0\u1EDBc g\u1EEDi v\u1EC1",
+      "source": "dbo.SY_FrmCfg/AR_OrderAproveFrm/LYS1/ExecSQLWithParaButtonCtl_5/BT",
+      "matches": 1
+    },
+    {
+      "module": "sales-orders",
+      "actionId": "create",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "sales-orders",
+      "actionId": "save",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "sales-orders",
+      "actionId": "delete",
+      "control": "native-toolbar",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "sales-orders",
+      "actionId": "paste",
+      "control": "web-draft-validation",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "sales-orders",
+      "actionId": "contract-info",
+      "control": "CommandButtonCtl",
+      "caption": "Xem th\u00F4ng tin h\u1EE3p \u0111\u1ED3ng",
+      "source": "dbo.SY_FrmCfg/AR_OrderByContractFrm/LYS1/CommandButtonCtl/BT",
+      "matches": 1
+    },
+    {
+      "module": "sales-orders",
+      "actionId": "recall",
+      "control": "CommandButtonCtl_1",
+      "caption": "Thu h\u1ED3i \u0111\u1EC3 s\u1EEDa",
+      "source": "dbo.SY_FrmCfg/AR_OrderByContractFrm/LYS1/CommandButtonCtl_1/BT",
+      "matches": 1
+    },
+    {
+      "module": "sales-orders",
+      "actionId": "send-pm",
+      "control": "ExecSQLWithParaButtonCtl",
+      "caption": "G\u1EEDi PM",
+      "source": "dbo.SY_FrmCfg/AR_OrderByContractFrm/LYS1/ExecSQLWithParaButtonCtl/BT",
+      "matches": 1
+    },
+    {
+      "module": "sales-qr",
+      "actionId": "scan-add",
+      "control": "BarcodeInputCtl",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "sales-qr",
+      "actionId": "scan-delete",
+      "control": "BarcodeInputCtl_1",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "sales-qr",
+      "actionId": "contract-info",
+      "control": "CommandButtonCtl_2",
+      "caption": "Xem th\u00F4ng tin h\u1EE3p \u0111\u1ED3ng",
+      "source": "dbo.SY_FrmCfg/AR_Invoice_QRCodeFrm/LYS1/CommandButtonCtl_2/BT",
+      "matches": 1
+    },
+    {
+      "module": "warehouse-qr",
+      "actionId": "scan-add",
+      "control": "BarcodeInputCtl",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "warehouse-qr",
+      "actionId": "scan-delete",
+      "control": "BarcodeInputCtl_1",
+      "caption": "",
+      "source": null,
+      "matches": 0
+    },
+    {
+      "module": "warehouse-qr",
+      "actionId": "print",
+      "control": "PrintButtonCtl",
+      "caption": "In m\u00E3 QR",
+      "source": "dbo.SY_FrmCfg/IV_Output_QRCodeFrm/LYS1/PrintButtonCtl/BT",
+      "matches": 1
+    }
+  ]
+}

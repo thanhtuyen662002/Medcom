@@ -16,6 +16,14 @@ không cần CDN hoặc thay đổi ứng dụng FE. Dùng bản BE đã cập n
    browser tự gửi Origin. Không cần điền các cookie bằng nút Authorize.
 4. Xem HTTP status, response và thời gian đáp ứng. Bấm **Đăng xuất** khi xong.
 
+Các nhóm màn hình ERP dùng tên tiếng Việt lấy từ `SY_FrmLstTbl.CaptionVN`
+đã đối chiếu và đóng gói trong BE: **Đặt mua hàng**, **Phiếu đề nghị nhập hàng**,
+**Phiếu di chuyển / bàn giao máy**… Đổi nhãn nhóm không đổi đường dẫn,
+tham số hay dữ liệu API. Nguồn nhãn: `inventories/erp/20261012/captions.json`.
+Đối với PO, khóa chứng từ hiện được trả ở `isLocked` (giá trị gốc `isLock`);
+`statusId` đi cùng `statusName` từ `AP_OrderStatusTbl`. Việc luôn bật nút
+Thêm/Sửa/Xóa trên giao diện không đổi giá trị khóa chứng từ.
+
 Các API tạo, sửa, xóa, gửi và quét ghi vào DB mà BE đang kết nối khi đầy đủ
 quyền và cấu hình ghi. Chỉ Execute với dữ liệu/chứng từ đã được chọn để kiểm
 tra. Trang không tự tạo idempotency key hoặc gửi lại lệnh. Giữ nguyên intent/key

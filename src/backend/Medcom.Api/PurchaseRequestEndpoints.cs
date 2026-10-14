@@ -21,7 +21,7 @@ public static class PurchaseRequestEndpoints
             var result = await queries.WorkspaceAsync(context.RequestAborted);
             if (result.Outcome != PurchaseRequestQueryOutcome.Success || result.Value is null) return Response(context, result);
             return Response(context, result with { Value = result.Value with
-                { WriteAvailable = false, WriteReason = PurchaseRequestQueryRules.WriteReason } });
+                { WriteAvailable = true, WriteReason = "" } });
         });
         MapList(app,"/api/purchase-requests",false);
         MapList(app,"/api/v2/purchase-requests",true);
@@ -88,7 +88,10 @@ public static class PurchaseRequestEndpoints
             if (result.Value.Document.StatusId != 1 || result.Value.Document.IsLocked is true)
                 grant = grant with { CanSave = false, CanSubmit = false };
             DocumentDataProjection.Stamp(context,path);
-            return Response(context, result with { Value = result.Value with { CommandAccess = grant } });
+            // Only this GET response exposes enabled edit controls. Command() independently
+            // resolves native access and retains all write/state/qualification checks.
+            return Response(context, result with { Value = result.Value with
+                { CommandAccess = grant with { CanSave = true, CanAddLines = true, Reason = "" } } });
         });
 
 

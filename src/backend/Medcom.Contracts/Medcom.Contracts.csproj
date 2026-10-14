@@ -3,5 +3,6 @@
     <EmbeddedResource Include="../../../inventories/erp/20261010/six-screen-catalog.json" LogicalName="Medcom.ErpScreenCatalog" />
     <EmbeddedResource Include="../../../inventories/erp/20261011/cud-workflow-catalog.json" LogicalName="Medcom.ErpWorkflowCatalog" />
     <EmbeddedResource Include="../../../inventories/backend/20261011/api-reference-bindings.json" LogicalName="Medcom.ApiReferenceCatalog" />
+    <EmbeddedResource Include="../../../inventories/erp/20261012/captions.json" LogicalName="Medcom.ErpCaptions" />
   </ItemGroup>
 </Project>

@@ -1,7 +1,7 @@
 // Compiled, unconfigured loopback host only. No real ERP credentials or SQL.
 import { createRequire } from "node:module";
 import { spawn } from "node:child_process";
-import { mkdtemp, writeFile, rm, mkdir } from "node:fs/promises";
+import { mkdtemp, writeFile, readFile, rm, mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import assert from "node:assert/strict";
@@ -61,7 +61,11 @@ try {
   const count = await page.evaluate(() => window.ui.getSystem().specSelectors.taggedOperations()
     .reduce((total, tag) => total + tag.get("operations").size, 0));
   assert.equal(count, 243);
-  await page.locator(".opblock-tag").filter({ hasText: "ERP · purchase-orders" }).click();
+  const captions = JSON.parse(await readFile("inventories/erp/20261012/captions.json", "utf8"));
+  for (const screen of captions.screens)
+    assert.equal(await page.locator(".opblock-tag").getByRole("link", { name: screen.caption, exact: true }).count(), 1, screen.module);
+  assert.equal(await page.locator(".opblock-tag").filter({ hasText: "ERP ·" }).count(), 0);
+  await page.locator(".opblock-tag").filter({ hasText: "Đặt mua hàng" }).click();
   await page.locator(".opblock-summary-path").filter({ hasText: "/api/erp/purchase-orders/create" }).waitFor();
   const orders = page.locator(".opblock").filter({ has: page.locator(".opblock-summary-path").filter({ hasText: /^\/api\/erp\/purchase-orders$/ }) });
   await orders.locator(".opblock-summary").click();

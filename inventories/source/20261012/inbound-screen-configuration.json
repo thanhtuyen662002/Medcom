@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "sourceSet": "owner-live-meddata-20261012-i85",
+  "observationDate": "2026-10-12",
+  "queryMode": "SELECT-only serializable transaction, rolled back",
+  "businessWritesPerformed": false,
+  "productionAccepted": false,
+  "supersedesOnly": "owner-live-meddata-20261011-i78/inbound-requests/send-warehouse/CS4",
+  "object": "dbo.SY_FrmCfg",
+  "address": {
+    "FID": "IV_InboundRequestFrm",
+    "KeyID": "LYS1",
+    "SubID": "ExecSQLWithParaButtonCtl_1",
+    "SubValue": "CS4"
+  },
+  "previous": {
+    "sha256Utf16LE": "0e2167a49fd1cfb83055dd108b5636ca5fa9a1730b9c2e95cdb38914c1ccaf94",
+    "characters": 851
+  },
+  "current": {
+    "sha256Utf16LE": "8f28068831ebda75b4e87c751c65fd6b08ce45f6e32770cac0e42215e43efaa1",
+    "characters": 590,
+    "valueIsNull": false
+  },
+  "semanticComparison": {
+    "sourceStatusIds": [0, 1],
+    "requiredNonNullDetailColumns": ["LotNumberByDocument", "SetQuantityByDocument", "ExpireDateByDocument"],
+    "removedNonNullDetailColumns": ["BarrelQuantityByDocument"],
+    "otherChanges": "Whitespace and layout only; status and message precedence unchanged"
+  },
+  "verificationAfterPatch": {
+    "schema": "matched",
+    "moduleHashes": "passed",
+    "workflowMetadata": "passed",
+    "screenConfiguration": "passed",
+    "expectedConfigurationRows": 184,
+    "actualConfigurationRows": 184,
+    "configurationDifferences": 0
+  },
+  "evidence": {
+    "privateDirectory": "I85-inbound-503 in owner's private agent artifact store",
+    "objects": ["metadata-probe.before.json", "metadata-probe.json", "baseline-CS4.private.txt", "current-CS4.private.txt", "source-diff.private.txt", "Program.cs"],
+    "afterProbeSha256": "f7ce874a264af341bce9cb99cfb0cb9d5a76589730cb09fab567e9db3250ceb8",
+    "historicalValue": "I78-cud-actions/ui-configuration.private.json, configuration rows at the exact address above"
+  },
+  "unknowns": ["Authenticated VPS HTTP acceptance after deployment", "Production write acceptance for this amended action"]
+}

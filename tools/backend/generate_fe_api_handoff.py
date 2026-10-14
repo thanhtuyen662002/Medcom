@@ -7,6 +7,9 @@ ROOT = Path(__file__).resolve().parents[2]
 CATALOGS = ["inventories/erp/20261010/six-screen-catalog.json", "inventories/erp/20261011/cud-workflow-catalog.json"]
 api = json.loads((ROOT / "docs/backend/medcom-openapi.json").read_text(encoding="utf-8"))
 screens = [screen for name in CATALOGS for screen in json.loads((ROOT / name).read_text(encoding="utf-8"))["screens"]]
+captions = json.loads((ROOT / "inventories/erp/20261012/captions.json").read_text(encoding="utf-8"))
+screen_captions = {row["module"]: row["caption"] for row in captions["screens"]}
+action_captions = {(row["module"], row["actionId"]): row["caption"] for row in captions["actions"]}
 base_buttons = {
     ("purchase-requests", "CommandButtonCtl"): "submit", ("purchase-requests", "CommandButtonCtl_1"): "send-purchase-order",
     ("sales-orders", "CommandButtonCtl"): "contract-info", ("sales-orders", "CommandButtonCtl_1"): "recall",
@@ -17,7 +20,7 @@ purposes = {
     "": ("Danh sách", "Tải danh sách phiếu theo trang, tìm kiếm và bộ lọc của màn hình."),
     "/screen": ("Chuẩn bị màn hình", "Lấy mô tả các cột, lựa chọn và nút của màn hình; không hiển thị thông tin nội bộ này cho người dùng."),
     "/detail": ("Mở phiếu", "Lấy đầy đủ thông tin phiếu và các bảng chi tiết theo trang."),
-    "/actions": ("Các nút trên phiếu", "Lấy nút được phép hiện và thao tác theo người dùng, chi nhánh và trạng thái hiện tại."),
+    "/actions": ("Các nút trên phiếu", "Lấy trạng thái nút; các nút thêm/lưu/xóa luôn bật để thử giao diện, các nút gửi/duyệt/thu hồi vẫn theo quyền và trạng thái phiếu."),
     "/options": ("Danh sách chọn", "Lấy danh sách cho các ô chọn trên phiếu, có tìm kiếm và phân trang."),
     "/create": ("Thêm", "Tạo phiếu mới và ghi các dòng chi tiết vào cơ sở dữ liệu."),
     "/save": ("Lưu", "Ghi thay đổi của phiếu và các dòng chi tiết."),
@@ -52,10 +55,10 @@ shared = {
     "/api/documents/query-contract": ("Hỗ trợ tích hợp", "Mô tả bộ lọc và phân trang dành cho đội triển khai."),
 }
 lines = ["# Bàn giao API BE cho FE — màn hình và thao tác", "",
-    f"Danh mục đủ {sum(len(item) for item in api['paths'].values())} API hiện có, phục vụ 19 màn hình ERP. Cập nhật 11/10/2026. Địa chỉ BE: https://medcom-production.up.railway.app.", "",
+    f"Danh mục đủ {sum(len(item) for item in api['paths'].values())} API hiện có, phục vụ 19 màn hình ERP. Cập nhật 12/10/2026. Trên VPS, FE gọi qua proxy tại https://medcom.bms79.com/api/erp; nối đường dẫn BE trong các bảng dưới đây vào địa chỉ đó.", "",
     "## Quy định giao diện", "",
-    "Tên màn hình và nút phải dùng nhãn nghiệp vụ trong các bảng dưới đây. Tên cột dùng nhãn nghiệp vụ đã được duyệt trên ERP. FE không tự đặt nhãn theo tên trường, đường dẫn API, tên bảng, mã lỗi hoặc thông tin kỹ thuật BE. Không đưa các từ như fields, stateToken, readScope, ReferenceState, schema hay tên thao tác nội bộ lên giao diện.", "",
-    "Chỉ hiện nút mà BE cho phép hiện; chỉ cho bấm nút mà BE cho phép thao tác. Sau khi thêm/lưu/gửi/thu hồi, tải lại phiếu và các nút. Lỗi hiển thị bằng câu tiếng Việt theo thao tác đang làm; thông tin chẩn đoán giữ cho đội triển khai.", "",
+    "Dùng caption tiếng Việt BE trả về từ DB. Khi caption rỗng, FE dùng nhãn nghiệp vụ cố định đã được duyệt trên ERP; không suy ra nhãn từ tên trường, đường dẫn API, tên bảng, mã lỗi hoặc thông tin kỹ thuật BE. Không đưa các từ như fields, stateToken, readScope, ReferenceState, schema hay tên thao tác nội bộ lên giao diện. Tên cột dùng nhãn nghiệp vụ đã được duyệt.", "",
+    "Trong đợt thử giao diện này, các nút Thêm/Lưu/Xóa, lưu chi phí/lưu danh sách máy và thêm/xóa QR luôn hiện và cho phép bấm khi đã truy cập được màn hình. Trạng thái khóa của phiếu vẫn là dữ liệu thật; FE không dùng nó để khóa các nút CUD này. Khi gửi thao tác, BE vẫn kiểm tra quyền, trạng thái chứng từ và điều kiện ghi DB. Các nút gửi/duyệt/thu hồi vẫn hiện và bật theo kết quả BE. Sau thao tác thành công, tải lại phiếu và nút. Lỗi hiển thị bằng câu tiếng Việt theo thao tác đang làm; thông tin chẩn đoán giữ cho đội triển khai.", "",
     "Mỗi bản ghi đã trả đủ dữ liệu tại một vị trí, danh sách và chi tiết vẫn lấy theo trang. Hàng hóa đi kèm mã hàng, tên hàng, đơn vị; kho, chi nhánh và trạng thái đi kèm tên. Tiền và ngày có dữ liệu hiển thị phù hợp Việt Nam. Những mã thuộc các chứng từ khác nhau được giữ riêng.", "",
     "Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dán đã tồn tại được ghi trong danh mục để nhận diện, không yêu cầu dựng thêm các nút đó.", "",
     "## API dùng chung", "", "| Dùng ở đâu / thao tác | API | Làm gì |", "|---|---|---|"]
@@ -68,9 +71,9 @@ for path, item in api["paths"].items():
         for method in item: row(shared[path][0], method, path, shared[path][1])
 for screen in screens:
     module = screen["id"]
-    buttons = {button.get("operation", base_buttons.get((module, button["control"]))): button["caption"]
+    buttons = {button.get("operation", base_buttons.get((module, button["control"]))): action_captions.get((module, button.get("operation", base_buttons.get((module, button["control"])))), "")
                for button in screen["buttons"] if not button["control"].startswith("PrintButtonCtl")}
-    lines += ["", "## " + screen["caption"], "", "| Thao tác / vị trí | API | Làm gì |", "|---|---|---|"]
+    lines += ["", "## " + screen_captions.get(module, ""), "", "| Thao tác / vị trí | API | Làm gì |", "|---|---|---|"]
     base = "/api/erp/" + module
     for path, item in api["paths"].items():
         if path != base and not path.startswith(base + "/"): continue
@@ -94,19 +97,19 @@ for path, item in api["paths"].items():
         if (method, path) in covered: continue
         if operation["x-medcom-admission"].startswith("default-provider-unavailable"):
             old_writes.append((method, path)); continue
-        caption = "Đề nghị mua hàng" if "purchase-requests" in path else "Đơn đặt mua" if "purchase-orders" in path else "Đề nghị nhập kho"
+        caption = screen_captions["purchase-requests" if "purchase-requests" in path else "purchase-orders" if "purchase-orders" in path else "inbound-requests"]
         purpose = "Đọc chi tiết phiếu theo trang." if path.endswith("/detail") else "Lấy thông tin lựa chọn trước khi mở phiếu." if path.endswith("/workspace") else "Lấy danh sách chọn của phiếu." if path.endswith("/lookup") else "Đọc danh sách phiếu theo trang."
         row(caption, method, path, purpose)
 lines += ["", "## Các API cũ đã được thay thế khi ghi phiếu", "",
     "Không nối nút thêm/lưu/gửi vào các API dưới đây. Dùng API ERP của đúng màn hình ở trên để ghi dữ liệu.", "",
     "| Dùng ở đâu | API cũ | API đang dùng |", "|---|---|---|"]
 for method, path in old_writes:
-    caption = "Đề nghị mua hàng" if "purchase-requests" in path else "Đề nghị nhập kho"
+    caption = screen_captions["purchase-requests" if "purchase-requests" in path else "inbound-requests"]
     current = "/api/erp/purchase-requests" if "purchase-requests" in path else "/api/erp/inbound-requests"
     row(caption, method, path, "Dùng nhóm `" + current + "` ở mục màn hình tương ứng.")
 assert covered == {(method, path) for path, item in api["paths"].items() for method in item}
 lines += ["", "## Tài liệu cho đội triển khai", "",
     "Cấu trúc dữ liệu được mô tả trong [OpenAPI](medcom-openapi.json). Quy tắc chuyển đổi dữ liệu trả về nằm trong [ghi chú nội bộ BE](API_RESPONSE_CONTRACT_V3_20261011.md); không lấy các thuật ngữ của tài liệu đó làm nhãn giao diện.", "",
-    "Danh mục đối chiếu từ API đã build và hai catalog màn hình trong `inventories/erp/20261010/six-screen-catalog.json`, `inventories/erp/20261011/cud-workflow-catalog.json`. Tình trạng merge, triển khai và kiểm thử thực tế được ghi tại [I79](../execution/I79_API_RESPONSE_STANDARDIZATION_20261011.md). Việc FE đã chuyển cách đọc dữ liệu và nghiệm thu thao tác trên phiếu thật vẫn UNKNOWN cho đến khi đội FE/owner xác nhận.", ""]
+    "Danh mục đối chiếu từ API đã build và catalog màn hình; tên màn hình/nút lấy từ đợt kiểm tra DB ngày 12/10/2026. Quy tắc nút trong đợt thử và nguồn caption được ghi tại [bàn giao nút và tên màn hình](BE_FE_BUTTONS_CAPTIONS_20261012.md). Việc FE đã cập nhật và nghiệm thu thao tác trên phiếu thật vẫn cần đội FE/owner xác nhận.", ""]
 (ROOT / "docs/backend/BE_FE_API_REFERENCE_20261011.md").write_text('\n'.join(lines), encoding="utf-8", newline="\n")
 print(f"Generated {len(covered)} unique API purposes across {len(screens)} screens")

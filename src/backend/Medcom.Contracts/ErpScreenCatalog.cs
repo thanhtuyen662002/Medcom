@@ -82,8 +82,9 @@ public static class ErpScreenCatalog
                 actions.Add(new("save-"+section.Key,section.Key switch
                     {"costs"=>"Lưu chi phí","assets"=>"Lưu danh sách máy",_=>throw new InvalidOperationException("Unmapped business section caption.")},
                     "native-toolbar","save-"+section.Key,null,true,true,evidence));
-            result.Add(module,new(module,Text(row,"caption"),Text(row,"menuId"),Text(row,"formId"),
-                new ReadOnlyDictionary<string,IReadOnlyList<ErpFieldDefinition>>(fields),actions.AsReadOnly(),
+            var labels=Array.AsReadOnly(actions.Select(action=>action with{Caption=ErpCaptionCatalog.Action(module,action.Id,action.Control)}).ToArray());
+            result.Add(module,new(module,ErpCaptionCatalog.Screen(module,Text(row,"formId")),Text(row,"menuId"),Text(row,"formId"),
+                new ReadOnlyDictionary<string,IReadOnlyList<ErpFieldDefinition>>(fields),labels,
                 Array.AsReadOnly(lookups),evidence));
         }
         if(result.Count!=19) throw new InvalidOperationException("ERP screen catalog incomplete.");

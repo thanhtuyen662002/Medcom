@@ -25,6 +25,7 @@ WORKER = 'src/backend/Medcom.LegacyPasswordWorker/Medcom.LegacyPasswordWorker.cs
 ERP_CATALOG = 'inventories/erp/20261010/six-screen-catalog.json'
 WORKFLOW_CATALOG = 'inventories/erp/20261011/cud-workflow-catalog.json'
 REFERENCE_CATALOG = 'inventories/backend/20261011/api-reference-bindings.json'
+CAPTION_CATALOG = 'inventories/erp/20261012/captions.json'
 IMAGE = os.environ.get('MEDCOM_CONTAINER_IMAGE')
 PUBLIC_ROOT = {'global.json', 'Directory.Build.props', 'Directory.Build.targets', 'NuGet.config'}
 SWAGGER_ASSETS = {'src/backend/Medcom.Api/Swagger/' + name for name in
@@ -78,6 +79,7 @@ class ContainerContractTests(unittest.TestCase):
             f'COPY {ERP_CATALOG} ./{ERP_CATALOG}',
             f'COPY {WORKFLOW_CATALOG} ./{WORKFLOW_CATALOG}',
             f'COPY {REFERENCE_CATALOG} ./{REFERENCE_CATALOG}',
+            f'COPY {CAPTION_CATALOG} ./{CAPTION_CATALOG}',
             'COPY --from=build /out/api/ ./',
             'COPY --from=build /out/password-worker/ ./password-worker/'])
         for project in (API, WORKER):
@@ -112,7 +114,7 @@ class ContainerContractTests(unittest.TestCase):
             '!Dockerfile', '!.dockerignore', '!src/backend/**/*.cs',
             '!src/backend/**/*.csproj', '!src/backend/**/packages.lock.json',
             '!src/backend/Medcom.Api/appsettings.json', '!' + ERP_CATALOG,
-            '!' + REFERENCE_CATALOG, '!' + WORKFLOW_CATALOG} | {'!' + path for path in SWAGGER_ASSETS}
+            '!' + REFERENCE_CATALOG, '!' + WORKFLOW_CATALOG, '!' + CAPTION_CATALOG} | {'!' + path for path in SWAGGER_ASSETS}
         self.assertEqual(rules[0], '**')
         self.assertEqual({rule for rule in rules if rule.startswith('!')}, expected)
         final_exclusion = max(i for i, rule in enumerate(rules) if rule.startswith('!'))
@@ -285,6 +287,7 @@ class DockerSmokeTests(unittest.TestCase):
             ERP_CATALOG,
             WORKFLOW_CATALOG,
             REFERENCE_CATALOG,
+            CAPTION_CATALOG,
             'src/backend/Medcom.Api/appsettings.json',
             'src/backend/Medcom.Api/Medcom.Api.csproj',
             'src/backend/Medcom.Api/packages.lock.json',
@@ -294,6 +297,8 @@ class DockerSmokeTests(unittest.TestCase):
             'inventories/erp/20261010/other-catalog.json',
             'inventories/erp/20261010/six-screen-catalog.private.json',
             'inventories/erp/20261011/cud-workflow-catalog.private.json',
+            'inventories/erp/20261012/captions.private.json',
+            'inventories/erp/20261012/other-captions.json',
             'inventories/backend/20261011/other-catalog.json',
             'inventories/backend/20261011/reference-source-reconciliation.json',
             'inventories/backend/20261011/api-reference-bindings.private.json',
@@ -362,7 +367,7 @@ class DockerSmokeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             context = Path(folder)
             (context / '.dockerignore').write_text(IGNORE)
-            for catalog in (ERP_CATALOG, WORKFLOW_CATALOG, REFERENCE_CATALOG, *SWAGGER_ASSETS):
+            for catalog in (ERP_CATALOG, WORKFLOW_CATALOG, REFERENCE_CATALOG, CAPTION_CATALOG, *SWAGGER_ASSETS):
                 child = context / catalog / 'unexpected.cs'
                 child.parent.mkdir(parents=True)
                 child.write_text('synthetic forbidden payload\n')

@@ -3205,6 +3205,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu \u0111\u1EC1 ngh\u1ECB nh\u1EADp h\u00E0ng"
+        ],
         "x-medcom-capability": "inbound-requests.read"
       }
     },
@@ -3248,6 +3251,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu \u0111\u1EC1 ngh\u1ECB nh\u1EADp h\u00E0ng"
+        ],
         "x-medcom-capability": "inbound-requests.read",
         "parameters": [
           {
@@ -3364,6 +3370,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu \u0111\u1EC1 ngh\u1ECB nh\u1EADp h\u00E0ng"
+        ],
         "x-medcom-capability": "inbound-requests.read",
         "parameters": [
           {
@@ -3468,6 +3477,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu \u0111\u1EC1 ngh\u1ECB nh\u1EADp h\u00E0ng"
+        ],
         "x-medcom-capability": "inbound-requests.read",
         "parameters": [
           {
@@ -3534,6 +3546,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu \u0111\u1EC1 ngh\u1ECB nh\u1EADp h\u00E0ng"
+        ],
         "x-medcom-capability": "inbound-requests.read",
         "parameters": [
           {
@@ -3610,6 +3625,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu \u0111\u1EC1 ngh\u1ECB nh\u1EADp h\u00E0ng"
+        ],
         "x-medcom-capability": "inbound-requests.read",
         "parameters": [
           {
@@ -3685,6 +3703,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu \u0111\u1EC1 ngh\u1ECB nh\u1EADp h\u00E0ng"
+        ],
         "x-medcom-capability": "inbound-requests.read",
         "parameters": [
           {
@@ -3766,6 +3787,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu \u0111\u1EC1 ngh\u1ECB nh\u1EADp h\u00E0ng"
+        ],
         "x-medcom-capability": "inbound-requests.read",
         "parameters": [
           {
@@ -3847,6 +3871,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu \u0111\u1EC1 ngh\u1ECB nh\u1EADp h\u00E0ng"
+        ],
         "x-medcom-capability": "inbound-requests.read",
         "parameters": [
           {
@@ -3922,6 +3949,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu \u0111\u1EC1 ngh\u1ECB nh\u1EADp h\u00E0ng"
+        ],
         "x-medcom-capability": "inbound-requests.read",
         "parameters": [
           {
@@ -4000,6 +4030,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu \u0111\u1EC1 ngh\u1ECB nh\u1EADp h\u00E0ng"
+        ],
         "x-medcom-capability": "inbound-requests.read",
         "parameters": [
           {
@@ -4078,6 +4111,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu \u0111\u1EC1 ngh\u1ECB nh\u1EADp h\u00E0ng"
+        ],
         "x-medcom-capability": "inbound-requests.read",
         "parameters": [
           {
@@ -4151,6 +4187,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u1EED l\u00FD \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-accounting.read"
       }
     },
@@ -4194,6 +4233,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u1EED l\u00FD \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-accounting.read",
         "parameters": [
           {
@@ -4310,6 +4352,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u1EED l\u00FD \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-accounting.read",
         "parameters": [
           {
@@ -4414,6 +4459,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u1EED l\u00FD \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-accounting.read",
         "parameters": [
           {
@@ -4480,6 +4528,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u1EED l\u00FD \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-accounting.read",
         "parameters": [
           {
@@ -4556,6 +4607,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u1EED l\u00FD \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-accounting.read",
         "parameters": [
           {
@@ -4631,6 +4685,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u1EED l\u00FD \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-accounting.read",
         "parameters": [
           {
@@ -4712,6 +4769,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u1EED l\u00FD \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-accounting.read",
         "parameters": [
           {
@@ -4790,6 +4850,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u1EED l\u00FD \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-accounting.read",
         "parameters": [
           {
@@ -4868,6 +4931,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u1EED l\u00FD \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-accounting.read",
         "parameters": [
           {
@@ -4946,6 +5012,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u1EED l\u00FD \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-accounting.read",
         "parameters": [
           {
@@ -5020,6 +5089,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EE3t \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-batches.read"
       }
     },
@@ -5063,6 +5135,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EE3t \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-batches.read",
         "parameters": [
           {
@@ -5179,6 +5254,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EE3t \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-batches.read",
         "parameters": [
           {
@@ -5283,6 +5361,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EE3t \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-batches.read",
         "parameters": [
           {
@@ -5349,6 +5430,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EE3t \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-batches.read",
         "parameters": [
           {
@@ -5425,6 +5509,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EE3t \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-batches.read",
         "parameters": [
           {
@@ -5500,6 +5587,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EE3t \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-batches.read",
         "parameters": [
           {
@@ -5581,6 +5671,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EE3t \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-batches.read",
         "parameters": [
           {
@@ -5662,6 +5755,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EE3t \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-batches.read",
         "parameters": [
           {
@@ -5737,6 +5833,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EE3t \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-batches.read",
         "parameters": [
           {
@@ -5818,6 +5917,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EE3t \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-batches.read",
         "parameters": [
           {
@@ -5894,6 +5996,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn \u0111\u1EC1 ngh\u1ECB \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-pm.read"
       }
     },
@@ -5937,6 +6042,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn \u0111\u1EC1 ngh\u1ECB \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-pm.read",
         "parameters": [
           {
@@ -6053,6 +6161,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn \u0111\u1EC1 ngh\u1ECB \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-pm.read",
         "parameters": [
           {
@@ -6151,6 +6262,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn \u0111\u1EC1 ngh\u1ECB \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-pm.read",
         "parameters": [
           {
@@ -6217,6 +6331,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn \u0111\u1EC1 ngh\u1ECB \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-pm.read",
         "parameters": [
           {
@@ -6293,6 +6410,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn \u0111\u1EC1 ngh\u1ECB \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-pm.read",
         "parameters": [
           {
@@ -6368,6 +6488,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn \u0111\u1EC1 ngh\u1ECB \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-pm.read",
         "parameters": [
           {
@@ -6449,6 +6572,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn \u0111\u1EC1 ngh\u1ECB \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-pm.read",
         "parameters": [
           {
@@ -6527,6 +6653,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn \u0111\u1EC1 ngh\u1ECB \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-pm.read",
         "parameters": [
           {
@@ -6603,6 +6732,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu \u0111\u1EC1 ngh\u1ECB \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-requests.read"
       }
     },
@@ -6646,6 +6778,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu \u0111\u1EC1 ngh\u1ECB \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-requests.read",
         "parameters": [
           {
@@ -6762,6 +6897,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu \u0111\u1EC1 ngh\u1ECB \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-requests.read",
         "parameters": [
           {
@@ -6860,6 +6998,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu \u0111\u1EC1 ngh\u1ECB \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-requests.read",
         "parameters": [
           {
@@ -6926,6 +7067,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu \u0111\u1EC1 ngh\u1ECB \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-requests.read",
         "parameters": [
           {
@@ -7002,6 +7146,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu \u0111\u1EC1 ngh\u1ECB \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-requests.read",
         "parameters": [
           {
@@ -7078,6 +7225,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu \u0111\u1EC1 ngh\u1ECB \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-requests.read",
         "parameters": [
           {
@@ -7153,6 +7303,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu \u0111\u1EC1 ngh\u1ECB \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-requests.read",
         "parameters": [
           {
@@ -7229,6 +7382,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu \u0111\u1EC1 ngh\u1ECB \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-requests.read",
         "parameters": [
           {
@@ -7305,6 +7461,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu \u0111\u1EC1 ngh\u1ECB \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-requests.read",
         "parameters": [
           {
@@ -7386,6 +7545,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu \u0111\u1EC1 ngh\u1ECB \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-requests.read",
         "parameters": [
           {
@@ -7467,6 +7629,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu \u0111\u1EC1 ngh\u1ECB \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-requests.read",
         "parameters": [
           {
@@ -7542,6 +7707,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu \u0111\u1EC1 ngh\u1ECB \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-requests.read",
         "parameters": [
           {
@@ -7623,6 +7791,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu \u0111\u1EC1 ngh\u1ECB \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-requests.read",
         "parameters": [
           {
@@ -7699,6 +7870,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Ph\u00EA duy\u1EC7t \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-sa.read"
       }
     },
@@ -7742,6 +7916,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Ph\u00EA duy\u1EC7t \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-sa.read",
         "parameters": [
           {
@@ -7858,6 +8035,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Ph\u00EA duy\u1EC7t \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-sa.read",
         "parameters": [
           {
@@ -7962,6 +8142,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Ph\u00EA duy\u1EC7t \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-sa.read",
         "parameters": [
           {
@@ -8028,6 +8211,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Ph\u00EA duy\u1EC7t \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-sa.read",
         "parameters": [
           {
@@ -8104,6 +8290,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Ph\u00EA duy\u1EC7t \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-sa.read",
         "parameters": [
           {
@@ -8179,6 +8368,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Ph\u00EA duy\u1EC7t \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-sa.read",
         "parameters": [
           {
@@ -8260,6 +8452,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Ph\u00EA duy\u1EC7t \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-sa.read",
         "parameters": [
           {
@@ -8338,6 +8533,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Ph\u00EA duy\u1EC7t \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-sa.read",
         "parameters": [
           {
@@ -8416,6 +8614,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Ph\u00EA duy\u1EC7t \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-sa.read",
         "parameters": [
           {
@@ -8494,6 +8695,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Ph\u00EA duy\u1EC7t \u0111i\u1EC1u chuy\u1EC3n n\u1ED9i b\u1ED9"
+        ],
         "x-medcom-capability": "internal-transfer-sa.read",
         "parameters": [
           {
@@ -8568,6 +8772,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn thi\u1EBFt b\u1ECB \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-tech.read"
       }
     },
@@ -8611,6 +8818,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn thi\u1EBFt b\u1ECB \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-tech.read",
         "parameters": [
           {
@@ -8727,6 +8937,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn thi\u1EBFt b\u1ECB \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-tech.read",
         "parameters": [
           {
@@ -8831,6 +9044,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn thi\u1EBFt b\u1ECB \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-tech.read",
         "parameters": [
           {
@@ -8897,6 +9113,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn thi\u1EBFt b\u1ECB \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-tech.read",
         "parameters": [
           {
@@ -8973,6 +9192,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn thi\u1EBFt b\u1ECB \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-tech.read",
         "parameters": [
           {
@@ -9048,6 +9270,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn thi\u1EBFt b\u1ECB \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-tech.read",
         "parameters": [
           {
@@ -9129,6 +9354,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn thi\u1EBFt b\u1ECB \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-tech.read",
         "parameters": [
           {
@@ -9207,6 +9435,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn thi\u1EBFt b\u1ECB \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-tech.read",
         "parameters": [
           {
@@ -9285,6 +9516,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn thi\u1EBFt b\u1ECB \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-tech.read",
         "parameters": [
           {
@@ -9360,6 +9594,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn thi\u1EBFt b\u1ECB \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-tech.read",
         "parameters": [
           {
@@ -9434,6 +9671,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn nh\u1EADn \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-warehouse-in.read"
       }
     },
@@ -9477,6 +9717,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn nh\u1EADn \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-warehouse-in.read",
         "parameters": [
           {
@@ -9593,6 +9836,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn nh\u1EADn \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-warehouse-in.read",
         "parameters": [
           {
@@ -9697,6 +9943,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn nh\u1EADn \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-warehouse-in.read",
         "parameters": [
           {
@@ -9763,6 +10012,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn nh\u1EADn \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-warehouse-in.read",
         "parameters": [
           {
@@ -9839,6 +10091,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn nh\u1EADn \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-warehouse-in.read",
         "parameters": [
           {
@@ -9914,6 +10169,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn nh\u1EADn \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-warehouse-in.read",
         "parameters": [
           {
@@ -9995,6 +10253,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn nh\u1EADn \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-warehouse-in.read",
         "parameters": [
           {
@@ -10071,6 +10332,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn xu\u1EA5t \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-warehouse-out.read"
       }
     },
@@ -10114,6 +10378,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn xu\u1EA5t \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-warehouse-out.read",
         "parameters": [
           {
@@ -10230,6 +10497,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn xu\u1EA5t \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-warehouse-out.read",
         "parameters": [
           {
@@ -10334,6 +10604,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn xu\u1EA5t \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-warehouse-out.read",
         "parameters": [
           {
@@ -10400,6 +10673,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn xu\u1EA5t \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-warehouse-out.read",
         "parameters": [
           {
@@ -10476,6 +10752,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn xu\u1EA5t \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-warehouse-out.read",
         "parameters": [
           {
@@ -10551,6 +10830,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn xu\u1EA5t \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-warehouse-out.read",
         "parameters": [
           {
@@ -10632,6 +10914,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn xu\u1EA5t \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-warehouse-out.read",
         "parameters": [
           {
@@ -10710,6 +10995,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn xu\u1EA5t \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-warehouse-out.read",
         "parameters": [
           {
@@ -10788,6 +11076,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn xu\u1EA5t \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-warehouse-out.read",
         "parameters": [
           {
@@ -10866,6 +11157,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn xu\u1EA5t \u0111i\u1EC1u chuy\u1EC3n"
+        ],
         "x-medcom-capability": "internal-transfer-warehouse-out.read",
         "parameters": [
           {
@@ -10940,6 +11234,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu di chuy\u1EC3n / b\u00E0n giao m\u00E1y"
+        ],
         "x-medcom-capability": "machine-movements.read"
       }
     },
@@ -10983,6 +11280,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu di chuy\u1EC3n / b\u00E0n giao m\u00E1y"
+        ],
         "x-medcom-capability": "machine-movements.read",
         "parameters": [
           {
@@ -11099,6 +11399,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu di chuy\u1EC3n / b\u00E0n giao m\u00E1y"
+        ],
         "x-medcom-capability": "machine-movements.read",
         "parameters": [
           {
@@ -11194,6 +11497,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu di chuy\u1EC3n / b\u00E0n giao m\u00E1y"
+        ],
         "x-medcom-capability": "machine-movements.read",
         "parameters": [
           {
@@ -11260,6 +11566,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu di chuy\u1EC3n / b\u00E0n giao m\u00E1y"
+        ],
         "x-medcom-capability": "machine-movements.read",
         "parameters": [
           {
@@ -11336,6 +11645,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu di chuy\u1EC3n / b\u00E0n giao m\u00E1y"
+        ],
         "x-medcom-capability": "machine-movements.read",
         "parameters": [
           {
@@ -11411,6 +11723,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu di chuy\u1EC3n / b\u00E0n giao m\u00E1y"
+        ],
         "x-medcom-capability": "machine-movements.read",
         "parameters": [
           {
@@ -11487,6 +11802,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu di chuy\u1EC3n / b\u00E0n giao m\u00E1y"
+        ],
         "x-medcom-capability": "machine-movements.read",
         "parameters": [
           {
@@ -11563,6 +11881,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu di chuy\u1EC3n / b\u00E0n giao m\u00E1y"
+        ],
         "x-medcom-capability": "machine-movements.read",
         "parameters": [
           {
@@ -11644,6 +11965,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu di chuy\u1EC3n / b\u00E0n giao m\u00E1y"
+        ],
         "x-medcom-capability": "machine-movements.read",
         "parameters": [
           {
@@ -11725,6 +12049,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu di chuy\u1EC3n / b\u00E0n giao m\u00E1y"
+        ],
         "x-medcom-capability": "machine-movements.read",
         "parameters": [
           {
@@ -11798,6 +12125,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu s\u1EEDa ch\u1EEFa / b\u1EA3o h\u00E0nh / b\u1EA3o tr\u00EC m\u00E1y"
+        ],
         "x-medcom-capability": "machine-repairs.read"
       }
     },
@@ -11841,6 +12171,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu s\u1EEDa ch\u1EEFa / b\u1EA3o h\u00E0nh / b\u1EA3o tr\u00EC m\u00E1y"
+        ],
         "x-medcom-capability": "machine-repairs.read",
         "parameters": [
           {
@@ -11957,6 +12290,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu s\u1EEDa ch\u1EEFa / b\u1EA3o h\u00E0nh / b\u1EA3o tr\u00EC m\u00E1y"
+        ],
         "x-medcom-capability": "machine-repairs.read",
         "parameters": [
           {
@@ -12052,6 +12388,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu s\u1EEDa ch\u1EEFa / b\u1EA3o h\u00E0nh / b\u1EA3o tr\u00EC m\u00E1y"
+        ],
         "x-medcom-capability": "machine-repairs.read",
         "parameters": [
           {
@@ -12118,6 +12457,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu s\u1EEDa ch\u1EEFa / b\u1EA3o h\u00E0nh / b\u1EA3o tr\u00EC m\u00E1y"
+        ],
         "x-medcom-capability": "machine-repairs.read",
         "parameters": [
           {
@@ -12194,6 +12536,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu s\u1EEDa ch\u1EEFa / b\u1EA3o h\u00E0nh / b\u1EA3o tr\u00EC m\u00E1y"
+        ],
         "x-medcom-capability": "machine-repairs.read",
         "parameters": [
           {
@@ -12269,6 +12614,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu s\u1EEDa ch\u1EEFa / b\u1EA3o h\u00E0nh / b\u1EA3o tr\u00EC m\u00E1y"
+        ],
         "x-medcom-capability": "machine-repairs.read",
         "parameters": [
           {
@@ -12345,6 +12693,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu s\u1EEDa ch\u1EEFa / b\u1EA3o h\u00E0nh / b\u1EA3o tr\u00EC m\u00E1y"
+        ],
         "x-medcom-capability": "machine-repairs.read",
         "parameters": [
           {
@@ -12421,6 +12772,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu s\u1EEDa ch\u1EEFa / b\u1EA3o h\u00E0nh / b\u1EA3o tr\u00EC m\u00E1y"
+        ],
         "x-medcom-capability": "machine-repairs.read",
         "parameters": [
           {
@@ -12502,6 +12856,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu s\u1EEDa ch\u1EEFa / b\u1EA3o h\u00E0nh / b\u1EA3o tr\u00EC m\u00E1y"
+        ],
         "x-medcom-capability": "machine-repairs.read",
         "parameters": [
           {
@@ -12583,6 +12940,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Phi\u1EBFu s\u1EEDa ch\u1EEFa / b\u1EA3o h\u00E0nh / b\u1EA3o tr\u00EC m\u00E1y"
+        ],
         "x-medcom-capability": "machine-repairs.read",
         "parameters": [
           {
@@ -12656,6 +13016,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Duy\u1EC7t \u0111\u1EC1 ngh\u1ECB mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-approvals.read"
       }
     },
@@ -12699,6 +13062,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Duy\u1EC7t \u0111\u1EC1 ngh\u1ECB mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-approvals.read",
         "parameters": [
           {
@@ -12815,6 +13181,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Duy\u1EC7t \u0111\u1EC1 ngh\u1ECB mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-approvals.read",
         "parameters": [
           {
@@ -12910,6 +13279,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Duy\u1EC7t \u0111\u1EC1 ngh\u1ECB mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-approvals.read",
         "parameters": [
           {
@@ -12976,6 +13348,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Duy\u1EC7t \u0111\u1EC1 ngh\u1ECB mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-approvals.read",
         "parameters": [
           {
@@ -13052,6 +13427,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Duy\u1EC7t \u0111\u1EC1 ngh\u1ECB mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-approvals.read",
         "parameters": [
           {
@@ -13127,6 +13505,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Duy\u1EC7t \u0111\u1EC1 ngh\u1ECB mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-approvals.read",
         "parameters": [
           {
@@ -13205,6 +13586,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Duy\u1EC7t \u0111\u1EC1 ngh\u1ECB mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-approvals.read",
         "parameters": [
           {
@@ -13281,6 +13665,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EB7t mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-orders.read"
       }
     },
@@ -13324,6 +13711,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EB7t mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-orders.read",
         "parameters": [
           {
@@ -13440,6 +13830,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EB7t mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-orders.read",
         "parameters": [
           {
@@ -13535,6 +13928,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EB7t mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-orders.read",
         "parameters": [
           {
@@ -13601,6 +13997,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EB7t mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-orders.read",
         "parameters": [
           {
@@ -13677,6 +14076,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EB7t mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-orders.read",
         "parameters": [
           {
@@ -13753,6 +14155,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EB7t mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-orders.read",
         "parameters": [
           {
@@ -13828,6 +14233,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EB7t mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-orders.read",
         "parameters": [
           {
@@ -13909,6 +14317,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EB7t mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-orders.read",
         "parameters": [
           {
@@ -13990,6 +14401,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EB7t mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-orders.read",
         "parameters": [
           {
@@ -14063,6 +14477,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EC1 ngh\u1ECB mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-requests.read"
       }
     },
@@ -14106,6 +14523,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EC1 ngh\u1ECB mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-requests.read",
         "parameters": [
           {
@@ -14222,6 +14642,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EC1 ngh\u1ECB mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-requests.read",
         "parameters": [
           {
@@ -14317,6 +14740,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EC1 ngh\u1ECB mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-requests.read",
         "parameters": [
           {
@@ -14383,6 +14809,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EC1 ngh\u1ECB mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-requests.read",
         "parameters": [
           {
@@ -14459,6 +14888,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EC1 ngh\u1ECB mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-requests.read",
         "parameters": [
           {
@@ -14534,6 +14966,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EC1 ngh\u1ECB mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-requests.read",
         "parameters": [
           {
@@ -14610,6 +15045,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EC1 ngh\u1ECB mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-requests.read",
         "parameters": [
           {
@@ -14686,6 +15124,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EC1 ngh\u1ECB mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-requests.read",
         "parameters": [
           {
@@ -14767,6 +15208,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EC1 ngh\u1ECB mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-requests.read",
         "parameters": [
           {
@@ -14848,6 +15292,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EC1 ngh\u1ECB mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-requests.read",
         "parameters": [
           {
@@ -14923,6 +15370,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EC1 ngh\u1ECB mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-requests.read",
         "parameters": [
           {
@@ -15004,6 +15454,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "\u0110\u1EC1 ngh\u1ECB mua h\u00E0ng"
+        ],
         "x-medcom-capability": "purchase-requests.read",
         "parameters": [
           {
@@ -15083,6 +15536,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-order-pm.read"
       }
     },
@@ -15126,6 +15582,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-order-pm.read",
         "parameters": [
           {
@@ -15242,6 +15701,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-order-pm.read",
         "parameters": [
           {
@@ -15340,6 +15802,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-order-pm.read",
         "parameters": [
           {
@@ -15404,6 +15869,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-order-pm.read",
         "parameters": [
           {
@@ -15471,6 +15939,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-order-pm.read",
         "parameters": [
           {
@@ -15547,6 +16018,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-order-pm.read",
         "parameters": [
           {
@@ -15622,6 +16096,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-order-pm.read",
         "parameters": [
           {
@@ -15700,6 +16177,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "X\u00E1c nh\u1EADn \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-order-pm.read",
         "parameters": [
           {
@@ -15776,6 +16256,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Duy\u1EC7t \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-order-sa.read"
       }
     },
@@ -15819,6 +16302,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Duy\u1EC7t \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-order-sa.read",
         "parameters": [
           {
@@ -15935,6 +16421,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Duy\u1EC7t \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-order-sa.read",
         "parameters": [
           {
@@ -16033,6 +16522,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Duy\u1EC7t \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-order-sa.read",
         "parameters": [
           {
@@ -16097,6 +16589,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Duy\u1EC7t \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-order-sa.read",
         "parameters": [
           {
@@ -16164,6 +16659,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Duy\u1EC7t \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-order-sa.read",
         "parameters": [
           {
@@ -16240,6 +16738,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Duy\u1EC7t \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-order-sa.read",
         "parameters": [
           {
@@ -16315,6 +16816,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Duy\u1EC7t \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-order-sa.read",
         "parameters": [
           {
@@ -16393,6 +16897,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Duy\u1EC7t \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-order-sa.read",
         "parameters": [
           {
@@ -16471,6 +16978,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Duy\u1EC7t \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-order-sa.read",
         "parameters": [
           {
@@ -16549,6 +17059,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Duy\u1EC7t \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-order-sa.read",
         "parameters": [
           {
@@ -16627,6 +17140,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Duy\u1EC7t \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-order-sa.read",
         "parameters": [
           {
@@ -16701,6 +17217,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Qu\u1EA3n l\u00FD \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-orders.read"
       }
     },
@@ -16744,6 +17263,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Qu\u1EA3n l\u00FD \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-orders.read",
         "parameters": [
           {
@@ -16860,6 +17382,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Qu\u1EA3n l\u00FD \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-orders.read",
         "parameters": [
           {
@@ -16958,6 +17483,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Qu\u1EA3n l\u00FD \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-orders.read",
         "parameters": [
           {
@@ -17022,6 +17550,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Qu\u1EA3n l\u00FD \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-orders.read",
         "parameters": [
           {
@@ -17089,6 +17620,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Qu\u1EA3n l\u00FD \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-orders.read",
         "parameters": [
           {
@@ -17165,6 +17699,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Qu\u1EA3n l\u00FD \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-orders.read",
         "parameters": [
           {
@@ -17241,6 +17778,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Qu\u1EA3n l\u00FD \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-orders.read",
         "parameters": [
           {
@@ -17316,6 +17856,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Qu\u1EA3n l\u00FD \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-orders.read",
         "parameters": [
           {
@@ -17392,6 +17935,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Qu\u1EA3n l\u00FD \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-orders.read",
         "parameters": [
           {
@@ -17468,6 +18014,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Qu\u1EA3n l\u00FD \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-orders.read",
         "parameters": [
           {
@@ -17549,6 +18098,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Qu\u1EA3n l\u00FD \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-orders.read",
         "parameters": [
           {
@@ -17630,6 +18182,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Qu\u1EA3n l\u00FD \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-orders.read",
         "parameters": [
           {
@@ -17705,6 +18260,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Qu\u1EA3n l\u00FD \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-orders.read",
         "parameters": [
           {
@@ -17786,6 +18344,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Qu\u1EA3n l\u00FD \u0111\u01A1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-orders.read",
         "parameters": [
           {
@@ -17862,6 +18423,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Xu\u1EA5t b\u00E1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-qr.read"
       }
     },
@@ -17905,6 +18469,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Xu\u1EA5t b\u00E1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-qr.read",
         "parameters": [
           {
@@ -18021,6 +18588,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Xu\u1EA5t b\u00E1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-qr.read",
         "parameters": [
           {
@@ -18119,6 +18689,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Xu\u1EA5t b\u00E1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-qr.read",
         "parameters": [
           {
@@ -18183,6 +18756,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Xu\u1EA5t b\u00E1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-qr.read",
         "parameters": [
           {
@@ -18250,6 +18826,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Xu\u1EA5t b\u00E1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-qr.read",
         "parameters": [
           {
@@ -18326,6 +18905,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Xu\u1EA5t b\u00E1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-qr.read",
         "parameters": [
           {
@@ -18401,6 +18983,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Xu\u1EA5t b\u00E1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-qr.read",
         "parameters": [
           {
@@ -18476,6 +19061,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Xu\u1EA5t b\u00E1n h\u00E0ng"
+        ],
         "x-medcom-capability": "sales-qr.read",
         "parameters": [
           {
@@ -18549,6 +19137,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Xu\u1EA5t kho"
+        ],
         "x-medcom-capability": "warehouse-qr.read"
       }
     },
@@ -18592,6 +19183,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Xu\u1EA5t kho"
+        ],
         "x-medcom-capability": "warehouse-qr.read",
         "parameters": [
           {
@@ -18708,6 +19302,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Xu\u1EA5t kho"
+        ],
         "x-medcom-capability": "warehouse-qr.read",
         "parameters": [
           {
@@ -18806,6 +19403,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Xu\u1EA5t kho"
+        ],
         "x-medcom-capability": "warehouse-qr.read",
         "parameters": [
           {
@@ -18872,6 +19472,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Xu\u1EA5t kho"
+        ],
         "x-medcom-capability": "warehouse-qr.read",
         "parameters": [
           {
@@ -18948,6 +19551,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Xu\u1EA5t kho"
+        ],
         "x-medcom-capability": "warehouse-qr.read",
         "parameters": [
           {
@@ -19023,6 +19629,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Xu\u1EA5t kho"
+        ],
         "x-medcom-capability": "warehouse-qr.read",
         "parameters": [
           {
@@ -19098,6 +19707,9 @@
         ],
         "x-medcom-admission": "Source-backed ERP reads and transactional commands. Concrete SQL writer uses the operator\u0027s protected target profile and native menu/branch/state grants.",
         "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "tags": [
+          "Xu\u1EA5t kho"
+        ],
         "x-medcom-capability": "warehouse-qr.read",
         "parameters": [
           {
