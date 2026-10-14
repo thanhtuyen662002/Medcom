@@ -17,3 +17,4 @@ src/backend/Medcom.Api/wwwroot/
 src/frontend/test-results/
 src/frontend/playwright-report/
 .test-runtime/
+/apps/medcom-sites/medcom-root-ca.pem

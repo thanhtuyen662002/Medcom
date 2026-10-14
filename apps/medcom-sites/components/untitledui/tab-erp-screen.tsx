@@ -7,7 +7,6 @@ import {
   Plus,
   Trash2,
   Send,
-  RotateCcw,
   QrCode,
   FileText,
   AlertCircle,
@@ -17,10 +16,13 @@ import {
   Building,
   User,
   Info,
-  SlidersHorizontal,
   Camera,
   X,
   Package,
+  MoreVertical,
+  Pencil,
+  Lock,
+  LockOpen,
 } from "lucide-react";
 import {
   erpClient,
@@ -35,6 +37,9 @@ import {
 } from "@/lib/erp/erp-client";
 import { UntitledBottomSheet } from "./bottom-sheet";
 import { UntitledButton } from "./button";
+import { LookupField } from "./lookup-field";
+import { PurchaseOrderCreateSheet } from "./purchase-order-create-sheet";
+import { PurchaseRequestCreateSheet } from "./purchase-request-create-sheet";
 import { QrCamera } from "@/lib/erp/qr-camera";
 
 interface TabErpScreenProps {
@@ -62,7 +67,7 @@ function getModuleTitle(mod: ErpScreenModule): string {
     case "machine-repairs":
       return "Phiếu sửa chữa / bảo hành / bảo trì máy";
     case "purchase-orders":
-      return "Đơn đặt mua";
+      return "Đề nghị mua hàng (PO)";
     case "inbound-requests":
       return "Đề nghị nhập kho";
     case "purchase-approvals":
@@ -121,7 +126,7 @@ const FIELD_LABELS: Record<string, string> = {
   branchId: "Chi nhánh",
   branchName: "Tên chi nhánh",
   documentDate: "Ngày chứng từ",
-  purchaseDate: "Ngày mua",
+  purchaseDate: "Ngày đề xuất",
   datetimeRecorded: "Thời gian ghi nhận",
   plannedTransferDate: "Ngày chuyển dự kiến",
   batchDate: "Ngày tạo đợt",
@@ -131,11 +136,22 @@ const FIELD_LABELS: Record<string, string> = {
   statusId: "Trạng thái",
   statusName: "Tên trạng thái",
   isLocked: "Khóa phiếu",
-  objectId: "Mã đối tượng",
+  objectId: "Khách hàng",
   objectName: "Tên đối tượng",
-  personSuggest: "Người đề xuất",
+  personSuggest: "Người đề nghị",
   customerName: "Khách hàng",
   vendorName: "Nhà cung cấp",
+  department: "Bộ phận",
+  purposeId: "Mục đích",
+  purposeName: "Tên mục đích",
+  purposeDescOrClient: "Mục đích / Khách hàng",
+  price: "Giá bán",
+  model: "Model",
+  budget: "Ngân sách",
+  budgetDisplay: "Ngân sách",
+  timeRequired: "Thời gian yêu cầu",
+  totalPrice: "Tổng giá",
+  totalPriceDisplay: "Tổng giá",
   memo: "Nội dung",
   notes: "Ghi chú",
   orderNumber: "Số đơn hàng",
@@ -220,8 +236,9 @@ function formatVietnamDate(val: unknown): string {
   if (!val || typeof val !== "string") return "";
   const match = val.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2}))?)?/);
   if (!match) return String(val);
-  const [, y, m, d, hh, mm] = match;
-  if (hh && mm) return `${d}/${m}/${y} ${hh}:${mm}`;
+  const [, y, m, d, hh, mm, ss] = match;
+  if (hh && mm && !(hh === "00" && mm === "00" && (!ss || ss === "00")))
+    return `${d}/${m}/${y} ${hh}:${mm}`;
   return `${d}/${m}/${y}`;
 }
 
@@ -232,33 +249,61 @@ function formatVietnamNumber(val: unknown): string {
   return new Intl.NumberFormat("vi-VN").format(num);
 }
 
-const ACTION_CAPTIONS: Record<string, string> = {
-  submit: "Gửi đề nghị",
-  "send-purchase-order": "Gửi đặt mua hàng",
-  "send-management": "Gửi BLĐ",
-  "send-warehouse": "Gửi Thủ kho",
-  approve: "Duyệt",
-  reject: "Từ chối nhanh",
-  "send-sa": "Gửi SA",
-  "send-accounting": "Gửi Kế toán",
-  "send-tech": "Gửi Kỹ thuật",
-  "return-step": "Chọn bước gửi về",
-  "pm-confirm": "Đồng ý điều chuyển",
-  "sync-requests": "Đồng bộ đề nghị",
-  dispatch: "Xác nhận xuất / Gửi Kho đích",
-  receive: "Xác nhận nhận hàng",
-  recall: "Thu hồi để sửa",
-  delete: "Xóa",
-  save: "Lưu",
-  create: "Thêm",
-  "contract-info": "Xem thông tin hợp đồng",
-};
+function parseDecimalText(val: unknown): number | null {
+  if (typeof val === "number") return Number.isFinite(val) ? val : null;
+  if (typeof val !== "string" || val.trim() === "") return null;
+  const num = Number(val.replace(/,/g, "").trim());
+  return Number.isFinite(num) ? num : null;
+}
 
-function getActionCaption(module: ErpScreenModule, act: ErpActionState): string {
-  if (module === "purchase-approvals" && act.id === "reject") return "Không duyệt";
-  if (module === "internal-transfer-tech" && act.id === "send-sa") return "Gửi TP SA";
-  if (module === "internal-transfer-accounting" && act.id === "send-warehouse") return "Gửi Kho nguồn";
-  return act.caption || ACTION_CAPTIONS[act.id] || act.id;
+// Grand total across detail lines: prefer the server-computed line amount
+// (includes VAT/discounts when present), fall back to qty x unit price.
+function sumLineTotals(rows: Array<{ fields?: unknown } | Record<string, unknown>>): number | null {
+  if (!rows || rows.length === 0) return null;
+  let sum = 0;
+  let any = false;
+  for (const row of rows) {
+    const f = ((row as { fields?: unknown }).fields || row || {}) as Record<string, unknown>;
+    const server = parseDecimalText(f.amount ?? f.sourceAmount);
+    if (server !== null) {
+      sum += server;
+      any = true;
+      continue;
+    }
+    const qty = parseDecimalText(f.quantity);
+    const price = parseDecimalText(f.unitPrice);
+    if (qty !== null && price !== null) {
+      sum += qty * price;
+      any = true;
+    }
+  }
+  return any ? sum : null;
+}
+
+// Backend display convention: VND grouped 0 decimals, others 2 decimals.
+function formatMoney(n: number, currencyId?: string): string {
+  if (!Number.isFinite(n)) return "—";
+  if ((currencyId || "").toUpperCase() === "VND")
+    return new Intl.NumberFormat("vi-VN").format(Math.round(n));
+  return new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+}
+
+function docCurrencyId(header: unknown): string {
+  const c = (header as Record<string, unknown> | null | undefined)?.currencyId;
+  return typeof c === "string" ? c : "";
+}
+
+// Per-line total display: server display string first, then raw server amount,
+// then qty x unit price fallback. Never blank when qty and price exist.
+function lineTotalDisplay(f: Record<string, unknown>, currencyId?: string): string {
+  const display = (f.totalPriceDisplay || f.amountDisplay || "") as string;
+  if (typeof display === "string" && display.trim() !== "") return display;
+  const raw = parseDecimalText(f.totalPrice ?? f.amount ?? f.sourceAmount);
+  if (raw !== null) return formatMoney(raw, currencyId);
+  const qty = parseDecimalText(f.quantity);
+  const price = parseDecimalText(f.unitPrice);
+  if (qty !== null && price !== null) return formatMoney(qty * price, currencyId);
+  return "—";
 }
 
 function getActionErrorMessage(outcome: string, code?: string | null): string {
@@ -305,12 +350,117 @@ function getActionReasonMessage(reason?: string | null): string {
   }
 }
 
-function isPrintAction(act: ErpActionState): boolean {
-  if (act.id === "contract-info") return false;
-  const id = act.id.toLowerCase();
-  const cap = act.caption.toLowerCase();
-  return id.includes("print") || /\b(in|print)\b/i.test(cap) || cap.startsWith("in ");
+const moduleActionsCache = new Map<string, ErpActionState[]>();
+const moduleActionsInflight = new Map<string, Promise<ErpActionState[]>>();
+
+function moduleActionsKey(module: ErpScreenModule, branchId: string) {
+  return `${module}::${branchId}`;
 }
+
+// Screen metadata has no branch dependency: fetch once per module.
+// Document lists load lazily once per tab+branch; refresh button and branch
+// changes are the explicit reload paths.
+const screenMetaCache = new Map<ErpScreenModule, ErpScreenDescription>();
+const listLoadedKeys = new Set<string>();
+
+function listLoadedKey(module: ErpScreenModule, branchId: string) {
+  return `${module}::${branchId}`;
+}
+
+// Header fields editable inline in the detail card. Lookup-backed keys render
+// the shared options combobox; dates render date inputs; the rest are text.
+// Rate follows the currency lookup and stays read-only.
+const EDITABLE_HEADER_BY_MODULE: Record<string, readonly string[]> = {
+  "purchase-requests": [
+    "personSuggest",
+    "department",
+    "purposeId",
+    "purposeDescOrClient",
+    "price",
+    "notes",
+    "objectId",
+    "currencyId",
+  ],
+};
+const DEFAULT_EDITABLE_HEADER_KEYS = [
+  "documentDate",
+  "objectId",
+  "deliverDate",
+  "contractId",
+  "memo",
+  "notes",
+] as const;
+function editableHeaderKeys(module: ErpScreenModule): readonly string[] {
+  return EDITABLE_HEADER_BY_MODULE[module] ?? DEFAULT_EDITABLE_HEADER_KEYS;
+}
+const REQUIRED_EDIT_KEYS: Record<string, readonly string[]> = {
+  "purchase-requests": ["personSuggest", "department", "objectId", "currencyId"],
+};
+const DEFAULT_REQUIRED_EDIT_KEYS = ["documentDate", "objectId"] as const;
+function requiredEditKeys(module: ErpScreenModule): readonly string[] {
+  return REQUIRED_EDIT_KEYS[module] ?? DEFAULT_REQUIRED_EDIT_KEYS;
+}
+const EDIT_LOOKUPS: Record<string, Record<string, string>> = {
+  "purchase-requests": {
+    personSuggest: "header.PersonSuggest",
+    department: "header.Department",
+    objectId: "header.ObjectID",
+    purposeId: "header.PurposeID",
+    currencyId: "header.CurrencyID",
+  },
+};
+const DEFAULT_EDIT_LOOKUPS: Record<string, string> = { objectId: "header.ObjectID" };
+function editLookupId(module: ErpScreenModule, key: string): string | undefined {
+  return (EDIT_LOOKUPS[module] ?? DEFAULT_EDIT_LOOKUPS)[key];
+}
+// Exact writable DTOs per module. The display header/rows carry *Display /
+// *Name / status companions that the backend Freeze validator rejects
+// (UnmappedMemberHandling.Disallow), so save must send only these keys.
+const SAVE_LINE_BY_MODULE: Record<string, readonly string[]> = {
+  "purchase-requests": ["itemId", "quantity", "unitPrice", "budget", "timeRequired", "model"],
+  "purchase-orders": ["itemId", "quantity", "unitPrice", "notes", "quantity2", "property", "property2"],
+};
+function saveLineKeys(module: ErpScreenModule): readonly string[] {
+  return SAVE_LINE_BY_MODULE[module] ?? [];
+}
+const SAVE_HEADER_BY_MODULE: Record<string, readonly string[]> = {
+  "purchase-requests": [
+    "purchaseDate",
+    "purposeId",
+    "personSuggest",
+    "department",
+    "purposeDescOrClient",
+    "price",
+    "notes",
+    "currencyId",
+    "objectId",
+    "rateExchange",
+  ],
+  "purchase-orders": [
+    "documentDate",
+    "objectId",
+    "memo",
+    "notes",
+    "deliverDate",
+    "currencyId",
+    "rateExchange",
+    "searchField",
+    "contractId",
+  ],
+};
+
+// Lock state for the header badge: true = locked, false = unlocked,
+// null = field absent (hide the badge instead of printing true/false).
+function lockBadgeState(header: unknown): boolean | null {
+  const v = (header as Record<string, unknown> | null | undefined)?.isLocked;
+  if (v === true || v === 1 || v === "1") return true;
+  if (v === false || v === 0 || v === "0") return false;
+  return null;
+}
+
+// Detail dropdown entries, in display order. Rendered only when the backend
+// marks them visible; enabled state and reason come from the same action.
+const MENU_ACTION_IDS = ["save", "submit", "send-purchase-order", "delete"] as const;
 
 export function TabErpScreen({
   module,
@@ -335,18 +485,38 @@ export function TabErpScreen({
   const [moduleActions, setModuleActions] = useState<ErpActionState[]>([]);
 
   useEffect(() => {
-    let active = true;
-    erpClient.getErpModuleActions(module, { branchId: currentBranch })
-      .then((acts) => {
-        if (active) setModuleActions(acts || []);
-      })
-      .catch(() => {
-        if (active) setModuleActions([]);
-      });
+    const key = moduleActionsKey(module, currentBranch);
+    const cached = moduleActionsCache.get(key);
+    if (cached) {
+      setModuleActions(cached);
+      return;
+    }
+    // Drop stale data from another branch; hidden tabs refetch on activation.
+    setModuleActions([]);
+    if (!isActive) return;
+    let cancelled = false;
+    let pending = moduleActionsInflight.get(key);
+    if (!pending) {
+      pending = erpClient
+        .getErpModuleActions(module, { branchId: currentBranch })
+        .then((acts) => {
+          const list = acts || [];
+          moduleActionsCache.set(key, list);
+          return list;
+        })
+        .catch(() => [] as ErpActionState[])
+        .finally(() => {
+          moduleActionsInflight.delete(key);
+        });
+      moduleActionsInflight.set(key, pending);
+    }
+    pending.then((acts) => {
+      if (!cancelled) setModuleActions(acts);
+    });
     return () => {
-      active = false;
+      cancelled = true;
     };
-  }, [module, currentBranch]);
+  }, [module, currentBranch, isActive]);
 
   const createActionFromApi = moduleActions.find((a) => a.id === "create");
   const canCreate = createActionFromApi != null ? (createActionFromApi.visible && createActionFromApi.enabled) : hasCreate;
@@ -389,6 +559,15 @@ export function TabErpScreen({
 
   // Action Execution State
   const [executingAction, setExecutingAction] = useState<string | null>(null);
+  // Detail action dropdown + inline header edit state
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editHeader, setEditHeader] = useState<Record<string, string>>({});
+  const [editLines, setEditLines] = useState<Record<string, Record<string, string>>>({});
+  const [editChoices, setEditChoices] = useState<Record<string, ErpChoice | null>>({});
+  const [editMulti, setEditMulti] = useState<Record<string, ErpChoice[]>>({});
+  const [editRate, setEditRate] = useState<string | null>(null);
+  const [deleteArmed, setDeleteArmed] = useState(false);
   const [actionFeedback, setActionFeedback] = useState<{
     type: "success" | "warning" | "error";
     message: string;
@@ -427,6 +606,10 @@ export function TabErpScreen({
 
   // Create Modal State (for non-QR modules)
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  // Redesigned purchase-order create sheet (header + editable line grid).
+  const [poCreateOpen, setPoCreateOpen] = useState(false);
+  // Redesigned purchase-request create sheet (matches the desktop PR form).
+  const [prCreateOpen, setPrCreateOpen] = useState(false);
   const [createDate, setCreateDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [createObject, setCreateObject] = useState("");
   const [createNotes, setCreateNotes] = useState("");
@@ -438,11 +621,17 @@ export function TabErpScreen({
   // Load Screen Metadata
   useEffect(() => {
     if (!isActive) return;
+    const cached = screenMetaCache.get(module);
+    if (cached) {
+      setScreenMeta(cached);
+      return;
+    }
     let cancelled = false;
     async function loadMeta() {
       setLoadingMeta(true);
       try {
         const meta = await erpClient.getScreenMetadata(module);
+        screenMetaCache.set(module, meta);
         if (!cancelled) setScreenMeta(meta);
       } catch (err: unknown) {
         console.warn(`[ErpScreen] Screen metadata for ${module}:`, err);
@@ -474,6 +663,7 @@ export function TabErpScreen({
         setRows(result.rows || []);
         setPage(result.page);
         setHasMore(result.hasMore);
+        listLoadedKeys.add(listLoadedKey(module, currentBranch));
       } catch (err: unknown) {
         setErrorMsg("Không thể tải danh sách bản ghi từ máy chủ ERP.");
       } finally {
@@ -484,12 +674,12 @@ export function TabErpScreen({
     [module, currentBranch, search, dateFrom, dateTo, statusId]
   );
 
-  // Initial load or branch/filter change
+  // Lazily load once per tab+branch; revisit via refresh button or branch change.
   useEffect(() => {
-    if (isActive) {
+    if (isActive && !listLoadedKeys.has(listLoadedKey(module, currentBranch))) {
       loadList(1);
     }
-  }, [isActive, loadList]);
+  }, [isActive, module, currentBranch, loadList]);
 
   // Handle Manual Refresh
   const handleRefresh = async () => {
@@ -514,6 +704,13 @@ export function TabErpScreen({
     setLoadingDetail(true);
     setDetailError(null);
     setActionFeedback(null);
+    setEditing(false);
+    setMenuOpen(false);
+    setDeleteArmed(false);
+    setEditChoices({});
+    setEditMulti({});
+    setEditLines({});
+    setEditRate(null);
     try {
       const data = await erpClient.getErpModuleDetail(module, {
         branchId: currentBranch,
@@ -581,6 +778,218 @@ export function TabErpScreen({
     setDetailError(null);
     setActionFeedback(null);
     setContractInfo(null);
+    setEditing(false);
+    setMenuOpen(false);
+    setDeleteArmed(false);
+    setEditChoices({});
+    setEditMulti({});
+    setEditLines({});
+    setEditRate(null);
+  };
+
+  // Detail action dropdown helpers: inline header edit, delete (two-step
+  // confirm), and workflow prompts reuse the existing prompt modal.
+  const startEditing = () => {
+    if (!detail) return;
+    const h = (detail.header || {}) as Record<string, unknown>;
+    const isoDate = (v: unknown) => (typeof v === "string" ? v.slice(0, 10) : "");
+    const text = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : String(v));
+    const initial: Record<string, string> = {};
+    for (const key of editableHeaderKeys(module)) {
+      const raw = h[key];
+      initial[key] = key.toLowerCase().includes("date") ? isoDate(raw) : text(raw);
+    }
+    setEditHeader(initial);
+    const lineKeys = saveLineKeys(module);
+    const lineDrafts: Record<string, Record<string, string>> = {};
+    if (lineKeys.length > 0) {
+      for (const row of detail.lines?.rows || []) {
+        const f = ((row as { fields?: unknown }).fields || row || {}) as Record<string, unknown>;
+        const draft: Record<string, string> = {};
+        for (const k of lineKeys) {
+          const v = f[k];
+          draft[k] = v == null ? "" : String(v);
+        }
+        lineDrafts[row.lineId] = draft;
+      }
+    }
+    setEditLines(lineDrafts);
+    setEditChoices({});
+    setEditMulti({});
+    setEditRate(null);
+    setEditing(true);
+    setMenuOpen(false);
+    setActionFeedback(null);
+  };
+
+  const patchEditLine = (lineId: string, k: string, v: string) =>
+    setEditLines((prev) => ({ ...prev, [lineId]: { ...(prev[lineId] || {}), [k]: v } }));
+
+  const handleSaveHeader = async () => {
+    if (!detail) return;
+    const keys = editableHeaderKeys(module);
+    const missing = requiredEditKeys(module).filter((k) => !(editHeader[k] ?? "").trim());
+    if (missing.length > 0) {
+      setActionFeedback({
+        type: "warning",
+        message: "Vui lòng nhập đủ các trường bắt buộc trước khi lưu.",
+      });
+      return;
+    }
+    if (
+      keys.includes("price") &&
+      (editHeader.price ?? "").trim() !== "" &&
+      !/^\d+(\.\d+)?$/.test(editHeader.price.trim())
+    ) {
+      setActionFeedback({ type: "warning", message: "Giá bán phải là số." });
+      return;
+    }
+    setExecutingAction("save");
+    setActionFeedback(null);
+    const idempotencyKey = `save-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
+    try {
+      const edited: Record<string, unknown> = {};
+      for (const k of keys) {
+        const v = (editHeader[k] ?? "").trim();
+        if (k === "purposeId") edited[k] = v ? Number(v) : null;
+        else
+          edited[k] = k.toLowerCase().includes("date") ? (v ? `${v}T00:00:00.000` : null) : v ? v : null;
+      }
+      const base = (detail.header || {}) as Record<string, unknown>;
+      const allow = SAVE_HEADER_BY_MODULE[module];
+      const header: Record<string, unknown> = {};
+      if (allow) {
+        for (const k of allow) {
+          if (k in edited) {
+            header[k] = edited[k];
+            continue;
+          }
+          if (k === "rateExchange" && editRate !== null) {
+            const n = Number(editRate);
+            header[k] = Number.isFinite(n) && n > 0 ? n : (k in base ? base[k] : null);
+            continue;
+          }
+          let raw: unknown = k in base ? base[k] : null;
+          if (
+            typeof raw === "string" &&
+            k.toLowerCase().includes("date") &&
+            /T\d{2}:\d{2}:\d{2}$/.test(raw)
+          ) {
+            raw = `${raw}.000`;
+          }
+          header[k] = raw ?? null;
+        }
+      } else {
+        Object.assign(header, base, edited);
+      }
+      // Line edits: Update only changed rows, exact input DTO keys.
+      const lineKeys = saveLineKeys(module);
+      const lineChanges: Array<{ kind: "Update"; lineId: string; values: Record<string, unknown> }> = [];
+      if (lineKeys.length > 0) {
+        for (const row of detail.lines?.rows || []) {
+          const f = ((row as { fields?: unknown }).fields || row || {}) as Record<string, unknown>;
+          const draft = editLines[row.lineId];
+          if (!draft) continue;
+          const itemId = (draft.itemId ?? "").trim();
+          const qty = (draft.quantity ?? "").trim();
+          const priceVal = (draft.unitPrice ?? "").trim();
+          if (!itemId || !/^\d+(\.\d+)?$/.test(qty) || !/^\d+(\.\d+)?$/.test(priceVal)) {
+            setActionFeedback({
+              type: "warning",
+              message: "Mỗi dòng cần Mã hàng, Số lượng và Đơn giá hợp lệ.",
+            });
+            setExecutingAction(null);
+            return;
+          }
+          const values: Record<string, unknown> = {};
+          let changed = false;
+          for (const k of lineKeys) {
+            const cur = f[k] == null ? "" : String(f[k]).trim();
+            const next = (draft[k] ?? "").trim();
+            values[k] = next ? next : null;
+            if (next !== cur) changed = true;
+          }
+          if (changed) lineChanges.push({ kind: "Update", lineId: row.lineId, values });
+        }
+      }
+      const res = await erpClient.saveDocument(module, {
+        idempotencyKey,
+        branchId: currentBranch,
+        documentId: detail.documentId,
+        expectedStateToken: detail.stateToken,
+        header,
+        lineChanges,
+      });
+      if (res.outcome === "Committed" || res.outcome === "Replayed") setEditing(false);
+      handleCommandOutcome(res);
+    } catch {
+      setActionFeedback({
+        type: "error",
+        message: "Lỗi kết nối khi lưu chứng từ.",
+      });
+    } finally {
+      setExecutingAction(null);
+    }
+  };
+
+  const handleDeleteDocument = async () => {
+    if (!detail) return;
+    if (!deleteArmed) {
+      setDeleteArmed(true);
+      return;
+    }
+    setDeleteArmed(false);
+    setMenuOpen(false);
+    setExecutingAction("delete");
+    setActionFeedback(null);
+    const idempotencyKey = `del-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
+    try {
+      const res = await erpClient.deleteDocument(module, {
+        idempotencyKey,
+        branchId: currentBranch,
+        documentId: detail.documentId,
+        expectedStateToken: detail.stateToken,
+      });
+      handleCommandOutcome(res);
+      if (res.receipt?.deleted) loadList(1);
+    } catch {
+      setActionFeedback({
+        type: "error",
+        message: "Lỗi kết nối khi xóa chứng từ.",
+      });
+    } finally {
+      setExecutingAction(null);
+    }
+  };
+
+  const openWorkflowPrompt = (act: ErpActionState) => {
+    setMenuOpen(false);
+    setDeleteArmed(false);
+    setActionPromptModal({ open: true, action: act, notes: "" });
+  };
+
+  const menuActs = (detail?.actions || []).filter(
+    (a): a is ErpActionState =>
+      a.visible && (MENU_ACTION_IDS as readonly string[]).includes(a.id)
+  );
+
+  const menuLabel = (act: ErpActionState): string => {
+    if (act.id === "save") return editing ? "Lưu thay đổi" : "Sửa thông tin";
+    if (act.id === "delete") return deleteArmed ? "Bấm lần nữa để xóa" : "Xóa chứng từ";
+    if (act.id === "submit") return "Gửi đề nghị";
+    if (act.id === "send-purchase-order") return "Gửi đặt mua hàng";
+    return act.caption || act.id;
+  };
+
+  const handleMenuClick = (act: ErpActionState) => {
+    if (act.id === "save") {
+      if (editing) void handleSaveHeader();
+      else startEditing();
+    } else if (act.id === "delete") {
+      void handleDeleteDocument();
+    } else {
+      openWorkflowPrompt(act);
+    }
   };
 
   // Process Command Outcome
@@ -681,277 +1090,7 @@ export function TabErpScreen({
     };
   }, [cameraModalOpen, cameraScanMode]);
 
-  // Execute Action / Command
-  const handleAction = async (action: ErpActionState) => {
-    if (!action.enabled) {
-      setActionFeedback({
-        type: "warning",
-        message: getActionReasonMessage(action.reason) || "Nút này hiện đang bị khóa theo quy tắc nghiệp vụ.",
-      });
-      return;
-    }
 
-    if (!detail) return;
-    const op = action.id;
-
-    // Create Action from detail buttons
-    if (op === "create") {
-      setCreateModalOpen(true);
-      return;
-    }
-
-    // Save Document (POST /api/erp/{module}/save)
-    if (op === "save") {
-      setExecutingAction("save");
-      setActionFeedback(null);
-      const idempotencyKey = `save-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-      try {
-        const res = await erpClient.saveDocument(module, {
-          idempotencyKey,
-          branchId: currentBranch,
-          documentId: detail.documentId,
-          expectedStateToken: detail.stateToken,
-          header: detail.header || {},
-          lineChanges: [],
-        });
-        handleCommandOutcome(res);
-      } catch {
-        setActionFeedback({
-          type: "error",
-          message: "Lỗi kết nối khi lưu chứng từ ERP.",
-        });
-      } finally {
-        setExecutingAction(null);
-      }
-      return;
-    }
-
-    // Save Costs Section (POST /api/erp/inbound-requests/sections/costs/save)
-    if (op === "save-costs" || (op === "save" && module === "inbound-requests" && action.route?.includes("costs"))) {
-      setExecutingAction("save-costs");
-      setActionFeedback(null);
-      const idempotencyKey = `cost-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-      try {
-        const res = await erpClient.saveSection(module, "costs", {
-          idempotencyKey,
-          branchId: currentBranch,
-          documentId: detail.documentId,
-          expectedStateToken: detail.stateToken,
-          lineChanges: [],
-        });
-        handleCommandOutcome(res);
-      } catch {
-        setActionFeedback({
-          type: "error",
-          message: "Lỗi kết nối khi lưu chi phí nhập kho.",
-        });
-      } finally {
-        setExecutingAction(null);
-      }
-      return;
-    }
-
-    // Save Tech Assets Section (POST /api/erp/internal-transfer-tech/sections/assets/save)
-    if (op === "save-assets" || (op === "save" && module === "internal-transfer-tech" && action.route?.includes("assets"))) {
-      setExecutingAction("save-assets");
-      setActionFeedback(null);
-      const idempotencyKey = `asset-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-      try {
-        const res = await erpClient.saveSection(module, "assets", {
-          idempotencyKey,
-          branchId: currentBranch,
-          documentId: detail.documentId,
-          expectedStateToken: detail.stateToken,
-          lineChanges: [],
-        });
-        handleCommandOutcome(res);
-      } catch {
-        setActionFeedback({
-          type: "error",
-          message: "Lỗi kết nối khi lưu danh sách thiết bị / máy điều chuyển.",
-        });
-      } finally {
-        setExecutingAction(null);
-      }
-      return;
-    }
-
-    // Scan QR Add / Delete
-    if (op === "scan-add") {
-      openQrScannerModal("add");
-      return;
-    }
-    if (op === "scan-delete") {
-      openQrScannerModal("delete");
-      return;
-    }
-
-    // View Contract Info (Sales Orders, Sales QR, Sales Order PM, Sales Order SA)
-    if (
-      op === "contract-info" &&
-      (module === "sales-orders" ||
-        module === "sales-qr" ||
-        module === "sales-order-pm" ||
-        module === "sales-order-sa")
-    ) {
-      setLoadingContract(true);
-      try {
-        const info = await erpClient.getErpContract(module, {
-          branchId: currentBranch,
-          documentId: detail.documentId,
-        });
-        setContractInfo(info);
-      } catch {
-        setActionFeedback({
-          type: "error",
-          message: "Không tìm thấy thông tin hợp đồng liên kết với chứng từ này.",
-        });
-      } finally {
-        setLoadingContract(false);
-      }
-      return;
-    }
-
-    // Return Step (sales-order-sa, internal-transfer-sa, internal-transfer-accounting, internal-transfer-warehouse-out)
-    if (op === "return-step") {
-      setLoadingReturnStep(true);
-      setReturnStepModalOpen(true);
-      setReturnNotes("");
-      try {
-        const optData = await erpClient.getActionOptions(module, "return-step", {
-          branchId: currentBranch,
-          page: 1,
-          pageSize: 50,
-        });
-        setReturnStepChoices(optData.items || []);
-        if (optData.items && optData.items.length > 0) {
-          setSelectedReturnStatusId(optData.items[0].id);
-        }
-      } catch {
-        setActionFeedback({
-          type: "error",
-          message: "Không thể tải danh sách trạng thái quay lại.",
-        });
-      } finally {
-        setLoadingReturnStep(false);
-      }
-      return;
-    }
-
-    // Send SA (internal-transfer-tech)
-    if (op === "send-sa" && module === "internal-transfer-tech") {
-      setLoadingSendSa(true);
-      setSendSaModalOpen(true);
-      setSendSaNotes("");
-      try {
-        const optData = await erpClient.getActionOptions("internal-transfer-tech", "send-sa", {
-          branchId: currentBranch,
-          page: 1,
-          pageSize: 50,
-        });
-        setSaChoices(optData.items || []);
-        if (optData.items && optData.items.length >= 2) {
-          setSelectedPrimarySaId(optData.items[0].id);
-          setSelectedSupportingSaId(optData.items[1].id);
-        } else if (optData.items && optData.items.length === 1) {
-          setSelectedPrimarySaId(optData.items[0].id);
-          setSelectedSupportingSaId(optData.items[0].id);
-        }
-      } catch {
-        setActionFeedback({
-          type: "error",
-          message: "Không thể tải danh sách SA phụ trách.",
-        });
-      } finally {
-        setLoadingSendSa(false);
-      }
-      return;
-    }
-
-    // Sync Requests (internal-transfer-batches)
-    if (op === "sync-requests") {
-      setExecutingAction("sync-requests");
-      const idempotencyKey = `sync-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-      try {
-        const res = await erpClient.executeWorkflowAction(module, "sync-requests", {
-          idempotencyKey,
-          branchId: currentBranch,
-          documentId: detail.documentId,
-          expectedStateToken: detail.stateToken,
-          payload: {},
-        });
-        handleCommandOutcome(res);
-      } catch {
-        setActionFeedback({
-          type: "error",
-          message: "Lỗi kết nối khi đồng bộ đề nghị điều chuyển.",
-        });
-      } finally {
-        setExecutingAction(null);
-      }
-      return;
-    }
-
-    // Send PM: Open PM selection dialog
-    if (op === "send-pm") {
-      setLoadingPm(true);
-      setPmModalOpen(true);
-      try {
-        const pmData = await erpClient.getPmOptions(
-          module as "sales-orders" | "internal-transfer-requests",
-          {
-            branchId: currentBranch,
-            role: "primary",
-            page: 1,
-            pageSize: 50,
-          }
-        );
-        setPmChoices(pmData.items || []);
-        if (pmData.items && pmData.items.length > 0) {
-          setSelectedPmId(pmData.items[0].id);
-        }
-      } catch {
-        setActionFeedback({
-          type: "error",
-          message: "Không thể tải danh sách PM đang hoạt động.",
-        });
-      } finally {
-        setLoadingPm(false);
-      }
-      return;
-    }
-
-    // Delete Action
-    if (op === "delete") {
-      setExecutingAction("delete");
-      setActionFeedback(null);
-      const idempotencyKey = `act-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-      try {
-        const res = await erpClient.deleteDocument(module, {
-          idempotencyKey,
-          branchId: currentBranch,
-          documentId: detail.documentId,
-          expectedStateToken: detail.stateToken,
-        });
-        handleCommandOutcome(res);
-      } catch {
-        setActionFeedback({
-          type: "error",
-          message: "Lỗi kết nối khi xóa chứng từ.",
-        });
-      } finally {
-        setExecutingAction(null);
-      }
-      return;
-    }
-
-    // General workflow actions: Open prompt modal for notes/confirmation
-    setActionPromptModal({
-      open: true,
-      action,
-      notes: "",
-    });
-  };
 
   // Submit Prompt Action (notes / reason)
   const handleConfirmPromptAction = async () => {
@@ -1276,7 +1415,7 @@ export function TabErpScreen({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
                 Phân hệ ERP
               </span>
               <span className="text-xs text-neutral-400">Chi nhánh: {currentBranch}</span>
@@ -1298,7 +1437,7 @@ export function TabErpScreen({
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && loadList(1)}
                 placeholder="Tìm theo mã chứng từ, người lập, đối tượng..."
-                className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-2xs"
+                className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-2xs"
               />
             </div>
 
@@ -1309,14 +1448,18 @@ export function TabErpScreen({
               className="p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 transition-colors shrink-0 disabled:opacity-50"
               title="Làm mới danh sách"
             >
-              <RefreshCw className={`size-4 ${isRefreshing ? "animate-spin text-purple-600" : ""}`} />
+              <RefreshCw className={`size-4 ${isRefreshing ? "animate-spin text-brand-600" : ""}`} />
             </button>
 
             {isCreateVisible && (
               <UntitledButton
                 variant="primary"
                 size="md"
-                onClick={() => setCreateModalOpen(true)}
+                onClick={() => {
+                  if (module === "purchase-orders") setPoCreateOpen(true);
+                  else if (module === "purchase-requests") setPrCreateOpen(true);
+                  else setCreateModalOpen(true);
+                }}
                 disabled={!canCreate}
                 title={createActionTooltip}
                 iconLeading={<Plus className="size-4" />}
@@ -1325,6 +1468,12 @@ export function TabErpScreen({
               </UntitledButton>
             )}
           </div>
+          {isCreateVisible && !canCreate && createActionTooltip && (
+            <p className="mt-2 text-[11px] text-amber-700 dark:text-amber-300 flex items-center gap-1.5">
+              <AlertCircle className="size-3.5 shrink-0" />
+              <span>Chưa thể tạo mới: {createActionTooltip}</span>
+            </p>
+          )}
 
           {/* Filter Chips Bar */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
@@ -1355,7 +1504,7 @@ export function TabErpScreen({
                   onClick={() => setStatusFilter(chip.id)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 shrink-0 ${
                     isSelected
-                      ? "bg-purple-600 text-white shadow-xs"
+                      ? "bg-brand-600 text-white shadow-xs"
                       : "bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 border border-neutral-200/80 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800"
                   }`}
                 >
@@ -1363,7 +1512,7 @@ export function TabErpScreen({
                   <span
                     className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
                       isSelected
-                        ? "bg-purple-700 text-white"
+                        ? "bg-brand-700 text-white"
                         : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400"
                     }`}
                   >
@@ -1419,7 +1568,7 @@ export function TabErpScreen({
               <div
                 key={docId}
                 onClick={() => handleOpenDetail(docId)}
-                className="group cursor-pointer rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 hover:border-purple-300 dark:hover:border-purple-800/60 transition-all shadow-xs hover:shadow-md"
+                className="group cursor-pointer rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 hover:border-brand-300 dark:hover:border-brand-800/60 transition-all shadow-xs hover:shadow-md"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
@@ -1440,12 +1589,12 @@ export function TabErpScreen({
                     )}
                     {dateText && (
                       <p className="text-[11px] text-neutral-400 mt-1.5 flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5 text-purple-600" />
+                        <Calendar className="w-3.5 h-3.5 text-brand-600" />
                         <span>{dateText}</span>
                       </p>
                     )}
                   </div>
-                  <ChevronRight className="w-4 h-4 text-neutral-400 group-hover:text-purple-600 transition-colors shrink-0 mt-1" />
+                  <ChevronRight className="w-4 h-4 text-neutral-400 group-hover:text-brand-600 transition-colors shrink-0 mt-1" />
                 </div>
               </div>
             );
@@ -1470,6 +1619,22 @@ export function TabErpScreen({
         open={Boolean(selectedDocId)}
         onClose={handleCloseDetail}
         title={`Chi tiết: ${selectedDocId || ""}`}
+        titleExtra={(() => {
+          const locked = lockBadgeState(detail?.header);
+          if (locked === null) return undefined;
+          return (
+            <span
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold shrink-0 ${
+                locked
+                  ? "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300"
+                  : "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300"
+              }`}
+            >
+              {locked ? <Lock className="size-3" /> : <LockOpen className="size-3" />}
+              {locked ? "Đã khóa" : "Chưa khóa"}
+            </span>
+          );
+        })()}
       >
         <div className="space-y-4 pb-16">
           {/* Action Feedback Banner */}
@@ -1494,7 +1659,7 @@ export function TabErpScreen({
 
           {loadingDetail ? (
             <div className="space-y-3 py-8 text-center">
-              <RefreshCw className="w-6 h-6 animate-spin mx-auto text-purple-600" />
+              <RefreshCw className="w-6 h-6 animate-spin mx-auto text-brand-600" />
               <p className="text-xs text-neutral-500">Đang tải đầy đủ trường chi tiết từ ERP...</p>
             </div>
           ) : detailError ? (
@@ -1503,56 +1668,12 @@ export function TabErpScreen({
             </div>
           ) : detail ? (
             <>
-              {/* Dynamic Action Buttons Toolbar (Print buttons removed per requirement, contract info kept) */}
-              {detail.actions &&
-                detail.actions.filter((act) => act.visible && !isPrintAction(act)).length > 0 && (
-                  <div className="rounded-2xl p-3 bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200/70 dark:border-neutral-800">
-                    <div className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400 mb-2">
-                      Nút thao tác nghiệp vụ:
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {detail.actions
-                        .filter((act) => act.visible && !isPrintAction(act))
-                        .map((act) => {
-                          const isCurrentExecuting = executingAction === act.id;
-                          const reasonTooltip = getActionReasonMessage(act.reason);
-                          return (
-                            <button
-                              key={act.id}
-                              onClick={() => handleAction(act)}
-                              disabled={!act.enabled || Boolean(executingAction)}
-                              title={reasonTooltip || undefined}
-                              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 ${
-                                act.enabled
-                                  ? "bg-purple-600 hover:bg-purple-700 text-white shadow-xs"
-                                  : "bg-neutral-200 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500 cursor-not-allowed"
-                              }`}
-                            >
-                              {isCurrentExecuting ? (
-                                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                              ) : act.id === "delete" ? (
-                                <Trash2 className="w-3.5 h-3.5" />
-                              ) : act.id === "send-pm" || act.id === "submit" ? (
-                                <Send className="w-3.5 h-3.5" />
-                              ) : act.id === "recall" ? (
-                                <RotateCcw className="w-3.5 h-3.5" />
-                              ) : (
-                                <SlidersHorizontal className="w-3.5 h-3.5" />
-                              )}
-                              <span>{getActionCaption(module, act)}</span>
-                            </button>
-                          );
-                        })}
-                    </div>
-                  </div>
-                )}
-
               {/* QR Scanner Controls for warehouse-qr / sales-qr: Replaced input box with 2 camera buttons */}
               {isQrModule && (
-                <div className="p-4 rounded-2xl bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900/40 space-y-3">
+                <div className="p-4 rounded-2xl bg-brand-50/50 dark:bg-brand-950/20 border border-brand-200 dark:border-brand-900/40 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-purple-900 dark:text-purple-300 flex items-center gap-1.5">
-                      <QrCode className="w-4 h-4 text-purple-600" />
+                    <span className="text-xs font-bold text-brand-900 dark:text-brand-300 flex items-center gap-1.5">
+                      <QrCode className="w-4 h-4 text-brand-600" />
                       Thao tác quét mã vạch / QR tem kiện
                     </span>
                   </div>
@@ -1604,10 +1725,67 @@ export function TabErpScreen({
                       {detail.documentId}
                     </p>
                   </div>
-                  <div>
-                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200 dark:border-purple-900/40">
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 border border-brand-200 dark:border-brand-900/40">
                       {String(detail.header?.statusName || (detail.header?.isLocked ? "Đã khóa" : "Đang mở"))}
                     </span>
+                    {menuActs.length > 0 && (
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMenuOpen((v) => !v);
+                              setDeleteArmed(false);
+                            }}
+                            aria-label="Thao tác chứng từ"
+                            className="p-1.5 rounded-xl text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                          >
+                            <MoreVertical className="size-5" />
+                          </button>
+                          {menuOpen && (
+                            <>
+                              <div
+                                className="fixed inset-0 z-40"
+                                onClick={() => {
+                                  setMenuOpen(false);
+                                  setDeleteArmed(false);
+                                }}
+                                aria-hidden="true"
+                              />
+                              <div className="absolute right-0 z-50 mt-1 w-52 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-xl overflow-hidden py-1">
+                                {menuActs.map((act) => {
+                                  const disabled =
+                                    !act.enabled || Boolean(executingAction) || (editing && act.id !== "save");
+                                  const danger = act.id === "delete";
+                                  return (
+                                    <button
+                                      key={act.id}
+                                      type="button"
+                                      disabled={disabled}
+                                      title={getActionReasonMessage(act.reason) || undefined}
+                                      onClick={() => handleMenuClick(act)}
+                                      className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-left transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                        danger
+                                          ? "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
+                                          : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                                      } ${deleteArmed && danger ? "bg-red-50 dark:bg-red-950/40" : ""}`}
+                                    >
+                                      {act.id === "save" ? (
+                                        <Pencil className="size-4" />
+                                      ) : danger ? (
+                                        <Trash2 className="size-4" />
+                                      ) : (
+                                        <Send className="size-4" />
+                                      )}
+                                      <span className="flex-1">{menuLabel(act)}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
                   </div>
                 </div>
 
@@ -1635,25 +1813,151 @@ export function TabErpScreen({
 
                 {/* Chi tiết thuộc tính Header */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs pt-1">
-                  {Object.entries(detail.header || {}).map(([key, value]) => {
-                    if (value === null || value === undefined || value === "") return null;
-                    if (typeof value === "object") return null;
+                  {(() => {
+                    const headerKeys = Object.keys(detail.header || {});
+                    // Render the full known field set in both modes: the
+                    // backend omits null fields, but empty rows ("—") tell
+                    // the reader the field exists. Edit mode additionally
+                    // covers editable keys missing from the payload.
+                    const saveKeys = ((SAVE_HEADER_BY_MODULE[module] ?? []) as readonly string[]);
+                    const editKeys = editableHeaderKeys(module) as readonly string[];
+                    // Edit mode renders every known key even when the backend
+                    // omits null fields; view mode hides empties (no "—" rows).
+                    const keys = [...headerKeys];
+                    for (const k of [...saveKeys, ...(editing ? editKeys : [])]) {
+                      if (!keys.includes(k)) keys.push(k);
+                    }
+                    return keys.map((key) => {
+                      const value = (detail.header as Record<string, unknown> | undefined)?.[key];
+                    const isEditKey = editing && editKeys.includes(key);
+                    const isEmpty = value === null || value === undefined || value === "";
+                    if (isEmpty && !isEditKey) return null;
+                    if (typeof value === "object" && value !== null) return null;
                     if (isTechnicalField(key)) return null;
                     if (
                       key === "objectName" ||
-                      key === "personSuggest" ||
                       key === "customerName" ||
                       key === "vendorName" ||
                       key === "statusName" ||
                       key === "documentId" ||
-                      key === "branchId"
+                      key === "isLocked"
                     )
                       return null;
+                    const headerObj = (detail.header || {}) as Record<string, unknown>;
+                    // personSuggest doubles as the top identity block: keep a
+                    // dedicated row when objectName takes that slot (or while
+                    // editing, where it renders its dropdown).
+                    if (key === "personSuggest" && !headerObj.objectName && !editing) return null;
+                    // Rate is read-only and shown under its currency while editing.
+                    if (key === "rateExchange" && editing) return null;
+                    // Prefer resolved names over raw ids/codes.
+                    if (key === "statusId" && headerObj.statusName) return null;
+                    // purposeId edits through its own dropdown while editing;
+                    // otherwise the resolved name row covers it.
+                    if (key === "purposeId" && headerObj.purposeName && !editing) return null;
+                    if (key === "purposeName" && editing) return null;
+                    // objectId edits through its own dropdown while editing;
+                    // otherwise the top identity block already shows the name.
+                    if (key === "objectId" && headerObj.objectName && !editing) return null;
+                    // Display companions duplicate the base field; the base
+                    // render already formats dates/numbers.
+                    if (key.endsWith("Display") && key.slice(0, -"Display".length) in headerObj)
+                      return null;
+                    if (key === "currencyName" && "currencyId" in headerObj) return null;
 
                     const displayVal =
                       key.toLowerCase().includes("date") || key.toLowerCase().includes("time")
                         ? formatVietnamDate(value)
                         : String(value);
+
+                    if (editing && (editableHeaderKeys(module) as readonly string[]).includes(key)) {
+                      const lookupId = editLookupId(module, key);
+                      if (lookupId) {
+                        const selected = editChoices[key] ?? null;
+                        const isMultiKey = key === "personSuggest" || key === "department";
+                        const multiSelected: ErpChoice[] | undefined = isMultiKey
+                          ? (editMulti[key] ?? (editHeader[key] ?? "")
+                              .split(",")
+                              .map((s) => s.trim())
+                              .filter(Boolean)
+                              .map((s) => ({ id: s, label: s }) as ErpChoice))
+                          : undefined;
+                        const knownName =
+                          key === "objectId" && typeof headerObj.objectName === "string"
+                            ? headerObj.objectName
+                            : key === "purposeId" && typeof headerObj.purposeName === "string"
+                              ? headerObj.purposeName
+                              : "";
+                        return (
+                          <div
+                            key={key}
+                            className="flex flex-col py-1"
+                          >
+                            <LookupField
+                              label={getFieldLabel(key)}
+                              required={(requiredEditKeys(module) as readonly string[]).includes(key)}
+                              module={module}
+                              lookupId={lookupId}
+                              branchId={currentBranch}
+                              value={editHeader[key] ?? ""}
+                              choice={selected}
+                              displayValue={knownName || undefined}
+                              compact
+                              multiple={isMultiKey || undefined}
+                              selected={multiSelected}
+                              onMultiSelect={
+                                isMultiKey
+                                  ? (cs) => {
+                                      setEditMulti((prev) => ({ ...prev, [key]: cs }));
+                                      setEditHeader((prev) => ({
+                                        ...prev,
+                                        [key]: cs.map((c) => c.id).join(", "),
+                                      }));
+                                    }
+                                  : undefined
+                              }
+                              onSelect={(c) => {
+                                setEditHeader((prev) => ({ ...prev, [key]: c ? c.id : "" }));
+                                setEditChoices((prev) => ({ ...prev, [key]: c }));
+                                if (key === "currencyId") {
+                                  const rate = c?.fields?.["RateExchange"];
+                                  setEditRate(
+                                    typeof rate === "number" && Number.isFinite(rate) && rate > 0
+                                      ? String(rate)
+                                      : null
+                                  );
+                                }
+                              }}
+                            />
+                            {key === "currencyId" && (
+                              <p className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400">
+                                <span className="font-semibold">Tỷ giá:</span>{" "}
+                                {editRate ?? String(headerObj.rateExchange ?? "—")} (tự động theo loại tiền)
+                              </p>
+                            )}
+                          </div>
+                        );
+                      }
+                      const isDate = key.toLowerCase().includes("date");
+                      return (
+                        <div
+                          key={key}
+                          className="flex flex-col py-1"
+                        >
+                          <span className="text-[10px] text-brand-600 dark:text-brand-400 font-medium">
+                            {getFieldLabel(key)}
+                          </span>
+                          <input
+                            type={isDate ? "date" : "text"}
+                            value={editHeader[key] ?? ""}
+                            onChange={(e) =>
+                              setEditHeader((prev) => ({ ...prev, [key]: e.target.value }))
+                            }
+                            className="mt-0.5 p-1.5 rounded-lg border border-brand-300 dark:border-brand-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
+                          />
+                        </div>
+                      );
+                    }
 
                     return (
                       <div
@@ -1666,8 +1970,25 @@ export function TabErpScreen({
                         </span>
                       </div>
                     );
-                  })}
+                    });
+                  })()}
                 </div>
+                {editing && (
+                  <div className="flex gap-2 pt-1">
+                    <UntitledButton
+                      variant="primary"
+                      size="md"
+                      onClick={handleSaveHeader}
+                      disabled={executingAction === "save"}
+                      iconLeading={<CheckCircle2 className="size-4" />}
+                    >
+                      {executingAction === "save" ? "Đang lưu..." : "Lưu thay đổi"}
+                    </UntitledButton>
+                    <UntitledButton variant="secondary-gray" size="md" onClick={() => setEditing(false)}>
+                      Hủy sửa
+                    </UntitledButton>
+                  </div>
+                )}
               </div>
 
               {/* Lines Table */}
@@ -1682,55 +2003,367 @@ export function TabErpScreen({
                 </div>
                 {detail.lines?.rows?.length === 0 ? (
                   <p className="text-xs text-neutral-400 py-3 text-center">Chứng từ chưa có dòng hàng nào.</p>
+                ) : editing && (saveLineKeys(module) as readonly string[]).length > 0 ? (
+                  <>
+                    {/* Mobile: editable line cards */}
+                    <div className="space-y-2 md:hidden">
+                      {(detail.lines.rows || []).map((row, idx) => {
+                        const f = ((row as { fields?: unknown }).fields || row || {}) as Record<string, unknown>;
+                        const d = editLines[row.lineId] || {};
+                        const set = (k: string, v: string) => patchEditLine(row.lineId, k, v);
+                        const lineKeys = saveLineKeys(module) as readonly string[];
+                        const extras = ["model", "budget", "timeRequired", "notes"].filter((k) =>
+                          lineKeys.includes(k)
+                        );
+                        const q = (d.quantity ?? "").trim();
+                        const p = (d.unitPrice ?? "").trim();
+                        const live =
+                          /^\d+(\.\d+)?$/.test(q) && /^\d+(\.\d+)?$/.test(p)
+                            ? Number(q) * Number(p)
+                            : null;
+                        const inputCls =
+                          "mt-0.5 p-1.5 rounded-lg border border-brand-300 dark:border-brand-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 w-full";
+                        const itemName = (f.itemName || f.name || "") as string;
+                        return (
+                          <div
+                            key={row.lineId}
+                            className="rounded-xl border border-brand-200 dark:border-brand-800/60 p-3 bg-white dark:bg-neutral-900 space-y-2.5"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-xs font-bold text-neutral-500">Dòng {idx + 1}</span>
+                            </div>
+                            <div>
+                              <label className="block text-[10px] text-brand-600 dark:text-brand-400 font-medium">
+                                Mã hàng <span className="text-red-500">*</span>
+                              </label>
+                              <input
+                                type="text"
+                                value={d.itemId ?? ""}
+                                onChange={(e) => set("itemId", e.target.value)}
+                                className={inputCls}
+                              />
+                            </div>
+                            {itemName && (
+                              <p className="text-[11px] text-neutral-500 dark:text-neutral-400">{itemName}</p>
+                            )}
+                            {extras.length > 0 && (
+                              <div className="grid grid-cols-1 gap-2.5">
+                                {extras.map((k) => (
+                                  <div key={k}>
+                                    <label className="block text-[10px] text-brand-600 dark:text-brand-400 font-medium">
+                                      {getFieldLabel(k)}
+                                    </label>
+                                    <input
+                                      type="text"
+                                      inputMode={k === "budget" ? "decimal" : "text"}
+                                      value={d[k] ?? ""}
+                                      onChange={(e) => set(k, e.target.value)}
+                                      className={inputCls}
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            <div className="grid grid-cols-2 gap-2.5">
+                              <div>
+                                <label className="block text-[10px] text-brand-600 dark:text-brand-400 font-medium">
+                                  Số lượng <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  inputMode="decimal"
+                                  value={d.quantity ?? ""}
+                                  onChange={(e) => set("quantity", e.target.value)}
+                                  className={inputCls}
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] text-brand-600 dark:text-brand-400 font-medium">
+                                  Đơn giá <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  inputMode="decimal"
+                                  value={d.unitPrice ?? ""}
+                                  onChange={(e) => set("unitPrice", e.target.value)}
+                                  className={inputCls}
+                                />
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-[10px] text-neutral-400">Tổng giá</span>
+                              <span className="font-bold text-brand-700 dark:text-brand-300 font-mono">
+                                {live === null ? "—" : formatMoney(live, docCurrencyId(detail.header))}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {/* Desktop: editable line table */}
+                    <div className="overflow-x-auto hidden md:block">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="border-b border-neutral-200 dark:border-neutral-800 text-[10px] text-neutral-400 uppercase">
+                            <th className="py-2 px-2.5">Mã hàng *</th>
+                            <th className="py-2 px-2.5">Tên hàng</th>
+                            {(saveLineKeys(module) as readonly string[])
+                              .filter((k) => ["model", "budget", "timeRequired", "notes"].includes(k))
+                              .map((k) => (
+                                <th key={k} className="py-2 px-2.5">
+                                  {getFieldLabel(k)}
+                                </th>
+                              ))}
+                            <th className="py-2 px-2.5">Số lượng *</th>
+                            <th className="py-2 px-2.5">Đơn giá *</th>
+                            <th className="py-2 px-2.5 text-right">Tổng giá</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                          {(detail.lines.rows || []).map((row) => {
+                            const f = ((row as { fields?: unknown }).fields || row || {}) as Record<string, unknown>;
+                            const d = editLines[row.lineId] || {};
+                            const set = (k: string, v: string) => patchEditLine(row.lineId, k, v);
+                            const cellInput =
+                              "mt-0.5 p-1.5 rounded-lg border border-brand-300 dark:border-brand-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 w-full min-w-20";
+                            const q = (d.quantity ?? "").trim();
+                            const p = (d.unitPrice ?? "").trim();
+                            const live =
+                              /^\d+(\.\d+)?$/.test(q) && /^\d+(\.\d+)?$/.test(p)
+                                ? Number(q) * Number(p)
+                                : null;
+                            const itemName = (f.itemName || f.name || "") as string;
+                            const unit = (f.unit || f.unit2 || "") as string;
+                            return (
+                              <tr key={row.lineId} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/40 align-top">
+                                <td className="py-2 px-2.5">
+                                  <input
+                                    type="text"
+                                    value={d.itemId ?? ""}
+                                    onChange={(e) => set("itemId", e.target.value)}
+                                    className={`${cellInput} font-mono`}
+                                  />
+                                </td>
+                                <td className="py-2.5 px-2.5 font-medium text-neutral-800 dark:text-neutral-200">
+                                  <div className="text-xs">{itemName || "—"}</div>
+                                  {unit && (
+                                    <div className="text-[10px] text-brand-600 dark:text-brand-400 font-medium">
+                                      ĐVT: {unit}
+                                    </div>
+                                  )}
+                                </td>
+                                {(saveLineKeys(module) as readonly string[])
+                                  .filter((k) => ["model", "budget", "timeRequired", "notes"].includes(k))
+                                  .map((k) => (
+                                    <td key={k} className="py-2 px-2.5">
+                                      <input
+                                        type="text"
+                                        inputMode={k === "budget" ? "decimal" : "text"}
+                                        value={d[k] ?? ""}
+                                        onChange={(e) => set(k, e.target.value)}
+                                        className={cellInput}
+                                      />
+                                    </td>
+                                  ))}
+                                <td className="py-2 px-2.5">
+                                  <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    value={d.quantity ?? ""}
+                                    onChange={(e) => set("quantity", e.target.value)}
+                                    className={cellInput}
+                                  />
+                                </td>
+                                <td className="py-2 px-2.5">
+                                  <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    value={d.unitPrice ?? ""}
+                                    onChange={(e) => set("unitPrice", e.target.value)}
+                                    className={cellInput}
+                                  />
+                                </td>
+                                <td className="py-2.5 px-2.5 text-right font-bold text-brand-700 dark:text-brand-300 font-mono">
+                                  {live === null ? "—" : formatMoney(live, docCurrencyId(detail.header))}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="border-b border-neutral-200 dark:border-neutral-800 text-[10px] text-neutral-400 uppercase">
-                          <th className="py-2 px-2.5">Mã dòng</th>
-                          <th className="py-2 px-2.5">Mã VT / Tên hàng</th>
-                          <th className="py-2 px-2.5">Số lượng</th>
-                          <th className="py-2 px-2.5">Đơn giá / Thành tiền</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                        {detail.lines.rows.map((row) => {
-                          const f = (row.fields || row || {}) as Record<string, unknown>;
-                          const itemId = (f.itemId || f.itemCode || f.assetId || "") as string;
-                          const itemCode = (f.itemCode || f.itemId || "") as string;
-                          const itemName = (f.itemName || f.name || "") as string;
-                          const unit = (f.unit || f.unit2 || "") as string;
-                          const qty = (f.quantity || f.setQuantityByDocument || f.amount || "") as string;
-                          const price = (f.unitPriceDisplay || f.unitPrice || f.totalPriceDisplay || f.totalPrice || "") as string;
-                          return (
-                            <tr key={row.lineId} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/40">
-                              <td className="py-2.5 px-2.5 text-[11px] font-mono text-neutral-400">
-                                {row.lineId}
-                              </td>
-                              <td className="py-2.5 px-2.5 font-medium text-neutral-800 dark:text-neutral-200">
-                                <div className="font-mono text-xs">{itemCode || itemId || "—"}</div>
-                                {itemName && <div className="text-[11px] text-neutral-600 dark:text-neutral-400 font-normal">{itemName}</div>}
-                                {unit && <div className="text-[10px] text-purple-600 dark:text-purple-400 font-medium">ĐVT: {unit}</div>}
-                              </td>
-                              <td className="py-2.5 px-2.5 text-neutral-700 dark:text-neutral-300 font-semibold">
-                                {formatVietnamNumber(qty) || qty || "—"}
-                              </td>
-                              <td className="py-2.5 px-2.5 text-neutral-700 dark:text-neutral-300 font-mono">
-                                {price || "—"}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                  <>
+                    {/* Mobile: stacked cards instead of a wide scrollable table */}
+                    <div className="space-y-2 md:hidden">
+                      {detail.lines.rows.map((row, idx) => {
+                        const f = (row.fields || row || {}) as Record<string, unknown>;
+                        const itemCode = ((f.itemCode || f.itemId || f.assetId || "") as string) || "—";
+                        const itemName = (f.itemName || f.name || "") as string;
+                        const unit = (f.unit || f.unit2 || "") as string;
+                        const qty = (f.quantity || f.setQuantityByDocument || "") as string;
+                        const price = (f.unitPriceDisplay || f.unitPrice || "") as string;
+                        const total = lineTotalDisplay(f, docCurrencyId(detail.header));
+                        const lineNotes = (f.notes || "") as string;
+                        return (
+                          <div
+                            key={row.lineId}
+                            className="rounded-xl border border-neutral-200/80 dark:border-neutral-800 p-3 bg-neutral-50/50 dark:bg-neutral-950/40"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-mono text-xs font-bold text-neutral-900 dark:text-white truncate">
+                                {itemCode}
+                              </span>
+                              <span className="text-[10px] text-neutral-400 shrink-0">#{idx + 1}</span>
+                            </div>
+                            {itemName && (
+                              <p className="mt-0.5 text-xs text-neutral-600 dark:text-neutral-300 leading-relaxed break-words">
+                                {itemName}
+                              </p>
+                            )}
+                            {unit && <p className="text-[10px] text-brand-600 dark:text-brand-400 font-medium">ĐVT: {unit}</p>}
+                            {lineNotes && (
+                              <p className="mt-0.5 text-[11px] text-neutral-500 dark:text-neutral-400 italic break-words">
+                                {lineNotes}
+                              </p>
+                            )}
+                            {module === "purchase-requests" &&
+                              (((f.model || "") as string) ||
+                                ((f.budgetDisplay || f.budget || "") as string) ||
+                                ((f.timeRequired || "") as string)) && (
+                                <div className="mt-1.5 grid grid-cols-3 gap-2 text-xs">
+                                  <div className="min-w-0">
+                                    <p className="text-[10px] text-neutral-400">Model</p>
+                                    <p className="font-medium text-neutral-700 dark:text-neutral-300 break-all">
+                                      {(f.model as string) || "—"}
+                                    </p>
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="text-[10px] text-neutral-400">Ngân sách</p>
+                                    <p className="font-mono text-neutral-700 dark:text-neutral-300 break-all">
+                                      {((f.budgetDisplay || f.budget || "") as string) || "—"}
+                                    </p>
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="text-[10px] text-neutral-400">T.gian YC</p>
+                                    <p className="font-medium text-neutral-700 dark:text-neutral-300 break-all">
+                                      {(f.timeRequired as string) || "—"}
+                                    </p>
+                                  </div>
+                                </div>
+                              )}
+                            <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                              <div>
+                                <p className="text-[10px] text-neutral-400">Số lượng</p>
+                                <p className="font-semibold text-neutral-800 dark:text-neutral-200">
+                                  {formatVietnamNumber(qty) || qty || "—"}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] text-neutral-400">Đơn giá</p>
+                                <p className="font-mono text-neutral-700 dark:text-neutral-300">{price || "—"}</p>
+                              </div>
+                            </div>
+                            <div className="mt-1.5 pt-1.5 border-t border-neutral-200/70 dark:border-neutral-800 flex items-center justify-between">
+                              <span className="text-[10px] text-neutral-400">Tổng giá</span>
+                              <span className="text-xs font-bold text-brand-700 dark:text-brand-300 font-mono">
+                                {total || "—"}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {/* Desktop: full table */}
+                    <div className="overflow-x-auto hidden md:block">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="border-b border-neutral-200 dark:border-neutral-800 text-[10px] text-neutral-400 uppercase">
+                            <th className="py-2 px-2.5">Mã hàng</th>
+                            <th className="py-2 px-2.5">Tên hàng</th>
+                            {module === "purchase-requests" && (
+                              <>
+                                <th className="py-2 px-2.5">Model</th>
+                                <th className="py-2 px-2.5">Ngân sách</th>
+                                <th className="py-2 px-2.5">Thời gian YC</th>
+                              </>
+                            )}
+                            <th className="py-2 px-2.5">Số lượng</th>
+                            <th className="py-2 px-2.5">Đơn giá</th>
+                            <th className="py-2 px-2.5 text-right">Tổng giá</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                          {detail.lines.rows.map((row) => {
+                            const f = (row.fields || row || {}) as Record<string, unknown>;
+                            const itemCode = (f.itemCode || f.itemId || f.assetId || "") as string;
+                            const itemName = (f.itemName || f.name || "") as string;
+                            const unit = (f.unit || f.unit2 || "") as string;
+                            const qty = (f.quantity || f.setQuantityByDocument || "") as string;
+                            const price = (f.unitPriceDisplay || f.unitPrice || "") as string;
+                            const total = lineTotalDisplay(f, docCurrencyId(detail.header));
+                            const lineNotes = (f.notes || "") as string;
+                            return (
+                              <tr key={row.lineId} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/40">
+                                <td className="py-2.5 px-2.5 font-mono text-xs font-bold text-neutral-900 dark:text-white">
+                                  {itemCode || "—"}
+                                </td>
+                                <td className="py-2.5 px-2.5 font-medium text-neutral-800 dark:text-neutral-200">
+                                  <div className="text-xs">{itemName || "—"}</div>
+                                  {unit && <div className="text-[10px] text-brand-600 dark:text-brand-400 font-medium">ĐVT: {unit}</div>}
+                                  {lineNotes && <div className="text-[11px] text-neutral-500 dark:text-neutral-400 italic">{lineNotes}</div>}
+                                </td>
+                                {module === "purchase-requests" && (
+                                  <>
+                                    <td className="py-2.5 px-2.5 text-neutral-700 dark:text-neutral-300">
+                                      {(f.model as string) || "—"}
+                                    </td>
+                                    <td className="py-2.5 px-2.5 text-neutral-700 dark:text-neutral-300 font-mono">
+                                      {((f.budgetDisplay || f.budget || "") as string) || "—"}
+                                    </td>
+                                    <td className="py-2.5 px-2.5 text-neutral-700 dark:text-neutral-300">
+                                      {(f.timeRequired as string) || "—"}
+                                    </td>
+                                  </>
+                                )}
+                                <td className="py-2.5 px-2.5 text-neutral-700 dark:text-neutral-300 font-semibold">
+                                  {formatVietnamNumber(qty) || qty || "—"}
+                                </td>
+                                <td className="py-2.5 px-2.5 text-neutral-700 dark:text-neutral-300 font-mono">
+                                  {price || "—"}
+                                </td>
+                                <td className="py-2.5 px-2.5 text-right font-bold text-brand-700 dark:text-brand-300 font-mono">
+                                  {total || "—"}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
                 )}
+                {(() => {
+                  const grand = sumLineTotals(detail.lines?.rows || []);
+                  const cur = docCurrencyId(detail.header);
+                  return grand !== null ? (
+                    <div className="mt-3 pt-2.5 border-t border-neutral-200 dark:border-neutral-800 flex items-center justify-between text-xs">
+                      <span className="font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                        Tổng cộng ({detail.lines?.rows?.length || 0} dòng)
+                      </span>
+                      <span className="font-bold text-brand-700 dark:text-brand-300 font-mono">
+                        {formatMoney(grand, cur)}{cur ? ` ${cur}` : ""}
+                      </span>
+                    </div>
+                  ) : null;
+                })()}
                 {detail.lines?.hasMore && (
                   <div className="pt-3 text-center border-t border-neutral-100 dark:border-neutral-800/60 mt-3">
                     <button
                       type="button"
                       onClick={handleLoadMoreLines}
-                      disabled={loadingMoreLines}
+                      disabled={loadingMoreLines || editing}
                       className="px-3.5 py-1.5 text-xs font-medium rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50"
                     >
                       {loadingMoreLines ? "Đang tải thêm..." : "Tải thêm dòng chi tiết..."}
@@ -1857,8 +2490,8 @@ export function TabErpScreen({
                 playsInline
               />
               {/* Scanner Reticle Overlay */}
-              <div className="absolute inset-0 border-2 border-purple-500/60 rounded-2xl pointer-events-none flex items-center justify-center">
-                <div className="size-48 border-2 border-dashed border-purple-400 rounded-xl" />
+              <div className="absolute inset-0 border-2 border-brand-500/60 rounded-2xl pointer-events-none flex items-center justify-center">
+                <div className="size-48 border-2 border-dashed border-brand-400 rounded-xl" />
               </div>
             </div>
 
@@ -1888,7 +2521,7 @@ export function TabErpScreen({
                     }
                   }}
                   disabled={!manualBarcode.trim() || qrOperationLoading}
-                  className="px-4 py-2 rounded-xl bg-purple-600 text-white font-semibold hover:bg-purple-700 disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-50"
                 >
                   Xác nhận
                 </button>
@@ -1899,6 +2532,32 @@ export function TabErpScreen({
       )}
 
       {/* CREATE DOCUMENT MODAL (For non-QR modules) */}
+      {module === "purchase-orders" && (
+        <PurchaseOrderCreateSheet
+          open={poCreateOpen}
+          onClose={() => setPoCreateOpen(false)}
+          currentBranch={currentBranch}
+          onCreated={(docId) => {
+            setPoCreateOpen(false);
+            loadList(1);
+            handleOpenDetail(docId);
+          }}
+        />
+      )}
+
+      {module === "purchase-requests" && (
+        <PurchaseRequestCreateSheet
+          open={prCreateOpen}
+          onClose={() => setPrCreateOpen(false)}
+          currentBranch={currentBranch}
+          onCreated={(docId) => {
+            setPrCreateOpen(false);
+            loadList(1);
+            handleOpenDetail(docId);
+          }}
+        />
+      )}
+
       {createModalOpen && (
         <UntitledBottomSheet
           open={createModalOpen}
@@ -2037,7 +2696,7 @@ export function TabErpScreen({
                 type="button"
                 onClick={handleCreateDocument}
                 disabled={creatingDocument}
-                className="px-4 py-2 rounded-xl bg-purple-600 text-white font-semibold hover:bg-purple-700 disabled:opacity-50 text-xs"
+                className="px-4 py-2 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-50 text-xs"
               >
                 {creatingDocument ? "Đang tạo..." : "Xác nhận tạo chứng từ"}
               </button>
@@ -2054,8 +2713,8 @@ export function TabErpScreen({
           title={`Hợp đồng: ${contractInfo.contractId}`}
         >
           <div className="space-y-3 p-2 text-xs">
-            <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900 space-y-1.5">
-              <span className="font-semibold text-purple-900 dark:text-purple-300 block">
+            <div className="p-3 rounded-2xl bg-brand-50 dark:bg-brand-950/30 border border-brand-200 dark:border-brand-900 space-y-1.5">
+              <span className="font-semibold text-brand-900 dark:text-brand-300 block">
                 Số / Mã hợp đồng: {contractInfo.contractNo || contractInfo.contractId}
               </span>
               {contractInfo.objectName && (
@@ -2124,7 +2783,7 @@ export function TabErpScreen({
               <button
                 onClick={handleConfirmSendPm}
                 disabled={!selectedPmId || executingAction === "send-pm"}
-                className="px-4 py-2 rounded-xl bg-purple-600 text-white font-semibold hover:bg-purple-700 disabled:opacity-50"
+                className="px-4 py-2 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-50"
               >
                 {executingAction === "send-pm" ? "Đang gửi..." : "Xác nhận gửi PM"}
               </button>
@@ -2141,8 +2800,8 @@ export function TabErpScreen({
           title={`Thao tác: ${actionPromptModal.action.caption}`}
         >
           <div className="space-y-3.5 p-2 text-xs">
-            <div className="p-3 rounded-xl bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200/60 dark:border-purple-900/40">
-              <p className="text-xs font-semibold text-purple-900 dark:text-purple-300">
+            <div className="p-3 rounded-xl bg-brand-50/60 dark:bg-brand-950/30 border border-brand-200/60 dark:border-brand-900/40">
+              <p className="text-xs font-semibold text-brand-900 dark:text-brand-300">
                 Xác nhận thực hiện thao tác &ldquo;{actionPromptModal.action.caption}&rdquo; trên chứng từ {detail?.documentId}
               </p>
             </div>
@@ -2177,7 +2836,7 @@ export function TabErpScreen({
                 className={`px-4 py-2 rounded-xl text-white font-semibold text-xs disabled:opacity-50 ${
                   actionPromptModal.action.id === "reject"
                     ? "bg-rose-600 hover:bg-rose-700"
-                    : "bg-purple-600 hover:bg-purple-700"
+                    : "bg-brand-600 hover:bg-brand-700"
                 }`}
               >
                 {executingAction === actionPromptModal.action.id ? "Đang xử lý..." : `Xác nhận ${actionPromptModal.action.caption}`}
@@ -2239,7 +2898,7 @@ export function TabErpScreen({
                 type="button"
                 onClick={handleConfirmReturnStep}
                 disabled={!selectedReturnStatusId || executingAction === "return-step"}
-                className="px-4 py-2 rounded-xl bg-purple-600 text-white font-semibold hover:bg-purple-700 disabled:opacity-50 text-xs"
+                className="px-4 py-2 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-50 text-xs"
               >
                 {executingAction === "return-step" ? "Đang gửi..." : "Xác nhận gửi về"}
               </button>
@@ -2314,7 +2973,7 @@ export function TabErpScreen({
                 type="button"
                 onClick={handleConfirmSendSa}
                 disabled={!selectedPrimarySaId || !selectedSupportingSaId || executingAction === "send-sa"}
-                className="px-4 py-2 rounded-xl bg-purple-600 text-white font-semibold hover:bg-purple-700 disabled:opacity-50 text-xs"
+                className="px-4 py-2 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-50 text-xs"
               >
                 {executingAction === "send-sa" ? "Đang gửi..." : "Xác nhận gửi SA"}
               </button>

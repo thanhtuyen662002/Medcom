@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Image from "next/image";
 import { createPortal } from "react-dom";
 import {
   X,
@@ -108,7 +109,7 @@ export function SidebarDrawer({
         },
         {
           id: "orders",
-          label: "Đơn mua hàng (PO)",
+          label: "Đề nghị mua hàng (PO)",
           description: "19 trường header & 12 cột chi tiết",
           icon: ShoppingBag,
           badge: pendingOrdersCount > 0 ? pendingOrdersCount : undefined,
@@ -144,8 +145,16 @@ export function SidebarDrawer({
       title: "Mua hàng & Nhập kho (ERP)",
       items: [
         {
+          id: "purchase-requests",
+          label: "Đề nghị mua hàng (PR)",
+          description: "Menu 05011 • AP_PurposeRequestListFrm",
+          icon: FileText,
+          badge: "Mới",
+          badgeColor: "emerald",
+        },
+        {
           id: "purchase-orders",
-          label: "Đơn đặt mua",
+          label: "Đề nghị mua hàng (PO)",
           description: "Menu 050129 • AP_OrderFrm",
           icon: ShoppingBag,
           badge: "CUD & Tra giá",
@@ -354,8 +363,8 @@ export function SidebarDrawer({
         {/* Drawer Header */}
         <div className="p-4 sm:p-5 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-900/70 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="size-10 rounded-2xl bg-gradient-to-tr from-purple-700 to-purple-500 text-white flex items-center justify-center font-extrabold text-base shadow-sm ring-2 ring-purple-100 dark:ring-purple-950 shrink-0">
-              M
+            <div className="h-10 w-24 rounded-xl bg-white flex items-center justify-center shrink-0 p-1">
+              <Image src="/medcom-logo.png" alt="MEDCOMTECH" width={176} height={64} className="h-full w-full object-contain" priority />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
@@ -384,9 +393,9 @@ export function SidebarDrawer({
         </div>
 
         {/* User Card info */}
-        <div className="px-4 py-3 bg-purple-50/40 dark:bg-purple-950/20 border-b border-purple-100/60 dark:border-purple-900/30 flex items-center justify-between gap-2">
+        <div className="px-4 py-3 bg-brand-50/40 dark:bg-brand-950/20 border-b border-brand-100/60 dark:border-brand-900/30 flex items-center justify-between gap-2">
           <div className="min-w-0 flex items-center gap-2.5">
-            <div className="size-8 rounded-xl bg-purple-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+            <div className="size-8 rounded-xl bg-brand-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
               {userName.slice(0, 2).toUpperCase()}
             </div>
             <div className="min-w-0">
@@ -394,7 +403,7 @@ export function SidebarDrawer({
                 {userName}
               </p>
               <p className="text-[10px] text-neutral-500 dark:text-neutral-400 truncate">
-                {userRole} · <span className="font-semibold text-purple-700 dark:text-purple-300">{currentBranch}</span>
+                {userRole} · <span className="font-semibold text-brand-700 dark:text-brand-300">{currentBranch}</span>
               </p>
             </div>
           </div>
@@ -424,15 +433,15 @@ export function SidebarDrawer({
                       onClick={() => handleItemClick(item.id)}
                       className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-left transition-all group ${
                         isActive
-                          ? "bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-bold border border-purple-200/80 dark:border-purple-800/80 shadow-2xs"
+                          ? "bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 font-bold border border-brand-200/80 dark:border-brand-800/80 shadow-2xs"
                           : "text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800/70 border border-transparent font-medium"
                       }`}
                     >
                       <div
                         className={`size-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
                           isActive
-                            ? "bg-purple-600 text-white"
-                            : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 group-hover:text-purple-600 dark:group-hover:text-purple-300 group-hover:bg-purple-50 dark:group-hover:bg-purple-950/50"
+                            ? "bg-brand-600 text-white"
+                            : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 group-hover:text-brand-600 dark:group-hover:text-brand-300 group-hover:bg-brand-50 dark:group-hover:bg-brand-950/50"
                         }`}
                       >
                         <Icon className="size-4" />
@@ -447,7 +456,7 @@ export function SidebarDrawer({
                                 item.badgeColor === "emerald"
                                   ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300"
                                   : item.badgeColor === "purple"
-                                  ? "bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300"
+                                  ? "bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300"
                                   : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400"
                               }`}
                             >
@@ -464,7 +473,7 @@ export function SidebarDrawer({
 
                       <ChevronRight
                         className={`size-3.5 text-neutral-300 dark:text-neutral-600 shrink-0 group-hover:translate-x-0.5 transition-transform ${
-                          isActive ? "text-purple-600 dark:text-purple-400" : ""
+                          isActive ? "text-brand-600 dark:text-brand-400" : ""
                         }`}
                       />
                     </button>
@@ -485,7 +494,7 @@ export function SidebarDrawer({
             >
               <div className="flex items-center gap-2">
                 {isDarkMode ? (
-                  <Moon className="size-4 text-purple-400" />
+                  <Moon className="size-4 text-brand-400" />
                 ) : (
                   <Sun className="size-4 text-amber-500" />
                 )}

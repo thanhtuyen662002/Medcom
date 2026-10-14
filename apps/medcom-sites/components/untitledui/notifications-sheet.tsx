@@ -259,8 +259,8 @@ export function NotificationsSheet({
   const getTypeStyle = (type: string, colorHex?: string | null) => {
     if (colorHex) {
       return {
-        bg: "bg-purple-50 dark:bg-purple-950/40",
-        border: "border-purple-200 dark:border-purple-800",
+        bg: "bg-brand-50 dark:bg-brand-950/40",
+        border: "border-brand-200 dark:border-brand-800",
         icon: <Info className="size-4" style={{ color: colorHex }} />,
       };
     }
@@ -286,9 +286,9 @@ export function NotificationsSheet({
         };
       default:
         return {
-          bg: "bg-purple-50 dark:bg-purple-950/40",
-          border: "border-purple-200 dark:border-purple-800",
-          icon: <Info className="size-4 text-purple-600 dark:text-purple-400" />,
+          bg: "bg-brand-50 dark:bg-brand-950/40",
+          border: "border-brand-200 dark:border-brand-800",
+          icon: <Info className="size-4 text-brand-600 dark:text-brand-400" />,
         };
     }
   };
@@ -309,7 +309,7 @@ export function NotificationsSheet({
               onClick={() => setFilterUnreadOnly(false)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 !filterUnreadOnly
-                  ? "bg-white dark:bg-neutral-900 text-purple-700 dark:text-purple-300 shadow-2xs"
+                  ? "bg-white dark:bg-neutral-900 text-brand-700 dark:text-brand-300 shadow-2xs"
                   : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900"
               }`}
             >
@@ -320,13 +320,13 @@ export function NotificationsSheet({
               onClick={() => setFilterUnreadOnly(true)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                 filterUnreadOnly
-                  ? "bg-white dark:bg-neutral-900 text-purple-700 dark:text-purple-300 shadow-2xs"
+                  ? "bg-white dark:bg-neutral-900 text-brand-700 dark:text-brand-300 shadow-2xs"
                   : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900"
               }`}
             >
               Chưa đọc
               {unreadCount > 0 && (
-                <span className="size-2 rounded-full bg-purple-600 inline-block" />
+                <span className="size-2 rounded-full bg-brand-600 inline-block" />
               )}
             </button>
           </div>
@@ -338,7 +338,7 @@ export function NotificationsSheet({
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-xs font-medium text-neutral-600 dark:text-neutral-300 transition-colors"
             title="Làm mới thông báo"
           >
-            <RefreshCw className={`size-3.5 ${refreshing ? "animate-spin text-purple-600" : ""}`} />
+            <RefreshCw className={`size-3.5 ${refreshing ? "animate-spin text-brand-600" : ""}`} />
             <span className="hidden sm:inline">Làm mới</span>
           </button>
         </div>
@@ -386,8 +386,8 @@ export function NotificationsSheet({
                   onClick={() => handleOpenTarget(item)}
                   className={`p-3.5 rounded-2xl border transition-all cursor-pointer relative group ${
                     item.isView
-                      ? "bg-white dark:bg-neutral-900/60 border-neutral-200/80 dark:border-neutral-800 hover:border-purple-300 dark:hover:border-purple-800"
-                      : "bg-purple-50/40 dark:bg-purple-950/20 border-purple-200 dark:border-purple-900/60 shadow-2xs hover:border-purple-300 dark:hover:border-purple-700"
+                      ? "bg-white dark:bg-neutral-900/60 border-neutral-200/80 dark:border-neutral-800 hover:border-brand-300 dark:hover:border-brand-800"
+                      : "bg-brand-50/40 dark:bg-brand-950/20 border-brand-200 dark:border-brand-900/60 shadow-2xs hover:border-brand-300 dark:hover:border-brand-700"
                   }`}
                 >
                   <div className="flex items-start gap-3">
@@ -412,7 +412,7 @@ export function NotificationsSheet({
                             {item.title}
                           </h4>
                           {!item.isView && (
-                            <span className="size-2 rounded-full bg-purple-600 shrink-0" />
+                            <span className="size-2 rounded-full bg-brand-600 shrink-0" />
                           )}
                         </div>
 
@@ -449,13 +449,13 @@ export function NotificationsSheet({
                             type="button"
                             onClick={(e) => handleToggleRead(e, item)}
                             disabled={isItemLoading}
-                            className="p-1 rounded-lg text-neutral-400 hover:text-purple-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                            className="p-1 rounded-lg text-neutral-400 hover:text-brand-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
                             title={item.isView ? "Đánh dấu là chưa đọc" : "Đánh dấu là đã đọc"}
                           >
                             {item.isView ? (
                               <CheckCheck className="size-3.5 text-neutral-400" />
                             ) : (
-                              <Check className="size-3.5 text-purple-600 font-bold" />
+                              <Check className="size-3.5 text-brand-600 font-bold" />
                             )}
                           </button>
                           <ChevronRight className="size-3.5 text-neutral-400 group-hover:translate-x-0.5 transition-transform" />

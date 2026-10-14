@@ -1,8 +1,5 @@
 name: Railway container validation
 on:
-  push:
-    branches: [main, 'medcom-work/**', 'medcom-ci/**']
-  pull_request:
   workflow_dispatch:
 permissions:
   contents: read

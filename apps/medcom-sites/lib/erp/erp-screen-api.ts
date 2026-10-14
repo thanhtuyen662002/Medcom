@@ -118,65 +118,99 @@ async function erpPost<T>(
   signal?: AbortSignal
 ): Promise<T> {
   const csrf = await getCsrfToken();
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-    "X-CSRF-TOKEN": csrf,
-  };
-  if (activeReadScope) {
-    headers["X-Medcom-Read-Scope"] = activeReadScope;
-  }
+  const attempt = async (): Promise<T> => {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "X-CSRF-TOKEN": csrf,
+    };
+    if (activeReadScope) {
+      headers["X-Medcom-Read-Scope"] = activeReadScope;
+    }
 
-  const response = await fetch(`/api/erp/${path}`, {
-    method: "POST",
+    const response = await fetch(`/api/erp/${path}`, {
+      method: "POST",
+      credentials: "same-origin",
+      headers,
+      body: JSON.stringify(payload),
+      cache: "no-store",
+      signal,
+    });
+
+    const headerScope = response.headers.get("X-Medcom-Read-Scope");
+    if (headerScope && /^[a-f0-9]{64}$/.test(headerScope)) {
+      activeReadScope = headerScope;
+    }
+
+    const body = (await response.json().catch(() => null)) as unknown;
+
+    // For command endpoints returning ErpCommandResult directly
+    if (schema === (erpCommandResultSchema as unknown)) {
+      const commandParsed = erpCommandResultSchema.safeParse(body);
+      if (commandParsed.success) {
+        return commandParsed.data as unknown as T;
+      }
+    }
+
+    if (!response.ok) {
+      const errorParsed = z.object({ code: z.string().optional() }).safeParse(body);
+      throw new ApiError(
+        response.status,
+        errorParsed.success ? (errorParsed.data.code ?? "erp_command_failed") : "erp_command_failed",
+        response.headers.get("x-correlation-id") ?? undefined
+      );
+    }
+
+    const envelopeParsed = z.object({
+      readScope: z.string(),
+      data: z.unknown(),
+    }).safeParse(body);
+    if (envelopeParsed.success) {
+      activeReadScope = envelopeParsed.data.readScope;
+      const innerParsed = schema.safeParse(envelopeParsed.data.data);
+      if (innerParsed.success) {
+        return innerParsed.data;
+      }
+    }
+
+    const directParsed = schema.safeParse(body);
+    if (!directParsed.success) {
+      throw new ApiError(502, "invalid_api_response");
+    }
+    return directParsed.data;
+  };
+
+  try {
+    return await attempt();
+  } catch (error) {
+    // Stale read scope (rotated by session continue, another tab, or an
+    // earlier write): refresh from workspace once, then retry once.
+    if (
+      error instanceof ApiError &&
+      error.status === 409 &&
+      (error.code === "erp_scope_changed" || error.code === "read_scope_changed")
+    ) {
+      await refreshReadScope(signal);
+      return await attempt();
+    }
+    throw error;
+  }
+}
+
+// Pull a fresh read scope from the workspace endpoint (the BFF relays the
+// scope headers on this GET). Throws the fetch error when refresh fails.
+async function refreshReadScope(signal?: AbortSignal): Promise<void> {
+  const r = await fetch("/api/erp/api/workspace", {
     credentials: "same-origin",
-    headers,
-    body: JSON.stringify(payload),
     cache: "no-store",
     signal,
   });
-
-  const headerScope = response.headers.get("X-Medcom-Read-Scope");
+  const headerScope = r.headers.get("X-Medcom-Read-Scope");
   if (headerScope && /^[a-f0-9]{64}$/.test(headerScope)) {
     activeReadScope = headerScope;
+    return;
   }
-
-  const body = (await response.json().catch(() => null)) as unknown;
-
-  // For command endpoints returning ErpCommandResult directly
-  if (schema === (erpCommandResultSchema as unknown)) {
-    const commandParsed = erpCommandResultSchema.safeParse(body);
-    if (commandParsed.success) {
-      return commandParsed.data as unknown as T;
-    }
-  }
-
-  if (!response.ok) {
-    const errorParsed = z.object({ code: z.string().optional() }).safeParse(body);
-    throw new ApiError(
-      response.status,
-      errorParsed.success ? (errorParsed.data.code ?? "erp_command_failed") : "erp_command_failed",
-      response.headers.get("x-correlation-id") ?? undefined
-    );
-  }
-
-  const envelopeParsed = z.object({
-    readScope: z.string(),
-    data: z.unknown(),
-  }).safeParse(body);
-  if (envelopeParsed.success) {
-    activeReadScope = envelopeParsed.data.readScope;
-    const innerParsed = schema.safeParse(envelopeParsed.data.data);
-    if (innerParsed.success) {
-      return innerParsed.data;
-    }
-  }
-
-  const directParsed = schema.safeParse(body);
-  if (!directParsed.success) {
-    throw new ApiError(502, "invalid_api_response");
-  }
-  return directParsed.data;
+  throw new ApiError(r.status, "read_scope_changed", r.headers.get("x-correlation-id") ?? undefined);
 }
 
 /** 1. Read Form & Metadata */

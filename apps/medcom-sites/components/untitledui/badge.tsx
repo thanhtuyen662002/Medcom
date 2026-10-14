@@ -24,10 +24,10 @@ export function UntitledBadge({
 }: UntitledBadgeProps) {
   const variantStyles: Record<BadgeVariant, { bg: string; text: string; ring: string; dot: string }> = {
     brand: {
-      bg: "bg-purple-50 dark:bg-purple-950/60",
-      text: "text-purple-700 dark:text-purple-300",
-      ring: "ring-1 ring-purple-600/20 dark:ring-purple-400/30",
-      dot: "bg-purple-500",
+      bg: "bg-brand-50 dark:bg-brand-950/60",
+      text: "text-brand-700 dark:text-brand-300",
+      ring: "ring-1 ring-brand-600/20 dark:ring-brand-400/30",
+      dot: "bg-brand-500",
     },
     blue: {
       bg: "bg-blue-50 dark:bg-blue-950/60",

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import {
   ShieldCheck,
   Lock,
@@ -94,15 +95,15 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 bg-gradient-to-b from-neutral-50 via-purple-50/20 to-neutral-100 dark:from-neutral-950 dark:via-purple-950/20 dark:to-neutral-900 transition-colors">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 bg-gradient-to-b from-neutral-50 via-brand-50/20 to-neutral-100 dark:from-neutral-950 dark:via-brand-950/20 dark:to-neutral-900 transition-colors">
       {/* Background radial glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 size-96 rounded-full bg-purple-500/10 dark:bg-purple-600/15 blur-3xl pointer-events-none" />
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 size-96 rounded-full bg-brand-500/10 dark:bg-brand-600/15 blur-3xl pointer-events-none" />
 
       <div className="w-full max-w-md relative z-10 space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex size-14 rounded-2xl bg-gradient-to-tr from-purple-700 via-purple-600 to-indigo-500 text-white items-center justify-center shadow-lg ring-4 ring-purple-100 dark:ring-purple-950/60 mb-2">
-            <ShieldCheck className="size-8" />
+          <div className="inline-flex h-14 w-40 rounded-2xl bg-white items-center justify-center shadow-lg mb-2 p-2">
+            <Image src="/medcom-logo.png" alt="MEDCOMTECH" width={288} height={104} className="h-full w-full object-contain" priority />
           </div>
 
           <div className="flex items-center justify-center gap-2">
@@ -151,7 +152,7 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="admin hoặc mã nhân viên..."
-                  className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50/60 dark:bg-neutral-800/60 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50/60 dark:bg-neutral-800/60 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all"
                 />
               </div>
             </div>
@@ -170,7 +171,7 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Nhập mật khẩu..."
-                  className="w-full pl-10 pr-10 py-2.5 text-xs sm:text-sm rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50/60 dark:bg-neutral-800/60 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
+                  className="w-full pl-10 pr-10 py-2.5 text-xs sm:text-sm rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50/60 dark:bg-neutral-800/60 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all"
                 />
                 <button
                   type="button"
@@ -189,7 +190,7 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => handleRememberToggle(e.target.checked)}
-                  className="size-4 rounded text-purple-600 focus:ring-purple-500 border-neutral-300 dark:border-neutral-700"
+                  className="size-4 rounded text-brand-600 focus:ring-brand-500 border-neutral-300 dark:border-neutral-700"
                 />
                 <span>Ghi nhớ phiên đăng nhập</span>
               </label>
@@ -199,7 +200,7 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                   e.preventDefault();
                   alert("Vui lòng liên hệ Quản trị viên IT Medcom để cấp lại mật khẩu.");
                 }}
-                className="text-purple-600 dark:text-purple-400 hover:underline font-medium"
+                className="text-brand-600 dark:text-brand-400 hover:underline font-medium"
               >
                 Quên mật khẩu?
               </a>
@@ -223,7 +224,7 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
           {/* Compliance Footer */}
           <div className="mt-6 pt-4 border-t border-neutral-100 dark:border-neutral-800 text-center">
             <p className="text-[11px] text-neutral-400 flex items-center justify-center gap-1.5">
-              <Server className="size-3 text-purple-600" />
+              <Server className="size-3 text-brand-600" />
               <span>Xác thực an toàn AES-GCM · Chuẩn Dược GSP Bộ Y Tế</span>
             </p>
           </div>

@@ -7,6 +7,21 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* MEDCOMTECH brand navy (sampled from public/medcom-logo.png ≈ #0A2268) */
+@theme {
+  --color-brand-50: #EDF1F9;
+  --color-brand-100: #D8E1F3;
+  --color-brand-200: #B2C4E6;
+  --color-brand-300: #7F9CD4;
+  --color-brand-400: #4C72BC;
+  --color-brand-500: #2B4FA1;
+  --color-brand-600: #1A3A84;
+  --color-brand-700: #102A68;
+  --color-brand-800: #0C224F;
+  --color-brand-900: #0A1E46;
+  --color-brand-950: #060F2C;
+}
+
 @utility scrollbar-thin {
   scrollbar-width: thin;
 }

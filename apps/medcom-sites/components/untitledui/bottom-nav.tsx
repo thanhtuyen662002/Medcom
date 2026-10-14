@@ -95,7 +95,7 @@ export function UntitledBottomNav({
               }}
               className={`relative flex flex-col items-center justify-center py-1.5 px-2 rounded-xl transition-all duration-150 active:scale-95 flex-1 min-w-0 ${
                 isActive
-                  ? "text-purple-600 dark:text-purple-400 font-semibold"
+                  ? "text-brand-600 dark:text-brand-400 font-semibold"
                   : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 font-medium"
               }`}
             >
@@ -115,7 +115,7 @@ export function UntitledBottomNav({
                 {tab.label}
               </span>
               {isActive && (
-                <span className="absolute bottom-0 w-3 h-0.5 rounded-full bg-purple-600 dark:bg-purple-400" />
+                <span className="absolute bottom-0 w-3 h-0.5 rounded-full bg-brand-600 dark:bg-brand-400" />
               )}
             </button>
           );

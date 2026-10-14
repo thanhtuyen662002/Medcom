@@ -8,6 +8,7 @@ export interface UntitledBottomSheetProps {
   open: boolean;
   onClose: () => void;
   title?: string;
+  titleExtra?: React.ReactNode;
   subtitle?: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
@@ -18,6 +19,7 @@ export function UntitledBottomSheet({
   open,
   onClose,
   title,
+  titleExtra,
   subtitle,
   children,
   footer,
@@ -75,9 +77,12 @@ export function UntitledBottomSheet({
           <div className="px-5 py-3.5 border-b border-neutral-100 dark:border-neutral-800 flex items-start justify-between gap-3 bg-neutral-50/50 dark:bg-neutral-900/50">
             <div className="min-w-0 flex-1">
               {title && (
-                <h3 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-white truncate">
-                  {title}
-                </h3>
+                <div className="flex items-center gap-2 min-w-0">
+                  <h3 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-white truncate">
+                    {title}
+                  </h3>
+                  {titleExtra}
+                </div>
               )}
               {subtitle && (
                 <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400 truncate">

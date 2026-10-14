@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { Loader2 } from "lucide-react";
 import { DesktopHeader } from "./desktop-header";
 import { DesktopSidebar } from "./desktop-sidebar";
 import { UntitledMobileHeader, type BranchOption } from "./mobile-header";
@@ -366,7 +367,7 @@ export function MedcomApp() {
     return (
       <div className="min-h-screen w-full flex items-center justify-center bg-neutral-50 dark:bg-neutral-950">
         <div className="flex flex-col items-center gap-3">
-          <div className="size-10 rounded-2xl bg-purple-600 animate-pulse" />
+          <Loader2 className="size-10 text-brand-600 dark:text-brand-400 animate-spin" />
           <p className="text-xs text-neutral-400 font-medium">Đang khởi tạo ERP Medcom...</p>
         </div>
       </div>
@@ -466,6 +467,7 @@ export function MedcomApp() {
                 purchasesCount={purchasesCount}
                 inboundCount={inboundCount}
                 isLoadingCounts={isLoadingCounts}
+                isActive={activeTab === "home"}
               />
             </div>
 
