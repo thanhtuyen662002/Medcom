@@ -89,12 +89,6 @@ export function DesktopSidebar({
       badge: 0,
     },
     {
-      id: "orders" as NavTabId,
-      label: "Đơn hàng (PO)",
-      icon: ShoppingBag,
-      badge: pendingOrdersCount,
-    },
-    {
       id: "purchases" as NavTabId,
       label: "Đề nghị (PR)",
       icon: FileText,
@@ -119,7 +113,6 @@ export function DesktopSidebar({
       title: "Mua hàng & Nhập kho",
       items: [
         { id: "purchase-requests" as NavTabId, label: "Đề nghị mua hàng (PR)", icon: FileText },
-        { id: "purchase-orders" as NavTabId, label: "Đề nghị mua hàng (PO)", icon: ShoppingBag },
         { id: "purchase-approvals" as NavTabId, label: "Duyệt đề nghị mua", icon: CheckCircle2 },
         { id: "inbound-requests" as NavTabId, label: "Đề nghị nhập kho", icon: PackageCheck },
       ],

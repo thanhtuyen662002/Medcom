@@ -46,12 +46,6 @@ export function UntitledBottomNav({
       badge: 0,
     },
     {
-      id: "orders",
-      label: "Đơn hàng PO",
-      icon: ShoppingBag,
-      badge: pendingOrdersCount,
-    },
-    {
       id: "purchases",
       label: "Đề nghị PR",
       icon: FileText,
