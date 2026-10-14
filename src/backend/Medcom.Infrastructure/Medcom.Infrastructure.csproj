@@ -3,5 +3,6 @@
     <ProjectReference Include="../Medcom.Application/Medcom.Application.csproj" />
     <ProjectReference Include="../Medcom.Contracts/Medcom.Contracts.csproj" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.3" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="9.0.21" />
   </ItemGroup>
 </Project>
