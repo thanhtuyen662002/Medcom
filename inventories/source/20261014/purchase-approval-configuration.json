@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "sourceSet": "owner-live-meddata-20261014-i91",
+  "observedAtUtc": "2026-10-14T09:33:33.8451774Z",
+  "queryMode": "SELECT-only serializable transaction, rolled back",
+  "businessWritesPerformed": false,
+  "productionAccepted": false,
+  "supersedesOnly": "owner-live-meddata-20261011-i78/purchase-approvals/approve/CS4",
+  "object": "dbo.SY_FrmCfg",
+  "address": {
+    "FID": "AP_ApprovePurchaseRequestListFrm",
+    "KeyID": "LYS1",
+    "SubID": "ExecSQLWithParaButtonCtl_1",
+    "SubValue": "CS4"
+  },
+  "previous": {
+    "sha256Utf16LE": "7f6d00e492158f3a93a4566fdd17b9d41dcd0a762ad0a22d1eed17f7d863eadc",
+    "characters": 154
+  },
+  "current": {
+    "sha256Utf16LE": "ab018e267556cc5530ca3b5d049e151bd3c75c2c9277357dce6d8a9e22d1cf41",
+    "characters": 169,
+    "valueIsNull": false
+  },
+  "semanticComparison": {
+    "previousBlockedStatusIds": [3],
+    "currentBlockedStatusIds": [1, 3],
+    "changedMessage": "Includes the draft restriction",
+    "changedCommandEffect": false,
+    "webCommandAdmission": "Unchanged: only pending status 2, with native rights and other existing guards"
+  },
+  "beforeVerification": {
+    "schema": "matched",
+    "moduleHashes": "passed",
+    "workflowMetadata": "passed",
+    "screenConfiguration": "failed",
+    "expectedConfigurationRows": 58,
+    "actualConfigurationRows": 58,
+    "configurationDifferences": 1,
+    "duplicateAddresses": 0
+  },
+  "afterVerification": {
+    "observedAtUtc": "2026-10-14T09:40:40.5040595Z",
+    "schema": "matched",
+    "moduleHashes": "passed",
+    "workflowMetadata": "passed",
+    "nativeMetadataAndDefaults": "passed",
+    "screenConfiguration": "passed",
+    "expectedConfigurationRows": 58,
+    "actualConfigurationRows": 58,
+    "configurationDifferences": 0,
+    "duplicateAddresses": 0
+  },
+  "evidence": {
+    "privateDirectory": "I91-purchase-approval-button-20261014 in owner's private agent artifact store",
+    "objects": ["Program.cs", "ConfigProbe.csproj", "configuration.private.json", "metadata-probe.before.json", "configuration.after.private.json", "metadata-probe.after.json"],
+    "historicalValue": "I89-purchase-approvals-20261014/form-configurations.private.json at the same address"
+  },
+  "unknowns": ["Exact VPS failing stage/correlation", "Authenticated VPS HTTP acceptance after deployment", "Real approval write acceptance"]
+}

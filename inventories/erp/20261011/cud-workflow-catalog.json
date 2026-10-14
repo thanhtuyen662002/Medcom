@@ -3,7 +3,7 @@
   "sourceSet": "owner-live-meddata-20261011-i78",
   "observedAtUtc": "2026-10-11T05:40:10.8210712Z",
   "moduleObservedAtUtc": "2026-10-11T06:28:08.9766687Z",
-  "amendments": ["inventories/source/20261012/inbound-screen-configuration.json"],
+  "amendments": ["inventories/source/20261012/inbound-screen-configuration.json", "inventories/source/20261014/purchase-approval-configuration.json"],
   "productionAccepted": false,
   "businessWritesPerformed": false,
   "scope": "Remaining CUD and workflow buttons; print/upload/import/copy excluded",
@@ -4055,9 +4055,9 @@
           "key": "LYS1",
           "control": "ExecSQLWithParaButtonCtl_1",
           "property": "CS4",
-          "sha256Utf16LE": "7f6d00e492158f3a93a4566fdd17b9d41dcd0a762ad0a22d1eed17f7d863eadc",
+          "sha256Utf16LE": "ab018e267556cc5530ca3b5d049e151bd3c75c2c9277357dce6d8a9e22d1cf41",
           "valueIsNull": false,
-          "characters": 154
+          "characters": 169
         },
         {
           "key": "LYS1",
@@ -4772,7 +4772,7 @@
           ],
           "procedure": null,
           "commandSha256Utf16LE": "798651b7d88006d84d4f16e5f7b325e2b980cd1c3b876ea6cd362742921223fe",
-          "checkSha256Utf16LE": "7f6d00e492158f3a93a4566fdd17b9d41dcd0a762ad0a22d1eed17f7d863eadc",
+          "checkSha256Utf16LE": "ab018e267556cc5530ca3b5d049e151bd3c75c2c9277357dce6d8a9e22d1cf41",
           "propertyEvidence": "dbo.SY_FrmCfg/AP_ApprovePurchaseRequestListFrm/LYS1/ExecSQLWithParaButtonCtl_1/C4"
         }
       ],
