@@ -81,12 +81,6 @@ export function DesktopHeader({
       badge: 0,
     },
     {
-      id: "orders" as NavTabId,
-      label: "Đơn hàng (PO)",
-      icon: ShoppingBag,
-      badge: pendingOrdersCount,
-    },
-    {
       id: "purchases" as NavTabId,
       label: "Đề nghị (PR)",
       icon: FileText,
@@ -117,9 +111,9 @@ export function DesktopHeader({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Brand & Branch Selector */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 shrink-0">
             <div className="flex items-center gap-2.5">
-              <div className="h-10 w-20 rounded-xl bg-white flex items-center justify-center">
+              <div className="h-10 w-20 flex items-center justify-center">
                 <Image src="/medcom-logo.png" alt="MEDCOMTECH" width={144} height={52} className="h-full w-full object-contain" priority />
               </div>
             </div>
@@ -188,8 +182,8 @@ export function DesktopHeader({
             </div>
           </div>
 
-          {/* Navigation Links (Desktop) */}
-          <nav className="flex items-center gap-1">
+          {/* Navigation Links (Desktop): scrolls internally instead of overflowing the bar */}
+          <nav className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto scrollbar-none [mask-image:linear-gradient(to_right,black_92%,transparent)]">
             {navItems.map((item) => {
               const isActive = activeTab === item.id;
               const Icon = item.icon;
@@ -231,7 +225,7 @@ export function DesktopHeader({
           </nav>
 
           {/* Right Header Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {onToggleLayoutMode && (
               <button
                 type="button"
