@@ -1,9 +1,16 @@
 name: Medcom self-hosted frontend
 on:
-  push:
-    branches: [main, 'codex/g45-selfhost-*']
-  pull_request:
   workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Runner platform (tick chọn trước khi bấm Run workflow)'
+        required: false
+        default: both
+        type: choice
+        options:
+          - both
+          - linux
+          - win32
 permissions:
   contents: read
 concurrency:
@@ -17,11 +24,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        platform: ${{ inputs.platform == 'linux' && fromJSON('["linux"]') || inputs.platform == 'win32' && fromJSON('["win32"]') || fromJSON('["linux", "win32"]') }}
         include:
-          - os: ubuntu-latest
-            platform: linux
-          - os: windows-latest
-            platform: win32
+          - platform: linux
+            os: ubuntu-latest
+          - platform: win32
+            os: windows-latest
     env:
       NEXT_TELEMETRY_DISABLED: '1'
       SOURCE_REVISION: ${{ github.sha }}
