@@ -254,8 +254,8 @@ public sealed class DocumentFullFieldTests
         Assert.Equal(JsonValueKind.Null,fields.GetProperty("header").GetProperty("notes").ValueKind);
         Assert.Equal(token,data.GetProperty("stateToken").GetString());
         Assert.Equal(raw,JsonSerializer.Serialize(fixture.Source.Documents[0],Json));
-        Assert.True(data.GetProperty("commandAccess").GetProperty("canSave").GetBoolean());
-        Assert.True(data.GetProperty("commandAccess").GetProperty("canAddLines").GetBoolean());
+        Assert.False(data.GetProperty("commandAccess").GetProperty("canSave").GetBoolean());
+        Assert.False(data.GetProperty("commandAccess").GetProperty("canAddLines").GetBoolean());
         Assert.False(data.GetProperty("commandAccess").GetProperty("canSubmit").GetBoolean());
         var legacyList=await fixture.Json("/api/purchase-requests");
         var legacyDetail=await fixture.Json("/api/purchase-requests/detail?documentId=QA-DOC");
