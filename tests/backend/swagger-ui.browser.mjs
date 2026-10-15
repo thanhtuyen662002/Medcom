@@ -9,6 +9,9 @@ import assert from "node:assert/strict";
 const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.MEDCOM_SWAGGER_PLAYWRIGHT
   || path.resolve("src/frontend/node_modules/playwright"));
+const expectedContract = JSON.parse(await readFile("docs/backend/medcom-openapi.json", "utf8"));
+const expectedPaths = Object.keys(expectedContract.paths).length;
+const expectedOperations = Object.values(expectedContract.paths).reduce((count, item) => count + Object.keys(item).length, 0);
 const privateDir = await mkdtemp(path.join(tmpdir(), "medcom-swagger-browser-"));
 const privateConfig = path.join(privateDir, "synthetic.json");
 await writeFile(privateConfig, "{}");
@@ -45,7 +48,7 @@ try {
   await page.goto(address + "/swagger", { waitUntil: "domcontentloaded" });
   await page.getByRole("heading", { name: "Medcom — Kiểm tra API" }).waitFor();
   try {
-    await page.waitForFunction(() => window.ui?.getSystem().specSelectors.specJson().get("paths")?.size === 243, null, { timeout: 45000 });
+    await page.waitForFunction(expected => window.ui?.getSystem().specSelectors.specJson().get("paths")?.size === expected, expectedPaths, { timeout: 45000 });
   } catch (error) {
     console.error(JSON.stringify({ operations: await page.locator(".opblock").count(), scriptErrors, policyErrors, consoleErrors: consoleErrors.slice(0, 5),
       errors: await page.locator(".errors-wrapper").allTextContents(), ui: (await page.locator("#swagger-ui").innerText()).slice(0, 700),
@@ -60,7 +63,7 @@ try {
   }
   const count = await page.evaluate(() => window.ui.getSystem().specSelectors.taggedOperations()
     .reduce((total, tag) => total + tag.get("operations").size, 0));
-  assert.equal(count, 243);
+  assert.equal(count, expectedOperations);
   const captions = JSON.parse(await readFile("inventories/erp/20261012/captions.json", "utf8"));
   for (const screen of captions.screens)
     assert.equal(await page.locator(".opblock-tag").getByRole("link", { name: screen.caption, exact: true }).count(), 1, screen.module);
@@ -94,7 +97,7 @@ try {
   assert.deepEqual(policyErrors, []);
   await mkdir("artifacts", { recursive: true });
   await page.screenshot({ path: "artifacts/swagger-browser.png", fullPage: true });
-  console.log("PASS: 243 grouped operations under production CSP; Try it out succeeds; managed headers do not block UI validation; anonymous scope/HTTP writes remain denied");
+  console.log(`PASS: ${expectedOperations} grouped operations under production CSP; Try it out succeeds; managed headers do not block UI validation; anonymous scope/HTTP writes remain denied`);
 } finally {
   if (browser) await browser.close();
   if (child && child.exitCode === null) child.kill();
