@@ -23,6 +23,7 @@ import {
   Pencil,
   Lock,
   LockOpen,
+  Loader2,
 } from "lucide-react";
 import {
   erpClient,
@@ -38,6 +39,7 @@ import {
 import { UntitledBottomSheet } from "./bottom-sheet";
 import { UntitledButton } from "./button";
 import { LookupField } from "./lookup-field";
+import { SalesOrderForm } from "@/components/erp/sales-order-form";
 import { PurchaseOrderCreateSheet } from "./purchase-order-create-sheet";
 import { PurchaseRequestCreateSheet } from "./purchase-request-create-sheet";
 import { QrCamera } from "@/lib/erp/qr-camera";
@@ -326,8 +328,7 @@ function getActionErrorMessage(outcome: string, code?: string | null): string {
   }
 }
 
-function getActionReasonMessage(reason?: string | null): string {
-  if (!reason) return "";
+function getActionReasonMessage(reason?: string | null): string {  if (!reason) return "";
   switch (reason) {
     case "native_permission_or_hidden":
       return "Chức năng chưa được phân quyền hoặc bị ẩn theo quy tắc ERP.";
@@ -348,6 +349,25 @@ function getActionReasonMessage(reason?: string | null): string {
     default:
       return reason;
   }
+}
+
+// Màu badge theo trạng thái chứng từ: id số là chuẩn (duyệt ĐNMH:
+// 2 chờ, 3 đã duyệt, 4 không duyệt); các màn khác đoán theo tên.
+function statusBadgeClass(statusId: unknown, statusName: unknown): string {
+  const base = "px-2.5 py-1 rounded-full text-xs font-semibold border ";
+  const red = "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300 border-red-200 dark:border-red-900/50";
+  const green = "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/50";
+  const amber = "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-900/50";
+  const brand = "bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 border-brand-200 dark:border-brand-900/40";
+  if (statusId === 4) return base + red;
+  if (statusId === 3) return base + green;
+  if (statusId === 2) return base + amber;
+  const name = (typeof statusName === "string" ? statusName : "").toLowerCase();
+  if (!name) return base + brand;
+  if (name.includes("không duyệt") || name.includes("tu choi") || name.includes("từ chối")) return base + red;
+  if (name.includes("chờ") || name.includes("cho duyet") || name.includes("chờ duyệt") || name.includes("chua") || name.includes("chưa")) return base + amber;
+  if (name.includes("duyệt") || name.includes("duyet") || name.includes("đồng ý") || name.includes("hoàn tất") || name.includes("đã khóa")) return base + green;
+  return base + brand;
 }
 
 const moduleActionsCache = new Map<string, ErpActionState[]>();
@@ -381,6 +401,18 @@ const EDITABLE_HEADER_BY_MODULE: Record<string, readonly string[]> = {
     "objectId",
     "currencyId",
   ],
+  "sales-orders": [
+    "documentDate",
+    "contractId",
+    "managerId",
+    "employeeId",
+    "objectId",
+    "deliverDate",
+    "memo",
+    "ghiChuDonHang",
+    "linkId",
+    "documentUrl",
+  ],
 };
 const DEFAULT_EDITABLE_HEADER_KEYS = [
   "documentDate",
@@ -395,6 +427,7 @@ function editableHeaderKeys(module: ErpScreenModule): readonly string[] {
 }
 const REQUIRED_EDIT_KEYS: Record<string, readonly string[]> = {
   "purchase-requests": ["personSuggest", "department", "objectId", "currencyId"],
+  "sales-orders": ["documentDate", "objectId", "employeeId"],
 };
 const DEFAULT_REQUIRED_EDIT_KEYS = ["documentDate", "objectId"] as const;
 function requiredEditKeys(module: ErpScreenModule): readonly string[] {
@@ -408,6 +441,12 @@ const EDIT_LOOKUPS: Record<string, Record<string, string>> = {
     purposeId: "header.PurposeID",
     currencyId: "header.CurrencyID",
   },
+  "sales-orders": {
+    contractId: "header.ContractID",
+    managerId: "header.ManagerID",
+    employeeId: "header.EmployeeID",
+    objectId: "header.ObjectID",
+  },
 };
 const DEFAULT_EDIT_LOOKUPS: Record<string, string> = { objectId: "header.ObjectID" };
 function editLookupId(module: ErpScreenModule, key: string): string | undefined {
@@ -419,6 +458,7 @@ function editLookupId(module: ErpScreenModule, key: string): string | undefined 
 const SAVE_LINE_BY_MODULE: Record<string, readonly string[]> = {
   "purchase-requests": ["itemId", "quantity", "unitPrice", "budget", "timeRequired", "model"],
   "purchase-orders": ["itemId", "quantity", "unitPrice", "notes", "quantity2", "property", "property2"],
+  "sales-orders": ["itemId", "quantity", "unitPrice", "discountPercent", "vATPercent", "vATQuantity", "dienGiai", "notes", "property", "property2", "parentId", "notes2", "costId", "storeHouseId", "vATId"],
 };
 function saveLineKeys(module: ErpScreenModule): readonly string[] {
   return SAVE_LINE_BY_MODULE[module] ?? [];
@@ -446,6 +486,17 @@ const SAVE_HEADER_BY_MODULE: Record<string, readonly string[]> = {
     "rateExchange",
     "searchField",
     "contractId",
+  ],
+  "sales-orders": [
+    "documentDate", "objectId", "contractId", "memo", "deliverDate", "baseTotal",
+    "employeeId", "managerId", "phone", "taxCode", "notes", "depositAmount",
+    "agencyId", "isVAT", "isOrder", "currencyId", "rateExchange", "linkId",
+    "ghiChuDonHang", "paymentTermId", "ceoId", "thamGiaHopDongBan", "bBKCUrl",
+    "beforeOutStockUrl", "bBBGUrl", "documentUrl", "handoverLocation",
+    "representedByA", "positionA", "addressA", "representedByB", "positionB",
+    "addressB", "conclude", "minutesNumber", "partyAKeep", "partyBKeep",
+    "deliveryStatusId", "deliveryEmployeeId", "deliveryEmployeeSubId", "vehicle",
+    "soPhieu", "soHoaDon", "ngayPhieu", "ngayHoaDon",
   ],
 };
 
@@ -612,6 +663,18 @@ export function TabErpScreen({
   const [prCreateOpen, setPrCreateOpen] = useState(false);
   const [createDate, setCreateDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [createObject, setCreateObject] = useState("");
+  const [createEmployee, setCreateEmployee] = useState("");
+  const [createEmployeeChoice, setCreateEmployeeChoice] = useState<ErpChoice | null>(null);
+  const [createObjectChoice, setCreateObjectChoice] = useState<ErpChoice | null>(null);
+  const [createContract, setCreateContract] = useState("");
+  const [createContractChoice, setCreateContractChoice] = useState<ErpChoice | null>(null);
+  const [createDeliverDate, setCreateDeliverDate] = useState("");
+  const newSoLineKey = () => `so-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+  const [createSoLines, setCreateSoLines] = useState<Array<{
+    key: string; itemId: string; choice: ErpChoice | null; quantity: string; unitPrice: string; dienGiai: string;
+  }>>([{ key: "so-init", itemId: "", choice: null, quantity: "1", unitPrice: "", dienGiai: "" }]);
+  const patchSoLine = (key: string, patch: Partial<{ itemId: string; choice: ErpChoice | null; quantity: string; unitPrice: string; dienGiai: string }>) =>
+    setCreateSoLines((prev) => prev.map((l) => (l.key === key ? { ...l, ...patch } : l)));
   const [createNotes, setCreateNotes] = useState("");
   const [createItemId, setCreateItemId] = useState("");
   const [createQuantity, setCreateQuantity] = useState("1");
@@ -647,9 +710,10 @@ export function TabErpScreen({
 
   // Load Document List
   const loadList = useCallback(
-    async (targetPage = 1, silent = false) => {
+    async (targetPage = 1, silent = false, statusOverride?: number | null) => {
       if (!silent) setIsLoadingList(true);
       setErrorMsg(null);
+      const effectiveStatus = statusOverride !== undefined ? statusOverride : statusId;
       try {
         const result = await erpClient.getErpModuleList(module, {
           branchId: currentBranch,
@@ -658,7 +722,7 @@ export function TabErpScreen({
           search: search.trim() || undefined,
           dateFrom: dateFrom || undefined,
           dateTo: dateTo || undefined,
-          statusId: statusId !== null ? statusId : undefined,
+          statusId: effectiveStatus !== null ? effectiveStatus : undefined,
         });
         setRows(result.rows || []);
         setPage(result.page);
@@ -1260,21 +1324,45 @@ export function TabErpScreen({
           });
         }
       } else if (module === "sales-orders") {
+        const soObject = (createObject || createObjectChoice?.id || "").trim();
+        const soEmployee = (createEmployee || createEmployeeChoice?.id || "").trim();
+        if (!soObject || !soEmployee) {
+          setActionFeedback({
+            type: "warning",
+            message: "Vui lòng chọn Khách hàng và Mã nhân viên trước khi tạo đơn hàng.",
+          });
+          setCreatingDocument(false);
+          return;
+        }
         header.documentDate = `${createDate}T00:00:00.000`;
-        header.objectId = createObject || "KH01";
-        header.employeeId = "NV01";
+        header.objectId = soObject;
+        header.employeeId = soEmployee;
         header.isOrder = true;
         header.currencyId = "VND";
         header.rateExchange = 1.0;
+        const soContract = (createContract || createContractChoice?.id || "").trim();
+        if (soContract) header.contractId = soContract;
+        if (createDeliverDate) header.deliverDate = `${createDeliverDate}T00:00:00.000`;
         header.memo = createNotes || "Đơn hàng bán";
         header.notes = createNotes || null;
-        if (createItemId.trim()) {
+        const soDec = /^\d+(\.\d+)?$/;
+        const soValid = createSoLines.filter((l) => l.itemId.trim() && soDec.test(l.quantity.trim()) && (!l.unitPrice.trim() || soDec.test(l.unitPrice.trim())));
+        if (soValid.length === 0) {
+          setActionFeedback({
+            type: "warning",
+            message: "Cần ít nhất 1 dòng hàng với Mã hàng và Số lượng hợp lệ.",
+          });
+          setCreatingDocument(false);
+          return;
+        }
+        for (const l of soValid) {
           lines.push({
-            clientLineKey: "line-1",
+            clientLineKey: l.key,
             values: {
-              itemId: createItemId.trim(),
-              quantity: createQuantity || "1",
-              unitPrice: createUnitPrice || "0",
+              itemId: l.itemId.trim(),
+              quantity: l.quantity.trim(),
+              unitPrice: l.unitPrice.trim() || null,
+              dienGiai: l.dienGiai.trim() || null,
             },
           });
         }
@@ -1402,8 +1490,12 @@ export function TabErpScreen({
     }
   };
 
-  // Filter rows locally if needed
-  const displayRows = rows.filter((r) => {
+  // Filter rows locally if needed. Màn duyệt và đề nghị mua lọc theo trạng
+  // thái trên server (statusId) nên bỏ qua lớp lọc khóa/mở ở client.
+  const isApprovalModule = module === "purchase-approvals";
+  const isPrModule = module === "purchase-requests";
+  const useServerStatusChips = isApprovalModule || isPrModule;
+  const displayRows = useServerStatusChips ? rows : rows.filter((r) => {
     const isLocked = r.header?.isLocked ?? (r as Record<string, unknown>).isLocked;
     if (statusFilter === "locked") return isLocked === true || isLocked === 1 || isLocked === "1";
     if (statusFilter === "open") return isLocked === false || isLocked === 0 || isLocked === "0" || isLocked == null;
@@ -1479,31 +1571,76 @@ export function TabErpScreen({
 
           {/* Filter Chips Bar */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-            {[
-              { id: "all", label: "Tất cả", count: rows.length },
-              {
-                id: "open",
-                label: "Đang mở / Chưa khóa",
-                count: rows.filter((r) => {
-                  const isLocked = r.header?.isLocked ?? (r as Record<string, unknown>).isLocked;
-                  return isLocked === false || isLocked === 0 || isLocked === "0" || isLocked == null;
-                }).length,
-              },
-              {
-                id: "locked",
-                label: "Đã khóa / Hoàn tất",
-                count: rows.filter((r) => {
-                  const isLocked = r.header?.isLocked ?? (r as Record<string, unknown>).isLocked;
-                  return isLocked === true || isLocked === 1 || isLocked === "1";
-                }).length,
-              },
-            ].map((chip) => {
+            {(isApprovalModule
+              ? ([
+                  { id: "all", label: "Tất cả", status: null as number | null },
+                  { id: "pending", label: "Chờ duyệt", status: 2 },
+                  { id: "approved", label: "Đã duyệt", status: 3 },
+                  { id: "rejected", label: "Không duyệt", status: 4 },
+                ] as const).map((chip) => ({
+                  id: chip.id,
+                  label: chip.label,
+                  status: chip.status,
+                  count: chip.status === null
+                    ? rows.length
+                    : rows.filter((r) => {
+                        const s = (r.header as Record<string, unknown> | undefined)?.statusId;
+                        return s === chip.status;
+                      }).length,
+                }))
+              : isPrModule
+              ? ([
+                  { id: "all", label: "Tất cả", status: null as number | null },
+                  { id: "draft", label: "Mới lập", status: 1 },
+                  { id: "pending", label: "Chờ duyệt", status: 2 },
+                  { id: "approved", label: "Đã duyệt", status: 3 },
+                  { id: "returned", label: "Trả về", status: 4 },
+                  { id: "ordered", label: "Đã gửi ĐMH", status: 5 },
+                ] as const).map((chip) => ({
+                  id: chip.id,
+                  label: chip.label,
+                  status: chip.status,
+                  count: chip.status === null
+                    ? rows.length
+                    : rows.filter((r) => {
+                        const s = (r.header as Record<string, unknown> | undefined)?.statusId;
+                        return s === chip.status;
+                      }).length,
+                }))
+              : [
+                  { id: "all", label: "Tất cả", count: rows.length, status: undefined as unknown as number | null },
+                  {
+                    id: "open",
+                    label: "Đang mở / Chưa khóa",
+                    count: rows.filter((r) => {
+                      const isLocked = r.header?.isLocked ?? (r as Record<string, unknown>).isLocked;
+                      return isLocked === false || isLocked === 0 || isLocked === "0" || isLocked == null;
+                    }).length,
+                    status: undefined as unknown as number | null,
+                  },
+                  {
+                    id: "locked",
+                    label: "Đã khóa / Hoàn tất",
+                    count: rows.filter((r) => {
+                      const isLocked = r.header?.isLocked ?? (r as Record<string, unknown>).isLocked;
+                      return isLocked === true || isLocked === 1 || isLocked === "1";
+                    }).length,
+                    status: undefined as unknown as number | null,
+                  },
+                ]
+            ).map((chip) => {
               const isSelected = statusFilter === chip.id;
               return (
                 <button
                   key={chip.id}
                   type="button"
-                  onClick={() => setStatusFilter(chip.id)}
+                  onClick={() => {
+                    setStatusFilter(chip.id);
+                    if (useServerStatusChips) {
+                      setStatusId(chip.status);
+                      void loadList(1, false, chip.status);
+                    }
+                  }}
                   className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 shrink-0 ${
                     isSelected
                       ? "bg-brand-600 text-white shadow-xs"
@@ -1658,6 +1795,16 @@ export function TabErpScreen({
               <span>{actionFeedback.message}</span>
             </div>
           )}
+          {/* Action In-Flight Spinner: menu đã đóng nên cần báo đang chờ API */}
+          {executingAction && (
+            <div
+              role="status"
+              className="p-3 rounded-xl border text-xs flex items-center gap-2 bg-brand-50 text-brand-800 border-brand-200 dark:bg-brand-950/40 dark:text-brand-300 dark:border-brand-900/50"
+            >
+              <Loader2 className="w-4 h-4 shrink-0 animate-spin" aria-hidden="true" />
+              <span>Đang xử lý thao tác, vui lòng chờ phản hồi từ máy chủ...</span>
+            </div>
+          )}
 
           {loadingDetail ? (
             <div className="space-y-3 py-8 text-center">
@@ -1669,6 +1816,14 @@ export function TabErpScreen({
               {detailError}
             </div>
           ) : detail ? (
+            module === "sales-orders" ? (
+              <SalesOrderForm
+                branchId={currentBranch}
+                documentId={detail.documentId}
+                onClose={handleCloseDetail}
+                onChanged={() => loadList(page, true)}
+              />
+            ) : (
             <>
               {/* QR Scanner Controls for warehouse-qr / sales-qr: Replaced input box with 2 camera buttons */}
               {isQrModule && (
@@ -1728,7 +1883,10 @@ export function TabErpScreen({
                     </p>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 border border-brand-200 dark:border-brand-900/40">
+                    <span className={statusBadgeClass(
+                      (detail.header as Record<string, unknown> | undefined)?.statusId,
+                      detail.header?.statusName,
+                    )}>
                       {String(detail.header?.statusName || (detail.header?.isLocked ? "Đã khóa" : "Đang mở"))}
                     </span>
                     {menuActs.length > 0 && (
@@ -1759,6 +1917,9 @@ export function TabErpScreen({
                                   const disabled =
                                     !act.enabled || Boolean(executingAction) || (editing && act.id !== "save");
                                   const danger = act.id === "delete";
+                                  const reason = disabled && !act.enabled
+                                    ? getActionReasonMessage(act.reason)
+                                    : "";
                                   return (
                                     <button
                                       key={act.id}
@@ -1783,7 +1944,14 @@ export function TabErpScreen({
                                       ) : (
                                         <Send className="size-4" />
                                       )}
-                                      <span className="flex-1">{menuLabel(act)}</span>
+                                      <span className="flex-1">
+                                        <span className="block">{menuLabel(act)}</span>
+                                        {reason ? (
+                                          <span className="block text-[10px] font-normal text-neutral-400 dark:text-neutral-500">
+                                            {reason}
+                                          </span>
+                                        ) : null}
+                                      </span>
                                     </button>
                                   );
                                 })}
@@ -2475,6 +2643,7 @@ export function TabErpScreen({
                   </div>
                 ))}
             </>
+            )
           ) : null}
         </div>
       </UntitledBottomSheet>
@@ -2583,13 +2752,11 @@ export function TabErpScreen({
               />
             </div>
 
-            {module !== "internal-transfer-batches" && (
+            {module !== "internal-transfer-batches" && module !== "sales-orders" && (
               <div>
                 <label className="block text-neutral-500 mb-1 font-medium">
                   {module === "purchase-requests"
                     ? "Người đề xuất (*):"
-                    : module === "sales-orders"
-                    ? "Mã khách hàng / Đối tác (ObjectId) (*):"
                     : module === "purchase-orders"
                     ? "Mã nhà cung cấp (ObjectId) (*):"
                     : module === "inbound-requests"
@@ -2609,8 +2776,6 @@ export function TabErpScreen({
                   placeholder={
                     module === "purchase-requests"
                       ? "VD: NV01, Nguyen Van A..."
-                      : module === "sales-orders"
-                      ? "Mã KH hoặc đối tác (VD: KH001)..."
                       : module === "purchase-orders"
                       ? "Mã NCC (VD: NCC001)..."
                       : module === "inbound-requests"
@@ -2626,6 +2791,32 @@ export function TabErpScreen({
               </div>
             )}
 
+            {module === "sales-orders" && (
+              <div className="space-y-3">
+                <LookupField label="Khách hàng" required module="sales-orders" lookupId="header.ObjectID"
+                  branchId={currentBranch} value={createObject} choice={createObjectChoice}
+                  displayValue={createObject}
+                  onSelect={(c) => { setCreateObjectChoice(c); setCreateObject(c ? c.id : ""); }}
+                  placeholder="Chọn khách hàng..." />
+                <LookupField label="Mã nhân viên" required module="sales-orders" lookupId="header.EmployeeID"
+                  branchId={currentBranch} value={createEmployee} choice={createEmployeeChoice}
+                  displayValue={createEmployee}
+                  onSelect={(c) => { setCreateEmployeeChoice(c); setCreateEmployee(c ? c.id : ""); }}
+                  placeholder="Chọn nhân viên..." />
+                <LookupField label="Mã hợp đồng" module="sales-orders" lookupId="header.ContractID"
+                  branchId={currentBranch} value={createContract} choice={createContractChoice}
+                  displayValue={createContract}
+                  onSelect={(c) => { setCreateContractChoice(c); setCreateContract(c ? c.id : ""); }}
+                  placeholder="Chọn hợp đồng (không bắt buộc)..." />
+                <div>
+                  <label className="block text-neutral-500 mb-1 font-medium">Ngày giao:</label>
+                  <input type="date" value={createDeliverDate} onChange={(e) => setCreateDeliverDate(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs" />
+                </div>
+              </div>
+            )}
+
+            {module !== "sales-orders" && (
             <div className={`grid grid-cols-1 ${module === "machine-movements" || module === "machine-repairs" || module === "internal-transfer-batches" ? "" : module === "internal-transfer-requests" || module === "inbound-requests" ? "sm:grid-cols-2" : "sm:grid-cols-3"} gap-2`}>
               <div className={module === "machine-movements" || module === "machine-repairs" || module === "internal-transfer-batches" ? "w-full" : "sm:col-span-1"}>
                 <label className="block text-neutral-500 mb-1 font-medium">
@@ -2678,6 +2869,55 @@ export function TabErpScreen({
                 </div>
               )}
             </div>
+            )}
+
+            {module === "sales-orders" && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-neutral-500 font-medium">Dòng hàng ({createSoLines.length}) (*):</label>
+                  <button type="button"
+                    onClick={() => setCreateSoLines((prev) => [...prev, { key: newSoLineKey(), itemId: "", choice: null, quantity: "1", unitPrice: "", dienGiai: "" }])}
+                    className="px-2.5 py-1.5 rounded-lg border border-brand-300 dark:border-brand-800 text-brand-700 dark:text-brand-300 text-xs font-bold inline-flex items-center gap-1">
+                    <Plus className="size-3.5" /> Thêm dòng
+                  </button>
+                </div>
+                {createSoLines.map((line, idx) => (
+                  <div key={line.key} className="p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-neutral-400">Dòng {idx + 1}</span>
+                      {createSoLines.length > 1 && (
+                        <button type="button" aria-label={`Xóa dòng ${idx + 1}`}
+                          onClick={() => setCreateSoLines((prev) => prev.filter((l) => l.key !== line.key))}
+                          className="p-1 rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40">
+                          <Trash2 className="size-4" />
+                        </button>
+                      )}
+                    </div>
+                    <LookupField label="Mã hàng" required module="sales-orders" lookupId="lines.ItemID"
+                      branchId={currentBranch} value={line.itemId} choice={line.choice}
+                      displayValue={line.itemId} onSelect={(c) => patchSoLine(line.key, { choice: c, itemId: c ? c.id : "" })}
+                      compact placeholder="Chọn mã hàng..." />
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-neutral-500 mb-1 font-medium">Số lượng (*):</label>
+                        <input type="number" value={line.quantity} onChange={(e) => patchSoLine(line.key, { quantity: e.target.value })}
+                          className="w-full p-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs" />
+                      </div>
+                      <div>
+                        <label className="block text-neutral-500 mb-1 font-medium">Đơn giá:</label>
+                        <input type="number" value={line.unitPrice} onChange={(e) => patchSoLine(line.key, { unitPrice: e.target.value })}
+                          className="w-full p-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-neutral-500 mb-1 font-medium">Diễn giải dòng:</label>
+                      <input type="text" value={line.dienGiai} onChange={(e) => patchSoLine(line.key, { dienGiai: e.target.value })}
+                        className="w-full p-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div>
               <label className="block text-neutral-500 mb-1 font-medium">Ghi chú / Diễn giải:</label>
@@ -2839,12 +3079,15 @@ export function TabErpScreen({
                 type="button"
                 onClick={handleConfirmPromptAction}
                 disabled={executingAction === actionPromptModal.action.id}
-                className={`px-4 py-2 rounded-xl text-white font-semibold text-xs disabled:opacity-50 ${
+                className={`px-4 py-2 rounded-xl text-white font-semibold text-xs disabled:opacity-50 inline-flex items-center gap-1.5 ${
                   actionPromptModal.action.id === "reject"
                     ? "bg-rose-600 hover:bg-rose-700"
                     : "bg-brand-600 hover:bg-brand-700"
                 }`}
               >
+                {executingAction === actionPromptModal.action.id && (
+                  <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+                )}
                 {executingAction === actionPromptModal.action.id ? "Đang xử lý..." : `Xác nhận ${actionPromptModal.action.caption}`}
               </button>
             </div>

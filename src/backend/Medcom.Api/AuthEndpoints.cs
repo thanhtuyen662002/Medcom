@@ -84,6 +84,8 @@ public static class AuthEndpoints
                 navigation.Add(new("purchase-orders", "Đơn đặt hàng mua", "/workspace/?screen=purchase-orders"));
             if (session.Identity.Capabilities.Contains("purchase-requests.read", StringComparer.Ordinal))
                 navigation.Add(new("purchase-requests", "Đề nghị mua hàng", "/workspace/?screen=purchase-requests"));
+            if (session.Identity.Capabilities.Contains("purchase-approvals.read", StringComparer.Ordinal))
+                navigation.Add(new("purchase-approvals", "Duyệt đề nghị mua hàng", "/workspace/?screen=purchase-approvals"));
             if (session.Identity.Capabilities.Contains("inbound-requests.read", StringComparer.Ordinal))
                 navigation.Add(new("inbound-requests", "Yêu cầu nhập kho", "/workspace/?screen=inbound-requests"));
             WorkspaceReadScope.Stamp(context, session);
