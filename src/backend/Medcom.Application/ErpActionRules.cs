@@ -13,6 +13,14 @@ public static class ErpActionRules
 {
     public static bool IsCudOperation(string operation)=>operation is "create" or "save" or "delete"
         or "scan-add" or "scan-delete" or "save-costs" or "save-assets";
+    public static bool IsUiTestOperation(string operation)=>IsCudOperation(operation)||operation is
+        "submit" or "send-purchase-order" or "send-pm" or "recall" or "contract-info"
+        or "approve" or "reject" or "send-management" or "send-warehouse" or "send-sa"
+        or "send-accounting" or "send-tech" or "pm-confirm" or "return-step" or "sync-requests"
+        or "dispatch" or "receive";
+    // Workflow toolbar visibility also determines which CUD endpoints are registered.
+    public static bool IsUiTestAction(string module,ErpActionDefinition action)=>IsUiTestOperation(action.Operation)
+        &&(!ErpScreenCatalog.IsWorkflow(module)||action.Operation is not ("create" or "save" or "delete")||action.NativeVisible);
     // Presentation only, per owner UI-test request. Never use this for command admission.
     public static IReadOnlyList<ErpActionState> ForDisplay(ErpActionContext state)
     {
@@ -20,12 +28,12 @@ public static class ErpActionRules
         return Array.AsReadOnly(Evaluate(state).Select(action=>
         {
             var definition=screen!.Actions.Single(item=>item.Id==action.Id);
-            return IsCudOperation(definition.Operation)
+            return IsUiTestAction(state.Module,definition)
                 ?action with{Visible=true,Enabled=true,Reason=null,Route=Route(state.Module,definition.Operation)}:action;
         }).ToArray());
     }
     public static ErpScreenDescription ForDisplay(ErpScreenDescription screen)=>screen with
-    {Actions=Array.AsReadOnly(screen.Actions.Select(action=>IsCudOperation(action.Operation)
+    {Actions=Array.AsReadOnly(screen.Actions.Select(action=>IsUiTestAction(screen.Id,action)
         ?action with{NativeVisible=true,LockExpression=null}:action).ToArray())};
 
     public static IReadOnlyList<ErpActionState> Evaluate(ErpActionContext state)
