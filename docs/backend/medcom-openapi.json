@@ -3165,6 +3165,60 @@
         "x-medcom-response-contract": 3
       }
     },
+    "/api/erp/permissions": {
+      "get": {
+        "operationId": "erp_permissions",
+        "responses": {
+          "200": {
+            "description": "Typed response. Inspect access and outcome; HTTP 200 does not imply a committed write.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErpScopedResponse_ErpPermissionsCanonicalV3_documentId"
+                }
+              }
+            },
+            "headers": {
+              "X-Correlation-ID": {
+                "description": "Server-generated request correlation, never client authority.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Non-success HTTP status. Do not infer an available operation or committed effect. Infrastructure errors may use another shape.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "x-medcom-admission": "Current authenticated native menu and branch permissions; document state is returned by actions/detail.",
+        "description": "Contract of the registered boundary. Live credentials, capability, branch, session scope and provider qualification remain authoritative.",
+        "parameters": [
+          {
+            "name": "branchId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            }
+          }
+        ],
+        "x-medcom-response-contract": 3
+      }
+    },
     "/api/erp/inbound-requests/screen": {
       "get": {
         "operationId": "inbound_requests_screen",
@@ -25823,6 +25877,138 @@
           "documentId",
           "expectedStateEqualityToken",
           "header"
+        ]
+      },
+      "ErpScopedResponse_ErpPermissions": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "readScope": {
+            "type": "string"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErpPermissions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "readScope",
+          "data"
+        ]
+      },
+      "ErpPermissions": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "branchId": {
+            "type": "string"
+          },
+          "screens": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErpScreenPermission"
+            }
+          }
+        },
+        "required": [
+          "branchId",
+          "screens"
+        ]
+      },
+      "ErpScreenPermission": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "module": {
+            "type": "string"
+          },
+          "caption": {
+            "type": "string"
+          },
+          "canView": {
+            "type": "boolean"
+          },
+          "crud": {
+            "$ref": "#/components/schemas/ErpCrudPermission"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErpActionPermission"
+            }
+          }
+        },
+        "required": [
+          "module",
+          "caption",
+          "canView",
+          "crud",
+          "actions"
+        ]
+      },
+      "ErpCrudPermission": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "canRead": {
+            "type": "boolean"
+          },
+          "canCreate": {
+            "type": "boolean"
+          },
+          "canUpdate": {
+            "type": "boolean"
+          },
+          "canDelete": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "canRead",
+          "canCreate",
+          "canUpdate",
+          "canDelete"
+        ]
+      },
+      "ErpActionPermission": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "caption": {
+            "type": "string"
+          },
+          "visible": {
+            "type": "boolean"
+          },
+          "requiresSavedDocument": {
+            "type": "boolean"
+          },
+          "route": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "caption",
+          "visible",
+          "requiresSavedDocument",
+          "route"
         ]
       },
       "ErpScopedResponse_ErpScreenDescription": {
@@ -119475,6 +119661,143 @@
           "stateEqualityToken",
           "auditId",
           "committedAtUtc"
+        ],
+        "x-medcom-response-contract": 3
+      },
+      "ErpScopedResponse_ErpPermissionsCanonicalV3_documentId": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "readScope": {
+            "type": "string"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErpPermissionsCanonicalV3_documentId"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "readScope",
+          "data"
+        ],
+        "x-medcom-response-contract": 3
+      },
+      "ErpPermissionsCanonicalV3_documentId": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "branchId": {
+            "type": "string"
+          },
+          "screens": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErpScreenPermissionCanonicalV3_documentId"
+            }
+          }
+        },
+        "required": [
+          "branchId",
+          "screens"
+        ],
+        "x-medcom-response-contract": 3
+      },
+      "ErpScreenPermissionCanonicalV3_documentId": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "module": {
+            "type": "string"
+          },
+          "caption": {
+            "type": "string"
+          },
+          "canView": {
+            "type": "boolean"
+          },
+          "crud": {
+            "$ref": "#/components/schemas/ErpCrudPermissionCanonicalV3_documentId"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErpActionPermissionCanonicalV3_documentId"
+            }
+          }
+        },
+        "required": [
+          "module",
+          "caption",
+          "canView",
+          "crud",
+          "actions"
+        ],
+        "x-medcom-response-contract": 3
+      },
+      "ErpCrudPermissionCanonicalV3_documentId": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "canRead": {
+            "type": "boolean"
+          },
+          "canCreate": {
+            "type": "boolean"
+          },
+          "canUpdate": {
+            "type": "boolean"
+          },
+          "canDelete": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "canRead",
+          "canCreate",
+          "canUpdate",
+          "canDelete"
+        ],
+        "x-medcom-response-contract": 3
+      },
+      "ErpActionPermissionCanonicalV3_documentId": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "caption": {
+            "type": "string"
+          },
+          "visible": {
+            "type": "boolean"
+          },
+          "requiresSavedDocument": {
+            "type": "boolean"
+          },
+          "route": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "caption",
+          "visible",
+          "requiresSavedDocument",
+          "route"
         ],
         "x-medcom-response-contract": 3
       },

@@ -5,6 +5,8 @@ public enum ErpReadOutcome { Success, Invalid, Denied, NotFound, Unavailable, Ca
 public sealed record ErpReadResult<T>(ErpReadOutcome Outcome,T? Value=default,string? Code=null);
 public interface IErpScreenService
 {
+    Task<ErpReadResult<ErpPermissions>> PermissionsAsync(string branch,CancellationToken token)
+        =>Task.FromResult(new ErpReadResult<ErpPermissions>(ErpReadOutcome.Unavailable));
     Task<ErpReadResult<ErpDocumentPage>> ListAsync(string module,ErpPageQuery query,CancellationToken token);
     Task<ErpReadResult<ErpDocumentDetail>> DetailAsync(string module,string branch,string document,int page,int size,CancellationToken token);
     Task<ErpReadResult<IReadOnlyList<ErpActionState>>> ActionsAsync(string module,string branch,string? document,CancellationToken token);
