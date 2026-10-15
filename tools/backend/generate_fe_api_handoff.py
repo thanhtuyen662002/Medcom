@@ -20,7 +20,7 @@ purposes = {
     "": ("Danh sách", "Tải danh sách phiếu theo trang, tìm kiếm và bộ lọc của màn hình."),
     "/screen": ("Chuẩn bị màn hình", "Lấy mô tả các cột, lựa chọn và nút của màn hình; không hiển thị thông tin nội bộ này cho người dùng."),
     "/detail": ("Mở phiếu", "Lấy đầy đủ thông tin phiếu và các bảng chi tiết theo trang."),
-    "/actions": ("Các nút trên phiếu", "Lấy trạng thái nút; các nút thêm/lưu/xóa luôn bật để thử giao diện, các nút gửi/duyệt/thu hồi vẫn theo quyền và trạng thái phiếu."),
+    "/actions": ("Các nút trên phiếu", "Lấy các nút nghiệp vụ luôn hiện và bật để thử giao diện; khi thực hiện, BE vẫn kiểm tra quyền, trạng thái phiếu và dữ liệu."),
     "/options": ("Danh sách chọn", "Lấy danh sách cho các ô chọn trên phiếu, có tìm kiếm và phân trang."),
     "/create": ("Thêm", "Tạo phiếu mới và ghi các dòng chi tiết vào cơ sở dữ liệu."),
     "/save": ("Lưu", "Ghi thay đổi của phiếu và các dòng chi tiết."),
@@ -55,10 +55,10 @@ shared = {
     "/api/documents/query-contract": ("Hỗ trợ tích hợp", "Mô tả bộ lọc và phân trang dành cho đội triển khai."),
 }
 lines = ["# Bàn giao API BE cho FE — màn hình và thao tác", "",
-    f"Danh mục đủ {sum(len(item) for item in api['paths'].values())} API hiện có, phục vụ 19 màn hình ERP. Cập nhật 14/10/2026. Trên VPS, FE gọi qua proxy tại https://medcom.bms79.com/api/erp; nối đường dẫn BE trong các bảng dưới đây vào địa chỉ đó.", "",
+    f"Danh mục đủ {sum(len(item) for item in api['paths'].values())} API hiện có, phục vụ 19 màn hình ERP. Cập nhật 15/10/2026. Trên VPS, FE gọi qua proxy tại https://medcom.bms79.com/api/erp; nối đường dẫn BE trong các bảng dưới đây vào địa chỉ đó.", "",
     "## Quy định giao diện", "",
     "Dùng caption tiếng Việt BE trả về từ DB. Khi caption rỗng, FE dùng nhãn nghiệp vụ cố định đã được duyệt trên ERP; không suy ra nhãn từ tên trường, đường dẫn API, tên bảng, mã lỗi hoặc thông tin kỹ thuật BE. Không đưa các từ như fields, stateToken, readScope, ReferenceState, schema hay tên thao tác nội bộ lên giao diện. Tên cột dùng nhãn nghiệp vụ đã được duyệt.", "",
-    "Trong đợt thử giao diện này, các nút Thêm/Lưu/Xóa, lưu chi phí/lưu danh sách máy và thêm/xóa QR luôn hiện và cho phép bấm khi đã truy cập được màn hình. Trạng thái khóa của phiếu vẫn là dữ liệu thật; FE không dùng nó để khóa các nút CUD này. Khi gửi thao tác, BE vẫn kiểm tra quyền, trạng thái chứng từ và điều kiện ghi DB. Các nút gửi/duyệt/thu hồi vẫn hiện và bật theo kết quả BE. Sau thao tác thành công, tải lại phiếu và nút. Lỗi hiển thị bằng câu tiếng Việt theo thao tác đang làm; thông tin chẩn đoán giữ cho đội triển khai.", "",
+    "Trong đợt thử giao diện này, 72 nút nghiệp vụ đang có trên 19 màn hình luôn hiện và cho phép bấm khi đã truy cập được màn hình: Thêm/Lưu/Xóa, lưu chi phí/lưu danh sách máy, thêm/xóa QR, Duyệt/Không duyệt/Từ chối, Gửi, Thu hồi, Xác nhận, chọn bước gửi về, đồng bộ đề nghị và xem thông tin hợp đồng. Trạng thái khóa và trạng thái phiếu vẫn là dữ liệu thật; FE không dùng chúng để khóa lại các nút này. Phiếu cần lưu vẫn phải được lưu trước khi gửi thao tác. Khi thực hiện, BE vẫn kiểm tra đăng nhập, quyền, chi nhánh, trạng thái chứng từ và dữ liệu; nút bật không đồng nghĩa thao tác đã được duyệt. Sau thao tác thành công, tải lại phiếu và nút. Khi BE từ chối, hiển thị thông báo tiếng Việt phù hợp và giữ dữ liệu đang nhập. Thông tin chẩn đoán chỉ dành cho đội triển khai.", "",
     "Mỗi bản ghi đã trả đủ dữ liệu tại một vị trí, danh sách và chi tiết vẫn lấy theo trang. Hàng hóa đi kèm mã hàng, tên hàng, đơn vị; kho, chi nhánh và trạng thái đi kèm tên. Tiền và ngày có dữ liệu hiển thị phù hợp Việt Nam. Những mã thuộc các chứng từ khác nhau được giữ riêng.", "",
     "Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dán đã tồn tại được ghi trong danh mục để nhận diện, không yêu cầu dựng thêm các nút đó.", "",
     "## API dùng chung", "", "| Dùng ở đâu / thao tác | API | Làm gì |", "|---|---|---|"]
@@ -88,7 +88,7 @@ for screen in screens:
             else: place, purpose = caption, "Thực hiện nút “" + caption + "” trên phiếu đang mở, khi người dùng và trạng thái cho phép."
         else: raise ValueError("Unmapped operation: " + path)
         if module == "purchase-approvals" and suffix == "":
-            purpose = "Tải danh sách đề nghị ở mọi trạng thái trong chi nhánh được phép, theo trang; có thể lọc trạng thái khi cần. Nút Duyệt/Không duyệt vẫn theo quyền và trạng thái phiếu."
+            purpose = "Tải danh sách đề nghị ở mọi trạng thái trong chi nhánh được phép, theo trang; có thể lọc trạng thái khi cần. Nút Duyệt/Không duyệt luôn bật để thử giao diện; khi bấm, BE vẫn kiểm tra quyền và phiếu phải đang chờ duyệt."
         for method in item: row(place, method, path, purpose)
 lines += ["", "## Các API đọc đã có ở nhóm chứng từ", "",
     "Màn hình mới dùng API trong từng mục ERP phía trên. Nhóm dưới đây phục vụ phần đọc đang tích hợp từ trước.", "",

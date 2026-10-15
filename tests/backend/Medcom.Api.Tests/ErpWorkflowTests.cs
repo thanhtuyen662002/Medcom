@@ -49,9 +49,13 @@ public sealed class ErpWorkflowTests
     [InlineData(1,false)][InlineData(2,true)][InlineData(3,false)][InlineData(4,false)][InlineData(5,false)]
     public void Listing_other_purchase_statuses_does_not_allow_approving_or_rejecting_them(int status,bool allowed)
     {
-        var actions=ErpActionRules.ForDisplay(State("purchase-approvals",status));
+        var state=State("purchase-approvals",status);
+        var actions=ErpActionRules.Evaluate(state);
         Assert.Equal(allowed,actions.Single(action=>action.Id=="approve").Enabled);
         Assert.Equal(allowed,actions.Single(action=>action.Id=="reject").Enabled);
+        var display=ErpActionRules.ForDisplay(state);
+        Assert.True(display.Single(action=>action.Id=="approve").Enabled);
+        Assert.True(display.Single(action=>action.Id=="reject").Enabled);
     }
     [Fact]
     public void Purchase_order_edits_do_not_invent_a_draft_only_restriction()

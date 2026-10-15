@@ -1,8 +1,10 @@
-# Bàn giao nút và tên màn hình — 12/10/2026
+# Bàn giao nút và tên màn hình — cập nhật 15/10/2026
 
-Trong đợt thử giao diện, 48 nút CUD đang có luôn hiện và bật: Thêm, Lưu, Xóa, lưu chi phí, lưu danh sách máy, thêm/xóa QR. Màn hình chỉ có nút duyệt hoặc gửi vẫn giữ các nút đúng chức năng của nó. Không bổ sung nút In hoặc Import/copy.
+Trong đợt thử giao diện, 72 nút nghiệp vụ đang có trên 19 màn hình luôn hiện và bật: Thêm, Lưu, Xóa, lưu chi phí, lưu danh sách máy, thêm/xóa QR, Duyệt/Không duyệt/Từ chối, Gửi, Thu hồi, Xác nhận, chọn bước gửi về, đồng bộ đề nghị và xem thông tin hợp đồng. Màn hình giữ đúng các nút đang có của nó. Không bổ sung nút In hoặc Import/copy.
 
-FE lấy các nút từ `GET /api/erp/{màn hình}/actions`; khi mở phiếu, `GET /api/erp/{màn hình}/detail` cũng trả các nút của phiếu. Dùng `visible=true` và `enabled=true` của CUD để cho người dùng bấm thử. Không dùng trạng thái khóa của phiếu để khóa lại CUD trên giao diện. BE vẫn kiểm tra quyền, trạng thái phiếu, dữ liệu và phiên khi nhận yêu cầu ghi. Các nút gửi, duyệt, thu hồi và xác nhận tiếp tục theo trạng thái BE trả về.
+Các bước xác nhận, phê duyệt, xử lý, xuất và nhận điều chuyển chỉ dùng các nút xử lý phiếu đã có; không dựng thêm nút Thêm/Xóa tại các bước này.
+
+FE lấy các nút từ `GET /api/erp/{màn hình}/actions`; khi mở phiếu, `GET /api/erp/{màn hình}/detail` cũng trả các nút của phiếu. Dùng `visible=true` và `enabled=true` BE trả về để cho người dùng bấm thử. Không dùng trạng thái khóa hoặc trạng thái phiếu để khóa lại các nút nghiệp vụ này trên giao diện. Phiếu cần lưu vẫn phải lưu trước khi gửi thao tác. BE kiểm tra quyền, chi nhánh, trạng thái phiếu, dữ liệu và phiên khi thực hiện; nút bật không bảo đảm yêu cầu sẽ được chấp nhận. Khi BE từ chối, giữ dữ liệu đang nhập và hiển thị thông báo tiếng Việt phù hợp.
 
 `GET /api/erp/{màn hình}/screen` trả tên màn hình và caption nút. Caption có nguồn xác minh sẽ là tên tiếng Việt trong DB; caption không lấy được sẽ là chuỗi rỗng `""`. FE dùng nhãn nghiệp vụ cố định đã được duyệt khi caption rỗng. Không lấy tên API, mã thao tác, tên bảng hoặc mã lỗi làm nhãn giao diện. Nhãn chuẩn Thêm/Lưu/Xóa do FE đặt khi caption của các nút này rỗng.
 
