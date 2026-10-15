@@ -36,6 +36,7 @@ internal static partial class FeDisplayProjection
          ||path.StartsWith("/api/v2/documents/",StringComparison.Ordinal)||path.StartsWith("/api/purchase-requests",StringComparison.Ordinal)
          ||path.StartsWith("/api/v2/purchase-requests",StringComparison.Ordinal)||path.StartsWith("/api/inbound-requests/",StringComparison.Ordinal)
          ||path.StartsWith("/api/notifications",StringComparison.Ordinal)||path=="/api/lookups/branches")
+        &&path!="/api/erp/permissions"
         &&!path.EndsWith("/screen",StringComparison.Ordinal)&&!path.EndsWith("/actions",StringComparison.Ordinal)
         &&!path.EndsWith("-contract",StringComparison.Ordinal)&&!path.EndsWith("/workspace",StringComparison.Ordinal)
         &&!path.Contains("/commands/",StringComparison.Ordinal)

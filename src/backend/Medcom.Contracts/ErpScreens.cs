@@ -12,6 +12,13 @@ public sealed record ErpActionDefinition(string Id, string Caption, string Contr
     string? LockExpression, bool NativeVisible, bool RequiresSavedDocument, string Evidence);
 public sealed record ErpActionState(string Id, string Caption, bool Visible, bool Enabled,
     string? Reason, bool RequiresSavedDocument, string? Route);
+// Role permissions only. Document-dependent enabled states are returned by /actions and /detail.
+public sealed record ErpCrudPermission(bool CanRead, bool CanCreate, bool CanUpdate, bool CanDelete);
+public sealed record ErpActionPermission(string Id, string Caption, bool Visible,
+    bool RequiresSavedDocument, string? Route);
+public sealed record ErpScreenPermission(string Module, string Caption, bool CanView,
+    ErpCrudPermission Crud, IReadOnlyList<ErpActionPermission> Actions);
+public sealed record ErpPermissions(string BranchId, IReadOnlyList<ErpScreenPermission> Screens);
 public sealed record ErpScreenDescription(string Id, string Caption, string MenuId, string FormId,
     IReadOnlyDictionary<string, IReadOnlyList<ErpFieldDefinition>> Fields,
     IReadOnlyList<ErpActionDefinition> Actions, IReadOnlyList<ErpLookupDefinition> Lookups, string Evidence);

@@ -1,12 +1,12 @@
 # Bàn giao API BE cho FE — màn hình và thao tác
 
-Danh mục đủ 243 API hiện có, phục vụ 19 màn hình ERP. Cập nhật 15/10/2026. Trên VPS, FE gọi qua proxy tại https://medcom.bms79.com/api/erp; nối đường dẫn BE trong các bảng dưới đây vào địa chỉ đó.
+Danh mục đủ 244 API hiện có, phục vụ 19 màn hình ERP. Cập nhật 15/10/2026. Trên VPS, FE gọi qua proxy tại https://medcom.bms79.com/api/erp; nối đường dẫn BE trong các bảng dưới đây vào địa chỉ đó.
 
 ## Quy định giao diện
 
 Dùng caption tiếng Việt BE trả về từ DB. Khi caption rỗng, FE dùng nhãn nghiệp vụ cố định đã được duyệt trên ERP; không suy ra nhãn từ tên trường, đường dẫn API, tên bảng, mã lỗi hoặc thông tin kỹ thuật BE. Không đưa các từ như fields, stateToken, readScope, ReferenceState, schema hay tên thao tác nội bộ lên giao diện. Tên cột dùng nhãn nghiệp vụ đã được duyệt.
 
-Trong đợt thử giao diện này, 72 nút nghiệp vụ đang có trên 19 màn hình luôn hiện và cho phép bấm khi đã truy cập được màn hình: Thêm/Lưu/Xóa, lưu chi phí/lưu danh sách máy, thêm/xóa QR, Duyệt/Không duyệt/Từ chối, Gửi, Thu hồi, Xác nhận, chọn bước gửi về, đồng bộ đề nghị và xem thông tin hợp đồng. Trạng thái khóa và trạng thái phiếu vẫn là dữ liệu thật; FE không dùng chúng để khóa lại các nút này. Phiếu cần lưu vẫn phải được lưu trước khi gửi thao tác. Khi thực hiện, BE vẫn kiểm tra đăng nhập, quyền, chi nhánh, trạng thái chứng từ và dữ liệu; nút bật không đồng nghĩa thao tác đã được duyệt. Sau thao tác thành công, tải lại phiếu và nút. Khi BE từ chối, hiển thị thông báo tiếng Việt phù hợp và giữ dữ liệu đang nhập. Thông tin chẩn đoán chỉ dành cho đội triển khai.
+FE gọi GET /api/erp/permissions theo chi nhánh đã chọn để dựng menu và quyền Thêm/Sửa/Xóa của đủ 19 màn hình. Chỉ hiện màn hình khi được phép xem, chỉ hiện nút khi được phép dùng. Khi mở phiếu, lấy trạng thái các nút từ API actions hoặc detail: nút không được phép thì ẩn; nút được phép nhưng phiếu chưa phù hợp thì hiện và khóa. Không tiếp tục ép bật các nút như đợt test trước. Sau thao tác, đổi chi nhánh hoặc thay đổi quyền, tải lại quyền và phiếu. BE luôn kiểm tra lại khi thực hiện. Nếu tải quyền thất bại, không dùng quyền cũ để mở thao tác. Xem [bàn giao quyền cho FE](BE_FE_PERMISSIONS_20261015.md).
 
 Mỗi bản ghi đã trả đủ dữ liệu tại một vị trí, danh sách và chi tiết vẫn lấy theo trang. Hàng hóa đi kèm mã hàng, tên hàng, đơn vị; kho, chi nhánh và trạng thái đi kèm tên. Tiền và ngày có dữ liệu hiển thị phù hợp Việt Nam. Những mã thuộc các chứng từ khác nhau được giữ riêng.
 
@@ -33,6 +33,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Chọn chi nhánh | `GET /api/lookups/branches` | Lấy mã và tên chi nhánh được phép dùng, có tìm kiếm và phân trang. |
 | Hỗ trợ tích hợp | `GET /api/documents/field-contract` | Mô tả dữ liệu chứng từ dành cho đội triển khai. |
 | Hỗ trợ tích hợp | `GET /api/documents/query-contract` | Mô tả bộ lọc và phân trang dành cho đội triển khai. |
+| Menu, màn hình và các nút | `GET /api/erp/permissions` | Lấy quyền xem màn hình, Thêm/Sửa/Xóa và từng nút của người đang đăng nhập trong chi nhánh đã chọn. |
 
 ## Đề nghị mua hàng
 
@@ -41,7 +42,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Chuẩn bị màn hình | `GET /api/erp/purchase-requests/screen` | Lấy mô tả các cột, lựa chọn và nút của màn hình; không hiển thị thông tin nội bộ này cho người dùng. |
 | Danh sách | `GET /api/erp/purchase-requests` | Tải danh sách phiếu theo trang, tìm kiếm và bộ lọc của màn hình. |
 | Mở phiếu | `GET /api/erp/purchase-requests/detail` | Lấy đầy đủ thông tin phiếu và các bảng chi tiết theo trang. |
-| Các nút trên phiếu | `GET /api/erp/purchase-requests/actions` | Lấy các nút nghiệp vụ luôn hiện và bật để thử giao diện; khi thực hiện, BE vẫn kiểm tra quyền, trạng thái phiếu và dữ liệu. |
+| Các nút trên phiếu | `GET /api/erp/purchase-requests/actions` | Lấy quyền hiện và trạng thái bật/tắt từng nút theo người đăng nhập và phiếu đang mở. |
 | Danh sách chọn | `POST /api/erp/purchase-requests/options` | Lấy danh sách cho các ô chọn trên phiếu, có tìm kiếm và phân trang. |
 | Kiểm tra kết quả thao tác | `POST /api/erp/purchase-requests/commands/lookup` | Kiểm tra lần lưu/gửi trước khi chưa nhận được kết quả; không dựng thành nút nghiệp vụ riêng. |
 | Chọn dữ liệu có sẵn | `POST /api/erp/purchase-requests/selection` | API chọn dữ liệu đã có; ngoài phạm vi triển khai mới theo yêu cầu bỏ Import/copy. |
@@ -59,7 +60,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Chuẩn bị màn hình | `GET /api/erp/sales-orders/screen` | Lấy mô tả các cột, lựa chọn và nút của màn hình; không hiển thị thông tin nội bộ này cho người dùng. |
 | Danh sách | `GET /api/erp/sales-orders` | Tải danh sách phiếu theo trang, tìm kiếm và bộ lọc của màn hình. |
 | Mở phiếu | `GET /api/erp/sales-orders/detail` | Lấy đầy đủ thông tin phiếu và các bảng chi tiết theo trang. |
-| Các nút trên phiếu | `GET /api/erp/sales-orders/actions` | Lấy các nút nghiệp vụ luôn hiện và bật để thử giao diện; khi thực hiện, BE vẫn kiểm tra quyền, trạng thái phiếu và dữ liệu. |
+| Các nút trên phiếu | `GET /api/erp/sales-orders/actions` | Lấy quyền hiện và trạng thái bật/tắt từng nút theo người đăng nhập và phiếu đang mở. |
 | Xem thông tin hợp đồng | `GET /api/erp/sales-orders/contract-info` | Mở thông tin hợp đồng liên quan đến phiếu. |
 | Danh sách chọn | `POST /api/erp/sales-orders/options` | Lấy danh sách cho các ô chọn trên phiếu, có tìm kiếm và phân trang. |
 | Lựa chọn khi Gửi PM | `POST /api/erp/sales-orders/actions/send-pm/options` | Lấy danh sách người nhận hoặc bước xử lý để người dùng chọn trước khi gửi. |
@@ -79,7 +80,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Chuẩn bị màn hình | `GET /api/erp/internal-transfer-requests/screen` | Lấy mô tả các cột, lựa chọn và nút của màn hình; không hiển thị thông tin nội bộ này cho người dùng. |
 | Danh sách | `GET /api/erp/internal-transfer-requests` | Tải danh sách phiếu theo trang, tìm kiếm và bộ lọc của màn hình. |
 | Mở phiếu | `GET /api/erp/internal-transfer-requests/detail` | Lấy đầy đủ thông tin phiếu và các bảng chi tiết theo trang. |
-| Các nút trên phiếu | `GET /api/erp/internal-transfer-requests/actions` | Lấy các nút nghiệp vụ luôn hiện và bật để thử giao diện; khi thực hiện, BE vẫn kiểm tra quyền, trạng thái phiếu và dữ liệu. |
+| Các nút trên phiếu | `GET /api/erp/internal-transfer-requests/actions` | Lấy quyền hiện và trạng thái bật/tắt từng nút theo người đăng nhập và phiếu đang mở. |
 | Danh sách chọn | `POST /api/erp/internal-transfer-requests/options` | Lấy danh sách cho các ô chọn trên phiếu, có tìm kiếm và phân trang. |
 | Lựa chọn khi Gửi PM | `POST /api/erp/internal-transfer-requests/actions/send-pm/options` | Lấy danh sách người nhận hoặc bước xử lý để người dùng chọn trước khi gửi. |
 | Kiểm tra kết quả thao tác | `POST /api/erp/internal-transfer-requests/commands/lookup` | Kiểm tra lần lưu/gửi trước khi chưa nhận được kết quả; không dựng thành nút nghiệp vụ riêng. |
@@ -98,7 +99,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Chuẩn bị màn hình | `GET /api/erp/warehouse-qr/screen` | Lấy mô tả các cột, lựa chọn và nút của màn hình; không hiển thị thông tin nội bộ này cho người dùng. |
 | Danh sách | `GET /api/erp/warehouse-qr` | Tải danh sách phiếu theo trang, tìm kiếm và bộ lọc của màn hình. |
 | Mở phiếu | `GET /api/erp/warehouse-qr/detail` | Lấy đầy đủ thông tin phiếu và các bảng chi tiết theo trang. |
-| Các nút trên phiếu | `GET /api/erp/warehouse-qr/actions` | Lấy các nút nghiệp vụ luôn hiện và bật để thử giao diện; khi thực hiện, BE vẫn kiểm tra quyền, trạng thái phiếu và dữ liệu. |
+| Các nút trên phiếu | `GET /api/erp/warehouse-qr/actions` | Lấy quyền hiện và trạng thái bật/tắt từng nút theo người đăng nhập và phiếu đang mở. |
 | Danh sách chọn | `POST /api/erp/warehouse-qr/options` | Lấy danh sách cho các ô chọn trên phiếu, có tìm kiếm và phân trang. |
 | Kiểm tra kết quả thao tác | `POST /api/erp/warehouse-qr/commands/lookup` | Kiểm tra lần lưu/gửi trước khi chưa nhận được kết quả; không dựng thành nút nghiệp vụ riêng. |
 | Quét thêm mã QR | `POST /api/erp/warehouse-qr/qr/add` | Ghi mã QR quét vào phiếu đang mở. |
@@ -111,7 +112,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Chuẩn bị màn hình | `GET /api/erp/sales-qr/screen` | Lấy mô tả các cột, lựa chọn và nút của màn hình; không hiển thị thông tin nội bộ này cho người dùng. |
 | Danh sách | `GET /api/erp/sales-qr` | Tải danh sách phiếu theo trang, tìm kiếm và bộ lọc của màn hình. |
 | Mở phiếu | `GET /api/erp/sales-qr/detail` | Lấy đầy đủ thông tin phiếu và các bảng chi tiết theo trang. |
-| Các nút trên phiếu | `GET /api/erp/sales-qr/actions` | Lấy các nút nghiệp vụ luôn hiện và bật để thử giao diện; khi thực hiện, BE vẫn kiểm tra quyền, trạng thái phiếu và dữ liệu. |
+| Các nút trên phiếu | `GET /api/erp/sales-qr/actions` | Lấy quyền hiện và trạng thái bật/tắt từng nút theo người đăng nhập và phiếu đang mở. |
 | Xem thông tin hợp đồng | `GET /api/erp/sales-qr/contract-info` | Mở thông tin hợp đồng liên quan đến phiếu. |
 | Danh sách chọn | `POST /api/erp/sales-qr/options` | Lấy danh sách cho các ô chọn trên phiếu, có tìm kiếm và phân trang. |
 | Kiểm tra kết quả thao tác | `POST /api/erp/sales-qr/commands/lookup` | Kiểm tra lần lưu/gửi trước khi chưa nhận được kết quả; không dựng thành nút nghiệp vụ riêng. |
@@ -125,7 +126,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Chuẩn bị màn hình | `GET /api/erp/machine-movements/screen` | Lấy mô tả các cột, lựa chọn và nút của màn hình; không hiển thị thông tin nội bộ này cho người dùng. |
 | Danh sách | `GET /api/erp/machine-movements` | Tải danh sách phiếu theo trang, tìm kiếm và bộ lọc của màn hình. |
 | Mở phiếu | `GET /api/erp/machine-movements/detail` | Lấy đầy đủ thông tin phiếu và các bảng chi tiết theo trang. |
-| Các nút trên phiếu | `GET /api/erp/machine-movements/actions` | Lấy các nút nghiệp vụ luôn hiện và bật để thử giao diện; khi thực hiện, BE vẫn kiểm tra quyền, trạng thái phiếu và dữ liệu. |
+| Các nút trên phiếu | `GET /api/erp/machine-movements/actions` | Lấy quyền hiện và trạng thái bật/tắt từng nút theo người đăng nhập và phiếu đang mở. |
 | Danh sách chọn | `POST /api/erp/machine-movements/options` | Lấy danh sách cho các ô chọn trên phiếu, có tìm kiếm và phân trang. |
 | Kiểm tra kết quả thao tác | `POST /api/erp/machine-movements/commands/lookup` | Kiểm tra lần lưu/gửi trước khi chưa nhận được kết quả; không dựng thành nút nghiệp vụ riêng. |
 | Chọn dữ liệu có sẵn | `POST /api/erp/machine-movements/selection` | API chọn dữ liệu đã có; ngoài phạm vi triển khai mới theo yêu cầu bỏ Import/copy. |
@@ -141,7 +142,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Chuẩn bị màn hình | `GET /api/erp/machine-repairs/screen` | Lấy mô tả các cột, lựa chọn và nút của màn hình; không hiển thị thông tin nội bộ này cho người dùng. |
 | Danh sách | `GET /api/erp/machine-repairs` | Tải danh sách phiếu theo trang, tìm kiếm và bộ lọc của màn hình. |
 | Mở phiếu | `GET /api/erp/machine-repairs/detail` | Lấy đầy đủ thông tin phiếu và các bảng chi tiết theo trang. |
-| Các nút trên phiếu | `GET /api/erp/machine-repairs/actions` | Lấy các nút nghiệp vụ luôn hiện và bật để thử giao diện; khi thực hiện, BE vẫn kiểm tra quyền, trạng thái phiếu và dữ liệu. |
+| Các nút trên phiếu | `GET /api/erp/machine-repairs/actions` | Lấy quyền hiện và trạng thái bật/tắt từng nút theo người đăng nhập và phiếu đang mở. |
 | Danh sách chọn | `POST /api/erp/machine-repairs/options` | Lấy danh sách cho các ô chọn trên phiếu, có tìm kiếm và phân trang. |
 | Kiểm tra kết quả thao tác | `POST /api/erp/machine-repairs/commands/lookup` | Kiểm tra lần lưu/gửi trước khi chưa nhận được kết quả; không dựng thành nút nghiệp vụ riêng. |
 | Chọn dữ liệu có sẵn | `POST /api/erp/machine-repairs/selection` | API chọn dữ liệu đã có; ngoài phạm vi triển khai mới theo yêu cầu bỏ Import/copy. |
@@ -157,7 +158,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Chuẩn bị màn hình | `GET /api/erp/purchase-orders/screen` | Lấy mô tả các cột, lựa chọn và nút của màn hình; không hiển thị thông tin nội bộ này cho người dùng. |
 | Danh sách | `GET /api/erp/purchase-orders` | Tải danh sách phiếu theo trang, tìm kiếm và bộ lọc của màn hình. |
 | Mở phiếu | `GET /api/erp/purchase-orders/detail` | Lấy đầy đủ thông tin phiếu và các bảng chi tiết theo trang. |
-| Các nút trên phiếu | `GET /api/erp/purchase-orders/actions` | Lấy các nút nghiệp vụ luôn hiện và bật để thử giao diện; khi thực hiện, BE vẫn kiểm tra quyền, trạng thái phiếu và dữ liệu. |
+| Các nút trên phiếu | `GET /api/erp/purchase-orders/actions` | Lấy quyền hiện và trạng thái bật/tắt từng nút theo người đăng nhập và phiếu đang mở. |
 | Danh sách chọn | `POST /api/erp/purchase-orders/options` | Lấy danh sách cho các ô chọn trên phiếu, có tìm kiếm và phân trang. |
 | Chọn hàng | `POST /api/erp/purchase-orders/item-price` | Lấy giá mua áp dụng cho hàng được chọn. |
 | Kiểm tra kết quả thao tác | `POST /api/erp/purchase-orders/commands/lookup` | Kiểm tra lần lưu/gửi trước khi chưa nhận được kết quả; không dựng thành nút nghiệp vụ riêng. |
@@ -172,7 +173,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Chuẩn bị màn hình | `GET /api/erp/inbound-requests/screen` | Lấy mô tả các cột, lựa chọn và nút của màn hình; không hiển thị thông tin nội bộ này cho người dùng. |
 | Danh sách | `GET /api/erp/inbound-requests` | Tải danh sách phiếu theo trang, tìm kiếm và bộ lọc của màn hình. |
 | Mở phiếu | `GET /api/erp/inbound-requests/detail` | Lấy đầy đủ thông tin phiếu và các bảng chi tiết theo trang. |
-| Các nút trên phiếu | `GET /api/erp/inbound-requests/actions` | Lấy các nút nghiệp vụ luôn hiện và bật để thử giao diện; khi thực hiện, BE vẫn kiểm tra quyền, trạng thái phiếu và dữ liệu. |
+| Các nút trên phiếu | `GET /api/erp/inbound-requests/actions` | Lấy quyền hiện và trạng thái bật/tắt từng nút theo người đăng nhập và phiếu đang mở. |
 | Danh sách chọn | `POST /api/erp/inbound-requests/options` | Lấy danh sách cho các ô chọn trên phiếu, có tìm kiếm và phân trang. |
 | Kiểm tra kết quả thao tác | `POST /api/erp/inbound-requests/commands/lookup` | Kiểm tra lần lưu/gửi trước khi chưa nhận được kết quả; không dựng thành nút nghiệp vụ riêng. |
 | Thêm | `POST /api/erp/inbound-requests/create` | Tạo phiếu mới và ghi các dòng chi tiết vào cơ sở dữ liệu. |
@@ -187,9 +188,9 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Thao tác / vị trí | API | Làm gì |
 |---|---|---|
 | Chuẩn bị màn hình | `GET /api/erp/purchase-approvals/screen` | Lấy mô tả các cột, lựa chọn và nút của màn hình; không hiển thị thông tin nội bộ này cho người dùng. |
-| Danh sách | `GET /api/erp/purchase-approvals` | Tải danh sách đề nghị ở mọi trạng thái trong chi nhánh được phép, theo trang; có thể lọc trạng thái khi cần. Nút Duyệt/Không duyệt luôn bật để thử giao diện; khi bấm, BE vẫn kiểm tra quyền và phiếu phải đang chờ duyệt. |
+| Danh sách | `GET /api/erp/purchase-approvals` | Tải danh sách đề nghị ở mọi trạng thái trong chi nhánh được phép, theo trang; có thể lọc trạng thái khi cần. Nút Duyệt/Không duyệt hiện theo quyền và chỉ bật khi phiếu đang chờ duyệt, đủ điều kiện xử lý. |
 | Mở phiếu | `GET /api/erp/purchase-approvals/detail` | Lấy đầy đủ thông tin phiếu và các bảng chi tiết theo trang. |
-| Các nút trên phiếu | `GET /api/erp/purchase-approvals/actions` | Lấy các nút nghiệp vụ luôn hiện và bật để thử giao diện; khi thực hiện, BE vẫn kiểm tra quyền, trạng thái phiếu và dữ liệu. |
+| Các nút trên phiếu | `GET /api/erp/purchase-approvals/actions` | Lấy quyền hiện và trạng thái bật/tắt từng nút theo người đăng nhập và phiếu đang mở. |
 | Danh sách chọn | `POST /api/erp/purchase-approvals/options` | Lấy danh sách cho các ô chọn trên phiếu, có tìm kiếm và phân trang. |
 | Kiểm tra kết quả thao tác | `POST /api/erp/purchase-approvals/commands/lookup` | Kiểm tra lần lưu/gửi trước khi chưa nhận được kết quả; không dựng thành nút nghiệp vụ riêng. |
 | Không duyệt | `POST /api/erp/purchase-approvals/actions/reject` | Thực hiện nút “Không duyệt” trên phiếu đang mở, khi người dùng và trạng thái cho phép. |
@@ -202,7 +203,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Chuẩn bị màn hình | `GET /api/erp/sales-order-pm/screen` | Lấy mô tả các cột, lựa chọn và nút của màn hình; không hiển thị thông tin nội bộ này cho người dùng. |
 | Danh sách | `GET /api/erp/sales-order-pm` | Tải danh sách phiếu theo trang, tìm kiếm và bộ lọc của màn hình. |
 | Mở phiếu | `GET /api/erp/sales-order-pm/detail` | Lấy đầy đủ thông tin phiếu và các bảng chi tiết theo trang. |
-| Các nút trên phiếu | `GET /api/erp/sales-order-pm/actions` | Lấy các nút nghiệp vụ luôn hiện và bật để thử giao diện; khi thực hiện, BE vẫn kiểm tra quyền, trạng thái phiếu và dữ liệu. |
+| Các nút trên phiếu | `GET /api/erp/sales-order-pm/actions` | Lấy quyền hiện và trạng thái bật/tắt từng nút theo người đăng nhập và phiếu đang mở. |
 | Xem thông tin hợp đồng | `GET /api/erp/sales-order-pm/contract-info` | Mở thông tin hợp đồng liên quan đến phiếu. |
 | Danh sách chọn | `POST /api/erp/sales-order-pm/options` | Lấy danh sách cho các ô chọn trên phiếu, có tìm kiếm và phân trang. |
 | Kiểm tra kết quả thao tác | `POST /api/erp/sales-order-pm/commands/lookup` | Kiểm tra lần lưu/gửi trước khi chưa nhận được kết quả; không dựng thành nút nghiệp vụ riêng. |
@@ -216,7 +217,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Chuẩn bị màn hình | `GET /api/erp/sales-order-sa/screen` | Lấy mô tả các cột, lựa chọn và nút của màn hình; không hiển thị thông tin nội bộ này cho người dùng. |
 | Danh sách | `GET /api/erp/sales-order-sa` | Tải danh sách phiếu theo trang, tìm kiếm và bộ lọc của màn hình. |
 | Mở phiếu | `GET /api/erp/sales-order-sa/detail` | Lấy đầy đủ thông tin phiếu và các bảng chi tiết theo trang. |
-| Các nút trên phiếu | `GET /api/erp/sales-order-sa/actions` | Lấy các nút nghiệp vụ luôn hiện và bật để thử giao diện; khi thực hiện, BE vẫn kiểm tra quyền, trạng thái phiếu và dữ liệu. |
+| Các nút trên phiếu | `GET /api/erp/sales-order-sa/actions` | Lấy quyền hiện và trạng thái bật/tắt từng nút theo người đăng nhập và phiếu đang mở. |
 | Xem thông tin hợp đồng | `GET /api/erp/sales-order-sa/contract-info` | Mở thông tin hợp đồng liên quan đến phiếu. |
 | Danh sách chọn | `POST /api/erp/sales-order-sa/options` | Lấy danh sách cho các ô chọn trên phiếu, có tìm kiếm và phân trang. |
 | Kiểm tra kết quả thao tác | `POST /api/erp/sales-order-sa/commands/lookup` | Kiểm tra lần lưu/gửi trước khi chưa nhận được kết quả; không dựng thành nút nghiệp vụ riêng. |
@@ -233,7 +234,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Chuẩn bị màn hình | `GET /api/erp/internal-transfer-pm/screen` | Lấy mô tả các cột, lựa chọn và nút của màn hình; không hiển thị thông tin nội bộ này cho người dùng. |
 | Danh sách | `GET /api/erp/internal-transfer-pm` | Tải danh sách phiếu theo trang, tìm kiếm và bộ lọc của màn hình. |
 | Mở phiếu | `GET /api/erp/internal-transfer-pm/detail` | Lấy đầy đủ thông tin phiếu và các bảng chi tiết theo trang. |
-| Các nút trên phiếu | `GET /api/erp/internal-transfer-pm/actions` | Lấy các nút nghiệp vụ luôn hiện và bật để thử giao diện; khi thực hiện, BE vẫn kiểm tra quyền, trạng thái phiếu và dữ liệu. |
+| Các nút trên phiếu | `GET /api/erp/internal-transfer-pm/actions` | Lấy quyền hiện và trạng thái bật/tắt từng nút theo người đăng nhập và phiếu đang mở. |
 | Danh sách chọn | `POST /api/erp/internal-transfer-pm/options` | Lấy danh sách cho các ô chọn trên phiếu, có tìm kiếm và phân trang. |
 | Kiểm tra kết quả thao tác | `POST /api/erp/internal-transfer-pm/commands/lookup` | Kiểm tra lần lưu/gửi trước khi chưa nhận được kết quả; không dựng thành nút nghiệp vụ riêng. |
 | Lưu | `POST /api/erp/internal-transfer-pm/save` | Ghi thay đổi của phiếu và các dòng chi tiết. |
@@ -247,7 +248,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Chuẩn bị màn hình | `GET /api/erp/internal-transfer-batches/screen` | Lấy mô tả các cột, lựa chọn và nút của màn hình; không hiển thị thông tin nội bộ này cho người dùng. |
 | Danh sách | `GET /api/erp/internal-transfer-batches` | Tải danh sách phiếu theo trang, tìm kiếm và bộ lọc của màn hình. |
 | Mở phiếu | `GET /api/erp/internal-transfer-batches/detail` | Lấy đầy đủ thông tin phiếu và các bảng chi tiết theo trang. |
-| Các nút trên phiếu | `GET /api/erp/internal-transfer-batches/actions` | Lấy các nút nghiệp vụ luôn hiện và bật để thử giao diện; khi thực hiện, BE vẫn kiểm tra quyền, trạng thái phiếu và dữ liệu. |
+| Các nút trên phiếu | `GET /api/erp/internal-transfer-batches/actions` | Lấy quyền hiện và trạng thái bật/tắt từng nút theo người đăng nhập và phiếu đang mở. |
 | Danh sách chọn | `POST /api/erp/internal-transfer-batches/options` | Lấy danh sách cho các ô chọn trên phiếu, có tìm kiếm và phân trang. |
 | Kiểm tra kết quả thao tác | `POST /api/erp/internal-transfer-batches/commands/lookup` | Kiểm tra lần lưu/gửi trước khi chưa nhận được kết quả; không dựng thành nút nghiệp vụ riêng. |
 | Thêm | `POST /api/erp/internal-transfer-batches/create` | Tạo phiếu mới và ghi các dòng chi tiết vào cơ sở dữ liệu. |
@@ -263,7 +264,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Chuẩn bị màn hình | `GET /api/erp/internal-transfer-tech/screen` | Lấy mô tả các cột, lựa chọn và nút của màn hình; không hiển thị thông tin nội bộ này cho người dùng. |
 | Danh sách | `GET /api/erp/internal-transfer-tech` | Tải danh sách phiếu theo trang, tìm kiếm và bộ lọc của màn hình. |
 | Mở phiếu | `GET /api/erp/internal-transfer-tech/detail` | Lấy đầy đủ thông tin phiếu và các bảng chi tiết theo trang. |
-| Các nút trên phiếu | `GET /api/erp/internal-transfer-tech/actions` | Lấy các nút nghiệp vụ luôn hiện và bật để thử giao diện; khi thực hiện, BE vẫn kiểm tra quyền, trạng thái phiếu và dữ liệu. |
+| Các nút trên phiếu | `GET /api/erp/internal-transfer-tech/actions` | Lấy quyền hiện và trạng thái bật/tắt từng nút theo người đăng nhập và phiếu đang mở. |
 | Danh sách chọn | `POST /api/erp/internal-transfer-tech/options` | Lấy danh sách cho các ô chọn trên phiếu, có tìm kiếm và phân trang. |
 | Kiểm tra kết quả thao tác | `POST /api/erp/internal-transfer-tech/commands/lookup` | Kiểm tra lần lưu/gửi trước khi chưa nhận được kết quả; không dựng thành nút nghiệp vụ riêng. |
 | Lưu | `POST /api/erp/internal-transfer-tech/save` | Ghi thay đổi của phiếu và các dòng chi tiết. |
@@ -279,7 +280,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Chuẩn bị màn hình | `GET /api/erp/internal-transfer-sa/screen` | Lấy mô tả các cột, lựa chọn và nút của màn hình; không hiển thị thông tin nội bộ này cho người dùng. |
 | Danh sách | `GET /api/erp/internal-transfer-sa` | Tải danh sách phiếu theo trang, tìm kiếm và bộ lọc của màn hình. |
 | Mở phiếu | `GET /api/erp/internal-transfer-sa/detail` | Lấy đầy đủ thông tin phiếu và các bảng chi tiết theo trang. |
-| Các nút trên phiếu | `GET /api/erp/internal-transfer-sa/actions` | Lấy các nút nghiệp vụ luôn hiện và bật để thử giao diện; khi thực hiện, BE vẫn kiểm tra quyền, trạng thái phiếu và dữ liệu. |
+| Các nút trên phiếu | `GET /api/erp/internal-transfer-sa/actions` | Lấy quyền hiện và trạng thái bật/tắt từng nút theo người đăng nhập và phiếu đang mở. |
 | Danh sách chọn | `POST /api/erp/internal-transfer-sa/options` | Lấy danh sách cho các ô chọn trên phiếu, có tìm kiếm và phân trang. |
 | Kiểm tra kết quả thao tác | `POST /api/erp/internal-transfer-sa/commands/lookup` | Kiểm tra lần lưu/gửi trước khi chưa nhận được kết quả; không dựng thành nút nghiệp vụ riêng. |
 | Lưu | `POST /api/erp/internal-transfer-sa/save` | Ghi thay đổi của phiếu và các dòng chi tiết. |
@@ -295,7 +296,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Chuẩn bị màn hình | `GET /api/erp/internal-transfer-accounting/screen` | Lấy mô tả các cột, lựa chọn và nút của màn hình; không hiển thị thông tin nội bộ này cho người dùng. |
 | Danh sách | `GET /api/erp/internal-transfer-accounting` | Tải danh sách phiếu theo trang, tìm kiếm và bộ lọc của màn hình. |
 | Mở phiếu | `GET /api/erp/internal-transfer-accounting/detail` | Lấy đầy đủ thông tin phiếu và các bảng chi tiết theo trang. |
-| Các nút trên phiếu | `GET /api/erp/internal-transfer-accounting/actions` | Lấy các nút nghiệp vụ luôn hiện và bật để thử giao diện; khi thực hiện, BE vẫn kiểm tra quyền, trạng thái phiếu và dữ liệu. |
+| Các nút trên phiếu | `GET /api/erp/internal-transfer-accounting/actions` | Lấy quyền hiện và trạng thái bật/tắt từng nút theo người đăng nhập và phiếu đang mở. |
 | Danh sách chọn | `POST /api/erp/internal-transfer-accounting/options` | Lấy danh sách cho các ô chọn trên phiếu, có tìm kiếm và phân trang. |
 | Kiểm tra kết quả thao tác | `POST /api/erp/internal-transfer-accounting/commands/lookup` | Kiểm tra lần lưu/gửi trước khi chưa nhận được kết quả; không dựng thành nút nghiệp vụ riêng. |
 | Lưu | `POST /api/erp/internal-transfer-accounting/save` | Ghi thay đổi của phiếu và các dòng chi tiết. |
@@ -311,7 +312,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Chuẩn bị màn hình | `GET /api/erp/internal-transfer-warehouse-out/screen` | Lấy mô tả các cột, lựa chọn và nút của màn hình; không hiển thị thông tin nội bộ này cho người dùng. |
 | Danh sách | `GET /api/erp/internal-transfer-warehouse-out` | Tải danh sách phiếu theo trang, tìm kiếm và bộ lọc của màn hình. |
 | Mở phiếu | `GET /api/erp/internal-transfer-warehouse-out/detail` | Lấy đầy đủ thông tin phiếu và các bảng chi tiết theo trang. |
-| Các nút trên phiếu | `GET /api/erp/internal-transfer-warehouse-out/actions` | Lấy các nút nghiệp vụ luôn hiện và bật để thử giao diện; khi thực hiện, BE vẫn kiểm tra quyền, trạng thái phiếu và dữ liệu. |
+| Các nút trên phiếu | `GET /api/erp/internal-transfer-warehouse-out/actions` | Lấy quyền hiện và trạng thái bật/tắt từng nút theo người đăng nhập và phiếu đang mở. |
 | Danh sách chọn | `POST /api/erp/internal-transfer-warehouse-out/options` | Lấy danh sách cho các ô chọn trên phiếu, có tìm kiếm và phân trang. |
 | Kiểm tra kết quả thao tác | `POST /api/erp/internal-transfer-warehouse-out/commands/lookup` | Kiểm tra lần lưu/gửi trước khi chưa nhận được kết quả; không dựng thành nút nghiệp vụ riêng. |
 | Lưu | `POST /api/erp/internal-transfer-warehouse-out/save` | Ghi thay đổi của phiếu và các dòng chi tiết. |
@@ -327,7 +328,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Chuẩn bị màn hình | `GET /api/erp/internal-transfer-warehouse-in/screen` | Lấy mô tả các cột, lựa chọn và nút của màn hình; không hiển thị thông tin nội bộ này cho người dùng. |
 | Danh sách | `GET /api/erp/internal-transfer-warehouse-in` | Tải danh sách phiếu theo trang, tìm kiếm và bộ lọc của màn hình. |
 | Mở phiếu | `GET /api/erp/internal-transfer-warehouse-in/detail` | Lấy đầy đủ thông tin phiếu và các bảng chi tiết theo trang. |
-| Các nút trên phiếu | `GET /api/erp/internal-transfer-warehouse-in/actions` | Lấy các nút nghiệp vụ luôn hiện và bật để thử giao diện; khi thực hiện, BE vẫn kiểm tra quyền, trạng thái phiếu và dữ liệu. |
+| Các nút trên phiếu | `GET /api/erp/internal-transfer-warehouse-in/actions` | Lấy quyền hiện và trạng thái bật/tắt từng nút theo người đăng nhập và phiếu đang mở. |
 | Danh sách chọn | `POST /api/erp/internal-transfer-warehouse-in/options` | Lấy danh sách cho các ô chọn trên phiếu, có tìm kiếm và phân trang. |
 | Kiểm tra kết quả thao tác | `POST /api/erp/internal-transfer-warehouse-in/commands/lookup` | Kiểm tra lần lưu/gửi trước khi chưa nhận được kết quả; không dựng thành nút nghiệp vụ riêng. |
 | Lưu | `POST /api/erp/internal-transfer-warehouse-in/save` | Ghi thay đổi của phiếu và các dòng chi tiết. |

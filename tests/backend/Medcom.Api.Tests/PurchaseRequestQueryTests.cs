@@ -662,6 +662,7 @@ internal sealed class PurchaseQuerySource
     public int Opens,Commits,Rollbacks,ConnectionDisposals,TransactionDisposals,CommandDisposals,ReaderDisposals;
     public Action? AfterData, AfterLookupData, AfterCleanup;
     public string? FailureSql;
+    public Func<QueryCommand,DbDataReader?>? PermissionRead;
     public Exception? FailureException;
     public readonly ItemDisplayRecordingSource Display=new();
     public bool LookupShapeOk, BindingMissing, BindingDuplicate, LookupIgnorePaging;
@@ -679,6 +680,7 @@ internal sealed class PurchaseQuerySource
     {
         var parameters=command.Parameters.Cast<DbParameter>().ToDictionary(p=>p.ParameterName,p=>p.Value==DBNull.Value?null:p.Value,StringComparer.Ordinal);
         Commands.Add((command.CommandText,parameters));
+        if(PermissionRead?.Invoke(command) is {} permissionRows)return permissionRows;
         if (command.CommandText == FailureSql && FailureException is not null) throw FailureException;
         if(ItemDisplayRecordingSource.Matches(command.CommandText))return Display.Read(command);
         if(command.CommandText==SqlLegacyBranchScope.NativeUserText)

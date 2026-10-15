@@ -1,6 +1,6 @@
 # Kiểm tra API bằng Swagger
 
-BE có trang `/swagger` (chuyển tới `/swagger/index.html`), dùng danh mục 243
+BE có trang `/swagger` (chuyển tới `/swagger/index.html`), dùng danh mục 244
 API hiện tại tại `/api/contracts/openapi.json`. Trang được đóng gói cùng BE,
 không cần CDN hoặc thay đổi ứng dụng FE. Dùng bản BE đã cập nhật từ main.
 

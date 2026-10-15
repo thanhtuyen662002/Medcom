@@ -265,6 +265,9 @@ internal static class ApiContractCatalog
             schemas.SourceMetadata(head, fields.Header);
             schemas.SourceMetadata(line, fields.Lines);
         }
+        Add("get","/api/erp/permissions","erp_permissions",Shape(typeof(ErpScopedResponse<ErpPermissions>)),
+            "Current authenticated native menu and branch permissions; document state is returned by actions/detail.",
+            parameters:new JsonArray(Parameter("branchId","query",String(50),true)));
         foreach(var module in ErpScreenCatalog.ModuleIds)
         {
             var screen=ErpScreenCatalog.Get(module)!;var path="/api/erp/"+module;var id=module.Replace("-","_",StringComparison.Ordinal);

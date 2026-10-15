@@ -54,8 +54,8 @@ public sealed class ErpWorkflowTests
         Assert.Equal(allowed,actions.Single(action=>action.Id=="approve").Enabled);
         Assert.Equal(allowed,actions.Single(action=>action.Id=="reject").Enabled);
         var display=ErpActionRules.ForDisplay(state);
-        Assert.True(display.Single(action=>action.Id=="approve").Enabled);
-        Assert.True(display.Single(action=>action.Id=="reject").Enabled);
+        Assert.Equal(allowed,display.Single(action=>action.Id=="approve").Enabled);
+        Assert.Equal(allowed,display.Single(action=>action.Id=="reject").Enabled);
     }
     [Fact]
     public void Purchase_order_edits_do_not_invent_a_draft_only_restriction()

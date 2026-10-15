@@ -66,8 +66,8 @@ public sealed class PurchaseRequestEndpointTests
         var data = body.GetProperty("data");
         Assert.Equal("QA-DOC", data.GetProperty("document").GetProperty("header").GetProperty("documentId").GetString());
         var access = data.GetProperty("commandAccess");
-        Assert.True(access.GetProperty("canSave").GetBoolean()); Assert.False(access.GetProperty("canSubmit").GetBoolean());
-        Assert.True(access.GetProperty("canAddLines").GetBoolean());
+        Assert.False(access.GetProperty("canSave").GetBoolean()); Assert.False(access.GetProperty("canSubmit").GetBoolean());
+        Assert.False(access.GetProperty("canAddLines").GetBoolean());
         Assert.Empty(events); Assert.Equal(0, fixture.Source.Commits);
     }
 
