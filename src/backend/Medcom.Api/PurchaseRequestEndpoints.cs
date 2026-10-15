@@ -88,10 +88,8 @@ public static class PurchaseRequestEndpoints
             if (result.Value.Document.StatusId != 1 || result.Value.Document.IsLocked is true)
                 grant = grant with { CanSave = false, CanSubmit = false };
             DocumentDataProjection.Stamp(context,path);
-            // Only this GET response exposes enabled edit controls. Command() independently
-            // resolves native access and retains all write/state/qualification checks.
             return Response(context, result with { Value = result.Value with
-                { CommandAccess = grant with { CanSave = true, CanAddLines = true, Reason = "" } } });
+                { CommandAccess = grant } });
         });
 
 

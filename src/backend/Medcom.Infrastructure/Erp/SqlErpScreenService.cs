@@ -18,6 +18,7 @@ public interface IErpSqlCommandExecutor
 public sealed partial class SqlErpScreenService:IErpScreenService
 {
     private readonly SqlErpScreenReader reader;
+    private readonly SqlErpPermissionsReader permissions;
     private readonly IErpSqlCommandExecutor? commands;
     public SqlErpScreenService(SqlLegacyUserStore store,LegacyCompany company,
         Func<CancellationToken,Task<AuthoritativeIdentity?>> resolveLiveSession,
@@ -28,7 +29,9 @@ public sealed partial class SqlErpScreenService:IErpScreenService
         Func<CancellationToken,Task<AuthoritativeIdentity?>> resolveLiveSession,
         Func<CancellationToken,Task<AuthoritativeIdentity?>>? inspectLocalSession=null,
         IErpSqlCommandExecutor? commands=null,Action<ErpReadDiagnostic>? diagnostic=null)
-    {reader=new(company,connections,resolveLiveSession,inspectLocalSession,diagnostic);this.commands=commands;}
+    {reader=new(company,connections,resolveLiveSession,inspectLocalSession,diagnostic);
+        permissions=new(company,connections,resolveLiveSession,inspectLocalSession);this.commands=commands;}
+    public Task<ErpReadResult<ErpPermissions>> PermissionsAsync(string branch,CancellationToken token)=>permissions.Read(branch,token);
     public Task<ErpReadResult<ErpDocumentPage>> ListAsync(string module,ErpPageQuery query,CancellationToken token)
     {
         if(query is null||!ErpInputRules.Page(query.Page,query.PageSize)||query.Search?.Length>100||!ErpInputRules.Text(query.Search,false)

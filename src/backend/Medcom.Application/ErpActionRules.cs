@@ -13,28 +13,25 @@ public static class ErpActionRules
 {
     public static bool IsCudOperation(string operation)=>operation is "create" or "save" or "delete"
         or "scan-add" or "scan-delete" or "save-costs" or "save-assets";
-    public static bool IsUiTestOperation(string operation)=>IsCudOperation(operation)||operation is
-        "submit" or "send-purchase-order" or "send-pm" or "recall" or "contract-info"
-        or "approve" or "reject" or "send-management" or "send-warehouse" or "send-sa"
-        or "send-accounting" or "send-tech" or "pm-confirm" or "return-step" or "sync-requests"
-        or "dispatch" or "receive";
-    // Workflow toolbar visibility also determines which CUD endpoints are registered.
-    public static bool IsUiTestAction(string module,ErpActionDefinition action)=>IsUiTestOperation(action.Operation)
-        &&(!ErpScreenCatalog.IsWorkflow(module)||action.Operation is not ("create" or "save" or "delete")||action.NativeVisible);
-    // Presentation only, per owner UI-test request. Never use this for command admission.
-    public static IReadOnlyList<ErpActionState> ForDisplay(ErpActionContext state)
+    public static IReadOnlyList<ErpActionState> ForDisplay(ErpActionContext state)=>Evaluate(state);
+    public static ErpScreenDescription ForDisplay(ErpScreenDescription screen)=>screen;
+
+    private static bool Grant(ErpNativeRights rights,string operation)=>operation switch
+    {"create"=>rights.Add,"delete"=>rights.Delete,"paste"=>rights.Add||rights.Update,
+        "contract-info"=>rights.Read,_ when operation.StartsWith("print",StringComparison.Ordinal)=>rights.Read,
+        _=>rights.Update};
+    public static ErpScreenPermission Permissions(ErpScreenDescription screen,ErpNativeRights rights)
     {
-        var screen=ErpScreenCatalog.Get(state.Module);
-        return Array.AsReadOnly(Evaluate(state).Select(action=>
-        {
-            var definition=screen!.Actions.Single(item=>item.Id==action.Id);
-            return IsUiTestAction(state.Module,definition)
-                ?action with{Visible=true,Enabled=true,Reason=null,Route=Route(state.Module,definition.Operation)}:action;
-        }).ToArray());
+        // Print/import/copy are outside the current web handoff. A hidden native CUD
+        // control must never advertise an endpoint that is not registered.
+        var actions=screen.Actions.Where(a=>a.Operation!="paste"&&!a.Operation.StartsWith("print",StringComparison.Ordinal))
+            .Select(a=>new ErpActionPermission(a.Id,a.Caption,a.NativeVisible&&rights.Read&&Grant(rights,a.Operation),
+                a.RequiresSavedDocument,a.NativeVisible&&rights.Read&&Grant(rights,a.Operation)?Route(screen.Id,a.Operation):null)).ToArray();
+        bool Has(string operation)=>screen.Actions.Any(a=>a.Operation==operation&&a.NativeVisible);
+        return new(screen.Id,screen.Caption,rights.Read,new(rights.Read,rights.Read&&rights.Add&&Has("create"),
+            rights.Read&&rights.Update&&screen.Actions.Any(a=>a.NativeVisible&&(a.Operation=="save"||a.Operation is "scan-add" or "scan-delete"||a.Operation.StartsWith("save-",StringComparison.Ordinal))),
+            rights.Read&&rights.Delete&&Has("delete")),Array.AsReadOnly(actions));
     }
-    public static ErpScreenDescription ForDisplay(ErpScreenDescription screen)=>screen with
-    {Actions=Array.AsReadOnly(screen.Actions.Select(action=>IsUiTestAction(screen.Id,action)
-        ?action with{NativeVisible=true,LockExpression=null}:action).ToArray())};
 
     public static IReadOnlyList<ErpActionState> Evaluate(ErpActionContext state)
     {
@@ -44,10 +41,7 @@ public static class ErpActionRules
     private static ErpActionState Evaluate(ErpActionContext state,ErpActionDefinition action)
     {
         var write=action.Operation is not ("contract-info" or "paste") && !action.Operation.StartsWith("print",StringComparison.Ordinal);
-        var grant=action.Operation switch
-        {"create"=>state.Rights.Add,"delete"=>state.Rights.Delete,"paste"=>state.Rights.Add||state.Rights.Update,
-          "contract-info"=>state.Rights.Read,_ when action.Operation.StartsWith("print",StringComparison.Ordinal)=>state.Rights.Read,
-          _=>state.Rights.Update};
+        var grant=Grant(state.Rights,action.Operation);
         var visible=action.NativeVisible&&state.Rights.Read&&grant;
         string? reason=!visible?"native_permission_or_hidden":null;
         if(reason is null&&action.RequiresSavedDocument&&state.DocumentId is null)reason="save_document_first";

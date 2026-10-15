@@ -10,6 +10,11 @@ public static class ErpScreenEndpoints
 {
     public static void Map(IEndpointRouteBuilder app)
     {
+        app.MapGet("/api/erp/permissions",async(HttpContext context,IErpScreenService service)=>
+        {
+            if(!Query(context,"branchId"))return Problem(400,"invalid_query");
+            return Read(context,await service.PermissionsAsync(Value(context,"branchId")??"",context.RequestAborted));
+        });
         foreach(var module in ErpScreenCatalog.ModuleIds)
         {
             var path="/api/erp/"+module;

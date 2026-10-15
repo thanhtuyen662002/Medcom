@@ -25,7 +25,7 @@ public sealed class PurchaseRequestCommandEndpointTests
         Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode); Assert.Equal(0, commands.SaveCalls);
         var detail = await fixture.Json("/api/purchase-requests/detail?documentId=QA-DOC");
         var access = detail.GetProperty("data").GetProperty("commandAccess");
-        Assert.True(access.GetProperty("canSave").GetBoolean()); Assert.True(access.GetProperty("canAddLines").GetBoolean());
+        Assert.False(access.GetProperty("canSave").GetBoolean()); Assert.False(access.GetProperty("canAddLines").GetBoolean());
         // Display controls do not admit the unavailable command provider, even after reading them.
         using var retry=await Send(fixture,"save",Save(fixture));
         Assert.Equal(HttpStatusCode.ServiceUnavailable,retry.StatusCode);Assert.Equal(0,commands.SaveCalls);

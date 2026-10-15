@@ -9,74 +9,64 @@ public sealed class ErpCudPresentationTests
     public static IEnumerable<object[]> Modules()=>ErpScreenCatalog.ModuleIds.Select(module=>new object[]{module});
     [Theory]
     [MemberData(nameof(Modules))]
-    public void Existing_business_controls_stay_enabled_without_mutating_native_command_admission(string module)
+    public void Presentation_obeys_native_grants_and_preserves_source_metadata(string module)
     {
         var state=new ErpActionContext(module,"actor","synthetic",999,true,"other",null,0,true,true,
             new(true,false,false,false),false,NumberingQualified:false);
-        var before=ErpActionRules.Evaluate(state);var display=ErpActionRules.ForDisplay(state);
-        Assert.Equal(before.Count,display.Count);
-        foreach(var definition in ErpScreenCatalog.Get(module)!.Actions)
+        Assert.Equal(ErpActionRules.Evaluate(state),ErpActionRules.ForDisplay(state));
+        foreach(var action in ErpActionRules.ForDisplay(state))
         {
-            var native=before.Single(a=>a.Id==definition.Id);var shown=display.Single(a=>a.Id==definition.Id);
-            if(ErpActionRules.IsUiTestAction(module,definition))
-            {
-                Assert.True(shown.Enabled);Assert.True(shown.Visible);Assert.Null(shown.Reason);
-                Assert.StartsWith("/api/erp/"+module+"/",shown.Route);
-                Assert.False(native.Enabled);
-            }
-            else Assert.Equal(native,shown);
+            var definition=ErpScreenCatalog.Get(module)!.Actions.Single(a=>a.Id==action.Id);
+            if(definition.Operation!="contract-info"&&!definition.Operation.StartsWith("print",StringComparison.Ordinal))
+            {Assert.False(action.Visible);Assert.False(action.Enabled);Assert.Null(action.Route);}
         }
-        Assert.Equal(before,ErpActionRules.Evaluate(state));
-        var catalog=ErpScreenCatalog.Get(module)!;var copy=ErpActionRules.ForDisplay(catalog);
-        Assert.Same(catalog,ErpScreenCatalog.Get(module));Assert.NotSame(catalog.Actions,copy.Actions);
-        foreach(var action in copy.Actions.Where(a=>ErpActionRules.IsUiTestAction(module,a)))
-        {Assert.True(action.NativeVisible);Assert.Null(action.LockExpression);}
+        var screen=ErpScreenCatalog.Get(module)!;
+        Assert.Same(screen,ErpActionRules.ForDisplay(screen));
+        var hidden=ErpActionRules.Permissions(screen,new(false,true,true,true));
+        Assert.False(hidden.CanView);Assert.All(hidden.Actions,a=>{Assert.False(a.Visible);Assert.Null(a.Route);});
+        Assert.Equal(new ErpCrudPermission(false,false,false,false),hidden.Crud);
     }
     [Theory]
     [InlineData("sales-orders",12)] [InlineData("purchase-requests",3)]
     [InlineData("internal-transfer-requests",10)] [InlineData("machine-movements",0)]
-    public void An_edit_control_does_not_allow_writing_a_locked_document(string module,int status)
+    public void A_locked_document_keeps_authorized_controls_visible_but_disabled(string module,int status)
     {
         var state=new ErpActionContext(module,"actor","synthetic",status,true,"actor",null,1,false,false,
             new(true,true,true,true),true);
-        Assert.True(ErpActionRules.ForDisplay(state).Single(a=>a.Id=="save").Enabled);
-        Assert.False(ErpActionRules.Evaluate(state).Single(a=>a.Id=="save").Enabled);
-        Assert.False(ErpActionRules.StateAllows(state,"save"));
+        var save=ErpActionRules.ForDisplay(state).Single(a=>a.Id=="save");
+        Assert.True(save.Visible);Assert.False(save.Enabled);Assert.Equal("state_or_assignment_not_allowed",save.Reason);
     }
     [Fact]
-    public void Unsupported_or_workflow_operations_are_never_made_available_as_CUD()
+    public void Permission_controls_only_advertise_existing_web_routes()
     {
-        Assert.Empty(ErpActionRules.ForDisplay(new ErpActionContext("unknown","actor",null,null,false,null,null,0,false,false,new(true,true,true,true),true)));
-        foreach(var operation in new[]{"save-unknown","approve","send-pm","recall","receive","paste","print"})
-            Assert.False(ErpActionRules.IsCudOperation(operation));
-        Assert.Equal(48,ErpScreenCatalog.ModuleIds.Sum(module=>ErpScreenCatalog.Get(module)!.Actions.Count(action=>ErpActionRules.IsCudOperation(action.Operation))));
-    }
-    [Fact]
-    public void Test_enabled_controls_always_point_to_existing_routes_without_inventing_operations()
-    {
-        var api=ApiContractCatalog.Build();var enabled=0;
-        foreach(var operation in new[]{"unknown","save-unknown","approve-unknown","paste","print","print_1","import","copy"})
-            Assert.False(ErpActionRules.IsUiTestOperation(operation));
+        var api=ApiContractCatalog.Build();var visible=0;
         foreach(var module in ErpScreenCatalog.ModuleIds)
         {
-            var context=new ErpActionContext(module,"actor",null,null,true,null,null,0,false,false,new(true,false,false,false),false);
-            foreach(var action in ErpActionRules.ForDisplay(context))
+            var screen=ErpScreenCatalog.Get(module)!;
+            var permissions=ErpActionRules.Permissions(screen,new(true,true,true,true));
+            foreach(var action in permissions.Actions)
             {
-                var definition=ErpScreenCatalog.Get(module)!.Actions.Single(a=>a.Id==action.Id);
-                if(!ErpActionRules.IsUiTestAction(module,definition))
-                {
-                    if(ErpActionRules.IsCudOperation(definition.Operation))
-                    {Assert.False(action.Visible);Assert.False(action.Enabled);Assert.Null(action.Route);}
-                    continue;
-                }
+                var definition=screen.Actions.Single(a=>a.Id==action.Id);
+                Assert.Equal(definition.NativeVisible,action.Visible);
+                if(!action.Visible){Assert.Null(action.Route);continue;}
                 var method=definition.Operation=="contract-info"?"get":"post";
-                Assert.True(action.Visible);Assert.True(action.Enabled);Assert.Null(action.Reason);
                 Assert.NotNull(action.Route);
-                Assert.True(api["paths"]![action.Route]?[method] is not null,module+"/"+action.Id+" route is missing");enabled++;
+                Assert.True(api["paths"]![action.Route]?[method] is not null,module+"/"+action.Id+" route is missing");visible++;
                 Assert.Equal(definition.RequiresSavedDocument,action.RequiresSavedDocument);
             }
         }
-        Assert.Equal(72,enabled);
+        Assert.Equal(72,visible);
+    }
+    [Theory]
+    [InlineData(true,false,false,false)] [InlineData(true,true,false,false)]
+    [InlineData(true,false,true,false)] [InlineData(true,false,false,true)] [InlineData(false,true,true,true)]
+    public void CRUD_and_workflow_buttons_follow_the_corresponding_grant(bool read,bool add,bool update,bool delete)
+    {
+        var permission=ErpActionRules.Permissions(ErpScreenCatalog.Get("purchase-requests")!,new(read,add,update,delete));
+        Assert.Equal(read,permission.CanView);
+        Assert.Equal(new ErpCrudPermission(read,read&&add,read&&update,read&&delete),permission.Crud);
+        foreach(var (id,allowed) in new[]{("create",add),("save",update),("delete",delete),("submit",update)})
+            Assert.Equal(read&&allowed,permission.Actions.Single(a=>a.Id==id).Visible);
     }
     [Fact]
     public void Every_label_is_bound_to_the_audited_form_or_button_without_generated_fallbacks()
