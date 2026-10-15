@@ -14,7 +14,7 @@ public sealed class PurchaseApprovalConfigurationTests
     [Theory]
     [InlineData("current")] [InlineData("old")] [InlineData("unknown")]
     [InlineData("missing")] [InlineData("extra")] [InlineData("duplicate")] [InlineData("null")]
-    public async Task Reviewed_approval_button_passes_without_accepting_other_form_drift(string mutation)
+    public async Task Offline_source_audit_detects_approval_configuration_drift_without_gating_runtime(string mutation)
     {
         var metadata=ErpScreenCatalog.Metadata("purchase-approvals");
         var buttons=metadata.GetProperty("buttons").EnumerateArray().ToArray();

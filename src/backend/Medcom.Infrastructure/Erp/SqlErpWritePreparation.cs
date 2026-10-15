@@ -4,7 +4,7 @@ using Medcom.Contracts;
 
 namespace Medcom.Infrastructure.Erp;
 
-public sealed record ErpWritePreparation(string SchemaFingerprint, string CatalogHash, bool Installed, IReadOnlyList<string> Modules);
+public sealed record ErpWritePreparation(string? SchemaFingerprint, string CatalogHash, bool Installed, IReadOnlyList<string> Modules);
 
 public static class SqlErpWritePreparation
 {
@@ -20,19 +20,16 @@ public static class SqlErpWritePreparation
         await using var connection = connections();
         await connection.OpenAsync(token);
         await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.Serializable, token);
-        await using (var command = ErpSqlPlan.Command(transaction, "SELECT DB_NAME(),HAS_PERMS_BY_NAME(DB_NAME(),'DATABASE','VIEW DEFINITION');"))
+        await using (var command = ErpSqlPlan.Command(transaction, "SELECT DB_NAME();"))
         {
             await using var rows = await command.ExecuteReaderAsync(token);
-            if (!await rows.ReadAsync(token) || rows.GetString(0) != database || rows.GetInt32(1) != 1)
-                throw new InvalidOperationException("Exact target and metadata visibility required.");
+            if (!await rows.ReadAsync(token) || rows.GetString(0) != database || await rows.ReadAsync(token)||await rows.NextResultAsync(token))
+                throw new InvalidOperationException("Exact target required.");
         }
-        await SqlErpScreenCommands.VerifyNativeMetadata(transaction, token);
-        if(modules.Any(ErpScreenCatalog.IsWorkflow))await SqlErpScreenCommands.VerifyWorkflowMetadata(transaction,token);
         foreach (var module in modules)
         {
             var plan = ErpSqlPlan.Get(module)!;
             if (!await SqlErpScreenReader.SchemaMatches(transaction, plan, token)) throw new InvalidOperationException("Native field contract changed.");
-            await SqlErpScreenCommands.VerifyScreenConfiguration(transaction, plan, token);
         }
         if (install)
         {
@@ -43,14 +40,11 @@ public static class SqlErpWritePreparation
         }
         else
         {
-            await using var command = ErpSqlPlan.Command(transaction, "SELECT DatabaseBindingId,CatalogHash,SchemaVersion FROM dbo.MedcomErpCommandSchema WHERE SingletonId=1;");
-            await using var rows = await command.ExecuteReaderAsync(token);
-            if (!await rows.ReadAsync(token) || rows.GetGuid(0) != binding || rows.GetInt32(2) != 1
-                || !rows.GetFieldValue<byte[]>(1).AsSpan().SequenceEqual(Convert.FromHexString(ErpWriteRuntime.CatalogHash)) || await rows.ReadAsync(token))
+            if (!await ErpWriteRuntime.JournalMatchesAsync(transaction,binding,token))
                 throw new InvalidOperationException("Installed ERP journal binding required.");
         }
-        var fingerprint = Convert.ToHexStringLower(await ErpWriteRuntime.SchemaFingerprintAsync(transaction, token));
-        var result = new ErpWritePreparation(fingerprint, ErpWriteRuntime.CatalogHash, install, modules.ToArray());
+        // Retain the legacy JSON member as null; no fingerprint refresh is required.
+        var result = new ErpWritePreparation(null, ErpWriteRuntime.CatalogHash, install, modules.ToArray());
         if (install) await transaction.CommitAsync(token);
         else await transaction.RollbackAsync(token);
         return result;

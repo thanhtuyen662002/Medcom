@@ -45,8 +45,6 @@ public sealed class ErpWriteStartupTests : IDisposable
     [InlineData("DatabaseBindingId", "00000000-0000-0000-0000-000000000000")]
     [InlineData("DatabaseBindingId", "bad")]
     [InlineData("Database", "Different")]
-    [InlineData("SchemaFingerprint", "bad")]
-    [InlineData("SchemaFingerprint", "")]
     [InlineData("Modules", "sales-orders;sales-orders")]
     [InlineData("Modules", "unknown")]
     [InlineData("Modules", " sales-orders")]
@@ -61,11 +59,34 @@ public sealed class ErpWriteStartupTests : IDisposable
         Assert.Null(error.InnerException);
     }
     [Theory]
-    [InlineData("DatabaseBindingId")][InlineData("Database")][InlineData("SchemaFingerprint")][InlineData("Modules")]
+    [InlineData("DatabaseBindingId")][InlineData("Database")][InlineData("Modules")]
     public void Incomplete_profile_fails_at_startup_instead_of_publishing_a_dormant_writer(string field)
     {
         var settings = Settings(); settings.Remove(Key(field)); Write(settings);
         Assert.Throws<InvalidOperationException>(() => ApiHost.Build(Args()));
+    }
+    [Theory]
+    [InlineData(null)][InlineData("")][InlineData("stale-value")][InlineData("not-a-hash")]
+    [InlineData("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")]
+    public async Task Missing_empty_stale_or_malformed_retired_fingerprint_does_not_disable_writes(string? fingerprint)
+    {
+        var settings=Settings();if(fingerprint is null)settings.Remove(Key("SchemaFingerprint"));else settings[Key("SchemaFingerprint")]=fingerprint;
+        Write(settings);
+        await using var app=ApiHost.Build(Args());
+        Assert.True(app.Services.GetRequiredService<IErpSqlWriteAcceptance>().Includes("purchase-requests"));
+    }
+    [Fact]
+    public async Task Retired_fingerprint_environment_overlay_is_inert_for_a_complete_private_profile()
+    {
+        Write(Settings());var key=Key("SchemaFingerprint").Replace(":","__",StringComparison.Ordinal);
+        var original=Environment.GetEnvironmentVariable(key);
+        try
+        {
+            Environment.SetEnvironmentVariable(key,"stale-environment-value");
+            await using var app=ApiHost.Build(Args());
+            Assert.True(app.Services.GetRequiredService<IErpSqlWriteAcceptance>().Includes("purchase-requests"));
+        }
+        finally{Environment.SetEnvironmentVariable(key,original);}
     }
     [Fact]
     public void Process_arguments_cannot_override_the_protected_profile()

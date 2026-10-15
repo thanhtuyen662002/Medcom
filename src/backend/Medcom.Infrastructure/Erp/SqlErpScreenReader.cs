@@ -62,12 +62,7 @@ internal sealed class SqlErpScreenReader
             if(rights is null)return new(ErpReadOutcome.Denied);
             stage=ErpReadStage.Schema;
             if(!await SchemaMatches(transaction,plan,token))return new(ErpReadOutcome.Unavailable,Code:"erp_source_schema_changed");
-            stage=ErpReadStage.NativeModules;
-            await SqlErpScreenCommands.VerifyModuleHashes(transaction,token);
-            stage=ErpReadStage.WorkflowMetadata;
-            if(ErpScreenCatalog.IsWorkflow(module))await SqlErpScreenCommands.VerifyWorkflowMetadata(transaction,token);
-            stage=ErpReadStage.ScreenConfiguration;
-            await SqlErpScreenCommands.VerifyScreenConfiguration(transaction,plan,token);
+            // Native/form hashes are diagnostic evidence, not runtime admission.
             stage=ErpReadStage.Read;
             var observed=await read(transaction,identity,plan,rights);
             stage=ErpReadStage.FinalAuthority;
@@ -130,14 +125,15 @@ internal sealed class SqlErpScreenReader
                 WHERE C.object_id=OBJECT_ID(@table,'U') AND T.is_user_defined=0 ORDER BY C.column_id;
                 """);
             ErpSqlPlan.Parameter(command,"@table",DbType.String,"dbo."+table,255);
-            await using var reader=await command.ExecuteReaderAsync(token);var index=0;
-            var physical=section.Value.Where(f=>!f.Virtual).ToArray();
+            await using var reader=await command.ExecuteReaderAsync(token);
+            var physical=section.Value.Where(f=>!f.Virtual).ToDictionary(f=>f.Column,StringComparer.Ordinal);
+            var seen=new HashSet<string>(StringComparer.Ordinal);
             while(await reader.ReadAsync(token))
             {
-                if(index>=physical.Length)return false;
-                var field=physical[index++];
-                if(reader.GetString(0)!=field.Column||reader.GetString(1)!=field.SqlType||reader.GetBoolean(5)!=field.Nullable
-                    ||reader.GetBoolean(6)||reader.GetBoolean(7)||reader.GetInt32(8)!=field.Ordinal)return false;
+                var name=reader.GetString(0);
+                if(!physical.TryGetValue(name,out var field))continue;
+                if(!seen.Add(name)||reader.GetString(1)!=field.SqlType||reader.GetBoolean(5)!=field.Nullable
+                    ||reader.GetBoolean(6)||reader.GetBoolean(7))return false;
                 var args=field.TypeArguments?.Trim('(',')').Split(',');
                 if(field.SqlType is "nvarchar" or "varchar" or "char" or "nchar")
                 {
@@ -147,7 +143,7 @@ internal sealed class SqlErpScreenReader
                 if(field.SqlType is "decimal" or "numeric"
                     &&(reader.GetByte(3)!=int.Parse(args![0],CultureInfo.InvariantCulture)||reader.GetByte(4)!=int.Parse(args[1],CultureInfo.InvariantCulture)))return false;
             }
-            if(index!=physical.Length||await reader.NextResultAsync(token))return false;
+            if(seen.Count!=physical.Count||await reader.NextResultAsync(token))return false;
         }
         return true;
     }

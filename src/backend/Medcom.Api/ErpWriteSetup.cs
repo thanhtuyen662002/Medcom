@@ -22,7 +22,7 @@ public static class ErpWriteSetup
             using var configuration = new ConfigurationManager();
             configuration.AddCommandLine(args.Skip(1).ToArray());
             ServerConfiguration.LoadPrivateConfiguration(configuration, Directory.GetCurrentDirectory(), args.Skip(1).ToArray());
-            var settings = ErpWriteStartup.Read(configuration, preparation: true) ?? throw new InvalidOperationException();
+            var settings = ErpWriteStartup.Read(configuration) ?? throw new InvalidOperationException();
             var connection = ServerConfiguration.ResolveConnectionString(configuration, out var testTls);
             var store = new SqlLegacyUserStore(connection, developmentTestTlsTarget: testTls);
             using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(2));

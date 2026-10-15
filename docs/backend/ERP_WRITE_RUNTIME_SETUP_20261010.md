@@ -1,12 +1,14 @@
 # Vận hành API ghi ERP từ FE
 
+Cập nhật 15/10/2026: chủ hệ thống đã yêu cầu bỏ khóa fingerprint khỏi API. Hướng dẫn hiện hành ở [Ghi ERP không khóa fingerprint](ERP_WRITES_WITHOUT_FINGERPRINT_20261015.md); phần dưới đã được cập nhật tương ứng. Không dùng lại hướng dẫn refresh fingerprint cũ.
+
 I74 bổ sung bộ ghi và cấp số cụ thể vào startup thông thường. Sau khi cài journal và cấu hình DB đích, các route CUD/workflow/QR của [hướng dẫn FE](BE_FE_SIX_SCREEN_COMMANDS_20261010.md) thực hiện transaction SQL và trả receipt `Committed`/`Replayed`. Không cần viết thêm implementation C# hoặc chạy chế độ purchase pilot. Bằng chứng: `ApiHost.cs`, `ErpWriteStartup.cs`, `ErpWriteRuntime.cs`, `SqlErpScreenCommands.cs`, `SqlErpDocumentNumberAllocator.cs`; kiểm thử và giới hạn ở `docs/execution/I74_ERP_WRITE_RUNTIME_20261010.md`.
 
 ## Chuẩn bị server
 
-Giữ cấu hình kết nối SQL và đăng nhập ERP hiện có. SQL account cần quyền đọc metadata/VIEW DEFINITION, đọc các bảng phân quyền và quyền ghi/EXECUTE trên các đối tượng nghiệp vụ của phạm vi. Công cụ cài đặt cần quyền tạo hai bảng Web. Không cấp quyền SQL từ trình duyệt và không đặt password trong URL, argv hoặc Git.
+Giữ cấu hình kết nối SQL và đăng nhập ERP hiện có. SQL account cần quyền đọc metadata các bảng đang dùng, đọc phân quyền và quyền ghi/EXECUTE trên các đối tượng nghiệp vụ của phạm vi. API không đọc định nghĩa toàn bộ DB hoặc yêu cầu VIEW DEFINITION để so hash; công cụ kiểm kê riêng vẫn có thể cần quyền đó. Công cụ cài đặt cần quyền tạo hai bảng Web. Không cấp quyền SQL từ trình duyệt và không đặt password trong URL, argv hoặc Git.
 
-Thêm vào file private nằm ngoài repository, ví dụ `D:\Config\appsettings.Private.json`, phần sau. Tạo GUID mới bằng `New-Guid`; `Database` phải khớp chính xác Initial Catalog của cấu hình kết nối. Đầu tiên bỏ `SchemaFingerprint`, công cụ sẽ trả giá trị sau khi chuẩn bị.
+Thêm vào file private nằm ngoài repository, ví dụ `D:\Config\appsettings.Private.json`, phần sau. Chỉ khi cài mới, tạo GUID bằng `New-Guid`; khi cập nhật giữ nguyên GUID đang dùng. `Database` phải khớp chính xác Initial Catalog. Không cần khai báo `SchemaFingerprint`; giá trị cũ được bỏ qua.
 
 ```json
 {
@@ -26,24 +28,23 @@ Cài trên môi trường đã được chủ hệ thống chọn và cho phép.
 dotnet Medcom.Api.dll --install-erp-writes --Medcom:PrivateConfigPath D:\Config\appsettings.Private.json
 ```
 
-Lệnh kiểm tra đủ schema fields, 67 procedure/trigger module pins, 15 default pins và cấu hình form, rồi tạo `dbo.MedcomErpCommandSchema` và `dbo.MedcomErpCommandJournal` trong một transaction. Nó không chạy host và không thay đổi các bảng/procedure/configuration nghiệp vụ ERP. Nếu đã có journal, lệnh từ chối ghi đè; dùng kiểm tra chỉ đọc:
+Lệnh kiểm tra DB đích và các cột bắt buộc của API, rồi tạo `dbo.MedcomErpCommandSchema` và `dbo.MedcomErpCommandJournal` trong một transaction. Nó không chạy host và không thay đổi các bảng/procedure/configuration nghiệp vụ ERP. Nếu đã có journal, lệnh từ chối ghi đè; dùng kiểm tra chỉ đọc:
 
 ```powershell
 dotnet Medcom.Api.dll --prepare-erp-writes --Medcom:PrivateConfigPath D:\Config\appsettings.Private.json
 ```
 
-Kết quả thành công có `status=prepared`, `schemaFingerprint`, `catalogHash`, `installed` và danh sách modules. Thêm fingerprint trả về vào `Medcom:ErpWrites:SchemaFingerprint`, rồi khởi động BE như thông thường. Startup có profile ghi sẽ tự bật reader cần thiết; không cần bật `Legacy:EnableReadOnlyPilots` riêng. `Legacy:Enabled`, tenant/company, Tools.dll và cơ chế đăng nhập ERP vẫn cần cấu hình đúng. Lệnh prepare là kiểm tra kỹ thuật, không phải giấy nghiệm thu production.
+Kết quả thành công có `status=prepared`, `schemaFingerprint=null`, `catalogHash`, `installed` và danh sách modules. `catalogHash` chỉ là thông tin nguồn lịch sử, không khóa quyền ghi. Không ghi/refresh fingerprint vào cấu hình; khởi động BE như thông thường. Startup có profile ghi sẽ tự bật reader cần thiết; không cần bật `Legacy:EnableReadOnlyPilots` riêng. `Legacy:Enabled`, tenant/company, Tools.dll và cơ chế đăng nhập ERP vẫn cần cấu hình đúng. Lệnh prepare là kiểm tra kỹ thuật, không phải giấy nghiệm thu production.
 
-Container có thể dùng bốn biến môi trường do người vận hành quản lý thay cho phần `ErpWrites` trong file:
+Container có thể dùng ba biến môi trường do người vận hành quản lý thay cho phần `ErpWrites` trong file:
 
 ```text
 Medcom__ErpWrites__DatabaseBindingId=<GUID>
 Medcom__ErpWrites__Database=<TEN_DB>
-Medcom__ErpWrites__SchemaFingerprint=<64_HEX_TU_PREPARE>
 Medcom__ErpWrites__Modules=purchase-requests;sales-orders;internal-transfer-requests;warehouse-qr;sales-qr;machine-movements;machine-repairs
 ```
 
-Toàn bộ profile phải đến từ file private hoặc môi trường server; không trộn hai nguồn, không đặt profile trong public appsettings hoặc command-line host. Thiếu/sai profile được báo ngay khi startup. Sau thay đổi schema/module/configuration, phải rà soát thay đổi và nghiệm thu tương ứng trước khi chạy prepare để chấp nhận fingerprint mới; không tự refresh khi có lỗi.
+Toàn bộ profile phải đến từ file private hoặc môi trường server; không trộn hai nguồn, không đặt profile trong public appsettings hoặc command-line host. Thiếu/sai profile được báo ngay khi startup. SchemaFingerprint cũ được bỏ qua, kể cả khi biến môi trường fingerprint khác giá trị trong file. Các trường cấu hình còn hiệu lực vẫn phải thống nhất. Cập nhật FE/BE hoặc thay đổi hash schema/procedure/form không cần chạy prepare hay refresh fingerprint. API kiểm tra quyền, dữ liệu và các cột nó thực sự dùng; lỗi tương thích thật vẫn được xử lý trên thao tác/màn hình liên quan.
 
 ## FE gọi API
 
