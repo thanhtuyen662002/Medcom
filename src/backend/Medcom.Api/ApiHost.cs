@@ -97,7 +97,7 @@ public static class ApiHost
             if (erpWrites is not null)
             {
                 builder.Services.AddSingleton<Medcom.Infrastructure.Erp.IErpSqlWriteAcceptance>(
-                    new Medcom.Infrastructure.Erp.ErpWriteRuntime(erpWrites.Binding, erpWrites.Database, erpWrites.SchemaFingerprint!, erpWrites.Modules));
+                    new Medcom.Infrastructure.Erp.ErpWriteRuntime(erpWrites.Binding, erpWrites.Database, erpWrites.Modules));
                 builder.Services.AddSingleton<Medcom.Infrastructure.Erp.IErpDocumentNumberAllocator, Medcom.Infrastructure.Erp.SqlErpDocumentNumberAllocator>();
                 builder.Services.AddScoped<Medcom.Infrastructure.Erp.IErpSqlCommandExecutor>(provider =>
                 {

@@ -1,3 +1,20 @@
+owner_retire_runtime_fingerprint_gates_20261015:
+  instruction: disable_runtime_fingerprint_blocks_for_FE_testing_and_BE_updates_preserve_native_authorization
+  canonical_goal: 45
+  current_increment: I94
+  pr: 161
+  base: a2a61cb7f77f5e4f9e02b69b7023bf455fad8c37
+  checkpoint: docs/execution/checkpoints/I94_RETIRE_RUNTIME_FINGERPRINT_GATES_20261015.md
+  handoff: docs/backend/ERP_WRITES_WITHOUT_FINGERPRINT_20261015.md
+  runtime_schema_source_form_catalog_hash_admission: removed
+  retired_SchemaFingerprint_setting: ignored_including_stale_environment_overlays
+  native_permissions_branch_state_concurrency_idempotency_transactions: preserved
+  api_routes_payloads: unchanged
+  database_migration_or_fingerprint_refresh: not_required
+  focused_tests: 117_passed_zero_failed_zero_skipped
+  exact_head_full_suite_and_hosted_receipts: pending_PR161_integration_checkpoint
+  separately_owned_FE_changes: NONE
+  actual_VPS_deployment_and_business_acceptance: UNKNOWN
 owner_reference_displays_20261011:
   instruction: all_reference_IDs_with_names_ItemCode_Unit_Vietnamese_money_dates_Branch_lookup_and_CUD_button_audit
   canonical_goal: 45

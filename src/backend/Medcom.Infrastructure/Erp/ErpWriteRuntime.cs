@@ -7,40 +7,45 @@ using Medcom.Contracts;
 
 namespace Medcom.Infrastructure.Erp;
 
-// Technical target verification, not a claim of production/business acceptance.
-// An operator prepares the journal and captures the exact schema fingerprint once.
-// Startup never installs, refreshes or silently accepts a changed target.
+// Technical target identity only. Runtime hashes are retired by owner direction;
+// unrelated schema/source/configuration changes must not disable all ERP writes.
 public sealed class ErpWriteRuntime : IErpSqlWriteAcceptance
 {
     private readonly Guid binding;
     private readonly string database;
-    private readonly byte[] fingerprint;
     private readonly HashSet<string> modules;
-    public ErpWriteRuntime(Guid binding, string database, string schemaFingerprint, IEnumerable<string> modules)
+    public ErpWriteRuntime(Guid binding, string database, IEnumerable<string> modules)
     {
-        if (binding == Guid.Empty || string.IsNullOrWhiteSpace(database) || database.Equals("master", StringComparison.OrdinalIgnoreCase)
-            || schemaFingerprint.Length != 64 || !schemaFingerprint.All(char.IsAsciiHexDigit))
+        if (binding == Guid.Empty || string.IsNullOrWhiteSpace(database) || database.Equals("master", StringComparison.OrdinalIgnoreCase))
             throw new ArgumentException("Complete ERP write target configuration required.");
         this.modules = new(modules, StringComparer.Ordinal);
         if (this.modules.Count == 0 || this.modules.Any(module => ErpScreenCatalog.Get(module) is null))
             throw new ArgumentException("Fixed ERP screen modules required.");
-        this.binding = binding; this.database = database; fingerprint = Convert.FromHexString(schemaFingerprint);
+        this.binding = binding; this.database = database;
     }
+    // Existing operator tooling may still pass the retired argument; ignore it.
+    public ErpWriteRuntime(Guid binding,string database,string? schemaFingerprint,IEnumerable<string> modules)
+        :this(binding,database,modules) { }
     public bool Includes(string module) => modules.Contains(module);
     public async Task<bool> VerifyAsync(DbTransaction transaction, Guid binding, string module, CancellationToken token)
     {
         if (this.binding != binding || !Includes(module)) return false;
         await using (var command = ErpSqlPlan.Command(transaction, "SELECT DB_NAME();"))
             if (await command.ExecuteScalarAsync(token) as string != database) return false;
-        var observed = await SchemaFingerprintAsync(transaction, token);
-        if (!CryptographicOperations.FixedTimeEquals(fingerprint, observed)) return false;
-        await SqlErpScreenCommands.VerifyNativeMetadata(transaction, token);
-        if(ErpScreenCatalog.IsWorkflow(module))await SqlErpScreenCommands.VerifyWorkflowMetadata(transaction,token);
-        await SqlErpScreenCommands.VerifyScreenConfiguration(transaction, ErpSqlPlan.Get(module)!, token);
         return true;
     }
     public static string CatalogHash => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(ErpScreenCatalog.SourceMetadata.GetRawText())));
+    // CatalogHash remains historical journal metadata, never a write permit.
+    internal static async Task<bool> JournalMatchesAsync(DbTransaction transaction,Guid binding,CancellationToken token)
+    {
+        await using var command=ErpSqlPlan.Command(transaction,"SELECT SingletonId,SchemaVersion,DatabaseBindingId FROM dbo.MedcomErpCommandSchema WITH(HOLDLOCK);");
+        await using var reader=await command.ExecuteReaderAsync(token);
+        return reader.FieldCount==3&&await reader.ReadAsync(token)&&!Enumerable.Range(0,3).Any(reader.IsDBNull)
+            &&reader.GetByte(0)==1&&reader.GetInt32(1)==1&&reader.GetGuid(2)==binding
+            &&!await reader.ReadAsync(token)&&!await reader.NextResultAsync(token);
+    }
 
+    // Explicit diagnostic utility only; never called by API admission or setup.
     // Only the digest leaves SQL Server. No definition, user, settings value or business row
     // is read into a public artifact. Include complete database module/constraint signatures,
     // column shapes and index/foreign-key/trigger enablement, rather than table presence alone.

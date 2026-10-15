@@ -1,15 +1,13 @@
 using System.Data;
 using System.Data.Common;
 using System.Globalization;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.RegularExpressions;
 using Medcom.Application;
 using Medcom.Contracts;
 namespace Medcom.Infrastructure.Erp;
 
 // Exact current-form lookup bindings only. SQL remains private in the owner database;
-// the compiled source hash and typed context bind it before any read. No HTTP SQL is accepted.
+// typed column/context checks and the bounded read-SQL binder apply. No HTTP SQL is accepted.
 internal static class ErpLookupSql
 {
     internal sealed record Bound(string Text,IReadOnlyList<(string Name,string Value)> Parameters);
@@ -69,8 +67,7 @@ internal static class ErpLookupSql
         await using var reader=await command.ExecuteReaderAsync(token);
         if(!await reader.ReadAsync(token)||reader.IsDBNull(0)||reader.IsDBNull(1)||reader.IsDBNull(2))return null;
         var source=reader.GetString(0);
-        if(Convert.ToHexStringLower(SHA256.HashData(Encoding.Unicode.GetBytes(source)))!=lookup.SourceHash
-            ||reader.GetString(1)!=lookup.ValueField||reader.GetString(2)!=lookup.DisplayField
+        if(reader.GetString(1)!=lookup.ValueField||reader.GetString(2)!=lookup.DisplayField
             ||(reader.IsDBNull(3)?null:reader.GetString(3))!=lookup.Parameters
             ||(reader.IsDBNull(4)?null:reader.GetString(4))!=lookup.RequiredParameters
             ||!reader.IsDBNull(5)&&reader.GetBoolean(5)||(!reader.IsDBNull(6)&&reader.GetBoolean(6))!=lookup.MultiSelect
@@ -78,19 +75,6 @@ internal static class ErpLookupSql
         if(ErpScreenCatalog.IsWorkflow(screen.Id)&&(!reader.IsDBNull(8)&&reader.GetBoolean(8))!=lookup.AllowUnlisted)return null;
         if(await reader.ReadAsync(token)||await reader.NextResultAsync(token))return null;
         await reader.DisposeAsync();
-        var procedure=Regex.Match(source.TrimStart(),@"^(?:EXEC\s+)?(?:dbo\.)?(WA_OrderByContract_GetItemStp|IV_GetItemByContractIDStp)\b",RegexOptions.IgnoreCase|RegexOptions.CultureInvariant);
-        if(procedure.Success)
-        {
-            var name=procedure.Groups[1].Value;
-            var pins=ErpScreenCatalog.SourceMetadata.GetProperty("modules").EnumerateArray()
-                .Concat(ErpScreenCatalog.WorkflowMetadata.GetProperty("modules").EnumerateArray())
-                .Where(module=>module.GetProperty("name").GetString()==name).Select(module=>module.GetProperty("definitionSha256Utf16LE").GetString())
-                .Distinct(StringComparer.Ordinal).ToArray();
-            if(pins.Length!=1)return null;
-            await using var probe=ErpSqlPlan.Command(transaction,"SELECT CONVERT(varchar(64),HASHBYTES('SHA2_256',CONVERT(varbinary(max),definition)),2) FROM sys.sql_modules WHERE object_id=OBJECT_ID(@object,'P');");
-            ErpSqlPlan.Parameter(probe,"@object",DbType.String,"dbo."+name,255);
-            if((await probe.ExecuteScalarAsync(token)as string)?.ToLowerInvariant()!=pins[0])return null;
-        }
         return source;
     }
     internal static bool Sensitive(string column)=>column.Contains("password",StringComparison.OrdinalIgnoreCase)

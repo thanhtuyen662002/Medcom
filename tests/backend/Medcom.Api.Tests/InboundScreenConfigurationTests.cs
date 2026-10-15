@@ -17,7 +17,7 @@ public sealed class InboundScreenConfigurationTests
     [Theory]
     [InlineData("current")] [InlineData("old")] [InlineData("unknown")]
     [InlineData("missing")] [InlineData("extra")] [InlineData("duplicate")] [InlineData("null")]
-    public async Task Reviewed_current_configuration_passes_and_every_unreviewed_change_still_fails(string mutation)
+    public async Task Offline_source_audit_detects_inbound_configuration_drift_without_gating_runtime(string mutation)
     {
         var metadata=ErpScreenCatalog.Metadata("inbound-requests");
         Assert.Equal(CurrentHash,metadata.GetProperty("buttons").EnumerateArray()

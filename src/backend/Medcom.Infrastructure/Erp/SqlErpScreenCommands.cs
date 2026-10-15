@@ -10,7 +10,7 @@ using Microsoft.Data.SqlClient;
 namespace Medcom.Infrastructure.Erp;
 
 // Trusted server seam for target verification. The concrete ErpWriteRuntime checks the
-// installed binding and exact schema/source/configuration. Business/release acceptance
+// installed binding and the selected database. Business/release acceptance
 // is separately recorded; no HTTP flag or caller-supplied SQL can construct this runtime.
 public interface IErpSqlWriteAcceptance
 {
@@ -96,8 +96,10 @@ public sealed partial class SqlErpScreenCommands:IErpSqlCommandExecutor
                 ErpSqlPlan.Parameter(command,"@mode",DbType.String,observation?"Shared":"Exclusive",32);
                 Require(await command.ExecuteScalarAsync(token)is int locked&&locked>=0,ErpCommandOutcome.Conflict,"erp_command_busy");
             }
-            stage="qualification";Require(await acceptance.VerifyAsync(transaction,binding,module,token)&&await JournalBinding(transaction,token)
-                &&await SqlErpScreenReader.SchemaMatches(transaction,plan,token),ErpCommandOutcome.QualificationRequired,"target_acceptance_changed");
+            stage="qualification";
+            Require(await acceptance.VerifyAsync(transaction,binding,module,token),ErpCommandOutcome.QualificationRequired,"erp_write_target_mismatch");
+            Require(await JournalBinding(transaction,token),ErpCommandOutcome.QualificationRequired,"erp_journal_binding_mismatch");
+            Require(await SqlErpScreenReader.SchemaMatches(transaction,plan,token),ErpCommandOutcome.QualificationRequired,"erp_source_schema_changed");
             stage="authority";var rights=await ErpSqlAuthority.Read(transaction,company,identity!,plan.Screen,request.BranchId,token);
             Require(rights is not null,ErpCommandOutcome.Denied,"native_scope_denied");
             var key=JsonSerializer.SerializeToUtf8Bytes(new[]{"erp-command-v1",identity!.TenantId,identity.CompanyId,identity.PrincipalId,module,operation,request.BranchId,request.IdempotencyKey});
@@ -146,7 +148,7 @@ public sealed partial class SqlErpScreenCommands:IErpSqlCommandExecutor
                 var observed=await JournalRead(transaction,slot,key,bytes,token);
                 Require(observed is not null&&ErpInputRules.Fingerprint(receipt)==ErpInputRules.Fingerprint(observed),ErpCommandOutcome.Unavailable,"journal_verification_failed");
                 await Fence(transaction,identity,plan,rights!,request.BranchId,token);
-                Require(await acceptance.VerifyAsync(transaction,binding,module,token),ErpCommandOutcome.QualificationRequired,"target_acceptance_changed");
+                Require(await acceptance.VerifyAsync(transaction,binding,module,token),ErpCommandOutcome.QualificationRequired,"erp_write_target_mismatch");
                 token.ThrowIfCancellationRequested();commitAttempted=true;
                 stage="commit";await transaction.CommitAsync(token);committed=true;
                 result=new(ErpCommandOutcome.Committed,Receipt:receipt);
@@ -186,14 +188,7 @@ public sealed partial class SqlErpScreenCommands:IErpSqlCommandExecutor
         Require(SqlErpScreenReader.SameSession(identity,await inspect(token))
             &&await ErpSqlAuthority.Read(transaction,company,identity,plan.Screen,branch,token)==rights,ErpCommandOutcome.Denied,"authority_changed");
     }
-    private async Task<bool> JournalBinding(DbTransaction transaction,CancellationToken token)
-    {
-        await using var command=ErpSqlPlan.Command(transaction,"SELECT SingletonId,SchemaVersion,DatabaseBindingId,CatalogHash FROM dbo.MedcomErpCommandSchema WITH(HOLDLOCK);");
-        await using var reader=await command.ExecuteReaderAsync(token);
-        var catalog=SHA256.HashData(Encoding.UTF8.GetBytes(ErpScreenCatalog.SourceMetadata.GetRawText()));
-        return await reader.ReadAsync(token)&&reader.GetByte(0)==1&&reader.GetInt32(1)==1&&reader.GetGuid(2)==binding
-            &&reader.GetFieldValue<byte[]>(3).AsSpan().SequenceEqual(catalog)&&!await reader.ReadAsync(token)&&!await reader.NextResultAsync(token);
-    }
+    private Task<bool> JournalBinding(DbTransaction transaction,CancellationToken token)=>ErpWriteRuntime.JournalMatchesAsync(transaction,binding,token);
     private async Task<ErpCommandReceipt?> JournalRead(DbTransaction transaction,byte[] slot,byte[] key,byte[] intent,CancellationToken token)
     {
         await using var command=ErpSqlPlan.Command(transaction,"SELECT KeyBytes,IntentBytes,ReceiptJson,DocumentId,AfterToken,AuditId FROM dbo.MedcomErpCommandJournal WITH(UPDLOCK,HOLDLOCK) WHERE DatabaseBindingId=@binding AND SlotHash=@slot;");

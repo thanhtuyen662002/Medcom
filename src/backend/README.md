@@ -4,6 +4,8 @@ The backend includes `/swagger` for API inspection. Sign in with an ERP account,
 then use **Try it out**; its client supplies CSRF/current scope and retains normal
 server permissions. See the [Swagger usage guide](../../docs/backend/SWAGGER_UI.md).
 
+Runtime schema/source/form fingerprint gates were retired by owner direction on 15 October 2026. Existing `SchemaFingerprint` settings are ignored; keep the current DB/journal binding, native permissions, document state and concurrency checks. See the [operator update handoff](../../docs/backend/ERP_WRITES_WITHOUT_FINGERPRINT_20261015.md).
+
 ## Current API and frontend handoff — 11 October 2026
 
 The [complete Vietnamese FE API reference](../../docs/backend/BE_FE_API_REFERENCE_20261011.md) covers **244 HTTP operations, 1202 schemas and 214 dropdown bindings** across 19 forms. Use the [authenticated permissions handoff](../../docs/backend/BE_FE_PERMISSIONS_20261015.md) for menu, screen, CRUD and button rendering. The [CUD/workflow handoff](../../docs/backend/BE_FE_CUD_WORKFLOW_20261011.md) identifies each added screen, owned input fields, business buttons, statuses, section routes and stock-voucher preconditions. Print/import/copy additions are excluded from PR140. Source, native SQL fixture, CI and deployment evidence are recorded separately in [I78](../../docs/execution/I78_CUD_ACTIONS_20261011.md).
