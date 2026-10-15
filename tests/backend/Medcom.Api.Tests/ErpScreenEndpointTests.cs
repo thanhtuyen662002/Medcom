@@ -9,9 +9,9 @@ namespace Medcom.Api.Tests;
 
 public sealed class ErpScreenEndpointTests
 {
+    public static IEnumerable<object[]> Modules()=>ErpScreenCatalog.ModuleIds.Select(module=>new object[]{module});
     [Theory]
-    [InlineData("purchase-requests")][InlineData("sales-orders")][InlineData("internal-transfer-requests")]
-    [InlineData("warehouse-qr")][InlineData("sales-qr")][InlineData("machine-movements")][InlineData("machine-repairs")]
+    [MemberData(nameof(Modules))]
     public async Task Fixed_screen_metadata_is_authenticated_authorized_and_publishes_complete_fields(string module)
     {
         await using var fixture=await PurchaseHttpFixture.Start();
@@ -25,11 +25,12 @@ public sealed class ErpScreenEndpointTests
         foreach(var action in screen.GetProperty("actions").EnumerateArray())
         {
             var operation=action.GetProperty("operation").GetString()!;
-            if(ErpActionRules.IsCudOperation(operation))
+            var definition=ErpScreenCatalog.Get(module)!.Actions.Single(a=>a.Operation==operation);
+            Assert.Equal(definition.Caption,action.GetProperty("caption").GetString());
+            if(ErpActionRules.IsUiTestAction(module,definition))
             {
                 Assert.True(action.GetProperty("nativeVisible").GetBoolean());
                 Assert.Equal(JsonValueKind.Null,action.GetProperty("lockExpression").ValueKind);
-                Assert.Equal("",action.GetProperty("caption").GetString());
             }
         }
         fixture.Authority.Identity=fixture.Authority.Identity with{Capabilities=[]};
