@@ -12,6 +12,7 @@ import {
   erpContractInfoSchema,
   erpCommandObservationSchema,
   erpItemPriceSchema,
+  erpPermissionsSchema,
   type ErpScreenDescription,
   type ErpDocumentPage,
   type ErpDocumentDetail,
@@ -22,6 +23,7 @@ import {
   type ErpContractInfo,
   type ErpCommandObservation,
   type ErpItemPrice,
+  type ErpPermissions,
 } from "./erp-screen-contracts";
 
 let activeReadScope: string | null = null;
@@ -212,6 +214,14 @@ async function refreshReadScope(signal?: AbortSignal): Promise<void> {
   }
   throw new ApiError(r.status, "read_scope_changed", r.headers.get("x-correlation-id") ?? undefined);
 }
+
+/** 0. Screen permissions for the current ERP session (menu + CRUD gating) */
+export async function getErpPermissions(
+  params: { branchId: string },
+  signal?: AbortSignal
+): Promise<ErpPermissions> {
+  return erpGet(`api/erp/permissions`, erpPermissionsSchema, params, signal);
+};
 
 /** 1. Read Form & Metadata */
 export async function getErpScreen(

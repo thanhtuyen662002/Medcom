@@ -123,6 +123,7 @@ const erpScreenPostRoutes = new Set([
 export function erpScreenPostRoute(path:string){return erpScreenPostRoutes.has(path);}
 
 const erpScreenGetRoutes = new Set([
+  "api/erp/permissions",
   ...erpScreenModules.flatMap(m => [
     `api/erp/${m}/screen`,
     `api/erp/${m}`,

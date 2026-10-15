@@ -46,6 +46,9 @@ export interface SidebarDrawerProps {
   pendingOrdersCount?: number;
   pendingPurchasesCount?: number;
   pendingInboundCount?: number;
+  /** Quyền màn hình từ /api/erp/permissions; allowed null = chưa có quyền. */
+  tabAccess?: { loading: boolean; error: boolean; allowed: readonly string[] | null } | null;
+  onRetryTabs?: () => void;
 }
 
 interface NavSection {
@@ -77,6 +80,8 @@ export function SidebarDrawer({
   pendingOrdersCount = 0,
   pendingPurchasesCount = 0,
   pendingInboundCount = 0,
+  tabAccess = null,
+  onRetryTabs,
 }: SidebarDrawerProps) {
   const [mounted, setMounted] = useState(false);
 
@@ -400,7 +405,31 @@ export function SidebarDrawer({
 
         {/* Scrollable Navigation List */}
         <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4 scrollbar-thin">
-          {sections.map((section, sIdx) => (
+          {tabAccess?.allowed == null ? (
+            <div className="space-y-1">
+              <span className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 block mb-1.5">
+                Màn hình ERP
+              </span>
+              {tabAccess?.error ? (
+                <button
+                  type="button"
+                  onClick={onRetryTabs}
+                  className="w-full px-2.5 py-2 rounded-xl text-xs font-semibold text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-800"
+                >
+                  Không tải được quyền. Bấm để thử lại.
+                </button>
+              ) : (
+                <p className="px-2.5 py-2 text-xs text-neutral-400">Đang tải quyền màn hình...</p>
+              )}
+            </div>
+          ) : (
+          sections
+            .map((section) => ({
+              ...section,
+              items: section.items.filter((item) => (tabAccess.allowed as readonly string[]).includes(item.id)),
+            }))
+            .filter((section) => section.items.length > 0)
+            .map((section, sIdx) => (
             <div key={sIdx} className="space-y-1">
               <span className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 block mb-1.5">
                 {section.title}
@@ -465,7 +494,7 @@ export function SidebarDrawer({
                 })}
               </div>
             </div>
-          ))}
+          )))}
         </div>
 
         {/* Footer Actions (Theme toggle & Logout) */}

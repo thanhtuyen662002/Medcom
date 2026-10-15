@@ -25,7 +25,7 @@ test('root lifecycle precedence, mismatched proof, outage and POST-only boundari
  assert.equal(derive({...verified,authority:'unavailable',proofLifecycleKey:null}).mountProtected,true);
 });
 test('bounded requested screen resolution waits for proof and intersects current grants',()=>{
- const all=['home','settings','purchase-orders','purchase-requests','purchase-approval','inbound-requests','transfers','sales','accounting','reports'];
+ const all=['home','settings','purchase-orders','purchase-requests','purchase-approvals','inbound-requests','transfers','sales','accounting','reports'];
  for(const id of all){assert.equal(parse(id),id);assert.equal(resolve(id,all,derive(input)),null);assert.equal(resolve(id,all,derive(verified)),id==='sales'?'home':id);}
  for(const bad of ['https://evil.test','javascript:alert(1)','//evil','/settings','unknown',{},null]){assert.equal(parse(bad),null);assert.equal(resolve(bad,['settings'],derive(verified)),'settings');}
  assert.equal(resolve('purchase-orders',['home'],derive(verified)),'home');assert.equal(resolve('home',[],derive(verified)),null);assert.equal(resolve('sales',['sales'],derive(verified)),null);

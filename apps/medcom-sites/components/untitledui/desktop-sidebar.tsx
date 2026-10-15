@@ -52,6 +52,9 @@ export interface DesktopSidebarProps {
   pendingOrdersCount?: number;
   pendingPurchasesCount?: number;
   pendingInboundCount?: number;
+  /** Quyền màn hình từ /api/erp/permissions; allowed null = chưa có quyền. */
+  tabAccess?: { loading: boolean; error: boolean; allowed: readonly string[] | null } | null;
+  onRetryTabs?: () => void;
 }
 
 export function DesktopSidebar({
@@ -72,6 +75,8 @@ export function DesktopSidebar({
   pendingOrdersCount = 0,
   pendingPurchasesCount = 0,
   pendingInboundCount = 0,
+  tabAccess = null,
+  onRetryTabs,
 }: DesktopSidebarProps) {
   const [branchDropdownOpen, setBranchDropdownOpen] = useState(false);
 
@@ -296,7 +301,28 @@ export function DesktopSidebar({
         </div>
 
         {/* ERP Modules (19 Screens) */}
-        {erpSections.map((sec) => (
+        {tabAccess?.allowed == null ? (
+          <div className="space-y-1 pt-2 border-t border-neutral-100 dark:border-neutral-800/60">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 px-2 block mb-1">
+              Màn hình ERP
+            </span>
+            {tabAccess?.error ? (
+              <button
+                type="button"
+                onClick={onRetryTabs}
+                className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-800 hover:bg-brand-50 dark:hover:bg-brand-950/40"
+              >
+                Không tải được quyền. Bấm để thử lại.
+              </button>
+            ) : (
+              <p className="px-3 py-2 text-xs text-neutral-400">Đang tải quyền màn hình...</p>
+            )}
+          </div>
+        ) : (
+        erpSections
+          .map((sec) => ({ ...sec, items: sec.items.filter((item) => (tabAccess.allowed as readonly string[]).includes(item.id)) }))
+          .filter((sec) => sec.items.length > 0)
+          .map((sec) => (
           <div key={sec.title} className="space-y-1 pt-2 border-t border-neutral-100 dark:border-neutral-800/60">
             <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 px-2 block mb-1">
               {sec.title}
@@ -325,7 +351,7 @@ export function DesktopSidebar({
               );
             })}
           </div>
-        ))}
+        )))}
 
         {/* Settings */}
         <div className="space-y-1 pt-2 border-t border-neutral-100 dark:border-neutral-800/60">

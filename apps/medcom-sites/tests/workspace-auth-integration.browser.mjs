@@ -156,7 +156,7 @@ test('composed auth admission, portal fencing and same-intent custody',{timeout:
  try{
   browser=await chromium.launch({executablePath:executable,headless:true,chromiumSandbox:true});
   for(const width of [1280,390]){
-   for(const screen of ['home','settings','purchase-orders','purchase-requests','purchase-approval','inbound-requests','transfers','sales','accounting','reports','https://untrusted.invalid'])await run(`${width} initial held proof and anonymous ${screen}`,async()=>{
+   for(const screen of ['home','settings','purchase-orders','purchase-requests','purchase-approvals','inbound-requests','transfers','sales','accounting','reports','https://untrusted.invalid'])await run(`${width} initial held proof and anonymous ${screen}`,async()=>{
     await start(width,screen,{authenticated:false,holdWorkspace:true});await page.getByRole('heading',{name:'Đang xác minh phiên làm việc…',exact:true}).waitFor();await gateOnly();release('Workspace');await page.getByRole('form',{name:'Đăng nhập ERP',exact:true}).waitFor();await gateOnly();assert.equal(calls.filter(call=>call.route.includes('/documents/')||call.route.startsWith('/api/purchase-requests')).length,0);
    });
    await run(`${width} initial unavailable retry preserves requested route without mounting shell`,async()=>{

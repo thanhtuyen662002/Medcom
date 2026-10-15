@@ -37,6 +37,7 @@ import {
   getErpOptions,
   getErpPmOptions,
   getErpActionOptions,
+  getErpPermissions,
   saveErpSection,
   getErpItemPrice,
   createErpDocument,
@@ -326,6 +327,10 @@ export class ErpClientService {
     }
   ) {
     return await getErpList(module, params);
+  }
+
+  public async getScreenPermissions(branchId: string) {
+    return await getErpPermissions({ branchId });
   }
 
   public async getErpModuleDetail(
