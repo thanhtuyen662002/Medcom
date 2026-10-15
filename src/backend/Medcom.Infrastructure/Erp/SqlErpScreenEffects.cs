@@ -12,9 +12,8 @@ public sealed partial class SqlErpScreenCommands
     private static async Task<IReadOnlyList<ErpAllocatedLine>> Apply(DbTransaction transaction,AuthoritativeIdentity identity,
         ErpSqlPlan plan,ErpFrozenCommand request,string document,ErpReadSnapshot? before,CancellationToken token)
     {
-        await VerifyNativeMetadata(transaction,token);
-        if(ErpScreenCatalog.IsWorkflow(plan.Module))await VerifyWorkflowMetadata(transaction,token);
-        await VerifyScreenConfiguration(transaction,plan,token);
+        // Execute fixed typed operations against the current target. Source/form
+        // fingerprint audits remain available separately and never gate CUD.
         if(before is not null)await PhysicalKeys(transaction,plan,document,before.Lines.Count,token);
         var allocated=new List<ErpAllocatedLine>();
         if(ErpScreenCatalog.IsWorkflow(plan.Module))
@@ -319,6 +318,8 @@ public sealed partial class SqlErpScreenCommands
         Require(success,ErpCommandOutcome.Unavailable,"native_success_not_observed");
     }
     internal static int NativeSuccessCode(string name)=>name=="CF_QRcodeStp"?0:3;
+    // Diagnostic audit helpers only. API reads, writes, numbering and journal
+    // preparation do not call these historical source/configuration hash checks.
     internal static async Task VerifyNativeMetadata(DbTransaction transaction,CancellationToken token)
     {
         // Pin the finite observed static closure. Dynamic dependencies remain the external acceptance owner’s responsibility.

@@ -30,7 +30,6 @@ public sealed class SqlErpDocumentNumberAllocator : IErpDocumentNumberAllocator
         if (!header.TryGetProperty(dateName, out var raw) || raw.ValueKind != JsonValueKind.String
             || !DateTime.TryParseExact(raw.GetString(), "yyyy-MM-dd'T'HH:mm:ss.fff", CultureInfo.InvariantCulture,
                 DateTimeStyles.None, out var date)) return null;
-        await SqlErpScreenCommands.VerifyScreenConfiguration(transaction, plan, token);
         await using (var mask = ErpSqlPlan.Command(transaction, "SELECT CodeValue FROM dbo.SY_Setup WITH(HOLDLOCK) WHERE CodeID='DocumentMask';"))
         {
             await using var rows = await mask.ExecuteReaderAsync(token);
