@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ApiError } from "./api";
 import { type ErpScreenModule } from "./proxy-policy";
+import { attachmentPageSchema, attachmentResultSchema, type SalesOrderAttachmentUpload } from "./sales-order-attachments";
 import {
   erpScreenDescriptionSchema,
   erpDocumentPageSchema,
@@ -36,10 +37,11 @@ export function setActiveReadScope(scope: string | null): void {
   activeReadScope = scope;
 }
 
-async function getCsrfToken(): Promise<string> {
+async function getCsrfToken(signal?: AbortSignal): Promise<string> {
   const r = await fetch("/api/erp/api/auth/csrf", {
     credentials: "same-origin",
     cache: "no-store",
+    signal,
   });
   if (!r.ok) throw new ApiError(r.status, "csrf_failed");
   const data = (await r.json()) as { token: string | null };
@@ -213,6 +215,50 @@ async function refreshReadScope(signal?: AbortSignal): Promise<void> {
     return;
   }
   throw new ApiError(r.status, "read_scope_changed", r.headers.get("x-correlation-id") ?? undefined);
+}
+
+export async function getSalesOrderAttachments(branchId: string, documentId: string, page = 1, signal?: AbortSignal) {
+  return erpGet("api/erp/sales-orders/attachments", attachmentPageSchema, { branchId, documentId, page, pageSize: 20 }, signal);
+}
+
+export async function uploadSalesOrderAttachment(request: SalesOrderAttachmentUpload, signal?: AbortSignal) {
+  const csrf = await getCsrfToken(signal);
+  if (!activeReadScope) await refreshReadScope(signal);
+  const attempt = async () => {
+    const form = new FormData();
+    form.set("idempotencyKey", request.idempotencyKey); form.set("branchId", request.branchId);
+    form.set("documentId", request.documentId); form.set("expectedStateToken", request.expectedStateToken);
+    form.set("slotId", "2"); form.set("file", request.file, request.file.name);
+    // The browser owns the multipart boundary. Never stringify/decode the image bytes.
+    const response = await fetch("/api/erp/api/erp/sales-orders/attachments/upload", {
+      method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error", signal,
+      headers: { Accept: "application/json", "X-CSRF-TOKEN": csrf, "X-Medcom-Read-Scope": activeReadScope! }, body: form,
+    });
+    const scope = response.headers.get("X-Medcom-Read-Scope");
+    if (scope && /^[a-f0-9]{64}$/.test(scope)) activeReadScope = scope;
+    const body: unknown = await response.json().catch(() => null);
+    if (!response.ok) {
+      const problem = z.object({ code: z.string().optional() }).passthrough().safeParse(body);
+      throw new ApiError(response.status, problem.success ? problem.data.code || "attachment_upload_failed" : "attachment_upload_failed",
+        response.headers.get("x-correlation-id") || undefined);
+    }
+    const parsed = attachmentResultSchema.safeParse(body);
+    if (!parsed.success) throw new ApiError(502, "invalid_attachment_response");
+    if (parsed.data.outcome === "Committed" || parsed.data.outcome === "Replayed") {
+      const receipt = parsed.data.receipt;
+      if (!receipt || receipt.module !== "sales-orders" || receipt.documentId !== request.documentId ||
+        receipt.idempotencyKey !== request.idempotencyKey || receipt.deleted || !receipt.attachmentId)
+        throw new ApiError(502, "invalid_attachment_receipt");
+    }
+    return parsed.data;
+  };
+  try { return await attempt(); }
+  catch (error) {
+    if (error instanceof ApiError && error.status === 409 && ["erp_scope_changed", "read_scope_changed"].includes(error.code)) {
+      await refreshReadScope(signal); return await attempt();
+    }
+    throw error;
+  }
 }
 
 /** 0. Screen permissions for the current ERP session (menu + CRUD gating) */

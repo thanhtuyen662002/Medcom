@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Image from "next/image";
+import { MedcomLogo } from "@/components/brand/medcom-logo";
 import {
   ShieldCheck,
   Lock,
@@ -103,7 +103,7 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
         {/* Brand Header */}
         <div className="text-center space-y-2">
           <div className="inline-flex h-14 w-40 items-center justify-center">
-            <Image src="/medcom-logo.png" alt="MEDCOMTECH" width={288} height={104} className="h-full w-full object-contain" priority />
+            <MedcomLogo alt="MEDCOMTECH" width={288} height={104} className="h-full w-full object-contain" priority />
           </div>
 
           <div className="flex items-center justify-center gap-2">
@@ -223,6 +223,9 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
 
           {/* Compliance Footer */}
           <div className="mt-6 pt-4 border-t border-neutral-100 dark:border-neutral-800 text-center">
+            <a href="/help" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline">
+              Xem hướng dẫn sử dụng Medcom
+            </a>
             <p className="text-[11px] text-neutral-400 flex items-center justify-center gap-1.5">
               <Server className="size-3 text-brand-600" />
               <span>Xác thực an toàn AES-GCM · Chuẩn Dược GSP Bộ Y Tế</span>

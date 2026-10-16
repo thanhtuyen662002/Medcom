@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { MedcomThemeIcons } from "@/components/brand/medcom-logo";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -17,7 +18,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi">
-      <body className="antialiased">{children}</body>
+      <body className="antialiased"><MedcomThemeIcons />{children}</body>
     </html>
   );
 }

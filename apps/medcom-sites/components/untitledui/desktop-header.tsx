@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import Image from "next/image";
+import { MedcomLogo } from "@/components/brand/medcom-logo";
 import {
   ShieldCheck,
   Building2,
@@ -21,6 +21,7 @@ import {
   Search,
   Menu,
   PanelLeft,
+  BookOpen,
 } from "lucide-react";
 import { UntitledBadge } from "./badge";
 import { UntitledButton } from "./button";
@@ -114,7 +115,7 @@ export function DesktopHeader({
           <div className="flex items-center gap-4 shrink-0">
             <div className="flex items-center gap-2.5">
               <div className="h-10 w-20 flex items-center justify-center">
-                <Image src="/medcom-logo.png" alt="MEDCOMTECH" width={144} height={52} className="h-full w-full object-contain" priority />
+                <MedcomLogo alt="MEDCOMTECH" width={144} height={52} className="h-full w-full object-contain" priority />
               </div>
             </div>
 
@@ -226,6 +227,9 @@ export function DesktopHeader({
 
           {/* Right Header Actions */}
           <div className="flex items-center gap-2 shrink-0">
+            <a href="/help" target="_blank" rel="noopener noreferrer" aria-label="Hướng dẫn sử dụng (mở tab mới)" title="Hướng dẫn sử dụng" className="p-2 rounded-xl text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800">
+              <BookOpen className="size-4" />
+            </a>
             {onToggleLayoutMode && (
               <button
                 type="button"

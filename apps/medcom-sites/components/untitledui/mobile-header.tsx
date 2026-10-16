@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import Image from "next/image";
+import { MedcomLogo } from "@/components/brand/medcom-logo";
 import { Building2, Bell, ChevronDown, Check, ShieldCheck, Wifi, Sparkles } from "lucide-react";
 
 export interface BranchOption {
@@ -48,7 +48,7 @@ export function UntitledMobileHeader({
         {/* Brand & Branch Selector */}
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="h-9 w-20 flex items-center justify-center">
-            <Image src="/medcom-logo.png" alt="MEDCOMTECH" width={144} height={52} className="h-full w-full object-contain" priority />
+            <MedcomLogo alt="MEDCOMTECH" width={144} height={52} className="h-full w-full object-contain" priority />
           </div>
 
           <div className="relative min-w-0">

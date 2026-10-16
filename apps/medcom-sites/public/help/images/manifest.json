@@ -1,0 +1,74 @@
+{
+  "kind": "production-components-with-synthetic-offline-transport",
+  "viewport": {
+    "width": 440,
+    "height": 860
+  },
+  "realErpData": false,
+  "backendRequests": false,
+  "businessWrites": false,
+  "images": [
+    {
+      "name": "pr-list",
+      "annotations": 3,
+      "sha256": "8fae4f144b457733a93eda1081b2b06546373b2c1956d9d2c9130da09fca5945"
+    },
+    {
+      "name": "pr-header",
+      "annotations": 2,
+      "sha256": "23271e5c030b34db051e0aa74e50e62473591bb13c32ed803a8ceccc513cb71b"
+    },
+    {
+      "name": "pr-lines",
+      "annotations": 3,
+      "sha256": "34680d60421e1ca1169808ed410d47f389aceed5843ef5883fb2c9c7ce24c279"
+    },
+    {
+      "name": "pr-review",
+      "annotations": 1,
+      "sha256": "c6cc7d79aab3edb496cf5d822e5896dd54ec6e1ae4a5bc0ba335f60f557f12a2"
+    },
+    {
+      "name": "pr-actions",
+      "annotations": 2,
+      "sha256": "d17b993e2b36ba30e370a5b5fb63c9949c0f6344a49385c5a318e269495f1d7b"
+    },
+    {
+      "name": "approval-list",
+      "annotations": 2,
+      "sha256": "36497a108926ca6d3b125012ac96f037dcdbb12bbe7db9e278cb4ce77eb62c13"
+    },
+    {
+      "name": "approval-menu",
+      "annotations": 3,
+      "sha256": "56d5f07f5ddb42c69c8090a394cfc77eb8868a5349729f60faff374e9cacca3d"
+    },
+    {
+      "name": "approval-confirm",
+      "annotations": 2,
+      "sha256": "08f7e8aa55de013f54a57eeb76b09b68d9c8789d12081b36e872cf74957a0d30"
+    },
+    {
+      "name": "approval-reject",
+      "annotations": 2,
+      "sha256": "7bb8dee2852bc6f2411c5721aa90cdcf506b25939eb897d2a7fb0aee2b4df9df"
+    },
+    {
+      "name": "po-list",
+      "annotations": 3,
+      "sha256": "509a712e654006f0921324df55dadc2a42388b7df60fcc8793264990c0fa26e2"
+    },
+    {
+      "name": "po-detail",
+      "annotations": 1,
+      "sha256": "c7cf79d5d51b51fdef9d1b5909db34b02ae4cccce80994bcaf18d7d50db969f1"
+    }
+  ],
+  "sourceFiles": [
+    "components/untitledui/tab-erp-screen.tsx",
+    "components/untitledui/purchase-request-create-sheet.tsx",
+    "components/untitledui/lookup-field.tsx",
+    "components/untitledui/bottom-sheet.tsx"
+  ],
+  "errors": []
+}

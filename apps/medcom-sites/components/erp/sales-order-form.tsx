@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Camera, CheckCircle2, AlertCircle, ImagePlus, Link2, Loader2, RefreshCw, Save, Search, Undo2, X } from "lucide-react";
+import React, { useCallback, useEffect, useState } from "react";
+import { CheckCircle2, AlertCircle, Link2, Loader2, RefreshCw, Save, Pencil, MoreHorizontal, Undo2, Send } from "lucide-react";
 import { erpClient } from "@/lib/erp/erp-client";
 import type {
   ErpActionState,
@@ -13,14 +13,13 @@ import type {
 import { LookupField, fieldText } from "@/components/untitledui/lookup-field";
 import { UntitledBottomSheet } from "@/components/untitledui/bottom-sheet";
 import { buildSalesOrderSaveHeader } from "@/lib/erp/sales-order-form";
+import { salesOrderField } from "@/lib/erp/sales-order-lookups";
+import { SALES_ORDER_LINE_COLUMNS, SALES_ORDER_LINE_GROUPS } from "@/lib/erp/sales-order-lines";
+import { SalesOrderAttachmentList } from "./sales-order-attachment-list";
+import { RecordActionBar, RecordDetailHeading, RecordDetailStatus, RecordSection } from "./record-dialog";
+import { RequestButton, RequestInput, RequestTextarea, RecordDetailContext, requestDate, requestStyles } from "./request-presentation";
 
-/* ------------------------------------------------------------------ */
-/* Quản lý đơn hàng (sales-orders) — bố cục theo form desktop ERP:     */
-/* Số CT / Ngày CT / Mã hợp đồng / Mã quản lý / Mã nhân viên /         */
-/* Khách hàng (+Tên, Địa chỉ) / Ngày giao / Trạng thái / Link TLDK /   */
-/* Diễn giải / Ghi chú + panel Tài liệu đính kèm + Dòng hàng chi tiết. */
-/* Nút "..." của desktop = hộp chọn tra cứu (LookupField).             */
-/* ------------------------------------------------------------------ */
+/* Shared record detail: display saved values until the user chooses Sửa. */
 
 const LOOKUPS = {
   contractId: "header.ContractID",
@@ -82,6 +81,13 @@ const EMPTY_DRAFT: Draft = {
   deliverDate: "", memo: "", ghiChuDonHang: "", linkId: "", documentUrl: "",
 };
 
+function draftFromHeader(header: Record<string, unknown>): Draft {
+  return { documentDate: isoDate(header.documentDate), contractId: text(header.contractId),
+    managerId: text(header.managerId), employeeId: text(header.employeeId), objectId: text(header.objectId),
+    deliverDate: isoDate(header.deliverDate), memo: text(header.memo), ghiChuDonHang: text(header.ghiChuDonHang),
+    linkId: text(header.linkId), documentUrl: text(header.documentUrl) };
+}
+
 export function SalesOrderForm({
   branchId,
   documentId,
@@ -93,8 +99,11 @@ export function SalesOrderForm({
   onClose: () => void;
   onChanged: () => void;
 }) {
-  const [docId, setDocId] = useState(documentId);
-  const [quickFind, setQuickFind] = useState("");
+  const embedded = React.useContext(RecordDetailContext);
+  const prefix = React.useId();
+  const docId = documentId;
+  const [editing, setEditing] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
   const [detail, setDetail] = useState<ErpDocumentDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -103,11 +112,6 @@ export function SalesOrderForm({
   const [saving, setSaving] = useState(false);
   const [acting, setActing] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ type: "success" | "error" | "warning"; message: string } | null>(null);
-  // Ảnh đính kèm: xem trước file máy + link lưu vào documentUrl.
-  const [localPreview, setLocalPreview] = useState<string | null>(null);
-  const [localOnlyWarn, setLocalOnlyWarn] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
-  const captureRef = useRef<HTMLInputElement>(null);
   // Modal hợp đồng / PM / thu hồi.
   const [contract, setContract] = useState<ErpContractInfo | null>(null);
   const [contractOpen, setContractOpen] = useState(false);
@@ -119,29 +123,17 @@ export function SalesOrderForm({
   const [recallOpen, setRecallOpen] = useState(false);
 
   const load = useCallback(async (id: string) => {
+    setEditing(false);
     setLoading(true);
     setError(null);
     setFeedback(null);
-    setLocalPreview(null);
-    setLocalOnlyWarn(false);
     try {
       const data = await erpClient.getErpModuleDetail("sales-orders", {
         branchId, documentId: id, page: 1, pageSize: 50,
       });
       setDetail(data);
       const h = (data.header || {}) as Record<string, unknown>;
-      setDraft({
-        documentDate: isoDate(h.documentDate),
-        contractId: text(h.contractId),
-        managerId: text(h.managerId),
-        employeeId: text(h.employeeId),
-        objectId: text(h.objectId),
-        deliverDate: isoDate(h.deliverDate),
-        memo: text(h.memo),
-        ghiChuDonHang: text(h.ghiChuDonHang),
-        linkId: text(h.linkId),
-        documentUrl: text(h.documentUrl),
-      });
+      setDraft(draftFromHeader(h));
       setChoices({});
     } catch {
       setDetail(null);
@@ -152,7 +144,6 @@ export function SalesOrderForm({
   }, [branchId]);
 
   useEffect(() => { void load(docId); }, [docId, load]);
-  useEffect(() => { setDocId(documentId); }, [documentId]);
 
   const set = (k: keyof Draft, v: string) => setDraft((p) => ({ ...p, [k]: v }));
   const pick = (k: string, c: ErpChoice | null) => {
@@ -161,24 +152,17 @@ export function SalesOrderForm({
   };
 
   const header = (detail?.header || {}) as Record<string, unknown>;
-  const customerName = choices.objectId?.label || text(header.objectName) || "";
-  const customerAddr =
-    text((choices.objectId?.fields as Record<string, unknown> | undefined)?.address) ||
-    text(header.address) || "";
+  const originalCustomer = draft.objectId === text(header.objectId);
+  const customerName = salesOrderField(choices.objectId, "ObjectName") ||
+    (originalCustomer ? text(header.objectName) : "");
+  const customerAddr = salesOrderField(choices.objectId, "Address") ||
+    (originalCustomer ? text(header.address) : "");
   const statusName = text(header.statusName) || "—";
   const actions = detail?.actions || [];
   const act = (id: string): ErpActionState | undefined => actions.find((a) => a.id === id);
-  const previewUrl = localPreview || draft.documentUrl.trim();
-
-  function onFile(file: File | undefined) {
-    if (!file) return;
-    if (localPreview) URL.revokeObjectURL(localPreview);
-    setLocalPreview(URL.createObjectURL(file));
-    setLocalOnlyWarn(true);
-  }
 
   async function handleSave() {
-    if (!detail || saving) return;
+    if (!editing || !detail || saving || acting || !detail.actions.some(action => action.id === "save" && action.visible && action.enabled)) return;
     if (!draft.documentDate.trim() || !draft.objectId.trim() || !draft.employeeId.trim()) {
       setFeedback({ type: "warning", message: "Vui lòng nhập đủ Ngày CT, Khách hàng và Mã nhân viên trước khi lưu." });
       return;
@@ -213,27 +197,14 @@ export function SalesOrderForm({
   function handleDiscard() {
     if (!detail) return;
     const h = (detail.header || {}) as Record<string, unknown>;
-    setDraft({
-      documentDate: isoDate(h.documentDate),
-      contractId: text(h.contractId),
-      managerId: text(h.managerId),
-      employeeId: text(h.employeeId),
-      objectId: text(h.objectId),
-      deliverDate: isoDate(h.deliverDate),
-      memo: text(h.memo),
-      ghiChuDonHang: text(h.ghiChuDonHang),
-      linkId: text(h.linkId),
-      documentUrl: text(h.documentUrl),
-    });
+    setDraft(draftFromHeader(h));
     setChoices({});
-    if (localPreview) URL.revokeObjectURL(localPreview);
-    setLocalPreview(null);
-    setLocalOnlyWarn(false);
     setFeedback(null);
+    setEditing(false);
   }
 
   async function runAction(op: string, payload: Record<string, unknown>) {
-    if (!detail || acting) return;
+    if (!detail || editing || loading || saving || acting || !detail.actions.some(action => action.id === op && action.visible && action.enabled)) return;
     setActing(op);
     setFeedback(null);
     try {
@@ -284,208 +255,144 @@ export function SalesOrderForm({
   const recallAct = act("recall");
   const sendPmAct = act("send-pm");
   const contractAct = act("contract-info");
-  const canSave = !saving && (!saveAct || saveAct.enabled);
-
-  const inputCls = "w-full p-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs";
-  const labelCls = "block text-neutral-500 dark:text-neutral-400 mb-1 font-medium text-[11px]";
-  const roCls = "w-full p-2 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white text-xs font-semibold";
+  const busy = loading || saving || !!acting;
+  const canSave = !!saveAct?.visible && saveAct.enabled && !busy;
+  const canEdit = editing && canSave;
+  const dirty = !!detail && JSON.stringify(draft) !== JSON.stringify(draftFromHeader(header));
+  const inputCls = "w-full min-h-11 min-w-0 rounded-xl border border-border bg-background p-3 text-base text-foreground";
+  const locked = header.isLocked === true || header.isLocked === 1 || header.isLocked === "1";
+  const knownLock = locked || header.isLocked === false || header.isLocked === 0 || header.isLocked === "0";
 
   return (
-    <div className="space-y-3">
-      {/* Thanh công cụ: Tìm nhanh + Lưu / Không lưu */}
-      <div className="flex flex-wrap items-end gap-2 p-3 rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900">
-        <div className="flex-1 min-w-36">
-          <label className={labelCls}>Tìm nhanh</label>
-          <div className="flex gap-1.5">
-            <input value={quickFind} onChange={(e) => setQuickFind(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && quickFind.trim()) setDocId(quickFind.trim()); }}
-              placeholder="Số chứng từ..." className={inputCls} />
-            <button type="button" aria-label="Tìm chứng từ"
-              onClick={() => { if (quickFind.trim()) setDocId(quickFind.trim()); }}
-              className="px-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300">
-              <Search className="size-4" />
-            </button>
-          </div>
-        </div>
-        <button type="button" onClick={() => void handleSave()} disabled={!canSave || !detail}
-          title={saveAct?.reason ? reasonMessage(saveAct.reason) : undefined}
-          className="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold disabled:opacity-50 inline-flex items-center gap-1.5">
-          {saving && <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />}
-          {saving ? "Đang lưu..." : "Lưu"}
-        </button>
-        <button type="button" onClick={handleDiscard} disabled={!detail}
-          className="px-4 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-200 text-xs font-bold">
-          Không lưu
-        </button>
-      </div>
+    <div className={`${requestStyles.editor} detail-body`}>
+      <RecordDetailHeading title="Đơn hàng" documentNumber={detail?.documentId}>
+        {editing && <p role="status">{dirty ? "Có thay đổi chưa lưu" : "Đang chỉnh sửa đơn hàng"}</p>}
+      </RecordDetailHeading>
+      <RecordDetailStatus presentationAllowed={!!detail && !loading}>
+        <span className="rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-medium">{statusName}</span>
+        {knownLock && <span className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">{locked ? "Đã khóa" : "Chưa khóa"}</span>}
+      </RecordDetailStatus>
 
-      {feedback && (
-        <div role="status" className={`p-3 rounded-xl border text-xs flex items-center gap-2 ${
-          feedback.type === "success"
-            ? "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/50"
-            : feedback.type === "warning"
-            ? "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/50"
-            : "bg-red-50 text-red-800 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900/50"}`}>
-          {feedback.type === "success" ? <CheckCircle2 className="size-4 shrink-0" /> : <AlertCircle className="size-4 shrink-0" />}
-          <span>{feedback.message}</span>
-        </div>
-      )}
+      {feedback && <div role="status" className={`flex min-w-0 items-start gap-2 rounded-xl border p-3 text-sm ${
+        feedback.type === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300"
+          : feedback.type === "warning" ? "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300"
+          : "border-red-200 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300"}`}>
+        {feedback.type === "success" ? <CheckCircle2 className="mt-0.5 size-4 shrink-0" /> : <AlertCircle className="mt-0.5 size-4 shrink-0" />}
+        <span className="min-w-0 break-words">{feedback.message}</span>
+      </div>}
 
-      {loading ? (
-        <div className="py-10 text-center">
-          <RefreshCw className="size-6 animate-spin mx-auto text-brand-600" />
-          <p className="text-xs text-neutral-500 mt-2">Đang tải đơn hàng...</p>
-        </div>
-      ) : error || !detail ? (
-        <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/30 text-xs text-red-700 dark:text-red-300">
-          {error ?? "Không có dữ liệu."}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-3">
-          {/* Cột trái: thông tin chứng từ */}
-          <div className="p-3 rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-2.5">
-            <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr] gap-2.5">
-              <div>
-                <label className={labelCls}>Số CT</label>
-                <p className="font-mono text-sm font-bold text-neutral-900 dark:text-white">{detail.documentId}</p>
-              </div>
-              <div>
-                <label className={labelCls}>Ngày CT</label>
-                <input type="date" value={draft.documentDate} onChange={(e) => set("documentDate", e.target.value)} className={inputCls} />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-[1fr_120px] gap-2.5">
-              <LookupField label="Mã hợp đồng" module="sales-orders" lookupId={LOOKUPS.contractId}
-                branchId={branchId} value={draft.contractId} choice={choices.contractId ?? null}
-                displayValue={draft.contractId} onSelect={(c) => pick("contractId", c)} compact placeholder="Chọn hợp đồng..." />
-              <div>
-                <label className={labelCls}>Chi nhánh</label>
-                <p className={roCls}>{text(header.branchId) || branchId}</p>
-              </div>
-            </div>
-            <LookupField label="Mã quản lý" module="sales-orders" lookupId={LOOKUPS.managerId}
-              branchId={branchId} value={draft.managerId} choice={choices.managerId ?? null}
-              displayValue={draft.managerId} onSelect={(c) => pick("managerId", c)} compact placeholder="Chọn quản lý..." />
-            <LookupField label="Mã nhân viên" required module="sales-orders" lookupId={LOOKUPS.employeeId}
-              branchId={branchId} value={draft.employeeId} choice={choices.employeeId ?? null}
-              displayValue={draft.employeeId} onSelect={(c) => pick("employeeId", c)} compact placeholder="Chọn nhân viên..." />
-            <LookupField label="Khách hàng" required module="sales-orders" lookupId={LOOKUPS.objectId}
-              branchId={branchId} value={draft.objectId} choice={choices.objectId ?? null}
-              displayValue={draft.objectId} onSelect={(c) => pick("objectId", c)} compact placeholder="Chọn khách hàng..." />
-            <div>
-              <label className={labelCls}>Tên kh/hàng</label>
-              <p className={`${roCls} uppercase`}>{customerName || "—"}</p>
-            </div>
-            <div>
-              <label className={labelCls}>Địa chỉ</label>
-              <p className={roCls}>{customerAddr || "—"}</p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <div>
-                <label className={labelCls}>Ngày giao</label>
-                <input type="date" value={draft.deliverDate} onChange={(e) => set("deliverDate", e.target.value)} className={inputCls} />
-              </div>
-              <div>
-                <label className={labelCls}>Mã trạng thái</label>
-                <p className={roCls}>{statusName}</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-[110px_1fr] gap-2.5">
-              <div>
-                <label className={labelCls}>Mở TLDK</label>
-                <button type="button" disabled={!draft.linkId.trim()}
-                  onClick={() => { const u = draft.linkId.trim(); if (/^https?:\/\//i.test(u)) window.open(u, "_blank", "noopener"); }}
-                  className="w-full px-2 py-2 rounded-xl border border-brand-300 dark:border-brand-800 text-brand-700 dark:text-brand-300 text-xs font-bold disabled:opacity-40 inline-flex items-center justify-center gap-1">
-                  <Link2 className="size-3.5" /> Mở TLDK
-                </button>
-              </div>
-              <div>
-                <label className={labelCls}>Link TLDK</label>
-                <input value={draft.linkId} onChange={(e) => set("linkId", e.target.value)} placeholder="Dán link tài liệu..." className={inputCls} />
-              </div>
-            </div>
-            <div>
-              <label className={labelCls}>Diễn giải</label>
-              <input value={draft.memo} onChange={(e) => set("memo", e.target.value)} className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>Ghi chú</label>
-              <input value={draft.ghiChuDonHang} onChange={(e) => set("ghiChuDonHang", e.target.value)} className={inputCls} />
-            </div>
-            <div className="flex flex-wrap gap-2 pt-1">
-              <button type="button" disabled={!sendPmAct?.enabled || !!acting}
-                title={sendPmAct?.reason ? reasonMessage(sendPmAct.reason) : undefined}
-                onClick={() => void openPm()}
-                className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold disabled:opacity-50 inline-flex items-center gap-1.5">
-                {acting === "send-pm" && <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />}
-                {acting === "send-pm" ? "Đang gửi..." : "Gửi PM"}
-              </button>
-              <button type="button" disabled={!recallAct?.enabled || !!acting}
-                title={recallAct?.reason ? reasonMessage(recallAct.reason) : undefined}
-                onClick={() => setRecallOpen(true)}
-                className="px-3 py-2 rounded-xl bg-white dark:bg-neutral-900 border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 text-xs font-bold disabled:opacity-50 inline-flex items-center gap-1.5">
-                <Undo2 className="size-3.5" /> Thu hồi để sửa
-              </button>
-              <button type="button" disabled={!contractAct?.enabled}
-                title={contractAct?.reason ? reasonMessage(contractAct.reason) : undefined}
-                onClick={() => void openContract()}
-                className="px-3 py-2 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-200 text-xs font-bold disabled:opacity-50">
-                Xem thông tin hợp đồng
-              </button>
-            </div>
-            {sendPmAct && !sendPmAct.enabled && (
-              <p className="text-[11px] text-neutral-400">Gửi PM: {reasonMessage(sendPmAct.reason) || "không khả dụng ở trạng thái này."}</p>
-            )}
-          </div>
+      {loading ? <RecordSection title="Thông tin chung"><div role="status" className="flex items-center gap-2 py-5 text-sm text-muted-foreground"><Loader2 className="size-5 animate-spin" />Đang tải đơn hàng...</div></RecordSection>
+        : error || !detail ? <RecordSection title="Thông tin chung"><p role="alert" className="text-sm text-destructive">{error || "Chưa có thông tin đơn hàng."}</p>
+          <RequestButton type="button" onClick={() => void load(docId)}>Thử lại</RequestButton></RecordSection>
+        : <>
+          {(!saveAct?.visible || !saveAct.enabled) && <p className={requestStyles.muted}>Đơn hàng hiện chỉ được xem. {saveAct?.reason ? reasonMessage(saveAct.reason) : "Các thao tác thực hiện theo quyền và trạng thái của đơn."}</p>}
+          <RecordSection title="Thông tin chung">
+            {editing ? <fieldset disabled={!canEdit} className="grid min-w-0 grid-cols-2 gap-4 border-0 p-0">
+              <div className={requestStyles.field}><label htmlFor={`${prefix}-date`}>Ngày chứng từ *</label>
+                <RequestInput id={`${prefix}-date`} type="date" value={draft.documentDate} onChange={event => set("documentDate", event.target.value)} /></div>
+              <div className={requestStyles.field}><label htmlFor={`${prefix}-deliver`}>Ngày giao</label>
+                <RequestInput id={`${prefix}-deliver`} type="date" value={draft.deliverDate} onChange={event => set("deliverDate", event.target.value)} /></div>
+            </fieldset> : <dl className={requestStyles.values}>
+              <div><dt>Ngày chứng từ</dt><dd>{draft.documentDate ? requestDate(draft.documentDate) : "—"}</dd></div>
+              <div><dt>Ngày giao</dt><dd>{draft.deliverDate ? requestDate(draft.deliverDate) : "—"}</dd></div>
+            </dl>}
+            <dl className={requestStyles.values}><div className="col-span-full"><dt>Chi nhánh</dt><dd>{text(header.branchName) || text(header.branchId) || branchId}</dd></div></dl>
+          </RecordSection>
 
-          {/* Cột phải: tài liệu đính kèm */}
-          <div className="p-3 rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-2 h-fit">
-            <p className="text-[11px] font-bold text-neutral-500 dark:text-neutral-400">Tài liệu đính kèm</p>
-            <div className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 aspect-[4/3] flex items-center justify-center overflow-hidden">
-              {previewUrl && /^https?:\/\//i.test(previewUrl) || localPreview ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={localPreview || previewUrl} alt="Tài liệu đính kèm" className="w-full h-full object-contain" />
-              ) : (
-                <span className="text-sm font-bold text-red-500">Không có hình ảnh</span>
-              )}
-            </div>
-            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
-            <input ref={captureRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
-            <div className="grid grid-cols-3 gap-1.5">
-              <button type="button" onClick={() => captureRef.current?.click()}
-                className="px-1 py-1.5 rounded-lg border border-neutral-300 dark:border-neutral-700 text-[11px] font-semibold inline-flex items-center justify-center gap-1">
-                <Camera className="size-3.5" /> Chụp ảnh
-              </button>
-              <button type="button" onClick={() => fileRef.current?.click()}
-                className="px-1 py-1.5 rounded-lg border border-neutral-300 dark:border-neutral-700 text-[11px] font-semibold inline-flex items-center justify-center gap-1">
-                <ImagePlus className="size-3.5" /> Chọn ảnh
-              </button>
-              <button type="button" onClick={() => { set("documentUrl", ""); if (localPreview) URL.revokeObjectURL(localPreview); setLocalPreview(null); setLocalOnlyWarn(false); }}
-                className="px-1 py-1.5 rounded-lg border border-neutral-300 dark:border-neutral-700 text-[11px] font-semibold inline-flex items-center justify-center gap-1">
-                <X className="size-3.5" /> Xóa ảnh
-              </button>
-            </div>
-            <input value={draft.documentUrl} onChange={(e) => set("documentUrl", e.target.value)}
-              placeholder="Dán link ảnh để lưu..." className={inputCls} />
-            {localOnlyWarn && (
-              <p className="text-[10px] text-amber-600">Ảnh từ máy chỉ xem trước — dán link ảnh vào ô trên để Lưu.</p>
-            )}
-          </div>
-        </div>
-      )}
+          <RecordSection title="Khách hàng & hợp đồng">
+            {editing ? <fieldset disabled={!canEdit} className="min-w-0 space-y-4 border-0 p-0">
+              <LookupField label="Khách hàng" required module="sales-orders" lookupId={LOOKUPS.objectId} branchId={branchId}
+                value={draft.objectId} choice={choices.objectId ?? null} displayValue={customerName || draft.objectId}
+                onSelect={choice => pick("objectId", choice)} placeholder="Chọn khách hàng..." />
+              <dl className={requestStyles.values}><div className="col-span-full"><dt>Địa chỉ khách hàng</dt><dd className="whitespace-pre-wrap">{customerAddr || "—"}</dd></div></dl>
+              <LookupField label="Hợp đồng" module="sales-orders" lookupId={LOOKUPS.contractId} branchId={branchId}
+                value={draft.contractId} choice={choices.contractId ?? null} displayValue={draft.contractId === text(header.contractId) ? text(header.contractName) || draft.contractId : draft.contractId}
+                onSelect={choice => pick("contractId", choice)} placeholder="Chọn hợp đồng..." />
+            </fieldset> : <dl className={requestStyles.values}>
+              <div className="col-span-full"><dt>Khách hàng</dt><dd>{customerName || draft.objectId || "—"}
+                {customerName && draft.objectId && <span className="mt-1 block text-xs font-normal text-muted-foreground">{draft.objectId}</span>}</dd></div>
+              <div className="col-span-full"><dt>Địa chỉ khách hàng</dt><dd className="whitespace-pre-wrap">{customerAddr || "—"}</dd></div>
+              <div className="col-span-full"><dt>Hợp đồng</dt><dd>{text(header.contractName) || draft.contractId || "—"}
+                {text(header.contractName) && draft.contractId && <span className="mt-1 block text-xs font-normal text-muted-foreground">{draft.contractId}</span>}</dd></div>
+            </dl>}
+          </RecordSection>
 
-      {/* Dòng hàng chi tiết + Lịch sử gửi/duyệt (tab như desktop) */}
-      {detail && detail.lines && (
-        <DetailTabs
-          lines={(detail.lines.rows || []).map((row) => ({
-            lineId: row.lineId,
-            fields: ((row as { fields?: unknown }).fields || {}) as Record<string, unknown>,
-          }))}
-          history={(((detail as unknown as { history?: unknown }).history || {}) as {
-            rows?: Array<{ lineId: string; fields?: Record<string, unknown> }>;
-          }).rows || []}
-        />
-      )}
+          <RecordSection title="Nhân viên phụ trách">
+            {editing ? <fieldset disabled={!canEdit} className="grid min-w-0 gap-4 border-0 p-0 sm:grid-cols-2">
+              <LookupField label="Nhân viên" required module="sales-orders" lookupId={LOOKUPS.employeeId} branchId={branchId}
+                value={draft.employeeId} choice={choices.employeeId ?? null} displayValue={draft.employeeId === text(header.employeeId) ? text(header.employeeName) || draft.employeeId : draft.employeeId}
+                onSelect={choice => pick("employeeId", choice)} placeholder="Chọn nhân viên..." />
+              <LookupField label="Quản lý" module="sales-orders" lookupId={LOOKUPS.managerId} branchId={branchId}
+                value={draft.managerId} choice={choices.managerId ?? null} displayValue={draft.managerId === text(header.managerId) ? text(header.managerName) || draft.managerId : draft.managerId}
+                onSelect={choice => pick("managerId", choice)} placeholder="Chọn quản lý..." />
+            </fieldset> : <dl className={requestStyles.values}>
+              <div><dt>Nhân viên</dt><dd>{text(header.employeeName) || draft.employeeId || "—"}</dd></div>
+              <div><dt>Quản lý</dt><dd>{text(header.managerName) || draft.managerId || "—"}</dd></div>
+            </dl>}
+          </RecordSection>
+
+          <RecordSection title="Nội dung & ghi chú">
+            {editing ? <fieldset disabled={!canEdit} className="grid min-w-0 gap-4 border-0 p-0 sm:grid-cols-2">
+              <div className={requestStyles.field}><label htmlFor={`${prefix}-memo`}>Diễn giải</label>
+                <RequestTextarea id={`${prefix}-memo`} rows={3} value={draft.memo} onChange={event => set("memo", event.target.value)} /></div>
+              <div className={requestStyles.field}><label htmlFor={`${prefix}-notes`}>Ghi chú đơn hàng</label>
+                <RequestTextarea id={`${prefix}-notes`} rows={3} maxLength={250} value={draft.ghiChuDonHang} onChange={event => set("ghiChuDonHang", event.target.value)} /></div>
+            </fieldset> : <dl className={requestStyles.values}>
+              <div className="col-span-full sm:col-span-1"><dt>Diễn giải</dt><dd className="whitespace-pre-wrap">{draft.memo || "—"}</dd></div>
+              <div className="col-span-full sm:col-span-1"><dt>Ghi chú đơn hàng</dt><dd className="whitespace-pre-wrap">{draft.ghiChuDonHang || "—"}</dd></div>
+            </dl>}
+          </RecordSection>
+
+          <DetailTabs lines={(detail.lines?.rows || []).map(row => ({ lineId: row.lineId, fields: (row.fields || {}) as Record<string, unknown> }))}
+            history={(((detail as unknown as { history?: unknown }).history || {}) as { rows?: Array<{ lineId: string; fields?: Record<string, unknown> }> }).rows || []} />
+
+          <RecordSection title="Tài liệu đính kèm">
+            {editing ? <div className={requestStyles.field}><label htmlFor={`${prefix}-link`}>Link tài liệu đính kèm</label>
+              <div className="flex min-w-0 flex-wrap gap-2">
+                <RequestInput id={`${prefix}-link`} className="min-w-0 flex-1 basis-52" disabled={!canEdit} value={draft.linkId}
+                  onChange={event => set("linkId", event.target.value)} placeholder="Dán link tài liệu..." />
+                <RequestButton type="button" disabled={!/^https?:\/\//i.test(draft.linkId.trim())}
+                  onClick={() => { const url = draft.linkId.trim(); if (/^https?:\/\//i.test(url)) window.open(url, "_blank", "noopener,noreferrer"); }}><Link2 className="size-4" />Mở tài liệu</RequestButton>
+              </div>
+            </div> : draft.linkId.trim() && <dl className={requestStyles.values}>
+              <div className="col-span-full"><dt>Link tài liệu đính kèm</dt><dd>
+                {/^https?:\/\//i.test(draft.linkId.trim()) ? <a className="inline-flex min-h-11 max-w-full items-center gap-2 text-primary underline underline-offset-4" href={draft.linkId.trim()} target="_blank" rel="noopener noreferrer"><Link2 className="size-4 shrink-0" />Mở tài liệu</a> : draft.linkId}
+              </dd></div>
+            </dl>}
+            <SalesOrderAttachmentList embedded key={`${branchId}:${detail.documentId}`} branchId={branchId} documentId={detail.documentId} />
+          </RecordSection>
+        </>}
+
+      <RecordActionBar className={`${requestStyles.actions} w-full justify-end`} presentationAllowed={!!detail && !loading}>
+        {!embedded && <RequestButton type="button" disabled={busy} onClick={onClose}>Đóng</RequestButton>}
+        {!editing && <RequestButton type="button" variant="outline" className="!flex-none px-3" disabled={busy}
+          aria-label="Thao tác khác" title="Thao tác khác" onClick={() => setActionsOpen(true)}><MoreHorizontal className="size-5" /></RequestButton>}
+        {editing ? <>
+        <RequestButton type="button" disabled={busy} onClick={handleDiscard}>Hủy sửa</RequestButton>
+        {saveAct?.visible && <RequestButton type="button" variant="default" disabled={!canEdit || !detail || !dirty}
+          title={saveAct.reason ? reasonMessage(saveAct.reason) : undefined} onClick={() => void handleSave()}>
+          {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}{saving ? "Đang lưu..." : "Lưu thay đổi"}
+        </RequestButton>}
+        </> : saveAct?.visible && <RequestButton type="button" variant="default" disabled={!canSave}
+          title={saveAct.reason ? reasonMessage(saveAct.reason) : undefined}
+          onClick={() => { if (canSave) { setFeedback(null); setEditing(true); } }}><Pencil className="size-4" />Sửa</RequestButton>}
+      </RecordActionBar>
+
+      <UntitledBottomSheet open={actionsOpen} onClose={() => setActionsOpen(false)} title="Thao tác đơn hàng">
+        <div className="grid gap-2">
+          {contractAct?.visible && <RequestButton type="button" className="justify-start" disabled={!contractAct.enabled || busy || editing}
+            title={contractAct.reason ? reasonMessage(contractAct.reason) : undefined}
+            onClick={() => { setActionsOpen(false); void openContract(); }}>Thông tin hợp đồng</RequestButton>}
+          {sendPmAct?.visible && <RequestButton type="button" className="justify-start" disabled={!sendPmAct.enabled || busy || editing}
+            title={sendPmAct.reason ? reasonMessage(sendPmAct.reason) : undefined}
+            onClick={() => { setActionsOpen(false); void openPm(); }}><Send className="size-4" />Gửi PM</RequestButton>}
+          {recallAct?.visible && <RequestButton type="button" className="justify-start" disabled={!recallAct.enabled || busy || editing}
+            title={recallAct.reason ? reasonMessage(recallAct.reason) : undefined}
+            onClick={() => { setActionsOpen(false); setRecallOpen(true); }}><Undo2 className="size-4" />Thu hồi để sửa</RequestButton>}
+          <RequestButton type="button" className="justify-start" disabled={busy || editing}
+            onClick={() => { setActionsOpen(false); void load(docId); }}><RefreshCw className="size-4" />Làm mới</RequestButton>
+        </div>
+      </UntitledBottomSheet>
 
       {/* Modal hợp đồng */}
       <UntitledBottomSheet open={contractOpen} onClose={() => setContractOpen(false)} title="Thông tin hợp đồng">
@@ -539,37 +446,15 @@ export function SalesOrderForm({
   );
 }
 
-/* Lưới dòng hàng theo đúng cột desktop + tab Lịch sử gửi/duyệt. */
-const LINE_COLUMNS: Array<{ key: string; label: string; num?: boolean }> = [
-  { key: "itemId", label: "Mã hàng" },
-  { key: "mfgItemId", label: "Mã hàng NSX" },
-  { key: "itemName", label: "Tên hàng / dịch vụ" },
-  { key: "unit", label: "ĐVT" },
-  { key: "quantity", label: "Số lượng", num: true },
-  { key: "unit2", label: "ĐVT2" },
-  { key: "unitFactor", label: "Hệ số ĐVT", num: true },
-  { key: "quantity2", label: "Số lượng 2", num: true },
-  { key: "unitPrice", label: "Đơn giá", num: true },
-  { key: "amount", label: "Số tiền", num: true },
-  { key: "discountPercent", label: "% Chiết khấu", num: true },
-  { key: "discountAmount", label: "Tiền CK", num: true },
-  { key: "vATPercent", label: "% Thuế", num: true },
-  { key: "vATAmount", label: "Tiền thuế", num: true },
-  { key: "totalAmount", label: "Tổng tiền", num: true },
-  { key: "soLuongHopDong", label: "Tổng số lượng HĐ", num: true },
-  { key: "deliveryQuantity", label: "Đã XUẤT hàng", num: true },
-  { key: "vATQuantity", label: "Số lượng VAT", num: true },
-  { key: "dienGiai", label: "Diễn giải" },
-  { key: "notes", label: "Ghi chú" },
-  { key: "property", label: "Qui cách" },
-  { key: "property2", label: "Qui cách 2" },
-];
+/* Các trường chi tiết theo ảnh ERP, xuống dòng theo chiều rộng màn hình. */
+const LINE_COLUMNS: Array<{ key: string; label: string; num?: boolean }> =
+  SALES_ORDER_LINE_COLUMNS.map(column => ({ key: column.key, label: column.label, num: "numeric" in column && column.numeric }));
 
 function lineCell(f: Record<string, unknown>, key: string): string {
-  if (key === "mfgItemId") return text(f.mfgItemId ?? f.manufacturerItemId) || "—";
-  if (key === "itemName") return text(f.itemName ?? f.itemDisplay ?? f.name) || "—";
-  if (key === "unit") return text(f.unit ?? f.unit1 ?? f.unit2) || "—";
-  return text(f[key]) || "—";
+  if (key === "itemCode") return text(f.itemCode ?? f.ItemCode ?? f.manufacturerItemCode ?? f.mfgItemId ?? f.manufacturerItemId) || "—";
+  if (key === "itemName") return text(f.itemName ?? f.ItemName ?? f.itemDisplay ?? f.name) || "—";
+  if (key === "unit") return text(f.unit ?? f.Unit ?? f.unit1) || "—";
+  return text(f[key] ?? f[key[0].toUpperCase() + key.slice(1)]) || "—";
 }
 
 function DetailTabs({
@@ -580,75 +465,55 @@ function DetailTabs({
   history: Array<{ lineId: string; fields?: Record<string, unknown> }>;
 }) {
   const [tab, setTab] = useState<"lines" | "history">("lines");
-  const th = "py-2 px-2 whitespace-nowrap";
-  const td = "py-2 px-2 whitespace-nowrap";
   return (
-    <div className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900">
-      <div className="flex gap-1 p-2 border-b border-neutral-100 dark:border-neutral-800" role="tablist" aria-label="Chi tiết đơn hàng">
+    <RecordSection title="Dòng hàng & lịch sử">
+      <div className="flex min-w-0 flex-wrap gap-2" role="group" aria-label="Nội dung chi tiết đơn hàng">
         {([["lines", `Thông tin chi tiết (${lines.length})`], ["history", "Lịch sử gửi / duyệt"]] as const).map(([id, label]) => (
-          <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold ${tab === id ? "bg-brand-600 text-white" : "text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"}`}>
+          <RequestButton key={id} type="button" aria-pressed={tab === id} onClick={() => setTab(id)} variant={tab === id ? "default" : "outline"}>
             {label}
-          </button>
+          </RequestButton>
         ))}
       </div>
       {tab === "lines" ? (
-        <div className="overflow-x-auto p-1">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-neutral-200 dark:border-neutral-800 text-[10px] text-neutral-400 uppercase">
-                {LINE_COLUMNS.map((c) => <th key={c.key} className={th}>{c.label}</th>)}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-              {lines.map((row) => (
-                <tr key={row.lineId} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/40">
-                  {LINE_COLUMNS.map((c) => (
-                    <td key={c.key} className={`${td} ${c.num ? "text-right font-mono" : ""} ${c.key === "itemId" ? "font-semibold" : ""}`}>
-                      {lineCell(row.fields, c.key)}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-              {lines.length === 0 && (
-                <tr><td colSpan={LINE_COLUMNS.length} className="py-4 text-center text-neutral-400">Chưa có dòng hàng.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div className="min-w-0 space-y-3">
+          {lines.map((row, index) => <details key={row.lineId} open={index === 0} className={`${requestStyles.line} block`}>
+            <summary className="min-h-11 cursor-pointer break-words text-sm font-semibold">Dòng {index + 1} · {lineCell(row.fields, "itemName") !== "—" ? lineCell(row.fields, "itemName") : lineCell(row.fields, "itemId")}</summary>
+            <div className="space-y-4 pt-3">
+            {SALES_ORDER_LINE_GROUPS.map(group => <section key={group.label} aria-label={group.label} className="min-w-0 space-y-3 border-t border-border pt-3">
+              <h6 className="text-xs font-semibold text-muted-foreground">{group.label}</h6>
+              <dl className={requestStyles.values}>
+                {group.keys.map(key => {
+                  const column = LINE_COLUMNS.find(item => item.key === key)!;
+                  const fullWidth = group.fullWidth.includes(key);
+                  return <div key={key} className={`min-w-0 ${fullWidth ? "col-span-full" : ""}`}>
+                    <dt>{column.label}</dt>
+                    <dd className={`whitespace-pre-wrap break-words ${column.num ? "tabular-nums" : ""}`}>
+                      {lineCell(row.fields, key)}
+                    </dd>
+                  </div>;
+                })}
+              </dl>
+            </section>)}
+            </div>
+          </details>)}
+          {lines.length === 0 && <p className={requestStyles.muted}>Chưa có dòng hàng.</p>}
         </div>
       ) : (
-        <div className="overflow-x-auto p-1">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-neutral-200 dark:border-neutral-800 text-[10px] text-neutral-400 uppercase">
-                <th className={th}>Thời gian</th>
-                <th className={th}>Người gửi</th>
-                <th className={th}>Trạng thái</th>
-                <th className={th}>Gửi đến</th>
-                <th className={th}>Ghi chú</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-              {history.map((row) => {
-                const f = row.fields || {};
-                const t = (k: string) => { const v = f[k]; return typeof v === "string" ? v : v == null ? "—" : String(v); };
-                return (
-                  <tr key={row.lineId}>
-                    <td className={td}>{t("thoiGian")}</td>
-                    <td className={`${td} font-semibold`}>{t("userName")}</td>
-                    <td className={td}>{t("statusId")}</td>
-                    <td className={td}>{t("sendTo")}</td>
-                    <td className={td}>{t("notes")}</td>
-                  </tr>
-                );
-              })}
-              {history.length === 0 && (
-                <tr><td colSpan={5} className="py-4 text-center text-neutral-400">Chưa có lịch sử gửi / duyệt.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div className="min-w-0 space-y-3">
+          {history.map(row => <article key={row.lineId} className={requestStyles.line}>
+            <dl className={requestStyles.values}>
+              {[
+                { key: "thoiGian", label: "Thời gian" }, { key: "userName", label: "Người gửi" },
+                { key: "statusId", label: "Trạng thái" }, { key: "sendTo", label: "Gửi đến" }, { key: "notes", label: "Ghi chú" },
+              ].map(field => <div key={field.key} className={`min-w-0 ${field.key === "notes" ? "col-span-full" : ""}`}>
+                <dt>{field.label}</dt>
+                <dd className="whitespace-pre-wrap break-words">{text(row.fields?.[field.key]) || "—"}</dd>
+              </div>)}
+            </dl>
+          </article>)}
+          {history.length === 0 && <p className={requestStyles.muted}>Chưa có lịch sử gửi / duyệt.</p>}
         </div>
       )}
-    </div>
+    </RecordSection>
   );
 }

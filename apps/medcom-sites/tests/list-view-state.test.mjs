@@ -186,7 +186,10 @@ async function rootDenialHost(){
  const names=['HTMLElement','window','location','history','localStorage','document','requestAnimationFrame','cancelAnimationFrame','fetch'];
  const saved=captureGlobals(names);
  const location=new URL('https://synthetic.test/?screen=purchase-orders');
- Object.assign(globalThis,{HTMLElement:class {},window:{...denialEventBus(),location,scrollY:0,scrollTo(){}},location,history:{state:null,scrollRestoration:'auto',replaceState(state){this.state=state;},pushState(){},go(){}},localStorage:{getItem(){return null;},setItem(){}},document:{...denialEventBus(),visibilityState:'visible',activeElement:null,documentElement:{classList:{toggle(){}},dataset:{}}},requestAnimationFrame:()=>1,cancelAnimationFrame(){}});
+ // The shared visual logo reads the same root class that Workspace toggles.
+ const rootClasses=new Set();
+ const classList={contains:value=>rootClasses.has(value),toggle(value,force){const enabled=force??!rootClasses.has(value);if(enabled)rootClasses.add(value);else rootClasses.delete(value);return enabled;}};
+ Object.assign(globalThis,{HTMLElement:class {},window:{...denialEventBus(),location,scrollY:0,scrollTo(){}},location,history:{state:null,scrollRestoration:'auto',replaceState(state){this.state=state;},pushState(){},go(){}},localStorage:{getItem(){return null;},setItem(){}},document:{...denialEventBus(),visibilityState:'visible',activeElement:null,documentElement:{classList,dataset:{}}},requestAnimationFrame:()=>1,cancelAnimationFrame(){}});
  let renderer,failure=null,holdList=false;const workspaceWaiters=[],listWaiters=[],calls=[];
  const workspace={session:{displayName:'SYNTHETIC',tenantId:'T',companyId:'C',companyName:'Synthetic',authorityVersion:1,idleExpiresAt:new Date(Date.now()+3600000).toISOString(),absoluteExpiresAt:new Date(Date.now()+7200000).toISOString(),capabilities:['purchase-orders.read']},branchIds:['BR-A'],navigation:[{id:'purchase-orders',label:'Orders',href:'/?screen=purchase-orders'}]};
  globalThis.fetch=async(url,init)=>{

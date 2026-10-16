@@ -71,7 +71,12 @@ loss preserves inert controls. Purchase restoration waits for fresh bootstrap
 scope and permitted branch IDs; newer user input or scrolling cancels restoration.
 Existing draft-versus-applied behavior and guarded history are retained.
 
-The top-level Hướng dẫn tab is the single instructional surface.
+The dedicated `/help` route provides mobile-first Vietnamese instructions,
+annotated synthetic screenshots and its own business sidebar. Three purchase
+guides are available; other modules carry Feature badges. Header/sidebar,
+mobile drawer and login links open it separately to retain the working screen.
+See `docs/HELP_CENTER_20261016.md` for content evidence and image regeneration.
+The historical top-level Hướng dẫn tab remains compatible with the classic workspace.
 `RecordDialog` (compatibility export `RequestDetailDialog`) retains the proven
 responsive, authority-masked dialog tree and focus/stacking foundation.
 `RecordActionBar` places existing actions in its footer with explicit form owners;

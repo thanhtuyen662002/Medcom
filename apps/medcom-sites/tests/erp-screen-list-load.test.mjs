@@ -35,6 +35,7 @@ export const erpClient={
  },
 };`,
  'bottom-sheet':`export const UntitledBottomSheet=({open,children})=>open?<div data-testid="bottom-sheet">{children}</div>:null;`,
+ 'erp-detail-sheet':`export const ErpDetailSheet=({open,children})=>open?<div data-testid="bottom-sheet">{children}</div>:null;`,
  'button':`export const UntitledButton=({children,iconLeading,iconTrailing,variant,size,...rest})=><button type="button" {...rest}>{children}</button>;`,
  'lookup-field':`export const LookupField=()=>null; export const fieldText=(v)=>v==null?'':String(v); export const choiceLabel=(c,f)=>c&&c.label?c.label:f;`,
  'sales-order-form':`export const SalesOrderForm=()=>null;`,
