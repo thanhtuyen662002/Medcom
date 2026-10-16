@@ -172,7 +172,8 @@ internal sealed class FeDisplayFilter(IReferenceData references,IOptions<Microso
 {
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext invocation,EndpointFilterDelegate next)
     {
-        var result=await next(invocation);var context=invocation.HttpContext;
+        var context=invocation.HttpContext;object? result;
+        using(RequestPerformance.Measure(context,"provider"))result=await next(invocation);
         if(!FeDisplayProjection.Applies(context.Request.Method,context.Request.Path.Value??"")||result is not IValueHttpResult {Value:{} value}
             ||result is IStatusCodeHttpResult {StatusCode:{} status}&&status!=200)return result;
         var node=JsonSerializer.SerializeToNode(value,value.GetType(),options.Value.SerializerOptions);
@@ -192,7 +193,8 @@ internal sealed class FeDisplayFilter(IReferenceData references,IOptions<Microso
             &&value is ErpScopedResponse<BranchChoicePage> branches
             ? branches.Data.Items.ToDictionary(x=>new ReferenceKey("branch",x.BranchId),
                 x=>new ReferenceValue(x.BranchName,"available",new Dictionary<string,string?>())):null;
-        var names=branchNames is not null?new ErpReadResult<IReadOnlyDictionary<ReferenceKey,ReferenceValue>>(ErpReadOutcome.Success,branchNames)
+        ErpReadResult<IReadOnlyDictionary<ReferenceKey,ReferenceValue>> names;
+        using(RequestPerformance.Measure(context,"references"))names=branchNames is not null?new ErpReadResult<IReadOnlyDictionary<ReferenceKey,ReferenceValue>>(ErpReadOutcome.Success,branchNames)
             :keys.Length==0?new ErpReadResult<IReadOnlyDictionary<ReferenceKey,ReferenceValue>>(ErpReadOutcome.Success,new Dictionary<ReferenceKey,ReferenceValue>())
             :await references.ReadAsync(keys,context.RequestAborted);
         var original=AuthEndpoints.Current(context);

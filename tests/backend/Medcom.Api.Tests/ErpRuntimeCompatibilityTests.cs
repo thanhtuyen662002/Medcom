@@ -32,19 +32,31 @@ public sealed class ErpRuntimeCompatibilityTests
     [MemberData(nameof(Modules))]
     public async Task Additive_columns_and_physical_order_changes_do_not_break_the_required_field_contract(string module)
     {
-        using var connection=new DisplayConnection(command=>Schema(command,ErpSqlPlan.Get(module)!,"additive"));
+        var exchanges=0;
+        using var connection=new DisplayConnection(command=>{exchanges++;return Schema(command,ErpSqlPlan.Get(module)!,"additive");});
         connection.Open();using var transaction=connection.BeginTransaction(IsolationLevel.Serializable);
         Assert.True(await SqlErpScreenReader.SchemaMatches(transaction,ErpSqlPlan.Get(module)!,default));
+        Assert.Equal(1,exchanges);
     }
     [Theory]
     [InlineData("missing")][InlineData("type")][InlineData("length")][InlineData("duplicate")]
     [InlineData("computed")][InlineData("identity")][InlineData("nullability")]
+    [InlineData("missing-result")][InlineData("extra-result")][InlineData("projection")]
     public async Task Incompatible_required_fields_remain_scoped_errors(string mutation)
     {
         var plan=ErpSqlPlan.Get("purchase-requests")!;
         using var connection=new DisplayConnection(command=>Schema(command,plan,mutation));connection.Open();
         using var transaction=connection.BeginTransaction(IsolationLevel.Serializable);
         Assert.False(await SqlErpScreenReader.SchemaMatches(transaction,plan,default));
+    }
+    [Theory]
+    [InlineData("wider-text")][InlineData("max-text")]
+    public async Task Widened_variable_text_does_not_block_existing_typed_reads_or_commands(string mutation)
+    {
+        var plan=ErpSqlPlan.Get("sales-orders")!;
+        using var connection=new DisplayConnection(command=>Schema(command,plan,mutation));connection.Open();
+        using var transaction=connection.BeginTransaction(IsolationLevel.Serializable);
+        Assert.True(await SqlErpScreenReader.SchemaMatches(transaction,plan,default));
     }
     [Theory]
     [InlineData("create")][InlineData("save")][InlineData("delete")]
@@ -111,8 +123,9 @@ public sealed class ErpRuntimeCompatibilityTests
     }
     private static DbDataReader Schema(DbCommand command,ErpSqlPlan plan,string mutation)
     {
+        DataTable Section(string name)
+        {
         var table=Table(typeof(string),typeof(string),typeof(short),typeof(byte),typeof(byte),typeof(bool),typeof(bool),typeof(bool),typeof(int));
-        var name=(string)command.Parameters["@table"].Value!;
         var section=plan.Tables.Single(p=>"dbo."+p.Value==name).Key;
         var fields=plan.Screen.Fields[section].Where(f=>!f.Virtual).Reverse().ToArray();
         foreach(var field in fields)
@@ -126,12 +139,21 @@ public sealed class ErpRuntimeCompatibilityTests
         if(mutation=="missing")table.Rows.RemoveAt(0);
         if(mutation=="type")table.Rows[0][1]="incompatible";
         if(mutation=="length")table.Rows.Cast<DataRow>().First(r=>(string)r[1]is "nvarchar" or "varchar")[2]=(short)1;
+        if(mutation is "wider-text" or "max-text")
+        {
+            var row=table.Rows.Cast<DataRow>().First(r=>(string)r[1]is "nvarchar" or "varchar"&&(short)r[2]>0);
+            row[2]=mutation=="max-text"?(short)-1:(short)((short)row[2]*2);
+        }
         if(mutation=="duplicate")table.Rows.Add(table.Rows[0].ItemArray);
         if(mutation=="computed")table.Rows[0][7]=true;
         if(mutation=="identity")table.Rows[0][6]=true;
         if(mutation=="nullability")table.Rows[0][5]=!(bool)table.Rows[0][5];
         table.Rows.Add("NewOptionalColumn","nvarchar",(short)200,(byte)0,(byte)0,true,false,false,9999);
-        return table.CreateDataReader();
+        return table;
+        }
+        var tables=command.Parameters.Cast<DbParameter>().Select(p=>Section((string)p.Value!)).ToArray();
+        if(mutation=="projection")tables[0].Columns.RemoveAt(8);
+        return new DataTableReader(mutation=="missing-result"?tables[..^1]:mutation=="extra-result"?[..tables,tables[0].Copy()]:tables);
     }
     private static DataTable Table(params Type[] types)
     {var t=new DataTable();for(var i=0;i<types.Length;i++)t.Columns.Add("c"+i,types[i]);return t;}

@@ -223,7 +223,10 @@ public static class ApiHost
                         var sessions = context.HttpContext.RequestServices.GetRequiredService<IWebSessions>();
                         try
                         {
-                            var session = HttpMethods.IsGet(context.Request.Method)
+                            using var measurement=RequestPerformance.Measure(context.HttpContext,"auth");
+                            var tokenOnly=HttpMethods.IsGet(context.Request.Method)
+                                &&context.HttpContext.GetEndpoint()?.Metadata.GetMetadata<AuthEndpoints.CsrfTokenOperation>() is not null;
+                            var session = tokenOnly?await sessions.InspectAsync(token,timeout.Token):NativeReadSession.IsRead(context.HttpContext)
                                 ? await sessions.ResolveReadAsync(token, timeout.Token)
                                 : await sessions.ResolveAsync(token, false, timeout.Token);
                             if (session is null) { context.RejectPrincipal(); return; }
@@ -245,6 +248,7 @@ public static class ApiHost
         var allRequestsSecure = SecureIngress.ReadConfiguration(builder.Configuration);
         var app = builder.Build();
         app.UseSecureIngress(allRequestsSecure);
+        app.Use(RequestPerformance.Observe);
         var contentSecurityPolicy = WebSecurity.ContentSecurityPolicy(app.Environment.WebRootPath);
         app.Use(async (context, next) =>
         {

@@ -188,10 +188,15 @@ internal sealed class AttachmentWire
     {
         if(!screen)return Rows(new[]{("UserAutoID","varchar",50),("DocumentID","varchar",50),("FileName","nvarchar",1000),("STT","int",4),("FileType","int",4),("Content","varbinary",-1),("Content2","image",16)}
             .Where(r=>!BadSchema||r.Item1!="Content").Select(r=>new object?[]{r.Item1,r.Item2,(short)r.Item3,false,false}).ToArray());
-        var table=(string)c.Parameters["@table"].Value!;var section=Plan.Tables.Single(t=>"dbo."+t.Value==table).Key;
-        return Rows(Plan.Screen.Fields[section].Where(f=>!f.Virtual).Select(f=>
+        var tables=c.Parameters.Cast<DbParameter>().Select(p=>
+        {
+        var table=(string)p.Value!;var section=Plan.Tables.Single(t=>"dbo."+t.Value==table).Key;
+        var shape=new DataTable();for(var i=0;i<9;i++)shape.Columns.Add("c"+i,typeof(object));
+        foreach(var f in Plan.Screen.Fields[section].Where(f=>!f.Virtual))
         {var args=f.TypeArguments?.Trim('(',')').Split(',');short len=(short)(f.SqlType is "nvarchar" or "varchar" or "char" or "nchar"?args is["max"]?-1:int.Parse(args![0],CultureInfo.InvariantCulture)*(f.SqlType.StartsWith('n')?2:1):0);
-            return new object?[]{f.Column,f.SqlType,len,(byte)(args?.Length==2?int.Parse(args[0],CultureInfo.InvariantCulture):0),(byte)(args?.Length==2?int.Parse(args[1],CultureInfo.InvariantCulture):0),f.Nullable,false,false,f.Ordinal};}).ToArray());
+            shape.Rows.Add(f.Column,f.SqlType,len,(byte)(args?.Length==2?int.Parse(args[0],CultureInfo.InvariantCulture):0),(byte)(args?.Length==2?int.Parse(args[1],CultureInfo.InvariantCulture):0),f.Nullable,false,false,f.Ordinal);}
+        return shape;
+        }).ToArray();return new DataTableReader(tables);
     }
     private DbDataReader Project(string section,IEnumerable<Dictionary<string,object?>> rows)
     {var fields=Plan.Screen.Fields[section];var t=new DataTable();for(var i=0;i<fields.Count;i++)t.Columns.Add("f"+i,typeof(object));foreach(var row in rows)t.Rows.Add(fields.Select(f=>row.GetValueOrDefault(f.Name)??DBNull.Value).ToArray());return t.CreateDataReader();}

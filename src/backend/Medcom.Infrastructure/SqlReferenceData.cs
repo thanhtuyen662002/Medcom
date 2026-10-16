@@ -28,10 +28,12 @@ public sealed class SqlReferenceData:IReferenceData
         return Run<IReadOnlyDictionary<ReferenceKey,ReferenceValue>>(async(transaction,identity)=>
         {
             var result=new Dictionary<ReferenceKey,ReferenceValue>();
-            foreach(var group in copy.GroupBy(x=>x.Binding,StringComparer.Ordinal))
+            var groups=copy.GroupBy(x=>x.Binding,StringComparer.Ordinal).ToArray();
+            var shapes=await Shapes(transaction,groups.Select(g=>ApiReferenceCatalog.Get(g.Key)!).ToArray(),token);
+            foreach(var group in groups)
             {
                 var binding=ApiReferenceCatalog.Get(group.Key)!;
-                if(!await Shape(transaction,binding,token))
+                if(!shapes[binding.Id])
                 {foreach(var key in group)result[key]=new(null,"unavailable",new Dictionary<string,string?>());continue;}
                 foreach(var batch in group.Chunk(100))
                     foreach(var pair in await ReadBatch(transaction,binding,batch,token))result.Add(pair.Key,pair.Value);
@@ -61,7 +63,34 @@ public sealed class SqlReferenceData:IReferenceData
     {
         await using var command=ErpSqlPlan.Command(transaction,"SELECT C.name,T.name,C.max_length,C.is_nullable FROM sys.columns C JOIN sys.types T ON T.user_type_id=C.user_type_id WHERE C.object_id=OBJECT_ID(@table) AND T.is_user_defined=0;");
         ErpSqlPlan.Parameter(command,"@table",DbType.String,"dbo."+binding.Table,255);
-        await using var reader=await command.ExecuteReaderAsync(token);var seen=new HashSet<string>(StringComparer.Ordinal);
+        await using var reader=await command.ExecuteReaderAsync(token);
+        return await ReadShape(reader,binding,token)&&!await reader.NextResultAsync(token);
+    }
+    internal static async Task<IReadOnlyDictionary<string,bool>> Shapes(DbTransaction transaction,ReferenceBinding[] bindings,CancellationToken token)
+    {
+        if(bindings.Any(b=>ApiReferenceCatalog.Get(b.Id)!=b)||bindings.Select(b=>b.Id).Distinct(StringComparer.Ordinal).Count()!=bindings.Length)
+            throw new InvalidOperationException("Finite distinct reference bindings required.");
+        var result=new Dictionary<string,bool>(StringComparer.Ordinal);
+        if(bindings.Length==0)return result;
+        await using var command=ErpSqlPlan.Command(transaction,"");
+        for(var i=0;i<bindings.Length;i++)
+        {
+            var parameter="@table"+i.ToString(CultureInfo.InvariantCulture);
+            command.CommandText+="SELECT C.name,T.name,C.max_length,C.is_nullable FROM sys.columns C JOIN sys.types T ON T.user_type_id=C.user_type_id WHERE C.object_id=OBJECT_ID("+parameter+") AND T.is_user_defined=0;\n";
+            ErpSqlPlan.Parameter(command,parameter,DbType.String,"dbo."+bindings[i].Table,255);
+        }
+        await using var reader=await command.ExecuteReaderAsync(token);
+        for(var i=0;i<bindings.Length;i++)
+        {
+            result.Add(bindings[i].Id,await ReadShape(reader,bindings[i],token));
+            if(await reader.NextResultAsync(token)!=(i+1<bindings.Length))throw new InvalidOperationException("Reference metadata result count changed.");
+        }
+        return result;
+    }
+    private static async Task<bool> ReadShape(DbDataReader reader,ReferenceBinding binding,CancellationToken token)
+    {
+        if(reader.FieldCount!=4)return false;
+        var seen=new HashSet<string>(StringComparer.Ordinal);
         while(await reader.ReadAsync(token))
         {
             var name=reader.GetString(0);var column=binding.Columns.SingleOrDefault(x=>x.Name==name);
@@ -74,7 +103,7 @@ public sealed class SqlReferenceData:IReferenceData
                 if(reader.GetInt16(2)!=length)return false;
             }
         }
-        return seen.Count==binding.Columns.Count&&!await reader.NextResultAsync(token);
+        return seen.Count==binding.Columns.Count;
     }
     internal static string BatchText(ReferenceBinding binding,int count)
     {

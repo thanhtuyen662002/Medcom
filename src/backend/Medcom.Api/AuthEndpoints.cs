@@ -11,11 +11,16 @@ public static class AuthEndpoints
 {
     public const string SessionClaim = "medcom_session";
     public static readonly object ResolvedKey = new();
+    // Public token issuance returns no role or business data. Only the live local
+    // identity is needed to bind the antiforgery token; the eventual protected
+    // request independently revalidates database authority.
+    internal sealed record CsrfTokenOperation;
 
     public static void Map(WebApplication app)
     {
         app.MapGet("/api/auth/csrf", (HttpContext context, IAntiforgery antiforgery) =>
-            Results.Ok(new { token = antiforgery.GetAndStoreTokens(context).RequestToken })).AllowAnonymous();
+            Results.Ok(new { token = antiforgery.GetAndStoreTokens(context).RequestToken })).AllowAnonymous()
+            .WithMetadata(new CsrfTokenOperation());
 
         app.MapPost("/api/auth/login", async (LoginRequest request, HttpContext context,
             IIdentityAuthority authority, IWebSessions sessions) =>

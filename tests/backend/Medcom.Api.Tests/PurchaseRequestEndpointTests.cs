@@ -150,7 +150,7 @@ public sealed class PurchaseRequestEndpointTests
     [InlineData("GET", "/HEALTH/live")]
     [InlineData("GET", "/api/auth/csrf")]
     [InlineData("GET", "/api/auth/session")]
-    public async Task HealthOptimizationDoesNotApplyToOtherMethodsPathsOrAnonymousRoutes(string method, string path)
+    public async Task Health_and_CSRF_optimizations_keep_distinct_rules_for_other_methods_and_protected_routes(string method, string path)
     {
         HealthSessions? sessions = null;
         await using var fixture = await PurchaseHttpFixture.Start(services => {
@@ -160,7 +160,10 @@ public sealed class PurchaseRequestEndpointTests
         await fixture.Login(); sessions!.Clear(); var before = fixture.Authority.Revalidations;
         using var request = new HttpRequestMessage(new HttpMethod(method), path);
         using var response = await fixture.Client.SendAsync(request);
-        Assert.Equal(1, sessions.Resolves); Assert.Equal(before + 1, fixture.Authority.Revalidations);
+        var tokenOnly=method=="GET"&&path=="/api/auth/csrf";
+        Assert.Equal(tokenOnly?0:1, sessions.Resolves);
+        Assert.Equal(tokenOnly?1:0,sessions.Inspections);
+        Assert.Equal(before+(tokenOnly?0:1), fixture.Authority.Revalidations);
     }
 
     private sealed class HealthSessions(IWebSessions inner) : IWebSessions

@@ -116,17 +116,25 @@ internal sealed class SqlErpScreenReader
     }
     internal static async Task<bool> SchemaMatches(DbTransaction transaction,ErpSqlPlan plan,CancellationToken token)
     {
-        foreach(var section in plan.Screen.Fields)
+        var sections=plan.Screen.Fields.ToArray();
+        await using var command=ErpSqlPlan.Command(transaction,"");
+        for(var i=0;i<sections.Length;i++)
         {
-            var table=plan.Tables.GetValueOrDefault(section.Key);
-            await using var command=ErpSqlPlan.Command(transaction,"""
+            var parameter=i==0?"@table":"@table"+i.ToString(CultureInfo.InvariantCulture);
+            command.CommandText+="""
                 SELECT C.name,T.name,C.max_length,C.precision,C.scale,C.is_nullable,C.is_identity,C.is_computed,C.column_id
                 FROM sys.columns C JOIN sys.types T ON T.user_type_id=C.user_type_id
-                WHERE C.object_id=OBJECT_ID(@table,'U') AND T.is_user_defined=0 ORDER BY C.column_id;
-                """);
-            ErpSqlPlan.Parameter(command,"@table",DbType.String,"dbo."+table,255);
-            await using var reader=await command.ExecuteReaderAsync(token);
-            var physical=section.Value.Where(f=>!f.Virtual).ToDictionary(f=>f.Column,StringComparer.Ordinal);
+                WHERE C.object_id=OBJECT_ID(
+                """+parameter+",'U') AND T.is_user_defined=0 ORDER BY C.column_id;\n";
+            ErpSqlPlan.Parameter(command,parameter,DbType.String,"dbo."+plan.Tables.GetValueOrDefault(sections[i].Key),255);
+        }
+        // All current required-field checks remain in the same transaction. One
+        // network exchange replaces a separate exchange for every section.
+        await using var reader=await command.ExecuteReaderAsync(token);
+        for(var i=0;i<sections.Length;i++)
+        {
+            if(reader.FieldCount!=9)return false;
+            var physical=sections[i].Value.Where(f=>!f.Virtual).ToDictionary(f=>f.Column,StringComparer.Ordinal);
             var seen=new HashSet<string>(StringComparer.Ordinal);
             while(await reader.ReadAsync(token))
             {
@@ -138,12 +146,18 @@ internal sealed class SqlErpScreenReader
                 if(field.SqlType is "nvarchar" or "varchar" or "char" or "nchar")
                 {
                     var length=args is ["max"]?-1:int.Parse(args![0],CultureInfo.InvariantCulture)*(field.SqlType.StartsWith("n",StringComparison.Ordinal)?2:1);
-                    if(reader.GetInt16(2)!=length)return false;
+                    var actual=reader.GetInt16(2);
+                    // Widening variable text preserves the typed string contract.
+                    // Required capacity, fixed-width padding and all other type
+                    // checks remain enforced; this is not a schema hash gate.
+                    if(field.SqlType is "nvarchar" or "varchar"
+                        ?length==-1?actual!=-1:actual!=-1&&actual<length
+                        :actual!=length)return false;
                 }
                 if(field.SqlType is "decimal" or "numeric"
                     &&(reader.GetByte(3)!=int.Parse(args![0],CultureInfo.InvariantCulture)||reader.GetByte(4)!=int.Parse(args[1],CultureInfo.InvariantCulture)))return false;
             }
-            if(seen.Count!=physical.Count||await reader.NextResultAsync(token))return false;
+            if(seen.Count!=physical.Count||await reader.NextResultAsync(token)!=(i+1<sections.Length))return false;
         }
         return true;
     }
