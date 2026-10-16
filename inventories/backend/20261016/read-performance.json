@@ -1,0 +1,351 @@
+{
+  "formatVersion": 1,
+  "observedAtUtc": "2026-10-16T09:24:40.3962697Z",
+  "scope": "owner_authorized_read_only_local_to_current_DB_component_audit",
+  "businessWritesPerformed": false,
+  "credentialsBusinessRowsAndSourceSqlIncluded": false,
+  "fullAuthenticatedVpsApiLatency": "UNKNOWN",
+  "allFeCallsBelow100ms": "NOT_ESTABLISHED",
+  "probeEvidence": [
+    {
+      "privateArtifact": "read-performance-local.json",
+      "sha256": "885a9366d70ae9b329d6e45691e8f92b49484b8acbf4719ef47de477d2c92d3b"
+    },
+    {
+      "privateArtifact": "sql-batch-before-widening-fix.json",
+      "sha256": "6fdc40fdf5a6a8f59000b2a31f0665a4893761d97029f0c5182db51dfef9f295"
+    },
+    {
+      "privateArtifact": "sql-batch-validation.json",
+      "sha256": "1ce79d0eee2504c522f13fa0f85a6add3833a76e6c63dfa856e4b3f412ee4c5f"
+    }
+  ],
+  "externalHttpSamples": [
+    {
+      "origin": "public_backend",
+      "route": "/api/erp/purchase-requests/options",
+      "method": "POST",
+      "authenticated": false,
+      "status": 401,
+      "durationMs": 68.958,
+      "fullApiAcceptance": false
+    },
+    {
+      "origin": "public_backend",
+      "route": "/health/live",
+      "method": "GET",
+      "authenticated": false,
+      "status": 200,
+      "durationMs": 127.568,
+      "fullApiAcceptance": false
+    },
+    {
+      "origin": "public_frontend",
+      "route": "/",
+      "method": "GET",
+      "authenticated": false,
+      "status": 200,
+      "durationMs": 130.545,
+      "fullApiAcceptance": false
+    }
+  ],
+  "simpleSqlRoundTripsMs": [
+    27.4,
+    27.5,
+    27.5,
+    28.4,
+    38.9
+  ],
+  "configuredLocalAuditPooling": true,
+  "vpsEffectivePooling": "UNKNOWN",
+  "connectionOpenSamples": [
+    {
+      "label": "open_pooling_False_0",
+      "ms": 397.7
+    },
+    {
+      "label": "open_pooling_False_1",
+      "ms": 105.8
+    },
+    {
+      "label": "open_pooling_False_2",
+      "ms": 109.7
+    },
+    {
+      "label": "open_pooling_True_0",
+      "ms": 116.1
+    },
+    {
+      "label": "open_pooling_True_1",
+      "ms": 0.5
+    },
+    {
+      "label": "open_pooling_True_2",
+      "ms": 0.2
+    }
+  ],
+  "referenceMetadataSamples": [
+    {
+      "label": "reference_shapes_separate",
+      "pass": 0,
+      "exchanges": 5,
+      "ms": 203.7,
+      "valid": true
+    },
+    {
+      "label": "reference_shapes_batch",
+      "pass": 0,
+      "exchanges": 1,
+      "ms": 41.8,
+      "valid": true,
+      "same": true
+    },
+    {
+      "label": "reference_shapes_separate",
+      "pass": 1,
+      "exchanges": 5,
+      "ms": 156.1,
+      "valid": true
+    },
+    {
+      "label": "reference_shapes_batch",
+      "pass": 1,
+      "exchanges": 1,
+      "ms": 35.1,
+      "valid": true,
+      "same": true
+    },
+    {
+      "label": "reference_shapes_separate",
+      "pass": 2,
+      "exchanges": 5,
+      "ms": 137.7,
+      "valid": true
+    },
+    {
+      "label": "reference_shapes_batch",
+      "pass": 2,
+      "exchanges": 1,
+      "ms": 30.5,
+      "valid": true,
+      "same": true
+    }
+  ],
+  "formMetadataChecks": [
+    {
+      "module": "inbound-requests",
+      "valid": true,
+      "ms": 37.6,
+      "exchanges": 1,
+      "sections": 5
+    },
+    {
+      "module": "internal-transfer-accounting",
+      "valid": true,
+      "ms": 33.3,
+      "exchanges": 1,
+      "sections": 5
+    },
+    {
+      "module": "internal-transfer-batches",
+      "valid": true,
+      "ms": 31.2,
+      "exchanges": 1,
+      "sections": 5
+    },
+    {
+      "module": "internal-transfer-pm",
+      "valid": true,
+      "ms": 28.3,
+      "exchanges": 1,
+      "sections": 3
+    },
+    {
+      "module": "internal-transfer-requests",
+      "valid": true,
+      "ms": 29.8,
+      "exchanges": 1,
+      "sections": 3
+    },
+    {
+      "module": "internal-transfer-sa",
+      "valid": true,
+      "ms": 31.8,
+      "exchanges": 1,
+      "sections": 5
+    },
+    {
+      "module": "internal-transfer-tech",
+      "valid": true,
+      "ms": 32,
+      "exchanges": 1,
+      "sections": 5
+    },
+    {
+      "module": "internal-transfer-warehouse-in",
+      "valid": true,
+      "ms": 30,
+      "exchanges": 1,
+      "sections": 5
+    },
+    {
+      "module": "internal-transfer-warehouse-out",
+      "valid": true,
+      "ms": 34.2,
+      "exchanges": 1,
+      "sections": 5
+    },
+    {
+      "module": "machine-movements",
+      "valid": true,
+      "ms": 28.4,
+      "exchanges": 1,
+      "sections": 2
+    },
+    {
+      "module": "machine-repairs",
+      "valid": true,
+      "ms": 30.1,
+      "exchanges": 1,
+      "sections": 2
+    },
+    {
+      "module": "purchase-approvals",
+      "valid": true,
+      "ms": 27.5,
+      "exchanges": 1,
+      "sections": 2
+    },
+    {
+      "module": "purchase-orders",
+      "valid": true,
+      "ms": 28.1,
+      "exchanges": 1,
+      "sections": 2
+    },
+    {
+      "module": "purchase-requests",
+      "valid": true,
+      "ms": 28,
+      "exchanges": 1,
+      "sections": 2
+    },
+    {
+      "module": "sales-order-pm",
+      "valid": true,
+      "ms": 29.9,
+      "exchanges": 1,
+      "sections": 3
+    },
+    {
+      "module": "sales-order-sa",
+      "valid": true,
+      "ms": 28.7,
+      "exchanges": 1,
+      "sections": 3
+    },
+    {
+      "module": "sales-orders",
+      "valid": true,
+      "ms": 29.6,
+      "exchanges": 1,
+      "sections": 3
+    },
+    {
+      "module": "sales-qr",
+      "valid": true,
+      "ms": 33.9,
+      "exchanges": 1,
+      "sections": 3
+    },
+    {
+      "module": "warehouse-qr",
+      "valid": true,
+      "ms": 29.4,
+      "exchanges": 1,
+      "sections": 3
+    }
+  ],
+  "observedPreexistingVariableTextWidening": [
+    {
+      "module": "sales-order-pm",
+      "section": "header",
+      "table": "AR_OrderTbl",
+      "field": "AddressA",
+      "expectedType": "nvarchar",
+      "actualType": "nvarchar",
+      "expectedNullable": true,
+      "actualNullable": true,
+      "expectedLength": 400,
+      "actualLength": -1
+    },
+    {
+      "module": "sales-order-pm",
+      "section": "header",
+      "table": "AR_OrderTbl",
+      "field": "AddressB",
+      "expectedType": "nvarchar",
+      "actualType": "nvarchar",
+      "expectedNullable": true,
+      "actualNullable": true,
+      "expectedLength": 400,
+      "actualLength": -1
+    },
+    {
+      "module": "sales-order-sa",
+      "section": "header",
+      "table": "AR_OrderTbl",
+      "field": "AddressA",
+      "expectedType": "nvarchar",
+      "actualType": "nvarchar",
+      "expectedNullable": true,
+      "actualNullable": true,
+      "expectedLength": 400,
+      "actualLength": -1
+    },
+    {
+      "module": "sales-order-sa",
+      "section": "header",
+      "table": "AR_OrderTbl",
+      "field": "AddressB",
+      "expectedType": "nvarchar",
+      "actualType": "nvarchar",
+      "expectedNullable": true,
+      "actualNullable": true,
+      "expectedLength": 400,
+      "actualLength": -1
+    },
+    {
+      "module": "sales-orders",
+      "section": "header",
+      "table": "AR_OrderTbl",
+      "field": "AddressA",
+      "expectedType": "nvarchar",
+      "actualType": "nvarchar",
+      "expectedNullable": true,
+      "actualNullable": true,
+      "expectedLength": 400,
+      "actualLength": -1
+    },
+    {
+      "module": "sales-orders",
+      "section": "header",
+      "table": "AR_OrderTbl",
+      "field": "AddressB",
+      "expectedType": "nvarchar",
+      "actualType": "nvarchar",
+      "expectedNullable": true,
+      "actualNullable": true,
+      "expectedLength": 400,
+      "actualLength": -1
+    }
+  ],
+  "implementationEvidence": [
+    "src/backend/Medcom.Api/NativeReadSession.cs",
+    "src/backend/Medcom.Api/ApiHost.cs",
+    "src/backend/Medcom.Api/RequestPerformance.cs",
+    "src/backend/Medcom.Infrastructure/Erp/SqlErpScreenReader.cs",
+    "src/backend/Medcom.Infrastructure/SqlReferenceData.cs",
+    "tests/backend/Medcom.Api.Tests/ReadPerformanceTests.cs"
+  ]
+}

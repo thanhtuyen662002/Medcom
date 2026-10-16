@@ -99,7 +99,7 @@ public static class ErpScreenEndpoints
                 context.Items["Medcom.CanonicalChoiceAliases"]=new[]{definition.ValueField,definition.DisplayField};
             else if(value is ErpPmLookupQuery) context.Items["Medcom.CanonicalChoiceAliases"]=new[]{"UserName","HoTen"};
             return Read(context,await call(service,value,context.RequestAborted));
-        });
+        }).WithMetadata(new NativeReadSession.SqlReadOperation());
     private static void MapCommand<T>(IEndpointRouteBuilder app,string path,string module,string operation,
         Func<IErpScreenService,T,CancellationToken,Task<ErpCommandResult>> call)=>app.MapPost(path,async(HttpContext context,IErpScreenService service)=>
         {

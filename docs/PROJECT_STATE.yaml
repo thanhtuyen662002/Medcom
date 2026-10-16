@@ -1,3 +1,20 @@
+owner_native_read_latency_20261016:
+  instruction: investigate_options_and_other_reads_over_two_seconds_with_owner_target_every_FE_call_under_100ms
+  canonical_goal: 45
+  current_increment: I96
+  pr: 165
+  base: 2e18226755dbe6f8ab5a8abe9847fbc6d4c49749
+  checkpoint: docs/execution/checkpoints/I96_READ_PERFORMANCE_20261016.md
+  evidence: inventories/backend/20261016/read-performance.json
+  handoff: docs/backend/READ_PERFORMANCE_20261016.md
+  changes: registered_read_POST_admission_batched_screen_and_reference_metadata_sanitized_request_timings
+  native_role_branch_session_state_mutation_authority: preserved
+  observed_variable_text_widening: AR_OrderTbl_AddressA_AddressB_nvarchar_200_to_max_compatible
+  current_DB_required_form_schemas: 19_of_19_passed_read_only_component_probe
+  all_API_under_100ms_from_FE_acceptance: UNKNOWN_not_achieved_by_component_measurements
+  VPS_authenticated_all_API_benchmarks_and_redeployment: UNKNOWN_owner_managed
+  FE_routes_JSON_DB_VPS_automation_changes: NONE
+  final_current_head_full_local_and_hosted_validation: pending_PR165_receipts
 owner_db_image_attachments_20261016:
   instruction: audit_ERP_Attach_storage_and_add_real_file_upload_read_replace_delete_for_FE
   canonical_goal: 45
