@@ -152,17 +152,10 @@ public sealed class SqlReferenceData:IReferenceData
     private async Task<bool> Authority(DbTransaction transaction,AuthoritativeIdentity identity,CancellationToken token)
     {
         if(identity.TenantId!=company.TenantId||identity.CompanyId!=company.CompanyId||!ErpInputRules.AnsiIdentifier(identity.PrincipalId,100))return false;
-        LegacyUser user;
-        await using(var command=ErpSqlPlan.Command(transaction,SqlLegacyBranchScope.NativeUserText))
-        {
-            ErpSqlPlan.Parameter(command,"@actor",DbType.String,identity.PrincipalId,100);
-            await using var reader=await command.ExecuteReaderAsync(token);
-            if(!await reader.ReadAsync(token)||Enumerable.Range(0,5).Any(reader.IsDBNull))return false;
-            user=new(reader.GetString(0),"",reader.GetString(1),reader.GetBoolean(2),reader.GetString(3),!reader.GetBoolean(4));
-            if(await reader.ReadAsync(token)||await reader.NextResultAsync(token)||user.Username!=identity.PrincipalId||user.Disabled||!user.GroupEnabled
-                ||LegacyIdentityAuthority.Stamp(user)!=identity.CredentialStamp)return false;
-        }
-        var scope=await SqlLegacyBranchScope.ResolveAsync(transaction,user,token);
+        var observation=await SqlNativeIdentity.ReadAsync(transaction,identity.PrincipalId,
+            user=>LegacyIdentityAuthority.Stamp(user)==identity.CredentialStamp,token);
+        if(observation is null)return false;
+        var scope=observation.Scope;
         return (identity.BranchIds??[]).Order(StringComparer.Ordinal).SequenceEqual(scope.BranchIds.Order(StringComparer.Ordinal))&&identity.BranchSelection==scope.BranchSelection;
     }
     private async Task<ErpReadResult<T>> Run<T>(Func<DbTransaction,AuthoritativeIdentity,Task<ErpReadResult<T>>> read,CancellationToken token)

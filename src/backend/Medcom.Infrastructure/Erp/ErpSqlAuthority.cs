@@ -64,25 +64,13 @@ internal static class ErpSqlAuthority
         if(identity.TenantId!=company.TenantId||identity.CompanyId!=company.CompanyId
             ||!ErpInputRules.AnsiIdentifier(identity.PrincipalId,100)||!ErpInputRules.AnsiIdentifier(branch,50)
             ||string.IsNullOrEmpty(identity.CredentialStamp)||identity.BranchIds?.Contains(branch,StringComparer.Ordinal)!=true)return null;
-        LegacyUser user;
-        await using(var command=ErpSqlPlan.Command(transaction,"""
-            SELECT TOP(2) U.UserName,U.[Password],U.[Disable],U.UserGroupID,G.IsDisable
-            FROM dbo.SY_User U WITH(HOLDLOCK) LEFT JOIN dbo.SY_UserGroup G WITH(HOLDLOCK) ON G.UserGroupID=U.UserGroupID
-            WHERE U.UserName=@actor;
-            """))
-        {
-            ErpSqlPlan.Parameter(command,"@actor",DbType.AnsiString,identity.PrincipalId,100);
-            await using var reader=await command.ExecuteReaderAsync(token);
-            if(!await reader.ReadAsync(token)||Enumerable.Range(0,5).Any(reader.IsDBNull))return null;
-            user=new(reader.GetString(0),"",reader.GetString(1),reader.GetBoolean(2),reader.GetString(3),!reader.GetBoolean(4));
-            if(await reader.ReadAsync(token)||await reader.NextResultAsync(token)||user.Username!=identity.PrincipalId
-                ||user.Disabled||!user.GroupEnabled||!ErpInputRules.AnsiIdentifier(user.GroupId,50)
-                ||LegacyIdentityAuthority.Stamp(user)!=identity.CredentialStamp)return null;
-        }
-        var branches=await SqlLegacyBranchScope.ResolveAsync(transaction,user,token);
+        var observation=await SqlNativeIdentity.ReadAsync(transaction,identity.PrincipalId,
+            user=>ErpInputRules.AnsiIdentifier(user.GroupId,50)&&LegacyIdentityAuthority.Stamp(user)==identity.CredentialStamp,token);
+        if(observation is null)return null;
+        var branches=observation.Scope;
         if(!branches.BranchIds.Contains(branch,StringComparer.Ordinal)
             ||!(identity.BranchIds??[]).Order(StringComparer.Ordinal).SequenceEqual(branches.BranchIds.Order(StringComparer.Ordinal))
             ||identity.BranchSelection!=branches.BranchSelection)return null;
-        return user;
+        return observation.User;
     }
 }

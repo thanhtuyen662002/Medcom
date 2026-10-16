@@ -1,5 +1,22 @@
 # Kiểm tra độ trễ đọc dữ liệu — 16/10/2026
 
+## Tiếp tục tối ưu sau lần triển khai I96 — I97 / PR #166
+
+Đợt đo I96 trên VPS sau triển khai gồm 174 request đã đăng nhập, tất cả HTTP 200: trung vị options 1295,2 ms, danh sách 1329,8 ms, chi tiết 1511,4 ms và CSRF 9,0 ms. Riêng bước xác thực khoảng 590 ms. Bằng chứng tổng hợp: [kết quả đo PR #165](https://github.com/thanhtuyen662002/Medcom/pull/165#issuecomment-6213180195); không suy ra đã đo tất cả API hoặc toàn bộ đường FE/BFF.
+
+I97 giảm các lượt SQL nối tiếp để đọc người dùng/quyền/chi nhánh. Phần quyền Đề nghị mua hàng được lọc sớm bằng đúng mã màn hình trước khi áp dụng các điều kiện quyền cũ. Các API danh sách, chi tiết và tên tham chiếu cũng dùng chung một batch đọc người dùng/chi nhánh, tránh đọc trùng. Quyền vẫn được đọc mới từ DB; các kiểm tra tài khoản, nhóm, chi nhánh, trạng thái, concurrency và quyền khi ghi vẫn giữ nguyên. Bằng chứng mã: `SqlLegacyUserStore.FindAsync`, `SqlIdentityCapabilities`, `SqlNativeIdentity`, `ErpSqlAuthority.ReadUser`, `SqlReferenceData.Authority`.
+
+| Đo thành phần từ máy kiểm thử tới MedData | Trước I97 | Sau I97 |
+|---|---:|---:|
+| Đọc thông tin người dùng, quyền và chi nhánh; trung vị 12 lượt sau lượt đầu | 639,4 ms | 172,7 ms |
+| Chỉ đọc quyền chi nhánh; trung vị sáu đối chiếu | 62,8 ms | 26,6 ms |
+
+Cả 18 đối chiếu trên sáu người dùng (ba chi nhánh cố định, ba chọn từ danh mục) trả cùng kết quả quyền/chi nhánh; 39 ca SQL với bảng tạm và dữ liệu giả lập cũng đạt. Đây là số đo thành phần, không phải thời gian API trên VPS. Không kết luận đã đạt dưới 100 ms. Chi tiết, giới hạn và định danh bằng chứng: `inventories/backend/20261016/native-auth-performance.json` và `docs/execution/checkpoints/I97_NATIVE_AUTH_BATCHING_20261016.md`.
+
+Chỉ cần redeploy BE từ main sau khi PR #166 được merge. FE tiếp tục gọi các API hiện tại; không cần đổi route, request, response, DB schema hoặc fingerprint. Sau triển khai cần đo lại API có đăng nhập trên VPS bằng `Server-Timing` như hướng dẫn bên dưới. Các tên bước đo chỉ dùng cho vận hành, không đưa lên giao diện nghiệp vụ.
+
+## Bằng chứng và thay đổi của I96
+
 Yêu cầu: kiểm tra options và các API đọc mất trên hai giây; mục tiêu mới của chủ hệ thống là **mọi lần FE gọi API đều dưới 100 ms**. Mục tiêu này **chưa được nghiệm thu**. Không thay thế yêu cầu đó bằng thời gian SQL, thời gian một hàm, trung bình hoặc p95. Chưa có phép đo toàn bộ API bằng phiên đăng nhập trên VPS sau khi triển khai bản sửa này.
 
 ## Kết quả xác minh
