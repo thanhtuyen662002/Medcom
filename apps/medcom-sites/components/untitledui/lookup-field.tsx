@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Search, X, Loader2, Check } from "lucide-react";
 import { erpClient } from "@/lib/erp/erp-client";
 import type { ErpChoice } from "@/lib/erp/erp-screen-contracts";
@@ -33,6 +33,8 @@ export function LookupField({
   selected,
   onMultiSelect,
   context,
+  preloadAll = false,
+  secondaryFields = [],
 }: {
   label: string;
   required?: boolean;
@@ -51,45 +53,66 @@ export function LookupField({
   onMultiSelect?: (choices: ErpChoice[]) => void;
   /** Values for the lookup's declared `parameters` (e.g. contract lookup bound to ObjectID). */
   context?: Record<string, string | null>;
+  /** Load every bounded page, including before opening (customer's contracts). */
+  preloadAll?: boolean;
+  secondaryFields?: readonly string[];
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [items, setItems] = useState<ErpChoice[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<{ key: string; items: ErpChoice[]; hasMore: boolean; page: number }>();
+  const [pendingKey, setPendingKey] = useState<string | null>(null);
+  const [failureKey, setFailureKey] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
+  const [pagination, setPagination] = useState({ key: "", page: 1 });
 
   // Callers inline a fresh object each render; serialize it so the request only
   // reruns when the linked parent value actually changes.
   const contextKey = JSON.stringify(context ?? null);
+  const effectiveSearch = open ? search.trim() : "";
+  const queryKey = JSON.stringify([module, lookupId, branchId, contextKey, effectiveSearch, preloadAll]);
+  const page = pagination.key === queryKey ? pagination.page : 1;
+  const enabled = open || preloadAll;
+  const currentKey = useRef(queryKey);
+  useLayoutEffect(() => { currentKey.current = queryKey; }, [queryKey]);
+  const items = result?.key === queryKey ? result.items : [];
+  const loading = pendingKey === queryKey || (enabled && result?.key !== queryKey && failureKey !== queryKey);
+  const failed = failureKey === queryKey;
 
   useEffect(() => {
-    if (!open) return;
+    if (!enabled) return;
     let cancelled = false;
-    setLoading(true);
+    const key = queryKey;
+    const [requestModule, requestLookup, requestBranch, requestContext, requestSearch] = JSON.parse(key) as
+      [ErpScreenModule, string, string, string, string, boolean];
+    setPendingKey(key);
+    setFailureKey(null);
     const timer = setTimeout(() => {
-      erpClient
-        .getLookupOptions(module, {
-          branchId,
-          lookupId,
-          page: 1,
-          pageSize: 20,
-          search: search.trim() ? search.trim() : null,
-          context: contextKey === "null" ? null : (JSON.parse(contextKey) as Record<string, string | null>),
-        })
-        .then((page) => {
-          if (!cancelled) setItems(page.items || []);
-        })
-        .catch(() => {
-          if (!cancelled) setItems([]);
-        })
-        .finally(() => {
-          if (!cancelled) setLoading(false);
-        });
-    }, search ? 300 : 0);
+      void (async () => {
+        const accumulated: ErpChoice[] = [];
+        for (let next = 1; next <= 1000; next++) {
+          const response = await erpClient.getLookupOptions(requestModule, {
+            branchId: requestBranch, lookupId: requestLookup, page: next, pageSize: 100,
+            search: requestSearch || null, context: JSON.parse(requestContext),
+          });
+          if (cancelled) return;
+          accumulated.push(...response.items);
+          if (!response.hasMore || (!preloadAll && next >= page)) {
+            setResult({ key, items: accumulated, hasMore: response.hasMore, page: next });
+            return;
+          }
+        }
+        throw new Error("Lookup page limit reached");
+      })().catch(() => {
+        if (!cancelled) { setResult(undefined); setFailureKey(key); }
+      }).finally(() => {
+        if (!cancelled) setPendingKey(null);
+      });
+    }, requestSearch ? 300 : 0);
     return () => {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [open, search, module, lookupId, branchId, contextKey]);
+  }, [enabled, queryKey, page, retry, preloadAll]);
 
   const isSelected = (id: string) => (selected ?? []).some((c) => c.id === id);
   const toggleMulti = (item: ErpChoice) => {
@@ -189,6 +212,11 @@ export function LookupField({
                 <p className="p-3 text-xs text-neutral-400 flex items-center gap-2">
                   <Loader2 className="size-3.5 animate-spin" /> Đang tải...
                 </p>
+              ) : failed ? (
+                <div role="alert" className="p-3 text-xs text-red-600">
+                  Không tải được danh sách lựa chọn.
+                  <button type="button" onClick={() => setRetry(v => v + 1)} className="ml-2 underline">Thử lại</button>
+                </div>
               ) : items.length === 0 ? (
                 <p className="p-3 text-xs text-neutral-400">Không có lựa chọn nào.</p>
               ) : (
@@ -199,6 +227,7 @@ export function LookupField({
                       key={item.id}
                       type="button"
                       onClick={() => {
+                        if (currentKey.current !== queryKey || loading || failed) return;
                         if (multiple) toggleMulti(item);
                         else {
                           onSelect(item);
@@ -229,12 +258,23 @@ export function LookupField({
                         {fieldText(item.label) && item.label !== item.id && (
                           <span className="block truncate text-[10px] text-neutral-400">{item.id}</span>
                         )}
+                        {secondaryFields.map(field => fieldText(item.fields?.[field])).filter(Boolean).length > 0 && (
+                          <span className="block text-[10px] text-neutral-500">
+                            {secondaryFields.map(field => fieldText(item.fields?.[field])).filter(Boolean).join(" · ")}
+                          </span>
+                        )}
                       </span>
                     </button>
                   );
                 })
               )}
             </div>
+            {!loading && !failed && result?.key === queryKey && result.hasMore && (
+              <button type="button" onClick={() => setPagination({ key: queryKey, page: result.page + 1 })}
+                className="w-full p-2 text-xs text-brand-600 border-t border-neutral-100 dark:border-neutral-800">
+                Tải thêm lựa chọn
+              </button>
+            )}
             {multiple && (
               <div className="p-2 border-t border-neutral-100 dark:border-neutral-800 flex justify-end">
                 <button

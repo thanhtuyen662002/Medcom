@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import Image from "next/image";
+import { MedcomLogo } from "@/components/brand/medcom-logo";
 import {
   ShieldCheck,
   Building2,
@@ -28,6 +28,7 @@ import {
   UserCheck,
   ClipboardList,
   Boxes,
+  BookOpen,
 } from "lucide-react";
 import { UntitledBadge } from "./badge";
 import { UntitledButton } from "./button";
@@ -167,7 +168,7 @@ export function DesktopSidebar({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-full flex items-center justify-center">
-              <Image src="/medcom-logo.png" alt="MEDCOMTECH" width={144} height={52} className="h-full w-full object-contain" priority />
+              <MedcomLogo alt="MEDCOMTECH" width={144} height={52} className="h-full w-full object-contain" priority />
             </div>
           </div>
 
@@ -356,6 +357,10 @@ export function DesktopSidebar({
 
         {/* Settings */}
         <div className="space-y-1 pt-2 border-t border-neutral-100 dark:border-neutral-800/60">
+          <a href="/help" target="_blank" rel="noopener noreferrer" className="w-full flex items-center gap-2.5 px-3 py-3 rounded-xl text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
+            <BookOpen className="size-4 shrink-0 text-neutral-400" />
+            <span>Hướng dẫn sử dụng</span>
+          </a>
           <button
             type="button"
             onClick={() => onTabChange("settings")}

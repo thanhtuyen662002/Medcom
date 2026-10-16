@@ -428,12 +428,8 @@ html { scroll-padding-top: 88px; }
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
-}
-
-.dark .brand-logo {
-  filter: grayscale(1) invert(1);
 }
 
 .mobile-bottom-nav { display: none; }

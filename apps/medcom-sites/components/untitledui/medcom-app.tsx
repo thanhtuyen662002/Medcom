@@ -237,6 +237,24 @@ export function MedcomApp() {
 
   // Synchronize documentElement & body class with isDarkMode
   useEffect(() => {
+    const syncSharedTheme = () => {
+      try {
+        const saved = localStorage.getItem("medcom.theme.dark");
+        setIsDarkMode(saved !== null ? saved === "true" : window.matchMedia("(prefers-color-scheme: dark)").matches);
+      } catch { /* Keep the current theme if preference storage is unavailable. */ }
+    };
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === "medcom.theme.dark" || event.key === null) syncSharedTheme();
+    };
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("focus", syncSharedTheme);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("focus", syncSharedTheme);
+    };
+  }, []);
+
+  useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add("dark");
       document.body.classList.add("dark");

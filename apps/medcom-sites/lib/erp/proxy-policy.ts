@@ -61,6 +61,7 @@ const legacyDraftModules = [
 ] as const;
 
 const erpScreenPostRoutes = new Set([
+  "api/erp/sales-orders/attachments/upload",
   ...erpScreenModules.map(m => `api/erp/${m}/options`),
   ...erpScreenModules.map(m => `api/erp/${m}/commands/lookup`),
   ...fullCudModules.flatMap(m => [
@@ -123,6 +124,8 @@ const erpScreenPostRoutes = new Set([
 export function erpScreenPostRoute(path:string){return erpScreenPostRoutes.has(path);}
 
 const erpScreenGetRoutes = new Set([
+  "api/erp/sales-orders/attachments",
+  "api/erp/sales-orders/attachments/content",
   "api/erp/permissions",
   ...erpScreenModules.flatMap(m => [
     `api/erp/${m}/screen`,
@@ -156,7 +159,8 @@ export function notificationReadRoute(path:string):boolean{
 }
 export function notificationRoute(path:string):boolean{return notificationGetRoute(path)||notificationReadRoute(path);}
 
-export function requestBodyLimit(path:string,method:string){return method==="POST"&&(purchaseCommandRoute(path)||inboundCommandRoute(path)||erpScreenPostRoute(path)||notificationReadRoute(path))?1048576:16384;}
+export function salesOrderAttachmentUploadRoute(path:string){return path==="api/erp/sales-orders/attachments/upload";}
+export function requestBodyLimit(path:string,method:string){return method==="POST"&&salesOrderAttachmentUploadRoute(path)?12*1024*1024:method==="POST"&&(purchaseCommandRoute(path)||inboundCommandRoute(path)||erpScreenPostRoute(path)||notificationReadRoute(path))?1048576:16384;}
 const routes = new Map([
  ...[...purchaseCommandRoutes].map(path=>[path,["POST"]] as [string,string[]]),
  ...[...inboundCommandRoutes].map(path=>[path,["POST"]] as [string,string[]]),

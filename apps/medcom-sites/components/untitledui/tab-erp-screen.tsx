@@ -12,6 +12,7 @@ import {
   AlertCircle,
   CheckCircle2,
   ChevronRight,
+  ChevronLeft,
   Calendar,
   Building,
   User,
@@ -38,12 +39,18 @@ import {
 } from "@/lib/erp/erp-client";
 import { UntitledBottomSheet } from "./bottom-sheet";
 import { UntitledButton } from "./button";
-import { LookupField, fieldText } from "./lookup-field";
+import { LookupField, fieldText, choiceLabel } from "./lookup-field";
 import { DocumentCardSkeleton } from "./skeleton";
 import { SalesOrderForm } from "@/components/erp/sales-order-form";
 import { PurchaseOrderCreateSheet } from "./purchase-order-create-sheet";
 import { PurchaseRequestCreateSheet } from "./purchase-request-create-sheet";
 import { QrCamera } from "@/lib/erp/qr-camera";
+import { resolveSalesOrderCustomer, salesOrderField } from "@/lib/erp/sales-order-lookups";
+import { SalesOrderLineEditor } from "@/components/erp/sales-order-line-editor";
+import { emptySalesOrderLine, isSalesOrderLineValid, salesOrderLineDisplay, salesOrderLineInput, type SalesOrderDraftLine } from "@/lib/erp/sales-order-lines";
+import { useSalesOrderAttachments } from "@/components/erp/use-sales-order-attachments";
+import { SalesOrderAttachmentPicker } from "@/components/erp/sales-order-attachment-picker";
+import { ErpDetailSheet } from "@/components/erp/erp-detail-sheet";
 import type { ErpDocumentPage } from "@/lib/erp/erp-screen-contracts";
 
 interface TabErpScreenProps {
@@ -672,6 +679,34 @@ export function TabErpScreen({
 
   // Create Modal State (for non-QR modules)
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const createAttachments = useSalesOrderAttachments();
+  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
+  const [pendingOrderCreate, setPendingOrderCreate] = useState(false);
+  const orderCreateIntent = useRef<Parameters<typeof erpClient.createDocument>[1] | null>(null);
+  const createGeneration = useRef(0);
+  const createLocked = !!createdOrderId || pendingOrderCreate;
+  const [createIsMobile, setCreateIsMobile] = useState(false);
+  const [salesOrderCreateStep, setSalesOrderCreateStep] = useState(0);
+  const createContentRef = useRef<HTMLDivElement>(null);
+  const isSalesOrderMobile = module === "sales-orders" && createIsMobile;
+  const showCreateHeader = !isSalesOrderMobile || salesOrderCreateStep === 0;
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const query = window.matchMedia("(max-width: 767px)");
+    const sync = () => setCreateIsMobile(query.matches);
+    sync(); query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
+  useEffect(() => {
+    if (createModalOpen) {
+      setSalesOrderCreateStep(createLocked ? 2 : 0);
+      if (!createLocked) setActionFeedback(null);
+    }
+  }, [createModalOpen]);
+  useEffect(() => () => { createGeneration.current++; }, []);
+  useEffect(() => {
+    if (createModalOpen && isSalesOrderMobile) createContentRef.current?.scrollIntoView({ block: "start" });
+  }, [createModalOpen, isSalesOrderMobile, salesOrderCreateStep]);
   // Redesigned purchase-order create sheet (header + editable line grid).
   const [poCreateOpen, setPoCreateOpen] = useState(false);
   // Redesigned purchase-request create sheet (matches the desktop PR form).
@@ -684,11 +719,18 @@ export function TabErpScreen({
   const [createContract, setCreateContract] = useState("");
   const [createContractChoice, setCreateContractChoice] = useState<ErpChoice | null>(null);
   const [createDeliverDate, setCreateDeliverDate] = useState("");
+  const [createManager, setCreateManager] = useState<ErpChoice | null>(null);
+  const [createMemo, setCreateMemo] = useState("");
+  const [createOrderNotes, setCreateOrderNotes] = useState("");
+  const [createLink, setCreateLink] = useState("");
+  const [customerLoading, setCustomerLoading] = useState(false);
+  const [customerError, setCustomerError] = useState<string | null>(null);
+  const [customerRetry, setCustomerRetry] = useState(0);
+  const customerResolution = useRef(0);
+  const [lineResetNotice, setLineResetNotice] = useState(false);
   const newSoLineKey = () => `so-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
-  const [createSoLines, setCreateSoLines] = useState<Array<{
-    key: string; itemId: string; choice: ErpChoice | null; quantity: string; unitPrice: string; dienGiai: string;
-  }>>([{ key: "so-init", itemId: "", choice: null, quantity: "1", unitPrice: "", dienGiai: "" }]);
-  const patchSoLine = (key: string, patch: Partial<{ itemId: string; choice: ErpChoice | null; quantity: string; unitPrice: string; dienGiai: string }>) =>
+  const [createSoLines, setCreateSoLines] = useState<SalesOrderDraftLine[]>([emptySalesOrderLine("so-init")]);
+  const patchSoLine = (key: string, patch: Partial<SalesOrderDraftLine>) =>
     setCreateSoLines((prev) => prev.map((l) => (l.key === key ? { ...l, ...patch } : l)));
   const [createNotes, setCreateNotes] = useState("");
   const [createItemId, setCreateItemId] = useState("");
@@ -696,38 +738,74 @@ export function TabErpScreen({
   const [createUnitPrice, setCreateUnitPrice] = useState("100000");
   const [creatingDocument, setCreatingDocument] = useState(false);
 
-  // Khách hàng ↔ Hợp đồng (Đơn hàng bán): lookup header.ContractID có ParaArr =
-  // "ObjectID" (một khách hàng có nhiều hợp đồng) nên chọn khách trước thì danh
-  // sách hợp đồng chỉ tải hợp đồng của khách đó; ngược lại chọn hợp đồng trước
-  // thì map tự động khách hàng từ LinkColumn "ObjectID;ObjectName" của hợp đồng.
+  const clearSoLines = () => {
+    if (createSoLines.some(line => line.itemId)) setLineResetNotice(true);
+    setCreateSoLines([emptySalesOrderLine(newSoLineKey())]);
+  };
+
+  // ContractID links ObjectID/ObjectName/EmployeeID; customer lookup supplies Address.
+  // Evidence: six-screen-catalog.json#sales-orders.lookups (no guessed SQL/fields).
   const selectSoContract = (c: ErpChoice | null) => {
+    if ((c?.id || "") !== createContract) clearSoLines();
+    const previousEmployee = salesOrderField(createContractChoice, "EmployeeID");
+    const employee = salesOrderField(c, "EmployeeID");
+    if (employee || (previousEmployee && createEmployee === previousEmployee)) {
+      setCreateEmployee(employee);
+      setCreateEmployeeChoice(employee ? { id: employee, name: employee, label: employee, fields: {} } : null);
+    }
     setCreateContractChoice(c);
     setCreateContract(c ? c.id : "");
     if (!c) return;
-    const objectId = fieldText(c.fields?.ObjectID);
+    const objectId = salesOrderField(c, "ObjectID");
     // Không có ObjectID trên dòng hợp đồng thì giữ nguyên khách đang chọn.
     if (!objectId || objectId === createObject) return;
     setCreateObject(objectId);
     setCreateObjectChoice({
       id: objectId,
-      name: fieldText(c.fields?.ObjectName) || objectId,
+      name: salesOrderField(c, "ObjectName") || objectId,
       label: objectId,
-      fields: { ...c.fields, ObjectID: objectId },
+      fields: { ObjectID: objectId, ObjectName: salesOrderField(c, "ObjectName") },
     });
   };
 
   const selectSoCustomer = (c: ErpChoice | null) => {
+    customerResolution.current++;
+    setCustomerLoading(false); setCustomerError(null);
     const nextObject = c ? c.id : "";
     // Đổi khách hàng thì hợp đồng đã chọn không còn thuộc khách này → bỏ chọn.
     // Khi hợp đồng vừa tự map khách (ObjectID trùng) thì điều kiện này không xảy ra.
-    const contractObject = fieldText(createContractChoice?.fields?.ObjectID);
-    if (createContract && contractObject && contractObject !== nextObject) {
+    if (createContract && nextObject !== createObject) {
+      const linkedEmployee = salesOrderField(createContractChoice, "EmployeeID");
+      if (linkedEmployee && createEmployee === linkedEmployee) {
+        setCreateEmployee(""); setCreateEmployeeChoice(null);
+      }
+      clearSoLines();
       setCreateContract("");
       setCreateContractChoice(null);
     }
     setCreateObjectChoice(c);
     setCreateObject(nextObject);
   };
+
+  useEffect(() => {
+    if (!createModalOpen || module !== "sales-orders" || !createContract || !createObject) {
+      setCustomerLoading(false); setCustomerError(null); return;
+    }
+    let cancelled = false;
+    const sequence = ++customerResolution.current;
+    const isCurrent = () => !cancelled && sequence === customerResolution.current;
+    setCustomerLoading(true); setCustomerError(null);
+    void resolveSalesOrderCustomer(currentBranch, createContract, createObject,
+      query => erpClient.getLookupOptions("sales-orders", query), isCurrent)
+      .then(customer => {
+        if (!isCurrent()) return;
+        if (!customer) throw new Error("Linked customer unavailable");
+        setCreateObjectChoice(customer);
+      })
+      .catch(() => { if (isCurrent()) setCustomerError("Chưa tải được thông tin khách hàng. Vui lòng thử lại."); })
+      .finally(() => { if (isCurrent()) setCustomerLoading(false); });
+    return () => { cancelled = true; };
+  }, [createModalOpen, module, currentBranch, createContract, createObject, customerRetry]);
 
   // Load Screen Metadata
   useEffect(() => {
@@ -851,6 +929,16 @@ export function TabErpScreen({
     setSelectedDocId(null);
     setDetail(null);
     setDetailError(null);
+    setCreateModalOpen(false);
+    createGeneration.current++;
+    createAttachments.reset(); setCreatedOrderId(null); setPendingOrderCreate(false); orderCreateIntent.current = null;
+    setCreatingDocument(false);
+    setCreateObject(""); setCreateObjectChoice(null);
+    setCreateContract(""); setCreateContractChoice(null);
+    setCreateEmployee(""); setCreateEmployeeChoice(null); setCreateManager(null);
+    setCreateSoLines([emptySalesOrderLine("so-init")]);
+    setCreateMemo(""); setCreateOrderNotes(""); setCreateLink("");
+    setCreateDeliverDate(""); setLineResetNotice(false);
     if (isActive) void loadList(1);
   }, [currentBranch, module, isActive, loadList]);
 
@@ -1392,11 +1480,70 @@ export function TabErpScreen({
   };
 
   // Handle Create New Document
+  const goToSalesOrderStep = (next: number) => {
+    if (creatingDocument || createLocked) return;
+    if (next > 0 && (!createDate || !createObject.trim() || !createEmployee.trim() || createOrderNotes.length > 250 || customerLoading || customerError || createAttachments.validating)) {
+      setActionFeedback({ type: "warning", message: customerLoading ? "Đang tải thông tin khách hàng. Vui lòng chờ." :
+        customerError || "Nhập ngày chứng từ, chọn khách hàng và mã nhân viên. Ghi chú tối đa 250 ký tự." });
+      setSalesOrderCreateStep(0); return;
+    }
+    if (next > 1 && (!createSoLines.length || !createSoLines.every(isSalesOrderLineValid))) {
+      setActionFeedback({ type: "warning", message: "Chọn mã hàng, nhập số lượng và các giá trị giá/thuế/chiết khấu hợp lệ cho từng dòng." });
+      setSalesOrderCreateStep(1); return;
+    }
+    setActionFeedback(null); setSalesOrderCreateStep(next);
+  };
+
+  const createdSalesOrderId = (result: ErpCommandResult, requestKey: string): string => {
+    const receipt = result.receipt;
+    if (!receipt || receipt.module !== "sales-orders" || receipt.idempotencyKey !== requestKey || receipt.deleted ||
+      !receipt.documentId || receipt.documentId.length > 50) throw new Error("Invalid created document receipt");
+    return receipt.documentId;
+  };
+
+  const finishCreatedSalesOrder = async (documentId: string, run: number) => {
+    const uploaded = await createAttachments.uploadAll(currentBranch, documentId);
+    if (run !== createGeneration.current) return;
+    if (!uploaded) {
+      setSalesOrderCreateStep(2);
+      setActionFeedback({ type: "warning", message: `Đơn ${documentId} đã tạo. Ảnh đính kèm chưa hoàn tất; bấm Thử lại tải ảnh để tiếp tục trên đơn này.` });
+      void loadList(1); return;
+    }
+    setCreateModalOpen(false); setCreatedOrderId(null); setPendingOrderCreate(false); orderCreateIntent.current = null;
+    createAttachments.reset();
+    setCreateObject(""); setCreateObjectChoice(null); setCreateContract(""); setCreateContractChoice(null);
+    setCreateEmployee(""); setCreateEmployeeChoice(null); setCreateManager(null);
+    setCreateMemo(""); setCreateOrderNotes(""); setCreateLink("");
+    setCreateDeliverDate(""); setLineResetNotice(false); setCreateSoLines([emptySalesOrderLine(newSoLineKey())]);
+    setActionFeedback({ type: "success", message: `Đã tạo đơn ${documentId}${createAttachments.files.length ? " và tải ảnh đính kèm" : ""}.` });
+    void loadList(1); void handleOpenDetail(documentId);
+  };
+
   const handleCreateDocument = async () => {
+    if (creatingDocument || createAttachments.validating || createAttachments.uploading || (module === "sales-orders" && !createLocked && (customerLoading || customerError))) return;
+    if (isSalesOrderMobile && salesOrderCreateStep !== 2 && !createLocked) { goToSalesOrderStep(2); return; }
+    const run = createGeneration.current;
     setCreatingDocument(true);
     setActionFeedback(null);
     const idempotencyKey = `crt-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     try {
+      if (module === "sales-orders" && createdOrderId) {
+        await finishCreatedSalesOrder(createdOrderId, run); return;
+      }
+      if (module === "sales-orders" && orderCreateIntent.current) {
+        const pending = orderCreateIntent.current;
+        const result = await erpClient.createDocument("sales-orders", pending);
+        if (run !== createGeneration.current) return;
+        if (result.outcome === "Committed" || result.outcome === "Replayed") {
+          const id = createdSalesOrderId(result, pending.idempotencyKey);
+          setCreatedOrderId(id); setPendingOrderCreate(false);
+          await finishCreatedSalesOrder(id, run);
+        } else {
+          if (!["OutcomeUnknown", "Unavailable"].includes(result.outcome)) { orderCreateIntent.current = null; setPendingOrderCreate(false); }
+          handleCommandOutcome(result);
+        }
+        return;
+      }
       const header: Record<string, unknown> = {};
       const lines: Array<{ clientLineKey: string; values: Record<string, unknown> }> = [];
 
@@ -1419,6 +1566,10 @@ export function TabErpScreen({
           });
         }
       } else if (module === "sales-orders") {
+        if (!createDate || createOrderNotes.length > 250) {
+          setActionFeedback({ type: "warning", message: "Nhập ngày chứng từ và ghi chú đơn hàng tối đa 250 ký tự." });
+          return;
+        }
         const soObject = (createObject || createObjectChoice?.id || "").trim();
         const soEmployee = (createEmployee || createEmployeeChoice?.id || "").trim();
         if (!soObject || !soEmployee) {
@@ -1438,14 +1589,16 @@ export function TabErpScreen({
         const soContract = (createContract || createContractChoice?.id || "").trim();
         if (soContract) header.contractId = soContract;
         if (createDeliverDate) header.deliverDate = `${createDeliverDate}T00:00:00.000`;
-        header.memo = createNotes || "Đơn hàng bán";
-        header.notes = createNotes || null;
-        const soDec = /^\d+(\.\d+)?$/;
-        const soValid = createSoLines.filter((l) => l.itemId.trim() && soDec.test(l.quantity.trim()) && (!l.unitPrice.trim() || soDec.test(l.unitPrice.trim())));
-        if (soValid.length === 0) {
+        header.memo = createMemo.trim() || null;
+        header.ghiChuDonHang = createOrderNotes.trim() || null;
+        header.managerId = createManager?.id || null;
+        header.taxCode = salesOrderField(createObjectChoice, "TaxCode") || null;
+        header.linkId = createLink.trim() || null;
+        const soValid = createSoLines.filter(isSalesOrderLineValid);
+        if (soValid.length === 0 || soValid.length !== createSoLines.length) {
           setActionFeedback({
             type: "warning",
-            message: "Cần ít nhất 1 dòng hàng với Mã hàng và Số lượng hợp lệ.",
+            message: "Mỗi dòng hàng cần Mã hàng, Số lượng và các giá trị giá/thuế/chiết khấu hợp lệ. Hãy xóa dòng trống không dùng.",
           });
           setCreatingDocument(false);
           return;
@@ -1453,12 +1606,7 @@ export function TabErpScreen({
         for (const l of soValid) {
           lines.push({
             clientLineKey: l.key,
-            values: {
-              itemId: l.itemId.trim(),
-              quantity: l.quantity.trim(),
-              unitPrice: l.unitPrice.trim() || null,
-              dienGiai: l.dienGiai.trim() || null,
-            },
+            values: salesOrderLineInput(l),
           });
         }
       } else if (module === "internal-transfer-requests") {
@@ -1565,23 +1713,40 @@ export function TabErpScreen({
         header.notes = createNotes || null;
       }
 
-      const res = await erpClient.createDocument(module, {
+      const intent = {
         idempotencyKey,
         branchId: currentBranch,
         header,
         lines,
-      });
+      };
+      if (module === "sales-orders") { orderCreateIntent.current = intent; setPendingOrderCreate(true); }
+      const res = await erpClient.createDocument(module, intent);
+      if (run !== createGeneration.current) return;
+      if (module === "sales-orders") {
+        if (res.outcome === "Committed" || res.outcome === "Replayed") {
+          const id = createdSalesOrderId(res, intent.idempotencyKey);
+          setCreatedOrderId(id); setPendingOrderCreate(false);
+          await finishCreatedSalesOrder(id, run);
+        } else {
+          if (!["OutcomeUnknown", "Unavailable"].includes(res.outcome)) { orderCreateIntent.current = null; setPendingOrderCreate(false); }
+          handleCommandOutcome(res);
+        }
+        return;
+      }
 
-      setCreateModalOpen(false);
+      if (res.outcome === "Committed" || res.outcome === "Replayed") {
+        setCreateModalOpen(false);
+      }
       handleCommandOutcome(res);
       loadList(1);
     } catch {
+      if (run !== createGeneration.current) return;
       setActionFeedback({
         type: "error",
-        message: "Lỗi kết nối khi tạo mới chứng từ ERP.",
+        message: module === "sales-orders" ? "Chưa xác nhận đầy đủ kết quả. Bấm tiếp tục để kiểm tra đúng đơn/lần tải đang có." : "Lỗi kết nối khi tạo mới chứng từ ERP.",
       });
     } finally {
-      setCreatingDocument(false);
+      if (run === createGeneration.current) setCreatingDocument(false);
     }
   };
 
@@ -1848,8 +2013,10 @@ export function TabErpScreen({
         )}
       </div>
 
-      {/* DETAIL BOTTOM SHEET MODAL (No nested double scroll cut-off, padded pb-16) */}
-      <UntitledBottomSheet
+      {/* Sales orders share the established record-detail shell. */}
+      <ErpDetailSheet
+        salesOrder={module === "sales-orders"}
+        documentNumber={selectedDocId}
         open={Boolean(selectedDocId)}
         onClose={handleCloseDetail}
         title={`Chi tiết: ${selectedDocId || ""}`}
@@ -1869,7 +2036,7 @@ export function TabErpScreen({
           );
         })()}
       >
-        <div className="space-y-4 pb-16">
+        <div className={module === "sales-orders" ? "min-w-0 space-y-4" : "space-y-4 pb-16"}>
           {/* Action Feedback Banner */}
           {actionFeedback && (
             <div
@@ -1911,6 +2078,7 @@ export function TabErpScreen({
           ) : detail ? (
             module === "sales-orders" ? (
               <SalesOrderForm
+                key={`${currentBranch}:${detail.documentId}`}
                 branchId={currentBranch}
                 documentId={detail.documentId}
                 onClose={handleCloseDetail}
@@ -2738,7 +2906,7 @@ export function TabErpScreen({
             )
           ) : null}
         </div>
-      </UntitledBottomSheet>
+      </ErpDetailSheet>
 
       {/* QR CAMERA SCANNER BOTTOM SHEET MODAL */}
       {cameraModalOpen && (
@@ -2828,10 +2996,40 @@ export function TabErpScreen({
       {createModalOpen && (
         <UntitledBottomSheet
           open={createModalOpen}
-          onClose={() => setCreateModalOpen(false)}
-          title={`Tạo mới ${getModuleTitle(module)}`}
+          onClose={() => { if (!creatingDocument && !createAttachments.uploading) setCreateModalOpen(false); }}
+          title={module === "sales-orders" ? "Tạo đơn hàng" : `Tạo mới ${getModuleTitle(module)}`}
+          footer={isSalesOrderMobile ? <div className="flex gap-2">
+            <button type="button" disabled={creatingDocument}
+              onClick={() => salesOrderCreateStep > 0 && !createLocked ? goToSalesOrderStep(salesOrderCreateStep - 1) : setCreateModalOpen(false)}
+              className="inline-flex min-h-11 items-center justify-center gap-1 rounded-xl border border-neutral-300 px-4 text-xs font-semibold text-neutral-700 disabled:opacity-50 dark:border-neutral-700 dark:text-neutral-200">
+              {salesOrderCreateStep > 0 && !createLocked && <ChevronLeft className="size-4" />}{createLocked ? "Đóng" : salesOrderCreateStep > 0 ? "Quay lại" : "Hủy"}
+            </button>
+            {salesOrderCreateStep < 2 ? <button type="button" disabled={creatingDocument || customerLoading || createAttachments.validating}
+              onClick={() => goToSalesOrderStep(salesOrderCreateStep + 1)}
+              className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1 rounded-xl bg-brand-600 px-3 text-xs font-bold text-white disabled:opacity-50">
+              {salesOrderCreateStep === 0 ? "Tiếp: Dòng hàng" : "Xem lại"}<ChevronRight className="size-4 shrink-0" />
+            </button> : <button type="button" onClick={handleCreateDocument}
+              disabled={creatingDocument || createAttachments.validating || (!createLocked && (customerLoading || !!customerError))}
+              className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1 rounded-xl bg-brand-600 px-3 text-xs font-bold text-white disabled:opacity-50">
+              {creatingDocument && <Loader2 className="size-4 animate-spin" />}{createAttachments.uploading ? "Đang tải ảnh..." : creatingDocument ? "Đang tạo..." : createdOrderId ? "Thử lại tải ảnh" : pendingOrderCreate ? "Kiểm tra / tiếp tục" : createAttachments.files.length ? "Tạo đơn & tải ảnh" : "Xác nhận tạo đơn"}
+            </button>}
+          </div> : undefined}
         >
-          <div className="space-y-3.5 p-2 text-xs">
+          <div ref={createContentRef} className={`space-y-3.5 text-xs ${module === "sales-orders" ? "" : "p-2"}`}>
+            {isSalesOrderMobile && <ol aria-label="Các bước tạo đơn hàng" className="flex items-center gap-1">
+              {["Thông tin", "Dòng hàng", "Xem lại"].map((label, index) => <li key={label} className="min-w-0 flex-1">
+                <button type="button" onClick={() => goToSalesOrderStep(index)} disabled={creatingDocument || createLocked}
+                  aria-current={salesOrderCreateStep === index ? "step" : undefined} className="min-h-10 w-full text-left disabled:opacity-50">
+                  <span className={`block h-1 rounded-full ${index <= salesOrderCreateStep ? "bg-brand-600" : "bg-neutral-200 dark:bg-neutral-700"}`} />
+                  <span className={`mt-1 block text-[10px] font-semibold ${index === salesOrderCreateStep ? "text-brand-700 dark:text-brand-300" : "text-neutral-400"}`}>{index + 1}. {label}</span>
+                </button>
+              </li>)}
+            </ol>}
+            {actionFeedback && <p role="status" className="text-xs text-amber-700">{actionFeedback.message}</p>}
+            {module === "sales-orders" && createdOrderId && <p role="status" className="rounded-xl bg-emerald-50 p-3 text-xs text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300">Đơn {createdOrderId} đã được tạo. Các lần thử tiếp theo chỉ tiếp tục tải ảnh vào đơn này.</p>}
+            {module === "sales-orders" && pendingOrderCreate && !creatingDocument && <p role="status" className="text-xs text-amber-700 dark:text-amber-300">Đang giữ lần tạo hiện tại. Bấm Kiểm tra / tiếp tục để xác nhận kết quả trước khi tạo đơn khác.</p>}
+            {module === "sales-orders" && <p className="text-neutral-500">Chi nhánh: {currentBranch} · Số chứng từ được cấp khi lưu.</p>}
+            {showCreateHeader && <fieldset aria-label="Thông tin đơn hàng" disabled={module === "sales-orders" && (creatingDocument || createLocked)} className="min-w-0 space-y-3.5 border-0 p-0">
             <div>
               <label className="block text-neutral-500 mb-1 font-medium">
                 {module === "purchase-requests" ? "Ngày đề xuất (*):" : "Ngày lập chứng từ (*):"}
@@ -2888,18 +3086,30 @@ export function TabErpScreen({
                 <LookupField label="Khách hàng" required module="sales-orders" lookupId="header.ObjectID"
                   branchId={currentBranch} value={createObject} choice={createObjectChoice}
                   displayValue={createObject}
-                  context={{ ContractID: createContract || null }}
+                  context={{ ContractID: null }} secondaryFields={["ObjectName", "Address"]}
                   onSelect={selectSoCustomer}
                   placeholder="Chọn khách hàng..." />
+                <div><label htmlFor="so-create-tax-code" className="block text-neutral-500 mb-1 font-medium">Mã số thuế</label>
+                  <input id="so-create-tax-code" readOnly value={salesOrderField(createObjectChoice, "TaxCode")} className="w-full p-2 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-xs" /></div>
+                <div><label htmlFor="so-create-address" className="block text-neutral-500 mb-1 font-medium">Địa chỉ khách hàng</label>
+                  <textarea id="so-create-address" readOnly rows={2} value={salesOrderField(createObjectChoice, "Address")}
+                    className="w-full p-2 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-xs" /></div>
+                {customerLoading && <p role="status" className="text-xs text-neutral-500">Đang tải thông tin khách hàng...</p>}
+                {customerError && <p role="alert" className="text-xs text-red-600">{customerError}
+                  <button type="button" className="ml-2 underline" onClick={() => setCustomerRetry(v => v + 1)}>Tải lại khách hàng</button></p>}
                 <LookupField label="Mã nhân viên" required module="sales-orders" lookupId="header.EmployeeID"
                   branchId={currentBranch} value={createEmployee} choice={createEmployeeChoice}
                   displayValue={createEmployee}
                   onSelect={(c) => { setCreateEmployeeChoice(c); setCreateEmployee(c ? c.id : ""); }}
                   placeholder="Chọn nhân viên..." />
+                <LookupField label="Mã quản lý" module="sales-orders" lookupId="header.ManagerID"
+                  branchId={currentBranch} value={createManager?.id || ""} choice={createManager}
+                  secondaryFields={["ManagerName"]} onSelect={setCreateManager} placeholder="Chọn quản lý..." />
                 <LookupField label="Mã hợp đồng" module="sales-orders" lookupId="header.ContractID"
                   branchId={currentBranch} value={createContract} choice={createContractChoice}
                   displayValue={createContract}
                   context={{ ObjectID: createObject || null }}
+                  preloadAll={!!createObject} secondaryFields={["ContractName", "ObjectName"]}
                   onSelect={selectSoContract}
                   placeholder="Chọn hợp đồng (không bắt buộc)..." />
                 <div>
@@ -2907,8 +3117,12 @@ export function TabErpScreen({
                   <input type="date" value={createDeliverDate} onChange={(e) => setCreateDeliverDate(e.target.value)}
                     className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs" />
                 </div>
+                <div><label htmlFor="so-create-link" className="block text-neutral-500 mb-1 font-medium">Link tài liệu đính kèm</label>
+                  <input id="so-create-link" type="url" value={createLink} onChange={e => setCreateLink(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-xs" /></div>
               </div>
             )}
+            </fieldset>}
 
             {module !== "sales-orders" && (
               <div className={`grid grid-cols-1 ${module === "machine-movements" || module === "machine-repairs" || module === "internal-transfer-batches" ? "" : module === "internal-transfer-requests" || module === "inbound-requests" ? "sm:grid-cols-2" : "sm:grid-cols-3"} gap-2`}>
@@ -2965,55 +3179,28 @@ export function TabErpScreen({
               </div>
             )}
 
-            {module === "sales-orders" && (
+            {module === "sales-orders" && (!isSalesOrderMobile || salesOrderCreateStep === 1) && (
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="block text-neutral-500 font-medium">Dòng hàng ({createSoLines.length}) (*):</label>
-                  <button type="button"
-                    onClick={() => setCreateSoLines((prev) => [...prev, { key: newSoLineKey(), itemId: "", choice: null, quantity: "1", unitPrice: "", dienGiai: "" }])}
-                    className="px-2.5 py-1.5 rounded-lg border border-brand-300 dark:border-brand-800 text-brand-700 dark:text-brand-300 text-xs font-bold inline-flex items-center gap-1">
-                    <Plus className="size-3.5" /> Thêm dòng
-                  </button>
-                </div>
-                {createSoLines.map((line, idx) => (
-                  <div key={line.key} className="p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold text-neutral-400">Dòng {idx + 1}</span>
-                      {createSoLines.length > 1 && (
-                        <button type="button" aria-label={`Xóa dòng ${idx + 1}`}
-                          onClick={() => setCreateSoLines((prev) => prev.filter((l) => l.key !== line.key))}
-                          className="p-1 rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40">
-                          <Trash2 className="size-4" />
-                        </button>
-                      )}
-                    </div>
-                    <LookupField label="Mã hàng" required module="sales-orders" lookupId="lines.ItemID"
-                      branchId={currentBranch} value={line.itemId} choice={line.choice}
-                      displayValue={line.itemId} onSelect={(c) => patchSoLine(line.key, { choice: c, itemId: c ? c.id : "" })}
-                      compact placeholder="Chọn mã hàng..." />
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="block text-neutral-500 mb-1 font-medium">Số lượng (*):</label>
-                        <input type="number" value={line.quantity} onChange={(e) => patchSoLine(line.key, { quantity: e.target.value })}
-                          className="w-full p-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs" />
-                      </div>
-                      <div>
-                        <label className="block text-neutral-500 mb-1 font-medium">Đơn giá:</label>
-                        <input type="number" value={line.unitPrice} onChange={(e) => patchSoLine(line.key, { unitPrice: e.target.value })}
-                          className="w-full p-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-neutral-500 mb-1 font-medium">Diễn giải dòng:</label>
-                      <input type="text" value={line.dienGiai} onChange={(e) => patchSoLine(line.key, { dienGiai: e.target.value })}
-                        className="w-full p-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs" />
-                    </div>
-                  </div>
-                ))}
+                {lineResetNotice && <p role="status" className="text-xs text-amber-700">Đã bỏ các dòng hàng cũ khi đổi hợp đồng / khách hàng. Vui lòng chọn lại hàng.</p>}
+                <fieldset disabled={creatingDocument || createLocked} className="min-w-0 border-0 p-0">
+                <SalesOrderLineEditor lines={createSoLines} branchId={currentBranch} contractId={createContract}
+                  onPatch={patchSoLine} onAdd={() => {
+                    const key = newSoLineKey();
+                    setCreateSoLines(prev => [...prev, emptySalesOrderLine(key)]);
+                    return key;
+                  }} onRemove={key => setCreateSoLines(prev => prev.filter(line => line.key !== key))} />
+                </fieldset>
               </div>
             )}
 
-            <div>
+            {module === "sales-orders" ? (showCreateHeader ? <fieldset disabled={creatingDocument || createLocked} className="min-w-0 space-y-3 border-0 p-0">
+              <div><label htmlFor="so-create-memo" className="block text-neutral-500 mb-1 font-medium">Diễn giải</label>
+                <textarea id="so-create-memo" value={createMemo} onChange={e => setCreateMemo(e.target.value)} rows={3}
+                  className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-xs" /></div>
+              <div><label htmlFor="so-create-order-notes" className="block text-neutral-500 mb-1 font-medium">Ghi chú đơn hàng</label>
+                <textarea id="so-create-order-notes" value={createOrderNotes} onChange={e => setCreateOrderNotes(e.target.value)} rows={3} maxLength={250}
+                  className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-xs" /></div>
+            </fieldset> : null) : <div>
               <label className="block text-neutral-500 mb-1 font-medium">Ghi chú / Diễn giải:</label>
               <textarea
                 value={createNotes}
@@ -3022,25 +3209,71 @@ export function TabErpScreen({
                 rows={3}
                 className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
               />
-            </div>
+            </div>}
 
-            <div className="flex justify-end gap-2 pt-2">
+            {module === "sales-orders" && showCreateHeader && <SalesOrderAttachmentPicker files={createAttachments.files}
+              onAdd={createAttachments.addFiles} onRemove={createAttachments.removeFile}
+              disabled={creatingDocument || pendingOrderCreate} validating={createAttachments.validating} error={createAttachments.error}
+              readOnly={pendingOrderCreate} documentCreated={!!createdOrderId} />}
+
+            {isSalesOrderMobile && salesOrderCreateStep === 2 && <section className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-3 dark:border-neutral-800 dark:bg-neutral-950/40">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-400">Xem lại đơn hàng</h4>
+              <dl className="grid min-w-0 grid-cols-2 gap-3">
+                {[
+                  { label: "Ngày chứng từ", value: createDate },
+                  { label: "Ngày giao", value: createDeliverDate },
+                  { label: "Khách hàng", value: choiceLabel(createObjectChoice, createObject), full: true },
+                  { label: "Địa chỉ", value: salesOrderField(createObjectChoice, "Address"), full: true },
+                  { label: "Mã số thuế", value: salesOrderField(createObjectChoice, "TaxCode"), full: true },
+                  { label: "Hợp đồng", value: choiceLabel(createContractChoice, createContract), full: true },
+                  { label: "Nhân viên", value: choiceLabel(createEmployeeChoice, createEmployee) },
+                  { label: "Quản lý", value: choiceLabel(createManager, "") },
+                  { label: "Link tài liệu đính kèm", value: createLink, full: true },
+                  { label: "Diễn giải", value: createMemo, full: true },
+                  { label: "Ghi chú đơn hàng", value: createOrderNotes, full: true },
+                ].map(field => <div key={field.label} className={`min-w-0 ${field.full ? "col-span-full" : ""}`}>
+                  <dt className="mb-1 text-[11px] text-neutral-500">{field.label}</dt>
+                  <dd className="whitespace-pre-wrap break-words font-semibold text-neutral-700 dark:text-neutral-200">{field.value || "—"}</dd>
+                </div>)}
+              </dl>
+              <div className="space-y-2 border-t border-neutral-200 pt-3 dark:border-neutral-800">
+                <h5 className="font-bold">Dòng hàng ({createSoLines.length})</h5>
+                {createSoLines.map((line, index) => {
+                  const values = salesOrderLineDisplay(line);
+                  return <div key={line.key} className="min-w-0 rounded-xl bg-neutral-100 p-3 dark:bg-neutral-800">
+                    <p className="break-words font-semibold">{index + 1}. {choiceLabel(line.choice, line.itemId)}</p>
+                    <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-neutral-500">
+                      <p>Số lượng: <strong className="text-neutral-700 dark:text-neutral-200">{line.quantity} {values.unit}</strong></p>
+                      <p>Đơn giá: <strong className="break-words text-neutral-700 dark:text-neutral-200">{line.unitPrice || "—"}</strong></p>
+                      <p className="col-span-full">Tổng tiền tạm tính: <strong className="break-words text-neutral-700 dark:text-neutral-200">{values.totalAmount || "—"}</strong></p>
+                    </div>
+                    {line.dienGiai && <p className="mt-2 break-words text-[11px] text-neutral-500">Diễn giải: {line.dienGiai}</p>}
+                    {line.notes && <p className="mt-1 break-words text-[11px] text-neutral-500">Ghi chú: {line.notes}</p>}
+                  </div>;
+                })}
+              </div>
+              <SalesOrderAttachmentPicker files={createAttachments.files} onAdd={createAttachments.addFiles}
+                onRemove={createAttachments.removeFile} error={createAttachments.error} readOnly={!createdOrderId}
+                disabled={creatingDocument} validating={createAttachments.validating} documentCreated={!!createdOrderId} />
+            </section>}
+
+            {!isSalesOrderMobile && <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
-                onClick={() => setCreateModalOpen(false)}
+                onClick={() => setCreateModalOpen(false)} disabled={creatingDocument}
                 className="px-4 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 text-xs"
               >
-                Hủy
+                {createLocked ? "Đóng" : "Hủy"}
               </button>
               <button
                 type="button"
                 onClick={handleCreateDocument}
-                disabled={creatingDocument}
+                disabled={creatingDocument || createAttachments.validating || (module === "sales-orders" && !createLocked && (customerLoading || !!customerError))}
                 className="px-4 py-2 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-50 text-xs"
               >
-                {creatingDocument ? "Đang tạo..." : "Xác nhận tạo chứng từ"}
+                {module === "sales-orders" ? createAttachments.uploading ? "Đang tải ảnh..." : creatingDocument ? "Đang tạo..." : createdOrderId ? "Thử lại tải ảnh" : pendingOrderCreate ? "Kiểm tra / tiếp tục" : createAttachments.files.length ? "Tạo đơn & tải ảnh" : "Xác nhận tạo đơn" : creatingDocument ? "Đang tạo..." : "Xác nhận tạo chứng từ"}
               </button>
-            </div>
+            </div>}
           </div>
         </UntitledBottomSheet>
       )}

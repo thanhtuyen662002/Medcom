@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Image from "next/image";
+import { MedcomLogo } from "@/components/brand/medcom-logo";
 import { createPortal } from "react-dom";
 import {
   X,
@@ -28,6 +28,7 @@ import {
   UserCheck,
   ClipboardList,
   Wrench,
+  BookOpen,
 } from "lucide-react";
 import { type NavTabId } from "./bottom-nav";
 
@@ -360,7 +361,7 @@ export function SidebarDrawer({
         <div className="p-4 sm:p-5 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-900/70 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <div className="h-10 w-24 flex items-center justify-center shrink-0">
-              <Image src="/medcom-logo.png" alt="MEDCOMTECH" width={176} height={64} className="h-full w-full object-contain" priority />
+              <MedcomLogo alt="MEDCOMTECH" width={176} height={64} className="h-full w-full object-contain" priority />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
@@ -502,6 +503,10 @@ export function SidebarDrawer({
 
         {/* Footer Actions (Theme toggle & Logout) */}
         <div className="p-3 bg-neutral-50/90 dark:bg-neutral-950/90 border-t border-neutral-200/80 dark:border-neutral-800 space-y-2">
+          <a href="/help" target="_blank" rel="noopener noreferrer" className="w-full flex items-center gap-2 px-3 py-3 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+            <BookOpen className="size-4 text-brand-600" />
+            <span>Hướng dẫn sử dụng</span>
+          </a>
           {onToggleDarkMode && (
             <button
               type="button"

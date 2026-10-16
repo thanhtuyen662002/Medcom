@@ -1,10 +1,12 @@
 # Medcom logo asset
 
 - Asset: `public/medcom-logo.png` (transparent RGBA PNG, 2065 × 761).
+- Owner-selected dark asset: `public/medcom-logo-dark.png` (2172 × 724), SHA-256 `2915343c698d4b7baeddb751250e3a1a9b705aaffac84c6fca0d43fb21379903`. The light file retains SHA-256 `328bedc270d441943b8c0e144dece20ade3a7f1d334a0703f07af6ce1a826cb9`. Both files are served unchanged.
 - Source: owner-provided `Logo.png`, 171 × 104; original upload is preserved.
 - Editing: built-in image generation/editing tool, transparent background extraction and raster restoration. This is a raster restoration, not original vector artwork.
-- Website: sidebar image uses a transparent 200 × 60 frame with proportional `object-fit: cover`; this crops surplus transparent vertical margins while keeping all visible lettering, tagline and emblem. Light mode keeps the original color asset. Dark mode renders a monochrome inverse using CSS `grayscale(1) invert(1)` for contrast against the dark sidebar; the transparent PNG is unchanged. The former white plate, ERP WORKSPACE caption and redundant company-context card are removed.
-- Browser icon and shortcut use the supplied brand asset rather than the starter monogram.
+- Website: `components/brand/medcom-logo.tsx` observes the existing root `dark` class and renders one Next Image with the corresponding owner-selected file. Desktop header/sidebar, mobile header/drawer, login, help and classic workspace all use this shared component. Display frames retain their current sizes and proportional `object-fit: contain`; the old classic inversion filter and Help's light background plate are removed. No recoloring, image generation or asset edits were performed for this change.
+- Browser icon and shortcut follow the same files via `MedcomThemeIcons` in `app/layout.tsx`, including manual theme changes and client navigation. The observer only updates Medcom icon links and disconnects when unmounted.
+- Local verification for the owner-requested theme variants: seven consumer files checked in `.test-runtime/help-center/logo-scope.json`; actual Help/login and tab-icon switching checked in `theme-evidence.json`; TypeScript and production build passed; existing ERP suite 664/664 passed (`logo-erp-check.log`); all seven required UI gates passed (`logo-ui-gates.log` and `.test-runtime/integrated-ui-gates/result.json`). The older denial-test DOM double was extended with consistent `classList.contains/toggle`; no assertions or checks were removed. These are local UI/build results, not deployed-server or business-runtime acceptance.
 
 ## Edit prompt
 
