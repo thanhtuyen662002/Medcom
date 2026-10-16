@@ -7,7 +7,7 @@ owner_native_read_latency_20261016:
   checkpoint: docs/execution/checkpoints/I96_READ_PERFORMANCE_20261016.md
   evidence: inventories/backend/20261016/read-performance.json
   handoff: docs/backend/READ_PERFORMANCE_20261016.md
-  changes: registered_read_POST_admission_batched_screen_and_reference_metadata_sanitized_request_timings
+  changes: registered_read_POST_admission_local_CSRF_token_binding_batched_metadata_sanitized_request_timings
   native_role_branch_session_state_mutation_authority: preserved
   observed_variable_text_widening: AR_OrderTbl_AddressA_AddressB_nvarchar_200_to_max_compatible
   current_DB_required_form_schemas: 19_of_19_passed_read_only_component_probe

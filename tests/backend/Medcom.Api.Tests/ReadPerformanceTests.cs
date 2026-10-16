@@ -68,6 +68,27 @@ public sealed class ReadPerformanceTests
         Assert.All(timing.Split(", "),entry=>Assert.Matches(@"^(auth|provider|references|be);dur=[0-9]+\.[0-9]$",entry));
     }
 
+    [Fact]
+    public async Task Public_CSRF_issuance_does_not_repeat_DB_authority_and_its_token_cannot_bypass_protected_request_revalidation()
+    {
+        await using var fixture=await PurchaseHttpFixture.Start();await fixture.Login();
+        var before=fixture.Authority.Revalidations;
+        for(var i=0;i<5;i++)Assert.NotNull((await fixture.Json("/api/auth/csrf")).GetProperty("token").GetString());
+        Assert.Equal(before,fixture.Authority.Revalidations);
+        using(var session=await fixture.Client.GetAsync("/api/auth/session"))Assert.Equal(HttpStatusCode.OK,session.StatusCode);
+        Assert.Equal(before+1,fixture.Authority.Revalidations);
+        fixture.Authority.Rejected=true;
+        var csrf=(await fixture.Json("/api/auth/csrf")).GetProperty("token").GetString();
+        Assert.Equal(before+1,fixture.Authority.Revalidations);
+        using var request=new HttpRequestMessage(HttpMethod.Post,"/api/erp/purchase-requests/create");
+        request.Headers.Add("X-CSRF-TOKEN",csrf);request.Content=new StringContent("{}",System.Text.Encoding.UTF8,"application/json");
+        using var denied=await fixture.Client.SendAsync(request);Assert.Equal(HttpStatusCode.Unauthorized,denied.StatusCode);
+        using var read=await fixture.Client.GetAsync("/api/erp/purchase-requests/screen");Assert.Equal(HttpStatusCode.Unauthorized,read.StatusCode);
+        // Expired/revoked local sessions can still get anonymous CSRF tokens,
+        // exactly as any other anonymous caller; they cannot read or write ERP.
+        Assert.NotNull((await fixture.Json("/api/auth/csrf")).GetProperty("token").GetString());
+    }
+
     [Theory]
     [InlineData("valid")][InlineData("middle-invalid")][InlineData("missing-result")][InlineData("extra-result")]
     public async Task Reference_metadata_is_one_exchange_and_incompatible_or_missing_results_cannot_be_accepted(string mutation)

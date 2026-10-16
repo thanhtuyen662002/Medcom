@@ -224,7 +224,9 @@ public static class ApiHost
                         try
                         {
                             using var measurement=RequestPerformance.Measure(context.HttpContext,"auth");
-                            var session = NativeReadSession.IsRead(context.HttpContext)
+                            var tokenOnly=HttpMethods.IsGet(context.Request.Method)
+                                &&context.HttpContext.GetEndpoint()?.Metadata.GetMetadata<AuthEndpoints.CsrfTokenOperation>() is not null;
+                            var session = tokenOnly?await sessions.InspectAsync(token,timeout.Token):NativeReadSession.IsRead(context.HttpContext)
                                 ? await sessions.ResolveReadAsync(token, timeout.Token)
                                 : await sessions.ResolveAsync(token, false, timeout.Token);
                             if (session is null) { context.RejectPrincipal(); return; }
