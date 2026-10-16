@@ -1,5 +1,9 @@
 # Source baseline
 
+## Bounded attachment verification — 2026-10-16
+
+Owner-authorized read-only current MedData audit: `inventories/backend/20261016/attachment-bindings.json` records 11 Attach tables, 101 columns, keys/FKs and sanitized attachment-control slot/caption properties. All 19 existing API forms were checked; five have a supported typed document binding. Current owner-accessible ERP `Tools.dll` is 8,261,633 bytes, SHA-256 `7019a26a5129edf44716601678ea1aadaebde5082defebd195ff47a7452d7ec8`; static attachment-control methods were inspected privately without starting the ERP application. This current artifact is separate from the historical 20261002 DLL/archive and is not proof of the deployed VPS binary. No new historical Library archive materialization/rehash is claimed; that capability is unavailable in this session. Production image rows, file bytes, credentials, SQL bodies and raw binaries are excluded. See `docs/execution/checkpoints/I95_ERP_DB_ATTACHMENTS_20261016.md` for validation and remaining runtime acceptance.
+
 ## Windows ERP
 - Library file: `ERP_Medcom2026(4).zip`
 - Library file id: `file_0000000035688207bef9da87828d6a6b`

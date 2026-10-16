@@ -112,7 +112,7 @@ public static class ErpScreenEndpoints
                 ErpCommandOutcome.Conflict or ErpCommandOutcome.OutcomeUnknown=>409,_=>503};
             WorkspaceReadScope.Stamp(context,AuthEndpoints.Current(context));return Results.Json(result,statusCode:status);
         });
-    private static IResult? Guard(HttpContext context,string module)
+    internal static IResult? Guard(HttpContext context,string module)
     {
         if(!CanRead(context,module))return Problem(403,"native_read_denied");
         if(!context.Request.IsHttps||context.Request.Headers.Origin.Count!=1
@@ -140,13 +140,13 @@ public static class ErpScreenEndpoints
     {value=fallback;return !context.Request.Query.TryGetValue(name,out var raw)||int.TryParse(raw,NumberStyles.None,CultureInfo.InvariantCulture,out value);}
     private static bool OptionalInteger(HttpContext context,string name,out int? value)
     {value=null;var raw=Value(context,name);if(raw is null)return true;if(!int.TryParse(raw,NumberStyles.AllowLeadingSign,CultureInfo.InvariantCulture,out var n))return false;value=n;return true;}
-    private static T? Decode<T>(JsonElement raw)
+    internal static T? Decode<T>(JsonElement raw)
     {
         try{return JsonSerializer.Deserialize<T>(raw,new JsonSerializerOptions(JsonSerializerDefaults.Web){PropertyNameCaseInsensitive=false,
             UnmappedMemberHandling=System.Text.Json.Serialization.JsonUnmappedMemberHandling.Disallow,MaxDepth=16});}
         catch(JsonException){return default;}
     }
-    private static async Task<JsonElement?> Body(HttpContext context)
+    internal static async Task<JsonElement?> Body(HttpContext context)
     {
         var type=context.Request.ContentType??"";
         if(!type.Equals("application/json",StringComparison.OrdinalIgnoreCase)&&!type.Equals("application/json; charset=utf-8",StringComparison.OrdinalIgnoreCase))

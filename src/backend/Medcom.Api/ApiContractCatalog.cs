@@ -445,6 +445,49 @@ internal static class ApiContractCatalog
         schemas.SetRequired<ErpItemPriceQuery>(["branchId","objectId","documentDate","itemId"]);
         FeDisplaySchemas.Apply(paths,schemas.Values);
         CanonicalResponseSchemas.Apply(paths,schemas.Values);
+        // Already-flat attachment DTOs and file responses bypass JSON display projections at runtime.
+        foreach(var module in ErpScreenCatalog.ModuleIds)
+        {
+            var path="/api/erp/"+module+"/attachments";var id=module.Replace('-','_');
+            const string admission="Current native menu/branch/document permissions. Images are stored transactionally in fixed ERP Attach tables; no runtime schema fingerprint or caller-selected storage table.";
+            var query=new JsonArray(Parameter("branchId","query",String(50),true),Parameter("documentId","query",String(50),true));
+            var paged=(JsonArray)query.DeepClone();paged.Add(Parameter("page","query",Number(10000,1)));paged.Add(Parameter("pageSize","query",Number(100,20)));
+            Add("get",path,id+"_attachments",Shape(typeof(ErpScopedResponse<ErpAttachmentPage>)),admission,module+".read",parameters:paged);
+            void Headers(string suffix,string method)
+            {
+                var headers=paths[path+suffix]![method]!["responses"]!["200"]!["headers"]!.AsObject();
+                foreach(var name in new[]{"X-Medcom-Read-Scope","X-Medcom-Session-Scope"})headers[name]=new JsonObject{["description"]="Current authorized session/read scope; correlation only.",["schema"]=String(64)};
+                headers["X-Medcom-Response-Contract"]=new JsonObject{["schema"]=new JsonObject{["type"]="string",["const"]=CanonicalResponseProjection.Version}};
+            }
+            Headers("","get");
+            if(!ErpAttachmentCatalog.Supports(module))continue;
+            var content=(JsonArray)query.DeepClone();content.Add(Parameter("attachmentId","query",String(50),true));content.Add(Parameter("preview","query",new(){["type"]="boolean",["default"]=false}));
+            Add("get",path+"/content",id+"_attachment_content",null,admission,module+".read",parameters:content);
+            Headers("/content","get");
+            paths[path+"/content"]!["get"]!["responses"]!["200"]!["description"]="Authorized original/preview attachment bytes; no JSON envelope.";
+            paths[path+"/content"]!["get"]!["responses"]!["200"]!["content"]=new JsonObject
+            { ["image/jpeg"]=new JsonObject{["schema"]=new JsonObject{["type"]="string",["format"]="binary"}},
+              ["image/png"]=new JsonObject{["schema"]=new JsonObject{["type"]="string",["format"]="binary"}},
+              ["application/octet-stream"]=new JsonObject{["schema"]=new JsonObject{["type"]="string",["format"]="binary"}} };
+            if(!ErpAttachmentCatalog.Writable(module))continue;
+            var headers=new JsonArray(Parameter("X-Medcom-Read-Scope","header",String(64),true),Parameter("Origin","header",String(),true));
+            Add("post",path+"/delete",id+"_attachment_delete",Shape(typeof(ErpAttachmentResult)),admission,module+".read",request:typeof(ErpAttachmentDelete),parameters:(JsonArray)headers.DeepClone());
+            Add("post",path+"/upload",id+"_attachment_upload",Shape(typeof(ErpAttachmentResult)),admission,module+".read",parameters:headers);
+            Headers("/delete","post");Headers("/upload","post");
+            var properties=new JsonObject
+            {
+                ["idempotencyKey"]=String(100),["branchId"]=String(50),["documentId"]=String(50),["expectedStateToken"]=String(64),
+                ["attachmentId"]=String(50),["expectedAttachmentToken"]=String(64),
+                ["file"]=new JsonObject{["type"]="string",["format"]="binary",["description"]="JPEG/PNG original image, <=10 MiB. File header and extension must agree. Name comes from the file part."},
+                ["preview"]=new JsonObject{["type"]="string",["format"]="binary",["description"]="Optional JPEG/PNG thumbnail <=1 MiB. If omitted, the original bytes are stored as Content2 for native ERP compatibility."}
+            };
+            var required=new JsonArray("idempotencyKey","branchId","documentId","expectedStateToken","file");
+            var slots=ErpAttachmentCatalog.Slots(module).Where(s=>s.SlotId is not null).Select(s=>s.SlotId!.Value).ToArray();
+            if(slots.Length>0){properties["slotId"]=new JsonObject{["type"]="integer",["enum"]=new JsonArray(slots.Select(s=>(JsonNode?)JsonValue.Create(s)).ToArray())};required.Add("slotId");}
+            paths[path+"/upload"]!["post"]!["requestBody"]=new JsonObject
+            { ["required"]=true,["content"]=new JsonObject{["multipart/form-data"]=new JsonObject{["schema"]=new JsonObject
+                {["type"]="object",["additionalProperties"]=false,["properties"]=properties,["required"]=required}}} };
+        }
         return new()
         {
             ["openapi"] = "3.1.1", ["info"] = new JsonObject { ["title"] = "Medcom backend HTTP contract", ["version"] = "3.0.0",
@@ -462,7 +505,7 @@ internal static class ApiContractCatalog
                 }
             },
             ["x-medcom-business-release"] = "not-admitted",
-            ["x-medcom-command-rules"] = "HTTPS, authenticated live session, CSRF cookie plus token, exact same backend Origin, current scope header and original immutable DTO; decoded body <=1048576 bytes. Purchase: every DTO property required including nulls; Add rejected; numeric outcomes. Inbound: Save/SendToWarehouse only, decimal strings, SQL wall-clock dates, no cost edits; string outcomes. Pending/Absent/Unavailable/OutcomeUnknown never authorize redispatch.",
+            ["x-medcom-command-rules"] = "HTTPS, authenticated live session, CSRF cookie plus token, exact same backend Origin, current scope header and original immutable DTO; JSON body <=1048576 bytes. Purchase: every DTO property required including nulls; Add rejected; numeric outcomes. Inbound: Save/SendToWarehouse only, decimal strings, SQL wall-clock dates, no cost edits; string outcomes. Pending/Absent/Unavailable/OutcomeUnknown never authorize a new command. Attachment uploads use bounded multipart JPEG/PNG (original <=10 MiB, preview <=1 MiB); an uncertain attachment response can be retried only with identical metadata/file bytes and the same idempotency key.",
             ["x-medcom-read-scope"] = "Use X-Medcom-Session-Scope and X-Medcom-Read-Scope; purchase {scopeKey,data} envelopes. Invalidate state on identity/authority/branch/scope changes. Follow hasMore for paged detail lines."
         };
     }

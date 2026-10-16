@@ -167,12 +167,14 @@ class ContainerContractTests(unittest.TestCase):
                 self.assertEqual(result.stdout.splitlines(), [
                     '<Medcom.Api.dll>', '<--urls>', f'<http://0.0.0.0:{port or "8080"}>'])
 
-    def test_hosted_workflow_has_no_deploy_or_secret_access(self):
+    def test_manual_hosted_workflow_has_no_deploy_or_secret_access(self):
         import yaml  # Pinned by .github/requirements-ci.txt, as in existing CI.
         workflow = yaml.load((ROOT / '.github/workflows/railway-container.yml').read_text(),
                              Loader=yaml.BaseLoader)
         self.assertEqual(workflow['permissions'], {'contents': 'read'})
-        self.assertEqual(set(workflow['on']), {'push', 'pull_request', 'workflow_dispatch'})
+        # PR #156 made this optional VPS-adjacent image validation manual-only.
+        # Assert the current owner policy without re-enabling automatic workflows.
+        self.assertEqual(set(workflow['on']), {'workflow_dispatch'})
         job = workflow['jobs']['railway-container']
         self.assertEqual(job['runs-on'], 'ubuntu-latest')
         self.assertEqual(job['env']['DOCKER_BUILDKIT'], '1')
@@ -270,7 +272,7 @@ class DockerSmokeTests(unittest.TestCase):
                           '--env', 'Medcom__PrivateConfigPath=/unreadable/private-fixture.json',
                           container, 'dotnet', '/app/Medcom.Api.dll', '--print-api-contract', timeout=15).stdout
         self.assertEqual(json.loads(exported), expected)
-        self.assertEqual(sum(len(item) for item in expected['paths'].values()), 244)
+        self.assertEqual(sum(len(item) for item in expected['paths'].values()), 276)
         for path, method in [('/api/erp/permissions', 'get'), ('/api/notifications', 'get'), ('/api/notifications/{id}', 'get'),
                              ('/api/notifications/{id}/target', 'get'), ('/api/notifications/{id}/read', 'post')]:
             self.assertIn(method, expected['paths'][path])

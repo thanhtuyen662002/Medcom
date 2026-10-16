@@ -1,3 +1,27 @@
+owner_db_image_attachments_20261016:
+  instruction: audit_ERP_Attach_storage_and_add_real_file_upload_read_replace_delete_for_FE
+  canonical_goal: 45
+  current_increment: I95
+  pr: 163
+  base: f730ed5cdcd3e2e3a3d8190468311ca423bbbba7
+  evidence: inventories/backend/20261016/attachment-bindings.json
+  checkpoint: docs/execution/checkpoints/I95_ERP_DB_ATTACHMENTS_20261016.md
+  handoff: docs/backend/BE_FE_ATTACHMENTS_20261016.md
+  audited_tables: 11
+  audited_columns: 101
+  supported_document_modules: 5
+  unsupported_existing_modules: 14
+  compiled_storage_tables: AR_OrderAttachTbl_IV_InboundRequestAttachTbl_AP_POAttachTbl
+  writable_document_modules: 4
+  new_operations: 32
+  total_operations: 276
+  API_schemas: 1209
+  actual_SQL_temporary_table_storage_checks: 33_passed_three_native_column_shapes_no_business_rows
+  first_full_public_suite: 3568_passed_zero_failed_zero_skipped_before_final_additions
+  final_focused_full_and_exact_head_hosted_validation: pending_PR163_receipts
+  production_DB_migration_or_fingerprint_refresh: not_required
+  FE_changes: NONE_proxy_multipart_allowlist_limits_and_URL_mapping_handoff_required
+  VPS_deployment_and_owner_business_desktop_acceptance: UNKNOWN
 owner_retire_runtime_fingerprint_gates_20261015:
   instruction: disable_runtime_fingerprint_blocks_for_FE_testing_and_BE_updates_preserve_native_authorization
   canonical_goal: 45
