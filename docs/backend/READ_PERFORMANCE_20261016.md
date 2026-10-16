@@ -4,7 +4,7 @@
 
 Đợt đo I96 trên VPS sau triển khai gồm 174 request đã đăng nhập, tất cả HTTP 200: trung vị options 1295,2 ms, danh sách 1329,8 ms, chi tiết 1511,4 ms và CSRF 9,0 ms. Riêng bước xác thực khoảng 590 ms. Bằng chứng tổng hợp: [kết quả đo PR #165](https://github.com/thanhtuyen662002/Medcom/pull/165#issuecomment-6213180195); không suy ra đã đo tất cả API hoặc toàn bộ đường FE/BFF.
 
-I97 giảm các lượt SQL nối tiếp để đọc người dùng/quyền/chi nhánh. Phần quyền Đề nghị mua hàng được lọc sớm bằng đúng mã màn hình trước khi áp dụng các điều kiện quyền cũ. Các API danh sách, chi tiết và tên tham chiếu cũng dùng chung một batch đọc người dùng/chi nhánh, tránh đọc trùng. Quyền vẫn được đọc mới từ DB; các kiểm tra tài khoản, nhóm, chi nhánh, trạng thái, concurrency và quyền khi ghi vẫn giữ nguyên. Bằng chứng mã: `SqlLegacyUserStore.FindAsync`, `SqlIdentityCapabilities`, `SqlNativeIdentity`, `ErpSqlAuthority.ReadUser`, `SqlReferenceData.Authority`.
+I97 giảm các lượt SQL nối tiếp để đọc người dùng/quyền/chi nhánh. Phần quyền Đề nghị mua hàng được lọc sớm bằng đúng mã màn hình trước khi áp dụng các điều kiện quyền cũ. Các API danh sách, chi tiết và tên tham chiếu cũng dùng một batch đọc người dùng/chi nhánh; phần tên tham chiếu bỏ lượt đọc người dùng trùng, phần màn hình giữ kiểm tra số nhóm khớp trong cùng batch. Quyền vẫn được đọc mới từ DB; các kiểm tra tài khoản, nhóm, chi nhánh, trạng thái, concurrency và quyền khi ghi vẫn giữ nguyên. Bằng chứng mã: `SqlLegacyUserStore.FindAsync`, `SqlIdentityCapabilities`, `SqlNativeIdentity`, `ErpSqlAuthority.ReadUser`, `SqlReferenceData.Authority`.
 
 | Đo thành phần từ máy kiểm thử tới MedData | Trước I97 | Sau I97 |
 |---|---:|---:|

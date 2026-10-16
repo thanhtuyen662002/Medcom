@@ -65,7 +65,7 @@ internal static class ErpSqlAuthority
             ||!ErpInputRules.AnsiIdentifier(identity.PrincipalId,100)||!ErpInputRules.AnsiIdentifier(branch,50)
             ||string.IsNullOrEmpty(identity.CredentialStamp)||identity.BranchIds?.Contains(branch,StringComparer.Ordinal)!=true)return null;
         var observation=await SqlNativeIdentity.ReadAsync(transaction,identity.PrincipalId,
-            user=>ErpInputRules.AnsiIdentifier(user.GroupId,50)&&LegacyIdentityAuthority.Stamp(user)==identity.CredentialStamp,token);
+            user=>ErpInputRules.AnsiIdentifier(user.GroupId,50)&&LegacyIdentityAuthority.Stamp(user)==identity.CredentialStamp,token,checkLegacyGroupMatch:true);
         if(observation is null)return null;
         var branches=observation.Scope;
         if(!branches.BranchIds.Contains(branch,StringComparer.Ordinal)

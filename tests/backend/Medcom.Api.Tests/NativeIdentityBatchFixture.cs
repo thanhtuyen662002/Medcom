@@ -9,14 +9,17 @@ internal static class NativeIdentityBatchFixture
 {
     internal static DbDataReader Read(DbCommand command, Func<DbCommand, DbDataReader> read)
     {
-        if (command.CommandText != SqlNativeIdentity.Text) throw new InvalidOperationException("Unexpected fixture batch.");
+        if (command.CommandText != SqlNativeIdentity.Text && command.CommandText != SqlNativeIdentity.ErpText)
+            throw new InvalidOperationException("Unexpected fixture batch.");
         var original = command.CommandText;
         var tables = new List<DataTable>();
         try
         {
+            if (original == SqlNativeIdentity.ErpText) Append(SqlNativeIdentity.ErpUserText);
+            var nativeIndex = tables.Count;
             Append(SqlLegacyBranchScope.NativeUserText);
-            var native = tables[0].Rows.Count == 0 || tables[0].Columns.Count != 6 || tables[0].Rows[0].IsNull(5)
-                ? null : tables[0].Rows[0][5] as string;
+            var native = tables[nativeIndex].Rows.Count == 0 || tables[nativeIndex].Columns.Count != 6 || tables[nativeIndex].Rows[0].IsNull(5)
+                ? null : tables[nativeIndex].Rows[0][5] as string;
             if (SqlLegacyBranchScope.NativeAll(native))
             {
                 Append(SqlLegacyBranchScope.CatalogShapeText);

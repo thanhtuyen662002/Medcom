@@ -211,7 +211,7 @@ public sealed class ErpRuntimeCompatibilityTests
         }
         internal DbDataReader Read(DbCommand command)
         {
-            if(command.CommandText==SqlNativeIdentity.Text)return NativeIdentityBatchFixture.Read(command,Read);
+            if(command.CommandText is SqlNativeIdentity.Text or SqlNativeIdentity.ErpText)return NativeIdentityBatchFixture.Read(command,Read);
             Track(command);var sql=command.CommandText;
             if(sql=="SELECT DB_NAME();")return Rows([Database]);
             if(sql=="SELECT @@TRANCOUNT,CONVERT(int,XACT_STATE());")return Rows([1,1]);

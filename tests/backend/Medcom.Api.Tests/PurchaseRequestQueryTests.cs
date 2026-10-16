@@ -678,7 +678,7 @@ internal sealed class PurchaseQuerySource
     private static string Fold(string input)=>new string(input.TrimEnd().Normalize(NormalizationForm.FormD).Where(c=>CharUnicodeInfo.GetUnicodeCategory(c)!=UnicodeCategory.NonSpacingMark).ToArray()).ToUpperInvariant();
     public DbDataReader Read(QueryCommand command)
     {
-        if(command.CommandText==SqlNativeIdentity.Text)return NativeIdentityBatchFixture.Read(command,c=>Read((QueryCommand)c));
+        if(command.CommandText is SqlNativeIdentity.Text or SqlNativeIdentity.ErpText)return NativeIdentityBatchFixture.Read(command,c=>Read((QueryCommand)c));
         var parameters=command.Parameters.Cast<DbParameter>().ToDictionary(p=>p.ParameterName,p=>p.Value==DBNull.Value?null:p.Value,StringComparer.Ordinal);
         Commands.Add((command.CommandText,parameters));
         if(PermissionRead?.Invoke(command) is {} permissionRows)return permissionRows;

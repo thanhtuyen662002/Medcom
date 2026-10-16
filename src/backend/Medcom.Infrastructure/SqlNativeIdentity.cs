@@ -7,6 +7,11 @@ namespace Medcom.Infrastructure;
 // One fresh, read-only batch. No cross-request identity, grant or branch cache.
 internal static class SqlNativeIdentity
 {
+    internal const string ErpUserText = """
+        SELECT TOP(2) U.UserName,U.[Password],U.[Disable],U.UserGroupID,G.IsDisable
+        FROM dbo.SY_User U WITH(HOLDLOCK) LEFT JOIN dbo.SY_UserGroup G WITH(HOLDLOCK) ON G.UserGroupID=U.UserGroupID
+        WHERE U.UserName=@legacyActor;
+        """;
     internal const string Text = SqlLegacyBranchScope.NativeUserText + "\n" + """
         IF EXISTS(SELECT 1 FROM dbo.SY_User WITH(HOLDLOCK)
           WHERE UserName=@actor AND (BranchID IS NULL OR DATALENGTH(BranchID)=0))
@@ -15,16 +20,32 @@ internal static class SqlNativeIdentity
         END
         ELSE BEGIN
         """ + "\n" + SqlLegacyBranchScope.RestrictedText + "\nEND;\n";
+    internal const string ErpText = ErpUserText + "\n" + Text;
 
     internal sealed record Observation(LegacyUser User, SqlLegacyBranchScope.Resolution Scope);
 
     internal static async Task<Observation?> ReadAsync(DbTransaction transaction, string actor,
-        Func<LegacyUser, bool> accept, CancellationToken token)
+        Func<LegacyUser, bool> accept, CancellationToken token, bool checkLegacyGroupMatch = false)
     {
         if (transaction.IsolationLevel != IsolationLevel.Serializable)
             throw new InvalidOperationException("Serializable native authority required.");
-        await using var command = SqlLegacyBranchScope.Command(transaction, Text, actor);
+        await using var command = SqlLegacyBranchScope.Command(transaction, checkLegacyGroupMatch ? ErpText : Text, actor);
+        if (checkLegacyGroupMatch)
+        {
+            var parameter = command.CreateParameter(); parameter.ParameterName = "@legacyActor";
+            parameter.DbType = DbType.AnsiString; parameter.Size = 100; parameter.Value = actor; command.Parameters.Add(parameter);
+        }
         await using var reader = await command.ExecuteReaderAsync(token);
+        if (checkLegacyGroupMatch)
+        {
+            // The modern screen provider historically rejects ambiguous collation matches
+            // in its preliminary group join as well as checking the physical native group.
+            if (reader.FieldCount != 5 || !await reader.ReadAsync(token) || Enumerable.Range(0, 5).Any(reader.IsDBNull)) return null;
+            var preliminary = new LegacyUser(reader.GetString(0), "", reader.GetString(1), reader.GetBoolean(2), reader.GetString(3), !reader.GetBoolean(4));
+            if (await reader.ReadAsync(token) || preliminary.Username != actor || preliminary.Disabled
+                || !preliminary.GroupEnabled || !accept(preliminary)) return null;
+            await Next(reader, token);
+        }
         var result = await ReadBatch(reader, actor, accept, token);
         if (result is not null && await reader.NextResultAsync(token))
             throw new InvalidOperationException("Unexpected native identity result.");

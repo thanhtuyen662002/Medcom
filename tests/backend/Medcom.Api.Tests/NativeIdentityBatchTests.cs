@@ -56,6 +56,32 @@ public sealed class NativeIdentityBatchTests
     }
 
     [Theory]
+    [InlineData("success", true)][InlineData("duplicate-group-match", false)][InlineData("missing-group-match", false)]
+    [InlineData("disabled-group-match", false)][InlineData("changed-credential-match", false)]
+    public async Task Screen_batch_retains_the_preliminary_group_cardinality_and_credential_fence(string scenario, bool allowed)
+    {
+        var preliminary = Table([typeof(string), typeof(string), typeof(bool), typeof(string), typeof(bool)],
+            [User.Username, User.StoredHash, false, User.GroupId, false]);
+        if (scenario == "duplicate-group-match") preliminary.Rows.Add(preliminary.Rows[0].ItemArray);
+        if (scenario == "missing-group-match") preliminary.Rows.Clear();
+        if (scenario == "disabled-group-match") preliminary.Rows[0][4] = true;
+        if (scenario == "changed-credential-match") preliminary.Rows[0][1] = "changed";
+        var sets = new[] { preliminary }.Concat(NativeSets("assigned")).ToArray(); var commands = 0;
+        await using var connection = new DisplayConnection(command =>
+        {
+            commands++; Assert.Equal(SqlNativeIdentity.ErpText, command.CommandText);
+            Assert.Equal(DbType.AnsiString, command.Parameters["@legacyActor"].DbType);
+            Assert.Equal(User.Username, command.Parameters["@legacyActor"].Value);
+            return new DataTableReader(sets);
+        });
+        await connection.OpenAsync();
+        await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.Serializable);
+        var result = await SqlNativeIdentity.ReadAsync(transaction, User.Username,
+            user => LegacyIdentityAuthority.Stamp(user) == LegacyIdentityAuthority.Stamp(User), default, checkLegacyGroupMatch: true);
+        Assert.Equal(allowed, result is not null); Assert.Equal(1, commands);
+    }
+
+    [Theory]
     [InlineData("allowed", true)][InlineData("purchase-no-run", false)][InlineData("purchase-parent-disabled", false)]
     [InlineData("purchase-parent-missing", false)][InlineData("purchase-menu-disabled", false)]
     [InlineData("purchase-form-changed", false)][InlineData("purchase-parameterized", false)]
