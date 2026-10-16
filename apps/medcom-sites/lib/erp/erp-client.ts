@@ -324,9 +324,10 @@ export class ErpClientService {
       dateFrom?: string;
       dateTo?: string;
       statusId?: number | null;
-    }
+    },
+    signal?: AbortSignal
   ) {
-    return await getErpList(module, params);
+    return await getErpList(module, params, signal);
   }
 
   public async getScreenPermissions(branchId: string) {

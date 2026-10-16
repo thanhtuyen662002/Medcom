@@ -158,6 +158,14 @@ export function SidebarDrawer({
           badgeColor: "purple",
         },
         {
+          id: "purchase-orders",
+          label: "Đặt mua hàng",
+          description: "Menu 050129 • AP_OrderFrm",
+          icon: ShoppingBag,
+          badge: "CUD",
+          badgeColor: "purple",
+        },
+        {
           id: "inbound-requests",
           label: "Đề nghị nhập kho",
           description: "Menu 07011 • Gửi BLĐ, Thủ kho & Chi phí",
@@ -333,9 +341,8 @@ export function SidebarDrawer({
 
   const content = (
     <div
-      className={`fixed inset-0 z-50 overflow-hidden flex ${
-        isDarkActive ? "dark" : ""
-      }`}
+      className={`fixed inset-0 z-50 overflow-hidden flex ${isDarkActive ? "dark" : ""
+        }`}
       role="dialog"
       aria-modal="true"
       aria-label="Menu phân hệ ứng dụng"
@@ -352,7 +359,7 @@ export function SidebarDrawer({
         {/* Drawer Header */}
         <div className="p-4 sm:p-5 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-900/70 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="h-10 w-24 rounded-xl bg-white flex items-center justify-center shrink-0 p-1">
+            <div className="h-10 w-24 flex items-center justify-center shrink-0">
               <Image src="/medcom-logo.png" alt="MEDCOMTECH" width={176} height={64} className="h-full w-full object-contain" priority />
             </div>
             <div className="min-w-0">
@@ -423,78 +430,74 @@ export function SidebarDrawer({
               )}
             </div>
           ) : (
-          sections
-            .map((section) => ({
-              ...section,
-              items: section.items.filter((item) => (tabAccess.allowed as readonly string[]).includes(item.id)),
-            }))
-            .filter((section) => section.items.length > 0)
-            .map((section, sIdx) => (
-            <div key={sIdx} className="space-y-1">
-              <span className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 block mb-1.5">
-                {section.title}
-              </span>
-              <div className="space-y-0.5">
-                {section.items.map((item) => {
-                  const isActive = activeTab === item.id;
-                  const Icon = item.icon;
+            sections
+              .map((section) => ({
+                ...section,
+                items: section.items.filter((item) => (tabAccess.allowed as readonly string[]).includes(item.id)),
+              }))
+              .filter((section) => section.items.length > 0)
+              .map((section, sIdx) => (
+                <div key={sIdx} className="space-y-1">
+                  <span className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 block mb-1.5">
+                    {section.title}
+                  </span>
+                  <div className="space-y-0.5">
+                    {section.items.map((item) => {
+                      const isActive = activeTab === item.id;
+                      const Icon = item.icon;
 
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => handleItemClick(item.id)}
-                      className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-left transition-all group ${
-                        isActive
-                          ? "bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 font-bold border border-brand-200/80 dark:border-brand-800/80 shadow-2xs"
-                          : "text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800/70 border border-transparent font-medium"
-                      }`}
-                    >
-                      <div
-                        className={`size-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
-                          isActive
-                            ? "bg-brand-600 text-white"
-                            : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 group-hover:text-brand-600 dark:group-hover:text-brand-300 group-hover:bg-brand-50 dark:group-hover:bg-brand-950/50"
-                        }`}
-                      >
-                        <Icon className="size-4" />
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-1">
-                          <span className="text-xs truncate">{item.label}</span>
-                          {item.badge !== undefined && (
-                            <span
-                              className={`px-1.5 py-0.2 text-[9px] font-bold rounded-full whitespace-nowrap ${
-                                item.badgeColor === "emerald"
-                                  ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300"
-                                  : item.badgeColor === "purple"
-                                  ? "bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300"
-                                  : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400"
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => handleItemClick(item.id)}
+                          className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-left transition-all group ${isActive
+                              ? "bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 font-bold border border-brand-200/80 dark:border-brand-800/80 shadow-2xs"
+                              : "text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800/70 border border-transparent font-medium"
+                            }`}
+                        >
+                          <div
+                            className={`size-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${isActive
+                                ? "bg-brand-600 text-white"
+                                : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 group-hover:text-brand-600 dark:group-hover:text-brand-300 group-hover:bg-brand-50 dark:group-hover:bg-brand-950/50"
                               }`}
-                            >
-                              {item.badge}
-                            </span>
-                          )}
-                        </div>
-                        {item.description && (
-                          <p className="text-[10px] text-neutral-400 dark:text-neutral-500 truncate font-normal">
-                            {item.description}
-                          </p>
-                        )}
-                      </div>
+                          >
+                            <Icon className="size-4" />
+                          </div>
 
-                      <ChevronRight
-                        className={`size-3.5 text-neutral-300 dark:text-neutral-600 shrink-0 group-hover:translate-x-0.5 transition-transform ${
-                          isActive ? "text-brand-600 dark:text-brand-400" : ""
-                        }`}
-                      />
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )))}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="text-xs truncate">{item.label}</span>
+                              {item.badge !== undefined && (
+                                <span
+                                  className={`px-1.5 py-0.2 text-[9px] font-bold rounded-full whitespace-nowrap ${item.badgeColor === "emerald"
+                                      ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300"
+                                      : item.badgeColor === "purple"
+                                        ? "bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300"
+                                        : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400"
+                                    }`}
+                                >
+                                  {item.badge}
+                                </span>
+                              )}
+                            </div>
+                            {item.description && (
+                              <p className="text-[10px] text-neutral-400 dark:text-neutral-500 truncate font-normal">
+                                {item.description}
+                              </p>
+                            )}
+                          </div>
+
+                          <ChevronRight
+                            className={`size-3.5 text-neutral-300 dark:text-neutral-600 shrink-0 group-hover:translate-x-0.5 transition-transform ${isActive ? "text-brand-600 dark:text-brand-400" : ""
+                              }`}
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )))}
         </div>
 
         {/* Footer Actions (Theme toggle & Logout) */}
