@@ -162,6 +162,7 @@ internal sealed class AttachmentWire
     }
     internal DbDataReader Read(DbCommand c)
     {
+        if(c.CommandText is SqlNativeIdentity.Text or SqlNativeIdentity.ErpText)return NativeIdentityBatchFixture.Read(c,Read);
         Track(c);var sql=c.CommandText;
         if(sql=="SELECT @@TRANCOUNT,CONVERT(int,XACT_STATE());")return Rows([1,1]);
         if(sql.Contains("FROM sys.columns C JOIN sys.types T",StringComparison.Ordinal))return Schema(c,sql.Contains("C.precision",StringComparison.Ordinal));

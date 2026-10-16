@@ -51,6 +51,7 @@ public sealed class NativeReferenceAuthorityTests
             ["platform.status"],LegacyIdentityAuthority.Stamp(User),[Branch],new("all",null,false));
         internal DbDataReader Read(DbCommand command)
         {
+            if(command.CommandText==SqlNativeIdentity.Text)return NativeIdentityBatchFixture.Read(command,Read);
             if(command.CommandText==SqlLegacyBranchScope.NativeUserText)
                 return Rows([typeof(string),typeof(string),typeof(bool),typeof(string),typeof(bool),typeof(string)],
                     [[User.Username,User.StoredHash,User.Disabled,User.GroupId,!User.GroupEnabled,null]]);

@@ -1,3 +1,22 @@
+owner_fresh_native_authority_latency_20261016:
+  instruction: continue_backend_latency_reduction_after_owner_I96_VPS_redeploy
+  canonical_goal: 45
+  current_increment: I97
+  pr: 166
+  base: 113650b79cf07da82993e5aed99f541cd140bd77
+  checkpoint: docs/execution/checkpoints/I97_NATIVE_AUTH_BATCHING_20261016.md
+  evidence: inventories/backend/20261016/native-auth-performance.json
+  handoff: docs/backend/READ_PERFORMANCE_20261016.md
+  changes: fresh_identity_grant_branch_batch_bound_purchase_menu_narrowing_shared_native_scope_batch
+  authority_TTL_cache: NONE
+  native_permissions_credentials_branches_state_concurrency_transactions: preserved
+  local_DB_component_equivalence: 18_of_18_auth_and_6_of_6_scope
+  actual_SQL_temp_table_semantics: 39_passed_zero_failed_all_three_grant_routes
+  warm_auth_component_median_ms_before_after: 639.4_to_172.7_local_not_VPS
+  focused_tests: 175_passed_zero_failed_zero_skipped_58_new_native_batch_cases
+  final_full_exact_head_and_hosted_validation: pending_PR166_receipts
+  all_FE_API_calls_under_100ms_and_VPS_I97_redeployment: UNKNOWN_owner_managed
+  FE_API_contract_DB_schema_VPS_configuration_automation_changes: NONE
 owner_native_read_latency_20261016:
   instruction: investigate_options_and_other_reads_over_two_seconds_with_owner_target_every_FE_call_under_100ms
   canonical_goal: 45

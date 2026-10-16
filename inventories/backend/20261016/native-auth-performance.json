@@ -1,0 +1,55 @@
+{
+  "formatVersion": 1,
+  "increment": "I97",
+  "base": "113650b79cf07da82993e5aed99f541cd140bd77",
+  "pr": 166,
+  "observedAtUtc": "2026-10-16T10:29:28.6654206Z",
+  "measurementOrigin": "owner_local_machine_to_MedData_not_VPS",
+  "productionDataWrites": false,
+  "authComparison": {
+    "subjects": 6,
+    "assignedBranchSubjects": 3,
+    "nativeBlankBranchSubjects": 3,
+    "passesPerSubject": 3,
+    "equivalentResults": 18,
+    "mismatches": 0,
+    "warmSamplesPerVersion": 12,
+    "warmPreviousMedianMs": 639.4,
+    "warmCurrentMedianMs": 172.7,
+    "comparedFields": ["canonicalUsername", "displayName", "storedHash", "disabled", "groupId", "groupEnabled", "capabilitySet", "branchSet", "branchSelection"]
+  },
+  "nativeScopeComparison": {
+    "subjects": 6,
+    "equivalentResults": 6,
+    "mismatches": 0,
+    "previousMedianMs": 62.8,
+    "currentMedianMs": 26.6,
+    "previousCommandsAssignedOrBlank": [2, 3],
+    "currentCommands": 1
+  },
+  "syntheticSqlSemantics": {
+    "storage": "connection_local_SQL_Server_temp_tables_only",
+    "cases": 39,
+    "failures": 0,
+    "grantRoutes": ["group", "direct_user", "delegated_group"],
+    "checks": ["Run_required", "menu_disabled", "parent_disabled_or_missing", "form_binding", "parameter_binding", "principal_alias", "group_alias", "menu_alias", "delegator_disabled", "delegator_group_disabled", "delegation_alias", "full_batch_matches_original_strict_grant_projection"]
+  },
+  "privateEvidence": [
+    {"object": "I97-native-auth-batching-20261016/native-auth-validation.json", "sha256": "d2f867973e0454cad99ad8fcd4b918734099d3a94bf3686615c2354d4777be84"},
+    {"object": "I97-native-auth-batching-20261016/native-auth-sql-semantics.json", "sha256": "ea09749e4eef674896fbab7ce25357afe7ae75f790e0ec004ed7bdc64bb5ea1d"},
+    {"object": "I97-native-auth-batching-20261016/NativeAuthProbe.cs", "sha256": "eaefb5d1444235e5bc3f4015ca8f21926814efde121c425782a6d793c92a9a66"},
+    {"object": "I97-native-auth-batching-20261016/NativeAuthSqlSemantics.cs", "sha256": "947d6a4a290be04b7d95964e0f1a6300cf3988d0a48adb466d0eedba12df6e64"}
+  ],
+  "codeEvidence": [
+    "src/backend/Medcom.Infrastructure/SqlLegacyUserStore.cs:FindAsync",
+    "src/backend/Medcom.Infrastructure/SqlIdentityCapabilities.cs:ReadAsync/PurchaseGrantsText",
+    "src/backend/Medcom.Infrastructure/SqlNativeIdentity.cs:ReadAsync/ReadBatch",
+    "src/backend/Medcom.Infrastructure/SqlLegacyBranchScope.cs:NativeUserText/RestrictedText/CatalogShapeText/CatalogText",
+    "src/backend/Medcom.Infrastructure/Erp/ErpSqlAuthority.cs:ReadUser",
+    "src/backend/Medcom.Infrastructure/SqlReferenceData.cs:Authority",
+    "tests/backend/Medcom.Api.Tests/NativeIdentityBatchTests.cs"
+  ],
+  "VPS_API_latency_after_I97": "UNKNOWN_owner_redeployment_required",
+  "every_FE_call_under_100ms_acceptance": "OPEN_not_established",
+  "api_contract_FE_DB_schema_VPS_configuration_automations_changed": false
+}
