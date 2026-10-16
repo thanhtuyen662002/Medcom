@@ -48,6 +48,37 @@ export function MedcomApp() {
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
   const [isLoadingCounts, setIsLoadingCounts] = useState(true);
 
+  // Quyền màn hình theo phiên ERP (/api/erp/permissions). allowed null =
+  // chưa tải xong: không mặc định có quyền, BE vẫn là chốt chặn cuối.
+  const [tabAccess, setTabAccess] = useState<{
+    loading: boolean;
+    error: boolean;
+    allowed: readonly string[] | null;
+  }>({ loading: false, error: false, allowed: null });
+
+  const retryTabAccess = useCallback(async () => {
+    setTabAccess({ loading: true, error: false, allowed: null });
+    try {
+      const perms = await erpClient.getScreenPermissions(currentBranch);
+      if (!perms || !Array.isArray(perms.screens)) throw new Error("invalid permissions");
+      setTabAccess({
+        loading: false,
+        error: false,
+        allowed: perms.screens.filter((s) => s.canView).map((s) => s.module),
+      });
+    } catch {
+      setTabAccess({ loading: false, error: true, allowed: null });
+    }
+  }, [currentBranch]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      setTabAccess({ loading: false, error: false, allowed: null });
+      return;
+    }
+    void retryTabAccess();
+  }, [currentUser, retryTabAccess]);
+
   // Modals state
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -407,6 +438,8 @@ export function MedcomApp() {
               pendingOrdersCount={ordersCount}
               pendingPurchasesCount={purchasesCount}
               pendingInboundCount={inboundCount}
+              tabAccess={tabAccess}
+              onRetryTabs={() => void retryTabAccess()}
             />
           </div>
         ) : (
@@ -580,6 +613,8 @@ export function MedcomApp() {
           pendingOrdersCount={ordersCount}
           pendingPurchasesCount={purchasesCount}
           pendingInboundCount={inboundCount}
+          tabAccess={tabAccess}
+          onRetryTabs={() => void retryTabAccess()}
         />
 
         {/* Quick Create PR Bottom Sheet */}

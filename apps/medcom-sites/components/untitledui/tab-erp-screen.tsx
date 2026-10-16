@@ -23,6 +23,7 @@ import {
   Pencil,
   Lock,
   LockOpen,
+  Loader2,
 } from "lucide-react";
 import {
   erpClient,
@@ -37,10 +38,13 @@ import {
 } from "@/lib/erp/erp-client";
 import { UntitledBottomSheet } from "./bottom-sheet";
 import { UntitledButton } from "./button";
-import { LookupField } from "./lookup-field";
+import { LookupField, fieldText } from "./lookup-field";
+import { DocumentCardSkeleton } from "./skeleton";
+import { SalesOrderForm } from "@/components/erp/sales-order-form";
 import { PurchaseOrderCreateSheet } from "./purchase-order-create-sheet";
 import { PurchaseRequestCreateSheet } from "./purchase-request-create-sheet";
 import { QrCamera } from "@/lib/erp/qr-camera";
+import type { ErpDocumentPage } from "@/lib/erp/erp-screen-contracts";
 
 interface TabErpScreenProps {
   module: ErpScreenModule;
@@ -350,22 +354,40 @@ function getActionReasonMessage(reason?: string | null): string {
   }
 }
 
+// Màu badge theo trạng thái chứng từ: id số là chuẩn (duyệt ĐNMH:
+// 2 chờ, 3 đã duyệt, 4 không duyệt); các màn khác đoán theo tên.
+function statusBadgeClass(statusId: unknown, statusName: unknown): string {
+  const base = "px-2.5 py-1 rounded-full text-xs font-semibold border ";
+  const red = "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300 border-red-200 dark:border-red-900/50";
+  const green = "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/50";
+  const amber = "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-900/50";
+  const brand = "bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 border-brand-200 dark:border-brand-900/40";
+  if (statusId === 4) return base + red;
+  if (statusId === 3) return base + green;
+  if (statusId === 2) return base + amber;
+  const name = (typeof statusName === "string" ? statusName : "").toLowerCase();
+  if (!name) return base + brand;
+  if (name.includes("không duyệt") || name.includes("tu choi") || name.includes("từ chối")) return base + red;
+  if (name.includes("chờ") || name.includes("cho duyet") || name.includes("chờ duyệt") || name.includes("chua") || name.includes("chưa")) return base + amber;
+  if (name.includes("duyệt") || name.includes("duyet") || name.includes("đồng ý") || name.includes("hoàn tất") || name.includes("đã khóa")) return base + green;
+  return base + brand;
+}
+
 const moduleActionsCache = new Map<string, ErpActionState[]>();
 const moduleActionsInflight = new Map<string, Promise<ErpActionState[]>>();
+
+// Chặn 2 lần tải danh sách giống hệt nhau cùng chạy (StrictMode dev):
+// cả 2 cùng chờ 1 promise, không loại bỏ response 200 nào.
+const listInflight = new Map<string, Promise<ErpDocumentPage>>();
 
 function moduleActionsKey(module: ErpScreenModule, branchId: string) {
   return `${module}::${branchId}`;
 }
 
 // Screen metadata has no branch dependency: fetch once per module.
-// Document lists load lazily once per tab+branch; refresh button and branch
-// changes are the explicit reload paths.
+// Document lists reload every time their tab becomes visible so the data
+// is never stale; refresh button and branch changes reload explicitly.
 const screenMetaCache = new Map<ErpScreenModule, ErpScreenDescription>();
-const listLoadedKeys = new Set<string>();
-
-function listLoadedKey(module: ErpScreenModule, branchId: string) {
-  return `${module}::${branchId}`;
-}
 
 // Header fields editable inline in the detail card. Lookup-backed keys render
 // the shared options combobox; dates render date inputs; the rest are text.
@@ -381,6 +403,18 @@ const EDITABLE_HEADER_BY_MODULE: Record<string, readonly string[]> = {
     "objectId",
     "currencyId",
   ],
+  "sales-orders": [
+    "documentDate",
+    "contractId",
+    "managerId",
+    "employeeId",
+    "objectId",
+    "deliverDate",
+    "memo",
+    "ghiChuDonHang",
+    "linkId",
+    "documentUrl",
+  ],
 };
 const DEFAULT_EDITABLE_HEADER_KEYS = [
   "documentDate",
@@ -395,6 +429,7 @@ function editableHeaderKeys(module: ErpScreenModule): readonly string[] {
 }
 const REQUIRED_EDIT_KEYS: Record<string, readonly string[]> = {
   "purchase-requests": ["personSuggest", "department", "objectId", "currencyId"],
+  "sales-orders": ["documentDate", "objectId", "employeeId"],
 };
 const DEFAULT_REQUIRED_EDIT_KEYS = ["documentDate", "objectId"] as const;
 function requiredEditKeys(module: ErpScreenModule): readonly string[] {
@@ -408,6 +443,12 @@ const EDIT_LOOKUPS: Record<string, Record<string, string>> = {
     purposeId: "header.PurposeID",
     currencyId: "header.CurrencyID",
   },
+  "sales-orders": {
+    contractId: "header.ContractID",
+    managerId: "header.ManagerID",
+    employeeId: "header.EmployeeID",
+    objectId: "header.ObjectID",
+  },
 };
 const DEFAULT_EDIT_LOOKUPS: Record<string, string> = { objectId: "header.ObjectID" };
 function editLookupId(module: ErpScreenModule, key: string): string | undefined {
@@ -419,6 +460,7 @@ function editLookupId(module: ErpScreenModule, key: string): string | undefined 
 const SAVE_LINE_BY_MODULE: Record<string, readonly string[]> = {
   "purchase-requests": ["itemId", "quantity", "unitPrice", "budget", "timeRequired", "model"],
   "purchase-orders": ["itemId", "quantity", "unitPrice", "notes", "quantity2", "property", "property2"],
+  "sales-orders": ["itemId", "quantity", "unitPrice", "discountPercent", "vATPercent", "vATQuantity", "dienGiai", "notes", "property", "property2", "parentId", "notes2", "costId", "storeHouseId", "vATId"],
 };
 function saveLineKeys(module: ErpScreenModule): readonly string[] {
   return SAVE_LINE_BY_MODULE[module] ?? [];
@@ -447,6 +489,17 @@ const SAVE_HEADER_BY_MODULE: Record<string, readonly string[]> = {
     "searchField",
     "contractId",
   ],
+  "sales-orders": [
+    "documentDate", "objectId", "contractId", "memo", "deliverDate", "baseTotal",
+    "employeeId", "managerId", "phone", "taxCode", "notes", "depositAmount",
+    "agencyId", "isVAT", "isOrder", "currencyId", "rateExchange", "linkId",
+    "ghiChuDonHang", "paymentTermId", "ceoId", "thamGiaHopDongBan", "bBKCUrl",
+    "beforeOutStockUrl", "bBBGUrl", "documentUrl", "handoverLocation",
+    "representedByA", "positionA", "addressA", "representedByB", "positionB",
+    "addressB", "conclude", "minutesNumber", "partyAKeep", "partyBKeep",
+    "deliveryStatusId", "deliveryEmployeeId", "deliveryEmployeeSubId", "vehicle",
+    "soPhieu", "soHoaDon", "ngayPhieu", "ngayHoaDon",
+  ],
 };
 
 // Lock state for the header badge: true = locked, false = unlocked,
@@ -461,6 +514,13 @@ function lockBadgeState(header: unknown): boolean | null {
 // Detail dropdown entries, in display order. Rendered only when the backend
 // marks them visible; enabled state and reason come from the same action.
 const MENU_ACTION_IDS = ["save", "submit", "send-purchase-order", "approve", "reject", "delete"] as const;
+
+// Tạm thời: Đặt mua hàng chưa có trong Medcom:ErpWrites:Modules nên backend
+// trả erp_write_unqualified (nút "Tạo mới" bị khóa kèm lý do "chưa ghi trực
+// tiếp", và save/delete hiện disabled trong dropdown chi tiết). Thay vì hiển
+// thị trạng thái bị chặn, ẨN toàn bộ action write của module này ở FE.
+// Bỏ "purchase-orders" khỏi danh sách này khi operator bật ghi cho module.
+const WRITE_GATED_MODULES = new Set<ErpScreenModule>(["purchase-orders"]);
 
 export function TabErpScreen({
   module,
@@ -480,6 +540,11 @@ export function TabErpScreen({
     "inbound-requests",
     "internal-transfer-batches",
   ].includes(module);
+
+  // Write admission is off for this module (see WRITE_GATED_MODULES): hide the
+  // create entry point and every detail-menu mutation instead of rendering the
+  // backend's "not yet admitted" state.
+  const writesGated = WRITE_GATED_MODULES.has(module);
 
   // Screen Level Actions (when no document selected - FE-14)
   const [moduleActions, setModuleActions] = useState<ErpActionState[]>([]);
@@ -520,7 +585,8 @@ export function TabErpScreen({
 
   const createActionFromApi = moduleActions.find((a) => a.id === "create");
   const canCreate = createActionFromApi != null ? (createActionFromApi.visible && createActionFromApi.enabled) : hasCreate;
-  const isCreateVisible = createActionFromApi != null ? createActionFromApi.visible : hasCreate;
+  const isCreateVisible =
+    !writesGated && (createActionFromApi != null ? createActionFromApi.visible : hasCreate);
   const createActionTooltip = createActionFromApi?.reason ? getActionReasonMessage(createActionFromApi.reason) : undefined;
 
   // Screen Metadata
@@ -612,11 +678,56 @@ export function TabErpScreen({
   const [prCreateOpen, setPrCreateOpen] = useState(false);
   const [createDate, setCreateDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [createObject, setCreateObject] = useState("");
+  const [createEmployee, setCreateEmployee] = useState("");
+  const [createEmployeeChoice, setCreateEmployeeChoice] = useState<ErpChoice | null>(null);
+  const [createObjectChoice, setCreateObjectChoice] = useState<ErpChoice | null>(null);
+  const [createContract, setCreateContract] = useState("");
+  const [createContractChoice, setCreateContractChoice] = useState<ErpChoice | null>(null);
+  const [createDeliverDate, setCreateDeliverDate] = useState("");
+  const newSoLineKey = () => `so-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+  const [createSoLines, setCreateSoLines] = useState<Array<{
+    key: string; itemId: string; choice: ErpChoice | null; quantity: string; unitPrice: string; dienGiai: string;
+  }>>([{ key: "so-init", itemId: "", choice: null, quantity: "1", unitPrice: "", dienGiai: "" }]);
+  const patchSoLine = (key: string, patch: Partial<{ itemId: string; choice: ErpChoice | null; quantity: string; unitPrice: string; dienGiai: string }>) =>
+    setCreateSoLines((prev) => prev.map((l) => (l.key === key ? { ...l, ...patch } : l)));
   const [createNotes, setCreateNotes] = useState("");
   const [createItemId, setCreateItemId] = useState("");
   const [createQuantity, setCreateQuantity] = useState("1");
   const [createUnitPrice, setCreateUnitPrice] = useState("100000");
   const [creatingDocument, setCreatingDocument] = useState(false);
+
+  // Khách hàng ↔ Hợp đồng (Đơn hàng bán): lookup header.ContractID có ParaArr =
+  // "ObjectID" (một khách hàng có nhiều hợp đồng) nên chọn khách trước thì danh
+  // sách hợp đồng chỉ tải hợp đồng của khách đó; ngược lại chọn hợp đồng trước
+  // thì map tự động khách hàng từ LinkColumn "ObjectID;ObjectName" của hợp đồng.
+  const selectSoContract = (c: ErpChoice | null) => {
+    setCreateContractChoice(c);
+    setCreateContract(c ? c.id : "");
+    if (!c) return;
+    const objectId = fieldText(c.fields?.ObjectID);
+    // Không có ObjectID trên dòng hợp đồng thì giữ nguyên khách đang chọn.
+    if (!objectId || objectId === createObject) return;
+    setCreateObject(objectId);
+    setCreateObjectChoice({
+      id: objectId,
+      name: fieldText(c.fields?.ObjectName) || objectId,
+      label: objectId,
+      fields: { ...c.fields, ObjectID: objectId },
+    });
+  };
+
+  const selectSoCustomer = (c: ErpChoice | null) => {
+    const nextObject = c ? c.id : "";
+    // Đổi khách hàng thì hợp đồng đã chọn không còn thuộc khách này → bỏ chọn.
+    // Khi hợp đồng vừa tự map khách (ObjectID trùng) thì điều kiện này không xảy ra.
+    const contractObject = fieldText(createContractChoice?.fields?.ObjectID);
+    if (createContract && contractObject && contractObject !== nextObject) {
+      setCreateContract("");
+      setCreateContractChoice(null);
+    }
+    setCreateObjectChoice(c);
+    setCreateObject(nextObject);
+  };
 
   // Load Screen Metadata
   useEffect(() => {
@@ -645,28 +756,51 @@ export function TabErpScreen({
     };
   }, [module, isActive]);
 
-  // Load Document List
+  // Load Document List (dedupe identical in-flight requests so no 200 is
+  // dropped; race-free apply; 45s timeout shows a retryable error).
+  const listSeqRef = useRef(0);
   const loadList = useCallback(
-    async (targetPage = 1, silent = false) => {
+    async (targetPage = 1, silent = false, statusOverride?: number | null) => {
+      const seq = ++listSeqRef.current;
+      const effectiveStatus = statusOverride !== undefined ? statusOverride : statusId;
+      const params = {
+        branchId: currentBranch,
+        page: targetPage,
+        pageSize: 20,
+        search: search.trim() || undefined,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
+        statusId: effectiveStatus !== null ? effectiveStatus : undefined,
+      };
+      const key = `${module}::${currentBranch}::${targetPage}::${params.search ?? ""}::${params.dateFrom ?? ""}::${params.dateTo ?? ""}::${params.statusId ?? ""}`;
       if (!silent) setIsLoadingList(true);
       setErrorMsg(null);
-      try {
-        const result = await erpClient.getErpModuleList(module, {
-          branchId: currentBranch,
-          page: targetPage,
-          pageSize: 20,
-          search: search.trim() || undefined,
-          dateFrom: dateFrom || undefined,
-          dateTo: dateTo || undefined,
-          statusId: statusId !== null ? statusId : undefined,
+      let inflight = listInflight.get(key);
+      if (!inflight) {
+        const aborter = new AbortController();
+        const timer = setTimeout(() => aborter.abort(), 45000);
+        const started: Promise<ErpDocumentPage> = erpClient.getErpModuleList(module, params, aborter.signal);
+        inflight = started.finally(() => {
+          clearTimeout(timer);
+          if (listInflight.get(key) === inflight) listInflight.delete(key);
         });
+        listInflight.set(key, inflight);
+      }
+      try {
+        const result = await inflight;
+        if (seq !== listSeqRef.current) return;
         setRows(result.rows || []);
         setPage(result.page);
         setHasMore(result.hasMore);
-        listLoadedKeys.add(listLoadedKey(module, currentBranch));
       } catch (err: unknown) {
-        setErrorMsg("Không thể tải danh sách bản ghi từ máy chủ ERP.");
+        if (seq !== listSeqRef.current) return;
+        setErrorMsg(
+          err instanceof DOMException && err.name === "AbortError"
+            ? "Máy chủ phản hồi quá chậm (quá 45 giây). Bấm Làm mới để thử lại."
+            : "Không thể tải danh sách bản ghi từ máy chủ ERP."
+        );
       } finally {
+        if (seq !== listSeqRef.current) return;
         setIsLoadingList(false);
         setIsRefreshing(false);
       }
@@ -674,12 +808,15 @@ export function TabErpScreen({
     [module, currentBranch, search, dateFrom, dateTo, statusId]
   );
 
-  // Lazily load once per tab+branch; revisit via refresh button or branch change.
+  // Reload the list every time this tab becomes visible. Show skeletons
+  // while waiting when there is nothing to display yet; refresh quietly
+  // otherwise so the old rows stay until the new response arrives.
+  const wasActiveRef = useRef(false);
   useEffect(() => {
-    if (isActive && !listLoadedKeys.has(listLoadedKey(module, currentBranch))) {
-      loadList(1);
-    }
-  }, [isActive, module, currentBranch, loadList]);
+    const becameActive = isActive && !wasActiveRef.current;
+    wasActiveRef.current = isActive;
+    if (becameActive) void loadList(1, rows.length > 0);
+  }, [isActive, loadList, rows.length]);
 
   // Handle Manual Refresh
   const handleRefresh = async () => {
@@ -689,13 +826,33 @@ export function TabErpScreen({
 
   const openDetailRequestSeqRef = useRef<number>(0);
 
-  // Invalidate in-flight reads when branch changes (FE-14)
+  // Invalidate in-flight reads when the branch/module scope changes (FE-14)
+  // and reload the list when visible, so rows never belong to another scope.
+  // Only loadList may advance listSeqRef: it owns the loading flags, so the
+  // request with the newest seq is always the one that applies the response
+  // and clears isLoadingList/isRefreshing. Bumping the counter here on every
+  // dependency change (activation, search, status chip) orphaned the request
+  // started above: its 200 was discarded by the seq guard and the flags were
+  // never reset, leaving the skeleton on screen forever.
+  const prevScopeRef = useRef(`${module}::${currentBranch}`);
   useEffect(() => {
+    const scope = `${module}::${currentBranch}`;
+    if (prevScopeRef.current === scope) return;
+    prevScopeRef.current = scope;
     openDetailRequestSeqRef.current++;
+    listSeqRef.current++;
+    // The request orphaned above can no longer clear these flags, so hand
+    // them over here; a reload below takes them straight back.
+    setIsLoadingList(false);
+    setIsRefreshing(false);
+    setRows([]);
+    setPage(1);
+    setHasMore(false);
     setSelectedDocId(null);
     setDetail(null);
     setDetailError(null);
-  }, [currentBranch]);
+    if (isActive) void loadList(1);
+  }, [currentBranch, module, isActive, loadList]);
 
   // Open Document Detail (Race-free: only applies response for latest requested documentId)
   const handleOpenDetail = async (documentId: string) => {
@@ -968,10 +1125,12 @@ export function TabErpScreen({
     setActionPromptModal({ open: true, action: act, notes: "" });
   };
 
-  const menuActs = (detail?.actions || []).filter(
-    (a): a is ErpActionState =>
-      a.visible && (MENU_ACTION_IDS as readonly string[]).includes(a.id)
-  );
+  const menuActs = writesGated
+    ? []
+    : (detail?.actions || []).filter(
+        (a): a is ErpActionState =>
+          a.visible && (MENU_ACTION_IDS as readonly string[]).includes(a.id)
+      );
 
   const menuLabel = (act: ErpActionState): string => {
     if (act.id === "save") return editing ? "Lưu thay đổi" : "Sửa thông tin";
@@ -1260,21 +1419,45 @@ export function TabErpScreen({
           });
         }
       } else if (module === "sales-orders") {
+        const soObject = (createObject || createObjectChoice?.id || "").trim();
+        const soEmployee = (createEmployee || createEmployeeChoice?.id || "").trim();
+        if (!soObject || !soEmployee) {
+          setActionFeedback({
+            type: "warning",
+            message: "Vui lòng chọn Khách hàng và Mã nhân viên trước khi tạo đơn hàng.",
+          });
+          setCreatingDocument(false);
+          return;
+        }
         header.documentDate = `${createDate}T00:00:00.000`;
-        header.objectId = createObject || "KH01";
-        header.employeeId = "NV01";
+        header.objectId = soObject;
+        header.employeeId = soEmployee;
         header.isOrder = true;
         header.currencyId = "VND";
         header.rateExchange = 1.0;
+        const soContract = (createContract || createContractChoice?.id || "").trim();
+        if (soContract) header.contractId = soContract;
+        if (createDeliverDate) header.deliverDate = `${createDeliverDate}T00:00:00.000`;
         header.memo = createNotes || "Đơn hàng bán";
         header.notes = createNotes || null;
-        if (createItemId.trim()) {
+        const soDec = /^\d+(\.\d+)?$/;
+        const soValid = createSoLines.filter((l) => l.itemId.trim() && soDec.test(l.quantity.trim()) && (!l.unitPrice.trim() || soDec.test(l.unitPrice.trim())));
+        if (soValid.length === 0) {
+          setActionFeedback({
+            type: "warning",
+            message: "Cần ít nhất 1 dòng hàng với Mã hàng và Số lượng hợp lệ.",
+          });
+          setCreatingDocument(false);
+          return;
+        }
+        for (const l of soValid) {
           lines.push({
-            clientLineKey: "line-1",
+            clientLineKey: l.key,
             values: {
-              itemId: createItemId.trim(),
-              quantity: createQuantity || "1",
-              unitPrice: createUnitPrice || "0",
+              itemId: l.itemId.trim(),
+              quantity: l.quantity.trim(),
+              unitPrice: l.unitPrice.trim() || null,
+              dienGiai: l.dienGiai.trim() || null,
             },
           });
         }
@@ -1402,8 +1585,12 @@ export function TabErpScreen({
     }
   };
 
-  // Filter rows locally if needed
-  const displayRows = rows.filter((r) => {
+  // Filter rows locally if needed. Màn duyệt và đề nghị mua lọc theo trạng
+  // thái trên server (statusId) nên bỏ qua lớp lọc khóa/mở ở client.
+  const isApprovalModule = module === "purchase-approvals";
+  const isPrModule = module === "purchase-requests";
+  const useServerStatusChips = isApprovalModule || isPrModule;
+  const displayRows = useServerStatusChips ? rows : rows.filter((r) => {
     const isLocked = r.header?.isLocked ?? (r as Record<string, unknown>).isLocked;
     if (statusFilter === "locked") return isLocked === true || isLocked === 1 || isLocked === "1";
     if (statusFilter === "open") return isLocked === false || isLocked === 0 || isLocked === "0" || isLocked == null;
@@ -1479,44 +1666,87 @@ export function TabErpScreen({
 
           {/* Filter Chips Bar */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-            {[
-              { id: "all", label: "Tất cả", count: rows.length },
-              {
-                id: "open",
-                label: "Đang mở / Chưa khóa",
-                count: rows.filter((r) => {
-                  const isLocked = r.header?.isLocked ?? (r as Record<string, unknown>).isLocked;
-                  return isLocked === false || isLocked === 0 || isLocked === "0" || isLocked == null;
-                }).length,
-              },
-              {
-                id: "locked",
-                label: "Đã khóa / Hoàn tất",
-                count: rows.filter((r) => {
-                  const isLocked = r.header?.isLocked ?? (r as Record<string, unknown>).isLocked;
-                  return isLocked === true || isLocked === 1 || isLocked === "1";
-                }).length,
-              },
-            ].map((chip) => {
+            {(isApprovalModule
+              ? ([
+                { id: "all", label: "Tất cả", status: null as number | null },
+                { id: "pending", label: "Chờ duyệt", status: 2 },
+                { id: "approved", label: "Đã duyệt", status: 3 },
+                { id: "rejected", label: "Không duyệt", status: 4 },
+              ] as const).map((chip) => ({
+                id: chip.id,
+                label: chip.label,
+                status: chip.status,
+                count: chip.status === null
+                  ? rows.length
+                  : rows.filter((r) => {
+                    const s = (r.header as Record<string, unknown> | undefined)?.statusId;
+                    return s === chip.status;
+                  }).length,
+              }))
+              : isPrModule
+                ? ([
+                  { id: "all", label: "Tất cả", status: null as number | null },
+                  { id: "draft", label: "Mới lập", status: 1 },
+                  { id: "pending", label: "Chờ duyệt", status: 2 },
+                  { id: "approved", label: "Đã duyệt", status: 3 },
+                  { id: "returned", label: "Trả về", status: 4 },
+                  { id: "ordered", label: "Đã gửi ĐMH", status: 5 },
+                ] as const).map((chip) => ({
+                  id: chip.id,
+                  label: chip.label,
+                  status: chip.status,
+                  count: chip.status === null
+                    ? rows.length
+                    : rows.filter((r) => {
+                      const s = (r.header as Record<string, unknown> | undefined)?.statusId;
+                      return s === chip.status;
+                    }).length,
+                }))
+                : [
+                  { id: "all", label: "Tất cả", count: rows.length, status: undefined as unknown as number | null },
+                  {
+                    id: "open",
+                    label: "Đang mở / Chưa khóa",
+                    count: rows.filter((r) => {
+                      const isLocked = r.header?.isLocked ?? (r as Record<string, unknown>).isLocked;
+                      return isLocked === false || isLocked === 0 || isLocked === "0" || isLocked == null;
+                    }).length,
+                    status: undefined as unknown as number | null,
+                  },
+                  {
+                    id: "locked",
+                    label: "Đã khóa / Hoàn tất",
+                    count: rows.filter((r) => {
+                      const isLocked = r.header?.isLocked ?? (r as Record<string, unknown>).isLocked;
+                      return isLocked === true || isLocked === 1 || isLocked === "1";
+                    }).length,
+                    status: undefined as unknown as number | null,
+                  },
+                ]
+            ).map((chip) => {
               const isSelected = statusFilter === chip.id;
               return (
                 <button
                   key={chip.id}
                   type="button"
-                  onClick={() => setStatusFilter(chip.id)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 shrink-0 ${
-                    isSelected
+                  onClick={() => {
+                    setStatusFilter(chip.id);
+                    if (useServerStatusChips) {
+                      setStatusId(chip.status);
+                      void loadList(1, false, chip.status);
+                    }
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 shrink-0 ${isSelected
                       ? "bg-brand-600 text-white shadow-xs"
                       : "bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 border border-neutral-200/80 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                  }`}
+                    }`}
                 >
                   <span>{chip.label}</span>
                   <span
-                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                      isSelected
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${isSelected
                         ? "bg-brand-700 text-white"
                         : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400"
-                    }`}
+                      }`}
                   >
                     {chip.count}
                   </span>
@@ -1538,14 +1768,7 @@ export function TabErpScreen({
       {/* Document List */}
       <div className="space-y-2">
         {isLoadingList ? (
-          <div className="space-y-2.5">
-            {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="h-24 rounded-2xl bg-neutral-100 dark:bg-neutral-800/50 animate-pulse border border-neutral-200/60 dark:border-neutral-800/80"
-              />
-            ))}
-          </div>
+          <DocumentCardSkeleton count={4} />
         ) : displayRows.length === 0 ? (
           <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-8 text-center">
             <Info className="w-8 h-8 mx-auto text-neutral-400 mb-2" />
@@ -1555,6 +1778,15 @@ export function TabErpScreen({
             <p className="text-xs text-neutral-500 mt-1">
               Chưa có bản ghi nào phù hợp với bộ lọc hiện tại tại chi nhánh {currentBranch}.
             </p>
+            <button
+              type="button"
+              onClick={() => void loadList(1)}
+              disabled={isLoadingList}
+              className="mt-3 px-4 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 text-xs font-semibold text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 inline-flex items-center gap-1.5"
+            >
+              <RefreshCw className={`size-3.5 ${isLoadingList ? "animate-spin" : ""}`} />
+              Tải lại danh sách
+            </button>
           </div>
         ) : (
           displayRows.map((row) => {
@@ -1626,11 +1858,10 @@ export function TabErpScreen({
           if (locked === null) return undefined;
           return (
             <span
-              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold shrink-0 ${
-                locked
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold shrink-0 ${locked
                   ? "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300"
                   : "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300"
-              }`}
+                }`}
             >
               {locked ? <Lock className="size-3" /> : <LockOpen className="size-3" />}
               {locked ? "Đã khóa" : "Chưa khóa"}
@@ -1642,13 +1873,12 @@ export function TabErpScreen({
           {/* Action Feedback Banner */}
           {actionFeedback && (
             <div
-              className={`p-3 rounded-xl border text-xs flex items-center gap-2 ${
-                actionFeedback.type === "success"
+              className={`p-3 rounded-xl border text-xs flex items-center gap-2 ${actionFeedback.type === "success"
                   ? "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/50"
                   : actionFeedback.type === "warning"
-                  ? "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/50"
-                  : "bg-red-50 text-red-800 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900/50"
-              }`}
+                    ? "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/50"
+                    : "bg-red-50 text-red-800 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900/50"
+                }`}
             >
               {actionFeedback.type === "success" ? (
                 <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
@@ -1656,6 +1886,16 @@ export function TabErpScreen({
                 <AlertCircle className="w-4 h-4 shrink-0" />
               )}
               <span>{actionFeedback.message}</span>
+            </div>
+          )}
+          {/* Action In-Flight Spinner: menu đã đóng nên cần báo đang chờ API */}
+          {executingAction && (
+            <div
+              role="status"
+              className="p-3 rounded-xl border text-xs flex items-center gap-2 bg-brand-50 text-brand-800 border-brand-200 dark:bg-brand-950/40 dark:text-brand-300 dark:border-brand-900/50"
+            >
+              <Loader2 className="w-4 h-4 shrink-0 animate-spin" aria-hidden="true" />
+              <span>Đang xử lý thao tác, vui lòng chờ phản hồi từ máy chủ...</span>
             </div>
           )}
 
@@ -1669,69 +1909,80 @@ export function TabErpScreen({
               {detailError}
             </div>
           ) : detail ? (
-            <>
-              {/* QR Scanner Controls for warehouse-qr / sales-qr: Replaced input box with 2 camera buttons */}
-              {isQrModule && (
-                <div className="p-4 rounded-2xl bg-brand-50/50 dark:bg-brand-950/20 border border-brand-200 dark:border-brand-900/40 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-brand-900 dark:text-brand-300 flex items-center gap-1.5">
-                      <QrCode className="w-4 h-4 text-brand-600" />
-                      Thao tác quét mã vạch / QR tem kiện
-                    </span>
+            module === "sales-orders" ? (
+              <SalesOrderForm
+                branchId={currentBranch}
+                documentId={detail.documentId}
+                onClose={handleCloseDetail}
+                onChanged={() => loadList(page, true)}
+              />
+            ) : (
+              <>
+                {/* QR Scanner Controls for warehouse-qr / sales-qr: Replaced input box with 2 camera buttons */}
+                {isQrModule && (
+                  <div className="p-4 rounded-2xl bg-brand-50/50 dark:bg-brand-950/20 border border-brand-200 dark:border-brand-900/40 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-brand-900 dark:text-brand-300 flex items-center gap-1.5">
+                        <QrCode className="w-4 h-4 text-brand-600" />
+                        Thao tác quét mã vạch / QR tem kiện
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      {(() => {
+                        const scanAddAct = detail?.actions?.find((a) => a.id === "scan-add");
+                        const scanDelAct = detail?.actions?.find((a) => a.id === "scan-delete");
+                        const canScanAdd = scanAddAct ? scanAddAct.enabled : true;
+                        const canScanDel = scanDelAct ? scanDelAct.enabled : true;
+                        return (
+                          <>
+                            <UntitledButton
+                              variant="primary"
+                              size="md"
+                              onClick={() => openQrScannerModal("add")}
+                              disabled={qrOperationLoading || !canScanAdd}
+                              title={scanAddAct?.reason ? getActionReasonMessage(scanAddAct.reason) : undefined}
+                              iconLeading={<Camera className="size-4" />}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs disabled:opacity-50"
+                            >
+                              Quét thêm mã QR
+                            </UntitledButton>
+                            <UntitledButton
+                              variant="primary"
+                              size="md"
+                              onClick={() => openQrScannerModal("delete")}
+                              disabled={qrOperationLoading || !canScanDel}
+                              title={scanDelAct?.reason ? getActionReasonMessage(scanDelAct.reason) : undefined}
+                              iconLeading={<Camera className="size-4" />}
+                              className="bg-red-600 hover:bg-red-700 text-white shadow-xs disabled:opacity-50"
+                            >
+                              Quét xóa mã QR
+                            </UntitledButton>
+                          </>
+                        );
+                      })()}
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2.5">
-                    {(() => {
-                      const scanAddAct = detail?.actions?.find((a) => a.id === "scan-add");
-                      const scanDelAct = detail?.actions?.find((a) => a.id === "scan-delete");
-                      const canScanAdd = scanAddAct ? scanAddAct.enabled : true;
-                      const canScanDel = scanDelAct ? scanDelAct.enabled : true;
-                      return (
-                        <>
-                          <UntitledButton
-                            variant="primary"
-                            size="md"
-                            onClick={() => openQrScannerModal("add")}
-                            disabled={qrOperationLoading || !canScanAdd}
-                            title={scanAddAct?.reason ? getActionReasonMessage(scanAddAct.reason) : undefined}
-                            iconLeading={<Camera className="size-4" />}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs disabled:opacity-50"
-                          >
-                            Quét thêm mã QR
-                          </UntitledButton>
-                          <UntitledButton
-                            variant="primary"
-                            size="md"
-                            onClick={() => openQrScannerModal("delete")}
-                            disabled={qrOperationLoading || !canScanDel}
-                            title={scanDelAct?.reason ? getActionReasonMessage(scanDelAct.reason) : undefined}
-                            iconLeading={<Camera className="size-4" />}
-                            className="bg-red-600 hover:bg-red-700 text-white shadow-xs disabled:opacity-50"
-                          >
-                            Quét xóa mã QR
-                          </UntitledButton>
-                        </>
-                      );
-                    })()}
-                  </div>
-                </div>
-              )}
+                )}
 
-              {/* THẺ THÔNG TIN CHUNG CHỨNG TỪ (Unified Card following Inbound Standard) */}
-              <div className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 shadow-xs space-y-3">
-                <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-neutral-100 dark:border-neutral-800">
-                  <div className="space-y-0.5">
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-400">
-                      Mã chứng từ
-                    </span>
-                    <p className="font-mono text-sm sm:text-base font-bold text-neutral-900 dark:text-white">
-                      {detail.documentId}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 border border-brand-200 dark:border-brand-900/40">
-                      {String(detail.header?.statusName || (detail.header?.isLocked ? "Đã khóa" : "Đang mở"))}
-                    </span>
-                    {menuActs.length > 0 && (
+                {/* THẺ THÔNG TIN CHUNG CHỨNG TỪ (Unified Card following Inbound Standard) */}
+                <div className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 shadow-xs space-y-3">
+                  <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-neutral-100 dark:border-neutral-800">
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-400">
+                        Mã chứng từ
+                      </span>
+                      <p className="font-mono text-sm sm:text-base font-bold text-neutral-900 dark:text-white">
+                        {detail.documentId}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className={statusBadgeClass(
+                        (detail.header as Record<string, unknown> | undefined)?.statusId,
+                        detail.header?.statusName,
+                      )}>
+                        {String(detail.header?.statusName || (detail.header?.isLocked ? "Đã khóa" : "Đang mở"))}
+                      </span>
+                      {menuActs.length > 0 && (
                         <div className="relative">
                           <button
                             type="button"
@@ -1759,6 +2010,9 @@ export function TabErpScreen({
                                   const disabled =
                                     !act.enabled || Boolean(executingAction) || (editing && act.id !== "save");
                                   const danger = act.id === "delete";
+                                  const reason = disabled && !act.enabled
+                                    ? getActionReasonMessage(act.reason)
+                                    : "";
                                   return (
                                     <button
                                       key={act.id}
@@ -1766,11 +2020,10 @@ export function TabErpScreen({
                                       disabled={disabled}
                                       title={getActionReasonMessage(act.reason) || undefined}
                                       onClick={() => handleMenuClick(act)}
-                                      className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-left transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                                        danger
+                                      className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-left transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${danger
                                           ? "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
                                           : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                                      } ${deleteArmed && danger ? "bg-red-50 dark:bg-red-950/40" : ""}`}
+                                        } ${deleteArmed && danger ? "bg-red-50 dark:bg-red-950/40" : ""}`}
                                     >
                                       {act.id === "save" ? (
                                         <Pencil className="size-4" />
@@ -1783,7 +2036,14 @@ export function TabErpScreen({
                                       ) : (
                                         <Send className="size-4" />
                                       )}
-                                      <span className="flex-1">{menuLabel(act)}</span>
+                                      <span className="flex-1">
+                                        <span className="block">{menuLabel(act)}</span>
+                                        {reason ? (
+                                          <span className="block text-[10px] font-normal text-neutral-400 dark:text-neutral-500">
+                                            {reason}
+                                          </span>
+                                        ) : null}
+                                      </span>
                                     </button>
                                   );
                                 })}
@@ -1792,678 +2052,405 @@ export function TabErpScreen({
                           )}
                         </div>
                       )}
+                    </div>
                   </div>
-                </div>
 
-                {/* Tên đối tượng / Khách hàng / Nhà cung cấp (Bố trí trọn dòng) */}
-                {Boolean(
-                  detail.header?.objectName ||
+                  {/* Tên đối tượng / Khách hàng / Nhà cung cấp (Bố trí trọn dòng) */}
+                  {Boolean(
+                    detail.header?.objectName ||
                     detail.header?.personSuggest ||
                     detail.header?.customerName ||
                     detail.header?.vendorName
-                ) && (
-                  <div className="py-2 border-b border-neutral-100 dark:border-neutral-800/60">
-                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold block mb-1">
-                      Đối tượng / Khách hàng / Nhà cung cấp
-                    </span>
-                    <p className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-white leading-relaxed break-words">
-                      {String(
-                        detail.header?.objectName ||
-                          detail.header?.personSuggest ||
-                          detail.header?.customerName ||
-                          detail.header?.vendorName
-                      )}
-                    </p>
-                  </div>
-                )}
+                  ) && (
+                      <div className="py-2 border-b border-neutral-100 dark:border-neutral-800/60">
+                        <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold block mb-1">
+                          Đối tượng / Khách hàng / Nhà cung cấp
+                        </span>
+                        <p className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-white leading-relaxed break-words">
+                          {String(
+                            detail.header?.objectName ||
+                            detail.header?.personSuggest ||
+                            detail.header?.customerName ||
+                            detail.header?.vendorName
+                          )}
+                        </p>
+                      </div>
+                    )}
 
-                {/* Chi tiết thuộc tính Header */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs pt-1">
-                  {(() => {
-                    const headerKeys = Object.keys(detail.header || {});
-                    // Render the full known field set in both modes: the
-                    // backend omits null fields, but empty rows ("—") tell
-                    // the reader the field exists. Edit mode additionally
-                    // covers editable keys missing from the payload.
-                    const saveKeys = ((SAVE_HEADER_BY_MODULE[module] ?? []) as readonly string[]);
-                    const editKeys = editableHeaderKeys(module) as readonly string[];
-                    // Edit mode renders every known key even when the backend
-                    // omits null fields; view mode hides empties (no "—" rows).
-                    const keys = [...headerKeys];
-                    for (const k of [...saveKeys, ...(editing ? editKeys : [])]) {
-                      if (!keys.includes(k)) keys.push(k);
-                    }
-                    return keys.map((key) => {
-                      const value = (detail.header as Record<string, unknown> | undefined)?.[key];
-                    const isEditKey = editing && editKeys.includes(key);
-                    const isEmpty = value === null || value === undefined || value === "";
-                    if (isEmpty && !isEditKey) return null;
-                    if (typeof value === "object" && value !== null) return null;
-                    if (isTechnicalField(key)) return null;
-                    if (
-                      key === "objectName" ||
-                      key === "customerName" ||
-                      key === "vendorName" ||
-                      key === "statusName" ||
-                      key === "documentId" ||
-                      key === "isLocked"
-                    )
-                      return null;
-                    const headerObj = (detail.header || {}) as Record<string, unknown>;
-                    // personSuggest doubles as the top identity block: keep a
-                    // dedicated row when objectName takes that slot (or while
-                    // editing, where it renders its dropdown).
-                    if (key === "personSuggest" && !headerObj.objectName && !editing) return null;
-                    // Rate is read-only and shown under its currency while editing.
-                    if (key === "rateExchange" && editing) return null;
-                    // Prefer resolved names over raw ids/codes.
-                    if (key === "statusId" && headerObj.statusName) return null;
-                    // purposeId edits through its own dropdown while editing;
-                    // otherwise the resolved name row covers it.
-                    if (key === "purposeId" && headerObj.purposeName && !editing) return null;
-                    if (key === "purposeName" && editing) return null;
-                    // objectId edits through its own dropdown while editing;
-                    // otherwise the top identity block already shows the name.
-                    if (key === "objectId" && headerObj.objectName && !editing) return null;
-                    // Display companions duplicate the base field; the base
-                    // render already formats dates/numbers.
-                    if (key.endsWith("Display") && key.slice(0, -"Display".length) in headerObj)
-                      return null;
-                    if (key === "currencyName" && "currencyId" in headerObj) return null;
+                  {/* Chi tiết thuộc tính Header */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs pt-1">
+                    {(() => {
+                      const headerKeys = Object.keys(detail.header || {});
+                      // Render the full known field set in both modes: the
+                      // backend omits null fields, but empty rows ("—") tell
+                      // the reader the field exists. Edit mode additionally
+                      // covers editable keys missing from the payload.
+                      const saveKeys = ((SAVE_HEADER_BY_MODULE[module] ?? []) as readonly string[]);
+                      const editKeys = editableHeaderKeys(module) as readonly string[];
+                      // Edit mode renders every known key even when the backend
+                      // omits null fields; view mode hides empties (no "—" rows).
+                      const keys = [...headerKeys];
+                      for (const k of [...saveKeys, ...(editing ? editKeys : [])]) {
+                        if (!keys.includes(k)) keys.push(k);
+                      }
+                      return keys.map((key) => {
+                        const value = (detail.header as Record<string, unknown> | undefined)?.[key];
+                        const isEditKey = editing && editKeys.includes(key);
+                        const isEmpty = value === null || value === undefined || value === "";
+                        if (isEmpty && !isEditKey) return null;
+                        if (typeof value === "object" && value !== null) return null;
+                        if (isTechnicalField(key)) return null;
+                        if (
+                          key === "objectName" ||
+                          key === "customerName" ||
+                          key === "vendorName" ||
+                          key === "statusName" ||
+                          key === "documentId" ||
+                          key === "isLocked"
+                        )
+                          return null;
+                        const headerObj = (detail.header || {}) as Record<string, unknown>;
+                        // personSuggest doubles as the top identity block: keep a
+                        // dedicated row when objectName takes that slot (or while
+                        // editing, where it renders its dropdown).
+                        if (key === "personSuggest" && !headerObj.objectName && !editing) return null;
+                        // Rate is read-only and shown under its currency while editing.
+                        if (key === "rateExchange" && editing) return null;
+                        // Prefer resolved names over raw ids/codes.
+                        if (key === "statusId" && headerObj.statusName) return null;
+                        // purposeId edits through its own dropdown while editing;
+                        // otherwise the resolved name row covers it.
+                        if (key === "purposeId" && headerObj.purposeName && !editing) return null;
+                        if (key === "purposeName" && editing) return null;
+                        // objectId edits through its own dropdown while editing;
+                        // otherwise the top identity block already shows the name.
+                        if (key === "objectId" && headerObj.objectName && !editing) return null;
+                        // Display companions duplicate the base field; the base
+                        // render already formats dates/numbers.
+                        if (key.endsWith("Display") && key.slice(0, -"Display".length) in headerObj)
+                          return null;
+                        if (key === "currencyName" && "currencyId" in headerObj) return null;
 
-                    const displayVal =
-                      key.toLowerCase().includes("date") || key.toLowerCase().includes("time")
-                        ? formatVietnamDate(value)
-                        : String(value);
+                        const displayVal =
+                          key.toLowerCase().includes("date") || key.toLowerCase().includes("time")
+                            ? formatVietnamDate(value)
+                            : String(value);
 
-                    if (editing && (editableHeaderKeys(module) as readonly string[]).includes(key)) {
-                      const lookupId = editLookupId(module, key);
-                      if (lookupId) {
-                        const selected = editChoices[key] ?? null;
-                        const isMultiKey = key === "personSuggest" || key === "department";
-                        const multiSelected: ErpChoice[] | undefined = isMultiKey
-                          ? (editMulti[key] ?? (editHeader[key] ?? "")
-                              .split(",")
-                              .map((s) => s.trim())
-                              .filter(Boolean)
-                              .map((s) => ({ id: s, label: s }) as ErpChoice))
-                          : undefined;
-                        const knownName =
-                          key === "objectId" && typeof headerObj.objectName === "string"
-                            ? headerObj.objectName
-                            : key === "purposeId" && typeof headerObj.purposeName === "string"
-                              ? headerObj.purposeName
-                              : "";
+                        if (editing && (editableHeaderKeys(module) as readonly string[]).includes(key)) {
+                          const lookupId = editLookupId(module, key);
+                          if (lookupId) {
+                            const selected = editChoices[key] ?? null;
+                            const isMultiKey = key === "personSuggest" || key === "department";
+                            const multiSelected: ErpChoice[] | undefined = isMultiKey
+                              ? (editMulti[key] ?? (editHeader[key] ?? "")
+                                .split(",")
+                                .map((s) => s.trim())
+                                .filter(Boolean)
+                                .map((s) => ({ id: s, label: s }) as ErpChoice))
+                              : undefined;
+                            const knownName =
+                              key === "objectId" && typeof headerObj.objectName === "string"
+                                ? headerObj.objectName
+                                : key === "purposeId" && typeof headerObj.purposeName === "string"
+                                  ? headerObj.purposeName
+                                  : "";
+                            return (
+                              <div
+                                key={key}
+                                className="flex flex-col py-1"
+                              >
+                                <LookupField
+                                  label={getFieldLabel(key)}
+                                  required={(requiredEditKeys(module) as readonly string[]).includes(key)}
+                                  module={module}
+                                  lookupId={lookupId}
+                                  branchId={currentBranch}
+                                  value={editHeader[key] ?? ""}
+                                  choice={selected}
+                                  displayValue={knownName || undefined}
+                                  compact
+                                  multiple={isMultiKey || undefined}
+                                  selected={multiSelected}
+                                  onMultiSelect={
+                                    isMultiKey
+                                      ? (cs) => {
+                                        setEditMulti((prev) => ({ ...prev, [key]: cs }));
+                                        setEditHeader((prev) => ({
+                                          ...prev,
+                                          [key]: cs.map((c) => c.id).join(", "),
+                                        }));
+                                      }
+                                      : undefined
+                                  }
+                                  onSelect={(c) => {
+                                    setEditHeader((prev) => ({ ...prev, [key]: c ? c.id : "" }));
+                                    setEditChoices((prev) => ({ ...prev, [key]: c }));
+                                    if (key === "currencyId") {
+                                      const rate = c?.fields?.["RateExchange"];
+                                      setEditRate(
+                                        typeof rate === "number" && Number.isFinite(rate) && rate > 0
+                                          ? String(rate)
+                                          : null
+                                      );
+                                    }
+                                  }}
+                                />
+                                {key === "currencyId" && (
+                                  <p className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400">
+                                    <span className="font-semibold">Tỷ giá:</span>{" "}
+                                    {editRate ?? String(headerObj.rateExchange ?? "—")} (tự động theo loại tiền)
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          }
+                          const isDate = key.toLowerCase().includes("date");
+                          return (
+                            <div
+                              key={key}
+                              className="flex flex-col py-1"
+                            >
+                              <span className="text-[10px] text-brand-600 dark:text-brand-400 font-medium">
+                                {getFieldLabel(key)}
+                              </span>
+                              <input
+                                type={isDate ? "date" : "text"}
+                                value={editHeader[key] ?? ""}
+                                onChange={(e) =>
+                                  setEditHeader((prev) => ({ ...prev, [key]: e.target.value }))
+                                }
+                                className="mt-0.5 p-1.5 rounded-lg border border-brand-300 dark:border-brand-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
+                              />
+                            </div>
+                          );
+                        }
+
                         return (
                           <div
                             key={key}
-                            className="flex flex-col py-1"
+                            className="flex flex-col py-1 border-b border-neutral-100 dark:border-neutral-800/60"
                           >
-                            <LookupField
-                              label={getFieldLabel(key)}
-                              required={(requiredEditKeys(module) as readonly string[]).includes(key)}
-                              module={module}
-                              lookupId={lookupId}
-                              branchId={currentBranch}
-                              value={editHeader[key] ?? ""}
-                              choice={selected}
-                              displayValue={knownName || undefined}
-                              compact
-                              multiple={isMultiKey || undefined}
-                              selected={multiSelected}
-                              onMultiSelect={
-                                isMultiKey
-                                  ? (cs) => {
-                                      setEditMulti((prev) => ({ ...prev, [key]: cs }));
-                                      setEditHeader((prev) => ({
-                                        ...prev,
-                                        [key]: cs.map((c) => c.id).join(", "),
-                                      }));
-                                    }
-                                  : undefined
-                              }
-                              onSelect={(c) => {
-                                setEditHeader((prev) => ({ ...prev, [key]: c ? c.id : "" }));
-                                setEditChoices((prev) => ({ ...prev, [key]: c }));
-                                if (key === "currencyId") {
-                                  const rate = c?.fields?.["RateExchange"];
-                                  setEditRate(
-                                    typeof rate === "number" && Number.isFinite(rate) && rate > 0
-                                      ? String(rate)
-                                      : null
-                                  );
-                                }
-                              }}
-                            />
-                            {key === "currencyId" && (
-                              <p className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400">
-                                <span className="font-semibold">Tỷ giá:</span>{" "}
-                                {editRate ?? String(headerObj.rateExchange ?? "—")} (tự động theo loại tiền)
-                              </p>
-                            )}
+                            <span className="text-[10px] text-neutral-400 font-medium">{getFieldLabel(key)}</span>
+                            <span className="text-neutral-800 dark:text-neutral-200 font-semibold break-all">
+                              {displayVal}
+                            </span>
                           </div>
                         );
-                      }
-                      const isDate = key.toLowerCase().includes("date");
-                      return (
-                        <div
-                          key={key}
-                          className="flex flex-col py-1"
-                        >
-                          <span className="text-[10px] text-brand-600 dark:text-brand-400 font-medium">
-                            {getFieldLabel(key)}
-                          </span>
-                          <input
-                            type={isDate ? "date" : "text"}
-                            value={editHeader[key] ?? ""}
-                            onChange={(e) =>
-                              setEditHeader((prev) => ({ ...prev, [key]: e.target.value }))
-                            }
-                            className="mt-0.5 p-1.5 rounded-lg border border-brand-300 dark:border-brand-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
-                          />
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div
-                        key={key}
-                        className="flex flex-col py-1 border-b border-neutral-100 dark:border-neutral-800/60"
-                      >
-                        <span className="text-[10px] text-neutral-400 font-medium">{getFieldLabel(key)}</span>
-                        <span className="text-neutral-800 dark:text-neutral-200 font-semibold break-all">
-                          {displayVal}
-                        </span>
-                      </div>
-                    );
-                    });
-                  })()}
-                </div>
-                {editing && (
-                  <div className="flex gap-2 pt-1">
-                    <UntitledButton
-                      variant="primary"
-                      size="md"
-                      onClick={handleSaveHeader}
-                      disabled={executingAction === "save"}
-                      iconLeading={<CheckCircle2 className="size-4" />}
-                    >
-                      {executingAction === "save" ? "Đang lưu..." : "Lưu thay đổi"}
-                    </UntitledButton>
-                    <UntitledButton variant="secondary-gray" size="md" onClick={() => setEditing(false)}>
-                      Hủy sửa
-                    </UntitledButton>
+                      });
+                    })()}
                   </div>
-                )}
-              </div>
-
-              {/* Lines Table */}
-              <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4 bg-white dark:bg-neutral-900">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-xs font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider">
-                    Dòng hàng chi tiết ({detail.lines?.rows?.length || 0})
-                  </h4>
-                  <span className="text-[10px] text-neutral-400 font-medium">
-                    Trang {detail.lines?.page || 1}
-                  </span>
-                </div>
-                {detail.lines?.rows?.length === 0 ? (
-                  <p className="text-xs text-neutral-400 py-3 text-center">Chứng từ chưa có dòng hàng nào.</p>
-                ) : editing && (saveLineKeys(module) as readonly string[]).length > 0 ? (
-                  <>
-                    {/* Mobile: editable line cards */}
-                    <div className="space-y-2 md:hidden">
-                      {(detail.lines.rows || []).map((row, idx) => {
-                        const f = ((row as { fields?: unknown }).fields || row || {}) as Record<string, unknown>;
-                        const d = editLines[row.lineId] || {};
-                        const set = (k: string, v: string) => patchEditLine(row.lineId, k, v);
-                        const lineKeys = saveLineKeys(module) as readonly string[];
-                        const extras = ["model", "budget", "timeRequired", "notes"].filter((k) =>
-                          lineKeys.includes(k)
-                        );
-                        const q = (d.quantity ?? "").trim();
-                        const p = (d.unitPrice ?? "").trim();
-                        const live =
-                          /^\d+(\.\d+)?$/.test(q) && /^\d+(\.\d+)?$/.test(p)
-                            ? Number(q) * Number(p)
-                            : null;
-                        const inputCls =
-                          "mt-0.5 p-1.5 rounded-lg border border-brand-300 dark:border-brand-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 w-full";
-                        const itemName = (f.itemName || f.name || "") as string;
-                        return (
-                          <div
-                            key={row.lineId}
-                            className="rounded-xl border border-brand-200 dark:border-brand-800/60 p-3 bg-white dark:bg-neutral-900 space-y-2.5"
-                          >
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-xs font-bold text-neutral-500">Dòng {idx + 1}</span>
-                            </div>
-                            <div>
-                              <label className="block text-[10px] text-brand-600 dark:text-brand-400 font-medium">
-                                Mã hàng <span className="text-red-500">*</span>
-                              </label>
-                              <input
-                                type="text"
-                                value={d.itemId ?? ""}
-                                onChange={(e) => set("itemId", e.target.value)}
-                                className={inputCls}
-                              />
-                            </div>
-                            {itemName && (
-                              <p className="text-[11px] text-neutral-500 dark:text-neutral-400">{itemName}</p>
-                            )}
-                            {extras.length > 0 && (
-                              <div className="grid grid-cols-1 gap-2.5">
-                                {extras.map((k) => (
-                                  <div key={k}>
-                                    <label className="block text-[10px] text-brand-600 dark:text-brand-400 font-medium">
-                                      {getFieldLabel(k)}
-                                    </label>
-                                    <input
-                                      type="text"
-                                      inputMode={k === "budget" ? "decimal" : "text"}
-                                      value={d[k] ?? ""}
-                                      onChange={(e) => set(k, e.target.value)}
-                                      className={inputCls}
-                                    />
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                            <div className="grid grid-cols-2 gap-2.5">
-                              <div>
-                                <label className="block text-[10px] text-brand-600 dark:text-brand-400 font-medium">
-                                  Số lượng <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                  type="text"
-                                  inputMode="decimal"
-                                  value={d.quantity ?? ""}
-                                  onChange={(e) => set("quantity", e.target.value)}
-                                  className={inputCls}
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-[10px] text-brand-600 dark:text-brand-400 font-medium">
-                                  Đơn giá <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                  type="text"
-                                  inputMode="decimal"
-                                  value={d.unitPrice ?? ""}
-                                  onChange={(e) => set("unitPrice", e.target.value)}
-                                  className={inputCls}
-                                />
-                              </div>
-                            </div>
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-[10px] text-neutral-400">Tổng giá</span>
-                              <span className="font-bold text-brand-700 dark:text-brand-300 font-mono">
-                                {live === null ? "—" : formatMoney(live, docCurrencyId(detail.header))}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
+                  {editing && (
+                    <div className="flex gap-2 pt-1">
+                      <UntitledButton
+                        variant="primary"
+                        size="md"
+                        onClick={handleSaveHeader}
+                        disabled={executingAction === "save"}
+                        iconLeading={<CheckCircle2 className="size-4" />}
+                      >
+                        {executingAction === "save" ? "Đang lưu..." : "Lưu thay đổi"}
+                      </UntitledButton>
+                      <UntitledButton variant="secondary-gray" size="md" onClick={() => setEditing(false)}>
+                        Hủy sửa
+                      </UntitledButton>
                     </div>
-                    {/* Desktop: editable line table */}
-                    <div className="overflow-x-auto hidden md:block">
-                      <table className="w-full text-left text-xs border-collapse">
-                        <thead>
-                          <tr className="border-b border-neutral-200 dark:border-neutral-800 text-[10px] text-neutral-400 uppercase">
-                            <th className="py-2 px-2.5">Mã hàng *</th>
-                            <th className="py-2 px-2.5">Tên hàng</th>
-                            {(saveLineKeys(module) as readonly string[])
-                              .filter((k) => ["model", "budget", "timeRequired", "notes"].includes(k))
-                              .map((k) => (
-                                <th key={k} className="py-2 px-2.5">
-                                  {getFieldLabel(k)}
-                                </th>
-                              ))}
-                            <th className="py-2 px-2.5">Số lượng *</th>
-                            <th className="py-2 px-2.5">Đơn giá *</th>
-                            <th className="py-2 px-2.5 text-right">Tổng giá</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                          {(detail.lines.rows || []).map((row) => {
-                            const f = ((row as { fields?: unknown }).fields || row || {}) as Record<string, unknown>;
-                            const d = editLines[row.lineId] || {};
-                            const set = (k: string, v: string) => patchEditLine(row.lineId, k, v);
-                            const cellInput =
-                              "mt-0.5 p-1.5 rounded-lg border border-brand-300 dark:border-brand-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 w-full min-w-20";
-                            const q = (d.quantity ?? "").trim();
-                            const p = (d.unitPrice ?? "").trim();
-                            const live =
-                              /^\d+(\.\d+)?$/.test(q) && /^\d+(\.\d+)?$/.test(p)
-                                ? Number(q) * Number(p)
-                                : null;
-                            const itemName = (f.itemName || f.name || "") as string;
-                            const unit = (f.unit || f.unit2 || "") as string;
-                            return (
-                              <tr key={row.lineId} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/40 align-top">
-                                <td className="py-2 px-2.5">
-                                  <input
-                                    type="text"
-                                    value={d.itemId ?? ""}
-                                    onChange={(e) => set("itemId", e.target.value)}
-                                    className={`${cellInput} font-mono`}
-                                  />
-                                </td>
-                                <td className="py-2.5 px-2.5 font-medium text-neutral-800 dark:text-neutral-200">
-                                  <div className="text-xs">{itemName || "—"}</div>
-                                  {unit && (
-                                    <div className="text-[10px] text-brand-600 dark:text-brand-400 font-medium">
-                                      ĐVT: {unit}
-                                    </div>
-                                  )}
-                                </td>
-                                {(saveLineKeys(module) as readonly string[])
-                                  .filter((k) => ["model", "budget", "timeRequired", "notes"].includes(k))
-                                  .map((k) => (
-                                    <td key={k} className="py-2 px-2.5">
+                  )}
+                </div>
+
+                {/* Lines Table */}
+                <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4 bg-white dark:bg-neutral-900">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-xs font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider">
+                      Dòng hàng chi tiết ({detail.lines?.rows?.length || 0})
+                    </h4>
+                    <span className="text-[10px] text-neutral-400 font-medium">
+                      Trang {detail.lines?.page || 1}
+                    </span>
+                  </div>
+                  {detail.lines?.rows?.length === 0 ? (
+                    <p className="text-xs text-neutral-400 py-3 text-center">Chứng từ chưa có dòng hàng nào.</p>
+                  ) : editing && (saveLineKeys(module) as readonly string[]).length > 0 ? (
+                    <>
+                      {/* Mobile: editable line cards */}
+                      <div className="space-y-2 md:hidden">
+                        {(detail.lines.rows || []).map((row, idx) => {
+                          const f = ((row as { fields?: unknown }).fields || row || {}) as Record<string, unknown>;
+                          const d = editLines[row.lineId] || {};
+                          const set = (k: string, v: string) => patchEditLine(row.lineId, k, v);
+                          const lineKeys = saveLineKeys(module) as readonly string[];
+                          const extras = ["model", "budget", "timeRequired", "notes"].filter((k) =>
+                            lineKeys.includes(k)
+                          );
+                          const q = (d.quantity ?? "").trim();
+                          const p = (d.unitPrice ?? "").trim();
+                          const live =
+                            /^\d+(\.\d+)?$/.test(q) && /^\d+(\.\d+)?$/.test(p)
+                              ? Number(q) * Number(p)
+                              : null;
+                          const inputCls =
+                            "mt-0.5 p-1.5 rounded-lg border border-brand-300 dark:border-brand-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 w-full";
+                          const itemName = (f.itemName || f.name || "") as string;
+                          return (
+                            <div
+                              key={row.lineId}
+                              className="rounded-xl border border-brand-200 dark:border-brand-800/60 p-3 bg-white dark:bg-neutral-900 space-y-2.5"
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs font-bold text-neutral-500">Dòng {idx + 1}</span>
+                              </div>
+                              <div>
+                                <label className="block text-[10px] text-brand-600 dark:text-brand-400 font-medium">
+                                  Mã hàng <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  value={d.itemId ?? ""}
+                                  onChange={(e) => set("itemId", e.target.value)}
+                                  className={inputCls}
+                                />
+                              </div>
+                              {itemName && (
+                                <p className="text-[11px] text-neutral-500 dark:text-neutral-400">{itemName}</p>
+                              )}
+                              {extras.length > 0 && (
+                                <div className="grid grid-cols-1 gap-2.5">
+                                  {extras.map((k) => (
+                                    <div key={k}>
+                                      <label className="block text-[10px] text-brand-600 dark:text-brand-400 font-medium">
+                                        {getFieldLabel(k)}
+                                      </label>
                                       <input
                                         type="text"
                                         inputMode={k === "budget" ? "decimal" : "text"}
                                         value={d[k] ?? ""}
                                         onChange={(e) => set(k, e.target.value)}
-                                        className={cellInput}
+                                        className={inputCls}
                                       />
-                                    </td>
+                                    </div>
                                   ))}
-                                <td className="py-2 px-2.5">
+                                </div>
+                              )}
+                              <div className="grid grid-cols-2 gap-2.5">
+                                <div>
+                                  <label className="block text-[10px] text-brand-600 dark:text-brand-400 font-medium">
+                                    Số lượng <span className="text-red-500">*</span>
+                                  </label>
                                   <input
                                     type="text"
                                     inputMode="decimal"
                                     value={d.quantity ?? ""}
                                     onChange={(e) => set("quantity", e.target.value)}
-                                    className={cellInput}
+                                    className={inputCls}
                                   />
-                                </td>
-                                <td className="py-2 px-2.5">
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] text-brand-600 dark:text-brand-400 font-medium">
+                                    Đơn giá <span className="text-red-500">*</span>
+                                  </label>
                                   <input
                                     type="text"
                                     inputMode="decimal"
                                     value={d.unitPrice ?? ""}
                                     onChange={(e) => set("unitPrice", e.target.value)}
-                                    className={cellInput}
+                                    className={inputCls}
                                   />
-                                </td>
-                                <td className="py-2.5 px-2.5 text-right font-bold text-brand-700 dark:text-brand-300 font-mono">
-                                  {live === null ? "—" : formatMoney(live, docCurrencyId(detail.header))}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    {/* Mobile: stacked cards instead of a wide scrollable table */}
-                    <div className="space-y-2 md:hidden">
-                      {detail.lines.rows.map((row, idx) => {
-                        const f = (row.fields || row || {}) as Record<string, unknown>;
-                        const itemCode = ((f.itemCode || f.itemId || f.assetId || "") as string) || "—";
-                        const itemName = (f.itemName || f.name || "") as string;
-                        const unit = (f.unit || f.unit2 || "") as string;
-                        const qty = (f.quantity || f.setQuantityByDocument || "") as string;
-                        const price = (f.unitPriceDisplay || f.unitPrice || "") as string;
-                        const total = lineTotalDisplay(f, docCurrencyId(detail.header));
-                        const lineNotes = (f.notes || "") as string;
-                        return (
-                          <div
-                            key={row.lineId}
-                            className="rounded-xl border border-neutral-200/80 dark:border-neutral-800 p-3 bg-neutral-50/50 dark:bg-neutral-950/40"
-                          >
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="font-mono text-xs font-bold text-neutral-900 dark:text-white truncate">
-                                {itemCode}
-                              </span>
-                              <span className="text-[10px] text-neutral-400 shrink-0">#{idx + 1}</span>
-                            </div>
-                            {itemName && (
-                              <p className="mt-0.5 text-xs text-neutral-600 dark:text-neutral-300 leading-relaxed break-words">
-                                {itemName}
-                              </p>
-                            )}
-                            {unit && <p className="text-[10px] text-brand-600 dark:text-brand-400 font-medium">ĐVT: {unit}</p>}
-                            {lineNotes && (
-                              <p className="mt-0.5 text-[11px] text-neutral-500 dark:text-neutral-400 italic break-words">
-                                {lineNotes}
-                              </p>
-                            )}
-                            {module === "purchase-requests" &&
-                              (((f.model || "") as string) ||
-                                ((f.budgetDisplay || f.budget || "") as string) ||
-                                ((f.timeRequired || "") as string)) && (
-                                <div className="mt-1.5 grid grid-cols-3 gap-2 text-xs">
-                                  <div className="min-w-0">
-                                    <p className="text-[10px] text-neutral-400">Model</p>
-                                    <p className="font-medium text-neutral-700 dark:text-neutral-300 break-all">
-                                      {(f.model as string) || "—"}
-                                    </p>
-                                  </div>
-                                  <div className="min-w-0">
-                                    <p className="text-[10px] text-neutral-400">Ngân sách</p>
-                                    <p className="font-mono text-neutral-700 dark:text-neutral-300 break-all">
-                                      {((f.budgetDisplay || f.budget || "") as string) || "—"}
-                                    </p>
-                                  </div>
-                                  <div className="min-w-0">
-                                    <p className="text-[10px] text-neutral-400">T.gian YC</p>
-                                    <p className="font-medium text-neutral-700 dark:text-neutral-300 break-all">
-                                      {(f.timeRequired as string) || "—"}
-                                    </p>
-                                  </div>
                                 </div>
-                              )}
-                            <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
-                              <div>
-                                <p className="text-[10px] text-neutral-400">Số lượng</p>
-                                <p className="font-semibold text-neutral-800 dark:text-neutral-200">
-                                  {formatVietnamNumber(qty) || qty || "—"}
-                                </p>
                               </div>
-                              <div>
-                                <p className="text-[10px] text-neutral-400">Đơn giá</p>
-                                <p className="font-mono text-neutral-700 dark:text-neutral-300">{price || "—"}</p>
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-[10px] text-neutral-400">Tổng giá</span>
+                                <span className="font-bold text-brand-700 dark:text-brand-300 font-mono">
+                                  {live === null ? "—" : formatMoney(live, docCurrencyId(detail.header))}
+                                </span>
                               </div>
                             </div>
-                            <div className="mt-1.5 pt-1.5 border-t border-neutral-200/70 dark:border-neutral-800 flex items-center justify-between">
-                              <span className="text-[10px] text-neutral-400">Tổng giá</span>
-                              <span className="text-xs font-bold text-brand-700 dark:text-brand-300 font-mono">
-                                {total || "—"}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {/* Desktop: full table */}
-                    <div className="overflow-x-auto hidden md:block">
-                      <table className="w-full text-left text-xs border-collapse">
-                        <thead>
-                          <tr className="border-b border-neutral-200 dark:border-neutral-800 text-[10px] text-neutral-400 uppercase">
-                            <th className="py-2 px-2.5">Mã hàng</th>
-                            <th className="py-2 px-2.5">Tên hàng</th>
-                            {module === "purchase-requests" && (
-                              <>
-                                <th className="py-2 px-2.5">Model</th>
-                                <th className="py-2 px-2.5">Ngân sách</th>
-                                <th className="py-2 px-2.5">Thời gian YC</th>
-                              </>
-                            )}
-                            <th className="py-2 px-2.5">Số lượng</th>
-                            <th className="py-2 px-2.5">Đơn giá</th>
-                            <th className="py-2 px-2.5 text-right">Tổng giá</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                          {detail.lines.rows.map((row) => {
-                            const f = (row.fields || row || {}) as Record<string, unknown>;
-                            const itemCode = (f.itemCode || f.itemId || f.assetId || "") as string;
-                            const itemName = (f.itemName || f.name || "") as string;
-                            const unit = (f.unit || f.unit2 || "") as string;
-                            const qty = (f.quantity || f.setQuantityByDocument || "") as string;
-                            const price = (f.unitPriceDisplay || f.unitPrice || "") as string;
-                            const total = lineTotalDisplay(f, docCurrencyId(detail.header));
-                            const lineNotes = (f.notes || "") as string;
-                            return (
-                              <tr key={row.lineId} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/40">
-                                <td className="py-2.5 px-2.5 font-mono text-xs font-bold text-neutral-900 dark:text-white">
-                                  {itemCode || "—"}
-                                </td>
-                                <td className="py-2.5 px-2.5 font-medium text-neutral-800 dark:text-neutral-200">
-                                  <div className="text-xs">{itemName || "—"}</div>
-                                  {unit && <div className="text-[10px] text-brand-600 dark:text-brand-400 font-medium">ĐVT: {unit}</div>}
-                                  {lineNotes && <div className="text-[11px] text-neutral-500 dark:text-neutral-400 italic">{lineNotes}</div>}
-                                </td>
-                                {module === "purchase-requests" && (
-                                  <>
-                                    <td className="py-2.5 px-2.5 text-neutral-700 dark:text-neutral-300">
-                                      {(f.model as string) || "—"}
-                                    </td>
-                                    <td className="py-2.5 px-2.5 text-neutral-700 dark:text-neutral-300 font-mono">
-                                      {((f.budgetDisplay || f.budget || "") as string) || "—"}
-                                    </td>
-                                    <td className="py-2.5 px-2.5 text-neutral-700 dark:text-neutral-300">
-                                      {(f.timeRequired as string) || "—"}
-                                    </td>
-                                  </>
-                                )}
-                                <td className="py-2.5 px-2.5 text-neutral-700 dark:text-neutral-300 font-semibold">
-                                  {formatVietnamNumber(qty) || qty || "—"}
-                                </td>
-                                <td className="py-2.5 px-2.5 text-neutral-700 dark:text-neutral-300 font-mono">
-                                  {price || "—"}
-                                </td>
-                                <td className="py-2.5 px-2.5 text-right font-bold text-brand-700 dark:text-brand-300 font-mono">
-                                  {total || "—"}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </>
-                )}
-                {(() => {
-                  const grand = sumLineTotals(detail.lines?.rows || []);
-                  const cur = docCurrencyId(detail.header);
-                  return grand !== null ? (
-                    <div className="mt-3 pt-2.5 border-t border-neutral-200 dark:border-neutral-800 flex items-center justify-between text-xs">
-                      <span className="font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Tổng cộng ({detail.lines?.rows?.length || 0} dòng)
-                      </span>
-                      <span className="font-bold text-brand-700 dark:text-brand-300 font-mono">
-                        {formatMoney(grand, cur)}{cur ? ` ${cur}` : ""}
-                      </span>
-                    </div>
-                  ) : null;
-                })()}
-                {detail.lines?.hasMore && (
-                  <div className="pt-3 text-center border-t border-neutral-100 dark:border-neutral-800/60 mt-3">
-                    <button
-                      type="button"
-                      onClick={handleLoadMoreLines}
-                      disabled={loadingMoreLines || editing}
-                      className="px-3.5 py-1.5 text-xs font-medium rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50"
-                    >
-                      {loadingMoreLines ? "Đang tải thêm..." : "Tải thêm dòng chi tiết..."}
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* QR Comparison Table (If comparison lines exist - uses canonical fields: itemId, lot, expireDate, storeHouseId, quantity) */}
-              {detail.comparison && detail.comparison.rows && detail.comparison.rows.length > 0 && (
-                <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4 bg-white dark:bg-neutral-900">
-                  <h4 className="text-xs font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider mb-2.5">
-                    Dòng đối chiếu hàng cần quét ({detail.comparison.rows.length})
-                  </h4>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="border-b border-neutral-200 dark:border-neutral-800 text-[10px] text-neutral-400 uppercase">
-                          <th className="py-2 px-2.5">Mã VT</th>
-                          <th className="py-2 px-2.5">Lô SX</th>
-                          <th className="py-2 px-2.5">Hạn dùng</th>
-                          <th className="py-2 px-2.5">Kho</th>
-                          <th className="py-2 px-2.5">Số lượng</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                        {detail.comparison.rows.map((row) => {
-                          const cf = (row.fields || row || {}) as Record<string, unknown>;
-                          const itemId = (cf.itemId || cf.itemCode || row.lineId || "") as string;
-                          const lot = (cf.lot || "") as string;
-                          const expDate = cf.expireDate ? formatVietnamDate(cf.expireDate) : "";
-                          const wh = (cf.storeHouseId || "") as string;
-                          const qty = cf.quantity != null ? String(cf.quantity) : "";
-                          return (
-                            <tr key={row.lineId} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/40">
-                              <td className="py-2 px-2.5 text-neutral-700 dark:text-neutral-300 font-medium font-mono">
-                                {itemId || "—"}
-                              </td>
-                              <td className="py-2 px-2.5 text-neutral-600 dark:text-neutral-400">
-                                {lot || "—"}
-                              </td>
-                              <td className="py-2 px-2.5 text-neutral-600 dark:text-neutral-400">
-                                {expDate || "—"}
-                              </td>
-                              <td className="py-2 px-2.5 text-neutral-600 dark:text-neutral-400">
-                                {wh || "—"}
-                              </td>
-                              <td className="py-2 px-2.5 text-neutral-700 dark:text-neutral-300 font-semibold font-mono">
-                                {qty ? formatVietnamNumber(qty) : "—"}
-                              </td>
-                            </tr>
                           );
                         })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-              {/* Extra Sections (costs, assets, etc.) */}
-              {detail.sections && Object.keys(detail.sections).length > 0 &&
-                Object.entries(detail.sections).map(([secKey, secPage]) => (
-                  <div key={secKey} className="rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4 bg-white dark:bg-neutral-900 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider">
-                        Phần {secKey === "costs" ? "Chi phí" : secKey === "assets" ? "Danh sách máy" : secKey} ({secPage?.rows?.length || 0})
-                      </h4>
-                      <span className="text-[10px] text-neutral-400 font-medium">
-                        Trang {secPage?.page || 1}
-                      </span>
-                    </div>
-                    {(!secPage || secPage.rows.length === 0) ? (
-                      <p className="text-xs text-neutral-400 py-2 text-center">Chưa có dữ liệu cho mục này.</p>
-                    ) : (
-                      <div className="overflow-x-auto">
+                      </div>
+                      {/* Desktop: editable line table */}
+                      <div className="overflow-x-auto hidden md:block">
                         <table className="w-full text-left text-xs border-collapse">
                           <thead>
                             <tr className="border-b border-neutral-200 dark:border-neutral-800 text-[10px] text-neutral-400 uppercase">
-                              <th className="py-2 px-2.5">Mã dòng</th>
-                              <th className="py-2 px-2.5">Thông tin chi tiết</th>
+                              <th className="py-2 px-2.5">Mã hàng *</th>
+                              <th className="py-2 px-2.5">Tên hàng</th>
+                              {(saveLineKeys(module) as readonly string[])
+                                .filter((k) => ["model", "budget", "timeRequired", "notes"].includes(k))
+                                .map((k) => (
+                                  <th key={k} className="py-2 px-2.5">
+                                    {getFieldLabel(k)}
+                                  </th>
+                                ))}
+                              <th className="py-2 px-2.5">Số lượng *</th>
+                              <th className="py-2 px-2.5">Đơn giá *</th>
+                              <th className="py-2 px-2.5 text-right">Tổng giá</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                            {secPage.rows.map((row) => {
-                              const rData = (row.fields || row || {}) as Record<string, unknown>;
+                            {(detail.lines.rows || []).map((row) => {
+                              const f = ((row as { fields?: unknown }).fields || row || {}) as Record<string, unknown>;
+                              const d = editLines[row.lineId] || {};
+                              const set = (k: string, v: string) => patchEditLine(row.lineId, k, v);
+                              const cellInput =
+                                "mt-0.5 p-1.5 rounded-lg border border-brand-300 dark:border-brand-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 w-full min-w-20";
+                              const q = (d.quantity ?? "").trim();
+                              const p = (d.unitPrice ?? "").trim();
+                              const live =
+                                /^\d+(\.\d+)?$/.test(q) && /^\d+(\.\d+)?$/.test(p)
+                                  ? Number(q) * Number(p)
+                                  : null;
+                              const itemName = (f.itemName || f.name || "") as string;
+                              const unit = (f.unit || f.unit2 || "") as string;
                               return (
-                                <tr key={row.lineId} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/40">
-                                  <td className="py-2 px-2.5 font-mono text-[11px] text-neutral-400">{row.lineId}</td>
-                                  <td className="py-2 px-2.5 text-neutral-800 dark:text-neutral-200">
-                                    {Object.entries(rData).filter(([k]) => !isTechnicalField(k)).map(([k, v]) => (
-                                      <span key={k} className="inline-block mr-3 mb-1">
-                                        <span className="text-neutral-400 text-[10px] mr-1">{getFieldLabel(k)}:</span>
-                                        <span className="font-semibold text-xs">{String(v ?? "—")}</span>
-                                      </span>
+                                <tr key={row.lineId} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/40 align-top">
+                                  <td className="py-2 px-2.5">
+                                    <input
+                                      type="text"
+                                      value={d.itemId ?? ""}
+                                      onChange={(e) => set("itemId", e.target.value)}
+                                      className={`${cellInput} font-mono`}
+                                    />
+                                  </td>
+                                  <td className="py-2.5 px-2.5 font-medium text-neutral-800 dark:text-neutral-200">
+                                    <div className="text-xs">{itemName || "—"}</div>
+                                    {unit && (
+                                      <div className="text-[10px] text-brand-600 dark:text-brand-400 font-medium">
+                                        ĐVT: {unit}
+                                      </div>
+                                    )}
+                                  </td>
+                                  {(saveLineKeys(module) as readonly string[])
+                                    .filter((k) => ["model", "budget", "timeRequired", "notes"].includes(k))
+                                    .map((k) => (
+                                      <td key={k} className="py-2 px-2.5">
+                                        <input
+                                          type="text"
+                                          inputMode={k === "budget" ? "decimal" : "text"}
+                                          value={d[k] ?? ""}
+                                          onChange={(e) => set(k, e.target.value)}
+                                          className={cellInput}
+                                        />
+                                      </td>
                                     ))}
+                                  <td className="py-2 px-2.5">
+                                    <input
+                                      type="text"
+                                      inputMode="decimal"
+                                      value={d.quantity ?? ""}
+                                      onChange={(e) => set("quantity", e.target.value)}
+                                      className={cellInput}
+                                    />
+                                  </td>
+                                  <td className="py-2 px-2.5">
+                                    <input
+                                      type="text"
+                                      inputMode="decimal"
+                                      value={d.unitPrice ?? ""}
+                                      onChange={(e) => set("unitPrice", e.target.value)}
+                                      className={cellInput}
+                                    />
+                                  </td>
+                                  <td className="py-2.5 px-2.5 text-right font-bold text-brand-700 dark:text-brand-300 font-mono">
+                                    {live === null ? "—" : formatMoney(live, docCurrencyId(detail.header))}
                                   </td>
                                 </tr>
                               );
@@ -2471,10 +2458,284 @@ export function TabErpScreen({
                           </tbody>
                         </table>
                       </div>
-                    )}
+                    </>
+                  ) : (
+                    <>
+                      {/* Mobile: stacked cards instead of a wide scrollable table */}
+                      <div className="space-y-2 md:hidden">
+                        {detail.lines.rows.map((row, idx) => {
+                          const f = (row.fields || row || {}) as Record<string, unknown>;
+                          const itemCode = ((f.itemCode || f.itemId || f.assetId || "") as string) || "—";
+                          const itemName = (f.itemName || f.name || "") as string;
+                          const unit = (f.unit || f.unit2 || "") as string;
+                          const qty = (f.quantity || f.setQuantityByDocument || "") as string;
+                          const price = (f.unitPriceDisplay || f.unitPrice || "") as string;
+                          const total = lineTotalDisplay(f, docCurrencyId(detail.header));
+                          const lineNotes = (f.notes || "") as string;
+                          return (
+                            <div
+                              key={row.lineId}
+                              className="rounded-xl border border-neutral-200/80 dark:border-neutral-800 p-3 bg-neutral-50/50 dark:bg-neutral-950/40"
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="font-mono text-xs font-bold text-neutral-900 dark:text-white truncate">
+                                  {itemCode}
+                                </span>
+                                <span className="text-[10px] text-neutral-400 shrink-0">#{idx + 1}</span>
+                              </div>
+                              {itemName && (
+                                <p className="mt-0.5 text-xs text-neutral-600 dark:text-neutral-300 leading-relaxed break-words">
+                                  {itemName}
+                                </p>
+                              )}
+                              {unit && <p className="text-[10px] text-brand-600 dark:text-brand-400 font-medium">ĐVT: {unit}</p>}
+                              {lineNotes && (
+                                <p className="mt-0.5 text-[11px] text-neutral-500 dark:text-neutral-400 italic break-words">
+                                  {lineNotes}
+                                </p>
+                              )}
+                              {module === "purchase-requests" &&
+                                (((f.model || "") as string) ||
+                                  ((f.budgetDisplay || f.budget || "") as string) ||
+                                  ((f.timeRequired || "") as string)) && (
+                                  <div className="mt-1.5 grid grid-cols-3 gap-2 text-xs">
+                                    <div className="min-w-0">
+                                      <p className="text-[10px] text-neutral-400">Model</p>
+                                      <p className="font-medium text-neutral-700 dark:text-neutral-300 break-all">
+                                        {(f.model as string) || "—"}
+                                      </p>
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="text-[10px] text-neutral-400">Ngân sách</p>
+                                      <p className="font-mono text-neutral-700 dark:text-neutral-300 break-all">
+                                        {((f.budgetDisplay || f.budget || "") as string) || "—"}
+                                      </p>
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="text-[10px] text-neutral-400">T.gian YC</p>
+                                      <p className="font-medium text-neutral-700 dark:text-neutral-300 break-all">
+                                        {(f.timeRequired as string) || "—"}
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
+                              <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                                <div>
+                                  <p className="text-[10px] text-neutral-400">Số lượng</p>
+                                  <p className="font-semibold text-neutral-800 dark:text-neutral-200">
+                                    {formatVietnamNumber(qty) || qty || "—"}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] text-neutral-400">Đơn giá</p>
+                                  <p className="font-mono text-neutral-700 dark:text-neutral-300">{price || "—"}</p>
+                                </div>
+                              </div>
+                              <div className="mt-1.5 pt-1.5 border-t border-neutral-200/70 dark:border-neutral-800 flex items-center justify-between">
+                                <span className="text-[10px] text-neutral-400">Tổng giá</span>
+                                <span className="text-xs font-bold text-brand-700 dark:text-brand-300 font-mono">
+                                  {total || "—"}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {/* Desktop: full table */}
+                      <div className="overflow-x-auto hidden md:block">
+                        <table className="w-full text-left text-xs border-collapse">
+                          <thead>
+                            <tr className="border-b border-neutral-200 dark:border-neutral-800 text-[10px] text-neutral-400 uppercase">
+                              <th className="py-2 px-2.5">Mã hàng</th>
+                              <th className="py-2 px-2.5">Tên hàng</th>
+                              {module === "purchase-requests" && (
+                                <>
+                                  <th className="py-2 px-2.5">Model</th>
+                                  <th className="py-2 px-2.5">Ngân sách</th>
+                                  <th className="py-2 px-2.5">Thời gian YC</th>
+                                </>
+                              )}
+                              <th className="py-2 px-2.5">Số lượng</th>
+                              <th className="py-2 px-2.5">Đơn giá</th>
+                              <th className="py-2 px-2.5 text-right">Tổng giá</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                            {detail.lines.rows.map((row) => {
+                              const f = (row.fields || row || {}) as Record<string, unknown>;
+                              const itemCode = (f.itemCode || f.itemId || f.assetId || "") as string;
+                              const itemName = (f.itemName || f.name || "") as string;
+                              const unit = (f.unit || f.unit2 || "") as string;
+                              const qty = (f.quantity || f.setQuantityByDocument || "") as string;
+                              const price = (f.unitPriceDisplay || f.unitPrice || "") as string;
+                              const total = lineTotalDisplay(f, docCurrencyId(detail.header));
+                              const lineNotes = (f.notes || "") as string;
+                              return (
+                                <tr key={row.lineId} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/40">
+                                  <td className="py-2.5 px-2.5 font-mono text-xs font-bold text-neutral-900 dark:text-white">
+                                    {itemCode || "—"}
+                                  </td>
+                                  <td className="py-2.5 px-2.5 font-medium text-neutral-800 dark:text-neutral-200">
+                                    <div className="text-xs">{itemName || "—"}</div>
+                                    {unit && <div className="text-[10px] text-brand-600 dark:text-brand-400 font-medium">ĐVT: {unit}</div>}
+                                    {lineNotes && <div className="text-[11px] text-neutral-500 dark:text-neutral-400 italic">{lineNotes}</div>}
+                                  </td>
+                                  {module === "purchase-requests" && (
+                                    <>
+                                      <td className="py-2.5 px-2.5 text-neutral-700 dark:text-neutral-300">
+                                        {(f.model as string) || "—"}
+                                      </td>
+                                      <td className="py-2.5 px-2.5 text-neutral-700 dark:text-neutral-300 font-mono">
+                                        {((f.budgetDisplay || f.budget || "") as string) || "—"}
+                                      </td>
+                                      <td className="py-2.5 px-2.5 text-neutral-700 dark:text-neutral-300">
+                                        {(f.timeRequired as string) || "—"}
+                                      </td>
+                                    </>
+                                  )}
+                                  <td className="py-2.5 px-2.5 text-neutral-700 dark:text-neutral-300 font-semibold">
+                                    {formatVietnamNumber(qty) || qty || "—"}
+                                  </td>
+                                  <td className="py-2.5 px-2.5 text-neutral-700 dark:text-neutral-300 font-mono">
+                                    {price || "—"}
+                                  </td>
+                                  <td className="py-2.5 px-2.5 text-right font-bold text-brand-700 dark:text-brand-300 font-mono">
+                                    {total || "—"}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  )}
+                  {(() => {
+                    const grand = sumLineTotals(detail.lines?.rows || []);
+                    const cur = docCurrencyId(detail.header);
+                    return grand !== null ? (
+                      <div className="mt-3 pt-2.5 border-t border-neutral-200 dark:border-neutral-800 flex items-center justify-between text-xs">
+                        <span className="font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Tổng cộng ({detail.lines?.rows?.length || 0} dòng)
+                        </span>
+                        <span className="font-bold text-brand-700 dark:text-brand-300 font-mono">
+                          {formatMoney(grand, cur)}{cur ? ` ${cur}` : ""}
+                        </span>
+                      </div>
+                    ) : null;
+                  })()}
+                  {detail.lines?.hasMore && (
+                    <div className="pt-3 text-center border-t border-neutral-100 dark:border-neutral-800/60 mt-3">
+                      <button
+                        type="button"
+                        onClick={handleLoadMoreLines}
+                        disabled={loadingMoreLines || editing}
+                        className="px-3.5 py-1.5 text-xs font-medium rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50"
+                      >
+                        {loadingMoreLines ? "Đang tải thêm..." : "Tải thêm dòng chi tiết..."}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* QR Comparison Table (If comparison lines exist - uses canonical fields: itemId, lot, expireDate, storeHouseId, quantity) */}
+                {detail.comparison && detail.comparison.rows && detail.comparison.rows.length > 0 && (
+                  <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4 bg-white dark:bg-neutral-900">
+                    <h4 className="text-xs font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider mb-2.5">
+                      Dòng đối chiếu hàng cần quét ({detail.comparison.rows.length})
+                    </h4>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="border-b border-neutral-200 dark:border-neutral-800 text-[10px] text-neutral-400 uppercase">
+                            <th className="py-2 px-2.5">Mã VT</th>
+                            <th className="py-2 px-2.5">Lô SX</th>
+                            <th className="py-2 px-2.5">Hạn dùng</th>
+                            <th className="py-2 px-2.5">Kho</th>
+                            <th className="py-2 px-2.5">Số lượng</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                          {detail.comparison.rows.map((row) => {
+                            const cf = (row.fields || row || {}) as Record<string, unknown>;
+                            const itemId = (cf.itemId || cf.itemCode || row.lineId || "") as string;
+                            const lot = (cf.lot || "") as string;
+                            const expDate = cf.expireDate ? formatVietnamDate(cf.expireDate) : "";
+                            const wh = (cf.storeHouseId || "") as string;
+                            const qty = cf.quantity != null ? String(cf.quantity) : "";
+                            return (
+                              <tr key={row.lineId} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/40">
+                                <td className="py-2 px-2.5 text-neutral-700 dark:text-neutral-300 font-medium font-mono">
+                                  {itemId || "—"}
+                                </td>
+                                <td className="py-2 px-2.5 text-neutral-600 dark:text-neutral-400">
+                                  {lot || "—"}
+                                </td>
+                                <td className="py-2 px-2.5 text-neutral-600 dark:text-neutral-400">
+                                  {expDate || "—"}
+                                </td>
+                                <td className="py-2 px-2.5 text-neutral-600 dark:text-neutral-400">
+                                  {wh || "—"}
+                                </td>
+                                <td className="py-2 px-2.5 text-neutral-700 dark:text-neutral-300 font-semibold font-mono">
+                                  {qty ? formatVietnamNumber(qty) : "—"}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                ))}
-            </>
+                )}
+                {/* Extra Sections (costs, assets, etc.) */}
+                {detail.sections && Object.keys(detail.sections).length > 0 &&
+                  Object.entries(detail.sections).map(([secKey, secPage]) => (
+                    <div key={secKey} className="rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4 bg-white dark:bg-neutral-900 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider">
+                          Phần {secKey === "costs" ? "Chi phí" : secKey === "assets" ? "Danh sách máy" : secKey} ({secPage?.rows?.length || 0})
+                        </h4>
+                        <span className="text-[10px] text-neutral-400 font-medium">
+                          Trang {secPage?.page || 1}
+                        </span>
+                      </div>
+                      {(!secPage || secPage.rows.length === 0) ? (
+                        <p className="text-xs text-neutral-400 py-2 text-center">Chưa có dữ liệu cho mục này.</p>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left text-xs border-collapse">
+                            <thead>
+                              <tr className="border-b border-neutral-200 dark:border-neutral-800 text-[10px] text-neutral-400 uppercase">
+                                <th className="py-2 px-2.5">Mã dòng</th>
+                                <th className="py-2 px-2.5">Thông tin chi tiết</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                              {secPage.rows.map((row) => {
+                                const rData = (row.fields || row || {}) as Record<string, unknown>;
+                                return (
+                                  <tr key={row.lineId} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/40">
+                                    <td className="py-2 px-2.5 font-mono text-[11px] text-neutral-400">{row.lineId}</td>
+                                    <td className="py-2 px-2.5 text-neutral-800 dark:text-neutral-200">
+                                      {Object.entries(rData).filter(([k]) => !isTechnicalField(k)).map(([k, v]) => (
+                                        <span key={k} className="inline-block mr-3 mb-1">
+                                          <span className="text-neutral-400 text-[10px] mr-1">{getFieldLabel(k)}:</span>
+                                          <span className="font-semibold text-xs">{String(v ?? "—")}</span>
+                                        </span>
+                                      ))}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+              </>
+            )
           ) : null}
         </div>
       </UntitledBottomSheet>
@@ -2583,24 +2844,22 @@ export function TabErpScreen({
               />
             </div>
 
-            {module !== "internal-transfer-batches" && (
+            {module !== "internal-transfer-batches" && module !== "sales-orders" && (
               <div>
                 <label className="block text-neutral-500 mb-1 font-medium">
                   {module === "purchase-requests"
                     ? "Người đề xuất (*):"
-                    : module === "sales-orders"
-                    ? "Mã khách hàng / Đối tác (ObjectId) (*):"
                     : module === "purchase-orders"
-                    ? "Mã nhà cung cấp (ObjectId) (*):"
-                    : module === "inbound-requests"
-                    ? "Số hóa đơn / Số đơn hàng (*):"
-                    : module === "internal-transfer-requests"
-                    ? "Lý do điều chuyển:"
-                    : module === "machine-movements"
-                    ? "Mã loại di chuyển (MoveTypeId) (*):"
-                    : module === "machine-repairs"
-                    ? "Mã loại dịch vụ sửa chữa (ServiceTypeId) (*):"
-                    : "Đối tượng / Người liên quan (*):"}
+                      ? "Mã nhà cung cấp (ObjectId) (*):"
+                      : module === "inbound-requests"
+                        ? "Số hóa đơn / Số đơn hàng (*):"
+                        : module === "internal-transfer-requests"
+                          ? "Lý do điều chuyển:"
+                          : module === "machine-movements"
+                            ? "Mã loại di chuyển (MoveTypeId) (*):"
+                            : module === "machine-repairs"
+                              ? "Mã loại dịch vụ sửa chữa (ServiceTypeId) (*):"
+                              : "Đối tượng / Người liên quan (*):"}
                 </label>
                 <input
                   type="text"
@@ -2609,75 +2868,150 @@ export function TabErpScreen({
                   placeholder={
                     module === "purchase-requests"
                       ? "VD: NV01, Nguyen Van A..."
-                      : module === "sales-orders"
-                      ? "Mã KH hoặc đối tác (VD: KH001)..."
                       : module === "purchase-orders"
-                      ? "Mã NCC (VD: NCC001)..."
-                      : module === "inbound-requests"
-                      ? "VD: HD00123 / PO001..."
-                      : module === "machine-movements"
-                      ? "VD: MOVE01..."
-                      : module === "machine-repairs"
-                      ? "VD: REPAIR01..."
-                      : "Nhập thông tin đối tượng..."
+                        ? "Mã NCC (VD: NCC001)..."
+                        : module === "inbound-requests"
+                          ? "VD: HD00123 / PO001..."
+                          : module === "machine-movements"
+                            ? "VD: MOVE01..."
+                            : module === "machine-repairs"
+                              ? "VD: REPAIR01..."
+                              : "Nhập thông tin đối tượng..."
                   }
                   className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
                 />
               </div>
             )}
 
-            <div className={`grid grid-cols-1 ${module === "machine-movements" || module === "machine-repairs" || module === "internal-transfer-batches" ? "" : module === "internal-transfer-requests" || module === "inbound-requests" ? "sm:grid-cols-2" : "sm:grid-cols-3"} gap-2`}>
-              <div className={module === "machine-movements" || module === "machine-repairs" || module === "internal-transfer-batches" ? "w-full" : "sm:col-span-1"}>
-                <label className="block text-neutral-500 mb-1 font-medium">
-                  {module === "machine-movements" || module === "machine-repairs"
-                    ? "Mã thiết bị / máy (AssetId) (*):"
-                    : module === "internal-transfer-batches"
-                    ? "Mã đề nghị điều chuyển (RequestId) (*):"
-                    : "Mã mặt hàng (ItemID) (*):"}
-                </label>
-                <input
-                  type="text"
-                  value={createItemId}
-                  onChange={(e) => setCreateItemId(e.target.value)}
-                  placeholder={
-                    module === "machine-movements" || module === "machine-repairs"
-                      ? "VD: ASSET01..."
-                      : module === "internal-transfer-batches"
-                      ? "VD: DNDC001..."
-                      : "Mã VT (VD: VT001)..."
-                  }
-                  className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
-                />
-              </div>
-              {module !== "machine-movements" && module !== "machine-repairs" && module !== "internal-transfer-batches" && (
+            {module === "sales-orders" && (
+              <div className="space-y-3">
+                <LookupField label="Khách hàng" required module="sales-orders" lookupId="header.ObjectID"
+                  branchId={currentBranch} value={createObject} choice={createObjectChoice}
+                  displayValue={createObject}
+                  context={{ ContractID: createContract || null }}
+                  onSelect={selectSoCustomer}
+                  placeholder="Chọn khách hàng..." />
+                <LookupField label="Mã nhân viên" required module="sales-orders" lookupId="header.EmployeeID"
+                  branchId={currentBranch} value={createEmployee} choice={createEmployeeChoice}
+                  displayValue={createEmployee}
+                  onSelect={(c) => { setCreateEmployeeChoice(c); setCreateEmployee(c ? c.id : ""); }}
+                  placeholder="Chọn nhân viên..." />
+                <LookupField label="Mã hợp đồng" module="sales-orders" lookupId="header.ContractID"
+                  branchId={currentBranch} value={createContract} choice={createContractChoice}
+                  displayValue={createContract}
+                  context={{ ObjectID: createObject || null }}
+                  onSelect={selectSoContract}
+                  placeholder="Chọn hợp đồng (không bắt buộc)..." />
                 <div>
+                  <label className="block text-neutral-500 mb-1 font-medium">Ngày giao:</label>
+                  <input type="date" value={createDeliverDate} onChange={(e) => setCreateDeliverDate(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs" />
+                </div>
+              </div>
+            )}
+
+            {module !== "sales-orders" && (
+              <div className={`grid grid-cols-1 ${module === "machine-movements" || module === "machine-repairs" || module === "internal-transfer-batches" ? "" : module === "internal-transfer-requests" || module === "inbound-requests" ? "sm:grid-cols-2" : "sm:grid-cols-3"} gap-2`}>
+                <div className={module === "machine-movements" || module === "machine-repairs" || module === "internal-transfer-batches" ? "w-full" : "sm:col-span-1"}>
                   <label className="block text-neutral-500 mb-1 font-medium">
-                    {module === "internal-transfer-requests"
-                      ? "Số lượng yêu cầu (*):"
-                      : module === "inbound-requests"
-                      ? "Số lượng kiện/hộp (*):"
-                      : "Số lượng (*):"}
+                    {module === "machine-movements" || module === "machine-repairs"
+                      ? "Mã thiết bị / máy (AssetId) (*):"
+                      : module === "internal-transfer-batches"
+                        ? "Mã đề nghị điều chuyển (RequestId) (*):"
+                        : "Mã mặt hàng (ItemID) (*):"}
                   </label>
                   <input
-                    type="number"
-                    value={createQuantity}
-                    onChange={(e) => setCreateQuantity(e.target.value)}
+                    type="text"
+                    value={createItemId}
+                    onChange={(e) => setCreateItemId(e.target.value)}
+                    placeholder={
+                      module === "machine-movements" || module === "machine-repairs"
+                        ? "VD: ASSET01..."
+                        : module === "internal-transfer-batches"
+                          ? "VD: DNDC001..."
+                          : "Mã VT (VD: VT001)..."
+                    }
                     className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
                   />
                 </div>
-              )}
-              {module !== "machine-movements" && module !== "machine-repairs" && module !== "internal-transfer-batches" && module !== "internal-transfer-requests" && module !== "inbound-requests" && (
-                <div>
-                  <label className="block text-neutral-500 mb-1 font-medium">Đơn giá dự kiến:</label>
-                  <input
-                    type="number"
-                    value={createUnitPrice}
-                    onChange={(e) => setCreateUnitPrice(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
-                  />
+                {module !== "machine-movements" && module !== "machine-repairs" && module !== "internal-transfer-batches" && (
+                  <div>
+                    <label className="block text-neutral-500 mb-1 font-medium">
+                      {module === "internal-transfer-requests"
+                        ? "Số lượng yêu cầu (*):"
+                        : module === "inbound-requests"
+                          ? "Số lượng kiện/hộp (*):"
+                          : "Số lượng (*):"}
+                    </label>
+                    <input
+                      type="number"
+                      value={createQuantity}
+                      onChange={(e) => setCreateQuantity(e.target.value)}
+                      className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
+                    />
+                  </div>
+                )}
+                {module !== "machine-movements" && module !== "machine-repairs" && module !== "internal-transfer-batches" && module !== "internal-transfer-requests" && module !== "inbound-requests" && (
+                  <div>
+                    <label className="block text-neutral-500 mb-1 font-medium">Đơn giá dự kiến:</label>
+                    <input
+                      type="number"
+                      value={createUnitPrice}
+                      onChange={(e) => setCreateUnitPrice(e.target.value)}
+                      className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {module === "sales-orders" && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-neutral-500 font-medium">Dòng hàng ({createSoLines.length}) (*):</label>
+                  <button type="button"
+                    onClick={() => setCreateSoLines((prev) => [...prev, { key: newSoLineKey(), itemId: "", choice: null, quantity: "1", unitPrice: "", dienGiai: "" }])}
+                    className="px-2.5 py-1.5 rounded-lg border border-brand-300 dark:border-brand-800 text-brand-700 dark:text-brand-300 text-xs font-bold inline-flex items-center gap-1">
+                    <Plus className="size-3.5" /> Thêm dòng
+                  </button>
                 </div>
-              )}
-            </div>
+                {createSoLines.map((line, idx) => (
+                  <div key={line.key} className="p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-neutral-400">Dòng {idx + 1}</span>
+                      {createSoLines.length > 1 && (
+                        <button type="button" aria-label={`Xóa dòng ${idx + 1}`}
+                          onClick={() => setCreateSoLines((prev) => prev.filter((l) => l.key !== line.key))}
+                          className="p-1 rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40">
+                          <Trash2 className="size-4" />
+                        </button>
+                      )}
+                    </div>
+                    <LookupField label="Mã hàng" required module="sales-orders" lookupId="lines.ItemID"
+                      branchId={currentBranch} value={line.itemId} choice={line.choice}
+                      displayValue={line.itemId} onSelect={(c) => patchSoLine(line.key, { choice: c, itemId: c ? c.id : "" })}
+                      compact placeholder="Chọn mã hàng..." />
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-neutral-500 mb-1 font-medium">Số lượng (*):</label>
+                        <input type="number" value={line.quantity} onChange={(e) => patchSoLine(line.key, { quantity: e.target.value })}
+                          className="w-full p-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs" />
+                      </div>
+                      <div>
+                        <label className="block text-neutral-500 mb-1 font-medium">Đơn giá:</label>
+                        <input type="number" value={line.unitPrice} onChange={(e) => patchSoLine(line.key, { unitPrice: e.target.value })}
+                          className="w-full p-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-neutral-500 mb-1 font-medium">Diễn giải dòng:</label>
+                      <input type="text" value={line.dienGiai} onChange={(e) => patchSoLine(line.key, { dienGiai: e.target.value })}
+                        className="w-full p-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div>
               <label className="block text-neutral-500 mb-1 font-medium">Ghi chú / Diễn giải:</label>
@@ -2839,12 +3173,14 @@ export function TabErpScreen({
                 type="button"
                 onClick={handleConfirmPromptAction}
                 disabled={executingAction === actionPromptModal.action.id}
-                className={`px-4 py-2 rounded-xl text-white font-semibold text-xs disabled:opacity-50 ${
-                  actionPromptModal.action.id === "reject"
+                className={`px-4 py-2 rounded-xl text-white font-semibold text-xs disabled:opacity-50 inline-flex items-center gap-1.5 ${actionPromptModal.action.id === "reject"
                     ? "bg-rose-600 hover:bg-rose-700"
                     : "bg-brand-600 hover:bg-brand-700"
-                }`}
+                  }`}
               >
+                {executingAction === actionPromptModal.action.id && (
+                  <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+                )}
                 {executingAction === actionPromptModal.action.id ? "Đang xử lý..." : `Xác nhận ${actionPromptModal.action.caption}`}
               </button>
             </div>

@@ -32,6 +32,7 @@ export function LookupField({
   multiple,
   selected,
   onMultiSelect,
+  context,
 }: {
   label: string;
   required?: boolean;
@@ -48,11 +49,17 @@ export function LookupField({
   multiple?: boolean;
   selected?: ErpChoice[];
   onMultiSelect?: (choices: ErpChoice[]) => void;
+  /** Values for the lookup's declared `parameters` (e.g. contract lookup bound to ObjectID). */
+  context?: Record<string, string | null>;
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [items, setItems] = useState<ErpChoice[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Callers inline a fresh object each render; serialize it so the request only
+  // reruns when the linked parent value actually changes.
+  const contextKey = JSON.stringify(context ?? null);
 
   useEffect(() => {
     if (!open) return;
@@ -66,6 +73,7 @@ export function LookupField({
           page: 1,
           pageSize: 20,
           search: search.trim() ? search.trim() : null,
+          context: contextKey === "null" ? null : (JSON.parse(contextKey) as Record<string, string | null>),
         })
         .then((page) => {
           if (!cancelled) setItems(page.items || []);
@@ -81,7 +89,7 @@ export function LookupField({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [open, search, module, lookupId, branchId]);
+  }, [open, search, module, lookupId, branchId, contextKey]);
 
   const isSelected = (id: string) => (selected ?? []).some((c) => c.id === id);
   const toggleMulti = (item: ErpChoice) => {

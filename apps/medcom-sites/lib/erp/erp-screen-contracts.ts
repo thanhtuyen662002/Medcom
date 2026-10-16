@@ -50,6 +50,37 @@ export const erpActionStateSchema = z.object({
 });
 export type ErpActionState = z.infer<typeof erpActionStateSchema>;
 
+// Quyền màn hình theo phiên ERP hiện tại (GET /api/erp/permissions).
+// Không có enabled theo chứng từ: enabled lấy theo từng phiếu ở /actions.
+export const erpCrudPermissionSchema = z.object({
+  canRead: z.boolean(),
+  canCreate: z.boolean(),
+  canUpdate: z.boolean(),
+  canDelete: z.boolean(),
+}).strict();
+export type ErpCrudPermission = z.infer<typeof erpCrudPermissionSchema>;
+export const erpActionPermissionSchema = z.object({
+  id: z.string(),
+  caption: z.string(),
+  visible: z.boolean(),
+  requiresSavedDocument: z.boolean(),
+  route: z.string().nullable(),
+}).strict();
+export type ErpActionPermission = z.infer<typeof erpActionPermissionSchema>;
+export const erpScreenPermissionSchema = z.object({
+  module: z.string(),
+  caption: z.string(),
+  canView: z.boolean(),
+  crud: erpCrudPermissionSchema,
+  actions: z.array(erpActionPermissionSchema),
+}).strict();
+export type ErpScreenPermission = z.infer<typeof erpScreenPermissionSchema>;
+export const erpPermissionsSchema = z.object({
+  branchId: z.string(),
+  screens: z.array(erpScreenPermissionSchema),
+}).strict();
+export type ErpPermissions = z.infer<typeof erpPermissionsSchema>;
+
 export const erpScreenDescriptionSchema = z.object({
   id: z.string(),
   caption: z.string(),

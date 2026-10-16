@@ -1,9 +1,9 @@
-export type ScreenId="home"|"purchase-orders"|"purchase-requests"|"purchase-approval"|"inbound-requests"|"transfers"|"sales"|"accounting"|"reports"|"settings";
+export type ScreenId="home"|"purchase-orders"|"purchase-requests"|"purchase-approvals"|"inbound-requests"|"transfers"|"sales"|"accounting"|"reports"|"settings";
 export const screens=[
  {id:"purchase-requests",label:"Đề nghị mua hàng",group:"Mua hàng",description:"Đọc đề nghị mua hàng theo quyền ERP hiện tại.",form:"AP_PurposeRequestListFrm",menu:"05011",capability:"purchase-requests.read"},
  {id:"home",label:"Không gian làm việc",group:"Tổng quan",description:"Truy cập nhanh các công việc và phân hệ."},
  {id:"purchase-orders",label:"Đơn đặt hàng mua",group:"Mua hàng",description:"Tra cứu đơn hàng và theo dõi chi tiết hàng hóa.",form:"AP_OrderFrm",menu:"050129",capability:"purchase-orders.read"},
- {id:"purchase-approval",label:"Duyệt yêu cầu mua",group:"Mua hàng",description:"Kiểm tra và phê duyệt yêu cầu mua hàng.",form:"AP_ApprovePurchaseRequestListFrm",menu:"05012"},
+ {id:"purchase-approvals",label:"Duyệt yêu cầu mua",group:"Mua hàng",description:"Kiểm tra và phê duyệt yêu cầu mua hàng.",form:"AP_ApprovePurchaseRequestListFrm",menu:"05012",capability:"purchase-approvals.read"},
  {id:"inbound-requests",label:"Yêu cầu nhập kho",group:"Kho hàng",description:"Tra cứu yêu cầu nhập và số lượng theo chứng từ.",form:"IV_InboundRequestFrm",menu:"07011",capability:"inbound-requests.read"},
  {id:"transfers",label:"Điều chuyển nội bộ",group:"Kho hàng",description:"Theo dõi từng giai đoạn của quy trình điều chuyển.",form:"IV_InternalTransferRequestFrm",menu:"07010100"},
  {id:"sales",label:"Yêu cầu hóa đơn",group:"Bán hàng",description:"Yêu cầu lập hóa đơn bán hàng.",form:"AR_InvoiceRequestFrm",menu:"06023",sourceDisabled:true},

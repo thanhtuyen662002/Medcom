@@ -20,7 +20,7 @@ test('I44 production auth surfaces, controlled root and protected body portal',{
  import {deriveWorkspaceAuthState,resolveWorkspaceReturnTarget} from './lib/erp/workspace-auth-state';
  window.evidence={mounts:0,unmounts:0,calls:0,success:0,actions:0,retries:0};
  let input={lifecycleKey:'A',session:'unresolved',hasAuthenticatedProof:false,authority:'verifying',proofLifecycleKey:null,signOutPending:false};
- let grants=['home','settings','purchase-orders','purchase-requests','purchase-approval','inbound-requests','transfers','accounting','reports'];
+ let grants=['home','settings','purchase-orders','purchase-requests','purchase-approvals','inbound-requests','transfers','accounting','reports'];
  const requested=new URLSearchParams(location.search).get('screen');const root=createRoot(document.getElementById('root'));
  function Business({allowed,target}){React.useEffect(()=>{window.evidence.mounts++;return()=>window.evidence.unmounts++;},[]);const [filter,setFilter]=React.useState('draft');const [intent]=React.useState('unresolved');return <><h2>Protected {target}</h2><input aria-label='Filter' value={filter} onChange={e=>setFilter(e.target.value)}/><span data-intent={intent}/>{createPortal(<div data-protected-portal {...protectedPresentationProps(allowed)}><button onClick={()=>{if(allowed)window.evidence.actions++;}}>Protected command</button></div>,document.body)}</>}
  function render(){const state=deriveWorkspaceAuthState(input);root.render(<WorkspaceAuthGate state={state} onRetry={()=>{window.evidence.retries++;window.transition({authority:'verifying'});}} login={{configured:true,authenticate:()=>{window.evidence.calls++;return new Promise((resolve,reject)=>{window.finishLogin={resolve,reject};});},onSuccess:()=>{window.evidence.success++;}}}><Business allowed={state.presentationAllowed} target={resolveWorkspaceReturnTarget(requested,grants,state)}/></WorkspaceAuthGate>);}
@@ -37,7 +37,7 @@ test('I44 production auth surfaces, controlled root and protected body portal',{
    const context=await browser.newContext({viewport:{width,height:800}}),page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
    const transition=patch=>page.evaluate(p=>window.transition(p),patch);
    const proof={session:'live',hasAuthenticatedProof:true,authority:'verified',proofLifecycleKey:'A'};
-   for(const screen of ['home','settings','purchase-orders','purchase-requests','purchase-approval','inbound-requests','transfers','accounting','reports']){
+   for(const screen of ['home','settings','purchase-orders','purchase-requests','purchase-approvals','inbound-requests','transfers','accounting','reports']){
     await page.goto(origin+'/?screen='+screen);await page.getByRole('heading',{name:'Đang xác minh phiên làm việc…'}).waitFor();assert.equal(await page.getByRole('heading',{name:/Protected/}).count(),0);assert.equal(await page.evaluate(()=>window.evidence.mounts),0);
     await transition({authority:'unavailable'});await page.getByRole('button',{name:'Thử lại'}).click();assert.equal(await page.evaluate(()=>window.evidence.retries),1);await transition(proof);await page.getByRole('heading',{name:'Protected '+screen,exact:true}).waitFor();
    }
