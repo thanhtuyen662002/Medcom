@@ -23,6 +23,7 @@ public sealed partial class SqlErpScreenCommands
         if(request.Operation=="delete")
         {
             await DomainDeleteGuard(transaction,plan,document,token);
+            await SqlErpAttachmentStore.DeleteForDocument(transaction,plan.Module,document,token);
             await DeleteRows(transaction,plan.LineTable,plan.HeaderKey,document,null,before!.Lines.Count,token);
             if(before.Sections is not null)foreach(var section in before.Sections)
                 await DeleteRows(transaction,plan.Tables[section.Key],plan.SectionKey(section.Key),document,null,section.Value.Count,token);

@@ -51,6 +51,7 @@ public static class ApiHost
         builder.Services.AddSingleton<IPurchaseRequestCommandAccess, UnavailablePurchaseRequestCommandAccess>();
         builder.Services.AddSingleton<IPurchaseRequestCommands, UnavailablePurchaseRequestCommands>();
         builder.Services.AddSingleton<IErpScreenService, UnavailableErpScreenService>();
+        builder.Services.AddSingleton<IErpAttachmentService, UnavailableErpAttachmentService>();
         builder.Services.AddSingleton<INotificationQueries, UnavailableNotificationQueries>();
         builder.Services.AddSingleton<IReferenceData, UnavailableReferenceData>();
         builder.Services.AddInboundDraftFacade();
@@ -129,6 +130,18 @@ public static class ApiHost
                     async cancellation => (await sessions.InspectAsync(token, cancellation))?.Identity,
                     diagnostic => LogPurchaseReadUnavailable(provider.GetRequiredService<ILogger<SqlPurchaseRequestQueries>>(),
                         context, diagnostic));
+            });
+            if(enablePilots) builder.Services.AddScoped<IErpAttachmentService>(provider=>
+            {
+                var context=provider.GetRequiredService<IHttpContextAccessor>().HttpContext??throw new InvalidOperationException("Current request required.");
+                var token=AuthEndpoints.Current(context).Token;var sessions=provider.GetRequiredService<IWebSessions>();
+                return new Medcom.Infrastructure.Erp.SqlErpAttachments(provider.GetRequiredService<SqlLegacyUserStore>(),provider.GetRequiredService<LegacyCompany>(),
+                    cancellation=>NativeReadSession.Resolve(context,sessions,cancellation),async cancellation=>(await sessions.InspectAsync(token,cancellation))?.Identity,
+                    erpWrites?.Binding,provider.GetService<Medcom.Infrastructure.Erp.IErpSqlWriteAcceptance>(),
+                    diagnostic=>LogErpReadUnavailable(provider.GetRequiredService<ILogger<Medcom.Infrastructure.Erp.SqlErpAttachments>>(),context,diagnostic),
+                    diagnostic=>provider.GetRequiredService<ILogger<Medcom.Infrastructure.Erp.SqlErpAttachments>>().LogWarning(
+                        new EventId(1118,"ErpAttachmentUnavailable"),"ERP attachment failure module {Module}, operation {Operation}, stage {Stage}, exception {ExceptionKind}, provider {ProviderNumber}; correlation {CorrelationId}",
+                        diagnostic.Module,diagnostic.Operation,diagnostic.Stage,diagnostic.ExceptionKind,diagnostic.ProviderNumber,context.TraceIdentifier));
             });
             if(enablePilots) builder.Services.AddScoped<IErpScreenService>(provider=>
             {
@@ -302,6 +315,8 @@ public static class ApiHost
         ApiContractCatalog.Map(app);
         PurchaseRequestEndpoints.Map(data);
         ErpScreenEndpoints.Map(data);
+        // Attachment DTOs already have a flat explicit contract; binary downloads must bypass JSON projections.
+        ErpAttachmentEndpoints.Map(app);
         NotificationEndpoints.Map(data);
         BranchEndpoints.Map(data);
         data.MapInboundDraftFacade();

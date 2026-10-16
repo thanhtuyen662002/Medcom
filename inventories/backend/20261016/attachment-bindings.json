@@ -1,0 +1,2043 @@
+{
+  "schemaVersion": 1,
+  "sourceSet": "owner-live-meddata-20261016-attachments",
+  "observedAtUtc": "2026-10-16T04:25:09.7390582Z",
+  "businessWritesPerformed": false,
+  "productionAccepted": false,
+  "evidence": {
+    "readOnlyQueries": "sys.tables/sys.columns/sys.types/sys.indexes/sys.index_columns/sys.foreign_keys/sys.foreign_key_columns; dbo.SY_FrmCfg attachment-control properties",
+    "tools": {
+      "sha256": "7019a26a5129edf44716601678ea1aadaebde5082defebd195ff47a7452d7ec8",
+      "bytes": 8261633,
+      "artifact": "owner-accessible current ERP Tools.dll; separate from the 20261002 baseline"
+    },
+    "staticMethods": [
+      "Tools.AttachWebcamImageControlCtl.Init",
+      "Tools.AttachWebcamImageControlCtl.SetDataControl",
+      "Tools.AttachWebcamImageControlCtl.SaveFileToDB",
+      "Tools.AttachFileX.AttachFileType"
+    ],
+    "historicalSources": [
+      "docs/SOURCE_BASELINE.md",
+      "docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md"
+    ]
+  },
+  "tables": [
+    {
+      "schema": "dbo",
+      "table": "AP_POAttachTbl",
+      "columns": [
+        {
+          "schema": "dbo",
+          "table": "AP_POAttachTbl",
+          "column": "UserAutoID",
+          "type": "varchar",
+          "max_length": 50,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": false,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 1
+        },
+        {
+          "schema": "dbo",
+          "table": "AP_POAttachTbl",
+          "column": "DocumentID",
+          "type": "varchar",
+          "max_length": 30,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": false,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 2
+        },
+        {
+          "schema": "dbo",
+          "table": "AP_POAttachTbl",
+          "column": "FileName",
+          "type": "nvarchar",
+          "max_length": 500,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": false,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 3
+        },
+        {
+          "schema": "dbo",
+          "table": "AP_POAttachTbl",
+          "column": "FileType",
+          "type": "int",
+          "max_length": 4,
+          "precision": 10,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 4
+        },
+        {
+          "schema": "dbo",
+          "table": "AP_POAttachTbl",
+          "column": "STT",
+          "type": "int",
+          "max_length": 4,
+          "precision": 10,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 5
+        },
+        {
+          "schema": "dbo",
+          "table": "AP_POAttachTbl",
+          "column": "Content",
+          "type": "varbinary",
+          "max_length": -1,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 6
+        },
+        {
+          "schema": "dbo",
+          "table": "AP_POAttachTbl",
+          "column": "Content2",
+          "type": "varbinary",
+          "max_length": -1,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 7
+        },
+        {
+          "schema": "dbo",
+          "table": "AP_POAttachTbl",
+          "column": "FileSize",
+          "type": "decimal",
+          "max_length": 9,
+          "precision": 18,
+          "scale": 2,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 8
+        },
+        {
+          "schema": "dbo",
+          "table": "AP_POAttachTbl",
+          "column": "Base64Content",
+          "type": "varchar",
+          "max_length": -1,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 9
+        },
+        {
+          "schema": "dbo",
+          "table": "AP_POAttachTbl",
+          "column": "Base64Content2",
+          "type": "varchar",
+          "max_length": -1,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 10
+        },
+        {
+          "schema": "dbo",
+          "table": "AP_POAttachTbl",
+          "column": "AttachmentKind",
+          "type": "varchar",
+          "max_length": 30,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 11
+        },
+        {
+          "schema": "dbo",
+          "table": "AP_POAttachTbl",
+          "column": "Notes",
+          "type": "nvarchar",
+          "max_length": 1000,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 12
+        },
+        {
+          "schema": "dbo",
+          "table": "AP_POAttachTbl",
+          "column": "UserCreate",
+          "type": "varchar",
+          "max_length": 50,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 13
+        },
+        {
+          "schema": "dbo",
+          "table": "AP_POAttachTbl",
+          "column": "DateCreate",
+          "type": "datetime2",
+          "max_length": 6,
+          "precision": 19,
+          "scale": 0,
+          "is_nullable": false,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 14
+        }
+      ],
+      "keys": [
+        {
+          "table": "AP_POAttachTbl",
+          "index": "PK_AP_POAttachTbl",
+          "is_primary_key": true,
+          "is_unique": true,
+          "column": "UserAutoID",
+          "key_ordinal": 1
+        },
+        {
+          "table": "AP_POAttachTbl",
+          "index": "IX_AP_POAttach_DocumentID",
+          "is_primary_key": false,
+          "is_unique": false,
+          "column": "DocumentID",
+          "key_ordinal": 1
+        }
+      ],
+      "foreignKeys": [
+        {
+          "table": "AP_POAttachTbl",
+          "constraint": "FK_AP_POAttach_Order",
+          "column": "DocumentID",
+          "referencedTable": "AP_OrderTbl",
+          "referencedColumn": "DocumentID",
+          "delete_referential_action_desc": "NO_ACTION"
+        }
+      ]
+    },
+    {
+      "schema": "dbo",
+      "table": "AR_ObjectNewRequireAttachTbl",
+      "columns": [
+        {
+          "schema": "dbo",
+          "table": "AR_ObjectNewRequireAttachTbl",
+          "column": "UserAutoID",
+          "type": "varchar",
+          "max_length": 50,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": false,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 1
+        },
+        {
+          "schema": "dbo",
+          "table": "AR_ObjectNewRequireAttachTbl",
+          "column": "ObjectID",
+          "type": "varchar",
+          "max_length": 50,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 2
+        },
+        {
+          "schema": "dbo",
+          "table": "AR_ObjectNewRequireAttachTbl",
+          "column": "FileName",
+          "type": "nvarchar",
+          "max_length": 500,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 3
+        },
+        {
+          "schema": "dbo",
+          "table": "AR_ObjectNewRequireAttachTbl",
+          "column": "FileType",
+          "type": "int",
+          "max_length": 4,
+          "precision": 10,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 4
+        },
+        {
+          "schema": "dbo",
+          "table": "AR_ObjectNewRequireAttachTbl",
+          "column": "STT",
+          "type": "nvarchar",
+          "max_length": 100,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 5
+        },
+        {
+          "schema": "dbo",
+          "table": "AR_ObjectNewRequireAttachTbl",
+          "column": "Content",
+          "type": "image",
+          "max_length": 16,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 6
+        },
+        {
+          "schema": "dbo",
+          "table": "AR_ObjectNewRequireAttachTbl",
+          "column": "Content2",
+          "type": "image",
+          "max_length": 16,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 7
+        },
+        {
+          "schema": "dbo",
+          "table": "AR_ObjectNewRequireAttachTbl",
+          "column": "FileSize",
+          "type": "decimal",
+          "max_length": 9,
+          "precision": 18,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 8
+        },
+        {
+          "schema": "dbo",
+          "table": "AR_ObjectNewRequireAttachTbl",
+          "column": "Base64Content",
+          "type": "varchar",
+          "max_length": -1,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 9
+        },
+        {
+          "schema": "dbo",
+          "table": "AR_ObjectNewRequireAttachTbl",
+          "column": "Base64Content2",
+          "type": "varchar",
+          "max_length": -1,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 10
+        }
+      ],
+      "keys": [
+        {
+          "table": "AR_ObjectNewRequireAttachTbl",
+          "index": "PK_AR_ObjectNewRequireAttachTbl",
+          "is_primary_key": true,
+          "is_unique": true,
+          "column": "UserAutoID",
+          "key_ordinal": 1
+        }
+      ],
+      "foreignKeys": [
+        {
+          "table": "AR_ObjectNewRequireAttachTbl",
+          "constraint": "FK_AR_ObjectNewRequireAttachTbl_AR_ObjectNewRequireTbl",
+          "column": "ObjectID",
+          "referencedTable": "AR_ObjectNewRequireTbl",
+          "referencedColumn": "ObjectID",
+          "delete_referential_action_desc": "CASCADE"
+        }
+      ]
+    },
+    {
+      "schema": "dbo",
+      "table": "AR_OrderAttachTbl",
+      "columns": [
+        {
+          "schema": "dbo",
+          "table": "AR_OrderAttachTbl",
+          "column": "UserAutoID",
+          "type": "varchar",
+          "max_length": 50,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": false,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 1
+        },
+        {
+          "schema": "dbo",
+          "table": "AR_OrderAttachTbl",
+          "column": "DocumentID",
+          "type": "varchar",
+          "max_length": 50,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 2
+        },
+        {
+          "schema": "dbo",
+          "table": "AR_OrderAttachTbl",
+          "column": "FileName",
+          "type": "nvarchar",
+          "max_length": 500,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 3
+        },
+        {
+          "schema": "dbo",
+          "table": "AR_OrderAttachTbl",
+          "column": "FileType",
+          "type": "int",
+          "max_length": 4,
+          "precision": 10,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 4
+        },
+        {
+          "schema": "dbo",
+          "table": "AR_OrderAttachTbl",
+          "column": "STT",
+          "type": "nvarchar",
+          "max_length": 100,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 5
+        },
+        {
+          "schema": "dbo",
+          "table": "AR_OrderAttachTbl",
+          "column": "Content",
+          "type": "image",
+          "max_length": 16,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 6
+        },
+        {
+          "schema": "dbo",
+          "table": "AR_OrderAttachTbl",
+          "column": "Content2",
+          "type": "image",
+          "max_length": 16,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 7
+        }
+      ],
+      "keys": [
+        {
+          "table": "AR_OrderAttachTbl",
+          "index": "PK_AR_OrderAttachTbl",
+          "is_primary_key": true,
+          "is_unique": true,
+          "column": "UserAutoID",
+          "key_ordinal": 1
+        }
+      ],
+      "foreignKeys": [
+        {
+          "table": "AR_OrderAttachTbl",
+          "constraint": "FK_AR_OrderAttachTbl_AR_OrderTbl",
+          "column": "DocumentID",
+          "referencedTable": "AR_OrderTbl",
+          "referencedColumn": "DocumentID",
+          "delete_referential_action_desc": "CASCADE"
+        }
+      ]
+    },
+    {
+      "schema": "dbo",
+      "table": "CF_ContractAttachTbl",
+      "columns": [
+        {
+          "schema": "dbo",
+          "table": "CF_ContractAttachTbl",
+          "column": "UserAutoID",
+          "type": "varchar",
+          "max_length": 50,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": false,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 1
+        },
+        {
+          "schema": "dbo",
+          "table": "CF_ContractAttachTbl",
+          "column": "ContractID",
+          "type": "nvarchar",
+          "max_length": 200,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 2
+        },
+        {
+          "schema": "dbo",
+          "table": "CF_ContractAttachTbl",
+          "column": "FileName",
+          "type": "nvarchar",
+          "max_length": 500,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 3
+        },
+        {
+          "schema": "dbo",
+          "table": "CF_ContractAttachTbl",
+          "column": "FileType",
+          "type": "int",
+          "max_length": 4,
+          "precision": 10,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 4
+        },
+        {
+          "schema": "dbo",
+          "table": "CF_ContractAttachTbl",
+          "column": "STT",
+          "type": "nvarchar",
+          "max_length": 100,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 5
+        },
+        {
+          "schema": "dbo",
+          "table": "CF_ContractAttachTbl",
+          "column": "Content",
+          "type": "image",
+          "max_length": 16,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 6
+        },
+        {
+          "schema": "dbo",
+          "table": "CF_ContractAttachTbl",
+          "column": "Content2",
+          "type": "image",
+          "max_length": 16,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 7
+        }
+      ],
+      "keys": [
+        {
+          "table": "CF_ContractAttachTbl",
+          "index": "PK_CF_ContractAttachTbl",
+          "is_primary_key": true,
+          "is_unique": true,
+          "column": "UserAutoID",
+          "key_ordinal": 1
+        }
+      ],
+      "foreignKeys": [
+        {
+          "table": "CF_ContractAttachTbl",
+          "constraint": "FK_CF_ContractAttachTbl_CF_ContractTbl",
+          "column": "ContractID",
+          "referencedTable": "CF_ContractTbl",
+          "referencedColumn": "ContractID",
+          "delete_referential_action_desc": "CASCADE"
+        }
+      ]
+    },
+    {
+      "schema": "dbo",
+      "table": "CF_ObjectAttachTbl",
+      "columns": [
+        {
+          "schema": "dbo",
+          "table": "CF_ObjectAttachTbl",
+          "column": "UserAutoID",
+          "type": "varchar",
+          "max_length": 50,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": false,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 1
+        },
+        {
+          "schema": "dbo",
+          "table": "CF_ObjectAttachTbl",
+          "column": "ObjectID",
+          "type": "varchar",
+          "max_length": 50,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 2
+        },
+        {
+          "schema": "dbo",
+          "table": "CF_ObjectAttachTbl",
+          "column": "FileName",
+          "type": "nvarchar",
+          "max_length": 500,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 3
+        },
+        {
+          "schema": "dbo",
+          "table": "CF_ObjectAttachTbl",
+          "column": "FileType",
+          "type": "int",
+          "max_length": 4,
+          "precision": 10,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 4
+        },
+        {
+          "schema": "dbo",
+          "table": "CF_ObjectAttachTbl",
+          "column": "STT",
+          "type": "nvarchar",
+          "max_length": 100,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 5
+        },
+        {
+          "schema": "dbo",
+          "table": "CF_ObjectAttachTbl",
+          "column": "Content",
+          "type": "image",
+          "max_length": 16,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 6
+        },
+        {
+          "schema": "dbo",
+          "table": "CF_ObjectAttachTbl",
+          "column": "Content2",
+          "type": "image",
+          "max_length": 16,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 7
+        },
+        {
+          "schema": "dbo",
+          "table": "CF_ObjectAttachTbl",
+          "column": "ImgDate",
+          "type": "datetime",
+          "max_length": 8,
+          "precision": 23,
+          "scale": 3,
+          "is_nullable": false,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 8
+        }
+      ],
+      "keys": [],
+      "foreignKeys": []
+    },
+    {
+      "schema": "dbo",
+      "table": "CS_PaymentPlanAttachTbl",
+      "columns": [
+        {
+          "schema": "dbo",
+          "table": "CS_PaymentPlanAttachTbl",
+          "column": "UserAutoID",
+          "type": "varchar",
+          "max_length": 50,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": false,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 1
+        },
+        {
+          "schema": "dbo",
+          "table": "CS_PaymentPlanAttachTbl",
+          "column": "DocumentID",
+          "type": "varchar",
+          "max_length": 30,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 2
+        },
+        {
+          "schema": "dbo",
+          "table": "CS_PaymentPlanAttachTbl",
+          "column": "FileName",
+          "type": "nvarchar",
+          "max_length": 500,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 3
+        },
+        {
+          "schema": "dbo",
+          "table": "CS_PaymentPlanAttachTbl",
+          "column": "FileType",
+          "type": "int",
+          "max_length": 4,
+          "precision": 10,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 4
+        },
+        {
+          "schema": "dbo",
+          "table": "CS_PaymentPlanAttachTbl",
+          "column": "STT",
+          "type": "nvarchar",
+          "max_length": 100,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 5
+        },
+        {
+          "schema": "dbo",
+          "table": "CS_PaymentPlanAttachTbl",
+          "column": "Content",
+          "type": "image",
+          "max_length": 16,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 6
+        },
+        {
+          "schema": "dbo",
+          "table": "CS_PaymentPlanAttachTbl",
+          "column": "Content2",
+          "type": "image",
+          "max_length": 16,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 7
+        }
+      ],
+      "keys": [
+        {
+          "table": "CS_PaymentPlanAttachTbl",
+          "index": "PK_CS_PaymentPlanAttachTbl",
+          "is_primary_key": true,
+          "is_unique": true,
+          "column": "UserAutoID",
+          "key_ordinal": 1
+        }
+      ],
+      "foreignKeys": [
+        {
+          "table": "CS_PaymentPlanAttachTbl",
+          "constraint": "FK_CS_PaymentPlanAttachTbl_CS_PaymentPlanTbl",
+          "column": "DocumentID",
+          "referencedTable": "CS_PaymentPlanTbl",
+          "referencedColumn": "DocumentID",
+          "delete_referential_action_desc": "CASCADE"
+        }
+      ]
+    },
+    {
+      "schema": "dbo",
+      "table": "EQ_EquipAttachTbl",
+      "columns": [
+        {
+          "schema": "dbo",
+          "table": "EQ_EquipAttachTbl",
+          "column": "UserAutoID",
+          "type": "varchar",
+          "max_length": 50,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": false,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 1
+        },
+        {
+          "schema": "dbo",
+          "table": "EQ_EquipAttachTbl",
+          "column": "EquipID",
+          "type": "varchar",
+          "max_length": 50,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 2
+        },
+        {
+          "schema": "dbo",
+          "table": "EQ_EquipAttachTbl",
+          "column": "FileName",
+          "type": "nvarchar",
+          "max_length": 500,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 3
+        },
+        {
+          "schema": "dbo",
+          "table": "EQ_EquipAttachTbl",
+          "column": "FileType",
+          "type": "int",
+          "max_length": 4,
+          "precision": 10,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 4
+        },
+        {
+          "schema": "dbo",
+          "table": "EQ_EquipAttachTbl",
+          "column": "STT",
+          "type": "nvarchar",
+          "max_length": 100,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 5
+        },
+        {
+          "schema": "dbo",
+          "table": "EQ_EquipAttachTbl",
+          "column": "Content",
+          "type": "image",
+          "max_length": 16,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 6
+        },
+        {
+          "schema": "dbo",
+          "table": "EQ_EquipAttachTbl",
+          "column": "Content2",
+          "type": "image",
+          "max_length": 16,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 7
+        },
+        {
+          "schema": "dbo",
+          "table": "EQ_EquipAttachTbl",
+          "column": "FileSize",
+          "type": "decimal",
+          "max_length": 9,
+          "precision": 18,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 8
+        },
+        {
+          "schema": "dbo",
+          "table": "EQ_EquipAttachTbl",
+          "column": "Base64Content",
+          "type": "varchar",
+          "max_length": -1,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 9
+        },
+        {
+          "schema": "dbo",
+          "table": "EQ_EquipAttachTbl",
+          "column": "Base64Content2",
+          "type": "varchar",
+          "max_length": -1,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 10
+        }
+      ],
+      "keys": [
+        {
+          "table": "EQ_EquipAttachTbl",
+          "index": "PK_EQ_EquipAttachTbl",
+          "is_primary_key": true,
+          "is_unique": true,
+          "column": "UserAutoID",
+          "key_ordinal": 1
+        }
+      ],
+      "foreignKeys": [
+        {
+          "table": "EQ_EquipAttachTbl",
+          "constraint": "FK_EQ_EquipAttachTbl_EQ_EquipTbl",
+          "column": "EquipID",
+          "referencedTable": "EQ_EquipTbl",
+          "referencedColumn": "EquipID",
+          "delete_referential_action_desc": "CASCADE"
+        }
+      ]
+    },
+    {
+      "schema": "dbo",
+      "table": "FA_AssetAttachTbl",
+      "columns": [
+        {
+          "schema": "dbo",
+          "table": "FA_AssetAttachTbl",
+          "column": "UserAutoID",
+          "type": "varchar",
+          "max_length": 50,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": false,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 1
+        },
+        {
+          "schema": "dbo",
+          "table": "FA_AssetAttachTbl",
+          "column": "AssetID",
+          "type": "varchar",
+          "max_length": 50,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 2
+        },
+        {
+          "schema": "dbo",
+          "table": "FA_AssetAttachTbl",
+          "column": "FileName",
+          "type": "nvarchar",
+          "max_length": 500,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 3
+        },
+        {
+          "schema": "dbo",
+          "table": "FA_AssetAttachTbl",
+          "column": "FileType",
+          "type": "int",
+          "max_length": 4,
+          "precision": 10,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 4
+        },
+        {
+          "schema": "dbo",
+          "table": "FA_AssetAttachTbl",
+          "column": "STT",
+          "type": "nvarchar",
+          "max_length": 100,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 5
+        },
+        {
+          "schema": "dbo",
+          "table": "FA_AssetAttachTbl",
+          "column": "Content",
+          "type": "image",
+          "max_length": 16,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 6
+        },
+        {
+          "schema": "dbo",
+          "table": "FA_AssetAttachTbl",
+          "column": "Content2",
+          "type": "image",
+          "max_length": 16,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 7
+        },
+        {
+          "schema": "dbo",
+          "table": "FA_AssetAttachTbl",
+          "column": "FileSize",
+          "type": "decimal",
+          "max_length": 9,
+          "precision": 18,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 8
+        },
+        {
+          "schema": "dbo",
+          "table": "FA_AssetAttachTbl",
+          "column": "Base64Content",
+          "type": "varchar",
+          "max_length": -1,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 9
+        },
+        {
+          "schema": "dbo",
+          "table": "FA_AssetAttachTbl",
+          "column": "Base64Content2",
+          "type": "varchar",
+          "max_length": -1,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 10
+        }
+      ],
+      "keys": [
+        {
+          "table": "FA_AssetAttachTbl",
+          "index": "PK_FA_AssetAttachTbl",
+          "is_primary_key": true,
+          "is_unique": true,
+          "column": "UserAutoID",
+          "key_ordinal": 1
+        }
+      ],
+      "foreignKeys": [
+        {
+          "table": "FA_AssetAttachTbl",
+          "constraint": "FK_FA_AssetAttachTbl_FA_AssetTbl",
+          "column": "AssetID",
+          "referencedTable": "FA_AssetTbl",
+          "referencedColumn": "AssetID",
+          "delete_referential_action_desc": "CASCADE"
+        }
+      ]
+    },
+    {
+      "schema": "dbo",
+      "table": "HR_PersonAttachTbl",
+      "columns": [
+        {
+          "schema": "dbo",
+          "table": "HR_PersonAttachTbl",
+          "column": "UserAutoID",
+          "type": "varchar",
+          "max_length": 50,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": false,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 1
+        },
+        {
+          "schema": "dbo",
+          "table": "HR_PersonAttachTbl",
+          "column": "PersonID",
+          "type": "varchar",
+          "max_length": 50,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 2
+        },
+        {
+          "schema": "dbo",
+          "table": "HR_PersonAttachTbl",
+          "column": "FileName",
+          "type": "nvarchar",
+          "max_length": 500,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 3
+        },
+        {
+          "schema": "dbo",
+          "table": "HR_PersonAttachTbl",
+          "column": "FileType",
+          "type": "int",
+          "max_length": 4,
+          "precision": 10,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 4
+        },
+        {
+          "schema": "dbo",
+          "table": "HR_PersonAttachTbl",
+          "column": "STT",
+          "type": "nvarchar",
+          "max_length": 100,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 5
+        },
+        {
+          "schema": "dbo",
+          "table": "HR_PersonAttachTbl",
+          "column": "Content",
+          "type": "image",
+          "max_length": 16,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 6
+        },
+        {
+          "schema": "dbo",
+          "table": "HR_PersonAttachTbl",
+          "column": "Content2",
+          "type": "image",
+          "max_length": 16,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 7
+        },
+        {
+          "schema": "dbo",
+          "table": "HR_PersonAttachTbl",
+          "column": "FileSize",
+          "type": "decimal",
+          "max_length": 9,
+          "precision": 18,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 8
+        },
+        {
+          "schema": "dbo",
+          "table": "HR_PersonAttachTbl",
+          "column": "Base64Content",
+          "type": "varchar",
+          "max_length": -1,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 9
+        },
+        {
+          "schema": "dbo",
+          "table": "HR_PersonAttachTbl",
+          "column": "Base64Content2",
+          "type": "varchar",
+          "max_length": -1,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 10
+        }
+      ],
+      "keys": [
+        {
+          "table": "HR_PersonAttachTbl",
+          "index": "PK_HR_PersonAttachTbl",
+          "is_primary_key": true,
+          "is_unique": true,
+          "column": "UserAutoID",
+          "key_ordinal": 1
+        }
+      ],
+      "foreignKeys": [
+        {
+          "table": "HR_PersonAttachTbl",
+          "constraint": "FK_HR_PersonAttachTbl_HR_PersonTbl",
+          "column": "PersonID",
+          "referencedTable": "HR_PersonTbl",
+          "referencedColumn": "PersonID",
+          "delete_referential_action_desc": "CASCADE"
+        }
+      ]
+    },
+    {
+      "schema": "dbo",
+      "table": "HR_SoTayNhanVienAttachTbl",
+      "columns": [
+        {
+          "schema": "dbo",
+          "table": "HR_SoTayNhanVienAttachTbl",
+          "column": "UserAutoID",
+          "type": "varchar",
+          "max_length": 50,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": false,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 1
+        },
+        {
+          "schema": "dbo",
+          "table": "HR_SoTayNhanVienAttachTbl",
+          "column": "DocumentID",
+          "type": "varchar",
+          "max_length": 30,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 2
+        },
+        {
+          "schema": "dbo",
+          "table": "HR_SoTayNhanVienAttachTbl",
+          "column": "FileName",
+          "type": "nvarchar",
+          "max_length": 500,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 3
+        },
+        {
+          "schema": "dbo",
+          "table": "HR_SoTayNhanVienAttachTbl",
+          "column": "FileType",
+          "type": "int",
+          "max_length": 4,
+          "precision": 10,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 4
+        },
+        {
+          "schema": "dbo",
+          "table": "HR_SoTayNhanVienAttachTbl",
+          "column": "STT",
+          "type": "nvarchar",
+          "max_length": 100,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 5
+        },
+        {
+          "schema": "dbo",
+          "table": "HR_SoTayNhanVienAttachTbl",
+          "column": "Content",
+          "type": "image",
+          "max_length": 16,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 6
+        },
+        {
+          "schema": "dbo",
+          "table": "HR_SoTayNhanVienAttachTbl",
+          "column": "Content2",
+          "type": "image",
+          "max_length": 16,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 7
+        }
+      ],
+      "keys": [
+        {
+          "table": "HR_SoTayNhanVienAttachTbl",
+          "index": "PK_HR_SoTayNhanVienAttachTbl",
+          "is_primary_key": true,
+          "is_unique": true,
+          "column": "UserAutoID",
+          "key_ordinal": 1
+        }
+      ],
+      "foreignKeys": [
+        {
+          "table": "HR_SoTayNhanVienAttachTbl",
+          "constraint": "FK_HR_SoTayNhanVienAttachTbl_HR_SoTayNhanVienTbl",
+          "column": "DocumentID",
+          "referencedTable": "HR_SoTayNhanVienTbl",
+          "referencedColumn": "DocumentID",
+          "delete_referential_action_desc": "CASCADE"
+        }
+      ]
+    },
+    {
+      "schema": "dbo",
+      "table": "IV_InboundRequestAttachTbl",
+      "columns": [
+        {
+          "schema": "dbo",
+          "table": "IV_InboundRequestAttachTbl",
+          "column": "UserAutoID",
+          "type": "varchar",
+          "max_length": 50,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": false,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 1
+        },
+        {
+          "schema": "dbo",
+          "table": "IV_InboundRequestAttachTbl",
+          "column": "FileName",
+          "type": "nvarchar",
+          "max_length": -1,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 2
+        },
+        {
+          "schema": "dbo",
+          "table": "IV_InboundRequestAttachTbl",
+          "column": "FileStyle",
+          "type": "nvarchar",
+          "max_length": 100,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 3
+        },
+        {
+          "schema": "dbo",
+          "table": "IV_InboundRequestAttachTbl",
+          "column": "STT",
+          "type": "int",
+          "max_length": 4,
+          "precision": 10,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 4
+        },
+        {
+          "schema": "dbo",
+          "table": "IV_InboundRequestAttachTbl",
+          "column": "Content",
+          "type": "varbinary",
+          "max_length": -1,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 5
+        },
+        {
+          "schema": "dbo",
+          "table": "IV_InboundRequestAttachTbl",
+          "column": "Content2",
+          "type": "image",
+          "max_length": 16,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 6
+        },
+        {
+          "schema": "dbo",
+          "table": "IV_InboundRequestAttachTbl",
+          "column": "FileSize",
+          "type": "decimal",
+          "max_length": 9,
+          "precision": 18,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 7
+        },
+        {
+          "schema": "dbo",
+          "table": "IV_InboundRequestAttachTbl",
+          "column": "Base64Content",
+          "type": "varchar",
+          "max_length": -1,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 8
+        },
+        {
+          "schema": "dbo",
+          "table": "IV_InboundRequestAttachTbl",
+          "column": "Base64Content2",
+          "type": "varchar",
+          "max_length": -1,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 9
+        },
+        {
+          "schema": "dbo",
+          "table": "IV_InboundRequestAttachTbl",
+          "column": "FileType",
+          "type": "int",
+          "max_length": 4,
+          "precision": 10,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 10
+        },
+        {
+          "schema": "dbo",
+          "table": "IV_InboundRequestAttachTbl",
+          "column": "DocumentID",
+          "type": "varchar",
+          "max_length": 50,
+          "precision": 0,
+          "scale": 0,
+          "is_nullable": true,
+          "is_identity": false,
+          "is_computed": false,
+          "column_id": 11
+        }
+      ],
+      "keys": [
+        {
+          "table": "IV_InboundRequestAttachTbl",
+          "index": "PK__IV_Inbou__26A2D3AB915FBF4F",
+          "is_primary_key": true,
+          "is_unique": true,
+          "column": "UserAutoID",
+          "key_ordinal": 1
+        }
+      ],
+      "foreignKeys": []
+    }
+  ],
+  "bindings": [
+    {
+      "module": "purchase-requests",
+      "formId": "AP_PurposeRequestListFrm",
+      "headerTable": "AP_PurchaseRequestTbl",
+      "supported": false,
+      "attachmentTable": null,
+      "parentColumn": null,
+      "bindingKind": "no-current-form-binding-observed",
+      "nativeProperties": [],
+      "nativePOButton": null,
+      "writableRoutes": false,
+      "nativeHiddenEditEvidence": []
+    },
+    {
+      "module": "sales-orders",
+      "formId": "AR_OrderByContractFrm",
+      "headerTable": "AR_OrderTbl",
+      "supported": true,
+      "attachmentTable": "AR_OrderAttachTbl",
+      "parentColumn": "DocumentID",
+      "bindingKind": "native-webcam-control",
+      "nativeProperties": [
+        {
+          "form": "AR_OrderByContractFrm",
+          "layout": "LYS2",
+          "control": "AttachWebcamImageControlCtl",
+          "property": "STT",
+          "value": "2"
+        },
+        {
+          "form": "AR_OrderByContractFrm",
+          "layout": "LYS2",
+          "control": "AttachWebcamImageControlCtl",
+          "property": "BTA",
+          "value": "Ảnh chụp hư hỏng"
+        },
+        {
+          "form": "AR_OrderByContractFrm",
+          "layout": "LYS1",
+          "control": "AttachWebcamImageControlCtl",
+          "property": "BTA",
+          "value": "Tài liệu đính kèm"
+        },
+        {
+          "form": "AR_OrderByContractFrm",
+          "layout": "LYS1",
+          "control": "AttachWebcamImageControlCtl",
+          "property": "STT",
+          "value": "2"
+        }
+      ],
+      "nativePOButton": null,
+      "writableRoutes": true,
+      "nativeHiddenEditEvidence": []
+    },
+    {
+      "module": "internal-transfer-requests",
+      "formId": "IV_InternalTransferRequestFrm",
+      "headerTable": "IV_InternalTransferRequestTbl",
+      "supported": false,
+      "attachmentTable": null,
+      "parentColumn": null,
+      "bindingKind": "no-current-form-binding-observed",
+      "nativeProperties": [],
+      "nativePOButton": null,
+      "writableRoutes": false,
+      "nativeHiddenEditEvidence": []
+    },
+    {
+      "module": "warehouse-qr",
+      "formId": "IV_Output_QRCodeFrm",
+      "headerTable": "IV_OutputTbl",
+      "supported": false,
+      "attachmentTable": null,
+      "parentColumn": null,
+      "bindingKind": "no-current-form-binding-observed",
+      "nativeProperties": [],
+      "nativePOButton": null,
+      "writableRoutes": false,
+      "nativeHiddenEditEvidence": []
+    },
+    {
+      "module": "sales-qr",
+      "formId": "AR_Invoice_QRCodeFrm",
+      "headerTable": "AR_InvoiceTbl",
+      "supported": false,
+      "attachmentTable": null,
+      "parentColumn": null,
+      "bindingKind": "no-current-form-binding-observed",
+      "nativeProperties": [],
+      "nativePOButton": null,
+      "writableRoutes": false,
+      "nativeHiddenEditEvidence": []
+    },
+    {
+      "module": "machine-movements",
+      "formId": "FA_Move2026Frm",
+      "headerTable": "FA_MoveTbl",
+      "supported": false,
+      "attachmentTable": null,
+      "parentColumn": null,
+      "bindingKind": "no-current-form-binding-observed",
+      "nativeProperties": [],
+      "nativePOButton": null,
+      "writableRoutes": false,
+      "nativeHiddenEditEvidence": []
+    },
+    {
+      "module": "machine-repairs",
+      "formId": "FA_Repair2026Frm",
+      "headerTable": "FA_RepairTbl",
+      "supported": false,
+      "attachmentTable": null,
+      "parentColumn": null,
+      "bindingKind": "no-current-form-binding-observed",
+      "nativeProperties": [],
+      "nativePOButton": null,
+      "writableRoutes": false,
+      "nativeHiddenEditEvidence": []
+    },
+    {
+      "module": "purchase-orders",
+      "formId": "AP_OrderFrm",
+      "headerTable": "AP_OrderTbl",
+      "supported": true,
+      "attachmentTable": "AP_POAttachTbl",
+      "parentColumn": "DocumentID",
+      "bindingKind": "web-extension-explicit-existing-foreign-key",
+      "nativeProperties": [],
+      "nativePOButton": "UNKNOWN",
+      "writableRoutes": true,
+      "nativeHiddenEditEvidence": []
+    },
+    {
+      "module": "inbound-requests",
+      "formId": "IV_InboundRequestFrm",
+      "headerTable": "IV_InboundRequestTbl",
+      "supported": true,
+      "attachmentTable": "IV_InboundRequestAttachTbl",
+      "parentColumn": "DocumentID",
+      "bindingKind": "native-webcam-control",
+      "nativeProperties": [
+        {
+          "form": "IV_InboundRequestFrm",
+          "layout": "LYS2",
+          "control": "AttachWebcamImageControlCtl",
+          "property": "BTA",
+          "value": "Ảnh chụp hư hỏng"
+        },
+        {
+          "form": "IV_InboundRequestFrm",
+          "layout": "LYS1",
+          "control": "AttachWebcamImageControlCtl_2",
+          "property": "STT",
+          "value": "6"
+        },
+        {
+          "form": "IV_InboundRequestFrm",
+          "layout": "LYS1",
+          "control": "AttachWebcamImageControlCtl_3",
+          "property": "BTA",
+          "value": "Ảnh chụp hư hỏng"
+        },
+        {
+          "form": "IV_InboundRequestFrm",
+          "layout": "LYS2",
+          "control": "AttachWebcamImageControlCtl_2",
+          "property": "STT",
+          "value": "6"
+        },
+        {
+          "form": "IV_InboundRequestFrm",
+          "layout": "LYS1",
+          "control": "AttachWebcamImageControlCtl_1",
+          "property": "BTA",
+          "value": "Ảnh chụp trước khi dở hàng"
+        },
+        {
+          "form": "IV_InboundRequestFrm",
+          "layout": "LYS2",
+          "control": "AttachWebcamImageControlCtl_1",
+          "property": "STT",
+          "value": "4"
+        },
+        {
+          "form": "IV_InboundRequestFrm",
+          "layout": "LYS1",
+          "control": "AttachWebcamImageControlCtl_2",
+          "property": "BTA",
+          "value": "Ảnh chụp sau khi dở hàng"
+        },
+        {
+          "form": "IV_InboundRequestFrm",
+          "layout": "LYS1",
+          "control": "AttachWebcamImageControlCtl_1",
+          "property": "STT",
+          "value": "4"
+        },
+        {
+          "form": "IV_InboundRequestFrm",
+          "layout": "LYS2",
+          "control": "AttachWebcamImageControlCtl",
+          "property": "STT",
+          "value": "2"
+        },
+        {
+          "form": "IV_InboundRequestFrm",
+          "layout": "LYS2",
+          "control": "AttachWebcamImageControlCtl_2",
+          "property": "BTA",
+          "value": "Ảnh chụp sau khi dở hàng"
+        },
+        {
+          "form": "IV_InboundRequestFrm",
+          "layout": "LYS1",
+          "control": "AttachWebcamImageControlCtl",
+          "property": "STT",
+          "value": "2"
+        },
+        {
+          "form": "IV_InboundRequestFrm",
+          "layout": "LYS2",
+          "control": "AttachWebcamImageControlCtl_1",
+          "property": "BTA",
+          "value": "Ảnh chụp trước khi dở hàng"
+        },
+        {
+          "form": "IV_InboundRequestFrm",
+          "layout": "LYS1",
+          "control": "AttachWebcamImageControlCtl",
+          "property": "BTA",
+          "value": "Ảnh chụp hư hỏng"
+        },
+        {
+          "form": "IV_InboundRequestFrm",
+          "layout": "LYS1",
+          "control": "AttachWebcamImageControlCtl_3",
+          "property": "STT",
+          "value": "2"
+        }
+      ],
+      "nativePOButton": null,
+      "writableRoutes": true,
+      "nativeHiddenEditEvidence": []
+    },
+    {
+      "module": "purchase-approvals",
+      "formId": "AP_ApprovePurchaseRequestListFrm",
+      "headerTable": "AP_PurchaseRequestTbl",
+      "supported": false,
+      "attachmentTable": null,
+      "parentColumn": null,
+      "bindingKind": "no-current-form-binding-observed",
+      "nativeProperties": [],
+      "nativePOButton": null,
+      "writableRoutes": false,
+      "nativeHiddenEditEvidence": []
+    },
+    {
+      "module": "sales-order-pm",
+      "formId": "AR_OrderComfirmFrm",
+      "headerTable": "AR_OrderTbl",
+      "supported": true,
+      "attachmentTable": "AR_OrderAttachTbl",
+      "parentColumn": "DocumentID",
+      "bindingKind": "native-webcam-control",
+      "nativeProperties": [
+        {
+          "form": "AR_OrderComfirmFrm",
+          "layout": "LYS1",
+          "control": "AttachWebcamImageControlCtl",
+          "property": "BTA",
+          "value": "Tài liệu đính kèm"
+        },
+        {
+          "form": "AR_OrderComfirmFrm",
+          "layout": "LYS1",
+          "control": "AttachWebcamImageControlCtl",
+          "property": "STT",
+          "value": "2"
+        },
+        {
+          "form": "AR_OrderComfirmFrm",
+          "layout": "LYS2",
+          "control": "AttachWebcamImageControlCtl",
+          "property": "BTA",
+          "value": "Ảnh chụp hư hỏng"
+        },
+        {
+          "form": "AR_OrderComfirmFrm",
+          "layout": "LYS2",
+          "control": "AttachWebcamImageControlCtl",
+          "property": "STT",
+          "value": "2"
+        }
+      ],
+      "nativePOButton": null,
+      "writableRoutes": true,
+      "nativeHiddenEditEvidence": []
+    },
+    {
+      "module": "sales-order-sa",
+      "formId": "AR_OrderAproveFrm",
+      "headerTable": "AR_OrderTbl",
+      "supported": true,
+      "attachmentTable": "AR_OrderAttachTbl",
+      "parentColumn": "DocumentID",
+      "bindingKind": "native-webcam-control",
+      "nativeProperties": [
+        {
+          "form": "AR_OrderAproveFrm",
+          "layout": "LYS1",
+          "control": "AttachWebcamImageControlCtl",
+          "property": "STT",
+          "value": "2"
+        },
+        {
+          "form": "AR_OrderAproveFrm",
+          "layout": "LYS1",
+          "control": "AttachWebcamImageControlCtl",
+          "property": "BTA",
+          "value": "Tài liệu đính kèm"
+        }
+      ],
+      "nativePOButton": null,
+      "writableRoutes": false,
+      "nativeHiddenEditEvidence": [
+        {
+          "FID": "AR_OrderAproveFrm",
+          "KeyID": "HBE",
+          "SubID": "",
+          "KeyValue": "1",
+          "SubValue": ""
+        }
+      ]
+    },
+    {
+      "module": "internal-transfer-pm",
+      "formId": "IV_InternalTransferPMFrm",
+      "headerTable": "IV_InternalTransferRequestTbl",
+      "supported": false,
+      "attachmentTable": null,
+      "parentColumn": null,
+      "bindingKind": "no-current-form-binding-observed",
+      "nativeProperties": [],
+      "nativePOButton": null,
+      "writableRoutes": false,
+      "nativeHiddenEditEvidence": []
+    },
+    {
+      "module": "internal-transfer-batches",
+      "formId": "IV_InternalTransferBatchFrm",
+      "headerTable": "IV_InternalTransferBatchTbl",
+      "supported": false,
+      "attachmentTable": null,
+      "parentColumn": null,
+      "bindingKind": "no-current-form-binding-observed",
+      "nativeProperties": [],
+      "nativePOButton": null,
+      "writableRoutes": false,
+      "nativeHiddenEditEvidence": []
+    },
+    {
+      "module": "internal-transfer-tech",
+      "formId": "IV_InternalTransferTechFrm",
+      "headerTable": "IV_InternalTransferBatchTbl",
+      "supported": false,
+      "attachmentTable": null,
+      "parentColumn": null,
+      "bindingKind": "no-current-form-binding-observed",
+      "nativeProperties": [],
+      "nativePOButton": null,
+      "writableRoutes": false,
+      "nativeHiddenEditEvidence": []
+    },
+    {
+      "module": "internal-transfer-sa",
+      "formId": "IV_InternalTransferSAFrm",
+      "headerTable": "IV_InternalTransferBatchTbl",
+      "supported": false,
+      "attachmentTable": null,
+      "parentColumn": null,
+      "bindingKind": "no-current-form-binding-observed",
+      "nativeProperties": [],
+      "nativePOButton": null,
+      "writableRoutes": false,
+      "nativeHiddenEditEvidence": []
+    },
+    {
+      "module": "internal-transfer-accounting",
+      "formId": "IV_InternalTransferAccountingFrm",
+      "headerTable": "IV_InternalTransferBatchTbl",
+      "supported": false,
+      "attachmentTable": null,
+      "parentColumn": null,
+      "bindingKind": "no-current-form-binding-observed",
+      "nativeProperties": [],
+      "nativePOButton": null,
+      "writableRoutes": false,
+      "nativeHiddenEditEvidence": []
+    },
+    {
+      "module": "internal-transfer-warehouse-out",
+      "formId": "IV_InternalTransferWarehouseOutFrm",
+      "headerTable": "IV_InternalTransferBatchTbl",
+      "supported": false,
+      "attachmentTable": null,
+      "parentColumn": null,
+      "bindingKind": "no-current-form-binding-observed",
+      "nativeProperties": [],
+      "nativePOButton": null,
+      "writableRoutes": false,
+      "nativeHiddenEditEvidence": []
+    },
+    {
+      "module": "internal-transfer-warehouse-in",
+      "formId": "IV_InternalTransferWarehouseInFrm",
+      "headerTable": "IV_InternalTransferBatchTbl",
+      "supported": false,
+      "attachmentTable": null,
+      "parentColumn": null,
+      "bindingKind": "no-current-form-binding-observed",
+      "nativeProperties": [],
+      "nativePOButton": null,
+      "writableRoutes": false,
+      "nativeHiddenEditEvidence": []
+    }
+  ],
+  "limits": [
+    "Only five existing ERP document modules have a supported binding; other attachment tables belong to forms outside the nineteen existing BE forms.",
+    "PM/SA share AR_OrderAttachTbl; native role/state/edit visibility still controls writes.",
+    "No raw archive equivalence, production binary execution or owner business acceptance is claimed.",
+    "BE stores Content/Content2 and FileType=1 using observed native STT values; optional Base64/FileSize fields are left untouched. Native desktop display of new Web uploads remains UNKNOWN pending owner acceptance.",
+    "No image/business file bytes, names, real document IDs, user rows, credentials or SQL bodies are exported."
+  ]
+}

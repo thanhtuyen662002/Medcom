@@ -28,6 +28,10 @@ purposes = {
     "/contract-info": ("Xem thông tin hợp đồng", "Mở thông tin hợp đồng liên quan đến phiếu."),
     "/item-price": ("Chọn hàng", "Lấy giá mua áp dụng cho hàng được chọn."),
     "/commands/lookup": ("Kiểm tra kết quả thao tác", "Kiểm tra lần lưu/gửi trước khi chưa nhận được kết quả; không dựng thành nút nghiệp vụ riêng."),
+    "/attachments": ("Ảnh đính kèm", "Lấy danh sách ảnh theo trang, các vị trí ảnh và quyền thêm/xóa trên phiếu; chỉ mở phần này khi màn hình có hỗ trợ."),
+    "/attachments/content": ("Xem hoặc tải ảnh", "Mở ảnh gốc hoặc ảnh xem trước của phiếu đang xem."),
+    "/attachments/upload": ("Thêm hoặc thay ảnh", "Gửi file ảnh vào phiếu đã lưu và ghi ảnh vào cơ sở dữ liệu ERP."),
+    "/attachments/delete": ("Xóa ảnh", "Xóa ảnh được chọn khi người dùng và trạng thái phiếu cho phép."),
     "/qr/add": ("Quét thêm mã QR", "Ghi mã QR quét vào phiếu đang mở."),
     "/qr/delete": ("Quét xóa mã QR", "Xóa mã QR quét khỏi phiếu đang mở."),
     "/sections/costs/save": ("Lưu chi phí", "Ghi các dòng chi phí của đề nghị nhập kho."),
@@ -91,7 +95,7 @@ for screen in screens:
         if module == "purchase-approvals" and suffix == "":
             purpose = "Tải danh sách đề nghị ở mọi trạng thái trong chi nhánh được phép, theo trang; có thể lọc trạng thái khi cần. Nút Duyệt/Không duyệt hiện theo quyền và chỉ bật khi phiếu đang chờ duyệt, đủ điều kiện xử lý."
         for method in item: row(place, method, path, purpose)
-lines += ["", "## Các API đọc đã có ở nhóm chứng từ", "",
+lines += ["", "## Ảnh đính kèm", "", "Bổ sung ngày 16/10/2026: [bàn giao ảnh theo màn hình và cách gửi file](BE_FE_ATTACHMENTS_20261016.md). Danh sách ảnh trả quyền thao tác riêng; FE dùng các quyền đó và cập nhật proxy để chuyển file.", "", "## Các API đọc đã có ở nhóm chứng từ", "",
     "Màn hình mới dùng API trong từng mục ERP phía trên. Nhóm dưới đây phục vụ phần đọc đang tích hợp từ trước.", "",
     "| Dùng ở đâu / thao tác | API | Làm gì |", "|---|---|---|"]
 old_writes = []

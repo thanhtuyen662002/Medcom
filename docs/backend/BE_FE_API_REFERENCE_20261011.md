@@ -1,6 +1,6 @@
 # Bàn giao API BE cho FE — màn hình và thao tác
 
-Danh mục đủ 244 API hiện có, phục vụ 19 màn hình ERP. Cập nhật 15/10/2026. Trên VPS, FE gọi qua proxy tại https://medcom.bms79.com/api/erp; nối đường dẫn BE trong các bảng dưới đây vào địa chỉ đó.
+Danh mục đủ 276 API hiện có, phục vụ 19 màn hình ERP. Cập nhật 15/10/2026. Trên VPS, FE gọi qua proxy tại https://medcom.bms79.com/api/erp; nối đường dẫn BE trong các bảng dưới đây vào địa chỉ đó.
 
 ## Quy định giao diện
 
@@ -52,6 +52,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Xóa | `POST /api/erp/purchase-requests/delete` | Xóa phiếu khi người dùng và trạng thái cho phép. |
 | Gửi đề nghị | `POST /api/erp/purchase-requests/actions/submit` | Thực hiện nút “Gửi đề nghị” trên phiếu đang mở, khi người dùng và trạng thái cho phép. |
 | Gửi đặt mua hàng | `POST /api/erp/purchase-requests/actions/send-purchase-order` | Thực hiện nút “Gửi đặt mua hàng” trên phiếu đang mở, khi người dùng và trạng thái cho phép. |
+| Ảnh đính kèm | `GET /api/erp/purchase-requests/attachments` | Lấy danh sách ảnh theo trang, các vị trí ảnh và quyền thêm/xóa trên phiếu; chỉ mở phần này khi màn hình có hỗ trợ. |
 
 ## Quản lý đơn hàng
 
@@ -72,6 +73,10 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Xóa | `POST /api/erp/sales-orders/delete` | Xóa phiếu khi người dùng và trạng thái cho phép. |
 | Thu hồi để sửa | `POST /api/erp/sales-orders/actions/recall` | Thực hiện nút “Thu hồi để sửa” trên phiếu đang mở, khi người dùng và trạng thái cho phép. |
 | Gửi PM | `POST /api/erp/sales-orders/actions/send-pm` | Thực hiện nút “Gửi PM” trên phiếu đang mở, khi người dùng và trạng thái cho phép. |
+| Ảnh đính kèm | `GET /api/erp/sales-orders/attachments` | Lấy danh sách ảnh theo trang, các vị trí ảnh và quyền thêm/xóa trên phiếu; chỉ mở phần này khi màn hình có hỗ trợ. |
+| Xem hoặc tải ảnh | `GET /api/erp/sales-orders/attachments/content` | Mở ảnh gốc hoặc ảnh xem trước của phiếu đang xem. |
+| Xóa ảnh | `POST /api/erp/sales-orders/attachments/delete` | Xóa ảnh được chọn khi người dùng và trạng thái phiếu cho phép. |
+| Thêm hoặc thay ảnh | `POST /api/erp/sales-orders/attachments/upload` | Gửi file ảnh vào phiếu đã lưu và ghi ảnh vào cơ sở dữ liệu ERP. |
 
 ## Phiếu đề nghị điều chuyển nội bộ
 
@@ -91,6 +96,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Xóa | `POST /api/erp/internal-transfer-requests/delete` | Xóa phiếu khi người dùng và trạng thái cho phép. |
 | Thu hồi để sửa | `POST /api/erp/internal-transfer-requests/actions/recall` | Thực hiện nút “Thu hồi để sửa” trên phiếu đang mở, khi người dùng và trạng thái cho phép. |
 | Gửi PM | `POST /api/erp/internal-transfer-requests/actions/send-pm` | Thực hiện nút “Gửi PM” trên phiếu đang mở, khi người dùng và trạng thái cho phép. |
+| Ảnh đính kèm | `GET /api/erp/internal-transfer-requests/attachments` | Lấy danh sách ảnh theo trang, các vị trí ảnh và quyền thêm/xóa trên phiếu; chỉ mở phần này khi màn hình có hỗ trợ. |
 
 ## Xuất kho
 
@@ -104,6 +110,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Kiểm tra kết quả thao tác | `POST /api/erp/warehouse-qr/commands/lookup` | Kiểm tra lần lưu/gửi trước khi chưa nhận được kết quả; không dựng thành nút nghiệp vụ riêng. |
 | Quét thêm mã QR | `POST /api/erp/warehouse-qr/qr/add` | Ghi mã QR quét vào phiếu đang mở. |
 | Quét xóa mã QR | `POST /api/erp/warehouse-qr/qr/delete` | Xóa mã QR quét khỏi phiếu đang mở. |
+| Ảnh đính kèm | `GET /api/erp/warehouse-qr/attachments` | Lấy danh sách ảnh theo trang, các vị trí ảnh và quyền thêm/xóa trên phiếu; chỉ mở phần này khi màn hình có hỗ trợ. |
 
 ## Xuất bán hàng
 
@@ -118,6 +125,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Kiểm tra kết quả thao tác | `POST /api/erp/sales-qr/commands/lookup` | Kiểm tra lần lưu/gửi trước khi chưa nhận được kết quả; không dựng thành nút nghiệp vụ riêng. |
 | Quét thêm mã QR | `POST /api/erp/sales-qr/qr/add` | Ghi mã QR quét vào phiếu đang mở. |
 | Quét xóa mã QR | `POST /api/erp/sales-qr/qr/delete` | Xóa mã QR quét khỏi phiếu đang mở. |
+| Ảnh đính kèm | `GET /api/erp/sales-qr/attachments` | Lấy danh sách ảnh theo trang, các vị trí ảnh và quyền thêm/xóa trên phiếu; chỉ mở phần này khi màn hình có hỗ trợ. |
 
 ## Phiếu di chuyển / bàn giao máy
 
@@ -134,6 +142,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Thêm | `POST /api/erp/machine-movements/create` | Tạo phiếu mới và ghi các dòng chi tiết vào cơ sở dữ liệu. |
 | Lưu | `POST /api/erp/machine-movements/save` | Ghi thay đổi của phiếu và các dòng chi tiết. |
 | Xóa | `POST /api/erp/machine-movements/delete` | Xóa phiếu khi người dùng và trạng thái cho phép. |
+| Ảnh đính kèm | `GET /api/erp/machine-movements/attachments` | Lấy danh sách ảnh theo trang, các vị trí ảnh và quyền thêm/xóa trên phiếu; chỉ mở phần này khi màn hình có hỗ trợ. |
 
 ## Phiếu sửa chữa / bảo hành / bảo trì máy
 
@@ -150,6 +159,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Thêm | `POST /api/erp/machine-repairs/create` | Tạo phiếu mới và ghi các dòng chi tiết vào cơ sở dữ liệu. |
 | Lưu | `POST /api/erp/machine-repairs/save` | Ghi thay đổi của phiếu và các dòng chi tiết. |
 | Xóa | `POST /api/erp/machine-repairs/delete` | Xóa phiếu khi người dùng và trạng thái cho phép. |
+| Ảnh đính kèm | `GET /api/erp/machine-repairs/attachments` | Lấy danh sách ảnh theo trang, các vị trí ảnh và quyền thêm/xóa trên phiếu; chỉ mở phần này khi màn hình có hỗ trợ. |
 
 ## Đặt mua hàng
 
@@ -165,6 +175,10 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Thêm | `POST /api/erp/purchase-orders/create` | Tạo phiếu mới và ghi các dòng chi tiết vào cơ sở dữ liệu. |
 | Lưu | `POST /api/erp/purchase-orders/save` | Ghi thay đổi của phiếu và các dòng chi tiết. |
 | Xóa | `POST /api/erp/purchase-orders/delete` | Xóa phiếu khi người dùng và trạng thái cho phép. |
+| Ảnh đính kèm | `GET /api/erp/purchase-orders/attachments` | Lấy danh sách ảnh theo trang, các vị trí ảnh và quyền thêm/xóa trên phiếu; chỉ mở phần này khi màn hình có hỗ trợ. |
+| Xem hoặc tải ảnh | `GET /api/erp/purchase-orders/attachments/content` | Mở ảnh gốc hoặc ảnh xem trước của phiếu đang xem. |
+| Xóa ảnh | `POST /api/erp/purchase-orders/attachments/delete` | Xóa ảnh được chọn khi người dùng và trạng thái phiếu cho phép. |
+| Thêm hoặc thay ảnh | `POST /api/erp/purchase-orders/attachments/upload` | Gửi file ảnh vào phiếu đã lưu và ghi ảnh vào cơ sở dữ liệu ERP. |
 
 ## Phiếu đề nghị nhập hàng
 
@@ -182,6 +196,10 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Gửi BLĐ | `POST /api/erp/inbound-requests/actions/send-management` | Thực hiện nút “Gửi BLĐ” trên phiếu đang mở, khi người dùng và trạng thái cho phép. |
 | Gửi Thủ kho | `POST /api/erp/inbound-requests/actions/send-warehouse` | Thực hiện nút “Gửi Thủ kho” trên phiếu đang mở, khi người dùng và trạng thái cho phép. |
 | Lưu chi phí | `POST /api/erp/inbound-requests/sections/costs/save` | Ghi các dòng chi phí của đề nghị nhập kho. |
+| Ảnh đính kèm | `GET /api/erp/inbound-requests/attachments` | Lấy danh sách ảnh theo trang, các vị trí ảnh và quyền thêm/xóa trên phiếu; chỉ mở phần này khi màn hình có hỗ trợ. |
+| Xem hoặc tải ảnh | `GET /api/erp/inbound-requests/attachments/content` | Mở ảnh gốc hoặc ảnh xem trước của phiếu đang xem. |
+| Xóa ảnh | `POST /api/erp/inbound-requests/attachments/delete` | Xóa ảnh được chọn khi người dùng và trạng thái phiếu cho phép. |
+| Thêm hoặc thay ảnh | `POST /api/erp/inbound-requests/attachments/upload` | Gửi file ảnh vào phiếu đã lưu và ghi ảnh vào cơ sở dữ liệu ERP. |
 
 ## Duyệt đề nghị mua hàng
 
@@ -195,6 +213,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Kiểm tra kết quả thao tác | `POST /api/erp/purchase-approvals/commands/lookup` | Kiểm tra lần lưu/gửi trước khi chưa nhận được kết quả; không dựng thành nút nghiệp vụ riêng. |
 | Không duyệt | `POST /api/erp/purchase-approvals/actions/reject` | Thực hiện nút “Không duyệt” trên phiếu đang mở, khi người dùng và trạng thái cho phép. |
 | Duyệt | `POST /api/erp/purchase-approvals/actions/approve` | Thực hiện nút “Duyệt” trên phiếu đang mở, khi người dùng và trạng thái cho phép. |
+| Ảnh đính kèm | `GET /api/erp/purchase-approvals/attachments` | Lấy danh sách ảnh theo trang, các vị trí ảnh và quyền thêm/xóa trên phiếu; chỉ mở phần này khi màn hình có hỗ trợ. |
 
 ## Xác nhận đơn hàng
 
@@ -209,6 +228,10 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Kiểm tra kết quả thao tác | `POST /api/erp/sales-order-pm/commands/lookup` | Kiểm tra lần lưu/gửi trước khi chưa nhận được kết quả; không dựng thành nút nghiệp vụ riêng. |
 | Gửi SA | `POST /api/erp/sales-order-pm/actions/send-sa` | Thực hiện nút “Gửi SA” trên phiếu đang mở, khi người dùng và trạng thái cho phép. |
 | Từ chối nhanh | `POST /api/erp/sales-order-pm/actions/reject` | Thực hiện nút “Từ chối nhanh” trên phiếu đang mở, khi người dùng và trạng thái cho phép. |
+| Ảnh đính kèm | `GET /api/erp/sales-order-pm/attachments` | Lấy danh sách ảnh theo trang, các vị trí ảnh và quyền thêm/xóa trên phiếu; chỉ mở phần này khi màn hình có hỗ trợ. |
+| Xem hoặc tải ảnh | `GET /api/erp/sales-order-pm/attachments/content` | Mở ảnh gốc hoặc ảnh xem trước của phiếu đang xem. |
+| Xóa ảnh | `POST /api/erp/sales-order-pm/attachments/delete` | Xóa ảnh được chọn khi người dùng và trạng thái phiếu cho phép. |
+| Thêm hoặc thay ảnh | `POST /api/erp/sales-order-pm/attachments/upload` | Gửi file ảnh vào phiếu đã lưu và ghi ảnh vào cơ sở dữ liệu ERP. |
 
 ## Duyệt đơn hàng
 
@@ -226,6 +249,8 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Từ chối nhanh | `POST /api/erp/sales-order-sa/actions/reject` | Thực hiện nút “Từ chối nhanh” trên phiếu đang mở, khi người dùng và trạng thái cho phép. |
 | Chọn bước gửi về | `POST /api/erp/sales-order-sa/actions/return-step` | Thực hiện nút “Chọn bước gửi về” trên phiếu đang mở, khi người dùng và trạng thái cho phép. |
 | Lựa chọn khi Chọn bước gửi về | `POST /api/erp/sales-order-sa/actions/return-step/options` | Lấy danh sách người nhận hoặc bước xử lý để người dùng chọn trước khi gửi. |
+| Ảnh đính kèm | `GET /api/erp/sales-order-sa/attachments` | Lấy danh sách ảnh theo trang, các vị trí ảnh và quyền thêm/xóa trên phiếu; chỉ mở phần này khi màn hình có hỗ trợ. |
+| Xem hoặc tải ảnh | `GET /api/erp/sales-order-sa/attachments/content` | Mở ảnh gốc hoặc ảnh xem trước của phiếu đang xem. |
 
 ## Xác nhận đề nghị điều chuyển
 
@@ -240,6 +265,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Lưu | `POST /api/erp/internal-transfer-pm/save` | Ghi thay đổi của phiếu và các dòng chi tiết. |
 | Đồng ý điều chuyển | `POST /api/erp/internal-transfer-pm/actions/pm-confirm` | Thực hiện nút “Đồng ý điều chuyển” trên phiếu đang mở, khi người dùng và trạng thái cho phép. |
 | Từ chối nhanh | `POST /api/erp/internal-transfer-pm/actions/reject` | Thực hiện nút “Từ chối nhanh” trên phiếu đang mở, khi người dùng và trạng thái cho phép. |
+| Ảnh đính kèm | `GET /api/erp/internal-transfer-pm/attachments` | Lấy danh sách ảnh theo trang, các vị trí ảnh và quyền thêm/xóa trên phiếu; chỉ mở phần này khi màn hình có hỗ trợ. |
 
 ## Đợt điều chuyển nội bộ
 
@@ -256,6 +282,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Xóa | `POST /api/erp/internal-transfer-batches/delete` | Xóa phiếu khi người dùng và trạng thái cho phép. |
 | Đồng bộ đề nghị | `POST /api/erp/internal-transfer-batches/actions/sync-requests` | Thực hiện nút “Đồng bộ đề nghị” trên phiếu đang mở, khi người dùng và trạng thái cho phép. |
 | Gửi kỹ thuật | `POST /api/erp/internal-transfer-batches/actions/send-tech` | Thực hiện nút “Gửi kỹ thuật” trên phiếu đang mở, khi người dùng và trạng thái cho phép. |
+| Ảnh đính kèm | `GET /api/erp/internal-transfer-batches/attachments` | Lấy danh sách ảnh theo trang, các vị trí ảnh và quyền thêm/xóa trên phiếu; chỉ mở phần này khi màn hình có hỗ trợ. |
 
 ## Xác nhận thiết bị điều chuyển
 
@@ -272,6 +299,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Từ chối nhanh | `POST /api/erp/internal-transfer-tech/actions/reject` | Thực hiện nút “Từ chối nhanh” trên phiếu đang mở, khi người dùng và trạng thái cho phép. |
 | Lưu danh sách máy | `POST /api/erp/internal-transfer-tech/sections/assets/save` | Ghi các máy đã chọn trên phiếu kỹ thuật điều chuyển. |
 | Lựa chọn khi Gửi TP SA | `POST /api/erp/internal-transfer-tech/actions/send-sa/options` | Lấy danh sách người nhận hoặc bước xử lý để người dùng chọn trước khi gửi. |
+| Ảnh đính kèm | `GET /api/erp/internal-transfer-tech/attachments` | Lấy danh sách ảnh theo trang, các vị trí ảnh và quyền thêm/xóa trên phiếu; chỉ mở phần này khi màn hình có hỗ trợ. |
 
 ## Phê duyệt điều chuyển nội bộ
 
@@ -288,6 +316,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Từ chối nhanh | `POST /api/erp/internal-transfer-sa/actions/reject` | Thực hiện nút “Từ chối nhanh” trên phiếu đang mở, khi người dùng và trạng thái cho phép. |
 | Chọn bước gửi về | `POST /api/erp/internal-transfer-sa/actions/return-step` | Thực hiện nút “Chọn bước gửi về” trên phiếu đang mở, khi người dùng và trạng thái cho phép. |
 | Lựa chọn khi Chọn bước gửi về | `POST /api/erp/internal-transfer-sa/actions/return-step/options` | Lấy danh sách người nhận hoặc bước xử lý để người dùng chọn trước khi gửi. |
+| Ảnh đính kèm | `GET /api/erp/internal-transfer-sa/attachments` | Lấy danh sách ảnh theo trang, các vị trí ảnh và quyền thêm/xóa trên phiếu; chỉ mở phần này khi màn hình có hỗ trợ. |
 
 ## Xử lý điều chuyển nội bộ
 
@@ -304,6 +333,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Từ chối nhanh | `POST /api/erp/internal-transfer-accounting/actions/reject` | Thực hiện nút “Từ chối nhanh” trên phiếu đang mở, khi người dùng và trạng thái cho phép. |
 | Chọn bước gửi về | `POST /api/erp/internal-transfer-accounting/actions/return-step` | Thực hiện nút “Chọn bước gửi về” trên phiếu đang mở, khi người dùng và trạng thái cho phép. |
 | Lựa chọn khi Chọn bước gửi về | `POST /api/erp/internal-transfer-accounting/actions/return-step/options` | Lấy danh sách người nhận hoặc bước xử lý để người dùng chọn trước khi gửi. |
+| Ảnh đính kèm | `GET /api/erp/internal-transfer-accounting/attachments` | Lấy danh sách ảnh theo trang, các vị trí ảnh và quyền thêm/xóa trên phiếu; chỉ mở phần này khi màn hình có hỗ trợ. |
 
 ## Xác nhận xuất điều chuyển
 
@@ -320,6 +350,7 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Từ chối nhanh | `POST /api/erp/internal-transfer-warehouse-out/actions/reject` | Thực hiện nút “Từ chối nhanh” trên phiếu đang mở, khi người dùng và trạng thái cho phép. |
 | Chọn bước gửi về | `POST /api/erp/internal-transfer-warehouse-out/actions/return-step` | Thực hiện nút “Chọn bước gửi về” trên phiếu đang mở, khi người dùng và trạng thái cho phép. |
 | Lựa chọn khi Chọn bước gửi về | `POST /api/erp/internal-transfer-warehouse-out/actions/return-step/options` | Lấy danh sách người nhận hoặc bước xử lý để người dùng chọn trước khi gửi. |
+| Ảnh đính kèm | `GET /api/erp/internal-transfer-warehouse-out/attachments` | Lấy danh sách ảnh theo trang, các vị trí ảnh và quyền thêm/xóa trên phiếu; chỉ mở phần này khi màn hình có hỗ trợ. |
 
 ## Xác nhận nhận điều chuyển
 
@@ -333,6 +364,11 @@ Lần bàn giao này không bổ sung In hoặc Import/copy. Các API chọn/dá
 | Kiểm tra kết quả thao tác | `POST /api/erp/internal-transfer-warehouse-in/commands/lookup` | Kiểm tra lần lưu/gửi trước khi chưa nhận được kết quả; không dựng thành nút nghiệp vụ riêng. |
 | Lưu | `POST /api/erp/internal-transfer-warehouse-in/save` | Ghi thay đổi của phiếu và các dòng chi tiết. |
 | Xác nhận nhận hàng | `POST /api/erp/internal-transfer-warehouse-in/actions/receive` | Thực hiện nút “Xác nhận nhận hàng” trên phiếu đang mở, khi người dùng và trạng thái cho phép. |
+| Ảnh đính kèm | `GET /api/erp/internal-transfer-warehouse-in/attachments` | Lấy danh sách ảnh theo trang, các vị trí ảnh và quyền thêm/xóa trên phiếu; chỉ mở phần này khi màn hình có hỗ trợ. |
+
+## Ảnh đính kèm
+
+Bổ sung ngày 16/10/2026: [bàn giao ảnh theo màn hình và cách gửi file](BE_FE_ATTACHMENTS_20261016.md). Danh sách ảnh trả quyền thao tác riêng; FE dùng các quyền đó và cập nhật proxy để chuyển file.
 
 ## Các API đọc đã có ở nhóm chứng từ
 
