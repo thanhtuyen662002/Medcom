@@ -73,9 +73,6 @@ export function DesktopSidebar({
   onToggleDarkMode,
   onLogout,
   onToggleLayoutMode,
-  pendingOrdersCount = 0,
-  pendingPurchasesCount = 0,
-  pendingInboundCount = 0,
   tabAccess = null,
   onRetryTabs,
 }: DesktopSidebarProps) {
@@ -94,34 +91,15 @@ export function DesktopSidebar({
       icon: LayoutDashboard,
       badge: 0,
     },
-    {
-      id: "purchases" as NavTabId,
-      label: "Đề nghị (PR)",
-      icon: FileText,
-      badge: pendingPurchasesCount,
-    },
-    {
-      id: "inbound" as NavTabId,
-      label: "Nhập kho GSP",
-      icon: PackageCheck,
-      badge: pendingInboundCount,
-    },
-    {
-      id: "scan" as NavTabId,
-      label: "Quét mã vạch & QR",
-      icon: QrCode,
-      badge: 0,
-    },
   ];
 
   const erpSections = [
     {
-      title: "Mua hàng & Nhập kho",
+      title: "Mua hàng",
       items: [
         { id: "purchase-requests" as NavTabId, label: "Đề nghị mua hàng (PR)", icon: FileText },
         { id: "purchase-approvals" as NavTabId, label: "Duyệt đề nghị mua", icon: CheckCircle2 },
         { id: "purchase-orders" as NavTabId, label: "Đặt mua hàng", icon: ShoppingBag },
-        { id: "inbound-requests" as NavTabId, label: "Đề nghị nhập kho", icon: PackageCheck },
       ],
     },
     {
