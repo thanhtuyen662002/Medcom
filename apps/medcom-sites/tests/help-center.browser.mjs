@@ -43,10 +43,10 @@ test('help catalog follows the owner sales and nested warehouse menus',async()=>
   for(const guide of helpGuides.filter(item=>item.available)){
     assert.ok(guide.sections.length>=3);
     assert.equal(new Set(guide.sections.map(section=>section.id)).size,guide.sections.length);
-    for(const section of guide.sections){if(section.image)await access(path.join(app,'public',section.image.src));}
+    for(const section of guide.sections){if(section.images)for(const picture of Object.values(section.images))await access(path.join(app,'public',picture.src));}
   }
   const receipt=JSON.parse(await readFile(path.join(app,'public/help/images/manifest.json'),'utf8'));
-  assert.equal(receipt.images.length,11);assert.equal(receipt.realErpData,false);assert.equal(receipt.backendRequests,false);assert.equal(receipt.businessWrites,false);assert.deepEqual(receipt.errors,[]);
+  assert.equal(receipt.images.length,58);assert.equal(receipt.realErpData,false);assert.equal(receipt.backendRequests,false);assert.equal(receipt.businessWrites,false);assert.deepEqual(receipt.errors,[]);
 });
 
 test('help mobile/desktop navigation, search, deep links, image zoom and keyboard',{timeout:120000},async()=>{
@@ -60,7 +60,22 @@ test('help mobile/desktop navigation, search, deep links, image zoom and keyboar
       // Keep preview-only Next dev controls out of product reference captures.
       await page.addStyleTag({content:'nextjs-portal{display:none!important}'});
       await page.getByRole('heading',{name:'Đề nghị mua hàng',exact:true}).waitFor();
-      await page.locator('img[src="/help/images/pr-list.png"]').waitFor();
+      assert.equal(await page.getByText('Đọc ngay khi thao tác',{exact:true}).count(),0);
+      const typography=await page.locator('[data-help-section] ol p').first().evaluate(node=>{const style=getComputedStyle(node);return{size:style.fontSize,font:style.fontFamily,color:style.color};});
+      assert.equal(typography.size,'16px');assert.match(typography.font,/Segoe UI/);assert.equal(typography.color,'rgb(0, 0, 0)');
+      const figure=page.locator('#mo-danh-sach figure');
+      const devices=figure.getByRole('group');
+      await devices.getByRole('button',{name:width>=1024?'Máy tính':'Điện thoại',exact:true}).waitFor();
+      for(const [label,suffix] of [['Máy tính','desktop'],['Điện thoại','mobile']]){
+        await devices.getByRole('button',{name:label,exact:true}).click();
+        await page.waitForFunction(device=>{const img=document.querySelector('#mo-danh-sach figure img');return img?.getAttribute('src')?.endsWith('-'+device+'.webp')&&img.complete&&img.naturalWidth>0;},suffix);
+        assert.equal(await devices.getByRole('button',{name:label,exact:true}).getAttribute('aria-pressed'),'true');
+        const bounds=await devices.getByRole('button',{name:label,exact:true}).boundingBox();assert.ok(bounds.height>=44);
+        assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+      }
+      await devices.getByRole('button',{name:width>=1024?'Máy tính':'Điện thoại',exact:true}).click();
+      await page.evaluate(()=>window.scrollTo(0,0));
+      await page.locator('img[src*="/help/images/pr-list-"]').waitFor();
       await page.waitForFunction(()=>Array.from(document.querySelectorAll('img[src*="/help/images/"]')).filter(img=>img.getBoundingClientRect().top<innerHeight).every(img=>img.complete&&img.naturalWidth>0));
       async function noOverflow(){assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`No horizontal overflow at ${width}px`);}
       const themeControl=page.getByRole('button',{name:'Chuyển sang giao diện tối',exact:true});
@@ -111,7 +126,7 @@ test('help mobile/desktop navigation, search, deep links, image zoom and keyboar
       await page.waitForFunction(()=>document.querySelector('dialog img')?.naturalWidth>0);
       assert.ok(await imageDialog.locator('img').evaluate(img=>img.getBoundingClientRect().width>250));
       await imageDialog.getByRole('button',{name:'Phóng to để đọc rõ'}).click();
-      assert.equal(await imageDialog.locator('img').evaluate(img=>img.getBoundingClientRect().width),660);
+      assert.equal(await imageDialog.locator('img').evaluate(img=>img.getBoundingClientRect().width),await imageDialog.locator('img').evaluate(img=>Math.max(660,img.naturalWidth)));
       await imageDialog.getByRole('button',{name:'Thu vừa màn hình'}).click();
       await noOverflow();await page.screenshot({path:path.join(output,'zoom-'+width+'.png')});
       await page.keyboard.press('Escape');assert.equal(await imageDialog.count(),0);assert.equal(await zoom.evaluate(node=>node===document.activeElement),true);
@@ -142,6 +157,8 @@ test('help inherits main theme, updates across tabs and follows system only with
         await page.waitForFunction(expected=>document.documentElement.classList.contains('dark')===expected&&document.body.classList.contains('dark')===expected,dark);
         assert.equal(await page.locator('main').evaluate(main=>getComputedStyle(main.parentElement.parentElement).backgroundColor),dark?'rgb(13, 20, 32)':'rgb(255, 255, 255)');
         assert.equal(await page.locator('main').evaluate(main=>getComputedStyle(main.parentElement.parentElement).colorScheme),dark?'dark':'light');
+        const text=await page.locator('[data-help-section] ol p').first().evaluate(node=>getComputedStyle(node).color);
+        assert.equal(text,dark?'rgb(255, 255, 255)':'rgb(0, 0, 0)');
         await page.waitForFunction(expected=>{
           const logo=document.querySelector('img[data-medcom-logo]');
           const icon=document.querySelector('link[rel="icon"]');

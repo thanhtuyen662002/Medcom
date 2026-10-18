@@ -2,7 +2,8 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {build} from 'esbuild';
 import {createRequire} from 'node:module';
-import {mkdir} from 'node:fs/promises';
+import {mkdir,readFile,readdir} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
@@ -25,4 +26,30 @@ test('sales documentation covers supported screens and preserves unsupported Fea
  }
  assert.ok(searchGuides('gui ke toan').some(guide=>guide.id==='sales-order-sa'));
  assert.ok(searchGuides('thu hoi').some(guide=>guide.id==='sales-orders'));
+});
+
+test('every ready guide has current desktop/mobile evidence and obsolete images are removed',async()=>{
+ const manifest=JSON.parse(await readFile(path.join(app,'public/help/images/manifest.json'),'utf8'));
+ assert.equal(manifest.kind,'production-components-with-synthetic-offline-transport');
+ assert.equal(manifest.realErpData,false);assert.equal(manifest.backendRequests,false);assert.equal(manifest.businessWrites,false);assert.deepEqual(manifest.errors,[]);
+ const expected=new Set();
+ for(const guide of helpGuides.filter(guide=>guide.available)){
+  assert.ok(guide.sections.filter(section=>section.images).length>=2,guide.id+' needs illustrations');
+  for(const section of guide.sections.filter(section=>section.images))for(const device of ['desktop','mobile']){
+   const picture=section.images[device];expected.add(picture.src);
+   const evidence=manifest.images.find(row=>row.src===picture.src);
+   assert.ok(evidence,`Missing capture evidence: ${picture.src}`);assert.equal(evidence.device,device);
+   assert.equal(picture.width,evidence.width);assert.equal(picture.height,evidence.height);assert.ok(evidence.annotations>0);
+   const bytes=await readFile(path.join(app,'public',picture.src));
+   assert.equal(createHash('sha256').update(bytes).digest('hex'),evidence.sha256);
+   assert.equal(bytes.toString('ascii',0,4),'RIFF');assert.equal(bytes.toString('ascii',8,12),'WEBP');
+  }
+ }
+ assert.equal(expected.size,58);assert.equal(manifest.images.length,58);
+ const files=(await readdir(path.join(app,'public/help/images'))).filter(name=>name!=='manifest.json').map(name=>'/help/images/'+name);
+ assert.deepEqual([...files].sort(),[...expected].sort(),'No obsolete or unreferenced screenshots');
+ for(const file of ['lib/help/guides.ts','lib/help/sales-guides.ts','components/help/help-center.tsx']){
+  const source=await readFile(path.join(app,file),'utf8');assert.doesNotMatch(source,/\p{Extended_Pictographic}/u);
+  assert.doesNotMatch(source,/Đọc ngay khi thao tác|Mở hướng dẫn ở một tab khác/);
+ }
 });

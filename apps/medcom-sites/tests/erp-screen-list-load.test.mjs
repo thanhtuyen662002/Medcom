@@ -17,6 +17,7 @@ await mkdir(output,{recursive:true});
 const stubs={
  'erp-client':`
 export const erpClient={
+ async getLookupOptions(module,query){return globalThis.__erpStatusHandler?globalThis.__erpStatusHandler(module,query):{items:[],page:1,hasMore:false,requiredParameters:[]};},
  async getDocumentsList(kind,page,search,branchId,pageSize){return globalThis.__legacyListHandler({page,search,branchId,pageSize});},
  async getPurchaseRequestsList(page,search,branchId,pageSize){return{list:await globalThis.__legacyListHandler({page,search,branchId,pageSize}),scopeKey:'synthetic-scope'};},
  async getScreenMetadata(){return{caption:'Đề nghị mua hàng'};},
@@ -50,7 +51,7 @@ const stubPlugin={
  name:'erp-screen-stubs',
  setup(builder){
   builder.onResolve({filter:/.*/},args=>{
-   if(!/tab-(erp-screen|orders|purchases)\.tsx$/.test(args.importer.replace(/\\/g,'/')))return null;
+   if(!/(tab-(erp-screen|orders|purchases)|sales-order-status-filter)\.tsx$/.test(args.importer.replace(/\\/g,'/')))return null;
    const requested=args.path.replace(/\\/g,'/');
    for(const key of Object.keys(stubs))if(requested.endsWith(key))return{path:key,namespace:'stub'};
    return null;
@@ -183,6 +184,50 @@ test('late pagination responses cannot overwrite a newer query or branch',async(
   assert.ok(!collect(renderer).text.includes('STALE-PAGE'));
   assert.equal(renderer.root.findByProps({'aria-current':'page'}).props['aria-label'],'Đến trang 1');
  }finally{pending.forEach(resolve=>resolve());delete globalThis.__erpListHandler;if(renderer)await act(async()=>renderer.unmount());}
+});
+
+for(const screenModule of ['sales-orders','sales-order-pm','sales-order-sa'])test(`${screenModule} filters by native status IDs on the server without lock or page-count badges`,async()=>{
+ const calls=[],lookups=[];let renderer;
+ globalThis.__erpStatusHandler=async(scope,query)=>{lookups.push({scope,...query});return{items:[{id:'-1',label:'Trạng thái minh họa A'},{id:'0',label:'Trạng thái minh họa B'},{id:'12',label:'Trạng thái minh họa C'}],page:1,hasMore:false,requiredParameters:[]};};
+ globalThis.__erpListHandler=async(scope,params)=>{calls.push({scope,...params});return{rows:[{documentId:'QA-SALES',header:{statusId:params.statusId??12,statusName:'Tên trạng thái từ API',isLocked:false}}],page:params.page,pageSize:params.pageSize,hasMore:true};};
+ try{
+  await act(async()=>{renderer=create(React.createElement(TabErpScreen,{module:screenModule,...props,isActive:true}));});await flush();
+  assert.equal(lookups.length,1);assert.equal(lookups[0].scope,screenModule);assert.equal(lookups[0].branchId,'MB');assert.equal(lookups[0].lookupId,'header.StatusID');
+  const group=renderer.root.findByProps({'aria-label':'Lọc trạng thái đơn hàng'});
+  const badges=()=>group.findAll(node=>node.type==='button');
+  assert.deepEqual(badges().map(node=>node.children.join('')),['Tất cả','Trạng thái minh họa A','Trạng thái minh họa B','Trạng thái minh họa C']);
+  assert.doesNotMatch(collect(renderer).text,/Đang mở \/ Chưa khóa|Đã khóa \/ Hoàn tất|Phân hệ ERP/);
+  assert.match(collect(renderer).text,/Tên trạng thái từ API/);
+  for(const [label,id] of [['Trạng thái minh họa A',-1],['Trạng thái minh họa B',0],['Trạng thái minh họa C',12]]){
+   await act(async()=>badges().find(node=>node.children.includes(label)).props.onClick());await flush();
+   assert.equal(calls.at(-1).scope,screenModule);assert.equal(calls.at(-1).page,1);assert.equal(calls.at(-1).statusId,id);
+   assert.equal(badges().find(node=>node.children.includes(label)).props['aria-pressed'],true);
+  }
+  await act(async()=>renderer.root.findByProps({'aria-label':'Trang sau'}).props.onClick());await flush();
+  assert.equal(calls.at(-1).page,2);assert.equal(calls.at(-1).statusId,12);
+  await act(async()=>badges()[0].props.onClick());await flush();
+  assert.equal(calls.at(-1).page,1);assert.equal(calls.at(-1).statusId,undefined);
+ }finally{delete globalThis.__erpListHandler;delete globalThis.__erpStatusHandler;if(renderer)await act(async()=>renderer.unmount());}
+});
+
+test('status lookup paging retries failures and ignores responses for a previous branch',async()=>{
+ let renderer,resolveOld,fail=true;
+ globalThis.__erpStatusHandler=async(module,query)=>{
+  if(query.branchId==='MB')return new Promise(resolve=>{resolveOld=resolve;});
+  if(query.page===2&&fail)throw Error('synthetic unavailable');
+  return{items:[{id:String(query.page),label:`Trạng thái mới ${query.page}`}],page:query.page,hasMore:query.page===1,requiredParameters:[]};
+ };
+ try{
+  await act(async()=>{renderer=create(React.createElement(TabErpScreen,{module:'sales-order-pm',...props,isActive:true}));});await flush();
+  await act(async()=>renderer.update(React.createElement(TabErpScreen,{module:'sales-order-pm',currentBranch:'MN',isActive:true})));await flush();
+  await act(async()=>resolveOld({items:[{id:'99',label:'STALE-STATUS'}],page:1,hasMore:false,requiredParameters:[]}));await flush();
+  assert.doesNotMatch(collect(renderer).text,/STALE-STATUS/);
+  const button=label=>renderer.root.findAll(node=>node.type==='button'&&node.children.includes(label))[0];
+  await act(async()=>button('Thêm trạng thái').props.onClick());await flush();
+  assert.match(collect(renderer).text,/Chưa tải được danh sách trạng thái/);assert.match(collect(renderer).text,/Trạng thái mới 1/);
+  fail=false;await act(async()=>button('Thử lại').props.onClick());await flush();
+  assert.match(collect(renderer).text,/Trạng thái mới 2/);assert.equal(button('Thêm trạng thái'),undefined);
+ }finally{delete globalThis.__erpStatusHandler;if(renderer)await act(async()=>renderer.unmount());}
 });
 
 for(const Component of [TabOrders,TabPurchases])test(`${Component.name} paginates server data and ignores old branch responses`,async()=>{

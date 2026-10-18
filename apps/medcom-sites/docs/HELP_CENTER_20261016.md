@@ -1,3 +1,5 @@
+> Current help content, fonts and desktop/mobile screenshot evidence: [2026-10-19 refresh](HELP_CENTER_20261019.md). The mobile-only capture record below is historical.
+
 # Medcom /help — user guide implementation
 
 Owner request (2026-10-16): a dedicated `/help` page with its own sidebar, starting at purchasing/inbound, no common-functions category, three documented purchase screens, Feature badges for other screens, detailed Vietnamese instructions and annotated images, with mobile as the primary layout.

@@ -1,18 +1,50 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { MedcomLogo } from "@/components/brand/medcom-logo";
 import { ArrowLeft, ArrowRight, ArrowUp, ArrowUpRight, BookOpen, Check, CheckCircle2, ChevronDown, ChevronRight, Clock3, Copy, FileText, Info, List, Menu, Package, Search, ShoppingBag, Smartphone, Sparkles, Wrench, X, ZoomIn, ArrowRightLeft, CircleHelp, Sun, Moon } from "lucide-react";
-import { defaultGuideId, findGuide, groupGuideIds, helpGroups, helpGuides, readyGuides, searchGuides, type HelpGuide, type HelpSection } from "@/lib/help/guides";
+import { defaultGuideId, findGuide, groupGuideIds, helpGroups, helpGuides, readyGuides, searchGuides, type HelpGuide } from "@/lib/help/guides";
 import { useInheritedTheme } from "@/lib/help/use-inherited-theme";
 import styles from "./help-center.module.css";
+import { Monitor } from "lucide-react";
+import type { HelpPicture, HelpPictures } from "@/lib/help/images";
 
 const groupIcons = { shopping: ShoppingBag, package: Package, transfer: ArrowRightLeft, wrench: Wrench };
 
 function FeatureBadge() { return <span className={styles.feature}>Feature</span>; }
 
-function ImageDialog({ picture, onClose }: { picture: NonNullable<HelpSection["image"]>; onClose: () => void }) {
+const desktopViewport = () => window.matchMedia("(min-width: 1024px)").matches;
+function subscribeViewport(listener: () => void) {
+  const media = window.matchMedia("(min-width: 1024px)");
+  media.addEventListener("change", listener);
+  return () => media.removeEventListener("change", listener);
+}
+
+function GuideFigure({ pictures, title, onZoom }: { pictures: HelpPictures; title: string; onZoom: (picture: HelpPicture) => void }) {
+  const wide = useSyncExternalStore(subscribeViewport, desktopViewport, () => false);
+  const [selected, setDevice] = useState<"desktop" | "mobile">();
+  const device = selected ?? (wide ? "desktop" : "mobile");
+
+  const picture = pictures[device];
+  return <figure className={styles.figure}>
+    <div className={styles.figureToolbar}>
+      <div className={styles.devicePicker} role="group" aria-label={`Giao diện minh họa: ${title}`}>
+        {(["desktop", "mobile"] as const).map(value => <button key={value} type="button" aria-pressed={device === value} onClick={() => setDevice(value)}>
+          {value === "desktop" ? <Monitor size={17} /> : <Smartphone size={17} />}<span>{value === "desktop" ? "Máy tính" : "Điện thoại"}</span>
+        </button>)}
+      </div>
+      <button type="button" className={styles.zoomButton} onClick={() => onZoom(picture)} aria-label={`Phóng to ảnh: ${title}`}><ZoomIn size={18} /><span>Xem lớn</span></button>
+    </div>
+    <button type="button" className={styles.screenshotButton} onClick={() => onZoom(picture)} aria-label={`Mở ảnh ${device === "desktop" ? "máy tính" : "điện thoại"}: ${title}`}>
+      <div className={styles.screenshotFrame} data-device={device}><Image unoptimized src={picture.src} alt={picture.alt} loading="lazy" width={picture.width} height={picture.height} /></div>
+    </button>
+    <figcaption>{picture.caption}</figcaption>
+  </figure>;
+}
+
+function ImageDialog({ picture, onClose }: { picture: HelpPicture; onClose: () => void }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [enlarged, setEnlarged] = useState(false);
   useEffect(() => {
@@ -23,9 +55,10 @@ function ImageDialog({ picture, onClose }: { picture: NonNullable<HelpSection["i
     dialog?.showModal();
     return () => { dialog?.close(); document.body.style.overflow = overflow; previous?.focus(); };
   }, []);
+  const zoomWidth = Math.max(660, picture.width);
   return <dialog ref={dialogRef} className={styles.imageDialog} onCancel={onClose} aria-label="Ảnh hướng dẫn phóng to" onClick={event => { if (event.target === event.currentTarget) onClose(); }}>
     <header><span>{picture.caption}</span><button type="button" onClick={onClose} aria-label="Đóng ảnh"><X size={22} /></button></header>
-    <div className={styles.imageDialogBody}><div className={styles.imageDialogCanvas} style={enlarged ? { width: 660 } : undefined}><img src={picture.src} alt={picture.alt} style={enlarged ? { width: 660, maxWidth: "none" } : undefined} /></div></div>
+    <div className={styles.imageDialogBody}><div className={styles.imageDialogCanvas} style={enlarged ? { width: zoomWidth } : undefined}><Image unoptimized src={picture.src} alt={picture.alt} width={picture.width} height={picture.height} style={{ width: enlarged ? zoomWidth : "100%", maxWidth: enlarged ? "none" : picture.width, height: "auto" }} /></div></div>
     <div className={styles.imageTools}><button type="button" aria-pressed={enlarged} onClick={() => setEnlarged(value => !value)}><ZoomIn size={15} />{enlarged ? "Thu vừa màn hình" : "Phóng to để đọc rõ"}</button><span>{enlarged ? "Vuốt ngang / dọc để xem ảnh." : "Cuộn để xem toàn bộ ảnh."}</span></div>
   </dialog>;
 }
@@ -38,7 +71,7 @@ export function HelpCenter({ initialGuideId = defaultGuideId }: { initialGuideId
   const [mobileOpen, setMobileOpen] = useState(false);
   const [tocOpen, setTocOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("");
-  const [zoom, setZoom] = useState<HelpSection["image"]>();
+  const [zoom, setZoom] = useState<HelpPicture>();
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState(false);
   const menuDialog = useRef<HTMLDialogElement>(null);
@@ -65,10 +98,11 @@ export function HelpCenter({ initialGuideId = defaultGuideId }: { initialGuideId
   useEffect(() => {
     if (!mobileOpen) return;
     const dialog = menuDialog.current;
+    const opener = menuButton.current;
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     dialog?.showModal();
-    return () => { dialog?.close(); document.body.style.overflow = overflow; menuButton.current?.focus(); };
+    return () => { dialog?.close(); document.body.style.overflow = overflow; opener?.focus(); };
   }, [mobileOpen]);
 
   useEffect(() => {
@@ -136,13 +170,13 @@ export function HelpCenter({ initialGuideId = defaultGuideId }: { initialGuideId
           </details>;
         })}
       </nav>
-      <div className={styles.navNote}><Sparkles size={18} /><div><strong>Từng bước, dễ làm theo</strong><p>3 hướng dẫn đã sẵn sàng.<br />Các mục Feature sẽ được bổ sung.</p></div></div>
+      <div className={styles.navNote}><BookOpen size={18} /><div><strong>{readyGuides.length} hướng dẫn sử dụng</strong><p>Ảnh máy tính và điện thoại.<br />Các mục Feature sẽ được bổ sung.</p></div></div>
       <Link href="/" className={styles.backApp}><ArrowUpRight size={17} /> Về ứng dụng Medcom</Link>
     </>;
   }
 
   function tocContents() {
-    return <nav aria-label="Trong bài viết này" className={styles.tocLinks}>{guide.sections?.map((section, index) => <a key={section.id} href={`#${section.id}`} aria-current={activeSection === section.id ? "location" : undefined} onClick={() => { setActiveSection(section.id); setTocOpen(false); }}><span>{String(index + 1).padStart(2, "0")}</span>{section.title}</a>)}<a href="#cau-hoi" onClick={() => setTocOpen(false)}><CircleHelp size={15} />Câu hỏi thường gặp</a></nav>;
+    return <nav aria-label="Trong bài viết này" className={styles.tocLinks}>{guide.sections?.map((section, index) => <a key={section.id} href={`#${section.id}`} aria-current={activeSection === section.id ? "location" : undefined} onClick={() => { setActiveSection(section.id); setTocOpen(false); }}><span>{String(index + 1).padStart(2, "0")}</span>{section.title}</a>)}{!!guide.questions?.length && <a href="#cau-hoi" onClick={() => setTocOpen(false)}><CircleHelp size={15} />Câu hỏi thường gặp</a>}</nav>;
   }
 
   function themeButton(mobile = false) {
@@ -161,7 +195,7 @@ export function HelpCenter({ initialGuideId = defaultGuideId }: { initialGuideId
     <header className={styles.header}>
       <a href="/help" aria-label="Medcom — Trung tâm hướng dẫn" className={styles.brand}><MedcomLogo width={134} height={46} alt="MEDCOMTECH" priority /><span /><strong>Hướng dẫn</strong></a>
       <div ref={searchRef} className={styles.searchWrap} onKeyDown={event => { if (event.key === "Escape") setSearchOpen(false); }}>
-        <Search size={18} aria-hidden="true" /><input aria-label="Tìm hướng dẫn" placeholder="Bạn cần hướng dẫn gì?" value={query} onChange={event => { setQuery(event.target.value); setSearchOpen(true); }} onFocus={() => setSearchOpen(true)} aria-expanded={searchOpen && !!query.trim()} aria-controls="help-search-results" autoComplete="off" />
+        <Search size={18} aria-hidden="true" /><input aria-label="Tìm hướng dẫn" placeholder="Bạn cần hướng dẫn gì?" value={query} onChange={event => { setQuery(event.target.value); setSearchOpen(true); }} onFocus={() => setSearchOpen(true)} aria-controls="help-search-results" autoComplete="off" />
         {query && <button type="button" aria-label="Xóa tìm kiếm" onClick={() => { setQuery(""); setSearchOpen(false); }}><X size={16} /></button>}
         {searchOpen && query.trim() && <div id="help-search-results" className={styles.searchResults}>
           <p>{matches.length ? `${matches.length} hướng dẫn phù hợp` : "Chưa tìm thấy hướng dẫn"}</p>
@@ -183,7 +217,7 @@ export function HelpCenter({ initialGuideId = defaultGuideId }: { initialGuideId
             <div className={styles.articleMeta}><span className={styles.readyBadge}><span /> Hướng dẫn sử dụng</span><span><Clock3 size={14} />{guide.minutes} phút đọc</span></div>
             <h1 id="guide-title" tabIndex={-1}>{guide.title}</h1>
             <p className={styles.description}>{guide.description}</p>
-            <div className={styles.articleInfo}><span><Smartphone size={16} /> Dễ theo dõi trên điện thoại</span><button type="button" onClick={copyLink}>{copied ? <Check size={15} /> : <Copy size={15} />}{copied ? "Đã sao chép" : "Chia sẻ bài viết"}</button></div>
+            <div className={styles.articleInfo}><span><Monitor size={16} /><Smartphone size={16} /> Máy tính và điện thoại</span><button type="button" onClick={copyLink}>{copied ? <Check size={15} /> : <Copy size={15} />}{copied ? "Đã sao chép" : "Chia sẻ bài viết"}</button></div>
             <span role="status" className={styles.copyStatus}>{copyError ? "Chưa sao chép được. Bạn có thể sao chép đường dẫn trên thanh địa chỉ." : copied ? "Đã sao chép liên kết bài viết." : ""}</span>
           </div>
           <div className={styles.learnCard}><div className={styles.learnIcon}><BookOpen size={21} /></div><div><strong>Trong hướng dẫn này</strong><ul>{guide.summary?.map(item => <li key={item}><CheckCircle2 size={15} />{item}</li>)}</ul><p>Dành cho: {guide.audience}</p></div></div>
@@ -194,17 +228,17 @@ export function HelpCenter({ initialGuideId = defaultGuideId }: { initialGuideId
             {section.intro && <p>{section.intro}</p>}
             {section.fields && <dl className={styles.fields}>{section.fields.map(field => <div key={field.name}><dt>{field.name}</dt><dd>{field.detail}</dd></div>)}</dl>}
             {section.steps && <ol className={styles.steps}>{section.steps.map((step, stepIndex) => <li key={step}><span>{stepIndex + 1}</span><p>{step}</p></li>)}</ol>}
-            {section.image && <figure className={styles.figure}><button type="button" onClick={() => setZoom(section.image)} aria-label={`Phóng to ảnh: ${section.title}`}><div className={styles.figureTop}><span><span className={styles.figureDot} /> MINH HỌA TRÊN ĐIỆN THOẠI</span><ZoomIn size={17} /></div><div className={styles.figureImage}><img src={section.image.src} alt={section.image.alt} loading="lazy" width={440} height={860} /></div></button><figcaption>{section.image.caption}</figcaption></figure>}
+            {section.images && <GuideFigure pictures={section.images} title={section.title} onZoom={setZoom} />}
             {section.tip && <div className={`${styles.callout} ${styles.tip}`}><Info size={18} /><div><strong>Mẹo thao tác</strong><p>{section.tip}</p></div></div>}
             {section.warning && <div className={`${styles.callout} ${styles.warning}`}><Info size={18} /><div><strong>Lưu ý trước khi tiếp tục</strong><p>{section.warning}</p></div></div>}
           </section>)}</article>
-          <section id="cau-hoi" className={styles.faq}><div className={styles.sectionTitle}><CircleHelp size={24} /><h2>Câu hỏi thường gặp</h2></div>{guide.questions?.map(item => <details key={item.question}><summary>{item.question}<ChevronDown size={17} /></summary><p>{item.answer}</p></details>)}</section>
+          {!!guide.questions?.length && <section id="cau-hoi" className={styles.faq}><div className={styles.sectionTitle}><CircleHelp size={24} /><h2>Câu hỏi thường gặp</h2></div>{guide.questions?.map(item => <details key={item.question}><summary>{item.question}<ChevronDown size={17} /></summary><p>{item.answer}</p></details>)}</section>}
           <div className={styles.articleFooter}><span><CheckCircle2 size={17} /> Bạn đã đến cuối hướng dẫn</span><a href="#guide-title"><ArrowUp size={15} /> Về đầu bài</a></div>
           <div className={styles.pagination}>{currentIndex > 0 ? <GuideLink guide={readyGuides[currentIndex - 1]} previous onSelect={selectGuide} /> : <span />}{currentIndex < readyGuides.length - 1 && <GuideLink guide={readyGuides[currentIndex + 1]} onSelect={selectGuide} />}</div>
-        </> : <div className={styles.featurePage}><div className={styles.featureIcon}><BookOpen size={31} /><Sparkles size={18} /></div><FeatureBadge /><h1 id="guide-title" tabIndex={-1}>{guide.title}</h1><p>Hướng dẫn đang được chuẩn bị</p><span>Nội dung chi tiết và ảnh thao tác sẽ được bổ sung khi giao diện chức năng sẵn sàng. Bạn có thể bắt đầu với các hướng dẫn mua hàng bên dưới.</span><div className={styles.readyCards}>{readyGuides.map(item => <a key={item.id} href={`?guide=${item.id}`} onClick={event => { event.preventDefault(); selectGuide(item.id); }}><FileText size={20} /><strong>{item.title}</strong><ArrowRight size={18} /></a>)}</div></div>}
+        </> : <div className={styles.featurePage}><div className={styles.featureIcon}><BookOpen size={31} /><Sparkles size={18} /></div><FeatureBadge /><h1 id="guide-title" tabIndex={-1}>{guide.title}</h1><p>Hướng dẫn đang được chuẩn bị</p><span>Nội dung chi tiết và ảnh thao tác sẽ được bổ sung khi giao diện chức năng sẵn sàng. Bạn có thể xem các hướng dẫn đã hoàn thiện bên dưới.</span><div className={styles.readyCards}>{readyGuides.map(item => <a key={item.id} href={`?guide=${item.id}`} onClick={event => { event.preventDefault(); selectGuide(item.id); }}><FileText size={20} /><strong>{item.title}</strong><ArrowRight size={18} /></a>)}</div></div>}
         <footer className={styles.siteFooter}><span>MEDCOMTECH · Hướng dẫn sử dụng</span><span>Rõ từng bước. Dễ thực hiện.</span></footer>
       </main>
-      {guide.available && <aside className={styles.toc}><span className={styles.eyebrow}>TRONG BÀI VIẾT NÀY</span>{tocContents()}<div className={styles.tocHint}><Smartphone size={23} /><strong>Đọc ngay khi thao tác</strong><p>Mở hướng dẫn ở một tab khác để vừa đọc, vừa thực hiện trong ứng dụng.</p></div></aside>}
+      {guide.available && <aside className={styles.toc}><span className={styles.eyebrow}>TRONG BÀI VIẾT NÀY</span>{tocContents()}</aside>}
     </div>
     {mobileOpen && <dialog ref={menuDialog} className={styles.menuDialog} aria-label="Danh mục hướng dẫn" onCancel={() => setMobileOpen(false)} onClick={event => { if (event.target === event.currentTarget) setMobileOpen(false); }}><div className={styles.menuDialogHeader}><BookOpen size={20} /><strong>Danh mục hướng dẫn</strong><button type="button" onClick={() => setMobileOpen(false)} aria-label="Đóng danh mục"><X size={21} /></button></div><div className={styles.menuDialogContent}>{navContents()}</div></dialog>}
     {zoom && <ImageDialog picture={zoom} onClose={() => setZoom(undefined)} />}

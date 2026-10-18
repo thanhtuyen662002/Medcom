@@ -56,6 +56,8 @@ import { ErpDetailSheet } from "@/components/erp/erp-detail-sheet";
 import type { ErpDocumentPage } from "@/lib/erp/erp-screen-contracts";
 import { SalesCommandSession, type SalesOrderModule } from "@/lib/erp/sales-order-workflow";
 import { SalesFlowOverview } from "@/components/erp/sales-flow-overview";
+import { SalesOrderStatusFilter } from "@/components/erp/sales-order-status-filter";
+import { documentStatusLabel } from "@/lib/erp/document-status";
 import {MoneyInput} from "@/components/erp/money-input";
 import {formatMoney as formatMoneyValue, isMoneyField, multiplyMoney, sumMoney} from "@/lib/erp/money";
 
@@ -837,7 +839,8 @@ export function TabErpScreen({
   const loadList = useCallback(
     async (targetPage = 1, silent = false, statusOverride?: number | null, pageSizeOverride = pageSize) => {
       const seq = ++listSeqRef.current;
-      const effectiveStatus = statusOverride !== undefined ? statusOverride : statusId;
+      const effectiveStatus = ["purchase-requests", "purchase-approvals", "sales-orders", "sales-order-pm", "sales-order-sa"].includes(module)
+        ? statusOverride !== undefined ? statusOverride : statusId : null;
       const params = {
         branchId: currentBranch,
         page: targetPage,
@@ -1774,7 +1777,9 @@ export function TabErpScreen({
   const isApprovalModule = module === "purchase-approvals";
   const isPrModule = module === "purchase-requests";
   const useServerStatusChips = isApprovalModule || isPrModule;
-  const displayRows = useServerStatusChips ? rows : rows.filter((r) => {
+  const isSalesOrderModule = module === "sales-orders" || module === "sales-order-pm" || module === "sales-order-sa";
+  const isSalesModule = ["sales-orders", "sales-order-pm", "sales-order-sa", "sales-qr"].includes(module);
+  const displayRows = useServerStatusChips || isSalesModule ? rows : rows.filter((r) => {
     const isLocked = r.header?.isLocked ?? (r as Record<string, unknown>).isLocked;
     if (statusFilter === "locked") return isLocked === true || isLocked === 1 || isLocked === "1";
     if (statusFilter === "open") return isLocked === false || isLocked === 0 || isLocked === "0" || isLocked == null;
@@ -1789,11 +1794,14 @@ export function TabErpScreen({
     }
     return "";
   };
+  const rowStatus = (row: ErpDocumentRow) => isSalesOrderModule
+    ? documentStatusLabel(typeof row.header?.statusId === "number" ? row.header.statusId : null, listText(row, "statusName"))
+    : listText(row, "statusName") || (row.header?.isLocked ? "Đã khóa" : "Đang mở");
   const tableColumns: DocumentListColumn<ErpDocumentRow>[] = [
     { id: "document", label: "Mã chứng từ", className: "min-w-40 whitespace-nowrap", render: row => <span className="font-mono font-semibold text-brand-700 dark:text-brand-300">{row.documentId}</span> },
     { id: "date", label: "Ngày chứng từ", className: "whitespace-nowrap tabular-nums", render: row => listText(row, "documentDateDisplay", "purchaseDateDisplay", "datetimeRecordedDisplay") || formatVietnamDate(listText(row, "documentDate", "purchaseDate", "datetimeRecorded")) || "—" },
     { id: "object", label: module.startsWith("sales-") ? "Khách hàng" : module === "purchase-orders" ? "Nhà cung cấp" : "Đối tượng / Mục đích", className: "min-w-60 max-w-sm", render: row => <span className="line-clamp-2 break-words font-medium" title={listText(row, "objectName", "customerName", "vendorName", "purposeDescOrClient")}>{listText(row, "objectName", "customerName", "vendorName", "purposeDescOrClient") || "—"}</span> },
-    { id: "status", label: "Trạng thái", className: "whitespace-nowrap", render: row => <span className="inline-flex rounded-lg border border-neutral-200 bg-neutral-100 px-2.5 py-1 text-sm font-medium dark:border-neutral-700 dark:bg-neutral-800">{listText(row, "statusName") || (row.header?.isLocked ? "Đã khóa" : "Đang mở")}</span> },
+    { id: "status", label: "Trạng thái", className: "whitespace-nowrap", render: row => <span className="inline-flex rounded-lg border border-neutral-200 bg-neutral-100 px-2.5 py-1 text-sm font-medium dark:border-neutral-700 dark:bg-neutral-800">{rowStatus(row)}</span> },
     ...(displayRows.some(row => listText(row, "personSuggest", "userCreate")) ? [{ id: "creator", label: "Người lập / Đề nghị", className: "min-w-40 max-w-52", render: (row: ErpDocumentRow) => <span className="line-clamp-2 break-words">{listText(row, "personSuggest", "userCreate") || "—"}</span> }] : []),
     { id: "notes", label: "Nội dung", className: "min-w-52 max-w-sm", render: row => <span className="line-clamp-2 break-words" title={listText(row, "memo", "notes")}>{listText(row, "memo", "notes") || "—"}</span> },
   ];
@@ -1805,10 +1813,7 @@ export function TabErpScreen({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
-                Phân hệ ERP
-              </span>
-              <span className="text-xs text-neutral-400">Chi nhánh: {currentBranch}</span>
+              <span className="text-sm text-black dark:text-white">Chi nhánh: {currentBranch}</span>
             </div>
             <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white mt-1">
               {screenMeta?.caption || getModuleTitle(module)}
@@ -1866,7 +1871,10 @@ export function TabErpScreen({
           )}
 
           {/* Filter Chips Bar */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+          {isSalesOrderModule && <SalesOrderStatusFilter module={module} branchId={currentBranch} isActive={isActive} value={statusId} onChange={next => {
+            setStatusId(next); void loadList(1, false, next);
+          }} />}
+          {!isSalesModule && <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
             {(isApprovalModule
               ? ([
                 { id: "all", label: "Tất cả", status: null as number | null },
@@ -1956,7 +1964,7 @@ export function TabErpScreen({
                 </button>
               );
             })}
-          </div>
+          </div>}
         </div>
       </div>
 
@@ -2005,7 +2013,7 @@ export function TabErpScreen({
             const dateDisplay = (h.documentDateDisplay || h.purchaseDateDisplay || h.datetimeRecordedDisplay || "") as string;
             const rawDate = (h.documentDate || h.purchaseDate || h.datetimeRecorded || "") as string;
             const dateText = dateDisplay || (rawDate ? formatVietnamDate(rawDate) : "");
-            const statusName = (h.statusName || (h.isLocked ? "Đã khóa" : "Đang mở")) as string;
+            const statusName = rowStatus(row);
             const objectName = (h.objectName || h.personSuggest || h.orderNumber || h.customerName || h.vendorName || "") as string;
 
             return (

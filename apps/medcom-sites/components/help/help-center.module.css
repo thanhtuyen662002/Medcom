@@ -742,23 +742,7 @@
   font-weight:700;
   border-left-color:#4c72bc;
   background:#d8e1f3}
-.tocHint {
-  margin-top:36px;
-  padding:18px 14px;
-  border:1px solid #edf0f5;
-  border-radius:10px;
-  background:#fafbfd;
-  color:var(--help-text)}
-.tocHint strong {
-  display:block;
-  color:var(--help-text);
-  font-size:12px;
-  margin-top:10px}
-.tocHint p {
-  font-size:12px;
-  line-height:1.9;
-  color:var(--help-text);
-  margin:6px 0 0}
+
 
 .faq {
   scroll-margin-top:110px}
@@ -1393,7 +1377,7 @@
   :global(html.dark) .navDot {
     background:#3b4c65;
   }
-  :global(html.dark) :is(.searchWrap,.navNote,.tocHint,.mobileToc,.featureIcon,.figureTop,.menuDialogHeader button,.imageDialog header button) {
+  :global(html.dark) :is(.searchWrap,.navNote,.mobileToc,.featureIcon,.figureTop,.menuDialogHeader button,.imageDialog header button) {
     background:#151f2f;
     border-color:#2b3a51;
     color:#abc0dd;
@@ -1409,7 +1393,7 @@
   :global(html.dark) .searchWrap input::placeholder {
     color:var(--help-text);
   }
-  :global(html.dark) :is(.headerReturn,.eyebrow,.groupChevron,.navItem,.navNote p,.backApp,.breadcrumb,.breadcrumb>span:last-child,.articleMeta,.description,.articleInfo,.learnCard p,.photoNote,.photoNote strong,.figureTop,.figure figcaption,.tocLinks a,.tocHint,.tocHint p,.tocHint strong,.articleFooter,.articleFooter a,.pagination a>span,.siteFooter,.searchResults small,.noResults) {
+  :global(html.dark) :is(.headerReturn,.eyebrow,.groupChevron,.navItem,.navNote p,.backApp,.breadcrumb,.breadcrumb>span:last-child,.articleMeta,.description,.articleInfo,.learnCard p,.photoNote,.photoNote strong,.figureTop,.figure figcaption,.tocLinks a,.articleFooter,.articleFooter a,.pagination a>span,.siteFooter,.searchResults small,.noResults) {
     color:var(--help-text);
   }
   :global(html.dark) :is(.articleHeader h1,.featurePage h1,.section h2,.faq h2) {
@@ -1509,3 +1493,60 @@
     scrollbar-color:#3a4d6b transparent;
   }
 }
+
+/* Readable type and current desktop/mobile screenshot controls. */
+.shell {font-family:"Segoe UI",Roboto,Arial,sans-serif;font-size:16px;line-height:1.75}
+.shell :is(.section>p,.steps p,.fields dt,.fields dd,.callout strong,.callout p,.learnCard strong,.learnCard li,.faq summary,.faq details p,.readyCards a,.featurePage>span:not(.feature)) {font-size:16px;line-height:1.8;color:var(--help-text)}
+.shell :is(.articleMeta,.articleInfo,.articleFooter,.breadcrumb,.navNote p,.learnCard p,.photoNote p,.figure figcaption,.siteFooter,.searchResults small,.searchResults>p,.copyStatus,.pagination a>span,.imageTools>span,.imageTools button,.imageDialog header) {font-size:14px;color:var(--help-text)}
+.shell :is(.navItem,.navGroup summary,.navSubgroup>summary,.navSubgroup .navItem,.tocLinks a,.brand strong,.headerReturn,.searchWrap input,.pagination strong) {font-size:15px}
+.shell .searchWrap input {font-family:inherit;font-size:16px}
+.shell :is(.feature,.readyBadge,.sectionTitle>span:not(.feature),.steps li>span) {font-size:13px}
+.shell .articleHeader h1 {font-size:36px;line-height:1.25;letter-spacing:-.8px;color:var(--help-text)}
+.shell :is(.section h2,.faq h2) {font-size:23px;line-height:1.4;color:var(--help-text)}
+.shell .description {font-size:18px;line-height:1.75}
+.shell .eyebrow {font-size:12px;letter-spacing:.08em}
+.layout {grid-template-columns:288px minmax(0,1000px) 230px;max-width:1660px}
+.main {min-width:0;padding:36px 40px 0}
+.sidebar {padding-top:30px}.toc {padding-top:44px}
+.learnCard {border-radius:16px;padding:24px}.section {margin-bottom:36px;padding-bottom:36px}
+.steps {gap:18px}.steps li {align-items:flex-start;gap:14px}
+.steps li>span {width:28px;height:28px;min-width:28px;margin-top:3px}
+.fields>div {padding:16px}.callout {border-radius:12px;padding:18px}
+.figure {margin:26px 0 0;min-width:0}
+.figureToolbar {display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px;border:1px solid var(--help-line);border-bottom:0;border-radius:14px 14px 0 0;background:#f6f8fc}
+.devicePicker {display:flex;min-width:0;gap:4px}
+.devicePicker button,.zoomButton {display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;border:1px solid transparent;border-radius:9px;padding:8px 12px;background:transparent;color:var(--help-text);font-size:14px;font-weight:600;line-height:1.4}
+.devicePicker button[aria-pressed="true"] {background:#fff;border-color:#cdd8ea;box-shadow:0 1px 3px #102a6810}
+.devicePicker button:hover,.zoomButton:hover {background:#eaf0fa}
+.figure>.screenshotButton {display:block;width:100%;padding:0;overflow:hidden;border:1px solid var(--help-line);border-radius:0 0 14px 14px;background:#f0f3f8;cursor:zoom-in}
+.screenshotFrame {display:flex;justify-content:center;min-width:0;padding:20px;background:linear-gradient(140deg,#eef3fa,#f8fafd)}
+.screenshotFrame img {display:block;max-width:100%;width:100%;height:auto;border:1px solid #dce3ed;border-radius:10px;box-shadow:0 10px 30px #102a6810}
+.screenshotFrame[data-device="mobile"] img {width:390px}
+.screenshotFrame[data-device="mobile"] {padding:24px}
+.shell .figure figcaption {padding:0 4px;text-align:left;line-height:1.7}
+.imageDialog {width:min(1440px,96vw);max-width:96vw}
+.imageDialogCanvas {max-width:none;margin:auto}
+.imageDialogBody {overflow:auto;overscroll-behavior:contain}
+.imageTools button {color:var(--help-text)}
+:global(html.dark) .shell :is(.fields dt,.callout strong,.callout p,.learnCard strong,.learnCard li,.readyCards a,.pagination strong,.imageTools button) {color:#fff}
+:global(html.dark) .figureToolbar {background:#151f2f;border-color:#2b3a51}
+:global(html.dark) .devicePicker button[aria-pressed="true"] {background:#25354d;border-color:#526989}
+:global(html.dark) :is(.devicePicker button:hover,.zoomButton:hover) {background:#223149}
+:global(html.dark) .figure>.screenshotButton {border-color:#2b3a51}
+:global(html.dark) .screenshotFrame {background:linear-gradient(140deg,#19273c,#111b2b)}
+@media(max-width:1399px) {.layout{grid-template-columns:270px minmax(0,1fr) 210px}.main{padding:32px 28px 0}.toc{padding-left:8px;padding-right:14px}}
+@media(max-width:1199px) {.layout{grid-template-columns:270px minmax(0,1fr)}.toc{display:none}}
+@media(max-width:767px) {
+  .layout{display:block}.main{padding:24px 20px 0}
+  .shell .articleHeader h1{font-size:30px}.shell .description{font-size:17px}
+  .shell :is(.section h2,.faq h2){font-size:21px}
+  .shell :is(.navItem,.navGroup summary,.navSubgroup>summary,.navSubgroup .navItem){font-size:16px}
+  .learnCard{padding:18px}.section{scroll-margin-top:190px}
+  .figureToolbar{padding:6px;gap:4px}.devicePicker button{padding:8px;font-size:14px;gap:5px}.zoomButton{padding:8px;font-size:14px;gap:4px}
+  .screenshotFrame,.screenshotFrame[data-device="mobile"]{padding:12px}
+  .shell .siteFooter{font-size:13px}.imageDialog{width:96vw}.imageDialogBody{padding:12px}
+}
+@media(max-width:359px) {.main{padding-left:16px;padding-right:16px}.zoomButton span{display:none}.shell .brand strong{font-size:14px}.shell .headerReturn{font-size:13px}}
+@media print {.figureToolbar{display:none}.figure>.screenshotButton{border:0;background:white}.screenshotFrame{background:white;padding:0}.screenshotFrame img{max-height:600px;width:auto;box-shadow:none}.shell{font-size:12pt}.shell :is(.steps p,.section>p,.fields dt,.fields dd){font-size:12pt}}
+
+.brand strong {white-space:nowrap}
