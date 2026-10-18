@@ -18,7 +18,7 @@ await build({entryPoints:[path.join(app,'lib/help/guides.ts')],bundle:true,platf
 const {helpGuides,helpGroups,groupGuideIds,searchGuides}=require(path.join(output,'guides.cjs'));
 
 test('help catalog follows the owner sales and nested warehouse menus',async()=>{
-  assert.equal(helpGuides.length,29);assert.equal(helpGuides.filter(item=>item.available).length,3);
+  assert.equal(helpGuides.length,29);assert.equal(helpGuides.filter(item=>item.available).length,7);
   const ids=helpGroups.flatMap(groupGuideIds);assert.equal(new Set(ids).size,29);
   assert.deepEqual([...ids].sort(),helpGuides.map(guide=>guide.id).sort());
   assert.deepEqual(helpGroups.find(group=>group.id==='purchasing').guides,['purchase-requests','purchase-approvals','purchase-orders']);

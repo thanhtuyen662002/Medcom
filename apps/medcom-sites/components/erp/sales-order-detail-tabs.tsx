@@ -4,6 +4,7 @@ import { Fragment, useId, useRef, useState, type KeyboardEvent } from "react";
 import { ArrowRight, ChevronDown, Clock3, History, Package2, Send } from "lucide-react";
 import { SALES_ORDER_LINE_COLUMNS, SALES_ORDER_LINE_GROUPS } from "@/lib/erp/sales-order-lines";
 import { documentStatusLabel } from "@/lib/erp/document-status";
+import {formatMoney, isMoneyField} from "@/lib/erp/money";
 
 interface OrderLine { lineId: string; fields: Record<string, unknown> }
 interface HistoryLine { lineId: string; fields?: Record<string, unknown> }
@@ -13,6 +14,10 @@ function text(value: unknown): string {
 }
 
 function lineCell(fields: Record<string, unknown>, key: string): string {
+  const raw = fields[key] ?? fields[key[0].toUpperCase() + key.slice(1)];
+  if (isMoneyField(key) && raw != null && raw !== "") return formatMoney(raw);
+  const display = fields[`${key}Display`];
+  if (typeof display === "string" && display.trim()) return display;
   if (key === "itemCode") return text(fields.itemCode ?? fields.ItemCode ?? fields.manufacturerItemCode ?? fields.mfgItemId ?? fields.manufacturerItemId);
   if (key === "itemName") return text(fields.itemName ?? fields.ItemName ?? fields.itemDisplay ?? fields.name);
   if (key === "unit") return text(fields.unit ?? fields.Unit ?? fields.unit1);
@@ -45,7 +50,9 @@ function EmptyPanel({ history }: { history?: boolean }) {
   </div>;
 }
 
-export function SalesOrderDetailTabs({ lines, history }: { lines: OrderLine[]; history: HistoryLine[] }) {
+export function SalesOrderDetailTabs({ lines, history, currencyId, hasMoreLines=false, hasMoreHistory=false, loadingMore=false, onMoreLines, onMoreHistory }: {
+  lines: OrderLine[]; history: HistoryLine[]; currencyId?:string; hasMoreLines?:boolean; hasMoreHistory?:boolean; loadingMore?:boolean; onMoreLines?:()=>void; onMoreHistory?:()=>void;
+}) {
   const prefix = useId();
   const tablist = useRef<HTMLDivElement>(null);
   const [tab, setTab] = useState<"lines" | "history">("lines");
@@ -73,6 +80,7 @@ export function SalesOrderDetailTabs({ lines, history }: { lines: OrderLine[]; h
     </div>
 
     <div role="tabpanel" id={`${prefix}-panel-lines`} aria-labelledby={`${prefix}-tab-lines`} hidden={tab !== "lines"} tabIndex={0} className="min-w-0 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-500">
+      {currencyId && <p className="border-b border-neutral-100 px-4 py-3 text-sm dark:border-neutral-800">Đơn vị tiền: <strong>{currencyId}</strong></p>}
       {lines.length === 0 ? <EmptyPanel /> : <>
         <div className="hidden min-w-0 lg:block">
           <div role="region" aria-label="Bảng hàng hóa đơn hàng" tabIndex={0} className="max-h-[32rem] overflow-auto overscroll-contain focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-500">
@@ -110,7 +118,7 @@ export function SalesOrderDetailTabs({ lines, history }: { lines: OrderLine[]; h
             <div id={`${prefix}-mobile-line-${index}`} hidden={!open} className="border-t border-neutral-200 dark:border-neutral-800"><LineInformation line={line} /></div>
           </article>;
         })}</div>
-        <p className="border-t border-neutral-200 bg-neutral-50/60 px-4 py-3 text-sm sm:px-5 dark:border-neutral-800 dark:bg-neutral-950/50">{lines.length} dòng hàng trên trang chi tiết hiện tại</p>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-200 bg-neutral-50/60 px-4 py-3 text-sm sm:px-5 dark:border-neutral-800 dark:bg-neutral-950/50"><span>{lines.length} dòng hàng đã tải</span>{hasMoreLines && <button type="button" disabled={loadingMore} onClick={onMoreLines} className="min-h-11 rounded-lg border border-neutral-300 px-4 font-semibold disabled:opacity-50 dark:border-neutral-700">{loadingMore?"Đang tải…":"Tải thêm hàng hóa"}</button>}</div>
       </>}
     </div>
 
@@ -125,7 +133,7 @@ export function SalesOrderDetailTabs({ lines, history }: { lines: OrderLine[]; h
           <article className="min-w-0 rounded-xl border border-neutral-200 bg-white p-4 sm:p-5 dark:border-neutral-800 dark:bg-neutral-900">
             <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
               <div className="min-w-0"><p className="mb-1 text-sm">Người gửi</p><h4 className="break-words text-base font-semibold">{text(fields.userName)}</h4></div>
-              <span className="inline-flex max-w-full items-start gap-1.5 text-sm leading-6"><Clock3 aria-hidden="true" className="mt-1 size-4 shrink-0" /><span className="break-words">{text(fields.thoiGian)}</span></span>
+              <span className="inline-flex max-w-full items-start gap-1.5 text-sm leading-6"><Clock3 aria-hidden="true" className="mt-1 size-4 shrink-0" /><span className="break-words">{text(fields.thoiGianDisplay ?? fields.thoiGian)}</span></span>
             </div>
             <dl className="mt-4 grid min-w-0 gap-4 sm:grid-cols-2">
               <div className="min-w-0"><dt className="mb-1 text-sm">Gửi đến</dt><dd className="flex items-start gap-2 text-base font-medium"><ArrowRight aria-hidden="true" className="mt-1 size-4 shrink-0 text-brand-600 dark:text-brand-300" /><span className="min-w-0 break-words">{text(fields.sendTo)}</span></dd></div>
@@ -135,6 +143,7 @@ export function SalesOrderDetailTabs({ lines, history }: { lines: OrderLine[]; h
           </article>
         </li>;
       })}</ol>}
+      {hasMoreHistory && <div className="border-t border-neutral-200 p-4 dark:border-neutral-800"><button type="button" disabled={loadingMore} onClick={onMoreHistory} className="min-h-11 rounded-lg border border-neutral-300 px-4 text-sm font-semibold disabled:opacity-50 dark:border-neutral-700">{loadingMore?"Đang tải…":"Tải thêm lịch sử"}</button></div>}
     </div>
   </section>;
 }

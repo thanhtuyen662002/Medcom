@@ -1,3 +1,5 @@
+import { salesGuides } from "./sales-guides";
+
 export type HelpSection = {
   id: string;
   title: string;
@@ -53,6 +55,7 @@ export function groupGuideIds(group: HelpGroup) {
 const image = (name: string, alt: string, caption: string) => ({ src: `/help/images/${name}.png`, alt, caption });
 
 export const helpGuides: HelpGuide[] = [
+  ...salesGuides,
   {
     id: "purchase-requests", title: "Đề nghị mua hàng", available: true, minutes: 8,
     audience: "Người lập đề nghị", keywords: ["PR", "tạo phiếu", "gửi duyệt", "bộ phận", "chi tiết"],
@@ -150,9 +153,8 @@ export const helpGuides: HelpGuide[] = [
     ["warehouse-quality-confirmation", "Kiểm soát và xác nhận chất lượng hàng hóa"],
     ["warehouse-goods-status", "Xác nhận tình trạng hàng hóa"],
     ["warehouse-goods-plan-approval", "Phê duyệt phương án hàng hóa"],
-    ["sales-orders", "Quản lý đơn hàng"], ["sales-order-pm", "Xác nhận đơn hàng"], ["sales-order-sa", "Duyệt đơn hàng"],
     ["sales-goods-status", "Xác nhận tình trạng hàng hoá"], ["sales-dispatch-invoices", "Duyệt, PXK và hoá đơn"],
-    ["sales-qr", "Xuất hàng theo PXK"], ["warehouse-qr", "Xuất kho"], ["warehouse-sales-qr", "Xuất bán hàng"],
+    ["warehouse-qr", "Xuất kho"], ["warehouse-sales-qr", "Xuất bán hàng"],
     ["internal-transfer-requests", "Phiếu đề nghị điều chuyển nội bộ (Sales / NVKD)"], ["internal-transfer-pm", "Xác nhận đề nghị điều chuyển (PM)"],
     ["internal-transfer-batches", "Đợt điều chuyển nội bộ (PM / Điều phối)"], ["internal-transfer-tech", "Xác nhận thiết bị điều chuyển (Kỹ thuật)"],
     ["internal-transfer-sa", "Phê duyệt điều chuyển nội bộ (TP SA)"], ["internal-transfer-accounting", "Xử lý điều chuyển nội bộ (Kế toán)"],

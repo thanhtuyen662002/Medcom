@@ -27,12 +27,11 @@ import { erpClient } from "@/lib/erp/erp-client";
 import type { DocumentDetail, PurchaseOrderHeader, PurchaseOrderLineFields } from "@/lib/erp/contracts";
 import { errorMessage } from "@/lib/erp/api";
 
+import {formatMoney} from "@/lib/erp/money";
+
 function formatVND(value?: string | null, currency = "VND"): string {
-  if (!value) return "0 " + currency;
-  if (value.includes("VND") || value.includes("USD") || value.includes("₫") || value.includes("$")) return value;
-  const parts = value.split(".");
-  const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  return parts.length > 1 ? `${intPart},${parts[1]} ${currency}` : `${intPart} ${currency}`;
+  if (value && /[A-Z]{3}|[₫$€]/.test(value)) return value;
+  return `${formatMoney(value || "0")}${currency ? ` ${currency}` : ""}`;
 }
 
 export interface OrderItem {
@@ -118,12 +117,12 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
             const raw = r as Record<string, unknown>;
             const h = r.purchaseOrderHeader;
             const baseTotal =
-              (raw.baseTotalDisplay as string) ||
-              (raw.totalAmountDisplay as string) ||
               h?.baseTotal ||
               (raw.baseTotal as string) ||
               (raw.totalAmount as string) ||
-              (raw.amount as string);
+              (raw.amount as string) ||
+              (raw.baseTotalDisplay as string) ||
+              (raw.totalAmountDisplay as string);
             const currencyId = h?.currencyId || (raw.currencyId as string) || "VND";
             const formattedTotal = baseTotal
               ? formatVND(baseTotal, currencyId)
@@ -243,10 +242,10 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
                 lines: detail.purchaseOrderLines.map((l: any) => {
                   const f = l.fields;
                   const rawL = l as Record<string, unknown>;
-                  const unitPriceVal = (rawL.unitPriceDisplay as string) || f?.unitPrice || (rawL.unitPrice as string);
-                  const amountVal = (rawL.amountDisplay as string) || (rawL.totalPriceDisplay as string) || f?.amount || (rawL.amount as string);
-                  const priceStr = (rawL.unitPriceDisplay as string) || (unitPriceVal ? formatVND(unitPriceVal, prev.currencyId || "VND") : "Theo hợp đồng");
-                  const amtStr = (rawL.amountDisplay as string) || (amountVal ? formatVND(amountVal, prev.currencyId || "VND") : "Theo hợp đồng");
+                  const unitPriceVal = f?.unitPrice ?? (rawL.unitPrice as string);
+                  const amountVal = f?.amount ?? (rawL.amount as string);
+                  const priceStr = unitPriceVal != null ? formatVND(unitPriceVal, prev.currencyId || "VND") : (rawL.unitPriceDisplay as string) || "Theo hợp đồng";
+                  const amtStr = amountVal != null ? formatVND(amountVal, prev.currencyId || "VND") : (rawL.amountDisplay as string) || (rawL.totalPriceDisplay as string) || "Theo hợp đồng";
                   const itemName =
                     (rawL.itemName as string) ||
                     (f as Record<string, unknown> | undefined)?.itemName ||

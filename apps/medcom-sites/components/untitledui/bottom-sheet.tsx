@@ -72,14 +72,14 @@ export function UntitledBottomSheet({
             <div className="min-w-0 flex-1">
               {title && (
                 <div className="flex flex-wrap items-center gap-2 min-w-0">
-                  <h3 className={`${presentation === "document" ? "text-lg sm:text-xl break-words" : "text-base sm:text-lg truncate"} font-semibold text-neutral-900 dark:text-white`}>
+                  <h3 className={`${presentation === "document" ? "text-lg sm:text-xl break-words" : "text-lg truncate"} font-semibold text-black dark:text-white`}>
                     {title}
                   </h3>
                   {titleExtra}
                 </div>
               )}
               {subtitle && (
-                <p className={`mt-1 ${presentation === "document" ? "text-sm break-words" : "text-xs truncate"} text-neutral-500 dark:text-neutral-400`}>
+                <p className={`mt-1 text-sm ${presentation === "document" ? "break-words" : "truncate"} text-black dark:text-white`}>
                   {subtitle}
                 </p>
               )}
@@ -96,7 +96,7 @@ export function UntitledBottomSheet({
         )}
 
         {/* Scrollable Body */}
-        <div className={`flex-1 min-h-0 min-w-0 overflow-y-auto overscroll-contain scrollbar-thin ${presentation === "document" ? "px-4 py-5 sm:p-6" : "px-5 py-4"}`} data-document-detail-body={presentation === "document" ? "" : undefined}>
+        <div className={`flex-1 min-h-0 min-w-0 overflow-y-auto overscroll-contain scrollbar-thin text-base leading-6 text-black dark:text-white font-['Segoe_UI',Roboto,Arial,sans-serif] [&_input]:text-base! [&_textarea]:text-base! [&_label]:text-sm! [&_.text-xs]:text-sm! [&_.text-neutral-400]:text-black! [&_.text-neutral-500]:text-black! dark:[&_.text-neutral-400]:text-white! dark:[&_.text-neutral-500]:text-white! [&_.text-neutral-600]:text-black! [&_.text-neutral-700]:text-black! [&_.text-neutral-800]:text-black! dark:[&_.text-neutral-600]:text-white! dark:[&_.text-neutral-700]:text-white! dark:[&_.text-neutral-800]:text-white! ${presentation === "document" ? "px-4 py-5 sm:p-6" : "px-5 py-4"}`} data-document-detail-body={presentation === "document" ? "" : undefined}>
           {children}
         </div>
 

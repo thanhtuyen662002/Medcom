@@ -13,6 +13,7 @@ module.exports = {
         "foundation/reference-data",
         "foundation/errors",
         "foundation/ui",
+        "foundation/sales-flow",
         "foundation/contracts",
         "foundation/evidence"
       ]

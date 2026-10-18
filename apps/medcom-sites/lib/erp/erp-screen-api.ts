@@ -217,8 +217,8 @@ async function refreshReadScope(signal?: AbortSignal): Promise<void> {
   throw new ApiError(r.status, "read_scope_changed", r.headers.get("x-correlation-id") ?? undefined);
 }
 
-export async function getSalesOrderAttachments(branchId: string, documentId: string, page = 1, signal?: AbortSignal) {
-  return erpGet("api/erp/sales-orders/attachments", attachmentPageSchema, { branchId, documentId, page, pageSize: 20 }, signal);
+export async function getSalesOrderAttachments(branchId: string, documentId: string, page = 1, signal?: AbortSignal, module: "sales-orders" | "sales-order-pm" | "sales-order-sa" = "sales-orders") {
+  return erpGet(`api/erp/${module}/attachments`, attachmentPageSchema, { branchId, documentId, page, pageSize: 20 }, signal);
 }
 
 export async function uploadSalesOrderAttachment(request: SalesOrderAttachmentUpload, signal?: AbortSignal) {

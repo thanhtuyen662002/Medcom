@@ -38,6 +38,6 @@ export async function validateAttachmentFile(file: File): Promise<string | null>
   return null;
 }
 
-export function attachmentContentUrl(branchId: string, documentId: string, attachmentId: string, preview = true): string {
-  return `/api/erp/api/erp/sales-orders/attachments/content?${new URLSearchParams({ branchId, documentId, attachmentId, preview: String(preview) })}`;
+export function attachmentContentUrl(branchId: string, documentId: string, attachmentId: string, preview = true, module: "sales-orders" | "sales-order-pm" | "sales-order-sa" = "sales-orders"): string {
+  return `/api/erp/api/erp/${module}/attachments/content?${new URLSearchParams({ branchId, documentId, attachmentId, preview: String(preview) })}`;
 }

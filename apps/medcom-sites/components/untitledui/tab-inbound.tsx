@@ -25,12 +25,11 @@ import { erpClient } from "@/lib/erp/erp-client";
 import type { DocumentDetail, InboundRequestHeader, InboundRequestLineFields } from "@/lib/erp/contracts";
 import { errorMessage } from "@/lib/erp/api";
 
+import {formatMoney} from "@/lib/erp/money";
+
 function formatVND(value?: string | null, currency = "VND"): string {
-  if (!value) return "0 " + currency;
-  if (value.includes("VND") || value.includes("USD") || value.includes("₫") || value.includes("$")) return value;
-  const parts = value.split(".");
-  const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  return parts.length > 1 ? `${intPart},${parts[1]} ${currency}` : `${intPart} ${currency}`;
+  if (value && /[A-Z]{3}|[₫$€]/.test(value)) return value;
+  return `${formatMoney(value || "0")}${currency ? ` ${currency}` : ""}`;
 }
 
 export interface InboundReceipt {
@@ -228,10 +227,10 @@ export function TabInbound({
             (rawL.expireDateByDocument as string) ||
             (rawL.expireDate as string);
           const exp = (rawL.expireDateDisplay as string) || (expVal ? expVal.slice(0, 10) : item.expiryDate);
-          const unitPriceVal = (rawL.unitPriceDisplay as string) || f?.unitPrice || (rawL.unitPrice as string);
-          const amountVal = (rawL.amountDisplay as string) || (rawL.totalPriceDisplay as string) || f?.amount || (rawL.amount as string);
-          const unitPriceStr = (rawL.unitPriceDisplay as string) || (unitPriceVal ? formatVND(unitPriceVal, "VND") : undefined);
-          const amountStr = (rawL.amountDisplay as string) || (amountVal ? formatVND(amountVal, "VND") : undefined);
+          const unitPriceVal = f?.unitPrice ?? (rawL.unitPrice as string);
+          const amountVal = f?.amount ?? (rawL.amount as string);
+          const unitPriceStr = unitPriceVal != null ? formatVND(unitPriceVal, "VND") : (rawL.unitPriceDisplay as string) || undefined;
+          const amountStr = amountVal != null ? formatVND(amountVal, "VND") : (rawL.amountDisplay as string) || (rawL.totalPriceDisplay as string) || undefined;
           const orderedQty =
             f?.setQuantityByDocument ||
             l.setQuantityByDocument ||

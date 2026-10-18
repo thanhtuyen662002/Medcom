@@ -1,4 +1,5 @@
 "use client";
+import {MoneyInput} from "./money-input";
 import {RecordActionBar,RecordSection,RecordFieldset,RecordDetailHeading,RecordDetailStatus,RecordDetailToolbar} from "./record-dialog";
 import {RecordDeleteConfirmation} from "./record-delete-confirmation";
 import {useRequestNotifications} from "./request-notifications";
@@ -314,7 +315,7 @@ function ExactField({id,label,value,nullable=false,multiline=false,disabled=fals
   const attributes={id,name:id,value:value??"",disabled:disabled||value===null,"aria-invalid":!!error,"aria-describedby":error?`${id}-error`:undefined,style:control};
   return <div className={requestStyles.field}><label htmlFor={id}>{label}</label>
     {nullable&&<label style={{display:"flex",gap:8,alignItems:"center",minHeight:44}}><input type="checkbox" aria-label={`${label} NULL`} checked={value===null} disabled={disabled} onChange={event=>onChange(event.target.checked?null:"")}/>Chưa có giá trị</label>}
-    {multiline?<RequestTextarea {...attributes} rows={2} onChange={event=>onChange(event.target.value)}/>:<RequestInput {...attributes} type="text" onChange={event=>onChange(event.target.value)}/>}
+    {multiline?<RequestTextarea {...attributes} rows={2} onChange={event=>onChange(event.target.value)}/>:id.endsWith("-unitPrice")?<MoneyInput {...attributes} value={value??""} onValueChange={onChange}/>:<RequestInput {...attributes} type="text" onChange={event=>onChange(event.target.value)}/>}
     {error&&<p id={`${id}-error`} role="alert">{error}</p>}
   </div>;
 }

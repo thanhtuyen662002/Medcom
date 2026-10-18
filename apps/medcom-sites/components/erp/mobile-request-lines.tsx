@@ -7,6 +7,8 @@ import {RemoteLookup} from "./lookup";
 import type {LookupAdapter} from "@/lib/erp/presentation";
 import type {ItemDisplayPresentation} from "@/lib/erp/item-display";
 import {ItemIdentity} from "./item-identity";
+import {MoneyInput} from "./money-input";
+import {formatMoney, isMoneyField} from "@/lib/erp/money";
 
 /** Local keys identify input/errors only. They are never ERP numbering. */
 export type PurchaseRequestLine = {
@@ -65,7 +67,9 @@ export function MobileRequestLines({lines, disabled, canAdd = true, canRemove = 
         const error = errors[`lines.${line.localKey}.${field}`];
         return <div key={field} className={requestStyles.field}>
           <label htmlFor={id}>{label}{field === "quantity" || field === "unitPrice" ? " *" : ""}</label>
-          {readOnly ? <strong>{line[field] || "—"}</strong> : <RequestInput id={id} name={`lines.${line.localKey}.${field}`} value={line[field]} inputMode={["quantity", "unitPrice", "budget"].includes(field) ? "numeric" : undefined} maxLength={maxLength} disabled={disabled} aria-invalid={!!error} aria-describedby={error ? `${id}-error` : undefined} style={requestInputStyle} onChange={event => onChange(line.localKey, {[field]: event.target.value})}/>}
+          {readOnly ? <strong>{isMoneyField(field)?formatMoney(line[field]):line[field] || "—"}</strong> : isMoneyField(field)
+            ? <MoneyInput id={id} name={`lines.${line.localKey}.${field}`} value={line[field]} inputMode="numeric" maxLength={maxLength} disabled={disabled} aria-invalid={!!error} aria-describedby={error ? `${id}-error` : undefined} style={requestInputStyle} onValueChange={value=>onChange(line.localKey,{[field]:value})}/>
+            : <RequestInput id={id} name={`lines.${line.localKey}.${field}`} value={line[field]} inputMode={field==="quantity" ? "numeric" : undefined} maxLength={maxLength} disabled={disabled} aria-invalid={!!error} aria-describedby={error ? `${id}-error` : undefined} style={requestInputStyle} onChange={event => onChange(line.localKey, {[field]: event.target.value})}/>}
           {error && <p id={`${id}-error`} role="alert">{error}</p>}
         </div>;
       })}</div>

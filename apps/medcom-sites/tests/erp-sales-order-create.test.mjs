@@ -219,7 +219,7 @@ test('contract hydrates exact customer, address and employee; create submits sep
   await inputValue(renderer,'so-create-link','https://example.test/attachment');
   assert.deepEqual(JSON.parse(lookupOf(renderer,'Mã hàng').props['data-context']),{'Master.ContractID':'HD01',UserAutoID:null});
   await act(async()=>lookupOf(renderer,'Mã hàng').props.onPick(choice('ITEM01',{UnitPrice:'120',DienGiai:'Source line memo'})));
-  await act(async()=>buttonOf(renderer,'Xác nhận tạo chứng từ').props.onClick());
+  await act(async()=>buttonOf(renderer,'Xác nhận tạo đơn').props.onClick());
   await flush();
   const {header,lines}=globalThis.__createIntents[0];
   assert.equal(header.memo,'Memo only');assert.equal(header.ghiChuDonHang,'Order notes only');
@@ -232,7 +232,7 @@ test('contract hydrates exact customer, address and employee; create submits sep
   assert.ok(byId(renderer,'so-create-memo'),'denied create keeps the draft open');
   assert.equal(byId(renderer,'so-create-memo').props.value,'Memo only');
   globalThis.__createOutcome='Committed';
-  await act(async()=>buttonOf(renderer,'Xác nhận tạo chứng từ').props.onClick());await flush();
+  await act(async()=>buttonOf(renderer,'Xác nhận tạo đơn').props.onClick());await flush();
   await act(async()=>buttonOf(renderer,'Tạo mới').props.onClick());
   assert.equal(byId(renderer,'so-create-memo').props.value,'');assert.equal(byId(renderer,'so-create-address').props.value,'');
   await act(async()=>renderer.unmount());globalThis.__lookupResponse=null;
@@ -245,7 +245,7 @@ test('switching customer cancels old hydration, clears incompatible contract, em
   await act(async()=>lookupOf(renderer,'Mã hợp đồng').props.onPick(choice('HD01',{ObjectID:'KH01',EmployeeID:'NV01'})));
   await flush();
   assert.equal(byId(renderer,'so-create-address').props.value,'');
-  assert.equal(buttonOf(renderer,'Xác nhận tạo chứng từ').props.disabled,true);
+  assert.equal(buttonOf(renderer,'Xác nhận tạo đơn').props.disabled,true);
   await act(async()=>lookupOf(renderer,'Mã hàng').props.onPick(choice('ITEM01',{UnitPrice:'120'})));
   await act(async()=>lookupOf(renderer,'Khách hàng').props.onPick(choice('KH02',{ObjectName:'New customer',Address:'New address'})));
   assert.equal(lookupOf(renderer,'Mã hợp đồng').props['data-value'],'');

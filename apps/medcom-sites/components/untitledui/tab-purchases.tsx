@@ -25,12 +25,11 @@ import { erpClient } from "@/lib/erp/erp-client";
 import type { PurchaseRequestHeaderFields, PurchaseRequestLineFields, PurchaseReadback } from "@/lib/erp/purchase-request-api";
 import { errorMessage } from "@/lib/erp/api";
 
+import {formatMoney} from "@/lib/erp/money";
+
 function formatVND(value?: string | null, currency = "VND"): string {
-  if (!value) return "0 " + currency;
-  if (value.includes("VND") || value.includes("USD") || value.includes("₫") || value.includes("$")) return value;
-  const parts = value.split(".");
-  const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  return parts.length > 1 ? `${intPart},${parts[1]} ${currency}` : `${intPart} ${currency}`;
+  if (value && /[A-Z]{3}|[₫$€]/.test(value)) return value;
+  return `${formatMoney(value || "0")}${currency ? ` ${currency}` : ""}`;
 }
 
 export interface PurchaseItem {
@@ -137,12 +136,12 @@ export function TabPurchases({
               (r.purchaseDate ? r.purchaseDate.slice(0, 10) : undefined) ||
               (raw.purchaseDate as string ? String(raw.purchaseDate).slice(0, 10) : "—");
             const priceVal =
-              (raw.priceDisplay as string) ||
-              (raw.totalAmountDisplay as string) ||
               f?.price ||
               (raw.price as string) ||
               (raw.totalAmount as string) ||
-              (raw.baseTotal as string);
+              (raw.baseTotal as string) ||
+              (raw.priceDisplay as string) ||
+              (raw.totalAmountDisplay as string);
             const currencyVal = f?.currencyId || (raw.currencyId as string) || "VND";
             const totalStr = priceVal ? formatVND(priceVal, currencyVal) : "Chi tiết dòng";
             const purposeStr =
@@ -259,8 +258,8 @@ export function TabPurchases({
             const itemName = rawLine.itemName || vals.itemName || rawLine.name || (vals.itemId ? `Dược phẩm [${vals.itemId}]` : "Vật tư y tế");
             const itemCode = rawLine.itemCode || vals.itemCode || vals.itemId || "";
             const unit = rawLine.unit || vals.unit || "Hộp";
-            const unitPrice = rawLine.unitPriceDisplay || vals.unitPriceDisplay || (vals.unitPrice ? formatVND(vals.unitPrice, headerFields?.currencyId || "VND") : "—");
-            const amount = rawLine.totalPriceDisplay || vals.totalPriceDisplay || (vals.totalPrice ? formatVND(vals.totalPrice, headerFields?.currencyId || "VND") : unitPrice);
+            const unitPrice = vals.unitPrice != null ? formatVND(vals.unitPrice, headerFields?.currencyId || "VND") : rawLine.unitPriceDisplay || vals.unitPriceDisplay || "—";
+            const amount = vals.totalPrice != null ? formatVND(vals.totalPrice, headerFields?.currencyId || "VND") : rawLine.totalPriceDisplay || vals.totalPriceDisplay || unitPrice;
             return {
               lineId: l.lineId || rawLine.userAutoId || `line-${idx}`,
               itemId: vals.itemId || itemCode,

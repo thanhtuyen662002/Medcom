@@ -7,6 +7,8 @@ import type { ErpChoice } from "@/lib/erp/erp-screen-contracts";
 import { UntitledBottomSheet } from "./bottom-sheet";
 import { LookupField, choiceLabel, fieldText } from "./lookup-field";
 import { UntitledButton } from "./button";
+import {MoneyInput} from "@/components/erp/money-input";
+import {formatMoney as formatVND, multiplyMoney, sumMoney} from "@/lib/erp/money";
 
 interface PurchaseOrderCreateSheetProps {
   open: boolean;
@@ -36,14 +38,9 @@ const emptyLine = (): DraftLine => ({
   notes: "",
 });
 
-function formatVND(n: number): string {
-  if (!Number.isFinite(n)) return "0";
-  return new Intl.NumberFormat("vi-VN").format(Math.round(n));
-}
-
-function lineTotal(line: DraftLine): number | null {
+function lineTotal(line: DraftLine): string | null {
   if (!DECIMAL_RE.test(line.quantity.trim()) || !DECIMAL_RE.test(line.unitPrice.trim())) return null;
-  return Number(line.quantity) * Number(line.unitPrice);
+  return multiplyMoney(line.quantity, line.unitPrice);
 }
 
 /* ---------- Small labeled inputs ---------- */
@@ -55,6 +52,7 @@ function TextField({
   placeholder,
   error,
   inputMode,
+  money = false,
 }: {
   label: string;
   required?: boolean;
@@ -63,23 +61,25 @@ function TextField({
   placeholder?: string;
   error?: string;
   inputMode?: "decimal" | "text";
+  money?: boolean;
 }) {
   return (
     <div>
-      <label className="block text-neutral-500 dark:text-neutral-400 mb-1 font-medium">
+      <label className="mb-1.5 block text-sm font-medium text-black dark:text-white">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
-      <input
+      {money ? <MoneyInput value={value} onValueChange={onChange} placeholder={placeholder} aria-invalid={!!error}
+        className={error ? "border-red-400 dark:border-red-700" : ""} /> : <input
         type="text"
         inputMode={inputMode || "text"}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className={`w-full p-2.5 rounded-xl border bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs ${
+        className={`w-full min-h-11 p-2.5 rounded-xl border bg-white dark:bg-neutral-900 text-black dark:text-white text-base ${
           error ? "border-red-400 dark:border-red-700" : "border-neutral-300 dark:border-neutral-700"
         }`}
-      />
-      {error && <p className="mt-1 text-[11px] text-red-500">{error}</p>}
+      />}
+      {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
     </div>
   );
 }
@@ -132,7 +132,7 @@ export function PurchaseOrderCreateSheet({
   const patchLine = (key: string, patch: Partial<DraftLine>) =>
     setLines((prev) => prev.map((l) => (l.key === key ? { ...l, ...patch } : l)));
 
-  const grandTotal = lines.reduce((sum, l) => sum + (lineTotal(l) || 0), 0);
+  const grandTotal = sumMoney(lines.map(lineTotal)) || "0";
 
   function validate(): Record<string, string> {
     const next: Record<string, string> = {};
@@ -237,46 +237,46 @@ export function PurchaseOrderCreateSheet({
   /* ----- Section 1: document ----- */
   const documentSection = (
     <section className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 space-y-3">
-      <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-400">Thông tin đơn</h4>
+      <h4 className="text-sm font-bold uppercase tracking-wider text-neutral-400">Thông tin đơn</h4>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
         <div>
-          <label className="block text-neutral-500 dark:text-neutral-400 mb-1 font-medium">Mã đơn</label>
-          <p className="p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-xs text-neutral-400">
+          <label className="block text-black dark:text-white mb-1 font-medium">Mã đơn</label>
+          <p className="p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-sm text-neutral-400">
             Tự cấp sau khi tạo
           </p>
         </div>
         <div>
-          <label className="block text-neutral-500 dark:text-neutral-400 mb-1 font-medium">
+          <label className="block text-black dark:text-white mb-1 font-medium">
             Ngày lập <span className="text-red-500">*</span>
           </label>
           <input
             type="date"
             value={documentDate}
             onChange={(e) => setDocumentDate(e.target.value)}
-            className={`w-full p-2.5 rounded-xl border bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs ${
+            className={`w-full p-2.5 rounded-xl border bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-sm ${
               errors["header.documentDate"]
                 ? "border-red-400 dark:border-red-700"
                 : "border-neutral-300 dark:border-neutral-700"
             }`}
           />
           {errors["header.documentDate"] && (
-            <p className="mt-1 text-[11px] text-red-500">{errors["header.documentDate"]}</p>
+            <p className="mt-1 text-sm text-red-500">{errors["header.documentDate"]}</p>
           )}
         </div>
         <div>
-          <label className="block text-neutral-500 dark:text-neutral-400 mb-1 font-medium">Ngày giao hàng</label>
+          <label className="block text-black dark:text-white mb-1 font-medium">Ngày giao hàng</label>
           <input
             type="date"
             value={deliverDate}
             onChange={(e) => setDeliverDate(e.target.value)}
-            className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
+            className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-sm"
           />
         </div>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
         <div className="col-span-2 md:col-span-1">
-          <label className="block text-neutral-500 dark:text-neutral-400 mb-1 font-medium">Chi nhánh</label>
-          <p className="p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-xs font-mono font-bold text-neutral-600 dark:text-neutral-300">
+          <label className="block text-black dark:text-white mb-1 font-medium">Chi nhánh</label>
+          <p className="p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-sm font-mono font-bold text-neutral-600 dark:text-neutral-300">
             {currentBranch}
           </p>
         </div>
@@ -297,7 +297,7 @@ export function PurchaseOrderCreateSheet({
   /* ----- Section 2: counterparty & currency ----- */
   const counterpartySection = (
     <section className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 space-y-3">
-      <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-400">Đối tượng &amp; tiền tệ</h4>
+      <h4 className="text-sm font-bold uppercase tracking-wider text-neutral-400">Đối tượng &amp; tiền tệ</h4>
       <LookupField
         label="Nhà cung cấp"
         required
@@ -314,7 +314,7 @@ export function PurchaseOrderCreateSheet({
         }}
       />
       {objectChoice && (fieldText(objectChoice.fields?.["ObjectName"]) || fieldText(objectChoice.fields?.["Address"])) && (
-        <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+        <p className="text-sm text-black dark:text-white">
           {[fieldText(objectChoice.fields?.["ObjectName"]), fieldText(objectChoice.fields?.["Address"])]
             .filter(Boolean)
             .join(" · ")}
@@ -342,19 +342,19 @@ export function PurchaseOrderCreateSheet({
           }}
         />
         <div>
-          <label className="block text-neutral-500 dark:text-neutral-400 mb-1 font-medium">Tỷ giá</label>
+          <label className="block text-black dark:text-white mb-1 font-medium">Tỷ giá</label>
           <p
-            className={`p-2.5 rounded-xl text-xs font-bold ${
+            className={`p-2.5 rounded-xl text-sm font-bold ${
               errors["header.rateExchange"]
                 ? "bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-400 dark:border-red-700"
-                : "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200"
+                : "bg-neutral-100 dark:bg-neutral-800 text-black dark:text-white"
             }`}
             title="Tự động theo loại tiền, không sửa tay"
           >
             {rateExchange || "—"}
           </p>
           {errors["header.rateExchange"] && (
-            <p className="mt-1 text-[11px] text-red-500">{errors["header.rateExchange"]}</p>
+            <p className="mt-1 text-sm text-red-500">{errors["header.rateExchange"]}</p>
           )}
         </div>
       </div>
@@ -365,18 +365,18 @@ export function PurchaseOrderCreateSheet({
   const linesSection = (
     <section className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
+        <h4 className="text-sm font-bold uppercase tracking-wider text-neutral-400">
           Chi tiết ({lines.length})
         </h4>
         <button
           type="button"
           onClick={() => setLines((prev) => [...prev, emptyLine()])}
-          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-brand-600 text-white hover:bg-brand-700"
+          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-sm font-bold bg-brand-600 text-white hover:bg-brand-700"
         >
           <Plus className="size-3.5" /> Thêm dòng
         </button>
       </div>
-      {errors["lines"] && <p className="text-[11px] text-red-500">{errors["lines"]}</p>}
+      {errors["lines"] && <p className="text-sm text-red-500">{errors["lines"]}</p>}
       <div className="space-y-3">
         {lines.map((line, idx) => {
           const total = lineTotal(line);
@@ -386,7 +386,7 @@ export function PurchaseOrderCreateSheet({
               className="rounded-xl border border-neutral-200/80 dark:border-neutral-800 p-3 space-y-2.5 bg-neutral-50/50 dark:bg-neutral-950/40"
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-neutral-500">Dòng {idx + 1}</span>
+                <span className="text-sm font-bold text-neutral-500">Dòng {idx + 1}</span>
                 {lines.length > 1 && (
                   <button
                     type="button"
@@ -413,7 +413,7 @@ export function PurchaseOrderCreateSheet({
                 }
               />
               {(line.itemChoice || line.itemId) && (
-                <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                <p className="text-sm text-black dark:text-white">
                   {[
                     fieldText(line.itemChoice?.fields?.["ItemName"]),
                     fieldText(line.itemChoice?.fields?.["Unit"]),
@@ -433,6 +433,7 @@ export function PurchaseOrderCreateSheet({
                 />
                 <TextField
                   label="Đơn giá"
+                  money
                   required
                   value={line.unitPrice}
                   onChange={(v) => patchLine(line.key, { unitPrice: v })}
@@ -440,8 +441,8 @@ export function PurchaseOrderCreateSheet({
                   error={errors[`line.${line.key}.unitPrice`]}
                 />
                 <div className="col-span-2 md:col-span-1">
-                  <label className="block text-neutral-500 dark:text-neutral-400 mb-1 font-medium">Thành tiền</label>
-                  <p className="p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-xs font-bold text-neutral-700 dark:text-neutral-200">
+                  <label className="block text-black dark:text-white mb-1 font-medium">Thành tiền</label>
+                  <p className="p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-sm font-bold text-black dark:text-white">
                     {total == null ? "—" : formatVND(total)}
                   </p>
                 </div>
@@ -456,7 +457,7 @@ export function PurchaseOrderCreateSheet({
           );
         })}
       </div>
-      <div className="flex items-center justify-between pt-1 text-xs font-bold text-neutral-800 dark:text-neutral-200">
+      <div className="flex items-center justify-between pt-1 text-sm font-bold text-neutral-800 dark:text-neutral-200">
         <span>Tổng: {lines.length} dòng</span>
         <span className="text-brand-700 dark:text-brand-300">Tổng tiền: {formatVND(grandTotal)}</span>
       </div>
@@ -466,13 +467,13 @@ export function PurchaseOrderCreateSheet({
   const feedback = (
     <>
       {submitError && (
-        <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-xs text-red-800 dark:text-red-300 flex items-center gap-2">
+        <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-sm text-red-800 dark:text-red-300 flex items-center gap-2">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{submitError}</span>
         </div>
       )}
       {submitWarning && (
-        <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2">
+        <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-sm text-amber-800 dark:text-amber-300 flex items-center gap-2">
           <AlertCircle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
           <span>{submitWarning}</span>
         </div>
@@ -485,7 +486,7 @@ export function PurchaseOrderCreateSheet({
 
   return (
     <UntitledBottomSheet open={open} onClose={onClose} title="Tạo đơn đặt mua">
-      <div className="space-y-3.5 pb-24 text-xs">
+      <div className="space-y-3.5 pb-24 text-sm">
         {isMobile && (
           <ol className="flex items-center gap-1 px-1">
             {steps.map((label, i) => (
@@ -505,7 +506,7 @@ export function PurchaseOrderCreateSheet({
                     }`}
                   />
                   <span
-                    className={`mt-1 block text-[10px] font-semibold ${
+                    className={`mt-1 block text-sm font-semibold ${
                       i === step ? "text-brand-700 dark:text-brand-300" : "text-neutral-400"
                     }`}
                   >
@@ -527,24 +528,24 @@ export function PurchaseOrderCreateSheet({
 
         {(!isMobile || step === 2) && (
           <section className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 space-y-2">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
+            <h4 className="text-sm font-bold uppercase tracking-wider text-neutral-400">
               {isMobile ? "Xem lại" : "Tổng hợp"}
             </h4>
-            <p className="text-xs text-neutral-700 dark:text-neutral-300">
+            <p className="text-sm text-black dark:text-white">
               {currentBranch} · {documentDate || "—"}
               {deliverDate ? ` · giao ${deliverDate}` : ""} · {currencyId || "—"}
               {rateExchange ? ` (${rateExchange})` : ""}
             </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            <p className="text-sm text-black dark:text-white">
               NCC: {choiceLabel(objectChoice, objectId) || "—"}
               {contractId.trim() ? ` · HĐ: ${contractId.trim()}` : ""}
             </p>
             <div className="pt-1 space-y-1">
               {reviewLines.length === 0 ? (
-                <p className="text-[11px] text-neutral-400">Chưa có chi tiết nào.</p>
+                <p className="text-sm text-neutral-400">Chưa có chi tiết nào.</p>
               ) : (
                 reviewLines.map((l) => (
-                  <p key={l.key} className="text-xs text-neutral-700 dark:text-neutral-300 flex justify-between gap-2">
+                  <p key={l.key} className="text-sm text-black dark:text-white flex justify-between gap-2">
                     <span className="truncate">
                       {l.itemId} × {l.quantity}
                     </span>
@@ -558,7 +559,7 @@ export function PurchaseOrderCreateSheet({
                 ))
               )}
             </div>
-            <p className="text-xs font-bold text-brand-700 dark:text-brand-300 pt-1">
+            <p className="text-sm font-bold text-brand-700 dark:text-brand-300 pt-1">
               Tổng thanh toán: {formatVND(grandTotal)} {currencyId}
             </p>
           </section>

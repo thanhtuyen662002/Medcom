@@ -34,6 +34,7 @@ import { UntitledBadge } from "./badge";
 import { UntitledButton } from "./button";
 import type { NavTabId } from "./bottom-nav";
 import type { BranchOption } from "./mobile-header";
+import { SalesFeatureLinks } from "@/components/erp/sales-feature-links";
 
 export interface DesktopSidebarProps {
   currentBranch: string;
@@ -103,11 +104,12 @@ export function DesktopSidebar({
       ],
     },
     {
-      title: "Bán hàng & SA/PM",
+      title: "Bán hàng",
       items: [
         { id: "sales-orders" as NavTabId, label: "Quản lý đơn hàng", icon: ShoppingBag },
         { id: "sales-order-pm" as NavTabId, label: "PM xử lý đơn hàng", icon: UserCheck },
         { id: "sales-order-sa" as NavTabId, label: "SA xử lý đơn hàng", icon: ClipboardList },
+        { id: "sales-qr" as NavTabId, label: "Xuất hàng theo PXK", icon: PackageCheck },
       ],
     },
     {
@@ -127,7 +129,6 @@ export function DesktopSidebar({
       title: "Mã vạch & Quét QR",
       items: [
         { id: "warehouse-qr" as NavTabId, label: "Quét QR xuất kho", icon: QrCode },
-        { id: "sales-qr" as NavTabId, label: "Quét QR xuất bán", icon: QrCode },
       ],
     },
     {
@@ -332,6 +333,7 @@ export function DesktopSidebar({
                 </button>
               );
             })}
+            {sec.title === "Bán hàng" && <SalesFeatureLinks />}
           </div>
         )))}
 

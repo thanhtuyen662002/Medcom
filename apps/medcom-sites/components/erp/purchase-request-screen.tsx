@@ -5,6 +5,7 @@ import {RequestButton,RequestNotice,RequestEmpty,RequestLoading,RequestStatus,Re
 import {RecordDetailToolbar,RecordSection} from "./record-dialog";
 import {RequestDetailDialog,useRequestDetailNavigation,useDetailPresentationProof,type RegisterRequestDetailNavigation} from "./request-detail-dialog";
 import {documentStatusLabel} from "@/lib/erp/document-status";
+import {formatMoney,isMoneyField} from "@/lib/erp/money";
 import {useListControls} from "./list-view-state";
 import {PurchaseReferenceDetails} from "./purchase-reference-details";
 import {purchaseReferenceIdentity,type PurchaseReferenceContext} from "@/lib/erp/purchase-reference-context";
@@ -315,14 +316,14 @@ function FullPurchaseReadback({readback}:{readback:PurchaseReadback}){
  const document=readback.document;
  const labels:Record<string,string>={purchaseRequestId:"Mã đề nghị",branchId:"Chi nhánh",statusId:"Mã trạng thái ERP",statusName:"Trạng thái",isLocked:"Khóa phiếu",purchaseDate:"Ngày giờ đề nghị trên ERP",purposeId:"Mã mục đích",personSuggest:"Người đề nghị",department:"Phòng ban",purposeDescOrClient:"Diễn giải mục đích / khách hàng",price:"Giá trị đề nghị",notes:"Ghi chú",currencyId:"Tiền tệ",objectId:"Mã đối tượng",rateExchange:"Tỷ giá"};
  return <section aria-label="Dữ liệu ERP đầy đủ"><details className={`${requestStyles.section} request-full-readback`}><summary className={requestStyles.title}>Toàn bộ thông tin trên ERP <span>{document.lines.length} chi tiết</span></summary><div className="request-full-readback-content">
-  <dl className={requestStyles.values}>{Object.entries({purchaseRequestId:document.purchaseRequestId,branchId:document.branchId,statusId:document.statusId,statusName:documentStatusLabel(document.statusId,readback.statusName),isLocked:document.isLocked,...document.header}).map(([field,data])=><div key={field}><dt>{labels[field]}</dt><dd style={{whiteSpace:"pre-wrap",overflowWrap:"anywhere"}}>{value(data)}</dd></div>)}</dl>
+  <dl className={requestStyles.values}>{Object.entries({purchaseRequestId:document.purchaseRequestId,branchId:document.branchId,statusId:document.statusId,statusName:documentStatusLabel(document.statusId,readback.statusName),isLocked:document.isLocked,...document.header}).map(([field,data])=><div key={field}><dt>{labels[field]}</dt><dd style={{whiteSpace:"pre-wrap",overflowWrap:"anywhere"}}>{isMoneyField(field)&&data!==null?formatMoney(data):value(data)}</dd></div>)}</dl>
   <p>{document.lines.length} chi tiết</p>
   <RecordLinesTable label="Toàn bộ dòng đề nghị" lines={document.lines.map(line=>({...line,itemId:line.values.itemId}))} binding={purchaseItemDisplayBinding(readback)} context={readback.itemDisplayContext} columns={[
-   {label:"Ngân sách",value:line=>value(line.values.budget),numeric:false},
+   {label:"Ngân sách",value:line=>formatMoney(line.values.budget)},
    {label:"Thời gian yêu cầu",value:line=>value(line.values.timeRequired),numeric:false},
    {label:"Số lượng",value:line=>value(line.values.quantity)},
-   {label:"Đơn giá",value:line=>value(line.values.unitPrice)},
-   {label:"Thành tiền",value:line=>value(line.values.totalPrice)},
+   {label:"Đơn giá",value:line=>formatMoney(line.values.unitPrice)},
+   {label:"Thành tiền",value:line=>formatMoney(line.values.totalPrice)},
    {label:"Model",value:line=>value(line.values.model),numeric:false},
   ]}/>
 

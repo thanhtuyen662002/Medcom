@@ -23,6 +23,11 @@ test('help hierarchy coverage is exact and features do not invent API modules',a
  assert.equal(catalog.modules.filter(m=>m.available).length,19);assert.equal(catalog.modules.filter(m=>!m.available).length,10);
  for(const m of catalog.modules){assert.equal(m.operations.length,catalog.operations.filter(o=>o.module===m.id).length);if(!m.available){const page=await fs.readFile(path.join(root,'docs/modules',m.id+'.mdx'),'utf8');assert.match(page,/UNKNOWN/);assert.ok(!page.includes('Fields & DB'));}}
  assert.ok(!ids.includes('asset-disposal'));assert.ok(!ids.includes('stocktaking'));
+ for(const id of ['sales-orders','sales-order-pm','sales-order-sa','sales-qr']){
+  assert.notEqual(catalog.modules.find(module=>module.id===id).title,id,'Vietnamese title must survive split help sources');
+  const page=await fs.readFile(path.join(root,'docs/modules',id+'.mdx'),'utf8');assert.match(page,/\/docs\/foundation\/sales-flow/);
+ }
+ const full=await fs.readFile(path.join(root,'static/llms-full.txt'),'utf8');assert.match(full,/SalesCommandSession/);
 });
 test('exact source hash and context exports match the documented snapshot',async()=>{
  const bytes=await fs.readFile(path.join(root,'contracts/openapi.json'));assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'),catalog.provenance.sha256);assert.deepEqual(bytes,await fs.readFile(path.join(root,'static/openapi.json')));

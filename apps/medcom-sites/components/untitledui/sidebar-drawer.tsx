@@ -31,6 +31,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import { type NavTabId } from "./bottom-nav";
+import { SalesFeatureLinks } from "@/components/erp/sales-feature-links";
 
 export interface SidebarDrawerProps {
   open: boolean;
@@ -142,7 +143,7 @@ export function SidebarDrawer({
       ],
     },
     {
-      title: "Quản lý Bán hàng & SA/PM",
+      title: "Bán hàng",
       items: [
         {
           id: "sales-orders",
@@ -168,6 +169,7 @@ export function SidebarDrawer({
           badge: "Duyệt SA",
           badgeColor: "purple",
         },
+        { id: "sales-qr", label: "Xuất hàng theo PXK", icon: PackageCheck },
       ],
     },
     {
@@ -248,14 +250,6 @@ export function SidebarDrawer({
           description: "Menu 0702001 • Quét thêm & quét xóa mã lô",
           icon: QrCode,
           badge: "26 đối chiếu",
-          badgeColor: "emerald",
-        },
-        {
-          id: "sales-qr",
-          label: "Quét QR xuất bán hàng",
-          description: "Menu 0702010 • Quét thêm/xóa & đối chiếu hóa đơn",
-          icon: Boxes,
-          badge: "49 đối chiếu",
           badgeColor: "emerald",
         },
       ],
@@ -462,6 +456,7 @@ export function SidebarDrawer({
                         </button>
                       );
                     })}
+                    {section.title === "Bán hàng" && <SalesFeatureLinks />}
                   </div>
                 </div>
               )))}
