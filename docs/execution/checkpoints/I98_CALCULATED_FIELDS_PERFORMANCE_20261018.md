@@ -1,0 +1,11 @@
+# I98 — calculated values audit and redeployed VPS latency
+
+Owner direction, 18 October 2026: audit the existing APIs for source-backed calculated figures and return them for FE integration; remeasure the newly redeployed VPS and continue BE optimization where needed. Backend-only, owner redeploys main, no ZIP or automation changes. New isolated branch `codex/be-calculated-fields-performance-20261018`, base `ed408e45c6ef3f36aebb3d073280d1297cd16154`; preserve historical leases and separately owned FE.
+
+Mandatory baseline identities remain in `docs/SOURCE_BASELINE.md`; the maintenance guide reconciliation is `docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md`. Historical approved Library archives cannot currently be materialized/rehashed in this session; no archive equivalence or runtime WinForms execution is claimed. Continue from the verified inventories and owner-accessible current ERP/MedData, recording exact evidence objects. Unknown formulas or semantics remain UNKNOWN, never invented.
+
+Read-only authenticated VPS benchmark uses the previously authorized private masked ERP login window. Credentials/cookies remain memory-only; durable reports contain finite operation labels, statuses, timings and payload sizes, not identities or business rows. SQL/source inspection is read-only; synthetic connection-local temp tables may validate formulas without business writes. Production schema/configuration/deployment mutations are outside this change.
+
+Audit targets: physical numeric fields, DB computed columns/views, ERP expression and grid summaries, list/detail/page mapping, normalization/write-derived values, amount/currency display and completeness for all 19 registered screens plus the existing typed pilots. Performance targets include reference data SQL batching, guided by observed request stages. Preserve current permissions, branch scope, state/concurrency, idempotency and transaction/cleanup fences; no TTL authorization cache or omission of fields for speed.
+
+Current source and VPS measurements, findings, implementation, local review, focused/full current-head tests, exact-head/base CI and integration: pending. Every-FE-call-under-100-ms acceptance and canonical goal #45 remain open.
