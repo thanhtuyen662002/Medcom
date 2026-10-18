@@ -1,0 +1,505 @@
+---
+title: "Dữ liệu tham chiếu và tên hiển thị"
+---
+
+Bảng này mô tả ánh xạ kỹ thuật để API bổ sung tên hiển thị. Đây không phải danh sách bản ghi hoặc giá trị lựa chọn thực tế; cần tải các giá trị qua API được cấp quyền.
+
+**Nguồn tham chiếu:** `inventories/backend/20261011/api-reference-bindings.json`. Đây là bản mô tả kỹ thuật được lưu từ nguồn; cần đối chiếu môi trường triển khai khi tích hợp. Thuộc tính writable không thay thế quyền ghi của tài khoản.
+
+## item
+
+Bảng SQL: `CF_ItemTbl` · trường mã `ItemID` · trường tên `ItemName`.
+
+Tên trường nguồn tương ứng: `ItemID`. Trường bổ sung: `ItemCode`, `Unit`.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `ItemID` | `nvarchar(50)` | Không |
+| `ItemName` | `nvarchar(max)` | Có |
+| `ItemCode` | `nvarchar(100)` | Có |
+| `Unit` | `nvarchar(50)` | Có |
+
+## branch
+
+Bảng SQL: `CF_BranchTbl` · trường mã `BranchID` · trường tên `BranchName`.
+
+Tên trường nguồn tương ứng: `BranchID`, `FromBranchID`, `ToBranchID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `BranchID` | `varchar(50)` | Không |
+| `BranchName` | `nvarchar(100)` | Không |
+
+## store
+
+Bảng SQL: `CF_StoreHouseTbl` · trường mã `StoreHouseID` · trường tên `StoreHouseName`.
+
+Tên trường nguồn tương ứng: `StoreHouseID`, `OrderStorehouseID`, `FromStoreHouseID`, `ToStoreHouseID`, `OriginStoreHouseID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `StoreHouseID` | `varchar(50)` | Không |
+| `StoreHouseName` | `nvarchar(100)` | Không |
+
+## object
+
+Bảng SQL: `CF_ObjectTbl` · trường mã `ObjectID` · trường tên `ObjectName`.
+
+Tên trường nguồn tương ứng: `ObjectID`, `ExpectedObjectID`, `FromObjectID`, `FldObjectID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `ObjectID` | `varchar(100)` | Không |
+| `ObjectName` | `nvarchar(300)` | Không |
+
+## employee
+
+Bảng SQL: `vEmployee` · trường mã `EmployeeID` · trường tên `EmployeeName`.
+
+Tên trường nguồn tương ứng: `EmployeeID`, `SupportEmployeeID`, `DeliveryEmployeeID`, `DeliveryEmployeeSubID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `EmployeeID` | `varchar(100)` | Không |
+| `EmployeeName` | `nvarchar(300)` | Không |
+
+## manager
+
+Bảng SQL: `vManager` · trường mã `ManagerID` · trường tên `ManagerName`.
+
+Tên trường nguồn tương ứng: `ManagerID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `ManagerID` | `varchar(100)` | Không |
+| `ManagerName` | `nvarchar(300)` | Không |
+
+## ceo
+
+Bảng SQL: `vCEO` · trường mã `CeoID` · trường tên `CeoName`.
+
+Tên trường nguồn tương ứng: `CeoID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `CeoID` | `varchar(100)` | Không |
+| `CeoName` | `nvarchar(300)` | Không |
+
+## agency
+
+Bảng SQL: `vAgency` · trường mã `AgencyID` · trường tên `AgencyName`.
+
+Tên trường nguồn tương ứng: `AgencyID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `AgencyID` | `varchar(100)` | Không |
+| `AgencyName` | `nvarchar(300)` | Không |
+
+## asset
+
+Bảng SQL: `FA_AssetTbl` · trường mã `AssetID` · trường tên `AssetName`.
+
+Tên trường nguồn tương ứng: `AssetID`, `RequestedAssetID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `AssetID` | `varchar(50)` | Không |
+| `AssetName` | `nvarchar(200)` | Có |
+
+## asset-type
+
+Bảng SQL: `FA_AssetTypeTbl` · trường mã `AssetTypeID` · trường tên `AssetTypeName`.
+
+Tên trường nguồn tương ứng: `AssetTypeID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `AssetTypeID` | `varchar(50)` | Không |
+| `AssetTypeName` | `nvarchar(150)` | Không |
+
+## capital
+
+Bảng SQL: `FA_CapitalTbl` · trường mã `CapitalID` · trường tên `CapitalName`.
+
+Tên trường nguồn tương ứng: `CapitalID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `CapitalID` | `varchar(50)` | Không |
+| `CapitalName` | `nvarchar(40)` | Có |
+
+## object-group
+
+Bảng SQL: `CF_ObjectGroupTbl` · trường mã `ObjectGroupID` · trường tên `ObjectGroupName`.
+
+Tên trường nguồn tương ứng: `ObjectGroupID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `ObjectGroupID` | `varchar(50)` | Không |
+| `ObjectGroupName` | `nvarchar(150)` | Không |
+
+## account-kind
+
+Bảng SQL: `CF_AccountKindTbl` · trường mã `AccountKindID` · trường tên `AccountKindName`.
+
+Tên trường nguồn tương ứng: `AccountKindID`, `AcctKindID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `AccountKindID` | `nvarchar(2)` | Không |
+| `AccountKindName` | `nvarchar(100)` | Có |
+
+## account-type
+
+Bảng SQL: `CF_AccountTypeTbl` · trường mã `AccountTypeID` · trường tên `AccountTypeName`.
+
+Tên trường nguồn tương ứng: `AccountTypeID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `AccountTypeID` | `nvarchar(20)` | Không |
+| `AccountTypeName` | `nvarchar(70)` | Có |
+
+## user-group
+
+Bảng SQL: `SY_UserGroup` · trường mã `UserGroupID` · trường tên `UserGroupName`.
+
+Tên trường nguồn tương ứng: `UserGroupID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `UserGroupID` | `varchar(20)` | Không |
+| `UserGroupName` | `nvarchar(100)` | Không |
+
+## person
+
+Bảng SQL: `HR_PersonTbl` · trường mã `PersonID` · trường tên `PersonName`.
+
+Tên trường nguồn tương ứng: `PersonID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `PersonID` | `varchar(50)` | Không |
+| `PersonName` | `nvarchar(200)` | Không |
+
+## currency
+
+Bảng SQL: `CF_CurrencyTbl` · trường mã `CurrencyID` · trường tên `CurrencyName`.
+
+Tên trường nguồn tương ứng: `CurrencyID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `CurrencyID` | `varchar(3)` | Không |
+| `CurrencyName` | `nvarchar(100)` | Không |
+
+## purpose
+
+Bảng SQL: `AP_PurposePurchaseTbl` · trường mã `PurposeID` · trường tên `PurposeName`.
+
+Tên trường nguồn tương ứng: `PurposeID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `PurposeID` | `int` | Không |
+| `PurposeName` | `nvarchar(50)` | Có |
+
+## contract
+
+Bảng SQL: `CF_ContractTbl` · trường mã `ContractID` · trường tên `ContractName`.
+
+Tên trường nguồn tương ứng: `ContractID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `ContractID` | `nvarchar(100)` | Không |
+| `ContractName` | `nvarchar(100)` | Không |
+
+## account
+
+Bảng SQL: `CF_ChartAccTbl` · trường mã `AccountID` · trường tên `AccountName`.
+
+Tên trường nguồn tương ứng: `AccountID`, `InvAccID`, `RevAccID`, `VATAccID`, `VATAccExID`, `IncomeAccID`, `CostOfSaleAccID`, `DiscountAcctID`, `ChietKhau1AccID`, `ChietKhau2AccID`, `ChietKhau3AccID`, `ChietKhau4AccID`, `ExpenseAccountID`, `ExpenseAccID`, `AssetAccID`, `DepreAccID`, `PayAccID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `AccountID` | `varchar(30)` | Không |
+| `AccountName` | `nvarchar(150)` | Không |
+
+## cost
+
+Bảng SQL: `CF_CostTbl` · trường mã `CostID` · trường tên `CostName`.
+
+Tên trường nguồn tương ứng: `CostID`, `ParentCostID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `CostID` | `varchar(50)` | Không |
+| `CostName` | `nvarchar(250)` | Không |
+
+## cost-center
+
+Bảng SQL: `CF_CostCenterTbl` · trường mã `CostCenterID` · trường tên `CostCenterName`.
+
+Tên trường nguồn tương ứng: `CostCenterID`, `ParentCostCenterID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `CostCenterID` | `varchar(50)` | Không |
+| `CostCenterName` | `nvarchar(250)` | Có |
+
+## department
+
+Bảng SQL: `CF_DepartmentTbl` · trường mã `DepartmentID` · trường tên `DepartmentName`.
+
+Tên trường nguồn tương ứng: `DepartmentID`, `ParentDepartmentID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `DepartmentID` | `varchar(50)` | Không |
+| `DepartmentName` | `nvarchar(100)` | Không |
+
+## location
+
+Bảng SQL: `CF_LocationTbl` · trường mã `LocationID` · trường tên `LocationName`.
+
+Tên trường nguồn tương ứng: `LocationID`, `ToLocationID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `LocationID` | `nvarchar(50)` | Không |
+| `LocationName` | `nvarchar(100)` | Không |
+
+## zone
+
+Bảng SQL: `CF_ZoneTbl` · trường mã `ZoneID` · trường tên `ZoneName`.
+
+Tên trường nguồn tương ứng: `ZoneID`, `ToZoneID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `ZoneID` | `nvarchar(50)` | Không |
+| `ZoneName` | `nvarchar(250)` | Có |
+
+## payment-term
+
+Bảng SQL: `CF_PaymentTermTbl` · trường mã `PaymentTermID` · trường tên `PaymentTermName`.
+
+Tên trường nguồn tương ứng: `PaymentTermID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `PaymentTermID` | `varchar(50)` | Không |
+| `PaymentTermName` | `nvarchar(70)` | Có |
+
+## payment-type
+
+Bảng SQL: `CF_PaymentTypeTbl` · trường mã `PaymentTypeID` · trường tên `PaymentTypeName`.
+
+Tên trường nguồn tương ứng: `PaymentTypeID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `PaymentTypeID` | `varchar(50)` | Không |
+| `PaymentTypeName` | `nvarchar(100)` | Không |
+
+## vat
+
+Bảng SQL: `CF_VATTbl` · trường mã `VATID` · trường tên `VATName`.
+
+Tên trường nguồn tương ứng: `VATID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `VATID` | `varchar(4)` | Không |
+| `VATName` | `nvarchar(50)` | Có |
+
+## impexp
+
+Bảng SQL: `CF_ImpExpTbl` · trường mã `ImpExpID` · trường tên `ImExName`.
+
+Tên trường nguồn tương ứng: `ImpExpID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `ImpExpID` | `varchar(50)` | Không |
+| `ImExName` | `nvarchar(150)` | Không |
+
+## move-type
+
+Bảng SQL: `FA_MovementTypeTbl` · trường mã `MoveTypeID` · trường tên `MoveTypeName`.
+
+Tên trường nguồn tương ứng: `MoveTypeID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `MoveTypeID` | `varchar(30)` | Không |
+| `MoveTypeName` | `nvarchar(150)` | Không |
+
+## service-type
+
+Bảng SQL: `FA_ServiceTypeTbl` · trường mã `ServiceTypeID` · trường tên `ServiceTypeName`.
+
+Tên trường nguồn tương ứng: `ServiceTypeID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `ServiceTypeID` | `varchar(30)` | Không |
+| `ServiceTypeName` | `nvarchar(150)` | Không |
+
+## user
+
+Bảng SQL: `SY_User` · trường mã `UserName` · trường tên `HoTen`.
+
+Tên trường nguồn tương ứng: `FromUserID`, `ToUserID`, `PMID`, `PrimaryPmID`, `SupportingPmID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `UserName` | `varchar(100)` | Không |
+| `HoTen` | `nvarchar(150)` | Không |
+
+## delivery-status
+
+Bảng SQL: `AR_OrderDeliveryStatusTbl` · trường mã `DeliveryStatusID` · trường tên `DeliveryStatusName`.
+
+Tên trường nguồn tương ứng: `DeliveryStatusID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `DeliveryStatusID` | `int` | Không |
+| `DeliveryStatusName` | `nvarchar(100)` | Có |
+
+## damage-status
+
+Bảng SQL: `IV_DamageInsideStatusTbl` · trường mã `DamageInsideStatusID` · trường tên `DamageInsideStatusName`.
+
+Tên trường nguồn tương ứng: `DamageInsideStatusID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `DamageInsideStatusID` | `int` | Không |
+| `DamageInsideStatusName` | `nvarchar(50)` | Không |
+
+## package-type
+
+Bảng SQL: `IV_PackageTypeTbl` · trường mã `PackageTypeID` · trường tên `PackageTypeName`.
+
+Tên trường nguồn tương ứng: `PackageTypeID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `PackageTypeID` | `nvarchar(50)` | Không |
+| `PackageTypeName` | `nvarchar(50)` | Không |
+
+## order-type
+
+Bảng SQL: `IV_OrderTypeTbl` · trường mã `OrderTypeID` · trường tên `OrderTypeName`.
+
+Tên trường nguồn tương ứng: `OrderTypeID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `OrderTypeID` | `nvarchar(50)` | Không |
+| `OrderTypeName` | `nvarchar(50)` | Không |
+
+## damage-location
+
+Bảng SQL: `IV_LocationDamageDetectedTbl` · trường mã `LocationDamageDetectedID` · trường tên `LocationDamageDetectedName`.
+
+Tên trường nguồn tương ứng: `LocationDamageDetectedID`. Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `LocationDamageDetectedID` | `int` | Không |
+| `LocationDamageDetectedName` | `nvarchar(50)` | Không |
+
+## status:purchase-requests
+
+Bảng SQL: `AP_PurchaseStatusTbl` · trường mã `StatusID` · trường tên `StatusName`.
+
+Tên trường nguồn tương ứng: . Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `StatusID` | `int` | Không |
+| `StatusName` | `nvarchar(50)` | Có |
+
+## status:purchase-orders
+
+Bảng SQL: `AP_OrderStatusTbl` · trường mã `StatusID` · trường tên `StatusName`.
+
+Tên trường nguồn tương ứng: . Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `StatusID` | `int` | Không |
+| `StatusName` | `nvarchar(50)` | Không |
+
+## status:inbound-requests
+
+Bảng SQL: `IV_InboundRequestStatusTbl` · trường mã `StatusID` · trường tên `StatusName`.
+
+Tên trường nguồn tương ứng: . Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `StatusID` | `int` | Không |
+| `StatusName` | `nvarchar(100)` | Không |
+
+## status:sales-orders
+
+Bảng SQL: `AR_OrderStatusTbl` · trường mã `StatusID` · trường tên `StatusName`.
+
+Tên trường nguồn tương ứng: . Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `StatusID` | `int` | Không |
+| `StatusName` | `nvarchar(50)` | Không |
+
+## status:sales-qr
+
+Bảng SQL: `AR_InvoiceStatusTbl` · trường mã `StatusID` · trường tên `StatusName`.
+
+Tên trường nguồn tương ứng: . Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `StatusID` | `int` | Không |
+| `StatusName` | `nvarchar(50)` | Không |
+
+## status:internal-transfer-requests
+
+Bảng SQL: `IV_InternalTransferRequestStatusTbl` · trường mã `StatusID` · trường tên `StatusName`.
+
+Tên trường nguồn tương ứng: . Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `StatusID` | `int` | Không |
+| `StatusName` | `nvarchar(150)` | Không |
+
+## status:contract-info
+
+Bảng SQL: `CF_ContractStatusTbl` · trường mã `StatusID` · trường tên `StatusName`.
+
+Tên trường nguồn tương ứng: . Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `StatusID` | `int` | Không |
+| `StatusName` | `nvarchar(255)` | Không |
+
+## status:internal-transfer-batches
+
+Bảng SQL: `IV_InternalTransferBatchStatusTbl` · trường mã `StatusID` · trường tên `StatusName`.
+
+Tên trường nguồn tương ứng: . Trường bổ sung: —.
+
+| Cột | Kiểu SQL | Cho phép null |
+|---|---|---|
+| `StatusID` | `int` | Không |
+| `StatusName` | `nvarchar(150)` | Không |
+

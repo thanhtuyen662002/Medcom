@@ -5,6 +5,7 @@ import {RequestButton,RequestNotice,RequestEmpty,RequestLoading,RequestStatus,Re
 import {RecordDetailToolbar,RecordSection} from "./record-dialog";
 import {RequestDetailDialog,useRequestDetailNavigation,useDetailPresentationProof,type RegisterRequestDetailNavigation} from "./request-detail-dialog";
 import {documentStatusLabel} from "@/lib/erp/document-status";
+import {formatMoney,isMoneyField} from "@/lib/erp/money";
 import {useListControls} from "./list-view-state";
 import {PurchaseReferenceDetails} from "./purchase-reference-details";
 import {purchaseReferenceIdentity,type PurchaseReferenceContext} from "@/lib/erp/purchase-reference-context";
@@ -299,7 +300,7 @@ function PurchaseRequestReader({workspace,boundary,sessionUnverified,sessionEnde
    {!!active?.error&&<RequestError error={active.error}/>}
    {(!canRead||!presentationReady)&&<RequestNotice>Dữ liệu phiếu tạm ẩn trong khi xác minh. Yêu cầu gốc vẫn được giữ.</RequestNotice>}
    {!canRead&&<RecordDetailToolbar><RequestButton type="button" onClick={()=>setRefresh(value=>value+1)}>Xác minh lại phiếu</RequestButton></RecordDetailToolbar>}
-   </RecordSection><RecordSection title="Dòng hàng"><p className={requestStyles.muted}>Dòng hàng sẽ hiển thị khi phiếu được xác minh.</p></RecordSection><RecordSection title="Ghi chú"><p className={requestStyles.muted}>Ghi chú sẽ hiển thị khi phiếu được xác minh.</p></RecordSection></>}
+   </RecordSection><RecordSection title="Chi tiết"><p className={requestStyles.muted}>Chi tiết sẽ hiển thị khi phiếu được xác minh.</p></RecordSection><RecordSection title="Ghi chú"><p className={requestStyles.muted}>Ghi chú sẽ hiển thị khi phiếu được xác minh.</p></RecordSection></>}
   {editor&&<section ref={registerFocusDetail} aria-label="Phiếu mua hàng hiện có" tabIndex={-1} className="scroll-mt-24 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" hidden={!canRead||!presentationReady}><div className={requestStyles.stack}>
    <MobileRequest itemDisplay={{scopeKey:editor.scopeKey,binding:purchaseItemDisplayBinding(editor.raw),context:editor.raw.itemDisplayContext}} presentationAllowed={presentationAllowed&&canRead&&presentationReady} statusPresentation={{documentId:editor.raw.document.purchaseRequestId,id:editor.raw.document.statusId,name:editor.raw.statusName}} initial={editor.snapshot} access={access} adapter={editor.bridge.adapter} readRevision={editor.revision} onConfirmed={onConfirmed} onWorkStateChange={onWorkStateChange}/>
    {canRead&&<>{editor.receiptId&&<p role="status">ERP đã xác nhận yêu cầu {editor.receiptId}. Receipt vẫn được giữ khi đọc lại thất bại.</p>}
@@ -314,15 +315,15 @@ function value(value:string|number|boolean|null){return value===null?"NULL":type
 function FullPurchaseReadback({readback}:{readback:PurchaseReadback}){
  const document=readback.document;
  const labels:Record<string,string>={purchaseRequestId:"Mã đề nghị",branchId:"Chi nhánh",statusId:"Mã trạng thái ERP",statusName:"Trạng thái",isLocked:"Khóa phiếu",purchaseDate:"Ngày giờ đề nghị trên ERP",purposeId:"Mã mục đích",personSuggest:"Người đề nghị",department:"Phòng ban",purposeDescOrClient:"Diễn giải mục đích / khách hàng",price:"Giá trị đề nghị",notes:"Ghi chú",currencyId:"Tiền tệ",objectId:"Mã đối tượng",rateExchange:"Tỷ giá"};
- return <section aria-label="Dữ liệu ERP đầy đủ"><details className={`${requestStyles.section} request-full-readback`}><summary className={requestStyles.title}>Toàn bộ thông tin trên ERP <span>{document.lines.length} dòng hàng</span></summary><div className="request-full-readback-content">
-  <dl className={requestStyles.values}>{Object.entries({purchaseRequestId:document.purchaseRequestId,branchId:document.branchId,statusId:document.statusId,statusName:documentStatusLabel(document.statusId,readback.statusName),isLocked:document.isLocked,...document.header}).map(([field,data])=><div key={field}><dt>{labels[field]}</dt><dd style={{whiteSpace:"pre-wrap",overflowWrap:"anywhere"}}>{value(data)}</dd></div>)}</dl>
-  <p>{document.lines.length} dòng hàng</p>
+ return <section aria-label="Dữ liệu ERP đầy đủ"><details className={`${requestStyles.section} request-full-readback`}><summary className={requestStyles.title}>Toàn bộ thông tin trên ERP <span>{document.lines.length} chi tiết</span></summary><div className="request-full-readback-content">
+  <dl className={requestStyles.values}>{Object.entries({purchaseRequestId:document.purchaseRequestId,branchId:document.branchId,statusId:document.statusId,statusName:documentStatusLabel(document.statusId,readback.statusName),isLocked:document.isLocked,...document.header}).map(([field,data])=><div key={field}><dt>{labels[field]}</dt><dd style={{whiteSpace:"pre-wrap",overflowWrap:"anywhere"}}>{isMoneyField(field)&&data!==null?formatMoney(data):value(data)}</dd></div>)}</dl>
+  <p>{document.lines.length} chi tiết</p>
   <RecordLinesTable label="Toàn bộ dòng đề nghị" lines={document.lines.map(line=>({...line,itemId:line.values.itemId}))} binding={purchaseItemDisplayBinding(readback)} context={readback.itemDisplayContext} columns={[
-   {label:"Ngân sách",value:line=>value(line.values.budget),numeric:false},
+   {label:"Ngân sách",value:line=>formatMoney(line.values.budget)},
    {label:"Thời gian yêu cầu",value:line=>value(line.values.timeRequired),numeric:false},
    {label:"Số lượng",value:line=>value(line.values.quantity)},
-   {label:"Đơn giá",value:line=>value(line.values.unitPrice)},
-   {label:"Thành tiền",value:line=>value(line.values.totalPrice)},
+   {label:"Đơn giá",value:line=>formatMoney(line.values.unitPrice)},
+   {label:"Thành tiền",value:line=>formatMoney(line.values.totalPrice)},
    {label:"Model",value:line=>value(line.values.model),numeric:false},
   ]}/>
 

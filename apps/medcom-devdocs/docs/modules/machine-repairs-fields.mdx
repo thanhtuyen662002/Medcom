@@ -1,0 +1,88 @@
+---
+title: "Phiếu sửa chữa / bảo hành / bảo trì máy · Trường dữ liệu"
+---
+
+:::note Phạm vi nguồn
+
+Các trường lấy từ danh mục kỹ thuật được backend nhúng. API đang triển khai trả **401** khi chưa đăng nhập; chưa đối chiếu dữ liệu mô tả theo phiên trên môi trường thật. Đây không phải danh mục toàn bộ cột của cơ sở dữ liệu.
+
+:::
+
+## Bảng và định danh
+
+| Phần dữ liệu | Bảng SQL |
+|---|---|
+| `header` | `FA_RepairTbl` |
+| `lines` | `FA_RepairDetailTbl` |
+
+Tên trong danh mục là tên trường nguồn. Kết quả phiên bản 3 có thể dùng tên thống nhất khác; phải đối chiếu cấu trúc phản hồi của từng API trước khi đọc hoặc gửi dữ liệu. Không gửi tên hiển thị thay mã định danh.
+
+## Phần dữ liệu: header
+
+| Trường nguồn | Cột SQL | Kiểu SQL | Cho phép null | Ánh xạ ghi | Mặc định | Trường ảo / nguồn |
+|---|---|---|---|---|---|---|
+| `documentId` | `DocumentID` | `varchar(30)` | Không | Không | Không khai báo | —  |
+| `documentDate` | `DocumentDate` | `datetime` | Không | Có | Không khai báo | —  |
+| `nguoiGiao` | `NguoiGiao` | `nvarchar(150)` | Có | Có | Không khai báo | —  |
+| `nguoiNhan` | `NguoiNhan` | `nvarchar(150)` | Có | Có | Không khai báo | —  |
+| `memo` | `Memo` | `nvarchar(150)` | Có | Có | Không khai báo | —  |
+| `notes` | `Notes` | `nvarchar(150)` | Có | Có | Không khai báo | —  |
+| `isLocked` | `isLock` | `bit` | Không | Không | Không khai báo | —  |
+| `userCreate` | `UserCreate` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `userUpdate` | `UserUpdate` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `dateUpdate` | `DateUpdate` | `datetime` | Có | Không | Không khai báo | —  |
+| `dateCreate` | `DateCreate` | `datetime` | Có | Không | Không khai báo | —  |
+| `serviceTypeId` | `ServiceTypeID` | `varchar(30)` | Không | Có | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `objectId` | `ObjectID` | `varchar(100)` | Có | Có | Không khai báo | —  |
+| `serviceLocation` | `ServiceLocation` | `nvarchar(500)` | Có | Có | Không khai báo | —  |
+| `contractId` | `ContractID` | `nvarchar(100)` | Có | Có | Không khai báo | —  |
+| `startDate` | `StartDate` | `datetime` | Có | Có | Không khai báo | —  |
+| `endDate` | `EndDate` | `datetime` | Có | Có | Không khai báo | —  |
+| `technician` | `Technician` | `nvarchar(150)` | Có | Có | Không khai báo | —  |
+| `serviceStatus` | `ServiceStatus` | `varchar(30)` | Có | Có | Không khai báo | —  |
+| `referenceNo` | `ReferenceNo` | `nvarchar(100)` | Có | Có | Không khai báo | —  |
+| `referenceDate` | `ReferenceDate` | `datetime` | Có | Có | Không khai báo | —  |
+| `documentLink` | `DocumentLink` | `nvarchar(1000)` | Có | Có | Không khai báo | —  |
+
+## Phần dữ liệu: lines
+
+| Trường nguồn | Cột SQL | Kiểu SQL | Cho phép null | Ánh xạ ghi | Mặc định | Trường ảo / nguồn |
+|---|---|---|---|---|---|---|
+| `userAutoId` | `UserAutoID` | `varchar(40)` | Không | Không | Không khai báo | —  |
+| `documentId` | `DocumentID` | `varchar(30)` | Không | Không | Không khai báo | —  |
+| `assetId` | `AssetID` | `varchar(50)` | Không | Có | Không khai báo | —  |
+| `noiDung` | `NoiDung` | `nvarchar(150)` | Có | Có | Không khai báo | —  |
+| `quantity` | `Quantity` | `decimal(18, 2)` | Có | Có | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `amount` | `Amount` | `decimal(18, 2)` | Có | Không | Không khai báo | —  |
+| `notes` | `Notes` | `nvarchar(150)` | Có | Có | Không khai báo | —  |
+| `problemDescription` | `ProblemDescription` | `nvarchar(max)` | Có | Có | Không khai báo | —  |
+| `actionTaken` | `ActionTaken` | `nvarchar(max)` | Có | Có | Không khai báo | —  |
+| `resultStatus` | `ResultStatus` | `nvarchar(500)` | Có | Có | Không khai báo | —  |
+| `warrantyCovered` | `WarrantyCovered` | `bit` | Có | Có | Không khai báo | —  |
+| `nextServiceDate` | `NextServiceDate` | `datetime` | Có | Có | Không khai báo | —  |
+| `laborAmount` | `LaborAmount` | `decimal(28, 0)` | Có | Có | Không khai báo | —  |
+| `partsAmount` | `PartsAmount` | `decimal(28, 0)` | Có | Không | Không khai báo | —  |
+| `internalAlert` | `InternalAlert` | `nvarchar(1000)` | Có | Có | Không khai báo | —  |
+
+## Danh sách lựa chọn
+
+Không tự suy đoán cách tách chuỗi trường liên kết hoặc tham số. Đối chiếu đặc tả danh sách lựa chọn, dữ liệu mô tả từ máy chủ và mã xử lý hiện có.
+
+| Mã lựa chọn / trường | Bảng hiển thị | Trường giá trị | Trường tên | Trường liên kết | Tham số / bắt buộc | Vô hiệu / chọn nhiều |
+|---|---|---|---|---|---|---|
+| `ContractID` | `header` | `ContractID` | `ContractID` | `—` | `—` / `—` | false / false |
+| `ObjectID` | `header` | `ObjectID` | `ObjectID` | `ServiceLocation` | `—` / `—` | false / false |
+| `ServiceStatus` | `header` | `ServiceStatus` | `ServiceStatusName` | `—` | `—` / `—` | false / false |
+| `ServiceTypeID` | `header` | `ServiceTypeID` | `ServiceTypeName` | `—` | `—` / `—` | false / false |
+| `AssetID` | `grdChitiet` | `AssetID` | `AssetID` | `AssetID;AssetName;Unit` | `—` / `—` | false / false |
+| `AssetName` | `grdChitiet` | `AssetName` | `AssetName` | `AssetID;AssetName;Unit` | `—` / `—` | true / true |
+
+## Các thao tác
+
+Tên và mã thao tác lấy theo danh mục, không thay thế quyền được cấp. Chỉ cho phép thực hiện khi cả quyền tài khoản và trạng thái nút trên chứng từ đều phù hợp.
+
+| Tên thao tác nguồn | Điều khiển | Mã thao tác khai báo | Nguồn tham chiếu |
+|---|---|---|---|
+
+
+**Nguồn tham chiếu:** `inventories/erp/20261010/six-screen-catalog.json#screens/machine-repairs`. Đây là bản mô tả kỹ thuật được lưu từ nguồn; cần đối chiếu môi trường triển khai khi tích hợp. Thuộc tính writable không thay thế quyền ghi của tài khoản.

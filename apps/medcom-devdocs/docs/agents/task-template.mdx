@@ -1,0 +1,38 @@
+---
+title: Mẫu yêu cầu triển khai
+---
+
+Sao chép mẫu sau và điền đúng mã phân hệ, API sau khi đối chiếu tài liệu. Đây là mẫu giao việc, không phải yêu cầu gọi API trên môi trường thật.
+
+```text
+Công việc: xây dựng [màn hình / quy trình] của phân hệ [mã chính xác].
+
+Nguồn tham chiếu:
+- OpenAPI SHA-256: [từ context/provenance.json]
+- Đối chiếu chức năng: [trang phân hệ]
+- Danh mục trường: [trang trường dữ liệu của phân hệ]
+- API sử dụng: [phương thức HTTP, đường dẫn, operationId chính xác]
+
+Đầu vào:
+- Kích thước cần hỗ trợ: điện thoại 320/390px và máy tính.
+- Giao diện/thành phần đang có: [đường dẫn mã nguồn].
+- Dữ liệu: dùng dữ liệu giả lập nếu chưa được cấp quyền môi trường thật.
+
+Yêu cầu tích hợp:
+- Đọc/ghi đúng đường dẫn JSON; tách giá trị và tên hiển thị, thông tin chung và chi tiết.
+- Giữ quy tắc bắt buộc, null, số thập phân và ngày giờ.
+- Quyền, chi nhánh, phạm vi phiên và trạng thái chứng từ quyết định thao tác.
+- Yêu cầu ghi giữ nguyên nội dung, idempotencyKey và expectedStateToken.
+- Nếu chưa biết kết quả, tra cứu yêu cầu đã gửi; không tự tạo yêu cầu ghi mới.
+- Xử lý đủ kiểu phản hồi khai báo và cả lỗi hạ tầng không phải JSON.
+
+Kết quả bàn giao:
+- Giao diện thích ứng kích thước và hỗ trợ tiếp cận.
+- Kiểm tra dữ liệu, trạng thái lỗi, cách phục hồi và kiểm thử phù hợp.
+- Nguồn tham chiếu cho nhận định; phần chưa được chứng minh ghi UNKNOWN.
+- Không tự tạo API, quyền hoặc tuyên bố thành công; không thử ghi trên production.
+```
+
+## Kiểm tra kết quả
+
+Đối chiếu cấu trúc yêu cầu và trường dữ liệu với đặc tả, mã nguồn được dẫn. Nếu bổ sung trường hoặc thao tác ngoài đặc tả, phải có nguồn xác nhận hoặc đánh dấu UNKNOWN. Kiểm thử bằng dữ liệu giả lập chỉ xác nhận hành vi của giao diện trong tình huống đó, không thay thế nghiệm thu backend thực tế.

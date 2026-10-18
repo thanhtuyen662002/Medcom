@@ -1,0 +1,10 @@
+{
+  "url": "https://api-medcom.bms79.com/api/contracts/openapi.json",
+  "fetchedAt": "2026-10-17T12:37:06.533Z",
+  "sha256": "d60e5ff34888d1133e24ed9bd26b41032de406b5595c64c2a71d433610022570",
+  "bytes": 3147407,
+  "version": "3.0.0",
+  "operations": 276,
+  "paths": 276,
+  "schemas": 1209
+}

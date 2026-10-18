@@ -1,0 +1,57 @@
+---
+title: Mô tả trường dữ liệu
+---
+
+## API mô tả trường
+
+| API | Nội dung |
+|---|---|
+| `GET /api/erp/{module}/screen` | Danh mục trường theo từng phần của chứng từ, danh sách lựa chọn, thao tác và nguồn tham chiếu |
+| `GET /api/documents/field-contract?kind=...` | Mô tả trường cho `purchase-orders`, `inbound-requests`, `purchase-requests` |
+| `GET /api/documents/query-contract` | Quy tắc truy vấn của các API đọc tương thích |
+| Cấu trúc phản hồi trong OpenAPI | Tên trường JSON, kiểu dữ liệu và thông tin ánh xạ SQL của từng API |
+
+Các API này được bảo vệ bằng xác thực. Lần kiểm tra không đăng nhập ngày 17/10/2026 ghi nhận `/api/erp/purchase-requests/screen`, `/api/documents/field-contract` và `/api/platform/metadata` trả **401 authentication_required**. Chưa đọc dữ liệu mô tả theo phiên đăng nhập trên môi trường thật.
+
+## Cấu trúc ErpFieldDefinition
+
+| Thuộc tính | Ý nghĩa khi xây dựng giao diện |
+|---|---|
+| `name` | Tên trường trong danh mục nguồn; cần đối chiếu tên JSON của phiên bản 3 |
+| `column` | Cột SQL được ánh xạ; không mặc định dùng làm tên trường gửi API |
+| `sqlType`, `typeArguments` | Kiểu SQL và giới hạn về độ dài, tổng chữ số, phần thập phân |
+| `nullable` | Cho phép giá trị NULL ở cơ sở dữ liệu; không đồng nghĩa được bỏ trường khỏi yêu cầu |
+| `ordinal` | Thứ tự trong danh mục, không tự động quyết định bố cục giao diện |
+| `hasDefault` | Có giá trị mặc định ở nguồn; giá trị cụ thể là UNKNOWN nếu chưa công bố |
+| `writable` | Có ánh xạ ghi; vẫn cần đúng quyền, thao tác, phiên bản và cấu trúc yêu cầu |
+| `virtual`, `sourceColumn` | Trường ảo hoặc cột nguồn nếu có; không tự ghi ngược giá trị tính toán |
+
+Nguồn: `src/backend/Medcom.Contracts/ErpScreens.cs#ErpFieldDefinition` và cấu trúc cùng tên trong OpenAPI. Danh mục từng phân hệ nằm ở trang **Trường dữ liệu** trong thanh điều hướng.
+
+## Tên trường trả về ở phiên bản 3
+
+Phản hồi phiên bản 3 có thể dùng tên thống nhất khác với tên nguồn. Ví dụ, cột `PurchaseRequestID` được mô tả bằng `purchaseRequestId` trong cấu trúc phản hồi tương ứng. Không mặc định mọi màn hình đều dùng `documentId`; phải đọc tham số và cấu trúc kết quả của đúng API.
+
+Các phần mở rộng `x-medcom-source-column`, `x-medcom-sql-type`, `x-medcom-sql-type-arguments`, `x-medcom-sql-nullable`, `x-medcom-writable` được hiển thị khi tra cứu cấu trúc dữ liệu. Nếu không có thông tin ánh xạ, chưa thể kết luận trường JSON tương ứng với cột SQL nào.
+
+Nguồn: `Erp_purchase_requests_document_rowFeDisplayCanonicalV3_purchaseRequestId` trong OpenAPI; `src/backend/Medcom.Api/CanonicalResponseProjection.cs`.
+
+## Giữ nguyên kiểu dữ liệu
+
+Số thập phân được yêu cầu dưới dạng chuỗi phải tiếp tục giữ dạng chuỗi. Không đưa số tiền qua `Number` rồi chuyển lại JSON nếu có thể mất độ chính xác. Ngày giờ lịch SQL không được tự thêm `Z` hoặc chuyển múi giờ khi đặc tả không yêu cầu.
+
+Phân biệt `required` (bắt buộc có thuộc tính JSON), `nullable` (cho phép giá trị null) và `writable` (có ánh xạ ghi). `additionalProperties: false` không cho phép gửi thêm các trường ngoài khai báo. Không áp dụng quy tắc bỏ mọi giá trị null vào yêu cầu cần đầy đủ thuộc tính.
+
+Kiểu boolean và mã lựa chọn dạng chuỗi/số có thể khác nhau giữa các họ API. Đọc đúng cấu trúc, không tái sử dụng một kiểu chỉ vì tên gần giống nhau.
+
+## Danh sách lựa chọn và trường liên kết
+
+Dữ liệu mô tả phân biệt trường giá trị (`valueField`), tên hiển thị (`displayField`), trường liên kết (`linkedFields`), tham số (`parameters`), tham số bắt buộc (`requiredParameters`), chọn nhiều (`multiSelect`), vô hiệu (`disabled`) và cho phép ngoài danh sách (`allowUnlisted`).
+
+Giao diện lưu mã giá trị; tên chỉ phục vụ hiển thị. Khi trường cha đổi, hủy kết quả lựa chọn đang tải và lấy lại dữ liệu theo điều kiện mới. Không thực thi SQL hoặc biểu thức từ dữ liệu mô tả ngay trên trình duyệt.
+
+Các API chọn/dán có thể trả `headerPatch` cùng danh sách dòng. Cần xử lý cả phần thông tin chung được bổ sung, không chỉ gộp dòng hàng. Máy chủ vẫn kiểm tra lại khi lưu.
+
+## Giới hạn danh mục
+
+Danh mục mô tả những trường được màn hình và API đăng ký; không hứa bao phủ toàn bộ database. Nguồn sử dụng là danh mục kỹ thuật đã loại bỏ dữ liệu nhạy cảm, không gồm bản xuất SQL, bản ghi khách hàng hoặc tệp nhị phân ERP. Mã kiểm tra của nguồn được lưu trong [thông tin nguồn](/context/provenance.json).

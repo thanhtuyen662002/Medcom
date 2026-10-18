@@ -126,6 +126,10 @@ export function erpScreenPostRoute(path:string){return erpScreenPostRoutes.has(p
 const erpScreenGetRoutes = new Set([
   "api/erp/sales-orders/attachments",
   "api/erp/sales-orders/attachments/content",
+  "api/erp/sales-order-pm/attachments",
+  "api/erp/sales-order-pm/attachments/content",
+  "api/erp/sales-order-sa/attachments",
+  "api/erp/sales-order-sa/attachments/content",
   "api/erp/permissions",
   ...erpScreenModules.flatMap(m => [
     `api/erp/${m}/screen`,

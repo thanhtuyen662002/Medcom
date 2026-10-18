@@ -1,0 +1,190 @@
+---
+title: "Xác nhận thiết bị điều chuyển (Kỹ thuật) · Trường dữ liệu"
+---
+
+:::note Phạm vi nguồn
+
+Các trường lấy từ danh mục kỹ thuật được backend nhúng. API đang triển khai trả **401** khi chưa đăng nhập; chưa đối chiếu dữ liệu mô tả theo phiên trên môi trường thật. Đây không phải danh mục toàn bộ cột của cơ sở dữ liệu.
+
+:::
+
+## Bảng và định danh
+
+| Phần dữ liệu | Bảng SQL |
+|---|---|
+| `header` | `IV_InternalTransferBatchTbl` |
+| `requests` | `IV_InternalTransferBatchRequestTbl` |
+| `lines` | `IV_InternalTransferBatchDetailTbl` |
+| `assets` | `IV_InternalTransferBatchAssetTbl` |
+| `history` | `IV_InternalTransferBatchLogTbl` |
+
+Tên trong danh mục là tên trường nguồn. Kết quả phiên bản 3 có thể dùng tên thống nhất khác; phải đối chiếu cấu trúc phản hồi của từng API trước khi đọc hoặc gửi dữ liệu. Không gửi tên hiển thị thay mã định danh.
+
+## Phần dữ liệu: header
+
+| Trường nguồn | Cột SQL | Kiểu SQL | Cho phép null | Ánh xạ ghi | Mặc định | Trường ảo / nguồn |
+|---|---|---|---|---|---|---|
+| `batchId` | `BatchID` | `varchar(30)` | Không | Không | Không khai báo | —  |
+| `batchDate` | `BatchDate` | `datetime` | Không | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `fromBranchId` | `FromBranchID` | `varchar(50)` | Không | Không | Không khai báo | —  |
+| `toBranchId` | `ToBranchID` | `varchar(50)` | Không | Không | Không khai báo | —  |
+| `fromStoreHouseId` | `FromStoreHouseID` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `toStoreHouseId` | `ToStoreHouseID` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `plannedTransferDate` | `PlannedTransferDate` | `datetime` | Có | Không | Không khai báo | —  |
+| `actualDispatchDate` | `ActualDispatchDate` | `datetime` | Có | Không | Không khai báo | —  |
+| `actualReceiveDate` | `ActualReceiveDate` | `datetime` | Có | Không | Không khai báo | —  |
+| `assignedPM` | `AssignedPM` | `varchar(100)` | Có | Không | Không khai báo | —  |
+| `assignedTechnician` | `AssignedTechnician` | `varchar(100)` | Có | Không | Không khai báo | —  |
+| `assignedSA` | `AssignedSA` | `varchar(100)` | Có | Không | Không khai báo | —  |
+| `hasEquipment` | `HasEquipment` | `bit` | Không | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `statusId` | `StatusID` | `int` | Không | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `transportMethod` | `TransportMethod` | `nvarchar(50)` | Có | Không | Không khai báo | —  |
+| `carrierName` | `CarrierName` | `nvarchar(150)` | Có | Không | Không khai báo | —  |
+| `carrierPhone` | `CarrierPhone` | `nvarchar(100)` | Có | Không | Không khai báo | —  |
+| `vehicleNo` | `VehicleNo` | `nvarchar(100)` | Có | Không | Không khai báo | —  |
+| `outputDocumentId` | `OutputDocumentID` | `varchar(30)` | Có | Không | Không khai báo | —  |
+| `inputDocumentId` | `InputDocumentID` | `varchar(30)` | Có | Không | Không khai báo | —  |
+| `notes` | `Notes` | `nvarchar(1000)` | Có | Không | Không khai báo | —  |
+| `technicalCheckedBy` | `TechnicalCheckedBy` | `varchar(100)` | Có | Không | Không khai báo | —  |
+| `technicalCheckedAt` | `TechnicalCheckedAt` | `datetime` | Có | Không | Không khai báo | —  |
+| `sAApprovedBy` | `SAApprovedBy` | `varchar(100)` | Có | Không | Không khai báo | —  |
+| `sAApprovedAt` | `SAApprovedAt` | `datetime` | Có | Không | Không khai báo | —  |
+| `accountingConfirmedBy` | `AccountingConfirmedBy` | `varchar(100)` | Có | Không | Không khai báo | —  |
+| `accountingConfirmedAt` | `AccountingConfirmedAt` | `datetime` | Có | Không | Không khai báo | —  |
+| `dispatchedBy` | `DispatchedBy` | `varchar(100)` | Có | Không | Không khai báo | —  |
+| `receivedBy` | `ReceivedBy` | `varchar(100)` | Có | Không | Không khai báo | —  |
+| `isLocked` | `isLock` | `bit` | Không | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `userCreate` | `UserCreate` | `varchar(100)` | Có | Không | Không khai báo | —  |
+| `userUpdate` | `UserUpdate` | `varchar(100)` | Có | Không | Không khai báo | —  |
+| `dateCreate` | `DateCreate` | `datetime` | Có | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `dateUpdate` | `DateUpdate` | `datetime` | Có | Không | Không khai báo | —  |
+| `sendTo` | `SendTo` | `nvarchar(max)` | Có | Không | Không khai báo | —  |
+| `statusCode` | `StatusCode` | `varchar(30)` | Có | Không | Không khai báo | Trường ảo `StatusCode` |
+| `statusName` | `StatusName` | `nvarchar(150)` | Có | Không | Không khai báo | Trường ảo `StatusName` |
+| `backColor` | `BackColor` | `int` | Có | Không | Không khai báo | Trường ảo `BackColor` |
+| `foreColor` | `ForeColor` | `int` | Có | Không | Không khai báo | Trường ảo `ForeColor` |
+| `fromBranchName` | `FromBranchName` | `nvarchar(100)` | Có | Không | Không khai báo | Trường ảo `FromBranchName` |
+| `toBranchName` | `ToBranchName` | `nvarchar(100)` | Có | Không | Không khai báo | Trường ảo `ToBranchName` |
+| `fromStoreHouseName` | `FromStoreHouseName` | `nvarchar(100)` | Có | Không | Không khai báo | Trường ảo `FromStoreHouseName` |
+| `toStoreHouseName` | `ToStoreHouseName` | `nvarchar(100)` | Có | Không | Không khai báo | Trường ảo `ToStoreHouseName` |
+| `pMName` | `PMName` | `nvarchar(150)` | Có | Không | Không khai báo | Trường ảo `PMName` |
+| `technicianName` | `TechnicianName` | `nvarchar(150)` | Có | Không | Không khai báo | Trường ảo `TechnicianName` |
+| `sAName` | `SAName` | `nvarchar(150)` | Có | Không | Không khai báo | Trường ảo `SAName` |
+| `requestCount` | `RequestCount` | `int` | Có | Không | Không khai báo | Trường ảo `RequestCount` |
+| `lineCount` | `LineCount` | `int` | Có | Không | Không khai báo | Trường ảo `LineCount` |
+
+## Phần dữ liệu: requests
+
+| Trường nguồn | Cột SQL | Kiểu SQL | Cho phép null | Ánh xạ ghi | Mặc định | Trường ảo / nguồn |
+|---|---|---|---|---|---|---|
+| `userAutoId` | `UserAutoID` | `varchar(40)` | Không | Không | Không khai báo | —  |
+| `batchId` | `BatchID` | `varchar(30)` | Không | Không | Không khai báo | —  |
+| `requestId` | `RequestID` | `nvarchar(50)` | Không | Không | Không khai báo | —  |
+| `addedBy` | `AddedBy` | `varchar(100)` | Có | Không | Không khai báo | —  |
+| `addedAt` | `AddedAt` | `datetime` | Có | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `notes` | `Notes` | `nvarchar(500)` | Có | Không | Không khai báo | —  |
+| `documentDate` | `DocumentDate` | `datetime` | Có | Không | Không khai báo | Trường ảo `DocumentDate` |
+| `salesUser` | `SalesUser` | `varchar(100)` | Có | Không | Không khai báo | Trường ảo `SalesUser` |
+| `requestedTransferDate` | `RequestedTransferDate` | `datetime` | Có | Không | Không khai báo | Trường ảo `RequestedTransferDate` |
+| `requestStatusName` | `RequestStatusName` | `nvarchar(150)` | Có | Không | Không khai báo | Trường ảo `StatusName` |
+| `salesName` | `SalesName` | `nvarchar(150)` | Có | Không | Không khai báo | Trường ảo `SalesName` |
+
+## Phần dữ liệu: lines
+
+| Trường nguồn | Cột SQL | Kiểu SQL | Cho phép null | Ánh xạ ghi | Mặc định | Trường ảo / nguồn |
+|---|---|---|---|---|---|---|
+| `userAutoId` | `UserAutoID` | `varchar(40)` | Không | Không | Không khai báo | —  |
+| `batchId` | `BatchID` | `varchar(30)` | Không | Không | Không khai báo | —  |
+| `requestId` | `RequestID` | `nvarchar(50)` | Không | Không | Không khai báo | —  |
+| `requestDetailId` | `RequestDetailID` | `nvarchar(50)` | Không | Không | Không khai báo | —  |
+| `itemId` | `ItemID` | `nvarchar(50)` | Không | Không | Không khai báo | —  |
+| `requestedQty` | `RequestedQty` | `decimal(28, 4)` | Không | Không | Không khai báo | —  |
+| `approvedQty` | `ApprovedQty` | `decimal(28, 4)` | Không | Không | Không khai báo | —  |
+| `requestedLot` | `RequestedLot` | `nvarchar(100)` | Có | Không | Không khai báo | —  |
+| `lot` | `Lot` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `expireDate` | `ExpireDate` | `datetime` | Có | Không | Không khai báo | —  |
+| `isEquipment` | `IsEquipment` | `bit` | Không | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `techStatus` | `TechStatus` | `varchar(20)` | Có | Có | Không khai báo | —  |
+| `techNotes` | `TechNotes` | `nvarchar(1000)` | Có | Có | Không khai báo | —  |
+| `bBKCUrl` | `BBKCUrl` | `nvarchar(1000)` | Có | Có | Không khai báo | —  |
+| `technician` | `Technician` | `varchar(100)` | Có | Không | Không khai báo | —  |
+| `techCheckedAt` | `TechCheckedAt` | `datetime` | Có | Không | Không khai báo | —  |
+| `actualIssueQty` | `ActualIssueQty` | `decimal(28, 4)` | Có | Không | Không khai báo | —  |
+| `actualReceiveQty` | `ActualReceiveQty` | `decimal(28, 4)` | Có | Không | Không khai báo | —  |
+| `accountingNote` | `AccountingNote` | `nvarchar(500)` | Có | Không | Không khai báo | —  |
+| `warehouseNote` | `WarehouseNote` | `nvarchar(500)` | Có | Không | Không khai báo | —  |
+| `receiveNote` | `ReceiveNote` | `nvarchar(500)` | Có | Không | Không khai báo | —  |
+| `notes` | `Notes` | `nvarchar(500)` | Có | Không | Không khai báo | —  |
+| `itemCode` | `ItemCode` | `nvarchar(100)` | Có | Không | Không khai báo | Trường ảo `ItemCode` |
+| `itemName` | `ItemName` | `nvarchar(max)` | Có | Không | Không khai báo | Trường ảo `ItemName` |
+| `unit` | `Unit` | `nvarchar(50)` | Có | Không | Không khai báo | Trường ảo `Unit` |
+| `hangSX` | `HangSX` | `nvarchar(100)` | Có | Không | Không khai báo | Trường ảo `HangSX` |
+| `isLot` | `isLot` | `bit` | Có | Không | Không khai báo | Trường ảo `isLot` |
+| `requestDate` | `RequestDate` | `datetime` | Có | Không | Không khai báo | Trường ảo `RequestDate` |
+| `salesUser` | `SalesUser` | `varchar(100)` | Có | Không | Không khai báo | Trường ảo `SalesUser` |
+| `salesName` | `SalesName` | `nvarchar(150)` | Có | Không | Không khai báo | Trường ảo `SalesName` |
+| `requestTerritoryNote` | `RequestTerritoryNote` | `nvarchar(500)` | Có | Không | Không khai báo | Trường ảo `RequestTerritoryNote` |
+| `qtyNotIssued` | `QtyNotIssued` | `decimal(29, 4)` | Có | Không | Không khai báo | Trường ảo `QtyNotIssued` |
+| `qtyInTransit` | `QtyInTransit` | `decimal(29, 4)` | Có | Không | Không khai báo | Trường ảo `QtyInTransit` |
+
+## Phần dữ liệu: assets
+
+| Trường nguồn | Cột SQL | Kiểu SQL | Cho phép null | Ánh xạ ghi | Mặc định | Trường ảo / nguồn |
+|---|---|---|---|---|---|---|
+| `userAutoId` | `UserAutoID` | `varchar(40)` | Không | Không | Không khai báo | —  |
+| `batchId` | `BatchID` | `varchar(30)` | Không | Không | Không khai báo | —  |
+| `batchDetailId` | `BatchDetailID` | `varchar(40)` | Không | Không | Không khai báo | —  |
+| `assetId` | `AssetID` | `varchar(50)` | Không | Không | Không khai báo | —  |
+| `assetCondition` | `AssetCondition` | `nvarchar(1000)` | Có | Có | Không khai báo | —  |
+| `techStatus` | `TechStatus` | `varchar(20)` | Có | Có | Không khai báo | —  |
+| `bBKCUrl` | `BBKCUrl` | `nvarchar(1000)` | Có | Có | Không khai báo | —  |
+| `techNotes` | `TechNotes` | `nvarchar(1000)` | Có | Có | Không khai báo | —  |
+| `technician` | `Technician` | `varchar(100)` | Có | Không | Không khai báo | —  |
+| `checkedAt` | `CheckedAt` | `datetime` | Có | Không | Không khai báo | —  |
+| `isDispatched` | `IsDispatched` | `bit` | Không | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `isReceived` | `IsReceived` | `bit` | Không | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `assetName` | `AssetName` | `nvarchar(200)` | Có | Không | Không khai báo | Trường ảo `AssetName` |
+| `itemId` | `ItemID` | `varchar(50)` | Có | Không | Không khai báo | Trường ảo `ItemID` |
+| `serialNo` | `SerialNo` | `nvarchar(100)` | Có | Không | Không khai báo | Trường ảo `SerialNo` |
+| `assetStatus` | `AssetStatus` | `nvarchar(100)` | Có | Không | Không khai báo | Trường ảo `AssetStatus` |
+| `trackLifecycle` | `TrackLifecycle` | `bit` | Có | Không | Không khai báo | Trường ảo `TrackLifecycle` |
+
+## Phần dữ liệu: history
+
+| Trường nguồn | Cột SQL | Kiểu SQL | Cho phép null | Ánh xạ ghi | Mặc định | Trường ảo / nguồn |
+|---|---|---|---|---|---|---|
+| `userAutoId` | `UserAutoID` | `varchar(50)` | Không | Không | Không khai báo | —  |
+| `documentId` | `DocumentID` | `varchar(50)` | Không | Không | Không khai báo | —  |
+| `thoiGian` | `ThoiGian` | `datetime` | Không | Không | Không khai báo | —  |
+| `userName` | `UserName` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `statusId` | `StatusID` | `int` | Có | Không | Không khai báo | —  |
+| `sendTo` | `SendTo` | `nvarchar(max)` | Có | Không | Không khai báo | —  |
+| `notes` | `Notes` | `nvarchar(max)` | Có | Không | Không khai báo | —  |
+| `batchId` | `BatchID` | `varchar(50)` | Có | Không | Không khai báo | Trường ảo `BatchID` |
+
+## Danh sách lựa chọn
+
+Không tự suy đoán cách tách chuỗi trường liên kết hoặc tham số. Đối chiếu đặc tả danh sách lựa chọn, dữ liệu mô tả từ máy chủ và mã xử lý hiện có.
+
+| Mã lựa chọn / trường | Bảng hiển thị | Trường giá trị | Trường tên | Trường liên kết | Tham số / bắt buộc | Vô hiệu / chọn nhiều |
+|---|---|---|---|---|---|---|
+| `header.AssignedPM` | `header` | `UserName` | `HoTen` | `—` | `FromBranchID` / `FromBranchID` | false / false |
+| `header.AssignedSA` | `header` | `UserName` | `HoTen` | `—` | `FromBranchID` / `FromBranchID` | false / false |
+| `header.AssignedTechnician` | `header` | `UserName` | `HoTen` | `—` | `FromBranchID` / `FromBranchID` | false / false |
+| `header.FromBranchID` | `header` | `BranchID` | `BranchName` | `—` | `—` / `—` | false / false |
+| `header.FromStoreHouseID` | `header` | `StoreHouseID` | `StoreHouseName` | `—` | `FromBranchID` / `FromBranchID` | false / false |
+| `header.ToBranchID` | `header` | `BranchID` | `BranchName` | `—` | `—` / `—` | false / false |
+| `header.ToStoreHouseID` | `header` | `StoreHouseID` | `StoreHouseName` | `—` | `ToBranchID` / `ToBranchID` | false / false |
+| `header.TransportMethod` | `header` | `ID` | `Name` | `—` | `—` / `—` | false / false |
+| `assets.AssetID` | `grdChitiet3` | `AssetID` | `AssetID` | `AssetName,SerialNo,ItemID` | `BatchDetailID` / `BatchDetailID` | false / false |
+
+## Các thao tác
+
+Tên và mã thao tác lấy theo danh mục, không thay thế quyền được cấp. Chỉ cho phép thực hiện khi cả quyền tài khoản và trạng thái nút trên chứng từ đều phù hợp.
+
+| Tên thao tác nguồn | Điều khiển | Mã thao tác khai báo | Nguồn tham chiếu |
+|---|---|---|---|
+| Gửi TP SA | `ExecSQLWithParaButtonCtl` | `send-sa` | `dbo.SY_FrmCfg/IV_InternalTransferTechFrm/LYS1/ExecSQLWithParaButtonCtl/C4` |
+| Từ chối nhanh | `ExecSQLWithParaButtonCtl_1` | `reject` | `dbo.SY_FrmCfg/IV_InternalTransferTechFrm/LYS1/ExecSQLWithParaButtonCtl_1/C4` |
+
+**Nguồn tham chiếu:** `inventories/erp/20261011/cud-workflow-catalog.json#screens/internal-transfer-tech`. Đây là bản mô tả kỹ thuật được lưu từ nguồn; cần đối chiếu môi trường triển khai khi tích hợp. Thuộc tính writable không thay thế quyền ghi của tài khoản.

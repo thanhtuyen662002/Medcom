@@ -1,0 +1,6 @@
+{
+  "theme.colorToggle.ariaLabel": {"message": "Chuyển đổi giao diện (hiện tại {mode})"},
+  "theme.colorToggle.ariaLabel.mode.system": {"message": "theo hệ thống"},
+  "theme.colorToggle.ariaLabel.mode.light": {"message": "sáng"},
+  "theme.colorToggle.ariaLabel.mode.dark": {"message": "tối"}
+}

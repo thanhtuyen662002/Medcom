@@ -6,7 +6,7 @@ type Column<Line>={label:string;value:(line:Line)=>string|number|null;numeric?:b
 
 /** One source row and one identity group at every viewport. Values stay exact;
  * only the table's presentation changes to labelled rows on small screens. */
-export function RecordLinesTable<Line extends ItemDisplaySourceLine>({lines,binding,context,columns,offset=0,nullLabel="NULL",label="Dòng hàng",indexedKey=false}:{
+export function RecordLinesTable<Line extends ItemDisplaySourceLine>({lines,binding,context,columns,offset=0,nullLabel="NULL",label="Chi tiết",indexedKey=false}:{
  lines:readonly Line[];binding:ItemDisplayBinding;context?:ItemDisplayContext|null;
  columns:readonly Column<Line>[];offset?:number;nullLabel?:string;label?:string;indexedKey?:boolean;
 }){

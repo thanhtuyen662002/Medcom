@@ -1,0 +1,41 @@
+---
+title: Nguồn và mức xác minh
+---
+
+import Provenance from '@site/src/components/Provenance';
+
+<Provenance />
+
+## Thứ tự đối chiếu
+
+| Nguồn | Dùng cho | Giới hạn |
+|---|---|---|
+| OpenAPI tải trực tiếp từ URL owner cung cấp | HTTP contract, schemas, security, extensions | Không chứng minh runtime success hoặc release admission |
+| `apps/medcom-sites/lib/help/guides.ts` | Cấu trúc sidebar và nhãn mục | Feature/UI availability không phải capability API |
+| `inventories/erp/20261010/six-screen-catalog.json` | Field/SQL column/lookup catalog được backend nhúng | Snapshot source; runtime session chưa đối chiếu |
+| `inventories/erp/20261011/cud-workflow-catalog.json` | Các screen workflow và metadata kỹ thuật | Không xuất private SQL bodies hoặc transaction rows |
+| `src/backend/Medcom.Contracts/ErpScreenCatalog.cs` | Cách ghép catalog, action mapping | Source tại checkout; không chứng minh binary deployed tương đương |
+| Backend endpoint/contracts source | Guard, DTO, error/outcome mapping | Cần runtime acceptance riêng |
+
+## Các mức dùng trong tài liệu
+
+**Đặc tả đã kiểm tra:** đã đọc OpenAPI và lưu mã kiểm tra. **Mô tả kỹ thuật từ nguồn:** đã đọc catalog sanitized/local source với đường dẫn và hash. **Kết quả HTTP quan sát được:** chỉ những GET metadata không có session đã quan sát 401. **Chưa xác minh (UNKNOWN):** chưa có route mapping, runtime field values, quyền thực tế, business acceptance hoặc ý nghĩa field không có mô tả nguồn.
+
+Không dùng tên cột để tự viết ý nghĩa nghiệp vụ. `NULL` không có nghĩa “không bắt buộc trên form”; `writable` không có nghĩa “user này được phép sửa”.
+
+## Bộ nguồn ERP và cơ sở dữ liệu
+
+Repository ghi baseline được owner phê duyệt trong `docs/SOURCE_BASELINE.md`: `ERP_Medcom2026(4).zip`, `Medcom-Data (3)(1).zip`. Lần dựng docs này **không có khả năng materialize/rehash Library archives**, không mở SQL dump hay binary ERP, không tuyên bố direct-source verification. Chỉ tái sử dụng catalog sanitized và provenance đã được repository ghi nhận.
+
+Maintenance guide là evidence bổ sung; xem `docs/erp/WINFORMS_SOURCE_GUIDE_EVIDENCE.md`. Không coi guide của snapshot cũ là mô tả runtime hiện tại.
+
+## Cập nhật đặc tả
+
+```bash
+npm run sync
+npm run generate
+npm test
+npm run build
+```
+
+`sync` chỉ GET URL contract cố định, kiểm tra JSON/OpenAPI và tạo snapshot/hash. `generate` sinh API pages, sidebar, field dictionary, search index và AI context. Luôn review diff của path/schema/mapping và chạy build trước khi công bố. Không có lệnh này tự động deploy hay gọi endpoint nghiệp vụ.

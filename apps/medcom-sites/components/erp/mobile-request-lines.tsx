@@ -7,6 +7,8 @@ import {RemoteLookup} from "./lookup";
 import type {LookupAdapter} from "@/lib/erp/presentation";
 import type {ItemDisplayPresentation} from "@/lib/erp/item-display";
 import {ItemIdentity} from "./item-identity";
+import {MoneyInput} from "./money-input";
+import {formatMoney, isMoneyField} from "@/lib/erp/money";
 
 /** Local keys identify input/errors only. They are never ERP numbering. */
 export type PurchaseRequestLine = {
@@ -49,10 +51,10 @@ export function MobileRequestLines({lines, disabled, canAdd = true, canRemove = 
   onRemove: (key: string) => void;
 }) {
   const prefix = useId();
-  return <RecordSection title="Dòng hàng" aria-label={`Hàng đề nghị (${lines.length})`} description={`${lines.length} dòng hàng`}>
+  return <RecordSection title="Chi tiết" aria-label={`Hàng đề nghị (${lines.length})`} description={`${lines.length} chi tiết`}>
     {errors.lines && <p role="alert">{errors.lines}</p>}
-    {!lines.length && <RequestEmpty title="Chưa có dòng hàng">Các dòng hàng sẽ hiển thị tại đây.</RequestEmpty>}
-    {lines.map((line, index) => <article className={requestStyles.line} key={line.localKey} aria-label={`Dòng hàng ${index + 1}`} >
+    {!lines.length && <RequestEmpty title="Chưa có chi tiết">Các chi tiết sẽ hiển thị tại đây.</RequestEmpty>}
+    {lines.map((line, index) => <article className={requestStyles.line} key={line.localKey} aria-label={`Chi tiết ${index + 1}`} >
       <h3 className={requestStyles.title}>Dòng {index + 1}</h3>
       {itemDisplay&&presentationAllowed&&<ItemIdentity {...itemDisplay} line={{lineId:line.lineId??"",itemId:line.itemId}}/>}
       {readOnly || lockItem ? !itemDisplay&&<p><strong>{line.itemLabel || line.itemId || "Chưa chọn hàng"}</strong></p> : <RemoteLookup id={itemLookupId} label={`Mặt hàng dòng ${index + 1}`} value={line.itemId ? {id: line.itemId, label: line.itemLabel || line.itemId} : null} adapter={lookupAdapter} disabled={disabled} error={errors[`lines.${line.localKey}.itemId`]} onChange={item => onChange(line.localKey, {itemId: item?.id ?? "", itemLabel: item?.label})}/>}
@@ -65,12 +67,14 @@ export function MobileRequestLines({lines, disabled, canAdd = true, canRemove = 
         const error = errors[`lines.${line.localKey}.${field}`];
         return <div key={field} className={requestStyles.field}>
           <label htmlFor={id}>{label}{field === "quantity" || field === "unitPrice" ? " *" : ""}</label>
-          {readOnly ? <strong>{line[field] || "—"}</strong> : <RequestInput id={id} name={`lines.${line.localKey}.${field}`} value={line[field]} inputMode={["quantity", "unitPrice", "budget"].includes(field) ? "numeric" : undefined} maxLength={maxLength} disabled={disabled} aria-invalid={!!error} aria-describedby={error ? `${id}-error` : undefined} style={requestInputStyle} onChange={event => onChange(line.localKey, {[field]: event.target.value})}/>}
+          {readOnly ? <strong>{isMoneyField(field)?formatMoney(line[field]):line[field] || "—"}</strong> : isMoneyField(field)
+            ? <MoneyInput id={id} name={`lines.${line.localKey}.${field}`} value={line[field]} inputMode="numeric" maxLength={maxLength} disabled={disabled} aria-invalid={!!error} aria-describedby={error ? `${id}-error` : undefined} style={requestInputStyle} onValueChange={value=>onChange(line.localKey,{[field]:value})}/>
+            : <RequestInput id={id} name={`lines.${line.localKey}.${field}`} value={line[field]} inputMode={field==="quantity" ? "numeric" : undefined} maxLength={maxLength} disabled={disabled} aria-invalid={!!error} aria-describedby={error ? `${id}-error` : undefined} style={requestInputStyle} onChange={event => onChange(line.localKey, {[field]: event.target.value})}/>}
           {error && <p id={`${id}-error`} role="alert">{error}</p>}
         </div>;
       })}</div>
       {!readOnly && canRemove && <RequestButton type="button" disabled={disabled} onClick={() => onRemove(line.localKey)}>Bỏ dòng {index + 1}</RequestButton>}
     </article>)}
-    {!readOnly && <RequestButton type="button" disabled={disabled || !canAdd} onClick={onAdd}>Thêm dòng hàng</RequestButton>}
+    {!readOnly && <RequestButton type="button" disabled={disabled || !canAdd} onClick={onAdd}>Thêm chi tiết</RequestButton>}
   </RecordSection>;
 }

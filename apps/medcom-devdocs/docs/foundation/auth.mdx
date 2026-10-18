@@ -1,0 +1,47 @@
+---
+title: Phiên đăng nhập, CSRF và phạm vi dữ liệu
+---
+
+## Cơ chế xác thực
+
+| Mã trong OpenAPI | Ý nghĩa | Tên cookie hoặc header |
+|---|---|---|
+| `SessionCookie` | Phiên đăng nhập hợp lệ; cookie HttpOnly do máy chủ cấp | `__Host-Medcom.Session` |
+| `CsrfCookie` | Cookie dùng cho kiểm tra chống giả mạo yêu cầu | `__Host-Medcom.Csrf` |
+| `CsrfToken` | Mã CSRF gửi trong header của yêu cầu | `X-CSRF-TOKEN` |
+
+Các cơ chế nằm trong cùng một đối tượng của mảng `security` phải được đáp ứng đồng thời (AND). Nếu có nhiều đối tượng, mỗi đối tượng là một lựa chọn xác thực (OR). Mảng rỗng chỉ có nghĩa API không khai báo cơ chế riêng tại đây; các kiểm tra chung của máy chủ vẫn có thể áp dụng.
+
+Nguồn: `contracts/openapi.json#/components/securitySchemes`, `src/backend/Medcom.Api/AuthEndpoints.cs`, `ApiHost.cs`.
+
+## Quyền màn hình và quyền thao tác trên chứng từ
+
+`GET /api/erp/permissions` trả quyền xem màn hình (`canView`), Thêm/Sửa/Xóa và các thao tác được phép theo tài khoản, chi nhánh. `GET /api/erp/{module}/actions` hoặc phần thao tác trong kết quả chi tiết trả trạng thái hiện tại của từng nút:
+
+| Trường | Cách sử dụng |
+|---|---|
+| `visible` | Nút có được hiển thị hay không |
+| `enabled` | Nút có được thực hiện trên chứng từ hiện tại hay không |
+| `reason` | Lý do chưa cho phép thực hiện |
+| `requiresSavedDocument` | Thao tác cần chứng từ đã lưu |
+| `route` | Đường dẫn thao tác nếu được cung cấp |
+
+Chỉ mở thao tác khi cả quyền tài khoản và trạng thái chứng từ phù hợp. Không tự cấp quyền theo tên vai trò, giá trị `writable` hoặc sự tồn tại của đường dẫn API. Khi bị chặn, hiển thị lý do phù hợp do máy chủ trả về.
+
+Nguồn: `src/backend/Medcom.Contracts/ErpScreens.cs`, `src/backend/Medcom.Application/ErpActionRules.cs`; cấu trúc `ErpPermissions`, `ErpActionState` trong OpenAPI.
+
+## Tách dữ liệu theo phạm vi phiên
+
+Giữ `X-Medcom-Session-Scope`, `X-Medcom-Read-Scope` và mã phạm vi trong nội dung phản hồi theo đúng từng API. Khi tài khoản, quyền, chi nhánh hoặc phạm vi thay đổi, hủy yêu cầu cũ, xóa bộ nhớ đệm liên quan và khởi tạo lại dữ liệu. Không dùng lại `expectedStateToken` của chứng từ thuộc phạm vi trước đó.
+
+Khóa bộ nhớ đệm nên bao gồm tài khoản, phạm vi phiên, phạm vi đọc, chi nhánh, phân hệ, chứng từ và bộ lọc. Các mã phạm vi do máy chủ cấp; bên gọi không phân tích hoặc tự tạo chúng.
+
+Các yêu cầu ERP dùng POST được kiểm tra HTTPS, `Origin` chính xác, tham số truy vấn được phép và `X-Medcom-Read-Scope` hiện hành. API tải danh sách lựa chọn cũng có kiểm tra riêng; không mặc định rằng thao tác chỉ đọc thì được bỏ CSRF hoặc phạm vi phiên.
+
+Nguồn: `src/backend/Medcom.Api/WorkspaceReadScope.cs`, `ErpScreenEndpoints.cs#Guard`; phần mở rộng `x-medcom-read-scope`, `x-medcom-command-rules` trong OpenAPI.
+
+## Phiên hết hạn
+
+Khi nhận 401, chặn yêu cầu ghi mới và yêu cầu đăng nhập lại. Có thể giữ bản nháp cục bộ nếu chính sách sản phẩm cho phép, nhưng phải xóa dữ liệu nhạy cảm khỏi màn hình. Sau đăng nhập, kiểm tra lại chi nhánh, quyền và phiên bản chứng từ trước khi tiếp tục. Không tự gửi lại yêu cầu đã gửi khi chưa biết kết quả.
+
+`POST /api/auth/session/continue` có thể trả `session_expired`. Đăng xuất sẽ thu hồi phiên và xóa cookie phía máy chủ. Thời lượng phiên thực tế phụ thuộc cấu hình triển khai; phần chưa được kiểm chứng được giữ là UNKNOWN.

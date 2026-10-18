@@ -1,0 +1,54 @@
+---
+title: Quy tắc xây dựng UI
+---
+
+Các mục dưới là **hướng dẫn triển khai UI**, không phải khẳng định mọi quy tắc UX đã được backend enforce. Dùng chúng cùng contract của module và kiểm thử nghiệp vụ.
+
+## Danh sách, chi tiết và phân trang
+
+Định nghĩa key chứng từ theo response canonical của operation. Lấy `branchId` từ phiên/workspace; không lấy một chi nhánh tùy ý từ localStorage rồi coi là có quyền. Tách trạng thái đang tải, trống, lỗi, thiếu quyền và dữ liệu cũ.
+
+Không coi số dòng trong trang là tổng hệ thống. Dùng page/pageSize/hasMore của từng endpoint; detail lines, history, requests, assets hoặc comparison có thể có pagination riêng. Không xuất hoặc lưu đè từ một mảng chi tiết chưa tải hết mà không báo rõ.
+
+Nguồn: `ErpPageQuery`, `ErpDocumentPage`, `ErpLinePage` trong `src/backend/Medcom.Contracts/ErpScreens.cs`; các response schema operation.
+
+## Biểu mẫu và danh sách lựa chọn
+
+Chỉ bind field đúng section và DTO. Tách value/display. Nhãn tiếng Việt không được dùng làm API key. Nhãn user lấy từ caption backend hoặc nhãn nghiệp vụ đã được owner duyệt; không tự dịch tên column/mã kỹ thuật thành nhãn. Render read-only cho field không writable; để quyền/saved-state/action state quyết định nút thao tác. `hasDefault` không cho phép đoán default value.
+
+Giữ decimal/date representation theo schema. Đừng round tiền trong state gửi server nếu contract chưa cho phép. Các linked field phải cập nhật cùng selection, kiểm tra `headerPatch`; khi đổi field cha, hủy lookup request và selection context cũ.
+
+Draft local có client line key; receipt có thể cấp line ID thật. Sau commit/replay, áp dụng allocated line mapping và tải lại dữ liệu; không giữ một optimistic row có ID tạm làm row đã lưu.
+
+## Thao tác và luồng duyệt
+
+Hiển thị action theo `visible`, chặn theo `enabled`, giải thích bằng `reason`. Với `requiresSavedDocument`, phải có chứng từ được server xác nhận. Với action có options, tải đúng options theo schema thay vì tạo danh sách trạng thái hoặc người duyệt từ suy đoán.
+
+`expectedStateToken` là opaque. Không sửa hoặc sinh token từ nội dung form. Nếu conflict, cho người dùng review dữ liệu mới; không tự ghi đè. Giữ trạng thái đang reconcile riêng với “Thất bại”.
+
+## Ảnh đính kèm
+
+Tra đúng module attachment operation. Snapshot công bố giới hạn JPEG/PNG: original tối đa 10 MiB, preview 1 MiB; request multipart theo schema cụ thể. Không gửi base64 vào JSON nếu endpoint yêu cầu multipart. Một số module chỉ có capability listing; không tự suy ra upload/delete từ route attachments chung.
+
+Khi kết quả upload không chắc chắn, chỉ retry cùng key, metadata và bytes không đổi theo command rules. Không lưu nội dung file/cookie vào AI context.
+
+Nguồn: `x-medcom-command-rules`, các operation `/attachments/*`; `src/backend/Medcom.Contracts/ErpAttachments.cs`.
+
+## Giao diện điện thoại và khả năng tiếp cận
+
+Thiết kế 320–390px trước: label luôn hiển thị, touch target từ 44px, bảng rộng có scroll owner rõ, nút primary không che input/keyboard. Không dùng màu làm cách duy nhất biểu diễn trạng thái. Dialog có tên, focus trap/return, Escape và thông báo validation có liên kết tới field.
+
+Desktop giữ productivity: Tab order ổn định, tìm kiếm bằng Enter, shortcut không chạy khi đang nhập, giữ selection/filter khi tải lại đúng scope. Không dùng emoji thay icon nghiệp vụ; dùng SVG có accessible name hoặc `aria-hidden` khi chỉ trang trí.
+
+## Mô hình trạng thái giao diện đề xuất
+
+```text
+idle -> loading -> ready | empty | denied | error
+ready -> editing -> validating -> sending
+sending -> committed -> reloading -> ready
+sending -> conflict -> reviewing
+sending -> uncertain -> reconciling
+scope-change -> invalidate -> bootstrap
+```
+
+Đây là mô hình client đề xuất. Việc gửi command phụ thuộc contract và runtime authority, không phụ thuộc riêng state machine này.

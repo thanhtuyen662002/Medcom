@@ -1,6 +1,7 @@
 "use client";
 
 import {useId,useLayoutEffect,useRef,useState,type ReactNode} from "react";
+import {X} from "lucide-react";
 import {RequestButton,RecordActionHost,RecordSecondaryHost,RecordStatusHost,RecordDetailContext} from "./request-presentation";
 
 /** Root owns history. These operations request navigation; only a later selectedId
@@ -28,9 +29,9 @@ export function useRequestDetailNavigation(register: RegisterRequestDetailNaviga
  * forceMount on the generic DialogContent (which does not retain its Portal).
  * The root guard's body portal remains above this surface and owns focus while
  * its AlertDialog or a higher visible root dialog is present. No history listener or command operation lives here. */
-export function RequestDetailDialog({open, presentationAllowed = true, title, closeLabel, onRequestClose, children, actions, documentNumber, mode="view", bodyRef, onBodyScroll}: {
+export function RequestDetailDialog({open, presentationAllowed = true, title, closeLabel, onRequestClose, children, actions, documentNumber, mode="view", bodyRef, onBodyScroll, className}: {
   open: boolean; presentationAllowed?: boolean; title: string; closeLabel: string;
-  onRequestClose: () => void; children: ReactNode; actions?:ReactNode; documentNumber?:string|null; mode?:"view"|"create"|"edit"; bodyRef?:import("react").Ref<HTMLDivElement>; onBodyScroll?:import("react").UIEventHandler<HTMLDivElement>;
+  onRequestClose: () => void; children: ReactNode; actions?:ReactNode; documentNumber?:string|null; mode?:"view"|"create"|"edit"; bodyRef?:import("react").Ref<HTMLDivElement>; onBodyScroll?:import("react").UIEventHandler<HTMLDivElement>; className?:string;
 }) {
   const [actionHost,setActionHost]=useState<HTMLElement|null>(null);
   const [secondaryHost,setSecondaryHost]=useState<HTMLElement|null>(null),[statusHost,setStatusHost]=useState<HTMLElement|null>(null);
@@ -127,7 +128,7 @@ export function RequestDetailDialog({open, presentationAllowed = true, title, cl
       document.removeEventListener("focusin", contain);
     };
   }, [shown]);
-  return <div hidden={!shown} inert={!shown} data-request-detail-surface="" className="request-detail-surface">
+  return <div hidden={!shown} inert={!shown} data-request-detail-surface="" className={`request-detail-surface ${className ?? ""}`}>
     <style>{`
       .request-detail-surface:not([hidden]){position:fixed;inset:0;z-index:45;display:grid;place-items:center;padding:24px;isolation:isolate}
       .request-detail-backdrop{position:absolute;inset:0;background:rgb(0 0 0 / .48)}
@@ -143,7 +144,7 @@ export function RequestDetailDialog({open, presentationAllowed = true, title, cl
       <header className="request-detail-header">
         <div className="record-dialog-identity"><h2 id={titleId}>{title}{documentNumber&&<span className="record-document-number">{documentNumber}</span>}</h2><div className="record-dialog-status" ref={setStatusHost}/></div>
         <div className="record-dialog-header-actions">
-          <RequestButton type="button" className="record-dialog-close" aria-label={closeLabel} title="Đóng hộp thoại" onClick={() => close.current()}>×</RequestButton>
+          <RequestButton type="button" className="record-dialog-close" aria-label={closeLabel} title="Đóng hộp thoại" onClick={() => close.current()}><X aria-hidden="true" className="size-5"/></RequestButton>
         </div>
         <div className="record-dialog-secondary-actions" role="group" aria-label="Thao tác phiếu" ref={setSecondaryHost}/>
       </header>

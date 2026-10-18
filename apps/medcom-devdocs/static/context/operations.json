@@ -1,0 +1,1934 @@
+[
+  {
+    "operationId": "healthLive",
+    "method": "GET",
+    "path": "/health/live",
+    "module": null,
+    "doc": "/docs/api/healthlive"
+  },
+  {
+    "operationId": "healthReady",
+    "method": "GET",
+    "path": "/health/ready",
+    "module": null,
+    "doc": "/docs/api/healthready"
+  },
+  {
+    "operationId": "openApiContract",
+    "method": "GET",
+    "path": "/api/contracts/openapi.json",
+    "module": null,
+    "doc": "/docs/api/openapicontract"
+  },
+  {
+    "operationId": "notificationList",
+    "method": "GET",
+    "path": "/api/notifications",
+    "module": null,
+    "doc": "/docs/api/notificationlist"
+  },
+  {
+    "operationId": "notificationDetail",
+    "method": "GET",
+    "path": "/api/notifications/{id}",
+    "module": null,
+    "doc": "/docs/api/notificationdetail"
+  },
+  {
+    "operationId": "notificationTarget",
+    "method": "GET",
+    "path": "/api/notifications/{id}/target",
+    "module": null,
+    "doc": "/docs/api/notificationtarget"
+  },
+  {
+    "operationId": "notificationSetRead",
+    "method": "POST",
+    "path": "/api/notifications/{id}/read",
+    "module": null,
+    "doc": "/docs/api/notificationsetread"
+  },
+  {
+    "operationId": "platformMetadata",
+    "method": "GET",
+    "path": "/api/platform/metadata",
+    "module": null,
+    "doc": "/docs/api/platformmetadata"
+  },
+  {
+    "operationId": "authCsrf",
+    "method": "GET",
+    "path": "/api/auth/csrf",
+    "module": null,
+    "doc": "/docs/api/authcsrf"
+  },
+  {
+    "operationId": "authLogin",
+    "method": "POST",
+    "path": "/api/auth/login",
+    "module": null,
+    "doc": "/docs/api/authlogin"
+  },
+  {
+    "operationId": "authSession",
+    "method": "GET",
+    "path": "/api/auth/session",
+    "module": null,
+    "doc": "/docs/api/authsession"
+  },
+  {
+    "operationId": "authContinue",
+    "method": "POST",
+    "path": "/api/auth/session/continue",
+    "module": null,
+    "doc": "/docs/api/authcontinue"
+  },
+  {
+    "operationId": "authLogout",
+    "method": "POST",
+    "path": "/api/auth/logout",
+    "module": null,
+    "doc": "/docs/api/authlogout"
+  },
+  {
+    "operationId": "workspace",
+    "method": "GET",
+    "path": "/api/workspace",
+    "module": null,
+    "doc": "/docs/api/workspace"
+  },
+  {
+    "operationId": "branchChoices",
+    "method": "GET",
+    "path": "/api/lookups/branches",
+    "module": null,
+    "doc": "/docs/api/branchchoices"
+  },
+  {
+    "operationId": "documentFieldContract",
+    "method": "GET",
+    "path": "/api/documents/field-contract",
+    "module": null,
+    "doc": "/docs/api/documentfieldcontract"
+  },
+  {
+    "operationId": "documentQueryContract",
+    "method": "GET",
+    "path": "/api/documents/query-contract",
+    "module": null,
+    "doc": "/docs/api/documentquerycontract"
+  },
+  {
+    "operationId": "purchaseordersLegacyList",
+    "method": "GET",
+    "path": "/api/documents/purchase-orders",
+    "module": null,
+    "doc": "/docs/api/purchaseorderslegacylist"
+  },
+  {
+    "operationId": "purchaseordersLegacyDetail",
+    "method": "GET",
+    "path": "/api/documents/purchase-orders/detail",
+    "module": null,
+    "doc": "/docs/api/purchaseorderslegacydetail"
+  },
+  {
+    "operationId": "purchaseordersV2List",
+    "method": "GET",
+    "path": "/api/v2/documents/purchase-orders",
+    "module": null,
+    "doc": "/docs/api/purchaseordersv2list"
+  },
+  {
+    "operationId": "purchaseordersV2Detail",
+    "method": "GET",
+    "path": "/api/v2/documents/purchase-orders/detail",
+    "module": null,
+    "doc": "/docs/api/purchaseordersv2detail"
+  },
+  {
+    "operationId": "inboundrequestsLegacyList",
+    "method": "GET",
+    "path": "/api/documents/inbound-requests",
+    "module": null,
+    "doc": "/docs/api/inboundrequestslegacylist"
+  },
+  {
+    "operationId": "inboundrequestsLegacyDetail",
+    "method": "GET",
+    "path": "/api/documents/inbound-requests/detail",
+    "module": null,
+    "doc": "/docs/api/inboundrequestslegacydetail"
+  },
+  {
+    "operationId": "inboundrequestsV2List",
+    "method": "GET",
+    "path": "/api/v2/documents/inbound-requests",
+    "module": null,
+    "doc": "/docs/api/inboundrequestsv2list"
+  },
+  {
+    "operationId": "inboundrequestsV2Detail",
+    "method": "GET",
+    "path": "/api/v2/documents/inbound-requests/detail",
+    "module": null,
+    "doc": "/docs/api/inboundrequestsv2detail"
+  },
+  {
+    "operationId": "purchaseRequestListLegacy",
+    "method": "GET",
+    "path": "/api/purchase-requests",
+    "module": null,
+    "doc": "/docs/api/purchaserequestlistlegacy"
+  },
+  {
+    "operationId": "purchaseRequestDetailLegacy",
+    "method": "GET",
+    "path": "/api/purchase-requests/detail",
+    "module": null,
+    "doc": "/docs/api/purchaserequestdetaillegacy"
+  },
+  {
+    "operationId": "purchaseRequestListV2",
+    "method": "GET",
+    "path": "/api/v2/purchase-requests",
+    "module": null,
+    "doc": "/docs/api/purchaserequestlistv2"
+  },
+  {
+    "operationId": "purchaseRequestDetailV2",
+    "method": "GET",
+    "path": "/api/v2/purchase-requests/detail",
+    "module": null,
+    "doc": "/docs/api/purchaserequestdetailv2"
+  },
+  {
+    "operationId": "purchaseRequestWorkspace",
+    "method": "GET",
+    "path": "/api/purchase-requests/workspace",
+    "module": null,
+    "doc": "/docs/api/purchaserequestworkspace"
+  },
+  {
+    "operationId": "purchaseRequestLookup",
+    "method": "GET",
+    "path": "/api/purchase-requests/lookup",
+    "module": null,
+    "doc": "/docs/api/purchaserequestlookup"
+  },
+  {
+    "operationId": "purchaseRequestsaveCommand",
+    "method": "POST",
+    "path": "/api/purchase-requests/save",
+    "module": null,
+    "doc": "/docs/api/purchaserequestsavecommand"
+  },
+  {
+    "operationId": "purchaseRequestsaveLookup",
+    "method": "POST",
+    "path": "/api/purchase-requests/save/lookup",
+    "module": null,
+    "doc": "/docs/api/purchaserequestsavelookup"
+  },
+  {
+    "operationId": "purchaseRequestsubmitCommand",
+    "method": "POST",
+    "path": "/api/purchase-requests/submit",
+    "module": null,
+    "doc": "/docs/api/purchaserequestsubmitcommand"
+  },
+  {
+    "operationId": "purchaseRequestsubmitLookup",
+    "method": "POST",
+    "path": "/api/purchase-requests/submit/lookup",
+    "module": null,
+    "doc": "/docs/api/purchaserequestsubmitlookup"
+  },
+  {
+    "operationId": "inboundDraftRead",
+    "method": "GET",
+    "path": "/api/inbound-requests/draft",
+    "module": null,
+    "doc": "/docs/api/inbounddraftread"
+  },
+  {
+    "operationId": "inboundDraftsave",
+    "method": "POST",
+    "path": "/api/inbound-requests/draft/save",
+    "module": null,
+    "doc": "/docs/api/inbounddraftsave"
+  },
+  {
+    "operationId": "inboundDraftsendtowarehouse",
+    "method": "POST",
+    "path": "/api/inbound-requests/draft/send-to-warehouse",
+    "module": null,
+    "doc": "/docs/api/inbounddraftsendtowarehouse"
+  },
+  {
+    "operationId": "inboundDraftreconcile",
+    "method": "POST",
+    "path": "/api/inbound-requests/draft/reconcile",
+    "module": null,
+    "doc": "/docs/api/inbounddraftreconcile"
+  },
+  {
+    "operationId": "erp_permissions",
+    "method": "GET",
+    "path": "/api/erp/permissions",
+    "module": "permissions",
+    "doc": "/docs/api/erp_permissions"
+  },
+  {
+    "operationId": "inbound_requests_screen",
+    "method": "GET",
+    "path": "/api/erp/inbound-requests/screen",
+    "module": "inbound-requests",
+    "doc": "/docs/api/inbound_requests_screen"
+  },
+  {
+    "operationId": "inbound_requests_list",
+    "method": "GET",
+    "path": "/api/erp/inbound-requests",
+    "module": "inbound-requests",
+    "doc": "/docs/api/inbound_requests_list"
+  },
+  {
+    "operationId": "inbound_requests_detail",
+    "method": "GET",
+    "path": "/api/erp/inbound-requests/detail",
+    "module": "inbound-requests",
+    "doc": "/docs/api/inbound_requests_detail"
+  },
+  {
+    "operationId": "inbound_requests_actions",
+    "method": "GET",
+    "path": "/api/erp/inbound-requests/actions",
+    "module": "inbound-requests",
+    "doc": "/docs/api/inbound_requests_actions"
+  },
+  {
+    "operationId": "inbound_requests_options",
+    "method": "POST",
+    "path": "/api/erp/inbound-requests/options",
+    "module": "inbound-requests",
+    "doc": "/docs/api/inbound_requests_options"
+  },
+  {
+    "operationId": "inbound_requests_command_lookup",
+    "method": "POST",
+    "path": "/api/erp/inbound-requests/commands/lookup",
+    "module": "inbound-requests",
+    "doc": "/docs/api/inbound_requests_command_lookup"
+  },
+  {
+    "operationId": "inbound_requests_create",
+    "method": "POST",
+    "path": "/api/erp/inbound-requests/create",
+    "module": "inbound-requests",
+    "doc": "/docs/api/inbound_requests_create"
+  },
+  {
+    "operationId": "inbound_requests_save",
+    "method": "POST",
+    "path": "/api/erp/inbound-requests/save",
+    "module": "inbound-requests",
+    "doc": "/docs/api/inbound_requests_save"
+  },
+  {
+    "operationId": "inbound_requests_delete",
+    "method": "POST",
+    "path": "/api/erp/inbound-requests/delete",
+    "module": "inbound-requests",
+    "doc": "/docs/api/inbound_requests_delete"
+  },
+  {
+    "operationId": "inbound_requests_send_management",
+    "method": "POST",
+    "path": "/api/erp/inbound-requests/actions/send-management",
+    "module": "inbound-requests",
+    "doc": "/docs/api/inbound_requests_send_management"
+  },
+  {
+    "operationId": "inbound_requests_send_warehouse",
+    "method": "POST",
+    "path": "/api/erp/inbound-requests/actions/send-warehouse",
+    "module": "inbound-requests",
+    "doc": "/docs/api/inbound_requests_send_warehouse"
+  },
+  {
+    "operationId": "inbound_requests_save_costs",
+    "method": "POST",
+    "path": "/api/erp/inbound-requests/sections/costs/save",
+    "module": "inbound-requests",
+    "doc": "/docs/api/inbound_requests_save_costs"
+  },
+  {
+    "operationId": "internal_transfer_accounting_screen",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-accounting/screen",
+    "module": "internal-transfer-accounting",
+    "doc": "/docs/api/internal_transfer_accounting_screen"
+  },
+  {
+    "operationId": "internal_transfer_accounting_list",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-accounting",
+    "module": "internal-transfer-accounting",
+    "doc": "/docs/api/internal_transfer_accounting_list"
+  },
+  {
+    "operationId": "internal_transfer_accounting_detail",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-accounting/detail",
+    "module": "internal-transfer-accounting",
+    "doc": "/docs/api/internal_transfer_accounting_detail"
+  },
+  {
+    "operationId": "internal_transfer_accounting_actions",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-accounting/actions",
+    "module": "internal-transfer-accounting",
+    "doc": "/docs/api/internal_transfer_accounting_actions"
+  },
+  {
+    "operationId": "internal_transfer_accounting_options",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-accounting/options",
+    "module": "internal-transfer-accounting",
+    "doc": "/docs/api/internal_transfer_accounting_options"
+  },
+  {
+    "operationId": "internal_transfer_accounting_command_lookup",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-accounting/commands/lookup",
+    "module": "internal-transfer-accounting",
+    "doc": "/docs/api/internal_transfer_accounting_command_lookup"
+  },
+  {
+    "operationId": "internal_transfer_accounting_save",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-accounting/save",
+    "module": "internal-transfer-accounting",
+    "doc": "/docs/api/internal_transfer_accounting_save"
+  },
+  {
+    "operationId": "internal_transfer_accounting_send_warehouse",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-accounting/actions/send-warehouse",
+    "module": "internal-transfer-accounting",
+    "doc": "/docs/api/internal_transfer_accounting_send_warehouse"
+  },
+  {
+    "operationId": "internal_transfer_accounting_reject",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-accounting/actions/reject",
+    "module": "internal-transfer-accounting",
+    "doc": "/docs/api/internal_transfer_accounting_reject"
+  },
+  {
+    "operationId": "internal_transfer_accounting_return_step",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-accounting/actions/return-step",
+    "module": "internal-transfer-accounting",
+    "doc": "/docs/api/internal_transfer_accounting_return_step"
+  },
+  {
+    "operationId": "internal_transfer_accounting_return_step_options",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-accounting/actions/return-step/options",
+    "module": "internal-transfer-accounting",
+    "doc": "/docs/api/internal_transfer_accounting_return_step_options"
+  },
+  {
+    "operationId": "internal_transfer_batches_screen",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-batches/screen",
+    "module": "internal-transfer-batches",
+    "doc": "/docs/api/internal_transfer_batches_screen"
+  },
+  {
+    "operationId": "internal_transfer_batches_list",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-batches",
+    "module": "internal-transfer-batches",
+    "doc": "/docs/api/internal_transfer_batches_list"
+  },
+  {
+    "operationId": "internal_transfer_batches_detail",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-batches/detail",
+    "module": "internal-transfer-batches",
+    "doc": "/docs/api/internal_transfer_batches_detail"
+  },
+  {
+    "operationId": "internal_transfer_batches_actions",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-batches/actions",
+    "module": "internal-transfer-batches",
+    "doc": "/docs/api/internal_transfer_batches_actions"
+  },
+  {
+    "operationId": "internal_transfer_batches_options",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-batches/options",
+    "module": "internal-transfer-batches",
+    "doc": "/docs/api/internal_transfer_batches_options"
+  },
+  {
+    "operationId": "internal_transfer_batches_command_lookup",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-batches/commands/lookup",
+    "module": "internal-transfer-batches",
+    "doc": "/docs/api/internal_transfer_batches_command_lookup"
+  },
+  {
+    "operationId": "internal_transfer_batches_create",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-batches/create",
+    "module": "internal-transfer-batches",
+    "doc": "/docs/api/internal_transfer_batches_create"
+  },
+  {
+    "operationId": "internal_transfer_batches_save",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-batches/save",
+    "module": "internal-transfer-batches",
+    "doc": "/docs/api/internal_transfer_batches_save"
+  },
+  {
+    "operationId": "internal_transfer_batches_delete",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-batches/delete",
+    "module": "internal-transfer-batches",
+    "doc": "/docs/api/internal_transfer_batches_delete"
+  },
+  {
+    "operationId": "internal_transfer_batches_sync_requests",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-batches/actions/sync-requests",
+    "module": "internal-transfer-batches",
+    "doc": "/docs/api/internal_transfer_batches_sync_requests"
+  },
+  {
+    "operationId": "internal_transfer_batches_send_tech",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-batches/actions/send-tech",
+    "module": "internal-transfer-batches",
+    "doc": "/docs/api/internal_transfer_batches_send_tech"
+  },
+  {
+    "operationId": "internal_transfer_pm_screen",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-pm/screen",
+    "module": "internal-transfer-pm",
+    "doc": "/docs/api/internal_transfer_pm_screen"
+  },
+  {
+    "operationId": "internal_transfer_pm_list",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-pm",
+    "module": "internal-transfer-pm",
+    "doc": "/docs/api/internal_transfer_pm_list"
+  },
+  {
+    "operationId": "internal_transfer_pm_detail",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-pm/detail",
+    "module": "internal-transfer-pm",
+    "doc": "/docs/api/internal_transfer_pm_detail"
+  },
+  {
+    "operationId": "internal_transfer_pm_actions",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-pm/actions",
+    "module": "internal-transfer-pm",
+    "doc": "/docs/api/internal_transfer_pm_actions"
+  },
+  {
+    "operationId": "internal_transfer_pm_options",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-pm/options",
+    "module": "internal-transfer-pm",
+    "doc": "/docs/api/internal_transfer_pm_options"
+  },
+  {
+    "operationId": "internal_transfer_pm_command_lookup",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-pm/commands/lookup",
+    "module": "internal-transfer-pm",
+    "doc": "/docs/api/internal_transfer_pm_command_lookup"
+  },
+  {
+    "operationId": "internal_transfer_pm_save",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-pm/save",
+    "module": "internal-transfer-pm",
+    "doc": "/docs/api/internal_transfer_pm_save"
+  },
+  {
+    "operationId": "internal_transfer_pm_pm_confirm",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-pm/actions/pm-confirm",
+    "module": "internal-transfer-pm",
+    "doc": "/docs/api/internal_transfer_pm_pm_confirm"
+  },
+  {
+    "operationId": "internal_transfer_pm_reject",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-pm/actions/reject",
+    "module": "internal-transfer-pm",
+    "doc": "/docs/api/internal_transfer_pm_reject"
+  },
+  {
+    "operationId": "internal_transfer_requests_screen",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-requests/screen",
+    "module": "internal-transfer-requests",
+    "doc": "/docs/api/internal_transfer_requests_screen"
+  },
+  {
+    "operationId": "internal_transfer_requests_list",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-requests",
+    "module": "internal-transfer-requests",
+    "doc": "/docs/api/internal_transfer_requests_list"
+  },
+  {
+    "operationId": "internal_transfer_requests_detail",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-requests/detail",
+    "module": "internal-transfer-requests",
+    "doc": "/docs/api/internal_transfer_requests_detail"
+  },
+  {
+    "operationId": "internal_transfer_requests_actions",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-requests/actions",
+    "module": "internal-transfer-requests",
+    "doc": "/docs/api/internal_transfer_requests_actions"
+  },
+  {
+    "operationId": "internal_transfer_requests_options",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-requests/options",
+    "module": "internal-transfer-requests",
+    "doc": "/docs/api/internal_transfer_requests_options"
+  },
+  {
+    "operationId": "internal_transfer_requests_pm_options",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-requests/actions/send-pm/options",
+    "module": "internal-transfer-requests",
+    "doc": "/docs/api/internal_transfer_requests_pm_options"
+  },
+  {
+    "operationId": "internal_transfer_requests_command_lookup",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-requests/commands/lookup",
+    "module": "internal-transfer-requests",
+    "doc": "/docs/api/internal_transfer_requests_command_lookup"
+  },
+  {
+    "operationId": "internal_transfer_requests_selection",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-requests/selection",
+    "module": "internal-transfer-requests",
+    "doc": "/docs/api/internal_transfer_requests_selection"
+  },
+  {
+    "operationId": "internal_transfer_requests_paste_validate",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-requests/paste/validate",
+    "module": "internal-transfer-requests",
+    "doc": "/docs/api/internal_transfer_requests_paste_validate"
+  },
+  {
+    "operationId": "internal_transfer_requests_create",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-requests/create",
+    "module": "internal-transfer-requests",
+    "doc": "/docs/api/internal_transfer_requests_create"
+  },
+  {
+    "operationId": "internal_transfer_requests_save",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-requests/save",
+    "module": "internal-transfer-requests",
+    "doc": "/docs/api/internal_transfer_requests_save"
+  },
+  {
+    "operationId": "internal_transfer_requests_delete",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-requests/delete",
+    "module": "internal-transfer-requests",
+    "doc": "/docs/api/internal_transfer_requests_delete"
+  },
+  {
+    "operationId": "internal_transfer_requests_recall",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-requests/actions/recall",
+    "module": "internal-transfer-requests",
+    "doc": "/docs/api/internal_transfer_requests_recall"
+  },
+  {
+    "operationId": "internal_transfer_requests_send_pm",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-requests/actions/send-pm",
+    "module": "internal-transfer-requests",
+    "doc": "/docs/api/internal_transfer_requests_send_pm"
+  },
+  {
+    "operationId": "internal_transfer_sa_screen",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-sa/screen",
+    "module": "internal-transfer-sa",
+    "doc": "/docs/api/internal_transfer_sa_screen"
+  },
+  {
+    "operationId": "internal_transfer_sa_list",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-sa",
+    "module": "internal-transfer-sa",
+    "doc": "/docs/api/internal_transfer_sa_list"
+  },
+  {
+    "operationId": "internal_transfer_sa_detail",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-sa/detail",
+    "module": "internal-transfer-sa",
+    "doc": "/docs/api/internal_transfer_sa_detail"
+  },
+  {
+    "operationId": "internal_transfer_sa_actions",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-sa/actions",
+    "module": "internal-transfer-sa",
+    "doc": "/docs/api/internal_transfer_sa_actions"
+  },
+  {
+    "operationId": "internal_transfer_sa_options",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-sa/options",
+    "module": "internal-transfer-sa",
+    "doc": "/docs/api/internal_transfer_sa_options"
+  },
+  {
+    "operationId": "internal_transfer_sa_command_lookup",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-sa/commands/lookup",
+    "module": "internal-transfer-sa",
+    "doc": "/docs/api/internal_transfer_sa_command_lookup"
+  },
+  {
+    "operationId": "internal_transfer_sa_save",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-sa/save",
+    "module": "internal-transfer-sa",
+    "doc": "/docs/api/internal_transfer_sa_save"
+  },
+  {
+    "operationId": "internal_transfer_sa_send_accounting",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-sa/actions/send-accounting",
+    "module": "internal-transfer-sa",
+    "doc": "/docs/api/internal_transfer_sa_send_accounting"
+  },
+  {
+    "operationId": "internal_transfer_sa_reject",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-sa/actions/reject",
+    "module": "internal-transfer-sa",
+    "doc": "/docs/api/internal_transfer_sa_reject"
+  },
+  {
+    "operationId": "internal_transfer_sa_return_step",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-sa/actions/return-step",
+    "module": "internal-transfer-sa",
+    "doc": "/docs/api/internal_transfer_sa_return_step"
+  },
+  {
+    "operationId": "internal_transfer_sa_return_step_options",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-sa/actions/return-step/options",
+    "module": "internal-transfer-sa",
+    "doc": "/docs/api/internal_transfer_sa_return_step_options"
+  },
+  {
+    "operationId": "internal_transfer_tech_screen",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-tech/screen",
+    "module": "internal-transfer-tech",
+    "doc": "/docs/api/internal_transfer_tech_screen"
+  },
+  {
+    "operationId": "internal_transfer_tech_list",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-tech",
+    "module": "internal-transfer-tech",
+    "doc": "/docs/api/internal_transfer_tech_list"
+  },
+  {
+    "operationId": "internal_transfer_tech_detail",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-tech/detail",
+    "module": "internal-transfer-tech",
+    "doc": "/docs/api/internal_transfer_tech_detail"
+  },
+  {
+    "operationId": "internal_transfer_tech_actions",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-tech/actions",
+    "module": "internal-transfer-tech",
+    "doc": "/docs/api/internal_transfer_tech_actions"
+  },
+  {
+    "operationId": "internal_transfer_tech_options",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-tech/options",
+    "module": "internal-transfer-tech",
+    "doc": "/docs/api/internal_transfer_tech_options"
+  },
+  {
+    "operationId": "internal_transfer_tech_command_lookup",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-tech/commands/lookup",
+    "module": "internal-transfer-tech",
+    "doc": "/docs/api/internal_transfer_tech_command_lookup"
+  },
+  {
+    "operationId": "internal_transfer_tech_save",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-tech/save",
+    "module": "internal-transfer-tech",
+    "doc": "/docs/api/internal_transfer_tech_save"
+  },
+  {
+    "operationId": "internal_transfer_tech_send_sa",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-tech/actions/send-sa",
+    "module": "internal-transfer-tech",
+    "doc": "/docs/api/internal_transfer_tech_send_sa"
+  },
+  {
+    "operationId": "internal_transfer_tech_reject",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-tech/actions/reject",
+    "module": "internal-transfer-tech",
+    "doc": "/docs/api/internal_transfer_tech_reject"
+  },
+  {
+    "operationId": "internal_transfer_tech_save_assets",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-tech/sections/assets/save",
+    "module": "internal-transfer-tech",
+    "doc": "/docs/api/internal_transfer_tech_save_assets"
+  },
+  {
+    "operationId": "internal_transfer_tech_send_sa_options",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-tech/actions/send-sa/options",
+    "module": "internal-transfer-tech",
+    "doc": "/docs/api/internal_transfer_tech_send_sa_options"
+  },
+  {
+    "operationId": "internal_transfer_warehouse_in_screen",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-warehouse-in/screen",
+    "module": "internal-transfer-warehouse-in",
+    "doc": "/docs/api/internal_transfer_warehouse_in_screen"
+  },
+  {
+    "operationId": "internal_transfer_warehouse_in_list",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-warehouse-in",
+    "module": "internal-transfer-warehouse-in",
+    "doc": "/docs/api/internal_transfer_warehouse_in_list"
+  },
+  {
+    "operationId": "internal_transfer_warehouse_in_detail",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-warehouse-in/detail",
+    "module": "internal-transfer-warehouse-in",
+    "doc": "/docs/api/internal_transfer_warehouse_in_detail"
+  },
+  {
+    "operationId": "internal_transfer_warehouse_in_actions",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-warehouse-in/actions",
+    "module": "internal-transfer-warehouse-in",
+    "doc": "/docs/api/internal_transfer_warehouse_in_actions"
+  },
+  {
+    "operationId": "internal_transfer_warehouse_in_options",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-warehouse-in/options",
+    "module": "internal-transfer-warehouse-in",
+    "doc": "/docs/api/internal_transfer_warehouse_in_options"
+  },
+  {
+    "operationId": "internal_transfer_warehouse_in_command_lookup",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-warehouse-in/commands/lookup",
+    "module": "internal-transfer-warehouse-in",
+    "doc": "/docs/api/internal_transfer_warehouse_in_command_lookup"
+  },
+  {
+    "operationId": "internal_transfer_warehouse_in_save",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-warehouse-in/save",
+    "module": "internal-transfer-warehouse-in",
+    "doc": "/docs/api/internal_transfer_warehouse_in_save"
+  },
+  {
+    "operationId": "internal_transfer_warehouse_in_receive",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-warehouse-in/actions/receive",
+    "module": "internal-transfer-warehouse-in",
+    "doc": "/docs/api/internal_transfer_warehouse_in_receive"
+  },
+  {
+    "operationId": "internal_transfer_warehouse_out_screen",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-warehouse-out/screen",
+    "module": "internal-transfer-warehouse-out",
+    "doc": "/docs/api/internal_transfer_warehouse_out_screen"
+  },
+  {
+    "operationId": "internal_transfer_warehouse_out_list",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-warehouse-out",
+    "module": "internal-transfer-warehouse-out",
+    "doc": "/docs/api/internal_transfer_warehouse_out_list"
+  },
+  {
+    "operationId": "internal_transfer_warehouse_out_detail",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-warehouse-out/detail",
+    "module": "internal-transfer-warehouse-out",
+    "doc": "/docs/api/internal_transfer_warehouse_out_detail"
+  },
+  {
+    "operationId": "internal_transfer_warehouse_out_actions",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-warehouse-out/actions",
+    "module": "internal-transfer-warehouse-out",
+    "doc": "/docs/api/internal_transfer_warehouse_out_actions"
+  },
+  {
+    "operationId": "internal_transfer_warehouse_out_options",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-warehouse-out/options",
+    "module": "internal-transfer-warehouse-out",
+    "doc": "/docs/api/internal_transfer_warehouse_out_options"
+  },
+  {
+    "operationId": "internal_transfer_warehouse_out_command_lookup",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-warehouse-out/commands/lookup",
+    "module": "internal-transfer-warehouse-out",
+    "doc": "/docs/api/internal_transfer_warehouse_out_command_lookup"
+  },
+  {
+    "operationId": "internal_transfer_warehouse_out_save",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-warehouse-out/save",
+    "module": "internal-transfer-warehouse-out",
+    "doc": "/docs/api/internal_transfer_warehouse_out_save"
+  },
+  {
+    "operationId": "internal_transfer_warehouse_out_dispatch",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-warehouse-out/actions/dispatch",
+    "module": "internal-transfer-warehouse-out",
+    "doc": "/docs/api/internal_transfer_warehouse_out_dispatch"
+  },
+  {
+    "operationId": "internal_transfer_warehouse_out_reject",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-warehouse-out/actions/reject",
+    "module": "internal-transfer-warehouse-out",
+    "doc": "/docs/api/internal_transfer_warehouse_out_reject"
+  },
+  {
+    "operationId": "internal_transfer_warehouse_out_return_step",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-warehouse-out/actions/return-step",
+    "module": "internal-transfer-warehouse-out",
+    "doc": "/docs/api/internal_transfer_warehouse_out_return_step"
+  },
+  {
+    "operationId": "internal_transfer_warehouse_out_return_step_options",
+    "method": "POST",
+    "path": "/api/erp/internal-transfer-warehouse-out/actions/return-step/options",
+    "module": "internal-transfer-warehouse-out",
+    "doc": "/docs/api/internal_transfer_warehouse_out_return_step_options"
+  },
+  {
+    "operationId": "machine_movements_screen",
+    "method": "GET",
+    "path": "/api/erp/machine-movements/screen",
+    "module": "machine-movements",
+    "doc": "/docs/api/machine_movements_screen"
+  },
+  {
+    "operationId": "machine_movements_list",
+    "method": "GET",
+    "path": "/api/erp/machine-movements",
+    "module": "machine-movements",
+    "doc": "/docs/api/machine_movements_list"
+  },
+  {
+    "operationId": "machine_movements_detail",
+    "method": "GET",
+    "path": "/api/erp/machine-movements/detail",
+    "module": "machine-movements",
+    "doc": "/docs/api/machine_movements_detail"
+  },
+  {
+    "operationId": "machine_movements_actions",
+    "method": "GET",
+    "path": "/api/erp/machine-movements/actions",
+    "module": "machine-movements",
+    "doc": "/docs/api/machine_movements_actions"
+  },
+  {
+    "operationId": "machine_movements_options",
+    "method": "POST",
+    "path": "/api/erp/machine-movements/options",
+    "module": "machine-movements",
+    "doc": "/docs/api/machine_movements_options"
+  },
+  {
+    "operationId": "machine_movements_command_lookup",
+    "method": "POST",
+    "path": "/api/erp/machine-movements/commands/lookup",
+    "module": "machine-movements",
+    "doc": "/docs/api/machine_movements_command_lookup"
+  },
+  {
+    "operationId": "machine_movements_selection",
+    "method": "POST",
+    "path": "/api/erp/machine-movements/selection",
+    "module": "machine-movements",
+    "doc": "/docs/api/machine_movements_selection"
+  },
+  {
+    "operationId": "machine_movements_paste_validate",
+    "method": "POST",
+    "path": "/api/erp/machine-movements/paste/validate",
+    "module": "machine-movements",
+    "doc": "/docs/api/machine_movements_paste_validate"
+  },
+  {
+    "operationId": "machine_movements_create",
+    "method": "POST",
+    "path": "/api/erp/machine-movements/create",
+    "module": "machine-movements",
+    "doc": "/docs/api/machine_movements_create"
+  },
+  {
+    "operationId": "machine_movements_save",
+    "method": "POST",
+    "path": "/api/erp/machine-movements/save",
+    "module": "machine-movements",
+    "doc": "/docs/api/machine_movements_save"
+  },
+  {
+    "operationId": "machine_movements_delete",
+    "method": "POST",
+    "path": "/api/erp/machine-movements/delete",
+    "module": "machine-movements",
+    "doc": "/docs/api/machine_movements_delete"
+  },
+  {
+    "operationId": "machine_repairs_screen",
+    "method": "GET",
+    "path": "/api/erp/machine-repairs/screen",
+    "module": "machine-repairs",
+    "doc": "/docs/api/machine_repairs_screen"
+  },
+  {
+    "operationId": "machine_repairs_list",
+    "method": "GET",
+    "path": "/api/erp/machine-repairs",
+    "module": "machine-repairs",
+    "doc": "/docs/api/machine_repairs_list"
+  },
+  {
+    "operationId": "machine_repairs_detail",
+    "method": "GET",
+    "path": "/api/erp/machine-repairs/detail",
+    "module": "machine-repairs",
+    "doc": "/docs/api/machine_repairs_detail"
+  },
+  {
+    "operationId": "machine_repairs_actions",
+    "method": "GET",
+    "path": "/api/erp/machine-repairs/actions",
+    "module": "machine-repairs",
+    "doc": "/docs/api/machine_repairs_actions"
+  },
+  {
+    "operationId": "machine_repairs_options",
+    "method": "POST",
+    "path": "/api/erp/machine-repairs/options",
+    "module": "machine-repairs",
+    "doc": "/docs/api/machine_repairs_options"
+  },
+  {
+    "operationId": "machine_repairs_command_lookup",
+    "method": "POST",
+    "path": "/api/erp/machine-repairs/commands/lookup",
+    "module": "machine-repairs",
+    "doc": "/docs/api/machine_repairs_command_lookup"
+  },
+  {
+    "operationId": "machine_repairs_selection",
+    "method": "POST",
+    "path": "/api/erp/machine-repairs/selection",
+    "module": "machine-repairs",
+    "doc": "/docs/api/machine_repairs_selection"
+  },
+  {
+    "operationId": "machine_repairs_paste_validate",
+    "method": "POST",
+    "path": "/api/erp/machine-repairs/paste/validate",
+    "module": "machine-repairs",
+    "doc": "/docs/api/machine_repairs_paste_validate"
+  },
+  {
+    "operationId": "machine_repairs_create",
+    "method": "POST",
+    "path": "/api/erp/machine-repairs/create",
+    "module": "machine-repairs",
+    "doc": "/docs/api/machine_repairs_create"
+  },
+  {
+    "operationId": "machine_repairs_save",
+    "method": "POST",
+    "path": "/api/erp/machine-repairs/save",
+    "module": "machine-repairs",
+    "doc": "/docs/api/machine_repairs_save"
+  },
+  {
+    "operationId": "machine_repairs_delete",
+    "method": "POST",
+    "path": "/api/erp/machine-repairs/delete",
+    "module": "machine-repairs",
+    "doc": "/docs/api/machine_repairs_delete"
+  },
+  {
+    "operationId": "purchase_approvals_screen",
+    "method": "GET",
+    "path": "/api/erp/purchase-approvals/screen",
+    "module": "purchase-approvals",
+    "doc": "/docs/api/purchase_approvals_screen"
+  },
+  {
+    "operationId": "purchase_approvals_list",
+    "method": "GET",
+    "path": "/api/erp/purchase-approvals",
+    "module": "purchase-approvals",
+    "doc": "/docs/api/purchase_approvals_list"
+  },
+  {
+    "operationId": "purchase_approvals_detail",
+    "method": "GET",
+    "path": "/api/erp/purchase-approvals/detail",
+    "module": "purchase-approvals",
+    "doc": "/docs/api/purchase_approvals_detail"
+  },
+  {
+    "operationId": "purchase_approvals_actions",
+    "method": "GET",
+    "path": "/api/erp/purchase-approvals/actions",
+    "module": "purchase-approvals",
+    "doc": "/docs/api/purchase_approvals_actions"
+  },
+  {
+    "operationId": "purchase_approvals_options",
+    "method": "POST",
+    "path": "/api/erp/purchase-approvals/options",
+    "module": "purchase-approvals",
+    "doc": "/docs/api/purchase_approvals_options"
+  },
+  {
+    "operationId": "purchase_approvals_command_lookup",
+    "method": "POST",
+    "path": "/api/erp/purchase-approvals/commands/lookup",
+    "module": "purchase-approvals",
+    "doc": "/docs/api/purchase_approvals_command_lookup"
+  },
+  {
+    "operationId": "purchase_approvals_reject",
+    "method": "POST",
+    "path": "/api/erp/purchase-approvals/actions/reject",
+    "module": "purchase-approvals",
+    "doc": "/docs/api/purchase_approvals_reject"
+  },
+  {
+    "operationId": "purchase_approvals_approve",
+    "method": "POST",
+    "path": "/api/erp/purchase-approvals/actions/approve",
+    "module": "purchase-approvals",
+    "doc": "/docs/api/purchase_approvals_approve"
+  },
+  {
+    "operationId": "purchase_orders_screen",
+    "method": "GET",
+    "path": "/api/erp/purchase-orders/screen",
+    "module": "purchase-orders",
+    "doc": "/docs/api/purchase_orders_screen"
+  },
+  {
+    "operationId": "purchase_orders_list",
+    "method": "GET",
+    "path": "/api/erp/purchase-orders",
+    "module": "purchase-orders",
+    "doc": "/docs/api/purchase_orders_list"
+  },
+  {
+    "operationId": "purchase_orders_detail",
+    "method": "GET",
+    "path": "/api/erp/purchase-orders/detail",
+    "module": "purchase-orders",
+    "doc": "/docs/api/purchase_orders_detail"
+  },
+  {
+    "operationId": "purchase_orders_actions",
+    "method": "GET",
+    "path": "/api/erp/purchase-orders/actions",
+    "module": "purchase-orders",
+    "doc": "/docs/api/purchase_orders_actions"
+  },
+  {
+    "operationId": "purchase_orders_options",
+    "method": "POST",
+    "path": "/api/erp/purchase-orders/options",
+    "module": "purchase-orders",
+    "doc": "/docs/api/purchase_orders_options"
+  },
+  {
+    "operationId": "purchase_orders_item_price",
+    "method": "POST",
+    "path": "/api/erp/purchase-orders/item-price",
+    "module": "purchase-orders",
+    "doc": "/docs/api/purchase_orders_item_price"
+  },
+  {
+    "operationId": "purchase_orders_command_lookup",
+    "method": "POST",
+    "path": "/api/erp/purchase-orders/commands/lookup",
+    "module": "purchase-orders",
+    "doc": "/docs/api/purchase_orders_command_lookup"
+  },
+  {
+    "operationId": "purchase_orders_create",
+    "method": "POST",
+    "path": "/api/erp/purchase-orders/create",
+    "module": "purchase-orders",
+    "doc": "/docs/api/purchase_orders_create"
+  },
+  {
+    "operationId": "purchase_orders_save",
+    "method": "POST",
+    "path": "/api/erp/purchase-orders/save",
+    "module": "purchase-orders",
+    "doc": "/docs/api/purchase_orders_save"
+  },
+  {
+    "operationId": "purchase_orders_delete",
+    "method": "POST",
+    "path": "/api/erp/purchase-orders/delete",
+    "module": "purchase-orders",
+    "doc": "/docs/api/purchase_orders_delete"
+  },
+  {
+    "operationId": "purchase_requests_screen",
+    "method": "GET",
+    "path": "/api/erp/purchase-requests/screen",
+    "module": "purchase-requests",
+    "doc": "/docs/api/purchase_requests_screen"
+  },
+  {
+    "operationId": "purchase_requests_list",
+    "method": "GET",
+    "path": "/api/erp/purchase-requests",
+    "module": "purchase-requests",
+    "doc": "/docs/api/purchase_requests_list"
+  },
+  {
+    "operationId": "purchase_requests_detail",
+    "method": "GET",
+    "path": "/api/erp/purchase-requests/detail",
+    "module": "purchase-requests",
+    "doc": "/docs/api/purchase_requests_detail"
+  },
+  {
+    "operationId": "purchase_requests_actions",
+    "method": "GET",
+    "path": "/api/erp/purchase-requests/actions",
+    "module": "purchase-requests",
+    "doc": "/docs/api/purchase_requests_actions"
+  },
+  {
+    "operationId": "purchase_requests_options",
+    "method": "POST",
+    "path": "/api/erp/purchase-requests/options",
+    "module": "purchase-requests",
+    "doc": "/docs/api/purchase_requests_options"
+  },
+  {
+    "operationId": "purchase_requests_command_lookup",
+    "method": "POST",
+    "path": "/api/erp/purchase-requests/commands/lookup",
+    "module": "purchase-requests",
+    "doc": "/docs/api/purchase_requests_command_lookup"
+  },
+  {
+    "operationId": "purchase_requests_selection",
+    "method": "POST",
+    "path": "/api/erp/purchase-requests/selection",
+    "module": "purchase-requests",
+    "doc": "/docs/api/purchase_requests_selection"
+  },
+  {
+    "operationId": "purchase_requests_paste_validate",
+    "method": "POST",
+    "path": "/api/erp/purchase-requests/paste/validate",
+    "module": "purchase-requests",
+    "doc": "/docs/api/purchase_requests_paste_validate"
+  },
+  {
+    "operationId": "purchase_requests_create",
+    "method": "POST",
+    "path": "/api/erp/purchase-requests/create",
+    "module": "purchase-requests",
+    "doc": "/docs/api/purchase_requests_create"
+  },
+  {
+    "operationId": "purchase_requests_save",
+    "method": "POST",
+    "path": "/api/erp/purchase-requests/save",
+    "module": "purchase-requests",
+    "doc": "/docs/api/purchase_requests_save"
+  },
+  {
+    "operationId": "purchase_requests_delete",
+    "method": "POST",
+    "path": "/api/erp/purchase-requests/delete",
+    "module": "purchase-requests",
+    "doc": "/docs/api/purchase_requests_delete"
+  },
+  {
+    "operationId": "purchase_requests_submit",
+    "method": "POST",
+    "path": "/api/erp/purchase-requests/actions/submit",
+    "module": "purchase-requests",
+    "doc": "/docs/api/purchase_requests_submit"
+  },
+  {
+    "operationId": "purchase_requests_send_purchase_order",
+    "method": "POST",
+    "path": "/api/erp/purchase-requests/actions/send-purchase-order",
+    "module": "purchase-requests",
+    "doc": "/docs/api/purchase_requests_send_purchase_order"
+  },
+  {
+    "operationId": "sales_order_pm_screen",
+    "method": "GET",
+    "path": "/api/erp/sales-order-pm/screen",
+    "module": "sales-order-pm",
+    "doc": "/docs/api/sales_order_pm_screen"
+  },
+  {
+    "operationId": "sales_order_pm_list",
+    "method": "GET",
+    "path": "/api/erp/sales-order-pm",
+    "module": "sales-order-pm",
+    "doc": "/docs/api/sales_order_pm_list"
+  },
+  {
+    "operationId": "sales_order_pm_detail",
+    "method": "GET",
+    "path": "/api/erp/sales-order-pm/detail",
+    "module": "sales-order-pm",
+    "doc": "/docs/api/sales_order_pm_detail"
+  },
+  {
+    "operationId": "sales_order_pm_actions",
+    "method": "GET",
+    "path": "/api/erp/sales-order-pm/actions",
+    "module": "sales-order-pm",
+    "doc": "/docs/api/sales_order_pm_actions"
+  },
+  {
+    "operationId": "sales_order_pm_contract_info",
+    "method": "GET",
+    "path": "/api/erp/sales-order-pm/contract-info",
+    "module": "sales-order-pm",
+    "doc": "/docs/api/sales_order_pm_contract_info"
+  },
+  {
+    "operationId": "sales_order_pm_options",
+    "method": "POST",
+    "path": "/api/erp/sales-order-pm/options",
+    "module": "sales-order-pm",
+    "doc": "/docs/api/sales_order_pm_options"
+  },
+  {
+    "operationId": "sales_order_pm_command_lookup",
+    "method": "POST",
+    "path": "/api/erp/sales-order-pm/commands/lookup",
+    "module": "sales-order-pm",
+    "doc": "/docs/api/sales_order_pm_command_lookup"
+  },
+  {
+    "operationId": "sales_order_pm_send_sa",
+    "method": "POST",
+    "path": "/api/erp/sales-order-pm/actions/send-sa",
+    "module": "sales-order-pm",
+    "doc": "/docs/api/sales_order_pm_send_sa"
+  },
+  {
+    "operationId": "sales_order_pm_reject",
+    "method": "POST",
+    "path": "/api/erp/sales-order-pm/actions/reject",
+    "module": "sales-order-pm",
+    "doc": "/docs/api/sales_order_pm_reject"
+  },
+  {
+    "operationId": "sales_order_sa_screen",
+    "method": "GET",
+    "path": "/api/erp/sales-order-sa/screen",
+    "module": "sales-order-sa",
+    "doc": "/docs/api/sales_order_sa_screen"
+  },
+  {
+    "operationId": "sales_order_sa_list",
+    "method": "GET",
+    "path": "/api/erp/sales-order-sa",
+    "module": "sales-order-sa",
+    "doc": "/docs/api/sales_order_sa_list"
+  },
+  {
+    "operationId": "sales_order_sa_detail",
+    "method": "GET",
+    "path": "/api/erp/sales-order-sa/detail",
+    "module": "sales-order-sa",
+    "doc": "/docs/api/sales_order_sa_detail"
+  },
+  {
+    "operationId": "sales_order_sa_actions",
+    "method": "GET",
+    "path": "/api/erp/sales-order-sa/actions",
+    "module": "sales-order-sa",
+    "doc": "/docs/api/sales_order_sa_actions"
+  },
+  {
+    "operationId": "sales_order_sa_contract_info",
+    "method": "GET",
+    "path": "/api/erp/sales-order-sa/contract-info",
+    "module": "sales-order-sa",
+    "doc": "/docs/api/sales_order_sa_contract_info"
+  },
+  {
+    "operationId": "sales_order_sa_options",
+    "method": "POST",
+    "path": "/api/erp/sales-order-sa/options",
+    "module": "sales-order-sa",
+    "doc": "/docs/api/sales_order_sa_options"
+  },
+  {
+    "operationId": "sales_order_sa_command_lookup",
+    "method": "POST",
+    "path": "/api/erp/sales-order-sa/commands/lookup",
+    "module": "sales-order-sa",
+    "doc": "/docs/api/sales_order_sa_command_lookup"
+  },
+  {
+    "operationId": "sales_order_sa_send_accounting",
+    "method": "POST",
+    "path": "/api/erp/sales-order-sa/actions/send-accounting",
+    "module": "sales-order-sa",
+    "doc": "/docs/api/sales_order_sa_send_accounting"
+  },
+  {
+    "operationId": "sales_order_sa_send_tech",
+    "method": "POST",
+    "path": "/api/erp/sales-order-sa/actions/send-tech",
+    "module": "sales-order-sa",
+    "doc": "/docs/api/sales_order_sa_send_tech"
+  },
+  {
+    "operationId": "sales_order_sa_reject",
+    "method": "POST",
+    "path": "/api/erp/sales-order-sa/actions/reject",
+    "module": "sales-order-sa",
+    "doc": "/docs/api/sales_order_sa_reject"
+  },
+  {
+    "operationId": "sales_order_sa_return_step",
+    "method": "POST",
+    "path": "/api/erp/sales-order-sa/actions/return-step",
+    "module": "sales-order-sa",
+    "doc": "/docs/api/sales_order_sa_return_step"
+  },
+  {
+    "operationId": "sales_order_sa_return_step_options",
+    "method": "POST",
+    "path": "/api/erp/sales-order-sa/actions/return-step/options",
+    "module": "sales-order-sa",
+    "doc": "/docs/api/sales_order_sa_return_step_options"
+  },
+  {
+    "operationId": "sales_orders_screen",
+    "method": "GET",
+    "path": "/api/erp/sales-orders/screen",
+    "module": "sales-orders",
+    "doc": "/docs/api/sales_orders_screen"
+  },
+  {
+    "operationId": "sales_orders_list",
+    "method": "GET",
+    "path": "/api/erp/sales-orders",
+    "module": "sales-orders",
+    "doc": "/docs/api/sales_orders_list"
+  },
+  {
+    "operationId": "sales_orders_detail",
+    "method": "GET",
+    "path": "/api/erp/sales-orders/detail",
+    "module": "sales-orders",
+    "doc": "/docs/api/sales_orders_detail"
+  },
+  {
+    "operationId": "sales_orders_actions",
+    "method": "GET",
+    "path": "/api/erp/sales-orders/actions",
+    "module": "sales-orders",
+    "doc": "/docs/api/sales_orders_actions"
+  },
+  {
+    "operationId": "sales_orders_contract_info",
+    "method": "GET",
+    "path": "/api/erp/sales-orders/contract-info",
+    "module": "sales-orders",
+    "doc": "/docs/api/sales_orders_contract_info"
+  },
+  {
+    "operationId": "sales_orders_options",
+    "method": "POST",
+    "path": "/api/erp/sales-orders/options",
+    "module": "sales-orders",
+    "doc": "/docs/api/sales_orders_options"
+  },
+  {
+    "operationId": "sales_orders_pm_options",
+    "method": "POST",
+    "path": "/api/erp/sales-orders/actions/send-pm/options",
+    "module": "sales-orders",
+    "doc": "/docs/api/sales_orders_pm_options"
+  },
+  {
+    "operationId": "sales_orders_command_lookup",
+    "method": "POST",
+    "path": "/api/erp/sales-orders/commands/lookup",
+    "module": "sales-orders",
+    "doc": "/docs/api/sales_orders_command_lookup"
+  },
+  {
+    "operationId": "sales_orders_selection",
+    "method": "POST",
+    "path": "/api/erp/sales-orders/selection",
+    "module": "sales-orders",
+    "doc": "/docs/api/sales_orders_selection"
+  },
+  {
+    "operationId": "sales_orders_paste_validate",
+    "method": "POST",
+    "path": "/api/erp/sales-orders/paste/validate",
+    "module": "sales-orders",
+    "doc": "/docs/api/sales_orders_paste_validate"
+  },
+  {
+    "operationId": "sales_orders_create",
+    "method": "POST",
+    "path": "/api/erp/sales-orders/create",
+    "module": "sales-orders",
+    "doc": "/docs/api/sales_orders_create"
+  },
+  {
+    "operationId": "sales_orders_save",
+    "method": "POST",
+    "path": "/api/erp/sales-orders/save",
+    "module": "sales-orders",
+    "doc": "/docs/api/sales_orders_save"
+  },
+  {
+    "operationId": "sales_orders_delete",
+    "method": "POST",
+    "path": "/api/erp/sales-orders/delete",
+    "module": "sales-orders",
+    "doc": "/docs/api/sales_orders_delete"
+  },
+  {
+    "operationId": "sales_orders_recall",
+    "method": "POST",
+    "path": "/api/erp/sales-orders/actions/recall",
+    "module": "sales-orders",
+    "doc": "/docs/api/sales_orders_recall"
+  },
+  {
+    "operationId": "sales_orders_send_pm",
+    "method": "POST",
+    "path": "/api/erp/sales-orders/actions/send-pm",
+    "module": "sales-orders",
+    "doc": "/docs/api/sales_orders_send_pm"
+  },
+  {
+    "operationId": "sales_qr_screen",
+    "method": "GET",
+    "path": "/api/erp/sales-qr/screen",
+    "module": "sales-qr",
+    "doc": "/docs/api/sales_qr_screen"
+  },
+  {
+    "operationId": "sales_qr_list",
+    "method": "GET",
+    "path": "/api/erp/sales-qr",
+    "module": "sales-qr",
+    "doc": "/docs/api/sales_qr_list"
+  },
+  {
+    "operationId": "sales_qr_detail",
+    "method": "GET",
+    "path": "/api/erp/sales-qr/detail",
+    "module": "sales-qr",
+    "doc": "/docs/api/sales_qr_detail"
+  },
+  {
+    "operationId": "sales_qr_actions",
+    "method": "GET",
+    "path": "/api/erp/sales-qr/actions",
+    "module": "sales-qr",
+    "doc": "/docs/api/sales_qr_actions"
+  },
+  {
+    "operationId": "sales_qr_contract_info",
+    "method": "GET",
+    "path": "/api/erp/sales-qr/contract-info",
+    "module": "sales-qr",
+    "doc": "/docs/api/sales_qr_contract_info"
+  },
+  {
+    "operationId": "sales_qr_options",
+    "method": "POST",
+    "path": "/api/erp/sales-qr/options",
+    "module": "sales-qr",
+    "doc": "/docs/api/sales_qr_options"
+  },
+  {
+    "operationId": "sales_qr_command_lookup",
+    "method": "POST",
+    "path": "/api/erp/sales-qr/commands/lookup",
+    "module": "sales-qr",
+    "doc": "/docs/api/sales_qr_command_lookup"
+  },
+  {
+    "operationId": "sales_qr_scan_add",
+    "method": "POST",
+    "path": "/api/erp/sales-qr/qr/add",
+    "module": "sales-qr",
+    "doc": "/docs/api/sales_qr_scan_add"
+  },
+  {
+    "operationId": "sales_qr_scan_delete",
+    "method": "POST",
+    "path": "/api/erp/sales-qr/qr/delete",
+    "module": "sales-qr",
+    "doc": "/docs/api/sales_qr_scan_delete"
+  },
+  {
+    "operationId": "warehouse_qr_screen",
+    "method": "GET",
+    "path": "/api/erp/warehouse-qr/screen",
+    "module": "warehouse-qr",
+    "doc": "/docs/api/warehouse_qr_screen"
+  },
+  {
+    "operationId": "warehouse_qr_list",
+    "method": "GET",
+    "path": "/api/erp/warehouse-qr",
+    "module": "warehouse-qr",
+    "doc": "/docs/api/warehouse_qr_list"
+  },
+  {
+    "operationId": "warehouse_qr_detail",
+    "method": "GET",
+    "path": "/api/erp/warehouse-qr/detail",
+    "module": "warehouse-qr",
+    "doc": "/docs/api/warehouse_qr_detail"
+  },
+  {
+    "operationId": "warehouse_qr_actions",
+    "method": "GET",
+    "path": "/api/erp/warehouse-qr/actions",
+    "module": "warehouse-qr",
+    "doc": "/docs/api/warehouse_qr_actions"
+  },
+  {
+    "operationId": "warehouse_qr_options",
+    "method": "POST",
+    "path": "/api/erp/warehouse-qr/options",
+    "module": "warehouse-qr",
+    "doc": "/docs/api/warehouse_qr_options"
+  },
+  {
+    "operationId": "warehouse_qr_command_lookup",
+    "method": "POST",
+    "path": "/api/erp/warehouse-qr/commands/lookup",
+    "module": "warehouse-qr",
+    "doc": "/docs/api/warehouse_qr_command_lookup"
+  },
+  {
+    "operationId": "warehouse_qr_scan_add",
+    "method": "POST",
+    "path": "/api/erp/warehouse-qr/qr/add",
+    "module": "warehouse-qr",
+    "doc": "/docs/api/warehouse_qr_scan_add"
+  },
+  {
+    "operationId": "warehouse_qr_scan_delete",
+    "method": "POST",
+    "path": "/api/erp/warehouse-qr/qr/delete",
+    "module": "warehouse-qr",
+    "doc": "/docs/api/warehouse_qr_scan_delete"
+  },
+  {
+    "operationId": "inbound_requests_attachments",
+    "method": "GET",
+    "path": "/api/erp/inbound-requests/attachments",
+    "module": "inbound-requests",
+    "doc": "/docs/api/inbound_requests_attachments"
+  },
+  {
+    "operationId": "inbound_requests_attachment_content",
+    "method": "GET",
+    "path": "/api/erp/inbound-requests/attachments/content",
+    "module": "inbound-requests",
+    "doc": "/docs/api/inbound_requests_attachment_content"
+  },
+  {
+    "operationId": "inbound_requests_attachment_delete",
+    "method": "POST",
+    "path": "/api/erp/inbound-requests/attachments/delete",
+    "module": "inbound-requests",
+    "doc": "/docs/api/inbound_requests_attachment_delete"
+  },
+  {
+    "operationId": "inbound_requests_attachment_upload",
+    "method": "POST",
+    "path": "/api/erp/inbound-requests/attachments/upload",
+    "module": "inbound-requests",
+    "doc": "/docs/api/inbound_requests_attachment_upload"
+  },
+  {
+    "operationId": "internal_transfer_accounting_attachments",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-accounting/attachments",
+    "module": "internal-transfer-accounting",
+    "doc": "/docs/api/internal_transfer_accounting_attachments"
+  },
+  {
+    "operationId": "internal_transfer_batches_attachments",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-batches/attachments",
+    "module": "internal-transfer-batches",
+    "doc": "/docs/api/internal_transfer_batches_attachments"
+  },
+  {
+    "operationId": "internal_transfer_pm_attachments",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-pm/attachments",
+    "module": "internal-transfer-pm",
+    "doc": "/docs/api/internal_transfer_pm_attachments"
+  },
+  {
+    "operationId": "internal_transfer_requests_attachments",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-requests/attachments",
+    "module": "internal-transfer-requests",
+    "doc": "/docs/api/internal_transfer_requests_attachments"
+  },
+  {
+    "operationId": "internal_transfer_sa_attachments",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-sa/attachments",
+    "module": "internal-transfer-sa",
+    "doc": "/docs/api/internal_transfer_sa_attachments"
+  },
+  {
+    "operationId": "internal_transfer_tech_attachments",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-tech/attachments",
+    "module": "internal-transfer-tech",
+    "doc": "/docs/api/internal_transfer_tech_attachments"
+  },
+  {
+    "operationId": "internal_transfer_warehouse_in_attachments",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-warehouse-in/attachments",
+    "module": "internal-transfer-warehouse-in",
+    "doc": "/docs/api/internal_transfer_warehouse_in_attachments"
+  },
+  {
+    "operationId": "internal_transfer_warehouse_out_attachments",
+    "method": "GET",
+    "path": "/api/erp/internal-transfer-warehouse-out/attachments",
+    "module": "internal-transfer-warehouse-out",
+    "doc": "/docs/api/internal_transfer_warehouse_out_attachments"
+  },
+  {
+    "operationId": "machine_movements_attachments",
+    "method": "GET",
+    "path": "/api/erp/machine-movements/attachments",
+    "module": "machine-movements",
+    "doc": "/docs/api/machine_movements_attachments"
+  },
+  {
+    "operationId": "machine_repairs_attachments",
+    "method": "GET",
+    "path": "/api/erp/machine-repairs/attachments",
+    "module": "machine-repairs",
+    "doc": "/docs/api/machine_repairs_attachments"
+  },
+  {
+    "operationId": "purchase_approvals_attachments",
+    "method": "GET",
+    "path": "/api/erp/purchase-approvals/attachments",
+    "module": "purchase-approvals",
+    "doc": "/docs/api/purchase_approvals_attachments"
+  },
+  {
+    "operationId": "purchase_orders_attachments",
+    "method": "GET",
+    "path": "/api/erp/purchase-orders/attachments",
+    "module": "purchase-orders",
+    "doc": "/docs/api/purchase_orders_attachments"
+  },
+  {
+    "operationId": "purchase_orders_attachment_content",
+    "method": "GET",
+    "path": "/api/erp/purchase-orders/attachments/content",
+    "module": "purchase-orders",
+    "doc": "/docs/api/purchase_orders_attachment_content"
+  },
+  {
+    "operationId": "purchase_orders_attachment_delete",
+    "method": "POST",
+    "path": "/api/erp/purchase-orders/attachments/delete",
+    "module": "purchase-orders",
+    "doc": "/docs/api/purchase_orders_attachment_delete"
+  },
+  {
+    "operationId": "purchase_orders_attachment_upload",
+    "method": "POST",
+    "path": "/api/erp/purchase-orders/attachments/upload",
+    "module": "purchase-orders",
+    "doc": "/docs/api/purchase_orders_attachment_upload"
+  },
+  {
+    "operationId": "purchase_requests_attachments",
+    "method": "GET",
+    "path": "/api/erp/purchase-requests/attachments",
+    "module": "purchase-requests",
+    "doc": "/docs/api/purchase_requests_attachments"
+  },
+  {
+    "operationId": "sales_order_pm_attachments",
+    "method": "GET",
+    "path": "/api/erp/sales-order-pm/attachments",
+    "module": "sales-order-pm",
+    "doc": "/docs/api/sales_order_pm_attachments"
+  },
+  {
+    "operationId": "sales_order_pm_attachment_content",
+    "method": "GET",
+    "path": "/api/erp/sales-order-pm/attachments/content",
+    "module": "sales-order-pm",
+    "doc": "/docs/api/sales_order_pm_attachment_content"
+  },
+  {
+    "operationId": "sales_order_pm_attachment_delete",
+    "method": "POST",
+    "path": "/api/erp/sales-order-pm/attachments/delete",
+    "module": "sales-order-pm",
+    "doc": "/docs/api/sales_order_pm_attachment_delete"
+  },
+  {
+    "operationId": "sales_order_pm_attachment_upload",
+    "method": "POST",
+    "path": "/api/erp/sales-order-pm/attachments/upload",
+    "module": "sales-order-pm",
+    "doc": "/docs/api/sales_order_pm_attachment_upload"
+  },
+  {
+    "operationId": "sales_order_sa_attachments",
+    "method": "GET",
+    "path": "/api/erp/sales-order-sa/attachments",
+    "module": "sales-order-sa",
+    "doc": "/docs/api/sales_order_sa_attachments"
+  },
+  {
+    "operationId": "sales_order_sa_attachment_content",
+    "method": "GET",
+    "path": "/api/erp/sales-order-sa/attachments/content",
+    "module": "sales-order-sa",
+    "doc": "/docs/api/sales_order_sa_attachment_content"
+  },
+  {
+    "operationId": "sales_orders_attachments",
+    "method": "GET",
+    "path": "/api/erp/sales-orders/attachments",
+    "module": "sales-orders",
+    "doc": "/docs/api/sales_orders_attachments"
+  },
+  {
+    "operationId": "sales_orders_attachment_content",
+    "method": "GET",
+    "path": "/api/erp/sales-orders/attachments/content",
+    "module": "sales-orders",
+    "doc": "/docs/api/sales_orders_attachment_content"
+  },
+  {
+    "operationId": "sales_orders_attachment_delete",
+    "method": "POST",
+    "path": "/api/erp/sales-orders/attachments/delete",
+    "module": "sales-orders",
+    "doc": "/docs/api/sales_orders_attachment_delete"
+  },
+  {
+    "operationId": "sales_orders_attachment_upload",
+    "method": "POST",
+    "path": "/api/erp/sales-orders/attachments/upload",
+    "module": "sales-orders",
+    "doc": "/docs/api/sales_orders_attachment_upload"
+  },
+  {
+    "operationId": "sales_qr_attachments",
+    "method": "GET",
+    "path": "/api/erp/sales-qr/attachments",
+    "module": "sales-qr",
+    "doc": "/docs/api/sales_qr_attachments"
+  },
+  {
+    "operationId": "warehouse_qr_attachments",
+    "method": "GET",
+    "path": "/api/erp/warehouse-qr/attachments",
+    "module": "warehouse-qr",
+    "doc": "/docs/api/warehouse_qr_attachments"
+  }
+]

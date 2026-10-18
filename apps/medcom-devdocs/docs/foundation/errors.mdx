@@ -1,0 +1,56 @@
+---
+title: Lỗi và cách xử lý
+---
+
+## Hai lớp lỗi
+
+**Lỗi HTTP và hạ tầng:** chuẩn hóa status, content type, `ProblemDetails`, `code`, `correlationId` hoặc `X-Correlation-ID`. Reverse proxy có thể trả HTML/body rỗng; luôn kiểm tra trước khi parse JSON. Không đưa cookie, password, raw intent hoặc dữ liệu cá nhân vào log lỗi.
+
+**Kết quả nghiệp vụ:** command có thể trả `outcome` và `receipt`; trạng thái HTTP không thay thế kết luận commit. Không hiển thị thành công chỉ dựa vào `response.ok`.
+
+Nguồn: `ProblemDetails` trong OpenAPI; `src/backend/Medcom.Api/ErpScreenEndpoints.cs#MapCommand`; `src/backend/Medcom.Contracts/ErpScreens.cs#ErpCommandResult`.
+
+## Mã lỗi xác định được từ source
+
+| HTTP | Code | Tình huống nguồn | UI nên làm |
+|---|---|---|---|
+| 400 | `https_required` | Login không dùng HTTPS | Sửa cấu hình URL/proxy; không retry bằng HTTP |
+| 400 | `invalid_login_request` | Login fields không đạt kiểm tra | Hiển thị lỗi form |
+| 401 | `invalid_credentials` | Identity bị từ chối | Yêu cầu người dùng kiểm tra thông tin |
+| 401 | `session_expired` | Continue session thất bại | Đăng nhập lại, bootstrap lại scope |
+| 503 | `identity_unavailable`, `session_unavailable` | Authority/session provider chưa sẵn sàng | Cho phép thử login lại có kiểm soát |
+| 400 | `invalid_query` | Query ERP sai tên, trùng key hoặc giá trị không hợp lệ | Sửa request; không lặp vô hạn |
+| 400 | `invalid_json` | ERP read-body không decode được | Sửa body/schema |
+| 400 | `invalid_erp_intent` | Command không freeze/decode được | Giữ draft, hiển thị lỗi; sửa DTO |
+| 403 | `native_read_denied` | Thiếu capability module read | Ẩn/chặn màn hình và đồng bộ quyền |
+| 403 | `origin_rejected` | HTTPS/Origin không đạt guard ERP POST | Sửa topology/proxy cấu hình |
+| 409 | `erp_scope_changed` | Read scope cũ hoặc không đúng | Invalidate scope, tải lại; không replay ghi mù |
+| 409 | `purchase_scope_changed` | Scope command purchase tương thích đổi | Dừng command, bootstrap/reconcile |
+| 415 | `json_required` | Purchase command không phải JSON đúng loại | Sửa Content-Type |
+
+Nguồn cho login: `src/backend/Medcom.Api/AuthEndpoints.cs`; ERP: `ErpScreenEndpoints.cs`; purchase tương thích: `PurchaseRequestEndpoints.cs`. Bảng này không khẳng định mọi route đều trả mọi code. Các lỗi còn lại chỉ được kết luận theo operation/provider cụ thể. Live probe chưa đăng nhập quan sát được `401 authentication_required`; không coi probe đó là test các lỗi khác.
+
+## Kết quả xử lý yêu cầu ghi ERP
+
+| Mã kết quả (outcome) | HTTP tại MapCommand | Cách xử lý |
+|---|---|---|
+| `Committed`, `Replayed` | 200 | Kiểm tra receipt, map allocated line IDs, tải lại detail/action state |
+| `InvalidInput` | 400 | Sửa input với draft đang có |
+| `Denied` | 403 | Đồng bộ quyền/action; không retry tự động |
+| `Conflict` | 409 | Tải lại phiên bản, cho người dùng review xung đột |
+| `OutcomeUnknown` | 409 | Khóa gửi mới; reconcile intent đã gửi |
+| `QualificationRequired`, `Unavailable`, `Cancelled` | 503 trong mapping hiện tại | Không khẳng định đã rollback hoặc cho phép gửi intent mới; xác minh outcome |
+
+Đây là mapping của họ `/api/erp/*`. Các command purchase/inbound tương thích có outcome representation khác. Không áp dụng bảng này bằng cách ép kiểu vào tất cả API.
+
+## Chống ghi lặp và kiểm tra phiên bản chứng từ
+
+Các DTO ERP dùng `idempotencyKey`; save/delete/action thường cần `expectedStateToken`. Key xác định một intent bất biến. Giữ **nguyên key và nguyên body** khi reconcile; đổi field hoặc key là intent khác. Không tái dùng key cho một thao tác người dùng mới.
+
+`POST /api/erp/{module}/commands/lookup` nhận `operation` và `originalIntent`. Dùng schema của module và xem `ErpCommandObservation`. `Pending`, `Absent`, `Unavailable`, `OutcomeUnknown` không cấp quyền tạo command mới. Kết quả không xác định sau timeout là một trạng thái UI riêng, cần giữ thông tin thao tác chờ xác minh.
+
+Nguồn: OpenAPI `x-medcom-command-rules`; `src/backend/Medcom.Contracts/ErpScreens.cs`; `src/backend/Medcom.Application/ErpCommandRules.cs`.
+
+## Kịch bản tối thiểu cần thử
+
+Validation trước/sau submit; mất quyền; đổi chi nhánh khi request đang bay; stale state token; double-click; timeout sau gửi; response 200 nhưng outcome khác thành công; 503 hoặc body HTML từ proxy; thay đổi scope giữa lookup và save. Khi test chỉ dùng môi trường và dữ liệu tổng hợp được cấp quyền, không thử ghi trên production để kiểm tra tài liệu.

@@ -121,11 +121,11 @@ export function LookupField({
   };
 
   return (
-    <div>
-      <label className="block text-neutral-500 dark:text-neutral-400 mb-1 font-medium">
+    <div className="min-w-0 text-base leading-6 text-black dark:text-white">
+      <label className="mb-1.5 block text-sm font-medium text-black dark:text-white">
         {label} {required && <span className="text-red-500">*</span>}
         {multiple && (selected ?? []).length > 0 && (
-          <span className="ml-1.5 text-[10px] font-bold text-brand-600 dark:text-brand-400">
+          <span className="ml-1.5 text-sm font-semibold text-brand-600 dark:text-brand-400">
             {(selected ?? []).length} đã chọn
           </span>
         )}
@@ -137,7 +137,7 @@ export function LookupField({
             setSearch("");
             setOpen((v) => !v);
           }}
-          className={`w-full pr-8 rounded-xl border bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs text-left ${
+          className={`min-h-11 w-full pr-12 rounded-xl border bg-white dark:bg-neutral-900 text-black dark:text-white text-base leading-6 font-medium text-left ${
             error
               ? "border-red-400 dark:border-red-700"
               : "border-neutral-300 dark:border-neutral-700"
@@ -145,13 +145,13 @@ export function LookupField({
         >
           {multiple ? (
             (selected ?? []).length === 0 ? (
-              <span className="text-neutral-400">{placeholder || "Chọn nhiều..."}</span>
+              <span className="text-black dark:text-white">{placeholder || "Chọn nhiều..."}</span>
             ) : (
               <span className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
                 {(selected ?? []).map((c) => (
                   <span
                     key={c.id}
-                    className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full bg-brand-100 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 text-[11px] font-semibold"
+                    className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full bg-brand-100 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 text-base font-medium"
                   >
                     <span className="max-w-32 truncate">{fieldText(c.label) || c.id}</span>
                     <span
@@ -180,7 +180,7 @@ export function LookupField({
           ) : (
             <span className="block truncate">
               {choiceLabel(choice, displayValue || value) || (
-                <span className="text-neutral-400">{placeholder || "Chọn..."}</span>
+                <span className="text-black dark:text-white">{placeholder || "Chọn..."}</span>
               )}
             </span>
           )}
@@ -190,7 +190,7 @@ export function LookupField({
             type="button"
             aria-label="Xóa lựa chọn"
             onClick={() => onSelect(null)}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
+            className="absolute right-1 top-1/2 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-lg text-black hover:bg-neutral-100 dark:text-white dark:hover:bg-neutral-800"
           >
             <X className="size-3.5" />
           </button>
@@ -204,21 +204,21 @@ export function LookupField({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Tìm kiếm..."
-                className="w-full bg-transparent outline-none text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400"
+                className="min-h-11 w-full bg-transparent outline-none text-base leading-6 text-black dark:text-white placeholder:text-black dark:placeholder:text-white"
               />
             </div>
             <div className="max-h-48 overflow-y-auto">
               {loading ? (
-                <p className="p-3 text-xs text-neutral-400 flex items-center gap-2">
+                <p className="p-3 text-sm text-black dark:text-white flex items-center gap-2">
                   <Loader2 className="size-3.5 animate-spin" /> Đang tải...
                 </p>
               ) : failed ? (
-                <div role="alert" className="p-3 text-xs text-red-600">
+                <div role="alert" className="p-3 text-sm text-red-600">
                   Không tải được danh sách lựa chọn.
                   <button type="button" onClick={() => setRetry(v => v + 1)} className="ml-2 underline">Thử lại</button>
                 </div>
               ) : items.length === 0 ? (
-                <p className="p-3 text-xs text-neutral-400">Không có lựa chọn nào.</p>
+                <p className="p-3 text-sm text-black dark:text-white">Không có lựa chọn nào.</p>
               ) : (
                 items.map((item) => {
                   const checked = multiple && isSelected(item.id);
@@ -234,10 +234,10 @@ export function LookupField({
                           setOpen(false);
                         }
                       }}
-                      className={`w-full text-left px-3 py-2 text-xs hover:bg-brand-50 dark:hover:bg-brand-950/40 flex items-center gap-2 ${
+                      className={`min-h-11 w-full text-left px-3 py-2 text-base leading-6 font-medium hover:bg-brand-50 dark:hover:bg-brand-950/40 flex items-center gap-2 ${
                         !multiple && item.id === value
                           ? "text-brand-700 dark:text-brand-300 font-bold"
-                          : "text-neutral-700 dark:text-neutral-300"
+                          : "text-black dark:text-white"
                       } ${checked ? "bg-brand-50/60 dark:bg-brand-950/30" : ""}`}
                     >
                       {multiple && (
@@ -256,10 +256,10 @@ export function LookupField({
                           {fieldText(item.label) || item.id}
                         </span>
                         {fieldText(item.label) && item.label !== item.id && (
-                          <span className="block truncate text-[10px] text-neutral-400">{item.id}</span>
+                          <span className="block truncate text-sm text-black dark:text-white">{item.id}</span>
                         )}
                         {secondaryFields.map(field => fieldText(item.fields?.[field])).filter(Boolean).length > 0 && (
-                          <span className="block text-[10px] text-neutral-500">
+                          <span className="block text-sm text-black dark:text-white">
                             {secondaryFields.map(field => fieldText(item.fields?.[field])).filter(Boolean).join(" · ")}
                           </span>
                         )}
@@ -271,7 +271,7 @@ export function LookupField({
             </div>
             {!loading && !failed && result?.key === queryKey && result.hasMore && (
               <button type="button" onClick={() => setPagination({ key: queryKey, page: result.page + 1 })}
-                className="w-full p-2 text-xs text-brand-600 border-t border-neutral-100 dark:border-neutral-800">
+                className="min-h-11 w-full p-2 text-sm font-semibold text-brand-600 dark:text-brand-300 border-t border-neutral-100 dark:border-neutral-800">
                 Tải thêm lựa chọn
               </button>
             )}
@@ -280,7 +280,7 @@ export function LookupField({
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-bold bg-brand-600 text-white hover:bg-brand-700"
+                  className="min-h-11 px-3 py-1.5 rounded-lg text-base font-semibold bg-brand-600 text-white hover:bg-brand-700"
                 >
                   Xong{(selected ?? []).length > 0 ? ` (${(selected ?? []).length})` : ""}
                 </button>
@@ -289,7 +289,7 @@ export function LookupField({
           </div>
         )}
       </div>
-      {error && <p className="mt-1 text-[11px] text-red-500">{error}</p>}
+      {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
     </div>
   );
 }
