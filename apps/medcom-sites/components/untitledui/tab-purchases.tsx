@@ -19,6 +19,8 @@ import { UntitledBadge } from "./badge";
 import { UntitledButton } from "./button";
 import { UntitledBottomSheet } from "./bottom-sheet";
 import { DocumentCardSkeleton, DetailLinesSkeleton } from "./skeleton";
+import { DocumentListTable, type DocumentListColumn } from "./document-list-table";
+import { DocumentListPagination } from "./document-list-pagination";
 import { erpClient } from "@/lib/erp/erp-client";
 import type { PurchaseRequestHeaderFields, PurchaseRequestLineFields, PurchaseReadback } from "@/lib/erp/purchase-request-api";
 import { errorMessage } from "@/lib/erp/api";
@@ -81,6 +83,10 @@ export function TabPurchases({
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [purchases, setPurchases] = useState<PurchaseItem[]>([]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [hasMore, setHasMore] = useState(false);
+  const listSeqRef = useRef(0);
   const [activeItem, setActiveItem] = useState<PurchaseItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -97,17 +103,15 @@ export function TabPurchases({
   }, [selectedItemForDetail]);
 
   const loadPurchases = useCallback(
-    async (isBackground = false) => {
-      if (!isBackground) {
-        if (purchases.length === 0) setLoading(true);
-        else setIsRefreshing(true);
-      } else {
-        setIsRefreshing(true);
-      }
+    async (isBackground = false, targetPage = page, targetPageSize = pageSize) => {
+      const seq = ++listSeqRef.current;
+      if (!isBackground) setLoading(true);
+      else setIsRefreshing(true);
 
       try {
         setError(null);
-        const res = await erpClient.getPurchaseRequestsList(1, search, currentBranch);
+        const res = await erpClient.getPurchaseRequestsList(targetPage, search, currentBranch, targetPageSize);
+        if (seq !== listSeqRef.current) return;
         if (res && res.list && res.list.rows) {
           setCurrentScopeKey(res.scopeKey);
           const mapped: PurchaseItem[] = res.list.rows.map((r) => {
@@ -187,6 +191,9 @@ export function TabPurchases({
           });
 
           setPurchases(mapped);
+          setPage(res.list.page);
+          setPageSize(res.list.pageSize);
+          setHasMore(res.list.hasMore);
           onCountChange?.(mapped.length);
           lastFetchedRef.current = Date.now();
         } else {
@@ -194,29 +201,32 @@ export function TabPurchases({
           onCountChange?.(0);
         }
       } catch (e) {
+        if (seq !== listSeqRef.current) return;
         setError(errorMessage(e));
       } finally {
-        setLoading(false);
-        setIsRefreshing(false);
+        if (seq === listSeqRef.current) {
+          setLoading(false);
+          setIsRefreshing(false);
+        }
       }
     },
-    [search, currentBranch, purchases.length, onCountChange]
+    [search, currentBranch, page, pageSize, onCountChange]
   );
 
-  // Initial and search-triggered fetch
+  // A new query starts at page one; returning to a stale tab refreshes its page.
+  const listQueryRef = useRef<string | null>(null);
+  const wasActiveRef = useRef(false);
   useEffect(() => {
-    loadPurchases();
-  }, [search, currentBranch]);
-
-  // Tab activation: stale-while-revalidate caching
-  useEffect(() => {
-    if (isActive) {
-      const now = Date.now();
-      if (now - lastFetchedRef.current > 45000 || purchases.length === 0) {
-        loadPurchases(purchases.length > 0);
-      }
+    const becameActive = isActive && !wasActiveRef.current;
+    wasActiveRef.current = isActive;
+    if (!isActive) return;
+    const query = JSON.stringify([search, currentBranch]);
+    const queryChanged = query !== listQueryRef.current;
+    if (queryChanged || (becameActive && Date.now() - lastFetchedRef.current > 45000)) {
+      listQueryRef.current = query;
+      void loadPurchases(!queryChanged, queryChanged ? 1 : page);
     }
-  }, [isActive, loadPurchases, purchases.length]);
+  }, [search, currentBranch, isActive, loadPurchases, page]);
 
   const handleOpenDetail = async (item: PurchaseItem) => {
     setActiveItem(item);
@@ -350,6 +360,15 @@ export function TabPurchases({
     }
   };
 
+  const tableColumns: DocumentListColumn<PurchaseItem>[] = [
+    { id: "document", label: "Mã PR", className: "min-w-40 whitespace-nowrap", render: item => <span className="font-mono font-semibold text-brand-700 dark:text-brand-300">{item.code}</span> },
+    { id: "date", label: "Ngày đề nghị", className: "whitespace-nowrap tabular-nums", render: item => item.date },
+    { id: "purpose", label: "Mục đích / Nội dung", className: "min-w-60 max-w-sm", render: item => <span className="line-clamp-2 break-words font-medium" title={item.purpose}>{item.purpose}</span> },
+    { id: "status", label: "Trạng thái", className: "whitespace-nowrap", render: item => getStatusBadge(item.status) },
+    { id: "creator", label: "Người đề nghị", className: "min-w-40 max-w-52", render: item => <span className="line-clamp-2 break-words">{item.creator}</span> },
+    { id: "amount", label: "Tổng tiền", className: "whitespace-nowrap text-right font-semibold tabular-nums", render: item => item.totalAmount },
+  ];
+
   return (
     <div className="space-y-4 pb-24 animate-uui-fade-in">
       {/* Search & Actions Bar */}
@@ -416,7 +435,7 @@ export function TabPurchases({
               <button
                 key={chip.id}
                 type="button"
-                onClick={() => setFilterStatus(chip.id)}
+                onClick={() => { setFilterStatus(chip.id); if (page !== 1) void loadPurchases(false, 1); }}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 shrink-0 ${
                   isSelected
                     ? "bg-brand-600 text-white shadow-xs"
@@ -453,8 +472,11 @@ export function TabPurchases({
               Thử lại
             </UntitledButton>
           </div>
-        ) : loading && purchases.length === 0 ? (
-          <DocumentCardSkeleton count={4} />
+        ) : loading ? (
+          <>
+            <DocumentListTable label="Danh sách đề nghị mua hàng" rows={[]} columns={tableColumns} rowId={item => item.code} onOpen={handleOpenDetail} loading />
+            <div className="lg:hidden"><DocumentCardSkeleton count={4} /></div>
+          </>
         ) : filtered.length === 0 ? (
           <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-8 text-center space-y-3">
             <FileText className="size-10 text-neutral-400 mx-auto stroke-[1.4]" />
@@ -476,7 +498,10 @@ export function TabPurchases({
             </UntitledButton>
           </div>
         ) : (
-          filtered.map((item) => (
+          <>
+          <DocumentListTable label="Danh sách đề nghị mua hàng" rows={filtered} columns={tableColumns} rowId={item => item.code} onOpen={handleOpenDetail} rowOffset={(page - 1) * pageSize} />
+          <div className="space-y-3 lg:hidden" data-document-cards>
+          {filtered.map((item) => (
             <div
               key={item.id}
               data-purchase-id={item.code}
@@ -520,12 +545,18 @@ export function TabPurchases({
                 </div>
               </div>
             </div>
-          ))
+          ))}
+          </div>
+          </>
         )}
       </div>
 
+      <DocumentListPagination page={page} pageSize={pageSize} rowCount={purchases.length} visibleRowCount={filtered.length} hasMore={hasMore} busy={loading || isRefreshing} pageSizeOptions={[20, 50]} maxPage={1000}
+        onPageChange={nextPage => void loadPurchases(false, nextPage)} onPageSizeChange={size => void loadPurchases(false, 1, size)} />
+
       {/* Item Detail Bottom Sheet */}
       <UntitledBottomSheet
+        presentation="document"
         open={Boolean(activeItem)}
         onClose={() => {
           setActiveItem(null);

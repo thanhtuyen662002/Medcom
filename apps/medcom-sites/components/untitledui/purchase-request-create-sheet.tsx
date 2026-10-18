@@ -80,22 +80,24 @@ function TextField({
   error?: string;
   inputMode?: "decimal" | "text";
 }) {
+  const inputId = React.useId();
   return (
     <div>
-      <label className="block text-neutral-500 dark:text-neutral-400 mb-1 font-medium">
+      <label htmlFor={inputId} className="block text-neutral-500 dark:text-neutral-400 mb-1 font-medium">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       <input
         type="text"
+        id={inputId}
         inputMode={inputMode || "text"}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className={`w-full p-2.5 rounded-xl border bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs ${
+        className={`w-full min-h-11 p-2.5 rounded-xl border bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-base ${
           error ? "border-red-400 dark:border-red-700" : "border-neutral-300 dark:border-neutral-700"
         }`}
       />
-      {error && <p className="mt-1 text-[11px] text-red-500">{error}</p>}
+      {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
     </div>
   );
 }
@@ -340,12 +342,12 @@ export function PurchaseRequestCreateSheet({
 
   /* ----- Section 1: header ----- */
   const headerSection = (
-    <section className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 space-y-3">
-      <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-400">Thông tin phiếu</h4>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
+    <section className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 sm:p-6 space-y-4">
+      <h4 className="text-base font-bold uppercase tracking-wider text-neutral-400">Thông tin phiếu</h4>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <div>
           <label className="block text-neutral-500 dark:text-neutral-400 mb-1 font-medium">Mã đề xuất</label>
-          <p className="p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-xs text-neutral-400">
+          <p className="p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-base text-neutral-400">
             {documentId || "Tự cấp sau khi tạo"}
           </p>
         </div>
@@ -356,18 +358,18 @@ export function PurchaseRequestCreateSheet({
             aria-invalid={!!errors["header.purchaseDate"]}
             value={purchaseDate}
             onChange={(e) => setPurchaseDate(e.target.value)}
-            className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
+            className="w-full min-h-11 p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-base"
           />
-          {errors["header.purchaseDate"] && <p className="mt-1 text-[11px] text-red-500">{errors["header.purchaseDate"]}</p>}
+          {errors["header.purchaseDate"] && <p className="mt-1 text-sm text-red-500">{errors["header.purchaseDate"]}</p>}
         </div>
         <div>
           <label className="block text-neutral-500 dark:text-neutral-400 mb-1 font-medium">Chi nhánh</label>
-          <p className="p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-xs font-mono font-bold text-neutral-600 dark:text-neutral-300">
+          <p className="p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-base font-mono font-bold text-neutral-600 dark:text-neutral-300">
             {currentBranch}
           </p>
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <LookupField
           label="Người đề nghị"
           required
@@ -430,8 +432,8 @@ export function PurchaseRequestCreateSheet({
 
   /* ----- Section 2: counterparty & currency ----- */
   const counterpartySection = (
-    <section className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 space-y-3">
-      <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-400">Đối tượng &amp; tiền tệ</h4>
+    <section className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 sm:p-6 space-y-4">
+      <h4 className="text-base font-bold uppercase tracking-wider text-neutral-400">Đối tượng &amp; tiền tệ</h4>
       <LookupField
         label="Khách hàng"
         required
@@ -448,13 +450,13 @@ export function PurchaseRequestCreateSheet({
         }}
       />
       {objectChoice && (fieldText(objectChoice.fields?.["ObjectName"]) || fieldText(objectChoice.fields?.["Address"])) && (
-        <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">
           {[fieldText(objectChoice.fields?.["ObjectName"]), fieldText(objectChoice.fields?.["Address"])]
             .filter(Boolean)
             .join(" · ")}
         </p>
       )}
-      <div className="grid grid-cols-3 gap-2.5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <LookupField
           label="Loại tiền"
           required
@@ -478,7 +480,7 @@ export function PurchaseRequestCreateSheet({
         <div>
           <label className="block text-neutral-500 dark:text-neutral-400 mb-1 font-medium">Tỷ giá</label>
           <p
-            className={`p-2.5 rounded-xl text-xs font-bold ${
+            className={`p-2.5 rounded-xl text-base font-bold ${
               errors["header.rateExchange"]
                 ? "bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-400 dark:border-red-700"
                 : "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200"
@@ -488,7 +490,7 @@ export function PurchaseRequestCreateSheet({
             {rateExchange || "—"}
           </p>
           {errors["header.rateExchange"] && (
-            <p className="mt-1 text-[11px] text-red-500">{errors["header.rateExchange"]}</p>
+            <p className="mt-1 text-sm text-red-500">{errors["header.rateExchange"]}</p>
           )}
         </div>
         <TextField
@@ -504,21 +506,21 @@ export function PurchaseRequestCreateSheet({
 
   /* ----- Section 3: lines ----- */
   const linesSection = (
-    <section className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 space-y-3">
+    <section className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 sm:p-6 space-y-4">
       <div className="flex items-center justify-between">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
+        <h4 className="text-base font-bold uppercase tracking-wider text-neutral-400">
           Chi tiết ({lines.length})
         </h4>
         <button
           type="button"
           onClick={() => setLines((prev) => [...prev, emptyLine()])}
           disabled={lines.length >= 500}
-          className="flex min-h-11 items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50"
+          className="flex min-h-11 items-center gap-1 px-2.5 py-1.5 rounded-xl text-base font-bold bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50"
         >
           <Plus className="size-3.5" /> Thêm dòng
         </button>
       </div>
-      {errors["lines"] && <p className="text-[11px] text-red-500">{errors["lines"]}</p>}
+      {errors["lines"] && <p className="text-sm text-red-500">{errors["lines"]}</p>}
       <div className="space-y-3">
         {lines.map((line, idx) => {
           const total = lineTotal(line);
@@ -528,7 +530,7 @@ export function PurchaseRequestCreateSheet({
               className="rounded-xl border border-neutral-200/80 dark:border-neutral-800 p-3 space-y-2.5 bg-neutral-50/50 dark:bg-neutral-950/40"
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-neutral-500">Dòng {idx + 1}</span>
+                <span className="text-base font-bold text-neutral-500">Dòng {idx + 1}</span>
                 {lines.length > 1 && (
                   <button
                     type="button"
@@ -555,7 +557,7 @@ export function PurchaseRequestCreateSheet({
                 }
               />
               {(line.itemChoice || line.itemId) && (
-                <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
                   {[
                     fieldText(line.itemChoice?.fields?.["ItemName"]),
                     fieldText(line.itemChoice?.fields?.["Unit"]),
@@ -565,7 +567,7 @@ export function PurchaseRequestCreateSheet({
                     .join(" · ") || line.itemId}
                 </p>
               )}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <TextField label="Model" value={line.model} onChange={(v) => patchLine(line.key, { model: v })} />
                 <TextField
                   label="Ngân sách"
@@ -580,7 +582,7 @@ export function PurchaseRequestCreateSheet({
                   onChange={(v) => patchLine(line.key, { timeRequired: v })}
                 />
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <TextField
                   label="Số lượng"
                   required
@@ -599,7 +601,7 @@ export function PurchaseRequestCreateSheet({
                 />
                 <div>
                   <label className="block text-neutral-500 dark:text-neutral-400 mb-1 font-medium">Tổng giá</label>
-                  <p className="p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-xs font-bold text-neutral-700 dark:text-neutral-200">
+                  <p className="p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-base font-bold text-neutral-700 dark:text-neutral-200">
                     {total == null ? "—" : formatVND(total)}
                   </p>
                 </div>
@@ -608,7 +610,7 @@ export function PurchaseRequestCreateSheet({
           );
         })}
       </div>
-      <div className="flex items-center justify-between pt-1 text-xs font-bold text-neutral-800 dark:text-neutral-200">
+      <div className="flex items-center justify-between pt-1 text-base font-bold text-neutral-800 dark:text-neutral-200">
         <span>
           Tổng: {lines.length} dòng
         </span>
@@ -620,13 +622,13 @@ export function PurchaseRequestCreateSheet({
   const feedback = (
     <>
       {submitError && (
-        <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-xs text-red-800 dark:text-red-300 flex items-center gap-2">
+        <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-base text-red-800 dark:text-red-300 flex items-center gap-2">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{submitError}</span>
         </div>
       )}
       {submitWarning && (
-        <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2">
+        <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-base text-amber-800 dark:text-amber-300 flex items-center gap-2">
           <AlertCircle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
           <span>{submitWarning}</span>
         </div>
@@ -654,10 +656,10 @@ export function PurchaseRequestCreateSheet({
   </div>;
 
   return (
-    <UntitledBottomSheet open={open} onClose={closeForm} title={isEditing ? "Sửa đề nghị mua hàng" : "Tạo đề nghị mua hàng"} subtitle={documentId} footer={formReady ? footer : undefined}>
+    <UntitledBottomSheet presentation="document" open={open} onClose={closeForm} title={isEditing ? "Sửa đề nghị mua hàng" : "Tạo đề nghị mua hàng"} subtitle={documentId} footer={formReady ? footer : undefined}>
       {loadingDocument ? <div role="status" className="flex items-center justify-center gap-2 py-8 text-sm"><Loader2 className="size-5 animate-spin" />Đang tải đầy đủ chi tiết phiếu...</div>
         : loadError ? <div className="space-y-3 text-sm"><p role="alert">Không tải được đầy đủ phiếu hoặc phiếu đã thay đổi trong lúc tải. Vui lòng thử lại.</p><UntitledButton variant="secondary-gray" size="md" onClick={() => setReadRevision(value => value + 1)}>Thử lại</UntitledButton></div> : null}
-      {formReady && <div className="space-y-3.5 text-xs">
+      {formReady && <div className="space-y-5 text-base leading-relaxed [&_input]:min-h-11 [&_input]:text-base [&_label]:text-sm [&_button]:text-base [&_button_span]:text-base [&_.text-xs]:text-base [&_h4]:text-lg">
         <fieldset disabled={formDisabled} className="min-w-0 space-y-3.5 border-0 p-0">
         {isMobile && (
           <ol aria-label="Các bước nhập đề nghị mua hàng" className="flex items-center gap-1 px-1">
@@ -680,7 +682,7 @@ export function PurchaseRequestCreateSheet({
                     }`}
                   />
                   <span
-                    className={`mt-1 block text-[10px] font-semibold ${
+                    className={`mt-1 block text-sm font-semibold ${
                       i === step
                         ? "text-brand-700 dark:text-brand-300"
                         : "text-neutral-400"
@@ -703,60 +705,46 @@ export function PurchaseRequestCreateSheet({
         {(!isMobile || step === 1) && linesSection}
 
         {(!isMobile || step === 2) && (
-          <section className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 space-y-2">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-              {isMobile ? "Xem lại" : "Tổng hợp"}
-            </h4>
-            <p className="text-xs text-neutral-700 dark:text-neutral-300">
-              {currentBranch} · {purchaseDate || "—"} · {currencyId || "—"}
-              {rateExchange ? ` (${rateExchange})` : ""}
-            </p>
-            <p className="text-xs text-neutral-700 dark:text-neutral-300">
-              {personSuggest || "—"} ·{" "}
-              {department || "—"}
-            </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
-              KH: {choiceLabel(objectChoice, objectId) || "—"}
-            </p>
-            <dl className="grid min-w-0 grid-cols-2 gap-3 border-y border-neutral-200 py-3 dark:border-neutral-800">
-              {[["Mục đích", choiceLabel(purposeChoice, purposeId)], ["Giá bán", price], ["Mục đích / Khách hàng", purposeDescOrClient], ["Ghi chú", notes]].map(([label, value]) =>
-                <div key={label} className="min-w-0"><dt className="text-neutral-400">{label}</dt><dd className="mt-1 whitespace-pre-wrap break-words">{value || "—"}</dd></div>)}
-            </dl>
-            {baseline && <p className="text-xs text-neutral-500">Thêm {lines.filter(line => !line.lineId).length} dòng · Xóa {baseline.lines.rows.filter(row => !lines.some(line => line.lineId === row.lineId)).length} dòng so với phiếu đã lưu</p>}
-            <div className="pt-1 space-y-1">
-              {reviewLines.length === 0 ? (
-                <p className="text-[11px] text-neutral-400">Chưa có chi tiết nào.</p>
-              ) : (
-                reviewLines.map((l) => (
-                  <article key={l.key} className="min-w-0 border-b border-neutral-100 py-2 text-xs text-neutral-700 dark:border-neutral-800 dark:text-neutral-300">
-                    <p className="break-words font-semibold">{choiceLabel(l.itemChoice, l.itemId)}</p>
-                    <div className="mt-1 flex flex-wrap justify-between gap-2">
-                    <span>{l.itemId} · {l.quantity} × {l.unitPrice}</span>
-                    <span className="font-bold">
-                      {(() => {
-                        const t = lineTotal(l);
-                        return t == null ? "—" : formatVND(t);
-                      })()}
-                    </span>
-                    </div>
-                    <dl className="mt-2 grid min-w-0 grid-cols-2 gap-2">
-                      {[["Model", l.model], ["Ngân sách", l.budget], ["Thời gian yêu cầu", l.timeRequired]].map(([label, value]) =>
-                        <div key={label} className="min-w-0"><dt className="text-neutral-400">{label}</dt><dd className="break-words">{value || "—"}</dd></div>)}
-                    </dl>
-                  </article>
-                ))
-              )}
+          <section data-purchase-review className="min-w-0 overflow-hidden rounded-2xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 px-4 py-4 sm:px-6 dark:border-neutral-800">
+              <div><h4 className="text-lg font-semibold text-neutral-900 dark:text-white">{isMobile ? "Xem lại" : "Tổng hợp"}</h4><p className="mt-1 text-sm text-neutral-900 dark:text-white">Kiểm tra thông tin trước khi {isEditing ? "lưu thay đổi" : "tạo phiếu"}.</p></div>
+              <span className="rounded-lg bg-neutral-100 px-3 py-1.5 text-sm font-medium dark:bg-neutral-800">{reviewLines.length} mặt hàng</span>
             </div>
-            <p className="text-xs font-bold text-brand-700 dark:text-brand-300 pt-1">
-              Tổng thanh toán: {formatVND(grandTotal)} {currencyId}
-            </p>
+            <div className="space-y-6 p-4 sm:p-6">
+              <dl className="grid grid-cols-2 gap-x-6 gap-y-4 lg:grid-cols-4">
+                {[["Chi nhánh", currentBranch], ["Ngày đề xuất", purchaseDate], ["Loại tiền", currencyId], ["Tỷ giá", rateExchange]].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-sm text-neutral-900 dark:text-white">{label}</dt><dd className="mt-1 break-words text-base font-semibold tabular-nums">{value || "—"}</dd></div>)}
+              </dl>
+              <div className="rounded-xl bg-brand-50 p-4 dark:bg-brand-950/40"><p className="text-sm text-neutral-900 dark:text-white">Khách hàng / Đối tượng</p><p className="mt-1.5 break-words text-lg font-semibold">{choiceLabel(objectChoice, objectId) || "—"}</p></div>
+              <dl className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
+                {[["Người đề nghị", personSuggest], ["Bộ phận", department], ["Mục đích", choiceLabel(purposeChoice, purposeId)], ["Giá bán", price], ["Mục đích / Khách hàng", purposeDescOrClient], ["Ghi chú", notes]].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-sm text-neutral-900 dark:text-white">{label}</dt><dd className="mt-1.5 whitespace-pre-wrap break-words text-base font-medium leading-7">{value || "—"}</dd></div>)}
+              </dl>
+              <div className="border-t border-neutral-200 pt-5 dark:border-neutral-800">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><h5 className="text-base font-semibold">Chi tiết hàng hóa</h5>{baseline && <p className="text-sm text-neutral-900 dark:text-white">Thêm {lines.filter(line => !line.lineId).length} dòng · Xóa {baseline.lines.rows.filter(row => !lines.some(line => line.lineId === row.lineId)).length} dòng so với phiếu đã lưu</p>}</div>
+                {reviewLines.length === 0 ? <p className="rounded-xl bg-neutral-50 p-4 text-base dark:bg-neutral-950">Chưa có chi tiết nào.</p> : <>
+                  <div className="hidden overflow-x-auto rounded-xl border border-neutral-200 lg:block dark:border-neutral-800">
+                    <table data-purchase-review-table className="w-full min-w-[1100px] text-left text-base [&_th]:whitespace-nowrap [&_th]:px-4 [&_th]:py-3 [&_th]:text-sm [&_th]:font-semibold [&_td]:px-4 [&_td]:py-4">
+                      <thead className="bg-neutral-50 dark:bg-neutral-950"><tr><th>Mặt hàng</th><th>Model</th><th>Ngân sách</th><th>Thời gian yêu cầu</th><th>Số lượng</th><th>Đơn giá</th><th className="text-right">Thành tiền</th></tr></thead>
+                      <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">{reviewLines.map(l => <tr key={l.key}>
+                        <td className="min-w-60"><p className="font-semibold">{choiceLabel(l.itemChoice, l.itemId)}</p><p className="mt-1 text-sm">{l.itemId}</p></td><td>{l.model || "—"}</td><td className="tabular-nums">{l.budget || "—"}</td><td>{l.timeRequired || "—"}</td><td className="tabular-nums">{l.quantity}</td><td className="tabular-nums">{l.unitPrice}</td><td className="text-right font-semibold tabular-nums">{lineTotal(l) == null ? "—" : formatVND(lineTotal(l)!)}</td>
+                      </tr>)}</tbody>
+                    </table>
+                  </div>
+                  <div className="space-y-4 lg:hidden">{reviewLines.map((l, index) => <article key={l.key} className="min-w-0 overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-800">
+                    <div className="space-y-4 p-4"><div><p className="text-sm">Mặt hàng {index + 1} · {l.itemId}</p><h5 className="mt-1 break-words text-base font-semibold leading-7">{choiceLabel(l.itemChoice, l.itemId)}</h5></div>
+                      <dl className="grid grid-cols-2 gap-x-4 gap-y-4">{[["Model", l.model], ["Ngân sách", l.budget], ["Thời gian yêu cầu", l.timeRequired], ["Số lượng", l.quantity], ["Đơn giá", l.unitPrice]].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-sm">{label}</dt><dd className="mt-1 break-words text-base font-medium tabular-nums">{value || "—"}</dd></div>)}</dl>
+                    </div><div className="flex flex-wrap justify-between gap-2 bg-neutral-50 px-4 py-3 dark:bg-neutral-950"><span className="text-sm">Thành tiền</span><strong className="text-base tabular-nums">{lineTotal(l) == null ? "—" : formatVND(lineTotal(l)!)}</strong></div>
+                  </article>)}</div>
+                </>}
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-brand-100 bg-brand-50 px-4 py-5 sm:px-6 dark:border-brand-900 dark:bg-brand-950/40"><div><p className="text-base font-semibold">Tổng thanh toán</p><p className="mt-1 text-sm">{reviewLines.length} mặt hàng · {currencyId || "—"}</p></div><strong className="min-w-0 break-words text-2xl font-semibold tabular-nums text-brand-800 dark:text-brand-200">{formatVND(grandTotal)} {currencyId}</strong></div>
           </section>
         )}
 
         </fieldset>
 
         {feedback}
-        {!saveAllowed && <p role="status" className="text-xs text-amber-700 dark:text-amber-300">Phiếu hiện không được phép sửa theo quyền hoặc trạng thái ERP.</p>}
+        {!saveAllowed && <p role="status" className="text-base text-amber-700 dark:text-amber-300">Phiếu hiện không được phép sửa theo quyền hoặc trạng thái ERP.</p>}
       </div>}
     </UntitledBottomSheet>
   );

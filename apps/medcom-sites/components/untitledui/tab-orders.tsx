@@ -21,6 +21,8 @@ import { UntitledBadge } from "./badge";
 import { UntitledButton } from "./button";
 import { UntitledBottomSheet } from "./bottom-sheet";
 import { DocumentCardSkeleton, DetailLinesSkeleton } from "./skeleton";
+import { DocumentListTable, type DocumentListColumn } from "./document-list-table";
+import { DocumentListPagination } from "./document-list-pagination";
 import { erpClient } from "@/lib/erp/erp-client";
 import type { DocumentDetail, PurchaseOrderHeader, PurchaseOrderLineFields } from "@/lib/erp/contracts";
 import { errorMessage } from "@/lib/erp/api";
@@ -77,6 +79,10 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [orders, setOrders] = useState<OrderItem[]>([]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [hasMore, setHasMore] = useState(false);
+  const listSeqRef = useRef(0);
   const [selectedOrder, setSelectedOrder] = useState<OrderItem | null>(null);
   const [detailData, setDetailData] = useState<DocumentDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -91,22 +97,21 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
 
   // Load orders from real backend
   const loadOrders = useCallback(
-    async (isBackground = false) => {
-      if (!isBackground) {
-        if (orders.length === 0) setLoading(true);
-        else setIsRefreshing(true);
-      } else {
-        setIsRefreshing(true);
-      }
+    async (isBackground = false, targetPage = page, targetPageSize = pageSize) => {
+      const seq = ++listSeqRef.current;
+      if (!isBackground) setLoading(true);
+      else setIsRefreshing(true);
 
       try {
         setError(null);
         const pageData = await erpClient.getDocumentsList(
           "purchase-orders",
-          1,
+          targetPage,
           search,
-          selectedBranch
+          selectedBranch,
+          targetPageSize
         );
+        if (seq !== listSeqRef.current) return;
 
         if (pageData && pageData.rows) {
           const mapped: OrderItem[] = pageData.rows.map((r) => {
@@ -183,30 +188,39 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
           });
 
           setOrders(mapped);
+          setPage(pageData.page);
+          setPageSize(pageData.pageSize);
+          setHasMore(pageData.hasMore);
           onCountChange?.(mapped.length);
           lastFetchedRef.current = Date.now();
         }
       } catch (err) {
+        if (seq !== listSeqRef.current) return;
         setError(errorMessage(err));
       } finally {
-        setLoading(false);
-        setIsRefreshing(false);
+        if (seq === listSeqRef.current) {
+          setLoading(false);
+          setIsRefreshing(false);
+        }
       }
     },
-    [search, selectedBranch, orders.length, onCountChange]
+    [search, selectedBranch, page, pageSize, onCountChange]
   );
 
-  // Fetch when search or branch changes
+  // A new query starts at page one; returning to a stale tab refreshes its page.
+  const listQueryRef = useRef<string | null>(null);
+  const wasActiveRef = useRef(false);
   useEffect(() => {
-    loadOrders(false);
-  }, [search, selectedBranch]);
-
-  // Re-fetch when tab becomes active if stale > 30s
-  useEffect(() => {
-    if (isActive && Date.now() - lastFetchedRef.current > 30000) {
-      loadOrders(true);
+    const becameActive = isActive && !wasActiveRef.current;
+    wasActiveRef.current = isActive;
+    if (!isActive) return;
+    const query = JSON.stringify([search, selectedBranch]);
+    const queryChanged = query !== listQueryRef.current;
+    if (queryChanged || (becameActive && Date.now() - lastFetchedRef.current > 30000)) {
+      listQueryRef.current = query;
+      void loadOrders(!queryChanged, queryChanged ? 1 : page);
     }
-  }, [isActive, loadOrders]);
+  }, [search, selectedBranch, isActive, loadOrders, page]);
 
   // Handle open order details
   const handleOpenDetail = async (order: OrderItem) => {
@@ -306,6 +320,15 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
     );
   };
 
+  const tableColumns: DocumentListColumn<OrderItem>[] = [
+    { id: "document", label: "Mã PO", className: "min-w-40 whitespace-nowrap", render: order => <span className="font-mono font-semibold text-brand-700 dark:text-brand-300">{order.documentId}</span> },
+    { id: "date", label: "Ngày chứng từ", className: "whitespace-nowrap tabular-nums", render: order => order.documentDate },
+    { id: "supplier", label: "Nhà cung cấp", className: "min-w-60 max-w-sm", render: order => <span className="line-clamp-2 break-words font-medium" title={order.supplier}>{order.supplier}</span> },
+    { id: "status", label: "Trạng thái", className: "whitespace-nowrap", render: order => <div className="flex items-center gap-2">{getStatusBadge(order.statusId, order.statusName)}{order.isLocked && <LockKeyhole aria-label="Đã khóa" className="size-4" />}</div> },
+    { id: "creator", label: "Người lập", className: "min-w-40 max-w-52", render: order => <span className="line-clamp-2 break-words">{order.creator}</span> },
+    { id: "amount", label: "Tổng tiền", className: "whitespace-nowrap text-right font-semibold tabular-nums", render: order => order.totalAmount },
+  ];
+
   return (
     <div className="space-y-4 pb-28">
       {/* Search & Actions Bar */}
@@ -355,7 +378,7 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
               <button
                 key={chip.id}
                 type="button"
-                onClick={() => setStatusFilter(chip.id)}
+                onClick={() => { setStatusFilter(chip.id); if (page !== 1) void loadOrders(false, 1); }}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 shrink-0 ${
                   isSelected
                     ? "bg-brand-600 text-white shadow-xs"
@@ -394,10 +417,13 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
           </div>
         ) : loading ? (
           <>
+            <DocumentListTable label="Danh sách đặt mua hàng" rows={[]} columns={tableColumns} rowId={order => order.documentId} onOpen={handleOpenDetail} loading />
+            <div className="space-y-3 lg:hidden">
             <DocumentCardSkeleton />
             <DocumentCardSkeleton />
             <DocumentCardSkeleton />
             <DocumentCardSkeleton />
+            </div>
           </>
         ) : filtered.length === 0 ? (
           <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-8 text-center space-y-3">
@@ -422,7 +448,10 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
             </UntitledButton>
           </div>
         ) : (
-          filtered.map((order) => (
+          <>
+          <DocumentListTable label="Danh sách đặt mua hàng" rows={filtered} columns={tableColumns} rowId={order => order.documentId} onOpen={handleOpenDetail} rowOffset={(page - 1) * pageSize} />
+          <div className="space-y-3 lg:hidden" data-document-cards>
+          {filtered.map((order) => (
             <div
               key={order.documentId}
               data-order-id={order.documentId}
@@ -480,12 +509,18 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
                 </div>
               </div>
             </div>
-          ))
+          ))}
+          </div>
+          </>
         )}
       </div>
 
+      <DocumentListPagination page={page} pageSize={pageSize} rowCount={orders.length} visibleRowCount={filtered.length} hasMore={hasMore} busy={loading || isRefreshing} maxPage={1000}
+        onPageChange={nextPage => void loadOrders(false, nextPage)} onPageSizeChange={size => void loadOrders(false, 1, size)} />
+
       {/* Order Detail Viewport-Anchored Modal */}
       <UntitledBottomSheet
+        presentation="document"
         open={Boolean(selectedOrder)}
         onClose={() => setSelectedOrder(null)}
         title={selectedOrder?.documentId || "Chi tiết đơn đặt hàng PO"}

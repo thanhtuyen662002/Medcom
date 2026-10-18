@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { CheckCircle2, AlertCircle, Link2, Loader2, RefreshCw, Save, Pencil, MoreHorizontal, Undo2, Send } from "lucide-react";
+import { CheckCircle2, AlertCircle, FileText, Link2, Loader2, RefreshCw, Save, Pencil, MoreHorizontal, Undo2, Send } from "lucide-react";
 import { erpClient } from "@/lib/erp/erp-client";
 import type {
   ErpActionState,
@@ -14,12 +14,29 @@ import { LookupField, fieldText } from "@/components/untitledui/lookup-field";
 import { UntitledBottomSheet } from "@/components/untitledui/bottom-sheet";
 import { buildSalesOrderSaveHeader } from "@/lib/erp/sales-order-form";
 import { salesOrderField } from "@/lib/erp/sales-order-lookups";
-import { SALES_ORDER_LINE_COLUMNS, SALES_ORDER_LINE_GROUPS } from "@/lib/erp/sales-order-lines";
 import { SalesOrderAttachmentList } from "./sales-order-attachment-list";
-import { RecordActionBar, RecordDetailHeading, RecordDetailStatus, RecordSection } from "./record-dialog";
-import { RequestButton, RequestInput, RequestTextarea, RecordDetailContext, requestDate, requestStyles } from "./request-presentation";
+import { SalesOrderDetailTabs } from "./sales-order-detail-tabs";
+import { RecordActionBar, RecordDetailHeading, RecordDetailStatus } from "./record-dialog";
+import { RequestButton, RequestInput, RequestTextarea, RecordDetailContext, requestDate, requestStyles as sharedRequestStyles } from "./request-presentation";
 
 /* Shared record detail: display saved values until the user chooses Sửa. */
+
+// Sales presentation stays local; other record screens retain their layout.
+const requestStyles = {
+  ...sharedRequestStyles,
+  editor: "grid w-full min-w-0 gap-4 text-base leading-6 text-black dark:text-white [&_label]:text-sm! [&_label]:text-black! dark:[&_label]:text-white! [&_input]:text-base! [&_textarea]:text-base! [&_fieldset_button]:min-h-11! [&_fieldset_button]:text-base! [&_.text-xs]:text-sm!",
+  field: "grid min-w-0 gap-2 text-sm font-medium text-black dark:text-white",
+  values: "grid min-w-0 grid-cols-2 gap-x-5 gap-y-4 text-base leading-6 text-black dark:text-white [&_dt]:mb-1.5 [&_dt]:text-sm [&_dt]:font-medium [&_dd]:min-w-0 [&_dd]:break-words [&_dd]:font-semibold",
+  muted: "text-sm leading-6 text-black dark:text-white",
+};
+
+function RecordSection({ title, children, className = "" }: { title: string; children: React.ReactNode; className?: string }) {
+  const titleId = React.useId();
+  return <section aria-labelledby={titleId} className={`min-w-0 space-y-4 rounded-2xl border border-neutral-200 bg-white p-4 shadow-xs sm:p-5 dark:border-neutral-800 dark:bg-neutral-900 ${className}`}>
+    <h3 id={titleId} className="text-base font-semibold leading-6 text-black dark:text-white">{title}</h3>
+    {children}
+  </section>;
+}
 
 const LOOKUPS = {
   contractId: "header.ContractID",
@@ -264,13 +281,13 @@ export function SalesOrderForm({
   const knownLock = locked || header.isLocked === false || header.isLocked === 0 || header.isLocked === "0";
 
   return (
-    <div className={`${requestStyles.editor} detail-body`}>
+    <div data-sales-order-form className={requestStyles.editor}>
       <RecordDetailHeading title="Đơn hàng" documentNumber={detail?.documentId}>
         {editing && <p role="status">{dirty ? "Có thay đổi chưa lưu" : "Đang chỉnh sửa đơn hàng"}</p>}
       </RecordDetailHeading>
       <RecordDetailStatus presentationAllowed={!!detail && !loading}>
-        <span className="rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-medium">{statusName}</span>
-        {knownLock && <span className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">{locked ? "Đã khóa" : "Chưa khóa"}</span>}
+        <span className="rounded-full border border-neutral-200 bg-neutral-100 px-3 py-1 text-sm font-semibold text-black dark:border-neutral-700 dark:bg-neutral-800 dark:text-white">{statusName}</span>
+        {knownLock && <span className="rounded-full border border-neutral-200 px-3 py-1 text-sm font-medium text-black dark:border-neutral-700 dark:text-white">{locked ? "Đã khóa" : "Chưa khóa"}</span>}
       </RecordDetailStatus>
 
       {feedback && <div role="status" className={`flex min-w-0 items-start gap-2 rounded-xl border p-3 text-sm ${
@@ -286,65 +303,70 @@ export function SalesOrderForm({
           <RequestButton type="button" onClick={() => void load(docId)}>Thử lại</RequestButton></RecordSection>
         : <>
           {(!saveAct?.visible || !saveAct.enabled) && <p className={requestStyles.muted}>Đơn hàng hiện chỉ được xem. {saveAct?.reason ? reasonMessage(saveAct.reason) : "Các thao tác thực hiện theo quyền và trạng thái của đơn."}</p>}
-          <RecordSection title="Thông tin chung">
-            {editing ? <fieldset disabled={!canEdit} className="grid min-w-0 grid-cols-2 gap-4 border-0 p-0">
-              <div className={requestStyles.field}><label htmlFor={`${prefix}-date`}>Ngày chứng từ *</label>
-                <RequestInput id={`${prefix}-date`} type="date" value={draft.documentDate} onChange={event => set("documentDate", event.target.value)} /></div>
-              <div className={requestStyles.field}><label htmlFor={`${prefix}-deliver`}>Ngày giao</label>
-                <RequestInput id={`${prefix}-deliver`} type="date" value={draft.deliverDate} onChange={event => set("deliverDate", event.target.value)} /></div>
-            </fieldset> : <dl className={requestStyles.values}>
-              <div><dt>Ngày chứng từ</dt><dd>{draft.documentDate ? requestDate(draft.documentDate) : "—"}</dd></div>
-              <div><dt>Ngày giao</dt><dd>{draft.deliverDate ? requestDate(draft.deliverDate) : "—"}</dd></div>
-            </dl>}
-            <dl className={requestStyles.values}><div className="col-span-full"><dt>Chi nhánh</dt><dd>{text(header.branchName) || text(header.branchId) || branchId}</dd></div></dl>
-          </RecordSection>
+          <div data-sales-order-overview className="grid min-w-0 items-stretch gap-4 lg:grid-cols-2">
+            <RecordSection title="Thông tin đơn hàng" className="h-full">
+              {editing ? <fieldset disabled={!canEdit} className="grid min-w-0 gap-4 border-0 p-0 sm:grid-cols-2 xl:grid-cols-3">
+                <div className={requestStyles.field}><label htmlFor={`${prefix}-date`}>Ngày chứng từ *</label>
+                  <RequestInput id={`${prefix}-date`} type="date" value={draft.documentDate} onChange={event => set("documentDate", event.target.value)} /></div>
+                <div className={requestStyles.field}><label htmlFor={`${prefix}-deliver`}>Ngày giao</label>
+                  <RequestInput id={`${prefix}-deliver`} type="date" value={draft.deliverDate} onChange={event => set("deliverDate", event.target.value)} /></div>
+                <dl className={`${requestStyles.values} sm:col-span-2 xl:col-span-1`}><div className="col-span-full"><dt>Chi nhánh</dt><dd>{text(header.branchName) || text(header.branchId) || branchId}</dd></div></dl>
+              </fieldset> : <dl className={`${requestStyles.values} sm:grid-cols-3`}>
+                <div><dt>Ngày chứng từ</dt><dd className="tabular-nums">{draft.documentDate ? requestDate(draft.documentDate) : "—"}</dd></div>
+                <div><dt>Ngày giao</dt><dd className="tabular-nums">{draft.deliverDate ? requestDate(draft.deliverDate) : "—"}</dd></div>
+                <div className="col-span-full sm:col-span-1"><dt>Chi nhánh</dt><dd>{text(header.branchName) || text(header.branchId) || branchId}</dd></div>
+              </dl>}
+              <div className="space-y-3 border-t border-neutral-100 pt-4 dark:border-neutral-800">
+                <h4 className="text-sm font-semibold">Người phụ trách</h4>
+                {editing ? <fieldset disabled={!canEdit} className="grid min-w-0 gap-4 border-0 p-0 sm:grid-cols-2">
+                  <LookupField label="Nhân viên" required module="sales-orders" lookupId={LOOKUPS.employeeId} branchId={branchId}
+                    value={draft.employeeId} choice={choices.employeeId ?? null} displayValue={draft.employeeId === text(header.employeeId) ? text(header.employeeName) || draft.employeeId : draft.employeeId}
+                    onSelect={choice => pick("employeeId", choice)} placeholder="Chọn nhân viên..." />
+                  <LookupField label="Quản lý" module="sales-orders" lookupId={LOOKUPS.managerId} branchId={branchId}
+                    value={draft.managerId} choice={choices.managerId ?? null} displayValue={draft.managerId === text(header.managerId) ? text(header.managerName) || draft.managerId : draft.managerId}
+                    onSelect={choice => pick("managerId", choice)} placeholder="Chọn quản lý..." />
+                </fieldset> : <dl className={requestStyles.values}>
+                  <div><dt>Nhân viên</dt><dd>{text(header.employeeName) || draft.employeeId || "—"}</dd></div>
+                  <div><dt>Quản lý</dt><dd>{text(header.managerName) || draft.managerId || "—"}</dd></div>
+                </dl>}
+              </div>
+            </RecordSection>
 
-          <RecordSection title="Khách hàng & hợp đồng">
-            {editing ? <fieldset disabled={!canEdit} className="min-w-0 space-y-4 border-0 p-0">
-              <LookupField label="Khách hàng" required module="sales-orders" lookupId={LOOKUPS.objectId} branchId={branchId}
-                value={draft.objectId} choice={choices.objectId ?? null} displayValue={customerName || draft.objectId}
-                onSelect={choice => pick("objectId", choice)} placeholder="Chọn khách hàng..." />
-              <dl className={requestStyles.values}><div className="col-span-full"><dt>Địa chỉ khách hàng</dt><dd className="whitespace-pre-wrap">{customerAddr || "—"}</dd></div></dl>
-              <LookupField label="Hợp đồng" module="sales-orders" lookupId={LOOKUPS.contractId} branchId={branchId}
-                value={draft.contractId} choice={choices.contractId ?? null} displayValue={draft.contractId === text(header.contractId) ? text(header.contractName) || draft.contractId : draft.contractId}
-                onSelect={choice => pick("contractId", choice)} placeholder="Chọn hợp đồng..." />
-            </fieldset> : <dl className={requestStyles.values}>
-              <div className="col-span-full"><dt>Khách hàng</dt><dd>{customerName || draft.objectId || "—"}
-                {customerName && draft.objectId && <span className="mt-1 block text-xs font-normal text-muted-foreground">{draft.objectId}</span>}</dd></div>
-              <div className="col-span-full"><dt>Địa chỉ khách hàng</dt><dd className="whitespace-pre-wrap">{customerAddr || "—"}</dd></div>
-              <div className="col-span-full"><dt>Hợp đồng</dt><dd>{text(header.contractName) || draft.contractId || "—"}
-                {text(header.contractName) && draft.contractId && <span className="mt-1 block text-xs font-normal text-muted-foreground">{draft.contractId}</span>}</dd></div>
-            </dl>}
-          </RecordSection>
+            <RecordSection title="Khách hàng & hợp đồng" className="h-full">
+              {editing ? <fieldset disabled={!canEdit} className="grid min-w-0 gap-4 border-0 p-0 sm:grid-cols-2">
+                <div className="min-w-0 sm:col-span-2"><LookupField label="Khách hàng" required module="sales-orders" lookupId={LOOKUPS.objectId} branchId={branchId}
+                  value={draft.objectId} choice={choices.objectId ?? null} displayValue={customerName || draft.objectId}
+                  onSelect={choice => pick("objectId", choice)} placeholder="Chọn khách hàng..." /></div>
+                <dl className={requestStyles.values}><div className="col-span-full"><dt>Địa chỉ khách hàng</dt><dd className="whitespace-pre-wrap">{customerAddr || "—"}</dd></div></dl>
+                <LookupField label="Hợp đồng" module="sales-orders" lookupId={LOOKUPS.contractId} branchId={branchId}
+                  value={draft.contractId} choice={choices.contractId ?? null} displayValue={draft.contractId === text(header.contractId) ? text(header.contractName) || draft.contractId : draft.contractId}
+                  onSelect={choice => pick("contractId", choice)} placeholder="Chọn hợp đồng..." />
+              </fieldset> : <dl className={requestStyles.values}>
+                <div className="col-span-full border-b border-neutral-100 pb-4 dark:border-neutral-800"><dt>Khách hàng</dt><dd className="text-lg leading-7">{customerName || draft.objectId || "—"}
+                  {customerName && draft.objectId && <span className="mt-1 block text-sm font-normal leading-6">{draft.objectId}</span>}</dd></div>
+                <div className="col-span-full sm:col-span-1"><dt>Địa chỉ khách hàng</dt><dd className="whitespace-pre-wrap">{customerAddr || "—"}</dd></div>
+                <div className="col-span-full sm:col-span-1"><dt>Hợp đồng</dt><dd>{text(header.contractName) || draft.contractId || "—"}
+                  {text(header.contractName) && draft.contractId && <span className="mt-1 block text-sm font-normal">{draft.contractId}</span>}</dd></div>
+              </dl>}
+            </RecordSection>
+          </div>
 
-          <RecordSection title="Nhân viên phụ trách">
-            {editing ? <fieldset disabled={!canEdit} className="grid min-w-0 gap-4 border-0 p-0 sm:grid-cols-2">
-              <LookupField label="Nhân viên" required module="sales-orders" lookupId={LOOKUPS.employeeId} branchId={branchId}
-                value={draft.employeeId} choice={choices.employeeId ?? null} displayValue={draft.employeeId === text(header.employeeId) ? text(header.employeeName) || draft.employeeId : draft.employeeId}
-                onSelect={choice => pick("employeeId", choice)} placeholder="Chọn nhân viên..." />
-              <LookupField label="Quản lý" module="sales-orders" lookupId={LOOKUPS.managerId} branchId={branchId}
-                value={draft.managerId} choice={choices.managerId ?? null} displayValue={draft.managerId === text(header.managerId) ? text(header.managerName) || draft.managerId : draft.managerId}
-                onSelect={choice => pick("managerId", choice)} placeholder="Chọn quản lý..." />
-            </fieldset> : <dl className={requestStyles.values}>
-              <div><dt>Nhân viên</dt><dd>{text(header.employeeName) || draft.employeeId || "—"}</dd></div>
-              <div><dt>Quản lý</dt><dd>{text(header.managerName) || draft.managerId || "—"}</dd></div>
-            </dl>}
-          </RecordSection>
-
-          <RecordSection title="Nội dung & ghi chú">
+          {editing || draft.memo.trim() || draft.ghiChuDonHang.trim() ? <RecordSection title="Nội dung & ghi chú">
             {editing ? <fieldset disabled={!canEdit} className="grid min-w-0 gap-4 border-0 p-0 sm:grid-cols-2">
               <div className={requestStyles.field}><label htmlFor={`${prefix}-memo`}>Diễn giải</label>
                 <RequestTextarea id={`${prefix}-memo`} rows={3} value={draft.memo} onChange={event => set("memo", event.target.value)} /></div>
               <div className={requestStyles.field}><label htmlFor={`${prefix}-notes`}>Ghi chú đơn hàng</label>
                 <RequestTextarea id={`${prefix}-notes`} rows={3} maxLength={250} value={draft.ghiChuDonHang} onChange={event => set("ghiChuDonHang", event.target.value)} /></div>
-            </fieldset> : <dl className={requestStyles.values}>
+            </fieldset> : <dl className={`${requestStyles.values} [&_dd]:font-normal!`}>
               <div className="col-span-full sm:col-span-1"><dt>Diễn giải</dt><dd className="whitespace-pre-wrap">{draft.memo || "—"}</dd></div>
               <div className="col-span-full sm:col-span-1"><dt>Ghi chú đơn hàng</dt><dd className="whitespace-pre-wrap">{draft.ghiChuDonHang || "—"}</dd></div>
             </dl>}
-          </RecordSection>
+          </RecordSection> : <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm dark:border-neutral-800 dark:bg-neutral-900">
+            <span className="inline-flex items-center gap-2 font-semibold"><FileText aria-hidden="true" className="size-4 shrink-0" />Nội dung & ghi chú</span>
+            <span>Chưa có diễn giải hoặc ghi chú.</span>
+          </div>}
 
-          <DetailTabs lines={(detail.lines?.rows || []).map(row => ({ lineId: row.lineId, fields: (row.fields || {}) as Record<string, unknown> }))}
-            history={(((detail as unknown as { history?: unknown }).history || {}) as { rows?: Array<{ lineId: string; fields?: Record<string, unknown> }> }).rows || []} />
+          <SalesOrderDetailTabs lines={detail.lines?.rows || []} history={detail.history?.rows || []} />
 
           <RecordSection title="Tài liệu đính kèm">
             {editing ? <div className={requestStyles.field}><label htmlFor={`${prefix}-link`}>Link tài liệu đính kèm</label>
@@ -396,7 +418,7 @@ export function SalesOrderForm({
 
       {/* Modal hợp đồng */}
       <UntitledBottomSheet open={contractOpen} onClose={() => setContractOpen(false)} title="Thông tin hợp đồng">
-        <div className="p-2 text-xs space-y-2">
+            <div className="p-2 text-base space-y-3">
           {!contract ? <p className="text-neutral-400">Không có dữ liệu.</p> : (
             <>
               <p><span className="text-neutral-400">Mã hợp đồng: </span><strong>{text(contract.contractNo || contract.contractId)}</strong></p>
@@ -443,77 +465,5 @@ export function SalesOrderForm({
         </div>
       </UntitledBottomSheet>
     </div>
-  );
-}
-
-/* Các trường chi tiết theo ảnh ERP, xuống dòng theo chiều rộng màn hình. */
-const LINE_COLUMNS: Array<{ key: string; label: string; num?: boolean }> =
-  SALES_ORDER_LINE_COLUMNS.map(column => ({ key: column.key, label: column.label, num: "numeric" in column && column.numeric }));
-
-function lineCell(f: Record<string, unknown>, key: string): string {
-  if (key === "itemCode") return text(f.itemCode ?? f.ItemCode ?? f.manufacturerItemCode ?? f.mfgItemId ?? f.manufacturerItemId) || "—";
-  if (key === "itemName") return text(f.itemName ?? f.ItemName ?? f.itemDisplay ?? f.name) || "—";
-  if (key === "unit") return text(f.unit ?? f.Unit ?? f.unit1) || "—";
-  return text(f[key] ?? f[key[0].toUpperCase() + key.slice(1)]) || "—";
-}
-
-function DetailTabs({
-  lines,
-  history,
-}: {
-  lines: Array<{ lineId: string; fields: Record<string, unknown> }>;
-  history: Array<{ lineId: string; fields?: Record<string, unknown> }>;
-}) {
-  const [tab, setTab] = useState<"lines" | "history">("lines");
-  return (
-    <RecordSection title="Chi tiết & lịch sử">
-      <div className="flex min-w-0 flex-wrap gap-2" role="group" aria-label="Nội dung chi tiết đơn hàng">
-        {([["lines", `Thông tin chi tiết (${lines.length})`], ["history", "Lịch sử gửi / duyệt"]] as const).map(([id, label]) => (
-          <RequestButton key={id} type="button" aria-pressed={tab === id} onClick={() => setTab(id)} variant={tab === id ? "default" : "outline"}>
-            {label}
-          </RequestButton>
-        ))}
-      </div>
-      {tab === "lines" ? (
-        <div className="min-w-0 space-y-3">
-          {lines.map((row, index) => <details key={row.lineId} open={index === 0} className={`${requestStyles.line} block`}>
-            <summary className="min-h-11 cursor-pointer break-words text-sm font-semibold">Dòng {index + 1} · {lineCell(row.fields, "itemName") !== "—" ? lineCell(row.fields, "itemName") : lineCell(row.fields, "itemId")}</summary>
-            <div className="space-y-4 pt-3">
-            {SALES_ORDER_LINE_GROUPS.map(group => <section key={group.label} aria-label={group.label} className="min-w-0 space-y-3 border-t border-border pt-3">
-              <h6 className="text-xs font-semibold text-muted-foreground">{group.label}</h6>
-              <dl className={requestStyles.values}>
-                {group.keys.map(key => {
-                  const column = LINE_COLUMNS.find(item => item.key === key)!;
-                  const fullWidth = group.fullWidth.includes(key);
-                  return <div key={key} className={`min-w-0 ${fullWidth ? "col-span-full" : ""}`}>
-                    <dt>{column.label}</dt>
-                    <dd className={`whitespace-pre-wrap break-words ${column.num ? "tabular-nums" : ""}`}>
-                      {lineCell(row.fields, key)}
-                    </dd>
-                  </div>;
-                })}
-              </dl>
-            </section>)}
-            </div>
-          </details>)}
-          {lines.length === 0 && <p className={requestStyles.muted}>Chưa có chi tiết.</p>}
-        </div>
-      ) : (
-        <div className="min-w-0 space-y-3">
-          {history.map(row => <article key={row.lineId} className={requestStyles.line}>
-            <dl className={requestStyles.values}>
-              {[
-                { key: "thoiGian", label: "Thời gian" }, { key: "userName", label: "Người gửi" },
-                { key: "statusId", label: "Trạng thái" }, { key: "sendTo", label: "Gửi đến" }, { key: "notes", label: "Ghi chú" },
-              ].map(field => <div key={field.key} className={`min-w-0 ${field.key === "notes" ? "col-span-full" : ""}`}>
-                <dt>{field.label}</dt>
-                <dd className="whitespace-pre-wrap break-words">{text(row.fields?.[field.key]) || "—"}</dd>
-              </div>)}
-            </dl>
-          </article>)}
-          {history.length === 0 && <p className={requestStyles.muted}>Chưa có lịch sử gửi / duyệt.</p>}
-        </div>
-      )}
-    </RecordSection>
   );
 }

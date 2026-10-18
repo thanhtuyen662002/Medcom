@@ -17,14 +17,17 @@ await mkdir(output,{recursive:true});
 const stubs={
  'erp-client':`
 export const erpClient={
+ async getDocumentsList(kind,page,search,branchId,pageSize){return globalThis.__legacyListHandler({page,search,branchId,pageSize});},
+ async getPurchaseRequestsList(page,search,branchId,pageSize){return{list:await globalThis.__legacyListHandler({page,search,branchId,pageSize}),scopeKey:'synthetic-scope'};},
  async getScreenMetadata(){return{caption:'Đề nghị mua hàng'};},
  async getErpModuleActions(module){
    globalThis.__erpActionCalls=(globalThis.__erpActionCalls||0)+1;
    if(module==='purchase-orders')return[{id:'create',caption:'',visible:true,enabled:false,reason:'erp_write_unqualified'}];
    return[{id:'create',caption:'',visible:true,enabled:true}];
  },
- async getErpModuleList(module){
+ async getErpModuleList(module,params){
    globalThis.__erpListCalls=(globalThis.__erpListCalls||0)+1;
+   if(globalThis.__erpListHandler)return globalThis.__erpListHandler(module,params);
    const documentId=module==='purchase-orders'?'PO-TEST-001':'PR-TEST-001';
    return{rows:[{documentId,header:{objectName:'NCC test',statusName:'Mới lập',documentDate:'2026-10-01T00:00:00'}}],page:1,hasMore:false};
  },
@@ -47,7 +50,7 @@ const stubPlugin={
  name:'erp-screen-stubs',
  setup(builder){
   builder.onResolve({filter:/.*/},args=>{
-   if(!/tab-erp-screen\.tsx$/.test(args.importer.replace(/\\/g,'/')))return null;
+   if(!/tab-(erp-screen|orders|purchases)\.tsx$/.test(args.importer.replace(/\\/g,'/')))return null;
    const requested=args.path.replace(/\\/g,'/');
    for(const key of Object.keys(stubs))if(requested.endsWith(key))return{path:key,namespace:'stub'};
    return null;
@@ -56,7 +59,7 @@ const stubPlugin={
  },
 };
 await build({
- stdin:{contents:'export {TabErpScreen} from "./components/untitledui/tab-erp-screen";',resolveDir:app,loader:'tsx'},
+ stdin:{contents:'export {TabErpScreen} from "./components/untitledui/tab-erp-screen"; export {TabOrders} from "./components/untitledui/tab-orders"; export {TabPurchases} from "./components/untitledui/tab-purchases";',resolveDir:app,loader:'tsx'},
  outfile:path.join(output,'fixture.cjs'),
  bundle:true,platform:'node',format:'cjs',packages:'external',jsx:'automatic',
  alias:{'@':app},logLevel:'warning',plugins:[stubPlugin],
@@ -64,7 +67,7 @@ await build({
 
 const require=createRequire(import.meta.url),React=require('react'),{create,act}=require('react-test-renderer');
 globalThis.IS_REACT_ACT_ENVIRONMENT=true;
-const {TabErpScreen}=require(path.join(output,'fixture.cjs'));
+const {TabErpScreen,TabOrders,TabPurchases}=require(path.join(output,'fixture.cjs'));
 
 const flush=async(rounds=8)=>{for(let i=0;i<rounds;i++)await act(async()=>{});};
 function walk(node,visit){if(node==null)return;if(typeof node==='string'){visit({text:node});return;}(node.children||[]).forEach(child=>walk(child,visit));}
@@ -120,4 +123,100 @@ test('write-gated purchase-orders hides create button, warning and detail mutati
  assert.equal(detailMenuButtons(renderer).length,0,'save/delete must be hidden for a write-gated module');
  assert.ok(!text.includes('Chưa thể tạo mới'),'the blocked reason must stay hidden in the detail sheet');
  await act(async()=>{renderer.unmount();});
+});
+
+test('server pagination changes pages and size, resets queries, and preserves the page on error',async()=>{
+ const calls=[];
+ let fail=false;
+ globalThis.__erpListHandler=async(module,params)=>{
+  calls.push({...params});
+  if(fail)throw new Error('synthetic unavailable');
+  return{rows:[{documentId:`PAGE-${params.page}`,header:{statusId:2}}],page:params.page,pageSize:params.pageSize,hasMore:params.page<3};
+ };
+ let renderer;
+ const button=name=>renderer.root.findByProps({'aria-label':name});
+ const click=async name=>{await act(async()=>button(name).props.onClick());await flush();};
+ try{
+  await act(async()=>{renderer=create(React.createElement(TabErpScreen,{module:'purchase-requests',...props,isActive:true}));});await flush();
+  assert.equal(calls.length,1);
+  assert.equal(button('Trang trước').props.disabled,true);
+  await click('Trang sau');
+  assert.equal(calls.at(-1).page,2);
+  assert.ok(collect(renderer).text.includes('PAGE-2'));
+  await click('Trang sau');
+  assert.equal(calls.at(-1).page,3);
+  assert.equal(button('Trang sau').props.disabled,true,'hasMore false disables forward navigation');
+  await click('Trang trước');assert.equal(calls.at(-1).page,2);
+  await act(async()=>renderer.root.findByProps({'aria-label':'Số dòng mỗi trang'}).props.onChange({target:{value:'50'}}));await flush();
+  assert.equal(calls.at(-1).page,1);assert.equal(calls.at(-1).pageSize,50);
+  await click('Trang sau');
+  const input=renderer.root.findAll(node=>node.type==='input'&&node.props.placeholder?.startsWith('Tìm theo mã'))[0];
+  await act(async()=>input.props.onChange({target:{value:'query test'}}));
+  await act(async()=>input.props.onKeyDown({key:'Enter'}));await flush();
+  assert.equal(calls.at(-1).page,1);assert.equal(calls.at(-1).search,'query test');assert.equal(calls.at(-1).pageSize,50);
+  await click('Trang sau');
+  const chip=renderer.root.findAll(node=>node.type==='button'&&node.props.onClick&&node.children.some(child=>child.type==='span'&&child.children?.includes('Chờ duyệt')))[0];
+  await act(async()=>chip.props.onClick());await flush();
+  assert.equal(calls.at(-1).page,1);assert.equal(calls.at(-1).statusId,2);
+  fail=true;await click('Trang sau');
+  assert.ok(collect(renderer).text.includes('PAGE-1'),'a failed request keeps the last successful rows');
+  assert.ok(collect(renderer).text.includes('Không thể tải danh sách'));
+  assert.equal(renderer.root.findByProps({'aria-current':'page'}).props['aria-label'],'Đến trang 1');
+  assert.equal(button('Trang sau').props.disabled,false,'failed page can be retried');
+ }finally{delete globalThis.__erpListHandler;if(renderer)await act(async()=>renderer.unmount());}
+});
+
+test('late pagination responses cannot overwrite a newer query or branch',async()=>{
+ const pending=[];
+ globalThis.__erpListHandler=async(module,params)=>{
+  if(params.page===2)return new Promise(resolve=>pending.push(()=>resolve({rows:[{documentId:'STALE-PAGE',header:{}}],page:2,pageSize:20,hasMore:false})));
+  return{rows:[{documentId:`CURRENT-${params.branchId}-${params.search??''}`,header:{}}],page:1,pageSize:params.pageSize,hasMore:true};
+ };
+ let renderer;
+ try{
+  await act(async()=>{renderer=create(React.createElement(TabErpScreen,{module:'sales-orders',...props,isActive:true}));});await flush();
+  await act(async()=>{renderer.root.findByProps({'aria-label':'Trang sau'}).props.onClick();});
+  assert.equal(renderer.root.findByProps({'aria-label':'Trang sau'}).props.disabled,true,'navigation is blocked while loading');
+  await act(async()=>{renderer.update(React.createElement(TabErpScreen,{module:'sales-orders',currentBranch:'MN',isActive:true}));});await flush();
+  await act(async()=>{pending.forEach(resolve=>resolve());});await flush();
+  assert.ok(collect(renderer).text.includes('CURRENT-MN-'));
+  assert.ok(!collect(renderer).text.includes('STALE-PAGE'));
+  assert.equal(renderer.root.findByProps({'aria-current':'page'}).props['aria-label'],'Đến trang 1');
+ }finally{pending.forEach(resolve=>resolve());delete globalThis.__erpListHandler;if(renderer)await act(async()=>renderer.unmount());}
+});
+
+for(const Component of [TabOrders,TabPurchases])test(`${Component.name} paginates server data and ignores old branch responses`,async()=>{
+ const calls=[],pending=[];let delay=false,fail=false,renderer;
+ globalThis.__legacyListHandler=async params=>{
+  calls.push({...params});
+  const result={rows:[{documentId:`ROW-${params.branchId}-${params.search}-${params.page}`,branchId:params.branchId,statusId:1}],page:params.page,pageSize:params.pageSize,hasMore:params.page<3};
+  if(fail)throw new Error('synthetic unavailable');
+  if(delay&&params.page===2)return new Promise(resolve=>pending.push(()=>resolve(result)));
+  return result;
+ };
+ const element=props=>React.createElement(Component,{currentBranch:'MB',onOpenCreateModal:()=>{},...props});
+ const button=name=>renderer.root.findByProps({'aria-label':name});
+ const click=async name=>{await act(async()=>button(name).props.onClick());await flush();};
+ try{
+  await act(async()=>{renderer=create(element({isActive:false}));});await flush();assert.equal(calls.length,0);
+  await act(async()=>renderer.update(element({isActive:true})));await flush();assert.equal(calls.length,1,'activation issues one request');
+  await click('Trang sau');assert.equal(calls.at(-1).page,2);
+  await click('Trang sau');assert.equal(button('Trang sau').props.disabled,true);
+  await click('Trang trước');assert.equal(calls.at(-1).page,2);
+  await act(async()=>renderer.root.findByProps({'aria-label':'Số dòng mỗi trang'}).props.onChange({target:{value:'50'}}));await flush();
+  assert.equal(calls.at(-1).page,1);assert.equal(calls.at(-1).pageSize,50);
+  await click('Trang sau');
+  const input=renderer.root.findAll(node=>node.type==='input'&&node.props.value!==undefined)[0];
+  await act(async()=>input.props.onChange({target:{value:'find'}}));await flush();
+  assert.equal(calls.at(-1).page,1);assert.equal(calls.at(-1).search,'find');
+  fail=true;await click('Trang sau');assert.equal(button('Trang trước').props.disabled,true,'failed page does not advance');
+  fail=false;delay=true;
+  await act(async()=>{button('Trang sau').props.onClick();});
+  assert.equal(button('Trang sau').props.disabled,true);
+  await act(async()=>renderer.update(element({isActive:true,currentBranch:'MN'})));await flush();
+  assert.equal(calls.at(-1).page,1);assert.equal(calls.at(-1).branchId,'MN');
+  await act(async()=>pending.forEach(resolve=>resolve()));await flush();
+  assert.ok(collect(renderer).text.includes('ROW-MN-find-1'));
+  assert.ok(!collect(renderer).text.includes('ROW-MB-find-2'));
+ }finally{pending.forEach(resolve=>resolve());delete globalThis.__legacyListHandler;if(renderer)await act(async()=>renderer.unmount());}
 });

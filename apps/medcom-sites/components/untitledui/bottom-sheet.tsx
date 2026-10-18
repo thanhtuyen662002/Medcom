@@ -13,6 +13,7 @@ export interface UntitledBottomSheetProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   maxHeight?: string;
+  presentation?: "sheet" | "document";
 }
 
 export function UntitledBottomSheet({
@@ -24,20 +25,13 @@ export function UntitledBottomSheet({
   children,
   footer,
   maxHeight = "max-h-[85vh]",
+  presentation = "sheet",
 }: UntitledBottomSheetProps) {
   const [mounted, setMounted] = useState(false);
-  const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    if (typeof document !== "undefined") {
-      const active =
-        document.documentElement.classList.contains("dark") ||
-        document.body.classList.contains("dark") ||
-        localStorage.getItem("medcom.theme.dark") === "true";
-      setIsDark(active);
-    }
-  }, [open]);
+  }, []);
 
   useEffect(() => {
     if (open) {
@@ -53,7 +47,7 @@ export function UntitledBottomSheet({
   if (!open || !mounted) return null;
 
   const content = (
-    <div className={`fixed inset-0 z-50 flex flex-col justify-end md:justify-center md:items-center overflow-hidden ${isDark ? "dark" : ""}`}>
+    <div className="fixed inset-0 z-50 flex flex-col justify-end md:justify-center md:items-center overflow-hidden">
       {/* Backdrop covering full viewport */}
       <div
         className="fixed inset-0 bg-neutral-950/65 backdrop-blur-sm transition-opacity duration-200"
@@ -63,29 +57,29 @@ export function UntitledBottomSheet({
 
       {/* Sheet / Modal Container (Bottom on mobile, Centered on desktop) */}
       <div
-        className={`relative z-10 w-full max-w-lg md:max-w-2xl bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white rounded-t-3xl md:rounded-3xl border-t border-x md:border border-neutral-200/90 dark:border-neutral-800 shadow-2xl overflow-hidden flex flex-col ${maxHeight} animate-uui-slide-up md:my-auto`}
+        className={`relative z-10 w-full ${presentation === "document" ? "h-dvh max-h-dvh text-base leading-relaxed tracking-normal font-['Segoe_UI',Roboto,Arial,sans-serif] md:h-auto md:max-h-[92dvh] md:w-[calc(100%_-_4rem)] md:max-w-[1440px] md:rounded-2xl" : `max-w-lg md:max-w-2xl rounded-t-3xl md:rounded-3xl ${maxHeight}`} bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white border-t border-x md:border border-neutral-200/90 dark:border-neutral-800 shadow-2xl overflow-hidden flex flex-col animate-uui-slide-up md:my-auto`}
         role="dialog"
         aria-modal="true"
       >
         {/* Mobile Drag Pill Handle */}
-        <div className="pt-2.5 pb-1 flex justify-center md:hidden cursor-grab">
+        <div className={`pt-2.5 pb-1 justify-center md:hidden cursor-grab ${presentation === "document" ? "hidden" : "flex"}`}>
           <div className="w-10 h-1.5 rounded-full bg-neutral-300 dark:bg-neutral-700" />
         </div>
 
         {/* Header */}
         {(title || subtitle) && (
-          <div className="px-5 py-3.5 border-b border-neutral-100 dark:border-neutral-800 flex items-start justify-between gap-3 bg-neutral-50/50 dark:bg-neutral-900/50">
+          <div className="px-4 py-4 sm:px-6 border-b border-neutral-100 dark:border-neutral-800 flex shrink-0 items-center justify-between gap-3 bg-neutral-50/50 dark:bg-neutral-900/50">
             <div className="min-w-0 flex-1">
               {title && (
-                <div className="flex items-center gap-2 min-w-0">
-                  <h3 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-white truncate">
+                <div className="flex flex-wrap items-center gap-2 min-w-0">
+                  <h3 className={`${presentation === "document" ? "text-lg sm:text-xl break-words" : "text-base sm:text-lg truncate"} font-semibold text-neutral-900 dark:text-white`}>
                     {title}
                   </h3>
                   {titleExtra}
                 </div>
               )}
               {subtitle && (
-                <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                <p className={`mt-1 ${presentation === "document" ? "text-sm break-words" : "text-xs truncate"} text-neutral-500 dark:text-neutral-400`}>
                   {subtitle}
                 </p>
               )}
@@ -93,7 +87,7 @@ export function UntitledBottomSheet({
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 -mr-1 rounded-xl text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className="size-11 inline-flex shrink-0 items-center justify-center -mr-1 rounded-xl text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
               aria-label="Đóng"
             >
               <X className="size-5" />
@@ -102,7 +96,7 @@ export function UntitledBottomSheet({
         )}
 
         {/* Scrollable Body */}
-        <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4 scrollbar-thin">
+        <div className={`flex-1 min-h-0 min-w-0 overflow-y-auto overscroll-contain scrollbar-thin ${presentation === "document" ? "px-4 py-5 sm:p-6" : "px-5 py-4"}`} data-document-detail-body={presentation === "document" ? "" : undefined}>
           {children}
         </div>
 
