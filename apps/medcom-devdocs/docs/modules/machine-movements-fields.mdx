@@ -1,0 +1,100 @@
+---
+title: "Phiếu di chuyển / bàn giao máy · Trường dữ liệu"
+---
+
+:::note Phạm vi nguồn
+
+Các trường lấy từ danh mục kỹ thuật được backend nhúng. API đang triển khai trả **401** khi chưa đăng nhập; chưa đối chiếu dữ liệu mô tả theo phiên trên môi trường thật. Đây không phải danh mục toàn bộ cột của cơ sở dữ liệu.
+
+:::
+
+## Bảng và định danh
+
+| Phần dữ liệu | Bảng SQL |
+|---|---|
+| `header` | `FA_MoveTbl` |
+| `lines` | `FA_MoveDetailTbl` |
+
+Tên trong danh mục là tên trường nguồn. Kết quả phiên bản 3 có thể dùng tên thống nhất khác; phải đối chiếu cấu trúc phản hồi của từng API trước khi đọc hoặc gửi dữ liệu. Không gửi tên hiển thị thay mã định danh.
+
+## Phần dữ liệu: header
+
+| Trường nguồn | Cột SQL | Kiểu SQL | Cho phép null | Ánh xạ ghi | Mặc định | Trường ảo / nguồn |
+|---|---|---|---|---|---|---|
+| `documentId` | `DocumentID` | `varchar(30)` | Không | Không | Không khai báo | —  |
+| `documentDate` | `DocumentDate` | `datetime` | Không | Có | Không khai báo | —  |
+| `nguoiGiao` | `NguoiGiao` | `nvarchar(150)` | Có | Có | Không khai báo | —  |
+| `nguoiNhan` | `NguoiNhan` | `nvarchar(150)` | Có | Có | Không khai báo | —  |
+| `memo` | `Memo` | `nvarchar(150)` | Có | Có | Không khai báo | —  |
+| `notes` | `Notes` | `nvarchar(150)` | Có | Có | Không khai báo | —  |
+| `isLocked` | `isLock` | `bit` | Không | Không | Không khai báo | —  |
+| `userCreate` | `UserCreate` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `userUpdate` | `UserUpdate` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `dateUpdate` | `DateUpdate` | `datetime` | Có | Không | Không khai báo | —  |
+| `dateCreate` | `DateCreate` | `datetime` | Có | Không | Không khai báo | —  |
+| `moveTypeId` | `MoveTypeID` | `varchar(30)` | Không | Có | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `contractId` | `ContractID` | `nvarchar(100)` | Có | Có | Không khai báo | —  |
+| `effectiveFrom` | `EffectiveFrom` | `datetime` | Có | Có | Không khai báo | —  |
+| `effectiveTo` | `EffectiveTo` | `datetime` | Có | Có | Không khai báo | —  |
+| `referenceNo` | `ReferenceNo` | `nvarchar(100)` | Có | Có | Không khai báo | —  |
+| `referenceDate` | `ReferenceDate` | `datetime` | Có | Có | Không khai báo | —  |
+| `documentLink` | `DocumentLink` | `nvarchar(1000)` | Có | Có | Không khai báo | —  |
+
+## Phần dữ liệu: lines
+
+| Trường nguồn | Cột SQL | Kiểu SQL | Cho phép null | Ánh xạ ghi | Mặc định | Trường ảo / nguồn |
+|---|---|---|---|---|---|---|
+| `userAutoId` | `UserAutoID` | `varchar(40)` | Không | Không | Không khai báo | —  |
+| `documentId` | `DocumentID` | `varchar(30)` | Không | Không | Không khai báo | —  |
+| `assetId` | `AssetID` | `varchar(50)` | Không | Có | Không khai báo | —  |
+| `quantity` | `Quantity` | `decimal(18, 2)` | Có | Có | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `departmentId` | `DepartmentID` | `varchar(50)` | Có | Có | Không khai báo | —  |
+| `objectId` | `ObjectID` | `varchar(50)` | Có | Có | Không khai báo | —  |
+| `costCenterId` | `CostCenterID` | `varchar(50)` | Có | Có | Không khai báo | —  |
+| `costId` | `CostID` | `varchar(50)` | Có | Có | Không khai báo | —  |
+| `notes` | `Notes` | `nvarchar(150)` | Có | Có | Không khai báo | —  |
+| `fromObjectId` | `FromObjectID` | `varchar(100)` | Có | Có | Không khai báo | —  |
+| `fromStoreHouseId` | `FromStoreHouseID` | `varchar(50)` | Có | Có | Không khai báo | —  |
+| `toStoreHouseId` | `ToStoreHouseID` | `varchar(50)` | Có | Có | Không khai báo | —  |
+| `fromLocation` | `FromLocation` | `nvarchar(500)` | Có | Có | Không khai báo | —  |
+| `toLocation` | `ToLocation` | `nvarchar(500)` | Có | Có | Không khai báo | —  |
+| `handoverDate` | `HandoverDate` | `datetime` | Có | Có | Không khai báo | —  |
+| `handoverComponents` | `HandoverComponents` | `nvarchar(max)` | Có | Có | Không khai báo | —  |
+| `assetCondition` | `AssetCondition` | `nvarchar(1000)` | Có | Có | Không khai báo | —  |
+| `lifecycleStatusAfter` | `LifecycleStatusAfter` | `varchar(30)` | Có | Không | Không khai báo | —  |
+| `toLocationId` | `ToLocationID` | `nvarchar(50)` | Có | Có | Không khai báo | —  |
+| `toQuanHuyen` | `ToQuanHuyen` | `nvarchar(50)` | Có | Có | Không khai báo | —  |
+| `toXaPhuong` | `ToXaPhuong` | `nvarchar(50)` | Có | Có | Không khai báo | —  |
+| `toChuyenKhoa` | `ToChuyenKhoa` | `nvarchar(250)` | Có | Có | Không khai báo | —  |
+| `toZoneId` | `ToZoneID` | `nvarchar(50)` | Có | Có | Không khai báo | —  |
+
+## Danh sách lựa chọn
+
+Không tự suy đoán cách tách chuỗi trường liên kết hoặc tham số. Đối chiếu đặc tả danh sách lựa chọn, dữ liệu mô tả từ máy chủ và mã xử lý hiện có.
+
+| Mã lựa chọn / trường | Bảng hiển thị | Trường giá trị | Trường tên | Trường liên kết | Tham số / bắt buộc | Vô hiệu / chọn nhiều |
+|---|---|---|---|---|---|---|
+| `ContractID` | `header` | `ContractID` | `ContractID` | `—` | `—` / `—` | false / false |
+| `MoveTypeID` | `header` | `MoveTypeID` | `MoveTypeName` | `—` | `—` / `—` | false / false |
+| `AssetID` | `grdChitiet` | `AssetID` | `AssetID` | `AssetID;AssetName;Unit` | `—` / `—` | false / false |
+| `AssetName` | `grdChitiet` | `AssetName` | `AssetName` | `AssetID;AssetName;Unit` | `—` / `—` | true / true |
+| `CostCenterID` | `grdChitiet` | `CostCenterID` | `CostCenterID` | `—` | `—` / `—` | false / false |
+| `CostID` | `grdChitiet` | `CostID` | `CostID` | `—` | `—` / `—` | false / false |
+| `DepartmentID` | `grdChitiet` | `DepartmentID` | `DepartmentName` | `—` | `—` / `—` | false / false |
+| `FromObjectID` | `grdChitiet` | `ObjectID` | `ObjectID` | `—` | `—` / `—` | false / false |
+| `FromStoreHouseID` | `grdChitiet` | `StoreHouseID` | `StoreHouseID` | `—` | `—` / `—` | false / false |
+| `ObjectID` | `grdChitiet` | `ObjectID` | `ObjectName` | `ObjectID;ToLocationID;ToQuanHuyen;ToXaPhuong;ToChuyenKhoa;ToZoneID;ToLocation` | `—` / `—` | false / false |
+| `ToChuyenKhoa` | `grdChitiet` | `ChuyenKhoa` | `ChuyenKhoa` | `—` | `—` / `—` | false / false |
+| `ToLocationID` | `grdChitiet` | `LocationID` | `LocationID` | `—` | `—` / `—` | false / false |
+| `ToStoreHouseID` | `grdChitiet` | `StoreHouseID` | `StoreHouseID` | `—` | `—` / `—` | false / false |
+| `ToZoneID` | `grdChitiet` | `ZoneID` | `ZoneID` | `—` | `—` / `—` | false / false |
+
+## Các thao tác
+
+Tên và mã thao tác lấy theo danh mục, không thay thế quyền được cấp. Chỉ cho phép thực hiện khi cả quyền tài khoản và trạng thái nút trên chứng từ đều phù hợp.
+
+| Tên thao tác nguồn | Điều khiển | Mã thao tác khai báo | Nguồn tham chiếu |
+|---|---|---|---|
+
+
+**Nguồn tham chiếu:** `inventories/erp/20261010/six-screen-catalog.json#screens/machine-movements`. Đây là bản mô tả kỹ thuật được lưu từ nguồn; cần đối chiếu môi trường triển khai khi tích hợp. Thuộc tính writable không thay thế quyền ghi của tài khoản.

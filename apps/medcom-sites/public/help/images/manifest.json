@@ -1,74 +1,541 @@
 {
   "kind": "production-components-with-synthetic-offline-transport",
-  "viewport": {
-    "width": 440,
-    "height": 860
-  },
+  "capturedAt": "2026-10-18T17:48:30.141Z",
   "realErpData": false,
   "backendRequests": false,
   "businessWrites": false,
   "images": [
     {
-      "name": "pr-list",
-      "annotations": 3,
-      "sha256": "8fae4f144b457733a93eda1081b2b06546373b2c1956d9d2c9130da09fca5945"
-    },
-    {
-      "name": "pr-header",
+      "name": "approval-confirm",
+      "device": "desktop",
+      "src": "/help/images/approval-confirm-desktop.webp",
+      "width": 1440,
+      "height": 1000,
       "annotations": 2,
-      "sha256": "23271e5c030b34db051e0aa74e50e62473591bb13c32ed803a8ceccc513cb71b"
-    },
-    {
-      "name": "pr-lines",
-      "annotations": 3,
-      "sha256": "34680d60421e1ca1169808ed410d47f389aceed5843ef5883fb2c9c7ce24c279"
-    },
-    {
-      "name": "pr-review",
-      "annotations": 1,
-      "sha256": "c6cc7d79aab3edb496cf5d822e5896dd54ec6e1ae4a5bc0ba335f60f557f12a2"
-    },
-    {
-      "name": "pr-actions",
-      "annotations": 2,
-      "sha256": "d17b993e2b36ba30e370a5b5fb63c9949c0f6344a49385c5a318e269495f1d7b"
-    },
-    {
-      "name": "approval-list",
-      "annotations": 2,
-      "sha256": "36497a108926ca6d3b125012ac96f037dcdbb12bbe7db9e278cb4ce77eb62c13"
-    },
-    {
-      "name": "approval-menu",
-      "annotations": 3,
-      "sha256": "56d5f07f5ddb42c69c8090a394cfc77eb8868a5349729f60faff374e9cacca3d"
+      "sha256": "1d47b54a5a0614802eb2b7a1943af85cbef453b87bf749b7aa66290cd9a0698a"
     },
     {
       "name": "approval-confirm",
+      "device": "mobile",
+      "src": "/help/images/approval-confirm-mobile.webp",
+      "width": 390,
+      "height": 844,
       "annotations": 2,
-      "sha256": "08f7e8aa55de013f54a57eeb76b09b68d9c8789d12081b36e872cf74957a0d30"
+      "sha256": "55e1dc8ad1c86a0e2421bc8a49cf1f13e9ff158f2b5df22bef3e6350936b1a76"
+    },
+    {
+      "name": "approval-list",
+      "device": "desktop",
+      "src": "/help/images/approval-list-desktop.webp",
+      "width": 1440,
+      "height": 1000,
+      "annotations": 2,
+      "sha256": "4a8c5192a32085fdb66e7433e23cb430d51064daf564748bad9d604d25ab6df6"
+    },
+    {
+      "name": "approval-list",
+      "device": "mobile",
+      "src": "/help/images/approval-list-mobile.webp",
+      "width": 390,
+      "height": 859,
+      "annotations": 2,
+      "sha256": "2570c347d7259688e49bf7d64f4d58c2c7e6f21b818a17cd99ee1264a7afe08a"
+    },
+    {
+      "name": "approval-menu",
+      "device": "desktop",
+      "src": "/help/images/approval-menu-desktop.webp",
+      "width": 1440,
+      "height": 1000,
+      "annotations": 2,
+      "sha256": "9925caf0b175defb59103587989b414e4b913fae11ce456faf71bd054ea4e9cb"
+    },
+    {
+      "name": "approval-menu",
+      "device": "mobile",
+      "src": "/help/images/approval-menu-mobile.webp",
+      "width": 390,
+      "height": 844,
+      "annotations": 2,
+      "sha256": "22ee52076db3ef3b23eee6557a6356bc6e9cbf7c4f2cba46a0aa03cb6dcf0012"
     },
     {
       "name": "approval-reject",
+      "device": "desktop",
+      "src": "/help/images/approval-reject-desktop.webp",
+      "width": 1440,
+      "height": 1000,
       "annotations": 2,
-      "sha256": "7bb8dee2852bc6f2411c5721aa90cdcf506b25939eb897d2a7fb0aee2b4df9df"
+      "sha256": "8ee71a13e32bd101d867ae7be490c75cfcc37d6955c56fa89c1d05730e9fc826"
     },
     {
-      "name": "po-list",
-      "annotations": 3,
-      "sha256": "509a712e654006f0921324df55dadc2a42388b7df60fcc8793264990c0fa26e2"
+      "name": "approval-reject",
+      "device": "mobile",
+      "src": "/help/images/approval-reject-mobile.webp",
+      "width": 390,
+      "height": 844,
+      "annotations": 2,
+      "sha256": "4974b2da16cab03d22109ed97ec89911207acb9c8243f94a4ae728cfbf088cb6"
+    },
+    {
+      "name": "pm-detail",
+      "device": "desktop",
+      "src": "/help/images/pm-detail-desktop.webp",
+      "width": 1440,
+      "height": 1000,
+      "annotations": 1,
+      "sha256": "ea0369339dc976ac2368c8d08d2019cfb8b1502e9abc6f6235a5c818caf2aefe"
+    },
+    {
+      "name": "pm-detail",
+      "device": "mobile",
+      "src": "/help/images/pm-detail-mobile.webp",
+      "width": 390,
+      "height": 844,
+      "annotations": 1,
+      "sha256": "6462443aed14909b30981d375db104c4161b0889a0a65e41f164e68d12b331e3"
+    },
+    {
+      "name": "pm-reject",
+      "device": "desktop",
+      "src": "/help/images/pm-reject-desktop.webp",
+      "width": 1440,
+      "height": 1000,
+      "annotations": 2,
+      "sha256": "2c415526781497d9341751ace8e267f3597d700246420423608bcb127fb39131"
+    },
+    {
+      "name": "pm-reject",
+      "device": "mobile",
+      "src": "/help/images/pm-reject-mobile.webp",
+      "width": 390,
+      "height": 844,
+      "annotations": 2,
+      "sha256": "db5927da0ecd53d6fd1da91b91ec6163a021c22347328891b58d63213c621057"
+    },
+    {
+      "name": "pm-send",
+      "device": "desktop",
+      "src": "/help/images/pm-send-desktop.webp",
+      "width": 1440,
+      "height": 1000,
+      "annotations": 2,
+      "sha256": "d2de086500597b839521038d5871acb5c2ed247a258ab834ec72064e494cee7e"
+    },
+    {
+      "name": "pm-send",
+      "device": "mobile",
+      "src": "/help/images/pm-send-mobile.webp",
+      "width": 390,
+      "height": 844,
+      "annotations": 2,
+      "sha256": "f8d46b85f584c1551245b4ca4c7d1443be642d362e36c124e78f96e614c9ae55"
     },
     {
       "name": "po-detail",
+      "device": "desktop",
+      "src": "/help/images/po-detail-desktop.webp",
+      "width": 1440,
+      "height": 1000,
       "annotations": 1,
-      "sha256": "c7cf79d5d51b51fdef9d1b5909db34b02ae4cccce80994bcaf18d7d50db969f1"
+      "sha256": "255d732f3f6e23dc6324736cea375fecdcdf921882b4d4abcb09b48173924047"
+    },
+    {
+      "name": "po-detail",
+      "device": "mobile",
+      "src": "/help/images/po-detail-mobile.webp",
+      "width": 390,
+      "height": 844,
+      "annotations": 1,
+      "sha256": "d938eddb446d25a4d85e99a03aa6ff15f12a49b1657da76da70e172db6c76916"
+    },
+    {
+      "name": "po-list",
+      "device": "desktop",
+      "src": "/help/images/po-list-desktop.webp",
+      "width": 1440,
+      "height": 1000,
+      "annotations": 3,
+      "sha256": "8f6549de10541559fa30241476b6e4320f5616740a7efe8c64bd648de2c19c54"
+    },
+    {
+      "name": "po-list",
+      "device": "mobile",
+      "src": "/help/images/po-list-mobile.webp",
+      "width": 390,
+      "height": 859,
+      "annotations": 3,
+      "sha256": "9ed6fd384ac00220b0fc1b9db6cc88a4aa1e6e50cae1731f72511c0ee603cd94"
+    },
+    {
+      "name": "pr-actions",
+      "device": "desktop",
+      "src": "/help/images/pr-actions-desktop.webp",
+      "width": 1440,
+      "height": 1000,
+      "annotations": 2,
+      "sha256": "58ae7945a4fe72bd2ea87c26cc92feaa17970f7511cc2eb8be495f49eb2a9c8c"
+    },
+    {
+      "name": "pr-actions",
+      "device": "mobile",
+      "src": "/help/images/pr-actions-mobile.webp",
+      "width": 390,
+      "height": 844,
+      "annotations": 2,
+      "sha256": "4efc9a296317a2c884db86b8d395f96dd90c953ad82ba9c636d78da35623ccb7"
+    },
+    {
+      "name": "pr-edit",
+      "device": "desktop",
+      "src": "/help/images/pr-edit-desktop.webp",
+      "width": 1440,
+      "height": 1000,
+      "annotations": 1,
+      "sha256": "9b2a7279551743e86b4e041d07b0d4066e41281db6207a2e3f1d3ec7055d7883"
+    },
+    {
+      "name": "pr-edit",
+      "device": "mobile",
+      "src": "/help/images/pr-edit-mobile.webp",
+      "width": 390,
+      "height": 844,
+      "annotations": 1,
+      "sha256": "dbcf3a41cbcd72820d6218c954f8c43221d8405e2ec6709ea62697a1890718b7"
+    },
+    {
+      "name": "pr-header",
+      "device": "desktop",
+      "src": "/help/images/pr-header-desktop.webp",
+      "width": 1440,
+      "height": 1000,
+      "annotations": 2,
+      "sha256": "ffd79ec96aeb504b3d7a68db125faf6610ce672394afe5c2fad7bdf4b2811bd3"
+    },
+    {
+      "name": "pr-header",
+      "device": "mobile",
+      "src": "/help/images/pr-header-mobile.webp",
+      "width": 390,
+      "height": 844,
+      "annotations": 2,
+      "sha256": "270091b835f3890ed617d32de7cfea8c0f1f6949dbfcdf7beda228dde848083d"
+    },
+    {
+      "name": "pr-lines",
+      "device": "desktop",
+      "src": "/help/images/pr-lines-desktop.webp",
+      "width": 1440,
+      "height": 1000,
+      "annotations": 3,
+      "sha256": "1755039b030339fcf04132a09683b5e780d9e6e409d28b6f1dbbb86734591b3d"
+    },
+    {
+      "name": "pr-lines",
+      "device": "mobile",
+      "src": "/help/images/pr-lines-mobile.webp",
+      "width": 390,
+      "height": 844,
+      "annotations": 3,
+      "sha256": "ceec3113fbe810c1bca306d01fdb16031b8d16348b28684180e0727e113fdf50"
+    },
+    {
+      "name": "pr-list",
+      "device": "desktop",
+      "src": "/help/images/pr-list-desktop.webp",
+      "width": 1440,
+      "height": 1000,
+      "annotations": 3,
+      "sha256": "96e5f35590bd9838b4a6df178eb7f8a179ef2960839a418bffe3175ca76d1d84"
+    },
+    {
+      "name": "pr-list",
+      "device": "mobile",
+      "src": "/help/images/pr-list-mobile.webp",
+      "width": 390,
+      "height": 863,
+      "annotations": 3,
+      "sha256": "fa3a35c40801ce4ed6d0c9e9240b69e4625954211b6195e562caf7026ba76c9d"
+    },
+    {
+      "name": "pr-review",
+      "device": "desktop",
+      "src": "/help/images/pr-review-desktop.webp",
+      "width": 1440,
+      "height": 1000,
+      "annotations": 1,
+      "sha256": "4b24df50273a7b6c3bc7f316f90e01c4386fa43d7a7090a4f07a9d21045c48a7"
+    },
+    {
+      "name": "pr-review",
+      "device": "mobile",
+      "src": "/help/images/pr-review-mobile.webp",
+      "width": 390,
+      "height": 844,
+      "annotations": 1,
+      "sha256": "0a12fb70c772f95c559fc78182c5ab087e99e376338609fd832f02e309802296"
+    },
+    {
+      "name": "qr-compare",
+      "device": "desktop",
+      "src": "/help/images/qr-compare-desktop.webp",
+      "width": 1440,
+      "height": 1000,
+      "annotations": 1,
+      "sha256": "3ef52b379600130ef7a0acaaa449668cea723fffa7c679ae7030e019df8c18b5"
+    },
+    {
+      "name": "qr-compare",
+      "device": "mobile",
+      "src": "/help/images/qr-compare-mobile.webp",
+      "width": 390,
+      "height": 844,
+      "annotations": 1,
+      "sha256": "7ce6a8ee79d365a9ed4961af9a30ddbdf33802b97e7b21abdfef6fa8ec49aa0e"
+    },
+    {
+      "name": "qr-detail",
+      "device": "desktop",
+      "src": "/help/images/qr-detail-desktop.webp",
+      "width": 1440,
+      "height": 1000,
+      "annotations": 2,
+      "sha256": "2fccc062c62643ab23017cb95b5bf1854966a5d1f36a4c5b6f616492e41b0d13"
+    },
+    {
+      "name": "qr-detail",
+      "device": "mobile",
+      "src": "/help/images/qr-detail-mobile.webp",
+      "width": 390,
+      "height": 844,
+      "annotations": 2,
+      "sha256": "40b0e864bdbfa596c3beb7e1981ad31492e33d694b351d0343a3a46a7ebbe3f9"
+    },
+    {
+      "name": "qr-scan",
+      "device": "desktop",
+      "src": "/help/images/qr-scan-desktop.webp",
+      "width": 1440,
+      "height": 1000,
+      "annotations": 2,
+      "sha256": "e336510a888ba5f4799268e4ae48f776bab13ec7071521236070fb9eac7c6fa8"
+    },
+    {
+      "name": "qr-scan",
+      "device": "mobile",
+      "src": "/help/images/qr-scan-mobile.webp",
+      "width": 390,
+      "height": 844,
+      "annotations": 2,
+      "sha256": "ed0adb4ba8b924e454733b1d7250f434b1ef5f78bea8a579860be24cf32b1504"
+    },
+    {
+      "name": "sa-detail",
+      "device": "desktop",
+      "src": "/help/images/sa-detail-desktop.webp",
+      "width": 1440,
+      "height": 1000,
+      "annotations": 1,
+      "sha256": "2c24644bfbfbbc17800e83f997f11da2ba6396cbc64fbdfeb5fd997491f4bf7f"
+    },
+    {
+      "name": "sa-detail",
+      "device": "mobile",
+      "src": "/help/images/sa-detail-mobile.webp",
+      "width": 390,
+      "height": 844,
+      "annotations": 1,
+      "sha256": "5ef393e31599e9c07ae56601eb8d98c17a1d4bf9b893cb971be8ccc00b134700"
+    },
+    {
+      "name": "sa-return",
+      "device": "desktop",
+      "src": "/help/images/sa-return-desktop.webp",
+      "width": 1440,
+      "height": 1000,
+      "annotations": 2,
+      "sha256": "e8eb597b5cceb4dbf609fbfa9cc3ab75961befc7b559bcf7615fc6c82c6ea883"
+    },
+    {
+      "name": "sa-return",
+      "device": "mobile",
+      "src": "/help/images/sa-return-mobile.webp",
+      "width": 390,
+      "height": 844,
+      "annotations": 2,
+      "sha256": "84ecc3be8cb7e0c0e6b0fd804789117df3e892de924f1e83600a03c42a5f40e6"
+    },
+    {
+      "name": "sa-route",
+      "device": "desktop",
+      "src": "/help/images/sa-route-desktop.webp",
+      "width": 1440,
+      "height": 1000,
+      "annotations": 2,
+      "sha256": "af3fb0901e09377ff26fa7a79c9b6e852957ad0dbfb58cd0352a08ce95e20c62"
+    },
+    {
+      "name": "sa-route",
+      "device": "mobile",
+      "src": "/help/images/sa-route-mobile.webp",
+      "width": 390,
+      "height": 844,
+      "annotations": 2,
+      "sha256": "95778c84f235904be46866a91f5a3555404a43dc4dcaa28f171cc643e74afba5"
+    },
+    {
+      "name": "so-create",
+      "device": "desktop",
+      "src": "/help/images/so-create-desktop.webp",
+      "width": 1440,
+      "height": 1000,
+      "annotations": 1,
+      "sha256": "fe79b552f30e5caa9d6d669c1310ce4e46e868aec3e0e2a2ed84249b4e2f89a1"
+    },
+    {
+      "name": "so-create",
+      "device": "mobile",
+      "src": "/help/images/so-create-mobile.webp",
+      "width": 390,
+      "height": 844,
+      "annotations": 1,
+      "sha256": "816c6b05c720775e1435f47684afae2f4e7d673c4915bf334c8a7d1228d36b2b"
+    },
+    {
+      "name": "so-detail",
+      "device": "desktop",
+      "src": "/help/images/so-detail-desktop.webp",
+      "width": 1440,
+      "height": 1000,
+      "annotations": 1,
+      "sha256": "9bc51f469373156b205e0d12c06a3d232663903f270a29ce55adfd912eb732ba"
+    },
+    {
+      "name": "so-detail",
+      "device": "mobile",
+      "src": "/help/images/so-detail-mobile.webp",
+      "width": 390,
+      "height": 844,
+      "annotations": 1,
+      "sha256": "d42909fda53523b3ac8a0a8524fe517b665b14205ad79d30651a571632bf5c35"
+    },
+    {
+      "name": "so-edit",
+      "device": "desktop",
+      "src": "/help/images/so-edit-desktop.webp",
+      "width": 1440,
+      "height": 1000,
+      "annotations": 1,
+      "sha256": "f92450e435d87fe055518a26a36c2d3339fef6c042c84d861483fa9e4b58a767"
+    },
+    {
+      "name": "so-edit",
+      "device": "mobile",
+      "src": "/help/images/so-edit-mobile.webp",
+      "width": 390,
+      "height": 844,
+      "annotations": 1,
+      "sha256": "5486f5b3031b1bf14b17222914badabb9c5333339eaee401792dd3b043072abc"
+    },
+    {
+      "name": "so-history",
+      "device": "desktop",
+      "src": "/help/images/so-history-desktop.webp",
+      "width": 1440,
+      "height": 1000,
+      "annotations": 1,
+      "sha256": "e91328412a6e0bcccff6c62348b2d3127994d70b10ae7ac3ec3f0a180d9c3dbc"
+    },
+    {
+      "name": "so-history",
+      "device": "mobile",
+      "src": "/help/images/so-history-mobile.webp",
+      "width": 390,
+      "height": 844,
+      "annotations": 1,
+      "sha256": "e4f8b418ce05eaa8793b9031488bfa89dea3fd796133d86383d42691aefefb5c"
+    },
+    {
+      "name": "so-lines",
+      "device": "desktop",
+      "src": "/help/images/so-lines-desktop.webp",
+      "width": 1440,
+      "height": 1000,
+      "annotations": 1,
+      "sha256": "cb206e4929de5556af8bea959912291a3c985b8e7dbab6c25b69501411cf8b8f"
+    },
+    {
+      "name": "so-lines",
+      "device": "mobile",
+      "src": "/help/images/so-lines-mobile.webp",
+      "width": 390,
+      "height": 844,
+      "annotations": 1,
+      "sha256": "5b4c6b80f2831c74b914f58f52e2235d431d97f553cbc9c607a6296ee9768050"
+    },
+    {
+      "name": "so-list",
+      "device": "desktop",
+      "src": "/help/images/so-list-desktop.webp",
+      "width": 1440,
+      "height": 1085,
+      "annotations": 3,
+      "sha256": "24a7c7ebec8bfe2b0e7eb19e1f14f3da16b7622dff2c1be48405109b689a6d41"
+    },
+    {
+      "name": "so-list",
+      "device": "mobile",
+      "src": "/help/images/so-list-mobile.webp",
+      "width": 390,
+      "height": 1365,
+      "annotations": 3,
+      "sha256": "48c86b6e72a683421d211b8b301149940bb593e286f2126c5eb02b7d484f3437"
+    },
+    {
+      "name": "so-review",
+      "device": "desktop",
+      "src": "/help/images/so-review-desktop.webp",
+      "width": 1440,
+      "height": 1000,
+      "annotations": 1,
+      "sha256": "d86be0ec3972a74f3cd089ac9cdbdd80dfe4413c48fe335886f425fec5479e89"
+    },
+    {
+      "name": "so-review",
+      "device": "mobile",
+      "src": "/help/images/so-review-mobile.webp",
+      "width": 390,
+      "height": 844,
+      "annotations": 1,
+      "sha256": "5d5da3dc81a1026ee0848dc50f81d49672e51e97531f8711a1d6307c75410e9b"
+    },
+    {
+      "name": "so-send",
+      "device": "desktop",
+      "src": "/help/images/so-send-desktop.webp",
+      "width": 1440,
+      "height": 1000,
+      "annotations": 3,
+      "sha256": "d2f090c5b1f59b98ab98fee909e031b2d95eba98587892f02f7ab70fefbf72cc"
+    },
+    {
+      "name": "so-send",
+      "device": "mobile",
+      "src": "/help/images/so-send-mobile.webp",
+      "width": 390,
+      "height": 844,
+      "annotations": 3,
+      "sha256": "cd1d532b54ae330d98c0a976ea72b94de260341af3bb183f12417e5bacd5f14d"
     }
   ],
   "sourceFiles": [
     "components/untitledui/tab-erp-screen.tsx",
+    "components/erp/sales-order-form.tsx",
+    "components/erp/sales-order-status-filter.tsx",
+    "components/erp/sales-order-detail-tabs.tsx",
+    "components/erp/sales-order-line-editor.tsx",
     "components/untitledui/purchase-request-create-sheet.tsx",
-    "components/untitledui/lookup-field.tsx",
-    "components/untitledui/bottom-sheet.tsx"
+    "scripts/fixtures/help-transport.mjs"
   ],
   "errors": []
 }

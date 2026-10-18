@@ -115,12 +115,12 @@ export function validatePurchaseRequest(values: PurchaseRequestDraft, access: Mo
   for (const [key, max] of [["notes", access.maxNotesLength], ["purposeDescOrClient", access.maxPurposeLength]] as const) {
     if (values[key].length > max) errors[key] = `Tối đa ${max} ký tự theo dịch vụ.`;
   }
-  if (!access.existingOnly && !values.lines.length) errors.lines = "Thêm ít nhất một dòng hàng trước khi gửi yêu cầu tới dịch vụ.";
+  if (!access.existingOnly && !values.lines.length) errors.lines = "Thêm ít nhất một chi tiết trước khi gửi yêu cầu tới dịch vụ.";
   if (values.lines.length > access.maxLines) errors.lines = `Tối đa ${access.maxLines} dòng theo dịch vụ.`;
   const keys = new Set<string>();
   for (const line of values.lines) {
     const prefix = `lines.${line.localKey}.`;
-    if (!line.localKey || keys.has(line.localKey)) errors.lines = "Không thể xác định duy nhất dòng hàng. Tải lại phiếu.";
+    if (!line.localKey || keys.has(line.localKey)) errors.lines = "Không thể xác định duy nhất chi tiết. Tải lại phiếu.";
     keys.add(line.localKey);
     if (!line.itemId.trim() || line.itemId.length > 50) errors[prefix + "itemId"] = "Chọn mã hàng hợp lệ, tối đa 50 ký tự.";
     for (const field of ["quantity", "unitPrice", "budget"] as const) {
@@ -252,7 +252,7 @@ function RequestEditor({initial, statusPresentation, itemDisplay, access, adapte
     if(!isPresentationCurrent())return;
     const found = validatePurchaseRequest(values, access); setErrors(found);
     if (Object.keys(found).length) {
-      setMessage("Kiểm tra các trường và dòng hàng được đánh dấu.");
+      setMessage("Kiểm tra các trường và chi tiết được đánh dấu.");
       requestAnimationFrame(() => form.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus());
       return;
     }
@@ -383,7 +383,7 @@ function RequestEditor({initial, statusPresentation, itemDisplay, access, adapte
       {/* Back reuses the review submitter's DOM node; cancel activation before its type changes. */}
       {review ? <><RequestButton type="button" disabled={!editable} onClick={event => {event.preventDefault();if(isPresentationCurrent())setReview(false);}}>Quay lại chỉnh sửa</RequestButton><RequestButton type="button" disabled={!editable || !access.canSaveDraft || !dirty && !!baseline.documentId} onClick={() => {if(isPresentationCurrent())void send("saveDraft");}}>Lưu nháp trên ERP</RequestButton><RequestButton variant="default" type="button" disabled={access.existingOnly ? !canSubmitExisting : !editable || !access.canSubmit} onClick={() => {if(isPresentationCurrent())void send("submit");}}>Gửi đề nghị</RequestButton></> : <RequestButton variant="default" type="submit" form={`${prefix}-form`} disabled={!editable&&!canSubmitExisting} onClick={()=>{if(isPresentationCurrent()&&canSubmitExisting&&!editable)setReview(true);}}>Rà soát phiếu</RequestButton>}
     </RecordActionBar>
-    <RecordDeleteConfirmation intent={deleteLine} open={!access.existingOnly&&deleteLine!==null&&deleteLine.baseline===baseline&&editable} identity={deleteLine?.identity??"Dòng hàng"} presentationAllowed={presentationAllowed&&access.canRead&&!access.verifying}
+    <RecordDeleteConfirmation intent={deleteLine} open={!access.existingOnly&&deleteLine!==null&&deleteLine.baseline===baseline&&editable} identity={deleteLine?.identity??"Chi tiết"} presentationAllowed={presentationAllowed&&access.canRead&&!access.verifying}
       isAllowed={removalAllowed}
       onCancel={()=>{if(currentRemoval.current.intent===deleteLine)setDeleteLine(null);}} onConfirm={()=>{if(removalAllowed()&&deleteLine){change({lines:values.lines.filter(line=>line.localKey!==deleteLine.key)});setDeleteLine(null);}}}/>
   </form>;

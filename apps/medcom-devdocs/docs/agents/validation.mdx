@@ -1,0 +1,36 @@
+---
+title: Danh sách kiểm tra giao diện
+---
+
+## Đặc tả
+
+- Method/path/operationId tồn tại trong snapshot.
+- Request đúng required properties, nullable, enum, string decimal/date và additionalProperties.
+- Response bind đúng canonical field path; không nhân đôi key cũ và key v3.
+- Hiểu rõ pagination và không lưu/xuất tập dữ liệu đang thiếu trang.
+
+## Quyền và các tình huống xử lý đồng thời
+
+- CRUD/action cần cả permission và document state.
+- Identity/branch/scope change hủy pending requests và invalidate cache.
+- Lookup phụ thuộc không nhận response của parent context cũ.
+- State token stale không bị tự ghi đè.
+- Double-submit không tạo hai intent; timeout chuyển sang reconcile.
+
+## Lỗi
+
+- Phân biệt 400, 401, 403, 404, 409, 415, 503 khi endpoint nguồn có mapping.
+- Không parse JSON mù với proxy HTML hoặc empty body.
+- Không coi HTTP 200 là command commit.
+- Có correlation ID an toàn cho support; không log secret hoặc dữ liệu thật.
+
+## Trải nghiệm sử dụng
+
+- 320px, 390px và desktop không mất field/nút quan trọng.
+- Keyboard/label/focus/dialog/screen reader hoạt động.
+- Màu trạng thái có text; SVG có ngữ nghĩa đúng.
+- Loading, empty, denied, error, conflict và uncertain tách biệt.
+
+## Bàn giao
+
+Ghi test nào đã chạy, fixture nào mock, phần runtime nào UNKNOWN và snapshot hash. Chỉ dùng “đã kiểm chứng backend” khi có evidence đúng môi trường, không dùng screenshot mock để thay thế.

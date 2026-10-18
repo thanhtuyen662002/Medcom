@@ -1,0 +1,51 @@
+---
+title: "Xuất hàng theo PXK"
+---
+
+Mục lục lấy từ thanh điều hướng `/help`; Các API dưới đây được đối chiếu bằng đúng mã phân hệ.
+
+Xem [Luồng giao diện Bán hàng](/docs/foundation/sales-flow) để biết hành vi đang triển khai, quyền thao tác và cách phục hồi kết quả ghi.
+
+Có **10 API** trong đặc tả. Trạng thái triển khai giao diện và nghiệm thu môi trường thật được xác nhận riêng.
+
+## Trình tự tích hợp
+
+1. Kiểm tra phiên đăng nhập, không gian làm việc và quyền tại `/api/erp/permissions`.
+2. Lấy `/api/erp/sales-qr/screen` để tra cấu trúc trường, danh sách lựa chọn và thao tác.
+3. Tải danh sách theo chi nhánh; mở chi tiết bằng mã định danh theo đúng tham số API.
+4. Đọc trạng thái các nút trên chứng từ; tải tiếp các phần dữ liệu có `hasMore`.
+5. Trước khi ghi, kiểm tra lại quyền, phạm vi phiên và phiên bản chứng từ; dùng đúng cấu trúc yêu cầu và khóa chống ghi lặp.
+6. Khi chưa nhận được kết quả sau gửi, tra cứu lại chính yêu cầu đã gửi; không tạo yêu cầu ghi mới để thử lại.
+
+## Mô hình dữ liệu
+
+Menu `0702010` · Form `AR_Invoice_QRCodeFrm`. Tên trong danh mục nguồn: **Quét QR xuất bán hàng**. [Trường dữ liệu, danh sách lựa chọn và ánh xạ SQL](./sales-qr-fields).
+
+Tên mục giữ nguyên theo hướng dẫn sử dụng. Việc đối chiếu dựa trên mã phân hệ; cần xác nhận nếu các tên menu khác nhau có thể mang ý nghĩa nghiệp vụ khác nhau.
+
+:::note Cần xác nhận nhãn nghiệp vụ
+
+Help đặt tên “Xuất hàng theo PXK”, trong khi catalog/API reference mô tả QR xuất bán hàng. Route `/api/erp/sales-qr` được xác nhận; sự tương đương chính xác với menu PXK của owner là **UNKNOWN**. Không tự chuyển API này sang mục “Xuất bán hàng” ở nhóm Quét QR-Code khi chưa có xác nhận.
+
+:::
+
+## API của màn hình
+
+| Phương thức | Đường dẫn | Chức năng | Mã thao tác |
+|---|---|---|---|
+| `GET` | `/api/erp/sales-qr/screen` | Lấy mô tả các cột, lựa chọn và nút của màn hình; không hiển thị thông tin nội bộ này cho người dùng. | [sales_qr_screen](/docs/api/sales_qr_screen) |
+| `GET` | `/api/erp/sales-qr` | Tải danh sách phiếu theo trang, tìm kiếm và bộ lọc của màn hình. | [sales_qr_list](/docs/api/sales_qr_list) |
+| `GET` | `/api/erp/sales-qr/detail` | Lấy đầy đủ thông tin phiếu và các bảng chi tiết theo trang. | [sales_qr_detail](/docs/api/sales_qr_detail) |
+| `GET` | `/api/erp/sales-qr/actions` | Lấy quyền hiện và trạng thái bật/tắt từng nút theo người đăng nhập và phiếu đang mở. | [sales_qr_actions](/docs/api/sales_qr_actions) |
+| `GET` | `/api/erp/sales-qr/contract-info` | Mở thông tin hợp đồng liên quan đến phiếu. | [sales_qr_contract_info](/docs/api/sales_qr_contract_info) |
+| `POST` | `/api/erp/sales-qr/options` | Lấy danh sách cho các ô chọn trên phiếu, có tìm kiếm và phân trang. | [sales_qr_options](/docs/api/sales_qr_options) |
+| `POST` | `/api/erp/sales-qr/commands/lookup` | Kiểm tra lần lưu/gửi trước khi chưa nhận được kết quả; không dựng thành nút nghiệp vụ riêng. | [sales_qr_command_lookup](/docs/api/sales_qr_command_lookup) |
+| `POST` | `/api/erp/sales-qr/qr/add` | Ghi mã QR quét vào phiếu đang mở. | [sales_qr_scan_add](/docs/api/sales_qr_scan_add) |
+| `POST` | `/api/erp/sales-qr/qr/delete` | Xóa mã QR quét khỏi phiếu đang mở. | [sales_qr_scan_delete](/docs/api/sales_qr_scan_delete) |
+| `GET` | `/api/erp/sales-qr/attachments` | Lấy danh sách ảnh theo trang, các vị trí ảnh và quyền thêm/xóa trên phiếu; chỉ mở phần này khi màn hình có hỗ trợ. | [sales_qr_attachments](/docs/api/sales_qr_attachments) |
+
+## Điều kiện triển khai
+
+Đọc [Xác thực và phạm vi phiên](/docs/foundation/auth), [Lỗi và cách xử lý](/docs/foundation/errors) và [Quy tắc xây dựng giao diện](/docs/foundation/ui). Máy chủ quyết định thao tác được phép ở thời điểm thực hiện. Thuộc tính writable không thay thế canCreate/canUpdate hoặc action.enabled.
+
+**Nguồn tham chiếu:** `inventories/erp/20261010/six-screen-catalog.json#screens/sales-qr`. Đây là bản mô tả kỹ thuật được lưu từ nguồn; cần đối chiếu môi trường triển khai khi tích hợp. Thuộc tính writable không thay thế quyền ghi của tài khoản.

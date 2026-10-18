@@ -1,0 +1,45 @@
+---
+title: "Phiếu di chuyển / bàn giao máy"
+---
+
+Mục lục lấy từ thanh điều hướng `/help`; Các API dưới đây được đối chiếu bằng đúng mã phân hệ.
+
+Có **12 API** trong đặc tả. Trạng thái triển khai giao diện và nghiệm thu môi trường thật được xác nhận riêng.
+
+## Trình tự tích hợp
+
+1. Kiểm tra phiên đăng nhập, không gian làm việc và quyền tại `/api/erp/permissions`.
+2. Lấy `/api/erp/machine-movements/screen` để tra cấu trúc trường, danh sách lựa chọn và thao tác.
+3. Tải danh sách theo chi nhánh; mở chi tiết bằng mã định danh theo đúng tham số API.
+4. Đọc trạng thái các nút trên chứng từ; tải tiếp các phần dữ liệu có `hasMore`.
+5. Trước khi ghi, kiểm tra lại quyền, phạm vi phiên và phiên bản chứng từ; dùng đúng cấu trúc yêu cầu và khóa chống ghi lặp.
+6. Khi chưa nhận được kết quả sau gửi, tra cứu lại chính yêu cầu đã gửi; không tạo yêu cầu ghi mới để thử lại.
+
+## Mô hình dữ liệu
+
+Menu `1207` · Form `FA_Move2026Frm`. Tên trong danh mục nguồn: **Phiếu di chuyển / bàn giao máy**. [Trường dữ liệu, danh sách lựa chọn và ánh xạ SQL](./machine-movements-fields).
+
+Tên mục giữ nguyên theo hướng dẫn sử dụng. Việc đối chiếu dựa trên mã phân hệ; cần xác nhận nếu các tên menu khác nhau có thể mang ý nghĩa nghiệp vụ khác nhau.
+
+## API của màn hình
+
+| Phương thức | Đường dẫn | Chức năng | Mã thao tác |
+|---|---|---|---|
+| `GET` | `/api/erp/machine-movements/screen` | Lấy mô tả các cột, lựa chọn và nút của màn hình; không hiển thị thông tin nội bộ này cho người dùng. | [machine_movements_screen](/docs/api/machine_movements_screen) |
+| `GET` | `/api/erp/machine-movements` | Tải danh sách phiếu theo trang, tìm kiếm và bộ lọc của màn hình. | [machine_movements_list](/docs/api/machine_movements_list) |
+| `GET` | `/api/erp/machine-movements/detail` | Lấy đầy đủ thông tin phiếu và các bảng chi tiết theo trang. | [machine_movements_detail](/docs/api/machine_movements_detail) |
+| `GET` | `/api/erp/machine-movements/actions` | Lấy quyền hiện và trạng thái bật/tắt từng nút theo người đăng nhập và phiếu đang mở. | [machine_movements_actions](/docs/api/machine_movements_actions) |
+| `POST` | `/api/erp/machine-movements/options` | Lấy danh sách cho các ô chọn trên phiếu, có tìm kiếm và phân trang. | [machine_movements_options](/docs/api/machine_movements_options) |
+| `POST` | `/api/erp/machine-movements/commands/lookup` | Kiểm tra lần lưu/gửi trước khi chưa nhận được kết quả; không dựng thành nút nghiệp vụ riêng. | [machine_movements_command_lookup](/docs/api/machine_movements_command_lookup) |
+| `POST` | `/api/erp/machine-movements/selection` | API chọn dữ liệu đã có; ngoài phạm vi triển khai mới theo yêu cầu bỏ Import/copy. | [machine_movements_selection](/docs/api/machine_movements_selection) |
+| `POST` | `/api/erp/machine-movements/paste/validate` | API kiểm tra dữ liệu dán đã có; ngoài phạm vi triển khai mới theo yêu cầu bỏ Import/copy. | [machine_movements_paste_validate](/docs/api/machine_movements_paste_validate) |
+| `POST` | `/api/erp/machine-movements/create` | Tạo phiếu mới và ghi các dòng chi tiết vào cơ sở dữ liệu. | [machine_movements_create](/docs/api/machine_movements_create) |
+| `POST` | `/api/erp/machine-movements/save` | Ghi thay đổi của phiếu và các dòng chi tiết. | [machine_movements_save](/docs/api/machine_movements_save) |
+| `POST` | `/api/erp/machine-movements/delete` | Xóa phiếu khi người dùng và trạng thái cho phép. | [machine_movements_delete](/docs/api/machine_movements_delete) |
+| `GET` | `/api/erp/machine-movements/attachments` | Lấy danh sách ảnh theo trang, các vị trí ảnh và quyền thêm/xóa trên phiếu; chỉ mở phần này khi màn hình có hỗ trợ. | [machine_movements_attachments](/docs/api/machine_movements_attachments) |
+
+## Điều kiện triển khai
+
+Đọc [Xác thực và phạm vi phiên](/docs/foundation/auth), [Lỗi và cách xử lý](/docs/foundation/errors) và [Quy tắc xây dựng giao diện](/docs/foundation/ui). Máy chủ quyết định thao tác được phép ở thời điểm thực hiện. Thuộc tính writable không thay thế canCreate/canUpdate hoặc action.enabled.
+
+**Nguồn tham chiếu:** `inventories/erp/20261010/six-screen-catalog.json#screens/machine-movements`. Đây là bản mô tả kỹ thuật được lưu từ nguồn; cần đối chiếu môi trường triển khai khi tích hợp. Thuộc tính writable không thay thế quyền ghi của tài khoản.

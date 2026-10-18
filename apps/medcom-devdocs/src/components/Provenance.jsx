@@ -1,0 +1,3 @@
+import React from 'react';
+import catalog from '../data/catalog.json';
+export default function Provenance(){return <div className="provenance"><span className="eyebrow">BẢN ĐẶC TẢ ĐƯỢC LƯU</span><dl><dt>URL</dt><dd><a href={catalog.provenance.url}>{catalog.provenance.url}</a></dd><dt>Ngày tải (UTC)</dt><dd>{catalog.provenance.fetchedAt}</dd><dt>Phiên bản</dt><dd>{catalog.provenance.version}</dd><dt>SHA-256</dt><dd><code>{catalog.provenance.sha256}</code></dd><dt>Dung lượng</dt><dd>{catalog.provenance.bytes.toLocaleString('en')} byte</dd></dl>{catalog.sourceHashes.map(s=><div key={s.path}><code>{s.path}</code><p className="hash">SHA-256 {s.sha256}</p></div>)}</div>}

@@ -1,0 +1,43 @@
+# Tài liệu kỹ thuật Medcom ERP
+
+Đặc tả kỹ thuật Medcom ERP bằng tiếng Việt. Phiên bản 3.0.0; mã kiểm tra SHA-256 d60e5ff34888d1133e24ed9bd26b41032de406b5595c64c2a71d433610022570.
+Không suy ra quyền hoặc trạng thái nghiệp vụ chỉ từ việc đường dẫn API tồn tại.
+
+## Mục lục
+- [Tệp tài liệu](/docs/agents/context)
+- [Toàn bộ tài liệu](/llms-full.txt)
+- [OpenAPI](/openapi.json)
+- [Danh mục API](/context/operations.json)
+- [Phân hệ](/context/modules.json)
+- [Nguồn tham chiếu](/context/provenance.json)
+
+## Phân hệ nghiệp vụ
+- [Đề nghị mua hàng](/docs/modules/purchase-requests): contract present
+- [Duyệt đề nghị mua hàng](/docs/modules/purchase-approvals): contract present
+- [Đặt mua hàng](/docs/modules/purchase-orders): contract present
+- [Quản lý đơn hàng](/docs/modules/sales-orders): contract present
+- [Xác nhận đơn hàng](/docs/modules/sales-order-pm): contract present
+- [Duyệt đơn hàng](/docs/modules/sales-order-sa): contract present
+- [Xác nhận tình trạng hàng hoá](/docs/modules/sales-goods-status): Feature; mapping UNKNOWN
+- [Duyệt, PXK và hoá đơn](/docs/modules/sales-dispatch-invoices): Feature; mapping UNKNOWN
+- [Xuất hàng theo PXK](/docs/modules/sales-qr): contract present
+- [Phiếu đề nghị nhập hàng](/docs/modules/inbound-requests): contract present
+- [Chứng từ chi phí](/docs/modules/warehouse-cost-documents): Feature; mapping UNKNOWN
+- [Xác nhận tình trạng hàng về](/docs/modules/warehouse-arrival-status): Feature; mapping UNKNOWN
+- [Kiểm soát thông tin hàng hóa](/docs/modules/warehouse-goods-information): Feature; mapping UNKNOWN
+- [Kiểm soát và xác nhận chất lượng hàng hóa](/docs/modules/warehouse-quality-confirmation): Feature; mapping UNKNOWN
+- [Xác nhận tình trạng hàng hóa](/docs/modules/warehouse-goods-status): Feature; mapping UNKNOWN
+- [Phê duyệt phương án hàng hóa](/docs/modules/warehouse-goods-plan-approval): Feature; mapping UNKNOWN
+- [Phiếu đề nghị điều chuyển nội bộ (Sales / NVKD)](/docs/modules/internal-transfer-requests): contract present
+- [Xác nhận đề nghị điều chuyển (PM)](/docs/modules/internal-transfer-pm): contract present
+- [Đợt điều chuyển nội bộ (PM / Điều phối)](/docs/modules/internal-transfer-batches): contract present
+- [Xác nhận thiết bị điều chuyển (Kỹ thuật)](/docs/modules/internal-transfer-tech): contract present
+- [Phê duyệt điều chuyển nội bộ (TP SA)](/docs/modules/internal-transfer-sa): contract present
+- [Xử lý điều chuyển nội bộ (Kế toán)](/docs/modules/internal-transfer-accounting): contract present
+- [Xác nhận xuất điều chuyển (Kho nguồn)](/docs/modules/internal-transfer-warehouse-out): contract present
+- [Xác nhận nhận điều chuyển (Kho đích)](/docs/modules/internal-transfer-warehouse-in): contract present
+- [Xuất kho](/docs/modules/warehouse-qr): contract present
+- [Xuất bán hàng](/docs/modules/warehouse-sales-qr): Feature; mapping UNKNOWN
+- [Phiếu di chuyển / bàn giao máy](/docs/modules/machine-movements): contract present
+- [Phiếu sửa chữa / bảo hành / bảo trì máy](/docs/modules/machine-repairs): contract present
+- [Đăng ký QR / Serial linh kiện](/docs/modules/asset-component-registration): Feature; mapping UNKNOWN

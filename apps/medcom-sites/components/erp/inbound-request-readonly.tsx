@@ -132,7 +132,7 @@ export function InboundRequestReadOnly({documentId, presentationAllowed=true, br
     aria-busy={phase === "pending"} className={requestStyles.editor}>
     <RecordSection title="Thông tin chung">
     <RequestNotice title="Chế độ chỉ đọc">
-      <p>Chỉ hiển thị thông tin chứng từ và trang dòng hàng do dịch vụ đọc cung cấp. Không bao gồm toàn bộ dữ liệu phiếu nháp hoặc các dòng chi phí.</p>
+      <p>Chỉ hiển thị thông tin chứng từ và trang chi tiết do dịch vụ đọc cung cấp. Không bao gồm toàn bộ dữ liệu phiếu nháp hoặc các dòng chi phí.</p>
     </RequestNotice>
     <p role="status" className={`${requestStyles.muted} min-h-6`}>{phase === "pending" ? "Đang cập nhật bản chỉ đọc…" : detail ? "Bản chỉ đọc đã được cập nhật." : "Chưa tải được bản chỉ đọc."}</p>
     {phase === "pending" && !detail && <RequestLoading form label="Đang tải bản chỉ đọc…"/>}
@@ -147,14 +147,14 @@ export function InboundRequestReadOnly({documentId, presentationAllowed=true, br
         </dl>
     </>}
     </RecordSection>
-    <RecordSection title="Dòng hàng" aria-label="Dòng yêu cầu nhập kho chỉ đọc">
+    <RecordSection title="Chi tiết" aria-label="Dòng yêu cầu nhập kho chỉ đọc">
       {detail ? <>
         <p className={requestStyles.muted}>{detail.inboundRequestLines.length} dòng trên trang {detail.page}. Số lượng được giữ nguyên từ ERP; NULL là chưa có giá trị.</p>
         {detail.inboundRequestLines.length === 0
-          ? <RequestEmpty title="Trang này không có dòng hàng">Dịch vụ đọc không trả về dòng hàng cho trang này.</RequestEmpty>
+          ? <RequestEmpty title="Trang này không có chi tiết">Dịch vụ đọc không trả về chi tiết cho trang này.</RequestEmpty>
           : <RecordLinesTable indexedKey lines={detail.inboundRequestLines} binding={pagedItemDisplayBinding("inbound-requests",detail)} context={detail.itemDisplayContext} offset={(detail.page-1)*detail.pageSize} label="Dòng yêu cầu nhập kho chỉ đọc" columns={quantities.map(([field,label])=>({label,value:(line:DocumentDetail["inboundRequestLines"][number])=>line[field]}))}/>}
 
-        <nav aria-label="Trang dòng hàng chỉ đọc" className={requestStyles.footer}>
+        <nav aria-label="Trang chi tiết chỉ đọc" className={requestStyles.footer}>
           <span>Trang {detail.page}{detail.hasMore ? " · Còn dòng ở trang sau" : " · Trang cuối"}</span>
           <div className={requestStyles.actions}>
             <RequestButton type="button" disabled={phase !== "ready" || page === 1} onClick={() => navigate(page - 1)}>Dòng trước</RequestButton>
@@ -162,7 +162,7 @@ export function InboundRequestReadOnly({documentId, presentationAllowed=true, br
           </div>
           {page >= 1000 && detail.hasMore && <p className={requestStyles.muted}>Đã tới giới hạn 1.000 trang của dịch vụ; vẫn còn dòng chưa được hiển thị.</p>}
         </nav>
-      </>:<p className={requestStyles.muted}>Dòng hàng sẽ hiển thị khi bản đọc được xác minh.</p>}
+      </>:<p className={requestStyles.muted}>Chi tiết sẽ hiển thị khi bản đọc được xác minh.</p>}
     </RecordSection>
     <RecordSection title="Ghi chú"><p className={requestStyles.muted}>Dịch vụ đọc chưa cung cấp ghi chú cho phiếu này.</p></RecordSection>
   </section>;

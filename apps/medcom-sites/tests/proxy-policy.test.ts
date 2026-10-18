@@ -1,6 +1,17 @@
 import{test}from"node:test";import assert from"node:assert/strict";import{backendOrigin,localHttpsOrigin,resolveErpOrigins,erpCookies,relayCookie,routeAllowed,sameOriginWrite,erpScreenModules,requestBodyLimit,isNotificationId,notificationGetRoute,notificationReadRoute}from"../lib/erp/proxy-policy.ts";
 test("only deployed HTTPS DNS origins",()=>{assert.equal(backendOrigin("https://erp.example.com"),"https://erp.example.com");for(const v of[undefined,"http://erp.example.com","https://localhost","https://127.0.0.1","https://[::1]","https://user:pass@erp.example.com","https://erp.example.com/path","https://erp.example.com?url=x"])assert.equal(backendOrigin(v),null);});
 test("route allowlist prevents open proxy and unsupported mutation",()=>{assert.ok(routeAllowed("api/auth/login","POST"));for(const p of["api/admin/delete","api/auth/../admin","https://evil.example","api/documents/purchase-orders/write"])assert.equal(routeAllowed(p,"GET"),false);assert.equal(routeAllowed("api/documents/purchase-orders","POST"),false);});
+
+test("PM and SA attachments expose exact read routes without admitting other mutations",()=>{
+ for(const module of ["sales-order-pm","sales-order-sa"]){
+  for(const suffix of ["attachments","attachments/content"]){
+   assert.equal(routeAllowed(`api/erp/${module}/${suffix}`,"GET"),true);
+   assert.equal(routeAllowed(`api/erp/${module}/${suffix}`,"POST"),false);
+  }
+  assert.equal(routeAllowed(`api/erp/${module}/attachments/delete`,"POST"),false);
+  assert.equal(routeAllowed(`api/erp/${module}/attachments/other`,"GET"),false);
+ }
+});
 test("ERP screen modules, routes and 1MiB body limits are correctly allowlisted",()=>{
  assert.equal(erpScreenModules.length,19);
  for(const m of erpScreenModules){

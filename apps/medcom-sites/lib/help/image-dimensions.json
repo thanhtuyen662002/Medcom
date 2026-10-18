@@ -1,0 +1,234 @@
+{
+  "/help/images/approval-confirm-desktop.webp": {
+    "width": 1440,
+    "height": 1000
+  },
+  "/help/images/approval-confirm-mobile.webp": {
+    "width": 390,
+    "height": 844
+  },
+  "/help/images/approval-list-desktop.webp": {
+    "width": 1440,
+    "height": 1000
+  },
+  "/help/images/approval-list-mobile.webp": {
+    "width": 390,
+    "height": 859
+  },
+  "/help/images/approval-menu-desktop.webp": {
+    "width": 1440,
+    "height": 1000
+  },
+  "/help/images/approval-menu-mobile.webp": {
+    "width": 390,
+    "height": 844
+  },
+  "/help/images/approval-reject-desktop.webp": {
+    "width": 1440,
+    "height": 1000
+  },
+  "/help/images/approval-reject-mobile.webp": {
+    "width": 390,
+    "height": 844
+  },
+  "/help/images/pm-detail-desktop.webp": {
+    "width": 1440,
+    "height": 1000
+  },
+  "/help/images/pm-detail-mobile.webp": {
+    "width": 390,
+    "height": 844
+  },
+  "/help/images/pm-reject-desktop.webp": {
+    "width": 1440,
+    "height": 1000
+  },
+  "/help/images/pm-reject-mobile.webp": {
+    "width": 390,
+    "height": 844
+  },
+  "/help/images/pm-send-desktop.webp": {
+    "width": 1440,
+    "height": 1000
+  },
+  "/help/images/pm-send-mobile.webp": {
+    "width": 390,
+    "height": 844
+  },
+  "/help/images/po-detail-desktop.webp": {
+    "width": 1440,
+    "height": 1000
+  },
+  "/help/images/po-detail-mobile.webp": {
+    "width": 390,
+    "height": 844
+  },
+  "/help/images/po-list-desktop.webp": {
+    "width": 1440,
+    "height": 1000
+  },
+  "/help/images/po-list-mobile.webp": {
+    "width": 390,
+    "height": 859
+  },
+  "/help/images/pr-actions-desktop.webp": {
+    "width": 1440,
+    "height": 1000
+  },
+  "/help/images/pr-actions-mobile.webp": {
+    "width": 390,
+    "height": 844
+  },
+  "/help/images/pr-edit-desktop.webp": {
+    "width": 1440,
+    "height": 1000
+  },
+  "/help/images/pr-edit-mobile.webp": {
+    "width": 390,
+    "height": 844
+  },
+  "/help/images/pr-header-desktop.webp": {
+    "width": 1440,
+    "height": 1000
+  },
+  "/help/images/pr-header-mobile.webp": {
+    "width": 390,
+    "height": 844
+  },
+  "/help/images/pr-lines-desktop.webp": {
+    "width": 1440,
+    "height": 1000
+  },
+  "/help/images/pr-lines-mobile.webp": {
+    "width": 390,
+    "height": 844
+  },
+  "/help/images/pr-list-desktop.webp": {
+    "width": 1440,
+    "height": 1000
+  },
+  "/help/images/pr-list-mobile.webp": {
+    "width": 390,
+    "height": 863
+  },
+  "/help/images/pr-review-desktop.webp": {
+    "width": 1440,
+    "height": 1000
+  },
+  "/help/images/pr-review-mobile.webp": {
+    "width": 390,
+    "height": 844
+  },
+  "/help/images/qr-compare-desktop.webp": {
+    "width": 1440,
+    "height": 1000
+  },
+  "/help/images/qr-compare-mobile.webp": {
+    "width": 390,
+    "height": 844
+  },
+  "/help/images/qr-detail-desktop.webp": {
+    "width": 1440,
+    "height": 1000
+  },
+  "/help/images/qr-detail-mobile.webp": {
+    "width": 390,
+    "height": 844
+  },
+  "/help/images/qr-scan-desktop.webp": {
+    "width": 1440,
+    "height": 1000
+  },
+  "/help/images/qr-scan-mobile.webp": {
+    "width": 390,
+    "height": 844
+  },
+  "/help/images/sa-detail-desktop.webp": {
+    "width": 1440,
+    "height": 1000
+  },
+  "/help/images/sa-detail-mobile.webp": {
+    "width": 390,
+    "height": 844
+  },
+  "/help/images/sa-return-desktop.webp": {
+    "width": 1440,
+    "height": 1000
+  },
+  "/help/images/sa-return-mobile.webp": {
+    "width": 390,
+    "height": 844
+  },
+  "/help/images/sa-route-desktop.webp": {
+    "width": 1440,
+    "height": 1000
+  },
+  "/help/images/sa-route-mobile.webp": {
+    "width": 390,
+    "height": 844
+  },
+  "/help/images/so-create-desktop.webp": {
+    "width": 1440,
+    "height": 1000
+  },
+  "/help/images/so-create-mobile.webp": {
+    "width": 390,
+    "height": 844
+  },
+  "/help/images/so-detail-desktop.webp": {
+    "width": 1440,
+    "height": 1000
+  },
+  "/help/images/so-detail-mobile.webp": {
+    "width": 390,
+    "height": 844
+  },
+  "/help/images/so-edit-desktop.webp": {
+    "width": 1440,
+    "height": 1000
+  },
+  "/help/images/so-edit-mobile.webp": {
+    "width": 390,
+    "height": 844
+  },
+  "/help/images/so-history-desktop.webp": {
+    "width": 1440,
+    "height": 1000
+  },
+  "/help/images/so-history-mobile.webp": {
+    "width": 390,
+    "height": 844
+  },
+  "/help/images/so-lines-desktop.webp": {
+    "width": 1440,
+    "height": 1000
+  },
+  "/help/images/so-lines-mobile.webp": {
+    "width": 390,
+    "height": 844
+  },
+  "/help/images/so-list-desktop.webp": {
+    "width": 1440,
+    "height": 1085
+  },
+  "/help/images/so-list-mobile.webp": {
+    "width": 390,
+    "height": 1365
+  },
+  "/help/images/so-review-desktop.webp": {
+    "width": 1440,
+    "height": 1000
+  },
+  "/help/images/so-review-mobile.webp": {
+    "width": 390,
+    "height": 844
+  },
+  "/help/images/so-send-desktop.webp": {
+    "width": 1440,
+    "height": 1000
+  },
+  "/help/images/so-send-mobile.webp": {
+    "width": 390,
+    "height": 844
+  }
+}

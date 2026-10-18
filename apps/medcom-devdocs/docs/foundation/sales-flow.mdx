@@ -1,0 +1,32 @@
+---
+title: Luồng giao diện Bán hàng
+---
+
+## Luồng giao diện Bán hàng {#sales-flow-ui}
+
+Bản giao diện ngày 18/10/2026 dùng cùng form đơn hàng cho Sales, PM và SA. Trạng thái và quyền lấy từ response hiện tại; thanh quy trình chỉ đánh dấu màn hình đang xem, không suy diễn một bước đã hoàn tất từ số thứ tự.
+
+| Bước | Màn hình | Hành vi giao diện |
+|---|---|---|
+| Lập đơn | `sales-orders` | Tạo đơn, khách hàng/hợp đồng liên kết, thêm/sửa/xóa dòng hàng, lưu, xóa khi được cấp quyền, gửi PM và thu hồi. |
+| Xác nhận | `sales-order-pm` | Xem đơn/hàng hóa/lịch sử; gửi SA hoặc trả lại kèm lý do. Không dùng API save của Sales để sửa tại bước PM. |
+| Duyệt | `sales-order-sa` | Xem đơn, gửi Kế toán/Kỹ thuật, trả lại hoặc chọn bước gửi về từ options API. |
+| Tình trạng hàng hóa | `sales-goods-status` | Feature: chưa có route tương ứng; chưa thể thực hiện thao tác nghiệp vụ. |
+| Duyệt PXK/hóa đơn | `sales-dispatch-invoices` | Feature: chưa có route tương ứng; không tự ánh xạ sang Sales/SA hoặc tạo giả chứng từ. |
+| Xuất theo PXK | `sales-qr` | Chọn chứng từ đã có, quét thêm/xóa QR và đối chiếu. Không thay thế bước tạo/duyệt PXK hoặc hóa đơn. |
+
+### Lưu và phục hồi kết quả
+
+- `sales-order-edit-lines.ts` giữ lineId của dòng đã lưu, tạo đúng Add/Update/Remove; chỉ truyền các field writable của `ErpSalesOrderLineInput`. Trường tên/tiền hiển thị không đi vào payload.
+- Đọc đủ chi tiết cùng stateToken trước khi sửa; không ghép trang khác phiên bản. Lịch sử và chi tiết có nút tải thêm.
+- `SalesCommandSession` giữ một intent bất biến cho save/delete/workflow/QR. Khi kết quả chưa rõ, chặn thao tác mới và chặn đóng form; lookup gửi lại `operation` và đúng `originalIntent` trước đó.
+- Gửi lại là thao tác rõ ràng của người dùng, giữ nguyên idempotencyKey và expectedStateToken. Chỉ xác nhận thành công khi receipt khớp module/operation/documentId/idempotencyKey/deleted.
+- Không lưu nháp/intent nghiệp vụ vào localStorage. Phiên đang chờ chỉ nằm trong bộ nhớ trang; chưa có phục hồi sau đóng trình duyệt hoặc đăng xuất.
+- Xem ảnh tại PM/SA dùng route và content URL của đúng module. Việc tải ảnh khi tạo Sales giữ luồng hiện có. Chức năng quản lý upload/delete ảnh riêng tại PM/SA chưa được bổ sung trong giao diện này.
+
+### Nguồn và giới hạn kiểm chứng
+
+Đã tải lại đặc tả công khai tại `https://api-medcom.bms79.com/api/contracts/openapi.json` ngày 18/10/2026; SHA-256 `d60e5ff34888d1133e24ed9bd26b41032de406b5595c64c2a71d433610022570`, có 56 path thuộc bốn module trên. Hai module Feature không có route. Nguồn đối chiếu: `apps/medcom-sites/lib/help/sales-guides.ts`, trang module/API tại devdocs, `ErpActionRules.cs`, `ErpWorkflowRules.cs`, `ErpScreens.cs` và mã frontend được nêu trên.
+
+Kiểm tra logic dùng dữ liệu tổng hợp, không ghi ERP thật. Theo yêu cầu của chủ dự án, không chạy trình duyệt. Hình thức hiển thị thực tế và nghiệm thu dữ liệu/quyền/ghi trên môi trường triển khai: **UNKNOWN**, cần chủ dự án kiểm tra. Những giới hạn này không được coi là đã hoàn tất đầy đủ sáu bước nghiệp vụ.
+

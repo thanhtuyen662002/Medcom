@@ -1,0 +1,37 @@
+---
+title: Tổng quan kỹ thuật
+description: Các phân hệ và cấu trúc API của Medcom ERP.
+---
+
+Medcom ERP có các nhóm chức năng **Mua hàng**, **Bán hàng**, **Quản lý kho** và **Tài sản**. Mỗi phân hệ có các API và trường dữ liệu tương ứng với chứng từ, danh sách lựa chọn và thao tác nghiệp vụ.
+
+| Phân hệ | Chức năng có trong danh mục |
+|---|---|
+| Mua hàng | Đề nghị mua hàng, duyệt đề nghị và đặt mua hàng |
+| Bán hàng | Quản lý đơn hàng, xác nhận đơn hàng, duyệt đơn hàng và xử lý QR theo mã phân hệ được đăng ký |
+| Quản lý kho | Đề nghị nhập hàng, các bước điều chuyển nội bộ và quét QR xuất kho |
+| Tài sản | Di chuyển/bàn giao máy, sửa chữa/bảo hành/bảo trì máy |
+
+Các mục chưa xác định được API được ghi **Chưa có API**. Những thông tin còn thiếu bằng chứng giữ trạng thái **Chưa xác minh (UNKNOWN)**. Cấu trúc điều hướng đối chiếu theo `apps/medcom-sites/lib/help/guides.ts`; API và dữ liệu đối chiếu theo nguồn ở cuối trang.
+
+## Chọn điểm bắt đầu
+
+| Công việc | Đọc trước |
+|---|---|
+| Tích hợp lần đầu | [Khởi tạo kết nối](./quickstart), [Phiên đăng nhập và phạm vi dữ liệu](./auth) |
+| Dựng biểu mẫu hoặc bảng dữ liệu | [Mô tả trường dữ liệu](./metadata), [Quy tắc giao diện](./ui) |
+| Xử lý lưu / action | [Lỗi và cách xử lý](./errors), API cụ thể trong sidebar |
+| Tra cứu các API | [Danh mục API](/api) |
+| Tải đặc tả hoặc chuẩn bị yêu cầu triển khai | [Tệp tài liệu](../agents/context), [Mẫu yêu cầu](../agents/task-template) |
+
+## Ba lớp thông tin
+
+**Bản đặc tả OpenAPI** mô tả đường dẫn, phương thức HTTP, dữ liệu gửi lên, kết quả trả về và cơ chế xác thực. **Danh mục nguồn** bổ sung ánh xạ trường JSON–SQL, danh sách lựa chọn, mã kiểm tra và đường dẫn tham chiếu. **Máy chủ đang hoạt động** quyết định quyền, chi nhánh, phạm vi phiên, trạng thái nút và kết quả xử lý thực tế.
+
+Backend công bố `x-medcom-business-release: not-admitted`; chưa thể coi việc có API trong đặc tả là bằng chứng đã được nghiệm thu để phát hành nghiệp vụ. Trạng thái hoàn thành bài hướng dẫn `/help` không thay thế quyền hoặc trạng thái của API.
+
+## Quy tắc đọc tài liệu
+
+Ví dụ JSON được tổng hợp theo cấu trúc khai báo, chưa phải yêu cầu đã được máy chủ chấp nhận. Thay `<string>`, `<redacted>` bằng dữ liệu phù hợp ở môi trường được cấp quyền. Phân biệt trường cho phép null, trường không bắt buộc và trường có ánh xạ ghi. Ý nghĩa nghiệp vụ chưa có mô tả nguồn được ghi UNKNOWN, không suy diễn từ tên trường.
+
+**Nguồn tham chiếu:** `contracts/openapi.json`, `contracts/provenance.json`, `apps/medcom-sites/lib/help/guides.ts`. [Chi tiết nguồn](./evidence).

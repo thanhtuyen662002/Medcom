@@ -31,6 +31,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import { type NavTabId } from "./bottom-nav";
+import { SalesFeatureLinks } from "@/components/erp/sales-feature-links";
 
 export interface SidebarDrawerProps {
   open: boolean;
@@ -78,9 +79,6 @@ export function SidebarDrawer({
   isDarkMode = false,
   onToggleDarkMode,
   onLogout,
-  pendingOrdersCount = 0,
-  pendingPurchasesCount = 0,
-  pendingInboundCount = 0,
   tabAccess = null,
   onRetryTabs,
 }: SidebarDrawerProps) {
@@ -113,34 +111,10 @@ export function SidebarDrawer({
           description: "Chỉ số KPI, tiến độ & cảnh báo",
           icon: LayoutDashboard,
         },
-        {
-          id: "purchases",
-          label: "Phiếu đề nghị mua (PR)",
-          description: "14 trường header & 9 cột chi tiết",
-          icon: FileText,
-          badge: pendingPurchasesCount > 0 ? pendingPurchasesCount : undefined,
-          badgeColor: "purple",
-        },
-        {
-          id: "inbound",
-          label: "Yêu cầu nhập kho Dược",
-          description: "37 trường header & 25 cột chi tiết",
-          icon: PackageCheck,
-          badge: pendingInboundCount > 0 ? pendingInboundCount : undefined,
-          badgeColor: "emerald",
-        },
-        {
-          id: "scan",
-          label: "Quét mã QR Thuốc & Vật tư",
-          description: "Đọc chuẩn mã vạch GSP Dược điển",
-          icon: QrCode,
-          badge: "Camera",
-          badgeColor: "purple",
-        },
       ],
     },
     {
-      title: "Mua hàng & Nhập kho (ERP)",
+      title: "Mua hàng",
       items: [
         {
           id: "purchase-requests",
@@ -166,18 +140,10 @@ export function SidebarDrawer({
           badge: "CUD",
           badgeColor: "purple",
         },
-        {
-          id: "inbound-requests",
-          label: "Đề nghị nhập kho",
-          description: "Menu 07011 • Gửi BLĐ, Thủ kho & Chi phí",
-          icon: PackageCheck,
-          badge: "CUD & Chi phí",
-          badgeColor: "purple",
-        },
       ],
     },
     {
-      title: "Quản lý Bán hàng & SA/PM",
+      title: "Bán hàng",
       items: [
         {
           id: "sales-orders",
@@ -203,6 +169,7 @@ export function SidebarDrawer({
           badge: "Duyệt SA",
           badgeColor: "purple",
         },
+        { id: "sales-qr", label: "Xuất hàng theo PXK", icon: PackageCheck },
       ],
     },
     {
@@ -283,14 +250,6 @@ export function SidebarDrawer({
           description: "Menu 0702001 • Quét thêm & quét xóa mã lô",
           icon: QrCode,
           badge: "26 đối chiếu",
-          badgeColor: "emerald",
-        },
-        {
-          id: "sales-qr",
-          label: "Quét QR xuất bán hàng",
-          description: "Menu 0702010 • Quét thêm/xóa & đối chiếu hóa đơn",
-          icon: Boxes,
-          badge: "49 đối chiếu",
           badgeColor: "emerald",
         },
       ],
@@ -399,13 +358,13 @@ export function SidebarDrawer({
               <p className="text-xs font-bold text-neutral-900 dark:text-white truncate">
                 {userName}
               </p>
-              <p className="text-[10px] text-neutral-500 dark:text-neutral-400 truncate">
+              <p className="text-[13px] text-neutral-500 dark:text-neutral-400 truncate">
                 {userRole} · <span className="font-semibold text-brand-700 dark:text-brand-300">{currentBranch}</span>
               </p>
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <span className="text-[10px] px-2 py-0.5 rounded-lg bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-200/80 dark:border-neutral-700 font-mono font-bold">
+            <span className="text-[13px] px-2 py-0.5 rounded-lg bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-200/80 dark:border-neutral-700 font-mono font-bold">
               {currentBranch}
             </span>
           </div>
@@ -415,7 +374,7 @@ export function SidebarDrawer({
         <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4 scrollbar-thin">
           {tabAccess?.allowed == null ? (
             <div className="space-y-1">
-              <span className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 block mb-1.5">
+              <span className="px-2.5 text-[13px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 block mb-1.5">
                 Màn hình ERP
               </span>
               {tabAccess?.error ? (
@@ -439,7 +398,7 @@ export function SidebarDrawer({
               .filter((section) => section.items.length > 0)
               .map((section, sIdx) => (
                 <div key={sIdx} className="space-y-1">
-                  <span className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 block mb-1.5">
+                  <span className="px-2.5 text-[13px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 block mb-1.5">
                     {section.title}
                   </span>
                   <div className="space-y-0.5">
@@ -451,9 +410,10 @@ export function SidebarDrawer({
                         <button
                           key={item.id}
                           type="button"
+                          aria-current={isActive ? "page" : undefined}
                           onClick={() => handleItemClick(item.id)}
                           className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-left transition-all group ${isActive
-                              ? "bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 font-bold border border-brand-200/80 dark:border-brand-800/80 shadow-2xs"
+                              ? "bg-brand-100 dark:bg-brand-800 text-black dark:text-white font-bold border border-brand-300 dark:border-brand-500"
                               : "text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800/70 border border-transparent font-medium"
                             }`}
                         >
@@ -468,7 +428,7 @@ export function SidebarDrawer({
 
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center justify-between gap-1">
-                              <span className="text-xs truncate">{item.label}</span>
+                              <span className="text-sm truncate">{item.label}</span>
                               {item.badge !== undefined && (
                                 <span
                                   className={`px-1.5 py-0.2 text-[9px] font-bold rounded-full whitespace-nowrap ${item.badgeColor === "emerald"
@@ -483,7 +443,7 @@ export function SidebarDrawer({
                               )}
                             </div>
                             {item.description && (
-                              <p className="text-[10px] text-neutral-400 dark:text-neutral-500 truncate font-normal">
+                              <p className="text-[13px] text-neutral-400 dark:text-neutral-500 truncate font-normal">
                                 {item.description}
                               </p>
                             )}
@@ -496,6 +456,7 @@ export function SidebarDrawer({
                         </button>
                       );
                     })}
+                    {section.title === "Bán hàng" && <SalesFeatureLinks />}
                   </div>
                 </div>
               )))}
@@ -521,7 +482,7 @@ export function SidebarDrawer({
                 )}
                 <span>{isDarkMode ? "Giao diện tối (Dark)" : "Giao diện sáng (Light)"}</span>
               </div>
-              <span className="text-[10px] text-neutral-400">Đổi theme</span>
+              <span className="text-[13px] text-neutral-400">Đổi theme</span>
             </button>
           )}
 
@@ -540,7 +501,7 @@ export function SidebarDrawer({
           )}
 
           <div className="text-center pt-1">
-            <p className="text-[10px] text-neutral-400 dark:text-neutral-500">
+            <p className="text-[13px] text-neutral-400 dark:text-neutral-500">
               Medcom ERP v2026.1 · Full 116 Fields Active
             </p>
           </div>

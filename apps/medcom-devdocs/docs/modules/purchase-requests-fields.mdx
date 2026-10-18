@@ -1,0 +1,84 @@
+---
+title: "Đề nghị mua hàng · Trường dữ liệu"
+---
+
+:::note Phạm vi nguồn
+
+Các trường lấy từ danh mục kỹ thuật được backend nhúng. API đang triển khai trả **401** khi chưa đăng nhập; chưa đối chiếu dữ liệu mô tả theo phiên trên môi trường thật. Đây không phải danh mục toàn bộ cột của cơ sở dữ liệu.
+
+:::
+
+## Bảng và định danh
+
+| Phần dữ liệu | Bảng SQL |
+|---|---|
+| `header` | `AP_PurchaseRequestTbl` |
+| `lines` | `AP_PurchaseRequestDetailTbl` |
+
+Tên trong danh mục là tên trường nguồn. Kết quả phiên bản 3 có thể dùng tên thống nhất khác; phải đối chiếu cấu trúc phản hồi của từng API trước khi đọc hoặc gửi dữ liệu. Không gửi tên hiển thị thay mã định danh.
+
+## Phần dữ liệu: header
+
+| Trường nguồn | Cột SQL | Kiểu SQL | Cho phép null | Ánh xạ ghi | Mặc định | Trường ảo / nguồn |
+|---|---|---|---|---|---|---|
+| `purchaseRequestId` | `PurchaseRequestID` | `nvarchar(50)` | Không | Không | Không khai báo | —  |
+| `purchaseDate` | `PurchaseDate` | `datetime` | Có | Có | Không khai báo | —  |
+| `purposeId` | `PurposeID` | `int` | Có | Có | Không khai báo | —  |
+| `personSuggest` | `PersonSuggest` | `nvarchar(500)` | Không | Có | Không khai báo | —  |
+| `department` | `Department` | `nvarchar(100)` | Không | Có | Không khai báo | —  |
+| `purposeDescOrClient` | `PurposeDescOrClient` | `nvarchar(max)` | Có | Có | Không khai báo | —  |
+| `price` | `Price` | `decimal(18, 2)` | Có | Có | Không khai báo | —  |
+| `notes` | `Notes` | `nvarchar(max)` | Có | Có | Không khai báo | —  |
+| `statusId` | `StatusID` | `int` | Không | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `isLocked` | `isLock` | `bit` | Có | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `currencyId` | `CurrencyID` | `varchar(3)` | Không | Có | Không khai báo | —  |
+| `objectId` | `ObjectID` | `varchar(100)` | Không | Có | Không khai báo | —  |
+| `rateExchange` | `RateExchange` | `float` | Không | Có | Không khai báo | —  |
+| `branchId` | `BranchID` | `varchar(50)` | Không | Không | Không khai báo | —  |
+
+## Phần dữ liệu: lines
+
+| Trường nguồn | Cột SQL | Kiểu SQL | Cho phép null | Ánh xạ ghi | Mặc định | Trường ảo / nguồn |
+|---|---|---|---|---|---|---|
+| `userAutoId` | `UserAutoID` | `varchar(50)` | Không | Không | Không khai báo | —  |
+| `itemId` | `ItemID` | `varchar(50)` | Không | Có | Không khai báo | —  |
+| `budget` | `Budget` | `decimal(18, 0)` | Có | Có | Không khai báo | —  |
+| `timeRequired` | `TimeRequired` | `nvarchar(200)` | Có | Có | Không khai báo | —  |
+| `quantity` | `Quantity` | `decimal(18, 0)` | Không | Có | Không khai báo | —  |
+| `unitPrice` | `UnitPrice` | `decimal(18, 0)` | Không | Có | Không khai báo | —  |
+| `totalPrice` | `TotalPrice` | `decimal(18, 0)` | Có | Không | Không khai báo | —  |
+| `model` | `Model` | `varchar(50)` | Có | Có | Không khai báo | —  |
+| `purchaseRequestId` | `PurchaseRequestID` | `nvarchar(50)` | Có | Không | Không khai báo | —  |
+
+## Danh sách lựa chọn
+
+Không tự suy đoán cách tách chuỗi trường liên kết hoặc tham số. Đối chiếu đặc tả danh sách lựa chọn, dữ liệu mô tả từ máy chủ và mã xử lý hiện có.
+
+| Mã lựa chọn / trường | Bảng hiển thị | Trường giá trị | Trường tên | Trường liên kết | Tham số / bắt buộc | Vô hiệu / chọn nhiều |
+|---|---|---|---|---|---|---|
+| `BranchID` | `header` | `BranchID` | `BranchID` | `—` | `—` / `—` | false / false |
+| `CurrencyID` | `header` | `CurrencyID` | `CurrencyID` | `RateExchange` | `—` / `—` | false / false |
+| `Department` | `header` | `Department` | `Department` | `Department` | `—` / `—` | false / false |
+| `ObjectID` | `header` | `ObjectID` | `ObjectName` | `ObjectID;ObjectName;Address` | `—` / `—` | false / false |
+| `PersonSuggest` | `header` | `PersonSuggest` | `PersonSuggest` | `PersonSuggest` | `—` / `—` | false / false |
+| `PurposeID` | `header` | `PurposeID` | `PurposeName` | `PurposeID;PurposeName` | `—` / `—` | false / false |
+| `StatusID` | `header` | `StatusID` | `StatusName` | `StatusID;StatusName` | `—` / `—` | false / false |
+| `ItemID` | `grdChitiet` | `ItemID` | `ItemID` | `ItemID;ItemName;Unit;HangSX` | `—` / `—` | false / false |
+| `PurposeID` | `grdListDoc` | `PurposeID` | `PurposeName` | `PurposeID` | `—` / `—` | false / false |
+| `StatusID` | `grdListDoc` | `StatusID` | `StatusName` | `StatusID;StatusName` | `—` / `—` | false / true |
+
+## Các thao tác
+
+Tên và mã thao tác lấy theo danh mục, không thay thế quyền được cấp. Chỉ cho phép thực hiện khi cả quyền tài khoản và trạng thái nút trên chứng từ đều phù hợp.
+
+| Tên thao tác nguồn | Điều khiển | Mã thao tác khai báo | Nguồn tham chiếu |
+|---|---|---|---|
+| Gửi đề nghị | `CommandButtonCtl` | `UNKNOWN; xem ErpScreenCatalog.cs` | `dbo.SY_FrmCfg/AP_PurposeRequestListFrm/LYS1/CommandButtonCtl/BT` |
+| Gửi đặt mua hàng | `CommandButtonCtl_1` | `UNKNOWN; xem ErpScreenCatalog.cs` | `dbo.SY_FrmCfg/AP_PurposeRequestListFrm/LYS1/CommandButtonCtl_1/BT` |
+| In đề xuất mua hàng | `PrintButtonCtl` | `UNKNOWN; xem ErpScreenCatalog.cs` | `dbo.SY_FrmCfg/AP_PurposeRequestListFrm/LYS1/PrintButtonCtl/BT` |
+| In BB giao nhận hàng hóa | `PrintButtonCtl_1` | `UNKNOWN; xem ErpScreenCatalog.cs` | `dbo.SY_FrmCfg/AP_PurposeRequestListFrm/LYS1/PrintButtonCtl_1/BT` |
+| In BB không phù hợp | `PrintButtonCtl_2` | `UNKNOWN; xem ErpScreenCatalog.cs` | `dbo.SY_FrmCfg/AP_PurposeRequestListFrm/LYS1/PrintButtonCtl_2/BT` |
+| In ĐN phê duyệt HĐ/ĐH | `PrintButtonCtl_3` | `UNKNOWN; xem ErpScreenCatalog.cs` | `dbo.SY_FrmCfg/AP_PurposeRequestListFrm/LYS1/PrintButtonCtl_3/BT` |
+| In BB kiểm nhập kho HH | `PrintButtonCtl_4` | `UNKNOWN; xem ErpScreenCatalog.cs` | `dbo.SY_FrmCfg/AP_PurposeRequestListFrm/LYS1/PrintButtonCtl_4/BT` |
+
+**Nguồn tham chiếu:** `inventories/erp/20261010/six-screen-catalog.json#screens/purchase-requests`. Đây là bản mô tả kỹ thuật được lưu từ nguồn; cần đối chiếu môi trường triển khai khi tích hợp. Thuộc tính writable không thay thế quyền ghi của tài khoản.

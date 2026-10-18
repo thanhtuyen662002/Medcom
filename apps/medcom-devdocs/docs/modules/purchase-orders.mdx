@@ -1,0 +1,47 @@
+---
+title: "Đặt mua hàng"
+---
+
+Mục lục lấy từ thanh điều hướng `/help`; Các API dưới đây được đối chiếu bằng đúng mã phân hệ.
+
+Có **14 API** trong đặc tả. Trạng thái triển khai giao diện và nghiệm thu môi trường thật được xác nhận riêng.
+
+## Trình tự tích hợp
+
+1. Kiểm tra phiên đăng nhập, không gian làm việc và quyền tại `/api/erp/permissions`.
+2. Lấy `/api/erp/purchase-orders/screen` để tra cấu trúc trường, danh sách lựa chọn và thao tác.
+3. Tải danh sách theo chi nhánh; mở chi tiết bằng mã định danh theo đúng tham số API.
+4. Đọc trạng thái các nút trên chứng từ; tải tiếp các phần dữ liệu có `hasMore`.
+5. Trước khi ghi, kiểm tra lại quyền, phạm vi phiên và phiên bản chứng từ; dùng đúng cấu trúc yêu cầu và khóa chống ghi lặp.
+6. Khi chưa nhận được kết quả sau gửi, tra cứu lại chính yêu cầu đã gửi; không tạo yêu cầu ghi mới để thử lại.
+
+## Mô hình dữ liệu
+
+Menu `050129` · Form `AP_OrderFrm`. Tên trong danh mục nguồn: **Đơn đặt mua**. [Trường dữ liệu, danh sách lựa chọn và ánh xạ SQL](./purchase-orders-fields).
+
+Tên mục giữ nguyên theo hướng dẫn sử dụng. Việc đối chiếu dựa trên mã phân hệ; cần xác nhận nếu các tên menu khác nhau có thể mang ý nghĩa nghiệp vụ khác nhau.
+
+## API của màn hình
+
+| Phương thức | Đường dẫn | Chức năng | Mã thao tác |
+|---|---|---|---|
+| `GET` | `/api/erp/purchase-orders/screen` | Lấy mô tả các cột, lựa chọn và nút của màn hình; không hiển thị thông tin nội bộ này cho người dùng. | [purchase_orders_screen](/docs/api/purchase_orders_screen) |
+| `GET` | `/api/erp/purchase-orders` | Tải danh sách phiếu theo trang, tìm kiếm và bộ lọc của màn hình. | [purchase_orders_list](/docs/api/purchase_orders_list) |
+| `GET` | `/api/erp/purchase-orders/detail` | Lấy đầy đủ thông tin phiếu và các bảng chi tiết theo trang. | [purchase_orders_detail](/docs/api/purchase_orders_detail) |
+| `GET` | `/api/erp/purchase-orders/actions` | Lấy quyền hiện và trạng thái bật/tắt từng nút theo người đăng nhập và phiếu đang mở. | [purchase_orders_actions](/docs/api/purchase_orders_actions) |
+| `POST` | `/api/erp/purchase-orders/options` | Lấy danh sách cho các ô chọn trên phiếu, có tìm kiếm và phân trang. | [purchase_orders_options](/docs/api/purchase_orders_options) |
+| `POST` | `/api/erp/purchase-orders/item-price` | Lấy giá mua áp dụng cho hàng được chọn. | [purchase_orders_item_price](/docs/api/purchase_orders_item_price) |
+| `POST` | `/api/erp/purchase-orders/commands/lookup` | Kiểm tra lần lưu/gửi trước khi chưa nhận được kết quả; không dựng thành nút nghiệp vụ riêng. | [purchase_orders_command_lookup](/docs/api/purchase_orders_command_lookup) |
+| `POST` | `/api/erp/purchase-orders/create` | Tạo phiếu mới và ghi các dòng chi tiết vào cơ sở dữ liệu. | [purchase_orders_create](/docs/api/purchase_orders_create) |
+| `POST` | `/api/erp/purchase-orders/save` | Ghi thay đổi của phiếu và các dòng chi tiết. | [purchase_orders_save](/docs/api/purchase_orders_save) |
+| `POST` | `/api/erp/purchase-orders/delete` | Xóa phiếu khi người dùng và trạng thái cho phép. | [purchase_orders_delete](/docs/api/purchase_orders_delete) |
+| `GET` | `/api/erp/purchase-orders/attachments` | Lấy danh sách ảnh theo trang, các vị trí ảnh và quyền thêm/xóa trên phiếu; chỉ mở phần này khi màn hình có hỗ trợ. | [purchase_orders_attachments](/docs/api/purchase_orders_attachments) |
+| `GET` | `/api/erp/purchase-orders/attachments/content` | Mở ảnh gốc hoặc ảnh xem trước của phiếu đang xem. | [purchase_orders_attachment_content](/docs/api/purchase_orders_attachment_content) |
+| `POST` | `/api/erp/purchase-orders/attachments/delete` | Xóa ảnh được chọn khi người dùng và trạng thái phiếu cho phép. | [purchase_orders_attachment_delete](/docs/api/purchase_orders_attachment_delete) |
+| `POST` | `/api/erp/purchase-orders/attachments/upload` | Gửi file ảnh vào phiếu đã lưu và ghi ảnh vào cơ sở dữ liệu ERP. | [purchase_orders_attachment_upload](/docs/api/purchase_orders_attachment_upload) |
+
+## Điều kiện triển khai
+
+Đọc [Xác thực và phạm vi phiên](/docs/foundation/auth), [Lỗi và cách xử lý](/docs/foundation/errors) và [Quy tắc xây dựng giao diện](/docs/foundation/ui). Máy chủ quyết định thao tác được phép ở thời điểm thực hiện. Thuộc tính writable không thay thế canCreate/canUpdate hoặc action.enabled.
+
+**Nguồn tham chiếu:** `inventories/erp/20261011/cud-workflow-catalog.json#screens/purchase-orders`. Đây là bản mô tả kỹ thuật được lưu từ nguồn; cần đối chiếu môi trường triển khai khi tích hợp. Thuộc tính writable không thay thế quyền ghi của tài khoản.
