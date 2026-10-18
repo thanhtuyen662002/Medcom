@@ -12,8 +12,14 @@ public sealed partial class SqlErpScreenCommands
         ErpFrozenCommand request,string document,ErpReadSnapshot? before,Dictionary<string,JsonElement> header,
         IReadOnlyDictionary<string,IReadOnlyDictionary<string,object?>> remaining,CancellationToken token)
     {
-        if(before is null||plan.Module is not ("purchase-orders" or "inbound-requests")
-            ||JsonElement.DeepEquals(ErpInputRules.Serialize(before.Header.GetValueOrDefault("rateExchange")),header["rateExchange"]))return;
+        if(before is null||plan.Module is not ("purchase-orders" or "inbound-requests"))return;
+        var previous=ErpInputRules.Serialize(before.Header.GetValueOrDefault("rateExchange"));
+        var current=header["rateExchange"];
+        if(JsonElement.DeepEquals(previous,current)
+            ||previous.ValueKind==JsonValueKind.String&&current.ValueKind==JsonValueKind.String
+                &&decimal.TryParse(previous.GetString(),NumberStyles.AllowLeadingSign|NumberStyles.AllowDecimalPoint,CultureInfo.InvariantCulture,out var oldRate)
+                &&decimal.TryParse(current.GetString(),NumberStyles.AllowLeadingSign|NumberStyles.AllowDecimalPoint,CultureInfo.InvariantCulture,out var newRate)
+                &&oldRate==newRate)return;
         var touched=request.Changes.Where(c=>c.LineId is not null).Select(c=>c.LineId!).ToHashSet(StringComparer.Ordinal);
         var lines=before.Lines.Where(line=>remaining.ContainsKey(line.LineId)&&!touched.Contains(line.LineId)).ToArray();
         if(lines.Length==0)return;

@@ -90,8 +90,9 @@ public sealed class CalculatedDataTests
         var plan=ErpSqlPlan.Get(module)!;var calls=0;
         var lines=new[]{"keep","touched","removed"}.Select(id=>new ErpLineRow(id,new Dictionary<string,object?>
             {{"sourceAmount","3"},{"setQuantityByDocument","3"},{"unitPrice","2"}})).ToArray();
-        var before=new ErpReadSnapshot(plan,"QA-A","QA-DOC",new Dictionary<string,object?>{{"rateExchange",1d}},lines,false);
-        var header=new Dictionary<string,JsonElement>{{"rateExchange",ErpInputRules.Serialize(2d)}};
+        object oldRate=module=="inbound-requests"?"1.0000000000":1d;
+        var before=new ErpReadSnapshot(plan,"QA-A","QA-DOC",new Dictionary<string,object?>{{"rateExchange",oldRate}},lines,false);
+        var header=new Dictionary<string,JsonElement>{{"rateExchange",module=="inbound-requests"?ErpInputRules.Serialize("2"):ErpInputRules.Serialize(2d)}};
         var raw=ErpInputRules.Serialize(new{});
         var request=new ErpFrozenCommand(module,"save","key","QA-A","QA-DOC",new string('a',64),null,
             [new(ErpLineChangeKind.Update,"touched",null,raw)],raw,null,raw);
@@ -105,7 +106,7 @@ public sealed class CalculatedDataTests
         });
         await connection.OpenAsync();await using var tx=await connection.BeginTransactionAsync(IsolationLevel.Serializable);
         await SqlErpScreenCommands.RevalueUnchangedLines(tx,plan,request,"QA-DOC",before,header,remaining,default);Assert.Equal(1,calls);
-        header["rateExchange"]=ErpInputRules.Serialize(1d);
+        header["rateExchange"]=module=="inbound-requests"?ErpInputRules.Serialize("1"):ErpInputRules.Serialize(1d);
         await SqlErpScreenCommands.RevalueUnchangedLines(tx,plan,request,"QA-DOC",before,header,remaining,default);Assert.Equal(1,calls);
         await tx.RollbackAsync();
     }
