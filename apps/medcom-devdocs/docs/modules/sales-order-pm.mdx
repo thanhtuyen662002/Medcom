@@ -1,0 +1,46 @@
+---
+title: "Xác nhận đơn hàng"
+---
+
+Mục lục lấy từ thanh điều hướng `/help`; Các API dưới đây được đối chiếu bằng đúng mã phân hệ.
+
+Có **13 API** trong đặc tả. Trạng thái triển khai giao diện và nghiệm thu môi trường thật được xác nhận riêng.
+
+## Trình tự tích hợp
+
+1. Kiểm tra phiên đăng nhập, không gian làm việc và quyền tại `/api/erp/permissions`.
+2. Lấy `/api/erp/sales-order-pm/screen` để tra cấu trúc trường, danh sách lựa chọn và thao tác.
+3. Tải danh sách theo chi nhánh; mở chi tiết bằng mã định danh theo đúng tham số API.
+4. Đọc trạng thái các nút trên chứng từ; tải tiếp các phần dữ liệu có `hasMore`.
+5. Trước khi ghi, kiểm tra lại quyền, phạm vi phiên và phiên bản chứng từ; dùng đúng cấu trúc yêu cầu và khóa chống ghi lặp.
+6. Khi chưa nhận được kết quả sau gửi, tra cứu lại chính yêu cầu đã gửi; không tạo yêu cầu ghi mới để thử lại.
+
+## Mô hình dữ liệu
+
+Menu `060021` · Form `AR_OrderComfirmFrm`. Tên trong danh mục nguồn: **PM xử lý đơn hàng**. [Trường dữ liệu, danh sách lựa chọn và ánh xạ SQL](./sales-order-pm-fields).
+
+Tên mục giữ nguyên theo hướng dẫn sử dụng. Việc đối chiếu dựa trên mã phân hệ; cần xác nhận nếu các tên menu khác nhau có thể mang ý nghĩa nghiệp vụ khác nhau.
+
+## API của màn hình
+
+| Phương thức | Đường dẫn | Chức năng | Mã thao tác |
+|---|---|---|---|
+| `GET` | `/api/erp/sales-order-pm/screen` | Lấy mô tả các cột, lựa chọn và nút của màn hình; không hiển thị thông tin nội bộ này cho người dùng. | [sales_order_pm_screen](/docs/api/sales_order_pm_screen) |
+| `GET` | `/api/erp/sales-order-pm` | Tải danh sách phiếu theo trang, tìm kiếm và bộ lọc của màn hình. | [sales_order_pm_list](/docs/api/sales_order_pm_list) |
+| `GET` | `/api/erp/sales-order-pm/detail` | Lấy đầy đủ thông tin phiếu và các bảng chi tiết theo trang. | [sales_order_pm_detail](/docs/api/sales_order_pm_detail) |
+| `GET` | `/api/erp/sales-order-pm/actions` | Lấy quyền hiện và trạng thái bật/tắt từng nút theo người đăng nhập và phiếu đang mở. | [sales_order_pm_actions](/docs/api/sales_order_pm_actions) |
+| `GET` | `/api/erp/sales-order-pm/contract-info` | Mở thông tin hợp đồng liên quan đến phiếu. | [sales_order_pm_contract_info](/docs/api/sales_order_pm_contract_info) |
+| `POST` | `/api/erp/sales-order-pm/options` | Lấy danh sách cho các ô chọn trên phiếu, có tìm kiếm và phân trang. | [sales_order_pm_options](/docs/api/sales_order_pm_options) |
+| `POST` | `/api/erp/sales-order-pm/commands/lookup` | Kiểm tra lần lưu/gửi trước khi chưa nhận được kết quả; không dựng thành nút nghiệp vụ riêng. | [sales_order_pm_command_lookup](/docs/api/sales_order_pm_command_lookup) |
+| `POST` | `/api/erp/sales-order-pm/actions/send-sa` | Thực hiện nút “Gửi SA” trên phiếu đang mở, khi người dùng và trạng thái cho phép. | [sales_order_pm_send_sa](/docs/api/sales_order_pm_send_sa) |
+| `POST` | `/api/erp/sales-order-pm/actions/reject` | Thực hiện nút “Từ chối nhanh” trên phiếu đang mở, khi người dùng và trạng thái cho phép. | [sales_order_pm_reject](/docs/api/sales_order_pm_reject) |
+| `GET` | `/api/erp/sales-order-pm/attachments` | Lấy danh sách ảnh theo trang, các vị trí ảnh và quyền thêm/xóa trên phiếu; chỉ mở phần này khi màn hình có hỗ trợ. | [sales_order_pm_attachments](/docs/api/sales_order_pm_attachments) |
+| `GET` | `/api/erp/sales-order-pm/attachments/content` | Mở ảnh gốc hoặc ảnh xem trước của phiếu đang xem. | [sales_order_pm_attachment_content](/docs/api/sales_order_pm_attachment_content) |
+| `POST` | `/api/erp/sales-order-pm/attachments/delete` | Xóa ảnh được chọn khi người dùng và trạng thái phiếu cho phép. | [sales_order_pm_attachment_delete](/docs/api/sales_order_pm_attachment_delete) |
+| `POST` | `/api/erp/sales-order-pm/attachments/upload` | Gửi file ảnh vào phiếu đã lưu và ghi ảnh vào cơ sở dữ liệu ERP. | [sales_order_pm_attachment_upload](/docs/api/sales_order_pm_attachment_upload) |
+
+## Điều kiện triển khai
+
+Đọc [Xác thực và phạm vi phiên](/docs/foundation/auth), [Lỗi và cách xử lý](/docs/foundation/errors) và [Quy tắc xây dựng giao diện](/docs/foundation/ui). Máy chủ quyết định thao tác được phép ở thời điểm thực hiện. Thuộc tính writable không thay thế canCreate/canUpdate hoặc action.enabled.
+
+**Nguồn tham chiếu:** `inventories/erp/20261011/cud-workflow-catalog.json#screens/sales-order-pm`. Đây là bản mô tả kỹ thuật được lưu từ nguồn; cần đối chiếu môi trường triển khai khi tích hợp. Thuộc tính writable không thay thế quyền ghi của tài khoản.

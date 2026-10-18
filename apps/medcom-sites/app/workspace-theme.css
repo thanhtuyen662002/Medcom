@@ -2,17 +2,17 @@
    authority, portal, scroll-owner and responsive contracts in globals.css. */
 html:root {
   --background: #ffffff;
-  --foreground: #101828;
+  --foreground: #000000;
   --card: #ffffff;
-  --card-foreground: #101828;
+  --card-foreground: #000000;
   --popover: #ffffff;
-  --popover-foreground: #101828;
+  --popover-foreground: #000000;
   --primary: #175cd3;
   --primary-foreground: #ffffff;
   --secondary: #f9fafb;
-  --secondary-foreground: #344054;
+  --secondary-foreground: #000000;
   --muted: #f9fafb;
-  --muted-foreground: #667085;
+  --muted-foreground: #000000;
   --accent: #eff4ff;
   --accent-foreground: #1849a9;
   --border: #eaecf0;
@@ -20,7 +20,7 @@ html:root {
   --ring: #175cd3;
   --radius: .5rem;
   --sidebar: #ffffff;
-  --sidebar-foreground: #344054;
+  --sidebar-foreground: #000000;
   --sidebar-border: #eaecf0;
   --surface-shadow: 0 1px 2px #1018280d;
   --medcom-topbar-height: 68px;
@@ -33,13 +33,13 @@ html:root.dark {
   --popover: #161b26;
   --popover-foreground: #ffffff;
   --secondary: #1f242f;
-  --secondary-foreground: #ececed;
+  --secondary-foreground: #ffffff;
   --muted: #1f242f;
-  --muted-foreground: #aeb4bf;
+  --muted-foreground: #ffffff;
   --border: #333741;
   --input: #475467;
   --sidebar: #101622;
-  --sidebar-foreground: #ececed;
+  --sidebar-foreground: #ffffff;
   --sidebar-border: #333741;
   --surface-shadow: 0 8px 28px #00000020;
 }
@@ -55,7 +55,7 @@ html:root.dark[data-palette="blue"] {
   --accent-foreground: #bad5ff; --ring: #8dbbff; --sidebar-primary: #8dbbff;
   --sidebar-accent: #26354c; --sidebar-accent-foreground: #bad5ff; --sidebar-ring: #8dbbff;
 }
-html body { font-family: "Inter", "Segoe UI", sans-serif; letter-spacing: normal; line-height: 1.5; }
+html body { font-family: var(--font-sans); letter-spacing: normal; line-height: 1.5; }
 html [data-slot="button"], html .request-select, html [data-slot="input"], html [data-slot="textarea"], html [data-slot="select-trigger"] { border-radius: 8px; font-size: .875rem; }
 html [data-slot="button"] { font-weight: 600; gap: 8px; transition: background-color .16s, border-color .16s, box-shadow .16s; }
 html [data-slot="button"][data-variant="outline"] { border-color: var(--input); background: var(--card); box-shadow: 0 1px 2px #00000004; }
@@ -290,4 +290,42 @@ html .record-lines-table .item-identity-field-3 dt { margin-right: 8px; }
   html .topbar, html .workspace-footer { display: none; }
   html .panel, html .request-panel { box-shadow: none; }
   html .erp-grid .request-list-table .request-list-action-heading, html .erp-grid .request-list-table .request-list-open { position: static; box-shadow: none; }
+}
+
+/* Neutral copy follows the active theme. Surface, brand, status and inverse
+   button colors retain their own contrast pairs. */
+@layer utilities {
+  html:not(.dark) :is(
+    .text-neutral-300, .text-neutral-400, .text-neutral-500, .text-neutral-600, .text-neutral-700, .text-neutral-800, .text-neutral-900,
+    .text-gray-400, .text-gray-500, .text-gray-600, .text-gray-700, .text-gray-800,
+    .text-slate-400, .text-slate-500, .text-slate-600, .text-slate-700, .text-slate-800,
+    .text-zinc-400, .text-zinc-500, .text-zinc-600, .text-zinc-700, .text-zinc-800,
+    .text-stone-400, .text-stone-500, .text-stone-600, .text-stone-700, .text-stone-800
+  ) {
+    color: #000000;
+  }
+
+  html.dark :is(
+    .text-neutral-300, .text-neutral-400, .text-neutral-500, .text-neutral-600, .text-neutral-700, .text-neutral-800, .text-neutral-900,
+    .text-gray-400, .text-gray-500, .text-gray-600, .text-gray-700, .text-gray-800,
+    .text-slate-400, .text-slate-500, .text-slate-600, .text-slate-700, .text-slate-800,
+    .text-zinc-400, .text-zinc-500, .text-zinc-600, .text-zinc-700, .text-zinc-800,
+    .text-stone-400, .text-stone-500, .text-stone-600, .text-stone-700, .text-stone-800,
+    .dark\:text-neutral-100, .dark\:text-neutral-200, .dark\:text-neutral-300,
+    .dark\:text-neutral-400, .dark\:text-neutral-500, .dark\:text-neutral-600
+  ) {
+    color: #ffffff;
+  }
+
+  html:not(.dark) :is(.hover\:text-neutral-600, .hover\:text-neutral-700, .hover\:text-neutral-800, .hover\:text-neutral-900):hover {
+    color: #000000;
+  }
+
+  html.dark :is(.hover\:text-neutral-100, .hover\:text-neutral-200, .hover\:text-neutral-600, .hover\:text-neutral-700, .hover\:text-neutral-800, .hover\:text-neutral-900):hover {
+    color: #ffffff;
+  }
+
+  html .placeholder\:text-neutral-400::placeholder {
+    color: var(--foreground);
+  }
 }

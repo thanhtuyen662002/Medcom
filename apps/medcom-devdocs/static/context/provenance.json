@@ -1,0 +1,31 @@
+{
+  "url": "https://api-medcom.bms79.com/api/contracts/openapi.json",
+  "fetchedAt": "2026-10-17T12:37:06.533Z",
+  "sha256": "d60e5ff34888d1133e24ed9bd26b41032de406b5595c64c2a71d433610022570",
+  "bytes": 3147407,
+  "version": "3.0.0",
+  "operations": 276,
+  "paths": 276,
+  "schemas": 1209,
+  "sourceHashes": [
+    {
+      "path": "docs/backend/BE_FE_API_REFERENCE_20261011.md",
+      "sha256": "384573bc23de1baf97c8f91ddf4847e9f6e41c82d9f9ff43660256412a0e1508"
+    },
+    {
+      "path": "inventories/erp/20261010/six-screen-catalog.json",
+      "sha256": "cd654678f14f5ea008dbb5ac95f2d8e758e3c8a7478dd28435fad932b1fb991b"
+    },
+    {
+      "path": "inventories/erp/20261011/cud-workflow-catalog.json",
+      "sha256": "1c3ee92852d012ee337f955d601fe7ab65057c1dcdd109714796f224009ff50b"
+    },
+    {
+      "path": "inventories/backend/20261011/api-reference-bindings.json",
+      "sha256": "80985963a84d71ad696eb006ac05992787c4733030d80ae7760492ea9278626b"
+    }
+  ],
+  "helpSha256": "a9c7b2a55166230253665340954b350a0bbe896765f35f52b90b2a304fad3988",
+  "liveMetadata": "401 without session; UNKNOWN authenticated values",
+  "libraryArchiveAccess": "Unavailable; no rehash or direct inspection claimed"
+}

@@ -248,7 +248,7 @@ function InboundEditor({documentId,statusPresentation,access,adapter,onConfirmed
 
   if(!access.scopeKey||!access.canRead)return <section role="status" className={requestStyles.section}><h2 className={requestStyles.title}>Yêu cầu nhập kho</h2><p>Phiên hoặc quyền đọc hiện tại không khả dụng. Dữ liệu của phiên trước được ẩn.</p></section>;
   if(!service)return <section role="status" className={requestStyles.section}><h2 className={requestStyles.title}>Yêu cầu nhập kho</h2><p>Chưa thể mở dữ liệu phiếu trong phạm vi hiện tại.</p>{unresolved&&<p>{unknownMessage}</p>}</section>;
-  if(!documentId&&!state.awaitingSnapshot)return <section role="status" className={requestStyles.section}><h2 className={requestStyles.title}>Yêu cầu nhập kho</h2><p>Chọn một phiếu trong danh sách để xem thông tin và dòng hàng. Tạo mới chưa được mở.</p>{unresolved&&<RequestButton disabled={state.phase!=="unknown"} onClick={()=>void reconcile()}>Kiểm tra yêu cầu gốc</RequestButton>}</section>;
+  if(!documentId&&!state.awaitingSnapshot)return <section role="status" className={requestStyles.section}><h2 className={requestStyles.title}>Yêu cầu nhập kho</h2><p>Chọn một phiếu trong danh sách để xem thông tin và chi tiết. Tạo mới chưa được mở.</p>{unresolved&&<RequestButton disabled={state.phase!=="unknown"} onClick={()=>void reconcile()}>Kiểm tra yêu cầu gốc</RequestButton>}</section>;
   const pageCount=Math.max(1,Math.ceil(state.details.length/25)),shownPage=Math.min(page,pageCount);
   const receipt=state.receipt?.documentId===documentId||state.awaitingSnapshot?state.receipt:null;
   return <section data-testid="inbound-editor" data-document-id={documentId??""} data-phase={state.phase} aria-busy={busy} aria-label="Yêu cầu nhập kho trên điện thoại" className={requestStyles.editor} style={{width:"100%",minWidth:0,boxSizing:"border-box",overflowWrap:"anywhere"}}>
@@ -259,7 +259,7 @@ function InboundEditor({documentId,statusPresentation,access,adapter,onConfirmed
     {!unresolved&&<RecordDetailToolbar presentationAllowed={presentationAllowed&&access.canRead&&access.available&&bindingCurrent}><RequestButton type="button" disabled={busy} onClick={reload}>Đọc lại ERP</RequestButton></RecordDetailToolbar>}
     {state.awaitingSnapshot&&<p role="alert">Đang đọc lại phiếu đã được ERP xác nhận: {state.awaitingSnapshot.documentId}. Chưa thể chỉnh sửa hoặc gửi tiếp. Không gửi lại thao tác đã xác nhận.</p>}
     {!bound&&unresolved&&<p>Chờ kết quả yêu cầu gốc trước khi mở chứng từ đã chọn.</p>}
-    {(!currentView||!state.header)&&<><RecordSection title="Thông tin chung">{state.phase==="loading"&&!unresolved&&!state.awaitingSnapshot&&<RequestLoading form label="Đang đọc phiếu từ ERP…"/>}<p className={requestStyles.muted}>Thông tin sẽ hiển thị khi phiếu được xác minh.</p></RecordSection><RecordSection title="Dòng hàng"><p className={requestStyles.muted}>Chưa có bản đọc hiện tại để hiển thị dòng hàng.</p></RecordSection><RecordSection title="Ghi chú"><p className={requestStyles.muted}>Ghi chú sẽ hiển thị cùng bản đọc được xác minh.</p></RecordSection></>}
+    {(!currentView||!state.header)&&<><RecordSection title="Thông tin chung">{state.phase==="loading"&&!unresolved&&!state.awaitingSnapshot&&<RequestLoading form label="Đang đọc phiếu từ ERP…"/>}<p className={requestStyles.muted}>Thông tin sẽ hiển thị khi phiếu được xác minh.</p></RecordSection><RecordSection title="Chi tiết"><p className={requestStyles.muted}>Chưa có bản đọc hiện tại để hiển thị chi tiết.</p></RecordSection><RecordSection title="Ghi chú"><p className={requestStyles.muted}>Ghi chú sẽ hiển thị cùng bản đọc được xác minh.</p></RecordSection></>}
     {currentView&&state.header&&<form id={formId} ref={form} onSubmit={event=>{event.preventDefault();review();}} className={requestStyles.stack}>
       <RecordDetailStatus presentationAllowed={presentationAllowed&&access.canRead&&access.available&&bindingCurrent}><RequestStatus value={currentView.statusId} statusName={statusPresentation?.documentId===currentView.documentId&&statusPresentation.id===currentView.statusId?statusPresentation.name:undefined}/></RecordDetailStatus>
       {!access.canSave&&!access.canSend&&<RequestNotice>Phiếu hiện chỉ được xem theo quyền của bạn.</RequestNotice>}
@@ -267,7 +267,7 @@ function InboundEditor({documentId,statusPresentation,access,adapter,onConfirmed
       <RecordFieldset disabled={!editable} title="Thông tin chung">
         {headerFields.filter(([field])=>field!=="notes").map(([field,label,nullable,multiline])=><ExactField key={field} label={label} id={`inbound-header-${field}`} value={state.header![field]} nullable={nullable} multiline={multiline} disabled={field==="branchId"||field==="documentDate"} error={state.errors[`header.${field}`]} onChange={value=>patchHeader(field,value)}/>)}
       </RecordFieldset>
-      <RecordSection title="Dòng hàng" aria-label="Dòng yêu cầu nhập kho" description={`${state.details.length} dòng đầy đủ`}>
+      <RecordSection title="Chi tiết" aria-label="Dòng yêu cầu nhập kho" description={`${state.details.length} dòng đầy đủ`}>
         {state.details.slice((shownPage-1)*25,shownPage*25).map((row,index)=>{
           const ordinal=(shownPage-1)*25+index+1;
           const key=lineKey(row),domKey=encodeURIComponent(key);
@@ -277,7 +277,7 @@ function InboundEditor({documentId,statusPresentation,access,adapter,onConfirmed
           </fieldset>;
         })}
         {state.errors.details&&<p role="alert">{state.errors.details}</p>}
-        <nav aria-label="Trang dòng hàng" style={{display:"flex",gap:8,flexWrap:"wrap"}}><RequestButton type="button" disabled={shownPage===1||busy||unresolved} onClick={()=>setPage(shownPage-1)}>Dòng trước</RequestButton><span>Trang {shownPage}/{pageCount}; giữ đủ {state.details.length} dòng</span><RequestButton type="button" disabled={shownPage===pageCount||busy||unresolved} onClick={()=>setPage(shownPage+1)}>Dòng tiếp</RequestButton></nav>
+        <nav aria-label="Trang chi tiết" style={{display:"flex",gap:8,flexWrap:"wrap"}}><RequestButton type="button" disabled={shownPage===1||busy||unresolved} onClick={()=>setPage(shownPage-1)}>Dòng trước</RequestButton><span>Trang {shownPage}/{pageCount}; giữ đủ {state.details.length} dòng</span><RequestButton type="button" disabled={shownPage===pageCount||busy||unresolved} onClick={()=>setPage(shownPage+1)}>Dòng tiếp</RequestButton></nav>
         <RequestButton type="button" disabled={!editable||state.details.length>=500} onClick={addDetail}>Thêm dòng</RequestButton>
       </RecordSection>
       <RecordSection title="Ghi chú"><fieldset disabled={!editable}><ExactField label="Ghi chú" id="inbound-header-notes" value={state.header.notes} nullable multiline error={state.errors["header.notes"]} onChange={value=>patchHeader("notes",value)}/></fieldset>
@@ -295,7 +295,7 @@ function InboundEditor({documentId,statusPresentation,access,adapter,onConfirmed
       {!dirty&&[0,1].includes(currentView.statusId)&&!canSend(currentView)&&<p>Cần có ít nhất một dòng; lô, số lượng bộ, số lượng thùng và ngày giờ hết hạn cần có giá trị trước khi gửi. ERP kiểm tra điều kiện trước khi nhận yêu cầu.</p>}
       {dirty&&<p>Lưu và đọc lại thay đổi trước khi gửi. Gửi chỉ chuyển yêu cầu sang trạng thái 2; không phải nhập tồn kho.</p>}
     </form>}
-    <RecordDeleteConfirmation intent={deleteTarget} open={deleteTarget!==null&&deleteTarget.binding===binding&&editable} identity={deleteTarget?.identity??"Dòng hàng"} presentationAllowed={presentationAllowed&&access.canRead&&access.available&&bindingCurrent}
+    <RecordDeleteConfirmation intent={deleteTarget} open={deleteTarget!==null&&deleteTarget.binding===binding&&editable} identity={deleteTarget?.identity??"Chi tiết"} presentationAllowed={presentationAllowed&&access.canRead&&access.available&&bindingCurrent}
       isAllowed={()=>isPresentationCurrent()&&deletionAuthority.current.editable&&deleteTarget?.binding===deletionAuthority.current.binding}
       onCancel={()=>setDeleteTarget(null)} onConfirm={()=>{if(isPresentationCurrent()&&deleteTarget&&deletionAuthority.current.editable&&deleteTarget.binding===deletionAuthority.current.binding){removeDetail(deleteTarget.key);setDeleteTarget(null);}}}/>
   </section>;

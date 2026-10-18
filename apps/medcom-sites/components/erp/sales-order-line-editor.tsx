@@ -27,7 +27,7 @@ export function SalesOrderLineEditor({ lines, branchId, contractId, onPatch, onA
     <div className="space-y-3">
       {lines.map((line, index) => {
         const values = salesOrderLineDisplay(line);
-        return <article key={line.key} aria-label={`Dòng hàng ${index + 1}`}
+        return <article key={line.key} aria-label={`Chi tiết ${index + 1}`}
           className="min-w-0 space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-3 dark:border-neutral-800 dark:bg-neutral-950/40 sm:p-4">
           <div className="flex items-center justify-between gap-2">
             <h5 className="text-xs font-bold text-neutral-600 dark:text-neutral-300">Dòng {index + 1}</h5>

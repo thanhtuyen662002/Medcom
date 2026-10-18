@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Plus, X, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { erpClient } from "@/lib/erp/erp-client";
-import type { ErpChoice } from "@/lib/erp/erp-screen-contracts";
+import type { ErpChoice, ErpDocumentDetail } from "@/lib/erp/erp-screen-contracts";
 import { UntitledBottomSheet } from "./bottom-sheet";
 import { LookupField, choiceLabel, fieldText } from "./lookup-field";
 import { UntitledButton } from "./button";
@@ -13,10 +13,13 @@ interface PurchaseRequestCreateSheetProps {
   onClose: () => void;
   currentBranch: string;
   onCreated?: (documentId: string) => void;
+  documentId?: string;
+  onSaved?: (documentId: string) => void;
 }
 
 interface DraftLine {
   key: string;
+  lineId?: string;
   itemId: string;
   itemChoice: ErpChoice | null;
   model: string;
@@ -38,6 +41,15 @@ const emptyLine = (): DraftLine => ({
   timeRequired: "",
   quantity: "1",
   unitPrice: "",
+});
+
+const text = (value: unknown) => value == null ? "" : String(value);
+const choice = (id: unknown, label?: unknown, fields: Record<string, unknown> = {}): ErpChoice | null =>
+  text(id) ? { id: text(id), name: text(label) || text(id), label: text(label) || text(id), fields } : null;
+const multiChoices = (value: unknown): ErpChoice[] => text(value).split(",").map(id => id.trim()).filter(Boolean).map(id => choice(id)!);
+const lineValues = (line: DraftLine): Record<string, unknown> => ({
+  itemId: line.itemId.trim(), quantity: line.quantity.trim(), unitPrice: line.unitPrice.trim(),
+  budget: line.budget.trim() || null, timeRequired: line.timeRequired.trim() || null, model: line.model.trim() || null,
 });
 
 function formatVND(n: number): string {
@@ -94,7 +106,17 @@ export function PurchaseRequestCreateSheet({
   onClose,
   currentBranch,
   onCreated,
+  documentId,
+  onSaved,
 }: PurchaseRequestCreateSheetProps) {
+  const isEditing = !!documentId;
+  const [baseline, setBaseline] = useState<ErpDocumentDetail | null>(null);
+  const [loadingDocument, setLoadingDocument] = useState(isEditing);
+  const [loadError, setLoadError] = useState(false);
+  const [readRevision, setReadRevision] = useState(0);
+  const saveIntent = useRef<Parameters<typeof erpClient.saveDocument>[1] | null>(null);
+  const submitLock = useRef(false);
+  const [uncertain, setUncertain] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const query = window.matchMedia("(max-width: 767px)");
@@ -138,6 +160,50 @@ export function PurchaseRequestCreateSheet({
     }
   }, [open ]);
 
+  useEffect(() => {
+    if (!open || !documentId) return;
+    let active = true;
+    setLoadingDocument(true); setLoadError(false); setBaseline(null);
+    void (async () => {
+      const first = await erpClient.getErpModuleDetail(MODULE, { branchId: currentBranch, documentId, page: 1, pageSize: 50 });
+      if (!active) return;
+      if (first.documentId !== documentId || (first.branchId && first.branchId !== currentBranch) || !first.stateToken) throw new Error("Invalid document binding");
+      const rows = [...first.lines.rows];
+      let page = first.lines;
+      while (page.hasMore) {
+        if (!active) return;
+        if (page.page >= 1000) throw new Error("Incomplete detail");
+        const next = await erpClient.getErpModuleDetail(MODULE, { branchId: currentBranch, documentId, page: page.page + 1, pageSize: 50 });
+        if (!active) return;
+        if (next.documentId !== documentId || next.stateToken !== first.stateToken || next.lines.page !== page.page + 1
+          || (next.branchId && next.branchId !== currentBranch)) throw new Error("Document changed during read");
+        rows.push(...next.lines.rows); page = next.lines;
+      }
+      if (!active) return;
+      if (rows.some(row => !row.lineId) || new Set(rows.map(row => row.lineId)).size !== rows.length) throw new Error("Invalid line identities");
+      const h = first.header || {};
+      setPurchaseDate(text(h.purchaseDate).slice(0, 10));
+      setPersonSuggest(text(h.personSuggest)); setPersonChoices(multiChoices(h.personSuggest));
+      setDepartment(text(h.department)); setDepartmentChoices(multiChoices(h.department));
+      setPurposeId(text(h.purposeId)); setPurposeChoice(choice(h.purposeId, h.purposeName));
+      setPurposeDescOrClient(text(h.purposeDescOrClient)); setPrice(text(h.price)); setNotes(text(h.notes));
+      setCurrencyId(text(h.currencyId)); setCurrencyChoice(choice(h.currencyId, h.currencyName));
+      setObjectId(text(h.objectId)); setObjectChoice(choice(h.objectId, h.objectName, { ObjectName: h.objectName, Address: h.address }));
+      setRateExchange(text(h.rateExchange));
+      setLines(rows.map(row => {
+        const f = row.fields || {};
+        return { key: row.lineId, lineId: row.lineId, itemId: text(f.itemId), itemChoice: choice(f.itemId, f.itemName, { ItemName: f.itemName, Unit: f.unit }),
+          model: text(f.model), budget: text(f.budget), timeRequired: text(f.timeRequired), quantity: text(f.quantity), unitPrice: text(f.unitPrice) };
+      }));
+      setBaseline({ ...first, lines: { ...page, rows, hasMore: false } });
+      setStep(0); setErrors({}); setSubmitError(null); setSubmitWarning(null);
+    })().catch(() => { if (active) setLoadError(true); }).finally(() => { if (active) setLoadingDocument(false); });
+    return () => { active = false; };
+  }, [open, documentId, currentBranch, readRevision]);
+
+  const saveAllowed = !isEditing || !!baseline?.actions.some(action => action.id === "save" && action.visible && action.enabled);
+  const formDisabled = creating || loadingDocument || (isEditing && (!baseline || !saveAllowed)) || uncertain;
+
   const patchLine = (key: string, patch: Partial<DraftLine>) =>
     setLines((prev) => prev.map((l) => (l.key === key ? { ...l, ...patch } : l)));
 
@@ -145,13 +211,15 @@ export function PurchaseRequestCreateSheet({
 
   function validate(): Record<string, string> {
     const next: Record<string, string> = {};
+    if (!purchaseDate) next["header.purchaseDate"] = "Chọn ngày đề nghị.";
     if (!personSuggest.trim()) next["header.personSuggest"] = "Chọn người đề nghị.";
     if (!department.trim()) next["header.department"] = "Chọn bộ phận.";
     if (!currencyId.trim()) next["header.currencyId"] = "Chọn loại tiền.";
     if (!objectId.trim()) next["header.objectId"] = "Chọn khách hàng / đối tượng.";
-    if (!DECIMAL_RE.test(rateExchange.trim())) next["header.rateExchange"] = "Tỷ giá phải là số.";
+    if (!DECIMAL_RE.test(rateExchange.trim()) || Number(rateExchange) <= 0) next["header.rateExchange"] = "Tỷ giá phải lớn hơn 0.";
     if (price.trim() && !DECIMAL_RE.test(price.trim())) next["header.price"] = "Giá bán phải là số.";
-    if (lines.length === 0) next["lines"] = "Cần ít nhất 1 dòng hàng.";
+    if (lines.length === 0) next["lines"] = "Cần ít nhất 1 chi tiết.";
+    if (lines.length > 500) next["lines"] = "Tối đa 500 dòng chi tiết.";
     for (const line of lines) {
       if (!line.itemId.trim()) next[`line.${line.key}.itemId`] = "Chọn mã hàng.";
       if (!DECIMAL_RE.test(line.quantity.trim())) next[`line.${line.key}.quantity`] = "Số lượng phải là số.";
@@ -162,37 +230,21 @@ export function PurchaseRequestCreateSheet({
     return next;
   }
 
-  const headerValid =
-    personSuggest.trim() !== "" &&
-    department.trim() !== "" &&
-    currencyId.trim() !== "" &&
-    objectId.trim() !== "" &&
-    DECIMAL_RE.test(rateExchange.trim());
-  const linesValid =
-    lines.length > 0 &&
-    lines.every(
-      (l) =>
-        l.itemId.trim() !== "" &&
-        DECIMAL_RE.test(l.quantity.trim()) &&
-        DECIMAL_RE.test(l.unitPrice.trim())
-    );
-
   async function handleSubmit() {
-    const found = validate();
+    if (submitLock.current || loadingDocument || !saveAllowed || (isEditing && !baseline)) return;
+    const found = saveIntent.current ? {} : validate();
     setErrors(found);
     setSubmitError(null);
     setSubmitWarning(null);
     if (Object.keys(found).length > 0) {
-      if (isMobile) setStep(headerValid ? 1 : 0);
+      if (isMobile) setStep(Object.keys(found).some(key => key.startsWith("header.")) ? 0 : 1);
       return;
     }
+    submitLock.current = true;
     setCreating(true);
-    const idempotencyKey = `crt-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
+    const idempotencyKey = `${isEditing ? "save" : "crt"}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
     try {
-      const res = await erpClient.createDocument(MODULE, {
-        idempotencyKey,
-        branchId: currentBranch,
-        header: {
+      const header: Record<string, unknown> = {
           purchaseDate: purchaseDate ? `${purchaseDate}T00:00:00.000` : null,
           purposeId: purposeId.trim() ? Number(purposeId) : null,
           personSuggest: personSuggest.trim(),
@@ -203,25 +255,59 @@ export function PurchaseRequestCreateSheet({
           currencyId: currencyId.trim(),
           objectId: objectId.trim(),
           rateExchange: Number(rateExchange),
-        },
-        lines: lines.map((l) => ({
-          clientLineKey: l.key,
-          values: {
-            itemId: l.itemId.trim(),
-            quantity: l.quantity.trim(),
-            unitPrice: l.unitPrice.trim(),
-            budget: l.budget.trim() ? l.budget.trim() : null,
-            timeRequired: l.timeRequired.trim() ? l.timeRequired.trim() : null,
-            model: l.model.trim() ? l.model.trim() : null,
-          },
-        })),
-      });
+      };
+      if (isEditing && baseline && !saveIntent.current) {
+        const originalHeader = baseline.header || {};
+        // Preserve the original wall-clock time when only the displayed date is unchanged.
+        if (purchaseDate === text(originalHeader.purchaseDate).slice(0, 10)) header.purchaseDate = originalHeader.purchaseDate ?? null;
+        if (typeof header.purchaseDate === "string" && /T\d{2}:\d{2}:\d{2}$/.test(header.purchaseDate)) header.purchaseDate += ".000";
+        for (const key of ["personSuggest", "department", "purposeDescOrClient", "price", "notes", "currencyId", "objectId"])
+          if (text(header[key]) === text(originalHeader[key]).trim()) header[key] = originalHeader[key] ?? null;
+
+        const originals = new Map(baseline.lines.rows.map(row => [row.lineId, row.fields || {}]));
+        const kept = new Set<string>();
+        const changes: Parameters<typeof erpClient.saveDocument>[1]["lineChanges"] = [];
+        for (const line of lines) {
+          const values = lineValues(line);
+          if (!line.lineId) { changes.push({ kind: "Add", clientLineKey: line.key, values }); continue; }
+          const original = originals.get(line.lineId);
+          if (!original || kept.has(line.lineId)) throw new Error("Không xác định được dòng chi tiết. Vui lòng mở lại phiếu.");
+          kept.add(line.lineId);
+          let changed = false;
+          for (const key of Object.keys(values)) {
+            if (text(values[key]) === text(original[key]).trim()) values[key] = original[key] ?? null;
+            else changed = true;
+          }
+          if (changed) changes.push({ kind: "Update", lineId: line.lineId, values });
+        }
+        for (const lineId of originals.keys()) if (!kept.has(lineId)) changes.push({ kind: "Remove", lineId });
+        if (changes.length > 500) throw new Error("Mỗi lần lưu tối đa 500 dòng thay đổi. Vui lòng chia thành nhiều lần lưu.");
+        saveIntent.current = { idempotencyKey, branchId: currentBranch, documentId: baseline.documentId,
+          expectedStateToken: baseline.stateToken!, header, lineChanges: changes };
+      }
+      const res = isEditing
+        ? await erpClient.saveDocument(MODULE, saveIntent.current!)
+        : await erpClient.createDocument(MODULE, { idempotencyKey, branchId: currentBranch, header,
+          lines: lines.map(line => ({ clientLineKey: line.key, values: lineValues(line) })) });
       if (res.outcome === "Committed" || res.outcome === "Replayed") {
+        if (isEditing) {
+          const receipt = res.receipt, intent = saveIntent.current!;
+          if (!receipt || receipt.documentId !== intent.documentId || receipt.module !== MODULE || receipt.idempotencyKey !== intent.idempotencyKey || receipt.deleted) throw new Error("Unconfirmed receipt");
+          saveIntent.current = null; setUncertain(false);
+          onSaved?.(receipt.documentId);
+          return;
+        }
         const docId = res.receipt?.documentId;
         if (docId) onCreated?.(docId);
         else onClose();
         return;
       }
+      if (isEditing && res.outcome === "OutcomeUnknown") {
+        setUncertain(true);
+        setSubmitError("Chưa xác nhận được kết quả lưu. Bấm Thử lại lưu để gửi lại đúng yêu cầu gốc.");
+        return;
+      }
+      saveIntent.current = null; setUncertain(false);
       if (res.outcome === "QualificationRequired") {
         setSubmitWarning(
           res.code === "target_acceptance_changed"
@@ -236,15 +322,19 @@ export function PurchaseRequestCreateSheet({
           : res.outcome === "Denied"
             ? "Tài khoản hiện tại không có quyền thực hiện thao tác này."
             : res.outcome === "Conflict"
-              ? "Chứng từ đã thay đổi bởi người dùng khác. Vui lòng thử lại."
+              ? "Chứng từ đã thay đổi bởi người dùng khác. Đóng form và mở lại phiếu để cập nhật dữ liệu."
               : res.outcome === "Cancelled"
                 ? "Thao tác đã bị hủy."
                 : `Thao tác không thành công${res.code ? ` (${res.code})` : ""}. Vui lòng thử lại.`;
       setSubmitError(message);
-    } catch {
-      setSubmitError("Lỗi kết nối khi tạo mới chứng từ ERP.");
+    } catch (error) {
+      if (isEditing && saveIntent.current) {
+        setUncertain(true);
+        setSubmitError("Chưa xác nhận được kết quả lưu. Bấm Thử lại lưu để gửi lại đúng yêu cầu gốc.");
+      } else setSubmitError(isEditing ? (error instanceof Error ? error.message : "Không thể lưu chứng từ ERP.") : "Lỗi kết nối khi tạo mới chứng từ ERP.");
     } finally {
       setCreating(false);
+      submitLock.current = false;
     }
   }
 
@@ -256,17 +346,19 @@ export function PurchaseRequestCreateSheet({
         <div>
           <label className="block text-neutral-500 dark:text-neutral-400 mb-1 font-medium">Mã đề xuất</label>
           <p className="p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-xs text-neutral-400">
-            Tự cấp sau khi tạo
+            {documentId || "Tự cấp sau khi tạo"}
           </p>
         </div>
         <div>
           <label className="block text-neutral-500 dark:text-neutral-400 mb-1 font-medium">Ngày đề xuất</label>
           <input
             type="date"
+            aria-invalid={!!errors["header.purchaseDate"]}
             value={purchaseDate}
             onChange={(e) => setPurchaseDate(e.target.value)}
             className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-xs"
           />
+          {errors["header.purchaseDate"] && <p className="mt-1 text-[11px] text-red-500">{errors["header.purchaseDate"]}</p>}
         </div>
         <div>
           <label className="block text-neutral-500 dark:text-neutral-400 mb-1 font-medium">Chi nhánh</label>
@@ -415,12 +507,13 @@ export function PurchaseRequestCreateSheet({
     <section className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 space-y-3">
       <div className="flex items-center justify-between">
         <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-          Dòng hàng ({lines.length})
+          Chi tiết ({lines.length})
         </h4>
         <button
           type="button"
           onClick={() => setLines((prev) => [...prev, emptyLine()])}
-          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-brand-600 text-white hover:bg-brand-700"
+          disabled={lines.length >= 500}
+          className="flex min-h-11 items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50"
         >
           <Plus className="size-3.5" /> Thêm dòng
         </button>
@@ -441,7 +534,7 @@ export function PurchaseRequestCreateSheet({
                     type="button"
                     aria-label={`Xóa dòng ${idx + 1}`}
                     onClick={() => setLines((prev) => prev.filter((l) => l.key !== line.key))}
-                    className="p-1 rounded-md text-neutral-400 hover:text-red-600"
+                    className="flex min-h-11 min-w-11 items-center justify-center rounded-md text-neutral-400 hover:text-red-600"
                   >
                     <X className="size-4" />
                   </button>
@@ -541,22 +634,43 @@ export function PurchaseRequestCreateSheet({
     </>
   );
 
-  const steps = ["Thông tin", "Dòng hàng", "Xem lại"];
+  const steps = ["Thông tin", "Chi tiết", "Xem lại"];
   const reviewLines = lines.filter((l) => l.itemId.trim() !== "");
+  const formReady = !isEditing || (!!baseline && !loadingDocument && !loadError);
+  const closeForm = () => { if (!submitLock.current && !uncertain) onClose(); };
+  const confirmLabel = creating ? (isEditing ? "Đang lưu..." : "Đang tạo...") : uncertain ? "Thử lại lưu" : isEditing ? "Lưu thay đổi" : "Xác nhận tạo phiếu";
+  const advanceStep = () => {
+    const found = validate();
+    setErrors(found);
+    if (step === 0) {
+      if (!Object.keys(found).some(key => key.startsWith("header."))) setStep(1);
+    } else if (Object.keys(found).length === 0) setStep(2);
+  };
+  const footer = <div className="flex gap-2 md:justify-end">
+    {isMobile && step > 0 ? <UntitledButton variant="secondary-gray" size="md" disabled={formDisabled} onClick={() => setStep(s => s - 1)} iconLeading={<ChevronLeft className="size-4" />}>Quay lại</UntitledButton>
+      : <UntitledButton variant="secondary-gray" size="md" disabled={creating || uncertain} onClick={closeForm}>{isEditing ? "Hủy sửa" : "Hủy"}</UntitledButton>}
+    {isMobile && step < 2 ? <UntitledButton className="min-h-11 min-w-0 flex-1 md:flex-none" variant="primary" size="md" disabled={formDisabled} onClick={advanceStep} iconLeading={<ChevronRight className="size-4" />}>{step === 0 ? "Tiếp: Chi tiết" : "Xem lại"}</UntitledButton>
+      : <UntitledButton className="min-h-11 min-w-0 flex-1 md:flex-none" variant="primary" size="md" disabled={creating || !saveAllowed} onClick={() => void handleSubmit()} iconLeading={creating ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}>{confirmLabel}</UntitledButton>}
+  </div>;
 
   return (
-    <UntitledBottomSheet open={open} onClose={onClose} title="Tạo đề nghị mua hàng">
-      <div className="space-y-3.5 pb-24 text-xs">
+    <UntitledBottomSheet open={open} onClose={closeForm} title={isEditing ? "Sửa đề nghị mua hàng" : "Tạo đề nghị mua hàng"} subtitle={documentId} footer={formReady ? footer : undefined}>
+      {loadingDocument ? <div role="status" className="flex items-center justify-center gap-2 py-8 text-sm"><Loader2 className="size-5 animate-spin" />Đang tải đầy đủ chi tiết phiếu...</div>
+        : loadError ? <div className="space-y-3 text-sm"><p role="alert">Không tải được đầy đủ phiếu hoặc phiếu đã thay đổi trong lúc tải. Vui lòng thử lại.</p><UntitledButton variant="secondary-gray" size="md" onClick={() => setReadRevision(value => value + 1)}>Thử lại</UntitledButton></div> : null}
+      {formReady && <div className="space-y-3.5 text-xs">
+        <fieldset disabled={formDisabled} className="min-w-0 space-y-3.5 border-0 p-0">
         {isMobile && (
-          <ol className="flex items-center gap-1 px-1">
+          <ol aria-label="Các bước nhập đề nghị mua hàng" className="flex items-center gap-1 px-1">
             {steps.map((label, i) => (
               <li key={label} className="flex-1">
                 <button
                   type="button"
+                  aria-current={i === step ? "step" : undefined}
                   onClick={() => {
-                    if (i === 0) setStep(0);
-                    if (i === 1 && headerValid) setStep(1);
-                    if (i === 2 && headerValid && linesValid) setStep(2);
+                    if (i <= step) { setStep(i); return; }
+                    const found = validate(); setErrors(found);
+                    if (i === 1 && !Object.keys(found).some(key => key.startsWith("header."))) setStep(1);
+                    if (i === 2 && Object.keys(found).length === 0) setStep(2);
                   }}
                   className="w-full text-left"
                 >
@@ -604,22 +718,32 @@ export function PurchaseRequestCreateSheet({
             <p className="text-xs text-neutral-500 dark:text-neutral-400">
               KH: {choiceLabel(objectChoice, objectId) || "—"}
             </p>
+            <dl className="grid min-w-0 grid-cols-2 gap-3 border-y border-neutral-200 py-3 dark:border-neutral-800">
+              {[["Mục đích", choiceLabel(purposeChoice, purposeId)], ["Giá bán", price], ["Mục đích / Khách hàng", purposeDescOrClient], ["Ghi chú", notes]].map(([label, value]) =>
+                <div key={label} className="min-w-0"><dt className="text-neutral-400">{label}</dt><dd className="mt-1 whitespace-pre-wrap break-words">{value || "—"}</dd></div>)}
+            </dl>
+            {baseline && <p className="text-xs text-neutral-500">Thêm {lines.filter(line => !line.lineId).length} dòng · Xóa {baseline.lines.rows.filter(row => !lines.some(line => line.lineId === row.lineId)).length} dòng so với phiếu đã lưu</p>}
             <div className="pt-1 space-y-1">
               {reviewLines.length === 0 ? (
-                <p className="text-[11px] text-neutral-400">Chưa có dòng hàng nào.</p>
+                <p className="text-[11px] text-neutral-400">Chưa có chi tiết nào.</p>
               ) : (
                 reviewLines.map((l) => (
-                  <p key={l.key} className="text-xs text-neutral-700 dark:text-neutral-300 flex justify-between gap-2">
-                    <span className="truncate">
-                      {l.itemId} × {l.quantity}
-                    </span>
-                    <span className="font-bold shrink-0">
+                  <article key={l.key} className="min-w-0 border-b border-neutral-100 py-2 text-xs text-neutral-700 dark:border-neutral-800 dark:text-neutral-300">
+                    <p className="break-words font-semibold">{choiceLabel(l.itemChoice, l.itemId)}</p>
+                    <div className="mt-1 flex flex-wrap justify-between gap-2">
+                    <span>{l.itemId} · {l.quantity} × {l.unitPrice}</span>
+                    <span className="font-bold">
                       {(() => {
                         const t = lineTotal(l);
                         return t == null ? "—" : formatVND(t);
                       })()}
                     </span>
-                  </p>
+                    </div>
+                    <dl className="mt-2 grid min-w-0 grid-cols-2 gap-2">
+                      {[["Model", l.model], ["Ngân sách", l.budget], ["Thời gian yêu cầu", l.timeRequired]].map(([label, value]) =>
+                        <div key={label} className="min-w-0"><dt className="text-neutral-400">{label}</dt><dd className="break-words">{value || "—"}</dd></div>)}
+                    </dl>
+                  </article>
                 ))
               )}
             </div>
@@ -629,67 +753,11 @@ export function PurchaseRequestCreateSheet({
           </section>
         )}
 
-        {feedback}
+        </fieldset>
 
-        {isMobile ? (
-          <div className="flex gap-2">
-            {step > 0 ? (
-              <UntitledButton variant="secondary-gray" size="md" onClick={() => setStep((s) => s - 1)} iconLeading={<ChevronLeft className="size-4" />}>
-                Quay lại
-              </UntitledButton>
-            ) : (
-              <UntitledButton variant="secondary-gray" size="md" onClick={onClose}>
-                Hủy
-              </UntitledButton>
-            )}
-            {step < 2 ? (
-              <UntitledButton
-                variant="primary"
-                size="md"
-                onClick={() => {
-                  if (step === 0) {
-                    const found = validate();
-                    setErrors(found);
-                    if (
-                      !found["header.personSuggest"] &&
-                      !found["header.department"] &&
-                      !found["header.currencyId"] &&
-                      !found["header.objectId"] &&
-                      !found["header.rateExchange"]
-                    )
-                      setStep(1);
-                  } else if (linesValid) setStep(2);
-                  else {
-                    setErrors(validate());
-                  }
-                }}
-                iconLeading={<ChevronRight className="size-4" />}
-              >
-                {step === 0 ? "Tiếp: Dòng hàng" : "Xem lại & tạo"}
-              </UntitledButton>
-            ) : (
-              <UntitledButton variant="primary" size="md" onClick={handleSubmit} disabled={creating} iconLeading={creating ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}>
-                {creating ? "Đang tạo..." : "Xác nhận tạo phiếu"}
-              </UntitledButton>
-            )}
-          </div>
-        ) : (
-          <div className="flex justify-end gap-2">
-            <UntitledButton variant="secondary-gray" size="md" onClick={onClose}>
-              Hủy
-            </UntitledButton>
-            <UntitledButton
-              variant="primary"
-              size="md"
-              onClick={handleSubmit}
-              disabled={creating}
-              iconLeading={creating ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
-            >
-              {creating ? "Đang tạo..." : "Xác nhận tạo chứng từ"}
-            </UntitledButton>
-          </div>
-        )}
-      </div>
+        {feedback}
+        {!saveAllowed && <p role="status" className="text-xs text-amber-700 dark:text-amber-300">Phiếu hiện không được phép sửa theo quyền hoặc trạng thái ERP.</p>}
+      </div>}
     </UntitledBottomSheet>
   );
 }

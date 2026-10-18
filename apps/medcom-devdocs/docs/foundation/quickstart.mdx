@@ -1,0 +1,55 @@
+---
+title: Khởi tạo kết nối
+---
+
+## Chuẩn bị môi trường
+
+Địa chỉ máy chủ API của bản đặc tả được lưu: `https://api-medcom.bms79.com`. Giao diện gọi qua lớp trung gian/proxy đã được cấu hình; Origin của yêu cầu ERP POST phải trùng chính xác Origin backend. `credentials: include` không tự giải quyết cross-origin, CORS hoặc SameSite. Không tắt CSRF để chạy môi trường phát triển.
+
+Không ghi mật khẩu, cookie hoặc mã CSRF vào mã nguồn, nhật ký hoặc nội dung gửi cho công cụ tự động. Thông tin đăng nhập và quyền do môi trường triển khai cấp.
+
+## Trình tự khởi tạo phiên
+
+1. `GET /api/auth/csrf`: giữ cookie CSRF do trình duyệt quản lý; đọc mã CSRF trong phản hồi.
+2. `POST /api/auth/login`: dùng JSON đúng cấu trúc khai báo, cookie và `X-CSRF-TOKEN`.
+3. Sau đăng nhập hoặc thay phiên, lấy lại mã CSRF gắn với tài khoản mới; đọc phiên, không gian làm việc và các header phạm vi dữ liệu.
+4. `GET /api/workspace`: lấy chi nhánh và navigation theo phiên.
+5. `GET /api/erp/permissions?branchId=...`: quyền Thêm/Sửa/Xóa và các thao tác được phép trên màn hình.
+6. `GET /api/erp/{module}/screen`: mô tả trường, danh sách lựa chọn và thao tác.
+7. Tải danh sách/chi tiết theo đúng tham số API; giữ phạm vi dữ liệu của phản hồi và bỏ các kết quả muộn thuộc phạm vi cũ.
+
+**Evidence:** `src/backend/Medcom.Api/AuthEndpoints.cs`, `ErpScreenEndpoints.cs`, `WorkspaceReadScope.cs`; cơ chế xác thực và tham số trong OpenAPI. Đây là trình tự tích hợp đề xuất, không phải nhật ký xác nhận đã đăng nhập thành công khi dựng tài liệu.
+
+## Mẫu hàm đọc dữ liệu
+
+```typescript
+// Chạy tại origin/proxy đã được cấu hình đúng cho deployment.
+export async function readJson<T>(url: string, signal?: AbortSignal): Promise<T> {
+  const response = await fetch(url, {
+    credentials: 'include',
+    headers: { Accept: 'application/json' },
+    signal,
+  });
+  const correlationId = response.headers.get('X-Correlation-ID');
+  const text = await response.text();
+  let body: unknown;
+  try { body = text ? JSON.parse(text) : null; }
+  catch { throw new Error(`Non-JSON response (${response.status}); ${correlationId ?? ''}`); }
+  if (!response.ok) {
+    // Production: normalize ProblemDetails, giữ status/code/correlationId.
+    throw Object.assign(new Error('API request failed'), {
+      status: response.status, body, correlationId,
+    });
+  }
+  // Production: validate runtime schema trước khi cập nhật cache/store.
+  return body as T;
+}
+```
+
+Đây là mẫu hàm đọc tối thiểu, chưa bao gồm gửi lại yêu cầu ghi, quản lý phiên hoặc kiểm tra cấu trúc dữ liệu đầy đủ. Đối chiếu cấu trúc phản hồi của API trước khi khai báo `T`.
+
+## Kết quả thành công vẫn cần kiểm tra
+
+Đọc lớp bọc theo đúng cấu trúc: ERP thường là `{ readScope, data }`; các API purchase tương thích có lớp bọc riêng. Không dùng một quy tắc tự đoán để tách dữ liệu cho mọi API. Khi có `hasMore: true`, tiếp tục tải đúng section cho đến khi hết hoặc UI hiển thị rõ phần chưa tải.
+
+HTTP 200 của yêu cầu ghi chưa đủ để hiển thị “Đã lưu”: kiểm tra `outcome` và `receipt`. [Cách xử lý kết quả chưa xác định](./errors).

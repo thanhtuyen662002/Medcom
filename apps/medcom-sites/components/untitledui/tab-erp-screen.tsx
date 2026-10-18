@@ -711,6 +711,7 @@ export function TabErpScreen({
   const [poCreateOpen, setPoCreateOpen] = useState(false);
   // Redesigned purchase-request create sheet (matches the desktop PR form).
   const [prCreateOpen, setPrCreateOpen] = useState(false);
+  const [prEditId, setPrEditId] = useState<string | null>(null);
   const [createDate, setCreateDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [createObject, setCreateObject] = useState("");
   const [createEmployee, setCreateEmployee] = useState("");
@@ -944,6 +945,7 @@ export function TabErpScreen({
 
   // Open Document Detail (Race-free: only applies response for latest requested documentId)
   const handleOpenDetail = async (documentId: string) => {
+    setPrEditId(null);
     const seq = ++openDetailRequestSeqRef.current;
     setSelectedDocId(documentId);
     setLoadingDetail(true);
@@ -1018,6 +1020,7 @@ export function TabErpScreen({
 
   // Close Detail Sheet
   const handleCloseDetail = () => {
+    setPrEditId(null);
     setSelectedDocId(null);
     setDetail(null);
     setDetailError(null);
@@ -1036,6 +1039,12 @@ export function TabErpScreen({
   // confirm), and workflow prompts reuse the existing prompt modal.
   const startEditing = () => {
     if (!detail) return;
+    if (module === "purchase-requests") {
+      if (!detail.actions.some(action => action.id === "save" && action.visible && action.enabled) || executingAction) return;
+      setPrEditId(detail.documentId);
+      setMenuOpen(false);
+      return;
+    }
     const h = (detail.header || {}) as Record<string, unknown>;
     const isoDate = (v: unknown) => (typeof v === "string" ? v.slice(0, 10) : "");
     const text = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : String(v));
@@ -1598,7 +1607,7 @@ export function TabErpScreen({
         if (soValid.length === 0 || soValid.length !== createSoLines.length) {
           setActionFeedback({
             type: "warning",
-            message: "Mỗi dòng hàng cần Mã hàng, Số lượng và các giá trị giá/thuế/chiết khấu hợp lệ. Hãy xóa dòng trống không dùng.",
+            message: "Mỗi chi tiết cần Mã hàng, Số lượng và các giá trị giá/thuế/chiết khấu hợp lệ. Hãy xóa dòng trống không dùng.",
           });
           setCreatingDocument(false);
           return;
@@ -2017,7 +2026,7 @@ export function TabErpScreen({
       <ErpDetailSheet
         salesOrder={module === "sales-orders"}
         documentNumber={selectedDocId}
-        open={Boolean(selectedDocId)}
+        open={Boolean(selectedDocId) && !prEditId}
         onClose={handleCloseDetail}
         title={`Chi tiết: ${selectedDocId || ""}`}
         titleExtra={(() => {
@@ -2429,14 +2438,14 @@ export function TabErpScreen({
                 <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4 bg-white dark:bg-neutral-900">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="text-xs font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider">
-                      Dòng hàng chi tiết ({detail.lines?.rows?.length || 0})
+                      Chi tiết ({detail.lines?.rows?.length || 0})
                     </h4>
                     <span className="text-[10px] text-neutral-400 font-medium">
                       Trang {detail.lines?.page || 1}
                     </span>
                   </div>
                   {detail.lines?.rows?.length === 0 ? (
-                    <p className="text-xs text-neutral-400 py-3 text-center">Chứng từ chưa có dòng hàng nào.</p>
+                    <p className="text-xs text-neutral-400 py-3 text-center">Chứng từ chưa có chi tiết nào.</p>
                   ) : editing && (saveLineKeys(module) as readonly string[]).length > 0 ? (
                     <>
                       {/* Mobile: editable line cards */}
@@ -2993,6 +3002,19 @@ export function TabErpScreen({
         />
       )}
 
+      {module === "purchase-requests" && prEditId && <PurchaseRequestCreateSheet
+        key={`${currentBranch}:${prEditId}`}
+        open
+        documentId={prEditId}
+        currentBranch={currentBranch}
+        onClose={() => setPrEditId(null)}
+        onSaved={id => {
+          setPrEditId(null);
+          void loadList(page, true);
+          void handleOpenDetail(id);
+        }}
+      />}
+
       {createModalOpen && (
         <UntitledBottomSheet
           open={createModalOpen}
@@ -3007,7 +3029,7 @@ export function TabErpScreen({
             {salesOrderCreateStep < 2 ? <button type="button" disabled={creatingDocument || customerLoading || createAttachments.validating}
               onClick={() => goToSalesOrderStep(salesOrderCreateStep + 1)}
               className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1 rounded-xl bg-brand-600 px-3 text-xs font-bold text-white disabled:opacity-50">
-              {salesOrderCreateStep === 0 ? "Tiếp: Dòng hàng" : "Xem lại"}<ChevronRight className="size-4 shrink-0" />
+              {salesOrderCreateStep === 0 ? "Tiếp: Chi tiết" : "Xem lại"}<ChevronRight className="size-4 shrink-0" />
             </button> : <button type="button" onClick={handleCreateDocument}
               disabled={creatingDocument || createAttachments.validating || (!createLocked && (customerLoading || !!customerError))}
               className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1 rounded-xl bg-brand-600 px-3 text-xs font-bold text-white disabled:opacity-50">
@@ -3017,7 +3039,7 @@ export function TabErpScreen({
         >
           <div ref={createContentRef} className={`space-y-3.5 text-xs ${module === "sales-orders" ? "" : "p-2"}`}>
             {isSalesOrderMobile && <ol aria-label="Các bước tạo đơn hàng" className="flex items-center gap-1">
-              {["Thông tin", "Dòng hàng", "Xem lại"].map((label, index) => <li key={label} className="min-w-0 flex-1">
+              {["Thông tin", "Chi tiết", "Xem lại"].map((label, index) => <li key={label} className="min-w-0 flex-1">
                 <button type="button" onClick={() => goToSalesOrderStep(index)} disabled={creatingDocument || createLocked}
                   aria-current={salesOrderCreateStep === index ? "step" : undefined} className="min-h-10 w-full text-left disabled:opacity-50">
                   <span className={`block h-1 rounded-full ${index <= salesOrderCreateStep ? "bg-brand-600" : "bg-neutral-200 dark:bg-neutral-700"}`} />
@@ -3181,7 +3203,7 @@ export function TabErpScreen({
 
             {module === "sales-orders" && (!isSalesOrderMobile || salesOrderCreateStep === 1) && (
               <div className="space-y-2">
-                {lineResetNotice && <p role="status" className="text-xs text-amber-700">Đã bỏ các dòng hàng cũ khi đổi hợp đồng / khách hàng. Vui lòng chọn lại hàng.</p>}
+                {lineResetNotice && <p role="status" className="text-xs text-amber-700">Đã bỏ các chi tiết cũ khi đổi hợp đồng / khách hàng. Vui lòng chọn lại hàng.</p>}
                 <fieldset disabled={creatingDocument || createLocked} className="min-w-0 border-0 p-0">
                 <SalesOrderLineEditor lines={createSoLines} branchId={currentBranch} contractId={createContract}
                   onPatch={patchSoLine} onAdd={() => {
@@ -3237,7 +3259,7 @@ export function TabErpScreen({
                 </div>)}
               </dl>
               <div className="space-y-2 border-t border-neutral-200 pt-3 dark:border-neutral-800">
-                <h5 className="font-bold">Dòng hàng ({createSoLines.length})</h5>
+                <h5 className="font-bold">Chi tiết ({createSoLines.length})</h5>
                 {createSoLines.map((line, index) => {
                   const values = salesOrderLineDisplay(line);
                   return <div key={line.key} className="min-w-0 rounded-xl bg-neutral-100 p-3 dark:bg-neutral-800">

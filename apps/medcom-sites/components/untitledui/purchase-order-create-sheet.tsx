@@ -140,7 +140,7 @@ export function PurchaseOrderCreateSheet({
     if (!objectId.trim()) next["header.objectId"] = "Chọn nhà cung cấp / đối tượng.";
     if (!currencyId.trim()) next["header.currencyId"] = "Chọn loại tiền.";
     if (!DECIMAL_RE.test(rateExchange.trim())) next["header.rateExchange"] = "Tỷ giá phải là số.";
-    if (lines.length === 0) next["lines"] = "Cần ít nhất 1 dòng hàng.";
+    if (lines.length === 0) next["lines"] = "Cần ít nhất 1 chi tiết.";
     for (const line of lines) {
       if (!line.itemId.trim()) next[`line.${line.key}.itemId`] = "Chọn mã hàng.";
       if (!DECIMAL_RE.test(line.quantity.trim())) next[`line.${line.key}.quantity`] = "Số lượng phải là số.";
@@ -366,7 +366,7 @@ export function PurchaseOrderCreateSheet({
     <section className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 space-y-3">
       <div className="flex items-center justify-between">
         <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-          Dòng hàng ({lines.length})
+          Chi tiết ({lines.length})
         </h4>
         <button
           type="button"
@@ -450,7 +450,7 @@ export function PurchaseOrderCreateSheet({
                 label="Ghi chú dòng"
                 value={line.notes}
                 onChange={(v) => patchLine(line.key, { notes: v })}
-                placeholder="Ghi chú dòng hàng..."
+                placeholder="Ghi chú chi tiết..."
               />
             </div>
           );
@@ -480,7 +480,7 @@ export function PurchaseOrderCreateSheet({
     </>
   );
 
-  const steps = ["Thông tin", "Dòng hàng", "Xem lại"];
+  const steps = ["Thông tin", "Chi tiết", "Xem lại"];
   const reviewLines = lines.filter((l) => l.itemId.trim() !== "");
 
   return (
@@ -541,7 +541,7 @@ export function PurchaseOrderCreateSheet({
             </p>
             <div className="pt-1 space-y-1">
               {reviewLines.length === 0 ? (
-                <p className="text-[11px] text-neutral-400">Chưa có dòng hàng nào.</p>
+                <p className="text-[11px] text-neutral-400">Chưa có chi tiết nào.</p>
               ) : (
                 reviewLines.map((l) => (
                   <p key={l.key} className="text-xs text-neutral-700 dark:text-neutral-300 flex justify-between gap-2">
@@ -599,7 +599,7 @@ export function PurchaseOrderCreateSheet({
                 }}
                 iconLeading={<ChevronRight className="size-4" />}
               >
-                {step === 0 ? "Tiếp: Dòng hàng" : "Xem lại & tạo"}
+                {step === 0 ? "Tiếp: Chi tiết" : "Xem lại & tạo"}
               </UntitledButton>
             ) : (
               <UntitledButton variant="primary" size="md" onClick={handleSubmit} disabled={creating} iconLeading={creating ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}>

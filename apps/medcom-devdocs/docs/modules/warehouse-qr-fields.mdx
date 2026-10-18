@@ -1,0 +1,126 @@
+---
+title: "Xuất kho · Trường dữ liệu"
+---
+
+:::note Phạm vi nguồn
+
+Các trường lấy từ danh mục kỹ thuật được backend nhúng. API đang triển khai trả **401** khi chưa đăng nhập; chưa đối chiếu dữ liệu mô tả theo phiên trên môi trường thật. Đây không phải danh mục toàn bộ cột của cơ sở dữ liệu.
+
+:::
+
+## Bảng và định danh
+
+| Phần dữ liệu | Bảng SQL |
+|---|---|
+| `header` | `IV_OutputTbl` |
+| `lines` | `IV_OutputQRCodeTbl` |
+| `comparison` | `IV_OutputDetailTbl` |
+
+Tên trong danh mục là tên trường nguồn. Kết quả phiên bản 3 có thể dùng tên thống nhất khác; phải đối chiếu cấu trúc phản hồi của từng API trước khi đọc hoặc gửi dữ liệu. Không gửi tên hiển thị thay mã định danh.
+
+## Phần dữ liệu: header
+
+| Trường nguồn | Cột SQL | Kiểu SQL | Cho phép null | Ánh xạ ghi | Mặc định | Trường ảo / nguồn |
+|---|---|---|---|---|---|---|
+| `documentId` | `DocumentID` | `varchar(30)` | Không | Không | Không khai báo | —  |
+| `documentDate` | `DocumentDate` | `datetime` | Không | Không | Không khai báo | —  |
+| `objectId` | `ObjectID` | `varchar(100)` | Có | Không | Không khai báo | —  |
+| `memo` | `Memo` | `nvarchar(200)` | Có | Không | Không khai báo | —  |
+| `notes` | `Notes` | `nvarchar(200)` | Có | Không | Không khai báo | —  |
+| `isLocked` | `isLock` | `bit` | Không | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `outputType` | `OutputType` | `varchar(20)` | Không | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `searchField` | `SearchField` | `nvarchar(2000)` | Có | Không | Không khai báo | —  |
+| `userCreate` | `UserCreate` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `userUpdate` | `UserUpdate` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `dateUpdate` | `DateUpdate` | `datetime` | Có | Không | Không khai báo | —  |
+| `dateCreate` | `DateCreate` | `datetime` | Có | Không | Không khai báo | —  |
+| `status` | `Status` | `int` | Không | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `calPrice` | `CalPrice` | `bit` | Không | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `calCost` | `CalCost` | `bit` | Không | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `linkId` | `LinkID` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `isPacket` | `isPacket` | `bit` | Không | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `baseTotal` | `BaseTotal` | `decimal(28, 0)` | Có | Không | Không khai báo | —  |
+| `docBatch` | `DocBatch` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `nguoiNhan` | `NguoiNhan` | `nvarchar(100)` | Có | Không | Không khai báo | —  |
+| `productOrderId` | `ProductOrderID` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `branchId` | `BranchID` | `varchar(50)` | Không | Không | Không khai báo | —  |
+| `nguoiGiao` | `NguoiGiao` | `nvarchar(100)` | Có | Không | Không khai báo | —  |
+| `isScanQrCode` | `isScanQRCode` | `bit` | Có | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `internalTransferBatchId` | `InternalTransferBatchID` | `varchar(30)` | Có | Không | Không khai báo | —  |
+
+## Phần dữ liệu: lines
+
+| Trường nguồn | Cột SQL | Kiểu SQL | Cho phép null | Ánh xạ ghi | Mặc định | Trường ảo / nguồn |
+|---|---|---|---|---|---|---|
+| `userAutoId` | `UserAutoID` | `nvarchar(50)` | Không | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `documentId` | `DocumentID` | `nvarchar(50)` | Không | Không | Không khai báo | —  |
+| `qrCode` | `QRCode` | `nvarchar(200)` | Không | Không | Không khai báo | —  |
+| `itemId` | `ItemID` | `nvarchar(50)` | Không | Không | Không khai báo | —  |
+| `itemCode` | `ItemCode` | `nvarchar(50)` | Có | Không | Không khai báo | —  |
+| `lot` | `Lot` | `nvarchar(50)` | Không | Không | Không khai báo | —  |
+| `quantity` | `Quantity` | `decimal(38, 10)` | Có | Không | Không khai báo | —  |
+| `qrPackageId` | `QRPackageID` | `nvarchar(200)` | Có | Không | Không khai báo | —  |
+| `quyCach` | `QuyCach` | `nvarchar(50)` | Có | Không | Không khai báo | —  |
+
+## Phần dữ liệu: comparison
+
+| Trường nguồn | Cột SQL | Kiểu SQL | Cho phép null | Ánh xạ ghi | Mặc định | Trường ảo / nguồn |
+|---|---|---|---|---|---|---|
+| `userAutoId` | `UserAutoID` | `varchar(40)` | Không | Không | Không khai báo | —  |
+| `documentId` | `DocumentID` | `varchar(30)` | Không | Không | Không khai báo | —  |
+| `itemId` | `ItemID` | `nvarchar(50)` | Không | Không | Không khai báo | —  |
+| `lot` | `Lot` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `expireDate` | `ExpireDate` | `datetime` | Có | Không | Không khai báo | —  |
+| `storeHouseId` | `StoreHouseID` | `varchar(50)` | Không | Không | Không khai báo | —  |
+| `quantity` | `Quantity` | `decimal(28, 4)` | Có | Không | Không khai báo | —  |
+| `unitPrice` | `UnitPrice` | `decimal(28, 2)` | Có | Không | Không khai báo | —  |
+| `amount` | `Amount` | `decimal(28, 0)` | Có | Không | Không khai báo | —  |
+| `invAccId` | `InvAccID` | `varchar(50)` | Không | Không | Không khai báo | —  |
+| `accountId2` | `AccountID2` | `varchar(50)` | Không | Không | Không khai báo | —  |
+| `costCenterId` | `CostCenterID` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `costId` | `CostID` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `notes` | `Notes` | `nvarchar(100)` | Có | Không | Không khai báo | —  |
+| `quantity2` | `Quantity2` | `decimal(28, 4)` | Có | Không | Không khai báo | —  |
+| `property` | `Property` | `nvarchar(50)` | Có | Không | Không khai báo | —  |
+| `property2` | `Property2` | `nvarchar(50)` | Có | Không | Không khai báo | —  |
+| `parentId` | `ParentID` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `packetGroup` | `PacketGroup` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `unitFactor` | `UnitFactor` | `float` | Có | Không | Không khai báo | —  |
+| `refDoc` | `RefDoc` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `assetId` | `AssetID` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `repairDocumentId` | `RepairDocumentID` | `varchar(30)` | Có | Không | Không khai báo | —  |
+| `repairDetailId` | `RepairDetailID` | `varchar(40)` | Có | Không | Không khai báo | —  |
+| `sourceInputDetailId` | `SourceInputDetailID` | `varchar(40)` | Có | Không | Không khai báo | —  |
+| `partSerialNo` | `PartSerialNo` | `nvarchar(100)` | Có | Không | Không khai báo | —  |
+
+## Danh sách lựa chọn
+
+Không tự suy đoán cách tách chuỗi trường liên kết hoặc tham số. Đối chiếu đặc tả danh sách lựa chọn, dữ liệu mô tả từ máy chủ và mã xử lý hiện có.
+
+| Mã lựa chọn / trường | Bảng hiển thị | Trường giá trị | Trường tên | Trường liên kết | Tham số / bắt buộc | Vô hiệu / chọn nhiều |
+|---|---|---|---|---|---|---|
+| `BranchID` | `header` | `BranchID` | `BranchID` | `—` | `—` / `—` | false / false |
+| `FldObjectID` | `header` | `ObjectID` | `ObjectID` | `ObjectID;ObjectName;Address` | `—` / `—` | false / false |
+| `FldOutputType` | `header` | `OutputType` | `OutputType` | `CalPrice;CalCost;isPacket` | `—` / `—` | false / false |
+| `AccountID2` | `grdChitiet2` | `AccountID2` | `AccountID2` | `—` | `—` / `—` | false / false |
+| `CostCenterID` | `grdChitiet2` | `CostCenterID` | `CostCenterID` | `—` | `—` / `—` | false / false |
+| `CostID` | `grdChitiet2` | `CostID` | `CostID` | `—` | `—` / `—` | false / false |
+| `InvAccID` | `grdChitiet2` | `InvAccID` | `InvAccID` | `—` | `—` / `—` | false / false |
+| `ItemID` | `grdChitiet2` | `ItemID` | `ItemID` | `ItemID;ItemName;Unit;InvAccID` | `—` / `—` | false / false |
+| `ItemName` | `grdChitiet2` | `ItemName` | `ItemName` | `StoreHouseID;ItemID;ItemName;Unit;InvAccID;Lot;Quantity2;Quantity;Property;Property2` | `Master.DocumentDate` / `—` | false / true |
+| `Lot` | `grdChitiet2` | `Lot` | `Lot` | `StoreHouseID;ItemID;ItemName;Unit;InvAccID;Lot;ExpireDate;Property;Property2;Quantity2;Quantity;UnitPrice;Amount` | `Master.DocumentDate;ItemID;StoreHouseID` / `—` | false / true |
+| `Property` | `grdChitiet2` | `Property` | `Property` | `StoreHouseID;ItemID;ItemName;Unit;InvAccID;AccountID2;Lot;Property;Property2;Quantity2;Quantity;UnitPrice;Amount` | `Master.DocumentDate;ItemID` / `—` | false / true |
+| `Property2` | `grdChitiet2` | `Property2` | `Property2` | `StoreHouseID;ItemID;ItemName;Unit;InvAccID;AccountID2;Lot;Property;Property2;Quantity2;Quantity;UnitPrice;Amount` | `Master.DocumentDate;ItemID` / `—` | false / true |
+| `RefDoc` | `grdChitiet2` | `RefDoc` | `RefDoc` | `—` | `Master.DocumentDate;Master.ObjectID;AccountID2` / `ObjectID;DocumentDate` | false / true |
+| `StoreHouseID` | `grdChitiet2` | `StoreHouseID` | `StoreHouseID` | `—` | `—` / `—` | false / false |
+| `CouponSeri` | `grdPhieuMuaHang` | `CouponSeri` | `CouponSeri` | `TriGia` | `—` / `—` | true / true |
+
+## Các thao tác
+
+Tên và mã thao tác lấy theo danh mục, không thay thế quyền được cấp. Chỉ cho phép thực hiện khi cả quyền tài khoản và trạng thái nút trên chứng từ đều phù hợp.
+
+| Tên thao tác nguồn | Điều khiển | Mã thao tác khai báo | Nguồn tham chiếu |
+|---|---|---|---|
+| In mã QR | `PrintButtonCtl` | `UNKNOWN; xem ErpScreenCatalog.cs` | `dbo.SY_FrmCfg/IV_Output_QRCodeFrm/LYS1/PrintButtonCtl/BT` |
+
+**Nguồn tham chiếu:** `inventories/erp/20261010/six-screen-catalog.json#screens/warehouse-qr`. Đây là bản mô tả kỹ thuật được lưu từ nguồn; cần đối chiếu môi trường triển khai khi tích hợp. Thuộc tính writable không thay thế quyền ghi của tài khoản.

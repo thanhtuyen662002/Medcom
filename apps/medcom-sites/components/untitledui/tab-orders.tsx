@@ -455,7 +455,7 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
                     {order.totalAmount}
                   </span>
                   <span className="text-[11px] text-neutral-400">
-                    {order.lines.length > 0 ? `${order.lines.length} dòng hàng` : "Xem chi tiết"}
+                    {order.lines.length > 0 ? `${order.lines.length} chi tiết` : "Xem chi tiết"}
                   </span>
                 </div>
               </div>

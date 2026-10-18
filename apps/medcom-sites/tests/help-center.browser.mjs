@@ -106,7 +106,7 @@ test('help mobile/desktop navigation, search, deep links, image zoom and keyboar
       if(width<768)await page.keyboard.press('Escape');
       await page.goto(origin+'/help?guide=purchase-requests#them-dong-hang');
       await page.getByRole('heading',{name:'Đề nghị mua hàng',exact:true}).waitFor();
-      const zoom=page.getByRole('button',{name:'Phóng to ảnh: Thêm và kiểm tra dòng hàng'});await zoom.scrollIntoViewIfNeeded();await zoom.click();
+      const zoom=page.locator('#them-dong-hang').getByRole('button',{name:/^Phóng to ảnh:/});await zoom.scrollIntoViewIfNeeded();await zoom.click();
       const imageDialog=page.getByRole('dialog',{name:'Ảnh hướng dẫn phóng to'});await imageDialog.waitFor();
       await page.waitForFunction(()=>document.querySelector('dialog img')?.naturalWidth>0);
       assert.ok(await imageDialog.locator('img').evaluate(img=>img.getBoundingClientRect().width>250));
@@ -184,7 +184,7 @@ test('help inherits main theme, updates across tabs and follows system only with
         assert.equal(await menu.evaluate(node=>getComputedStyle(node).backgroundColor),'rgb(17, 27, 43)');
         await page.screenshot({path:path.join(output,'dark-menu-'+width+'.png')});await page.keyboard.press('Escape');
       }
-      await page.getByRole('button',{name:'Phóng to ảnh: Thêm và kiểm tra dòng hàng'}).click();
+      await page.locator('#them-dong-hang').getByRole('button',{name:/^Phóng to ảnh:/}).click();
       const image=page.getByRole('dialog',{name:'Ảnh hướng dẫn phóng to'});await image.waitFor();
       assert.equal(await image.evaluate(node=>getComputedStyle(node).backgroundColor),'rgb(15, 25, 40)');
       await page.screenshot({path:path.join(output,'dark-zoom-'+width+'.png')});

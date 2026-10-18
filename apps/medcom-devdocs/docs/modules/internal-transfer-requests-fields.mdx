@@ -1,0 +1,99 @@
+---
+title: "Phiếu đề nghị điều chuyển nội bộ (Sales / NVKD) · Trường dữ liệu"
+---
+
+:::note Phạm vi nguồn
+
+Các trường lấy từ danh mục kỹ thuật được backend nhúng. API đang triển khai trả **401** khi chưa đăng nhập; chưa đối chiếu dữ liệu mô tả theo phiên trên môi trường thật. Đây không phải danh mục toàn bộ cột của cơ sở dữ liệu.
+
+:::
+
+## Bảng và định danh
+
+| Phần dữ liệu | Bảng SQL |
+|---|---|
+| `header` | `IV_InternalTransferRequestTbl` |
+| `lines` | `IV_InternalTransferRequestDetailTbl` |
+| `history` | `IV_InternalTransferRequestLogTbl` |
+
+Tên trong danh mục là tên trường nguồn. Kết quả phiên bản 3 có thể dùng tên thống nhất khác; phải đối chiếu cấu trúc phản hồi của từng API trước khi đọc hoặc gửi dữ liệu. Không gửi tên hiển thị thay mã định danh.
+
+## Phần dữ liệu: header
+
+| Trường nguồn | Cột SQL | Kiểu SQL | Cho phép null | Ánh xạ ghi | Mặc định | Trường ảo / nguồn |
+|---|---|---|---|---|---|---|
+| `documentId` | `DocumentID` | `nvarchar(50)` | Không | Không | Không khai báo | —  |
+| `documentDate` | `DocumentDate` | `datetime` | Không | Có | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `salesUser` | `SalesUser` | `varchar(100)` | Không | Không | Không khai báo | —  |
+| `branchId` | `BranchID` | `varchar(50)` | Không | Không | Không khai báo | —  |
+| `fromBranchId` | `FromBranchID` | `varchar(50)` | Không | Có | Không khai báo | —  |
+| `toBranchId` | `ToBranchID` | `varchar(50)` | Không | Có | Không khai báo | —  |
+| `requestedTransferDate` | `RequestedTransferDate` | `datetime` | Có | Có | Không khai báo | —  |
+| `assignedPM` | `AssignedPM` | `varchar(100)` | Có | Không | Không khai báo | —  |
+| `statusId` | `StatusID` | `int` | Không | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `transferReason` | `TransferReason` | `nvarchar(500)` | Có | Có | Không khai báo | —  |
+| `transportMethod` | `TransportMethod` | `nvarchar(50)` | Có | Có | Không khai báo | —  |
+| `notes` | `Notes` | `nvarchar(1000)` | Có | Có | Không khai báo | —  |
+| `pMConfirmedBy` | `PMConfirmedBy` | `varchar(100)` | Có | Không | Không khai báo | —  |
+| `pMConfirmedAt` | `PMConfirmedAt` | `datetime` | Có | Không | Không khai báo | —  |
+| `isLocked` | `isLock` | `bit` | Không | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `userCreate` | `UserCreate` | `varchar(100)` | Có | Không | Không khai báo | —  |
+| `userUpdate` | `UserUpdate` | `varchar(100)` | Có | Không | Không khai báo | —  |
+| `dateCreate` | `DateCreate` | `datetime` | Có | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `dateUpdate` | `DateUpdate` | `datetime` | Có | Không | Không khai báo | —  |
+| `sendTo` | `SendTo` | `nvarchar(max)` | Có | Không | Không khai báo | —  |
+
+## Phần dữ liệu: lines
+
+| Trường nguồn | Cột SQL | Kiểu SQL | Cho phép null | Ánh xạ ghi | Mặc định | Trường ảo / nguồn |
+|---|---|---|---|---|---|---|
+| `userAutoId` | `UserAutoID` | `nvarchar(50)` | Không | Không | Không khai báo | —  |
+| `documentId` | `DocumentID` | `nvarchar(50)` | Không | Không | Không khai báo | —  |
+| `itemId` | `ItemID` | `nvarchar(50)` | Không | Có | Không khai báo | —  |
+| `requestedQty` | `RequestedQty` | `decimal(28, 4)` | Không | Có | Không khai báo | —  |
+| `pMApprovedQty` | `PMApprovedQty` | `decimal(28, 4)` | Có | Không | Không khai báo | —  |
+| `requestedLot` | `RequestedLot` | `nvarchar(100)` | Có | Có | Không khai báo | —  |
+| `expectedObjectId` | `ExpectedObjectID` | `varchar(100)` | Có | Có | Không khai báo | —  |
+| `territoryNote` | `TerritoryNote` | `nvarchar(500)` | Có | Có | Không khai báo | —  |
+| `isEquipment` | `IsEquipment` | `bit` | Không | Có | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `requestedAssetId` | `RequestedAssetID` | `varchar(50)` | Có | Có | Không khai báo | —  |
+| `pMNote` | `PMNote` | `nvarchar(500)` | Có | Không | Không khai báo | —  |
+| `notes` | `Notes` | `nvarchar(500)` | Có | Có | Không khai báo | —  |
+
+## Phần dữ liệu: history
+
+| Trường nguồn | Cột SQL | Kiểu SQL | Cho phép null | Ánh xạ ghi | Mặc định | Trường ảo / nguồn |
+|---|---|---|---|---|---|---|
+| `userAutoId` | `UserAutoID` | `varchar(50)` | Không | Không | Không khai báo | —  |
+| `documentId` | `DocumentID` | `varchar(50)` | Không | Không | Không khai báo | —  |
+| `thoiGian` | `ThoiGian` | `datetime` | Không | Không | Không khai báo | —  |
+| `userName` | `UserName` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `statusId` | `StatusID` | `int` | Có | Không | Không khai báo | —  |
+| `sendTo` | `SendTo` | `nvarchar(max)` | Có | Không | Không khai báo | —  |
+| `notes` | `Notes` | `nvarchar(max)` | Có | Không | Không khai báo | —  |
+
+## Danh sách lựa chọn
+
+Không tự suy đoán cách tách chuỗi trường liên kết hoặc tham số. Đối chiếu đặc tả danh sách lựa chọn, dữ liệu mô tả từ máy chủ và mã xử lý hiện có.
+
+| Mã lựa chọn / trường | Bảng hiển thị | Trường giá trị | Trường tên | Trường liên kết | Tham số / bắt buộc | Vô hiệu / chọn nhiều |
+|---|---|---|---|---|---|---|
+| `AssignedPM` | `header` | `UserName` | `HoTen` | `—` | `FromBranchID` / `FromBranchID` | false / false |
+| `BranchID` | `header` | `BranchID` | `BranchID` | `—` | `—` / `—` | false / false |
+| `FromBranchID` | `header` | `BranchID` | `BranchName` | `—` | `—` / `—` | false / false |
+| `ToBranchID` | `header` | `BranchID` | `BranchName` | `—` | `—` / `—` | false / false |
+| `TransportMethod` | `header` | `ID` | `Name` | `—` | `—` / `—` | false / false |
+| `ExpectedObjectID` | `grdChitiet` | `ObjectID` | `ObjectID` | `ExpectedObjectName` | `—` / `—` | false / false |
+| `ItemID` | `grdChitiet` | `ItemID` | `ItemID` | `ItemCode;ItemName;Unit;HangSX;isLot` | `—` / `—` | false / false |
+| `RequestedAssetID` | `grdChitiet` | `AssetID` | `AssetID` | `RequestedAssetName;RequestedAssetSerial` | `ItemID` / `ItemID` | false / false |
+
+## Các thao tác
+
+Tên và mã thao tác lấy theo danh mục, không thay thế quyền được cấp. Chỉ cho phép thực hiện khi cả quyền tài khoản và trạng thái nút trên chứng từ đều phù hợp.
+
+| Tên thao tác nguồn | Điều khiển | Mã thao tác khai báo | Nguồn tham chiếu |
+|---|---|---|---|
+| Thu hồi để sửa | `CommandButtonCtl_1` | `UNKNOWN; xem ErpScreenCatalog.cs` | `dbo.SY_FrmCfg/IV_InternalTransferRequestFrm/LYS1/CommandButtonCtl_1/BT` |
+| Gửi PM | `ExecSQLWithParaButtonCtl` | `UNKNOWN; xem ErpScreenCatalog.cs` | `dbo.SY_FrmCfg/IV_InternalTransferRequestFrm/LYS1/ExecSQLWithParaButtonCtl/BT` |
+
+**Nguồn tham chiếu:** `inventories/erp/20261010/six-screen-catalog.json#screens/internal-transfer-requests`. Đây là bản mô tả kỹ thuật được lưu từ nguồn; cần đối chiếu môi trường triển khai khi tích hợp. Thuộc tính writable không thay thế quyền ghi của tài khoản.

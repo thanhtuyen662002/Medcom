@@ -466,7 +466,7 @@ function DetailTabs({
 }) {
   const [tab, setTab] = useState<"lines" | "history">("lines");
   return (
-    <RecordSection title="Dòng hàng & lịch sử">
+    <RecordSection title="Chi tiết & lịch sử">
       <div className="flex min-w-0 flex-wrap gap-2" role="group" aria-label="Nội dung chi tiết đơn hàng">
         {([["lines", `Thông tin chi tiết (${lines.length})`], ["history", "Lịch sử gửi / duyệt"]] as const).map(([id, label]) => (
           <RequestButton key={id} type="button" aria-pressed={tab === id} onClick={() => setTab(id)} variant={tab === id ? "default" : "outline"}>
@@ -496,7 +496,7 @@ function DetailTabs({
             </section>)}
             </div>
           </details>)}
-          {lines.length === 0 && <p className={requestStyles.muted}>Chưa có dòng hàng.</p>}
+          {lines.length === 0 && <p className={requestStyles.muted}>Chưa có chi tiết.</p>}
         </div>
       ) : (
         <div className="min-w-0 space-y-3">

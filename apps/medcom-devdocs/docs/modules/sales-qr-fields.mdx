@@ -1,0 +1,227 @@
+---
+title: "Xuất hàng theo PXK · Trường dữ liệu"
+---
+
+:::note Phạm vi nguồn
+
+Các trường lấy từ danh mục kỹ thuật được backend nhúng. API đang triển khai trả **401** khi chưa đăng nhập; chưa đối chiếu dữ liệu mô tả theo phiên trên môi trường thật. Đây không phải danh mục toàn bộ cột của cơ sở dữ liệu.
+
+:::
+
+## Bảng và định danh
+
+| Phần dữ liệu | Bảng SQL |
+|---|---|
+| `header` | `AR_InvoiceTbl` |
+| `lines` | `AR_InvoiceQRCodeTbl` |
+| `comparison` | `AR_InvoiceDetailTbl` |
+
+Tên trong danh mục là tên trường nguồn. Kết quả phiên bản 3 có thể dùng tên thống nhất khác; phải đối chiếu cấu trúc phản hồi của từng API trước khi đọc hoặc gửi dữ liệu. Không gửi tên hiển thị thay mã định danh.
+
+## Phần dữ liệu: header
+
+| Trường nguồn | Cột SQL | Kiểu SQL | Cho phép null | Ánh xạ ghi | Mặc định | Trường ảo / nguồn |
+|---|---|---|---|---|---|---|
+| `documentId` | `DocumentID` | `varchar(30)` | Không | Không | Không khai báo | —  |
+| `documentDate` | `DocumentDate` | `datetime` | Không | Không | Không khai báo | —  |
+| `objectId` | `ObjectID` | `varchar(100)` | Không | Không | Không khai báo | —  |
+| `employeeId` | `EmployeeID` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `managerId` | `ManagerID` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `memo` | `Memo` | `nvarchar(250)` | Có | Không | Không khai báo | —  |
+| `notes` | `Notes` | `nvarchar(200)` | Có | Không | Không khai báo | —  |
+| `receiver` | `Receiver` | `nvarchar(100)` | Có | Không | Không khai báo | —  |
+| `currencyId` | `CurrencyID` | `varchar(3)` | Không | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `rateExchange` | `RateExchange` | `float` | Không | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `paymentTypeId` | `PaymentTypeID` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `paymentTermId` | `PaymentTermID` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `dueDate` | `DueDate` | `datetime` | Có | Không | Không khai báo | —  |
+| `debtDueDate` | `DebtDueDate` | `datetime` | Có | Không | Không khai báo | —  |
+| `pONo` | `PONo` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `contractId` | `ContractID` | `nvarchar(100)` | Có | Không | Không khai báo | —  |
+| `refDoc` | `RefDoc` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `baseTotal` | `BaseTotal` | `decimal(18, 0)` | Có | Không | Không khai báo | —  |
+| `revAccId` | `RevAccID` | `varchar(50)` | Không | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `vATAccId` | `VATAccID` | `varchar(50)` | Không | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `isLocked` | `isLock` | `bit` | Không | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `invoiceNo` | `InvoiceNo` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `searchField` | `SearchField` | `nvarchar(2000)` | Có | Không | Không khai báo | —  |
+| `userCreate` | `UserCreate` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `userUpdate` | `UserUpdate` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `dateUpdate` | `DateUpdate` | `datetime` | Có | Không | Không khai báo | —  |
+| `dateCreate` | `DateCreate` | `datetime` | Có | Không | Không khai báo | —  |
+| `status` | `Status` | `int` | Không | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `linkId` | `LinkID` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `vATAccId2` | `VATAccID2` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `amountTotal` | `AmountTotal` | `decimal(28, 0)` | Có | Không | Không khai báo | —  |
+| `vATAmountTotal` | `VATAmountTotal` | `decimal(28, 0)` | Có | Không | Không khai báo | —  |
+| `impExpId` | `ImpExpID` | `varchar(10)` | Có | Không | Không khai báo | —  |
+| `isExport` | `isExport` | `bit` | Có | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `costCenterId` | `CostCenterID` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `costId` | `CostID` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `vATAccExId` | `VATAccExID` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `docBatch` | `DocBatch` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `couponAmount` | `CouponAmount` | `decimal(18, 0)` | Có | Không | Không khai báo | —  |
+| `lanIn` | `LanIn` | `int` | Có | Không | Không khai báo | —  |
+| `locationId` | `LocationID` | `nvarchar(50)` | Có | Không | Không khai báo | —  |
+| `attach` | `Attach` | `nvarchar(100)` | Có | Không | Không khai báo | —  |
+| `attachDate` | `AttachDate` | `datetime` | Có | Không | Không khai báo | —  |
+| `noiDungHoaDon` | `NoiDungHoaDon` | `nvarchar(500)` | Có | Không | Không khai báo | —  |
+| `nguoiMuaHangHD` | `NguoiMuaHangHD` | `nvarchar(250)` | Có | Không | Không khai báo | —  |
+| `tenKhachLe` | `TenKhachLe` | `nvarchar(250)` | Có | Không | Không khai báo | —  |
+| `mSTKhachLe` | `MSTKhachLe` | `nvarchar(50)` | Có | Không | Không khai báo | —  |
+| `branchId` | `BranchID` | `varchar(50)` | Không | Không | Không khai báo | —  |
+| `statusId` | `StatusID` | `int` | Có | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `isLocal` | `isLocal` | `bit` | Không | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `invoiceKey` | `InvoiceKey` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `refInvoiceKey` | `RefInvoiceKey` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `objectNameHD` | `ObjectNameHD` | `nvarchar(250)` | Có | Không | Không khai báo | —  |
+| `addressHD` | `AddressHD` | `nvarchar(250)` | Có | Không | Không khai báo | —  |
+| `taxCodeHD` | `TaxCodeHD` | `nvarchar(50)` | Có | Không | Không khai báo | —  |
+| `uId` | `UID` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `ghiChuHoaDon` | `GhiChuHoaDon` | `nvarchar(250)` | Có | Không | Không khai báo | —  |
+| `thuHo` | `ThuHo` | `bit` | Có | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `agencyId` | `AgencyID` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `ceoId` | `CeoID` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `ngayGiaoLai` | `NgayGiaoLai` | `datetime` | Có | Không | Không khai báo | —  |
+| `hinhThucGiaoHang` | `HinhThucGiaoHang` | `nvarchar(100)` | Có | Không | Không khai báo | —  |
+| `thamGiaHopDongBan` | `ThamGiaHopDongBan` | `bit` | Có | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `cTKM` | `CTKM` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `soTienKM` | `SoTienKM` | `decimal(18, 0)` | Có | Không | Không khai báo | —  |
+| `maVanDon` | `MaVanDon` | `nvarchar(50)` | Có | Không | Không khai báo | —  |
+| `phiVanChuyen` | `PhiVanChuyen` | `decimal(18, 0)` | Có | Không | Không khai báo | —  |
+| `phiKhacTotal` | `PhiKhacTotal` | `decimal(18, 0)` | Có | Không | Không khai báo | —  |
+| `maHopDong` | `MaHopDong` | `nvarchar(50)` | Có | Không | Không khai báo | —  |
+| `discountTotal` | `DiscountTotal` | `decimal(18, 0)` | Có | Không | Không khai báo | —  |
+| `isScanQrCode` | `isScanQRCode` | `bit` | Có | Không | Không khai báo | —  |
+
+## Phần dữ liệu: lines
+
+| Trường nguồn | Cột SQL | Kiểu SQL | Cho phép null | Ánh xạ ghi | Mặc định | Trường ảo / nguồn |
+|---|---|---|---|---|---|---|
+| `userAutoId` | `UserAutoID` | `nvarchar(50)` | Không | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `documentId` | `DocumentID` | `nvarchar(50)` | Không | Không | Không khai báo | —  |
+| `qrCode` | `QRCode` | `nvarchar(200)` | Không | Không | Không khai báo | —  |
+| `itemId` | `ItemID` | `nvarchar(50)` | Không | Không | Không khai báo | —  |
+| `itemCode` | `ItemCode` | `nvarchar(50)` | Có | Không | Không khai báo | —  |
+| `lot` | `Lot` | `nvarchar(50)` | Không | Không | Không khai báo | —  |
+| `quantity` | `Quantity` | `decimal(38, 10)` | Có | Không | Không khai báo | —  |
+| `qrPackageId` | `QRPackageID` | `nvarchar(200)` | Có | Không | Không khai báo | —  |
+| `quyCach` | `QuyCach` | `nvarchar(50)` | Có | Không | Không khai báo | —  |
+
+## Phần dữ liệu: comparison
+
+| Trường nguồn | Cột SQL | Kiểu SQL | Cho phép null | Ánh xạ ghi | Mặc định | Trường ảo / nguồn |
+|---|---|---|---|---|---|---|
+| `userAutoId` | `UserAutoID` | `varchar(40)` | Không | Không | Không khai báo | —  |
+| `documentId` | `DocumentID` | `varchar(30)` | Không | Không | Không khai báo | —  |
+| `itemId` | `ItemID` | `nvarchar(50)` | Không | Không | Không khai báo | —  |
+| `lot` | `Lot` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `expireDate` | `ExpireDate` | `datetime` | Có | Không | Không khai báo | —  |
+| `notes` | `Notes` | `nvarchar(500)` | Có | Không | Không khai báo | —  |
+| `storeHouseId` | `StoreHouseID` | `varchar(50)` | Không | Không | Không khai báo | —  |
+| `quantity` | `Quantity` | `decimal(28, 4)` | Không | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `unitPrice` | `UnitPrice` | `decimal(28, 4)` | Có | Không | Không khai báo | —  |
+| `sourceAmount` | `SourceAmount` | `decimal(28, 2)` | Có | Không | Không khai báo | —  |
+| `amount` | `Amount` | `decimal(28, 0)` | Có | Không | Không khai báo | —  |
+| `vATId` | `VATID` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `vATPercent` | `VATPercent` | `decimal(18, 2)` | Có | Không | Không khai báo | —  |
+| `vATAmount` | `VATAmount` | `decimal(28, 0)` | Có | Không | Không khai báo | —  |
+| `discountPercentTT` | `DiscountPercentTT` | `decimal(18, 2)` | Có | Không | Không khai báo | —  |
+| `discountAmountTT` | `DiscountAmountTT` | `decimal(28, 0)` | Có | Không | Không khai báo | —  |
+| `discountPercent` | `DiscountPercent` | `decimal(18, 2)` | Có | Không | Không khai báo | —  |
+| `discountAmount` | `DiscountAmount` | `decimal(28, 0)` | Có | Không | Không khai báo | —  |
+| `totalAmount` | `TotalAmount` | `decimal(28, 0)` | Có | Không | Không khai báo | —  |
+| `costCenterId` | `CostCenterID` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `costId` | `CostID` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `incomeAccId` | `IncomeAccID` | `varchar(50)` | Không | Không | Không khai báo | —  |
+| `invAccId` | `InvAccID` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `costOfSaleAccId` | `CostOfSaleAccID` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `discountAcctId` | `DiscountAcctID` | `varchar(50)` | Có | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `discountAmount2` | `DiscountAmount2` | `decimal(18, 0)` | Có | Không | Không khai báo | —  |
+| `unitCost` | `UnitCost` | `float` | Có | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `amountCost` | `AmountCost` | `decimal(28, 0)` | Có | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `quantity2` | `Quantity2` | `decimal(28, 4)` | Có | Không | Không khai báo | —  |
+| `property` | `Property` | `nvarchar(50)` | Có | Không | Không khai báo | —  |
+| `property2` | `Property2` | `nvarchar(50)` | Có | Không | Không khai báo | —  |
+| `objectId` | `ObjectID` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `parentId` | `ParentID` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `unitPriceV` | `UnitPriceV` | `decimal(28, 2)` | Có | Không | Không khai báo | —  |
+| `unitFactor` | `UnitFactor` | `float` | Có | Không | Không khai báo | —  |
+| `exportPercent` | `ExportPercent` | `decimal(18, 2)` | Có | Không | Không khai báo | —  |
+| `exportAmount` | `ExportAmount` | `decimal(28, 2)` | Có | Không | Không khai báo | —  |
+| `dienGiai` | `DienGiai` | `nvarchar(250)` | Có | Không | Không khai báo | —  |
+| `stockQuantity` | `StockQuantity` | `decimal(28, 4)` | Có | Không | Không khai báo | —  |
+| `isKM` | `isKM` | `bit` | Có | Không | Có; chưa xác minh giá trị (UNKNOWN) | —  |
+| `employeeId` | `EmployeeID` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `managerId` | `ManagerID` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `cTKM` | `CTKM` | `varchar(50)` | Có | Không | Không khai báo | —  |
+| `tongTienNhom1` | `TongTienNhom1` | `decimal(18, 0)` | Có | Không | Không khai báo | —  |
+| `tongTienNhom2` | `TongTienNhom2` | `decimal(18, 0)` | Có | Không | Không khai báo | —  |
+| `phiKhac` | `PhiKhac` | `decimal(18, 0)` | Có | Không | Không khai báo | —  |
+| `tongTienNhomFyto` | `TongTienNhomFyto` | `decimal(18, 0)` | Có | Không | Không khai báo | —  |
+| `quyCach` | `QuyCach` | `nvarchar(50)` | Có | Không | Không khai báo | —  |
+| `sLTheoQuyCach` | `SLTheoQuyCach` | `decimal(18, 2)` | Có | Không | Không khai báo | —  |
+
+## Danh sách lựa chọn
+
+Không tự suy đoán cách tách chuỗi trường liên kết hoặc tham số. Đối chiếu đặc tả danh sách lựa chọn, dữ liệu mô tả từ máy chủ và mã xử lý hiện có.
+
+| Mã lựa chọn / trường | Bảng hiển thị | Trường giá trị | Trường tên | Trường liên kết | Tham số / bắt buộc | Vô hiệu / chọn nhiều |
+|---|---|---|---|---|---|---|
+| `AgencyID` | `header` | `AgencyID` | `AgencyID` | `—` | `—` / `—` | false / false |
+| `BranchID` | `header` | `BranchID` | `BranchID` | `—` | `—` / `—` | false / false |
+| `CeoID` | `header` | `CeoID` | `CeoID` | `CeoName` | `—` / `—` | false / false |
+| `ChietKhau1AccID` | `header` | `ChietKhau1AccID` | `ChietKhau1AccID` | `—` | `—` / `—` | true / false |
+| `ChietKhau2AccID` | `header` | `ChietKhau2AccID` | `ChietKhau2AccID` | `—` | `—` / `—` | true / false |
+| `ChietKhau3AccID` | `header` | `ChietKhau3AccID` | `ChietKhau3AccID` | `—` | `—` / `—` | true / false |
+| `ChietKhau4AccID` | `header` | `ChietKhau4AccID` | `ChietKhau4AccID` | `—` | `—` / `—` | true / false |
+| `ContractID` | `header` | `ContractID` | `ContractID` | `ContractID` | `—` / `—` | false / false |
+| `CostCenterID` | `header` | `CostCenterID` | `CostCenterID` | `CostCenterID` | `—` / `—` | false / false |
+| `CostID` | `header` | `CostID` | `CostID` | `CostID` | `—` / `—` | false / false |
+| `CTKM` | `header` | `CTKM` | `CTKM` | `—` | `BranchID` / `—` | false / false |
+| `CurrencyID` | `header` | `CurrencyID` | `CurrencyID` | `RateExchange` | `—` / `—` | false / false |
+| `EmployeeID` | `header` | `EmployeeID` | `EmployeeID` | `—` | `—` / `—` | false / false |
+| `FldRefDoc` | `header` | `RefDoc` | `RefDoc` | `RefDoc` | `ObjectID;RevAccID;DocumentDate` / `—` | false / false |
+| `HinhThucGiaoHang` | `header` | `HinhThucGiaoHang` | `HinhThucGiaoHang` | `—` | `—` / `—` | false / false |
+| `LocationID` | `header` | `LocationID` | `LocationName` | `—` | `—` / `—` | false / false |
+| `MaHopDong` | `header` | `MaHopDong` | `MaHopDong` | `—` | `—` / `—` | true / false |
+| `ManagerID` | `header` | `ManagerID` | `ManagerID` | `—` | `—` / `—` | false / false |
+| `ObjectID` | `header` | `ObjectID` | `ObjectID` | `ObjectID;ObjectName;Address;RevAccID;Phone;LocationID;NguoiMuaHangHD;ChietKhau2AccID;ChietKhau4AccID;CostCenterID;Phone;HinhThucGiaoHang;PhanLoai` | `BranchID` / `—` | false / false |
+| `PaymentTermID` | `header` | `PaymentTermID` | `PaymentTermName` | `—` | `—` / `—` | false / false |
+| `PaymentTypeID` | `header` | `PaymentTypeID` | `PaymentTypeName` | `—` | `—` / `—` | false / false |
+| `RevAccID` | `header` | `RevAccID` | `RevAccID` | `—` | `—` / `—` | false / false |
+| `VATAccID` | `header` | `VATAccID` | `VATAccID` | `—` | `—` / `—` | false / false |
+| `VATAccID2` | `header` | `VATAccID2` | `VATAccID2` | `—` | `—` / `—` | false / false |
+| `CostCenterID` | `grdChitiet2` | `CostCenterID` | `CostCenterID` | `—` | `—` / `—` | false / false |
+| `CostID` | `grdChitiet2` | `CostID` | `CostID` | `—` | `—` / `—` | false / false |
+| `CostOfSaleAccID` | `grdChitiet2` | `CostOfSaleAccID` | `CostOfSaleAccID` | `—` | `—` / `—` | false / false |
+| `CTKM` | `grdChitiet2` | `CTKM` | `CTKM` | `—` | `Master.BranchID` / `—` | false / false |
+| `DiscountAcctID` | `grdChitiet2` | `DiscountAcctID` | `DiscountAcctID` | `—` | `—` / `—` | false / false |
+| `EmployeeID` | `grdChitiet2` | `EmployeeID` | `EmployeeID` | `—` | `—` / `—` | false / false |
+| `IncomeAccID` | `grdChitiet2` | `IncomeAccID` | `IncomeAccID` | `—` | `—` / `—` | false / false |
+| `InvAccID` | `grdChitiet2` | `InvAccID` | `InvAccID` | `—` | `—` / `—` | false / false |
+| `ItemID` | `grdChitiet2` | `ItemID` | `ItemID` | `ItemID;ItemName;Unit;InvAccID;VATID;VATPercent;IncomeAccID;CostOfSaleAccID;DiscountAcctID;DienGiai` | `—` / `—` | false / false |
+| `ItemName` | `grdChitiet2` | `ItemName` | `ItemName` | `ItemID;ItemName;Unit;InvAccID;VATID;VATPercent;IncomeAccID;CostOfSaleAccID;DiscountAcctID;DienGiai` | `—` / `—` | false / true |
+| `Lot` | `grdChitiet2` | `Lot` | `Lot` | `StoreHouseID;InvAccID;IncomeAccID;CostOfSaleAccID;Lot;ExpireDate;Property;Property2;UnitCost` | `Master.DocumentDate;ItemID` / `—` | false / true |
+| `ManagerID` | `grdChitiet2` | `ManagerID` | `ManagerID` | `—` | `—` / `—` | false / false |
+| `ObjectID` | `grdChitiet2` | `ObjectID` | `ObjectName` | `—` | `—` / `—` | false / false |
+| `Property` | `grdChitiet2` | `Property` | `Property` | `StoreHouseID;ItemID;ItemName;Unit;InvAccID;IncomeAccID;CostOfSaleAccID;Lot;Property;Property2;Quantity2;Quantity;UnitCost` | `Master.DocumentDate;ItemID` / `—` | false / true |
+| `Property2` | `grdChitiet2` | `Property2` | `Property2` | `StoreHouseID;ItemID;ItemName;Unit;InvAccID;IncomeAccID;CostOfSaleAccID;Lot;Property;Property2;Quantity2;Quantity;UnitCost` | `Master.DocumentDate;ItemID` / `—` | false / true |
+| `StoreHouseID` | `grdChitiet2` | `StoreHouseID` | `StoreHouseID` | `—` | `Master.BranchID` / `Master.BranchID` | false / false |
+| `VATID` | `grdChitiet2` | `VATID` | `VATID` | `VATPercent` | `—` / `—` | false / false |
+| `ItemID` | `grdChitietKM` | `ItemID` | `ItemID` | `ItemID;ItemName;Unit;InvAccID;VATID;VATPercent;IncomeAccID;CostOfSaleAccID;DiscountAcctID` | `—` / `—` | true / false |
+| `Lot` | `grdChitietKM` | `Lot` | `Lot` | `StoreHouseID;ItemID;ItemName;Unit;InvAccID;IncomeAccID;CostOfSaleAccID;Lot;ExpireDate;Property;Property2;UnitCost` | `Master.DocumentDate;ItemID;StoreHouseID` / `—` | true / true |
+| `StoreHouseID` | `grdChitietKM` | `StoreHouseID` | `StoreHouseID` | `—` | `—` / `—` | true / false |
+| `ItemName` | `grdHoaDon` | `ItemName` | `ItemName` | `ItemName;VATID;VATPercent` | `—` / `—` | true / false |
+| `ObjectName` | `grdHoaDon` | `ObjectName` | `ObjectName` | `Address;TaxCode` | `—` / `—` | true / false |
+| `VATID` | `grdHoaDon` | `VATID` | `VATID` | `VATPercent` | `—` / `—` | true / false |
+
+## Các thao tác
+
+Tên và mã thao tác lấy theo danh mục, không thay thế quyền được cấp. Chỉ cho phép thực hiện khi cả quyền tài khoản và trạng thái nút trên chứng từ đều phù hợp.
+
+| Tên thao tác nguồn | Điều khiển | Mã thao tác khai báo | Nguồn tham chiếu |
+|---|---|---|---|
+| Xem thông tin hợp đồng | `CommandButtonCtl_2` | `UNKNOWN; xem ErpScreenCatalog.cs` | `dbo.SY_FrmCfg/AR_Invoice_QRCodeFrm/LYS1/CommandButtonCtl_2/BT` |
+
+**Nguồn tham chiếu:** `inventories/erp/20261010/six-screen-catalog.json#screens/sales-qr`. Đây là bản mô tả kỹ thuật được lưu từ nguồn; cần đối chiếu môi trường triển khai khi tích hợp. Thuộc tính writable không thay thế quyền ghi của tài khoản.

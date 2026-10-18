@@ -86,7 +86,7 @@ export function RequestError({error,retry,legacyReference=false}:{error:unknown;
 }
 
 const requestPhaseCopy:Record<string,string>={
-  "Đang đọc đầy đủ các trường và dòng do DTO ERP cung cấp.":"Đang tải thông tin và dòng hàng…",
+  "Đang đọc đầy đủ các trường và dòng do DTO ERP cung cấp.":"Đang tải thông tin và chi tiết…",
   "Đã đọc đầy đủ các trường và dòng do DTO ERP cung cấp.":"Dữ liệu đã được cập nhật từ ERP.",
   "ERP đã xác nhận thao tác. Đang đọc lại snapshot và ID dòng thật.":"ERP đã xác nhận thao tác. Đang cập nhật lại phiếu…",
   "ERP đã xác nhận thao tác. Đã đọc lại snapshot khớp xác nhận và ID dòng thật.":"ERP đã xác nhận thao tác. Phiếu đã được cập nhật.",

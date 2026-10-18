@@ -1,0 +1,47 @@
+---
+title: "Duyệt đơn hàng"
+---
+
+Mục lục lấy từ thanh điều hướng `/help`; Các API dưới đây được đối chiếu bằng đúng mã phân hệ.
+
+Có **14 API** trong đặc tả. Trạng thái triển khai giao diện và nghiệm thu môi trường thật được xác nhận riêng.
+
+## Trình tự tích hợp
+
+1. Kiểm tra phiên đăng nhập, không gian làm việc và quyền tại `/api/erp/permissions`.
+2. Lấy `/api/erp/sales-order-sa/screen` để tra cấu trúc trường, danh sách lựa chọn và thao tác.
+3. Tải danh sách theo chi nhánh; mở chi tiết bằng mã định danh theo đúng tham số API.
+4. Đọc trạng thái các nút trên chứng từ; tải tiếp các phần dữ liệu có `hasMore`.
+5. Trước khi ghi, kiểm tra lại quyền, phạm vi phiên và phiên bản chứng từ; dùng đúng cấu trúc yêu cầu và khóa chống ghi lặp.
+6. Khi chưa nhận được kết quả sau gửi, tra cứu lại chính yêu cầu đã gửi; không tạo yêu cầu ghi mới để thử lại.
+
+## Mô hình dữ liệu
+
+Menu `060022` · Form `AR_OrderAproveFrm`. Tên trong danh mục nguồn: **SA xử lý đơn hàng**. [Trường dữ liệu, danh sách lựa chọn và ánh xạ SQL](./sales-order-sa-fields).
+
+Tên mục giữ nguyên theo hướng dẫn sử dụng. Việc đối chiếu dựa trên mã phân hệ; cần xác nhận nếu các tên menu khác nhau có thể mang ý nghĩa nghiệp vụ khác nhau.
+
+## API của màn hình
+
+| Phương thức | Đường dẫn | Chức năng | Mã thao tác |
+|---|---|---|---|
+| `GET` | `/api/erp/sales-order-sa/screen` | Lấy mô tả các cột, lựa chọn và nút của màn hình; không hiển thị thông tin nội bộ này cho người dùng. | [sales_order_sa_screen](/docs/api/sales_order_sa_screen) |
+| `GET` | `/api/erp/sales-order-sa` | Tải danh sách phiếu theo trang, tìm kiếm và bộ lọc của màn hình. | [sales_order_sa_list](/docs/api/sales_order_sa_list) |
+| `GET` | `/api/erp/sales-order-sa/detail` | Lấy đầy đủ thông tin phiếu và các bảng chi tiết theo trang. | [sales_order_sa_detail](/docs/api/sales_order_sa_detail) |
+| `GET` | `/api/erp/sales-order-sa/actions` | Lấy quyền hiện và trạng thái bật/tắt từng nút theo người đăng nhập và phiếu đang mở. | [sales_order_sa_actions](/docs/api/sales_order_sa_actions) |
+| `GET` | `/api/erp/sales-order-sa/contract-info` | Mở thông tin hợp đồng liên quan đến phiếu. | [sales_order_sa_contract_info](/docs/api/sales_order_sa_contract_info) |
+| `POST` | `/api/erp/sales-order-sa/options` | Lấy danh sách cho các ô chọn trên phiếu, có tìm kiếm và phân trang. | [sales_order_sa_options](/docs/api/sales_order_sa_options) |
+| `POST` | `/api/erp/sales-order-sa/commands/lookup` | Kiểm tra lần lưu/gửi trước khi chưa nhận được kết quả; không dựng thành nút nghiệp vụ riêng. | [sales_order_sa_command_lookup](/docs/api/sales_order_sa_command_lookup) |
+| `POST` | `/api/erp/sales-order-sa/actions/send-accounting` | Thực hiện nút “Gửi Kế toán” trên phiếu đang mở, khi người dùng và trạng thái cho phép. | [sales_order_sa_send_accounting](/docs/api/sales_order_sa_send_accounting) |
+| `POST` | `/api/erp/sales-order-sa/actions/send-tech` | Thực hiện nút “Gửi Kỹ thuật” trên phiếu đang mở, khi người dùng và trạng thái cho phép. | [sales_order_sa_send_tech](/docs/api/sales_order_sa_send_tech) |
+| `POST` | `/api/erp/sales-order-sa/actions/reject` | Thực hiện nút “Từ chối nhanh” trên phiếu đang mở, khi người dùng và trạng thái cho phép. | [sales_order_sa_reject](/docs/api/sales_order_sa_reject) |
+| `POST` | `/api/erp/sales-order-sa/actions/return-step` | Thực hiện nút “Chọn bước gửi về” trên phiếu đang mở, khi người dùng và trạng thái cho phép. | [sales_order_sa_return_step](/docs/api/sales_order_sa_return_step) |
+| `POST` | `/api/erp/sales-order-sa/actions/return-step/options` | Lấy danh sách người nhận hoặc bước xử lý để người dùng chọn trước khi gửi. | [sales_order_sa_return_step_options](/docs/api/sales_order_sa_return_step_options) |
+| `GET` | `/api/erp/sales-order-sa/attachments` | Lấy danh sách ảnh theo trang, các vị trí ảnh và quyền thêm/xóa trên phiếu; chỉ mở phần này khi màn hình có hỗ trợ. | [sales_order_sa_attachments](/docs/api/sales_order_sa_attachments) |
+| `GET` | `/api/erp/sales-order-sa/attachments/content` | Mở ảnh gốc hoặc ảnh xem trước của phiếu đang xem. | [sales_order_sa_attachment_content](/docs/api/sales_order_sa_attachment_content) |
+
+## Điều kiện triển khai
+
+Đọc [Xác thực và phạm vi phiên](/docs/foundation/auth), [Lỗi và cách xử lý](/docs/foundation/errors) và [Quy tắc xây dựng giao diện](/docs/foundation/ui). Máy chủ quyết định thao tác được phép ở thời điểm thực hiện. Thuộc tính writable không thay thế canCreate/canUpdate hoặc action.enabled.
+
+**Nguồn tham chiếu:** `inventories/erp/20261011/cud-workflow-catalog.json#screens/sales-order-sa`. Đây là bản mô tả kỹ thuật được lưu từ nguồn; cần đối chiếu môi trường triển khai khi tích hợp. Thuộc tính writable không thay thế quyền ghi của tài khoản.

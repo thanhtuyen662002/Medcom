@@ -162,7 +162,7 @@ export function DesktopSidebar({
   ];
 
   return (
-    <aside className="w-64 shrink-0 h-screen sticky top-0 flex flex-col bg-white dark:bg-neutral-900 border-r border-neutral-200/80 dark:border-neutral-800 transition-colors z-30 shadow-xs select-none">
+    <aside className="w-72 shrink-0 h-screen sticky top-0 flex flex-col bg-white dark:bg-neutral-900 border-r border-neutral-200/80 dark:border-neutral-800 transition-colors z-30 shadow-xs select-none">
       {/* Brand Header */}
       <div className="p-4 border-b border-neutral-100 dark:border-neutral-800/80">
         <div className="flex items-center justify-between">
@@ -179,7 +179,7 @@ export function DesktopSidebar({
               className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
               title="Chuyển sang thanh điều hướng ngang (Top Header)"
             >
-              <PanelLeftClose className="size-4" />
+              <PanelLeftClose className="size-5" />
             </button>
           )}
         </div>
@@ -189,7 +189,7 @@ export function DesktopSidebar({
           <button
             type="button"
             onClick={() => setBranchDropdownOpen(!branchDropdownOpen)}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50/80 dark:bg-neutral-800/60 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-xs font-semibold text-neutral-800 dark:text-neutral-200 transition-all cursor-pointer"
+            className="w-full flex items-center justify-between px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50/80 dark:bg-neutral-800/60 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm font-semibold text-neutral-800 dark:text-neutral-200 transition-all cursor-pointer"
           >
             <div className="flex items-center gap-2 min-w-0">
               <Building2 className="size-3.5 text-brand-600 shrink-0" />
@@ -209,9 +209,9 @@ export function DesktopSidebar({
                 onClick={() => setBranchDropdownOpen(false)}
               />
               <div className="absolute left-0 mt-1.5 w-full rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xl p-1.5 z-50 animate-uui-fade-in max-h-60 overflow-y-auto">
-                <div className="px-2.5 py-1.5 border-b border-neutral-100 dark:border-neutral-800 text-[11px]">
+                <div className="px-2.5 py-1.5 border-b border-neutral-100 dark:border-neutral-800 text-sm">
                   <p className="font-bold text-neutral-900 dark:text-white">Chi nhánh ERP</p>
-                  <p className="text-[10px] text-neutral-400">Chọn chi nhánh làm việc</p>
+                  <p className="text-xs text-neutral-400">Chọn chi nhánh làm việc</p>
                 </div>
                 <div className="py-1 space-y-0.5">
                   {branches.map((b) => {
@@ -224,9 +224,9 @@ export function DesktopSidebar({
                           onBranchChange(b.id);
                           setBranchDropdownOpen(false);
                         }}
-                        className={`w-full flex items-center justify-between p-2 rounded-xl text-left text-xs transition-colors ${
+                        className={`w-full flex items-center justify-between p-2 rounded-xl text-left text-sm transition-colors ${
                           isSelected
-                            ? "bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 font-semibold"
+                            ? "bg-brand-100 dark:bg-brand-800 text-black dark:text-white font-bold"
                             : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800/60"
                         }`}
                       >
@@ -248,10 +248,10 @@ export function DesktopSidebar({
       <div className="px-3 pt-3">
         <UntitledButton
           variant="primary"
-          size="sm"
+          size="md"
           fullWidth
           onClick={onOpenQuickCreate}
-          iconLeading={<Plus className="size-4" />}
+          iconLeading={<Plus className="size-5" />}
         >
           Đề nghị mới
         </UntitledButton>
@@ -261,7 +261,7 @@ export function DesktopSidebar({
       <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-4 scrollbar-thin">
         {/* Core Modules */}
         <div className="space-y-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 px-2 block mb-1">
+          <span className="text-xs font-bold uppercase tracking-wider text-neutral-400 px-2 block mb-1">
             Chức năng chính
           </span>
           {mainNavItems.map((item) => {
@@ -271,24 +271,25 @@ export function DesktopSidebar({
               <button
                 key={item.id}
                 type="button"
+                aria-current={isActive ? "page" : undefined}
                 onClick={() => onTabChange(item.id)}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-all cursor-pointer ${
                   isActive
-                    ? "bg-brand-50 dark:bg-brand-950/70 text-brand-700 dark:text-brand-300 shadow-2xs font-bold"
-                    : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+                    ? "bg-brand-100 dark:bg-brand-800 text-black dark:text-white ring-1 ring-inset ring-brand-300 dark:ring-brand-500 font-bold"
+                    : "font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
                 }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <Icon
-                    className={`size-4 shrink-0 ${
-                      isActive ? "text-brand-600 dark:text-brand-400" : "text-neutral-400"
+                    className={`size-5 shrink-0 ${
+                      isActive ? "text-current" : "text-neutral-400"
                     }`}
                   />
                   <span className="truncate">{item.label}</span>
                 </div>
                 {item.badge > 0 && (
                   <span
-                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold shrink-0 ${
+                    className={`px-1.5 py-0.2 rounded-full text-xs font-bold shrink-0 ${
                       isActive
                         ? "bg-brand-200 dark:bg-brand-800 text-brand-900 dark:text-brand-200"
                         : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300"
@@ -305,19 +306,19 @@ export function DesktopSidebar({
         {/* ERP Modules (19 Screens) */}
         {tabAccess?.allowed == null ? (
           <div className="space-y-1 pt-2 border-t border-neutral-100 dark:border-neutral-800/60">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 px-2 block mb-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-neutral-400 px-2 block mb-1">
               Màn hình ERP
             </span>
             {tabAccess?.error ? (
               <button
                 type="button"
                 onClick={onRetryTabs}
-                className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-800 hover:bg-brand-50 dark:hover:bg-brand-950/40"
+                className="w-full px-3 py-2 rounded-xl text-sm font-semibold text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-800 hover:bg-brand-50 dark:hover:bg-brand-950/40"
               >
                 Không tải được quyền. Bấm để thử lại.
               </button>
             ) : (
-              <p className="px-3 py-2 text-xs text-neutral-400">Đang tải quyền màn hình...</p>
+              <p className="px-3 py-2 text-sm text-neutral-400">Đang tải quyền màn hình...</p>
             )}
           </div>
         ) : (
@@ -326,7 +327,7 @@ export function DesktopSidebar({
           .filter((sec) => sec.items.length > 0)
           .map((sec) => (
           <div key={sec.title} className="space-y-1 pt-2 border-t border-neutral-100 dark:border-neutral-800/60">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 px-2 block mb-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-neutral-400 px-2 block mb-1">
               {sec.title}
             </span>
             {sec.items.map((item) => {
@@ -336,16 +337,17 @@ export function DesktopSidebar({
                 <button
                   key={item.id}
                   type="button"
+                  aria-current={isActive ? "page" : undefined}
                   onClick={() => onTabChange(item.id)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-all cursor-pointer ${
                     isActive
-                      ? "bg-brand-50 dark:bg-brand-950/70 text-brand-700 dark:text-brand-300 shadow-2xs font-bold"
-                      : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+                      ? "bg-brand-100 dark:bg-brand-800 text-black dark:text-white ring-1 ring-inset ring-brand-300 dark:ring-brand-500 font-bold"
+                      : "font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
                   }`}
                 >
                   <Icon
-                    className={`size-4 shrink-0 ${
-                      isActive ? "text-brand-600 dark:text-brand-400" : "text-neutral-400"
+                    className={`size-5 shrink-0 ${
+                      isActive ? "text-current" : "text-neutral-400"
                     }`}
                   />
                   <span className="truncate">{item.label}</span>
@@ -357,22 +359,23 @@ export function DesktopSidebar({
 
         {/* Settings */}
         <div className="space-y-1 pt-2 border-t border-neutral-100 dark:border-neutral-800/60">
-          <a href="/help" target="_blank" rel="noopener noreferrer" className="w-full flex items-center gap-2.5 px-3 py-3 rounded-xl text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
-            <BookOpen className="size-4 shrink-0 text-neutral-400" />
+          <a href="/help" target="_blank" rel="noopener noreferrer" className="w-full flex items-center gap-2.5 px-3 py-3 rounded-xl text-sm font-semibold text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
+            <BookOpen className="size-5 shrink-0 text-neutral-400" />
             <span>Hướng dẫn sử dụng</span>
           </a>
           <button
             type="button"
+            aria-current={activeTab === "settings" ? "page" : undefined}
             onClick={() => onTabChange("settings")}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-all cursor-pointer ${
               activeTab === "settings"
-                ? "bg-brand-50 dark:bg-brand-950/70 text-brand-700 dark:text-brand-300 shadow-2xs font-bold"
-                : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+                ? "bg-brand-100 dark:bg-brand-800 text-black dark:text-white ring-1 ring-inset ring-brand-300 dark:ring-brand-500 font-bold"
+                : "font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
             }`}
           >
             <Settings2
-              className={`size-4 shrink-0 ${
-                activeTab === "settings" ? "text-brand-600 dark:text-brand-400" : "text-neutral-400"
+              className={`size-5 shrink-0 ${
+                activeTab === "settings" ? "text-current" : "text-neutral-400"
               }`}
             />
             <span className="truncate">Cài đặt hệ thống</span>
@@ -391,7 +394,7 @@ export function DesktopSidebar({
               className="relative p-1.5 rounded-xl text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-neutral-800 transition-colors"
               title="Thông báo"
             >
-              <Bell className="size-4" />
+              <Bell className="size-5" />
               {unreadNotifications > 0 && (
                 <span className="absolute top-1 right-1 size-2 rounded-full bg-brand-600 ring-2 ring-white dark:ring-neutral-900" />
               )}
@@ -403,7 +406,7 @@ export function DesktopSidebar({
               className="p-1.5 rounded-xl text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200/60 dark:hover:bg-neutral-800 transition-colors"
               title="Đổi màu giao diện sáng / tối"
             >
-              {isDarkMode ? <Sun className="size-4" /> : <Moon className="size-4" />}
+              {isDarkMode ? <Sun className="size-5" /> : <Moon className="size-5" />}
             </button>
           </div>
 
@@ -414,20 +417,20 @@ export function DesktopSidebar({
             className="p-1.5 rounded-xl text-neutral-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
             title="Đăng xuất"
           >
-            <LogOut className="size-4" />
+            <LogOut className="size-5" />
           </button>
         </div>
 
         {/* User Card */}
         <div className="flex items-center gap-2.5 p-1.5 rounded-xl bg-white dark:bg-neutral-800/80 border border-neutral-200/60 dark:border-neutral-700/60">
-          <div className="size-8 rounded-lg bg-gradient-to-tr from-brand-700 to-brand-500 text-white font-bold text-xs flex items-center justify-center shrink-0">
+          <div className="size-8 rounded-lg bg-gradient-to-tr from-brand-700 to-brand-500 text-white font-bold text-sm flex items-center justify-center shrink-0">
             {userName.charAt(0)}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold text-neutral-900 dark:text-white leading-tight truncate">
+            <p className="text-sm font-bold text-neutral-900 dark:text-white leading-tight truncate">
               {userName}
             </p>
-            <p className="text-[10px] text-neutral-400 leading-tight truncate mt-0.5">
+            <p className="text-xs text-neutral-400 leading-tight truncate mt-0.5">
               {userRole}
             </p>
           </div>
