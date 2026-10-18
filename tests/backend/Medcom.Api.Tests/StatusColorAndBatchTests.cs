@@ -12,9 +12,9 @@ public sealed class StatusColorAndBatchTests
 {
     [Theory]
     [InlineData("-65536","#FF0000")] [InlineData("-16777216","#000000")] [InlineData("-1","#FFFFFF")]
-    [InlineData("0","#00000000")] [InlineData("2147418112","#FF00007F")]
+    [InlineData("0","#000000")] [InlineData("2147418112","#FF0000")]
     [InlineData(null,null)] [InlineData("bad",null)] [InlineData("4294967295",null)]
-    public void Source_signed_ARGB_is_converted_to_CSS_without_executing_source_text(string? raw,string? expected)
+    public void Source_integer_RGB_channels_become_opaque_CSS_including_zero_text_color(string? raw,string? expected)
         =>Assert.Equal(expected,FeDisplayProjection.StatusColor(raw));
 
     [Fact]

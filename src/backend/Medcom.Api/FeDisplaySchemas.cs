@@ -56,8 +56,8 @@ internal static class FeDisplaySchemas
                             if(FeDisplayProjection.IsStatusId(property.Key))
                             {
                                 var prefix=property.Key[..^2];
-                                Add(prefix+"ForeColor","Status text CSS color (#RRGGBB or #RRGGBBAA), from source ForeColor ARGB; null if absent or unresolved.",true,mandatory);
-                                Add(prefix+"BackColor","Status background CSS color (#RRGGBB or #RRGGBBAA), from source BackColor ARGB; null if absent or unresolved.",true,mandatory);
+                                Add(prefix+"ForeColor","Opaque status text CSS color (#RRGGBB), using RGB channels of source ForeColor integer; native alpha is ignored. Null if absent or unresolved.",true,mandatory);
+                                Add(prefix+"BackColor","Opaque status background CSS color (#RRGGBB), using RGB channels of source BackColor integer; native alpha is ignored. Null if absent or unresolved.",true,mandatory);
                             }
                             if(property.Key.Equals("ItemID",StringComparison.OrdinalIgnoreCase))
                             {

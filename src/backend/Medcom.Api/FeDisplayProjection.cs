@@ -125,9 +125,9 @@ internal static partial class FeDisplayProjection
     internal static string? StatusColor(string? raw)
     {
         if(!int.TryParse(raw,NumberStyles.Integer,CultureInfo.InvariantCulture,out var argb))return null;
-        var value=unchecked((uint)argb);var alpha=value>>24;
-        return "#"+(value&0xFFFFFF).ToString("X6",CultureInfo.InvariantCulture)
-            +(alpha==255?"":alpha.ToString("X2",CultureInfo.InvariantCulture));
+        // Native dictionaries also contain zero/nonopaque text colors. Status
+        // presentation uses their RGB channels as an opaque CSS color.
+        return "#"+(unchecked((uint)argb)&0xFFFFFF).ToString("X6",CultureInfo.InvariantCulture);
     }
     internal static bool ExactInput(Type type)=>type.GetCustomAttribute<JsonUnmappedMemberHandlingAttribute>()?.UnmappedMemberHandling==JsonUnmappedMemberHandling.Disallow
         ||type.IsGenericType&&type.GetGenericTypeDefinition()==typeof(IReadOnlyList<>)&&ExactInput(type.GetGenericArguments()[0]);

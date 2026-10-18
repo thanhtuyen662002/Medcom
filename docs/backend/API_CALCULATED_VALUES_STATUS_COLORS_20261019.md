@@ -13,7 +13,7 @@ Khi đọc danh sách, chi tiết, dropdown hoặc thông báo có mã trạng t
 }
 ```
 
-Đây là ví dụ giả lập. FE dùng `statusForeColor` cho màu chữ, `statusBackColor` cho màu nền của trạng thái. Giá trị là mã CSS `#RRGGBB`, hoặc `#RRGGBBAA` nếu có độ trong suốt; lấy từ cấu hình `ForeColor`/`BackColor` của đúng loại chứng từ. Thiếu màu, không có danh mục tương ứng hoặc mã trạng thái không xác định duy nhất thì trả `null`; FE dùng màu mặc định của giao diện. Một trạng thái phụ như `deliveryStatusId` có các trường tương ứng `deliveryStatusForeColor`/`deliveryStatusBackColor`, có thể `null` nếu danh mục không có màu. Quyền và khả năng bấm nút vẫn lấy từ API quyền/thao tác của màn hình.
+Đây là ví dụ giả lập. FE dùng `statusForeColor` cho màu chữ, `statusBackColor` cho màu nền của trạng thái. Giá trị là mã CSS `#RRGGBB`, lấy ba kênh RGB từ cấu hình số nguyên `ForeColor`/`BackColor` của đúng loại chứng từ. Màu trạng thái trên web luôn có độ đục đầy đủ; bỏ qua kênh alpha của số nguyên nguồn. Ví dụ màu nguồn `0` trả `#000000`, tránh làm chữ biến mất trên web. Thiếu màu, không có danh mục tương ứng hoặc mã trạng thái không xác định duy nhất thì trả `null`; FE dùng màu mặc định của giao diện. Một trạng thái phụ như `deliveryStatusId` có các trường tương ứng `deliveryStatusForeColor`/`deliveryStatusBackColor`, có thể `null` nếu danh mục không có màu. Quyền và khả năng bấm nút vẫn lấy từ API quyền/thao tác của màn hình.
 
 Chi tiết chứng từ tại `GET /api/erp/{module}/detail` bổ sung `data.summary` trên những màn hình có tổng ở lưới ERP:
 
