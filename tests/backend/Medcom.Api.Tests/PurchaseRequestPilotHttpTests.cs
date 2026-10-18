@@ -55,7 +55,7 @@ public sealed class PurchaseRequestPilotHttpTests
         Assert.NotNull(saved.Receipt);
         Assert.Empty(saved.Receipt!.AllocatedLines);
         Assert.Equal("9007199254740993", saved.Receipt.Document.Lines[0].Values.Quantity);
-        Assert.Equal("13", saved.Receipt.Document.Lines[0].Values.TotalPrice);
+        Assert.Equal("45035996273704965", saved.Receipt.Document.Lines[0].Values.TotalPrice);
         Assert.Equal("15.25", saved.Receipt.Document.Header.Price);
         Assert.NotEqual(original.ExpectedStateToken, saved.Receipt.StateToken);
         Assert.Equal(0, host.Model.SubmitEffects);

@@ -2,6 +2,8 @@
 
 This engineering note is not a product UI vocabulary. The owner requested one location per business field and a purpose-only FE handoff. The active FE handoff is [screen/action/API purpose](BE_FE_API_REFERENCE_20261011.md); machine request/response types are in [compiled OpenAPI](medcom-openapi.json).
 
+The [19 October calculated-value and status-color supplement](API_CALCULATED_VALUES_STATUS_COLORS_20261019.md) adds source grid summaries to seven detail responses and nullable CSS status colors to response presentation; existing routes and write inputs retain their contracts.
+
 ## Wire rules
 
 OpenAPI info version is `3.0.0`. Successful endpoints in the BE data group stamp `X-Medcom-Response-Contract: 3`. Projection operates on a serialized response copy, after the existing authorized reference/date/money enrichment. Authentication, workspace, health and ProblemDetails keep their nonduplicated control contracts. No new envelope is added to them. `/screen` and `*-contract` remain metadata; their `fields` members describe columns, not repeated business records. Read-only `/screen` field-definition names now match the canonical returned keys; SQL provenance and writable command field names are retained.

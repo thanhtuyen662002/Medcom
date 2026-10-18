@@ -413,6 +413,20 @@ internal static class ApiContractCatalog
             paths[path]!["get"]!["responses"]!["200"]!["content"]!["application/json"]!["schema"]=Schemas.Ref(listResponse);
             var detail=schemas.Variant(typeof(ErpDocumentDetail),"Erp_"+id+"_detail");
             schemas.Property(detail,"header",(JsonObject)sectionSchemas["header"]!.DeepClone());
+            var summaryFields=ErpCalculatedFields.Summary(module);
+            if(summaryFields.Count>0)
+            {
+                var summary=new JsonObject{["rowCount"]=new JsonObject{["type"]="integer",["format"]="int64"}};
+                foreach(var field in summaryFields)summary[field.Name]=new JsonObject
+                {
+                    ["anyOf"]=new JsonArray(new JsonObject{["type"]="string"},new JsonObject{["type"]="null"}),
+                    ["readOnly"]=true,["description"]="Sum over every stored line of the authorized document, independent of page. Null when no non-null source values exist."
+                };
+                schemas.Property(detail,"summary",new(){["type"]="object",["additionalProperties"]=false,
+                    ["properties"]=summary,["required"]=Array(summary.Select(p=>p.Key))});
+                schemas.Values[detail]!["required"]=Array(schemas.Values[detail]!["required"]!.AsArray().Select(x=>x!.GetValue<string>()).Append("summary").Distinct(StringComparer.Ordinal));
+            }
+            else schemas.Values[detail]!["properties"]!.AsObject().Remove("summary");
             var extraSections=new JsonObject();
             foreach(var section in screen.Fields.Where(s=>s.Key!="header"))
             {

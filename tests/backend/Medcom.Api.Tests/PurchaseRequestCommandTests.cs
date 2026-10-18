@@ -627,7 +627,7 @@ public sealed class PurchaseRequestCommandTests
         Assert.Equal(2,db.Commits); Assert.Equal(2,allocator.Qualifications); Assert.Equal(1,allocator.Allocations);
         Assert.Equal(new PurchaseRequestAllocatedLine("replacement-client","line-1"),Assert.Single(receipt.AllocatedLines));
         Assert.Equal(2,receipt.Document.Lines.Count);
-        Assert.Equal(PurchaseRequestCommandRules.Line(replacement),receipt.Document.Lines.Single(l=>l.LineId=="line-1").Values);
+        Assert.Equal(PurchaseRequestCommandRules.Line(replacement) with{TotalPrice="35"},receipt.Document.Lines.Single(l=>l.LineId=="line-1").Values);
         Assert.Equal(untouched,receipt.Document.Lines.Single(l=>l.LineId=="line-2"));
         var delete=Assert.Single(db.Commands,c=>c.CommandText==PurchaseRequestSql.DeleteLineText);
         var insert=Assert.Single(db.Commands,c=>c.CommandText==PurchaseRequestSql.InsertLineText);
@@ -1010,7 +1010,7 @@ public sealed class PurchaseRequestCommandTests
         Assert.Equal(1,answer.Receipt!.Document.StatusId); Assert.False(answer.Receipt.Document.IsLocked);
         Assert.Equal(2,db.Commits); Assert.Equal(1,db.AllocatorCalls); Assert.Single(db.Documents); Assert.Single(db.Journal);
         Assert.Equal("15.00",answer.Receipt.Document.Header.Price);
-        Assert.Equal("13",answer.Receipt.Document.Lines[0].Values.TotalPrice); // no guessed quantity*price rule.
+        Assert.Equal("10",answer.Receipt.Document.Lines[0].Values.TotalPrice); // SY_FrmExpTbl: Quantity * UnitPrice, ignoring submitted 13.
         Assert.All(db.Commands,c=>Assert.NotNull(c.Transaction));
         var receipt=JsonSerializer.Serialize(answer.Receipt,PurchaseRequestCommandRules.Json);
         db.AllocatorQualified=false;
@@ -1043,6 +1043,8 @@ public sealed class PurchaseRequestCommandTests
         var result=await db.Service().SaveAsync(request);
         Assert.Equal(PurchaseRequestCommandOutcome.Committed,result.Outcome); Assert.Equal(3,result.Receipt!.Document.Lines.Count);
         Assert.Equal("-2",result.Receipt.Document.Lines.Single(l=>l.LineId=="line-1").Values.Quantity);
+        Assert.Equal("-10",result.Receipt.Document.Lines.Single(l=>l.LineId=="line-1").Values.TotalPrice);
+        Assert.Equal("10",result.Receipt.Document.Lines.Single(l=>l.LineId is not ("line-1" or "line-2")).Values.TotalPrice);
         Assert.Equal(current.Lines.Single(l=>l.LineId=="line-2"),result.Receipt.Document.Lines.Single(l=>l.LineId=="line-2"));
         Assert.Equal(1,result.Receipt.Document.StatusId); Assert.Equal(0,db.SubmitEffects);
         Assert.DoesNotContain(db.Commands,c=>c.CommandText.Contains("DELETE dbo.AP_PurchaseRequestTbl",StringComparison.Ordinal));

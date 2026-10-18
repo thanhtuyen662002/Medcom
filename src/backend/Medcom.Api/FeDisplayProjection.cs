@@ -100,6 +100,12 @@ internal static partial class FeDisplayProjection
                     :binding is null?"unknown":found?.State??fallback;
                 var nameField=NameField(field.Key);if(!row.ContainsKey(nameField)||row[nameField] is null)row[nameField]=name;
                 var stateField=StateField(field.Key);if(!row.ContainsKey(stateField))row[stateField]=state;
+                if(IsStatusId(field.Key))
+                {
+                    var prefix=field.Key[..^2];
+                    row[prefix+"ForeColor"]=StatusColor(found?.Extra.GetValueOrDefault("ForeColor"));
+                    row[prefix+"BackColor"]=StatusColor(found?.Extra.GetValueOrDefault("BackColor"));
+                }
                 if(field.Key.Equals("ItemID",StringComparison.OrdinalIgnoreCase))
                 {
                     var native=field.Key.EndsWith("ID",StringComparison.Ordinal);
@@ -114,6 +120,14 @@ internal static partial class FeDisplayProjection
                 row[field.Key+"Display"]=DateNames.Contains(field.Key)?FormatDate(text):FormatMoney(text,currency);
             }
         }
+    }
+    internal static bool IsStatusId(string field)=>IsId(field)&&field.EndsWith("StatusId",StringComparison.OrdinalIgnoreCase);
+    internal static string? StatusColor(string? raw)
+    {
+        if(!int.TryParse(raw,NumberStyles.Integer,CultureInfo.InvariantCulture,out var argb))return null;
+        // Native dictionaries also contain zero/nonopaque text colors. Status
+        // presentation uses their RGB channels as an opaque CSS color.
+        return "#"+(unchecked((uint)argb)&0xFFFFFF).ToString("X6",CultureInfo.InvariantCulture);
     }
     internal static bool ExactInput(Type type)=>type.GetCustomAttribute<JsonUnmappedMemberHandlingAttribute>()?.UnmappedMemberHandling==JsonUnmappedMemberHandling.Disallow
         ||type.IsGenericType&&type.GetGenericTypeDefinition()==typeof(IReadOnlyList<>)&&ExactInput(type.GetGenericArguments()[0]);

@@ -25,6 +25,13 @@ public sealed class CanonicalErpHttpTests
             foreach (var pair in new[] { (path, list), (path + "/detail", detail) })
                 Assert.True(ApiContractCatalogTests.Matches(api, api["paths"]![pair.Item1]!["get"]!["responses"]!["200"]!["content"]!["application/json"]!["schema"]!, pair.Item2), module + " HTTP schema mismatch");
             var data = detail.GetProperty("data"); var header = data.GetProperty("header");
+            var sums=ErpCalculatedFields.Summary(module);
+            Assert.Equal(sums.Count>0,data.TryGetProperty("summary",out var summary));
+            if(sums.Count>0)
+            {
+                Assert.Equal(3,summary.GetProperty("rowCount").GetInt64());
+                foreach(var sum in sums)Assert.Equal("1234",summary.GetProperty(sum.Name).GetString());
+            }
             Assert.False(data.TryGetProperty("documentId", out _)); Assert.False(data.TryGetProperty("branchId", out _));
             Assert.Equal("SYNTHETIC-D", header.GetProperty("documentId").GetString());
             var page = list.GetProperty("data");
@@ -81,7 +88,9 @@ public sealed class CanonicalErpHttpTests
             var fields = ErpScreenCatalog.Get(module)!.Fields;
             return Success(new ErpDocumentDetail(document, branch, new string('a', 64), Fields(module, "header"), Section("lines"),
                 fields.ContainsKey("history") ? Section("history") : null, fields.ContainsKey("comparison") ? Section("comparison") : null, [],
-                fields.Where(s => s.Key is not ("header" or "lines" or "history" or "comparison")).ToDictionary(s => s.Key, s => Section(s.Key))));
+                fields.Where(s => s.Key is not ("header" or "lines" or "history" or "comparison")).ToDictionary(s => s.Key, s => Section(s.Key)),
+                ErpCalculatedFields.Summary(module).Count==0?null:ErpCalculatedFields.Summary(module)
+                    .Select(f=>KeyValuePair.Create<string,object?>(f.Name,"1234")).Prepend(KeyValuePair.Create<string,object?>("rowCount",3L)).ToDictionary()));
         }
         public Task<ErpReadResult<IReadOnlyList<ErpActionState>>> ActionsAsync(string module, string branch, string? document, CancellationToken token) => Missing<IReadOnlyList<ErpActionState>>();
         public Task<ErpReadResult<ErpContractInfo>> ContractAsync(string module, string branch, string document, CancellationToken token) => Missing<ErpContractInfo>();

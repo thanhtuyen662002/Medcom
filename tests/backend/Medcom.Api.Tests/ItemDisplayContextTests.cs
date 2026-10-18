@@ -236,7 +236,7 @@ internal sealed class ItemDisplayRecordingSource
         return Failure=="extra-result"?new DataTableReader([result,result.Clone()]):result.CreateDataReader();
     }
 }
-internal sealed class DisplayConnection(Func<DbCommand,DbDataReader> read):DbConnection
+internal sealed class DisplayConnection(Func<DbCommand,DbDataReader> read,Func<DbCommand,int>? write=null):DbConnection
 {
     private ConnectionState state;
     [AllowNull] public override string ConnectionString{get;set;}="";
@@ -244,12 +244,12 @@ internal sealed class DisplayConnection(Func<DbCommand,DbDataReader> read):DbCon
     public override ConnectionState State=>state;public override void Open()=>state=ConnectionState.Open;public override void Close()=>state=ConnectionState.Closed;
     public override void ChangeDatabase(string name)=>throw new NotSupportedException();
     protected override DbTransaction BeginDbTransaction(IsolationLevel level)=>new DisplayTransaction(this,level);
-    protected override DbCommand CreateDbCommand()=>new DisplayCommand(this,read);
+    protected override DbCommand CreateDbCommand()=>new DisplayCommand(this,read,write);
 }
 internal sealed class DisplayTransaction(DisplayConnection connection,IsolationLevel level):DbTransaction
 {public override IsolationLevel IsolationLevel=>level;protected override DbConnection DbConnection=>connection;
  public override void Commit()=>throw new InvalidOperationException("Read committed");public override void Rollback(){}}
-internal sealed class DisplayCommand(DisplayConnection connection,Func<DbCommand,DbDataReader> read):DbCommand
+internal sealed class DisplayCommand(DisplayConnection connection,Func<DbCommand,DbDataReader> read,Func<DbCommand,int>? write=null):DbCommand
 {
     private readonly QueryParameters parameters=new();
     [AllowNull] public override string CommandText{get;set;}="";public override int CommandTimeout{get;set;}public override CommandType CommandType{get;set;}
@@ -258,6 +258,6 @@ internal sealed class DisplayCommand(DisplayConnection connection,Func<DbCommand
     protected override DbParameterCollection DbParameterCollection=>parameters;
     protected override DbParameter CreateDbParameter()=>new QueryParameter();
     protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)=>read(this);
-    public override int ExecuteNonQuery()=>throw new InvalidOperationException("No writes");public override object? ExecuteScalar()=>throw new NotSupportedException();
+    public override int ExecuteNonQuery()=>write is null?throw new InvalidOperationException("No writes"):write(this);public override object? ExecuteScalar()=>throw new NotSupportedException();
     public override void Cancel(){}public override void Prepare(){}
 }

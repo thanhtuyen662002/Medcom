@@ -31,7 +31,8 @@ public sealed record ErpLinePage(IReadOnlyList<ErpLineRow> Rows, int Page, int P
 public sealed record ErpDocumentDetail(string DocumentId, string BranchId, string StateToken,
     IReadOnlyDictionary<string, object?> Header, ErpLinePage Lines,
     ErpLinePage? History, ErpLinePage? Comparison, IReadOnlyList<ErpActionState> Actions,
-    [property:JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] IReadOnlyDictionary<string,ErpLinePage>? Sections=null);
+    [property:JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] IReadOnlyDictionary<string,ErpLinePage>? Sections=null,
+    [property:JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] IReadOnlyDictionary<string,object?>? Summary=null);
 public sealed record ErpChoice(string Id, string? Label, IReadOnlyDictionary<string, object?> Fields);
 public sealed record ErpChoicePage(IReadOnlyList<ErpChoice> Items, int Page, int PageSize, bool HasMore,
     IReadOnlyList<string> RequiredParameters);

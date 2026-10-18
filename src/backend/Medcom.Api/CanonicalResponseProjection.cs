@@ -221,7 +221,8 @@ internal static class CanonicalResponseProjection
     {
         foreach (var name in Group(field)) if (Find(row, name) is {} key) row.Remove(key);
     }
-    private static string[] Group(string field) => FeDisplayProjection.IsId(field)
+    private static string[] Group(string field) => FeDisplayProjection.IsStatusId(field)
+        ? [field,FeDisplayProjection.NameField(field),FeDisplayProjection.StateField(field),field[..^2]+"ForeColor",field[..^2]+"BackColor"] : FeDisplayProjection.IsId(field)
         ? [field, FeDisplayProjection.NameField(field), FeDisplayProjection.StateField(field)] : [field];
     private static void Alias(JsonObject row, string from, string to)
     {

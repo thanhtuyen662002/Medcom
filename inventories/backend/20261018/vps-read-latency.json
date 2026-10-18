@@ -1,0 +1,1809 @@
+{
+  "format": 1,
+  "observedAtUtc": "2026-10-18T17:19:26.3365455Z",
+  "origin": "https://api-medcom.bms79.com",
+  "authenticated": true,
+  "method": "Serial real authenticated read requests with page 1/pageSize 20; no writes; one current authorized session; not a throughput/load test. CSRF and options preparation measured separately.",
+  "deployedCommit": "UNKNOWN; owner reported redeployment; no binary identity independently verified",
+  "businessDataWrites": false,
+  "credentialsCookiesUserBranchDocumentIdsAndBusinessRowsExcluded": true,
+  "statusCounts": {
+    "200": 175
+  },
+  "groups": {
+    "csrf": {
+      "samples": 58,
+      "medianMs": 10.55,
+      "p95NearestRankMs": 18.9,
+      "minMs": 7.8,
+      "maxMs": 132.8,
+      "under100Ms": 57
+    },
+    "other": {
+      "samples": 23,
+      "medianMs": 587,
+      "p95NearestRankMs": 1039.2,
+      "minMs": 566.3,
+      "maxMs": 1117.2,
+      "under100Ms": 0
+    },
+    "list": {
+      "samples": 19,
+      "medianMs": 1284.9,
+      "p95NearestRankMs": 1434.8,
+      "minMs": 918.3,
+      "maxMs": 1434.8,
+      "under100Ms": 0
+    },
+    "detail": {
+      "samples": 18,
+      "medianMs": 1402.9,
+      "p95NearestRankMs": 1629.7,
+      "minMs": 1328.2,
+      "maxMs": 1629.7,
+      "under100Ms": 0
+    },
+    "options": {
+      "samples": 57,
+      "medianMs": 1238.6,
+      "p95NearestRankMs": 1380.4,
+      "minMs": 911.1,
+      "maxMs": 1587.2,
+      "under100Ms": 0
+    }
+  },
+  "measurements": [
+    {
+      "operation": "csrf-before-login",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 132.8,
+      "firstByteMs": 124.7,
+      "responseBytes": 167,
+      "serverTiming": "be;dur=2.1",
+      "below100ms": false
+    },
+    {
+      "operation": "workspace",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 625.1,
+      "firstByteMs": 625,
+      "responseBytes": 1429,
+      "serverTiming": "auth;dur=616.1, be;dur=616.8",
+      "below100ms": false
+    },
+    {
+      "operation": "branches",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 906.2,
+      "firstByteMs": 906,
+      "responseBytes": 231,
+      "serverTiming": "auth;dur=594.0, provider;dur=296.9, references;dur=0.0, be;dur=891.8",
+      "below100ms": false
+    },
+    {
+      "operation": "permissions",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1039.2,
+      "firstByteMs": 1039,
+      "responseBytes": 14376,
+      "serverTiming": "auth;dur=598.1, provider;dur=427.4, be;dur=1027.6",
+      "below100ms": false
+    },
+    {
+      "operation": "notifications",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1117.2,
+      "firstByteMs": 1117.1,
+      "responseBytes": 4834,
+      "serverTiming": "auth;dur=612.7, provider;dur=198.0, references;dur=295.5, be;dur=1108.5",
+      "below100ms": false
+    },
+    {
+      "operation": "inbound-requests/screen",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 612.8,
+      "firstByteMs": 610.7,
+      "responseBytes": 30861,
+      "serverTiming": "auth;dur=597.0, provider;dur=0.2, be;dur=599.6",
+      "below100ms": false
+    },
+    {
+      "operation": "inbound-requests/list",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1434.8,
+      "firstByteMs": 1431.4,
+      "responseBytes": 26043,
+      "serverTiming": "auth;dur=602.1, provider;dur=376.0, references;dur=437.5, be;dur=1422.3",
+      "below100ms": false
+    },
+    {
+      "operation": "inbound-requests/detail",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1570.5,
+      "firstByteMs": 1570.1,
+      "responseBytes": 6365,
+      "serverTiming": "auth;dur=594.4, provider;dur=569.5, references;dur=391.8, be;dur=1559.4",
+      "below100ms": false
+    },
+    {
+      "operation": "inbound-requests/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 15.2,
+      "firstByteMs": 15,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.3",
+      "below100ms": true
+    },
+    {
+      "operation": "inbound-requests/options/header.BranchID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1380.4,
+      "firstByteMs": 1380.3,
+      "responseBytes": 775,
+      "serverTiming": "auth;dur=625.6, provider;dur=420.0, references;dur=325.1, be;dur=1372.3",
+      "below100ms": false
+    },
+    {
+      "operation": "inbound-requests/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 8.8,
+      "firstByteMs": 8.4,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.1",
+      "below100ms": true
+    },
+    {
+      "operation": "inbound-requests/options/header.CurrencyID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1353.3,
+      "firstByteMs": 1353,
+      "responseBytes": 466,
+      "serverTiming": "auth;dur=639.9, provider;dur=400.4, references;dur=298.1, be;dur=1339.9",
+      "below100ms": false
+    },
+    {
+      "operation": "inbound-requests/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 12.8,
+      "firstByteMs": 12.5,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.1, be;dur=1.4",
+      "below100ms": true
+    },
+    {
+      "operation": "inbound-requests/options/header.DamageInsideStatusID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1315.1,
+      "firstByteMs": 1314.9,
+      "responseBytes": 331,
+      "serverTiming": "auth;dur=603.5, provider;dur=399.2, references;dur=301.2, be;dur=1305.4",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-accounting/screen",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 622.4,
+      "firstByteMs": 622.2,
+      "responseBytes": 27488,
+      "serverTiming": "auth;dur=607.0, provider;dur=0.1, be;dur=609.6",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-accounting/list",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1319.7,
+      "firstByteMs": 1319.5,
+      "responseBytes": 2386,
+      "serverTiming": "auth;dur=593.2, provider;dur=369.9, references;dur=343.6, be;dur=1308.5",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-accounting/detail",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1629.7,
+      "firstByteMs": 1627.7,
+      "responseBytes": 11923,
+      "serverTiming": "auth;dur=595.3, provider;dur=611.1, references;dur=401.0, be;dur=1611.7",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-accounting/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 8.9,
+      "firstByteMs": 8.7,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.0",
+      "below100ms": true
+    },
+    {
+      "operation": "internal-transfer-accounting/options/header.FromBranchID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1360.9,
+      "firstByteMs": 1360.6,
+      "responseBytes": 308,
+      "serverTiming": "auth;dur=646.4, provider;dur=406.3, references;dur=298.1, be;dur=1352.2",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-accounting/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 11,
+      "firstByteMs": 10.8,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.0",
+      "below100ms": true
+    },
+    {
+      "operation": "internal-transfer-accounting/options/header.ToBranchID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1347.9,
+      "firstByteMs": 1347.5,
+      "responseBytes": 308,
+      "serverTiming": "auth;dur=634.8, provider;dur=394.4, references;dur=308.8, be;dur=1339.2",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-accounting/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 8.5,
+      "firstByteMs": 8.3,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.0",
+      "below100ms": true
+    },
+    {
+      "operation": "internal-transfer-accounting/options/header.TransportMethod",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1024.7,
+      "firstByteMs": 1024.4,
+      "responseBytes": 347,
+      "serverTiming": "auth;dur=609.6, provider;dur=405.8, references;dur=0.0, be;dur=1016.8",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-batches/screen",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 649.4,
+      "firstByteMs": 648.4,
+      "responseBytes": 27265,
+      "serverTiming": "auth;dur=635.1, provider;dur=0.1, be;dur=637.8",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-batches/list",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1332.3,
+      "firstByteMs": 1332.2,
+      "responseBytes": 2386,
+      "serverTiming": "auth;dur=612.9, provider;dur=363.7, references;dur=344.6, be;dur=1322.9",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-batches/detail",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1600.6,
+      "firstByteMs": 1600.1,
+      "responseBytes": 11731,
+      "serverTiming": "auth;dur=642.2, provider;dur=548.0, references;dur=393.8, be;dur=1588.2",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-batches/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 13.3,
+      "firstByteMs": 13.2,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.0",
+      "below100ms": true
+    },
+    {
+      "operation": "internal-transfer-batches/options/header.FromBranchID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1311.6,
+      "firstByteMs": 1311.2,
+      "responseBytes": 308,
+      "serverTiming": "auth;dur=601.4, provider;dur=397.8, references;dur=296.2, be;dur=1296.8",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-batches/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 8.3,
+      "firstByteMs": 8.2,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.0",
+      "below100ms": true
+    },
+    {
+      "operation": "internal-transfer-batches/options/header.ToBranchID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1327.7,
+      "firstByteMs": 1327.6,
+      "responseBytes": 308,
+      "serverTiming": "auth;dur=621.2, provider;dur=397.0, references;dur=299.1, be;dur=1318.5",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-batches/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 11,
+      "firstByteMs": 10.8,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.0",
+      "below100ms": true
+    },
+    {
+      "operation": "internal-transfer-batches/options/header.TransportMethod",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1031.9,
+      "firstByteMs": 1031.6,
+      "responseBytes": 347,
+      "serverTiming": "auth;dur=623.3, provider;dur=395.2, references;dur=0.0, be;dur=1020.0",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-pm/screen",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 576,
+      "firstByteMs": 575.8,
+      "responseBytes": 13557,
+      "serverTiming": "auth;dur=565.3, provider;dur=0.1, be;dur=566.8",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-pm/list",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1214.6,
+      "firstByteMs": 1214.3,
+      "responseBytes": 1530,
+      "serverTiming": "auth;dur=560.2, provider;dur=320.0, references;dur=320.0, be;dur=1201.5",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-pm/detail",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1367.2,
+      "firstByteMs": 1364.8,
+      "responseBytes": 6367,
+      "serverTiming": "auth;dur=578.8, provider;dur=404.5, references;dur=369.3, be;dur=1355.1",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-pm/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 8.4,
+      "firstByteMs": 8.3,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.3",
+      "below100ms": true
+    },
+    {
+      "operation": "internal-transfer-pm/options/header.BranchID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1241.6,
+      "firstByteMs": 1241.2,
+      "responseBytes": 775,
+      "serverTiming": "auth;dur=565.8, provider;dur=343.4, references;dur=321.9, be;dur=1232.9",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-pm/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 16.1,
+      "firstByteMs": 16,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.6",
+      "below100ms": true
+    },
+    {
+      "operation": "internal-transfer-pm/options/header.FromBranchID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1208.9,
+      "firstByteMs": 1208.7,
+      "responseBytes": 308,
+      "serverTiming": "auth;dur=566.1, provider;dur=344.2, references;dur=285.2, be;dur=1196.8",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-pm/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 10.8,
+      "firstByteMs": 9.5,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.0",
+      "below100ms": true
+    },
+    {
+      "operation": "internal-transfer-pm/options/header.ToBranchID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1206,
+      "firstByteMs": 1205.8,
+      "responseBytes": 308,
+      "serverTiming": "auth;dur=561.3, provider;dur=348.8, references;dur=282.5, be;dur=1194.0",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-requests/screen",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 566.3,
+      "firstByteMs": 566.2,
+      "responseBytes": 11860,
+      "serverTiming": "auth;dur=555.2, provider;dur=0.2, be;dur=556.8",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-requests/list",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1203.8,
+      "firstByteMs": 1203.5,
+      "responseBytes": 1341,
+      "serverTiming": "auth;dur=567.3, provider;dur=315.4, references;dur=310.9, be;dur=1194.9",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-requests/detail",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1354.9,
+      "firstByteMs": 1354.4,
+      "responseBytes": 6463,
+      "serverTiming": "auth;dur=563.0, provider;dur=415.6, references;dur=361.1, be;dur=1342.1",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-requests/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 10.5,
+      "firstByteMs": 10.2,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.0",
+      "below100ms": true
+    },
+    {
+      "operation": "internal-transfer-requests/options/header.BranchID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1238.6,
+      "firstByteMs": 1238.4,
+      "responseBytes": 775,
+      "serverTiming": "auth;dur=563.3, provider;dur=347.9, references;dur=309.3, be;dur=1223.3",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-requests/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 9.5,
+      "firstByteMs": 9.2,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.2",
+      "below100ms": true
+    },
+    {
+      "operation": "internal-transfer-requests/options/header.FromBranchID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1202.1,
+      "firstByteMs": 1201.7,
+      "responseBytes": 308,
+      "serverTiming": "auth;dur=561.4, provider;dur=345.3, references;dur=282.5, be;dur=1190.5",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-requests/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 9.2,
+      "firstByteMs": 9.1,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.0",
+      "below100ms": true
+    },
+    {
+      "operation": "internal-transfer-requests/options/header.ToBranchID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1198.3,
+      "firstByteMs": 1198.1,
+      "responseBytes": 308,
+      "serverTiming": "auth;dur=562.4, provider;dur=342.4, references;dur=281.8, be;dur=1187.8",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-sa/screen",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 635.4,
+      "firstByteMs": 635.2,
+      "responseBytes": 27066,
+      "serverTiming": "auth;dur=622.1, provider;dur=0.1, be;dur=624.6",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-sa/list",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1336.3,
+      "firstByteMs": 1336,
+      "responseBytes": 2386,
+      "serverTiming": "auth;dur=625.3, provider;dur=363.6, references;dur=336.0, be;dur=1326.3",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-sa/detail",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1550.5,
+      "firstByteMs": 1545.9,
+      "responseBytes": 11892,
+      "serverTiming": "auth;dur=601.5, provider;dur=549.9, references;dur=380.5, be;dur=1535.6",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-sa/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 7.8,
+      "firstByteMs": 7.7,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=0.9",
+      "below100ms": true
+    },
+    {
+      "operation": "internal-transfer-sa/options/header.FromBranchID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1200.4,
+      "firstByteMs": 1199.4,
+      "responseBytes": 308,
+      "serverTiming": "auth;dur=558.7, provider;dur=344.5, references;dur=283.7, be;dur=1188.2",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-sa/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 7.8,
+      "firstByteMs": 7.6,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=0.9",
+      "below100ms": true
+    },
+    {
+      "operation": "internal-transfer-sa/options/header.ToBranchID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1331.4,
+      "firstByteMs": 1331.2,
+      "responseBytes": 308,
+      "serverTiming": "auth;dur=640.2, provider;dur=394.7, references;dur=284.8, be;dur=1320.7",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-sa/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 12.3,
+      "firstByteMs": 11.8,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=0.9",
+      "below100ms": true
+    },
+    {
+      "operation": "internal-transfer-sa/options/header.TransportMethod",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1054.9,
+      "firstByteMs": 1054.6,
+      "responseBytes": 347,
+      "serverTiming": "auth;dur=646.0, provider;dur=398.7, references;dur=0.0, be;dur=1046.0",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-tech/screen",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 630.3,
+      "firstByteMs": 630.1,
+      "responseBytes": 27362,
+      "serverTiming": "auth;dur=619.1, provider;dur=0.1, be;dur=621.2",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-tech/list",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1322.6,
+      "firstByteMs": 1322.4,
+      "responseBytes": 2386,
+      "serverTiming": "auth;dur=601.6, provider;dur=370.4, references;dur=340.0, be;dur=1313.5",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-tech/detail",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1540.5,
+      "firstByteMs": 1540.4,
+      "responseBytes": 11855,
+      "serverTiming": "auth;dur=598.8, provider;dur=548.2, references;dur=380.0, be;dur=1529.9",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-tech/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 12.1,
+      "firstByteMs": 11.9,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.1",
+      "below100ms": true
+    },
+    {
+      "operation": "internal-transfer-tech/options/header.FromBranchID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1219.4,
+      "firstByteMs": 1219.3,
+      "responseBytes": 308,
+      "serverTiming": "auth;dur=563.5, provider;dur=355.4, references;dur=288.8, be;dur=1209.2",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-tech/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 9.8,
+      "firstByteMs": 9.6,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.0",
+      "below100ms": true
+    },
+    {
+      "operation": "internal-transfer-tech/options/header.ToBranchID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1319.5,
+      "firstByteMs": 1319.4,
+      "responseBytes": 308,
+      "serverTiming": "auth;dur=622.0, provider;dur=402.8, references;dur=284.7, be;dur=1310.8",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-tech/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 11.1,
+      "firstByteMs": 10.8,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=0.9",
+      "below100ms": true
+    },
+    {
+      "operation": "internal-transfer-tech/options/header.TransportMethod",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 911.1,
+      "firstByteMs": 910.9,
+      "responseBytes": 347,
+      "serverTiming": "auth;dur=555.0, provider;dur=346.8, references;dur=0.0, be;dur=903.3",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-warehouse-in/screen",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 573.2,
+      "firstByteMs": 570.7,
+      "responseBytes": 26883,
+      "serverTiming": "auth;dur=559.5, provider;dur=0.1, be;dur=561.8",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-warehouse-in/list",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 918.3,
+      "firstByteMs": 918.1,
+      "responseBytes": 138,
+      "serverTiming": "auth;dur=558.3, provider;dur=346.3, be;dur=905.5",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-warehouse-in/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 8.3,
+      "firstByteMs": 8.2,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.1",
+      "below100ms": true
+    },
+    {
+      "operation": "internal-transfer-warehouse-in/options/header.FromBranchID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1219.3,
+      "firstByteMs": 1219,
+      "responseBytes": 308,
+      "serverTiming": "auth;dur=575.0, provider;dur=344.9, references;dur=286.5, be;dur=1207.6",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-warehouse-in/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 8.3,
+      "firstByteMs": 8.1,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=0.9",
+      "below100ms": true
+    },
+    {
+      "operation": "internal-transfer-warehouse-in/options/header.ToBranchID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1207.4,
+      "firstByteMs": 1207.2,
+      "responseBytes": 308,
+      "serverTiming": "auth;dur=563.2, provider;dur=349.1, references;dur=284.4, be;dur=1197.9",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-warehouse-in/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 11.6,
+      "firstByteMs": 11.4,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=0.9",
+      "below100ms": true
+    },
+    {
+      "operation": "internal-transfer-warehouse-in/options/header.TransportMethod",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 919.5,
+      "firstByteMs": 919.1,
+      "responseBytes": 347,
+      "serverTiming": "auth;dur=557.5, provider;dur=348.5, references;dur=0.0, be;dur=907.2",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-warehouse-out/screen",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 585.1,
+      "firstByteMs": 584.7,
+      "responseBytes": 27156,
+      "serverTiming": "auth;dur=563.1, provider;dur=0.1, be;dur=565.4",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-warehouse-out/list",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1226.1,
+      "firstByteMs": 1225.6,
+      "responseBytes": 2386,
+      "serverTiming": "auth;dur=557.3, provider;dur=320.6, references;dur=334.5, be;dur=1214.0",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-warehouse-out/detail",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1447.6,
+      "firstByteMs": 1447.4,
+      "responseBytes": 11943,
+      "serverTiming": "auth;dur=565.3, provider;dur=482.3, references;dur=383.5, be;dur=1435.1",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-warehouse-out/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 9.7,
+      "firstByteMs": 9.5,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.1",
+      "below100ms": true
+    },
+    {
+      "operation": "internal-transfer-warehouse-out/options/header.FromBranchID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1199.7,
+      "firstByteMs": 1199.6,
+      "responseBytes": 308,
+      "serverTiming": "auth;dur=557.1, provider;dur=347.2, references;dur=285.2, be;dur=1190.9",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-warehouse-out/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 10,
+      "firstByteMs": 9.9,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=0.9",
+      "below100ms": true
+    },
+    {
+      "operation": "internal-transfer-warehouse-out/options/header.ToBranchID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1396.8,
+      "firstByteMs": 1396.7,
+      "responseBytes": 308,
+      "serverTiming": "auth;dur=731.0, provider;dur=361.7, references;dur=292.0, be;dur=1386.1",
+      "below100ms": false
+    },
+    {
+      "operation": "internal-transfer-warehouse-out/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 9.6,
+      "firstByteMs": 9.5,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.1",
+      "below100ms": true
+    },
+    {
+      "operation": "internal-transfer-warehouse-out/options/header.TransportMethod",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 917.1,
+      "firstByteMs": 917,
+      "responseBytes": 347,
+      "serverTiming": "auth;dur=558.7, provider;dur=346.2, references;dur=0.0, be;dur=906.2",
+      "below100ms": false
+    },
+    {
+      "operation": "machine-movements/screen",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 573.7,
+      "firstByteMs": 570.5,
+      "responseBytes": 13628,
+      "serverTiming": "auth;dur=559.1, provider;dur=0.2, be;dur=560.5",
+      "below100ms": false
+    },
+    {
+      "operation": "machine-movements/list",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1230.7,
+      "firstByteMs": 1230.5,
+      "responseBytes": 16841,
+      "serverTiming": "auth;dur=559.7, provider;dur=363.2, references;dur=292.7, be;dur=1219.6",
+      "below100ms": false
+    },
+    {
+      "operation": "machine-movements/detail",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1343.5,
+      "firstByteMs": 1343.2,
+      "responseBytes": 3157,
+      "serverTiming": "auth;dur=589.7, provider;dur=401.7, references;dur=337.4, be;dur=1330.7",
+      "below100ms": false
+    },
+    {
+      "operation": "machine-movements/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 9.5,
+      "firstByteMs": 9.4,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.0",
+      "below100ms": true
+    },
+    {
+      "operation": "machine-movements/options/header.ContractID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1277.7,
+      "firstByteMs": 1277.5,
+      "responseBytes": 4411,
+      "serverTiming": "auth;dur=574.4, provider;dur=362.8, references;dur=327.7, be;dur=1267.5",
+      "below100ms": false
+    },
+    {
+      "operation": "machine-movements/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 11.2,
+      "firstByteMs": 11.1,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=0.9",
+      "below100ms": true
+    },
+    {
+      "operation": "machine-movements/options/header.MoveTypeID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1233.8,
+      "firstByteMs": 1233.7,
+      "responseBytes": 1180,
+      "serverTiming": "auth;dur=585.5, provider;dur=347.2, references;dur=289.8, be;dur=1224.4",
+      "below100ms": false
+    },
+    {
+      "operation": "machine-movements/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 11.3,
+      "firstByteMs": 11.2,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=0.9",
+      "below100ms": true
+    },
+    {
+      "operation": "machine-movements/options/lines.AssetID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1587.2,
+      "firstByteMs": 1582.1,
+      "responseBytes": 55922,
+      "serverTiming": "auth;dur=575.1, provider;dur=373.0, references;dur=607.9, be;dur=1572.9",
+      "below100ms": false
+    },
+    {
+      "operation": "machine-repairs/screen",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 602.4,
+      "firstByteMs": 602.1,
+      "responseBytes": 10184,
+      "serverTiming": "auth;dur=588.4, provider;dur=0.1, be;dur=589.6",
+      "below100ms": false
+    },
+    {
+      "operation": "machine-repairs/list",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1225.8,
+      "firstByteMs": 1225.6,
+      "responseBytes": 1014,
+      "serverTiming": "auth;dur=587.1, provider;dur=342.1, references;dur=287.4, be;dur=1217.8",
+      "below100ms": false
+    },
+    {
+      "operation": "machine-repairs/detail",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1328.2,
+      "firstByteMs": 1328,
+      "responseBytes": 2637,
+      "serverTiming": "auth;dur=560.1, provider;dur=414.2, references;dur=333.5, be;dur=1309.7",
+      "below100ms": false
+    },
+    {
+      "operation": "machine-repairs/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 11.7,
+      "firstByteMs": 11.5,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.0",
+      "below100ms": true
+    },
+    {
+      "operation": "machine-repairs/options/header.ContractID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1249.8,
+      "firstByteMs": 1249.4,
+      "responseBytes": 4411,
+      "serverTiming": "auth;dur=562.8, provider;dur=350.6, references;dur=322.7, be;dur=1238.6",
+      "below100ms": false
+    },
+    {
+      "operation": "machine-repairs/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 12.5,
+      "firstByteMs": 12.4,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.0",
+      "below100ms": true
+    },
+    {
+      "operation": "machine-repairs/options/header.ObjectID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1277.1,
+      "firstByteMs": 1276.4,
+      "responseBytes": 4026,
+      "serverTiming": "auth;dur=571.3, provider;dur=383.1, references;dur=309.5, be;dur=1266.5",
+      "below100ms": false
+    },
+    {
+      "operation": "machine-repairs/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 10,
+      "firstByteMs": 9.8,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.0",
+      "below100ms": true
+    },
+    {
+      "operation": "machine-repairs/options/header.ServiceStatus",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1041.1,
+      "firstByteMs": 1040.9,
+      "responseBytes": 426,
+      "serverTiming": "auth;dur=633.1, provider;dur=398.8, references;dur=0.0, be;dur=1033.2",
+      "below100ms": false
+    },
+    {
+      "operation": "purchase-approvals/screen",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 638.7,
+      "firstByteMs": 638.6,
+      "responseBytes": 7820,
+      "serverTiming": "auth;dur=626.4, provider;dur=0.2, be;dur=627.5",
+      "below100ms": false
+    },
+    {
+      "operation": "purchase-approvals/list",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1395,
+      "firstByteMs": 1394.8,
+      "responseBytes": 7957,
+      "serverTiming": "auth;dur=656.9, provider;dur=366.6, references;dur=357.3, be;dur=1383.3",
+      "below100ms": false
+    },
+    {
+      "operation": "purchase-approvals/detail",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1332,
+      "firstByteMs": 1331.5,
+      "responseBytes": 2034,
+      "serverTiming": "auth;dur=554.7, provider;dur=360.8, references;dur=402.9, be;dur=1320.0",
+      "below100ms": false
+    },
+    {
+      "operation": "purchase-approvals/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 7.9,
+      "firstByteMs": 7.7,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.0",
+      "below100ms": true
+    },
+    {
+      "operation": "purchase-approvals/options/header.BranchID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1242.2,
+      "firstByteMs": 1242.1,
+      "responseBytes": 775,
+      "serverTiming": "auth;dur=563.8, provider;dur=348.4, references;dur=318.9, be;dur=1232.5",
+      "below100ms": false
+    },
+    {
+      "operation": "purchase-approvals/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 8.9,
+      "firstByteMs": 8.7,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.0",
+      "below100ms": true
+    },
+    {
+      "operation": "purchase-approvals/options/header.CurrencyID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1237.4,
+      "firstByteMs": 1237.1,
+      "responseBytes": 466,
+      "serverTiming": "auth;dur=596.2, provider;dur=346.9, references;dur=283.8, be;dur=1228.2",
+      "below100ms": false
+    },
+    {
+      "operation": "purchase-approvals/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 18,
+      "firstByteMs": 17.7,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=0.9",
+      "below100ms": true
+    },
+    {
+      "operation": "purchase-approvals/options/header.ObjectID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1256.7,
+      "firstByteMs": 1256.4,
+      "responseBytes": 4951,
+      "serverTiming": "auth;dur=559.9, provider;dur=357.1, references;dur=329.2, be;dur=1248.7",
+      "below100ms": false
+    },
+    {
+      "operation": "purchase-orders/screen",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 580.1,
+      "firstByteMs": 579.1,
+      "responseBytes": 8354,
+      "serverTiming": "auth;dur=568.2, provider;dur=0.1, be;dur=569.4",
+      "below100ms": false
+    },
+    {
+      "operation": "purchase-orders/list",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1272.8,
+      "firstByteMs": 1272.6,
+      "responseBytes": 6131,
+      "serverTiming": "auth;dur=583.0, provider;dur=316.3, references;dur=360.4, be;dur=1261.9",
+      "below100ms": false
+    },
+    {
+      "operation": "purchase-orders/detail",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1342.2,
+      "firstByteMs": 1341.9,
+      "responseBytes": 2351,
+      "serverTiming": "auth;dur=558.4, provider;dur=373.0, references;dur=400.1, be;dur=1333.1",
+      "below100ms": false
+    },
+    {
+      "operation": "purchase-orders/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 8.3,
+      "firstByteMs": 7.9,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.1",
+      "below100ms": true
+    },
+    {
+      "operation": "purchase-orders/options/header.BranchID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1229.7,
+      "firstByteMs": 1229.6,
+      "responseBytes": 775,
+      "serverTiming": "auth;dur=559.0, provider;dur=343.1, references;dur=317.9, be;dur=1221.3",
+      "below100ms": false
+    },
+    {
+      "operation": "purchase-orders/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 12.8,
+      "firstByteMs": 12.7,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.2",
+      "below100ms": true
+    },
+    {
+      "operation": "purchase-orders/options/header.CurrencyID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1272.6,
+      "firstByteMs": 1272.3,
+      "responseBytes": 466,
+      "serverTiming": "auth;dur=614.6, provider;dur=349.4, references;dur=295.5, be;dur=1261.0",
+      "below100ms": false
+    },
+    {
+      "operation": "purchase-orders/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 8.3,
+      "firstByteMs": 8.2,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=0.9",
+      "below100ms": true
+    },
+    {
+      "operation": "purchase-orders/options/header.ObjectID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1247,
+      "firstByteMs": 1246.8,
+      "responseBytes": 4951,
+      "serverTiming": "auth;dur=555.9, provider;dur=347.3, references;dur=333.0, be;dur=1238.7",
+      "below100ms": false
+    },
+    {
+      "operation": "purchase-requests/screen",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 576.5,
+      "firstByteMs": 575.6,
+      "responseBytes": 10622,
+      "serverTiming": "auth;dur=562.0, provider;dur=0.1, be;dur=563.2",
+      "below100ms": false
+    },
+    {
+      "operation": "purchase-requests/list",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1278.7,
+      "firstByteMs": 1278.5,
+      "responseBytes": 7957,
+      "serverTiming": "auth;dur=556.1, provider;dur=313.4, references;dur=397.7, be;dur=1269.7",
+      "below100ms": false
+    },
+    {
+      "operation": "purchase-requests/detail",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1383.5,
+      "firstByteMs": 1383.3,
+      "responseBytes": 3817,
+      "serverTiming": "auth;dur=562.5, provider;dur=383.3, references;dur=421.3, be;dur=1369.2",
+      "below100ms": false
+    },
+    {
+      "operation": "purchase-requests/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 10.6,
+      "firstByteMs": 10.5,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.0",
+      "below100ms": true
+    },
+    {
+      "operation": "purchase-requests/options/header.BranchID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1268.4,
+      "firstByteMs": 1268.3,
+      "responseBytes": 775,
+      "serverTiming": "auth;dur=594.3, provider;dur=345.5, references;dur=319.3, be;dur=1260.3",
+      "below100ms": false
+    },
+    {
+      "operation": "purchase-requests/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 10.1,
+      "firstByteMs": 9.9,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=0.9",
+      "below100ms": true
+    },
+    {
+      "operation": "purchase-requests/options/header.CurrencyID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1198.5,
+      "firstByteMs": 1198.4,
+      "responseBytes": 466,
+      "serverTiming": "auth;dur=561.8, provider;dur=341.6, references;dur=283.5, be;dur=1188.3",
+      "below100ms": false
+    },
+    {
+      "operation": "purchase-requests/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 13.8,
+      "firstByteMs": 13.7,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.0",
+      "below100ms": true
+    },
+    {
+      "operation": "purchase-requests/options/header.Department",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 926.2,
+      "firstByteMs": 925.9,
+      "responseBytes": 830,
+      "serverTiming": "auth;dur=566.0, provider;dur=350.0, references;dur=0.0, be;dur=917.4",
+      "below100ms": false
+    },
+    {
+      "operation": "sales-order-pm/screen",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 581.3,
+      "firstByteMs": 580.3,
+      "responseBytes": 21002,
+      "serverTiming": "auth;dur=569.3, provider;dur=0.2, be;dur=571.5",
+      "below100ms": false
+    },
+    {
+      "operation": "sales-order-pm/list",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1372.2,
+      "firstByteMs": 1366.5,
+      "responseBytes": 52118,
+      "serverTiming": "auth;dur=580.3, provider;dur=341.2, references;dur=421.6, be;dur=1355.5",
+      "below100ms": false
+    },
+    {
+      "operation": "sales-order-pm/detail",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1437,
+      "firstByteMs": 1436.3,
+      "responseBytes": 10122,
+      "serverTiming": "auth;dur=587.4, provider;dur=395.9, references;dur=441.5, be;dur=1427.9",
+      "below100ms": false
+    },
+    {
+      "operation": "sales-order-pm/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 11,
+      "firstByteMs": 10.8,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.4",
+      "below100ms": true
+    },
+    {
+      "operation": "sales-order-pm/options/header.ContractID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1302.1,
+      "firstByteMs": 1301.9,
+      "responseBytes": 4411,
+      "serverTiming": "auth;dur=585.6, provider;dur=373.9, references;dur=327.0, be;dur=1289.5",
+      "below100ms": false
+    },
+    {
+      "operation": "sales-order-pm/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 8.2,
+      "firstByteMs": 8.1,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.2",
+      "below100ms": true
+    },
+    {
+      "operation": "sales-order-pm/options/header.EmployeeID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1234.1,
+      "firstByteMs": 1233.8,
+      "responseBytes": 2131,
+      "serverTiming": "auth;dur=565.8, provider;dur=350.3, references;dur=307.2, be;dur=1225.9",
+      "below100ms": false
+    },
+    {
+      "operation": "sales-order-pm/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 13.4,
+      "firstByteMs": 13.2,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.0",
+      "below100ms": true
+    },
+    {
+      "operation": "sales-order-pm/options/header.ManagerID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1231,
+      "firstByteMs": 1230.8,
+      "responseBytes": 545,
+      "serverTiming": "auth;dur=559.6, provider;dur=347.3, references;dur=314.0, be;dur=1222.3",
+      "below100ms": false
+    },
+    {
+      "operation": "sales-order-sa/screen",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 577.5,
+      "firstByteMs": 576.1,
+      "responseBytes": 20264,
+      "serverTiming": "auth;dur=565.1, provider;dur=0.2, be;dur=567.0",
+      "below100ms": false
+    },
+    {
+      "operation": "sales-order-sa/list",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1352.5,
+      "firstByteMs": 1351.8,
+      "responseBytes": 49932,
+      "serverTiming": "auth;dur=574.9, provider;dur=328.3, references;dur=422.7, be;dur=1338.3",
+      "below100ms": false
+    },
+    {
+      "operation": "sales-order-sa/detail",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1415.1,
+      "firstByteMs": 1413.5,
+      "responseBytes": 10523,
+      "serverTiming": "auth;dur=560.9, provider;dur=405.9, references;dur=434.0, be;dur=1404.0",
+      "below100ms": false
+    },
+    {
+      "operation": "sales-order-sa/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 8.8,
+      "firstByteMs": 8.7,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.2",
+      "below100ms": true
+    },
+    {
+      "operation": "sales-order-sa/options/header.ContractID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1265.8,
+      "firstByteMs": 1265.6,
+      "responseBytes": 4411,
+      "serverTiming": "auth;dur=558.4, provider;dur=358.3, references;dur=323.6, be;dur=1243.5",
+      "below100ms": false
+    },
+    {
+      "operation": "sales-order-sa/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 9.5,
+      "firstByteMs": 9.4,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.0",
+      "below100ms": true
+    },
+    {
+      "operation": "sales-order-sa/options/header.EmployeeID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1245.2,
+      "firstByteMs": 1245.1,
+      "responseBytes": 2131,
+      "serverTiming": "auth;dur=568.4, provider;dur=351.1, references;dur=312.6, be;dur=1234.7",
+      "below100ms": false
+    },
+    {
+      "operation": "sales-order-sa/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 15.7,
+      "firstByteMs": 15.6,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.0",
+      "below100ms": true
+    },
+    {
+      "operation": "sales-order-sa/options/header.ManagerID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1284.8,
+      "firstByteMs": 1284.7,
+      "responseBytes": 545,
+      "serverTiming": "auth;dur=573.7, provider;dur=380.0, references;dur=318.6, be;dur=1273.6",
+      "below100ms": false
+    },
+    {
+      "operation": "sales-orders/screen",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 574.1,
+      "firstByteMs": 572.3,
+      "responseBytes": 20494,
+      "serverTiming": "auth;dur=562.5, provider;dur=0.1, be;dur=564.2",
+      "below100ms": false
+    },
+    {
+      "operation": "sales-orders/list",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1284.9,
+      "firstByteMs": 1284.8,
+      "responseBytes": 2401,
+      "serverTiming": "auth;dur=561.2, provider;dur=320.7, references;dur=388.4, be;dur=1271.9",
+      "below100ms": false
+    },
+    {
+      "operation": "sales-orders/detail",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1390.7,
+      "firstByteMs": 1390.3,
+      "responseBytes": 6493,
+      "serverTiming": "auth;dur=567.7, provider;dur=388.5, references;dur=422.9, be;dur=1381.6",
+      "below100ms": false
+    },
+    {
+      "operation": "sales-orders/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 9.6,
+      "firstByteMs": 9.3,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=0.9",
+      "below100ms": true
+    },
+    {
+      "operation": "sales-orders/options/header.ContractID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1327.6,
+      "firstByteMs": 1327.5,
+      "responseBytes": 6439,
+      "serverTiming": "auth;dur=576.5, provider;dur=379.5, references;dur=359.1, be;dur=1318.4",
+      "below100ms": false
+    },
+    {
+      "operation": "sales-orders/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 13.1,
+      "firstByteMs": 12.9,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.2",
+      "below100ms": true
+    },
+    {
+      "operation": "sales-orders/options/header.EmployeeID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1209.8,
+      "firstByteMs": 1209.6,
+      "responseBytes": 2131,
+      "serverTiming": "auth;dur=558.9, provider;dur=351.7, references;dur=283.8, be;dur=1197.1",
+      "below100ms": false
+    },
+    {
+      "operation": "sales-orders/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 12.7,
+      "firstByteMs": 12.7,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=0.9",
+      "below100ms": true
+    },
+    {
+      "operation": "sales-orders/options/header.ManagerID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1212.8,
+      "firstByteMs": 1212.7,
+      "responseBytes": 545,
+      "serverTiming": "auth;dur=554.8, provider;dur=355.0, references;dur=290.1, be;dur=1201.1",
+      "below100ms": false
+    },
+    {
+      "operation": "sales-qr/screen",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 577.9,
+      "firstByteMs": 576.6,
+      "responseBytes": 41422,
+      "serverTiming": "auth;dur=564.0, provider;dur=0.1, be;dur=566.8",
+      "below100ms": false
+    },
+    {
+      "operation": "sales-qr/list",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1428.2,
+      "firstByteMs": 1421.2,
+      "responseBytes": 69656,
+      "serverTiming": "auth;dur=565.3, provider;dur=326.1, references;dur=504.5, be;dur=1413.1",
+      "below100ms": false
+    },
+    {
+      "operation": "sales-qr/detail",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1516.1,
+      "firstByteMs": 1515.8,
+      "responseBytes": 9878,
+      "serverTiming": "auth;dur=556.6, provider;dur=411.0, references;dur=535.0, be;dur=1506.2",
+      "below100ms": false
+    },
+    {
+      "operation": "sales-qr/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 18.9,
+      "firstByteMs": 18.7,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.1",
+      "below100ms": true
+    },
+    {
+      "operation": "sales-qr/options/header.AgencyID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1322,
+      "firstByteMs": 1321.8,
+      "responseBytes": 10516,
+      "serverTiming": "auth;dur=566.3, provider;dur=363.7, references;dur=374.5, be;dur=1309.0",
+      "below100ms": false
+    },
+    {
+      "operation": "sales-qr/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 12.5,
+      "firstByteMs": 12.3,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=0.9",
+      "below100ms": true
+    },
+    {
+      "operation": "sales-qr/options/header.BranchID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1216.8,
+      "firstByteMs": 1216.7,
+      "responseBytes": 775,
+      "serverTiming": "auth;dur=569.8, provider;dur=348.6, references;dur=287.9, be;dur=1207.5",
+      "below100ms": false
+    },
+    {
+      "operation": "sales-qr/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 19,
+      "firstByteMs": 18.9,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=1.1",
+      "below100ms": true
+    },
+    {
+      "operation": "sales-qr/options/header.CeoID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1241.6,
+      "firstByteMs": 1241.2,
+      "responseBytes": 470,
+      "serverTiming": "auth;dur=568.6, provider;dur=359.6, references;dur=302.5, be;dur=1231.9",
+      "below100ms": false
+    },
+    {
+      "operation": "warehouse-qr/screen",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 587,
+      "firstByteMs": 585.8,
+      "responseBytes": 17663,
+      "serverTiming": "auth;dur=573.8, provider;dur=0.2, be;dur=575.6",
+      "below100ms": false
+    },
+    {
+      "operation": "warehouse-qr/list",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1206.6,
+      "firstByteMs": 1206.5,
+      "responseBytes": 9932,
+      "serverTiming": "auth;dur=567.9, provider;dur=328.7, references;dur=295.4, be;dur=1195.2",
+      "below100ms": false
+    },
+    {
+      "operation": "warehouse-qr/detail",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 1378.4,
+      "firstByteMs": 1378.3,
+      "responseBytes": 3361,
+      "serverTiming": "auth;dur=577.4, provider;dur=421.7, references;dur=362.1, be;dur=1363.1",
+      "below100ms": false
+    },
+    {
+      "operation": "warehouse-qr/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 10.4,
+      "firstByteMs": 10.4,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=0.9",
+      "below100ms": true
+    },
+    {
+      "operation": "warehouse-qr/options/header.BranchID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1218.1,
+      "firstByteMs": 1217.9,
+      "responseBytes": 775,
+      "serverTiming": "auth;dur=573.2, provider;dur=345.5, references;dur=283.4, be;dur=1203.3",
+      "below100ms": false
+    },
+    {
+      "operation": "warehouse-qr/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 9.2,
+      "firstByteMs": 9.1,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=0.9",
+      "below100ms": true
+    },
+    {
+      "operation": "warehouse-qr/options/header.FldObjectID",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1276.9,
+      "firstByteMs": 1276.4,
+      "responseBytes": 7642,
+      "serverTiming": "auth;dur=556.1, provider;dur=396.5, references;dur=307.0, be;dur=1262.7",
+      "below100ms": false
+    },
+    {
+      "operation": "warehouse-qr/csrf-before-options",
+      "method": "GET",
+      "status": 200,
+      "elapsedMs": 10.6,
+      "firstByteMs": 10.4,
+      "responseBytes": 210,
+      "serverTiming": "auth;dur=0.0, be;dur=0.9",
+      "below100ms": true
+    },
+    {
+      "operation": "warehouse-qr/options/header.FldOutputType",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 1187,
+      "firstByteMs": 1186.9,
+      "responseBytes": 2912,
+      "serverTiming": "auth;dur=565.0, provider;dur=346.2, references;dur=265.7, be;dur=1179.0",
+      "below100ms": false
+    }
+  ],
+  "under100MsAcceptance": false,
+  "scope": "Current redeployed VPS baseline before PR167; component improvements measured locally are not postdeployment VPS gains."
+}

@@ -66,6 +66,7 @@ public sealed partial class SqlErpScreenCommands
                 remaining[line]=fields.ToDictionary(pair=>pair.Key,pair=>(object?)pair.Value,StringComparer.Ordinal);
             }
             Require(remaining.Count<=ErpInputRules.MaximumLines&&(remaining.Count>0||plan.Module=="internal-transfer-batches"),ErpCommandOutcome.InvalidInput,"document_line_count");
+            await RevalueUnchangedLines(transaction,plan,request,document,before,header,remaining,token);
             if(plan.Module=="sales-orders")await SalesAfterSave(transaction,document,token);
             if(plan.Module=="purchase-orders")await PurchaseOrderAfterSave(transaction,document,token);
         }

@@ -260,8 +260,10 @@ public static class PurchaseRequestEndpoints
             if (!PurchaseRequestCommandRules.IntentBytes(frozen.Header).AsSpan().SequenceEqual(PurchaseRequestCommandRules.IntentBytes(document.Header))) return false;
             return frozen.LineChanges.All(change => change.Kind == PurchaseRequestLineChangeKind.Remove
                 ? document.Lines.All(line => line.LineId != change.LineId)
-                : document.Lines.Any(line => line.LineId == change.LineId && PurchaseRequestCommandRules.IntentBytes(line.Values).AsSpan()
-                    .SequenceEqual(PurchaseRequestCommandRules.IntentBytes(change.Values))));
+                : document.Lines.Any(line => line.LineId == change.LineId && (PurchaseRequestCommandRules.IntentBytes(line.Values).AsSpan()
+                    .SequenceEqual(PurchaseRequestCommandRules.IntentBytes(change.Values))
+                    || PurchaseRequestCommandRules.CalculateLine(change.Values!,out var calculated)
+                        && PurchaseRequestCommandRules.IntentBytes(line.Values).AsSpan().SequenceEqual(PurchaseRequestCommandRules.IntentBytes(calculated)))));
         }
         catch (Exception exception) when (exception is ArgumentException or NullReferenceException or InvalidOperationException)
         { return false; }

@@ -259,6 +259,10 @@ public sealed class SqlPurchaseRequestCommands : IPurchaseRequestCommands
                 }
                 else if(phase!=0) return Result(PurchaseRequestCommandOutcome.Unavailable);
 
+                if(command.NewLines.Select(l=>l.Values).Concat(command.Changes.Where(c=>c.Values is not null).Select(c=>c.Values!))
+                    .Any(values=>!PurchaseRequestCommandRules.CalculateLine(values,out _)))
+                    return Result(PurchaseRequestCommandOutcome.InvalidInput);
+
                 PurchaseRequestAggregate? currentDocument=null;
                 if(command.Document is not null)
                 {
@@ -326,7 +330,7 @@ public sealed class SqlPurchaseRequestCommands : IPurchaseRequestCommands
                             await One(delete,token);
                         }
                         else await WriteLine(transaction,change.Kind==PurchaseRequestLineChangeKind.Add ? PurchaseRequestSql.InsertLineText : PurchaseRequestSql.UpdateLineText,
-                            command.Document!,new(lineId,change.Values!),token);
+                            command.Document!,desired.Lines.Single(line=>line.LineId==lineId),token);
                     }
                 }
                 if(command.Submits)
@@ -588,7 +592,8 @@ public sealed class SqlPurchaseRequestCommands : IPurchaseRequestCommands
         foreach(var effect in effects)
         {
             var line=document.Lines.SingleOrDefault(l=>l.LineId==effect.Key);
-            if(effect.Value is null ? line is not null : line is null || line.Values!=effect.Value) return false;
+            if(effect.Value is null ? line is not null : line is null || line.Values!=effect.Value
+                &&(!PurchaseRequestCommandRules.CalculateLine(effect.Value,out var calculated)||line.Values!=calculated)) return false;
         }
         if(command.Action==PurchaseRequestCommandRules.SubmitAction
             && PurchaseRequestCommandRules.EqualityToken(document with { StatusId=1,IsLocked=false })!=command.ExpectedToken
@@ -671,12 +676,14 @@ public sealed class SqlPurchaseRequestCommands : IPurchaseRequestCommands
     private static PurchaseRequestAggregate BuildDesired(Submitted c,PurchaseRequestAggregate? current,PurchaseRequestAllocatedIdentifiers ids)
     {
         var lines=current?.Lines.ToDictionary(l=>l.LineId,StringComparer.Ordinal) ?? new Dictionary<string,PurchaseRequestPersistedLine>(StringComparer.Ordinal);
-        foreach(var line in c.NewLines) { var id=ids.Lines.Single(l=>l.ClientLineKey==line.ClientLineKey).LineId; lines.Add(id,new(id,line.Values)); }
+        PurchaseRequestLineValues Calculated(PurchaseRequestLineValues value)=>PurchaseRequestCommandRules.CalculateLine(value,out var result)
+            ?result:throw new ArgumentException("Calculated line total out of range.");
+        foreach(var line in c.NewLines) { var id=ids.Lines.Single(l=>l.ClientLineKey==line.ClientLineKey).LineId; lines.Add(id,new(id,Calculated(line.Values))); }
         foreach(var change in c.Changes)
         {
             var id=change.Kind==PurchaseRequestLineChangeKind.Add ? ids.Lines.Single(l=>l.ClientLineKey==change.ClientLineKey).LineId : change.LineId!;
             if(change.Kind==PurchaseRequestLineChangeKind.Remove) lines.Remove(id);
-            else { if(change.Kind==PurchaseRequestLineChangeKind.Add && lines.ContainsKey(id)) throw new PurchaseConflictException(); lines[id]=new(id,change.Values!); }
+            else { if(change.Kind==PurchaseRequestLineChangeKind.Add && lines.ContainsKey(id)) throw new PurchaseConflictException(); lines[id]=new(id,Calculated(change.Values!)); }
         }
         return PurchaseRequestCommandRules.Normalize(new(ids.PurchaseRequestId,c.Branch,c.Header ?? current!.Header,
             c.Submits ? 2 : 1,c.Submits ? true : current is null ? false : current.IsLocked,lines.Values.ToArray()));

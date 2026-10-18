@@ -951,7 +951,10 @@
       "table": "AP_PurchaseStatusTbl",
       "key": "StatusID",
       "label": "StatusName",
-      "extras": [],
+      "extras": [
+        "ForeColor",
+        "BackColor"
+      ],
       "aliases": [],
       "columns": [
         {
@@ -965,6 +968,18 @@
           "type": "nvarchar",
           "typeArguments": "(50)",
           "nullable": true
+        },
+        {
+          "name": "ForeColor",
+          "type": "int",
+          "typeArguments": null,
+          "nullable": true
+        },
+        {
+          "name": "BackColor",
+          "type": "int",
+          "typeArguments": null,
+          "nullable": true
         }
       ]
     },
@@ -973,7 +988,10 @@
       "table": "AP_OrderStatusTbl",
       "key": "StatusID",
       "label": "StatusName",
-      "extras": [],
+      "extras": [
+        "ForeColor",
+        "BackColor"
+      ],
       "aliases": [],
       "columns": [
         {
@@ -987,6 +1005,18 @@
           "type": "nvarchar",
           "typeArguments": "(50)",
           "nullable": false
+        },
+        {
+          "name": "ForeColor",
+          "type": "int",
+          "typeArguments": null,
+          "nullable": true
+        },
+        {
+          "name": "BackColor",
+          "type": "int",
+          "typeArguments": null,
+          "nullable": true
         }
       ]
     },
@@ -995,7 +1025,10 @@
       "table": "IV_InboundRequestStatusTbl",
       "key": "StatusID",
       "label": "StatusName",
-      "extras": [],
+      "extras": [
+        "ForeColor",
+        "BackColor"
+      ],
       "aliases": [],
       "columns": [
         {
@@ -1009,6 +1042,18 @@
           "type": "nvarchar",
           "typeArguments": "(100)",
           "nullable": false
+        },
+        {
+          "name": "ForeColor",
+          "type": "int",
+          "typeArguments": null,
+          "nullable": true
+        },
+        {
+          "name": "BackColor",
+          "type": "int",
+          "typeArguments": null,
+          "nullable": true
         }
       ]
     },
@@ -1017,7 +1062,10 @@
       "table": "AR_OrderStatusTbl",
       "key": "StatusID",
       "label": "StatusName",
-      "extras": [],
+      "extras": [
+        "ForeColor",
+        "BackColor"
+      ],
       "aliases": [],
       "columns": [
         {
@@ -1031,6 +1079,18 @@
           "type": "nvarchar",
           "typeArguments": "(50)",
           "nullable": false
+        },
+        {
+          "name": "ForeColor",
+          "type": "int",
+          "typeArguments": null,
+          "nullable": true
+        },
+        {
+          "name": "BackColor",
+          "type": "int",
+          "typeArguments": null,
+          "nullable": true
         }
       ]
     },
@@ -1039,7 +1099,10 @@
       "table": "AR_InvoiceStatusTbl",
       "key": "StatusID",
       "label": "StatusName",
-      "extras": [],
+      "extras": [
+        "ForeColor",
+        "BackColor"
+      ],
       "aliases": [],
       "columns": [
         {
@@ -1053,6 +1116,18 @@
           "type": "nvarchar",
           "typeArguments": "(50)",
           "nullable": false
+        },
+        {
+          "name": "ForeColor",
+          "type": "int",
+          "typeArguments": null,
+          "nullable": true
+        },
+        {
+          "name": "BackColor",
+          "type": "int",
+          "typeArguments": null,
+          "nullable": true
         }
       ]
     },
@@ -1061,7 +1136,10 @@
       "table": "IV_InternalTransferRequestStatusTbl",
       "key": "StatusID",
       "label": "StatusName",
-      "extras": [],
+      "extras": [
+        "ForeColor",
+        "BackColor"
+      ],
       "aliases": [],
       "columns": [
         {
@@ -1075,6 +1153,18 @@
           "type": "nvarchar",
           "typeArguments": "(150)",
           "nullable": false
+        },
+        {
+          "name": "ForeColor",
+          "type": "int",
+          "typeArguments": null,
+          "nullable": true
+        },
+        {
+          "name": "BackColor",
+          "type": "int",
+          "typeArguments": null,
+          "nullable": true
         }
       ]
     },
@@ -1083,7 +1173,10 @@
       "table": "CF_ContractStatusTbl",
       "key": "StatusID",
       "label": "StatusName",
-      "extras": [],
+      "extras": [
+        "ForeColor",
+        "BackColor"
+      ],
       "aliases": [],
       "columns": [
         {
@@ -1097,6 +1190,18 @@
           "type": "nvarchar",
           "typeArguments": "(255)",
           "nullable": false
+        },
+        {
+          "name": "ForeColor",
+          "type": "int",
+          "typeArguments": null,
+          "nullable": true
+        },
+        {
+          "name": "BackColor",
+          "type": "int",
+          "typeArguments": null,
+          "nullable": true
         }
       ]
     },
@@ -1105,7 +1210,10 @@
       "table": "IV_InternalTransferBatchStatusTbl",
       "key": "StatusID",
       "label": "StatusName",
-      "extras": [],
+      "extras": [
+        "ForeColor",
+        "BackColor"
+      ],
       "aliases": [],
       "columns": [
         {
@@ -1119,6 +1227,18 @@
           "type": "nvarchar",
           "typeArguments": "(150)",
           "nullable": false
+        },
+        {
+          "name": "ForeColor",
+          "type": "int",
+          "typeArguments": null,
+          "nullable": true
+        },
+        {
+          "name": "BackColor",
+          "type": "int",
+          "typeArguments": null,
+          "nullable": true
         }
       ]
     }

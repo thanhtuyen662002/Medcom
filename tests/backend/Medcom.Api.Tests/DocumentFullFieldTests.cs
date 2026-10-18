@@ -22,7 +22,8 @@ public sealed class DocumentFullFieldTests
         foreach(var name in names)Assert.True(row.TryGetProperty(name,out _),"Missing source column: "+name);
         Assert.All(row.EnumerateObject().Where(p=>!names.Contains(p.Name)),p=>Assert.True(
             p.Name.EndsWith("Name",StringComparison.Ordinal)||p.Name.EndsWith("Display",StringComparison.Ordinal)
-            ||p.Name.EndsWith("ReferenceState",StringComparison.Ordinal)||p.Name is "itemCode" or "unit" or "manufacturerItemCode" or "manufacturerCodeSource" or "isLocked",p.Name));
+            ||p.Name.EndsWith("ReferenceState",StringComparison.Ordinal)||p.Name is "itemCode" or "unit" or "manufacturerItemCode" or "manufacturerCodeSource" or "isLocked"
+                or "statusForeColor" or "statusBackColor" or "damageInsideStatusForeColor" or "damageInsideStatusBackColor",p.Name));
         return row.EnumerateObject().Count(p=>names.Contains(p.Name));
     }
 

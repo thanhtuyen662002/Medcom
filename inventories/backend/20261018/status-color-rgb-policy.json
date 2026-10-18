@@ -1,0 +1,92 @@
+{
+  "format": 1,
+  "observedAtUtc": "2026-10-18T17:48:53.884872+00:00",
+  "source": "current MedData fixed native status tables; columns ForeColor/BackColor",
+  "productionDataWrites": false,
+  "sourceRowsExcluded": true,
+  "configurationColorStatistics": [
+    {
+      "binding": "status:purchase-requests",
+      "rows": 5,
+      "nonnegativeFore": 5,
+      "nonnegativeBack": 0,
+      "nonopaqueFore": 5,
+      "nonopaqueBack": 0,
+      "zeroFore": 5,
+      "zeroBack": 0
+    },
+    {
+      "binding": "status:purchase-orders",
+      "rows": 4,
+      "nonnegativeFore": 1,
+      "nonnegativeBack": 0,
+      "nonopaqueFore": 1,
+      "nonopaqueBack": 0,
+      "zeroFore": 1,
+      "zeroBack": 0
+    },
+    {
+      "binding": "status:inbound-requests",
+      "rows": 14,
+      "nonnegativeFore": 0,
+      "nonnegativeBack": 0,
+      "nonopaqueFore": 0,
+      "nonopaqueBack": 0,
+      "zeroFore": 0,
+      "zeroBack": 0
+    },
+    {
+      "binding": "status:sales-orders",
+      "rows": 19,
+      "nonnegativeFore": 1,
+      "nonnegativeBack": 0,
+      "nonopaqueFore": 1,
+      "nonopaqueBack": 0,
+      "zeroFore": 1,
+      "zeroBack": 0
+    },
+    {
+      "binding": "status:sales-qr",
+      "rows": 10,
+      "nonnegativeFore": 4,
+      "nonnegativeBack": 0,
+      "nonopaqueFore": 4,
+      "nonopaqueBack": 0,
+      "zeroFore": 4,
+      "zeroBack": 0
+    },
+    {
+      "binding": "status:internal-transfer-requests",
+      "rows": 6,
+      "nonnegativeFore": 0,
+      "nonnegativeBack": 0,
+      "nonopaqueFore": 0,
+      "nonopaqueBack": 0,
+      "zeroFore": 0,
+      "zeroBack": 0
+    },
+    {
+      "binding": "status:contract-info",
+      "rows": 4,
+      "nonnegativeFore": 0,
+      "nonnegativeBack": 0,
+      "nonopaqueFore": 0,
+      "nonopaqueBack": 0,
+      "zeroFore": 0,
+      "zeroBack": 0
+    },
+    {
+      "binding": "status:internal-transfer-batches",
+      "rows": 15,
+      "nonnegativeFore": 0,
+      "nonnegativeBack": 0,
+      "nonopaqueFore": 0,
+      "nonopaqueBack": 0,
+      "zeroFore": 0,
+      "zeroBack": 0
+    }
+  ],
+  "zeroForeCount": 11,
+  "webPresentationPolicy": "Use low 24 RGB bits of signed integer as opaque #RRGGBB; native alpha ignored; source 0 becomes #000000. Null/unresolved remains null.",
+  "liveWinFormsTransparencyBehavior": "UNKNOWN; no runtime rendering acceptance claimed. Static candidate IL scan was not promoted to source proof."
+}
