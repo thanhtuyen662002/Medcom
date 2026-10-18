@@ -30,14 +30,15 @@ public sealed class SqlReferenceData:IReferenceData
             var result=new Dictionary<ReferenceKey,ReferenceValue>();
             var groups=copy.GroupBy(x=>x.Binding,StringComparer.Ordinal).ToArray();
             var shapes=await Shapes(transaction,groups.Select(g=>ApiReferenceCatalog.Get(g.Key)!).ToArray(),token);
+            var queries=new List<(ReferenceBinding Binding,ReferenceKey[] Keys)>();
             foreach(var group in groups)
             {
                 var binding=ApiReferenceCatalog.Get(group.Key)!;
                 if(!shapes[binding.Id])
                 {foreach(var key in group)result[key]=new(null,"unavailable",new Dictionary<string,string?>());continue;}
-                foreach(var batch in group.Chunk(100))
-                    foreach(var pair in await ReadBatch(transaction,binding,batch,token))result.Add(pair.Key,pair.Value);
+                foreach(var batch in group.Chunk(100))queries.Add((binding,batch));
             }
+            foreach(var pair in await ReadBatches(transaction,queries,token))result.Add(pair.Key,pair.Value);
             return new(ErpReadOutcome.Success,result);
         },token);
     }
@@ -51,7 +52,7 @@ public sealed class SqlReferenceData:IReferenceData
             if(!await Shape(transaction,binding,token))return new(ErpReadOutcome.Unavailable);
             var keys=(identity.BranchIds??[]).Select(x=>new ReferenceKey("branch",x)).ToArray();
             var values=new Dictionary<ReferenceKey,ReferenceValue>();
-            foreach(var batch in keys.Chunk(100))foreach(var pair in await ReadBatch(transaction,binding,batch,token))values.Add(pair.Key,pair.Value);
+            foreach(var pair in await ReadBatches(transaction,keys.Chunk(100).Select(batch=>(binding,batch)).ToArray(),token))values.Add(pair.Key,pair.Value);
             if(values.Values.Any(x=>x.State!="available"||x.Name is null))return new(ErpReadOutcome.Unavailable);
             var rows=keys.Select(x=>new BranchChoice(x.Key,values[x].Name!))
                 .Where(x=>search is null||x.BranchId.Contains(search,StringComparison.OrdinalIgnoreCase)||x.BranchName.Contains(search,StringComparison.OrdinalIgnoreCase))
@@ -65,6 +66,34 @@ public sealed class SqlReferenceData:IReferenceData
         ErpSqlPlan.Parameter(command,"@table",DbType.String,"dbo."+binding.Table,255);
         await using var reader=await command.ExecuteReaderAsync(token);
         return await ReadShape(reader,binding,token)&&!await reader.NextResultAsync(token);
+    }
+    internal static async Task<IReadOnlyDictionary<ReferenceKey,ReferenceValue>> ReadBatches(DbTransaction transaction,
+        IReadOnlyList<(ReferenceBinding Binding,ReferenceKey[] Keys)> queries,CancellationToken token)
+    {
+        var allKeys=queries.SelectMany(q=>q.Keys).ToArray();
+        if(allKeys.Length>MaximumKeys||allKeys.Distinct().Count()!=allKeys.Length
+            ||queries.Any(q=>ApiReferenceCatalog.Get(q.Binding.Id)!=q.Binding||q.Keys.Length is <1 or >100
+                ||q.Keys.Any(k=>k.Binding!=q.Binding.Id||k.Key.Length>250)))
+            throw new InvalidOperationException("Bounded distinct reference queries required.");
+        if(queries.Count==0)return new Dictionary<ReferenceKey,ReferenceValue>();
+        if(queries.Count==1)return await ReadBatch(transaction,queries[0].Binding,queries[0].Keys,token);
+        await using var command=ErpSqlPlan.Command(transaction,"");
+        for(var batch=0;batch<queries.Count;batch++)
+        {
+            var (binding,keys)=queries[batch];var prefix="@b"+batch.ToString(CultureInfo.InvariantCulture)+"_k";
+            command.CommandText+=BatchText(binding,keys.Length).Replace("@k",prefix,StringComparison.Ordinal)+"\n";
+            var number=binding.Columns[0].Type=="int";
+            for(var i=0;i<keys.Length;i++)ErpSqlPlan.Parameter(command,prefix+i.ToString(CultureInfo.InvariantCulture),
+                number?DbType.Int32:DbType.String,number?int.Parse(keys[i].Key,CultureInfo.InvariantCulture):keys[i].Key,number?0:250);
+        }
+        await using var reader=await command.ExecuteReaderAsync(token);
+        var result=new Dictionary<ReferenceKey,ReferenceValue>();
+        for(var i=0;i<queries.Count;i++)
+        {
+            foreach(var pair in await ReadProjection(reader,queries[i].Binding,queries[i].Keys,token))result.Add(pair.Key,pair.Value);
+            if(await reader.NextResultAsync(token)!=(i+1<queries.Count))throw new InvalidOperationException("Reference data result count changed.");
+        }
+        return result;
     }
     internal static async Task<IReadOnlyDictionary<string,bool>> Shapes(DbTransaction transaction,ReferenceBinding[] bindings,CancellationToken token)
     {
@@ -124,6 +153,13 @@ public sealed class SqlReferenceData:IReferenceData
             ErpSqlPlan.Parameter(command,"@k"+i,keyColumn.Type=="int"?DbType.Int32:DbType.String,key,keyColumn.Type=="int"?0:250);
         }
         await using var reader=await command.ExecuteReaderAsync(token);
+        var result=await ReadProjection(reader,binding,keys,token);
+        if(await reader.NextResultAsync(token))throw new InvalidOperationException("Unexpected reference result.");
+        return result;
+    }
+    private static async Task<IReadOnlyDictionary<ReferenceKey,ReferenceValue>> ReadProjection(DbDataReader reader,
+        ReferenceBinding binding,ReferenceKey[] keys,CancellationToken token)
+    {
         if(reader.FieldCount!=3+binding.Extras.Count)throw new InvalidOperationException("Reference shape changed.");
         var matches=new List<(string? Name,Dictionary<string,string?> Extra)>[keys.Length];
         for(var i=0;i<matches.Length;i++)matches[i]=[];
@@ -134,10 +170,11 @@ public sealed class SqlReferenceData:IReferenceData
             var exact=Convert.ToString(reader.GetValue(1),CultureInfo.InvariantCulture);
             if(exact!=keys[index].Key)throw new InvalidOperationException("Reference identity alias.");
             var extra=new Dictionary<string,string?>(StringComparer.Ordinal);
-            for(var i=0;i<binding.Extras.Count;i++)extra.Add(binding.Extras[i],reader.IsDBNull(3+i)?null:reader.GetString(3+i));
+            for(var i=0;i<binding.Extras.Count;i++)extra.Add(binding.Extras[i],reader.IsDBNull(3+i)?null:
+                binding.Columns.Single(c=>c.Name==binding.Extras[i]).Type=="int"
+                    ?reader.GetInt32(3+i).ToString(CultureInfo.InvariantCulture):reader.GetString(3+i));
             matches[index].Add((reader.IsDBNull(2)?null:reader.GetString(2),extra));
         }
-        if(await reader.NextResultAsync(token))throw new InvalidOperationException("Unexpected reference result.");
         var result=new Dictionary<ReferenceKey,ReferenceValue>();
         for(var i=0;i<keys.Length;i++)
         {

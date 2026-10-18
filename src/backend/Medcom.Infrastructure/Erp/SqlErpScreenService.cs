@@ -69,6 +69,16 @@ public sealed partial class SqlErpScreenService:IErpScreenService
             if(snapshot is null)return new(ErpReadOutcome.NotFound);
             async Task<ErpLinePage> Section(string section)
             {
+                var loaded=section switch
+                {
+                    "lines"=>snapshot.Lines,"comparison"=>snapshot.Comparison,
+                    _=>snapshot.Sections?.GetValueOrDefault(section)
+                };
+                var bound=section=="lines"&&module is "warehouse-qr" or "sales-qr"?ErpInputRules.MaximumScans:ErpInputRules.MaximumLines;
+                // A bounded complete snapshot already has the exact same native sort.
+                // Oversized sections still use the SQL page; history is read separately.
+                if(loaded is not null&&loaded.Count<=bound)
+                    return new(loaded.Skip((page-1)*size).Take(size).ToArray(),page,size,loaded.Count>page*size);
                 var rows=await SqlErpScreenReader.Lines(transaction,plan,section,document,(page-1)*size,size+1,token);
                 return new(rows.Take(size).ToArray(),page,size,rows.Count>size);
             }
@@ -79,8 +89,9 @@ public sealed partial class SqlErpScreenService:IErpScreenService
             {extra??=new(StringComparer.Ordinal);extra.Add(section,await Section(section));}
             var state=await SqlErpScreenReader.ActionContext(transaction,identity,plan,branch,rights,snapshot,commands?.IsQualified(module)==true,token);
             state=state with{NumberingQualified=commands?.CanExecute(module,"create")==true};
+            var summary=await SqlErpSummaries.Read(transaction,plan,document,token);
             return new(ErpReadOutcome.Success,new ErpDocumentDetail(document,branch,SqlErpScreenReader.StateToken(snapshot),snapshot.Header,
-                lines,history,comparison,ErpActionRules.ForDisplay(state),extra));
+                lines,history,comparison,ErpActionRules.ForDisplay(state),extra,summary));
         },token);
     }
     public Task<ErpReadResult<IReadOnlyList<ErpActionState>>> ActionsAsync(string module,string branch,string? document,CancellationToken token)

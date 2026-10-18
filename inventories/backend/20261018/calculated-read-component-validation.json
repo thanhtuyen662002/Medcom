@@ -1,0 +1,393 @@
+{
+  "origin": "local_component_against_MedData_not_VPS",
+  "observedAtUtc": "2026-10-18T17:23:03.1654987Z",
+  "productionDataWrites": false,
+  "configuredPooling": true,
+  "colorShapes": [
+    {
+      "binding": "status:purchase-requests",
+      "table": "AP_PurchaseStatusTbl",
+      "qualified": true,
+      "columns": [
+        {
+          "Name": "StatusID",
+          "Type": "int",
+          "TypeArguments": null,
+          "Nullable": false
+        },
+        {
+          "Name": "StatusName",
+          "Type": "nvarchar",
+          "TypeArguments": "(50)",
+          "Nullable": true
+        },
+        {
+          "Name": "ForeColor",
+          "Type": "int",
+          "TypeArguments": null,
+          "Nullable": true
+        },
+        {
+          "Name": "BackColor",
+          "Type": "int",
+          "TypeArguments": null,
+          "Nullable": true
+        }
+      ]
+    },
+    {
+      "binding": "status:purchase-orders",
+      "table": "AP_OrderStatusTbl",
+      "qualified": true,
+      "columns": [
+        {
+          "Name": "StatusID",
+          "Type": "int",
+          "TypeArguments": null,
+          "Nullable": false
+        },
+        {
+          "Name": "StatusName",
+          "Type": "nvarchar",
+          "TypeArguments": "(50)",
+          "Nullable": false
+        },
+        {
+          "Name": "ForeColor",
+          "Type": "int",
+          "TypeArguments": null,
+          "Nullable": true
+        },
+        {
+          "Name": "BackColor",
+          "Type": "int",
+          "TypeArguments": null,
+          "Nullable": true
+        }
+      ]
+    },
+    {
+      "binding": "status:inbound-requests",
+      "table": "IV_InboundRequestStatusTbl",
+      "qualified": true,
+      "columns": [
+        {
+          "Name": "StatusID",
+          "Type": "int",
+          "TypeArguments": null,
+          "Nullable": false
+        },
+        {
+          "Name": "StatusName",
+          "Type": "nvarchar",
+          "TypeArguments": "(100)",
+          "Nullable": false
+        },
+        {
+          "Name": "ForeColor",
+          "Type": "int",
+          "TypeArguments": null,
+          "Nullable": true
+        },
+        {
+          "Name": "BackColor",
+          "Type": "int",
+          "TypeArguments": null,
+          "Nullable": true
+        }
+      ]
+    },
+    {
+      "binding": "status:sales-orders",
+      "table": "AR_OrderStatusTbl",
+      "qualified": true,
+      "columns": [
+        {
+          "Name": "StatusID",
+          "Type": "int",
+          "TypeArguments": null,
+          "Nullable": false
+        },
+        {
+          "Name": "StatusName",
+          "Type": "nvarchar",
+          "TypeArguments": "(50)",
+          "Nullable": false
+        },
+        {
+          "Name": "ForeColor",
+          "Type": "int",
+          "TypeArguments": null,
+          "Nullable": true
+        },
+        {
+          "Name": "BackColor",
+          "Type": "int",
+          "TypeArguments": null,
+          "Nullable": true
+        }
+      ]
+    },
+    {
+      "binding": "status:sales-qr",
+      "table": "AR_InvoiceStatusTbl",
+      "qualified": true,
+      "columns": [
+        {
+          "Name": "StatusID",
+          "Type": "int",
+          "TypeArguments": null,
+          "Nullable": false
+        },
+        {
+          "Name": "StatusName",
+          "Type": "nvarchar",
+          "TypeArguments": "(50)",
+          "Nullable": false
+        },
+        {
+          "Name": "ForeColor",
+          "Type": "int",
+          "TypeArguments": null,
+          "Nullable": true
+        },
+        {
+          "Name": "BackColor",
+          "Type": "int",
+          "TypeArguments": null,
+          "Nullable": true
+        }
+      ]
+    },
+    {
+      "binding": "status:internal-transfer-requests",
+      "table": "IV_InternalTransferRequestStatusTbl",
+      "qualified": true,
+      "columns": [
+        {
+          "Name": "StatusID",
+          "Type": "int",
+          "TypeArguments": null,
+          "Nullable": false
+        },
+        {
+          "Name": "StatusName",
+          "Type": "nvarchar",
+          "TypeArguments": "(150)",
+          "Nullable": false
+        },
+        {
+          "Name": "ForeColor",
+          "Type": "int",
+          "TypeArguments": null,
+          "Nullable": true
+        },
+        {
+          "Name": "BackColor",
+          "Type": "int",
+          "TypeArguments": null,
+          "Nullable": true
+        }
+      ]
+    },
+    {
+      "binding": "status:contract-info",
+      "table": "CF_ContractStatusTbl",
+      "qualified": true,
+      "columns": [
+        {
+          "Name": "StatusID",
+          "Type": "int",
+          "TypeArguments": null,
+          "Nullable": false
+        },
+        {
+          "Name": "StatusName",
+          "Type": "nvarchar",
+          "TypeArguments": "(255)",
+          "Nullable": false
+        },
+        {
+          "Name": "ForeColor",
+          "Type": "int",
+          "TypeArguments": null,
+          "Nullable": true
+        },
+        {
+          "Name": "BackColor",
+          "Type": "int",
+          "TypeArguments": null,
+          "Nullable": true
+        }
+      ]
+    },
+    {
+      "binding": "status:internal-transfer-batches",
+      "table": "IV_InternalTransferBatchStatusTbl",
+      "qualified": true,
+      "columns": [
+        {
+          "Name": "StatusID",
+          "Type": "int",
+          "TypeArguments": null,
+          "Nullable": false
+        },
+        {
+          "Name": "StatusName",
+          "Type": "nvarchar",
+          "TypeArguments": "(150)",
+          "Nullable": false
+        },
+        {
+          "Name": "ForeColor",
+          "Type": "int",
+          "TypeArguments": null,
+          "Nullable": true
+        },
+        {
+          "Name": "BackColor",
+          "Type": "int",
+          "TypeArguments": null,
+          "Nullable": true
+        }
+      ]
+    }
+  ],
+  "poolSamples": [
+    {
+      "pooling": false,
+      "pass": 0,
+      "openMs": 225.3,
+      "totalMs": 282.9,
+      "valid": true
+    },
+    {
+      "pooling": false,
+      "pass": 1,
+      "openMs": 114.2,
+      "totalMs": 141.5,
+      "valid": true
+    },
+    {
+      "pooling": false,
+      "pass": 2,
+      "openMs": 120.3,
+      "totalMs": 150.1,
+      "valid": true
+    },
+    {
+      "pooling": false,
+      "pass": 3,
+      "openMs": 113.2,
+      "totalMs": 139.9,
+      "valid": true
+    },
+    {
+      "pooling": true,
+      "pass": 0,
+      "openMs": 120,
+      "totalMs": 147.1,
+      "valid": true
+    },
+    {
+      "pooling": true,
+      "pass": 1,
+      "openMs": 0.7,
+      "totalMs": 29.6,
+      "valid": true
+    },
+    {
+      "pooling": true,
+      "pass": 2,
+      "openMs": 0,
+      "totalMs": 28.3,
+      "valid": true
+    },
+    {
+      "pooling": true,
+      "pass": 3,
+      "openMs": 0,
+      "totalMs": 26.5,
+      "valid": true
+    }
+  ],
+  "referenceSamples": [
+    {
+      "pass": 0,
+      "groups": 7,
+      "keys": 14,
+      "previousMs": 200,
+      "currentMs": 57.8,
+      "previousRoundtrips": 7,
+      "currentRoundtrips": 1,
+      "equivalent": true
+    },
+    {
+      "pass": 1,
+      "groups": 7,
+      "keys": 14,
+      "previousMs": 184.1,
+      "currentMs": 29.8,
+      "previousRoundtrips": 7,
+      "currentRoundtrips": 1,
+      "equivalent": true
+    },
+    {
+      "pass": 2,
+      "groups": 7,
+      "keys": 14,
+      "previousMs": 180.8,
+      "currentMs": 29,
+      "previousRoundtrips": 7,
+      "currentRoundtrips": 1,
+      "equivalent": true
+    },
+    {
+      "pass": 3,
+      "groups": 7,
+      "keys": 14,
+      "previousMs": 185,
+      "currentMs": 32.7,
+      "previousRoundtrips": 7,
+      "currentRoundtrips": 1,
+      "equivalent": true
+    }
+  ],
+  "summaryChecks": [
+    {
+      "module": "machine-movements",
+      "columns": 1,
+      "passed": true
+    },
+    {
+      "module": "machine-repairs",
+      "columns": 4,
+      "passed": true
+    },
+    {
+      "module": "sales-order-pm",
+      "columns": 3,
+      "passed": true
+    },
+    {
+      "module": "sales-order-sa",
+      "columns": 3,
+      "passed": true
+    },
+    {
+      "module": "sales-orders",
+      "columns": 3,
+      "passed": true
+    },
+    {
+      "module": "sales-qr",
+      "columns": 1,
+      "passed": true
+    },
+    {
+      "module": "warehouse-qr",
+      "columns": 1,
+      "passed": true
+    }
+  ]
+}

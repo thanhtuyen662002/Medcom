@@ -217,7 +217,8 @@ internal static class CanonicalResponseSchemas
     internal static string CanonicalPath(string path) => string.Join('.', path.Split('.')
         .Where(part => part is not ("fields" or "purchaseOrderHeader" or "inboundRequestHeader"))
         .Select(part => part switch { "sourceFields" => "document", "userAutoId" => "lineId", "purchaseRequestId" => "documentId", "isLock" => "isLocked", _ => part }));
-    private static string[] Group(string field) => FeDisplayProjection.IsId(field)
+    private static string[] Group(string field) => FeDisplayProjection.IsStatusId(field)
+        ? [field,FeDisplayProjection.NameField(field),FeDisplayProjection.StateField(field),field[..^2]+"ForeColor",field[..^2]+"BackColor"] : FeDisplayProjection.IsId(field)
         ? [field, FeDisplayProjection.NameField(field), FeDisplayProjection.StateField(field)] : [field];
     private static JsonArray Array(IEnumerable<string> fields) => new(fields.Select(x => (JsonNode?)JsonValue.Create(x)).ToArray());
 }

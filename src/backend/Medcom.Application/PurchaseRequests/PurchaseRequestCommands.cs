@@ -96,6 +96,19 @@ public static class PurchaseRequestCommandRules
         return input with { Quantity = Decimal(input.Quantity, 0)!, UnitPrice = Decimal(input.UnitPrice, 0)!,
             Budget = Decimal(input.Budget, 0, true), TotalPrice = Decimal(input.TotalPrice, 0, true) };
     }
+    // SY_FrmExpTbl AP_PurposeRequestListFrm/Detail/TotalPrice. Preserve the
+    // submitted intent bytes and historical snapshot normalization separately.
+    public static bool CalculateLine(PurchaseRequestLineValues input,out PurchaseRequestLineValues calculated)
+    {
+        calculated=input;
+        try
+        {
+            var value=checked(decimal.Parse(input.Quantity,CultureInfo.InvariantCulture)*decimal.Parse(input.UnitPrice,CultureInfo.InvariantCulture));
+            var total=Decimal(value.ToString(CultureInfo.InvariantCulture),0)!;
+            calculated=input with{TotalPrice=total};return true;
+        }
+        catch(Exception error)when(error is ArgumentException or FormatException or OverflowException){return false;}
+    }
     public static CreatePurchaseRequestDraft Freeze(CreatePurchaseRequestDraft input)
     {
         Common(input.IdempotencyKey, input.BranchId);

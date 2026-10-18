@@ -53,6 +53,12 @@ internal static class FeDisplaySchemas
                         {
                             Add(FeDisplayProjection.NameField(property.Key),"Source reference name. Null for missing/ambiguous/unqualified references or technical identifiers; existing source name fields remain unchanged.",true,mandatory);
                             Add(FeDisplayProjection.StateField(property.Key),"available, unnamed, empty, missing, ambiguous, invalid, unavailable, unknown, identifier. Display metadata never grants permission.",false,mandatory);
+                            if(FeDisplayProjection.IsStatusId(property.Key))
+                            {
+                                var prefix=property.Key[..^2];
+                                Add(prefix+"ForeColor","Status text CSS color (#RRGGBB or #RRGGBBAA), from source ForeColor ARGB; null if absent or unresolved.",true,mandatory);
+                                Add(prefix+"BackColor","Status background CSS color (#RRGGBB or #RRGGBBAA), from source BackColor ARGB; null if absent or unresolved.",true,mandatory);
+                            }
                             if(property.Key.Equals("ItemID",StringComparison.OrdinalIgnoreCase))
                             {
                                 Add(property.Key.EndsWith("ID",StringComparison.Ordinal)?"ItemCode":"itemCode","CF_ItemTbl.ItemCode; existing document snapshot is retained.",true,mandatory);

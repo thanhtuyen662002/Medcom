@@ -1,0 +1,290 @@
+{
+  "format": 1,
+  "observedAtUtc": "2026-10-18T17:03:04.7716101Z",
+  "origin": "owner-accessible-current-MedData-read-only",
+  "approvedArchiveRematerialization": "UNKNOWN; see docs/SOURCE_BASELINE.md and I98 checkpoint; no archive equivalence claimed",
+  "sourceRowsExcluded": true,
+  "productionDataWrites": false,
+  "formsAudited": 19,
+  "expressionRows": 13,
+  "enabledExpressions": 10,
+  "expressions": [
+    {
+      "sourceObject": "dbo.SY_FrmExpTbl",
+      "formId": "AP_OrderFrm",
+      "dataName": "Detail",
+      "order": 2,
+      "target": "Quantity",
+      "enabled": false,
+      "expressionSha256": "e7c1fffedd86652d534c0d4b303cb864165bcc081bef2794eb4cdacc770c7027",
+      "normalizedArithmetic": null,
+      "disabledBehavior": "PRESERVE_STORED_VALUE",
+      "roundType": null,
+      "roundParameter": null,
+      "runtimeWinFormsExecution": "UNKNOWN"
+    },
+    {
+      "sourceObject": "dbo.SY_FrmExpTbl",
+      "formId": "AP_OrderFrm",
+      "dataName": "Detail",
+      "order": 4,
+      "target": "SourceAmount",
+      "enabled": true,
+      "expressionSha256": "7daa5ceb0fd86ac40bacbb048a68097bc85a015245849a4cee9401d0ce9d9245",
+      "normalizedArithmetic": "quantity * unitPrice",
+      "disabledBehavior": null,
+      "roundType": null,
+      "roundParameter": null,
+      "runtimeWinFormsExecution": "UNKNOWN"
+    },
+    {
+      "sourceObject": "dbo.SY_FrmExpTbl",
+      "formId": "AP_OrderFrm",
+      "dataName": "Detail",
+      "order": 8,
+      "target": "Amount",
+      "enabled": true,
+      "expressionSha256": "b55c831bd12a155f9a82bd62a4ef064ecf1ed7f87a63080c3e6fc367cb111f14",
+      "normalizedArithmetic": "sourceAmount * header.rateExchange",
+      "disabledBehavior": null,
+      "roundType": null,
+      "roundParameter": null,
+      "runtimeWinFormsExecution": "UNKNOWN"
+    },
+    {
+      "sourceObject": "dbo.SY_FrmExpTbl",
+      "formId": "AP_PurposeRequestListFrm",
+      "dataName": "Detail",
+      "order": 6,
+      "target": "TotalPrice",
+      "enabled": true,
+      "expressionSha256": "6dde814458c69630ec1b5872a4ad6c07d6241134ed6b72646be2f2b2e8bea3c0",
+      "normalizedArithmetic": "quantity * unitPrice",
+      "disabledBehavior": null,
+      "roundType": null,
+      "roundParameter": null,
+      "runtimeWinFormsExecution": "UNKNOWN"
+    },
+    {
+      "sourceObject": "dbo.SY_FrmExpTbl",
+      "formId": "AR_OrderByContractFrm",
+      "dataName": "Detail",
+      "order": 3,
+      "target": "Amount",
+      "enabled": true,
+      "expressionSha256": "6dde814458c69630ec1b5872a4ad6c07d6241134ed6b72646be2f2b2e8bea3c0",
+      "normalizedArithmetic": "quantity * unitPrice",
+      "disabledBehavior": null,
+      "roundType": null,
+      "roundParameter": null,
+      "runtimeWinFormsExecution": "UNKNOWN"
+    },
+    {
+      "sourceObject": "dbo.SY_FrmExpTbl",
+      "formId": "AR_OrderByContractFrm",
+      "dataName": "Detail",
+      "order": 5,
+      "target": "VATAmount",
+      "enabled": true,
+      "expressionSha256": "ca6ecf67bea908c70c997bbefc1c37c6e0a59b9991de107a912d3c7418fabb46",
+      "normalizedArithmetic": "amount * vatPercent / 100",
+      "disabledBehavior": null,
+      "roundType": null,
+      "roundParameter": null,
+      "runtimeWinFormsExecution": "UNKNOWN"
+    },
+    {
+      "sourceObject": "dbo.SY_FrmExpTbl",
+      "formId": "AR_OrderByContractFrm",
+      "dataName": "Detail",
+      "order": 6,
+      "target": "TotalAmount",
+      "enabled": true,
+      "expressionSha256": "b70d1e076fcccc82fd4baf3b850b4fbf903529086f3c7c020f8939fcff11b0c7",
+      "normalizedArithmetic": "amount + vatAmount",
+      "disabledBehavior": null,
+      "roundType": null,
+      "roundParameter": null,
+      "runtimeWinFormsExecution": "UNKNOWN"
+    },
+    {
+      "sourceObject": "dbo.SY_FrmExpTbl",
+      "formId": "AR_OrderByContractFrm",
+      "dataName": "Detail",
+      "order": 7,
+      "target": "ContractAmount",
+      "enabled": false,
+      "expressionSha256": "91a8d423566f8a0a703d6cb8bdca1aeadba5d9c4edd8fc9b39b440791cb8d8fb",
+      "normalizedArithmetic": null,
+      "disabledBehavior": "PRESERVE_STORED_VALUE",
+      "roundType": null,
+      "roundParameter": null,
+      "runtimeWinFormsExecution": "UNKNOWN"
+    },
+    {
+      "sourceObject": "dbo.SY_FrmExpTbl",
+      "formId": "AR_OrderByContractFrm",
+      "dataName": "Detail",
+      "order": 8,
+      "target": "Quantity2",
+      "enabled": true,
+      "expressionSha256": "c94618079bdc687b9e5506bab5da67064e8ad142de76300111b70384059ecd63",
+      "normalizedArithmetic": "quantity * unitFactor",
+      "disabledBehavior": null,
+      "roundType": null,
+      "roundParameter": null,
+      "runtimeWinFormsExecution": "UNKNOWN"
+    },
+    {
+      "sourceObject": "dbo.SY_FrmExpTbl",
+      "formId": "IV_InboundRequestFrm",
+      "dataName": "Detail",
+      "order": 6,
+      "target": "SourceAmount",
+      "enabled": false,
+      "expressionSha256": "159306c7e15a183e306f9ff4cfb395520f6975e2158ae5645af38e720767e808",
+      "normalizedArithmetic": null,
+      "disabledBehavior": "PRESERVE_STORED_VALUE",
+      "roundType": null,
+      "roundParameter": null,
+      "runtimeWinFormsExecution": "UNKNOWN"
+    },
+    {
+      "sourceObject": "dbo.SY_FrmExpTbl",
+      "formId": "IV_InboundRequestFrm",
+      "dataName": "Detail",
+      "order": 7,
+      "target": "Amount",
+      "enabled": true,
+      "expressionSha256": "e91a0975a9a927dafea27269c4f9e796099d6fff169f00bdb6d281f3b2ed0ab0",
+      "normalizedArithmetic": "setQuantityByDocument * unitPrice * header.rateExchange",
+      "disabledBehavior": null,
+      "roundType": null,
+      "roundParameter": null,
+      "runtimeWinFormsExecution": "UNKNOWN"
+    },
+    {
+      "sourceObject": "dbo.SY_FrmExpTbl",
+      "formId": "IV_InboundRequestFrm",
+      "dataName": "Detail2",
+      "order": 8,
+      "target": "Cost",
+      "enabled": true,
+      "expressionSha256": "1b89f81b5adad7daa791e45cbe41e7c714cc45c519240d20b00166502a0cacf9",
+      "normalizedArithmetic": "sourceAmount * row.rateExchange",
+      "disabledBehavior": null,
+      "roundType": null,
+      "roundParameter": null,
+      "runtimeWinFormsExecution": "UNKNOWN"
+    },
+    {
+      "sourceObject": "dbo.SY_FrmExpTbl",
+      "formId": "IV_InboundRequestFrm",
+      "dataName": "Detail2",
+      "order": 9,
+      "target": "VATAmount",
+      "enabled": true,
+      "expressionSha256": "b5c2bcf00e41e7c24d098eff3d80e102385419bfa68fe1d063af9aae863a0830",
+      "normalizedArithmetic": "cost * vatPercent / 100",
+      "disabledBehavior": null,
+      "roundType": null,
+      "roundParameter": null,
+      "runtimeWinFormsExecution": "UNKNOWN"
+    }
+  ],
+  "summaries": [
+    {
+      "module": "sales-qr",
+      "formId": "AR_Invoice_QRCodeFrm",
+      "sourceObject": "dbo.SY_FrmCfg",
+      "keyId": "T1",
+      "subId": "SUM",
+      "columns": [
+        "Quantity"
+      ],
+      "configurationValueSha256": "822bab8d41bca8d7976cd69963d93a335ee21fa46160c4b866e0df7ea4b33196"
+    },
+    {
+      "module": "warehouse-qr",
+      "formId": "IV_Output_QRCodeFrm",
+      "sourceObject": "dbo.SY_FrmCfg",
+      "keyId": "T1",
+      "subId": "SUM",
+      "columns": [
+        "Quantity"
+      ],
+      "configurationValueSha256": "822bab8d41bca8d7976cd69963d93a335ee21fa46160c4b866e0df7ea4b33196"
+    },
+    {
+      "module": "sales-order-pm",
+      "formId": "AR_OrderComfirmFrm",
+      "sourceObject": "dbo.SY_FrmCfg",
+      "keyId": "T1",
+      "subId": "SUM",
+      "columns": [
+        "Amount",
+        "VATAmount",
+        "TotalAmount"
+      ],
+      "configurationValueSha256": "fd71671c06c028020dc446a0ed761a2b547f205d5f6d794f22b20e456da9efd8"
+    },
+    {
+      "module": "sales-orders",
+      "formId": "AR_OrderByContractFrm",
+      "sourceObject": "dbo.SY_FrmCfg",
+      "keyId": "T1",
+      "subId": "SUM",
+      "columns": [
+        "Amount",
+        "VATAmount",
+        "TotalAmount"
+      ],
+      "configurationValueSha256": "fd71671c06c028020dc446a0ed761a2b547f205d5f6d794f22b20e456da9efd8"
+    },
+    {
+      "module": "sales-order-sa",
+      "formId": "AR_OrderAproveFrm",
+      "sourceObject": "dbo.SY_FrmCfg",
+      "keyId": "T1",
+      "subId": "SUM",
+      "columns": [
+        "Amount",
+        "VATAmount",
+        "TotalAmount"
+      ],
+      "configurationValueSha256": "fd71671c06c028020dc446a0ed761a2b547f205d5f6d794f22b20e456da9efd8"
+    },
+    {
+      "module": "machine-repairs",
+      "formId": "FA_Repair2026Frm",
+      "sourceObject": "dbo.SY_FrmCfg",
+      "keyId": "T1",
+      "subId": "SUM",
+      "columns": [
+        "Quantity",
+        "LaborAmount",
+        "PartsAmount",
+        "Amount"
+      ],
+      "configurationValueSha256": "83a39e054449fe89756a0f2874ee4d2794215420391f185a3c01ce2a45ac4fb0"
+    },
+    {
+      "module": "machine-movements",
+      "formId": "FA_Move2026Frm",
+      "sourceObject": "dbo.SY_FrmCfg",
+      "keyId": "T1",
+      "subId": "SUM",
+      "columns": [
+        "Quantity"
+      ],
+      "configurationValueSha256": "822bab8d41bca8d7976cd69963d93a335ee21fa46160c4b866e0df7ea4b33196"
+    }
+  ],
+  "formHeaderSummaryColumnArr": {
+    "sourceObject": "dbo.SY_FrmLstTbl.SummaryColumnArr",
+    "forms": 19,
+    "nonNull": 0
+  },
+  "getPolicy": "Preserve persisted source amounts and existing source-view figures; do not rewrite historical data on GET. Summary covers all physical lines in the authorized document, independent of page; SQL SUM null remains null.",
+  "poRemovedFields": "Remain excluded from canonical PO line responses; no PO summary introduced."
+}
