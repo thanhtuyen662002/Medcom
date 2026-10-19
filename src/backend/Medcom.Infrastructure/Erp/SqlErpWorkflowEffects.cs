@@ -108,6 +108,7 @@ public sealed partial class SqlErpScreenCommands
             if(change.Kind==ErpLineChangeKind.Remove)
             {await DeleteRows(transaction,table,key,document,line,1,token);rows.Remove(line);continue;}
             var values=Map(change.Values!.Value);
+            RestoreHidden(plan,section,values,change.Kind==ErpLineChangeKind.Update?rows[line]:null);
             await References(transaction,actor,plan,section,values,header,request.BranchId,token);
             if(plan.Module=="inbound-requests"&&section=="costs")
             {

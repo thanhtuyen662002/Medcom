@@ -33,6 +33,7 @@ public sealed partial class SqlErpScreenCommands
         else if(request.Operation is "create" or "save")
         {
             var header=Map(request.Header!.Value);
+            RestoreHidden(plan,"header",header,before?.Header);
             await References(transaction,identity,plan,"header",header,header,request.BranchId,token);
             if(plan.Module=="internal-transfer-requests")
                 Require(header["fromBranchId"].GetString()!=header["toBranchId"].GetString(),ErpCommandOutcome.InvalidInput,"transfer_branches_equal");
@@ -50,6 +51,7 @@ public sealed partial class SqlErpScreenCommands
                     await DeleteRows(transaction,plan.LineTable,plan.HeaderKey,document,line,1,token);remaining.Remove(line);continue;
                 }
                 var fields=Map(change.Values!.Value);
+                RestoreHidden(plan,"lines",fields,change.Kind==ErpLineChangeKind.Update?remaining[line]:null);
                 var source=await References(transaction,identity,plan,"lines",fields,header,request.BranchId,token,
                     change.Kind==ErpLineChangeKind.Update?remaining[line]:null);
                 if(plan.Module is "machine-movements" or "machine-repairs")
@@ -128,6 +130,17 @@ public sealed partial class SqlErpScreenCommands
         return allocated.AsReadOnly();
     }
     private static Dictionary<string,JsonElement> Map(JsonElement value)=>value.EnumerateObject().ToDictionary(p=>p.Name,p=>p.Value.Clone(),StringComparer.Ordinal);
+    internal static void RestoreHidden(ErpSqlPlan plan,string section,Dictionary<string,JsonElement> values,IReadOnlyDictionary<string,object?>? existing)
+    {
+        if(existing is null)return;
+        foreach(var field in plan.Screen.Fields[section].Where(f=>f.Writable&&ErpVisibleFields.IsHidden(plan.Module,section,f.Name)&&!values.ContainsKey(f.Name)))
+        {
+            Require(existing.TryGetValue(field.Name,out var value),ErpCommandOutcome.Conflict,"hidden_field_snapshot_missing");
+            var restored=ErpInputRules.Serialize(value);
+            Require(ErpInputRules.Value(field,restored),ErpCommandOutcome.Conflict,"hidden_field_snapshot_invalid");
+            values[field.Name]=restored;
+        }
+    }
     private static string? Text(JsonElement value,string key)=>value.TryGetProperty(key,out var text)&&text.ValueKind!=JsonValueKind.Null?text.GetString():null;
     private static async Task<IReadOnlyDictionary<string,object?>> References(DbTransaction transaction,AuthoritativeIdentity identity,
         ErpSqlPlan plan,string section,Dictionary<string,JsonElement> row,Dictionary<string,JsonElement> header,string branch,CancellationToken token,

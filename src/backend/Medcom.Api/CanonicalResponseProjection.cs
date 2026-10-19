@@ -250,6 +250,11 @@ internal sealed class CanonicalResponseFilter(IOptions<Microsoft.AspNetCore.Http
         var context = invocation.HttpContext;
         var aliases = context.Items["Medcom.CanonicalChoiceAliases"] as string[];
         var normalized = CanonicalResponseProjection.Normalize(node, context.Request.Path.Value ?? "", aliases);
+        if(HttpMethods.IsGet(context.Request.Method)&&ErpVisibleProjection.Module(context.Request.Path.Value??"")is not null)
+        {
+            ErpVisibleProjection.Apply(normalized,context.Request.Path.Value??"");
+            context.Response.Headers["X-Medcom-Response-Visibility"]="erp-visible-fields-v1";
+        }
         context.Response.Headers["X-Medcom-Response-Contract"] = CanonicalResponseProjection.Version;
         return Results.Json(normalized, options.Value.SerializerOptions);
     }

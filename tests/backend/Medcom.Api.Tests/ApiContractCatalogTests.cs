@@ -51,7 +51,8 @@ public sealed class ApiContractCatalogTests
         {
             var id=module.Replace('-','_');var prefix="Erp_"+id;
             var detail=document["paths"]!["/api/erp/"+module+"/detail"]!["get"]!["responses"]!["200"]!["content"]!["application/json"]!["schema"]!["$ref"]!.GetValue<string>();
-            Assert.StartsWith("#/components/schemas/"+prefix+"_detail_responseFeDisplayCanonicalV3_",detail,StringComparison.Ordinal);
+            Assert.Equal("#/components/schemas/ErpVisible_"+id+"_detail_erp",detail);
+            Assert.Equal("erp-visible-fields-v1",document["paths"]!["/api/erp/"+module+"/detail"]!["get"]!["x-medcom-response-visibility"]!.GetValue<string>());
             var header=schemas[prefix+"_header_fields"]!;
             Assert.Equal(ErpScreenCatalog.Get(module)!.Fields["header"].Count,((JsonObject)header["properties"]!).Count);
             if(module is "sales-qr" or "warehouse-qr"||ErpScreenCatalog.IsWorkflow(module))continue;

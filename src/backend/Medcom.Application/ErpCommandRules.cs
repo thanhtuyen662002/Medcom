@@ -34,7 +34,7 @@ public static class ErpCommandRules
                     if(!raw.TryGetProperty("lineChanges",out var changeArray)||changeArray.ValueKind!=JsonValueKind.Array
                         ||changeArray.EnumerateArray().Any(change=>!change.TryGetProperty("kind",out var kind)||kind.ValueKind!=JsonValueKind.String||kind.GetString()is not ("Add" or "Update" or "Remove")))return false;
                     var save=Read<ErpSaveRequest>(raw);key=save.IdempotencyKey;branch=save.BranchId;document=save.DocumentId;state=save.ExpectedStateToken;
-                    if(!ErpInputRules.Normalize(module,"header",save.Header,out h)||save.LineChanges is null||save.LineChanges.Count>500)return false;
+                    if(!ErpInputRules.Normalize(module,"header",save.Header,out h,preserveHiddenOmissions:true)||save.LineChanges is null||save.LineChanges.Count>500)return false;
                     header=h;
                     foreach(var change in save.LineChanges)
                     {
@@ -45,7 +45,7 @@ public static class ErpCommandRules
                         if(change.Kind==ErpLineChangeKind.Remove)
                         {if(change.Values is not null)return false;changes.Add(change);}
                         else
-                        {if(change.Values is not {} value||!ErpInputRules.Normalize(module,"lines",value,out var normalized))return false;
+                        {if(change.Values is not {} value||!ErpInputRules.Normalize(module,"lines",value,out var normalized,preserveHiddenOmissions:change.Kind==ErpLineChangeKind.Update))return false;
                          changes.Add(change with{Values=normalized});}
                     }
                     break;
@@ -74,7 +74,7 @@ public static class ErpCommandRules
                             if(change.Kind==ErpLineChangeKind.Remove)
                             {if(change.Values is not null)return false;changes.Add(change);}
                             else
-                            {if(change.Values is not {} v||!ErpInputRules.Normalize(module,section,v,out var n))return false;changes.Add(change with{Values=n});}
+                            {if(change.Values is not {} v||!ErpInputRules.Normalize(module,section,v,out var n,preserveHiddenOmissions:change.Kind==ErpLineChangeKind.Update))return false;changes.Add(change with{Values=n});}
                         }
                         break;
                     }

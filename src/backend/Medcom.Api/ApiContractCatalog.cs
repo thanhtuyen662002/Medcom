@@ -459,6 +459,7 @@ internal static class ApiContractCatalog
         schemas.SetRequired<ErpItemPriceQuery>(["branchId","objectId","documentDate","itemId"]);
         FeDisplaySchemas.Apply(paths,schemas.Values);
         CanonicalResponseSchemas.Apply(paths,schemas.Values);
+        ErpVisibleSchemas.Apply(paths,schemas.Values);
         // Already-flat attachment DTOs and file responses bypass JSON display projections at runtime.
         foreach(var module in ErpScreenCatalog.ModuleIds)
         {
