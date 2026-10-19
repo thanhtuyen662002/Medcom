@@ -29,6 +29,7 @@ import {
   ClipboardList,
   Wrench,
   BookOpen,
+  PackagePlus,
 } from "lucide-react";
 import { type NavTabId } from "./bottom-nav";
 import { SalesFeatureLinks } from "@/components/erp/sales-feature-links";
@@ -170,6 +171,17 @@ export function SidebarDrawer({
           badgeColor: "purple",
         },
         { id: "sales-qr", label: "Xuất hàng theo PXK", icon: PackageCheck },
+      ],
+    },
+    {
+      title: "Quản lý kho",
+      items: [
+        {
+          id: "inbound-requests",
+          label: "Đề nghị nhập hàng",
+          description: "Menu 07011 • IV_InboundRequestFrm",
+          icon: PackagePlus,
+        },
       ],
     },
     {

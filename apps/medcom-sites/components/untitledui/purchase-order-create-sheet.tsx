@@ -341,22 +341,16 @@ export function PurchaseOrderCreateSheet({
             } else setCurrencyId("");
           }}
         />
-        <div>
-          <label className="block text-black dark:text-white mb-1 font-medium">Tỷ giá</label>
-          <p
-            className={`p-2.5 rounded-xl text-sm font-bold ${
-              errors["header.rateExchange"]
-                ? "bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-400 dark:border-red-700"
-                : "bg-neutral-100 dark:bg-neutral-800 text-black dark:text-white"
-            }`}
-            title="Tự động theo loại tiền, không sửa tay"
-          >
-            {rateExchange || "—"}
-          </p>
-          {errors["header.rateExchange"] && (
-            <p className="mt-1 text-sm text-red-500">{errors["header.rateExchange"]}</p>
-          )}
-        </div>
+        {/* Chủ dự án cho phép sửa tay tỷ giá (19/10/2026) — chọn loại tiền chỉ gợi ý giá trị. */}
+        <TextField
+          label="Tỷ giá"
+          required
+          value={rateExchange}
+          onChange={setRateExchange}
+          inputMode="decimal"
+          error={errors["header.rateExchange"]}
+          placeholder="1"
+        />
       </div>
     </section>
   );
@@ -402,10 +396,11 @@ export function PurchaseOrderCreateSheet({
                 label="Mã hàng"
                 required
                 module="purchase-orders"
-          lookupId="lines.ItemID"
+                lookupId="lines.ItemID"
                 branchId={currentBranch}
                 value={line.itemId}
                 choice={line.itemChoice}
+                secondaryFields={["ItemName", "Unit", "HangSX", "ItemCode"]}
                 error={errors[`line.${line.key}.itemId`]}
                 placeholder="Chọn mã hàng..."
                 onSelect={(c) =>
@@ -413,14 +408,23 @@ export function PurchaseOrderCreateSheet({
                 }
               />
               {(line.itemChoice || line.itemId) && (
-                <p className="text-sm text-black dark:text-white">
-                  {[
-                    fieldText(line.itemChoice?.fields?.["ItemName"]),
-                    fieldText(line.itemChoice?.fields?.["Unit"]),
-                  ]
-                    .filter(Boolean)
-                    .join(" · ") || line.itemId}
-                </p>
+                <div className="space-y-0.5 text-sm text-black dark:text-white">
+                  <p>
+                    {[
+                      fieldText(line.itemChoice?.fields?.["ItemName"]),
+                      fieldText(line.itemChoice?.fields?.["Unit"]),
+                    ]
+                      .filter(Boolean)
+                      .join(" · ") || line.itemId}
+                  </p>
+                  {/* Chủ dự án yêu cầu hiển thị thêm mã hãng sản xuất (19/10/2026). */}
+                  <p>
+                    <span className="font-medium">Mã hãng SX: </span>
+                    {fieldText(line.itemChoice?.fields?.["HangSX"]) ||
+                      fieldText(line.itemChoice?.fields?.["ItemCode"]) ||
+                      "—"}
+                  </p>
+                </div>
               )}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
                 <TextField

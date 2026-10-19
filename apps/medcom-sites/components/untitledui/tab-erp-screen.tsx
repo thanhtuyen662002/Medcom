@@ -1807,8 +1807,8 @@ export function TabErpScreen({
     return true;
   });
 
-  // Lưới chứng từ dạng bảng trên desktop. Màn xuất hàng theo PXK dùng chung bảng này như các màn mua/bán.
-  const useDesktopTable = ["purchase-requests", "purchase-approvals", "purchase-orders", "sales-orders", "sales-order-pm", "sales-order-sa", "sales-qr"].includes(module);
+  // Lưới chứng từ dạng bảng trên desktop. Màn xuất hàng theo PXK và đề nghị nhập hàng dùng chung bảng này như các màn mua/bán.
+  const useDesktopTable = ["purchase-requests", "purchase-approvals", "purchase-orders", "sales-orders", "sales-order-pm", "sales-order-sa", "sales-qr", "inbound-requests"].includes(module);
   // Khung chi tiết bản ghi rộng giữ nguyên cho các màn mua/bán; màn PXK vẫn mở khung chi tiết hiện có.
   const useRecordDetail = useDesktopTable && module !== "sales-qr";
   const listText = (row: ErpDocumentRow, ...keys: string[]) => {
@@ -2381,6 +2381,8 @@ export function TabErpScreen({
                         if (key === "statusId" && headerObj.statusName) return null;
                         // Trạng thái giao hàng hiển thị thành badge riêng khi có tên.
                         if (key === "deliveryStatusId" && headerObj.deliveryStatusName) return null;
+                        // Nhập kho: tình trạng hư hỏng bên trong có cả mã lẫn tên; ưu tiên tên.
+                        if (key === "damageInsideStatusId" && headerObj.damageInsideStatusName) return null;
                         // purposeId edits through its own dropdown while editing;
                         // otherwise the resolved name row covers it.
                         if (key === "purposeId" && headerObj.purposeName && !editing) return null;

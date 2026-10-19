@@ -290,3 +290,22 @@ test('xuất hàng theo PXK dựng bảng desktop với đúng cột, màn khác
   assert.ok(collect(renderer).text.includes('PXK-TEST-0001'),'màn giữ lưới thẻ vẫn đọc được danh sách');
  }finally{delete globalThis.__erpListHandler;if(renderer)await act(async()=>renderer.unmount());}
 });
+
+// Đề nghị nhập hàng dùng chung bảng desktop; thẻ mobile do CSS quyết định, còn bảng thì kiểm tra trong cây render.
+test('đề nghị nhập hàng dựng bảng desktop với cột và màu trạng thái của BE',async()=>{
+ globalThis.__erpListHandler=async(module,params)=>({rows:[{documentId:'NK-TEST-0001',header:{objectName:'Nhà cung cấp kiểm thử',orderNumber:'PO-0001',documentDateDisplay:'01/10/2026 14:22:11',statusName:'Chờ nhập kho',statusForeColor:'#FFFFFF',statusBackColor:'#00695C',damageInsideStatusName:'Không hư hỏng',notes:'Ghi chú nhập kho kiểm thử'}}],page:params.page,pageSize:params.pageSize,hasMore:false});
+ let renderer;
+ try{
+  await act(async()=>{renderer=create(React.createElement(TabErpScreen,{module:'inbound-requests',...props,isActive:true}));});await flush();
+  const tables=renderer.root.findAll(node=>typeof node.type==='string'&&node.props?.['data-document-table']!==undefined);
+  assert.equal(tables.length,1,'đề nghị nhập hàng phải dựng bảng chứng từ trên desktop');
+  const {text}=collect(renderer);
+  for(const header of ['STT','Mã chứng từ','Ngày chứng từ','Đối tượng / Mục đích','Trạng thái','Nội dung','Chi tiết'])assert.ok(text.includes(header),`bảng nhập hàng thiếu cột ${header}: ${text}`);
+  assert.ok(!text.includes('Người lập / Đề nghị'),'dòng nhập hàng không có người lập nên cột này phải ẩn');
+  for(const cell of ['NK-TEST-0001','01/10/2026 14:22:11','Nhà cung cấp kiểm thử','Chờ nhập kho','Ghi chú nhập kho kiểm thử'])assert.ok(text.includes(cell),`bảng nhập hàng thiếu dữ liệu ${cell}`);
+  // Màu BE đủ tương phản (chữ trắng trên nền xanh đậm) thì giữ nguyên, không tự đổi.
+  const colored=renderer.root.findAll(node=>typeof node.type==='string'&&node.props?.style?.backgroundColor==='#00695C');
+  assert.ok(colored.length>0,'ô trạng thái phải nhận màu nền của BE');
+  assert.ok(colored.every(node=>node.props.style.color==='#FFFFFF'),'cặp màu đủ tương phản phải giữ nguyên màu chữ của BE');
+ }finally{delete globalThis.__erpListHandler;if(renderer)await act(async()=>renderer.unmount());}
+});

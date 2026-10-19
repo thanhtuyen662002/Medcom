@@ -135,14 +135,12 @@ export function PurchaseRequestCreateSheet({
   const [department, setDepartment] = useState("");
   const [departmentChoices, setDepartmentChoices] = useState<ErpChoice[]>([]);
   const [purposeId, setPurposeId] = useState("");
-  const [purposeChoice, setPurposeChoice] = useState<ErpChoice | null>(null);
   const [purposeDescOrClient, setPurposeDescOrClient] = useState("");
   const [price, setPrice] = useState("");
   const [notes, setNotes] = useState("");
   const [currencyId, setCurrencyId] = useState("VND");
   const [currencyChoice, setCurrencyChoice] = useState<ErpChoice | null>(null);
   const [objectId, setObjectId] = useState("");
-  const [objectChoice, setObjectChoice] = useState<ErpChoice | null>(null);
   const [rateExchange, setRateExchange] = useState("1");
 
   const [lines, setLines] = useState<DraftLine[]>([emptyLine()]);
@@ -187,10 +185,10 @@ export function PurchaseRequestCreateSheet({
       setPurchaseDate(text(h.purchaseDate).slice(0, 10));
       setPersonSuggest(text(h.personSuggest)); setPersonChoices(multiChoices(h.personSuggest));
       setDepartment(text(h.department)); setDepartmentChoices(multiChoices(h.department));
-      setPurposeId(text(h.purposeId)); setPurposeChoice(choice(h.purposeId, h.purposeName));
+      setPurposeId(text(h.purposeId));
       setPurposeDescOrClient(text(h.purposeDescOrClient)); setPrice(text(h.price)); setNotes(text(h.notes));
       setCurrencyId(text(h.currencyId)); setCurrencyChoice(choice(h.currencyId, h.currencyName));
-      setObjectId(text(h.objectId)); setObjectChoice(choice(h.objectId, h.objectName, { ObjectName: h.objectName, Address: h.address }));
+      setObjectId(text(h.objectId));
       setRateExchange(text(h.rateExchange));
       setLines(rows.map(row => {
         const f = row.fields || {};
@@ -217,7 +215,6 @@ export function PurchaseRequestCreateSheet({
     if (!personSuggest.trim()) next["header.personSuggest"] = "Chọn người đề nghị.";
     if (!department.trim()) next["header.department"] = "Chọn bộ phận.";
     if (!currencyId.trim()) next["header.currencyId"] = "Chọn loại tiền.";
-    if (!objectId.trim()) next["header.objectId"] = "Chọn khách hàng / đối tượng.";
     if (!DECIMAL_RE.test(rateExchange.trim()) || Number(rateExchange) <= 0) next["header.rateExchange"] = "Tỷ giá phải lớn hơn 0.";
     if (price.trim() && !DECIMAL_RE.test(price.trim())) next["header.price"] = "Giá bán phải là số.";
     if (lines.length === 0) next["lines"] = "Cần ít nhất 1 chi tiết.";
@@ -406,20 +403,9 @@ export function PurchaseRequestCreateSheet({
           placeholder="Chọn bộ phận..."
           onSelect={() => undefined}
         />
-        <LookupField
-          label="Mục đích"
-          module="purchase-requests"
-          lookupId="header.PurposeID"
-          branchId={currentBranch}
-          value={purposeId}
-          choice={purposeChoice}
-          placeholder="Chọn mục đích..."
-          onSelect={(c) => {
-            setPurposeChoice(c);
-            setPurposeId(c ? c.id : "");
-          }}
-        />
       </div>
+      {/* Chủ dự án bỏ trường "Mục đích" (19/10/2026). Giá trị purposeId của phiếu
+          đã lưu vẫn được giữ nguyên khi lưu lại, chỉ không còn ô nhập. */}
       <TextField
         label="Mục đích / Khách hàng"
         value={purposeDescOrClient}
@@ -430,32 +416,12 @@ export function PurchaseRequestCreateSheet({
     </section>
   );
 
-  /* ----- Section 2: counterparty & currency ----- */
+  /* ----- Section 2: currency & price ----- */
   const counterpartySection = (
     <section className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 sm:p-6 space-y-4">
-      <h4 className="text-base font-bold uppercase tracking-wider text-neutral-400">Đối tượng &amp; tiền tệ</h4>
-      <LookupField
-        label="Khách hàng"
-        required
-        module="purchase-requests"
-        lookupId="header.ObjectID"
-        branchId={currentBranch}
-        value={objectId}
-        choice={objectChoice}
-        error={errors["header.objectId"]}
-        placeholder="Chọn khách hàng / đối tượng..."
-        onSelect={(c) => {
-          setObjectChoice(c);
-          setObjectId(c ? c.id : "");
-        }}
-      />
-      {objectChoice && (fieldText(objectChoice.fields?.["ObjectName"]) || fieldText(objectChoice.fields?.["Address"])) && (
-        <p className="text-sm text-black dark:text-white">
-          {[fieldText(objectChoice.fields?.["ObjectName"]), fieldText(objectChoice.fields?.["Address"])]
-            .filter(Boolean)
-            .join(" · ")}
-        </p>
-      )}
+      <h4 className="text-base font-bold uppercase tracking-wider text-neutral-400">Tiền tệ &amp; giá bán</h4>
+      {/* Chủ dự án bỏ ô "Khách hàng" (19/10/2026). Với phiếu đã lưu, giá trị ObjectID
+          gốc vẫn được giữ nguyên khi lưu lại; phiếu tạo mới không gửi đối tượng. */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <LookupField
           label="Loại tiền"
@@ -477,22 +443,16 @@ export function PurchaseRequestCreateSheet({
             } else setCurrencyId("");
           }}
         />
-        <div>
-          <label className="block text-black dark:text-white mb-1 font-medium">Tỷ giá</label>
-          <p
-            className={`p-2.5 rounded-xl text-base font-bold ${
-              errors["header.rateExchange"]
-                ? "bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-400 dark:border-red-700"
-                : "bg-neutral-100 dark:bg-neutral-800 text-black dark:text-white"
-            }`}
-            title="Tự động theo loại tiền, không sửa tay"
-          >
-            {rateExchange || "—"}
-          </p>
-          {errors["header.rateExchange"] && (
-            <p className="mt-1 text-sm text-red-500">{errors["header.rateExchange"]}</p>
-          )}
-        </div>
+        {/* Chủ dự án cho phép sửa tay tỷ giá (19/10/2026) — chọn loại tiền chỉ gợi ý giá trị. */}
+        <TextField
+          label="Tỷ giá"
+          required
+          value={rateExchange}
+          onChange={setRateExchange}
+          inputMode="decimal"
+          error={errors["header.rateExchange"]}
+          placeholder="1"
+        />
         <TextField
           label="Giá bán"
           money
@@ -547,10 +507,11 @@ export function PurchaseRequestCreateSheet({
                 label="Mã hàng"
                 required
                 module="purchase-requests"
-          lookupId="lines.ItemID"
+                lookupId="lines.ItemID"
                 branchId={currentBranch}
                 value={line.itemId}
                 choice={line.itemChoice}
+                secondaryFields={["ItemName", "Unit", "HangSX", "ItemCode"]}
                 error={errors[`line.${line.key}.itemId`]}
                 placeholder="Chọn mã hàng..."
                 onSelect={(c) =>
@@ -558,15 +519,23 @@ export function PurchaseRequestCreateSheet({
                 }
               />
               {(line.itemChoice || line.itemId) && (
-                <p className="text-sm text-black dark:text-white">
-                  {[
-                    fieldText(line.itemChoice?.fields?.["ItemName"]),
-                    fieldText(line.itemChoice?.fields?.["Unit"]),
-                    fieldText(line.itemChoice?.fields?.["HangSX"]),
-                  ]
-                    .filter(Boolean)
-                    .join(" · ") || line.itemId}
-                </p>
+                <div className="space-y-0.5 text-sm text-black dark:text-white">
+                  <p>
+                    {[
+                      fieldText(line.itemChoice?.fields?.["ItemName"]),
+                      fieldText(line.itemChoice?.fields?.["Unit"]),
+                    ]
+                      .filter(Boolean)
+                      .join(" · ") || line.itemId}
+                  </p>
+                  {/* Chủ dự án yêu cầu hiển thị thêm mã hãng sản xuất (19/10/2026). */}
+                  <p>
+                    <span className="font-medium">Mã hãng SX: </span>
+                    {fieldText(line.itemChoice?.fields?.["HangSX"]) ||
+                      fieldText(line.itemChoice?.fields?.["ItemCode"]) ||
+                      "—"}
+                  </p>
+                </div>
               )}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <TextField label="Model" value={line.model} onChange={(v) => patchLine(line.key, { model: v })} />
@@ -717,9 +686,8 @@ export function PurchaseRequestCreateSheet({
               <dl className="grid grid-cols-2 gap-x-6 gap-y-4 lg:grid-cols-4">
                 {[["Chi nhánh", currentBranch], ["Ngày đề xuất", purchaseDate], ["Loại tiền", currencyId], ["Tỷ giá", rateExchange]].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-sm text-neutral-900 dark:text-white">{label}</dt><dd className="mt-1 break-words text-base font-semibold tabular-nums">{value || "—"}</dd></div>)}
               </dl>
-              <div className="rounded-xl bg-brand-50 p-4 dark:bg-brand-950/40"><p className="text-sm text-neutral-900 dark:text-white">Khách hàng / Đối tượng</p><p className="mt-1.5 break-words text-lg font-semibold">{choiceLabel(objectChoice, objectId) || "—"}</p></div>
               <dl className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
-                {[["Người đề nghị", personSuggest], ["Bộ phận", department], ["Mục đích", choiceLabel(purposeChoice, purposeId)], ["Giá bán", formatVND(price)], ["Mục đích / Khách hàng", purposeDescOrClient], ["Ghi chú", notes]].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-sm text-neutral-900 dark:text-white">{label}</dt><dd className="mt-1.5 whitespace-pre-wrap break-words text-base font-medium leading-7">{value || "—"}</dd></div>)}
+                {[["Người đề nghị", personSuggest], ["Bộ phận", department], ["Giá bán", formatVND(price)], ["Mục đích / Khách hàng", purposeDescOrClient], ["Ghi chú", notes]].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-sm text-neutral-900 dark:text-white">{label}</dt><dd className="mt-1.5 whitespace-pre-wrap break-words text-base font-medium leading-7">{value || "—"}</dd></div>)}
               </dl>
               <div className="border-t border-neutral-200 pt-5 dark:border-neutral-800">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><h5 className="text-base font-semibold">Chi tiết hàng hóa</h5>{baseline && <p className="text-sm text-neutral-900 dark:text-white">Thêm {lines.filter(line => !line.lineId).length} dòng · Xóa {baseline.lines.rows.filter(row => !lines.some(line => line.lineId === row.lineId)).length} dòng so với phiếu đã lưu</p>}</div>

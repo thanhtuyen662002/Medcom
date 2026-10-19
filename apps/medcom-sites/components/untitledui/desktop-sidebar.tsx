@@ -14,6 +14,7 @@ import {
   ShoppingBag,
   FileText,
   PackageCheck,
+  PackagePlus,
   QrCode,
   LayoutDashboard,
   Settings2,
@@ -102,6 +103,12 @@ export function DesktopSidebar({
         { id: "sales-order-pm" as NavTabId, label: "PM xử lý đơn hàng", icon: UserCheck },
         { id: "sales-order-sa" as NavTabId, label: "SA xử lý đơn hàng", icon: ClipboardList },
         { id: "sales-qr" as NavTabId, label: "Xuất hàng theo PXK", icon: PackageCheck },
+      ],
+    },
+    {
+      title: "Quản lý kho",
+      items: [
+        { id: "inbound-requests" as NavTabId, label: "Đề nghị nhập hàng", icon: PackagePlus },
       ],
     },
     {
