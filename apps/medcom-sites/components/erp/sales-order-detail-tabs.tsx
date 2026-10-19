@@ -4,6 +4,7 @@ import { Fragment, useId, useRef, useState, type KeyboardEvent } from "react";
 import { ArrowRight, ChevronDown, Clock3, History, Package2, Send } from "lucide-react";
 import { SALES_ORDER_LINE_COLUMNS } from "@/lib/erp/sales-order-lines";
 import { documentStatusLabel } from "@/lib/erp/document-status";
+import { statusColorsFrom } from "@/lib/erp/status-colors";
 import {formatMoney, isMoneyField} from "@/lib/erp/money";
 
 interface OrderLine { lineId: string; fields: Record<string, unknown> }
@@ -132,7 +133,7 @@ export function SalesOrderDetailTabs({ lines, history, currencyId, hasMoreLines=
             </div>
             <dl className="mt-4 grid min-w-0 gap-4 sm:grid-cols-2">
               <div className="min-w-0"><dt className="mb-1 text-sm">Gửi đến</dt><dd className="flex items-start gap-2 text-base font-medium"><ArrowRight aria-hidden="true" className="mt-1 size-4 shrink-0 text-brand-600 dark:text-brand-300" /><span className="min-w-0 break-words">{text(fields.sendTo)}</span></dd></div>
-              <div className="min-w-0"><dt className="mb-1 text-sm">Trạng thái</dt><dd title={statusId == null ? undefined : `Mã trạng thái: ${statusId}`} className="inline-flex max-w-full rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 py-1 text-sm font-semibold dark:border-neutral-700 dark:bg-neutral-800"><span className="break-words">{statusLabel}</span></dd></div>
+              <div className="min-w-0"><dt className="mb-1 text-sm">Trạng thái</dt><dd title={statusId == null ? undefined : `Mã trạng thái: ${statusId}`} style={statusColorsFrom(fields)} className="inline-flex max-w-full rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 py-1 text-sm font-semibold dark:border-neutral-700 dark:bg-neutral-800"><span className="break-words">{statusLabel}</span></dd></div>
             </dl>
             {fields.notes != null && String(fields.notes).trim() && <div className="mt-4 border-t border-neutral-100 pt-3 dark:border-neutral-800"><p className="mb-1 text-sm">Ghi chú</p><p className="whitespace-pre-wrap break-words text-base leading-6">{String(fields.notes)}</p></div>}
           </article>

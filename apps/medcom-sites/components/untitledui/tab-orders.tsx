@@ -28,6 +28,7 @@ import type { DocumentDetail, PurchaseOrderHeader, PurchaseOrderLineFields } fro
 import { errorMessage } from "@/lib/erp/api";
 
 import {formatMoney} from "@/lib/erp/money";
+import { statusColorStyle } from "@/lib/erp/status-colors";
 
 function formatVND(value?: string | null, currency = "VND"): string {
   if (value && /[A-Z]{3}|[₫$€]/.test(value)) return value;
@@ -40,6 +41,9 @@ export interface OrderItem {
   branchId: string;
   statusId: number | null;
   statusName: string;
+  /** Màu trạng thái BE cung cấp (#RRGGBB) hoặc null; thiếu màu thì dùng màu mặc định. */
+  statusForeColor?: string | null;
+  statusBackColor?: string | null;
   isLocked: boolean;
   supplier: string;
   creator: string;
@@ -148,6 +152,8 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
                   : r.statusId === 1
                   ? "Chờ phê duyệt"
                   : "Bản nháp"),
+              statusForeColor: (raw.statusForeColor as string) || null,
+              statusBackColor: (raw.statusBackColor as string) || null,
               isLocked: r.isLocked ?? false,
               supplier:
                 (raw.objectName as string) ||
@@ -290,30 +296,30 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
     return true;
   });
 
-  const getStatusBadge = (statusId: number | null, statusName?: string | null) => {
+  const getStatusBadge = (statusId: number | null, statusName?: string | null, style?: { color?: string; backgroundColor?: string }) => {
     if (statusId === 2) {
       return (
-        <UntitledBadge variant="success" size="sm" dot>
+        <UntitledBadge variant="success" size="sm" dot style={style}>
           {statusName || "Đã duyệt"}
         </UntitledBadge>
       );
     }
     if (statusId === 3) {
       return (
-        <UntitledBadge variant="blue" size="sm" dot>
+        <UntitledBadge variant="blue" size="sm" dot style={style}>
           {statusName || "Hoàn tất"}
         </UntitledBadge>
       );
     }
     if (statusId === 1) {
       return (
-        <UntitledBadge variant="warning" size="sm" dot>
+        <UntitledBadge variant="warning" size="sm" dot style={style}>
           {statusName || "Chờ phê duyệt"}
         </UntitledBadge>
       );
     }
     return (
-      <UntitledBadge variant="gray" size="sm">
+      <UntitledBadge variant="gray" size="sm" style={style}>
         {statusName || "Bản nháp"}
       </UntitledBadge>
     );
@@ -323,7 +329,7 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
     { id: "document", label: "Mã PO", className: "min-w-40 whitespace-nowrap", render: order => <span className="font-mono font-semibold text-brand-700 dark:text-brand-300">{order.documentId}</span> },
     { id: "date", label: "Ngày chứng từ", className: "whitespace-nowrap tabular-nums", render: order => order.documentDate },
     { id: "supplier", label: "Nhà cung cấp", className: "min-w-60 max-w-sm", render: order => <span className="line-clamp-2 break-words font-medium" title={order.supplier}>{order.supplier}</span> },
-    { id: "status", label: "Trạng thái", className: "whitespace-nowrap", render: order => <div className="flex items-center gap-2">{getStatusBadge(order.statusId, order.statusName)}{order.isLocked && <LockKeyhole aria-label="Đã khóa" className="size-4" />}</div> },
+    { id: "status", label: "Trạng thái", className: "whitespace-nowrap", render: order => <div className="flex items-center gap-2">{getStatusBadge(order.statusId, order.statusName, statusColorStyle(order.statusForeColor, order.statusBackColor))}{order.isLocked && <LockKeyhole aria-label="Đã khóa" className="size-4" />}</div> },
     { id: "creator", label: "Người lập", className: "min-w-40 max-w-52", render: order => <span className="line-clamp-2 break-words">{order.creator}</span> },
     { id: "amount", label: "Tổng tiền", className: "whitespace-nowrap text-right font-semibold tabular-nums", render: order => order.totalAmount },
   ];
@@ -463,7 +469,7 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
                     <span className="text-xs sm:text-sm font-mono font-bold text-brand-700 dark:text-brand-300">
                       {order.documentId}
                     </span>
-                    {getStatusBadge(order.statusId, order.statusName)}
+                    {getStatusBadge(order.statusId, order.statusName, statusColorStyle(order.statusForeColor, order.statusBackColor))}
                     {order.isLocked && (
                       <span className="inline-flex items-center gap-1 text-[10px] font-medium text-neutral-500 bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded-full">
                         <LockKeyhole className="size-3" /> Đã khóa
@@ -553,7 +559,7 @@ export function TabOrders({ currentBranch, isActive = true, onCountChange, onOpe
                   </p>
                 </div>
                 <div className="text-right flex flex-col items-end gap-1">
-                  {getStatusBadge(selectedOrder.statusId, selectedOrder.statusName)}
+                  {getStatusBadge(selectedOrder.statusId, selectedOrder.statusName, statusColorStyle(selectedOrder.statusForeColor, selectedOrder.statusBackColor))}
                   <span className="text-sm font-mono font-extrabold text-brand-700 dark:text-brand-300">
                     {selectedOrder.totalAmount}
                   </span>

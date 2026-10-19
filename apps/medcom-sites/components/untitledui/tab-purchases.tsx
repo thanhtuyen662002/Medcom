@@ -26,6 +26,7 @@ import type { PurchaseRequestHeaderFields, PurchaseRequestLineFields, PurchaseRe
 import { errorMessage } from "@/lib/erp/api";
 
 import {formatMoney} from "@/lib/erp/money";
+import { statusColorStyle } from "@/lib/erp/status-colors";
 
 function formatVND(value?: string | null, currency = "VND"): string {
   if (value && /[A-Z]{3}|[₫$€]/.test(value)) return value;
@@ -41,6 +42,9 @@ export interface PurchaseItem {
   branch: string;
   purpose: string;
   status: "pending" | "approved" | "draft" | "rejected";
+  /** Màu trạng thái BE cung cấp (#RRGGBB) hoặc null; thiếu màu thì dùng màu mặc định. */
+  statusForeColor?: string | null;
+  statusBackColor?: string | null;
   totalAmount: string;
   notes?: string | null;
   currencyId?: string;
@@ -120,6 +124,8 @@ export function TabPurchases({
             if (r.statusId === 2) status = "approved";
             else if (r.statusId === 1) status = "pending";
             else if (r.statusId === 3 || r.statusId === -1) status = "rejected";
+            const statusForeColor = (raw.statusForeColor as string) || null;
+            const statusBackColor = (raw.statusBackColor as string) || null;
 
             const branchId = r.branchId || (raw.branchId as string) || currentBranch || "CN01";
             const branchLabel =
@@ -173,6 +179,8 @@ export function TabPurchases({
               branch: (raw.branchName as string) || (f as any)?.branchName || branchLabel,
               purpose: purposeStr,
               status,
+              statusForeColor,
+              statusBackColor,
               totalAmount: totalStr,
               notes: f?.notes || (raw.notes as string),
               currencyId: f?.currencyId || (raw.currencyId as string) || "VND",
@@ -312,29 +320,29 @@ export function TabPurchases({
     return matchSearch && matchStatus;
   });
 
-  const getStatusBadge = (status: PurchaseItem["status"]) => {
+  const getStatusBadge = (status: PurchaseItem["status"], style?: { color?: string; backgroundColor?: string }) => {
     switch (status) {
       case "pending":
         return (
-          <UntitledBadge variant="warning" size="sm" dot>
+          <UntitledBadge variant="warning" size="sm" dot style={style}>
             Chờ duyệt
           </UntitledBadge>
         );
       case "approved":
         return (
-          <UntitledBadge variant="success" size="sm" dot>
+          <UntitledBadge variant="success" size="sm" dot style={style}>
             Đã duyệt
           </UntitledBadge>
         );
       case "draft":
         return (
-          <UntitledBadge variant="gray" size="sm" dot>
+          <UntitledBadge variant="gray" size="sm" dot style={style}>
             Dự thảo
           </UntitledBadge>
         );
       case "rejected":
         return (
-          <UntitledBadge variant="error" size="sm" dot>
+          <UntitledBadge variant="error" size="sm" dot style={style}>
             Từ chối
           </UntitledBadge>
         );
@@ -363,7 +371,7 @@ export function TabPurchases({
     { id: "document", label: "Mã PR", className: "min-w-40 whitespace-nowrap", render: item => <span className="font-mono font-semibold text-brand-700 dark:text-brand-300">{item.code}</span> },
     { id: "date", label: "Ngày đề nghị", className: "whitespace-nowrap tabular-nums", render: item => item.date },
     { id: "purpose", label: "Mục đích / Nội dung", className: "min-w-60 max-w-sm", render: item => <span className="line-clamp-2 break-words font-medium" title={item.purpose}>{item.purpose}</span> },
-    { id: "status", label: "Trạng thái", className: "whitespace-nowrap", render: item => getStatusBadge(item.status) },
+    { id: "status", label: "Trạng thái", className: "whitespace-nowrap", render: item => getStatusBadge(item.status, statusColorStyle(item.statusForeColor, item.statusBackColor)) },
     { id: "creator", label: "Người đề nghị", className: "min-w-40 max-w-52", render: item => <span className="line-clamp-2 break-words">{item.creator}</span> },
     { id: "amount", label: "Tổng tiền", className: "whitespace-nowrap text-right font-semibold tabular-nums", render: item => item.totalAmount },
   ];
@@ -513,7 +521,7 @@ export function TabPurchases({
                     <span className="text-xs font-mono font-bold text-brand-700 dark:text-brand-300">
                       {item.code}
                     </span>
-                    {getStatusBadge(item.status)}
+                    {getStatusBadge(item.status, statusColorStyle(item.statusForeColor, item.statusBackColor))}
                   </div>
                   <h4 className="text-sm font-bold text-neutral-900 dark:text-white truncate">
                     {item.purpose}
@@ -605,7 +613,7 @@ export function TabPurchases({
                   </p>
                 </div>
                 <div className="text-right flex flex-col items-end gap-1">
-                  {getStatusBadge(activeItem.status)}
+                  {getStatusBadge(activeItem.status, statusColorStyle(activeItem.statusForeColor, activeItem.statusBackColor))}
                   <span className="text-sm font-mono font-extrabold text-brand-700 dark:text-brand-300">
                     {activeItem.totalAmount}
                   </span>

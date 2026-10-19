@@ -10,6 +10,7 @@ import {Empty, EmptyDescription, EmptyHeader, EmptyTitle} from "@/components/ui/
 import {ListLoading} from "./list-loading";
 import {ApiError, errorMessage} from "@/lib/erp/api";
 import {documentStatusLabel} from "@/lib/erp/document-status";
+import {statusColorStyle} from "@/lib/erp/status-colors";
 import {cn} from "@/lib/utils";
 
 /** Shared presentation only. No request, authority, storage or command state. */
@@ -63,8 +64,8 @@ export function RequestLoading({label="Đang tải chứng từ…",form=false}:
 export function RequestDocumentIdentity({children}:{children:ReactNode}){
   return <span className="request-document-id"><FileText size={16} aria-hidden="true"/><strong>{children}</strong></span>;
 }
-export function RequestStatus({value,statusName}:{value:number|null|undefined;statusName?:string|null}){
-  return <Badge variant="outline" title={documentStatusLabel(value,statusName)} className="request-status max-w-full whitespace-normal font-normal">{documentStatusLabel(value,statusName)}</Badge>;
+export function RequestStatus({value,statusName,foreColor,backColor}:{value:number|null|undefined;statusName?:string|null;foreColor?:unknown;backColor?:unknown}){
+  return <Badge variant="outline" title={documentStatusLabel(value,statusName)} style={statusColorStyle(foreColor,backColor)} className="request-status max-w-full whitespace-normal font-normal">{documentStatusLabel(value,statusName)}</Badge>;
 }
 /** Display source wall-clock dates without converting time zone or editing data. */
 export function requestDate(value:string|null|undefined){

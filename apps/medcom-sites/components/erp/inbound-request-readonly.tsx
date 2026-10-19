@@ -139,7 +139,7 @@ export function InboundRequestReadOnly({documentId, presentationAllowed=true, br
     {currentResult?.phase === "failed" && <RequestError error={currentResult.error}
       retry={verifying || denied(currentResult.error) ? undefined : retryRead}/>}
     {detail && <>
-      <RecordDetailStatus presentationAllowed={presentationAllowed}><RequestStatus value={detail.document.statusId} statusName={detail.document.statusName}/></RecordDetailStatus>
+      <RecordDetailStatus presentationAllowed={presentationAllowed}><RequestStatus value={detail.document.statusId} statusName={detail.document.statusName} foreColor={detail.document.statusForeColor} backColor={detail.document.statusBackColor}/></RecordDetailStatus>
         <dl className={cn(requestStyles.values, "grid-cols-1 sm:grid-cols-2")}>
           <div><dt>Ngày chứng từ</dt><dd><time dateTime={detail.document.documentDate}>{requestDate(detail.document.documentDate)}</time></dd></div>
           <div><dt>Chi nhánh</dt><dd className="whitespace-pre-wrap">{detail.document.branchId}</dd></div>

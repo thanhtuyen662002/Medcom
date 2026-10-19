@@ -21,6 +21,7 @@ import { SalesCommandSession, salesActionLabels, salesCommandMessage, salesWorkf
 import { editableSalesLines, salesLineChanges, type EditableSalesLine } from "@/lib/erp/sales-order-edit-lines";
 import { emptySalesOrderLine, isSalesOrderLineValid } from "@/lib/erp/sales-order-lines";
 import { documentStatusLabel } from "@/lib/erp/document-status";
+import { statusColorsFrom } from "@/lib/erp/status-colors";
 import {formatMoney} from "@/lib/erp/money";
 import { RecordActionBar, RecordDetailHeading, RecordDetailStatus } from "./record-dialog";
 import { RequestButton, RequestInput, RequestTextarea, RecordDetailContext, requestDate, requestStyles as sharedRequestStyles } from "./request-presentation";
@@ -268,7 +269,7 @@ export function SalesOrderForm({
         {editing && <p role="status">{dirty ? "Có thay đổi chưa lưu" : "Đang chỉnh sửa đơn hàng"}</p>}
       </RecordDetailHeading>
       <RecordDetailStatus presentationAllowed={!!detail && !loading}>
-        <span className="rounded-full border border-neutral-200 bg-neutral-100 px-3 py-1 text-sm font-semibold text-black dark:border-neutral-700 dark:bg-neutral-800 dark:text-white">{statusName}</span>
+        <span className="rounded-full border border-neutral-200 bg-neutral-100 px-3 py-1 text-sm font-semibold text-black dark:border-neutral-700 dark:bg-neutral-800 dark:text-white" style={statusColorsFrom(header)}>{statusName}</span>
         {knownLock && <span className="rounded-full border border-neutral-200 px-3 py-1 text-sm font-medium text-black dark:border-neutral-700 dark:text-white">{locked ? "Đã khóa" : "Chưa khóa"}</span>}
       </RecordDetailStatus>
 
