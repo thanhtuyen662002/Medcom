@@ -448,14 +448,10 @@ export function MedcomApp() {
               userRole={currentUser.role}
               unreadNotifications={unreadNotificationsCount}
               onNotificationsClick={() => setNotificationsOpen(true)}
-              onOpenQuickCreate={() => setQuickCreateOpen(true)}
               isDarkMode={isDarkMode}
               onToggleDarkMode={handleToggleDarkMode}
               onLogout={handleLogout}
               onToggleLayoutMode={handleToggleLayoutMode}
-              pendingOrdersCount={ordersCount}
-              pendingPurchasesCount={purchasesCount}
-              pendingInboundCount={inboundCount}
               tabAccess={tabAccess}
               onRetryTabs={() => void retryTabAccess()}
             />
@@ -474,14 +470,10 @@ export function MedcomApp() {
               userRole={currentUser.role}
               unreadNotifications={unreadNotificationsCount}
               onNotificationsClick={() => setNotificationsOpen(true)}
-              onOpenQuickCreate={() => setQuickCreateOpen(true)}
               isDarkMode={isDarkMode}
               onToggleDarkMode={handleToggleDarkMode}
               onLogout={handleLogout}
               onToggleLayoutMode={handleToggleLayoutMode}
-              pendingOrdersCount={ordersCount}
-              pendingPurchasesCount={purchasesCount}
-              pendingInboundCount={inboundCount}
             />
           </div>
         )}
@@ -507,7 +499,6 @@ export function MedcomApp() {
             <div className={activeTab === "home" ? "block" : "hidden"}>
               <TabHome
                 onNavigateTab={(tab) => setActiveTab(tab)}
-                onOpenQuickCreate={() => setQuickCreateOpen(true)}
                 onSelectPurchaseItem={(item) => {
                   setSelectedPurchaseItem(item);
                   setActiveTab("purchases");

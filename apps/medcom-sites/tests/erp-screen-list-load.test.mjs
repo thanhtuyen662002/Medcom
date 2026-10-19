@@ -193,19 +193,19 @@ for(const screenModule of ['sales-orders','sales-order-pm','sales-order-sa'])tes
  try{
   await act(async()=>{renderer=create(React.createElement(TabErpScreen,{module:screenModule,...props,isActive:true}));});await flush();
   assert.equal(lookups.length,1);assert.equal(lookups[0].scope,screenModule);assert.equal(lookups[0].branchId,'MB');assert.equal(lookups[0].lookupId,'header.StatusID');
-  const group=renderer.root.findByProps({'aria-label':'Lọc trạng thái đơn hàng'});
-  const badges=()=>group.findAll(node=>node.type==='button');
-  assert.deepEqual(badges().map(node=>node.children.join('')),['Tất cả','Trạng thái minh họa A','Trạng thái minh họa B','Trạng thái minh họa C']);
+  const select=()=>renderer.root.findByProps({'aria-label':'Lọc trạng thái đơn hàng'});
+  const options=()=>select().findAll(node=>node.type==='option');
+  assert.deepEqual(options().map(node=>node.children.join('')),['Tất cả','Trạng thái minh họa A','Trạng thái minh họa B','Trạng thái minh họa C']);
   assert.doesNotMatch(collect(renderer).text,/Đang mở \/ Chưa khóa|Đã khóa \/ Hoàn tất|Phân hệ ERP/);
   assert.match(collect(renderer).text,/Tên trạng thái từ API/);
   for(const [label,id] of [['Trạng thái minh họa A',-1],['Trạng thái minh họa B',0],['Trạng thái minh họa C',12]]){
-   await act(async()=>badges().find(node=>node.children.includes(label)).props.onClick());await flush();
+   await act(async()=>select().props.onChange({target:{value:String(id)}}));await flush();
    assert.equal(calls.at(-1).scope,screenModule);assert.equal(calls.at(-1).page,1);assert.equal(calls.at(-1).statusId,id);
-   assert.equal(badges().find(node=>node.children.includes(label)).props['aria-pressed'],true);
+   assert.equal(select().props.value,String(id));
   }
   await act(async()=>renderer.root.findByProps({'aria-label':'Trang sau'}).props.onClick());await flush();
   assert.equal(calls.at(-1).page,2);assert.equal(calls.at(-1).statusId,12);
-  await act(async()=>badges()[0].props.onClick());await flush();
+  await act(async()=>select().props.onChange({target:{value:''}}));await flush();
   assert.equal(calls.at(-1).page,1);assert.equal(calls.at(-1).statusId,undefined);
  }finally{delete globalThis.__erpListHandler;delete globalThis.__erpStatusHandler;if(renderer)await act(async()=>renderer.unmount());}
 });
@@ -222,11 +222,13 @@ test('status lookup paging retries failures and ignores responses for a previous
   await act(async()=>renderer.update(React.createElement(TabErpScreen,{module:'sales-order-pm',currentBranch:'MN',isActive:true})));await flush();
   await act(async()=>resolveOld({items:[{id:'99',label:'STALE-STATUS'}],page:1,hasMore:false,requiredParameters:[]}));await flush();
   assert.doesNotMatch(collect(renderer).text,/STALE-STATUS/);
+  const select=()=>renderer.root.findByProps({'aria-label':'Lọc trạng thái đơn hàng'});
   const button=label=>renderer.root.findAll(node=>node.type==='button'&&node.children.includes(label))[0];
-  await act(async()=>button('Thêm trạng thái').props.onClick());await flush();
+  await act(async()=>select().props.onChange({target:{value:'__more__'}}));await flush();
   assert.match(collect(renderer).text,/Chưa tải được danh sách trạng thái/);assert.match(collect(renderer).text,/Trạng thái mới 1/);
   fail=false;await act(async()=>button('Thử lại').props.onClick());await flush();
-  assert.match(collect(renderer).text,/Trạng thái mới 2/);assert.equal(button('Thêm trạng thái'),undefined);
+  assert.match(collect(renderer).text,/Trạng thái mới 2/);
+  assert.equal(select().findAll(node=>node.type==='option'&&node.children.includes('Thêm trạng thái')).length,0);
  }finally{delete globalThis.__erpStatusHandler;if(renderer)await act(async()=>renderer.unmount());}
 });
 

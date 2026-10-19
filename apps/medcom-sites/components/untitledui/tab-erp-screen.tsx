@@ -55,7 +55,6 @@ import { SalesOrderAttachmentPicker } from "@/components/erp/sales-order-attachm
 import { ErpDetailSheet } from "@/components/erp/erp-detail-sheet";
 import type { ErpDocumentPage } from "@/lib/erp/erp-screen-contracts";
 import { SalesCommandSession, type SalesOrderModule } from "@/lib/erp/sales-order-workflow";
-import { SalesFlowOverview } from "@/components/erp/sales-flow-overview";
 import { SalesOrderStatusFilter } from "@/components/erp/sales-order-status-filter";
 import { documentStatusLabel } from "@/lib/erp/document-status";
 import {MoneyInput} from "@/components/erp/money-input";
@@ -898,11 +897,22 @@ export function TabErpScreen({
     if (becameActive) void loadList(search.trim() === appliedSearchRef.current ? page : 1, rows.length > 0);
   }, [isActive, loadList, rows.length, page, search]);
 
-  // Handle Manual Refresh
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    await loadList(search.trim() === appliedSearchRef.current ? page : 1, true);
-  };
+  // Auto-apply the search term with a debounce, so no dedicated search button
+  // (or Enter keypress) is required to load matching rows.
+  const loadListRef = useRef(loadList);
+  useEffect(() => { loadListRef.current = loadList; }, [loadList]);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!isActive) return;
+    if (search.trim() === appliedSearchRef.current) return;
+    searchDebounceRef.current = setTimeout(() => {
+      searchDebounceRef.current = null;
+      void loadListRef.current(1);
+    }, 400);
+    return () => {
+      if (searchDebounceRef.current) { clearTimeout(searchDebounceRef.current); searchDebounceRef.current = null; }
+    };
+  }, [search, isActive]);
 
   const openDetailRequestSeqRef = useRef<number>(0);
 
@@ -1806,75 +1816,81 @@ export function TabErpScreen({
     { id: "notes", label: "Nội dung", className: "min-w-52 max-w-sm", render: row => <span className="line-clamp-2 break-words" title={listText(row, "memo", "notes")}>{listText(row, "memo", "notes") || "—"}</span> },
   ];
 
+  const createActionButton = isCreateVisible ? (
+    <UntitledButton
+      variant="primary"
+      size="md"
+      onClick={() => {
+        if (module === "purchase-orders") setPoCreateOpen(true);
+        else if (module === "purchase-requests") setPrCreateOpen(true);
+        else setCreateModalOpen(true);
+      }}
+      disabled={!canCreate}
+      title={createActionTooltip}
+      iconLeading={<Plus className="size-4" />}
+    >
+      Tạo mới
+    </UntitledButton>
+  ) : null;
+
   return (
     <div className="space-y-4 pb-24 animate-uui-fade-in">
-      {/* Module Banner (No technical menu IDs or form names) */}
-      <div className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 sm:p-5 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-black dark:text-white">Chi nhánh: {currentBranch}</span>
+      {/* Module Header + Toolbar (No technical menu IDs or form names) */}
+      <div className="rounded-2xl border border-neutral-200/80 bg-white shadow-xs dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="flex flex-col gap-3 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
+          {/* Identity */}
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 dark:text-neutral-400">
+              <Building aria-hidden className="size-3.5 shrink-0" />
+              <span className="truncate">Chi nhánh {currentBranch}</span>
             </div>
-            <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-white mt-1">
+            <h2 className="mt-1 truncate text-lg font-bold tracking-tight text-neutral-900 dark:text-white sm:text-xl">
               {screenMeta?.caption || getModuleTitle(module)}
             </h2>
           </div>
-        </div>
 
-        {/* Toolbar: Search, Refresh, Create (Synchronized with PO, PR, Inbound) */}
-        <div className="mt-4 pt-3 border-t border-neutral-100 dark:border-neutral-800 space-y-2.5">
-          <div className="flex gap-2 items-center">
-            <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
+          {/* Controls: search (auto-load) + status filter + create */}
+          <div className="flex flex-col gap-2 border-t border-neutral-100 pt-3 sm:flex-row sm:items-center sm:gap-2.5 lg:border-0 lg:pt-0 dark:border-neutral-800">
+            <div className="relative min-w-0 sm:flex-1 lg:w-72 lg:flex-none">
+              <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-neutral-400" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && loadList(1)}
+                onKeyDown={(e) => {
+                  if (e.key !== "Enter") return;
+                  if (searchDebounceRef.current) { clearTimeout(searchDebounceRef.current); searchDebounceRef.current = null; }
+                  loadList(1);
+                }}
                 placeholder="Tìm theo mã chứng từ, người lập, đối tượng..."
-                className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-2xs"
+                className="h-11 w-full rounded-xl border border-neutral-200 bg-white pl-9 pr-3 text-sm text-neutral-900 shadow-2xs outline-none transition-colors placeholder:text-neutral-400 focus-visible:border-brand-500 focus-visible:ring-2 focus-visible:ring-brand-500/30 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
               />
             </div>
 
-            <button
-              type="button"
-              onClick={handleRefresh}
-              disabled={isRefreshing || isLoadingList}
-              className="p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 transition-colors shrink-0 disabled:opacity-50"
-              title="Làm mới danh sách"
-            >
-              <RefreshCw className={`size-4 ${isRefreshing ? "animate-spin text-brand-600" : ""}`} />
-            </button>
-
-            {isCreateVisible && (
-              <UntitledButton
-                variant="primary"
-                size="md"
-                onClick={() => {
-                  if (module === "purchase-orders") setPoCreateOpen(true);
-                  else if (module === "purchase-requests") setPrCreateOpen(true);
-                  else setCreateModalOpen(true);
-                }}
-                disabled={!canCreate}
-                title={createActionTooltip}
-                iconLeading={<Plus className="size-4" />}
-              >
-                Tạo mới
-              </UntitledButton>
-            )}
+            <div className="flex items-center gap-2.5">
+              {isSalesOrderModule && (
+                <div className="min-w-0 flex-1 sm:flex-none">
+                  <SalesOrderStatusFilter module={module} branchId={currentBranch} isActive={isActive} value={statusId} onChange={next => {
+                    setStatusId(next); void loadList(1, false, next);
+                  }} />
+                </div>
+              )}
+              {createActionButton}
+            </div>
           </div>
-          {isCreateVisible && !canCreate && createActionTooltip && (
-            <p className="mt-2 text-[11px] text-amber-700 dark:text-amber-300 flex items-center gap-1.5">
-              <AlertCircle className="size-3.5 shrink-0" />
-              <span>Chưa thể tạo mới: {createActionTooltip}</span>
-            </p>
-          )}
+        </div>
 
-          {/* Filter Chips Bar */}
-          {isSalesOrderModule && <SalesOrderStatusFilter module={module} branchId={currentBranch} isActive={isActive} value={statusId} onChange={next => {
-            setStatusId(next); void loadList(1, false, next);
-          }} />}
-          {!isSalesModule && <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+        {isCreateVisible && !canCreate && createActionTooltip && (
+          <p className="flex items-center gap-1.5 border-t border-neutral-100 px-4 py-2.5 text-[11px] text-amber-700 sm:px-5 dark:border-neutral-800 dark:text-amber-300">
+            <AlertCircle aria-hidden className="size-3.5 shrink-0" />
+            <span>Chưa thể tạo mới: {createActionTooltip}</span>
+          </p>
+        )}
+
+        {/* Status chips for modules without the server status dropdown */}
+        {!isSalesModule && (
+          <div className="border-t border-neutral-100 px-4 pb-4 pt-3 sm:px-5 dark:border-neutral-800">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
             {(isApprovalModule
               ? ([
                 { id: "all", label: "Tất cả", status: null as number | null },
@@ -1964,12 +1980,12 @@ export function TabErpScreen({
                 </button>
               );
             })}
-          </div>}
-        </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Global Error Banner */}
-      {["sales-orders", "sales-order-pm", "sales-order-sa", "sales-qr"].includes(module) && <SalesFlowOverview module={module} />}
       {errorMsg && (
         <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2">
           <AlertCircle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
@@ -3093,17 +3109,40 @@ export function TabErpScreen({
             {module === "sales-orders" && pendingOrderCreate && !creatingDocument && <p role="status" className="text-sm text-amber-700 dark:text-amber-300">Đang giữ lần tạo hiện tại. Bấm Kiểm tra / tiếp tục để xác nhận kết quả trước khi tạo đơn khác.</p>}
             {module === "sales-orders" && <p className="text-black">Chi nhánh: {currentBranch} · Số chứng từ được cấp khi lưu.</p>}
             {showCreateHeader && <fieldset aria-label="Thông tin đơn hàng" disabled={module === "sales-orders" && (creatingDocument || createLocked)} className="min-w-0 space-y-3.5 border-0 p-0">
-            <div>
-              <label className="block text-black mb-1 font-medium">
-                {module === "purchase-requests" ? "Ngày đề xuất (*):" : "Ngày lập chứng từ (*):"}
-              </label>
-              <input
-                type="date"
-                value={createDate}
-                onChange={(e) => setCreateDate(e.target.value)}
-                className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-black dark:text-white text-sm"
-              />
-            </div>
+            {module === "sales-orders" ? (
+              <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+                <div className="min-w-0">
+                  <label className="block text-black mb-1 font-medium">Ngày lập chứng từ (*):</label>
+                  <input
+                    type="date"
+                    value={createDate}
+                    onChange={(e) => setCreateDate(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-black dark:text-white text-sm"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <label className="block text-black mb-1 font-medium">Ngày giao:</label>
+                  <input
+                    type="date"
+                    value={createDeliverDate}
+                    onChange={(e) => setCreateDeliverDate(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-black dark:text-white text-sm"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-black mb-1 font-medium">
+                  {module === "purchase-requests" ? "Ngày đề xuất (*):" : "Ngày lập chứng từ (*):"}
+                </label>
+                <input
+                  type="date"
+                  value={createDate}
+                  onChange={(e) => setCreateDate(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-black dark:text-white text-sm"
+                />
+              </div>
+            )}
 
             {module !== "internal-transfer-batches" && module !== "sales-orders" && (
               <div>
@@ -3145,44 +3184,49 @@ export function TabErpScreen({
             )}
 
             {module === "sales-orders" && (
-              <div className="space-y-3">
+              <div className="space-y-3.5">
                 <LookupField label="Khách hàng" required module="sales-orders" lookupId="header.ObjectID"
                   branchId={currentBranch} value={createObject} choice={createObjectChoice}
                   displayValue={createObject}
                   context={{ ContractID: null }} secondaryFields={["ObjectName", "Address"]}
                   onSelect={selectSoCustomer}
                   placeholder="Chọn khách hàng..." />
-                <div><label htmlFor="so-create-tax-code" className="block text-black mb-1 font-medium">Mã số thuế</label>
-                  <input id="so-create-tax-code" readOnly value={salesOrderField(createObjectChoice, "TaxCode")} className="w-full p-2 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-sm" /></div>
-                <div><label htmlFor="so-create-address" className="block text-black mb-1 font-medium">Địa chỉ khách hàng</label>
-                  <textarea id="so-create-address" readOnly rows={2} value={salesOrderField(createObjectChoice, "Address")}
-                    className="w-full p-2 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-sm" /></div>
+                <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-3">
+                  <div className="min-w-0">
+                    <label htmlFor="so-create-tax-code" className="block text-black mb-1 font-medium">Mã số thuế</label>
+                    <input id="so-create-tax-code" readOnly value={salesOrderField(createObjectChoice, "TaxCode")} className="w-full min-h-11 p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-sm" />
+                  </div>
+                  <div className="min-w-0 sm:col-span-2">
+                    <label htmlFor="so-create-address" className="block text-black mb-1 font-medium">Địa chỉ khách hàng</label>
+                    <textarea id="so-create-address" readOnly rows={2} value={salesOrderField(createObjectChoice, "Address")}
+                      className="w-full p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-sm" />
+                  </div>
+                </div>
                 {customerLoading && <p role="status" className="text-sm text-black">Đang tải thông tin khách hàng...</p>}
                 {customerError && <p role="alert" className="text-sm text-red-600">{customerError}
                   <button type="button" className="ml-2 underline" onClick={() => setCustomerRetry(v => v + 1)}>Tải lại khách hàng</button></p>}
-                <LookupField label="Mã nhân viên" required module="sales-orders" lookupId="header.EmployeeID"
-                  branchId={currentBranch} value={createEmployee} choice={createEmployeeChoice}
-                  displayValue={createEmployee}
-                  onSelect={(c) => { setCreateEmployeeChoice(c); setCreateEmployee(c ? c.id : ""); }}
-                  placeholder="Chọn nhân viên..." />
-                <LookupField label="Mã quản lý" module="sales-orders" lookupId="header.ManagerID"
-                  branchId={currentBranch} value={createManager?.id || ""} choice={createManager}
-                  secondaryFields={["ManagerName"]} onSelect={setCreateManager} placeholder="Chọn quản lý..." />
-                <LookupField label="Mã hợp đồng" module="sales-orders" lookupId="header.ContractID"
-                  branchId={currentBranch} value={createContract} choice={createContractChoice}
-                  displayValue={createContract}
-                  context={{ ObjectID: createObject || null }}
-                  preloadAll={!!createObject} secondaryFields={["ContractName", "ObjectName"]}
-                  onSelect={selectSoContract}
-                  placeholder="Chọn hợp đồng (không bắt buộc)..." />
-                <div>
-                  <label className="block text-black mb-1 font-medium">Ngày giao:</label>
-                  <input type="date" value={createDeliverDate} onChange={(e) => setCreateDeliverDate(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-black dark:text-white text-sm" />
+                <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-3">
+                  <LookupField label="Mã nhân viên" required module="sales-orders" lookupId="header.EmployeeID"
+                    branchId={currentBranch} value={createEmployee} choice={createEmployeeChoice}
+                    displayValue={createEmployee}
+                    onSelect={(c) => { setCreateEmployeeChoice(c); setCreateEmployee(c ? c.id : ""); }}
+                    placeholder="Chọn nhân viên..." />
+                  <LookupField label="Mã quản lý" module="sales-orders" lookupId="header.ManagerID"
+                    branchId={currentBranch} value={createManager?.id || ""} choice={createManager}
+                    secondaryFields={["ManagerName"]} onSelect={setCreateManager} placeholder="Chọn quản lý..." />
+                  <LookupField label="Mã hợp đồng" module="sales-orders" lookupId="header.ContractID"
+                    branchId={currentBranch} value={createContract} choice={createContractChoice}
+                    displayValue={createContract}
+                    context={{ ObjectID: createObject || null }}
+                    preloadAll={!!createObject} secondaryFields={["ContractName", "ObjectName"]}
+                    onSelect={selectSoContract}
+                    placeholder="Chọn hợp đồng (không bắt buộc)..." />
                 </div>
-                <div><label htmlFor="so-create-link" className="block text-black mb-1 font-medium">Link tài liệu đính kèm</label>
+                <div className="min-w-0">
+                  <label htmlFor="so-create-link" className="block text-black mb-1 font-medium">Link tài liệu đính kèm</label>
                   <input id="so-create-link" type="url" value={createLink} onChange={e => setCreateLink(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-sm" /></div>
+                    className="w-full min-h-11 p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-sm" />
+                </div>
               </div>
             )}
             </fieldset>}
@@ -3255,7 +3299,7 @@ export function TabErpScreen({
               </div>
             )}
 
-            {module === "sales-orders" ? (showCreateHeader ? <fieldset disabled={creatingDocument || createLocked} className="min-w-0 space-y-3 border-0 p-0">
+            {module === "sales-orders" ? (showCreateHeader ? <fieldset disabled={creatingDocument || createLocked} className="grid min-w-0 grid-cols-1 gap-3.5 border-0 p-0 sm:grid-cols-2">
               <div><label htmlFor="so-create-memo" className="block text-black mb-1 font-medium">Diễn giải</label>
                 <textarea id="so-create-memo" value={createMemo} onChange={e => setCreateMemo(e.target.value)} rows={3}
                   className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-sm" /></div>

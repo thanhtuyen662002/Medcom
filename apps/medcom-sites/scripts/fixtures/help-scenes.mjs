@@ -47,8 +47,9 @@ export async function captureHelpScenes({ page, device, visit, capture, field, s
   if (!group || group === 'sales') {
     if (process.env.MEDCOM_CAPTURE_SCENES !== 'qr') {
     await visit('sales-orders');
-    await page.getByRole('group', { name: 'Lọc trạng thái đơn hàng' }).getByRole('button', { name: 'Mới lập', exact: true }).waitFor();
-    await capture('so-list', [page.getByPlaceholder('Tìm theo mã chứng từ, người lập, đối tượng...'), page.getByRole('group', { name: 'Lọc trạng thái đơn hàng' }), page.getByText('DH-MINH-HOA-001', { exact: true }).filter({visible:true}).first()], true);
+    await page.getByLabel('Lọc trạng thái đơn hàng').waitFor();
+    await page.getByLabel('Lọc trạng thái đơn hàng').selectOption({ label: 'Mới lập' });
+    await capture('so-list', [page.getByPlaceholder('Tìm theo mã chứng từ, người lập, đối tượng...'), page.getByLabel('Lọc trạng thái đơn hàng'), page.getByText('DH-MINH-HOA-001', { exact: true }).filter({visible:true}).first()], true);
     await button('Tạo mới').click();
     await page.getByText('Tạo đơn hàng', { exact: true }).waitFor();
     await page.locator('input[type="date"]').first().fill('2026-10-19');

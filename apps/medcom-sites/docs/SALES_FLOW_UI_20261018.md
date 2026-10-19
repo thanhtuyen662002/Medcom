@@ -13,9 +13,9 @@ Phạm vi: frontend `apps/medcom-sites`, `/help` và tài liệu `apps/medcom-de
 | `sales-goods-status` | Feature; không có route module trong đặc tả đã kiểm tra. |
 | `sales-dispatch-invoices` | Feature; không có route module trong đặc tả đã kiểm tra. |
 
-Nguồn giao diện: `components/untitledui/tab-erp-screen.tsx`, `components/erp/sales-order-form.tsx`, `components/erp/sales-order-action-dialog.tsx`, `components/erp/sales-order-detail-tabs.tsx`, `components/erp/sales-flow-overview.tsx`, `components/erp/sales-feature-links.tsx`. Các đường dẫn frontend trong tài liệu này tương đối với `apps/medcom-sites`.
+Nguồn giao diện: `components/untitledui/tab-erp-screen.tsx`, `components/erp/sales-order-form.tsx`, `components/erp/sales-order-action-dialog.tsx`, `components/erp/sales-order-detail-tabs.tsx`, `components/erp/sales-feature-links.tsx`. Các đường dẫn frontend trong tài liệu này tương đối với `apps/medcom-sites`.
 
-Danh sách desktop tiếp tục dùng bảng/phân trang hiện có; mobile dùng thẻ. Form có dữ liệu chính 16px, nhãn 14px, nền/tương phản theo theme và vùng chạm tối thiểu 44px. Quy trình sáu ô đánh dấu màn hình đang xem; không dùng số thứ tự để suy ra bước đã hoàn tất. Bố cục thực tế trên thiết bị: **UNKNOWN**, chưa chạy trình duyệt theo yêu cầu của chủ dự án.
+Danh sách desktop tiếp tục dùng bảng/phân trang hiện có; mobile dùng thẻ. Form có dữ liệu chính 16px, nhãn 14px, nền/tương phản theo theme và vùng chạm tối thiểu 44px. Panel “Quy trình Bán hàng” sáu ô (`components/erp/sales-flow-overview.tsx`) đã bị gỡ bỏ theo yêu cầu chủ dự án ngày 18/10/2026; danh sách bán hàng giờ chỉ còn banner module, thanh tìm kiếm và bộ lọc trạng thái. Bố cục thực tế trên thiết bị: **UNKNOWN**, chưa chạy trình duyệt theo yêu cầu của chủ dự án.
 
 ## Hợp đồng ghi và đọc
 

@@ -23,7 +23,6 @@ import type { NavTabId } from "./bottom-nav";
 
 export interface TabHomeProps {
   onNavigateTab: (tab: NavTabId) => void;
-  onOpenQuickCreate: () => void;
   onSelectPurchaseItem?: (item: any) => void;
   userName?: string;
   currentBranch?: string;
@@ -36,7 +35,6 @@ export interface TabHomeProps {
 
 export function TabHome({
   onNavigateTab,
-  onOpenQuickCreate,
   onSelectPurchaseItem,
   userName = "Dược sĩ phụ trách",
   currentBranch = "CN01",
@@ -119,30 +117,8 @@ export function TabHome({
               Xin chào, {userName}
             </h2>
             <p className="text-xs sm:text-sm text-brand-200 max-w-md">
-              Chi nhánh: <strong className="text-white">{currentBranch}</strong> · Hiện có{" "}
-              <strong className="text-white underline">{ordersCount} đơn hàng PO</strong> và{" "}
-              <strong className="text-white underline">{purchasesCount} phiếu đề nghị PR</strong>{" "}
-              trong hệ thống.
+              Chi nhánh: <strong className="text-white">{currentBranch}</strong>
             </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => onNavigateTab("orders")}
-              className="px-3.5 py-2.5 rounded-xl bg-brand-600/60 hover:bg-brand-600 text-white font-bold text-xs sm:text-sm border border-brand-400/40 active:scale-95 transition-all flex items-center gap-2 shrink-0"
-            >
-              <ShoppingBag className="size-4" />
-              Đơn hàng PO ({ordersCount})
-            </button>
-            <button
-              type="button"
-              onClick={onOpenQuickCreate}
-              className="px-4 py-2.5 rounded-xl bg-white text-brand-900 font-bold text-xs sm:text-sm shadow-md hover:bg-brand-50 active:scale-95 transition-all flex items-center gap-2 shrink-0"
-            >
-              <FilePlus2 className="size-4 text-brand-700" />
-              Tạo đề nghị
-            </button>
           </div>
         </div>
       </div>

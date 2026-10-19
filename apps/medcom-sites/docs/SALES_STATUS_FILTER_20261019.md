@@ -1,13 +1,13 @@
 # Sales order status presentation — 2026-10-19
 
-Sales, PM and SA now use the module's `header.StatusID` lookup for status-filter badges. Labels come from the options response; no status names or counts are invented. Selecting a status sends its signed integer ID in the server list query and starts at page 1. Subsequent pagination retains that ID. The all-status choice omits `statusId`. Lock/open filter badges are removed from Sales screens, and row labels no longer infer workflow status from the document lock. The generic “Phân hệ ERP” heading badge is removed.
+Sales, PM and SA now use the module's `header.StatusID` lookup for a status-filter dropdown (single `<select>`), replacing the previous wrapping row of status badges that overflowed the page. Labels come from the options response; no status names or counts are invented. Selecting a status sends its signed integer ID in the server list query and starts at page 1. Subsequent pagination retains that ID. The all-status choice omits `statusId`. Lock/open filter badges are removed from Sales screens, and row labels no longer infer workflow status from the document lock. The generic “Phân hệ ERP” heading badge is removed.
 
 Evidence:
 
 - `inventories/erp/20261010/six-screen-catalog.json`, object `screens[id=sales-orders].lookups[ColumnID=StatusID]`: native StatusID / StatusName binding.
 - `inventories/erp/20261011/cud-workflow-catalog.json`, objects `screens[id=sales-order-pm|sales-order-sa].lookups[id=header.StatusID]`: corresponding native bindings.
 - `src/backend/Medcom.Infrastructure/Erp/ErpSql.cs`, `ErpSqlPlan.ListText`: server StatusID filtering before page slicing. `ScopePredicate` restricts PM reads by recipient and branch; this change does not broaden that scope.
-- `components/erp/sales-order-status-filter.tsx`: paged options, retry and stale-response guards; scoped by module and branch.
+- `components/erp/sales-order-status-filter.tsx`: accessible status dropdown (`aria-label="Lọc trạng thái đơn hàng"`) with paged options, retry and stale-response guards; scoped by module and branch.
 - `components/untitledui/tab-erp-screen.tsx`: server-filter integration and API-derived row status on desktop and mobile.
 - `tests/erp-screen-list-load.test.mjs`: observed 10 passing tests, including signed/zero status IDs on all three modules, filtered pagination, all-status reset, lookup pagination/retry and stale branch responses. TypeScript and changed-file ESLint pass.
 

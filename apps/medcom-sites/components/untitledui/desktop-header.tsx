@@ -1,30 +1,21 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { MedcomLogo } from "@/components/brand/medcom-logo";
 import {
-  ShieldCheck,
   Building2,
   ChevronDown,
   Check,
   Bell,
   Sun,
   Moon,
-  Plus,
   LogOut,
-  ShoppingBag,
-  FileText,
-  PackageCheck,
-  QrCode,
   LayoutDashboard,
   Settings2,
-  Search,
   Menu,
   PanelLeft,
   BookOpen,
 } from "lucide-react";
-import { UntitledBadge } from "./badge";
-import { UntitledButton } from "./button";
 import type { NavTabId } from "./bottom-nav";
 import type { BranchOption } from "./mobile-header";
 
@@ -39,14 +30,10 @@ export interface DesktopHeaderProps {
   userRole?: string;
   unreadNotifications?: number;
   onNotificationsClick: () => void;
-  onOpenQuickCreate: () => void;
   isDarkMode: boolean;
   onToggleDarkMode: () => void;
   onLogout: () => void;
   onToggleLayoutMode?: () => void;
-  pendingOrdersCount?: number;
-  pendingPurchasesCount?: number;
-  pendingInboundCount?: number;
 }
 
 export function DesktopHeader({
@@ -60,14 +47,10 @@ export function DesktopHeader({
   userRole = "Dược sĩ / Quản lý",
   unreadNotifications = 0,
   onNotificationsClick,
-  onOpenQuickCreate,
   isDarkMode,
   onToggleDarkMode,
   onLogout,
   onToggleLayoutMode,
-  pendingOrdersCount = 0,
-  pendingPurchasesCount = 0,
-  pendingInboundCount = 0,
 }: DesktopHeaderProps) {
   const [branchDropdownOpen, setBranchDropdownOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -79,30 +62,6 @@ export function DesktopHeader({
       id: "home" as NavTabId,
       label: "Tổng quan",
       icon: LayoutDashboard,
-      badge: 0,
-    },
-    {
-      id: "purchases" as NavTabId,
-      label: "Đề nghị (PR)",
-      icon: FileText,
-      badge: pendingPurchasesCount,
-    },
-    {
-      id: "inbound" as NavTabId,
-      label: "Nhập kho",
-      icon: PackageCheck,
-      badge: pendingInboundCount,
-    },
-    {
-      id: "scan" as NavTabId,
-      label: "Quét mã",
-      icon: QrCode,
-      badge: 0,
-    },
-    {
-      id: "settings" as NavTabId,
-      label: "Cài đặt",
-      icon: Settings2,
       badge: 0,
     },
   ];
@@ -253,16 +212,6 @@ export function DesktopHeader({
                 <span>Phân hệ ERP</span>
               </button>
             )}
-
-            {/* Quick Create Action */}
-            <UntitledButton
-              variant="primary"
-              size="sm"
-              onClick={onOpenQuickCreate}
-              iconLeading={<Plus className="size-3.5" />}
-            >
-              Đề nghị mới
-            </UntitledButton>
 
             {/* Notifications */}
             <button

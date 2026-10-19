@@ -10,7 +10,6 @@ import {
   Bell,
   Sun,
   Moon,
-  Plus,
   LogOut,
   ShoppingBag,
   FileText,
@@ -30,8 +29,6 @@ import {
   Boxes,
   BookOpen,
 } from "lucide-react";
-import { UntitledBadge } from "./badge";
-import { UntitledButton } from "./button";
 import type { NavTabId } from "./bottom-nav";
 import type { BranchOption } from "./mobile-header";
 import { SalesFeatureLinks } from "@/components/erp/sales-feature-links";
@@ -46,14 +43,10 @@ export interface DesktopSidebarProps {
   userRole?: string;
   unreadNotifications?: number;
   onNotificationsClick: () => void;
-  onOpenQuickCreate: () => void;
   isDarkMode: boolean;
   onToggleDarkMode: () => void;
   onLogout: () => void;
   onToggleLayoutMode?: () => void;
-  pendingOrdersCount?: number;
-  pendingPurchasesCount?: number;
-  pendingInboundCount?: number;
   /** Quyền màn hình từ /api/erp/permissions; allowed null = chưa có quyền. */
   tabAccess?: { loading: boolean; error: boolean; allowed: readonly string[] | null } | null;
   onRetryTabs?: () => void;
@@ -69,7 +62,6 @@ export function DesktopSidebar({
   userRole = "Dược sĩ / Quản lý",
   unreadNotifications = 0,
   onNotificationsClick,
-  onOpenQuickCreate,
   isDarkMode,
   onToggleDarkMode,
   onLogout,
@@ -221,19 +213,6 @@ export function DesktopSidebar({
             </>
           )}
         </div>
-      </div>
-
-      {/* Primary Action Button */}
-      <div className="px-3 pt-3">
-        <UntitledButton
-          variant="primary"
-          size="md"
-          fullWidth
-          onClick={onOpenQuickCreate}
-          iconLeading={<Plus className="size-5" />}
-        >
-          Đề nghị mới
-        </UntitledButton>
       </div>
 
       {/* Navigation Scrollable Body */}

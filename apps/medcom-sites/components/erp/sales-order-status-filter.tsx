@@ -1,12 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Loader2, RefreshCw } from "lucide-react";
+import { ChevronDown, Loader2, RefreshCw } from "lucide-react";
 import { erpClient } from "@/lib/erp/erp-client";
 import type { SalesOrderModule } from "@/lib/erp/sales-order-workflow";
 
 type StatusChoice = { id: number; label: string };
 type StatusPage = { scope: string; choices: StatusChoice[]; page: number; hasMore: boolean };
+
+const ALL_VALUE = "";
+const MORE_VALUE = "__more__";
 
 export function SalesOrderStatusFilter({ module, branchId, isActive, value, onChange }: {
   module: SalesOrderModule; branchId: string; isActive: boolean;
@@ -52,20 +55,33 @@ export function SalesOrderStatusFilter({ module, branchId, isActive, value, onCh
     return () => { active = false; invalidate(); };
   }, [isActive, load, invalidate]);
 
-  return <div className="space-y-2">
-    <div role="group" aria-label="Lọc trạng thái đơn hàng" aria-busy={busy}
-      className="flex items-center gap-2 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-visible">
-      {[{ id: null, label: "Tất cả" }, ...(current?.choices ?? [])].map(choice => <button key={choice.id ?? "all"} type="button"
-        aria-pressed={value === choice.id} disabled={!isActive} onClick={() => onChange(choice.id)}
-        className={`inline-flex min-h-11 shrink-0 items-center rounded-xl border px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 ${value === choice.id
-          ? "border-brand-600 bg-brand-600 text-white" : "border-neutral-200 bg-white text-black hover:border-brand-300 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"}`}>
-        {choice.label}
-      </button>)}
-      {busy && <span role="status" className="inline-flex shrink-0 items-center gap-2 px-2 text-sm"><Loader2 aria-hidden className="size-4 animate-spin" />Đang tải trạng thái...</span>}
-      {!busy && failedPage == null && current?.hasMore && <button type="button" onClick={() => void load(current.page + 1)} className="min-h-11 shrink-0 rounded-xl border border-neutral-300 px-3 text-sm dark:border-neutral-700">Thêm trạng thái</button>}
+  return <div className="space-y-2" aria-busy={busy}>
+    <div className="flex items-center gap-2">
+      <div className="relative inline-flex items-center">
+        <select
+          aria-label="Lọc trạng thái đơn hàng"
+          value={value === null ? ALL_VALUE : String(value)}
+          disabled={!isActive}
+          onChange={event => {
+            const next = event.target.value;
+            if (next === MORE_VALUE) { if (current?.hasMore) void load(current.page + 1); return; }
+            onChange(next === ALL_VALUE ? null : Number(next));
+          }}
+          className="min-h-11 w-full min-w-[220px] max-w-xs appearance-none rounded-xl border border-neutral-200 bg-white py-2 pl-3 pr-9 text-sm font-semibold text-black shadow-2xs outline-none transition-colors cursor-pointer focus-visible:border-brand-500 focus-visible:ring-2 focus-visible:ring-brand-500/30 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+        >
+          <option value={ALL_VALUE}>Tất cả</option>
+          {(current?.choices ?? []).map(choice => (
+            <option key={choice.id} value={String(choice.id)}>{choice.label}</option>
+          ))}
+          {current?.hasMore && <option value={MORE_VALUE}>Thêm trạng thái</option>}
+        </select>
+        <ChevronDown aria-hidden className="pointer-events-none absolute right-3 size-4 text-neutral-400" />
+      </div>
+      {busy && <span role="status" className="inline-flex shrink-0 items-center gap-2 text-sm text-neutral-500"><Loader2 aria-hidden className="size-4 animate-spin" />Đang tải trạng thái...</span>}
     </div>
     {!busy && failedPage != null && <div role="status" className="flex flex-wrap items-center gap-2 text-sm">
-      <span>Chưa tải được danh sách trạng thái.</span><button type="button" onClick={() => void load(failedPage)} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-neutral-300 px-3 font-semibold dark:border-neutral-700"><RefreshCw aria-hidden className="size-4" />Thử lại</button>
+      <span>Chưa tải được danh sách trạng thái.</span>
+      <button type="button" onClick={() => void load(failedPage)} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-neutral-300 px-3 font-semibold dark:border-neutral-700"><RefreshCw aria-hidden className="size-4" />Thử lại</button>
     </div>}
   </div>;
 }
