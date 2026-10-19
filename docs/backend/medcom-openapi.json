@@ -24370,12 +24370,19 @@
             "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}$"
           },
           "objectId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-sql-type": "varchar(100)",
             "x-medcom-source-column": "ObjectID",
             "x-medcom-json-path": "document.purchaseOrderHeader.objectId",
             "x-medcom-list-json-path": "rows[].purchaseOrderHeader.objectId",
-            "x-medcom-sql-nullable": false
+            "x-medcom-sql-nullable": true
           },
           "memo": {
             "anyOf": [
@@ -27332,12 +27339,19 @@
             "x-medcom-sql-nullable": false
           },
           "objectId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-sql-type": "varchar(100)",
             "x-medcom-source-column": "ObjectID",
             "x-medcom-json-path": "data.sourceFields.header.objectId",
             "x-medcom-list-json-path": "data.rows[].fields.objectId",
-            "x-medcom-sql-nullable": false
+            "x-medcom-sql-nullable": true
           },
           "rateExchange": {
             "type": "number",
@@ -27704,7 +27718,14 @@
             "type": "string"
           },
           "objectId": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "rateExchange": {
             "type": "number"
@@ -52820,11 +52841,18 @@
             "x-medcom-writable": false
           },
           "objectId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "ObjectID",
             "x-medcom-sql-type": "varchar",
             "x-medcom-sql-type-arguments": "(100)",
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": false
           },
           "rateExchange": {
@@ -53263,7 +53291,14 @@
             "type": "string"
           },
           "objectId": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "memo": {
             "anyOf": [
@@ -53325,7 +53360,6 @@
         "x-medcom-exact-input": true,
         "required": [
           "documentDate",
-          "objectId",
           "currencyId",
           "rateExchange"
         ]
@@ -53605,11 +53639,18 @@
             "x-medcom-writable": true
           },
           "objectId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "ObjectID",
             "x-medcom-sql-type": "varchar",
             "x-medcom-sql-type-arguments": "(100)",
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": true
           },
           "memo": {
@@ -54269,7 +54310,14 @@
             "type": "string"
           },
           "objectId": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "rateExchange": {
             "type": "number"
@@ -54280,7 +54328,6 @@
           "personSuggest",
           "department",
           "currencyId",
-          "objectId",
           "rateExchange"
         ]
       },
@@ -54737,11 +54784,18 @@
             "x-medcom-writable": true
           },
           "objectId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "ObjectID",
             "x-medcom-sql-type": "varchar",
             "x-medcom-sql-type-arguments": "(100)",
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": true
           },
           "rateExchange": {
@@ -55236,11 +55290,18 @@
             "x-medcom-writable": false
           },
           "objectId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "ObjectID",
             "x-medcom-sql-type": "varchar",
             "x-medcom-sql-type-arguments": "(100)",
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": false
           },
           "contractId": {
@@ -57105,11 +57166,18 @@
             "x-medcom-writable": false
           },
           "objectId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "ObjectID",
             "x-medcom-sql-type": "varchar",
             "x-medcom-sql-type-arguments": "(100)",
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": false
           },
           "contractId": {
@@ -58702,7 +58770,14 @@
             "type": "string"
           },
           "objectId": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "contractId": {
             "anyOf": [
@@ -59114,7 +59189,6 @@
         "x-medcom-exact-input": true,
         "required": [
           "documentDate",
-          "objectId",
           "employeeId",
           "isOrder",
           "currencyId",
@@ -59582,11 +59656,18 @@
             "x-medcom-writable": true
           },
           "objectId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "ObjectID",
             "x-medcom-sql-type": "varchar",
             "x-medcom-sql-type-arguments": "(100)",
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": true
           },
           "contractId": {
@@ -65342,12 +65423,19 @@
             "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}$"
           },
           "objectId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-sql-type": "varchar(100)",
             "x-medcom-source-column": "ObjectID",
             "x-medcom-json-path": "document.purchaseOrderHeader.objectId",
             "x-medcom-list-json-path": "rows[].purchaseOrderHeader.objectId",
-            "x-medcom-sql-nullable": false
+            "x-medcom-sql-nullable": true
           },
           "memo": {
             "anyOf": [
@@ -69856,12 +69944,19 @@
             "x-medcom-sql-nullable": false
           },
           "objectId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-sql-type": "varchar(100)",
             "x-medcom-source-column": "ObjectID",
             "x-medcom-json-path": "data.sourceFields.header.objectId",
             "x-medcom-list-json-path": "data.rows[].fields.objectId",
-            "x-medcom-sql-nullable": false
+            "x-medcom-sql-nullable": true
           },
           "rateExchange": {
             "type": "number",
@@ -70332,7 +70427,14 @@
             "type": "string"
           },
           "objectId": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "rateExchange": {
             "type": "number"
@@ -97735,11 +97837,18 @@
             "x-medcom-writable": false
           },
           "objectId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "ObjectID",
             "x-medcom-sql-type": "varchar",
             "x-medcom-sql-type-arguments": "(100)",
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": false
           },
           "rateExchange": {
@@ -98472,11 +98581,18 @@
             "x-medcom-writable": true
           },
           "objectId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "ObjectID",
             "x-medcom-sql-type": "varchar",
             "x-medcom-sql-type-arguments": "(100)",
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": true
           },
           "memo": {
@@ -99792,11 +99908,18 @@
             "x-medcom-writable": true
           },
           "objectId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "ObjectID",
             "x-medcom-sql-type": "varchar",
             "x-medcom-sql-type-arguments": "(100)",
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": true
           },
           "rateExchange": {
@@ -100529,11 +100652,18 @@
             "x-medcom-writable": false
           },
           "objectId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "ObjectID",
             "x-medcom-sql-type": "varchar",
             "x-medcom-sql-type-arguments": "(100)",
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": false
           },
           "contractId": {
@@ -103193,11 +103323,18 @@
             "x-medcom-writable": false
           },
           "objectId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "ObjectID",
             "x-medcom-sql-type": "varchar",
             "x-medcom-sql-type-arguments": "(100)",
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": false
           },
           "contractId": {
@@ -105711,11 +105848,18 @@
             "x-medcom-writable": true
           },
           "objectId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "ObjectID",
             "x-medcom-sql-type": "varchar",
             "x-medcom-sql-type-arguments": "(100)",
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": true
           },
           "contractId": {
@@ -114393,12 +114537,19 @@
             "description": "Opaque status background CSS color (#RRGGBB), using RGB channels of source BackColor integer; native alpha is ignored. Null if absent or unresolved."
           },
           "objectId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-sql-type": "varchar(100)",
             "x-medcom-source-column": "ObjectID",
             "x-medcom-json-path": "document.objectId",
             "x-medcom-list-json-path": "rows[].objectId",
-            "x-medcom-sql-nullable": false
+            "x-medcom-sql-nullable": true
           },
           "memo": {
             "anyOf": [
@@ -114897,12 +115048,19 @@
                 "description": "Opaque status background CSS color (#RRGGBB), using RGB channels of source BackColor integer; native alpha is ignored. Null if absent or unresolved."
               },
               "objectId": {
-                "type": "string",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
                 "x-medcom-sql-type": "varchar(100)",
                 "x-medcom-source-column": "ObjectID",
                 "x-medcom-json-path": "document.objectId",
                 "x-medcom-list-json-path": "rows[].objectId",
-                "x-medcom-sql-nullable": false
+                "x-medcom-sql-nullable": true
               },
               "memo": {
                 "anyOf": [
@@ -115946,12 +116104,19 @@
             "description": "Opaque status background CSS color (#RRGGBB), using RGB channels of source BackColor integer; native alpha is ignored. Null if absent or unresolved."
           },
           "objectId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-sql-type": "varchar(100)",
             "x-medcom-source-column": "ObjectID",
             "x-medcom-json-path": "document.objectId",
             "x-medcom-list-json-path": "rows[].objectId",
-            "x-medcom-sql-nullable": false
+            "x-medcom-sql-nullable": true
           },
           "memo": {
             "anyOf": [
@@ -116450,12 +116615,19 @@
                 "description": "Opaque status background CSS color (#RRGGBB), using RGB channels of source BackColor integer; native alpha is ignored. Null if absent or unresolved."
               },
               "objectId": {
-                "type": "string",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
                 "x-medcom-sql-type": "varchar(100)",
                 "x-medcom-source-column": "ObjectID",
                 "x-medcom-json-path": "document.objectId",
                 "x-medcom-list-json-path": "rows[].objectId",
-                "x-medcom-sql-nullable": false
+                "x-medcom-sql-nullable": true
               },
               "memo": {
                 "anyOf": [
@@ -122641,12 +122813,19 @@
             "x-medcom-sql-nullable": false
           },
           "objectId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-sql-type": "varchar(100)",
             "x-medcom-source-column": "ObjectID",
             "x-medcom-json-path": "data.document.header.objectId",
             "x-medcom-list-json-path": "data.rows[].objectId",
-            "x-medcom-sql-nullable": false
+            "x-medcom-sql-nullable": true
           },
           "rateExchange": {
             "type": "number",
@@ -122899,12 +123078,19 @@
                     "x-medcom-sql-nullable": false
                   },
                   "objectId": {
-                    "type": "string",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
                     "x-medcom-sql-type": "varchar(100)",
                     "x-medcom-source-column": "ObjectID",
                     "x-medcom-json-path": "data.document.header.objectId",
                     "x-medcom-list-json-path": "data.rows[].objectId",
-                    "x-medcom-sql-nullable": false
+                    "x-medcom-sql-nullable": true
                   },
                   "rateExchange": {
                     "type": "number",
@@ -123750,12 +123936,19 @@
             "x-medcom-sql-nullable": false
           },
           "objectId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-sql-type": "varchar(100)",
             "x-medcom-source-column": "ObjectID",
             "x-medcom-json-path": "data.document.header.objectId",
             "x-medcom-list-json-path": "data.rows[].objectId",
-            "x-medcom-sql-nullable": false
+            "x-medcom-sql-nullable": true
           },
           "rateExchange": {
             "type": "number",
@@ -124008,12 +124201,19 @@
                     "x-medcom-sql-nullable": false
                   },
                   "objectId": {
-                    "type": "string",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
                     "x-medcom-sql-type": "varchar(100)",
                     "x-medcom-source-column": "ObjectID",
                     "x-medcom-json-path": "data.document.header.objectId",
                     "x-medcom-list-json-path": "data.rows[].objectId",
-                    "x-medcom-sql-nullable": false
+                    "x-medcom-sql-nullable": true
                   },
                   "rateExchange": {
                     "type": "number",
@@ -124901,7 +125101,14 @@
                 "type": "string"
               },
               "objectId": {
-                "type": "string"
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               },
               "rateExchange": {
                 "type": "number"
@@ -159038,11 +159245,18 @@
             "x-medcom-writable": false
           },
           "objectId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "ObjectID",
             "x-medcom-sql-type": "varchar",
             "x-medcom-sql-type-arguments": "(100)",
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": false
           },
           "rateExchange": {
@@ -159407,11 +159621,18 @@
                 "x-medcom-writable": false
               },
               "objectId": {
-                "type": "string",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
                 "x-medcom-source-column": "ObjectID",
                 "x-medcom-sql-type": "varchar",
                 "x-medcom-sql-type-arguments": "(100)",
-                "x-medcom-sql-nullable": false,
+                "x-medcom-sql-nullable": true,
                 "x-medcom-writable": false
               },
               "rateExchange": {
@@ -160491,11 +160712,18 @@
             "x-medcom-writable": true
           },
           "objectId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "ObjectID",
             "x-medcom-sql-type": "varchar",
             "x-medcom-sql-type-arguments": "(100)",
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": true
           },
           "memo": {
@@ -161005,11 +161233,18 @@
                 "x-medcom-writable": true
               },
               "objectId": {
-                "type": "string",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
                 "x-medcom-source-column": "ObjectID",
                 "x-medcom-sql-type": "varchar",
                 "x-medcom-sql-type-arguments": "(100)",
-                "x-medcom-sql-nullable": false,
+                "x-medcom-sql-nullable": true,
                 "x-medcom-writable": true
               },
               "memo": {
@@ -162180,11 +162415,18 @@
             "x-medcom-writable": true
           },
           "objectId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "ObjectID",
             "x-medcom-sql-type": "varchar",
             "x-medcom-sql-type-arguments": "(100)",
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": true
           },
           "rateExchange": {
@@ -162549,11 +162791,18 @@
                 "x-medcom-writable": true
               },
               "objectId": {
-                "type": "string",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
                 "x-medcom-source-column": "ObjectID",
                 "x-medcom-sql-type": "varchar",
                 "x-medcom-sql-type-arguments": "(100)",
-                "x-medcom-sql-nullable": false,
+                "x-medcom-sql-nullable": true,
                 "x-medcom-writable": true
               },
               "rateExchange": {
@@ -163226,11 +163475,18 @@
             "x-medcom-writable": false
           },
           "objectId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "ObjectID",
             "x-medcom-sql-type": "varchar",
             "x-medcom-sql-type-arguments": "(100)",
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": false
           },
           "contractId": {
@@ -164563,11 +164819,18 @@
                 "x-medcom-writable": false
               },
               "objectId": {
-                "type": "string",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
                 "x-medcom-source-column": "ObjectID",
                 "x-medcom-sql-type": "varchar",
                 "x-medcom-sql-type-arguments": "(100)",
-                "x-medcom-sql-nullable": false,
+                "x-medcom-sql-nullable": true,
                 "x-medcom-writable": false
               },
               "contractId": {
@@ -167043,11 +167306,18 @@
             "x-medcom-writable": false
           },
           "objectId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "ObjectID",
             "x-medcom-sql-type": "varchar",
             "x-medcom-sql-type-arguments": "(100)",
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": false
           },
           "contractId": {
@@ -168320,11 +168590,18 @@
                 "x-medcom-writable": false
               },
               "objectId": {
-                "type": "string",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
                 "x-medcom-source-column": "ObjectID",
                 "x-medcom-sql-type": "varchar",
                 "x-medcom-sql-type-arguments": "(100)",
-                "x-medcom-sql-nullable": false,
+                "x-medcom-sql-nullable": true,
                 "x-medcom-writable": false
               },
               "contractId": {
@@ -170666,11 +170943,18 @@
             "x-medcom-writable": true
           },
           "objectId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "x-medcom-source-column": "ObjectID",
             "x-medcom-sql-type": "varchar",
             "x-medcom-sql-type-arguments": "(100)",
-            "x-medcom-sql-nullable": false,
+            "x-medcom-sql-nullable": true,
             "x-medcom-writable": true
           },
           "contractId": {
@@ -171943,11 +172227,18 @@
                 "x-medcom-writable": true
               },
               "objectId": {
-                "type": "string",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
                 "x-medcom-source-column": "ObjectID",
                 "x-medcom-sql-type": "varchar",
                 "x-medcom-sql-type-arguments": "(100)",
-                "x-medcom-sql-nullable": false,
+                "x-medcom-sql-nullable": true,
                 "x-medcom-writable": true
               },
               "contractId": {
@@ -181558,12 +181849,19 @@
                   "description": "Opaque status background CSS color (#RRGGBB), using RGB channels of source BackColor integer; native alpha is ignored. Null if absent or unresolved."
                 },
                 "objectId": {
-                  "type": "string",
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
                   "x-medcom-sql-type": "varchar(100)",
                   "x-medcom-source-column": "ObjectID",
                   "x-medcom-json-path": "document.objectId",
                   "x-medcom-list-json-path": "rows[].objectId",
-                  "x-medcom-sql-nullable": false
+                  "x-medcom-sql-nullable": true
                 },
                 "memo": {
                   "anyOf": [
@@ -182068,12 +182366,19 @@
                 "description": "Opaque status background CSS color (#RRGGBB), using RGB channels of source BackColor integer; native alpha is ignored. Null if absent or unresolved."
               },
               "objectId": {
-                "type": "string",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
                 "x-medcom-sql-type": "varchar(100)",
                 "x-medcom-source-column": "ObjectID",
                 "x-medcom-json-path": "document.objectId",
                 "x-medcom-list-json-path": "rows[].objectId",
-                "x-medcom-sql-nullable": false
+                "x-medcom-sql-nullable": true
               },
               "memo": {
                 "anyOf": [
@@ -204452,11 +204757,18 @@
                       "x-medcom-writable": false
                     },
                     "objectId": {
-                      "type": "string",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
                       "x-medcom-source-column": "ObjectID",
                       "x-medcom-sql-type": "varchar",
                       "x-medcom-sql-type-arguments": "(100)",
-                      "x-medcom-sql-nullable": false,
+                      "x-medcom-sql-nullable": true,
                       "x-medcom-writable": false
                     },
                     "rateExchange": {
@@ -204840,11 +205152,18 @@
                     "x-medcom-writable": false
                   },
                   "objectId": {
-                    "type": "string",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
                     "x-medcom-source-column": "ObjectID",
                     "x-medcom-sql-type": "varchar",
                     "x-medcom-sql-type-arguments": "(100)",
-                    "x-medcom-sql-nullable": false,
+                    "x-medcom-sql-nullable": true,
                     "x-medcom-writable": false
                   },
                   "rateExchange": {
@@ -205412,11 +205731,18 @@
                       "x-medcom-writable": true
                     },
                     "objectId": {
-                      "type": "string",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
                       "x-medcom-source-column": "ObjectID",
                       "x-medcom-sql-type": "varchar",
                       "x-medcom-sql-type-arguments": "(100)",
-                      "x-medcom-sql-nullable": false,
+                      "x-medcom-sql-nullable": true,
                       "x-medcom-writable": true
                     },
                     "memo": {
@@ -205929,11 +206255,18 @@
                     "x-medcom-writable": true
                   },
                   "objectId": {
-                    "type": "string",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
                     "x-medcom-source-column": "ObjectID",
                     "x-medcom-sql-type": "varchar",
                     "x-medcom-sql-type-arguments": "(100)",
-                    "x-medcom-sql-nullable": false,
+                    "x-medcom-sql-nullable": true,
                     "x-medcom-writable": true
                   },
                   "memo": {
@@ -206731,11 +207064,18 @@
                       "x-medcom-writable": true
                     },
                     "objectId": {
-                      "type": "string",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
                       "x-medcom-source-column": "ObjectID",
                       "x-medcom-sql-type": "varchar",
                       "x-medcom-sql-type-arguments": "(100)",
-                      "x-medcom-sql-nullable": false,
+                      "x-medcom-sql-nullable": true,
                       "x-medcom-writable": true
                     },
                     "rateExchange": {
@@ -207119,11 +207459,18 @@
                     "x-medcom-writable": true
                   },
                   "objectId": {
-                    "type": "string",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
                     "x-medcom-source-column": "ObjectID",
                     "x-medcom-sql-type": "varchar",
                     "x-medcom-sql-type-arguments": "(100)",
-                    "x-medcom-sql-nullable": false,
+                    "x-medcom-sql-nullable": true,
                     "x-medcom-writable": true
                   },
                   "rateExchange": {
@@ -207691,11 +208038,18 @@
                       "x-medcom-writable": false
                     },
                     "objectId": {
-                      "type": "string",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
                       "x-medcom-source-column": "ObjectID",
                       "x-medcom-sql-type": "varchar",
                       "x-medcom-sql-type-arguments": "(100)",
-                      "x-medcom-sql-nullable": false,
+                      "x-medcom-sql-nullable": true,
                       "x-medcom-writable": false
                     },
                     "contractId": {
@@ -209031,11 +209385,18 @@
                     "x-medcom-writable": false
                   },
                   "objectId": {
-                    "type": "string",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
                     "x-medcom-source-column": "ObjectID",
                     "x-medcom-sql-type": "varchar",
                     "x-medcom-sql-type-arguments": "(100)",
-                    "x-medcom-sql-nullable": false,
+                    "x-medcom-sql-nullable": true,
                     "x-medcom-writable": false
                   },
                   "contractId": {
@@ -211295,11 +211656,18 @@
                       "x-medcom-writable": false
                     },
                     "objectId": {
-                      "type": "string",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
                       "x-medcom-source-column": "ObjectID",
                       "x-medcom-sql-type": "varchar",
                       "x-medcom-sql-type-arguments": "(100)",
-                      "x-medcom-sql-nullable": false,
+                      "x-medcom-sql-nullable": true,
                       "x-medcom-writable": false
                     },
                     "contractId": {
@@ -212591,11 +212959,18 @@
                     "x-medcom-writable": false
                   },
                   "objectId": {
-                    "type": "string",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
                     "x-medcom-source-column": "ObjectID",
                     "x-medcom-sql-type": "varchar",
                     "x-medcom-sql-type-arguments": "(100)",
-                    "x-medcom-sql-nullable": false,
+                    "x-medcom-sql-nullable": true,
                     "x-medcom-writable": false
                   },
                   "contractId": {
@@ -214897,11 +215272,18 @@
                       "x-medcom-writable": true
                     },
                     "objectId": {
-                      "type": "string",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
                       "x-medcom-source-column": "ObjectID",
                       "x-medcom-sql-type": "varchar",
                       "x-medcom-sql-type-arguments": "(100)",
-                      "x-medcom-sql-nullable": false,
+                      "x-medcom-sql-nullable": true,
                       "x-medcom-writable": true
                     },
                     "contractId": {
@@ -216193,11 +216575,18 @@
                     "x-medcom-writable": true
                   },
                   "objectId": {
-                    "type": "string",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
                     "x-medcom-source-column": "ObjectID",
                     "x-medcom-sql-type": "varchar",
                     "x-medcom-sql-type-arguments": "(100)",
-                    "x-medcom-sql-nullable": false,
+                    "x-medcom-sql-nullable": true,
                     "x-medcom-writable": true
                   },
                   "contractId": {

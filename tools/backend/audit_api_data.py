@@ -3,9 +3,12 @@
 import argparse
 from functools import lru_cache
 import json
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "tools/source"))
+from schema_evolution import nullable as current_nullable
 OPENAPI = "docs/backend/medcom-openapi.json"
 FIELDS = "docs/backend/document-field-contract.json"
 ERP_FIELDS = "inventories/erp/20261010/six-screen-catalog.json"
@@ -89,7 +92,7 @@ def audit(api, mapping, tables, erp_catalog=None):
             for field in fields:
                 column = columns[field["column"]]
                 require(field["sqlType"] == column["type"] + (column.get("typeArguments") or "")
-                        and field["nullable"] is column["nullable"], "Source type/nullability mismatch")
+                        and field["nullable"] is current_nullable(contract["table"], column["name"], column["nullable"]), "Source type/nullability mismatch")
                 for route_base in bases:
                     for path, field_path in ((route_base, field["listJsonPath"]), (route_base + "/detail", field["jsonPath"])):
                         if field_path is None:
@@ -140,7 +143,8 @@ def audit(api, mapping, tables, erp_catalog=None):
                     schema = at_schema(api, body, member)
                     alternatives = schema.get("anyOf", [schema])
                     expected_type = {"bit": "boolean", "int": "integer", "smallint": "integer", "tinyint": "integer", "bigint": "integer", "float": "number", "real": "number"}.get(field["type"], "string")
-                    require(any(s.get("type") == "null" for s in alternatives) is field["nullable"], "ERP wire nullability mismatch")
+                    table = screen["tables"][section] if "tables" in screen else screen[section + "Table" if section != "lines" else "lineTable"]
+                    require(any(s.get("type") == "null" for s in alternatives) is current_nullable(table, field["column"], field["nullable"]), "ERP wire nullability mismatch")
                     require(any(s.get("type") == expected_type for s in alternatives), "ERP wire primitive mismatch")
                     require(schema.get("x-medcom-source-column") == field["column"] and schema.get("x-medcom-sql-type") == field["type"]
                             and schema.get("x-medcom-sql-type-arguments") == field.get("typeArguments"), "ERP wire source provenance mismatch")

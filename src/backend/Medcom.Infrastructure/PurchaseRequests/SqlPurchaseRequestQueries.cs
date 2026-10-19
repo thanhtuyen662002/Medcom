@@ -74,7 +74,7 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
             ('AP_PurchaseRequestTbl','StatusID','int',4,0,10,0),
             ('AP_PurchaseRequestTbl','isLock','bit',1,1,1,0),
             ('AP_PurchaseRequestTbl','CurrencyID','varchar',3,0,0,0),
-            ('AP_PurchaseRequestTbl','ObjectID','varchar',100,0,0,0),
+            ('AP_PurchaseRequestTbl','ObjectID','varchar',100,1,0,0),
             ('AP_PurchaseRequestTbl','RateExchange','float',8,0,53,0),
             ('AP_PurchaseRequestTbl','BranchID','varchar',50,0,0,0),
             ('AP_PurchaseRequestDetailTbl','UserAutoID','varchar',50,0,0,0),
@@ -173,7 +173,7 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
                     reader.GetInt32(5), reader.IsDBNull(6) ? null : reader.GetBoolean(6), DocumentStatusSql.ReadName(reader, 8, 50),
                     new(reader.GetString(0),Date(reader,1),reader.IsDBNull(10)?null:reader.GetInt32(10),
                         reader.GetString(3),reader.GetString(4),Text(reader,11),Decimal(reader,12,"0.00"),Text(reader,13),
-                        reader.GetInt32(5),reader.IsDBNull(6)?null:reader.GetBoolean(6),reader.GetString(14),reader.GetString(15),
+                        reader.GetInt32(5),reader.IsDBNull(6)?null:reader.GetBoolean(6),reader.GetString(14),Text(reader,15),
                         Finite(reader.GetDouble(16)),reader.GetString(2))));
             }
             return new(rows.Take(query.PageSize).ToArray(), query.Page, query.PageSize, rows.Count > query.PageSize);
@@ -194,11 +194,11 @@ public sealed class SqlPurchaseRequestQueries : IPurchaseRequestQueries
                 PurchaseRequestSql.Document(command, documentId);
                 await using var reader = await command.ExecuteReaderAsync(ct);
                 if (!await reader.ReadAsync(ct)) throw new QueryNotFound();
-                if (new[] { 0, 3, 4, 8, 10, 11, 12, 13 }.Any(reader.IsDBNull)
+                if (new[] { 0, 3, 4, 8, 10, 12, 13 }.Any(reader.IsDBNull)
                     || reader.GetString(0) != documentId || !branches.Contains(reader.GetString(13), StringComparer.Ordinal)) throw new QueryNotFound();
                 var header = new PurchaseRequestHeaderInput(Date(reader, 1), reader.IsDBNull(2) ? null : reader.GetInt32(2),
                     reader.GetString(3), reader.GetString(4), Text(reader, 5), Decimal(reader, 6, "0.00"), Text(reader, 7),
-                    reader.GetString(10), reader.GetString(11), reader.GetDouble(12));
+                    reader.GetString(10), Text(reader,11), reader.GetDouble(12));
                 statusName = DocumentStatusSql.ReadName(reader, 14, 50);
                 head = new(documentId, reader.GetString(13), header, reader.GetInt32(8), reader.IsDBNull(9) ? null : reader.GetBoolean(9), []);
                 sourceHeader=new(head.PurchaseRequestId,header.PurchaseDate,header.PurposeId,header.PersonSuggest,

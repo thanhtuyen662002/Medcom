@@ -23,7 +23,7 @@ public sealed record ErpPurchaseRequestHeaderInput
     [JsonPropertyName("currencyId")]
     public required string CurrencyId { get; init; }
     [JsonPropertyName("objectId")]
-    public required string ObjectId { get; init; }
+    public string? ObjectId { get; init; }
     [JsonPropertyName("rateExchange")]
     public required double RateExchange { get; init; }
 }
@@ -51,7 +51,7 @@ public sealed record ErpSalesOrderHeaderInput
     [JsonPropertyName("documentDate")]
     public required string DocumentDate { get; init; }
     [JsonPropertyName("objectId")]
-    public required string ObjectId { get; init; }
+    public string? ObjectId { get; init; }
     [JsonPropertyName("contractId")]
     public string? ContractId { get; init; }
     [JsonPropertyName("memo")]

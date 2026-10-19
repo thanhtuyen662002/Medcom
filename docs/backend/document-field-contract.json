@@ -30,7 +30,7 @@
             "jsonPath": "document.objectId",
             "sqlType": "varchar(100)",
             "listJsonPath": "rows[].objectId",
-            "nullable": false,
+            "nullable": true,
             "jsonType": "string",
             "format": null
           },
@@ -1002,7 +1002,7 @@
             "jsonPath": "data.document.header.objectId",
             "sqlType": "varchar(100)",
             "listJsonPath": "data.rows[].objectId",
-            "nullable": false,
+            "nullable": true,
             "jsonType": "string",
             "format": null
           },
@@ -1120,5 +1120,6 @@
     }
   },
   "previousSourceSet": "owner-attachment-20261002",
-  "sourceEvidence": "inventories/source/20261010/document-read-tables.json"
+  "sourceEvidence": "inventories/source/20261010/document-read-tables.json",
+  "schemaEvolutionEvidence": "inventories/backend/20261019/schema-evolution.json"
 }
