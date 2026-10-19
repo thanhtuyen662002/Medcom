@@ -146,6 +146,7 @@ export function SalesOrderForm({
   const customerName = salesOrderField(choices.objectId,"ObjectName") || (originalCustomer ? text(header.objectName) : "");
   const customerAddr = salesOrderField(choices.objectId,"Address") || (originalCustomer ? text(header.address) : "");
   const statusName = documentStatusLabel(typeof header.statusId === "number" ? header.statusId : null, text(header.statusName));
+  const deliveryStatusName = text(header.deliveryStatusName);
   const actions = detail?.actions || [], act = (id:string) => actions.find(action => action.id === id);
   const saveAct = module === "sales-orders" ? act("save") : undefined, contractAct = act("contract-info"), deleteAct = act("delete");
   const busy = loading || saving || !!acting || loadingMore, pending = !!session.pending;
@@ -271,6 +272,15 @@ export function SalesOrderForm({
       <RecordDetailStatus presentationAllowed={!!detail && !loading}>
         <span className="rounded-full border border-neutral-200 bg-neutral-100 px-3 py-1 text-sm font-semibold text-black dark:border-neutral-700 dark:bg-neutral-800 dark:text-white" style={statusColorsFrom(header)}>{statusName}</span>
         {knownLock && <span className="rounded-full border border-neutral-200 px-3 py-1 text-sm font-medium text-black dark:border-neutral-700 dark:text-white">{locked ? "Đã khóa" : "Chưa khóa"}</span>}
+        {deliveryStatusName && (
+          <span
+            title="Trạng thái giao hàng"
+            className="rounded-full border border-neutral-200 bg-neutral-100 px-3 py-1 text-sm font-medium text-black dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+            style={statusColorsFrom(header, "deliveryStatusForeColor", "deliveryStatusBackColor")}
+          >
+            Giao hàng: {deliveryStatusName}
+          </span>
+        )}
       </RecordDetailStatus>
 
       {pending && <div role="status" className="space-y-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-base text-black dark:border-amber-800 dark:bg-amber-950 dark:text-white">
@@ -361,7 +371,7 @@ export function SalesOrderForm({
             onAdd={()=>{const key=crypto.randomUUID();setEditLines(previous=>[...previous,emptySalesOrderLine(key)]);return key;}}
             onRemove={key=>setEditLines(previous=>previous.filter(line=>line.key!==key))} /></fieldset>
             : <SalesOrderDetailTabs lines={detail.lines?.rows || []} history={detail.history?.rows || []}
-              currencyId={text(header.currencyId)}
+              currencyId={text(header.currencyId)} summary={detail.summary}
               hasMoreLines={detail.lines.hasMore} hasMoreHistory={detail.history?.hasMore} loadingMore={loadingMore}
               onMoreLines={()=>void more("lines")} onMoreHistory={()=>void more("history")} />}
 

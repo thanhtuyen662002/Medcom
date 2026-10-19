@@ -267,3 +267,26 @@ for(const Component of [TabOrders,TabPurchases])test(`${Component.name} paginate
   assert.ok(!collect(renderer).text.includes('ROW-MB-find-2'));
  }finally{pending.forEach(resolve=>resolve());delete globalThis.__legacyListHandler;if(renderer)await act(async()=>renderer.unmount());}
 });
+
+// Màn xuất hàng theo PXK hiển thị bảng chứng từ trên desktop như các màn mua/bán.
+// CSS quyết định bảng hay thẻ theo bề rộng, còn điều kiện "có dựng bảng" thì kiểm tra được ngay trong cây render.
+test('xuất hàng theo PXK dựng bảng desktop với đúng cột, màn khác vẫn giữ lưới thẻ',async()=>{
+ const tables=renderer=>renderer.root.findAll(node=>typeof node.type==='string'&&node.props?.['data-document-table']!==undefined);
+ globalThis.__erpListHandler=async(module,params)=>({rows:[{documentId:'PXK-TEST-0001',header:{objectName:'Khách hàng kiểm thử',userCreate:'nguoi.lap',statusName:'Lập hóa đơn',documentDateDisplay:'10/09/2026 00:00:00',statusForeColor:'#FFC000',statusBackColor:'#FFFF00',memo:'Ghi chú kiểm thử'}}],page:params.page,pageSize:params.pageSize,hasMore:false});
+ let renderer;
+ try{
+  await act(async()=>{renderer=create(React.createElement(TabErpScreen,{module:'sales-qr',...props,isActive:true}));});await flush();
+  assert.equal(tables(renderer).length,1,'PXK phải dựng bảng chứng từ trên desktop');
+  const {text}=collect(renderer);
+  for(const header of ['STT','Mã chứng từ','Ngày chứng từ','Khách hàng','Trạng thái','Người lập / Đề nghị','Nội dung','Chi tiết'])assert.ok(text.includes(header),`bảng PXK thiếu cột ${header}: ${text}`);
+  for(const cell of ['PXK-TEST-0001','10/09/2026 00:00:00','Khách hàng kiểm thử','Ghi chú kiểm thử'])assert.ok(text.includes(cell),`bảng PXK thiếu dữ liệu ${cell}`);
+  // Ô trạng thái vẫn nhận màu nền của BE và vẫn đổi sang màu chữ đọc được (chữ vàng trên nền vàng -> đen).
+  const colored=renderer.root.findAll(node=>typeof node.type==='string'&&node.props?.style?.backgroundColor==='#FFFF00');
+  assert.ok(colored.length>0,'ô trạng thái phải nhận màu nền của BE');
+  assert.ok(colored.every(node=>node.props.style.color==='#000000'),'chữ trên badge vàng phải đổi sang màu đọc được');
+  await act(async()=>{renderer.unmount();});renderer=null;
+  await act(async()=>{renderer=create(React.createElement(TabErpScreen,{module:'warehouse-qr',...props,isActive:true}));});await flush();
+  assert.equal(tables(renderer).length,0,'màn khác vẫn giữ lưới thẻ như trước');
+  assert.ok(collect(renderer).text.includes('PXK-TEST-0001'),'màn giữ lưới thẻ vẫn đọc được danh sách');
+ }finally{delete globalThis.__erpListHandler;if(renderer)await act(async()=>renderer.unmount());}
+});

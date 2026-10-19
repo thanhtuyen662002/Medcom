@@ -58,6 +58,7 @@ import { SalesCommandSession, type SalesOrderModule } from "@/lib/erp/sales-orde
 import { SalesOrderStatusFilter } from "@/components/erp/sales-order-status-filter";
 import { documentStatusLabel } from "@/lib/erp/document-status";
 import { statusColorsFrom } from "@/lib/erp/status-colors";
+import { readDocumentSummary, summaryDisplay } from "@/lib/erp/document-summary";
 import {MoneyInput} from "@/components/erp/money-input";
 import {formatMoney as formatMoneyValue, isMoneyField, multiplyMoney, sumMoney} from "@/lib/erp/money";
 
@@ -134,7 +135,10 @@ function isTechnicalField(key: string): boolean {
     k.includes("clientlinekey") ||
     k.includes("token") ||
     k.includes("hash") ||
-    k.includes("rowid")
+    k.includes("rowid") ||
+    // Màu trạng thái BE bổ sung (19/10/2026) là mã CSS, không hiển thị như dữ liệu.
+    k.includes("forecolor") ||
+    k.includes("backcolor")
   );
 }
 
@@ -154,6 +158,12 @@ const FIELD_LABELS: Record<string, string> = {
   expireDateByDocument: "Hạn sử dụng theo CT",
   statusId: "Trạng thái",
   statusName: "Tên trạng thái",
+  deliveryStatusId: "Trạng thái giao hàng",
+  deliveryStatus: "Trạng thái giao hàng",
+  deliveryEmployeeId: "Nhân viên giao hàng",
+  deliveryEmployee: "Nhân viên giao hàng",
+  deliveryEmployeeSubId: "Nhân viên giao hàng phụ",
+  deliveryEmployeeSub: "Nhân viên giao hàng phụ",
   isLocked: "Khóa phiếu",
   objectId: "Khách hàng",
   objectName: "Tên đối tượng",
@@ -1797,7 +1807,10 @@ export function TabErpScreen({
     return true;
   });
 
-  const useDesktopTable = ["purchase-requests", "purchase-approvals", "purchase-orders", "sales-orders", "sales-order-pm", "sales-order-sa"].includes(module);
+  // Lưới chứng từ dạng bảng trên desktop. Màn xuất hàng theo PXK dùng chung bảng này như các màn mua/bán.
+  const useDesktopTable = ["purchase-requests", "purchase-approvals", "purchase-orders", "sales-orders", "sales-order-pm", "sales-order-sa", "sales-qr"].includes(module);
+  // Khung chi tiết bản ghi rộng giữ nguyên cho các màn mua/bán; màn PXK vẫn mở khung chi tiết hiện có.
+  const useRecordDetail = useDesktopTable && module !== "sales-qr";
   const listText = (row: ErpDocumentRow, ...keys: string[]) => {
     for (const key of keys) {
       const value = row.header?.[key];
@@ -2079,7 +2092,7 @@ export function TabErpScreen({
       {/* Sales orders share the established record-detail shell. */}
       <ErpDetailSheet
         presentationAllowed={isActive}
-        presentation={useDesktopTable ? "document" : "sheet"}
+        presentation={useRecordDetail ? "document" : "sheet"}
         salesOrder={["sales-orders", "sales-order-pm", "sales-order-sa"].includes(module)}
         documentNumber={selectedDocId}
         open={Boolean(selectedDocId) && !prEditId}
@@ -2220,6 +2233,15 @@ export function TabErpScreen({
                       )} style={statusColorsFrom(detail.header)}>
                         {String(detail.header?.statusName || (detail.header?.isLocked ? "Đã khóa" : "Đang mở"))}
                       </span>
+                      {typeof detail.header?.deliveryStatusName === "string" && detail.header.deliveryStatusName.trim() !== "" && (
+                        <span
+                          title="Trạng thái giao hàng"
+                          className="px-2.5 py-1 rounded-full text-xs font-semibold border border-neutral-200 bg-neutral-100 text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200"
+                          style={statusColorsFrom(detail.header, "deliveryStatusForeColor", "deliveryStatusBackColor")}
+                        >
+                          Giao hàng: {String(detail.header.deliveryStatusName)}
+                        </span>
+                      )}
                       {menuActs.length > 0 && (
                         <div className="relative">
                           <button
@@ -2343,6 +2365,7 @@ export function TabErpScreen({
                           key === "customerName" ||
                           key === "vendorName" ||
                           key === "statusName" ||
+                          key === "deliveryStatusName" ||
                           key === "documentId" ||
                           key === "isLocked"
                         )
@@ -2356,6 +2379,8 @@ export function TabErpScreen({
                         if (key === "rateExchange" && editing) return null;
                         // Prefer resolved names over raw ids/codes.
                         if (key === "statusId" && headerObj.statusName) return null;
+                        // Trạng thái giao hàng hiển thị thành badge riêng khi có tên.
+                        if (key === "deliveryStatusId" && headerObj.deliveryStatusName) return null;
                         // purposeId edits through its own dropdown while editing;
                         // otherwise the resolved name row covers it.
                         if (key === "purposeId" && headerObj.purposeName && !editing) return null;
@@ -2845,8 +2870,36 @@ export function TabErpScreen({
                     </>
                   )}
                   {(() => {
-                    const grand = sumLineTotals(detail.lines?.rows || []);
                     const cur = docCurrencyId(detail.header);
+                    const summary = readDocumentSummary(detail.summary);
+                    if (summary) {
+                      const count = summary.rowCount ?? detail.lines?.rows?.length ?? 0;
+                      return (
+                        <div className="mt-3 pt-2.5 border-t border-neutral-200 dark:border-neutral-800 space-y-3">
+                          {summary.entries.length > 0 && (
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                              {summary.entries.map((entry) => (
+                                <div key={entry.key} className="min-w-0 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/60 px-3 py-2">
+                                  <div className="text-xs font-semibold uppercase tracking-wider text-neutral-400">{entry.label}</div>
+                                  <div className="font-mono font-bold text-brand-700 dark:text-brand-300 break-all">{summaryDisplay(entry, cur)}</div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <div className="flex items-center justify-between gap-2 text-base">
+                            <span className="font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                              Tổng cộng ({count} dòng)
+                            </span>
+                            {summary.total && (
+                              <span className="font-bold text-brand-700 dark:text-brand-300 font-mono">
+                                {summaryDisplay(summary.total, cur)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    }
+                    const grand = sumLineTotals(detail.lines?.rows || []);
                     return grand !== null ? (
                       <div className="mt-3 pt-2.5 border-t border-neutral-200 dark:border-neutral-800 flex items-center justify-between text-base">
                         <span className="font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">

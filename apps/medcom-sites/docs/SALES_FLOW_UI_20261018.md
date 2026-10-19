@@ -15,7 +15,7 @@ Phạm vi: frontend `apps/medcom-sites`, `/help` và tài liệu `apps/medcom-de
 
 Nguồn giao diện: `components/untitledui/tab-erp-screen.tsx`, `components/erp/sales-order-form.tsx`, `components/erp/sales-order-action-dialog.tsx`, `components/erp/sales-order-detail-tabs.tsx`, `components/erp/sales-feature-links.tsx`. Các đường dẫn frontend trong tài liệu này tương đối với `apps/medcom-sites`.
 
-Danh sách desktop tiếp tục dùng bảng/phân trang hiện có; mobile dùng thẻ. Form có dữ liệu chính 16px, nhãn 14px, nền/tương phản theo theme và vùng chạm tối thiểu 44px. Panel “Quy trình Bán hàng” sáu ô (`components/erp/sales-flow-overview.tsx`) đã bị gỡ bỏ theo yêu cầu chủ dự án ngày 18/10/2026; danh sách bán hàng giờ chỉ còn banner module, thanh tìm kiếm và bộ lọc trạng thái. Bố cục thực tế trên thiết bị: **UNKNOWN**, chưa chạy trình duyệt theo yêu cầu của chủ dự án.
+Danh sách desktop tiếp tục dùng bảng/phân trang hiện có; mobile dùng thẻ. Màn `sales-qr` (Xuất hàng theo PXK) trước đây chỉ hiện lưới thẻ trên desktop; từ 19/10/2026 màn này dùng chung bảng chứng từ desktop của các màn mua/bán (`DocumentListTable`, cột Mã chứng từ / Ngày / Khách hàng / Trạng thái / Người lập / Nội dung, ẩn dưới 1024px) — khung chi tiết của màn PXK vẫn giữ nguyên như trước. Form có dữ liệu chính 16px, nhãn 14px, nền/tương phản theo theme và vùng chạm tối thiểu 44px. Panel “Quy trình Bán hàng” sáu ô (`components/erp/sales-flow-overview.tsx`) đã bị gỡ bỏ theo yêu cầu chủ dự án ngày 18/10/2026; danh sách bán hàng giờ chỉ còn banner module, thanh tìm kiếm và bộ lọc trạng thái. Bố cục thực tế trên thiết bị: **UNKNOWN**, chưa chạy trình duyệt theo yêu cầu của chủ dự án.
 
 ## Hợp đồng ghi và đọc
 

@@ -169,6 +169,9 @@ export const erpDocumentDetailSchema = z
     lines: erpLinePageSchema.default({ rows: [], page: 1, pageSize: 20, hasMore: false }),
     history: erpLinePageSchema.nullable().optional(),
     comparison: erpLinePageSchema.nullable().optional(),
+    // Tổng toàn chứng từ do BE bổ sung (19/10/2026). Giữ dạng record để không
+    // làm hỏng phần đọc nếu BE thay đổi kiểu số/chuỗi của từng trường tổng.
+    summary: z.record(z.string(), z.unknown()).nullable().optional(),
     actions: z.array(erpActionStateSchema).default([]),
     sections: z.record(z.string(), erpLinePageSchema).nullable().optional(),
     documentName: z.string().nullable().optional(),

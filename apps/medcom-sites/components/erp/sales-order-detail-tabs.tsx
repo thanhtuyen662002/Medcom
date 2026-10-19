@@ -5,6 +5,7 @@ import { ArrowRight, ChevronDown, Clock3, History, Package2, Send } from "lucide
 import { SALES_ORDER_LINE_COLUMNS } from "@/lib/erp/sales-order-lines";
 import { documentStatusLabel } from "@/lib/erp/document-status";
 import { statusColorsFrom } from "@/lib/erp/status-colors";
+import { readDocumentSummary, summaryDisplay } from "@/lib/erp/document-summary";
 import {formatMoney, isMoneyField} from "@/lib/erp/money";
 
 interface OrderLine { lineId: string; fields: Record<string, unknown> }
@@ -46,13 +47,14 @@ function EmptyPanel({ history }: { history?: boolean }) {
   </div>;
 }
 
-export function SalesOrderDetailTabs({ lines, history, currencyId, hasMoreLines=false, hasMoreHistory=false, loadingMore=false, onMoreLines, onMoreHistory }: {
-  lines: OrderLine[]; history: HistoryLine[]; currencyId?:string; hasMoreLines?:boolean; hasMoreHistory?:boolean; loadingMore?:boolean; onMoreLines?:()=>void; onMoreHistory?:()=>void;
+export function SalesOrderDetailTabs({ lines, history, currencyId, summary, hasMoreLines=false, hasMoreHistory=false, loadingMore=false, onMoreLines, onMoreHistory }: {
+  lines: OrderLine[]; history: HistoryLine[]; currencyId?:string; summary?:unknown; hasMoreLines?:boolean; hasMoreHistory?:boolean; loadingMore?:boolean; onMoreLines?:()=>void; onMoreHistory?:()=>void;
 }) {
   const prefix = useId();
   const tablist = useRef<HTMLDivElement>(null);
   const [tab, setTab] = useState<"lines" | "history">("lines");
   const [expandedLine, setExpandedLine] = useState<string | null>(null);
+  const summaryView = readDocumentSummary(summary);
   const tabs = [
     { id: "lines" as const, label: "Chi tiết hàng hóa", count: lines.length, icon: Package2 },
     { id: "history" as const, label: "Lịch sử gửi / duyệt", count: history.length, icon: History },
@@ -114,6 +116,24 @@ export function SalesOrderDetailTabs({ lines, history, currencyId, hasMoreLines=
             <div id={`${prefix}-mobile-line-${index}`} hidden={!open} className="border-t border-neutral-200 dark:border-neutral-800"><LineInformation line={line} /></div>
           </article>;
         })}</div>
+        {summaryView && (
+          <div data-document-summary className="border-t border-neutral-200 bg-neutral-50/60 px-4 py-3 sm:px-5 dark:border-neutral-800 dark:bg-neutral-950/50">
+            {summaryView.entries.length > 0 && (
+              <dl className="grid min-w-0 grid-cols-2 gap-x-5 gap-y-3 sm:grid-cols-3 lg:grid-cols-4">
+                {summaryView.entries.map(entry => (
+                  <div key={entry.key} className="min-w-0">
+                    <dt className="text-sm">{entry.label}</dt>
+                    <dd className="min-w-0 break-words font-semibold tabular-nums">{summaryDisplay(entry, currencyId)}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+            <div className="mt-3 flex min-w-0 flex-wrap items-baseline justify-between gap-2 border-t border-neutral-200 pt-3 dark:border-neutral-800">
+              <span className="text-sm font-semibold uppercase tracking-wide">Tổng cộng ({summaryView.rowCount ?? lines.length} dòng toàn chứng từ)</span>
+              {summaryView.total && <strong className="break-words text-lg font-semibold tabular-nums text-brand-800 dark:text-brand-200">{summaryDisplay(summaryView.total, currencyId)}</strong>}
+            </div>
+          </div>
+        )}
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-200 bg-neutral-50/60 px-4 py-3 text-sm sm:px-5 dark:border-neutral-800 dark:bg-neutral-950/50"><span>{lines.length} dòng hàng đã tải</span>{hasMoreLines && <button type="button" disabled={loadingMore} onClick={onMoreLines} className="min-h-11 rounded-lg border border-neutral-300 px-4 font-semibold disabled:opacity-50 dark:border-neutral-700">{loadingMore?"Đang tải…":"Tải thêm hàng hóa"}</button>}</div>
       </>}
     </div>
