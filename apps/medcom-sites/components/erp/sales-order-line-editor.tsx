@@ -4,7 +4,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { LookupField } from "@/components/untitledui/lookup-field";
 import { MoneyInput } from "./money-input";
 import {formatMoney, isMoneyField} from "@/lib/erp/money";
-import { SALES_ORDER_LINE_COLUMNS, SALES_ORDER_LINE_GROUPS, salesOrderLineDisplay, selectSalesOrderLine, type SalesOrderDraftLine } from "@/lib/erp/sales-order-lines";
+import { SALES_ORDER_LINE_COLUMNS, salesOrderLineDisplay, selectSalesOrderLine, type SalesOrderDraftLine } from "@/lib/erp/sales-order-lines";
 
 export function SalesOrderLineEditor({ lines, branchId, contractId, onPatch, onAdd, onRemove }: {
   lines: (SalesOrderDraftLine & { savedLineId?: string })[];
@@ -14,7 +14,7 @@ export function SalesOrderLineEditor({ lines, branchId, contractId, onPatch, onA
   onAdd: () => string;
   onRemove: (key: string) => void;
 }) {
-  const columns: Array<{ key: string; label: string; numeric?: boolean; editable?: boolean }> = SALES_ORDER_LINE_COLUMNS;
+  const columns: Array<{ key: string; label: string; numeric?: boolean; editable?: boolean; formula?: string }> = SALES_ORDER_LINE_COLUMNS;
   const inputClass = "min-h-11 w-full min-w-0 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-2.5 text-base text-black dark:text-white";
   const labelClass = "mb-1.5 block text-sm font-medium text-black dark:text-white";
 
@@ -38,45 +38,40 @@ export function SalesOrderLineEditor({ lines, branchId, contractId, onPatch, onA
               <Trash2 className="size-4" />
             </button>}
           </div>
-          <div className="grid min-w-0 gap-5 xl:grid-cols-2">
-          {SALES_ORDER_LINE_GROUPS.map(group => <fieldset key={group.label} className="min-w-0 space-y-2.5 border-0 p-0">
-            <legend className="mb-2 text-sm font-semibold text-black dark:text-white">{group.label}</legend>
-            <div className="grid min-w-0 grid-cols-2 gap-3">
-              {group.keys.map(key => {
-                const column = columns.find(item => item.key === key)!;
-                const id = `so-${line.key}-${key}`;
-                const fullWidth = group.fullWidth.includes(key);
-                return <div key={key} className={`min-w-0 ${fullWidth ? "col-span-full" : ""}`}>
-                  {key === "itemId" ? <LookupField label="Mã hàng" required module="sales-orders" lookupId="lines.ItemID"
-                    branchId={branchId} value={line.itemId} choice={line.choice}
-                    context={{ "Master.ContractID": contractId || null, UserAutoID: line.savedLineId || null }}
-                    secondaryFields={["ItemCode", "ItemName", "Unit"]} displayValue={line.itemId}
-                    onSelect={choice => onPatch(line.key, selectSalesOrderLine(line.key, choice))}
-                    placeholder="Chọn mã hàng..." />
-                    : column.editable ? <>
-                      <label htmlFor={id} className={labelClass}>{column.label}{key === "quantity" && <span className="ml-1 text-red-500">*</span>}</label>
-                      {key === "dienGiai" || key === "notes" ? <textarea id={id} aria-label={`${column.label} dòng ${index + 1}`}
-                        rows={2} value={values[key]} onChange={event => onPatch(line.key, { [key]: event.target.value })}
-                        className={`${inputClass} resize-y`} />
-                        : isMoneyField(key) ? <MoneyInput id={id} aria-label={`${column.label} dòng ${index + 1}`} value={values[key]}
-                          onValueChange={value => onPatch(line.key, {[key]:value})} className={inputClass} />
-                        : <input id={id} aria-label={`${column.label} dòng ${index + 1}`} type="text" inputMode={column.numeric ? "decimal" : "text"}
-                          value={values[key]} onChange={event => onPatch(line.key, { [key]: event.target.value })}
-                          className={`${inputClass} ${column.numeric ? "tabular-nums" : ""}`} />}
-                    </> : <>
-                      <span className={labelClass}>{column.label}</span>
-                      <p className={`min-h-11 break-words rounded-xl bg-neutral-100 p-2.5 text-base font-medium text-black dark:bg-neutral-800 dark:text-white ${column.numeric ? "tabular-nums" : ""}`}>
-                        {isMoneyField(key) ? formatMoney(values[key]) : values[key] || "—"}
-                      </p>
-                    </>}
-                </div>;
-              })}
-            </div>
-          </fieldset>)}
+          <div className="grid min-w-0 grid-cols-1 gap-x-3 gap-y-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {columns.map(column => {
+              const key = column.key;
+              const id = `so-${line.key}-${key}`;
+              const span = key === "itemId" ? "sm:col-span-2" : key === "dienGiai" || key === "notes" ? "col-span-full" : "";
+              return <div key={key} className={`min-w-0 ${span}`}>
+                {key === "itemId" ? <LookupField label="Mã hàng" required module="sales-orders" lookupId="lines.ItemID"
+                  branchId={branchId} value={line.itemId} choice={line.choice}
+                  context={{ "Master.ContractID": contractId || null, UserAutoID: line.savedLineId || null }}
+                  secondaryFields={["ItemCode", "ItemName", "Unit"]} displayValue={line.itemId}
+                  onSelect={choice => onPatch(line.key, selectSalesOrderLine(line.key, choice))}
+                  placeholder="Chọn mã hàng..." />
+                  : column.editable ? <>
+                    <label htmlFor={id} className={labelClass}>{column.label}{key === "quantity" && <span className="ml-1 text-red-500">*</span>}</label>
+                    {key === "dienGiai" || key === "notes" ? <textarea id={id} aria-label={`${column.label} dòng ${index + 1}`}
+                      rows={2} value={values[key]} onChange={event => onPatch(line.key, { [key]: event.target.value })}
+                      className={`${inputClass} resize-y`} />
+                      : isMoneyField(key) ? <MoneyInput id={id} aria-label={`${column.label} dòng ${index + 1}`} value={values[key]}
+                        onValueChange={value => onPatch(line.key, {[key]:value})} className={inputClass} />
+                      : <input id={id} aria-label={`${column.label} dòng ${index + 1}`} type="text" inputMode={column.numeric ? "decimal" : "text"}
+                        value={values[key]} onChange={event => onPatch(line.key, { [key]: event.target.value })}
+                        className={`${inputClass} ${column.numeric ? "tabular-nums" : ""}`} />}
+                  </> : <>
+                    <span className={labelClass}>{column.label}</span>
+                    <p className={`min-h-11 break-words rounded-xl bg-neutral-100 p-2.5 text-base font-medium text-black dark:bg-neutral-800 dark:text-white ${column.numeric ? "tabular-nums" : ""}`}>
+                      {isMoneyField(key) ? formatMoney(values[key]) : values[key] || "—"}
+                    </p>
+                    {column.formula && <span title={`Công thức: ${column.formula}`} className="mt-1 block text-[11px] leading-4 text-neutral-400 dark:text-neutral-500">= {column.formula}</span>}
+                  </>}
+              </div>;
+            })}
           </div>
         </article>;
       })}
     </div>
-    <p className="text-sm leading-6 text-black dark:text-white">Số tiền, tiền thuế, tổng tiền và số lượng 2 là tạm tính; ERP xác nhận khi lưu. Tiền CK hiển thị theo dữ liệu ERP cung cấp.</p>
   </section>;
 }

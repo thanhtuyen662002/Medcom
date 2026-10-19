@@ -2,7 +2,7 @@
 
 import { Fragment, useId, useRef, useState, type KeyboardEvent } from "react";
 import { ArrowRight, ChevronDown, Clock3, History, Package2, Send } from "lucide-react";
-import { SALES_ORDER_LINE_COLUMNS, SALES_ORDER_LINE_GROUPS } from "@/lib/erp/sales-order-lines";
+import { SALES_ORDER_LINE_COLUMNS } from "@/lib/erp/sales-order-lines";
 import { documentStatusLabel } from "@/lib/erp/document-status";
 import {formatMoney, isMoneyField} from "@/lib/erp/money";
 
@@ -28,17 +28,12 @@ const cellClass = "border-b border-neutral-100 px-4 py-3.5 align-top dark:border
 const valuesClass = "grid min-w-0 grid-cols-2 gap-x-5 gap-y-4 text-base leading-6 [&_dt]:mb-1 [&_dt]:text-sm [&_dt]:font-normal [&_dd]:min-w-0 [&_dd]:break-words [&_dd]:font-medium";
 
 function LineInformation({ line }: { line: OrderLine }) {
-  return <div className="grid min-w-0 gap-6 rounded-xl bg-neutral-50 p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-4 dark:bg-neutral-950">
-    {SALES_ORDER_LINE_GROUPS.map(group => <section key={group.label} aria-label={group.label} className="min-w-0 space-y-4">
-      <h4 className="border-b border-neutral-200 pb-2 text-sm font-semibold dark:border-neutral-800">{group.label}</h4>
-      <dl className={valuesClass}>{group.keys.map(key => {
-        const column = SALES_ORDER_LINE_COLUMNS.find(column => column.key === key)!;
-        return <div key={key} className={group.fullWidth.includes(key) ? "col-span-full" : "min-w-0"}>
-          <dt>{column.label}</dt><dd className={`whitespace-pre-wrap ${"numeric" in column && column.numeric ? "tabular-nums" : ""}`}>{lineCell(line.fields, key)}</dd>
-        </div>;
-      })}</dl>
-    </section>)}
-  </div>;
+  return <dl className="grid min-w-0 grid-cols-1 gap-x-5 gap-y-4 rounded-xl bg-neutral-50 p-4 text-base leading-6 sm:grid-cols-2 sm:p-5 xl:grid-cols-4 [&_dt]:mb-1 [&_dt]:text-sm [&_dt]:font-normal [&_dd]:min-w-0 [&_dd]:break-words [&_dd]:font-medium dark:bg-neutral-950">
+    {SALES_ORDER_LINE_COLUMNS.map(column => <div key={column.key}
+      className={`min-w-0 ${column.key === "itemId" ? "sm:col-span-2" : column.key === "dienGiai" || column.key === "notes" ? "col-span-full" : ""}`}>
+      <dt>{column.label}</dt><dd className={`whitespace-pre-wrap ${"numeric" in column && column.numeric ? "tabular-nums" : ""}`}>{lineCell(line.fields, column.key)}</dd>
+    </div>)}
+  </dl>;
 }
 
 function EmptyPanel({ history }: { history?: boolean }) {

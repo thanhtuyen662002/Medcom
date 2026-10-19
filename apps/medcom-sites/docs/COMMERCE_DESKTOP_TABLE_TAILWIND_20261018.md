@@ -33,7 +33,7 @@ Từ 1024px hiển thị bảng; dưới 1024px giữ nội dung và kiểu th�
 ## Tab chi tiết và lịch sử gửi/duyệt — phản hồi tiếp theo
 
 - `components/erp/sales-order-detail-tabs.tsx`: tách phần trình bày ra khỏi SalesOrderForm. Hai tab có biểu tượng SVG, số dòng, trạng thái aria-selected, liên kết tabpanel và điều hướng ArrowLeft/ArrowRight/Home/End.
-- Tab hàng hóa: bảng desktop có nút mở rộng trong từng dòng, thẻ mobile có tóm tắt và nút mở đầy đủ; thay cấu trúc bảng cộng danh sách chi tiết lặp bên dưới. Các nhóm field lấy từ `lib/erp/sales-order-lines.ts#SALES_ORDER_LINE_GROUPS` và giữ ánh xạ field cũ; không tính lại số tiền.
+- Tab hàng hóa: bảng desktop có nút mở rộng trong từng dòng, thẻ mobile có tóm tắt và nút mở đầy đủ; thay cấu trúc bảng cộng danh sách chi tiết lặp bên dưới. Phần mở rộng in đủ field theo đúng thứ tự cột của `lib/erp/sales-order-lines.ts#SALES_ORDER_LINE_COLUMNS` (khớp lưới ERP) và giữ ánh xạ field cũ; không tính lại số tiền.
 - Tab lịch sử: dòng thời gian giữ nguyên thứ tự trả về; người gửi, thời gian, người nhận, mã trạng thái và ghi chú lấy đúng các key đã dùng trước đó (userName/thoiGian/sendTo/statusId/notes). Không suy đoán trạng thái từ mã, không tạo sự kiện mới.
 - `components/erp/sales-order-form.tsx`: truyền lines/history từ ErpDocumentDetail sang component trình bày; không thêm request hoặc đổi lệnh lưu.
 - TypeScript `tsc --noEmit --project apps/medcom-sites/tsconfig.json`: PASS sau lần thay tab này. Trình duyệt: KHÔNG CHẠY theo yêu cầu của chủ dự án; kết quả hiển thị thực tế: UNKNOWN.

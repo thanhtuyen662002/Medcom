@@ -22,10 +22,11 @@ The raw approved archives were not re-opened in this UI change; no new legacy-ru
 ## Detail columns
 
 The shared `lib/erp/sales-order-lines.ts` field list follows the owner's supplied grid,
-with the later explicit removal of the separate Tên hàng / dịch vụ field:
-Mã hàng, Mã hàng NSX, ĐVT, Số lượng, ĐVT2, Hệ số ĐVT,
-Số lượng 2, Đơn giá, Số tiền, % Chiết khấu, Tiền CK, % Thuế, Tiền thuế,
-Tổng tiền, Tổng số lượng HĐ, Đã XUẤT hàng, Số lượng VAT, Diễn giải, Ghi chú.
+with the later explicit removal of the separate Tên hàng / dịch vụ field and (owner
+direction, 2026-10-18) the removal of ĐVT2, Hệ số ĐVT and Số lượng 2 so the list matches
+the supplied ERP grid image:
+Mã hàng, Mã hàng NSX, ĐVT, Số lượng, Đơn giá, Số tiền, % Chiết khấu, Tiền CK, % Thuế,
+Tiền thuế, Tổng tiền, Tổng số lượng HĐ, Đã XUẤT hàng, Số lượng VAT, Diễn giải, Ghi chú.
 
 `components/erp/sales-order-line-editor.tsx` renders these columns in creation.
 `components/erp/sales-order-form.tsx` reuses exactly the same columns for saved detail.
@@ -33,11 +34,11 @@ The owner's correction removes the previous extra Qui cách / Qui cách 2 column
 only fields in the supplied image are shown. Mã hàng NSX reads ItemCode / manufacturerItemCode.
 
 The latest UI direction replaces horizontal tables with per-line cards, following
-`components/untitledui/purchase-request-create-sheet.tsx`. The remaining 19 fields wrap
-into groups (item information, quantities, pricing/tax, content).
+`components/untitledui/purchase-request-create-sheet.tsx`. The 16 fields render in one
+flat responsive grid in the exact ERP column order (Mã hàng … Ghi chú), so field
+positions match the supplied grid image and no group leaves empty cells.
 Every draft line has its own item picker, which already displays the item name.
-Compact fields are paired into two columns; trailing VAT quantity and total amount
-span the full row, as do the picker and note fields, so groups leave no odd empty cells.
+The picker spans two columns; the Diễn giải / Ghi chú textareas span the full row.
 Saved details and send/approval history also wrap into cards. No fields were added.
 
 On mobile (under 768px), creation follows Thông tin → Dòng hàng → Xem lại with

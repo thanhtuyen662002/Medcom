@@ -19,29 +19,19 @@ export const SALES_ORDER_LINE_COLUMNS = [
   { key: "itemCode", label: "Mã hàng NSX" },
   { key: "unit", label: "ĐVT" },
   { key: "quantity", label: "Số lượng", numeric: true, editable: true },
-  { key: "unit2", label: "ĐVT2" },
-  { key: "unitFactor", label: "Hệ số ĐVT", numeric: true },
-  { key: "quantity2", label: "Số lượng 2", numeric: true },
   { key: "unitPrice", label: "Đơn giá", numeric: true, editable: true },
-  { key: "amount", label: "Số tiền", numeric: true },
+  { key: "amount", label: "Số tiền", numeric: true, formula: "Số lượng × Đơn giá" },
   { key: "discountPercent", label: "% Chiết khấu", numeric: true, editable: true },
-  { key: "discountAmount", label: "Tiền CK", numeric: true },
+  { key: "discountAmount", label: "Tiền CK", numeric: true, formula: "Số tiền × % Chiết khấu ÷ 100" },
   { key: "vATPercent", label: "% Thuế", numeric: true, editable: true },
-  { key: "vATAmount", label: "Tiền thuế", numeric: true },
-  { key: "totalAmount", label: "Tổng tiền", numeric: true },
+  { key: "vATAmount", label: "Tiền thuế", numeric: true, formula: "Số tiền × % Thuế ÷ 100" },
+  { key: "totalAmount", label: "Tổng tiền", numeric: true, formula: "Số tiền + Tiền thuế − Tiền CK" },
   { key: "soLuongHopDong", label: "Tổng số lượng HĐ", numeric: true },
   { key: "deliveryQuantity", label: "Đã XUẤT hàng", numeric: true },
   { key: "vATQuantity", label: "Số lượng VAT", numeric: true, editable: true },
   { key: "dienGiai", label: "Diễn giải", editable: true },
   { key: "notes", label: "Ghi chú", editable: true },
-] satisfies Array<{ key: string; label: string; numeric?: boolean; editable?: boolean }>;
-
-export const SALES_ORDER_LINE_GROUPS = [
-  { label: "Thông tin hàng", keys: ["itemId", "itemCode", "unitFactor", "unit", "unit2"], fullWidth: ["itemId"] },
-  { label: "Số lượng", keys: ["quantity", "quantity2", "soLuongHopDong", "deliveryQuantity", "vATQuantity"], fullWidth: ["vATQuantity"] },
-  { label: "Giá & thuế", keys: ["unitPrice", "amount", "discountPercent", "discountAmount", "vATPercent", "vATAmount", "totalAmount"], fullWidth: ["totalAmount"] },
-  { label: "Nội dung", keys: ["dienGiai", "notes"], fullWidth: ["dienGiai", "notes"] },
-];
+] satisfies Array<{ key: string; label: string; numeric?: boolean; editable?: boolean; formula?: string }>;
 
 export function isSalesOrderLineValid(line: SalesOrderDraftLine): boolean {
   const number = /^\d+(\.\d+)?$/;
@@ -81,25 +71,38 @@ function format(value: Decimal | null): string {
 function multiply(a: Decimal | null, b: Decimal | null): Decimal | null {
   return a && b ? { value: a.value * b.value, scale: a.scale + b.scale } : null;
 }
-function add(a: Decimal | null, b: Decimal | null): Decimal | null {
-  if (!a || !b) return null;
-  const scale = Math.max(a.scale, b.scale);
-  return { value: a.value * BigInt(10) ** BigInt(scale - a.scale) + b.value * BigInt(10) ** BigInt(scale - b.scale), scale };
+/** Amount + VAT - Discount, treating a missing addend/subtrahend as zero. */
+function adjust(base: Decimal | null, plus: Decimal | null, minus: Decimal | null): Decimal | null {
+  if (!base) return null;
+  const scale = Math.max(base.scale, plus?.scale ?? 0, minus?.scale ?? 0);
+  const scaled = (value: Decimal | null) => value ? value.value * BigInt(10) ** BigInt(scale - value.scale) : BigInt(0);
+  return { value: scaled(base) + scaled(plus) - scaled(minus), scale };
 }
 
 export function salesOrderLineDisplay(line: SalesOrderDraftLine): Record<string, string> {
   const field = (column: string) => salesOrderField(line.choice, column);
   const amount = multiply(decimal(line.quantity), decimal(line.unitPrice));
-  const taxProduct = multiply(amount, decimal(line.vATPercent));
-  const tax = taxProduct ? { ...taxProduct, scale: taxProduct.scale + 2 } : null;
-  // Same preview expressions as SqlErpScreenEffects.Calculate, sales-orders branch.
-  // No client rounding and no invented discount expression; the server confirms saved amounts.
+  // Owner-supplied ERP line-effect expressions (backend remains authoritative):
+  //   Amount         = Quantity * UnitPrice
+  //   VATAmount      = Amount * VATPercent / 100
+  //   DiscountAmount = Amount * DiscountPercent / 100
+  //   TotalAmount    = Amount + VATAmount - DiscountAmount
+  // Percentages are divided by 100 by scaling two decimal places; a blank percentage
+  // contributes zero so the auto-filled cells stay populated. Preview only - the
+  // server recalculates and confirms every saved amount.
+  const percentOf = (base: Decimal | null, text: string): Decimal | null => {
+    if (!base) return null;
+    const percent = decimal(text) ?? { value: BigInt(0), scale: 0 };
+    return { value: base.value * percent.value, scale: base.scale + percent.scale + 2 };
+  };
+  const tax = percentOf(amount, line.vATPercent);
+  const discount = percentOf(amount, line.discountPercent);
   return { itemId: line.itemId, itemCode: field("ItemCode") || field("manufacturerItemCode"),
-    itemName: field("ItemName"), unit: field("Unit"), unit2: field("Unit2"), unitFactor: field("UnitFactor"),
-    quantity: line.quantity, quantity2: format(multiply(decimal(line.quantity), decimal(field("UnitFactor")))),
+    itemName: field("ItemName"), unit: field("Unit"),
+    quantity: line.quantity,
     unitPrice: line.unitPrice, amount: format(amount), discountPercent: line.discountPercent,
-    discountAmount: line.discountPercent === field("DiscountPercent") ? field("DiscountAmount") : "",
-    vATPercent: line.vATPercent, vATAmount: format(tax), totalAmount: format(add(amount, tax)),
+    discountAmount: format(discount),
+    vATPercent: line.vATPercent, vATAmount: format(tax), totalAmount: format(adjust(amount, tax, discount)),
     soLuongHopDong: field("SoLuongHopDong"), deliveryQuantity: field("DeliveryQuantity"),
     vATQuantity: line.vATQuantity, dienGiai: line.dienGiai, notes: line.notes };
 }

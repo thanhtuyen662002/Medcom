@@ -41,6 +41,20 @@ test('formatting the existing preview does not change tax arithmetic or raw API 
  assert.equal(salesOrderLineInput(line).unitPrice,'1000000.50');assert.equal(salesOrderLineInput(line).vATPercent,'8.5');
  line.quantity='4';assert.equal(salesOrderLineDisplay(line).vATAmount,'340000.17');
 });
+test('auto-filled preview applies the owner ERP formulas including discount subtraction',()=>{
+ const discounted={...emptySalesOrderLine('QA'),itemId:'QA-ITEM',quantity:'10',unitPrice:'1000',discountPercent:'10',vATPercent:'5'};
+ const values=salesOrderLineDisplay(discounted);
+ assert.equal(values.amount,'10000');
+ assert.equal(values.discountAmount,'1000');
+ assert.equal(values.vATAmount,'500');
+ assert.equal(values.totalAmount,'9500');
+ const bare={...emptySalesOrderLine('QA'),itemId:'QA-ITEM',quantity:'2',unitPrice:'1000'};
+ const bareValues=salesOrderLineDisplay(bare);
+ assert.equal(bareValues.amount,'2000');
+ assert.equal(bareValues.discountAmount,'0');
+ assert.equal(bareValues.vATAmount,'0');
+ assert.equal(bareValues.totalAmount,'2000');
+});
 
 const React=require('react'),{create,act}=require('react-test-renderer');globalThis.IS_REACT_ACT_ENVIRONMENT=true;
 test('money control formats on blur and emits only canonical values from actual edits',async()=>{
