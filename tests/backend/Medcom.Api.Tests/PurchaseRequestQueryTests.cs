@@ -16,6 +16,20 @@ namespace Medcom.Api.Tests;
 
 public sealed class PurchaseRequestQueryTests
 {
+    [Fact]
+    public async Task Nullable_object_is_retained_in_legacy_list_detail_and_state_without_a_write()
+    {
+        var source=new PurchaseQuerySource();source.Seed();
+        source.Documents[0]=source.Documents[0] with{Header=source.Documents[0].Header with{ObjectId=null}};
+        var list=await source.Service().ListAsync(new());
+        Assert.Equal(PurchaseRequestQueryOutcome.Success,list.Outcome);
+        Assert.Null(list.Value!.Rows[0].Fields!.ObjectId);
+        var detail=await source.Service().OpenAsync("QA-DOC");
+        Assert.Equal(PurchaseRequestQueryOutcome.Success,detail.Outcome);
+        Assert.Null(detail.Value!.Document.Header.ObjectId);
+        Assert.Null(detail.Value.SourceFields!.Header.ObjectId);
+        Assert.NotEmpty(detail.Value.StateToken);Assert.Equal(0,source.Commits);
+    }
     [Theory]
     [InlineData(PurchaseRequestReadStage.Credential)]
     [InlineData(PurchaseRequestReadStage.Grant)]
@@ -765,7 +779,7 @@ internal sealed class PurchaseQuerySource
                             ? Documents.Count(a=>Fold(a.PurchaseRequestId)==Fold(d.PurchaseRequestId))>1
                             : Documents.Any(a=>Fold(a.PurchaseRequestId)==Fold(d.PurchaseRequestId)&&a.PurchaseRequestId!=d.PurchaseRequestId))?1:0,StatusName??(object)DBNull.Value,StatusRows,
                     d.Header.PurposeId??(object)DBNull.Value,d.Header.PurposeDescOrClient??(object)DBNull.Value,Number(d.Header.Price),
-                    d.Header.Notes??(object)DBNull.Value,d.Header.CurrencyId,d.Header.ObjectId,d.Header.RateExchange});
+                    d.Header.Notes??(object)DBNull.Value,d.Header.CurrencyId,d.Header.ObjectId??(object)DBNull.Value,d.Header.RateExchange});
             var reader=Rows(17,result);AfterData?.Invoke();return reader;
         }
         if(command.CommandText.Contains("FROM dbo.AP_PurchaseRequestTbl",StringComparison.Ordinal))
@@ -773,7 +787,7 @@ internal sealed class PurchaseQuerySource
             var native=command.CommandText.Contains("WHERE D.PurchaseRequestID=@document",StringComparison.Ordinal);
             result=Documents.Where(d=>native?Fold(d.PurchaseRequestId)==Fold(id!):d.PurchaseRequestId==id).Take(2).Select(d=>new object[]{d.PurchaseRequestId,Date(d.Header.PurchaseDate),d.Header.PurposeId??(object)DBNull.Value,
                 d.Header.PersonSuggest,d.Header.Department,d.Header.PurposeDescOrClient??(object)DBNull.Value,Number(d.Header.Price),d.Header.Notes??(object)DBNull.Value,d.StatusId,d.IsLocked??(object)DBNull.Value,
-                d.Header.CurrencyId,d.Header.ObjectId,d.Header.RateExchange,d.BranchId,StatusName??(object)DBNull.Value,StatusRows});return Rows(16,result);
+                d.Header.CurrencyId,d.Header.ObjectId??(object)DBNull.Value,d.Header.RateExchange,d.BranchId,StatusName??(object)DBNull.Value,StatusRows});return Rows(16,result);
         }
         if(command.CommandText.Contains("FROM dbo.AP_PurchaseRequestDetailTbl C",StringComparison.Ordinal))
         {

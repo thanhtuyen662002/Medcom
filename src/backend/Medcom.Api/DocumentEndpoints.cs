@@ -32,7 +32,7 @@ public static class DocumentEndpoints
             if(!session.Identity.Capabilities.Contains(capability,StringComparer.Ordinal))
                 return Results.Problem(statusCode:403,title:"Access denied.");
             WorkspaceReadScope.Stamp(context,session);
-            return Results.Ok(DocumentFieldCatalog.Get(kind!));
+            return Results.Ok(DocumentFieldCatalog.Visible(kind!));
         });
         Map(app, "/api/documents/purchase-orders", DocumentKind.PurchaseOrders, "purchase-orders.read");
         Map(app, "/api/documents/inbound-requests", DocumentKind.InboundRequests, "inbound-requests.read");

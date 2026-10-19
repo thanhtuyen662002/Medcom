@@ -48,7 +48,7 @@ public sealed record ErpPurchaseOrdersHeaderInput
     [JsonPropertyName("documentDate")]
     public required string DocumentDate { get; init; }
     [JsonPropertyName("objectId")]
-    public required string ObjectId { get; init; }
+    public string? ObjectId { get; init; }
     [JsonPropertyName("memo")]
     public string? Memo { get; init; }
     [JsonPropertyName("notes")]

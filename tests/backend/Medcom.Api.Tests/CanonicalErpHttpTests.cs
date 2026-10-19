@@ -9,7 +9,7 @@ namespace Medcom.Api.Tests;
 public sealed class CanonicalErpHttpTests
 {
     [Fact]
-    public async Task Every_form_keeps_every_source_column_on_real_HTTP_pages_without_duplicate_wrappers()
+    public async Task Every_form_keeps_visible_columns_and_protocol_metadata_on_HTTP_pages_without_duplicate_wrappers()
     {
         var service = new SyntheticScreens();
         await using var fixture = await PurchaseHttpFixture.Start(services => services.AddSingleton<IErpScreenService>(service));
@@ -43,8 +43,9 @@ public sealed class CanonicalErpHttpTests
                     : new[] { (section.Key is "lines" or "history" or "comparison" ? data : data.GetProperty("sections")).GetProperty(section.Key).GetProperty("rows")[0] };
                 var original = SyntheticScreens.Fields(module, section.Key);
                 var expected = CanonicalResponseProjection.Normalize(JsonSerializer.SerializeToNode(original)!, path + "/detail").AsObject();
+                foreach(var hidden in ErpVisibleProjection.HiddenNames(module,section.Key))expected.Remove(hidden);
                 foreach (var definition in metadata.GetProperty(section.Key).EnumerateArray())
-                    Assert.True(rows[0].TryGetProperty(definition.GetProperty("name").GetString()!, out _), module + " metadata/read key mismatch");
+                    Assert.True(rows[0].TryGetProperty(definition.GetProperty("name").GetString()!, out _), module + "/"+section.Key+"/"+definition.GetProperty("name").GetString()+" metadata/read key mismatch");
                 foreach (var row in rows)
                 {
                     Assert.False(row.TryGetProperty("fields", out _)); Assert.False(row.TryGetProperty("userAutoId", out _));
@@ -63,7 +64,7 @@ public sealed class CanonicalErpHttpTests
         Assert.Equal(1516, columns); Assert.Equal(0, fixture.Source.Commits);
     }
 
-    private sealed class SyntheticScreens : IErpScreenService
+    internal sealed class SyntheticScreens : IErpScreenService
     {
         internal static Dictionary<string, object?> Fields(string module, string section) => ErpScreenCatalog.Get(module)!.Fields[section].ToDictionary(f => f.Name, f => Value(f, section));
         private static object? Value(ErpFieldDefinition field, string section)

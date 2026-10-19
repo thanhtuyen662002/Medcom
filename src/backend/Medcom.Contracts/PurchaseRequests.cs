@@ -6,7 +6,7 @@ namespace Medcom.Contracts;
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record PurchaseRequestHeaderInput(string? PurchaseDate, int? PurposeId,
     string PersonSuggest, string Department, string? PurposeDescOrClient, string? Price,
-    string? Notes, string CurrencyId, string ObjectId, double RateExchange);
+    string? Notes, string CurrencyId, string? ObjectId, double RateExchange);
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record PurchaseRequestLineValues(string ItemId, string? Budget, string? TimeRequired,
     string Quantity, string UnitPrice, string? TotalPrice, string? Model);

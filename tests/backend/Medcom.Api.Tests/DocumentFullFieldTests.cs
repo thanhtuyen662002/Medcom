@@ -13,12 +13,20 @@ namespace Medcom.Api.Tests;
 public sealed class DocumentFullFieldTests
 {
     private static readonly JsonSerializerOptions Json=new(JsonSerializerDefaults.Web);
+    private static int VisibleCount(string kind,bool header)
+    {
+        var mapping=DocumentFieldCatalog.Get(kind)!;var table=header?mapping.Header:mapping.Lines;
+        var hidden=ErpVisibleProjection.HiddenNames(kind,header?"header":"lines").ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return table.Fields.Count(f=>!hidden.Contains(f.JsonPath.Split('.')[^1]));
+    }
     private static JsonElement At(JsonElement value,string path) => path.Split('.').Aggregate(value,(node,part)=>
         part.EndsWith("[]",StringComparison.Ordinal)?node.GetProperty(part[..^2])[0]:node.GetProperty(part));
     private static int SourceFieldCount(JsonElement row,string kind,bool header)
     {
         var mapping=DocumentFieldCatalog.Get(kind)!;var table=header?mapping.Header:mapping.Lines;
-        var names=table.Fields.Select(f=>f.JsonPath.Split('.')[^1]).ToHashSet(StringComparer.Ordinal);
+        var hidden=ErpVisibleProjection.HiddenNames(kind,header?"header":"lines").ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var names=table.Fields.Select(f=>f.JsonPath.Split('.')[^1]).Where(n=>!hidden.Contains(n)).ToHashSet(StringComparer.Ordinal);
+        Assert.All(row.EnumerateObject(),p=>Assert.False(hidden.Contains(p.Name),"Hidden column leaked: "+p.Name));
         foreach(var name in names)Assert.True(row.TryGetProperty(name,out _),"Missing source column: "+name);
         Assert.All(row.EnumerateObject().Where(p=>!names.Contains(p.Name)),p=>Assert.True(
             p.Name.EndsWith("Name",StringComparison.Ordinal)||p.Name.EndsWith("Display",StringComparison.Ordinal)
@@ -55,12 +63,12 @@ public sealed class DocumentFullFieldTests
             var records = detail ? body.GetProperty(kind == DocumentKind.PurchaseOrders ? "purchaseOrderLines" : "inboundRequestLines") : body.GetProperty("rows");
             Assert.Equal(page <= 2 ? 2 : page == 3 ? 1 : 0, records.GetArrayLength());
             if (detail)
-                Assert.Equal(kind == DocumentKind.PurchaseOrders ? 19 : 38,
+                Assert.Equal(VisibleCount(name,true),
                     SourceFieldCount(body.GetProperty("document"),kind==DocumentKind.PurchaseOrders?"purchase-orders":"inbound-requests",true));
             foreach (var record in records.EnumerateArray())
             {
                 var fields = record;
-                Assert.Equal(detail ? kind == DocumentKind.PurchaseOrders ? 12 : 26 : kind == DocumentKind.PurchaseOrders ? 19 : 38,
+                Assert.Equal(VisibleCount(name,!detail),
                     SourceFieldCount(fields,kind==DocumentKind.PurchaseOrders?"purchase-orders":"inbound-requests",!detail));
                 var identity = record.GetProperty(detail ? "lineId" : "documentId").GetString()!;
                 Assert.True(identities.Add(identity));
@@ -210,8 +218,10 @@ public sealed class DocumentFullFieldTests
         await fixture.Login();
         var contract=await fixture.Json("/api/documents/field-contract?kind="+name);
         Assert.Equal(3,contract.GetProperty("contractVersion").GetInt32());
-        Assert.Equal(heads,contract.GetProperty("header").GetProperty("fields").GetArrayLength());
-        Assert.Equal(lines,contract.GetProperty("lines").GetProperty("fields").GetArrayLength());
+        Assert.Equal(heads,DocumentFieldCatalog.Get(name)!.Header.Fields.Count);
+        Assert.Equal(lines,DocumentFieldCatalog.Get(name)!.Lines.Fields.Count);
+        Assert.Equal(VisibleCount(name,true),contract.GetProperty("header").GetProperty("fields").GetArrayLength());
+        Assert.Equal(VisibleCount(name,false),contract.GetProperty("lines").GetProperty("fields").GetArrayLength());
         Assert.Equal(0,source.DocumentReads);
         var list=await fixture.Json("/api/v2/documents/"+name);
         var detail=await fixture.Json("/api/v2/documents/"+name+"/detail?documentId=DOC");
@@ -325,13 +335,17 @@ public sealed class DocumentFullFieldTests
             {
                 var table=contract.GetProperty(part);var fields=table.GetProperty("fields").EnumerateArray().ToArray();
                 var columns=tables[table.GetProperty("table").GetString()!].GetProperty("columns").EnumerateArray().ToArray();
-                var expected=saved.RootElement.GetProperty("kinds").GetProperty(kind).GetProperty(part).GetProperty("fields").EnumerateArray().ToArray();
-                Assert.Equal(columns.Length,fields.Length);Assert.Equal(expected.Length,fields.Length);total+=fields.Length;
+                var all=saved.RootElement.GetProperty("kinds").GetProperty(kind).GetProperty(part).GetProperty("fields").EnumerateArray().ToArray();
+                Assert.Equal(columns.Length,all.Length);total+=columns.Length;
+                var hidden=ErpVisibleProjection.HiddenNames(kind,part).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var expected=all.Where(f=>!hidden.Contains(f.GetProperty("jsonPath").GetString()!.Split('.')[^1])).ToArray();
+                columns=columns.Where(c=>expected.Any(f=>f.GetProperty("column").GetString()==c.GetProperty("name").GetString())).ToArray();
+                Assert.Equal(columns.Length,fields.Length);Assert.Equal(expected.Length,fields.Length);
                 for(var i=0;i<columns.Length;i++)
                 {
                     Assert.Equal(columns[i].GetProperty("name").GetString(),fields[i].GetProperty("column").GetString());
                     Assert.Equal(columns[i].GetProperty("type").GetString()+columns[i].GetProperty("typeArguments").GetString(),fields[i].GetProperty("sqlType").GetString());
-                    Assert.Equal(columns[i].GetProperty("nullable").GetBoolean(),fields[i].GetProperty("nullable").GetBoolean());
+                    Assert.Equal(ErpSchemaEvolution.Nullable(table.GetProperty("table").GetString()!,columns[i].GetProperty("name").GetString()!,columns[i].GetProperty("nullable").GetBoolean()),fields[i].GetProperty("nullable").GetBoolean());
                     foreach(var p in expected[i].EnumerateObject())Assert.Equal(p.Value.GetRawText(),fields[i].GetProperty(p.Name).GetRawText());
                 }
             }

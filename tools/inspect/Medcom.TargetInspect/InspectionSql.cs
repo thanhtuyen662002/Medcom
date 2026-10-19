@@ -38,7 +38,7 @@ public static class InspectionSql
             ('AP_PurchaseRequestTbl','StatusID','int',4,0,10,0,''),
             ('AP_PurchaseRequestTbl','isLock','bit',1,1,1,0,''),
             ('AP_PurchaseRequestTbl','CurrencyID','varchar',3,0,0,0,''),
-            ('AP_PurchaseRequestTbl','ObjectID','varchar',100,0,0,0,''),
+            ('AP_PurchaseRequestTbl','ObjectID','varchar',100,1,0,0,''),
             ('AP_PurchaseRequestTbl','RateExchange','float',8,0,53,0,''),
             ('AP_PurchaseRequestTbl','BranchID','varchar',50,0,0,0,''),
             ('AP_PurchaseRequestDetailTbl','UserAutoID','varchar',50,0,0,0,''),

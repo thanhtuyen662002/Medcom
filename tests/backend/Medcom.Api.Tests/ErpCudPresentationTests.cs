@@ -21,7 +21,9 @@ public sealed class ErpCudPresentationTests
             {Assert.False(action.Visible);Assert.False(action.Enabled);Assert.Null(action.Route);}
         }
         var screen=ErpScreenCatalog.Get(module)!;
-        Assert.Same(screen,ErpActionRules.ForDisplay(screen));
+        var displayed=ErpActionRules.ForDisplay(screen);
+        Assert.Equal(screen.Fields.Keys,displayed.Fields.Keys);
+        foreach(var section in screen.Fields)Assert.Equal(section.Value.Where(f=>!ErpVisibleFields.IsHidden(module,section.Key,f.Name)),displayed.Fields[section.Key]);
         var hidden=ErpActionRules.Permissions(screen,new(false,true,true,true));
         Assert.False(hidden.CanView);Assert.All(hidden.Actions,a=>{Assert.False(a.Visible);Assert.Null(a.Route);});
         Assert.Equal(new ErpCrudPermission(false,false,false,false),hidden.Crud);
@@ -29,12 +31,14 @@ public sealed class ErpCudPresentationTests
     [Theory]
     [InlineData("sales-orders",12)] [InlineData("purchase-requests",3)]
     [InlineData("internal-transfer-requests",10)] [InlineData("machine-movements",0)]
-    public void A_locked_document_keeps_authorized_controls_visible_but_disabled(string module,int status)
+    public void Authorized_CUD_controls_stay_enabled_for_testing_while_actual_writes_still_check_document_state(string module,int status)
     {
         var state=new ErpActionContext(module,"actor","synthetic",status,true,"actor",null,1,false,false,
             new(true,true,true,true),true);
         var save=ErpActionRules.ForDisplay(state).Single(a=>a.Id=="save");
-        Assert.True(save.Visible);Assert.False(save.Enabled);Assert.Equal("state_or_assignment_not_allowed",save.Reason);
+        Assert.True(save.Visible);Assert.True(save.Enabled);Assert.Null(save.Reason);
+        var enforced=ErpActionRules.Evaluate(state).Single(a=>a.Id=="save");
+        Assert.False(enforced.Enabled);Assert.Equal("state_or_assignment_not_allowed",enforced.Reason);
     }
     [Fact]
     public void Permission_controls_only_advertise_existing_web_routes()

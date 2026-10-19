@@ -222,12 +222,12 @@ public sealed class SqlPurchaseRequestCommandAuthorityReader
                 if (await r.NextResultAsync(token)) throw new InvalidOperationException("Unexpected result.");
                 return false;
             }
-            Required(r, 0, 3, 4, 8, 10, 11, 12, 13);
+            Required(r, 0, 3, 4, 8, 10, 12, 13);
             if (r.GetString(0) != document || r.GetString(13) != branch) return false;
             var header = new PurchaseRequestHeaderInput(r.IsDBNull(1) ? null : r.GetDateTime(1).ToString("yyyy-MM-dd'T'HH:mm:ss.fff", CultureInfo.InvariantCulture),
                 r.IsDBNull(2) ? null : r.GetInt32(2), r.GetString(3), r.GetString(4), r.IsDBNull(5) ? null : r.GetString(5),
                 r.IsDBNull(6) ? null : r.GetDecimal(6).ToString("0.00", CultureInfo.InvariantCulture), r.IsDBNull(7) ? null : r.GetString(7),
-                r.GetString(10), r.GetString(11), r.GetDouble(12));
+                r.GetString(10), r.IsDBNull(11)?null:r.GetString(11), r.GetDouble(12));
             // DO NOT gate on StatusId/IsLocked here. Submit changes these itself;
             // post-dispatch receipt access and historical lookup must remain possible.
             head = new(document, branch, header, r.GetInt32(8), r.IsDBNull(9) ? null : r.GetBoolean(9), []);

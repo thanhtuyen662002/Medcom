@@ -13,8 +13,11 @@ public static class ErpActionRules
 {
     public static bool IsCudOperation(string operation)=>operation is "create" or "save" or "delete"
         or "scan-add" or "scan-delete" or "save-costs" or "save-assets";
-    public static IReadOnlyList<ErpActionState> ForDisplay(ErpActionContext state)=>Evaluate(state);
-    public static ErpScreenDescription ForDisplay(ErpScreenDescription screen)=>screen;
+    public static IReadOnlyList<ErpActionState> ForDisplay(ErpActionContext state)=>Array.AsReadOnly(Evaluate(state).Select(action=>
+        action.Visible&&ErpScreenCatalog.Get(state.Module)!.Actions.Any(d=>d.Id==action.Id&&IsCudOperation(d.Operation))
+            ?action with{Enabled=true,Reason=null}:action).ToArray());
+    public static ErpScreenDescription ForDisplay(ErpScreenDescription screen)=>screen with
+    {Fields=screen.Fields.ToDictionary(s=>s.Key,s=>ErpVisibleFields.Visible(screen.Id,s.Key,s.Value),StringComparer.Ordinal)};
 
     private static bool Grant(ErpNativeRights rights,string operation)=>operation switch
     {"create"=>rights.Add,"delete"=>rights.Delete,"paste"=>rights.Add||rights.Update,
@@ -28,9 +31,10 @@ public static class ErpActionRules
             .Select(a=>new ErpActionPermission(a.Id,a.Caption,a.NativeVisible&&rights.Read&&Grant(rights,a.Operation),
                 a.RequiresSavedDocument,a.NativeVisible&&rights.Read&&Grant(rights,a.Operation)?Route(screen.Id,a.Operation):null)).ToArray();
         bool Has(string operation)=>screen.Actions.Any(a=>a.Operation==operation&&a.NativeVisible);
-        return new(screen.Id,screen.Caption,rights.Read,new(rights.Read,rights.Read&&rights.Add&&Has("create"),
+        var scanAdd=Has("scan-add");var scanDelete=Has("scan-delete");
+        return new(screen.Id,screen.Caption,rights.Read,new(rights.Read,rights.Read&&(rights.Add&&Has("create")||rights.Update&&scanAdd),
             rights.Read&&rights.Update&&screen.Actions.Any(a=>a.NativeVisible&&(a.Operation=="save"||a.Operation is "scan-add" or "scan-delete"||a.Operation.StartsWith("save-",StringComparison.Ordinal))),
-            rights.Read&&rights.Delete&&Has("delete")),Array.AsReadOnly(actions));
+            rights.Read&&(rights.Delete&&Has("delete")||rights.Update&&scanDelete)),Array.AsReadOnly(actions));
     }
 
     public static IReadOnlyList<ErpActionState> Evaluate(ErpActionContext state)

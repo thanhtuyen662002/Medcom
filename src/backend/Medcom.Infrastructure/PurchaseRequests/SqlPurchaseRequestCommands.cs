@@ -617,11 +617,11 @@ public sealed class SqlPurchaseRequestCommands : IPurchaseRequestCommands
                 if(strict && await r.NextResultAsync(token)) throw new InvalidOperationException("Unexpected observation head result.");
                 return null;
             }
-            if(new[]{0,3,4,8,10,11,12,13}.Any(r.IsDBNull) || r.GetString(0)!=document || r.GetString(13)!=branch) throw new PurchaseConflictException();
+            if(new[]{0,3,4,8,10,12,13}.Any(r.IsDBNull) || r.GetString(0)!=document || r.GetString(13)!=branch) throw new PurchaseConflictException();
             var header=new PurchaseRequestHeaderInput(r.IsDBNull(1) ? null : r.GetDateTime(1).ToString("yyyy-MM-dd'T'HH:mm:ss.fff",CultureInfo.InvariantCulture),
                 r.IsDBNull(2) ? null : r.GetInt32(2),r.GetString(3),r.GetString(4),r.IsDBNull(5) ? null : r.GetString(5),
                 r.IsDBNull(6) ? null : r.GetDecimal(6).ToString("0.00",CultureInfo.InvariantCulture),r.IsDBNull(7) ? null : r.GetString(7),
-                r.GetString(10),r.GetString(11),r.GetDouble(12));
+                r.GetString(10),r.IsDBNull(11)?null:r.GetString(11),r.GetDouble(12));
             head=new(document,branch,header,r.GetInt32(8),r.IsDBNull(9) ? null : r.GetBoolean(9),Array.Empty<PurchaseRequestPersistedLine>());
             if(await r.ReadAsync(token)) throw new InvalidOperationException("Duplicate master.");
             if(strict && await r.NextResultAsync(token)) throw new InvalidOperationException("Unexpected observation head result.");

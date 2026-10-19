@@ -1,0 +1,1943 @@
+{
+  "observedAtUtc": "2026-10-19T07:50:03.4846354Z",
+  "source": "owner-authorized read-only MedData technical configuration",
+  "productionDataWrites": false,
+  "policy": "Omit ERP-hidden business presentation fields. Retain document/line/branch/status identities, lock state and reference status names/colors required by the web protocol. Command snapshots stay server-side.",
+  "screens": [
+    {
+      "module": "purchase-requests",
+      "form": "AP_PurposeRequestListFrm",
+      "sections": [
+        {
+          "section": "header",
+          "slot": "T0",
+          "source": "dbo.SY_FrmCfg/AP_PurposeRequestListFrm/T0/HDE",
+          "sourcePresent": false,
+          "sourceSha256Utf16LE": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "columns": [],
+          "fields": []
+        },
+        {
+          "section": "lines",
+          "slot": "T1",
+          "source": "dbo.SY_FrmCfg/AP_PurposeRequestListFrm/T1/HDE",
+          "sourcePresent": false,
+          "sourceSha256Utf16LE": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "columns": [],
+          "fields": []
+        }
+      ]
+    },
+    {
+      "module": "sales-orders",
+      "form": "AR_OrderByContractFrm",
+      "sections": [
+        {
+          "section": "header",
+          "slot": "T0",
+          "source": "dbo.SY_FrmCfg/AR_OrderByContractFrm/T0/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "a87b99bd9385f232f076f9d6155e231fd403936e20b6412c2cacf59fe9b82029",
+          "columns": [
+            "BackColor"
+          ],
+          "fields": []
+        },
+        {
+          "section": "lines",
+          "slot": "T1",
+          "source": "dbo.SY_FrmCfg/AR_OrderByContractFrm/T1/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "11bb6564b302534f12a753806f53bd9bf89f817e11ec60b286cad4146e414e80",
+          "columns": [
+            "StoreHouseID",
+            "TonKhoHienTai",
+            "CostID",
+            "UnitFactor",
+            "Unit2",
+            "Quantity2",
+            "Notes2",
+            "Property2",
+            "Property"
+          ],
+          "fields": [
+            "unitFactor",
+            "unit2",
+            "quantity2",
+            "tonKhoHienTai",
+            "property",
+            "property2",
+            "notes2",
+            "costId",
+            "storeHouseId"
+          ]
+        },
+        {
+          "section": "history",
+          "slot": "T2",
+          "source": "dbo.SY_FrmCfg/AR_OrderByContractFrm/T2/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "a67b8fd092533916814184bb87e647874c380265a01364478645dfe1d13f376c",
+          "columns": [
+            "BackColor",
+            "StatusID"
+          ],
+          "fields": [
+            "statusId"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "internal-transfer-requests",
+      "form": "IV_InternalTransferRequestFrm",
+      "sections": [
+        {
+          "section": "header",
+          "slot": "T0",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferRequestFrm/T0/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "3b2c3ad6389ad678cc5a15c72c76668e77bdbc9a3e7810e936527eec55d6f093",
+          "columns": [
+            "BranchID",
+            "FromBranchID",
+            "ToBranchID",
+            "AssignedPM",
+            "StatusID",
+            "SendTo",
+            "PMConfirmedBy",
+            "PMConfirmedAt",
+            "BatchID",
+            "BackColor",
+            "ForeColor",
+            "isLock"
+          ],
+          "fields": [
+            "branchId",
+            "fromBranchId",
+            "toBranchId",
+            "assignedPM",
+            "statusId",
+            "pMConfirmedBy",
+            "pMConfirmedAt",
+            "isLocked",
+            "sendTo"
+          ]
+        },
+        {
+          "section": "lines",
+          "slot": "T1",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferRequestFrm/T1/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "68c6f4380e243b740d1210c6c3248033e5f712d58d9b2a1806957c2dc1646997",
+          "columns": [
+            "UserAutoID",
+            "DocumentID",
+            "ExpectedObjectID",
+            "PMApprovedQty",
+            "PMNote",
+            "HangSX",
+            "isLot"
+          ],
+          "fields": [
+            "userAutoId",
+            "documentId",
+            "pMApprovedQty",
+            "expectedObjectId",
+            "pMNote"
+          ]
+        },
+        {
+          "section": "history",
+          "slot": "T2",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferRequestFrm/T2/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "5a9fafa0ef7ce932cdf78a2cc5365bcc0b2405ce144a7d17c9c507db2d7cbc9e",
+          "columns": [
+            "UserAutoID",
+            "DocumentID",
+            "StatusID",
+            "BackColor",
+            "ForeColor"
+          ],
+          "fields": [
+            "userAutoId",
+            "documentId",
+            "statusId"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "warehouse-qr",
+      "form": "IV_Output_QRCodeFrm",
+      "sections": [
+        {
+          "section": "header",
+          "slot": "T0",
+          "source": "dbo.SY_FrmCfg/IV_Output_QRCodeFrm/T0/HDE",
+          "sourcePresent": false,
+          "sourceSha256Utf16LE": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "columns": [],
+          "fields": []
+        },
+        {
+          "section": "lines",
+          "slot": "T1",
+          "source": "dbo.SY_FrmCfg/IV_Output_QRCodeFrm/T1/HDE",
+          "sourcePresent": false,
+          "sourceSha256Utf16LE": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "columns": [],
+          "fields": []
+        },
+        {
+          "section": "comparison",
+          "slot": "T2",
+          "source": "dbo.SY_FrmCfg/IV_Output_QRCodeFrm/T2/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "7384e20b9f0f3df85a97fe0fd8521267a7bcf21895a0c7a56a9e3c6a6ecfae6f",
+          "columns": [
+            "UnitPrice",
+            "Amount",
+            "InvAccID",
+            "AccountID2",
+            "CostCenterID",
+            "CostID",
+            "RefDoc"
+          ],
+          "fields": [
+            "unitPrice",
+            "amount",
+            "invAccId",
+            "accountId2",
+            "costCenterId",
+            "costId",
+            "refDoc"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "sales-qr",
+      "form": "AR_Invoice_QRCodeFrm",
+      "sections": [
+        {
+          "section": "header",
+          "slot": "T0",
+          "source": "dbo.SY_FrmCfg/AR_Invoice_QRCodeFrm/T0/HDE",
+          "sourcePresent": false,
+          "sourceSha256Utf16LE": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "columns": [],
+          "fields": []
+        },
+        {
+          "section": "lines",
+          "slot": "T1",
+          "source": "dbo.SY_FrmCfg/AR_Invoice_QRCodeFrm/T1/HDE",
+          "sourcePresent": false,
+          "sourceSha256Utf16LE": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "columns": [],
+          "fields": []
+        },
+        {
+          "section": "comparison",
+          "slot": "T2",
+          "source": "dbo.SY_FrmCfg/AR_Invoice_QRCodeFrm/T2/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "2d7132ef828b80682de13803a6d1c52565f70b43be01bd22696b4acda2ef1d5c",
+          "columns": [
+            "UnitPrice",
+            "Amount",
+            "SourceAmount",
+            "VATID",
+            "VATPercent",
+            "VATAmount",
+            "DiscountPercentTT",
+            "DiscountAmountTT",
+            "DiscountPercent",
+            "DiscountAmount",
+            "TotalAmount",
+            "CostCenterID",
+            "CostID",
+            "IncomeAccID",
+            "InvAccID",
+            "CostOfSaleAccID",
+            "DiscountAcctID",
+            "DiscountAmount2",
+            "UnitCost",
+            "AmountCost",
+            "UnitPriceV",
+            "ExportPercent",
+            "ExportAmount",
+            "PhiKhac",
+            "TongTienNhomFyto",
+            "TongTienNhom1",
+            "TongTienNhom2",
+            "CTKM"
+          ],
+          "fields": [
+            "unitPrice",
+            "sourceAmount",
+            "amount",
+            "vATId",
+            "vATPercent",
+            "vATAmount",
+            "discountPercentTT",
+            "discountAmountTT",
+            "discountPercent",
+            "discountAmount",
+            "totalAmount",
+            "costCenterId",
+            "costId",
+            "incomeAccId",
+            "invAccId",
+            "costOfSaleAccId",
+            "discountAcctId",
+            "discountAmount2",
+            "unitCost",
+            "amountCost",
+            "unitPriceV",
+            "exportPercent",
+            "exportAmount",
+            "cTKM",
+            "tongTienNhom1",
+            "tongTienNhom2",
+            "phiKhac",
+            "tongTienNhomFyto"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "machine-movements",
+      "form": "FA_Move2026Frm",
+      "sections": [
+        {
+          "section": "header",
+          "slot": "T0",
+          "source": "dbo.SY_FrmCfg/FA_Move2026Frm/T0/HDE",
+          "sourcePresent": false,
+          "sourceSha256Utf16LE": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "columns": [],
+          "fields": []
+        },
+        {
+          "section": "lines",
+          "slot": "T1",
+          "source": "dbo.SY_FrmCfg/FA_Move2026Frm/T1/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "84c1bc2a9d0201bbc16c5126e1056261be3ff81aff6d9953e4aabdab804ef523",
+          "columns": [
+            "UserAutoID",
+            "DocumentID"
+          ],
+          "fields": [
+            "userAutoId",
+            "documentId"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "machine-repairs",
+      "form": "FA_Repair2026Frm",
+      "sections": [
+        {
+          "section": "header",
+          "slot": "T0",
+          "source": "dbo.SY_FrmCfg/FA_Repair2026Frm/T0/HDE",
+          "sourcePresent": false,
+          "sourceSha256Utf16LE": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "columns": [],
+          "fields": []
+        },
+        {
+          "section": "lines",
+          "slot": "T1",
+          "source": "dbo.SY_FrmCfg/FA_Repair2026Frm/T1/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "84c1bc2a9d0201bbc16c5126e1056261be3ff81aff6d9953e4aabdab804ef523",
+          "columns": [
+            "UserAutoID",
+            "DocumentID"
+          ],
+          "fields": [
+            "userAutoId",
+            "documentId"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "purchase-orders",
+      "form": "AP_OrderFrm",
+      "sections": [
+        {
+          "section": "header",
+          "slot": "T0",
+          "source": "dbo.SY_FrmCfg/AP_OrderFrm/T0/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "c22e112e1d4f1aa3bdc78f676de90a1d72629a5c8de9f24fd41d940254a700e3",
+          "columns": [
+            "SearchField",
+            "StatusID"
+          ],
+          "fields": [
+            "searchField",
+            "statusId"
+          ]
+        },
+        {
+          "section": "lines",
+          "slot": "T1",
+          "source": "dbo.SY_FrmCfg/AP_OrderFrm/T1/HDE",
+          "sourcePresent": false,
+          "sourceSha256Utf16LE": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "columns": [],
+          "fields": []
+        }
+      ]
+    },
+    {
+      "module": "inbound-requests",
+      "form": "IV_InboundRequestFrm",
+      "sections": [
+        {
+          "section": "header",
+          "slot": "T0",
+          "source": "dbo.SY_FrmCfg/IV_InboundRequestFrm/T0/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "863184c45ddcb2ef33231aa175f7bf02d76250cf90c3d2cff7895922a6ddf59c",
+          "columns": [
+            "TotalPalletQuantityByReal",
+            "TotalBarrelQuantityByReal",
+            "TotalWeightByReal",
+            "ExcessPackageQuantity",
+            "LackOfPackageQuantity",
+            "IsDamageOutsidePackage",
+            "DamageDescription",
+            "DamageInsideStatusID",
+            "LocationDamageDetectedID",
+            "LocationDamageDescription",
+            "NoPalletNote",
+            "PalletNote",
+            "CheckerNote",
+            "ResultDesciption",
+            "ItemID",
+            "QuantityOrBarrelQuantity",
+            "LoteOrDate",
+            "TotalQuantityInboundResult",
+            "GoodAwaitingInboundResult",
+            "ResultNote",
+            "DatetimeRecorded"
+          ],
+          "fields": [
+            "totalPalletQuantityByReal",
+            "totalBarrelQuantityByReal",
+            "excessPackageQuantity",
+            "lackOfPackageQuantity",
+            "isDamageOutsidePackage",
+            "damageDescription",
+            "damageInsideStatusId",
+            "locationDamageDetectedId",
+            "locationDamageDescription",
+            "resultDesciption",
+            "totalQuantityInboundResult",
+            "goodAwaitingInboundResult",
+            "resultNote",
+            "datetimeRecorded"
+          ]
+        },
+        {
+          "section": "lines",
+          "slot": "T1",
+          "source": "dbo.SY_FrmCfg/IV_InboundRequestFrm/T1/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "c632a9a19f9be4677070d43ee3c3a59dba1f5e7c0f6b567f38574e6801706453",
+          "columns": [
+            "OrderNumber",
+            "UserAutoID",
+            "SourceAmount"
+          ],
+          "fields": [
+            "userAutoId",
+            "sourceAmount"
+          ]
+        },
+        {
+          "section": "costs",
+          "slot": "T2",
+          "source": "dbo.SY_FrmCfg/IV_InboundRequestFrm/T2/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "7badd91710c3cedba1f3304f2d4d114d0407ce2077e3142f6ec47c3cbf2ca6e1",
+          "columns": [
+            "DocumentID",
+            "UserAutoID",
+            "ServiceDetailID",
+            "UserCreate",
+            "UserUpdate",
+            "DateCreate",
+            "DateUpdate",
+            "IsActive"
+          ],
+          "fields": [
+            "userAutoId",
+            "documentId",
+            "serviceDetailId",
+            "userCreate",
+            "userUpdate",
+            "dateCreate",
+            "dateUpdate",
+            "isActive"
+          ]
+        },
+        {
+          "section": "discrepancies",
+          "slot": "T3",
+          "source": "dbo.SY_FrmCfg/IV_InboundRequestFrm/T3/HDE",
+          "sourcePresent": false,
+          "sourceSha256Utf16LE": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "columns": [],
+          "fields": []
+        },
+        {
+          "section": "history",
+          "slot": "T4",
+          "source": "dbo.SY_FrmCfg/IV_InboundRequestFrm/T4/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "a67b8fd092533916814184bb87e647874c380265a01364478645dfe1d13f376c",
+          "columns": [
+            "BackColor",
+            "StatusID"
+          ],
+          "fields": [
+            "statusId"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "purchase-approvals",
+      "form": "AP_ApprovePurchaseRequestListFrm",
+      "sections": [
+        {
+          "section": "header",
+          "slot": "T0",
+          "source": "dbo.SY_FrmCfg/AP_ApprovePurchaseRequestListFrm/T0/HDE",
+          "sourcePresent": false,
+          "sourceSha256Utf16LE": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "columns": [],
+          "fields": []
+        },
+        {
+          "section": "lines",
+          "slot": "T1",
+          "source": "dbo.SY_FrmCfg/AP_ApprovePurchaseRequestListFrm/T1/HDE",
+          "sourcePresent": false,
+          "sourceSha256Utf16LE": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "columns": [],
+          "fields": []
+        }
+      ]
+    },
+    {
+      "module": "sales-order-pm",
+      "form": "AR_OrderComfirmFrm",
+      "sections": [
+        {
+          "section": "header",
+          "slot": "T0",
+          "source": "dbo.SY_FrmCfg/AR_OrderComfirmFrm/T0/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "a87b99bd9385f232f076f9d6155e231fd403936e20b6412c2cacf59fe9b82029",
+          "columns": [
+            "BackColor"
+          ],
+          "fields": [
+            "backColor"
+          ]
+        },
+        {
+          "section": "lines",
+          "slot": "T1",
+          "source": "dbo.SY_FrmCfg/AR_OrderComfirmFrm/T1/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "ea903ef3a4b3b6021510fbc66b689dd0b524c48c4f1dbe8345faa073f805d886",
+          "columns": [
+            "StoreHouseID",
+            "TonKhoHienTai",
+            "CostID"
+          ],
+          "fields": [
+            "tonKhoHienTai",
+            "costId",
+            "storeHouseId"
+          ]
+        },
+        {
+          "section": "history",
+          "slot": "T2",
+          "source": "dbo.SY_FrmCfg/AR_OrderComfirmFrm/T2/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "a67b8fd092533916814184bb87e647874c380265a01364478645dfe1d13f376c",
+          "columns": [
+            "BackColor",
+            "StatusID"
+          ],
+          "fields": [
+            "statusId"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "sales-order-sa",
+      "form": "AR_OrderAproveFrm",
+      "sections": [
+        {
+          "section": "header",
+          "slot": "T0",
+          "source": "dbo.SY_FrmCfg/AR_OrderAproveFrm/T0/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "ba933b90e976cf65171335a734975ac7059dfff8696b4d0517c05037dbde6cb9",
+          "columns": [
+            "StatusID"
+          ],
+          "fields": [
+            "statusId"
+          ]
+        },
+        {
+          "section": "lines",
+          "slot": "T1",
+          "source": "dbo.SY_FrmCfg/AR_OrderAproveFrm/T1/HDE",
+          "sourcePresent": false,
+          "sourceSha256Utf16LE": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "columns": [],
+          "fields": []
+        },
+        {
+          "section": "history",
+          "slot": "T2",
+          "source": "dbo.SY_FrmCfg/AR_OrderAproveFrm/T2/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "a67b8fd092533916814184bb87e647874c380265a01364478645dfe1d13f376c",
+          "columns": [
+            "BackColor",
+            "StatusID"
+          ],
+          "fields": [
+            "statusId"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "internal-transfer-pm",
+      "form": "IV_InternalTransferPMFrm",
+      "sections": [
+        {
+          "section": "header",
+          "slot": "T0",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferPMFrm/T0/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "77b5bd80e6efaefe1c64fbacbc84ed5a4715c41de5575df7d6b36301c728b26a",
+          "columns": [
+            "BranchID",
+            "FromBranchID",
+            "ToBranchID",
+            "AssignedPM",
+            "StatusID",
+            "SendTo",
+            "PMConfirmedBy",
+            "PMConfirmedAt",
+            "BatchID",
+            "BackColor",
+            "ForeColor",
+            "isLock",
+            "UserCreate",
+            "UserUpdate",
+            "DateCreate",
+            "DateUpdate"
+          ],
+          "fields": [
+            "branchId",
+            "fromBranchId",
+            "toBranchId",
+            "assignedPM",
+            "statusId",
+            "pMConfirmedBy",
+            "pMConfirmedAt",
+            "isLocked",
+            "userCreate",
+            "userUpdate",
+            "dateCreate",
+            "dateUpdate",
+            "sendTo",
+            "backColor",
+            "foreColor",
+            "batchId"
+          ]
+        },
+        {
+          "section": "lines",
+          "slot": "T1",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferPMFrm/T1/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "ebfa435f483711fe5b8fcc65780cd9d2ef220174263930a820a4c98eec61981b",
+          "columns": [
+            "UserAutoID",
+            "DocumentID",
+            "ExpectedObjectID",
+            "HangSX",
+            "isLot"
+          ],
+          "fields": [
+            "userAutoId",
+            "documentId",
+            "expectedObjectId"
+          ]
+        },
+        {
+          "section": "history",
+          "slot": "T2",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferPMFrm/T2/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "5a9fafa0ef7ce932cdf78a2cc5365bcc0b2405ce144a7d17c9c507db2d7cbc9e",
+          "columns": [
+            "UserAutoID",
+            "DocumentID",
+            "StatusID",
+            "BackColor",
+            "ForeColor"
+          ],
+          "fields": [
+            "userAutoId",
+            "documentId",
+            "statusId"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "internal-transfer-batches",
+      "form": "IV_InternalTransferBatchFrm",
+      "sections": [
+        {
+          "section": "header",
+          "slot": "T0",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferBatchFrm/T0/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "1d6f240b93f9af8e042aff11c7752cd7b9c74a5396d7bc8d7acc11c0e90dcf2a",
+          "columns": [
+            "FromBranchID",
+            "ToBranchID",
+            "FromStoreHouseID",
+            "ToStoreHouseID",
+            "AssignedPM",
+            "AssignedTechnician",
+            "AssignedSA",
+            "OutputDocumentID",
+            "InputDocumentID",
+            "ActualDispatchDate",
+            "ActualReceiveDate",
+            "TechnicalCheckedBy",
+            "TechnicalCheckedAt",
+            "SAApprovedBy",
+            "SAApprovedAt",
+            "AccountingConfirmedBy",
+            "AccountingConfirmedAt",
+            "DispatchedBy",
+            "ReceivedBy",
+            "StatusID",
+            "SendTo",
+            "BackColor",
+            "ForeColor",
+            "isLock",
+            "UserCreate",
+            "UserUpdate",
+            "DateCreate",
+            "DateUpdate"
+          ],
+          "fields": [
+            "fromBranchId",
+            "toBranchId",
+            "fromStoreHouseId",
+            "toStoreHouseId",
+            "actualDispatchDate",
+            "actualReceiveDate",
+            "assignedPM",
+            "assignedTechnician",
+            "assignedSA",
+            "statusId",
+            "outputDocumentId",
+            "inputDocumentId",
+            "technicalCheckedBy",
+            "technicalCheckedAt",
+            "sAApprovedBy",
+            "sAApprovedAt",
+            "accountingConfirmedBy",
+            "accountingConfirmedAt",
+            "dispatchedBy",
+            "receivedBy",
+            "isLocked",
+            "userCreate",
+            "userUpdate",
+            "dateCreate",
+            "dateUpdate",
+            "sendTo",
+            "backColor",
+            "foreColor"
+          ]
+        },
+        {
+          "section": "lines",
+          "slot": "T1",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferBatchFrm/T1/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "48aedc92678e5310e46e3b34bf05a1ea6e2f6525588a3a6245f9430111351867",
+          "columns": [
+            "UserAutoID",
+            "BatchID",
+            "SalesUser",
+            "AddedBy",
+            "AddedAt"
+          ],
+          "fields": [
+            "userAutoId",
+            "batchId",
+            "addedBy",
+            "addedAt",
+            "salesUser"
+          ]
+        },
+        {
+          "section": "details",
+          "slot": "T2",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferBatchFrm/T2/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "bfdbdcee971e45fe7a6c86382a4812d88de849776b39841dd4f5f70955aa2acf",
+          "columns": [
+            "UserAutoID",
+            "BatchID",
+            "RequestDetailID",
+            "Lot",
+            "ExpireDate",
+            "TechStatus",
+            "TechNotes",
+            "BBKCUrl",
+            "Technician",
+            "TechCheckedAt",
+            "ActualIssueQty",
+            "ActualReceiveQty",
+            "QtyNotIssued",
+            "QtyInTransit",
+            "AccountingNote",
+            "WarehouseNote",
+            "ReceiveNote",
+            "HangSX",
+            "isLot",
+            "RequestDate",
+            "RequestTerritoryNote"
+          ],
+          "fields": [
+            "userAutoId",
+            "batchId",
+            "requestDetailId",
+            "lot",
+            "expireDate",
+            "techStatus",
+            "techNotes",
+            "bBKCUrl",
+            "technician",
+            "techCheckedAt",
+            "actualIssueQty",
+            "actualReceiveQty",
+            "accountingNote",
+            "warehouseNote",
+            "receiveNote",
+            "hangSX",
+            "isLot",
+            "requestDate",
+            "requestTerritoryNote",
+            "qtyNotIssued",
+            "qtyInTransit"
+          ]
+        },
+        {
+          "section": "assets",
+          "slot": "T3",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferBatchFrm/T3/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "91ea2857d388bea336f5c32f5ba555e6d31e81caacf6e16c83d7f5ed7df704e4",
+          "columns": [
+            "UserAutoID",
+            "BatchID",
+            "BatchDetailID",
+            "AssetCondition",
+            "TechStatus",
+            "BBKCUrl",
+            "TechNotes",
+            "Technician",
+            "CheckedAt",
+            "IsDispatched",
+            "IsReceived",
+            "AssetStatus",
+            "TrackLifecycle"
+          ],
+          "fields": [
+            "userAutoId",
+            "batchId",
+            "batchDetailId",
+            "assetCondition",
+            "techStatus",
+            "bBKCUrl",
+            "techNotes",
+            "technician",
+            "checkedAt",
+            "isDispatched",
+            "isReceived",
+            "assetStatus",
+            "trackLifecycle"
+          ]
+        },
+        {
+          "section": "history",
+          "slot": "T4",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferBatchFrm/T4/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "9669d5923824b5ca1c786c5ed9658ff177673fdab5f28f4e894ab1d431c5d1e5",
+          "columns": [
+            "UserAutoID",
+            "BatchID",
+            "StatusID",
+            "BackColor",
+            "ForeColor"
+          ],
+          "fields": [
+            "userAutoId",
+            "statusId",
+            "batchId"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "internal-transfer-tech",
+      "form": "IV_InternalTransferTechFrm",
+      "sections": [
+        {
+          "section": "header",
+          "slot": "T0",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferTechFrm/T0/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "62c665597212528e9f3c2d199005402b4e22841c4be6746d2de11077c0cb28d6",
+          "columns": [
+            "FromBranchID",
+            "ToBranchID",
+            "FromStoreHouseID",
+            "ToStoreHouseID",
+            "AssignedPM",
+            "AssignedTechnician",
+            "AssignedSA",
+            "HasEquipment",
+            "CarrierName",
+            "CarrierPhone",
+            "VehicleNo",
+            "OutputDocumentID",
+            "InputDocumentID",
+            "ActualDispatchDate",
+            "ActualReceiveDate",
+            "RequestCount",
+            "LineCount",
+            "TechnicalCheckedBy",
+            "TechnicalCheckedAt",
+            "SAApprovedBy",
+            "SAApprovedAt",
+            "AccountingConfirmedBy",
+            "AccountingConfirmedAt",
+            "DispatchedBy",
+            "ReceivedBy",
+            "StatusID",
+            "SendTo",
+            "BackColor",
+            "ForeColor",
+            "isLock",
+            "UserCreate",
+            "UserUpdate",
+            "DateCreate",
+            "DateUpdate"
+          ],
+          "fields": [
+            "fromBranchId",
+            "toBranchId",
+            "fromStoreHouseId",
+            "toStoreHouseId",
+            "actualDispatchDate",
+            "actualReceiveDate",
+            "assignedPM",
+            "assignedTechnician",
+            "assignedSA",
+            "hasEquipment",
+            "statusId",
+            "carrierName",
+            "carrierPhone",
+            "vehicleNo",
+            "outputDocumentId",
+            "inputDocumentId",
+            "technicalCheckedBy",
+            "technicalCheckedAt",
+            "sAApprovedBy",
+            "sAApprovedAt",
+            "accountingConfirmedBy",
+            "accountingConfirmedAt",
+            "dispatchedBy",
+            "receivedBy",
+            "isLocked",
+            "userCreate",
+            "userUpdate",
+            "dateCreate",
+            "dateUpdate",
+            "sendTo",
+            "backColor",
+            "foreColor",
+            "requestCount",
+            "lineCount"
+          ]
+        },
+        {
+          "section": "requests",
+          "slot": "T1",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferTechFrm/T1/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "48aedc92678e5310e46e3b34bf05a1ea6e2f6525588a3a6245f9430111351867",
+          "columns": [
+            "UserAutoID",
+            "BatchID",
+            "SalesUser",
+            "AddedBy",
+            "AddedAt"
+          ],
+          "fields": [
+            "userAutoId",
+            "batchId",
+            "addedBy",
+            "addedAt",
+            "salesUser"
+          ]
+        },
+        {
+          "section": "lines",
+          "slot": "T2",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferTechFrm/T2/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "c4f9da755568c1bec0361d1b8ae98a8b33245c16fa1d01337a768fe25f75fcd1",
+          "columns": [
+            "UserAutoID",
+            "BatchID",
+            "RequestDetailID",
+            "RequestedQty",
+            "Lot",
+            "ExpireDate",
+            "Technician",
+            "TechCheckedAt",
+            "ActualIssueQty",
+            "ActualReceiveQty",
+            "QtyNotIssued",
+            "QtyInTransit",
+            "AccountingNote",
+            "WarehouseNote",
+            "ReceiveNote",
+            "HangSX",
+            "isLot",
+            "RequestDate",
+            "RequestTerritoryNote"
+          ],
+          "fields": [
+            "userAutoId",
+            "batchId",
+            "requestDetailId",
+            "requestedQty",
+            "lot",
+            "expireDate",
+            "technician",
+            "techCheckedAt",
+            "actualIssueQty",
+            "actualReceiveQty",
+            "accountingNote",
+            "warehouseNote",
+            "receiveNote",
+            "hangSX",
+            "isLot",
+            "requestDate",
+            "requestTerritoryNote",
+            "qtyNotIssued",
+            "qtyInTransit"
+          ]
+        },
+        {
+          "section": "assets",
+          "slot": "T3",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferTechFrm/T3/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "923f02bb4d974f5dbf4f1a1acd8b13c18ffc1f9c25d33a20d6e8544da2787e54",
+          "columns": [
+            "UserAutoID",
+            "BatchID",
+            "BatchDetailID",
+            "IsDispatched",
+            "IsReceived",
+            "AssetStatus",
+            "TrackLifecycle"
+          ],
+          "fields": [
+            "userAutoId",
+            "batchId",
+            "batchDetailId",
+            "isDispatched",
+            "isReceived",
+            "assetStatus",
+            "trackLifecycle"
+          ]
+        },
+        {
+          "section": "history",
+          "slot": "T4",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferTechFrm/T4/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "9669d5923824b5ca1c786c5ed9658ff177673fdab5f28f4e894ab1d431c5d1e5",
+          "columns": [
+            "UserAutoID",
+            "BatchID",
+            "StatusID",
+            "BackColor",
+            "ForeColor"
+          ],
+          "fields": [
+            "userAutoId",
+            "statusId",
+            "batchId"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "internal-transfer-sa",
+      "form": "IV_InternalTransferSAFrm",
+      "sections": [
+        {
+          "section": "header",
+          "slot": "T0",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferSAFrm/T0/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "62c665597212528e9f3c2d199005402b4e22841c4be6746d2de11077c0cb28d6",
+          "columns": [
+            "FromBranchID",
+            "ToBranchID",
+            "FromStoreHouseID",
+            "ToStoreHouseID",
+            "AssignedPM",
+            "AssignedTechnician",
+            "AssignedSA",
+            "HasEquipment",
+            "CarrierName",
+            "CarrierPhone",
+            "VehicleNo",
+            "OutputDocumentID",
+            "InputDocumentID",
+            "ActualDispatchDate",
+            "ActualReceiveDate",
+            "RequestCount",
+            "LineCount",
+            "TechnicalCheckedBy",
+            "TechnicalCheckedAt",
+            "SAApprovedBy",
+            "SAApprovedAt",
+            "AccountingConfirmedBy",
+            "AccountingConfirmedAt",
+            "DispatchedBy",
+            "ReceivedBy",
+            "StatusID",
+            "SendTo",
+            "BackColor",
+            "ForeColor",
+            "isLock",
+            "UserCreate",
+            "UserUpdate",
+            "DateCreate",
+            "DateUpdate"
+          ],
+          "fields": [
+            "fromBranchId",
+            "toBranchId",
+            "fromStoreHouseId",
+            "toStoreHouseId",
+            "actualDispatchDate",
+            "actualReceiveDate",
+            "assignedPM",
+            "assignedTechnician",
+            "assignedSA",
+            "hasEquipment",
+            "statusId",
+            "carrierName",
+            "carrierPhone",
+            "vehicleNo",
+            "outputDocumentId",
+            "inputDocumentId",
+            "technicalCheckedBy",
+            "technicalCheckedAt",
+            "sAApprovedBy",
+            "sAApprovedAt",
+            "accountingConfirmedBy",
+            "accountingConfirmedAt",
+            "dispatchedBy",
+            "receivedBy",
+            "isLocked",
+            "userCreate",
+            "userUpdate",
+            "dateCreate",
+            "dateUpdate",
+            "sendTo",
+            "backColor",
+            "foreColor",
+            "requestCount",
+            "lineCount"
+          ]
+        },
+        {
+          "section": "requests",
+          "slot": "T1",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferSAFrm/T1/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "48aedc92678e5310e46e3b34bf05a1ea6e2f6525588a3a6245f9430111351867",
+          "columns": [
+            "UserAutoID",
+            "BatchID",
+            "SalesUser",
+            "AddedBy",
+            "AddedAt"
+          ],
+          "fields": [
+            "userAutoId",
+            "batchId",
+            "addedBy",
+            "addedAt",
+            "salesUser"
+          ]
+        },
+        {
+          "section": "lines",
+          "slot": "T2",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferSAFrm/T2/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "c4f9da755568c1bec0361d1b8ae98a8b33245c16fa1d01337a768fe25f75fcd1",
+          "columns": [
+            "UserAutoID",
+            "BatchID",
+            "RequestDetailID",
+            "RequestedQty",
+            "Lot",
+            "ExpireDate",
+            "Technician",
+            "TechCheckedAt",
+            "ActualIssueQty",
+            "ActualReceiveQty",
+            "QtyNotIssued",
+            "QtyInTransit",
+            "AccountingNote",
+            "WarehouseNote",
+            "ReceiveNote",
+            "HangSX",
+            "isLot",
+            "RequestDate",
+            "RequestTerritoryNote"
+          ],
+          "fields": [
+            "userAutoId",
+            "batchId",
+            "requestDetailId",
+            "requestedQty",
+            "lot",
+            "expireDate",
+            "technician",
+            "techCheckedAt",
+            "actualIssueQty",
+            "actualReceiveQty",
+            "accountingNote",
+            "warehouseNote",
+            "receiveNote",
+            "hangSX",
+            "isLot",
+            "requestDate",
+            "requestTerritoryNote",
+            "qtyNotIssued",
+            "qtyInTransit"
+          ]
+        },
+        {
+          "section": "assets",
+          "slot": "T3",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferSAFrm/T3/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "923f02bb4d974f5dbf4f1a1acd8b13c18ffc1f9c25d33a20d6e8544da2787e54",
+          "columns": [
+            "UserAutoID",
+            "BatchID",
+            "BatchDetailID",
+            "IsDispatched",
+            "IsReceived",
+            "AssetStatus",
+            "TrackLifecycle"
+          ],
+          "fields": [
+            "userAutoId",
+            "batchId",
+            "batchDetailId",
+            "isDispatched",
+            "isReceived",
+            "assetStatus",
+            "trackLifecycle"
+          ]
+        },
+        {
+          "section": "history",
+          "slot": "T4",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferSAFrm/T4/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "9669d5923824b5ca1c786c5ed9658ff177673fdab5f28f4e894ab1d431c5d1e5",
+          "columns": [
+            "UserAutoID",
+            "BatchID",
+            "StatusID",
+            "BackColor",
+            "ForeColor"
+          ],
+          "fields": [
+            "userAutoId",
+            "statusId",
+            "batchId"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "internal-transfer-accounting",
+      "form": "IV_InternalTransferAccountingFrm",
+      "sections": [
+        {
+          "section": "header",
+          "slot": "T0",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferAccountingFrm/T0/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "ba667c4f122bdb1121cbb0b2f7fbe3ac79f312cbe863be1d8c016b57ac07fb56",
+          "columns": [
+            "FromBranchID",
+            "ToBranchID",
+            "FromStoreHouseID",
+            "ToStoreHouseID",
+            "AssignedPM",
+            "AssignedTechnician",
+            "AssignedSA",
+            "TechnicianName",
+            "HasEquipment",
+            "TransportMethod",
+            "CarrierName",
+            "CarrierPhone",
+            "VehicleNo",
+            "InputDocumentID",
+            "ActualDispatchDate",
+            "ActualReceiveDate",
+            "RequestCount",
+            "LineCount",
+            "TechnicalCheckedBy",
+            "TechnicalCheckedAt",
+            "SAApprovedBy",
+            "SAApprovedAt",
+            "AccountingConfirmedBy",
+            "AccountingConfirmedAt",
+            "DispatchedBy",
+            "ReceivedBy",
+            "StatusID",
+            "SendTo",
+            "BackColor",
+            "ForeColor",
+            "isLock",
+            "UserCreate",
+            "UserUpdate",
+            "DateCreate",
+            "DateUpdate"
+          ],
+          "fields": [
+            "fromBranchId",
+            "toBranchId",
+            "fromStoreHouseId",
+            "toStoreHouseId",
+            "actualDispatchDate",
+            "actualReceiveDate",
+            "assignedPM",
+            "assignedTechnician",
+            "assignedSA",
+            "hasEquipment",
+            "statusId",
+            "transportMethod",
+            "carrierName",
+            "carrierPhone",
+            "vehicleNo",
+            "inputDocumentId",
+            "technicalCheckedBy",
+            "technicalCheckedAt",
+            "sAApprovedBy",
+            "sAApprovedAt",
+            "accountingConfirmedBy",
+            "accountingConfirmedAt",
+            "dispatchedBy",
+            "receivedBy",
+            "isLocked",
+            "userCreate",
+            "userUpdate",
+            "dateCreate",
+            "dateUpdate",
+            "sendTo",
+            "backColor",
+            "foreColor",
+            "technicianName",
+            "requestCount",
+            "lineCount"
+          ]
+        },
+        {
+          "section": "requests",
+          "slot": "T1",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferAccountingFrm/T1/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "48aedc92678e5310e46e3b34bf05a1ea6e2f6525588a3a6245f9430111351867",
+          "columns": [
+            "UserAutoID",
+            "BatchID",
+            "SalesUser",
+            "AddedBy",
+            "AddedAt"
+          ],
+          "fields": [
+            "userAutoId",
+            "batchId",
+            "addedBy",
+            "addedAt",
+            "salesUser"
+          ]
+        },
+        {
+          "section": "lines",
+          "slot": "T2",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferAccountingFrm/T2/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "170c6c2dec96ef1b448b075ad3b48d7a3e2888764ac40d5a4d8a667950857d58",
+          "columns": [
+            "UserAutoID",
+            "BatchID",
+            "RequestDetailID",
+            "RequestedQty",
+            "TechNotes",
+            "BBKCUrl",
+            "Technician",
+            "TechCheckedAt",
+            "ActualIssueQty",
+            "ActualReceiveQty",
+            "QtyNotIssued",
+            "QtyInTransit",
+            "WarehouseNote",
+            "ReceiveNote",
+            "HangSX",
+            "isLot",
+            "RequestDate",
+            "RequestTerritoryNote"
+          ],
+          "fields": [
+            "userAutoId",
+            "batchId",
+            "requestDetailId",
+            "requestedQty",
+            "techNotes",
+            "bBKCUrl",
+            "technician",
+            "techCheckedAt",
+            "actualIssueQty",
+            "actualReceiveQty",
+            "warehouseNote",
+            "receiveNote",
+            "hangSX",
+            "isLot",
+            "requestDate",
+            "requestTerritoryNote",
+            "qtyNotIssued",
+            "qtyInTransit"
+          ]
+        },
+        {
+          "section": "assets",
+          "slot": "T3",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferAccountingFrm/T3/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "91ea2857d388bea336f5c32f5ba555e6d31e81caacf6e16c83d7f5ed7df704e4",
+          "columns": [
+            "UserAutoID",
+            "BatchID",
+            "BatchDetailID",
+            "AssetCondition",
+            "TechStatus",
+            "BBKCUrl",
+            "TechNotes",
+            "Technician",
+            "CheckedAt",
+            "IsDispatched",
+            "IsReceived",
+            "AssetStatus",
+            "TrackLifecycle"
+          ],
+          "fields": [
+            "userAutoId",
+            "batchId",
+            "batchDetailId",
+            "assetCondition",
+            "techStatus",
+            "bBKCUrl",
+            "techNotes",
+            "technician",
+            "checkedAt",
+            "isDispatched",
+            "isReceived",
+            "assetStatus",
+            "trackLifecycle"
+          ]
+        },
+        {
+          "section": "history",
+          "slot": "T4",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferAccountingFrm/T4/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "9669d5923824b5ca1c786c5ed9658ff177673fdab5f28f4e894ab1d431c5d1e5",
+          "columns": [
+            "UserAutoID",
+            "BatchID",
+            "StatusID",
+            "BackColor",
+            "ForeColor"
+          ],
+          "fields": [
+            "userAutoId",
+            "statusId",
+            "batchId"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "internal-transfer-warehouse-out",
+      "form": "IV_InternalTransferWarehouseOutFrm",
+      "sections": [
+        {
+          "section": "header",
+          "slot": "T0",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferWarehouseOutFrm/T0/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "fce9b7a98b2518669d43b9d856938cf69e6695d7eaad97e759258aa6e9be85c9",
+          "columns": [
+            "FromBranchID",
+            "ToBranchID",
+            "FromStoreHouseID",
+            "ToStoreHouseID",
+            "AssignedPM",
+            "AssignedTechnician",
+            "AssignedSA",
+            "PMName",
+            "TechnicianName",
+            "SAName",
+            "HasEquipment",
+            "InputDocumentID",
+            "ActualDispatchDate",
+            "ActualReceiveDate",
+            "RequestCount",
+            "LineCount",
+            "TechnicalCheckedBy",
+            "TechnicalCheckedAt",
+            "SAApprovedBy",
+            "SAApprovedAt",
+            "AccountingConfirmedBy",
+            "AccountingConfirmedAt",
+            "DispatchedBy",
+            "ReceivedBy",
+            "StatusID",
+            "SendTo",
+            "BackColor",
+            "ForeColor",
+            "isLock",
+            "UserCreate",
+            "UserUpdate",
+            "DateCreate",
+            "DateUpdate"
+          ],
+          "fields": [
+            "fromBranchId",
+            "toBranchId",
+            "fromStoreHouseId",
+            "toStoreHouseId",
+            "actualDispatchDate",
+            "actualReceiveDate",
+            "assignedPM",
+            "assignedTechnician",
+            "assignedSA",
+            "hasEquipment",
+            "statusId",
+            "inputDocumentId",
+            "technicalCheckedBy",
+            "technicalCheckedAt",
+            "sAApprovedBy",
+            "sAApprovedAt",
+            "accountingConfirmedBy",
+            "accountingConfirmedAt",
+            "dispatchedBy",
+            "receivedBy",
+            "isLocked",
+            "userCreate",
+            "userUpdate",
+            "dateCreate",
+            "dateUpdate",
+            "sendTo",
+            "backColor",
+            "foreColor",
+            "pMName",
+            "technicianName",
+            "sAName",
+            "requestCount",
+            "lineCount"
+          ]
+        },
+        {
+          "section": "requests",
+          "slot": "T1",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferWarehouseOutFrm/T1/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "438e8f31a9341242f98fe4ee939a98a7672ab79caa0d22fb2caa98372e449620",
+          "columns": [
+            "UserAutoID",
+            "BatchID",
+            "SalesUser",
+            "RequestStatusName",
+            "AddedBy",
+            "AddedAt"
+          ],
+          "fields": [
+            "userAutoId",
+            "batchId",
+            "addedBy",
+            "addedAt",
+            "salesUser",
+            "requestStatusName"
+          ]
+        },
+        {
+          "section": "lines",
+          "slot": "T2",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferWarehouseOutFrm/T2/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "c5c2c1a4376a2015687cb441dd2bde1198681affbaf3f19664db38516cbf7d33",
+          "columns": [
+            "UserAutoID",
+            "BatchID",
+            "RequestDetailID",
+            "RequestedQty",
+            "RequestedLot",
+            "TechStatus",
+            "TechNotes",
+            "BBKCUrl",
+            "Technician",
+            "TechCheckedAt",
+            "ActualReceiveQty",
+            "QtyInTransit",
+            "AccountingNote",
+            "ReceiveNote",
+            "HangSX",
+            "isLot",
+            "RequestDate",
+            "RequestTerritoryNote"
+          ],
+          "fields": [
+            "userAutoId",
+            "batchId",
+            "requestDetailId",
+            "requestedQty",
+            "requestedLot",
+            "techStatus",
+            "techNotes",
+            "bBKCUrl",
+            "technician",
+            "techCheckedAt",
+            "actualReceiveQty",
+            "accountingNote",
+            "receiveNote",
+            "hangSX",
+            "isLot",
+            "requestDate",
+            "requestTerritoryNote",
+            "qtyInTransit"
+          ]
+        },
+        {
+          "section": "assets",
+          "slot": "T3",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferWarehouseOutFrm/T3/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "44263ccd946104d3610da050b531956a2690af60c803681d15a1d1842d33cabc",
+          "columns": [
+            "UserAutoID",
+            "BatchID",
+            "BatchDetailID",
+            "AssetCondition",
+            "TechStatus",
+            "BBKCUrl",
+            "TechNotes",
+            "Technician",
+            "CheckedAt",
+            "IsReceived",
+            "AssetStatus",
+            "TrackLifecycle"
+          ],
+          "fields": [
+            "userAutoId",
+            "batchId",
+            "batchDetailId",
+            "assetCondition",
+            "techStatus",
+            "bBKCUrl",
+            "techNotes",
+            "technician",
+            "checkedAt",
+            "isReceived",
+            "assetStatus",
+            "trackLifecycle"
+          ]
+        },
+        {
+          "section": "history",
+          "slot": "T4",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferWarehouseOutFrm/T4/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "9669d5923824b5ca1c786c5ed9658ff177673fdab5f28f4e894ab1d431c5d1e5",
+          "columns": [
+            "UserAutoID",
+            "BatchID",
+            "StatusID",
+            "BackColor",
+            "ForeColor"
+          ],
+          "fields": [
+            "userAutoId",
+            "statusId",
+            "batchId"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "internal-transfer-warehouse-in",
+      "form": "IV_InternalTransferWarehouseInFrm",
+      "sections": [
+        {
+          "section": "header",
+          "slot": "T0",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferWarehouseInFrm/T0/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "7671357e683f814caacd34893a820f32f9327ee876e933e09de016c14063fd90",
+          "columns": [
+            "FromBranchID",
+            "ToBranchID",
+            "FromStoreHouseID",
+            "ToStoreHouseID",
+            "AssignedPM",
+            "AssignedTechnician",
+            "AssignedSA",
+            "PMName",
+            "TechnicianName",
+            "SAName",
+            "HasEquipment",
+            "CarrierPhone",
+            "ActualDispatchDate",
+            "ActualReceiveDate",
+            "RequestCount",
+            "LineCount",
+            "TechnicalCheckedBy",
+            "TechnicalCheckedAt",
+            "SAApprovedBy",
+            "SAApprovedAt",
+            "AccountingConfirmedBy",
+            "AccountingConfirmedAt",
+            "DispatchedBy",
+            "ReceivedBy",
+            "StatusID",
+            "SendTo",
+            "BackColor",
+            "ForeColor",
+            "isLock",
+            "UserCreate",
+            "UserUpdate",
+            "DateCreate",
+            "DateUpdate"
+          ],
+          "fields": [
+            "fromBranchId",
+            "toBranchId",
+            "fromStoreHouseId",
+            "toStoreHouseId",
+            "actualDispatchDate",
+            "actualReceiveDate",
+            "assignedPM",
+            "assignedTechnician",
+            "assignedSA",
+            "hasEquipment",
+            "statusId",
+            "carrierPhone",
+            "technicalCheckedBy",
+            "technicalCheckedAt",
+            "sAApprovedBy",
+            "sAApprovedAt",
+            "accountingConfirmedBy",
+            "accountingConfirmedAt",
+            "dispatchedBy",
+            "receivedBy",
+            "isLocked",
+            "userCreate",
+            "userUpdate",
+            "dateCreate",
+            "dateUpdate",
+            "sendTo",
+            "backColor",
+            "foreColor",
+            "pMName",
+            "technicianName",
+            "sAName",
+            "requestCount",
+            "lineCount"
+          ]
+        },
+        {
+          "section": "requests",
+          "slot": "T1",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferWarehouseInFrm/T1/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "438e8f31a9341242f98fe4ee939a98a7672ab79caa0d22fb2caa98372e449620",
+          "columns": [
+            "UserAutoID",
+            "BatchID",
+            "SalesUser",
+            "RequestStatusName",
+            "AddedBy",
+            "AddedAt"
+          ],
+          "fields": [
+            "userAutoId",
+            "batchId",
+            "addedBy",
+            "addedAt",
+            "salesUser",
+            "requestStatusName"
+          ]
+        },
+        {
+          "section": "lines",
+          "slot": "T2",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferWarehouseInFrm/T2/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "6ce0bc3a57e55fb4abdc86e4a80b60d711f7523038bf429c6a2dbc00ac8d1d38",
+          "columns": [
+            "UserAutoID",
+            "BatchID",
+            "RequestDetailID",
+            "RequestedQty",
+            "RequestedLot",
+            "TechStatus",
+            "TechNotes",
+            "BBKCUrl",
+            "Technician",
+            "TechCheckedAt",
+            "QtyNotIssued",
+            "AccountingNote",
+            "HangSX",
+            "isLot",
+            "RequestDate",
+            "RequestTerritoryNote"
+          ],
+          "fields": [
+            "userAutoId",
+            "batchId",
+            "requestDetailId",
+            "requestedQty",
+            "requestedLot",
+            "techStatus",
+            "techNotes",
+            "bBKCUrl",
+            "technician",
+            "techCheckedAt",
+            "accountingNote",
+            "hangSX",
+            "isLot",
+            "requestDate",
+            "requestTerritoryNote",
+            "qtyNotIssued"
+          ]
+        },
+        {
+          "section": "assets",
+          "slot": "T3",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferWarehouseInFrm/T3/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "7de071a253c75575e480a0470924154208714e6aed3f538eee8b27c7fd51f04a",
+          "columns": [
+            "UserAutoID",
+            "BatchID",
+            "BatchDetailID",
+            "AssetCondition",
+            "TechStatus",
+            "BBKCUrl",
+            "TechNotes",
+            "Technician",
+            "CheckedAt",
+            "AssetStatus",
+            "TrackLifecycle"
+          ],
+          "fields": [
+            "userAutoId",
+            "batchId",
+            "batchDetailId",
+            "assetCondition",
+            "techStatus",
+            "bBKCUrl",
+            "techNotes",
+            "technician",
+            "checkedAt",
+            "assetStatus",
+            "trackLifecycle"
+          ]
+        },
+        {
+          "section": "history",
+          "slot": "T4",
+          "source": "dbo.SY_FrmCfg/IV_InternalTransferWarehouseInFrm/T4/HDE",
+          "sourcePresent": true,
+          "sourceSha256Utf16LE": "9669d5923824b5ca1c786c5ed9658ff177673fdab5f28f4e894ab1d431c5d1e5",
+          "columns": [
+            "UserAutoID",
+            "BatchID",
+            "StatusID",
+            "BackColor",
+            "ForeColor"
+          ],
+          "fields": [
+            "userAutoId",
+            "statusId",
+            "batchId"
+          ]
+        }
+      ]
+    }
+  ]
+}

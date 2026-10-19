@@ -34,7 +34,7 @@ public static class ErpScreenCatalog
             foreach (var section in row.GetProperty("fields").EnumerateObject())
                 fields.Add(section.Name, Array.AsReadOnly(section.Value.EnumerateArray().Select(field => new ErpFieldDefinition(
                     Text(field,"name"),Text(field,"column"),Text(field,"type"),Optional(field,"typeArguments"),
-                    field.GetProperty("nullable").GetBoolean(),field.GetProperty("ordinal").GetInt32(),
+                    ErpSchemaEvolution.Nullable(ErpSchemaEvolution.Table(row,section.Name),Text(field,"column"),field.GetProperty("nullable").GetBoolean()),field.GetProperty("ordinal").GetInt32(),
                     field.GetProperty("hasDefault").GetBoolean(),field.GetProperty("writable").GetBoolean(),
                     field.TryGetProperty("virtual",out var computed)&&computed.GetBoolean(),Optional(field,"sourceColumn"))).ToArray()));
             var lookups = row.GetProperty("lookups").EnumerateArray().Select(item => new ErpLookupDefinition(

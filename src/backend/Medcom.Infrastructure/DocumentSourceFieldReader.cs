@@ -10,7 +10,7 @@ internal static class DocumentSourceFieldReader
     internal static PurchaseOrderHeaderFields ReadPurchaseOrderHeaderFields(DbDataReader reader,int start) => new(
         RequiredText(reader,start+0),
         RequiredDate(reader,start+1),
-        RequiredText(reader,start+2),
+        Text(reader,start+2),
         Text(reader,start+3),
         Text(reader,start+4),
         Date(reader,start+5),

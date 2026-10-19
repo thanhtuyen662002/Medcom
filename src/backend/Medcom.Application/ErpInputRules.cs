@@ -58,7 +58,7 @@ public static class ErpInputRules
         "internal-transfer-requests"=>typeof(ErpInternalTransferRequestLineInput),
         "machine-movements"=>typeof(ErpMachineMovementLineInput),"machine-repairs"=>typeof(ErpMachineRepairLineInput),_=>ErpWorkflowInputs.Type(module,"lines")
     };
-    public static bool Normalize(string module,string section,JsonElement raw,out JsonElement normalized)
+    public static bool Normalize(string module,string section,JsonElement raw,out JsonElement normalized,bool preserveHiddenOmissions=false)
     {
         normalized=default;
         if(ErpScreenCatalog.Get(module)is not {} catalog || !catalog.Fields.TryGetValue(section,out var fields)
@@ -69,6 +69,9 @@ public static class ErpInputRules
             var typed=JsonSerializer.Deserialize(raw,type,Json);
             if(typed is null)return false;
             var result=JsonSerializer.SerializeToElement(typed,type,Json);
+            if(preserveHiddenOmissions)
+                result=Serialize(result.EnumerateObject().Where(p=>raw.TryGetProperty(p.Name,out _)
+                    ||!ErpVisibleFields.IsHidden(module,section,p.Name)).ToDictionary(p=>p.Name,p=>p.Value.Clone(),StringComparer.Ordinal));
             foreach(var property in result.EnumerateObject())
             {
                 var field=fields.SingleOrDefault(field=>field.Name==property.Name&&field.Writable);

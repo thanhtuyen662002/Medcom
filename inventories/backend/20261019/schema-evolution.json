@@ -1,0 +1,9 @@
+{
+  "format": 1,
+  "evidence": "inventories/backend/20261019/object-nullability-audit.json",
+  "changes": [
+    { "table": "AP_PurchaseRequestTbl", "column": "ObjectID", "previousNullable": false, "nullable": true },
+    { "table": "AP_OrderTbl", "column": "ObjectID", "previousNullable": false, "nullable": true },
+    { "table": "AR_OrderTbl", "column": "ObjectID", "previousNullable": false, "nullable": true }
+  ]
+}
