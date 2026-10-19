@@ -1,0 +1,228 @@
+{
+  "observedAtUtc": "2026-10-19T09:15:57.9155859Z",
+  "status": "PASS",
+  "productionDataWrites": false,
+  "rolledBack": true,
+  "tableCount": 30,
+  "columnCount": 641,
+  "modules": [
+    {
+      "module": "inbound-requests",
+      "schemaMatches": true
+    },
+    {
+      "module": "internal-transfer-accounting",
+      "schemaMatches": true
+    },
+    {
+      "module": "internal-transfer-batches",
+      "schemaMatches": true
+    },
+    {
+      "module": "internal-transfer-pm",
+      "schemaMatches": true
+    },
+    {
+      "module": "internal-transfer-requests",
+      "schemaMatches": true
+    },
+    {
+      "module": "internal-transfer-sa",
+      "schemaMatches": true
+    },
+    {
+      "module": "internal-transfer-tech",
+      "schemaMatches": true
+    },
+    {
+      "module": "internal-transfer-warehouse-in",
+      "schemaMatches": true
+    },
+    {
+      "module": "internal-transfer-warehouse-out",
+      "schemaMatches": true
+    },
+    {
+      "module": "machine-movements",
+      "schemaMatches": true
+    },
+    {
+      "module": "machine-repairs",
+      "schemaMatches": true
+    },
+    {
+      "module": "purchase-approvals",
+      "schemaMatches": false
+    },
+    {
+      "module": "purchase-orders",
+      "schemaMatches": false
+    },
+    {
+      "module": "purchase-requests",
+      "schemaMatches": false
+    },
+    {
+      "module": "sales-order-pm",
+      "schemaMatches": false
+    },
+    {
+      "module": "sales-order-sa",
+      "schemaMatches": false
+    },
+    {
+      "module": "sales-orders",
+      "schemaMatches": false
+    },
+    {
+      "module": "sales-qr",
+      "schemaMatches": true
+    },
+    {
+      "module": "warehouse-qr",
+      "schemaMatches": true
+    }
+  ],
+  "deltas": [
+    {
+      "module": "purchase-approvals",
+      "section": "header",
+      "table": "AP_PurchaseRequestTbl",
+      "column": "ObjectID",
+      "reasons": [
+        "nullable"
+      ],
+      "expected": {
+        "type": "varchar",
+        "args": "(100)",
+        "nullable": false
+      },
+      "actual": {
+        "Type": "varchar",
+        "MaxLength": 100,
+        "Precision": 0,
+        "Scale": 0,
+        "Nullable": true,
+        "Identity": false,
+        "Computed": false
+      }
+    },
+    {
+      "module": "purchase-orders",
+      "section": "header",
+      "table": "AP_OrderTbl",
+      "column": "ObjectID",
+      "reasons": [
+        "nullable"
+      ],
+      "expected": {
+        "type": "varchar",
+        "args": "(100)",
+        "nullable": false
+      },
+      "actual": {
+        "Type": "varchar",
+        "MaxLength": 100,
+        "Precision": 0,
+        "Scale": 0,
+        "Nullable": true,
+        "Identity": false,
+        "Computed": false
+      }
+    },
+    {
+      "module": "purchase-requests",
+      "section": "header",
+      "table": "AP_PurchaseRequestTbl",
+      "column": "ObjectID",
+      "reasons": [
+        "nullable"
+      ],
+      "expected": {
+        "type": "varchar",
+        "args": "(100)",
+        "nullable": false
+      },
+      "actual": {
+        "Type": "varchar",
+        "MaxLength": 100,
+        "Precision": 0,
+        "Scale": 0,
+        "Nullable": true,
+        "Identity": false,
+        "Computed": false
+      }
+    },
+    {
+      "module": "sales-order-pm",
+      "section": "header",
+      "table": "AR_OrderTbl",
+      "column": "ObjectID",
+      "reasons": [
+        "nullable"
+      ],
+      "expected": {
+        "type": "varchar",
+        "args": "(100)",
+        "nullable": false
+      },
+      "actual": {
+        "Type": "varchar",
+        "MaxLength": 100,
+        "Precision": 0,
+        "Scale": 0,
+        "Nullable": true,
+        "Identity": false,
+        "Computed": false
+      }
+    },
+    {
+      "module": "sales-order-sa",
+      "section": "header",
+      "table": "AR_OrderTbl",
+      "column": "ObjectID",
+      "reasons": [
+        "nullable"
+      ],
+      "expected": {
+        "type": "varchar",
+        "args": "(100)",
+        "nullable": false
+      },
+      "actual": {
+        "Type": "varchar",
+        "MaxLength": 100,
+        "Precision": 0,
+        "Scale": 0,
+        "Nullable": true,
+        "Identity": false,
+        "Computed": false
+      }
+    },
+    {
+      "module": "sales-orders",
+      "section": "header",
+      "table": "AR_OrderTbl",
+      "column": "ObjectID",
+      "reasons": [
+        "nullable"
+      ],
+      "expected": {
+        "type": "varchar",
+        "args": "(100)",
+        "nullable": false
+      },
+      "actual": {
+        "Type": "varchar",
+        "MaxLength": 100,
+        "Precision": 0,
+        "Scale": 0,
+        "Nullable": true,
+        "Identity": false,
+        "Computed": false
+      }
+    }
+  ],
+  "source": "owner-authorized MedData metadata-only SELECT: sys.tables/sys.columns/sys.types",
+  "deployedVpsAcceptance": "UNKNOWN"
+}
