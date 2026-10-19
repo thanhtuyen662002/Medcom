@@ -31,7 +31,7 @@ internal static class DocumentFieldCatalog
             new("AP_OrderTbl",[
                 new("DocumentID","document.purchaseOrderHeader.documentId","varchar(30)",false,"string",null,"rows[].purchaseOrderHeader.documentId"),
                 new("DocumentDate","document.purchaseOrderHeader.documentDate","datetime",false,"string","sql-datetime-without-timezone","rows[].purchaseOrderHeader.documentDate"),
-                new("ObjectID","document.purchaseOrderHeader.objectId","varchar(100)",false,"string",null,"rows[].purchaseOrderHeader.objectId"),
+                new("ObjectID","document.purchaseOrderHeader.objectId","varchar(100)",true,"string",null,"rows[].purchaseOrderHeader.objectId"),
                 new("Memo","document.purchaseOrderHeader.memo","nvarchar(200)",true,"string",null,"rows[].purchaseOrderHeader.memo"),
                 new("Notes","document.purchaseOrderHeader.notes","nvarchar(200)",true,"string",null,"rows[].purchaseOrderHeader.notes"),
                 new("DeliverDate","document.purchaseOrderHeader.deliverDate","datetime",true,"string","sql-datetime-without-timezone","rows[].purchaseOrderHeader.deliverDate"),
@@ -141,7 +141,7 @@ internal static class DocumentFieldCatalog
                 new("StatusID","data.sourceFields.header.statusId","int",false,"integer",null,"data.rows[].fields.statusId"),
                 new("isLock","data.sourceFields.header.isLock","bit",true,"boolean",null,"data.rows[].fields.isLock"),
                 new("CurrencyID","data.sourceFields.header.currencyId","varchar(3)",false,"string",null,"data.rows[].fields.currencyId"),
-                new("ObjectID","data.sourceFields.header.objectId","varchar(100)",false,"string",null,"data.rows[].fields.objectId"),
+                new("ObjectID","data.sourceFields.header.objectId","varchar(100)",true,"string",null,"data.rows[].fields.objectId"),
                 new("RateExchange","data.sourceFields.header.rateExchange","float",false,"number",null,"data.rows[].fields.rateExchange"),
                 new("BranchID","data.sourceFields.header.branchId","varchar(50)",false,"string",null,"data.rows[].fields.branchId")]),
             new("AP_PurchaseRequestDetailTbl",[

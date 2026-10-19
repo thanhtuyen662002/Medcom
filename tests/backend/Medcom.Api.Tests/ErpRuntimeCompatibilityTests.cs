@@ -60,6 +60,18 @@ public sealed class ErpRuntimeCompatibilityTests
     }
     [Theory]
     [InlineData("create")][InlineData("save")][InlineData("delete")]
+    public async Task Nullable_object_preserves_CUD_commit_replay_and_null_database_parameter(string operation)
+    {
+        var wire=new RuntimeWire{NullObject=true};wire.Seed(operation!="create");
+        var request=await wire.Intent(operation);var commands=wire.Commands();
+        var result=await commands.ExecuteAsync("purchase-requests",operation,request,default);
+        Assert.Equal(ErpCommandOutcome.Committed,result.Outcome);
+        Assert.Equal(ErpCommandOutcome.Replayed,(await commands.ExecuteAsync("purchase-requests",operation,request,default)).Outcome);
+        Assert.Equal(1,wire.Commits);
+        if(operation!="delete")Assert.Null(wire.Header!["objectId"]);
+    }
+    [Theory]
+    [InlineData("create")][InlineData("save")][InlineData("delete")]
     public async Task CUD_commits_and_replays_with_retired_hashes_and_changed_dropdown_source(string operation)
     {
         var wire=new RuntimeWire();wire.Seed(operation!="create");
@@ -167,7 +179,7 @@ public sealed class ErpRuntimeCompatibilityTests
         internal readonly AuthoritativeIdentity Identity=PurchaseQuerySource.NewIdentity() with{BranchIds=["QA-A"],BranchSelection=new("assigned","QA-A",true)};
         internal readonly ErpSqlPlan Plan=ErpSqlPlan.Get("purchase-requests")!;
         internal readonly List<string> Sql=[];internal string Database="Synthetic";internal int JournalVersion=1,Commits,Effects;
-        internal bool AllowWrites=true;internal Dictionary<string,object?>? Header;
+        internal bool AllowWrites=true,NullObject;internal Dictionary<string,object?>? Header;
         private readonly Dictionary<string,Dictionary<string,object?>> lines=new(StringComparer.Ordinal);
         private byte[]? journalKey,journalIntent;private string? receipt;private Guid audit;
         internal RuntimeWire()=>JournalBinding=Binding;
@@ -175,13 +187,13 @@ public sealed class ErpRuntimeCompatibilityTests
         internal DbConnection Connection()=>new WireConnection(this);
         internal SqlErpScreenCommands Commands()=>new(Binding,Company,Connection,_=>Task.FromResult<AuthoritativeIdentity?>(Identity),
             _=>Task.FromResult<AuthoritativeIdentity?>(Identity),new ErpWriteRuntime(Binding,Database=="Other"?"Synthetic":Database,"stale-hash",ErpScreenCatalog.ModuleIds),new Number());
-        private static JsonElement InputHeader()=>ErpInputRules.Serialize(new{purchaseDate="2026-10-15T00:00:00.000",personSuggest="Synthetic",department="Synthetic",currencyId="VND",objectId="OBJECT",rateExchange=1d});
+        private JsonElement InputHeader()=>ErpInputRules.Serialize(new{purchaseDate="2026-10-15T00:00:00.000",personSuggest="Synthetic",department="Synthetic",currencyId="VND",objectId=NullObject?null:"OBJECT",rateExchange=1d});
         internal void Seed(bool exists)
         {
             if(!exists)return;
             Header=Plan.Screen.Fields["header"].ToDictionary(f=>f.Name,f=>Default(f),StringComparer.Ordinal);
             Header["purchaseRequestId"]="QA-DOC";Header["branchId"]="QA-A";Header["statusId"]=1;Header["isLocked"]=false;
-            Header["currencyId"]="VND";Header["objectId"]="OBJECT";
+            Header["currencyId"]="VND";Header["objectId"]=NullObject?null:"OBJECT";
             var line=Plan.Screen.Fields["lines"].ToDictionary(f=>f.Name,f=>Default(f),StringComparer.Ordinal);
             line["userAutoId"]="QA-LINE";line["purchaseRequestId"]="QA-DOC";line["itemId"]="ITEM";line["quantity"]=1m;line["unitPrice"]=2m;lines["QA-LINE"]=line;
         }

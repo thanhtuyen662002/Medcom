@@ -345,7 +345,7 @@ public sealed class DocumentFullFieldTests
                 {
                     Assert.Equal(columns[i].GetProperty("name").GetString(),fields[i].GetProperty("column").GetString());
                     Assert.Equal(columns[i].GetProperty("type").GetString()+columns[i].GetProperty("typeArguments").GetString(),fields[i].GetProperty("sqlType").GetString());
-                    Assert.Equal(columns[i].GetProperty("nullable").GetBoolean(),fields[i].GetProperty("nullable").GetBoolean());
+                    Assert.Equal(ErpSchemaEvolution.Nullable(table.GetProperty("table").GetString()!,columns[i].GetProperty("name").GetString()!,columns[i].GetProperty("nullable").GetBoolean()),fields[i].GetProperty("nullable").GetBoolean());
                     foreach(var p in expected[i].EnumerateObject())Assert.Equal(p.Value.GetRawText(),fields[i].GetProperty(p.Name).GetRawText());
                 }
             }

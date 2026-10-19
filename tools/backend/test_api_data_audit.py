@@ -43,6 +43,14 @@ class ApiDataAuditTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Unknown source set"):
             load_source_tables(mapping)
 
+    def test_current_nullable_object_must_not_revert_to_the_historical_nonnullable_wire_contract(self):
+        for module in ("purchase-requests", "purchase-approvals", "purchase-orders", "sales-orders", "sales-order-pm", "sales-order-sa"):
+            api = deepcopy(self.api)
+            schema = self.response(api, "/api/erp/" + module + "/detail", "data.header.objectId")
+            schema["anyOf"] = [{"type": "string"}]
+            with self.subTest(module=module), self.assertRaisesRegex(ValueError, "ERP wire nullability mismatch"):
+                audit(api, self.mapping, self.tables)
+
     def test_each_new_live_inbound_column_is_required_on_every_applicable_route(self):
         for member, field in [("document", "linkId"), ("inboundRequestLines[]", "parentId")]:
             api = deepcopy(self.api)

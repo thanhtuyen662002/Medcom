@@ -1,0 +1,87 @@
+{
+  "observedAtUtc": "2026-10-19T09:22:21.287189Z",
+  "status": "PASS",
+  "productionDataWrites": false,
+  "rolledBack": true,
+  "tableCount": 30,
+  "columnCount": 641,
+  "modules": [
+    {
+      "module": "inbound-requests",
+      "schemaMatches": true
+    },
+    {
+      "module": "internal-transfer-accounting",
+      "schemaMatches": true
+    },
+    {
+      "module": "internal-transfer-batches",
+      "schemaMatches": true
+    },
+    {
+      "module": "internal-transfer-pm",
+      "schemaMatches": true
+    },
+    {
+      "module": "internal-transfer-requests",
+      "schemaMatches": true
+    },
+    {
+      "module": "internal-transfer-sa",
+      "schemaMatches": true
+    },
+    {
+      "module": "internal-transfer-tech",
+      "schemaMatches": true
+    },
+    {
+      "module": "internal-transfer-warehouse-in",
+      "schemaMatches": true
+    },
+    {
+      "module": "internal-transfer-warehouse-out",
+      "schemaMatches": true
+    },
+    {
+      "module": "machine-movements",
+      "schemaMatches": true
+    },
+    {
+      "module": "machine-repairs",
+      "schemaMatches": true
+    },
+    {
+      "module": "purchase-approvals",
+      "schemaMatches": true
+    },
+    {
+      "module": "purchase-orders",
+      "schemaMatches": true
+    },
+    {
+      "module": "purchase-requests",
+      "schemaMatches": true
+    },
+    {
+      "module": "sales-order-pm",
+      "schemaMatches": true
+    },
+    {
+      "module": "sales-order-sa",
+      "schemaMatches": true
+    },
+    {
+      "module": "sales-orders",
+      "schemaMatches": true
+    },
+    {
+      "module": "sales-qr",
+      "schemaMatches": true
+    },
+    {
+      "module": "warehouse-qr",
+      "schemaMatches": true
+    }
+  ],
+  "deltas": []
+}

@@ -6,7 +6,7 @@ namespace Medcom.Contracts;
 public sealed record PurchaseOrderHeaderFields(
     string DocumentId,
     string DocumentDate,
-    string ObjectId,
+    string? ObjectId,
     string? Memo,
     string? Notes,
     string? DeliverDate,
@@ -118,7 +118,7 @@ public sealed record PurchaseRequestHeaderFields(
     int StatusId,
     bool? IsLock,
     string CurrencyId,
-    string ObjectId,
+    string? ObjectId,
     double RateExchange,
     string BranchId);
 

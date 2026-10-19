@@ -1,6 +1,7 @@
 """Generate fixed typed draft inputs from sanitized, finite current-form metadata."""
 import json
 from pathlib import Path
+from schema_evolution import evolve_screen
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / 'inventories/erp/20261010/six-screen-catalog.json'
@@ -18,6 +19,7 @@ def generate():
              '// Fixed inputs only: document IDs, actors, branches, locks, workflow and calculated fields are server-owned.',
              'using System.Text.Json.Serialization;', 'namespace Medcom.Contracts;', '']
     for screen in catalog['screens']:
+        evolve_screen(screen)
         if screen['id'] not in NAMES:
             continue
         for section, suffix in [('header', 'HeaderInput'), ('lines', 'LineInput')]:

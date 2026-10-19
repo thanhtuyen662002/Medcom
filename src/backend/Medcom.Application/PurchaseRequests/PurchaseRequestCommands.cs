@@ -84,7 +84,7 @@ public static class PurchaseRequestCommandRules
     {
         if (input is null || !Text(input.PersonSuggest, 500) || !Text(input.Department, 100)
             || !Text(input.PurposeDescOrClient, MaxText, true) || !Text(input.Notes, MaxText, true)
-            || !Identifier(input.CurrencyId, 3) || !Identifier(input.ObjectId, 100)
+            || !Identifier(input.CurrencyId, 3) || input.ObjectId is not null && !Identifier(input.ObjectId, 100)
             || !double.IsFinite(input.RateExchange)) throw new ArgumentException("Invalid header.");
         return input with { PurchaseDate = Date(input.PurchaseDate), Price = Decimal(input.Price, 2, true),
             RateExchange = input.RateExchange == 0d ? 0d : input.RateExchange };

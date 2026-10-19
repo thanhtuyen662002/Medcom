@@ -48,7 +48,7 @@ internal static class FullDocumentRows
     internal static readonly (string Name,Type Type,bool Nullable,string SqlType)[] OrderHeader = [
         ("DocumentID",typeof(string),false,"varchar"),
         ("DocumentDate",typeof(string),false,"datetime"),
-        ("ObjectID",typeof(string),false,"varchar"),
+        ("ObjectID",typeof(string),true,"varchar"),
         ("Memo",typeof(string),true,"nvarchar"),
         ("Notes",typeof(string),true,"nvarchar"),
         ("DeliverDate",typeof(string),true,"datetime"),

@@ -1,6 +1,7 @@
 """Generate fixed inputs for the source-backed remaining CUD/workflow forms."""
 import json
 from pathlib import Path
+from schema_evolution import evolve_screen
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / 'inventories/erp/20261011/cud-workflow-catalog.json'
@@ -12,7 +13,7 @@ def name(module, section):
 
 
 def generate():
-    screens = json.loads(SOURCE.read_text(encoding='utf-8'))['screens']
+    screens = [evolve_screen(s) for s in json.loads(SOURCE.read_text(encoding='utf-8'))['screens']]
     lines = ['// Generated from inventories/erp/20261011/cud-workflow-catalog.json.',
              'using System.Text.Json.Serialization;', 'namespace Medcom.Contracts;', '',
              'public static class ErpWorkflowInputs', '{',
