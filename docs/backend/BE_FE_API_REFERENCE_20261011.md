@@ -1,6 +1,6 @@
 # Bàn giao API BE cho FE — màn hình và thao tác
 
-Danh mục đủ 276 API hiện có, phục vụ 19 màn hình ERP. Cập nhật 15/10/2026. Trên VPS, FE gọi qua proxy tại https://medcom.bms79.com/api/erp; nối đường dẫn BE trong các bảng dưới đây vào địa chỉ đó.
+Danh mục đủ 276 API hiện có, phục vụ 19 màn hình ERP. Cập nhật 19/10/2026: [quyền CUD kho, tiền và cột hiển thị](API_KHO_QUYEN_COT_HIEN_THI_20261019.md). Trên VPS, FE gọi qua proxy tại https://medcom.bms79.com/api/erp; nối đường dẫn BE trong các bảng dưới đây vào địa chỉ đó.
 
 ## Quy định giao diện
 

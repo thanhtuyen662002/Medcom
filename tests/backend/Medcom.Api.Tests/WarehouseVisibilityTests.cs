@@ -8,6 +8,18 @@ namespace Medcom.Api.Tests;
 
 public sealed class WarehouseVisibilityTests
 {
+    [Fact]
+    public void Contract_information_formats_its_own_money_fields_without_changing_raw_values_or_quantities()
+    {
+        var raw=JsonNode.Parse("""{"documentId":"D","contractId":"C","fields":{"CurrencyID":"USD","ContractAmount":"1234.5","CreditLimit":"9999","CurrentBalance":"-1234.005","Quantity":"12","RateExchange":25000}}""")!;
+        FeDisplayProjection.Apply(raw,"sales-orders",new Dictionary<ReferenceKey,ReferenceValue>());
+        var result=CanonicalResponseProjection.Normalize(raw,"/api/erp/sales-orders/contract-info")["contract"]!;
+        Assert.Equal("1,234.50 USD",result["ContractAmountDisplay"]!.GetValue<string>());
+        Assert.Equal("9,999.00 USD",result["CreditLimitDisplay"]!.GetValue<string>());
+        Assert.Equal("-1,234.01 USD",result["CurrentBalanceDisplay"]!.GetValue<string>());
+        Assert.Equal("1234.5",result["ContractAmount"]!.GetValue<string>());
+        Assert.Null(result["QuantityDisplay"]);Assert.Null(result["RateExchangeDisplay"]);
+    }
     [Theory]
     [InlineData("warehouse-qr")][InlineData("sales-qr")]
     public void QR_add_and_remove_use_native_update_rights_and_advertise_the_registered_scan_routes(string module)

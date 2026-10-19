@@ -19,7 +19,8 @@ internal static partial class FeDisplayProjection
     {"Amount","AmountCost","AmountTotal","BaseTotal","CouponAmount","DepositAmount","DiscountAmount","DiscountAmount2",
      "DiscountAmountTT","DiscountTotal","ExportAmount","LaborAmount","PartsAmount","PhiKhacTotal","Price","SourceAmount",
      "TotalAmount","TotalPrice","UnitPrice","UnitPriceV","VATAmount","VATAmountTotal","CreditMax","CreditMax2","CreditMin",
-     "Budget","PhiKhac","PhiVanChuyen","SoTienKM","TongTienNhom1","TongTienNhom2","TongTienNhomFyto","UnitCost","Cost"};
+     "Budget","PhiKhac","PhiVanChuyen","SoTienKM","TongTienNhom1","TongTienNhom2","TongTienNhomFyto","UnitCost","Cost",
+     "ContractAmount","CreditLimit","CurrentBalance"};
     private static readonly HashSet<string> DateNames=new(StringComparer.OrdinalIgnoreCase)
     {"AttachDate","DateCreate","DateUpdate","DebtDueDate","DeliverDate","DocumentDate","DueDate","EffectiveFrom","EffectiveTo",
      "EndDate","ExpireDate","HandoverDate","NextServiceDate","NgayGiaoLai","NgayHoaDon","NgayPhieu","PMConfirmedAt","PurchaseDate",
