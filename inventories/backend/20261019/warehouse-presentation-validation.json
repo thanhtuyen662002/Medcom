@@ -1,0 +1,94 @@
+{
+  "observedAtUtc": "2026-10-19T07:50:03.4846354Z",
+  "sourceObjects": [
+    "dbo.SY_FrmCfg",
+    "dbo.SY_FrmLstTbl",
+    "dbo.SY_Menu",
+    "dbo.SY_UserPermisstion (aggregate flags only)",
+    "dbo.SY_UserGroupPermisstion (aggregate flags only)"
+  ],
+  "forms": 19,
+  "sections": 66,
+  "nativeHiddenLists": 53,
+  "mappedNativeHiddenFields": 543,
+  "businessRowsExported": false,
+  "productionDataWrites": false,
+  "nativeSource": {
+    "artifact": "owner-accessible ERP/Tools.dll",
+    "sha256": "7019a26a5129edf44716601678ea1aadaebde5082defebd195ff47a7452d7ec8",
+    "members": [
+      "Tools.Layout.TableInfoX.HideColumnArr",
+      "Tools.Utils.Functions.GetPermission",
+      "Tools.SysForm.FrmMasterDetail (toolbar visibility)",
+      "Tools.FormControler.SetGridChild / HideColumn"
+    ],
+    "constantOnlyDecoder": {
+      "status": "PASS",
+      "sha256": "7019a26a5129edf44716601678ea1aadaebde5082defebd195ff47a7452d7ec8",
+      "HideColumnArrKey": "HDE",
+      "nativeAddColumn": "IsAdd",
+      "nativeEditColumn": "IsUpdate",
+      "nativeDeleteColumn": "IsDelete",
+      "formsStarted": false,
+      "passwordMethodsCalled": false,
+      "productionDataWrites": false
+    },
+    "behavior": "GetPermission reads AddNew/Edit/Delete independently; Admin additionally enables Manager, not unconditional CUD. FrmMasterDetail separately applies hidden toolbar controls. HideColumnArr uses HDE and grid hiding marks columns invisible."
+  },
+  "sqlSyntheticGrantValidation": {
+    "status": "PASS",
+    "observedAtUtc": "2026-10-19T08:09:30.7080214Z",
+    "sourceObject": "dbo.SY_Menu (form binding only); synthetic grant flags",
+    "productionDataWrites": false,
+    "realPrincipalsQueried": false,
+    "rolledBack": true,
+    "cases": [
+      {
+        "Name": "add_without_run",
+        "read": 1,
+        "add": 1,
+        "update": 0,
+        "delete": 0
+      },
+      {
+        "Name": "update_without_run",
+        "read": 1,
+        "add": 0,
+        "update": 1,
+        "delete": 0
+      },
+      {
+        "Name": "delete_without_run",
+        "read": 1,
+        "add": 0,
+        "update": 0,
+        "delete": 1
+      },
+      {
+        "Name": "admin_only",
+        "read": 1,
+        "add": 0,
+        "update": 0,
+        "delete": 0
+      },
+      {
+        "Name": "none",
+        "read": 0,
+        "add": 0,
+        "update": 0,
+        "delete": 0
+      }
+    ]
+  },
+  "unknowns": [
+    "Current VPS deployment commit and authenticated administrator account result after redeploy",
+    "Interactive WinForms rendering and current binary-to-source equivalence",
+    "Approved historical Library archives could not be rematerialized/rehashed in this session; their existing identities remain separate"
+  ],
+  "ownerDecisions": {
+    "retainProtocolIdentityStatusLockAndPermissions": true,
+    "missingCurrencyDefaultsTo": "VND",
+    "warehouseScope": "all existing warehouse-related API screens",
+    "nativeWriteAuthorityAndStateChecks": "preserved"
+  }
+}

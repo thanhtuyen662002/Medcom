@@ -58,7 +58,8 @@ internal static partial class FeDisplayProjection
     internal static string StateField(string field)=>field.Length==2?(field=="id"?"referenceState":"ReferenceState"):field[..^2]+"ReferenceState";
     internal static bool IsDisplay(string field)=>MoneyNames.Contains(field)||DateNames.Contains(field);
     private static JsonNode? Get(JsonObject row,string field)=>row.FirstOrDefault(x=>x.Key.Equals(field,StringComparison.OrdinalIgnoreCase)).Value;
-    private static string? Currency(JsonObject row,string? parent,int depth=0)=>Text(Get(row,"CurrencyID"))
+    private static string? CurrencyCode(string? raw)=>string.IsNullOrWhiteSpace(raw)?null:raw.Trim().ToUpperInvariant();
+    private static string? Currency(JsonObject row,string? parent,int depth=0)=>CurrencyCode(Text(Get(row,"CurrencyID")))
         ??(depth<6?row.Where(x=>x.Key is "header" or "purchaseOrderHeader" or "inboundRequestHeader" or "fields" or "document" or "sourceFields" or "data").Select(x=>x.Value)
             .OfType<JsonObject>().Select(x=>Currency(x,null,depth+1)).FirstOrDefault(x=>x is not null):null)??parent;
     internal static IEnumerable<(JsonObject Row,string? Module,string? Currency)> Rows(JsonNode? node,string? module,string? currency=null,ISet<JsonNode>? protectedNodes=null)
@@ -67,7 +68,9 @@ internal static partial class FeDisplayProjection
         if(node is JsonObject row)
         {
             module=Text(Get(row,"ErpFormName"))is {} form?FormModule(form):module;
-            currency=Currency(row,currency);
+            // Owner presentation policy: a known ERP form without a stored
+            // currency displays VND. An explicit unsupported currency stays unknown.
+            currency=Currency(row,currency)??(module is not null?"VND":null);
             yield return(row,module,currency);
             foreach(var child in row.ToArray().Where(x=>x.Key!="access"))foreach(var nested in Rows(child.Value,module,currency,protectedNodes))yield return nested;
         }

@@ -4,6 +4,16 @@ namespace Medcom.Api;
 
 internal static class DocumentFieldCatalog
 {
+    internal static DocumentFieldContract? Visible(string kind)
+    {
+        var full=Get(kind);if(full is null)return null;
+        DocumentFieldTable Filter(DocumentFieldTable table,string section)
+        {
+            var hidden=ErpVisibleProjection.HiddenNames(kind,section).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            return table with{Fields=table.Fields.Where(f=>!hidden.Contains(f.JsonPath.Split('.')[^1])).ToArray()};
+        }
+        return full with{Header=Filter(full.Header,"header"),Lines=Filter(full.Lines,"lines")};
+    }
     internal static DocumentFieldContract? Get(string kind)
     {
         var source = Source(kind);

@@ -411,3 +411,6 @@ Không nối nút thêm/lưu/gửi vào các API dưới đây. Dùng API ERP c�
 Cấu trúc dữ liệu được mô tả trong [OpenAPI](medcom-openapi.json). Quy tắc chuyển đổi dữ liệu trả về nằm trong [ghi chú nội bộ BE](API_RESPONSE_CONTRACT_V3_20261011.md); không lấy các thuật ngữ của tài liệu đó làm nhãn giao diện.
 
 Danh mục đối chiếu từ API đã build và catalog màn hình; tên màn hình/nút lấy từ đợt kiểm tra DB ngày 12/10/2026. Quy tắc nút trong đợt thử và nguồn caption được ghi tại [bàn giao nút và tên màn hình](BE_FE_BUTTONS_CAPTIONS_20261012.md). Việc FE đã cập nhật và nghiệm thu thao tác trên phiếu thật vẫn cần đội FE/owner xác nhận.
+# Cập nhật tích hợp ngày 19/10/2026
+
+Quyền CUD kho, định dạng tiền và cột nghiệp vụ ẩn đã được cập nhật trong [bàn giao API kho](API_KHO_QUYEN_COT_HIEN_THI_20261019.md). Quy tắc trả đủ trường bên dưới chỉ áp dụng cho các cột được hiển thị và metadata cần cho mở/lưu phiếu; không còn bao gồm cột nghiệp vụ đã ẩn trong ERP.

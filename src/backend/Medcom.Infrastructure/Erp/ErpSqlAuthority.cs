@@ -23,9 +23,9 @@ internal static class ErpSqlAuthority
     internal const string GrantProjection="""
         SELECT M.MenuID,M.FormName,M.isDisable,M.Para,
           COALESCE((SELECT MAX(CASE WHEN P.IsRun=1 OR P.IsAdd=1 OR P.IsUpdate=1 OR P.IsDelete=1 OR P.isManager=1 OR P.isAdmin=1 THEN 1 ELSE 0 END) FROM Grants P WHERE P.MenuID=M.MenuID),0),
-          COALESCE((SELECT MAX(CASE WHEN P.IsRun=1 AND P.IsAdd=1 THEN 1 ELSE 0 END) FROM Grants P WHERE P.MenuID=M.MenuID),0),
-          COALESCE((SELECT MAX(CASE WHEN P.IsRun=1 AND P.IsUpdate=1 THEN 1 ELSE 0 END) FROM Grants P WHERE P.MenuID=M.MenuID),0),
-          COALESCE((SELECT MAX(CASE WHEN P.IsRun=1 AND P.IsDelete=1 THEN 1 ELSE 0 END) FROM Grants P WHERE P.MenuID=M.MenuID),0)
+          COALESCE((SELECT MAX(CASE WHEN P.IsAdd=1 THEN 1 ELSE 0 END) FROM Grants P WHERE P.MenuID=M.MenuID),0),
+          COALESCE((SELECT MAX(CASE WHEN P.IsUpdate=1 THEN 1 ELSE 0 END) FROM Grants P WHERE P.MenuID=M.MenuID),0),
+          COALESCE((SELECT MAX(CASE WHEN P.IsDelete=1 THEN 1 ELSE 0 END) FROM Grants P WHERE P.MenuID=M.MenuID),0)
         FROM dbo.SY_Menu M WITH(HOLDLOCK)
         """;
     private static bool Matches(DbDataReader data,ErpScreenDescription screen)=>data.FieldCount==8

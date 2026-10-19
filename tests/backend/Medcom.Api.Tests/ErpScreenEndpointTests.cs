@@ -19,7 +19,7 @@ public sealed class ErpScreenEndpointTests
         fixture.Authority.Identity=fixture.Authority.Identity with{Capabilities=ErpScreenCatalog.ModuleIds.Select(id=>id+".read").ToArray()};
         await fixture.Login();var result=await fixture.Json("/api/erp/"+module+"/screen");var screen=result.GetProperty("data");
         Assert.Equal(ErpScreenCatalog.Get(module)!.FormId,screen.GetProperty("formId").GetString());
-        Assert.Equal(ErpScreenCatalog.Get(module)!.Fields["header"].Count,screen.GetProperty("fields").GetProperty("header").GetArrayLength());
+        Assert.Equal(ErpVisibleFields.Visible(module,"header",ErpScreenCatalog.Get(module)!.Fields["header"]).Count,screen.GetProperty("fields").GetProperty("header").GetArrayLength());
         Assert.Equal(ErpScreenCatalog.Get(module)!.Lookups.Count,screen.GetProperty("lookups").GetArrayLength());
         Assert.Equal(ErpScreenCatalog.Get(module)!.Caption,screen.GetProperty("caption").GetString());
         foreach(var action in screen.GetProperty("actions").EnumerateArray())

@@ -93,6 +93,12 @@ class ApiDataAuditTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Duplicate business record wrapper"):
             audit(api, self.mapping, self.tables)
 
+    def test_hidden_business_column_cannot_be_reintroduced_as_an_optional_response_field(self):
+        api = deepcopy(self.api)
+        self.response(api, "/api/erp/internal-transfer-warehouse-out/detail", "data.lines.rows[]")["properties"]["techNotes"] = {"type": "string"}
+        with self.assertRaisesRegex(ValueError, "ERP hidden column leaked"):
+            audit(api, self.mapping, self.tables)
+
 
 if __name__ == "__main__":
     unittest.main()
