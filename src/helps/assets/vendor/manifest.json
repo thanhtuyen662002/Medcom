@@ -1,0 +1,10 @@
+{
+  "package": "mermaid",
+  "version": "12.2.0",
+  "source": "https://registry.npmjs.org/mermaid/12.2.0",
+  "integrity": "sha512-w7nr/SFrLO7BaVTs3dQTvYSV6nYSBj0Yy9DjBhsIJtAcHqRzXSq4Pg32ujHZ/AdWsAMNEvvhbm5dt9E2tOiHzw==",
+  "files": {
+    "mermaid-12.2.0.min.js": "a8a6a6f805b074a8261a2825c86f99c8054acb3b35f50bb7e24a4f9f2c3c3b9f",
+    "mermaid-LICENSE.txt": "ec9fb67dcb25eccc416ed56e1aab819222c805a2a4bfe4cb19e7556bf2ffde80"
+  }
+}

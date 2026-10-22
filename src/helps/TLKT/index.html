@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="vi" data-root="../" data-mode="technical">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Hướng dẫn thao tác và luồng kỹ thuật ERP Medcom: mua hàng, nhập hàng, bán hàng, điều chuyển, tài sản và linh kiện.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'">
+  <title>Tài liệu kỹ thuật · MEDCOM ERP</title>
+  <link rel="icon" href="../assets/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../assets/styles.css">
+  <script defer src="../assets/content.generated.js"></script>
+  <script defer src="../assets/core.js"></script>
+  <script defer src="../assets/app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Đến nội dung</a>
+  <header class="header">
+    <button class="icon-button mobile-menu" id="menu-toggle" aria-label="Mở danh mục" aria-controls="sidebar" aria-expanded="false"><span class="menu-lines"></span></button>
+    <a class="brand" href="../HDSD-ERP/#overview" aria-label="Medcom — Tổng quan tài liệu"><img src="../assets/mark.svg" width="30" height="30" alt=""><span>MEDCOM</span></a>
+    <span class="brand-divider"></span><span class="header-label">TÀI LIỆU ERP</span>
+    <nav class="mode-nav" aria-label="Loại tài liệu">
+      <a id="guide-link" href="../HDSD-ERP/">Hướng dẫn sử dụng</a>
+      <a id="technical-link" href="../TLKT/">Tài liệu kỹ thuật</a>
+    </nav>
+    <button class="search-trigger" id="search-open" aria-label="Tìm trong tài liệu"><span class="search-symbol" aria-hidden="true"></span><span>Tìm trong tài liệu</span><kbd>Ctrl K</kbd></button>
+  </header>
+  <div class="sidebar-shade" id="sidebar-shade" hidden></div>
+  <aside class="sidebar" id="sidebar" aria-label="Danh mục quy trình">
+    <div class="sidebar-title">KHÁM PHÁ TÀI LIỆU</div>
+    <nav id="article-nav" aria-label="Quy trình ERP"></nav>
+    <div class="sidebar-footer"><span class="version-dot"></span> Phiên bản <span id="version"></span><small>Nội dung được quản lý trên GitHub</small></div>
+  </aside>
+  <main id="main" tabindex="-1">
+    <div class="article-top"><nav id="breadcrumb" aria-label="Đường dẫn"></nav><div class="article-actions"><button id="copy-link" class="quiet-button" aria-label="Sao chép liên kết bài">Sao chép liên kết</button><button id="print" class="quiet-button">In tài liệu</button></div></div>
+    <article>
+      <div class="article-heading"><span class="eyebrow" id="article-kind"></span><h1 id="article-title"></h1><p class="subtitle" id="article-subtitle"></p><div class="article-meta" id="article-meta"></div></div>
+      <div class="tabs" role="tablist" aria-label="Nội dung bài"><button id="tab-guide" role="tab" aria-controls="panel" data-tab="guide">Hướng dẫn</button><button id="tab-flow" role="tab" aria-controls="panel" data-tab="flow">Sơ đồ</button><button id="tab-errors" role="tab" aria-controls="panel" data-tab="errors">Xử lý lỗi</button></div>
+      <div id="panel" role="tabpanel" aria-labelledby="tab-guide" tabindex="0"></div>
+      <div id="stage-strip" class="stage-strip" aria-label="Các giai đoạn"></div>
+      <section class="related"><div class="related-heading"><span>TIẾP TỤC KHÁM PHÁ</span><span>Các quy trình liên kết</span></div><div id="related-links"></div></section>
+      <footer class="article-footer"><span id="review-date"></span><span>MEDCOM ERP · Trung tâm tài liệu</span></footer>
+    </article>
+  </main>
+  <dialog id="search-dialog" aria-labelledby="search-title"><div class="search-header"><label class="sr-only" id="search-title" for="search-input">Tìm kiếm hướng dẫn và tài liệu kỹ thuật</label><span class="search-symbol" aria-hidden="true"></span><input id="search-input" type="search" placeholder="Tìm quy trình, nút bấm, tên form hoặc STP…" autocomplete="off"><button class="icon-button" id="search-close" aria-label="Đóng tìm kiếm">×</button></div><p class="search-hint">Tìm được cả tiếng Việt không dấu và tên đối tượng kỹ thuật.</p><div id="search-results" aria-live="polite"></div><div class="search-footer"><kbd>Esc</kbd> để đóng <span>Hướng dẫn & tài liệu kỹ thuật</span></div></dialog>
+  <div id="toast" role="status" class="toast" hidden></div>
+  <noscript><p class="noscript">Bật JavaScript để xem tài liệu, hoặc đọc các tệp trong thư mục content của repo.</p></noscript>
+</body>
+</html>
