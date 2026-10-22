@@ -25,7 +25,6 @@
       let heading='';if(a.group!==group){group=a.group;heading=`<p class="nav-group">${esc(group)}</p>`;}
       return heading+`<a class="nav-link" href="#${a.id}" data-article="${a.id}">${icon(a.id)}<span>${esc(navTitles[a.id]||a.title)}</span></a>`;
     }).join('');
-    $('version').textContent=docs.version;
     $(mode==='technical'?'technical-link':'guide-link').classList.add('active');
     $(mode==='technical'?'technical-link':'guide-link').setAttribute('aria-current','page');
   }
@@ -77,7 +76,6 @@
     } else panel.innerHTML=`<h2 class="panel-heading">Khi thao tác chưa thành công</h2><p class="error-empty">Chọn tình huống để xem điểm cần kiểm tra.</p><div class="error-list">${current.errors.map(([title,answer])=>`<details><summary>${esc(title)}</summary><p>${esc(answer)}</p></details>`).join('')}</div>`;
     $('stage-strip').innerHTML=current.stages.map((s,i)=>`<div class="stage"><span class="stage-icon">${i+1}</span><span>${esc(s)}</span></div>`).join('');
     $('related-links').innerHTML=(relations[current.id]||[]).map(id=>{const a=docs.articles.find(a=>a.id===id);return `<a href="#${id}">${esc(a.title)}<span aria-hidden="true">→</span></a>`;}).join('');
-    $('review-date').textContent=`Đối chiếu tài liệu và cấu hình: ${reviewDate}`;
     closeMenu();if(previous!==current.id)window.scrollTo({top:0,behavior:'instant'});
   }
   function loadDiagram(){
