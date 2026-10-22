@@ -1,0 +1,948 @@
+{
+  "reviewDate": "2026-10-22",
+  "source": "Live MedData metadata and module definitions via owner-authenticated read-only review",
+  "scope": "Documentation only; no changes to ERP permissions, data or modules",
+  "definitionHashFormat": "SHA-256 of UTF-8 SQL definition normalized to LF, without BOM",
+  "articles": [
+    {
+      "id": "overview",
+      "sourceDocument": "Tổng hợp từ 7 tài liệu hướng dẫn",
+      "contentFiles": [
+        "content/guides/overview.md",
+        "content/technical/overview.md"
+      ],
+      "forms": [],
+      "objects": [
+        {
+          "schema": "dbo",
+          "name": "AP_OrderDetailTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_OrderTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_PurchaseRequestTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "AR_OrderTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "FA_AssetTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InboundRequestCTCPTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InternalTransferRequestTbl",
+          "type": "USER_TABLE"
+        }
+      ]
+    },
+    {
+      "id": "purchasing",
+      "sourceDocument": "HDSD Quy Trình BPTM.docx",
+      "contentFiles": [
+        "content/guides/purchasing.md",
+        "content/technical/purchasing.md"
+      ],
+      "forms": [
+        {
+          "id": "AP_PurposeRequestListFrm",
+          "caption": "Đề nghị mua hàng",
+          "buttons": [
+            "Gửi đặt mua hàng",
+            "Gửi đề nghị",
+            "In BB giao nhận hàng hóa",
+            "In BB không phù hợp",
+            "In BB kiểm nhập kho HH",
+            "In ĐN phê duyệt HĐ/ĐH",
+            "In đề xuất mua hàng"
+          ]
+        },
+        {
+          "id": "AP_ApprovePurchaseRequestListFrm",
+          "caption": "Duyệt đề nghị mua hàng",
+          "buttons": [
+            "Duyệt",
+            "Không duyệt"
+          ]
+        },
+        {
+          "id": "AP_OrderFrm",
+          "caption": "Đặt mua hàng",
+          "buttons": []
+        }
+      ],
+      "objects": [
+        {
+          "schema": "dbo",
+          "name": "AP_OrderDetailTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_OrderTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_PurchaseOrderWorkflowStatusView",
+          "type": "VIEW",
+          "definitionSha256": "c8d142ce28fc566d045c1c57271941eb01bcf5ead1e75300866b470deb31eade"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_PurchaseRequestDetailTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_PurchaseRequestTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_PurchaseRequest_ApproveOrRejectStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "57139236ba8e60b0eda98cb68cfefa785822ad1963a4ffb5a55c8f807ae1492f"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_PurchaseRequest_CreatePOStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "191d4335cd299dee97cd849b7d978e2883443fa3739880e8bee4e1e12de56a0f"
+        },
+        {
+          "schema": "dbo",
+          "name": "SY_GetUserPermissionFnc",
+          "type": "SQL_INLINE_TABLE_VALUED_FUNCTION",
+          "definitionSha256": "a3062aeabd2e01d24dea5447ebfd93f90f63d80b0324138f867518cefb0018d7"
+        }
+      ]
+    },
+    {
+      "id": "inbound",
+      "sourceDocument": "HDSD quy trình nhập hàng.docx",
+      "contentFiles": [
+        "content/guides/inbound.md",
+        "content/technical/inbound.md"
+      ],
+      "forms": [
+        {
+          "id": "IV_InboundRequestFrm",
+          "caption": "Phiếu đề nghị nhập hàng",
+          "buttons": [
+            "Gửi BLĐ",
+            "Gửi Thủ kho",
+            "Hủy đợt nháp",
+            "In BBGN HH",
+            "In BBKN kho HH"
+          ]
+        },
+        {
+          "id": "IV_IncomingShipmentStatusFrm",
+          "caption": "Xác nhận tình trạng hàng về",
+          "buttons": [
+            "Gửi TP SA",
+            "In BBGN HH",
+            "In BBKN kho HH",
+            "In mã QR",
+            "Từ chối"
+          ]
+        },
+        {
+          "id": "IV_GoodsInfoControlFrm",
+          "caption": "Kiểm soát thông tin hàng hóa",
+          "buttons": [
+            "Chọn bước gửi về",
+            "Gửi PM",
+            "In BBGN HH",
+            "In BBKN kho HH",
+            "Từ chối nhanh"
+          ]
+        },
+        {
+          "id": "IV_GoodsQualityControlConfirmFrm",
+          "caption": "Kiểm soát và xác nhận chất lượng hàng hóa",
+          "buttons": [
+            "Chọn gửi về",
+            "Gửi kế toán",
+            "Gửi kỹ thuật",
+            "In BBGN HH",
+            "In BBKN kho HH",
+            "Từ chối nhanh"
+          ]
+        },
+        {
+          "id": "IV_GoodsStatusConfirmFrm",
+          "caption": "Xác nhận tình trạng hàng hóa",
+          "buttons": [
+            "Chọn bước gửi về",
+            "Gửi kế toán",
+            "In mã QR",
+            "Từ chối nhanh"
+          ]
+        },
+        {
+          "id": "IV_CargoHandlingPlanApprovalFrm",
+          "caption": "Phê duyệt phương án hàng hóa",
+          "buttons": [
+            "Hủy/PA khác",
+            "Phê duyệt"
+          ]
+        },
+        {
+          "id": "IV_InboundRequestCTCPFrm",
+          "caption": "Chứng từ chi phí",
+          "buttons": []
+        }
+      ],
+      "objects": [
+        {
+          "schema": "dbo",
+          "name": "AP_OrderDetailTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_OrderTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_POInboundPartialUsageView",
+          "type": "VIEW",
+          "definitionSha256": "ee60954afce977a674ecb2c7d0c36675f7b4e4bedb4949342f9acc6a2a54efa7"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_POInboundPartial_CancelStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "d83b054f9b114d996545c2be4ba1888212d94eb9f9b9a875178be33b00d9b53f"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_POInboundPartial_SyncStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "a4fd9c0970a309e580387e48ca0dbe0fd37f8d19160c49d9bfb6725e9c49fe28"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_POInboundSelectViewDetail",
+          "type": "VIEW",
+          "definitionSha256": "928523fd33708c8b11d98cf877a4986ceccf652c244e5b4def55d49a24705fc5"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_POShipmentTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InboundPartial_PlanDetailTrg",
+          "type": "SQL_TRIGGER",
+          "definitionSha256": "b2341702af881db0d957ae56efda3ea9f630f1f821c70a6b8b2f876a76563d2c"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InboundPartial_PlanHeaderTrg",
+          "type": "SQL_TRIGGER",
+          "definitionSha256": "6b2766c8a9e1c1b3387721a80dd6897742e389658762842f6c3b4ad0762f984b"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InboundRequestDetailsTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InboundRequestTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InboundRequest_ChangeWorkflowStatusStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "b4daee9c1166aa289db4d0bfffc6503679845925a843e4e8cd1630ffbd7d519d"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InboundRequest_DeleteDraftTrg",
+          "type": "SQL_TRIGGER",
+          "definitionSha256": "e10de0768400078e3e5a934d88d0a0fdf34a0317d1028581786d6e5f79b7645b"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InputTbl",
+          "type": "USER_TABLE"
+        }
+      ]
+    },
+    {
+      "id": "bptm",
+      "sourceDocument": "HDSD Quy Trình BPTM.docx",
+      "contentFiles": [
+        "content/guides/bptm.md",
+        "content/technical/bptm.md"
+      ],
+      "forms": [
+        {
+          "id": "AP_BPTMShipmentsFrm",
+          "caption": "BPTM - Theo dõi đợt hàng",
+          "buttons": []
+        },
+        {
+          "id": "AP_BPTMDueEntryFrm",
+          "caption": "BPTM - Nhập hạn thanh toán",
+          "buttons": []
+        },
+        {
+          "id": "AP_BPTMTaxPlanEntryFrm",
+          "caption": "BPTM - Dự kiến nộp thuế",
+          "buttons": []
+        },
+        {
+          "id": "AP_BPTMTaxPaidEntryFrm",
+          "caption": "BPTM - Xác nhận nộp thuế",
+          "buttons": []
+        },
+        {
+          "id": "AP_BPTMAlertsFrm",
+          "caption": "BPTM - Cảnh báo đến hạn",
+          "buttons": []
+        },
+        {
+          "id": "AP_BPTMPaymentsFrm",
+          "caption": "BPTM - Lịch sử thanh toán",
+          "buttons": []
+        },
+        {
+          "id": "AP_BPTMNotifySettingsFrm",
+          "caption": "BPTM - Cấu hình người nhận thông báo",
+          "buttons": []
+        }
+      ],
+      "objects": [
+        {
+          "schema": "dbo",
+          "name": "AP_BPTMUI_ApplyDueStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "457a14bfaa2e402e2f7ab503cf7fac8d74553d9eee8da9424695e491865c6359"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_BPTMUI_ApplyTaxPaidStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "7402bc139bfd4563c75fecb6a6b0f9cf1852e6419877e4b24373d5b853e003e7"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_BPTMUI_ApplyTaxPlanStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "c950ccca36d4faf7ff78ac528421c4ae44624790ee4d4b4745605bbbdb592051"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_POShipmentBPTMAlertView",
+          "type": "VIEW",
+          "definitionSha256": "b008403b00b2d1811ea55a54480ab3902ac1b078eb160d39b188988bb315a6d2"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_POShipmentTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_POShipment_SetDeliveryDueStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "3ee1372ffda0ed22417d69a6c5d7f6e20dfb8b061b34fe734f34e0c01434c576"
+        }
+      ]
+    },
+    {
+      "id": "import-costs",
+      "sourceDocument": "HDSD THEO DÕI VÀ PHÂN BỔ CHI PHÍ HÀNG NHẬP KHẨU.docx",
+      "contentFiles": [
+        "content/guides/import-costs.md",
+        "content/technical/import-costs.md"
+      ],
+      "forms": [
+        {
+          "id": "AP_PurchaseNKFrm",
+          "caption": "Mua hàng nhập khẩu",
+          "buttons": [
+            "In mã QR",
+            "Lấy phí trước HQ",
+            "Lấy phí về kho",
+            "Phân bổ trước HQ",
+            "Phân bổ về kho"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "schema": "dbo",
+          "name": "AP_ImportPurchaseValidationFnc",
+          "type": "SQL_INLINE_TABLE_VALUED_FUNCTION",
+          "definitionSha256": "ec1e74a75faef44ae79fa49af4d135455ad6c58a23ec62ec7e4c4cbb0d9aabab"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_ImportPurchase_PrePostStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "9d8f1a80a1fa3abe1cfc3c97856772b3f49a8dc27e8e16d8bd74ca5826025cd5"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_PurchaseCostSummaryView",
+          "type": "VIEW",
+          "definitionSha256": "498fe3e618b3c83c087806f7e8ae3634d23d25e7f5422805fba74381766b806b"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_PurchaseImportTaxView",
+          "type": "VIEW",
+          "definitionSha256": "358fe1460a68184bdb7bb7cd53364c706b0f900e4e4ffb47330282e365730a23"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_PurchaseInventoryValueView",
+          "type": "VIEW",
+          "definitionSha256": "95783f5cad4bde2519c0e906897adfd4ae749b2c5091c42ab9678ef79ff6d560"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_PurchasePreCustomsCostView",
+          "type": "VIEW",
+          "definitionSha256": "c254bbe8118c73d2fad371b19b927172a864387d889071ce95340b4136085bbd"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_PurchaseTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_PurchaseWarehouseCostView",
+          "type": "VIEW",
+          "definitionSha256": "cd9be22d5a4da697954daf29d9023322fe465c2f95b9c1e790528ea0ae2f5603"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_ServiceInboundCostCandidateView",
+          "type": "VIEW",
+          "definitionSha256": "0b9ea2abd4e68a41f0c23813998935a69343f1eadade5e41c1a606b055ba0246"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_ServiceInboundValidationFnc",
+          "type": "SQL_INLINE_TABLE_VALUED_FUNCTION",
+          "definitionSha256": "cbd6cb0d84fa9ea135d1f75cfdb592954c1ba18c9edfe55a841ce01a9275a53f"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_ServiceTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_Service_ImportInboundCostStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "046961a6db74c2e23c5b2334951fd14950b01e67232070570fa97e3090ce6828"
+        },
+        {
+          "schema": "dbo",
+          "name": "AP_Service_ValidateInboundCostStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "d78d5459cf41d77700fb3a72cfa2391d041a40237af3c0eac28eff8207f5197a"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InboundRequestCTCPTbl",
+          "type": "USER_TABLE"
+        }
+      ]
+    },
+    {
+      "id": "sales",
+      "sourceDocument": "HDSD quy trình bán hàng.docx",
+      "contentFiles": [
+        "content/guides/sales.md",
+        "content/technical/sales.md"
+      ],
+      "forms": [
+        {
+          "id": "AR_OrderByContractFrm",
+          "caption": "Quản lý đơn hàng",
+          "buttons": [
+            "Gửi PM",
+            "Thu hồi để sửa",
+            "Xem thông tin hợp đồng"
+          ]
+        },
+        {
+          "id": "AR_OrderComfirmFrm",
+          "caption": "Xác nhận đơn hàng",
+          "buttons": [
+            "Gửi SA",
+            "Từ chối nhanh",
+            "Xem thông tin hợp đồng"
+          ]
+        },
+        {
+          "id": "AR_OrderAproveFrm",
+          "caption": "Duyệt đơn hàng",
+          "buttons": [
+            "Chọn bước gửi về",
+            "Gửi Kế toán",
+            "Gửi Kỹ thuật",
+            "In Biên bản bàn giao",
+            "Từ chối nhanh",
+            "Xem thông tin hợp đồng"
+          ]
+        },
+        {
+          "id": "AR_OrderConfirmConditionFrm",
+          "caption": "Xác nhận tình trạng hàng hoá",
+          "buttons": [
+            "Chọn bước gửi về",
+            "Gửi Kế toán",
+            "In Biên bản bàn giao",
+            "Từ chối nhanh",
+            "Xem thông tin hợp đồng"
+          ]
+        },
+        {
+          "id": "AR_OrderApproveShipBillFrm",
+          "caption": "Duyệt, PXK và hoá đơn",
+          "buttons": [
+            "Chọn bước gửi về",
+            "Gửi Thủ kho",
+            "In Biên bản bàn giao",
+            "Từ chối nhanh",
+            "Xem thông tin hợp đồng"
+          ]
+        },
+        {
+          "id": "AR_OrderShipFrm",
+          "caption": "Xuất hàng theo PXK",
+          "buttons": [
+            "Chọn bước gửi về",
+            "In Biên bản bàn giao",
+            "In Biên bản bàn giao (Mẫu dược)",
+            "In Phiếu xuất kho",
+            "In Phiếu xuất kho (Mẫu Dược)",
+            "In mã QR",
+            "Từ chối nhanh",
+            "Xem thông tin hợp đồng"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "schema": "dbo",
+          "name": "AR_InvoiceOrderDetailTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "AR_OrderDetailTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "AR_OrderLogTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "AR_OrderLog_Stp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "25de3ce8a0337b7e562b69b3ae19a5f95d48c3453ff4fb61735c34fe8e4fda42"
+        },
+        {
+          "schema": "dbo",
+          "name": "AR_OrderTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "AR_OrderTbl_UpdateRefDoc",
+          "type": "SQL_TRIGGER",
+          "definitionSha256": "dc8ccd4f908a505619bc17c3c6deddcb55eef7cbf8dceb89a3fe329aa57b617b"
+        },
+        {
+          "schema": "dbo",
+          "name": "AR_Order_CheckSaveStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "a978cc83e3a8c5b67d114a2ab182e3c3613cf60d544bafe9e8db5ef5771d338e"
+        },
+        {
+          "schema": "dbo",
+          "name": "AR_Order_SalesRecallFromPMStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "5e190e588ac0c16b7c35391ad3b90e7ea5496463dcb4ebd5041e4520c6d437ce"
+        }
+      ]
+    },
+    {
+      "id": "internal-transfer",
+      "sourceDocument": "HDSD quy trình điều chuyển nội bộ.docx",
+      "contentFiles": [
+        "content/guides/internal-transfer.md",
+        "content/technical/internal-transfer.md"
+      ],
+      "forms": [
+        {
+          "id": "IV_InternalTransferRequestFrm",
+          "caption": "Phiếu đề nghị điều chuyển nội bộ",
+          "buttons": [
+            "Gửi PM",
+            "Thu hồi để sửa"
+          ]
+        },
+        {
+          "id": "IV_InternalTransferPMFrm",
+          "caption": "Xác nhận đề nghị điều chuyển",
+          "buttons": [
+            "Từ chối nhanh",
+            "Đồng ý điều chuyển"
+          ]
+        },
+        {
+          "id": "IV_InternalTransferBatchFrm",
+          "caption": "Đợt điều chuyển nội bộ",
+          "buttons": [
+            "Gửi TP SA",
+            "Gửi kỹ thuật",
+            "Đồng bộ đề nghị"
+          ]
+        },
+        {
+          "id": "IV_InternalTransferTechFrm",
+          "caption": "Xác nhận thiết bị điều chuyển",
+          "buttons": [
+            "Gửi TP SA",
+            "Từ chối nhanh"
+          ]
+        },
+        {
+          "id": "IV_InternalTransferSAFrm",
+          "caption": "Phê duyệt điều chuyển nội bộ",
+          "buttons": [
+            "Chọn bước gửi về",
+            "Gửi Kế toán",
+            "Từ chối nhanh"
+          ]
+        },
+        {
+          "id": "IV_InternalTransferAccountingFrm",
+          "caption": "Xử lý điều chuyển nội bộ",
+          "buttons": [
+            "Chọn bước gửi về",
+            "Gửi Kho nguồn",
+            "Từ chối nhanh"
+          ]
+        },
+        {
+          "id": "IV_InternalTransferWarehouseOutFrm",
+          "caption": "Xác nhận xuất điều chuyển",
+          "buttons": [
+            "Chọn bước gửi về",
+            "Từ chối nhanh",
+            "Xác nhận xuất / Gửi Kho đích"
+          ]
+        },
+        {
+          "id": "IV_InternalTransferWarehouseInFrm",
+          "caption": "Xác nhận nhận điều chuyển",
+          "buttons": [
+            "Xác nhận nhận hàng"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "schema": "dbo",
+          "name": "IV_InternalTransferBatchAssetTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InternalTransferBatchDetailTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InternalTransferBatchRequestTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InternalTransferBatchTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InternalTransferReceiptBalanceView",
+          "type": "VIEW",
+          "definitionSha256": "85fcff92f3471f118b84bc82f1daa8db1a917672192bc54bac7478096826cb1b"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InternalTransferReceiptLineTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InternalTransferReceiptTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InternalTransferRequestTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InternalTransfer_BatchAccountingConfirmStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "158f5be7ce379763838ddaf488a7feb8ab80e85f81f8b0c36e8291eeaad17d90"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InternalTransfer_BatchDispatchStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "bf61639e4333b6a6d291fc6bf60c40e9d09bee735cdcf6d895459f9a1f5accc9"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InternalTransfer_BatchReceiveStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "f21d9b82a3e424849091f9cb1b34ef64a7e783b5aa3970a7fb2145e8135bdeb7"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InternalTransfer_BatchSAApproveStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "0adc3f15b71056faff5a3f717a14bcb69c35fcb0a993d1feefe5861d7fe6864b"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InternalTransfer_BatchSubmitStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "ba2d47b822c7872734991e6d7d181f0d685c64f024625252b48f027b465f5886"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InternalTransfer_BatchSubmit_ExecuteStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "9598c6aeed5bea3b9a73de87c2780539c7b416f96bf6d09caac8ddb32277a0c0"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InternalTransfer_BatchSyncRequestsStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "f436f95101cc27ed75f88b0e0776cab545be09e599dafa062b5bd3fc00b02250"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InternalTransfer_ValidateActionUserStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "571ecf03de7e1512e1d19f48099303a49f94e832a81ac3631e1d0f39f148fe35"
+        }
+      ]
+    },
+    {
+      "id": "machine-lifecycle",
+      "sourceDocument": "HDSD Quản lý vòng đời máy.docx",
+      "contentFiles": [
+        "content/guides/machine-lifecycle.md",
+        "content/technical/machine-lifecycle.md"
+      ],
+      "forms": [
+        {
+          "id": "FA_AssetListFrm",
+          "caption": "Danh mục tài sản",
+          "buttons": []
+        },
+        {
+          "id": "FA_Move2026Frm",
+          "caption": "Phiếu di chuyển / bàn giao máy",
+          "buttons": []
+        },
+        {
+          "id": "FA_Repair2026Frm",
+          "caption": "Phiếu sửa chữa / bảo hành / bảo trì máy",
+          "buttons": []
+        }
+      ],
+      "objects": [
+        {
+          "schema": "dbo",
+          "name": "FA_AssetCurrentContractView",
+          "type": "VIEW",
+          "definitionSha256": "51e621d3d6d80c380e7e2bef1338fa3094974e5bb4e12fbe63e59930931720c2"
+        },
+        {
+          "schema": "dbo",
+          "name": "FA_AssetCurrentLifecycleView",
+          "type": "VIEW",
+          "definitionSha256": "891b06768fb9dcbd53d27561d39f46bc572f4a7da544c0e452ba80f547bcdef1"
+        },
+        {
+          "schema": "dbo",
+          "name": "FA_AssetStatusDisplayView",
+          "type": "VIEW",
+          "definitionSha256": "4bf6577cb567a30ce99de0378004ff17afedf82de2e8f525ac6831e2ab22f9f6"
+        },
+        {
+          "schema": "dbo",
+          "name": "FA_AssetStatusSourceTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "FA_AssetTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "FA_MoveDetailTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "FA_MoveTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "FA_PartGenealogyReportStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "013b17be6bd3b9ee6ff770736e900eae3b2459604b17d129c8884f3b27efc4d0"
+        }
+      ]
+    },
+    {
+      "id": "qr-parts",
+      "sourceDocument": "HDSD Quản lý linh kiện bằng QR.docx",
+      "contentFiles": [
+        "content/guides/qr-parts.md",
+        "content/technical/qr-parts.md"
+      ],
+      "forms": [
+        {
+          "id": "FA_PartRegFrm",
+          "caption": "Đăng ký QR / Serial linh kiện",
+          "buttons": []
+        },
+        {
+          "id": "FA_PartManagementFrm",
+          "caption": "Quản lý linh kiện",
+          "buttons": []
+        },
+        {
+          "id": "FA_PartBarcodeHistoryFrm",
+          "caption": "Lịch sử QR linh kiện",
+          "buttons": []
+        }
+      ],
+      "objects": [
+        {
+          "schema": "dbo",
+          "name": "FA_PartAutoRegisterSerialBatchStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "6907adeee82081a43096711a2d2ec4ba2894d67925fa0a7113728d77dd3699b5"
+        },
+        {
+          "schema": "dbo",
+          "name": "FA_PartBarcodeLabelReportStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "fd0bdfaf970f0c848b704c9276c9fa65ca36e6b33412c295d42e4138c1ab9a0d"
+        },
+        {
+          "schema": "dbo",
+          "name": "FA_PartGenealogyReportStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "013b17be6bd3b9ee6ff770736e900eae3b2459604b17d129c8884f3b27efc4d0"
+        },
+        {
+          "schema": "dbo",
+          "name": "FA_PartRegistrationFrmTbl",
+          "type": "USER_TABLE"
+        },
+        {
+          "schema": "dbo",
+          "name": "FA_PartRegistrationRequestProcessStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "a60801e442e1d5b7d3d7d178347a788be81cf07466756c9987dda7d020e0f9f3"
+        },
+        {
+          "schema": "dbo",
+          "name": "FA_PartReplacementExecuteStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "30b337b743f6bd5af869370d6b4a9ea7ee465e17447f661d53cb639b6d9826f2"
+        },
+        {
+          "schema": "dbo",
+          "name": "FA_PartScanLinkInputStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "4db0b1b0b0c0b2266e8dc2330a0e55e90ed9e5d3c5a85c0d83a649ddbfca9df9"
+        },
+        {
+          "schema": "dbo",
+          "name": "FA_PartScanLinkOutputStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "b95d80e2c74fa4c267fccbcf9a64a219ec4e196c7e70ad15a610a7ae2e89d0ce"
+        },
+        {
+          "schema": "dbo",
+          "name": "FA_PartScanRecoverInputStp",
+          "type": "SQL_STORED_PROCEDURE",
+          "definitionSha256": "b9cd51d9b4cd39a0a59a9a0d4d943d97bfccab946aa89ffd618940e9af22746b"
+        }
+      ]
+    }
+  ],
+  "uiObservations": [
+    {
+      "screen": "IV_InternalTransferBatchFrm",
+      "status": "OBSERVED",
+      "finding": "After ERP restart the form opened; Send Technical, Send TP SA and Sync Requests buttons were visible. The inspected record was already completed, so buttons were disabled. No workflow action executed."
+    },
+    {
+      "screen": "IV_InboundRequestFrm",
+      "status": "OBSERVED_WITH_LIMIT",
+      "finding": "Form, Take from PO, Send Warehouse and Cancel Draft controls visible. Status bar showed Expecting object to be local; detail binding and interactive PO selection were not accepted as runtime verified."
+    },
+    {
+      "screen": "FA_AssetListFrm",
+      "status": "OBSERVED",
+      "finding": "Contract/effectivity tab showed separate source Excel status, date effectivity and machine status labels."
+    },
+    {
+      "screen": "AR_OrderByContractFrm",
+      "status": "OBSERVED",
+      "finding": "Send PM and Recall to edit controls visible in Admin session. No send/recall action executed."
+    },
+    {
+      "screen": "Other role sessions, receipt/posting/apply and notification delivery",
+      "status": "UNKNOWN",
+      "finding": "Not exercised in this read-only review. ERP later showed Not Responding; configuration evidence is not an end-to-end acceptance."
+    }
+  ]
+}

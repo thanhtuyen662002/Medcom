@@ -1,0 +1,479 @@
+{
+  "title": "MEDCOM · Tài liệu ERP",
+  "version": "2026.10.22",
+  "reviewed": "2026-10-22",
+  "defaultArticle": "inbound",
+  "articles": [
+    {
+      "id": "overview",
+      "title": "Tổng quan các quy trình ERP",
+      "subtitle": "Nhìn rõ chứng từ nguồn, bước xử lý và các quy trình nối tiếp nhau.",
+      "group": "Bắt đầu",
+      "roles": [
+        "Người sử dụng ERP"
+      ],
+      "source": "Tổng hợp từ 7 tài liệu hướng dẫn",
+      "stages": [
+        "Chứng từ nguồn",
+        "Duyệt & xử lý",
+        "Chứng từ kho",
+        "Theo dõi kết quả"
+      ],
+      "flow": "flowchart TD\nA[Đề nghị mua hàng] --> B[Duyệt và tạo PO]\nB --> C[Đề nghị nhập theo nhiều đợt]\nC --> D[Kiểm nhận, SA, PM, Kỹ thuật khi cần, Kế toán]\nD --> E[Chứng từ mua hàng và nhập kho]\nC --> F[Chi phí đề nghị]\nF --> G[Dịch vụ, phân bổ vào nhập khẩu]\nB --> H[BPTM theo dõi lô, thuế và thanh toán]\nI[Đơn bán hàng theo hợp đồng] --> J[PM, SA, Kỹ thuật khi cần, Kế toán]\nJ --> K[Hóa đơn và xuất bán]\nL[Đề nghị điều chuyển] --> M[Đợt điều chuyển và phê duyệt]\nM --> N[PXK nguồn và nhiều PNK đích]\nE --> O[Tồn kho và thiết bị]\nN --> O\nK --> P[Xuất giao và theo dõi tiến độ]\nO --> Q[Vòng đời máy và QR linh kiện]\nQ --> R[Sửa chữa, thu hồi và tái sử dụng]",
+      "guide": "guides/overview.md",
+      "technical": "technical/overview.md",
+      "forms": [],
+      "objects": [],
+      "errors": [
+        [
+          "Không thấy nút như hướng dẫn",
+          "Kiểm tra màn hình đang mở, trạng thái chứng từ và quyền hiện hữu; sau cập nhật cấu hình có thể cần mở lại ERP."
+        ],
+        [
+          "Cần biết điểm nối giữa quy trình",
+          "Xem tab Sơ đồ và chuyển sang Tài liệu kỹ thuật ở cùng bài để đọc khóa liên kết và đối tượng xử lý."
+        ]
+      ],
+      "reviewed": "2026-10-22"
+    },
+    {
+      "id": "purchasing",
+      "title": "Mua hàng từ đề nghị đến PO",
+      "subtitle": "Lập đề nghị, duyệt và tạo đơn đặt hàng làm nguồn cho các đợt nhập.",
+      "group": "Mua hàng & nhập kho",
+      "roles": [
+        "Người đề nghị",
+        "Người duyệt",
+        "Thương mại"
+      ],
+      "source": "HDSD Quy Trình BPTM.docx",
+      "stages": [
+        "Đề nghị",
+        "Chờ duyệt",
+        "Duyệt",
+        "Tạo PO"
+      ],
+      "flow": "flowchart LR\nA[Lập đề nghị mua hàng] --> B[Chờ duyệt]\nB --> C{Quyết định}\nC -->|Duyệt| D[Đề nghị đã duyệt]\nC -->|Không duyệt + lý do| E[Không duyệt]\nD --> F[Tạo đơn đặt hàng]\nF --> G[PO và các dòng hàng]\nG --> H[Nhiều đợt đề nghị nhập]\nH --> I[Nhập kho và theo dõi lô hàng]",
+      "guide": "guides/purchasing.md",
+      "technical": "technical/purchasing.md",
+      "forms": [
+        "AP_PurposeRequestListFrm",
+        "AP_ApprovePurchaseRequestListFrm",
+        "AP_OrderFrm"
+      ],
+      "objects": [
+        "AP_PurchaseRequest_ApproveOrRejectStp",
+        "AP_PurchaseRequest_CreatePOStp",
+        "SY_GetUserPermissionFnc",
+        "AP_PurchaseOrderWorkflowStatusView"
+      ],
+      "errors": [
+        [
+          "Đề nghị đã có PO",
+          "Mở PO hiện có và tải lại đề nghị; không gửi tạo lại."
+        ],
+        [
+          "Không có quyền xử lý",
+          "Nhờ quản trị đối chiếu quyền đã thiết lập tại màn hình duyệt, tài khoản đang hoạt động và quyền hiệu lực."
+        ],
+        [
+          "Không duyệt nhưng thiếu lý do",
+          "Nhập nội dung cần điều chỉnh trước khi xác nhận Không duyệt."
+        ]
+      ],
+      "reviewed": "2026-10-22"
+    },
+    {
+      "id": "inbound",
+      "title": "Nhập hàng theo từng đợt",
+      "subtitle": "Lấy hàng từ đơn đặt hàng, xác nhận hàng về và gửi đúng bộ phận xử lý.",
+      "group": "Mua hàng & nhập kho",
+      "roles": [
+        "Thương mại",
+        "Thủ kho",
+        "TP SA",
+        "PM",
+        "Kỹ thuật",
+        "Kế toán"
+      ],
+      "source": "HDSD quy trình nhập hàng.docx",
+      "stages": [
+        "Chọn PO",
+        "Nhập SL đợt này",
+        "Lưu phiếu",
+        "Gửi Thủ kho"
+      ],
+      "flow": "flowchart TD\nPO[Đơn đặt hàng còn số lượng] --> TM[TM lập đề nghị nhập theo đợt]\nTM --> WH[Thủ kho xác nhận hàng thực tế]\nWH --> SA[TP SA kiểm tra]\nSA --> PM[PM xử lý]\nPM --> Q{Cần Kỹ thuật?}\nQ -->|Có| TECH[Kỹ thuật xác nhận]\nQ -->|Không| KT[Kế toán]\nTECH --> KT\nTM -. Phương án cần BLĐ .-> BLD[BLĐ duyệt hoặc hủy phương án]\nBLD -->|Duyệt| KT\nKT --> NK[Chứng từ mua hàng và nhập kho liên quan]\nWH -. Trả TM .-> TM\nSA -. Trả Thủ kho .-> WH\nPM -. Trả TP SA .-> SA\nTECH -. Trả PM .-> PM",
+      "guide": "guides/inbound.md",
+      "technical": "technical/inbound.md",
+      "forms": [
+        "IV_InboundRequestFrm",
+        "IV_IncomingShipmentStatusFrm",
+        "IV_GoodsInfoControlFrm",
+        "IV_GoodsQualityControlConfirmFrm",
+        "IV_GoodsStatusConfirmFrm",
+        "IV_CargoHandlingPlanApprovalFrm",
+        "IV_InboundRequestCTCPFrm"
+      ],
+      "objects": [
+        "AP_POInboundSelectViewDetail",
+        "AP_POInboundPartialUsageView",
+        "AP_POInboundPartial_SyncStp",
+        "AP_POInboundPartial_CancelStp",
+        "IV_InboundPartial_PlanHeaderTrg",
+        "IV_InboundPartial_PlanDetailTrg",
+        "IV_InboundRequest_ChangeWorkflowStatusStp",
+        "IV_InboundRequest_DeleteDraftTrg"
+      ],
+      "errors": [
+        [
+          "Không sửa được số lượng",
+          "Nhập tại “SL lấy đợt này” trong hộp lấy PO. Nếu cột chưa xuất hiện sau cập nhật, đóng hẳn ERP và mở lại; không sửa số lượng đặt của PO."
+        ],
+        [
+          "Thiếu Hãng sản xuất",
+          "Kiểm tra hãng trong danh mục hàng và mở lại bộ chọn PO. Hãng trống ở nguồn cần được bổ sung bởi người quản lý danh mục."
+        ],
+        [
+          "Chưa nhập đủ thông tin trên chứng từ",
+          "Kiểm tra lô, số lượng dương và hạn dùng của mọi dòng trước Gửi Thủ kho."
+        ],
+        [
+          "Số lượng còn lại thay đổi",
+          "Tải lại bộ chọn: một người khác hoặc một đợt nháp đã phân bổ lượng hàng. Không tăng số đặt để vượt kiểm tra."
+        ],
+        [
+          "Không xóa được phiếu",
+          "Kiểm tra trạng thái và các chứng từ liên kết. Không xóa cưỡng bức master/detail hoặc bỏ liên kết để qua kiểm tra."
+        ]
+      ],
+      "reviewed": "2026-10-22"
+    },
+    {
+      "id": "bptm",
+      "title": "Theo dõi đợt hàng & thanh toán",
+      "subtitle": "Theo dõi số lượng, hạn thanh toán, kế hoạch thuế và lịch sử trả tiền theo từng đợt PO.",
+      "group": "Mua hàng & nhập kho",
+      "roles": [
+        "Thương mại",
+        "Kế toán"
+      ],
+      "source": "HDSD Quy Trình BPTM.docx",
+      "stages": [
+        "Chọn đợt hàng",
+        "Áp dụng hạn trả",
+        "Theo dõi thuế",
+        "Đối chiếu thanh toán"
+      ],
+      "flow": "flowchart TD\nA[PO và đợt giao hàng] --> B[Theo dõi đợt hàng]\nB --> C[Nhập hạn thanh toán cho PO + số đợt]\nC --> D[Lưu và áp dụng nghiệp vụ]\nB --> E{Lô nhập khẩu?}\nE -->|Có| F[Kế hoạch thuế]\nF --> G[Áp dụng kế hoạch]\nG --> H[Ghi nhận đã nộp và chứng từ]\nB --> I[Theo dõi thanh toán nhà cung cấp]\nD --> J[Cảnh báo và đối chiếu tiến độ]\nH --> J\nI --> J",
+      "guide": "guides/bptm.md",
+      "technical": "technical/bptm.md",
+      "forms": [
+        "AP_BPTMShipmentsFrm",
+        "AP_BPTMDueEntryFrm",
+        "AP_BPTMTaxPlanEntryFrm",
+        "AP_BPTMTaxPaidEntryFrm",
+        "AP_BPTMAlertsFrm",
+        "AP_BPTMPaymentsFrm",
+        "AP_BPTMNotifySettingsFrm"
+      ],
+      "objects": [
+        "AP_BPTMUI_ApplyDueStp",
+        "AP_BPTMUI_ApplyTaxPlanStp",
+        "AP_BPTMUI_ApplyTaxPaidStp",
+        "AP_POShipment_SetDeliveryDueStp",
+        "AP_POShipmentBPTMAlertView"
+      ],
+      "errors": [
+        [
+          "Lưu rồi nhưng lô chưa đổi",
+          "Bấm Lưu và áp dụng nghiệp vụ, kiểm tra thông báo thành công và cờ đã áp dụng."
+        ],
+        [
+          "Phiếu đã áp dụng",
+          "Tạo phiếu điều chỉnh theo chức năng; không sửa cờ áp dụng hoặc chạy lại trực tiếp."
+        ],
+        [
+          "Không nhận cảnh báo",
+          "Đối chiếu danh sách Cảnh báo và cấu hình người nhận; nhờ quản trị kiểm tra tác vụ gửi."
+        ]
+      ],
+      "reviewed": "2026-10-22"
+    },
+    {
+      "id": "import-costs",
+      "title": "Chi phí hàng nhập khẩu",
+      "subtitle": "Từ chi phí trên đề nghị đến chứng từ dịch vụ, phân bổ và giá trị nhập kho.",
+      "group": "Mua hàng & nhập kho",
+      "roles": [
+        "Thương mại",
+        "Kế toán"
+      ],
+      "source": "HDSD THEO DÕI VÀ PHÂN BỔ CHI PHÍ HÀNG NHẬP KHẨU.docx",
+      "stages": [
+        "Ghi chi phí",
+        "Lập dịch vụ",
+        "Lấy & phân bổ",
+        "Kiểm tra giá nhập"
+      ],
+      "flow": "flowchart TD\nA[Đề nghị nhập hàng] --> B[Chứng từ chi phí theo đề nghị]\nA --> C[Đề nghị đã gửi Kế toán]\nB --> D[Lấy chi phí vào chứng từ dịch vụ]\nC --> D\nD --> E[Kiểm tra hóa đơn, đối tượng, tiền tệ]\nE --> F[Chốt dịch vụ]\nF --> G[Chứng từ mua hàng nhập khẩu cùng đề nghị]\nG --> H[Lấy chi phí]\nH --> I[Phân bổ từng loại chi phí]\nI --> J[Kiểm tra trị giá tính thuế, thuế và giá nhập kho]\nJ --> K[Chốt chứng từ khi hợp lệ]",
+      "guide": "guides/import-costs.md",
+      "technical": "technical/import-costs.md",
+      "forms": [
+        "AP_PurchaseNKFrm"
+      ],
+      "objects": [
+        "AP_ServiceInboundCostCandidateView",
+        "AP_Service_ImportInboundCostStp",
+        "AP_Service_ValidateInboundCostStp",
+        "AP_ServiceInboundValidationFnc",
+        "AP_ImportPurchaseValidationFnc",
+        "AP_ImportPurchase_PrePostStp",
+        "AP_PurchasePreCustomsCostView",
+        "AP_PurchaseWarehouseCostView",
+        "AP_PurchaseCostSummaryView",
+        "AP_PurchaseImportTaxView",
+        "AP_PurchaseInventoryValueView"
+      ],
+      "errors": [
+        [
+          "Không thấy chi phí để lấy",
+          "Kiểm tra đề nghị đã gửi Kế toán, dòng không hủy và chưa bị dịch vụ khác lấy."
+        ],
+        [
+          "Dịch vụ không hợp lệ",
+          "Đối chiếu cùng đề nghị, nhà cung cấp/hóa đơn, đối tượng phải trả, loại tiền và tình trạng chốt."
+        ],
+        [
+          "Lấy chi phí rồi nhưng giá chưa đúng",
+          "Thực hiện phân bổ từng loại và kiểm tra tổng, tiêu thức, tỷ giá và phạm vi chi phí."
+        ],
+        [
+          "Cảnh báo tổng tiền hoặc thuế",
+          "Dừng để đối chiếu hồ sơ, hoàn thiện dữ liệu nguồn; không bỏ qua mặc định."
+        ]
+      ],
+      "reviewed": "2026-10-22"
+    },
+    {
+      "id": "sales",
+      "title": "Bán hàng và xuất giao",
+      "subtitle": "Theo dõi đơn theo hợp đồng qua PM, SA, Kỹ thuật, Kế toán và Kho.",
+      "group": "Bán hàng",
+      "roles": [
+        "NVKD",
+        "PM",
+        "SA",
+        "Kỹ thuật",
+        "Kế toán",
+        "Thủ kho"
+      ],
+      "source": "HDSD quy trình bán hàng.docx",
+      "stages": [
+        "NVKD lập đơn",
+        "PM / SA xác nhận",
+        "Kế toán tạo PXK",
+        "Kho giao hàng"
+      ],
+      "flow": "flowchart TD\nA[NVKD lập đơn theo hợp đồng] -->|Gửi PM| B[PM xác nhận]\nB -->|Gửi SA| C[SA duyệt]\nC --> Q{Cần Kỹ thuật?}\nQ -->|Có| D[Kỹ thuật xác nhận tình trạng]\nQ -->|Không| E[Kế toán]\nD --> E\nE --> F[Hóa đơn bán hàng và phiếu xuất kho]\nF -->|Gửi Thủ kho| G[Kho xuất giao, hồ sơ bàn giao]\nB -. Chưa xử lý: người tạo thu hồi .-> A\nG --> H[Theo dõi tiến độ giao]",
+      "guide": "guides/sales.md",
+      "technical": "technical/sales.md",
+      "forms": [
+        "AR_OrderByContractFrm",
+        "AR_OrderComfirmFrm",
+        "AR_OrderAproveFrm",
+        "AR_OrderConfirmConditionFrm",
+        "AR_OrderApproveShipBillFrm",
+        "AR_OrderShipFrm"
+      ],
+      "objects": [
+        "AR_Order_SalesRecallFromPMStp",
+        "AR_Order_CheckSaveStp",
+        "AR_OrderTbl_UpdateRefDoc",
+        "AR_OrderLog_Stp"
+      ],
+      "errors": [
+        [
+          "Chưa được tạo phiếu xuất kho",
+          "Kế toán lập và kiểm tra chứng từ xuất bán liên kết đúng đề nghị trước Gửi Thủ kho."
+        ],
+        [
+          "Không thu hồi được",
+          "Kiểm tra người tạo và trạng thái Đã gửi PM; đơn đã chuyển bước phải dùng luồng trả lại."
+        ],
+        [
+          "Đã gửi Kho nhưng chưa giao xong",
+          "Xem tiến độ giao và chứng từ thực tế; trạng thái chuyển việc không thay thế tiến độ giao."
+        ]
+      ],
+      "reviewed": "2026-10-22"
+    },
+    {
+      "id": "internal-transfer",
+      "title": "Điều chuyển nội bộ",
+      "subtitle": "Gom đề nghị, duyệt theo loại hàng, xuất kho nguồn và nhận từng phần tại kho đích.",
+      "group": "Kho & điều chuyển",
+      "roles": [
+        "Sales / NVKD",
+        "PM",
+        "Kỹ thuật",
+        "TP SA",
+        "Kế toán",
+        "Kho nguồn",
+        "Kho đích"
+      ],
+      "source": "HDSD quy trình điều chuyển nội bộ.docx",
+      "stages": [
+        "Đề nghị",
+        "Gom đợt & duyệt",
+        "Xuất kho nguồn",
+        "Nhập kho đích"
+      ],
+      "flow": "flowchart TD\nA[NVKD gửi đề nghị] --> B[PM xác nhận đề nghị]\nB --> C[Lập đợt, chọn mã đề nghị và Đồng bộ đề nghị]\nC --> D{Có thiết bị?}\nD -->|Có: Gửi kỹ thuật| E[Kỹ thuật xác nhận serial]\nD -->|Không: Gửi TP SA| F[TP SA phê duyệt]\nE -->|Gửi TP SA| F\nF --> G[Kế toán xác nhận lô và hạn dùng]\nG --> H[Lập PXK điều chuyển]\nH --> I[Kho nguồn xác nhận xuất thực tế]\nI --> J[Kho đích lập PNK thực nhận]\nJ --> K{Nhận đủ?}\nK -->|Chưa: theo dõi phần còn lại| J\nK -->|Đủ| L[Hoàn tất và cập nhật vị trí tài sản]",
+      "guide": "guides/internal-transfer.md",
+      "technical": "technical/internal-transfer.md",
+      "forms": [
+        "IV_InternalTransferRequestFrm",
+        "IV_InternalTransferPMFrm",
+        "IV_InternalTransferBatchFrm",
+        "IV_InternalTransferTechFrm",
+        "IV_InternalTransferSAFrm",
+        "IV_InternalTransferAccountingFrm",
+        "IV_InternalTransferWarehouseOutFrm",
+        "IV_InternalTransferWarehouseInFrm"
+      ],
+      "objects": [
+        "IV_InternalTransfer_BatchSyncRequestsStp",
+        "IV_InternalTransfer_BatchSubmitStp",
+        "IV_InternalTransfer_BatchSubmit_ExecuteStp",
+        "IV_InternalTransfer_BatchSAApproveStp",
+        "IV_InternalTransfer_BatchAccountingConfirmStp",
+        "IV_InternalTransfer_BatchDispatchStp",
+        "IV_InternalTransfer_BatchReceiveStp",
+        "IV_InternalTransferReceiptBalanceView",
+        "IV_InternalTransfer_ValidateActionUserStp"
+      ],
+      "errors": [
+        [
+          "Chưa có mã yêu cầu đề nghị",
+          "Chọn mã ở mọi dòng tab Các đề nghị trong đợt; xóa dòng trống không sử dụng rồi đồng bộ lại."
+        ],
+        [
+          "Gửi TP SA bị khóa",
+          "Chỉ dùng trực tiếp từ PM khi đợt không có thiết bị và còn ở bước được sửa. Đợt thiết bị phải qua Kỹ thuật."
+        ],
+        [
+          "Số nhận vượt hoặc sai lô",
+          "Kiểm tra PNK theo mã hàng, lô, hạn dùng và phần đã xuất còn lại; không sửa tổng nhận trên đợt."
+        ],
+        [
+          "Chưa đủ tài sản/serial",
+          "Đối chiếu serial đúng mã hàng, không trùng và đủ số lượng thiết bị thực xuất trước khi hoàn tất."
+        ]
+      ],
+      "reviewed": "2026-10-22"
+    },
+    {
+      "id": "machine-lifecycle",
+      "title": "Quản lý vòng đời máy",
+      "subtitle": "Theo dõi serial, hợp đồng, vị trí, sửa chữa và rã máy theo chứng từ.",
+      "group": "Tài sản & linh kiện",
+      "roles": [
+        "Quản lý tài sản",
+        "Kỹ thuật",
+        "Kho"
+      ],
+      "source": "HDSD Quản lý vòng đời máy.docx",
+      "stages": [
+        "Khai báo máy",
+        "Ghi nhận biến động",
+        "Sửa chữa / thu hồi",
+        "Tra cứu vòng đời"
+      ],
+      "flow": "flowchart TD\nA[Khai báo tài sản, serial và theo dõi vòng đời] --> B[Biến động tài sản]\nB --> C{Nghiệp vụ}\nC --> D[Đặt, mượn, thuê, demo, bán]\nC --> E[Thu hồi về kho]\nC --> F[Điều chuyển nội bộ]\nD --> G[Lưu và khóa chứng từ hợp lệ]\nE --> G\nF --> G\nG --> H[Vị trí và vòng đời hiện tại]\nH --> I[Sửa chữa và thay linh kiện]\nH --> J[Rã máy]\nJ --> K[Thu hồi QR linh kiện về kho]\nK --> I\nH --> L[Machine 360 và lịch sử]",
+      "guide": "guides/machine-lifecycle.md",
+      "technical": "technical/machine-lifecycle.md",
+      "forms": [
+        "FA_AssetListFrm",
+        "FA_Move2026Frm",
+        "FA_Repair2026Frm"
+      ],
+      "objects": [
+        "FA_AssetCurrentLifecycleView",
+        "FA_AssetCurrentContractView",
+        "FA_AssetStatusDisplayView",
+        "FA_PartGenealogyReportStp"
+      ],
+      "errors": [
+        [
+          "Lưu biến động nhưng vị trí chưa đổi",
+          "Kiểm tra khóa chứng từ, ngày nghiệp vụ và biến động mới hơn."
+        ],
+        [
+          "Excel còn hiệu lực nhưng web/ERP báo hết hiệu lực",
+          "Đọc riêng nội dung Excel và phép tính ngày. Kiểm tra hợp đồng đang được chọn và thời hạn; không đồng nhất hai trường."
+        ],
+        [
+          "Serial chưa rõ hoặc trùng",
+          "Tách để xác nhận hồ sơ; giữ nguyên liên kết cho đến khi xác định chính xác máy."
+        ]
+      ],
+      "reviewed": "2026-10-22"
+    },
+    {
+      "id": "qr-parts",
+      "title": "Quản lý linh kiện bằng QR",
+      "subtitle": "Đăng ký mã, nhập kho, xuất lắp và thu hồi để truy vết từng linh kiện.",
+      "group": "Tài sản & linh kiện",
+      "roles": [
+        "Quản lý linh kiện",
+        "Kho",
+        "Kỹ thuật"
+      ],
+      "source": "HDSD Quản lý linh kiện bằng QR.docx",
+      "stages": [
+        "Đăng ký QR",
+        "Nhập kho",
+        "Xuất lắp",
+        "Thu hồi & truy vết"
+      ],
+      "flow": "flowchart TD\nA[Hàng được cấu hình theo dõi Serial] --> B[Đăng ký Serial có sẵn hoặc tạo lô Serial]\nB --> C[Kiểm tra xử lý thành công, in và dán QR]\nC --> D[PNK nháp: quét đủ QR]\nD --> E[Khóa PNK: có tồn linh kiện]\nE --> F[PXK lắp máy: chọn máy, quét QR]\nF --> G[Khóa PXK: linh kiện đang trên máy]\nG --> H[Biến động rã máy đã khóa]\nH --> I[PNK thu hồi: quét đúng QR, tình trạng]\nI --> E\nG --> J[Tra cứu mã QR và lịch sử]",
+      "guide": "guides/qr-parts.md",
+      "technical": "technical/qr-parts.md",
+      "forms": [
+        "FA_PartRegFrm",
+        "FA_PartManagementFrm",
+        "FA_PartBarcodeHistoryFrm"
+      ],
+      "objects": [
+        "FA_PartRegistrationRequestProcessStp",
+        "FA_PartAutoRegisterSerialBatchStp",
+        "FA_PartBarcodeLabelReportStp",
+        "FA_PartScanLinkInputStp",
+        "FA_PartScanLinkOutputStp",
+        "FA_PartScanRecoverInputStp",
+        "FA_PartReplacementExecuteStp",
+        "FA_PartGenealogyReportStp"
+      ],
+      "errors": [
+        [
+          "Đã đăng ký nhưng không thấy tồn",
+          "Kiểm tra kết quả đăng ký và phiếu nhập đã khóa; tạo mã không làm tăng tồn kho."
+        ],
+        [
+          "Quét mã sai mặt hàng hoặc trùng",
+          "Đối chiếu tem trên linh kiện vật lý, mã hàng và danh sách đã quét của chứng từ."
+        ],
+        [
+          "Không thu hồi được",
+          "Kiểm tra phiếu rã đã khóa, đúng máy nguồn và QR hiện đang lắp trên máy đó."
+        ],
+        [
+          "Không khóa được phiếu",
+          "Kiểm tra đủ QR theo số lượng, kho, máy và điều kiện tình trạng trước khi chốt."
+        ]
+      ],
+      "reviewed": "2026-10-22"
+    }
+  ]
+}

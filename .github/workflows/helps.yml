@@ -1,0 +1,30 @@
+name: ERP help center
+on:
+  pull_request:
+    paths:
+      - 'src/helps/**'
+      - '.github/workflows/helps.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/helps/**'
+      - '.github/workflows/helps.yml'
+permissions:
+  contents: read
+jobs:
+  help-content:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Rebuild static help pages
+        working-directory: src/helps
+        run: npm run build
+      - name: Check committed generated pages are current
+        run: git diff --exit-code -- src/helps
+      - name: Verify guides, search, references and static assets
+        working-directory: src/helps
+        run: npm test
