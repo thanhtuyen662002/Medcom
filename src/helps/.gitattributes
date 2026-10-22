@@ -1,3 +1,4 @@
 * text eol=lf
+*.png binary
 assets/vendor/*.min.js binary
 assets/vendor/mermaid-LICENSE.txt -text

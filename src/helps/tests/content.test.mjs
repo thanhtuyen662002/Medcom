@@ -48,7 +48,10 @@ test('locally vendored Mermaid matches recorded SHA-256',async()=>{
 test('all static entry points have relative assets and correct modes',async()=>{
   for(const [file,mode]of [['index.html','guide'],['HDSD-ERP/index.html','guide'],['TLKT/index.html','technical']]){
     const html=await readFile(path.join(root,file),'utf8');assert.ok(html.includes(`data-mode="${mode}"`));assert.ok(!html.includes('{{'));assert.ok(!/src="https?:/.test(html));
-    for(const match of html.matchAll(/(?:src|href)="([^"#]+\.(?:js|css|svg|png))"/g))assert.ok((await readFile(path.resolve(root,path.dirname(file),match[1]))).length);
+    for(const match of html.matchAll(/(?:src|href)="([^"#]+\.(?:js|css|svg|png))"/g)){
+      const asset=await readFile(path.resolve(root,path.dirname(file),match[1]));assert.ok(asset.length);
+      if(match[1].endsWith('.png'))assert.deepEqual(asset.subarray(0,8),Buffer.from([137,80,78,71,13,10,26,10]));
+    }
   }
 });
 test('technical references are tied to sanitized current metadata evidence',async()=>{
