@@ -37,7 +37,17 @@ Không sửa tài khoản, nhóm quyền, phạm vi chi nhánh, trạng thái ho
 
 ## Kiểm tra web
 
-Các kiểm tra nguồn chạy bằng `npm test`; thao tác trình duyệt, responsive và sơ đồ được kiểm tra trên bản preview cùng nội dung. Kết quả cuối và giới hạn triển khai được ghi trong mô tả PR. Chưa triển khai vào tên miền của ERP.
+| Kiểm tra | Kết quả |
+| --- | --- |
+| `npm test` | 10 nhóm kiểm tra đạt: nội dung đủ nguồn, tìm kiếm, route, escape HTML/link, nội dung sinh sẵn, dữ liệu công khai, hash thư viện, tài nguyên, tham chiếu metadata, các điểm nghiệp vụ đã chỉnh |
+| Sơ đồ | Đủ 9 sơ đồ được Mermaid vẽ thành SVG trên trình duyệt; không có lỗi/warning console tại lần kiểm tra |
+| Tìm kiếm | “gui thu kho” ưu tiên bài nhập hàng; “BatchReceiveStp” trả về bài kỹ thuật điều chuyển; mở kết quả đúng khu vực |
+| HDSD / TLKT | Giữ đúng mã bài khi chuyển khu vực, tab Form & SQL hiển thị các form/đối tượng của bài |
+| Điện thoại 390×844 | Mở danh mục, chọn bài, tự đóng danh mục; nội dung không tràn ngang toàn trang, bảng có vùng cuộn riêng |
+| Desktop 1366×900 | Header và sidebar cố định; nội dung theo bước, không có mục lục bên phải; không tràn ngang toàn trang |
+| Sơ đồ tải xuống | Phóng to 125%, về vừa khung và tải SVG thành công |
+
+Ảnh preview chỉ chứa nội dung minh họa đã loại thông tin khách hàng. Chưa triển khai vào tên miền của ERP; chưa xác nhận URL/HTTPS/cache trên máy chủ đích.
 
 ## Quy tắc cập nhật tiếp
 

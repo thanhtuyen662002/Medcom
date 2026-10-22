@@ -61,12 +61,23 @@
         {
           "id": "AP_PurposeRequestListFrm",
           "caption": "Đề nghị mua hàng",
-          "buttons": []
+          "buttons": [
+            "Gửi đặt mua hàng",
+            "Gửi đề nghị",
+            "In BB giao nhận hàng hóa",
+            "In BB không phù hợp",
+            "In BB kiểm nhập kho HH",
+            "In ĐN phê duyệt HĐ/ĐH",
+            "In đề xuất mua hàng"
+          ]
         },
         {
           "id": "AP_ApprovePurchaseRequestListFrm",
           "caption": "Duyệt đề nghị mua hàng",
-          "buttons": []
+          "buttons": [
+            "Duyệt",
+            "Không duyệt"
+          ]
         },
         {
           "id": "AP_OrderFrm",
@@ -132,32 +143,65 @@
         {
           "id": "IV_InboundRequestFrm",
           "caption": "Phiếu đề nghị nhập hàng",
-          "buttons": []
+          "buttons": [
+            "Gửi BLĐ",
+            "Gửi Thủ kho",
+            "Hủy đợt nháp",
+            "In BBGN HH",
+            "In BBKN kho HH"
+          ]
         },
         {
           "id": "IV_IncomingShipmentStatusFrm",
           "caption": "Xác nhận tình trạng hàng về",
-          "buttons": []
+          "buttons": [
+            "Gửi TP SA",
+            "In BBGN HH",
+            "In BBKN kho HH",
+            "In mã QR",
+            "Từ chối"
+          ]
         },
         {
           "id": "IV_GoodsInfoControlFrm",
           "caption": "Kiểm soát thông tin hàng hóa",
-          "buttons": []
+          "buttons": [
+            "Chọn bước gửi về",
+            "Gửi PM",
+            "In BBGN HH",
+            "In BBKN kho HH",
+            "Từ chối nhanh"
+          ]
         },
         {
           "id": "IV_GoodsQualityControlConfirmFrm",
           "caption": "Kiểm soát và xác nhận chất lượng hàng hóa",
-          "buttons": []
+          "buttons": [
+            "Chọn gửi về",
+            "Gửi kế toán",
+            "Gửi kỹ thuật",
+            "In BBGN HH",
+            "In BBKN kho HH",
+            "Từ chối nhanh"
+          ]
         },
         {
           "id": "IV_GoodsStatusConfirmFrm",
           "caption": "Xác nhận tình trạng hàng hóa",
-          "buttons": []
+          "buttons": [
+            "Chọn bước gửi về",
+            "Gửi kế toán",
+            "In mã QR",
+            "Từ chối nhanh"
+          ]
         },
         {
           "id": "IV_CargoHandlingPlanApprovalFrm",
           "caption": "Phê duyệt phương án hàng hóa",
-          "buttons": []
+          "buttons": [
+            "Hủy/PA khác",
+            "Phê duyệt"
+          ]
         },
         {
           "id": "IV_InboundRequestCTCPFrm",
@@ -339,7 +383,13 @@
         {
           "id": "AP_PurchaseNKFrm",
           "caption": "Mua hàng nhập khẩu",
-          "buttons": []
+          "buttons": [
+            "In mã QR",
+            "Lấy phí trước HQ",
+            "Lấy phí về kho",
+            "Phân bổ trước HQ",
+            "Phân bổ về kho"
+          ]
         }
       ],
       "objects": [
@@ -437,32 +487,68 @@
         {
           "id": "AR_OrderByContractFrm",
           "caption": "Quản lý đơn hàng",
-          "buttons": []
+          "buttons": [
+            "Gửi PM",
+            "Thu hồi để sửa",
+            "Xem thông tin hợp đồng"
+          ]
         },
         {
           "id": "AR_OrderComfirmFrm",
           "caption": "Xác nhận đơn hàng",
-          "buttons": []
+          "buttons": [
+            "Gửi SA",
+            "Từ chối nhanh",
+            "Xem thông tin hợp đồng"
+          ]
         },
         {
           "id": "AR_OrderAproveFrm",
           "caption": "Duyệt đơn hàng",
-          "buttons": []
+          "buttons": [
+            "Chọn bước gửi về",
+            "Gửi Kế toán",
+            "Gửi Kỹ thuật",
+            "In Biên bản bàn giao",
+            "Từ chối nhanh",
+            "Xem thông tin hợp đồng"
+          ]
         },
         {
           "id": "AR_OrderConfirmConditionFrm",
           "caption": "Xác nhận tình trạng hàng hoá",
-          "buttons": []
+          "buttons": [
+            "Chọn bước gửi về",
+            "Gửi Kế toán",
+            "In Biên bản bàn giao",
+            "Từ chối nhanh",
+            "Xem thông tin hợp đồng"
+          ]
         },
         {
           "id": "AR_OrderApproveShipBillFrm",
           "caption": "Duyệt, PXK và hoá đơn",
-          "buttons": []
+          "buttons": [
+            "Chọn bước gửi về",
+            "Gửi Thủ kho",
+            "In Biên bản bàn giao",
+            "Từ chối nhanh",
+            "Xem thông tin hợp đồng"
+          ]
         },
         {
           "id": "AR_OrderShipFrm",
           "caption": "Xuất hàng theo PXK",
-          "buttons": []
+          "buttons": [
+            "Chọn bước gửi về",
+            "In Biên bản bàn giao",
+            "In Biên bản bàn giao (Mẫu dược)",
+            "In Phiếu xuất kho",
+            "In Phiếu xuất kho (Mẫu Dược)",
+            "In mã QR",
+            "Từ chối nhanh",
+            "Xem thông tin hợp đồng"
+          ]
         }
       ],
       "objects": [
@@ -523,42 +609,69 @@
         {
           "id": "IV_InternalTransferRequestFrm",
           "caption": "Phiếu đề nghị điều chuyển nội bộ",
-          "buttons": []
+          "buttons": [
+            "Gửi PM",
+            "Thu hồi để sửa"
+          ]
         },
         {
           "id": "IV_InternalTransferPMFrm",
           "caption": "Xác nhận đề nghị điều chuyển",
-          "buttons": []
+          "buttons": [
+            "Từ chối nhanh",
+            "Đồng ý điều chuyển"
+          ]
         },
         {
           "id": "IV_InternalTransferBatchFrm",
           "caption": "Đợt điều chuyển nội bộ",
-          "buttons": []
+          "buttons": [
+            "Gửi TP SA",
+            "Gửi kỹ thuật",
+            "Đồng bộ đề nghị"
+          ]
         },
         {
           "id": "IV_InternalTransferTechFrm",
           "caption": "Xác nhận thiết bị điều chuyển",
-          "buttons": []
+          "buttons": [
+            "Gửi TP SA",
+            "Từ chối nhanh"
+          ]
         },
         {
           "id": "IV_InternalTransferSAFrm",
           "caption": "Phê duyệt điều chuyển nội bộ",
-          "buttons": []
+          "buttons": [
+            "Chọn bước gửi về",
+            "Gửi Kế toán",
+            "Từ chối nhanh"
+          ]
         },
         {
           "id": "IV_InternalTransferAccountingFrm",
           "caption": "Xử lý điều chuyển nội bộ",
-          "buttons": []
+          "buttons": [
+            "Chọn bước gửi về",
+            "Gửi Kho nguồn",
+            "Từ chối nhanh"
+          ]
         },
         {
           "id": "IV_InternalTransferWarehouseOutFrm",
           "caption": "Xác nhận xuất điều chuyển",
-          "buttons": []
+          "buttons": [
+            "Chọn bước gửi về",
+            "Từ chối nhanh",
+            "Xác nhận xuất / Gửi Kho đích"
+          ]
         },
         {
           "id": "IV_InternalTransferWarehouseInFrm",
           "caption": "Xác nhận nhận điều chuyển",
-          "buttons": []
+          "buttons": [
+            "Xác nhận nhận hàng"
+          ]
         }
       ],
       "objects": [

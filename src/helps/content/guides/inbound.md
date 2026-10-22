@@ -33,7 +33,18 @@ Không cần chờ đủ hóa đơn chi phí mới gửi Thủ kho. Chi phí đ�
 
 Thủ kho mở **Xác nhận tình trạng hàng về**, kiểm đếm và ghi **lô thực tế, số lượng thực tế, hạn dùng thực tế**, kèm các thông tin kiểm nhận. Sau đó **Gửi TP SA**; nếu cần TM làm lại thì chọn **Từ chối** và ghi rõ lý do.
 
-TP SA chuyển PM. PM có thể chuyển **Kỹ thuật** hoặc **Kế toán** theo trường hợp. Kỹ thuật kiểm tra xong chuyển Kế toán. Khi trả lại, người nhận sửa tại đúng bước được yêu cầu rồi gửi lại; không tạo phiếu trùng để bỏ qua bước trả lại.
+Các màn hình tiếp theo nằm cùng menu **Quản lý kho → Đề nghị nhập hàng**:
+
+| Vai trò | Màn hình | Thao tác chính |
+| --- | --- | --- |
+| TP SA | Kiểm soát thông tin hàng hóa | Đối chiếu chứng từ/kiểm nhận; **Gửi PM**, chọn PM nhận việc |
+| PM | Kiểm soát và xác nhận chất lượng hàng hóa | Kiểm tra hàng không phù hợp, kết luận; **Gửi kỹ thuật** hoặc **Gửi kế toán** |
+| Kỹ thuật | Xác nhận tình trạng hàng hóa | Ghi kết quả kiểm tra theo phân công; **Gửi kế toán** khi đủ điều kiện |
+| BLĐ | Phê duyệt phương án hàng hóa | **Phê duyệt** hoặc **Hủy/PA khác** đối với phương án được gửi |
+
+Khi phát hiện hàng không phù hợp, ghi từng dòng tại **Hàng hóa không phù hợp**: hàng/lô, lượng đã kiểm, lượng không phù hợp, tình trạng, cách giải quyết, kết luận và ý kiến đề nghị theo hồ sơ kiểm nhận. Đính kèm ảnh/BBKC khi cần. Không giảm số nhận chỉ để che phần hàng hỏng hoặc thiếu; phải giữ thông tin kiểm nhận và kết luận xử lý.
+
+Khi trả lại, ghi rõ lý do; người nhận sửa tại đúng bước được yêu cầu rồi gửi lại. Không tạo phiếu trùng để bỏ qua bước trả lại.
 
 Trường hợp lập phương án cần BLĐ, TM dùng **Gửi BLĐ**. Đây là nhánh duyệt phương án; không mặc định mọi phiếu đều qua BLĐ.
 

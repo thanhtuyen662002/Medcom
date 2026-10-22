@@ -59,6 +59,8 @@ test('technical references are tied to sanitized current metadata evidence',asyn
     for(const form of article.forms)assert.ok(row.forms.some(f=>f.id===form));
   }
   assert.ok(evidence.uiObservations.some(o=>o.status==='UNKNOWN'));
+  assert.ok(evidence.articles.find(a=>a.id==='inbound').forms.find(f=>f.id==='IV_InboundRequestFrm').buttons.includes('Gửi Thủ kho'));
+  assert.ok(evidence.articles.find(a=>a.id==='internal-transfer').forms.find(f=>f.id==='IV_InternalTransferBatchFrm').buttons.includes('Gửi TP SA'));
 });
 test('current business corrections are present and payment due is not arrival due',()=>{
   const by=id=>docs.articles.find(a=>a.id===id);

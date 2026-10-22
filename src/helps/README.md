@@ -2,6 +2,10 @@
 
 Web tĩnh HTML/CSS/JavaScript. Không cần đăng nhập, backend, DB hoặc bước cài thư viện để xem. Header và sidebar theo mẫu C; nội dung dạng bước thao tác theo mẫu B, không có mục lục bên phải.
 
+![Giao diện trung tâm tài liệu trên desktop](preview/desktop.png)
+
+[Xem bố cục điện thoại](preview/mobile.png)
+
 ## Hai đường dẫn
 
 - `HDSD-ERP/`: hướng dẫn cho người dùng, sơ đồ và xử lý lỗi.

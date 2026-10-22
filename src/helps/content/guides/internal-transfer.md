@@ -29,11 +29,11 @@ PXK phải thuộc đúng đợt và kho nguồn. Không dùng một phiếu xu�
 
 ## 5. Kho nguồn xác nhận xuất
 
-Kho nguồn kiểm tra hàng, lô, hạn dùng, lượng xuất và serial thiết bị theo PXK liên kết. Xác nhận xuất thực tế bằng chức năng của luồng điều chuyển. Đợt chuyển sang **Đang điều chuyển** để Kho đích tiếp nhận.
+Kho nguồn mở **Xác nhận xuất điều chuyển**, kiểm tra hàng, lô, hạn dùng, lượng xuất và serial thiết bị theo PXK liên kết. Ghi số thực xuất, lưu rồi bấm **Xác nhận xuất / Gửi Kho đích**. Đợt chuyển sang **Đang điều chuyển** để Kho đích tiếp nhận.
 
 ## 6. Kho đích nhận từng phần hoặc nhận đủ
 
-Mở bước nhận điều chuyển, lập **PNK điều chuyển** cho đợt. Trên chi tiết PNK, nhập đúng **số lượng thực nhận**, mã hàng, lô, hạn dùng và kho đích; lưu PNK nháp rồi thực hiện xác nhận nhận hàng của luồng.
+Lập **PNK điều chuyển** cho đợt tại chức năng nhập kho. Trên chi tiết PNK, nhập đúng **số lượng thực nhận**, mã hàng, lô, hạn dùng và kho đích; lưu PNK nháp. Mở **Xác nhận nhận điều chuyển (Kho đích)**, kiểm tra phiếu nhập liên kết rồi bấm **Xác nhận nhận hàng**.
 
 Hệ thống kiểm tra số nhận không vượt số đã xuất còn lại. PNK được chốt và tổng số nhận trên đợt tự cập nhật. **Không nhập tay ActualReceiveQty trên bảng đợt để thay thế PNK**.
 
