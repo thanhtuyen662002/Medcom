@@ -34,7 +34,7 @@ test('Markdown escapes raw HTML and disallows executable link schemes',()=>{
 });
 test('generated content is current and article links resolve',async()=>{
   const catalog=JSON.parse(await readFile(path.join(root,'content/catalog.json'),'utf8'));
-  for(const a of catalog.articles){const generated=docs.articles.find(b=>a.id===b.id);assert.equal(generated.guide,await readFile(path.join(root,'content',a.guide),'utf8'));assert.equal(generated.technical,await readFile(path.join(root,'content',a.technical),'utf8'));}
+  for(const a of catalog.articles){const generated=docs.articles.find(b=>a.id===b.id);assert.equal(generated.guide,(await readFile(path.join(root,'content',a.guide),'utf8')).replace(/\r\n?/g,'\n'));assert.equal(generated.technical,(await readFile(path.join(root,'content',a.technical),'utf8')).replace(/\r\n?/g,'\n'));}
   for(const a of docs.articles)for(const m of (a.guide+a.technical).matchAll(/\]\(#([a-z-]+)\)/g))assert.ok(docs.articles.some(b=>b.id===m[1]),m[1]);
 });
 test('public payload has no connections, credentials or real customer identifiers',()=>{

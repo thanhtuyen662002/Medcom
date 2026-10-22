@@ -11,7 +11,7 @@ for (const article of catalog.articles) {
   for (const field of ['guide', 'technical']) {
     const target = path.resolve(root, 'content', article[field]);
     if (!target.startsWith(path.join(root, 'content') + path.sep)) throw new Error('Content path escapes content directory');
-    article[field] = await readFile(target, 'utf8');
+    article[field] = (await readFile(target, 'utf8')).replace(/\r\n?/g, '\n');
     if (!article[field].includes('## ')) throw new Error(`Empty article: ${article.id}`);
   }
 }

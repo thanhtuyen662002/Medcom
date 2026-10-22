@@ -28,4 +28,3 @@ Web tĩnh này không kết nối MedData, không chuyển trạng thái, không
 
 | Đối tượng DB | Loại | Trách nhiệm |
 | --- | --- | --- |
-
