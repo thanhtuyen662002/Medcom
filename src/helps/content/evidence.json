@@ -167,7 +167,8 @@
           "caption": "Kiểm soát thông tin hàng hóa",
           "buttons": [
             "Chọn bước gửi về",
-            "Gửi PM",
+            "Gửi Kỹ thuật",
+            "Gửi PM (không thiết bị)",
             "In BBGN HH",
             "In BBKN kho HH",
             "Từ chối nhanh"
@@ -179,10 +180,9 @@
           "buttons": [
             "Chọn gửi về",
             "Gửi kế toán",
-            "Gửi kỹ thuật",
             "In BBGN HH",
             "In BBKN kho HH",
-            "Từ chối nhanh"
+            "Trả lại bước trước"
           ]
         },
         {
@@ -190,9 +190,9 @@
           "caption": "Xác nhận tình trạng hàng hóa",
           "buttons": [
             "Chọn bước gửi về",
-            "Gửi kế toán",
+            "Gửi PM",
             "In mã QR",
-            "Từ chối nhanh"
+            "Trả TP SA"
           ]
         },
         {
@@ -275,7 +275,7 @@
           "schema": "dbo",
           "name": "IV_InboundRequest_ChangeWorkflowStatusStp",
           "type": "SQL_STORED_PROCEDURE",
-          "definitionSha256": "b4daee9c1166aa289db4d0bfffc6503679845925a843e4e8cd1630ffbd7d519d"
+          "definitionSha256": "ec2655aeb40291d1142abbff235def92ececd5e69fe79b0acbad639a0e5a21eb"
         },
         {
           "schema": "dbo",
@@ -311,14 +311,64 @@
           "name": "IV_InboundRequest_SaveBatchAdapterTrg",
           "type": "SQL_TRIGGER",
           "definitionSha256": "aa854a0f76f18139c1a6a7ef960337795261b89d7a3d505248c3a156802e0717"
+        },
+        {
+          "schema": "dbo",
+          "name": "IV_InboundRequest_HasEquipmentFnc",
+          "type": "SQL_SCALAR_FUNCTION",
+          "definitionSha256": "00fe714865c2faa2b4cd15454d4ec036fd069d839875949be49b95bb9c9bf139"
         }
       ],
       "reviewDate": "2026-10-23",
       "verifiedBehavior": [
         "Native grid copy retains the source PO line and unique detail keys.",
         "An existing draft saves final split quantities in one save with detail-only edits.",
-        "Total allocation includes other noncancelled shipments; over-quota changes roll back atomically."
-      ]
+        "Total allocation includes other noncancelled shipments; over-quota changes roll back atomically.",
+        "Equipment and mixed requests follow SA -> Technical -> PM -> Accounting; non-equipment skips Technical.",
+        "Returns use explicit business-step sets, retain rejection reasons and require Technical resubmission before equipment reaches Accounting again."
+      ],
+      "workflowReview": {
+        "date": "2026-10-23",
+        "source": "Owner-authorized inbound workflow reorder, deployed definitions re-read and native role forms inspected after restart.",
+        "forwardPaths": [
+          "TP SA -> Technical for equipment -> PM -> Accounting",
+          "TP SA -> PM -> Accounting for non-equipment"
+        ],
+        "equipmentRule": "Existing item category TB; mixed requests require Technical. Missing/invalid item classification blocks forward handoff.",
+        "returnRules": {
+          "warehouse": [
+            1
+          ],
+          "SA": [
+            1,
+            3
+          ],
+          "Technical": [
+            1,
+            3,
+            5
+          ],
+          "PMEquipment": [
+            1,
+            3,
+            5,
+            9
+          ],
+          "PMNonEquipment": [
+            1,
+            3,
+            5
+          ]
+        },
+        "verification": {
+          "databasePositiveChecks": 31,
+          "databaseNegativeChecks": 20,
+          "returnQueryChecks": 5,
+          "nativeControls": "Observed new send and return controls in all three role form trees; TP SA active screen inspected.",
+          "nativeTransactions": "Not submitted during native UI verification. SQL transitions and UI command/query contracts tested with rollback."
+        },
+        "unchanged": "Existing status IDs, labels, permissions, other workflows and business documents were preserved."
+      }
     },
     {
       "id": "bptm",

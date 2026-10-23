@@ -57,18 +57,42 @@ Các màn hình tiếp theo nằm cùng menu **Quản lý kho → Đề nghị n
 
 | Vai trò | Màn hình | Thao tác chính |
 | --- | --- | --- |
-| TP SA | Kiểm soát thông tin hàng hóa | Đối chiếu chứng từ/kiểm nhận; **Gửi PM**, chọn PM nhận việc |
-| PM | Kiểm soát và xác nhận chất lượng hàng hóa | Kiểm tra hàng không phù hợp, kết luận; **Gửi kỹ thuật** hoặc **Gửi kế toán** |
-| Kỹ thuật | Xác nhận tình trạng hàng hóa | Ghi kết quả kiểm tra theo phân công; **Gửi kế toán** khi đủ điều kiện |
+| TP SA | Kiểm soát thông tin hàng hóa | Đối chiếu chứng từ/kiểm nhận. Có thiết bị: **Gửi Kỹ thuật**. Không có thiết bị: **Gửi PM (không thiết bị)**, chọn PM nhận việc |
+| Kỹ thuật | Xác nhận tình trạng hàng hóa | Kiểm tra thiết bị, bổ sung BBKC và kết quả kiểm tra; **Gửi PM**, chọn PM nhận việc |
+| PM | Kiểm soát và xác nhận chất lượng hàng hóa | Kiểm soát chất lượng, kết luận và hàng không phù hợp; **Gửi kế toán** khi đủ điều kiện |
 | BLĐ | Phê duyệt phương án hàng hóa | **Phê duyệt** hoặc **Hủy/PA khác** đối với phương án được gửi |
+
+Luồng có thiết bị là **TP SA → Kỹ thuật → PM → Kế toán**. Phiếu không có thiết bị đi **TP SA → PM → Kế toán**. Hệ thống xét loại hàng **Thiết bị** trong danh mục; chỉ cần một dòng thiết bị, kể cả phiếu có cả vật tư và thiết bị, thì cả phiếu phải qua Kỹ thuật.
+
+TP SA không gửi thẳng PM khi phiếu có thiết bị. Kỹ thuật gửi PM sau khi kiểm tra; PM là bước gửi Kế toán của luồng thông thường. Mỗi lần gửi, kiểm tra trạng thái mới và người nhận trong **Lịch sử gởi / duyệt**.
 
 Khi phát hiện hàng không phù hợp, ghi từng dòng tại **Hàng hóa không phù hợp**: hàng/lô, lượng đã kiểm, lượng không phù hợp, tình trạng, cách giải quyết, kết luận và ý kiến đề nghị theo hồ sơ kiểm nhận. Đính kèm ảnh/BBKC khi cần. Không giảm số nhận chỉ để che phần hàng hỏng hoặc thiếu; phải giữ thông tin kiểm nhận và kết luận xử lý.
 
-Khi trả lại, ghi rõ lý do; người nhận sửa tại đúng bước được yêu cầu rồi gửi lại. Không tạo phiếu trùng để bỏ qua bước trả lại.
-
 Trường hợp lập phương án cần BLĐ, TM dùng **Gửi BLĐ**. Đây là nhánh duyệt phương án; không mặc định mọi phiếu đều qua BLĐ.
 
-## 6. Nhập kho và xử lý đợt nháp
+## 6. Trả lại và gửi xử lý lại
+
+| Người đang xử lý | Nút trả lại | Người nhận lại |
+| --- | --- | --- |
+| Thủ kho | **Từ chối** | TM |
+| TP SA | **Từ chối nhanh** | Thủ kho |
+| Kỹ thuật | **Trả TP SA** | TP SA |
+| PM, phiếu có thiết bị | **Trả lại bước trước** | Kỹ thuật |
+| PM, phiếu không có thiết bị | **Trả lại bước trước** | TP SA |
+
+Nếu cần trả về bước xa hơn, dùng nút chọn bước trên đúng màn hình:
+
+- **TP SA — Chọn bước gửi về:** TM hoặc Thủ kho.
+- **Kỹ thuật — Chọn bước gửi về:** TM, Thủ kho hoặc TP SA.
+- **PM — Chọn gửi về:** TM, Thủ kho hoặc TP SA; chỉ phiếu có thiết bị mới có thêm Kỹ thuật.
+
+Nhập rõ lý do trước khi xác nhận. Phiếu chuyển sang trạng thái **Yêu cầu … xem lại** của vai trò nhận. Người nhận mở lại đúng phiếu, sửa nội dung được yêu cầu, lưu và gửi tiếp theo luồng ở bước 5. Không tạo phiếu trùng hoặc tự đổi trạng thái để bỏ qua bước trả lại.
+
+Ví dụ, PM trả phiếu thiết bị về Kỹ thuật thì Kỹ thuật kiểm tra lại → **Gửi PM** → PM xác nhận → **Gửi kế toán**. Với phiếu không có thiết bị, PM trả về TP SA thì TP SA xử lý lại → **Gửi PM (không thiết bị)**.
+
+Phiếu thiết bị đang nằm ở PM theo luồng cũ nhưng chưa được Kỹ thuật gửi PM theo luồng mới sẽ bị chặn khi gửi Kế toán. PM dùng **Trả lại bước trước** để chuyển Kỹ thuật, sau đó xử lý lại theo chuỗi trên. Giữ nguyên lịch sử phiếu.
+
+## 7. Nhập kho và xử lý đợt nháp
 
 Phiếu đề nghị, chứng từ mua hàng và phiếu nhập kho là các chứng từ liên kết riêng. Chỉ kiểm nhận/gửi đề nghị không thay thế việc lập và chốt phiếu nhập kho theo nghiệp vụ.
 
