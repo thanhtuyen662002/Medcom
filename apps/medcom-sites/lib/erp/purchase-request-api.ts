@@ -84,7 +84,7 @@ const snapshot=z.object({
  {kind:"purchase-requests",documentId:value.document.purchaseRequestId,branchId:value.document.branchId,stateToken:value.stateToken,
   statusId:value.document.statusId,isLocked:value.document.isLocked,page:null,pageSize:null},
  value.document.lines.map(line=>({lineId:line.lineId,itemId:line.values.itemId})))}));
-const workspace=z.object({branchIds:z.array(id).min(1).max(200),writeAvailable:z.literal(false),writeReason:z.literal("numbering_journal_runtime_unqualified"),
+const workspace=z.object({branchIds:z.array(id).min(1).max(200),writeAvailable:z.boolean(),writeReason:z.string(),
  lookups:z.array(z.object({kind:z.enum(["branches","items","objects","purposes","currencies"]),available:z.boolean(),reason:z.string().nullable(),evidence:z.string()}).passthrough()).max(5)}).passthrough();
 const list=z.object({rows:z.array(z.object({
   documentId:id,
