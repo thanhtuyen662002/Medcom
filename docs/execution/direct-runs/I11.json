@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "goal_issue": 45,
+  "ticket_id": "I11",
+  "role": "direct_interactive",
+  "owner": "Mika under owner-directed Medcom continuation",
+  "run_id": "0e2b21d2-3e83-4b32-b8f2-6ec2f716ba7b",
+  "base_sha": "2f337a5b06000b9ad8b37f064e0e6ef9b995f2d0",
+  "work_branch": "codex/g45-pm-return-i11-20261005",
+  "claim_branch": "medcom-claims/g45/direct/I11",
+  "predecessor_ticket": "I10",
+  "predecessor_handoff": "https://github.com/thanhtuyen662002/Medcom/pull/62#issuecomment-5997633562",
+  "scope": [
+    "tests/backend/Medcom.Api.Tests/PmReturnSqlAcceptanceFixture.cs",
+    "tests/backend/Medcom.Api.Tests/PmReturnSqlAcceptanceTests.cs",
+    "tests/backend/Medcom.Api.Tests/PmReturnLiveSessionIntegrationTests.cs",
+    "docs/backend/PM_RETURN_SQL_ACCEPTANCE.md",
+    "docs/execution/checkpoints/I11_PM_RETURN_SQL_ACCEPTANCE.md",
+    "docs/execution/direct-runs/I11.json"
+  ],
+  "purpose": "Build opt-in actual-workflow SQL acceptance harness and offline real LocalWebSessions composition, without executing SQL or activating runtime.",
+  "scheduled_successor": false,
+  "production_accepted": false,
+  "automation_policy": "No schedule changes",
+  "publication_policy": "Parent sole publisher; new isolated worker checkout; independent code/privacy review and exact-head/base CI required.",
+  "sql_policy": "No SQL connections/execution during this implementation. Future opt-in cases require externally provisioned separately authorized disposable target, exact source/schema pins and trusted TLS. No schema application/create/drop or production data operations.",
+  "constraints": [
+    "Five new worker files only; immutable admission marker remains unchanged; no existing source/project/lock/schema/API/DI/readiness/FE changes",
+    "Preserve all B01/P01 and earlier claims and worktrees; confirm live non-overlap before coding",
+    "Default test discovery and ordinary offline CI perform no SQL target discovery, private file read, connection, schema setup or fixture initialization",
+    "Use explicit runtime opt-in attribute and Category=LegacyRuntime plus dedicated acceptance trait; initialize fixture only inside admitted test bodies",
+    "Future SQL tests call actual production SqlPmReturnWorkflow SqlClient constructor, no copied or replacement executor; dedicated closed connections and bounded commands",
+    "Only explicit externally provisioned isolated target; no auto-discovery, SSL bypass, schema provisioning, database create/drop or permissions/service/credential changes",
+    "Synthetic rows only; no raw owner SQL, customer rows, credentials, private paths or private outputs in code, tests, logs, artifacts or transfer",
+    "Source/schema pins and binding custody must fail closed; ambiguous or missing runtime configuration cannot silently select another target",
+    "Independent persisted effect/log/audit/journal observations, original-receipt replay and two-connection competition; explicitly distinguish implemented cases from unobserved runtime evidence",
+    "Offline tests reuse existing I10 recording helpers with real LocalWebSessions resolver; test logout/expiry/revocation/refresh/cancellation and independent sessions without asserting realSQL proof",
+    "Crash/lost-ACK/nested rollback/deadlock/restore continuity and WinForms coexistence remain UNKNOWN unless actually exercised on an authorized target",
+    "Client expected revision and monotonic document-version/ABA protection remain unresolved; hashes or optional fields are not acceptance",
+    "No Tools.dll login, production deployment, runtime activation or full goal completion claim"
+  ],
+  "created_at": "2026-10-05T16:08:00Z"
+}
