@@ -36,13 +36,16 @@ export function FormField({ label, error, hint, children, required = false, id: 
   </div>;
 }
 
-export interface FormSectionProps { title: string; description?: string; children: ReactNode; className?: string }
+export interface FormSectionProps { title: string; description?: string; children: ReactNode; className?: string; layout?: "grid" | "stack"; action?: ReactNode }
 
-export function FormSection({ title, description, children, className }: FormSectionProps) {
+export function FormSection({ title, description, children, className, layout = "grid", action }: FormSectionProps) {
   const titleId = useId();
   return <section aria-labelledby={titleId} className={cn("min-w-0 space-y-4", className)}>
-    <div><h2 id={titleId} className="text-base font-semibold text-neutral-900 dark:text-neutral-100">{title}</h2>
-      {description && <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">{description}</p>}</div>
-    <div className="grid min-w-0 gap-4 md:grid-cols-2">{children}</div>
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="min-w-0"><h2 id={titleId} className="text-base font-semibold text-neutral-900 dark:text-neutral-100">{title}</h2>
+        {description && <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">{description}</p>}</div>
+      {action}
+    </div>
+    <div className={layout === "grid" ? "grid min-w-0 gap-4 md:grid-cols-2" : "min-w-0 space-y-4"}>{children}</div>
   </section>;
 }
