@@ -28,10 +28,10 @@ const plugin = {
   },
 };
 const exports = ['orders', 'purchases', 'inbound', 'home', 'settings'].map(name => 'export * from "./components/untitledui/tab-' + name + '";').join('\n')
-  + '\nexport * from "./components/untitledui/qr-scanner-view";';
+  + '\nexport * from "./components/untitledui/qr-scanner-view"; export {CreateFab} from "./components/app/create-fab";';
 await build({ stdin: { contents: exports, loader: 'tsx', resolveDir: process.cwd() }, outfile: output + '/screens.cjs', bundle: true,
   platform: 'node', format: 'cjs', packages: 'external', alias: { '@': process.cwd() }, jsx: 'automatic', plugins: [plugin], logLevel: 'warning' });
-const { TabOrders, TabPurchases, TabInbound, TabHome, TabSettings, UntitledQrScannerView } = require('../' + output + '/screens.cjs');
+const { TabOrders, TabPurchases, TabInbound, TabHome, TabSettings, UntitledQrScannerView, CreateFab } = require('../' + output + '/screens.cjs');
 const user = { username: 'qa-session', displayName: 'Người dùng phiên tổng hợp', role: 'Vai trò tổng hợp', branchId: 'QA-A', companyName: 'Đơn vị tổng hợp' };
 const row = (id = 'QA-001', statusId = 1) => ({
   documentId: id, branchId: 'QA-A', statusId, statusName: 'Trạng thái từ API', statusForeColor: '#FFFFFF', statusBackColor: '#00695C',
@@ -98,7 +98,7 @@ for (const spec of specifications) {
       assert.equal(calls.length, 1);
       assert.deepEqual(calls[0], { method: spec.method, kind: spec.kind, page: 1, search: '', branch: 'QA-A', pageSize: 20 });
       const html = markup(tree);
-      assert.match(html, /background-color:#00695C/);
+      assert.match(html, /--status-dark-bg:#[A-F0-9]{6}/); // P2-06 theme tones, not raw ERP paint.
       assert.ok(html.includes('<h1') && html.includes(spec.title));
       const positions = ['role="search"', 'aria-label="Bộ lọc"', 'aria-label="Làm mới"'].map(value => html.indexOf(value));
       assert.ok(positions.every(position => position >= 0));
@@ -108,8 +108,12 @@ for (const spec of specifications) {
       assert.equal(text(mobile).split('QA-001').length - 1, 1, 'one code per mobile card');
       const size = tree.root.findAll(node => node.type === 'select' && node.props['aria-label'] === 'Số dòng mỗi trang')[0];
       assert.deepEqual(size.findAllByType('option').map(node => node.props.value), [20, 50, 100]);
-      assert.match(button(tree, spec.fab).props.className, /fixed/);
-      await click(button(tree, spec.fab));
+      // react-test-renderer has no DOM portal host; retain permission/callback
+      // checks here and verify the actual mounted FAB in app-visual-qa.
+      const fab = tree.root.findByType(CreateFab);
+      assert.equal(fab.props.allowed, true);
+      assert.equal(fab.props.label, spec.fab);
+      await click(fab);
       assert.deepEqual(creations, ['create']);
       assertTouchClasses(tree);
       await act(async () => tree.update(h(spec.Component, { currentBranch: 'QA-A' })));

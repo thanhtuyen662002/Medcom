@@ -8,9 +8,12 @@ import { erpClient } from "@/lib/erp/erp-client";
 import type { DocumentDetail, InboundRequestHeader, InboundRequestLineFields } from "@/lib/erp/contracts";
 import { errorMessage } from "@/lib/erp/api";
 
+import { formatDateTime } from "@/lib/erp/document-detail/format";
 import {formatMoney} from "@/lib/erp/money";
 
 function formatVND(value?: string | null, currency = "VND"): string {
+  const plainCurrency = value?.match(/^(-?\d+)\s*([A-Z]{3}|[₫$€])$/);
+  if (plainCurrency) return `${formatMoney(plainCurrency[1])} ${plainCurrency[2]}`;
   if (value && /[A-Z]{3}|[₫$€]/.test(value)) return value;
   return `${formatMoney(value || "0")}${currency ? ` ${currency}` : ""}`;
 }
@@ -125,9 +128,9 @@ export function TabInbound({
               (raw.documentDateDisplay as string) ||
               (h as any)?.documentDateDisplay ||
               (h?.documentDate
-                ? h.documentDate.slice(0, 10)
+                ? h.documentDate
                 : r.documentDate
-                ? r.documentDate.slice(0, 10)
+                ? r.documentDate
                 : "—");
             const declarationNumber =
               h?.declarationNumber || (raw.declarationNumber as string);
@@ -221,7 +224,7 @@ export function TabInbound({
             f?.expireDateByDocument ||
             (rawL.expireDateByDocument as string) ||
             (rawL.expireDate as string);
-          const exp = (rawL.expireDateDisplay as string) || (expVal ? expVal.slice(0, 10) : item.expiryDate);
+          const exp = formatDateTime((rawL.expireDateDisplay as string) || expVal || item.expiryDate);
           const unitPriceVal = f?.unitPrice ?? (rawL.unitPrice as string);
           const amountVal = f?.amount ?? (rawL.amount as string);
           const unitPriceStr = unitPriceVal != null ? formatVND(unitPriceVal, "VND") : (rawL.unitPriceDisplay as string) || undefined;
@@ -294,7 +297,7 @@ export function TabInbound({
   const statuses = [{ value: "", label: "Tất cả" }, ...Object.entries(stageLabels).map(([value, label]) => ({ value, label }))];
   const tableColumns: RecordColumn<InboundReceipt>[] = [
     { id: "document", label: "Mã phiếu nhập", render: item => <span className="font-mono font-semibold text-brand-700 dark:text-brand-300">{item.code}</span> },
-    { id: "date", label: "Ngày chứng từ", className: "whitespace-nowrap", render: item => item.receivedDate },
+    { id: "date", label: "Ngày chứng từ", className: "whitespace-nowrap", render: item => formatDateTime(item.receivedDate) },
     { id: "supplier", label: "Nhà cung cấp", className: "min-w-60 max-w-sm", render: item => <span className="line-clamp-2 break-words">{item.supplier}</span> },
     { id: "status", label: "Trạng thái", render: getStageBadge },
     { id: "order", label: "Đơn hàng PO", render: item => item.orderNumber || "—" },
@@ -316,26 +319,26 @@ export function TabInbound({
 
   return (
     <div className="min-w-0 space-y-3 pb-8 animate-uui-fade-in">
-      <ScreenHeader title="Nhập kho" subtitle={"Chi nhánh " + currentBranch + " · " + inbounds.length + " chứng từ trên trang"} />
+      <ScreenHeader title="Nhập kho" branch={currentBranch} count={inbounds.length} />
       <ScreenToolbar search={searchInput} onSearchChange={setSearchInput} onSearch={setSearch}
         onFilter={() => setFilterOpen(true)} filterOpen={filterOpen} filterId="inbound-filters"
         filterCount={Number(Boolean(stageFilter)) + Number(pageSize !== 20)}
         refreshing={loading || isRefreshing} onRefresh={() => void loadInbounds(true)} onCreate={onOpenNewInbound} />
-      <FilterChips items={statuses.map(status => ({ ...status, count: status.value ? inbounds.filter(item => item.stage === status.value).length : inbounds.length }))}
+      <FilterChips description="Bộ lọc trạng thái và số đếm áp dụng cho trang hiện tại." items={statuses.map(status => ({ ...status, count: status.value ? inbounds.filter(item => item.stage === status.value).length : inbounds.length }))}
         value={stageFilter} onChange={setStageFilter} onPageChange={() => { if (page !== 1) void loadInbounds(false, 1); }} />
-      <p className="text-sm text-neutral-500 dark:text-neutral-400">Bộ lọc trạng thái và số đếm áp dụng cho trang hiện tại.</p>
       <RecordList label="Danh sách nhập kho" rows={filtered} columns={tableColumns} rowId={item => item.id}
-        card={item => ({ code: item.code, title: item.supplier, meta: [item.receivedDate, item.orderNumber ? "PO: " + item.orderNumber : null, item.invoiceNo ? "Hóa đơn: " + item.invoiceNo : null], status: { label: item.statusName || stageLabels[item.stage], tone: stageTones[item.stage], statusForeColor: item.statusForeColor, statusBackColor: item.statusBackColor } })}
+        card={item => ({ code: item.code, title: item.supplier, meta: [formatDateTime(item.receivedDate), item.orderNumber ? "PO: " + item.orderNumber : null, item.invoiceNo ? "Hóa đơn: " + item.invoiceNo : null], status: { label: item.statusName || stageLabels[item.stage], tone: stageTones[item.stage], statusForeColor: item.statusForeColor, statusBackColor: item.statusBackColor } })}
         onOpen={handleOpenDetail} loading={loading} error={error} onRetry={() => void loadInbounds(false)}
         empty={{ message: "Chưa có chứng từ khớp với tìm kiếm hoặc bộ lọc.", onCreate: onOpenNewInbound }}
         pagination={{ page, pageSize, rowCount: inbounds.length, visibleRowCount: filtered.length, hasMore, busy: loading || isRefreshing, maxPage: 1000,
           onPageChange: nextPage => void loadInbounds(false, nextPage), onPageSizeChange: size => void loadInbounds(false, 1, size) }} />
       <FilterSheet id="inbound-filters" open={filterOpen} onClose={() => setFilterOpen(false)} value={{ status: stageFilter, pageSize }} statuses={statuses}
         onApply={value => { setStageFilter(value.status); void loadInbounds(false, 1, value.pageSize); }} />
-      {onOpenNewInbound && <CreateFab allowed label="Tạo phiếu nhập kho" onClick={onOpenNewInbound} />}
+      {onOpenNewInbound && <CreateFab allowed={isActive && !activeItem && !filterOpen} label="Tạo phiếu nhập kho" onClick={onOpenNewInbound} />}
 
       {/* Inbound Detail Bottom Sheet */}
       <UntitledBottomSheet
+        presentation="document"
         open={Boolean(activeItem)}
         onClose={() => setActiveItem(null)}
         title={activeItem?.code || "Chi tiết biên bản nhập kho"}
@@ -347,7 +350,7 @@ export function TabInbound({
             <div className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 shadow-xs space-y-3">
               <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-neutral-100 dark:border-neutral-800">
                 <div className="space-y-0.5">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-400">
+                  <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
                     Mã chứng từ
                   </span>
                   <p className="font-mono text-sm sm:text-base font-bold text-neutral-900 dark:text-white">
@@ -359,8 +362,8 @@ export function TabInbound({
 
               {/* Tên đối tượng / Nhà cung cấp (ObjectName - có thể dài nên bố trí trọn dòng rõ ràng) */}
               <div className="py-1 border-b border-neutral-100 dark:border-neutral-800/60">
-                <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold block mb-1">
-                  Nhà cung cấp / Đối tượng (ObjectName)
+                <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 block mb-1">
+                  Nhà cung cấp / Đối tượng
                 </span>
                 <p className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-white leading-relaxed break-words">
                   {activeItem.supplier}
@@ -371,7 +374,7 @@ export function TabInbound({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
                 {activeItem.orderNumber && (
                   <div className="flex flex-col py-1">
-                    <span className="text-[10px] text-neutral-400">Mã Đề nghị mua hàng PO</span>
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400">Mã Đề nghị mua hàng PO</span>
                     <span className="font-semibold text-neutral-800 dark:text-neutral-200 font-mono">
                       {activeItem.orderNumber}
                     </span>
@@ -379,27 +382,27 @@ export function TabInbound({
                 )}
                 {activeItem.invoiceNo && (
                   <div className="flex flex-col py-1">
-                    <span className="text-[10px] text-neutral-400">Số hóa đơn VAT</span>
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400">Số hóa đơn VAT</span>
                     <span className="font-semibold text-neutral-800 dark:text-neutral-200">
                       {activeItem.invoiceNo}
                     </span>
                   </div>
                 )}
                 <div className="flex flex-col py-1">
-                  <span className="text-[10px] text-neutral-400">Ngày lập chứng từ</span>
+                  <span className="text-xs text-neutral-500 dark:text-neutral-400">Ngày lập chứng từ</span>
                   <span className="font-semibold text-neutral-800 dark:text-neutral-200">
-                    {activeItem.receivedDate}
+                    {formatDateTime(activeItem.receivedDate)}
                   </span>
                 </div>
                 <div className="flex flex-col py-1">
-                  <span className="text-[10px] text-neutral-400">Người kiểm soát</span>
+                  <span className="text-xs text-neutral-500 dark:text-neutral-400">Người kiểm soát</span>
                   <span className="font-semibold text-neutral-800 dark:text-neutral-200">
                     {activeItem.inspector}
                   </span>
                 </div>
                 {activeItem.departurePoint && activeItem.destinationPoint && (
                   <div className="flex flex-col py-1 sm:col-span-2">
-                    <span className="text-[10px] text-neutral-400">Tuyến vận chuyển</span>
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400">Tuyến vận chuyển</span>
                     <span className="font-semibold text-neutral-800 dark:text-neutral-200 break-words">
                       {activeItem.departurePoint} → {activeItem.destinationPoint}
                     </span>
@@ -407,7 +410,7 @@ export function TabInbound({
                 )}
                 {activeItem.header?.totalPalletQuantityByDocument && (
                   <div className="flex flex-col py-1">
-                    <span className="text-[10px] text-neutral-400">Tổng Pallet (CT / Thực tế)</span>
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400">Tổng Pallet (CT / Thực tế)</span>
                     <span className="font-semibold text-neutral-800 dark:text-neutral-200">
                       {activeItem.header.totalPalletQuantityByDocument} / {activeItem.header.totalPalletQuantityByReal || "—"} pallet
                     </span>
@@ -415,7 +418,7 @@ export function TabInbound({
                 )}
                 {activeItem.header?.totalBarrelQuantityByDocument && (
                   <div className="flex flex-col py-1">
-                    <span className="text-[10px] text-neutral-400">Tổng thùng (CT / Thực tế)</span>
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400">Tổng thùng (CT / Thực tế)</span>
                     <span className="font-semibold text-neutral-800 dark:text-neutral-200">
                       {activeItem.header.totalBarrelQuantityByDocument} / {activeItem.header.totalBarrelQuantityByReal || "—"} thùng
                     </span>
@@ -423,7 +426,7 @@ export function TabInbound({
                 )}
                 {activeItem.header?.notes && (
                   <div className="flex flex-col py-1 sm:col-span-2">
-                    <span className="text-[10px] text-neutral-400">Ghi chú</span>
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400">Ghi chú</span>
                     <span className="font-medium text-neutral-700 dark:text-neutral-300 break-words">
                       {activeItem.header.notes}
                     </span>

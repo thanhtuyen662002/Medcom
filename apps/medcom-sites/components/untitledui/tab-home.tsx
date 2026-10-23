@@ -6,6 +6,7 @@ import { AppButton, RecordCard, ListState } from "@/components/app";
 import { UntitledMetricCard } from "./metric-card";
 import { MetricCardSkeleton } from "./skeleton";
 import type { PurchaseItem } from "./tab-purchases";
+import { formatDateTime } from "@/lib/erp/document-detail/format";
 import { erpClient } from "@/lib/erp/erp-client";
 import type { NavTabId } from "./bottom-nav";
 
@@ -57,7 +58,7 @@ export function TabHome({
               id: r.documentId, code: r.documentId,
               purpose: r.fields?.purposeDescOrClient || r.fields?.notes || "Đề nghị mua sắm",
               department: r.department || "—", creator: r.personSuggest || "—", branch,
-              date: r.purchaseDate ? new Date(r.purchaseDate).toLocaleDateString("vi-VN") : "—",
+              date: formatDateTime(r.purchaseDate),
               totalAmount: "Xem chi tiết", status: r.statusId === 1 ? "pending" : "draft", lines: [],
               statusForeColor: typeof r.statusForeColor === "string" ? r.statusForeColor : null,
               statusBackColor: typeof r.statusBackColor === "string" ? r.statusBackColor : null,

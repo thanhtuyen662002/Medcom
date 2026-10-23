@@ -32,9 +32,10 @@ import type { ErpDocumentPage } from "@/lib/erp/erp-screen-contracts";
 
 import { useSalesOrderStatuses } from "@/components/erp/sales-order-status-filter";
 import { documentStatusLabel } from "@/lib/erp/document-status";
+import { formatDateTime } from "@/lib/erp/document-detail/format";
 import { formatMoney as formatMoneyValue } from "@/lib/erp/money";
 import { MoneyInput } from "@/components/erp/money-input";
-import { WRITE_GATED_MODULES, getActionErrorMessage, getActionReasonMessage, formatVietnamDate } from "@/lib/erp/document-detail/controllers/erp-detail-rules";
+import { WRITE_GATED_MODULES, getActionErrorMessage, getActionReasonMessage } from "@/lib/erp/document-detail/controllers/erp-detail-rules";
 
 interface TabErpScreenProps {
   module: ErpScreenModule;
@@ -836,7 +837,7 @@ export function TabErpScreen({
   const dateColumn = columnConfig.find(column => column.kind === "date")!;
   const dateText = (row: ErpDocumentRow) => {
     const display = listText(row, ...dateColumn.keys.filter(key => key.endsWith("Display")));
-    return display || formatVietnamDate(listText(row, ...dateColumn.keys.filter(key => !key.endsWith("Display"))));
+    return formatDateTime(display || listText(row, ...dateColumn.keys.filter(key => !key.endsWith("Display"))));
   };
   const tableColumns: RecordColumn<ErpDocumentRow>[] = columnConfig.map(column => ({
     id: column.id, label: column.label,
@@ -903,7 +904,7 @@ export function TabErpScreen({
 
   return (
     <div className="min-w-0 space-y-4 pb-24 animate-uui-fade-in">
-      <ScreenHeader title={title} branch={currentBranch} />
+      <ScreenHeader title={title} branch={currentBranch} count={rows.length} />
       <ScreenToolbar
         search={search} onSearchChange={setSearch} debounceMs={null}
         onSearch={value => {
@@ -919,6 +920,7 @@ export function TabErpScreen({
       />
       <div className="min-w-0" aria-busy={isSalesOrderModule && salesStatuses.busy}>
         <FilterChips items={chipItems} value={selectedStatus} onChange={value => selectStatus(value)}
+          description={!isSalesOrderModule ? "Bộ lọc trạng thái và số đếm áp dụng cho trang hiện tại." : undefined}
           label={isSalesOrderModule ? "Lọc trạng thái đơn hàng" : "Lọc nhanh trạng thái"}
           // selectStatus sends the status and page 1 together in one server read.
           onPageChange={() => {}} />
@@ -946,7 +948,7 @@ export function TabErpScreen({
         pagination={{ page, pageSize, rowCount: rows.length, visibleRowCount: displayRows.length, hasMore, busy: isLoadingList || isRefreshing,
           onPageChange: nextPage => void loadList(search.trim() === appliedSearchRef.current ? nextPage : 1),
           onPageSizeChange: size => void loadList(1, false, undefined, size) }} />
-      <CreateFab allowed={isCreateVisible && !selectedDocId && !createModalOpen && !poCreateOpen && !prCreateOpen && !filtersOpen}
+      <CreateFab allowed={isActive && isCreateVisible && !selectedDocId && !createModalOpen && !poCreateOpen && !prCreateOpen && !filtersOpen}
         label={`Tạo ${getModuleTitle(module)}`} onClick={openCreate} disabled={!canCreate} />
 
       {(() => {

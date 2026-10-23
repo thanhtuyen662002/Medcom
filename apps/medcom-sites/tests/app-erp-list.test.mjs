@@ -31,7 +31,7 @@ const leaves = {
 await build({
   stdin: { contents: `export {TabErpScreen} from './components/untitledui/tab-erp-screen';
     export {ERP_LIST_COLUMNS} from './lib/erp/list-columns'; export {erpScreenModules} from './lib/erp/proxy-policy';
-    export {FilterSheet} from './components/app/filter-sheet';`, resolveDir: app, loader: 'tsx' },
+    export {FilterSheet} from './components/app/filter-sheet'; export {CreateFab} from './components/app/create-fab';`, resolveDir: app, loader: 'tsx' },
   outfile: path.join(output, 'fixture.cjs'), bundle: true, platform: 'node', format: 'cjs', packages: 'external',
   alias: { '@': app }, jsx: 'automatic', logLevel: 'warning', plugins: [{
     name: 'synthetic-erp-transport', setup(builder) {
@@ -44,7 +44,7 @@ await build({
 });
 const require = createRequire(import.meta.url), React = require('react');
 const { create, act } = require('react-test-renderer');
-const { TabErpScreen, ERP_LIST_COLUMNS, erpScreenModules, FilterSheet } = require(path.join(output, 'fixture.cjs'));
+const { TabErpScreen, ERP_LIST_COLUMNS, erpScreenModules, FilterSheet, CreateFab } = require(path.join(output, 'fixture.cjs'));
 const h = React.createElement;
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 const flush = async () => { for (let i = 0; i < 6; i++) await act(async () => {}); };
@@ -200,8 +200,10 @@ test('desktop create and mobile FAB preserve visible/enabled and write admission
   for (const [suffix, visible, enabled] of [['hidden', false, false], ['disabled', true, false], ['allowed', true, true]]) {
     await mounted('sales-orders', tree => {
       const create = button(tree, 'Tạo mới');
-      const fab = button(tree, 'Tạo Quản lý đơn hàng');
-      assert.equal(Boolean(create), visible); assert.equal(Boolean(fab), visible);
+      // P2-06 portals the host button. This renderer checks admission props;
+      // app-visual-qa checks DOM visibility and disabled controls in a browser.
+      const fab = tree.root.findByType(CreateFab);
+      assert.equal(Boolean(create), visible); assert.equal(fab.props.allowed, visible);
       if (visible) { assert.equal(create.props.disabled, !enabled); assert.equal(fab.props.disabled, !enabled); }
     }, { branch: `P2-PERM-${suffix}`, actions: () => [{ id: 'create', visible, enabled }] });
   }

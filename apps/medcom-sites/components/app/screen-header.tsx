@@ -11,7 +11,7 @@ export interface ScreenHeaderProps {
 }
 
 export function ScreenHeader({ title, subtitle, branch, count, onCreate, createLabel = "Tạo mới", createDisabled }: ScreenHeaderProps) {
-  const description = subtitle ?? [branch ? `Chi nhánh ${branch}` : null, count !== undefined ? `${count} chứng từ` : null].filter(Boolean).join(" · ");
+  const description = subtitle ?? [branch ? `Chi nhánh ${branch}` : null, count !== undefined ? `${count} chứng từ trên trang` : null].filter(Boolean).join(" · ");
   return <header className="flex min-w-0 items-center justify-between gap-4 py-4">
     <div className="min-w-0">
       <h1 className="break-words text-xl font-semibold text-neutral-900 dark:text-neutral-100">{title}</h1>

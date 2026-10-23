@@ -75,3 +75,50 @@ export function statusColorsFrom(
   const record = source as Record<string, unknown>;
   return statusColorStyle(record[foreKey], record[backKey]);
 }
+
+export type StatusTone = "neutral" | "success" | "warning" | "danger" | "info";
+export type StatusBadgeStyle = Record<"--status-fg" | "--status-bg" | "--status-dark-fg" | "--status-dark-bg", string>;
+
+// Presentation only: never changes status IDs, filter groups or workflow rules.
+export function statusBadgeTone(label: string, fallback?: StatusTone): StatusTone | undefined {
+  if (/từ chối|không duyệt|hủy|huỷ|trả về/i.test(label)) return "danger";
+  if (/chờ|đang|chưa/i.test(label)) return "warning";
+  if (/hoàn tất|hoàn thành|đã duyệt|đã nhập|đã khóa/i.test(label)) return "success";
+  if (/nháp|dự thảo|mới lập/i.test(label)) return "neutral";
+  return fallback;
+}
+
+const badgePairs: Record<StatusTone, readonly [string, string, string, string]> = {
+  neutral: ["#404040", "#F5F5F5", "#E5E5E5", "#262626"],
+  success: ["#166534", "#F0FDF4", "#BBF7D0", "#052E16"],
+  warning: ["#92400E", "#FFFBEB", "#FDE68A", "#451A03"],
+  danger: ["#991B1B", "#FEF2F2", "#FECACA", "#450A0A"],
+  info: ["#0C224F", "#EDF1F9", "#B2C4E6", "#0A1E46"],
+};
+
+function blend(left: Rgb, right: Rgb, weight: number): Rgb {
+  const channel = (index: number) => Math.round(left[index] * (1 - weight) + right[index] * weight);
+  return [channel(0), channel(1), channel(2)];
+}
+function hex(rgb: Rgb): string {
+  return "#" + rgb.map(channel => channel.toString(16).padStart(2, "0")).join("").toUpperCase();
+}
+
+/** Shared web badge tones. Unknown ERP hues are tinted rather than painted neon.
+ * Both themes supply their own complete, opaque pair (including foreground-only
+ * ERP configurations), so contrast does not depend on the surrounding surface. */
+export function statusBadgeStyle(foreColor: unknown, backColor: unknown, tone?: StatusTone): StatusBadgeStyle {
+  const hue = parseColor(backColor) ?? parseColor(foreColor);
+  let pair = badgePairs[tone ?? "neutral"];
+  if (!tone && hue) {
+    const lightBack = blend(WHITE, hue.rgb, 0.08);
+    const lightFore = blend(BLACK, hue.rgb, 0.35);
+    const darkBack = blend([23, 23, 23], hue.rgb, 0.18);
+    const darkFore = blend(WHITE, hue.rgb, 0.28);
+    pair = [
+      contrastRatio(lightFore, lightBack) >= MIN_TEXT_CONTRAST ? hex(lightFore) : readableText(lightBack), hex(lightBack),
+      contrastRatio(darkFore, darkBack) >= MIN_TEXT_CONTRAST ? hex(darkFore) : readableText(darkBack), hex(darkBack),
+    ];
+  }
+  return { "--status-fg": pair[0], "--status-bg": pair[1], "--status-dark-fg": pair[2], "--status-dark-bg": pair[3] };
+}

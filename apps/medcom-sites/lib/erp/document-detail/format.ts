@@ -39,8 +39,12 @@ export function formatBoolean(value: unknown): string {
 function formatDateValue(value: unknown, includeTime: boolean): string {
   if (isEmptyDetailValue(value)) return EMPTY_VALUE;
   if (typeof value !== "string") return String(value);
-  // Preserve the prefix parsing and midnight behavior of tab-erp-screen.tsx:254–261.
-  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2}))?)?/);
+  // Display companions may already use Vietnamese dates. Keep wall-clock dates
+  // (no timezone conversion), remove midnight and omit seconds from real times.
+  const localized = value.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/);
+  const match = localized
+    ? [localized[0], localized[3], localized[2], localized[1], ...localized.slice(4)]
+    : value.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2}))?)?/);
   if (!match) return String(value);
   const [, y, m, d, hh, mm, ss] = match;
   if (includeTime && hh && mm && !(hh === "00" && mm === "00" && (!ss || ss === "00")))
