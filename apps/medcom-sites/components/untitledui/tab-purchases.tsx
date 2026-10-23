@@ -1,26 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import {
-  Search,
-  Plus,
-  FileText,
-  Calendar,
-  Building,
-  User,
-  CheckCircle2,
-  Clock,
-  Printer,
-  ChevronRight,
-  RefreshCw,
-  AlertCircle,
-} from "lucide-react";
-import { UntitledBadge } from "./badge";
-import { UntitledButton } from "./button";
+import { ScreenHeader, ScreenToolbar, FilterChips, FilterSheet, RecordList, CreateFab, StatusBadge, type RecordColumn } from "@/components/app";
 import { UntitledBottomSheet } from "./bottom-sheet";
-import { DocumentCardSkeleton, DetailLinesSkeleton } from "./skeleton";
-import { DocumentListTable, type DocumentListColumn } from "./document-list-table";
-import { DocumentListPagination } from "./document-list-pagination";
+import { DetailLinesSkeleton } from "./skeleton";
 import { erpClient } from "@/lib/erp/erp-client";
 import type { PurchaseRequestHeaderFields, PurchaseRequestLineFields, PurchaseReadback } from "@/lib/erp/purchase-request-api";
 import { errorMessage } from "@/lib/erp/api";
@@ -67,7 +50,7 @@ export interface PurchaseItem {
 }
 
 export interface TabPurchasesProps {
-  onOpenCreateModal: () => void;
+  onOpenCreateModal?: () => void;
   selectedItemForDetail?: PurchaseItem | null;
   onCloseDetailModal?: () => void;
   currentBranch?: string;
@@ -84,7 +67,9 @@ export function TabPurchases({
   onCountChange,
 }: TabPurchasesProps) {
   const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [searchInput, setSearchInput] = useState("");
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<string>("");
   const [purchases, setPurchases] = useState<PurchaseItem[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -316,58 +301,16 @@ export function TabPurchases({
       item.code.toLowerCase().includes(search.toLowerCase()) ||
       item.purpose.toLowerCase().includes(search.toLowerCase()) ||
       item.creator.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = filterStatus === "all" || item.status === filterStatus;
+    const matchStatus = filterStatus === "" || item.status === filterStatus;
     return matchSearch && matchStatus;
   });
 
-  const getStatusBadge = (status: PurchaseItem["status"], style?: { color?: string; backgroundColor?: string }) => {
-    switch (status) {
-      case "pending":
-        return (
-          <UntitledBadge variant="warning" size="sm" dot style={style}>
-            Chờ duyệt
-          </UntitledBadge>
-        );
-      case "approved":
-        return (
-          <UntitledBadge variant="success" size="sm" dot style={style}>
-            Đã duyệt
-          </UntitledBadge>
-        );
-      case "draft":
-        return (
-          <UntitledBadge variant="gray" size="sm" dot style={style}>
-            Dự thảo
-          </UntitledBadge>
-        );
-      case "rejected":
-        return (
-          <UntitledBadge variant="error" size="sm" dot style={style}>
-            Từ chối
-          </UntitledBadge>
-        );
-    }
-  };
+  const statusLabels = { pending: "Chờ duyệt", approved: "Đã duyệt", draft: "Dự thảo", rejected: "Từ chối" };
+  const statusTones = { pending: "warning", approved: "success", draft: "neutral", rejected: "danger" } as const;
+  const getStatusBadge = (status: PurchaseItem["status"], style?: { color?: string; backgroundColor?: string }) => <StatusBadge label={statusLabels[status]} tone={statusTones[status]} statusForeColor={style?.color} statusBackColor={style?.backgroundColor} />;
+  const statuses = [{ value: "", label: "Tất cả" }, ...Object.entries(statusLabels).map(([value, label]) => ({ value, label }))];
 
-  const handleApprove = (id: string) => {
-    setPurchases((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, status: "approved" as const } : p))
-    );
-    if (activeItem && activeItem.id === id) {
-      setActiveItem({ ...activeItem, status: "approved" });
-    }
-  };
-
-  const handleReject = (id: string) => {
-    setPurchases((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, status: "rejected" as const } : p))
-    );
-    if (activeItem && activeItem.id === id) {
-      setActiveItem({ ...activeItem, status: "rejected" });
-    }
-  };
-
-  const tableColumns: DocumentListColumn<PurchaseItem>[] = [
+  const tableColumns: RecordColumn<PurchaseItem>[] = [
     { id: "document", label: "Mã PR", className: "min-w-40 whitespace-nowrap", render: item => <span className="font-mono font-semibold text-brand-700 dark:text-brand-300">{item.code}</span> },
     { id: "date", label: "Ngày đề nghị", className: "whitespace-nowrap tabular-nums", render: item => item.date },
     { id: "purpose", label: "Mục đích / Nội dung", className: "min-w-60 max-w-sm", render: item => <span className="line-clamp-2 break-words font-medium" title={item.purpose}>{item.purpose}</span> },
@@ -377,189 +320,24 @@ export function TabPurchases({
   ];
 
   return (
-    <div className="space-y-4 pb-24 animate-uui-fade-in">
-      {/* Search & Actions Bar */}
-      <div className="space-y-2.5">
-        <div className="flex gap-2 items-center">
-          <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-neutral-400" />
-            <input
-              type="text"
-              placeholder="Tìm theo số phiếu PR, người lập, nội dung..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 text-xs sm:text-sm rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-2xs"
-            />
-          </div>
-
-          <button
-            type="button"
-            onClick={() => loadPurchases(false)}
-            disabled={isRefreshing}
-            className="p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 transition-colors shrink-0 disabled:opacity-50"
-            title="Làm mới danh sách"
-          >
-            <RefreshCw className={`size-4 ${isRefreshing ? "animate-spin text-brand-600" : ""}`} />
-          </button>
-
-          <UntitledButton
-            variant="primary"
-            size="md"
-            onClick={onOpenCreateModal}
-            iconLeading={<Plus className="size-4" />}
-          >
-            Tạo mới
-          </UntitledButton>
-        </div>
-
-        {/* Filter Chips Bar */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-          {[
-            { id: "all", label: "Tất cả", count: purchases.length },
-            {
-              id: "pending",
-              label: "Chờ duyệt",
-              count: purchases.filter((p) => p.status === "pending").length,
-            },
-            {
-              id: "approved",
-              label: "Đã duyệt",
-              count: purchases.filter((p) => p.status === "approved").length,
-            },
-            {
-              id: "draft",
-              label: "Dự thảo",
-              count: purchases.filter((p) => p.status === "draft").length,
-            },
-            {
-              id: "rejected",
-              label: "Từ chối",
-              count: purchases.filter((p) => p.status === "rejected").length,
-            },
-          ].map((chip) => {
-            const isSelected = filterStatus === chip.id;
-            return (
-              <button
-                key={chip.id}
-                type="button"
-                onClick={() => { setFilterStatus(chip.id); if (page !== 1) void loadPurchases(false, 1); }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 shrink-0 ${
-                  isSelected
-                    ? "bg-brand-600 text-white shadow-xs"
-                    : "bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 border border-neutral-200/80 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                }`}
-              >
-                <span>{chip.label}</span>
-                <span
-                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                    isSelected
-                      ? "bg-brand-700 text-white"
-                      : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400"
-                  }`}
-                >
-                  {chip.count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* List of Purchases (Mobile Cards) */}
-      <div className="space-y-3">
-        {error ? (
-          <div className="rounded-2xl border border-red-200 dark:border-red-900/60 bg-red-50/50 dark:bg-red-950/30 p-6 text-center space-y-3">
-            <p className="text-sm font-semibold text-red-700 dark:text-red-400">{error}</p>
-            <UntitledButton
-              variant="secondary-gray"
-              size="sm"
-              onClick={() => loadPurchases(false)}
-              iconLeading={<RefreshCw className="size-3.5" />}
-            >
-              Thử lại
-            </UntitledButton>
-          </div>
-        ) : loading ? (
-          <>
-            <DocumentListTable label="Danh sách đề nghị mua hàng" rows={[]} columns={tableColumns} rowId={item => item.code} onOpen={handleOpenDetail} loading />
-            <div className="lg:hidden"><DocumentCardSkeleton count={4} /></div>
-          </>
-        ) : filtered.length === 0 ? (
-          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-8 text-center space-y-3">
-            <FileText className="size-10 text-neutral-400 mx-auto stroke-[1.4]" />
-            <div>
-              <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
-                Không tìm thấy phiếu yêu cầu mua sắm nào
-              </p>
-              <p className="text-xs text-neutral-400 mt-0.5">
-                Chưa có dữ liệu cho chi nhánh này hoặc từ khóa tìm kiếm chưa khớp.
-              </p>
-            </div>
-            <UntitledButton
-              variant="secondary-gray"
-              size="sm"
-              onClick={() => loadPurchases(false)}
-              iconLeading={<RefreshCw className="size-3.5" />}
-            >
-              Tải lại dữ liệu
-            </UntitledButton>
-          </div>
-        ) : (
-          <>
-          <DocumentListTable label="Danh sách đề nghị mua hàng" rows={filtered} columns={tableColumns} rowId={item => item.code} onOpen={handleOpenDetail} rowOffset={(page - 1) * pageSize} />
-          <div className="space-y-3 lg:hidden" data-document-cards>
-          {filtered.map((item) => (
-            <div
-              key={item.id}
-              data-purchase-id={item.code}
-              onClick={() => handleOpenDetail(item)}
-              className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 hover:border-brand-300 dark:hover:border-brand-800 p-4 transition-all duration-150 cursor-pointer shadow-xs active:scale-[0.99] group"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="space-y-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold text-brand-700 dark:text-brand-300">
-                      {item.code}
-                    </span>
-                    {getStatusBadge(item.status, statusColorStyle(item.statusForeColor, item.statusBackColor))}
-                  </div>
-                  <h4 className="text-sm font-bold text-neutral-900 dark:text-white truncate">
-                    {item.purpose}
-                  </h4>
-                </div>
-
-                <div className="text-right shrink-0">
-                  <span className="text-sm font-extrabold text-neutral-900 dark:text-white block">
-                    {item.totalAmount}
-                  </span>
-                  <span className="text-[11px] text-neutral-400">
-                    {item.lines.length > 0 ? `${item.lines.length} mặt hàng` : "Xem chi tiết"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Meta details */}
-              <div className="mt-3 pt-2.5 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400">
-                <div className="flex items-center gap-1.5 truncate max-w-[200px]">
-                  <User className="size-3.5 text-neutral-400 shrink-0" />
-                  <span className="truncate">{item.creator}</span>
-                </div>
-
-                <div className="flex items-center gap-1.5 text-neutral-400 shrink-0">
-                  <Calendar className="size-3.5" />
-                  <span>{item.date}</span>
-                  <ChevronRight className="size-4 text-neutral-400 group-hover:text-brand-600 transition-colors ml-1" />
-                </div>
-              </div>
-            </div>
-          ))}
-          </div>
-          </>
-        )}
-      </div>
-
-      <DocumentListPagination page={page} pageSize={pageSize} rowCount={purchases.length} visibleRowCount={filtered.length} hasMore={hasMore} busy={loading || isRefreshing} pageSizeOptions={[20, 50]} maxPage={1000}
-        onPageChange={nextPage => void loadPurchases(false, nextPage)} onPageSizeChange={size => void loadPurchases(false, 1, size)} />
+    <div className="min-w-0 space-y-3 pb-8 animate-uui-fade-in">
+      <ScreenHeader title="Đề nghị PR" subtitle={"Chi nhánh " + currentBranch + " · " + purchases.length + " chứng từ trên trang"} />
+      <ScreenToolbar search={searchInput} onSearchChange={setSearchInput} onSearch={setSearch}
+        onFilter={() => setFilterOpen(true)} filterOpen={filterOpen} filterId="purchases-filters"
+        filterCount={Number(Boolean(filterStatus)) + Number(pageSize !== 20)}
+        refreshing={loading || isRefreshing} onRefresh={() => void loadPurchases(true)} onCreate={onOpenCreateModal} />
+      <FilterChips items={statuses.map(status => ({ ...status, count: status.value ? purchases.filter(item => item.status === status.value).length : purchases.length }))}
+        value={filterStatus} onChange={setFilterStatus} onPageChange={() => { if (page !== 1) void loadPurchases(false, 1); }} />
+      <p className="text-sm text-neutral-500 dark:text-neutral-400">Bộ lọc trạng thái và số đếm áp dụng cho trang hiện tại.</p>
+      <RecordList label="Danh sách đề nghị mua hàng" rows={filtered} columns={tableColumns} rowId={item => item.id}
+        card={item => ({ code: item.code, title: item.purpose, meta: [item.date, item.creator, item.totalAmount], status: { label: statusLabels[item.status], tone: statusTones[item.status], statusForeColor: item.statusForeColor, statusBackColor: item.statusBackColor } })}
+        onOpen={handleOpenDetail} loading={loading} error={error} onRetry={() => void loadPurchases(false)}
+        empty={{ message: "Chưa có chứng từ khớp với tìm kiếm hoặc bộ lọc.", onCreate: onOpenCreateModal }}
+        pagination={{ page, pageSize, rowCount: purchases.length, visibleRowCount: filtered.length, hasMore, busy: loading || isRefreshing, maxPage: 1000,
+          onPageChange: nextPage => void loadPurchases(false, nextPage), onPageSizeChange: size => void loadPurchases(false, 1, size) }} />
+      <FilterSheet id="purchases-filters" open={filterOpen} onClose={() => setFilterOpen(false)} value={{ status: filterStatus, pageSize }} statuses={statuses}
+        onApply={value => { setFilterStatus(value.status); void loadPurchases(false, 1, value.pageSize); }} />
+      {onOpenCreateModal && <CreateFab allowed label="Tạo đề nghị PR" onClick={onOpenCreateModal} />}
 
       {/* Item Detail Bottom Sheet */}
       <UntitledBottomSheet
@@ -571,33 +349,6 @@ export function TabPurchases({
         }}
         title={activeItem?.code || "Chi tiết phiếu mua sắm"}
         subtitle={`${activeItem?.department} · ${activeItem?.branch}`}
-        footer={
-          activeItem && (
-            <div className="flex gap-2">
-              {activeItem.status === "pending" && (
-                <>
-                  <UntitledButton
-                    variant="destructive"
-                    size="md"
-                    fullWidth
-                    onClick={() => handleReject(activeItem.id)}
-                  >
-                    Từ chối
-                  </UntitledButton>
-                  <UntitledButton
-                    variant="primary"
-                    size="md"
-                    fullWidth
-                    onClick={() => handleApprove(activeItem.id)}
-                    iconLeading={<CheckCircle2 className="size-4" />}
-                  >
-                    Phê duyệt
-                  </UntitledButton>
-                </>
-              )}
-            </div>
-          )
-        }
       >
         {activeItem && (
           <div className="space-y-4 pb-12">
