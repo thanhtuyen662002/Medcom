@@ -10,7 +10,7 @@ Thiết kế: `docs/architecture/APP_SCREEN_UNIFICATION_P2.md`. Nhánh tích h�
 | [P2-04](P2-04.md) | Form tạo/sửa → `FormSheet`/`FormField` | Codex | **Done** (p2/main) | P2-03 |
 | [P2-05](P2-05.md) | Khung điều hướng | Codex | **Done** (p2/main) | P2-02 |
 | [P2-06](P2-06.md) | Rà soát thị giác cuối, sửa lỗi (FAB lệch, badge dark, nhãn kỹ thuật, 00:00:00) | Codex | **Done** (p2/main) | tất cả |
-| [P2-07](P2-07.md) | Đồng bộ khung chi tiết + thanh thao tác (badge, nút, header) | Codex | Todo | P2-06 trên main |
+| [P2-07](P2-07.md) | Đồng bộ khung chi tiết + thanh thao tác (badge, nút, header) | Codex | **Done** (p2/main) | P2-06 trên main |
 
 ## Quy tắc phát hành (chủ dự án, 2026-10-24)
 
@@ -34,3 +34,5 @@ Một agent trên VPS kéo `main` và **deploy production định kỳ ở phút
 - P2-04 Review lần 1: `<form>` mới làm Enter/"Go" trong input tự tạo chứng từ (đổi hành vi). Trả lại. Lần 2 Đạt: chặn submit ngầm, có test; 44/44 test liên quan. Merge vào `p2/main`. Giao P2-06.
 - P2-06 Đạt lần 2 (lần 1: test trình duyệt gọi `playwright` thay vì `playwright-core` như CI). Leader kiểm tra dữ liệu thật mobile dark (`artifacts/ui-sync/P2-final/`): FAB đúng góc, badge đọc rõ, nhãn và ngày sạch. Build pass; quét diff không có dữ liệu thật. Mở PR `p2/main` → `main`.
 - Phát hiện chi tiết Bán hàng còn kiểu cũ (badge hồng chói, nút trắng ở dark, nhãn 3 dòng). Tạo P2-07, làm sau khi P2 lên main.
+- 02:21 merge PR #177 (`8ca2ab6`, CI 4/4 xanh) vào `main`; VPS deploy lúc 02:30.
+- P2-07 Đạt lần 1: chi tiết dùng `StatusBadge`, header chung, thanh thao tác [Thêm] [nút chính] với sheet thao tác. Assert cũ đổi theo DOM mới cùng ý định; không thêm `any`. Leader kiểm tra DMB1026/0050 trên dữ liệu thật (chỉ xem). Mở PR thứ hai.
