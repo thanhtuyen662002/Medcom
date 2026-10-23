@@ -1,4 +1,4 @@
-> Chọn quy trình ở thanh bên để xem các bước thao tác, sơ đồ và cách xử lý lỗi. Chuyển sang **Tài liệu kỹ thuật** khi cần tên form, bảng, STP, view và trigger liên quan.
+> Chọn quy trình ở thanh bên để xem các bước thao tác, sơ đồ và cách xử lý lỗi.
 
 ## 1. Mua hàng nối với nhập hàng theo đợt
 

@@ -10,7 +10,8 @@ Web tĩnh HTML/CSS/JavaScript. Không cần đăng nhập, backend, DB hoặc b�
 
 - `HDSD-ERP/`: hướng dẫn cho người dùng, sơ đồ và xử lý lỗi.
 - `TLKT/`: luồng kỹ thuật, khóa liên kết, form, STP, view, function và trigger.
-- Cùng một mã bài ở hai khu vực, ví dụ `HDSD-ERP/#inbound` và `TLKT/#inbound`.
+- Cùng một mã bài ở hai khu vực, ví dụ `HDSD-ERP/#inbound` và `TLKT/#inbound`. Gửi đường dẫn HDSD cho khách hàng và đường dẫn TLKT cho đội phát triển; giao diện không có tab chuyển giữa hai khu vực.
+- Nội dung và tìm kiếm được tạo riêng cho từng khu vực. HDSD không tải bài kỹ thuật, danh sách form/SQL hoặc trả kết quả dẫn sang TLKT; logo và các liên kết bài giữ người đọc trong khu vực đang mở.
 - Liên kết đến sơ đồ: `HDSD-ERP/#internal-transfer/flow`.
 
 9 bài gồm tổng quan và 8 quy trình, tổng hợp từ đủ 7 tài liệu Word được cung cấp. BPTM được tách thành mua hàng và theo dõi đợt hàng/thanh toán. Chỉ rõ các thay đổi đã đối chiếu tại [RECONCILIATION.md](RECONCILIATION.md); nguồn metadata đã loại dữ liệu nghiệp vụ nằm trong [content/evidence.json](content/evidence.json).
@@ -39,7 +40,7 @@ npm run build
 npm test
 ```
 
-6. Commit cả nguồn và `assets/content.generated.js`, các trang `index.html` được tạo lại. Push/merge bản đã kiểm tra rồi triển khai lại thư mục web. Website hiển thị nội dung bản đang triển khai; không tự đọc phiên bản mới trên GitHub khi máy chủ chưa nhận bản đó.
+6. Commit cả nguồn, `assets/content.generated.js` (HDSD), `assets/technical.generated.js` (TLKT) và các trang `index.html` được tạo lại. Push/merge bản đã kiểm tra rồi triển khai lại thư mục web. Website hiển thị nội dung bản đang triển khai; không tự đọc phiên bản mới trên GitHub khi máy chủ chưa nhận bản đó.
 
 Tệp sinh sẵn giúp web không phải tải Markdown bằng fetch và có thể hoạt động trên hosting tĩnh. Không sửa trực tiếp tệp sinh sẵn. Thư viện Mermaid 12.2.0 được đặt cục bộ, có giấy phép và hash trong `assets/vendor/`; không tải CDN lúc người dùng mở sơ đồ.
 
@@ -52,7 +53,7 @@ Phục vụ **toàn bộ** `src/helps` làm một gốc web tài liệu; giữ n
 
 Nếu máy chủ đã có ứng dụng ở gốc, người vận hành cần ánh xạ hai đường dẫn trên **và thư mục assets dùng chung** đến đúng nơi; không chép đè tài nguyên của ứng dụng hiện hữu. Một lựa chọn khác là đặt cả thư mục dưới `/erp-docs/`; tất cả liên kết tương đối vẫn chạy. Không cần rewrite cho ID bài vì dùng phần `#` của URL.
 
-Cho phép MIME HTML, JS, CSS, SVG và JSON. HTML và `content.generated.js` nên revalidate mỗi lần mở (Cache-Control: no-cache); các tài nguyên thư viện có version có thể cache dài. Sau cập nhật, kiểm tra bài, tab sơ đồ và tìm kiếm trên đường dẫn triển khai thật.
+Cho phép MIME HTML, JS, CSS, SVG và JSON. HTML và cả hai tệp `*.generated.js` nên revalidate mỗi lần mở (Cache-Control: no-cache); các tài nguyên thư viện có version có thể cache dài. Sau cập nhật, kiểm tra bài, tab sơ đồ và tìm kiếm trên đường dẫn triển khai thật.
 
 Trong lượt này chỉ đưa mã và nội dung lên nhánh/PR của repo; **chưa thay cấu hình máy chủ hay triển khai lên tên miền**.
 
