@@ -507,6 +507,8 @@ export function MedcomApp() {
               onToggleDarkMode={handleToggleDarkMode}
               onLogout={handleLogout}
               onToggleLayoutMode={handleToggleLayoutMode}
+              tabAccess={tabAccess}
+              onRetryTabs={() => void retryTabAccess()}
             />
           </div>
         )}
@@ -526,8 +528,8 @@ export function MedcomApp() {
             />
           </div>
 
-          {/* Responsive Content Workspace Container with pb-28 for fixed mobile nav */}
-          <main className={`flex-1 min-w-0 w-full ${["orders", "purchases", "purchase-requests", "purchase-approvals", "purchase-orders", "sales-orders", "sales-order-pm", "sales-order-sa", "sales-qr", "inbound-requests"].includes(activeTab) ? "max-w-none" : "max-w-7xl"} mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-28 md:pb-8 transition-all`}>
+          {/* Reserve the fixed bottom nav, 56px FAB, breathing room and safe area. */}
+          <main className={`flex-1 min-w-0 w-full ${["orders", "purchases", "purchase-requests", "purchase-approvals", "purchase-orders", "sales-orders", "sales-order-pm", "sales-order-sa", "sales-qr", "inbound-requests"].includes(activeTab) ? "max-w-none" : "max-w-7xl"} mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-[calc(10rem_+_env(safe-area-inset-bottom))] md:pb-8 transition-all`}>
             {/* Màn có bảng chứng từ dùng toàn bộ bề rộng; màn chỉ có biểu mẫu/thẻ giữ khung hẹp. */}
             {/* TAB 1: Home (Cached in DOM for instant response) */}
             <div className={activeTab === "home" ? "block" : "hidden"}>
@@ -627,6 +629,7 @@ export function MedcomApp() {
             pendingOrdersCount={ordersCount}
             pendingPurchasesCount={purchasesCount}
             pendingInboundCount={inboundCount}
+            menuOpen={isSidebarOpen}
           />
         </div>
 
