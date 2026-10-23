@@ -31,11 +31,13 @@ export function DocumentDetailView({ config, model, handlers, module, slots, men
   const ready = !model.loading && !model.error && model.documentId !== null;
   const notice = config.notice?.[module];
   const editor = model.editing && config.slots?.includes("lines-editor") ? slots?.["lines-editor"] : undefined;
+  const branch = [model.header.branchName, model.header.branchId].find(value => typeof value === "string" && value.trim());
+  const documentType = config.title.replace(/^Chi tiết\s+/i, "");
   return <div data-document-detail-view className={detailStyles.editor}>
     <RecordDetailHeading title={config.messages?.heading ?? config.title} documentNumber={model.documentId}>
       {model.editing && <p role="status">{model.dirty ? "Có thay đổi chưa lưu" : config.messages?.editing ?? "Đang chỉnh sửa chứng từ"}</p>}
     </RecordDetailHeading>
-    <DocumentDetailStatus status={model.status} presentationAllowed={ready} />
+    <DocumentDetailStatus status={model.status} subtitle={`${documentType.charAt(0).toLocaleUpperCase("vi-VN")}${documentType.slice(1)} · Chi nhánh ${branch ?? "—"}`} presentationAllowed={ready} />
     <DocumentDetailNotices model={model} handlers={handlers} />
     {model.loading ? <DetailSection title="Thông tin chung"><div role="status" className="flex items-center gap-2 py-5 text-sm text-muted-foreground"><Loader2 aria-hidden="true" className="size-5 animate-spin" />{config.messages?.loading ?? "Đang tải chứng từ..."}</div></DetailSection>
       : !ready ? <DetailSection title="Thông tin chung"><p role="alert" className="text-sm text-destructive">{model.error || config.messages?.empty || "Chưa có thông tin chứng từ."}</p><RequestButton type="button" onClick={handlers.onRetry}>Thử lại</RequestButton></DetailSection>

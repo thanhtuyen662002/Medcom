@@ -59,7 +59,8 @@ const stubPlugin={
    if(!/(?:tab-(?:erp-screen|orders|purchases)\.tsx|erp-document-detail-body\.tsx|erp-line-editor\.tsx|sales-order-status-filter\.tsx|document-detail\/[^/]+\.tsx|document-detail\/registry\.ts)$/.test(args.importer.replace(/\\/g,'/')))return null;
    const requested=args.path.replace(/\\/g,'/');
    if(requested==='@/components/app')return{path:'app-quick-tabs',namespace:'stub'};
-   for(const key of Object.keys(stubs))if(requested.endsWith(key))return{path:key,namespace:'stub'};
+   // A leaf named "button" must not swallow the shared AppButton import.
+   for(const key of Object.keys(stubs))if(requested.endsWith(`/${key}`))return{path:key,namespace:'stub'};
    return null;
   });
   builder.onLoad({filter:/.*/,namespace:'stub'},args=>({contents:stubs[args.path],loader:'tsx',resolveDir:app}));
@@ -94,7 +95,7 @@ const openFirstRow=async renderer=>{
  await act(async()=>cards[0].props.onClick());
  await flush();
 };
-const detailMenuButtons=renderer=>renderer.root.findAll(node=>node.props?.['aria-label']==='Thao tác chứng từ');
+const detailMenuButtons=renderer=>renderer.root.findAllByType('button').filter(node=>node.props?.['aria-label']==='Thao tác chứng từ');
 
 test('activating an ERP tab applies the 200 list response instead of a permanent skeleton',async()=>{
  globalThis.__erpListCalls=0;

@@ -142,7 +142,8 @@ test('I60 purchase read error displays its safe support code while arbitrary err
 
 test('I66 shared detail primitives expose one icon dismissal, named groups and masked header content',()=>{
  const html=renderToStaticMarkup(h(RecordDialog,{open:true,title:'Synthetic record',documentNumber:'QA-DOC',closeLabel:'Quay lại danh sách',onRequestClose:()=>{}},h(RecordSection,{title:'Thông tin chung'},'QA GENERAL'),h(RecordSection,{title:'Dòng hàng'},'QA ITEMS'),h(RecordSection,{title:'Ghi chú'},'QA NOTES')));
- assert.equal((html.match(/<button\b/g)??[]).length,1);assert.match(html,/aria-label="Quay lại danh sách" title="Đóng hộp thoại"/);assert.match(html,/>×<\/button>/);assert.doesNotMatch(html,/>Quay lại danh sách<|>Đóng<|>Đóng phiếu/);
+ // Current shell uses a decorative X SVG, preserving one accessible dismissal.
+ assert.equal((html.match(/<button\b/g)??[]).length,1);assert.match(html,/aria-label="Quay lại danh sách" title="Đóng hộp thoại"/);assert.match(html,/<svg(?=[^>]*aria-hidden="true")(?=[^>]*class="[^"]*lucide-x)[^>]*>/);assert.doesNotMatch(html,/>Quay lại danh sách<|>Đóng<|>Đóng phiếu/);
  assert.equal((html.match(/class="record-section"/g)??[]).length,3);for(const title of ['Thông tin chung','Dòng hàng','Ghi chú'])assert.ok(html.includes('>'+title+'</h3>'));
  const hidden=renderToStaticMarkup(h(React.Fragment,null,h(RecordDetailToolbar,{presentationAllowed:false},h('button',null,'VERIFY')),h(RecordDetailStatus,{presentationAllowed:false},'STALE STATUS')));
  assert.equal((hidden.match(/hidden="" inert="" aria-hidden="true"/g)??[]).length,2);

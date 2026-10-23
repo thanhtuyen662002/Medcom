@@ -1,14 +1,16 @@
 "use client";
 
 import type { DocumentDetailModel } from "@/lib/erp/document-detail/model";
+import { StatusBadge } from "@/components/app/status-badge";
 import { RecordDetailStatus } from "../record-dialog";
 
-export function DocumentDetailStatus({ status, presentationAllowed = true }: {
-  status: DocumentDetailModel["status"]; presentationAllowed?: boolean;
+export function DocumentDetailStatus({ status, subtitle, presentationAllowed = true }: {
+  status: DocumentDetailModel["status"]; subtitle?: string; presentationAllowed?: boolean;
 }) {
   return <RecordDetailStatus presentationAllowed={presentationAllowed}>
-    {status.label && <span style={status.style} className="rounded-full border border-neutral-200 bg-neutral-100 px-3 py-1 text-sm font-semibold text-black dark:border-neutral-700 dark:bg-neutral-800 dark:text-white">{status.label}</span>}
-    {status.locked !== null && <span className="rounded-full border border-neutral-200 px-3 py-1 text-sm font-medium text-black dark:border-neutral-700 dark:bg-neutral-800 dark:text-white">{status.locked ? "Đã khóa" : "Chưa khóa"}</span>}
-    {status.badges?.map(badge => <span key={badge.id} title={badge.title} style={badge.style} className="rounded-full border border-neutral-200 bg-neutral-100 px-3 py-1 text-sm font-medium text-black dark:border-neutral-700 dark:bg-neutral-800 dark:text-white">{badge.label}</span>)}
+    {subtitle && <p data-document-detail-subtitle className="w-full text-sm leading-5 text-neutral-500 dark:text-neutral-400">{subtitle}</p>}
+    {status.label && <StatusBadge label={status.label} statusForeColor={status.style?.color} statusBackColor={status.style?.backgroundColor} />}
+    {status.locked !== null && <StatusBadge label={status.locked ? "Đã khóa" : "Chưa khóa"} tone="neutral" />}
+    {status.badges?.map(badge => <StatusBadge key={badge.id} title={badge.title} label={badge.label} statusForeColor={badge.style?.color} statusBackColor={badge.style?.backgroundColor} />)}
   </RecordDetailStatus>;
 }

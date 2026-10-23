@@ -10,7 +10,6 @@ import { errorMessage } from "@/lib/erp/api";
 
 import { formatDateTime } from "@/lib/erp/document-detail/format";
 import {formatMoney} from "@/lib/erp/money";
-import { statusColorStyle } from "@/lib/erp/status-colors";
 
 function formatVND(value?: string | null, currency = "VND"): string {
   const plainCurrency = value?.match(/^(-?\d+)\s*([A-Z]{3}|[₫$€])$/);
@@ -310,14 +309,14 @@ export function TabPurchases({
 
   const statusLabels = { pending: "Chờ duyệt", approved: "Đã duyệt", draft: "Dự thảo", rejected: "Từ chối" };
   const statusTones = { pending: "warning", approved: "success", draft: "neutral", rejected: "danger" } as const;
-  const getStatusBadge = (status: PurchaseItem["status"], style?: { color?: string; backgroundColor?: string }) => <StatusBadge label={statusLabels[status]} tone={statusTones[status]} statusForeColor={style?.color} statusBackColor={style?.backgroundColor} />;
+  const getStatusBadge = (status: PurchaseItem["status"], colors?: { statusForeColor?: string | null; statusBackColor?: string | null }) => <StatusBadge label={statusLabels[status]} tone={statusTones[status]} statusForeColor={colors?.statusForeColor} statusBackColor={colors?.statusBackColor} />;
   const statuses = [{ value: "", label: "Tất cả" }, ...Object.entries(statusLabels).map(([value, label]) => ({ value, label }))];
 
   const tableColumns: RecordColumn<PurchaseItem>[] = [
     { id: "document", label: "Mã PR", className: "min-w-40 whitespace-nowrap", render: item => <span className="font-mono font-semibold text-brand-700 dark:text-brand-300">{item.code}</span> },
     { id: "date", label: "Ngày đề nghị", className: "whitespace-nowrap tabular-nums", render: item => formatDateTime(item.date) },
     { id: "purpose", label: "Mục đích / Nội dung", className: "min-w-60 max-w-sm", render: item => <span className="line-clamp-2 break-words font-medium" title={item.purpose}>{item.purpose}</span> },
-    { id: "status", label: "Trạng thái", className: "whitespace-nowrap", render: item => getStatusBadge(item.status, statusColorStyle(item.statusForeColor, item.statusBackColor)) },
+    { id: "status", label: "Trạng thái", className: "whitespace-nowrap", render: item => getStatusBadge(item.status, item) },
     { id: "creator", label: "Người đề nghị", className: "min-w-40 max-w-52", render: item => <span className="line-clamp-2 break-words">{item.creator}</span> },
     { id: "amount", label: "Tổng tiền", className: "whitespace-nowrap text-right font-semibold tabular-nums", render: item => item.totalAmount },
   ];
@@ -366,7 +365,7 @@ export function TabPurchases({
                   </p>
                 </div>
                 <div className="text-right flex flex-col items-end gap-1">
-                  {getStatusBadge(activeItem.status, statusColorStyle(activeItem.statusForeColor, activeItem.statusBackColor))}
+                  {getStatusBadge(activeItem.status, activeItem)}
                   <span className="text-sm font-mono font-extrabold text-brand-700 dark:text-brand-300">
                     {activeItem.totalAmount}
                   </span>

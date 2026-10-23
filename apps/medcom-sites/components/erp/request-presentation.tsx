@@ -5,12 +5,11 @@ import {AlertCircle, Copy, FileText, ShieldCheck} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Textarea} from "@/components/ui/textarea";
-import {Badge} from "@/components/ui/badge";
+import {StatusBadge} from "@/components/app/status-badge";
 import {Empty, EmptyDescription, EmptyHeader, EmptyTitle} from "@/components/ui/empty";
 import {ListLoading} from "./list-loading";
 import {ApiError, errorMessage} from "@/lib/erp/api";
 import {documentStatusLabel} from "@/lib/erp/document-status";
-import {statusColorStyle} from "@/lib/erp/status-colors";
 import {cn} from "@/lib/utils";
 
 /** Shared presentation only. No request, authority, storage or command state. */
@@ -65,7 +64,9 @@ export function RequestDocumentIdentity({children}:{children:ReactNode}){
   return <span className="request-document-id"><FileText size={16} aria-hidden="true"/><strong>{children}</strong></span>;
 }
 export function RequestStatus({value,statusName,foreColor,backColor}:{value:number|null|undefined;statusName?:string|null;foreColor?:unknown;backColor?:unknown}){
-  return <Badge variant="outline" title={documentStatusLabel(value,statusName)} style={statusColorStyle(foreColor,backColor)} className="request-status max-w-full whitespace-normal font-normal">{documentStatusLabel(value,statusName)}</Badge>;
+  return <StatusBadge label={documentStatusLabel(value,statusName)} title={documentStatusLabel(value,statusName)}
+    statusForeColor={typeof foreColor==="string"?foreColor:undefined} statusBackColor={typeof backColor==="string"?backColor:undefined}
+    className="request-status max-w-full whitespace-normal"/>;
 }
 /** Display source wall-clock dates without converting time zone or editing data. */
 export function requestDate(value:string|null|undefined){
