@@ -470,6 +470,9 @@ export function TabErpScreen({
   }, [currentBranch, module, isActive, loadList]);
 
   // Body owns detail reads; selection only opens the registered body.
+  const [detailReloadVersion, setDetailReloadVersion] = useState(0);
+  const detailCloseGuard = useRef<(() => boolean) | null>(null);
+  const detailOpenGuard = useRef<(() => boolean) | null>(null);
   const handleOpenDetail = async (documentId: string) => {
     const guard = detailOpenGuard.current ?? detailCloseGuard.current;
     if (documentId !== selectedDocId && guard && !guard()) return;
@@ -485,9 +488,6 @@ export function TabErpScreen({
     }
   }, [targetDocumentId, isActive]);
 
-  const [detailReloadVersion, setDetailReloadVersion] = useState(0);
-  const detailCloseGuard = useRef<(() => boolean) | null>(null);
-  const detailOpenGuard = useRef<(() => boolean) | null>(null);
   const setDetailCloseGuard = useCallback((guard: (() => boolean) | null) => { detailCloseGuard.current = guard; }, []);
   const setDetailOpenGuard = useCallback((guard: (() => boolean) | null) => { detailOpenGuard.current = guard; }, []);
   const handleCloseDetail = () => {
