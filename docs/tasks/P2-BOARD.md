@@ -9,7 +9,8 @@ Thiết kế: `docs/architecture/APP_SCREEN_UNIFICATION_P2.md`. Nhánh tích h�
 | [P2-03](P2-03.md) | Danh sách ERP 19 module | Codex | **Done** (p2/main) | P2-01 |
 | [P2-04](P2-04.md) | Form tạo/sửa → `FormSheet`/`FormField` | Codex | **Done** (p2/main) | P2-03 |
 | [P2-05](P2-05.md) | Khung điều hướng | Codex | **Done** (p2/main) | P2-02 |
-| [P2-06](P2-06.md) | Rà soát thị giác cuối, sửa lỗi (FAB lệch, badge dark, nhãn kỹ thuật, 00:00:00) | Codex | **Đang làm** | tất cả |
+| [P2-06](P2-06.md) | Rà soát thị giác cuối, sửa lỗi (FAB lệch, badge dark, nhãn kỹ thuật, 00:00:00) | Codex | **Done** (p2/main) | tất cả |
+| [P2-07](P2-07.md) | Đồng bộ khung chi tiết + thanh thao tác (badge, nút, header) | Codex | Todo | P2-06 trên main |
 
 ## Quy tắc phát hành (chủ dự án, 2026-10-24)
 
@@ -31,3 +32,5 @@ Một agent trên VPS kéo `main` và **deploy production định kỳ ở phút
 - Leader kiểm tra giao diện `p2/main` ở mobile (ảnh `artifacts/ui-sync/P2-merge/`): tab nhanh và màn ERP đã đồng bộ. Phát hiện lỗi FAB `fixed` bị lệch do `transform` của `animate-uui-fade-in`, cùng badge dark, nhãn kỹ thuật và `00:00:00`. Đưa vào P2-06, bắt buộc xong trước khi merge `main`.
 - P2-05 Đạt lần 1: drawer có tìm phân hệ, bỏ nhãn kỹ thuật; desktop có menu "Phân hệ"; bottom-nav 56px, `aria-current`. Merge vào `p2/main`; contracts 898/885/13 (trùng baseline), lint baseline. Leader xem ảnh mobile/desktop (`artifacts/ui-sync/P2-merge/`).
 - P2-04 Review lần 1: `<form>` mới làm Enter/"Go" trong input tự tạo chứng từ (đổi hành vi). Trả lại. Lần 2 Đạt: chặn submit ngầm, có test; 44/44 test liên quan. Merge vào `p2/main`. Giao P2-06.
+- P2-06 Đạt lần 2 (lần 1: test trình duyệt gọi `playwright` thay vì `playwright-core` như CI). Leader kiểm tra dữ liệu thật mobile dark (`artifacts/ui-sync/P2-final/`): FAB đúng góc, badge đọc rõ, nhãn và ngày sạch. Build pass; quét diff không có dữ liệu thật. Mở PR `p2/main` → `main`.
+- Phát hiện chi tiết Bán hàng còn kiểu cũ (badge hồng chói, nút trắng ở dark, nhãn 3 dòng). Tạo P2-07, làm sau khi P2 lên main.
