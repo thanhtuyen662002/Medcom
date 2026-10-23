@@ -13,7 +13,7 @@
         "Người sử dụng ERP"
       ],
       "source": "Tổng hợp từ 7 tài liệu hướng dẫn",
-      "flow": "flowchart TD\nA[Đề nghị mua hàng] --> B[Duyệt và tạo PO]\nB --> C[Đề nghị nhập theo nhiều đợt]\nC --> D[Kiểm nhận, SA, PM, Kỹ thuật khi cần, Kế toán]\nD --> E[Chứng từ mua hàng và nhập kho]\nC --> F[Chi phí đề nghị]\nF --> G[Dịch vụ, phân bổ vào nhập khẩu]\nB --> H[BPTM theo dõi lô, thuế và thanh toán]\nI[Đơn bán hàng theo hợp đồng] --> J[PM, SA, Kỹ thuật khi cần, Kế toán]\nJ --> K[Hóa đơn và xuất bán]\nL[Đề nghị điều chuyển] --> M[Đợt điều chuyển và phê duyệt]\nM --> N[PXK nguồn và nhiều PNK đích]\nE --> O[Tồn kho và thiết bị]\nN --> O\nK --> P[Xuất giao và theo dõi tiến độ]\nO --> Q[Vòng đời máy và QR linh kiện]\nQ --> R[Sửa chữa, thu hồi và tái sử dụng]",
+      "flow": "flowchart TD\nA[Đề nghị mua hàng] --> B[Duyệt và tạo PO]\nB --> C[Đề nghị nhập theo nhiều đợt]\nC --> D[Kiểm nhận, TP SA, Kỹ thuật nếu có thiết bị, PM, Kế toán]\nD --> E[Chứng từ mua hàng và nhập kho]\nC --> F[Chi phí đề nghị]\nF --> G[Dịch vụ, phân bổ vào nhập khẩu]\nB --> H[BPTM theo dõi lô, thuế và thanh toán]\nI[Đơn bán hàng theo hợp đồng] --> J[PM, SA, Kỹ thuật khi cần, Kế toán]\nJ --> K[Hóa đơn và xuất bán]\nL[Đề nghị điều chuyển] --> M[Đợt điều chuyển và phê duyệt]\nM --> N[PXK nguồn và nhiều PNK đích]\nE --> O[Tồn kho và thiết bị]\nN --> O\nK --> P[Xuất giao và theo dõi tiến độ]\nO --> Q[Vòng đời máy và QR linh kiện]\nQ --> R[Sửa chữa, thu hồi và tái sử dụng]",
       "guide": "guides/overview.md",
       "technical": "technical/overview.md",
       "forms": [],
@@ -28,7 +28,7 @@
           "Xem tab Sơ đồ để biết các bước nối tiếp, rồi mở quy trình liên quan ở thanh bên để đọc hướng dẫn chi tiết."
         ]
       ],
-      "reviewed": "2026-10-22"
+      "reviewed": "2026-10-23"
     },
     {
       "id": "purchasing",
@@ -80,20 +80,20 @@
         "Thương mại",
         "Thủ kho",
         "TP SA",
-        "PM",
         "Kỹ thuật",
+        "PM",
         "Kế toán"
       ],
       "source": "HDSD quy trình nhập hàng.docx",
-      "flow": "flowchart TD\nPO[Đơn đặt hàng còn số lượng] --> TM[TM lập đề nghị nhập theo đợt]\nOLD[Phiếu đã lưu: Nháp hoặc Yêu cầu TM xem lại] --> EDIT[Bấm Sửa]\nTM --> LOT{Một mặt hàng có nhiều lô?}\nEDIT --> LOT\nLOT -->|Có| COPY[Copy thêm dòng cho từng lô]\nLOT -->|Không| DETAIL[Nhập số lượng, lô và hạn dùng từng dòng]\nCOPY --> DETAIL\nDETAIL --> SAVE[Bấm Lưu một lần]\nSAVE --> CHECK{Tổng theo dòng PO, cộng các đợt khác, không vượt PO?}\nCHECK -->|Vượt: từ chối toàn bộ lần lưu| DETAIL\nCHECK -->|Hợp lệ| SAVED[Phiếu được lưu, giữ liên kết PO]\nSAVED -->|Gửi Thủ kho| WH[Thủ kho xác nhận hàng thực tế]\nWH --> SA[TP SA kiểm tra]\nSA --> PM[PM xử lý]\nPM --> Q{Cần Kỹ thuật?}\nQ -->|Có| TECH[Kỹ thuật xác nhận]\nQ -->|Không| KT[Kế toán]\nTECH --> KT\nSAVED -. Phương án cần BLĐ .-> BLD[BLĐ duyệt hoặc hủy phương án]\nBLD -->|Duyệt| KT\nKT --> NK[Chứng từ mua hàng và nhập kho liên quan]\nWH -. Trả TM .-> TM\nSA -. Trả Thủ kho .-> WH\nPM -. Trả TP SA .-> SA\nTECH -. Trả PM .-> PM",
+      "flow": "flowchart TD\nPO[Đơn đặt hàng còn số lượng] --> TM[TM lập đề nghị nhập theo đợt]\nOLD[Phiếu đã lưu: Nháp hoặc Yêu cầu TM xem lại] --> EDIT[Bấm Sửa]\nTM --> LOT{Một mặt hàng có nhiều lô?}\nEDIT --> LOT\nLOT -->|Có| COPY[Copy thêm dòng cho từng lô]\nLOT -->|Không| DETAIL[Nhập số lượng, lô và hạn dùng từng dòng]\nCOPY --> DETAIL\nDETAIL --> SAVE[Bấm Lưu một lần]\nSAVE --> CHECK{Tổng theo dòng PO, cộng các đợt khác, không vượt PO?}\nCHECK -->|Vượt: từ chối toàn bộ lần lưu| DETAIL\nCHECK -->|Hợp lệ| SAVED[Phiếu được lưu, giữ liên kết PO]\nSAVED -->|Gửi Thủ kho| WH[Thủ kho xác nhận hàng thực tế]\nWH -->|Gửi TP SA| SA[TP SA kiểm tra]\nSA --> Q{Phiếu có thiết bị?}\nQ -->|Có: Gửi Kỹ thuật| TECH[Kỹ thuật kiểm tra và bổ sung BBKC]\nQ -->|Không: Gửi PM không thiết bị| PM[PM kiểm soát chất lượng]\nTECH -->|Gửi PM và chọn PM| PM\nPM -->|Gửi kế toán| KT[Kế toán]\nSAVED -. Gửi BLĐ khi cần phương án .-> BLD[BLĐ duyệt hoặc hủy phương án]\nBLD -->|Duyệt| KT\nKT --> NK[Chứng từ mua hàng và nhập kho liên quan]\nWH -. Từ chối: trả TM .-> TM\nSA -. Từ chối nhanh: trả Thủ kho .-> WH\nTECH -. Trả TP SA .-> SA\nPM -. Trả lại: có thiết bị .-> TECH\nPM -. Trả lại: không có thiết bị .-> SA",
       "guide": "guides/inbound.md",
       "technical": "technical/inbound.md",
       "forms": [
         "IV_InboundRequestFrm",
         "IV_IncomingShipmentStatusFrm",
         "IV_GoodsInfoControlFrm",
-        "IV_GoodsQualityControlConfirmFrm",
         "IV_GoodsStatusConfirmFrm",
+        "IV_GoodsQualityControlConfirmFrm",
         "IV_CargoHandlingPlanApprovalFrm",
         "IV_InboundRequestCTCPFrm"
       ],
@@ -109,6 +109,7 @@
         "IV_InboundRequest_ApplyDetailSaveTrg",
         "IV_InboundRequest_SaveBatchAdapterTrg",
         "IV_InboundRequest_ChangeWorkflowStatusStp",
+        "IV_InboundRequest_HasEquipmentFnc",
         "IV_InboundRequest_DeleteDraftTrg"
       ],
       "errors": [
@@ -139,6 +140,22 @@
         [
           "Không xóa được phiếu",
           "Kiểm tra trạng thái và các chứng từ liên kết. Không xóa cưỡng bức master/detail hoặc bỏ liên kết để qua kiểm tra."
+        ],
+        [
+          "Phiếu có thiết bị bị chặn khi TP SA gửi PM",
+          "Dùng Gửi Kỹ thuật. Sau kiểm tra, Kỹ thuật bấm Gửi PM và chọn PM nhận việc. Phiếu có cả vật tư và thiết bị vẫn phải qua Kỹ thuật."
+        ],
+        [
+          "Phiếu không có thiết bị bị chặn khi gửi Kỹ thuật",
+          "TP SA dùng Gửi PM (không thiết bị), chọn PM nhận việc. Nếu chưa xác định được loại hàng, nhờ người quản lý danh mục kiểm tra trước khi gửi."
+        ],
+        [
+          "Phiếu thiết bị cũ ở PM chưa gửi được Kế toán",
+          "Nếu chưa có lượt Kỹ thuật gửi PM theo luồng mới, PM bấm Trả lại bước trước để chuyển Kỹ thuật. Kỹ thuật kiểm tra lại rồi Gửi PM; PM xác nhận và Gửi kế toán. Không tạo phiếu trùng hoặc tự đổi trạng thái."
+        ],
+        [
+          "Nút gửi vẫn hiện theo luồng cũ",
+          "Lưu công việc đang làm, thoát hẳn ERP rồi mở lại. Màn hình Kỹ thuật phải có Gửi PM; PM dùng Gửi kế toán và các nút trả lại."
         ]
       ],
       "reviewed": "2026-10-23"

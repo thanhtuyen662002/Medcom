@@ -63,6 +63,16 @@ Theo yêu cầu chủ hệ thống, bỏ hai tab chuyển HDSD/TLKT trên header
 
 Đây là thay đổi giao diện tài liệu, không thay đổi dữ liệu nghiệp vụ, phân quyền hoặc các bước trên ERP. Cấu trúc tải HDSD giữ tên `assets/content.generated.js` để tương thích script cập nhật IIS hiện có; TLKT dùng `assets/technical.generated.js` được đóng gói cùng thư mục assets.
 
+## Luồng nhập hàng: Kỹ thuật trước PM — 23/10/2026
+
+HDSD, TLKT và sơ đồ nhập hàng cập nhật theo bản sửa đã áp dụng: **TP SA → Kỹ thuật → PM → Kế toán** nếu có thiết bị; **TP SA → PM → Kế toán** nếu không có thiết bị. Phiếu hỗn hợp theo nhánh thiết bị. Thứ tự phần nhập hàng trong sơ đồ tổng quan cũng được sửa cho thống nhất; nội dung các quy trình khác giữ nguyên.
+
+Các bài ghi đúng nút TP SA **Gửi Kỹ thuật / Gửi PM (không thiết bị)**, Kỹ thuật **Gửi PM / Trả TP SA**, PM **Gửi kế toán / Trả lại bước trước / Chọn gửi về**. Hướng dẫn trả lại phân biệt PM trả Kỹ thuật cho thiết bị và trả TP SA cho hàng khác, kèm các đích khi chọn bước. Phần copy nhiều lô, chỉnh số lượng và lưu một lần giữ nguyên.
+
+Căn cứ là định nghĩa STP/helper đọc lại sau triển khai, cấu hình ba form và 56 kiểm tra DB/SQL: 31 kiểm tra hợp lệ, 20 kiểm tra chặn lỗi và 5 kiểm tra truy vấn trả lại. Sau chủ hệ thống mở lại ERP, đã đọc được đủ ba form với các nút mới. Chỉ kiểm tra hiển thị/control tree trên phiên Admin; không gửi, trả lại hoặc lưu chứng từ trong lần kiểm tra giao diện. Không nâng kết quả này thành chấp nhận đầu cuối trên các vai trò khác. Metadata công khai chỉ chứa tên, hash định nghĩa và phạm vi kiểm chứng, không chứa SQL body hoặc chứng từ.
+
+TLKT giải thích giữ mã trạng thái cũ, tập đích trả lại tường minh, loại hàng TB, điều kiện Kỹ thuật gửi PM trước khi PM gửi Kế toán cho thiết bị, và cách xử lý phiếu cũ đang ở PM. Các quy trình khác và phân quyền không bị thay đổi bởi lượt cập nhật tài liệu này.
+
 ## Quy tắc cập nhật tiếp
 
 Khi DB hoặc ERP đổi, đối chiếu module/form liên quan, cập nhật bài nguồn và sơ đồ cùng lượt. Đổi hash định nghĩa là dấu hiệu cần rà lại, không tự chứng minh nghiệp vụ đã đổi. Giữ các trạng thái UNKNOWN cho đến khi có quan sát hoặc kiểm thử đúng phạm vi, không nâng thành PASS bằng suy luận.
