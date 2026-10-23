@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Plus, X, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Plus, X, AlertCircle, Loader2 } from "lucide-react";
 import { erpClient } from "@/lib/erp/erp-client";
 import type { ErpChoice, ErpDocumentDetail } from "@/lib/erp/erp-screen-contracts";
-import { UntitledBottomSheet } from "./bottom-sheet";
+import { FormSheet } from "@/components/app/form-sheet";
+import { FormField, FormSection } from "@/components/app/form-field";
+import { AppButton } from "@/components/app/app-button";
+import { useIsMobile } from "@/components/app/use-is-mobile";
 import { LookupField, choiceLabel, fieldText } from "./lookup-field";
-import { UntitledButton } from "./button";
 import {MoneyInput} from "@/components/erp/money-input";
 import {formatMoney as formatVND, multiplyMoney, sumMoney} from "@/lib/erp/money";
 
@@ -79,27 +81,11 @@ function TextField({
   inputMode?: "decimal" | "text";
   money?: boolean;
 }) {
-  const inputId = React.useId();
-  return (
-    <div>
-      <label htmlFor={inputId} className="mb-1.5 block text-sm font-medium text-black dark:text-white">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      {money ? <MoneyInput id={inputId} value={value} onValueChange={onChange} placeholder={placeholder} aria-invalid={!!error}
-        className={error ? "border-red-400 dark:border-red-700" : ""} /> : <input
-        type="text"
-        id={inputId}
-        inputMode={inputMode || "text"}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className={`w-full min-h-11 p-2.5 rounded-xl border bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-base ${
-          error ? "border-red-400 dark:border-red-700" : "border-neutral-300 dark:border-neutral-700"
-        }`}
-      />}
-      {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
-    </div>
-  );
+  return <FormField label={label} required={required} error={error}>
+    {control => money ? <MoneyInput {...control} value={value} onValueChange={onChange} placeholder={placeholder} />
+      : <input {...control} type="text" inputMode={inputMode || "text"} value={value}
+          onChange={event => onChange(event.target.value)} placeholder={placeholder} />}
+  </FormField>;
 }
 
 /* ================= Main sheet ================= */
@@ -119,14 +105,7 @@ export function PurchaseRequestCreateSheet({
   const saveIntent = useRef<Parameters<typeof erpClient.saveDocument>[1] | null>(null);
   const submitLock = useRef(false);
   const [uncertain, setUncertain] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const query = window.matchMedia("(max-width: 767px)");
-    const sync = () => setIsMobile(query.matches);
-    sync();
-    query.addEventListener("change", sync);
-    return () => query.removeEventListener("change", sync);
-  }, []);
+  const isMobile = useIsMobile();
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [purchaseDate, setPurchaseDate] = useState(today);
@@ -339,28 +318,18 @@ export function PurchaseRequestCreateSheet({
 
   /* ----- Section 1: header ----- */
   const headerSection = (
-    <section className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 sm:p-6 space-y-4">
-      <h4 className="text-base font-bold uppercase tracking-wider text-neutral-400">Thông tin phiếu</h4>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+    <FormSection layout="stack" title="Thông tin phiếu" className="rounded-2xl border border-neutral-200/80 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-black dark:text-white mb-1 font-medium">Mã đề xuất</label>
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-1">Mã đề xuất</label>
           <p className="p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-base text-neutral-400">
             {documentId || "Tự cấp sau khi tạo"}
           </p>
         </div>
+        <FormField label="Ngày đề nghị" type="date" required value={purchaseDate}
+          onChange={event => setPurchaseDate(event.target.value)} error={errors["header.purchaseDate"]} />
         <div>
-          <label className="block text-black dark:text-white mb-1 font-medium">Ngày đề xuất</label>
-          <input
-            type="date"
-            aria-invalid={!!errors["header.purchaseDate"]}
-            value={purchaseDate}
-            onChange={(e) => setPurchaseDate(e.target.value)}
-            className="w-full min-h-11 p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-base"
-          />
-          {errors["header.purchaseDate"] && <p className="mt-1 text-sm text-red-500">{errors["header.purchaseDate"]}</p>}
-        </div>
-        <div>
-          <label className="block text-black dark:text-white mb-1 font-medium">Chi nhánh</label>
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-1">Chi nhánh</label>
           <p className="p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-base font-mono font-bold text-neutral-600 dark:text-neutral-300">
             {currentBranch}
           </p>
@@ -413,13 +382,12 @@ export function PurchaseRequestCreateSheet({
         placeholder="Diễn giải mục đích..."
       />
       <TextField label="Ghi chú" value={notes} onChange={setNotes} placeholder="Ghi chú nội dung phiếu..." />
-    </section>
+    </FormSection>
   );
 
   /* ----- Section 2: currency & price ----- */
   const counterpartySection = (
-    <section className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 sm:p-6 space-y-4">
-      <h4 className="text-base font-bold uppercase tracking-wider text-neutral-400">Tiền tệ &amp; giá bán</h4>
+    <FormSection layout="stack" title="Tiền tệ & giá bán" className="rounded-2xl border border-neutral-200/80 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
       {/* Chủ dự án bỏ ô "Khách hàng" (19/10/2026). Với phiếu đã lưu, giá trị ObjectID
           gốc vẫn được giữ nguyên khi lưu lại; phiếu tạo mới không gửi đối tượng. */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -462,25 +430,13 @@ export function PurchaseRequestCreateSheet({
           error={errors["header.price"]}
         />
       </div>
-    </section>
+    </FormSection>
   );
 
   /* ----- Section 3: lines ----- */
   const linesSection = (
-    <section className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 sm:p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h4 className="text-base font-bold uppercase tracking-wider text-neutral-400">
-          Chi tiết ({lines.length})
-        </h4>
-        <button
-          type="button"
-          onClick={() => setLines((prev) => [...prev, emptyLine()])}
-          disabled={lines.length >= 500}
-          className="flex min-h-11 items-center gap-1 px-2.5 py-1.5 rounded-xl text-base font-bold bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50"
-        >
-          <Plus className="size-3.5" /> Thêm dòng
-        </button>
-      </div>
+    <FormSection layout="stack" title={`Chi tiết (${lines.length})`} className="rounded-2xl border border-neutral-200/80 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
+      action={<AppButton onClick={() => setLines((prev) => [...prev, emptyLine()])} disabled={lines.length >= 500}><Plus aria-hidden="true" className="size-4" />Thêm dòng</AppButton>}>
       {errors["lines"] && <p className="text-sm text-red-500">{errors["lines"]}</p>}
       <div className="space-y-3">
         {lines.map((line, idx) => {
@@ -493,14 +449,15 @@ export function PurchaseRequestCreateSheet({
               <div className="flex items-center justify-between">
                 <span className="text-base font-bold text-neutral-500">Dòng {idx + 1}</span>
                 {lines.length > 1 && (
-                  <button
-                    type="button"
+                  <AppButton
+                    variant="ghost"
+                    size="icon"
                     aria-label={`Xóa dòng ${idx + 1}`}
                     onClick={() => setLines((prev) => prev.filter((l) => l.key !== line.key))}
-                    className="flex min-h-11 min-w-11 items-center justify-center rounded-md text-neutral-400 hover:text-red-600"
+                    className="text-neutral-500 hover:text-red-600 dark:text-neutral-400"
                   >
                     <X className="size-4" />
-                  </button>
+                  </AppButton>
                 )}
               </div>
               <LookupField
@@ -519,7 +476,7 @@ export function PurchaseRequestCreateSheet({
                 }
               />
               {(line.itemChoice || line.itemId) && (
-                <div className="space-y-0.5 text-sm text-black dark:text-white">
+                <div className="space-y-0.5 text-sm text-neutral-900 dark:text-neutral-100">
                   <p>
                     {[
                       fieldText(line.itemChoice?.fields?.["ItemName"]),
@@ -553,7 +510,7 @@ export function PurchaseRequestCreateSheet({
                   onChange={(v) => patchLine(line.key, { timeRequired: v })}
                 />
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 <TextField
                   label="Số lượng"
                   required
@@ -572,8 +529,8 @@ export function PurchaseRequestCreateSheet({
                   error={errors[`line.${line.key}.unitPrice`]}
                 />
                 <div>
-                  <label className="block text-black dark:text-white mb-1 font-medium">Tổng giá</label>
-                  <p className="p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-base font-bold text-black dark:text-white">
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-1">Tổng giá</label>
+                  <p className="p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-base font-bold text-neutral-900 dark:text-neutral-100">
                     {total == null ? "—" : formatVND(total)}
                   </p>
                 </div>
@@ -582,13 +539,13 @@ export function PurchaseRequestCreateSheet({
           );
         })}
       </div>
-      <div className="flex items-center justify-between pt-1 text-base font-bold text-neutral-800 dark:text-neutral-200">
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-base font-bold text-neutral-800 dark:text-neutral-200">
         <span>
           Tổng: {lines.length} dòng
         </span>
         <span className="text-brand-700 dark:text-brand-300">Tổng tiền: {formatVND(grandTotal)}</span>
       </div>
-    </section>
+    </FormSection>
   );
 
   const feedback = (
@@ -612,7 +569,7 @@ export function PurchaseRequestCreateSheet({
   const reviewLines = lines.filter((l) => l.itemId.trim() !== "");
   const formReady = !isEditing || (!!baseline && !loadingDocument && !loadError);
   const closeForm = () => { if (!submitLock.current && !uncertain) onClose(); };
-  const confirmLabel = creating ? (isEditing ? "Đang lưu..." : "Đang tạo...") : uncertain ? "Thử lại lưu" : isEditing ? "Lưu thay đổi" : "Xác nhận tạo phiếu";
+  const confirmLabel = creating ? (isEditing ? "Đang lưu..." : "Đang tạo...") : uncertain ? "Thử lại lưu" : isEditing ? "Lưu thay đổi" : "Tạo đề nghị mua";
   const advanceStep = () => {
     const found = validate();
     setErrors(found);
@@ -620,54 +577,22 @@ export function PurchaseRequestCreateSheet({
       if (!Object.keys(found).some(key => key.startsWith("header."))) setStep(1);
     } else if (Object.keys(found).length === 0) setStep(2);
   };
-  const footer = <div className="flex gap-2 md:justify-end">
-    {isMobile && step > 0 ? <UntitledButton variant="secondary-gray" size="md" disabled={formDisabled} onClick={() => setStep(s => s - 1)} iconLeading={<ChevronLeft className="size-4" />}>Quay lại</UntitledButton>
-      : <UntitledButton variant="secondary-gray" size="md" disabled={creating || uncertain} onClick={closeForm}>{isEditing ? "Hủy sửa" : "Hủy"}</UntitledButton>}
-    {isMobile && step < 2 ? <UntitledButton className="min-h-11 min-w-0 flex-1 md:flex-none" variant="primary" size="md" disabled={formDisabled} onClick={advanceStep} iconLeading={<ChevronRight className="size-4" />}>{step === 0 ? "Tiếp: Chi tiết" : "Xem lại"}</UntitledButton>
-      : <UntitledButton className="min-h-11 min-w-0 flex-1 md:flex-none" variant="primary" size="md" disabled={creating || !saveAllowed} onClick={() => void handleSubmit()} iconLeading={creating ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}>{confirmLabel}</UntitledButton>}
-  </div>;
-
   return (
-    <UntitledBottomSheet presentation="document" open={open} onClose={closeForm} title={isEditing ? "Sửa đề nghị mua hàng" : "Tạo đề nghị mua hàng"} subtitle={documentId} footer={formReady ? footer : undefined}>
+    <FormSheet open={open} onClose={closeForm} title={isEditing ? "Sửa đề nghị mua hàng" : "Tạo đề nghị mua hàng"}
+      description={documentId} submitLabel={confirmLabel} onSubmit={() => void handleSubmit()} busy={creating}
+      steps={isMobile && formReady ? steps.map(label => ({ id: label, label })) : []} currentStep={step}
+      onBack={() => setStep(s => s - 1)} backDisabled={formDisabled} cancelDisabled={creating || uncertain}
+      onNext={advanceStep} nextDisabled={formDisabled} submitDisabled={creating || !saveAllowed} hideFooter={!formReady}
+      stepDisabled={formDisabled} onStepChange={i => {
+        if (i <= step) { setStep(i); return; }
+        const found = validate(); setErrors(found);
+        if (i === 1 && !Object.keys(found).some(key => key.startsWith("header."))) setStep(1);
+        if (i === 2 && Object.keys(found).length === 0) setStep(2);
+      }}>
       {loadingDocument ? <div role="status" className="flex items-center justify-center gap-2 py-8 text-sm"><Loader2 className="size-5 animate-spin" />Đang tải đầy đủ chi tiết phiếu...</div>
-        : loadError ? <div className="space-y-3 text-sm"><p role="alert">Không tải được đầy đủ phiếu hoặc phiếu đã thay đổi trong lúc tải. Vui lòng thử lại.</p><UntitledButton variant="secondary-gray" size="md" onClick={() => setReadRevision(value => value + 1)}>Thử lại</UntitledButton></div> : null}
-      {formReady && <div className="space-y-5 text-base leading-relaxed [&_input]:min-h-11 [&_input]:text-base [&_label]:text-sm [&_button]:text-base [&_button_span]:text-base [&_.text-sm]:text-base [&_h4]:text-lg">
+        : loadError ? <div className="space-y-3 text-sm"><p role="alert">Không tải được đầy đủ phiếu hoặc phiếu đã thay đổi trong lúc tải. Vui lòng thử lại.</p><AppButton variant="secondary" onClick={() => setReadRevision(value => value + 1)}>Thử lại</AppButton></div> : null}
+      {formReady && <div className="min-w-0 space-y-5 text-base leading-relaxed">
         <fieldset disabled={formDisabled} className="min-w-0 space-y-3.5 border-0 p-0">
-        {isMobile && (
-          <ol aria-label="Các bước nhập đề nghị mua hàng" className="flex items-center gap-1 px-1">
-            {steps.map((label, i) => (
-              <li key={label} className="flex-1">
-                <button
-                  type="button"
-                  aria-current={i === step ? "step" : undefined}
-                  onClick={() => {
-                    if (i <= step) { setStep(i); return; }
-                    const found = validate(); setErrors(found);
-                    if (i === 1 && !Object.keys(found).some(key => key.startsWith("header."))) setStep(1);
-                    if (i === 2 && Object.keys(found).length === 0) setStep(2);
-                  }}
-                  className="w-full text-left"
-                >
-                  <span
-                    className={`block h-1 rounded-full ${
-                      i <= step ? "bg-brand-600" : "bg-neutral-200 dark:bg-neutral-700"
-                    }`}
-                  />
-                  <span
-                    className={`mt-1 block text-sm font-semibold ${
-                      i === step
-                        ? "text-brand-700 dark:text-brand-300"
-                        : "text-neutral-400"
-                    }`}
-                  >
-                    {i + 1}. {label}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ol>
-        )}
-
         {(!isMobile || step === 0) && (
           <div className="space-y-3.5">
             {headerSection}
@@ -717,6 +642,6 @@ export function PurchaseRequestCreateSheet({
         {feedback}
         {!saveAllowed && <p role="status" className="text-base text-amber-700 dark:text-amber-300">Phiếu hiện không được phép sửa theo quyền hoặc trạng thái ERP.</p>}
       </div>}
-    </UntitledBottomSheet>
+    </FormSheet>
   );
 }

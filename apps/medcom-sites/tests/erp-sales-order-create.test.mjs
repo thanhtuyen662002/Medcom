@@ -51,6 +51,7 @@ const stubs={
   'erp-client':clientStub,
   'lookup-field':lookupStub,
   'bottom-sheet':`export const UntitledBottomSheet=({open,children})=>open?<div data-sheet="1">{children}</div>:null;`,
+  'app-sheet':`export const AppSheet=({open,children})=>open?<div data-sheet="1">{children}</div>:null;`,
   'record-dialog':`export const RecordDetailStatus=({children})=><div>{children}</div>;`,
   'button':`export const UntitledButton=({children,iconLeading,iconTrailing,variant,size,...rest})=>(<button type="button" {...rest}>{children}</button>);`,
   'document-detail-dialog':`export const DocumentDetailDialog=({open,children})=>open?<div>{children}</div>:null;`,
@@ -66,7 +67,7 @@ const stubPlugin=(importerPattern,map)=>({
     builder.onResolve({filter:/.*/},args=>{
       if(!/(?:erp-document-detail-body)\.tsx$/.test(args.importer.replace(/\\/g,'/'))&&!importerPattern.test(args.importer.replace(/\\/g,'/'))&&!args.importer.replace(/\\/g,'/').endsWith('/document-detail/registry.ts'))return null;
       const requested=args.path.replace(/\\/g,'/');
-      for(const key of Object.keys(map))if(requested.endsWith(key))return{path:key,namespace:'stub'};
+      for(const key of Object.keys(map))if(requested.split('/').at(-1)===key)return{path:key,namespace:'stub'};
       return null;
     });
     builder.onLoad({filter:/.*/,namespace:'stub'},args=>({contents:map[args.path],loader:'tsx',resolveDir:app}));
@@ -81,7 +82,7 @@ const buildFixture=(entry,outfile,plugin)=>build({
 });
 
 await buildFixture('export {TabErpScreen} from "./components/untitledui/tab-erp-screen";','fixture.cjs',
-  stubPlugin(/(?:tab-erp-screen|sales-order-line-editor)\.tsx$/,stubs));
+  stubPlugin(/(?:tab-erp-screen|sales-order-line-editor|form-sheet)\.tsx$/,stubs));
 // Second fixture: the real LookupField with only its transport stubbed, so the
 // request payload (context) can be asserted.
 await buildFixture('export {LookupField} from "./components/untitledui/lookup-field";','lookup-field.cjs',
@@ -189,8 +190,11 @@ test('LookupField sends the linked context to the options API and refetches when
 const textOf=node=>node.children.map(child=>typeof child==='string'?child:textOf(child)).join('');
 const choice=(id,fields={})=>({id,name:id,label:id,fields});
 const pageOf=(items,page=1,hasMore=false)=>({items,page,pageSize:100,hasMore,requiredParameters:[]});
-const byId=(renderer,id)=>renderer.root.find(node=>node.props.id===id);
+// P2-04: FormField now owns the label; address the resolved native control.
+const byId=(renderer,id)=>renderer.root.find(node=>typeof node.type==='string'&&node.props.id===id);
 const buttonOf=(renderer,text)=>renderer.root.findAllByType('button').find(b=>b.props.children===text);
+// P2-04: the common footer submits its form instead of an inline onClick.
+const submitCreate=renderer=>renderer.root.findAllByType('form').find(form=>form.props['aria-label']==='Tạo đơn hàng').props.onSubmit({preventDefault(){}});
 const inputValue=(renderer,id,value)=>act(async()=>byId(renderer,id).props.onChange({target:{value}}));
 const openCreate=async()=>{
   let renderer;
@@ -220,7 +224,7 @@ test('contract hydrates exact customer, address and employee; create submits sep
   await inputValue(renderer,'so-create-link','https://example.test/attachment');
   assert.deepEqual(JSON.parse(lookupOf(renderer,'Mã hàng').props['data-context']),{'Master.ContractID':'HD01',UserAutoID:null});
   await act(async()=>lookupOf(renderer,'Mã hàng').props.onPick(choice('ITEM01',{UnitPrice:'120',DienGiai:'Source line memo'})));
-  await act(async()=>buttonOf(renderer,'Xác nhận tạo đơn').props.onClick());
+  await act(async()=>submitCreate(renderer));
   await flush();
   const {header,lines}=globalThis.__createIntents[0];
   assert.equal(header.memo,'Memo only');assert.equal(header.ghiChuDonHang,'Order notes only');
@@ -233,7 +237,7 @@ test('contract hydrates exact customer, address and employee; create submits sep
   assert.ok(byId(renderer,'so-create-memo'),'denied create keeps the draft open');
   assert.equal(byId(renderer,'so-create-memo').props.value,'Memo only');
   globalThis.__createOutcome='Committed';
-  await act(async()=>buttonOf(renderer,'Xác nhận tạo đơn').props.onClick());await flush();
+  await act(async()=>submitCreate(renderer));await flush();
   await act(async()=>buttonOf(renderer,'Tạo mới').props.onClick());
   assert.equal(byId(renderer,'so-create-memo').props.value,'');assert.equal(byId(renderer,'so-create-address').props.value,'');
   await act(async()=>renderer.unmount());globalThis.__lookupResponse=null;
@@ -246,7 +250,7 @@ test('switching customer cancels old hydration, clears incompatible contract, em
   await act(async()=>lookupOf(renderer,'Mã hợp đồng').props.onPick(choice('HD01',{ObjectID:'KH01',EmployeeID:'NV01'})));
   await flush();
   assert.equal(byId(renderer,'so-create-address').props.value,'');
-  assert.equal(buttonOf(renderer,'Xác nhận tạo đơn').props.disabled,true);
+  assert.equal(buttonOf(renderer,'Tạo đơn hàng').props.disabled,true);
   await act(async()=>lookupOf(renderer,'Mã hàng').props.onPick(choice('ITEM01',{UnitPrice:'120'})));
   await act(async()=>lookupOf(renderer,'Khách hàng').props.onPick(choice('KH02',{ObjectName:'New customer',Address:'New address'})));
   assert.equal(lookupOf(renderer,'Mã hợp đồng').props['data-value'],'');

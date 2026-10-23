@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
-import { Plus, X, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Plus, X, AlertCircle } from "lucide-react";
 import { erpClient } from "@/lib/erp/erp-client";
 import type { ErpChoice } from "@/lib/erp/erp-screen-contracts";
-import { UntitledBottomSheet } from "./bottom-sheet";
+import { FormSheet } from "@/components/app/form-sheet";
+import { FormField, FormSection } from "@/components/app/form-field";
+import { AppButton } from "@/components/app/app-button";
+import { useIsMobile } from "@/components/app/use-is-mobile";
 import { LookupField, choiceLabel, fieldText } from "./lookup-field";
-import { UntitledButton } from "./button";
 import {MoneyInput} from "@/components/erp/money-input";
 import {formatMoney as formatVND, multiplyMoney, sumMoney} from "@/lib/erp/money";
 
@@ -63,25 +65,11 @@ function TextField({
   inputMode?: "decimal" | "text";
   money?: boolean;
 }) {
-  return (
-    <div>
-      <label className="mb-1.5 block text-sm font-medium text-black dark:text-white">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      {money ? <MoneyInput value={value} onValueChange={onChange} placeholder={placeholder} aria-invalid={!!error}
-        className={error ? "border-red-400 dark:border-red-700" : ""} /> : <input
-        type="text"
-        inputMode={inputMode || "text"}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className={`w-full min-h-11 p-2.5 rounded-xl border bg-white dark:bg-neutral-900 text-black dark:text-white text-base ${
-          error ? "border-red-400 dark:border-red-700" : "border-neutral-300 dark:border-neutral-700"
-        }`}
-      />}
-      {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
-    </div>
-  );
+  return <FormField label={label} required={required} error={error}>
+    {control => money ? <MoneyInput {...control} value={value} onValueChange={onChange} placeholder={placeholder} />
+      : <input {...control} type="text" inputMode={inputMode || "text"} value={value}
+          onChange={event => onChange(event.target.value)} placeholder={placeholder} />}
+  </FormField>;
 }
 
 /* ================= Main sheet ================= */
@@ -91,14 +79,7 @@ export function PurchaseOrderCreateSheet({
   currentBranch,
   onCreated,
 }: PurchaseOrderCreateSheetProps) {
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const query = window.matchMedia("(max-width: 767px)");
-    const sync = () => setIsMobile(query.matches);
-    sync();
-    query.addEventListener("change", sync);
-    return () => query.removeEventListener("change", sync);
-  }, []);
+  const isMobile = useIsMobile();
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [documentDate, setDocumentDate] = useState(today);
@@ -236,51 +217,26 @@ export function PurchaseOrderCreateSheet({
 
   /* ----- Section 1: document ----- */
   const documentSection = (
-    <section className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 space-y-3">
-      <h4 className="text-sm font-bold uppercase tracking-wider text-neutral-400">Thông tin đơn</h4>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
+    <FormSection layout="stack" title="Thông tin đơn" className="rounded-2xl border border-neutral-200/80 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-black dark:text-white mb-1 font-medium">Mã đơn</label>
-          <p className="p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-sm text-neutral-400">
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-1">Mã đơn</label>
+          <p className="p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-sm text-neutral-500 dark:text-neutral-400">
             Tự cấp sau khi tạo
           </p>
         </div>
-        <div>
-          <label className="block text-black dark:text-white mb-1 font-medium">
-            Ngày lập <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="date"
-            value={documentDate}
-            onChange={(e) => setDocumentDate(e.target.value)}
-            className={`w-full p-2.5 rounded-xl border bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-sm ${
-              errors["header.documentDate"]
-                ? "border-red-400 dark:border-red-700"
-                : "border-neutral-300 dark:border-neutral-700"
-            }`}
-          />
-          {errors["header.documentDate"] && (
-            <p className="mt-1 text-sm text-red-500">{errors["header.documentDate"]}</p>
-          )}
-        </div>
-        <div>
-          <label className="block text-black dark:text-white mb-1 font-medium">Ngày giao hàng</label>
-          <input
-            type="date"
-            value={deliverDate}
-            onChange={(e) => setDeliverDate(e.target.value)}
-            className="w-full p-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-sm"
-          />
-        </div>
+        <FormField label="Ngày lập" type="date" required value={documentDate}
+          onChange={event => setDocumentDate(event.target.value)} error={errors["header.documentDate"]} />
+        <FormField label="Ngày giao hàng" type="date" value={deliverDate} onChange={event => setDeliverDate(event.target.value)} />
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
-        <div className="col-span-2 md:col-span-1">
-          <label className="block text-black dark:text-white mb-1 font-medium">Chi nhánh</label>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="sm:col-span-2 md:col-span-1">
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-1">Chi nhánh</label>
           <p className="p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-sm font-mono font-bold text-neutral-600 dark:text-neutral-300">
             {currentBranch}
           </p>
         </div>
-        <div className="col-span-2 md:col-span-2">
+        <div className="sm:col-span-2 md:col-span-2">
           <TextField
             label="Mã hợp đồng"
             value={contractId}
@@ -291,13 +247,12 @@ export function PurchaseOrderCreateSheet({
       </div>
       <TextField label="Nội dung (Memo)" value={memo} onChange={setMemo} placeholder="Diễn giải đơn đặt mua..." />
       <TextField label="Ghi chú" value={notes} onChange={setNotes} placeholder="Ghi chú thêm..." />
-    </section>
+    </FormSection>
   );
 
   /* ----- Section 2: counterparty & currency ----- */
   const counterpartySection = (
-    <section className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 space-y-3">
-      <h4 className="text-sm font-bold uppercase tracking-wider text-neutral-400">Đối tượng &amp; tiền tệ</h4>
+    <FormSection layout="stack" title="Đối tượng & tiền tệ" className="rounded-2xl border border-neutral-200/80 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
       <LookupField
         label="Nhà cung cấp"
         required
@@ -314,13 +269,13 @@ export function PurchaseOrderCreateSheet({
         }}
       />
       {objectChoice && (fieldText(objectChoice.fields?.["ObjectName"]) || fieldText(objectChoice.fields?.["Address"])) && (
-        <p className="text-sm text-black dark:text-white">
+        <p className="text-sm text-neutral-900 dark:text-neutral-100">
           {[fieldText(objectChoice.fields?.["ObjectName"]), fieldText(objectChoice.fields?.["Address"])]
             .filter(Boolean)
             .join(" · ")}
         </p>
       )}
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <LookupField
           label="Loại tiền"
           required
@@ -352,24 +307,13 @@ export function PurchaseOrderCreateSheet({
           placeholder="1"
         />
       </div>
-    </section>
+    </FormSection>
   );
 
   /* ----- Section 3: lines ----- */
   const linesSection = (
-    <section className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 p-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <h4 className="text-sm font-bold uppercase tracking-wider text-neutral-400">
-          Chi tiết ({lines.length})
-        </h4>
-        <button
-          type="button"
-          onClick={() => setLines((prev) => [...prev, emptyLine()])}
-          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-sm font-bold bg-brand-600 text-white hover:bg-brand-700"
-        >
-          <Plus className="size-3.5" /> Thêm dòng
-        </button>
-      </div>
+    <FormSection layout="stack" title={`Chi tiết (${lines.length})`} className="rounded-2xl border border-neutral-200/80 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
+      action={<AppButton onClick={() => setLines((prev) => [...prev, emptyLine()])}><Plus aria-hidden="true" className="size-4" />Thêm dòng</AppButton>}>
       {errors["lines"] && <p className="text-sm text-red-500">{errors["lines"]}</p>}
       <div className="space-y-3">
         {lines.map((line, idx) => {
@@ -382,14 +326,15 @@ export function PurchaseOrderCreateSheet({
               <div className="flex items-center justify-between">
                 <span className="text-sm font-bold text-neutral-500">Dòng {idx + 1}</span>
                 {lines.length > 1 && (
-                  <button
-                    type="button"
+                  <AppButton
+                    variant="ghost"
+                    size="icon"
                     aria-label={`Xóa dòng ${idx + 1}`}
                     onClick={() => setLines((prev) => prev.filter((l) => l.key !== line.key))}
-                    className="p-1 rounded-md text-neutral-400 hover:text-red-600"
+                    className="text-neutral-500 hover:text-red-600 dark:text-neutral-400"
                   >
                     <X className="size-4" />
-                  </button>
+                  </AppButton>
                 )}
               </div>
               <LookupField
@@ -408,7 +353,7 @@ export function PurchaseOrderCreateSheet({
                 }
               />
               {(line.itemChoice || line.itemId) && (
-                <div className="space-y-0.5 text-sm text-black dark:text-white">
+                <div className="space-y-0.5 text-sm text-neutral-900 dark:text-neutral-100">
                   <p>
                     {[
                       fieldText(line.itemChoice?.fields?.["ItemName"]),
@@ -426,7 +371,7 @@ export function PurchaseOrderCreateSheet({
                   </p>
                 </div>
               )}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 <TextField
                   label="Số lượng"
                   required
@@ -444,9 +389,9 @@ export function PurchaseOrderCreateSheet({
                   inputMode="decimal"
                   error={errors[`line.${line.key}.unitPrice`]}
                 />
-                <div className="col-span-2 md:col-span-1">
-                  <label className="block text-black dark:text-white mb-1 font-medium">Thành tiền</label>
-                  <p className="p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-sm font-bold text-black dark:text-white">
+                <div className="sm:col-span-2 md:col-span-1">
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-1">Thành tiền</label>
+                  <p className="p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-sm font-bold text-neutral-900 dark:text-neutral-100">
                     {total == null ? "—" : formatVND(total)}
                   </p>
                 </div>
@@ -461,11 +406,11 @@ export function PurchaseOrderCreateSheet({
           );
         })}
       </div>
-      <div className="flex items-center justify-between pt-1 text-sm font-bold text-neutral-800 dark:text-neutral-200">
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-sm font-bold text-neutral-800 dark:text-neutral-200">
         <span>Tổng: {lines.length} dòng</span>
         <span className="text-brand-700 dark:text-brand-300">Tổng tiền: {formatVND(grandTotal)}</span>
       </div>
-    </section>
+    </FormSection>
   );
 
   const feedback = (
@@ -488,40 +433,25 @@ export function PurchaseOrderCreateSheet({
   const steps = ["Thông tin", "Chi tiết", "Xem lại"];
   const reviewLines = lines.filter((l) => l.itemId.trim() !== "");
 
-  return (
-    <UntitledBottomSheet open={open} onClose={onClose} title="Tạo đơn đặt mua">
-      <div className="space-y-3.5 pb-24 text-sm">
-        {isMobile && (
-          <ol className="flex items-center gap-1 px-1">
-            {steps.map((label, i) => (
-              <li key={label} className="flex-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (i === 0) setStep(0);
-                    if (i === 1 && headerValid) setStep(1);
-                    if (i === 2 && headerValid && linesValid) setStep(2);
-                  }}
-                  className="w-full text-left"
-                >
-                  <span
-                    className={`block h-1 rounded-full ${
-                      i <= step ? "bg-brand-600" : "bg-neutral-200 dark:bg-neutral-700"
-                    }`}
-                  />
-                  <span
-                    className={`mt-1 block text-sm font-semibold ${
-                      i === step ? "text-brand-700 dark:text-brand-300" : "text-neutral-400"
-                    }`}
-                  >
-                    {i + 1}. {label}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ol>
-        )}
+  const advanceStep = () => {
+    if (step === 0) {
+      const found = validate();
+      setErrors(found);
+      if (!found["header.documentDate"] && !found["header.objectId"] && !found["header.currencyId"] && !found["header.rateExchange"]) setStep(1);
+    } else if (linesValid) setStep(2);
+    else setErrors(validate());
+  };
 
+  return (
+    <FormSheet open={open} onClose={onClose} title="Tạo đơn mua" submitLabel={creating ? "Đang tạo..." : "Tạo đơn mua"}
+      onSubmit={() => void handleSubmit()} busy={creating} submitDisabled={creating}
+      steps={isMobile ? steps.map(label => ({ id: label, label })) : []} currentStep={step}
+      onBack={() => setStep(s => s - 1)} onNext={advanceStep} onStepChange={i => {
+        if (i === 0) setStep(0);
+        if (i === 1 && headerValid) setStep(1);
+        if (i === 2 && headerValid && linesValid) setStep(2);
+      }}>
+      <div className="min-w-0 space-y-5 text-base leading-relaxed">
         {(!isMobile || step === 0) && (
           <div className="space-y-3.5">
             {documentSection}
@@ -535,12 +465,12 @@ export function PurchaseOrderCreateSheet({
             <h4 className="text-sm font-bold uppercase tracking-wider text-neutral-400">
               {isMobile ? "Xem lại" : "Tổng hợp"}
             </h4>
-            <p className="text-sm text-black dark:text-white">
+            <p className="text-sm text-neutral-900 dark:text-neutral-100">
               {currentBranch} · {documentDate || "—"}
               {deliverDate ? ` · giao ${deliverDate}` : ""} · {currencyId || "—"}
               {rateExchange ? ` (${rateExchange})` : ""}
             </p>
-            <p className="text-sm text-black dark:text-white">
+            <p className="text-sm text-neutral-900 dark:text-neutral-100">
               NCC: {choiceLabel(objectChoice, objectId) || "—"}
               {contractId.trim() ? ` · HĐ: ${contractId.trim()}` : ""}
             </p>
@@ -549,7 +479,7 @@ export function PurchaseOrderCreateSheet({
                 <p className="text-sm text-neutral-400">Chưa có chi tiết nào.</p>
               ) : (
                 reviewLines.map((l) => (
-                  <p key={l.key} className="text-sm text-black dark:text-white flex justify-between gap-2">
+                  <p key={l.key} className="text-sm text-neutral-900 dark:text-neutral-100 flex justify-between gap-2">
                     <span className="truncate">
                       {l.itemId} × {l.quantity}
                     </span>
@@ -571,64 +501,8 @@ export function PurchaseOrderCreateSheet({
 
         {feedback}
 
-        {isMobile ? (
-          <div className="flex gap-2">
-            {step > 0 ? (
-              <UntitledButton variant="secondary-gray" size="md" onClick={() => setStep((s) => s - 1)} iconLeading={<ChevronLeft className="size-4" />}>
-                Quay lại
-              </UntitledButton>
-            ) : (
-              <UntitledButton variant="secondary-gray" size="md" onClick={onClose}>
-                Hủy
-              </UntitledButton>
-            )}
-            {step < 2 ? (
-              <UntitledButton
-                variant="primary"
-                size="md"
-                onClick={() => {
-                  if (step === 0) {
-                    const found = validate();
-                    setErrors(found);
-                    if (
-                      !found["header.documentDate"] &&
-                      !found["header.objectId"] &&
-                      !found["header.currencyId"] &&
-                      !found["header.rateExchange"]
-                    )
-                      setStep(1);
-                  } else if (linesValid) setStep(2);
-                  else {
-                    setErrors(validate());
-                  }
-                }}
-                iconLeading={<ChevronRight className="size-4" />}
-              >
-                {step === 0 ? "Tiếp: Chi tiết" : "Xem lại & tạo"}
-              </UntitledButton>
-            ) : (
-              <UntitledButton variant="primary" size="md" onClick={handleSubmit} disabled={creating} iconLeading={creating ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}>
-                {creating ? "Đang tạo..." : "Xác nhận tạo đơn"}
-              </UntitledButton>
-            )}
-          </div>
-        ) : (
-          <div className="flex justify-end gap-2">
-            <UntitledButton variant="secondary-gray" size="md" onClick={onClose}>
-              Hủy
-            </UntitledButton>
-            <UntitledButton
-              variant="primary"
-              size="md"
-              onClick={handleSubmit}
-              disabled={creating}
-              iconLeading={creating ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
-            >
-              {creating ? "Đang tạo..." : "Xác nhận tạo chứng từ"}
-            </UntitledButton>
-          </div>
-        )}
+
       </div>
-    </UntitledBottomSheet>
+    </FormSheet>
   );
 }
